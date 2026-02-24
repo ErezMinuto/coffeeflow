@@ -155,13 +155,34 @@ body {
     font-weight: 600;
   }
 
-  /* Add padding to container for mobile nav */
-  .container {
-    padding-bottom: 80px !important;
+  /* Add space at bottom for mobile nav */
+  body {
+    padding-bottom: 0 !important;
   }
 
   .App {
-    padding-bottom: 70px;
+    min-height: 100vh;
+    padding-bottom: 0 !important;
+  }
+
+  .container {
+    padding: 1rem !important;
+    padding-bottom: 100px !important;
+    min-height: calc(100vh - 70px);
+  }
+
+  .page {
+    margin-bottom: 20px;
+  }
+
+  /* Make sure content doesn't hide behind nav */
+  .stats-grid,
+  .section,
+  .table-container,
+  .products-grid,
+  .roasts-list,
+  .form-card {
+    margin-bottom: 1rem !important;
   }
 }
 
