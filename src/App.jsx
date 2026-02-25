@@ -17,11 +17,6 @@ function App() {
   const operatorsDb = useSupabaseData('operators');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
-  useEffect(() => {
-    if (isSignedIn && getToken) {
-      setSupabaseToken(getToken);
-    }
-  }, [isSignedIn, getToken]);
 
   if (!isLoaded) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', direction: 'rtl' }}><div>טוען...</div></div>;
