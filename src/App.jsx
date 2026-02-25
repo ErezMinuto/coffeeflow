@@ -17,7 +17,12 @@ function App() {
   const operatorsDb = useSupabaseData('operators');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
-  
+  useEffect(() => {
+    if (isSignedIn && getToken) {
+      setSupabaseToken(getToken);
+    }
+  }, [isSignedIn, getToken]);
+
   if (!isLoaded) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', direction: 'rtl' }}><div>טוען...</div></div>;
   }
@@ -646,7 +651,12 @@ function App() {
       }
     };
 
-    const startEditProduct = (product) => { setEditingProduct({...product}); };
+    const startEditProduct = (product) => { 
+      setEditingProduct({
+        ...product,
+        recipe: product.recipe.map(r => ({...r}))
+      }); 
+    };
 
     const saveEditProduct = async () => {
       if (!validateProduct(editingProduct)) return;
