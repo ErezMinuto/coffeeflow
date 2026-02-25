@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { SignIn, UserButton, useUser, useAuth } from '@clerk/clerk-react';
-import { supabase, setSupabaseToken } from './lib/supabase';
+import { supabase } from './lib/supabase';
 import { useSupabaseData, useCostSettings } from './lib/hooks';
+import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 
 function App() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -15,6 +17,11 @@ function App() {
   const operatorsDb = useSupabaseData('operators');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
+  useEffect(() => {
+    if (isSignedIn && getToken) {
+      setSupabaseToken(getToken);
+    }
+  }, [isSignedIn, getToken]);
 
   if (!isLoaded) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', direction: 'rtl' }}><div>טוען...</div></div>;
@@ -84,6 +91,45 @@ function App() {
     return totalCost.toFixed(2);
   };
 
+  // Print label function
+  const printRoastLabel = async (roast, origin) => {
+    const doc = new jsPDF({ unit: 'mm', format: [100, 150] });
+    doc.setFillColor(250, 247, 242);
+    doc.rect(0, 0, 100, 150, 'F');
+    doc.setFillColor(111, 78, 55);
+    doc.rect(0, 0, 100, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Minuto Coffee', 50, 15, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('Fresh Roasted Coffee', 50, 23, { align: 'center' });
+    doc.setTextColor(45, 24, 16);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(origin?.name || 'Unknown Origin', 50, 45, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    const yStart = 60;
+    const lineHeight = 12;
+    if (roast.batch_number) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(roast.batch_number, 50, yStart, { align: 'center' });
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date(roast.date).toLocaleDateString('en-GB')}`, 50, yStart + lineHeight, { align: 'center' });
+    doc.text(`Weight: ${roast.roasted_weight} kg`, 50, yStart + lineHeight * 2, { align: 'center' });
+    doc.text(`Roaster: ${roast.operator}`, 50, yStart + lineHeight * 3, { align: 'center' });
+    try {
+      const qrData = JSON.stringify({ batch: roast.batch_number, origin: origin?.name, date: roast.date, weight: roast.roasted_weight });
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1 });
+      doc.addImage(qrCodeDataUrl, 'PNG', 25, 105, 50, 50);
+    } catch (error) {
+      console.error('QR code error:', error);
+    }
+    doc.save(`label-${roast.batch_number || roast.id}.pdf`);
+  };
+
   // Navigation Component
   const Navigation = () => {
     const menuItems = [
@@ -129,42 +175,9 @@ function App() {
 
   // Dashboard Component
   const Dashboard = () => {
-    const resetData = async () => {
-      if (!window.confirm('⚠️ האם אתה בטוח? פעולה זו תמחק את כל הנתונים!')) return;
-      try {
-        await Promise.all([
-          supabase.from('roasts').delete().eq('user_id', user.id),
-          supabase.from('products').delete().eq('user_id', user.id),
-          supabase.from('operators').delete().eq('user_id', user.id),
-          supabase.from('origins').delete().eq('user_id', user.id)
-        ]);
-        originsDb.refresh(); productsDb.refresh(); roastsDb.refresh(); operatorsDb.refresh();
-        alert('✅ הנתונים נמחקו בהצלחה');
-      } catch (error) {
-        console.error('Error resetting data:', error);
-        alert('❌ שגיאה במחיקת נתונים');
-      }
-    };
-
-    const initializeDemoData = async () => {
-      if (!window.confirm('האם להוסיף נתוני דוגמה?')) return;
-      try {
-        await Promise.all([
-          originsDb.insert({ name: 'ברזיל Fazenda Sertão', weight_loss: 20, cost_per_kg: 34, stock: 50, roasted_stock: 0 }),
-          originsDb.insert({ name: 'ברזיל Cerrado', weight_loss: 20, cost_per_kg: 33, stock: 35, roasted_stock: 0 }),
-          originsDb.insert({ name: 'אתיופיה Yirgacheffe', weight_loss: 18, cost_per_kg: 37, stock: 65, roasted_stock: 0 })
-        ]);
-        await Promise.all([
-          operatorsDb.insert({ name: 'יוסי' }),
-          operatorsDb.insert({ name: 'שירה' }),
-          operatorsDb.insert({ name: 'מיכאל' })
-        ]);
-        alert('✅ נתוני דוגמה נוספו!');
-      } catch (error) {
-        console.error('Error adding demo data:', error);
-        alert('❌ שגיאה בהוספת נתונים');
-      }
-    };
+    const LOW_STOCK_THRESHOLD = 10; // ק"ג
+    const lowStockOrigins = data.origins.filter(o => (o.stock || 0) < LOW_STOCK_THRESHOLD && (o.stock || 0) > 0);
+    const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
 
     return (
       <div className="page">
@@ -172,9 +185,43 @@ function App() {
           <h1>📊 דשבורד ראשי</h1>
           <div style={{ display: 'flex', gap: '10px' }}>
             <UserButton />
-            <button onClick={initializeDemoData} className="btn-small" style={{ background: '#10B981', color: 'white' }}>➕ נתוני דוגמה</button>
           </div>
         </div>
+
+        {/* Low Stock Alerts */}
+        {(lowStockOrigins.length > 0 || outOfStockOrigins.length > 0) && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            {outOfStockOrigins.length > 0 && (
+              <div style={{ background: '#FEE2E2', border: '2px solid #DC2626', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <h3 style={{ color: '#DC2626', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ❌ אזהרה: זנים ללא מלאי ({outOfStockOrigins.length})
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {outOfStockOrigins.map(o => (
+                    <span key={o.id} style={{ background: 'white', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#DC2626', fontWeight: 'bold' }}>
+                      {o.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {lowStockOrigins.length > 0 && (
+              <div style={{ background: '#FEF3C7', border: '2px solid #F59E0B', borderRadius: '8px', padding: '1rem' }}>
+                <h3 style={{ color: '#D97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ⚠️ מלאי נמוך (פחות מ-{LOW_STOCK_THRESHOLD} ק"ג) - {lowStockOrigins.length} זנים
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {lowStockOrigins.map(o => (
+                    <span key={o.id} style={{ background: 'white', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#D97706' }}>
+                      {o.name}: {o.stock} ק"ג
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="stats-grid">
           <div className="stat-card"><div className="stat-icon">🌱</div><div className="stat-info"><div className="stat-label">זנים במלאי</div><div className="stat-value">{data.origins.length}</div></div></div>
           <div className="stat-card"><div className="stat-icon">📦</div><div className="stat-info"><div className="stat-label">מוצרים</div><div className="stat-value">{data.products.length}</div></div></div>
@@ -327,13 +374,18 @@ function App() {
               {filteredOrigins.map(origin => {
                 const yieldPercent = 1 - (origin.weight_loss / 100);
                 const costPerKgRoasted = (origin.cost_per_kg / yieldPercent).toFixed(2);
+                const LOW_STOCK_THRESHOLD = 10;
+                const isLowStock = (origin.stock || 0) < LOW_STOCK_THRESHOLD && (origin.stock || 0) > 0;
+                const isOutOfStock = (origin.stock || 0) === 0;
+                const stockStyle = isOutOfStock ? { background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' } : 
+                                    isLowStock ? { background: '#FEF3C7', color: '#D97706', fontWeight: 'bold' } : {};
                 return (
-                  <tr key={origin.id}>
-                    <td><strong>{origin.name}</strong></td>
+                  <tr key={origin.id} style={isOutOfStock ? { background: '#FEE2E2' } : isLowStock ? { background: '#FFFBEB' } : {}}>
+                    <td><strong>{origin.name}</strong> {isOutOfStock && <span style={{ color: '#DC2626', marginRight: '0.5rem' }}>❌</span>} {isLowStock && <span style={{ color: '#F59E0B', marginRight: '0.5rem' }}>⚠️</span>}</td>
                     <td>{origin.weight_loss}%</td>
                     <td>₪{origin.cost_per_kg}</td>
                     <td>₪{costPerKgRoasted}</td>
-                    <td>{origin.stock || 0} ק"ג</td>
+                    <td style={stockStyle}>{origin.stock || 0} ק"ג</td>
                     <td>{origin.roasted_stock || 0} ק"ג</td>
                     <td>
                       <div className="action-buttons">
@@ -487,6 +539,7 @@ function App() {
                     <div className="roast-header">
                       <h3>{origin?.name || 'זן לא ידוע'}</h3>
                       <div className="roast-actions">
+                        <button onClick={() => printRoastLabel(roast, origin)} className="btn-icon" title="הדפס מדבקה">🖨️</button>
                         <button onClick={() => startEditRoast(roast)} className="btn-icon">✏️</button>
                         <button onClick={() => deleteRoast(roast)} className="btn-icon">🗑️</button>
                       </div>
