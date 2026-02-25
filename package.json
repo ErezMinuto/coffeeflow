@@ -2,13 +2,15 @@
   "name": "coffeeflow",
   "version": "2.0.0",
   "private": true,
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "@supabase/supabase-js": "^2.39.0",
-    "@clerk/clerk-react": "^4.30.0"
-  },
+ "dependencies": {
+  "@clerk/clerk-react": "^4.27.0",
+  "@supabase/supabase-js": "^2.38.0",
+  "jspdf": "^2.5.1",
+  "qrcode": "^1.5.3",
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "react-scripts": "5.0.1"
+},
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build"
