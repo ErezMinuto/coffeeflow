@@ -17,6 +17,11 @@ function App() {
   const operatorsDb = useSupabaseData('operators');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
+  useEffect(() => {
+    if (isSignedIn && getToken) {
+      setSupabaseToken(getToken);
+    }
+  }, [isSignedIn, getToken]);
 
   if (!isLoaded) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', direction: 'rtl' }}><div>טוען...</div></div>;
@@ -170,8 +175,7 @@ function App() {
 
   // Dashboard Component
   const Dashboard = () => {
-    const LOW_STOCK_THRESHOLD = 10; // ק"ג
-    const lowStockOrigins = data.origins.filter(o => (o.stock || 0) < LOW_STOCK_THRESHOLD && (o.stock || 0) > 0);
+    const lowStockOrigins = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
     const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
 
     return (
@@ -203,7 +207,7 @@ function App() {
             {lowStockOrigins.length > 0 && (
               <div style={{ background: '#FEF3C7', border: '2px solid #F59E0B', borderRadius: '8px', padding: '1rem' }}>
                 <h3 style={{ color: '#D97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ⚠️ מלאי נמוך (פחות מ-{LOW_STOCK_THRESHOLD} ק"ג) - {lowStockOrigins.length} זנים
+                  ⚠️ מלאי נמוך - {lowStockOrigins.length} זנים
                 </h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {lowStockOrigins.map(o => (
@@ -246,13 +250,21 @@ function App() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [editingOrigin, setEditingOrigin] = useState(null);
-    const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, notes: '' });
+    const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
 
     const addOrigin = async () => {
       if (!newOrigin.name || !newOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
       try {
-        await originsDb.insert({ name: newOrigin.name, weight_loss: parseFloat(newOrigin.weightLoss), cost_per_kg: parseFloat(newOrigin.costPerKg), stock: parseFloat(newOrigin.stock) || 0, roasted_stock: 0, notes: newOrigin.notes });
-        setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, notes: '' });
+        await originsDb.insert({ 
+          name: newOrigin.name, 
+          weight_loss: parseFloat(newOrigin.weightLoss), 
+          cost_per_kg: parseFloat(newOrigin.costPerKg), 
+          stock: parseFloat(newOrigin.stock) || 0, 
+          roasted_stock: 0, 
+          min_stock: parseFloat(newOrigin.minStock) || 10,
+          notes: newOrigin.notes 
+        });
+        setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
         alert('✅ זן נוסף בהצלחה!');
       } catch (error) {
         console.error('Error adding origin:', error);
@@ -261,13 +273,29 @@ function App() {
     };
 
     const startEdit = (origin) => {
-      setEditingOrigin({ id: origin.id, name: origin.name, weightLoss: origin.weight_loss, costPerKg: origin.cost_per_kg, stock: origin.stock, notes: origin.notes || '' });
+      setEditingOrigin({ 
+        id: origin.id, 
+        name: origin.name, 
+        weightLoss: origin.weight_loss, 
+        costPerKg: origin.cost_per_kg, 
+        stock: origin.stock, 
+        minStock: origin.min_stock || 10,
+        notes: origin.notes || '' 
+      });
     };
 
     const saveEdit = async () => {
       if (!editingOrigin.name || !editingOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
       try {
-        await originsDb.update(editingOrigin.id, { name: editingOrigin.name, weight_loss: parseFloat(editingOrigin.weightLoss), cost_per_kg: parseFloat(editingOrigin.costPerKg), stock: parseFloat(editingOrigin.stock), notes: editingOrigin.notes, updated_at: new Date().toISOString() });
+        await originsDb.update(editingOrigin.id, { 
+          name: editingOrigin.name, 
+          weight_loss: parseFloat(editingOrigin.weightLoss), 
+          cost_per_kg: parseFloat(editingOrigin.costPerKg), 
+          stock: parseFloat(editingOrigin.stock), 
+          min_stock: parseFloat(editingOrigin.minStock) || 10,
+          notes: editingOrigin.notes, 
+          updated_at: new Date().toISOString() 
+        });
         setEditingOrigin(null);
         alert('✅ זן עודכן בהצלחה!');
       } catch (error) {
@@ -341,6 +369,7 @@ function App() {
               <div className="form-group"><label>איבוד משקל בקלייה (%)</label><input type="number" value={editingOrigin.weightLoss} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} /></div>
               <div className="form-group"><label>עלות לק"ג (₪)</label><input type="number" step="0.01" value={editingOrigin.costPerKg} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} /></div>
               <div className="form-group"><label>מלאי (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.stock} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} /></div>
+              <div className="form-group"><label>מלאי מינימום (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.minStock} onChange={(e) => setEditingOrigin({...editingOrigin, minStock: e.target.value})} placeholder="10" /></div>
             </div>
             <div className="form-group"><label>הערות</label><textarea value={editingOrigin.notes} onChange={(e) => setEditingOrigin({...editingOrigin, notes: e.target.value})} rows="2" /></div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -357,6 +386,7 @@ function App() {
             <div className="form-group"><label>איבוד משקל בקלייה (%)</label><input type="number" value={newOrigin.weightLoss} onChange={(e) => setNewOrigin({...newOrigin, weightLoss: e.target.value})} /></div>
             <div className="form-group"><label>עלות לק"ג (₪)</label><input type="number" step="0.01" placeholder="45.00" value={newOrigin.costPerKg} onChange={(e) => setNewOrigin({...newOrigin, costPerKg: e.target.value})} /></div>
             <div className="form-group"><label>מלאי התחלתי (ק"ג)</label><input type="number" step="0.1" value={newOrigin.stock} onChange={(e) => setNewOrigin({...newOrigin, stock: e.target.value})} /></div>
+            <div className="form-group"><label>מלאי מינימום (ק"ג)</label><input type="number" step="0.1" value={newOrigin.minStock} onChange={(e) => setNewOrigin({...newOrigin, minStock: e.target.value})} placeholder="10" /></div>
           </div>
           <div className="form-group"><label>הערות</label><textarea placeholder="פרטים נוספים..." value={newOrigin.notes} onChange={(e) => setNewOrigin({...newOrigin, notes: e.target.value})} rows="2" /></div>
           <button onClick={addOrigin} className="btn-primary">➕ הוסף זן</button>
@@ -369,8 +399,8 @@ function App() {
               {filteredOrigins.map(origin => {
                 const yieldPercent = 1 - (origin.weight_loss / 100);
                 const costPerKgRoasted = (origin.cost_per_kg / yieldPercent).toFixed(2);
-                const LOW_STOCK_THRESHOLD = 10;
-                const isLowStock = (origin.stock || 0) < LOW_STOCK_THRESHOLD && (origin.stock || 0) > 0;
+                const minStock = origin.min_stock || 10;
+                const isLowStock = (origin.stock || 0) < minStock && (origin.stock || 0) > 0;
                 const isOutOfStock = (origin.stock || 0) === 0;
                 const stockStyle = isOutOfStock ? { background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' } : 
                                     isLowStock ? { background: '#FEF3C7', color: '#D97706', fontWeight: 'bold' } : {};
@@ -380,7 +410,7 @@ function App() {
                     <td>{origin.weight_loss}%</td>
                     <td>₪{origin.cost_per_kg}</td>
                     <td>₪{costPerKgRoasted}</td>
-                    <td style={stockStyle}>{origin.stock || 0} ק"ג</td>
+                    <td style={stockStyle}>{origin.stock || 0} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
                     <td>{origin.roasted_stock || 0} ק"ג</td>
                     <td>
                       <div className="action-buttons">
