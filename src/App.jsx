@@ -637,6 +637,7 @@ function App() {
       if (!validateProduct(newProduct)) return;
       try {
         await productsDb.insert({ name: newProduct.name, size: parseInt(newProduct.size), type: newProduct.type, description: newProduct.description, recipe: newProduct.recipe });
+        await productsDb.refresh();
         setAddingProduct(false);
         alert('✅ מוצר נוסף בהצלחה!');
       } catch (error) {
@@ -656,6 +657,7 @@ function App() {
       if (!validateProduct(editingProduct)) return;
       try {
         await productsDb.update(editingProduct.id, { name: editingProduct.name, size: parseInt(editingProduct.size), type: editingProduct.type, description: editingProduct.description, recipe: editingProduct.recipe, updated_at: new Date().toISOString() });
+        await productsDb.refresh();
         setEditingProduct(null);
         alert('✅ מוצר עודכן בהצלחה!');
       } catch (error) {
@@ -668,6 +670,7 @@ function App() {
       if (!window.confirm(`⚠️ האם למחוק את המוצר "${product.name} ${product.size}g"?`)) return;
       try {
         await productsDb.remove(product.id);
+        await productsDb.refresh();
         alert('✅ מוצר נמחק!');
       } catch (error) {
         console.error('Error deleting product:', error);
@@ -718,6 +721,36 @@ function App() {
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button onClick={saveNewProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור מוצר</button>
               <button onClick={() => setAddingProduct(false)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
+            </div>
+          </div>
+        )}
+
+        {editingProduct && (
+          <div className="form-card" style={{ marginBottom: '20px', background: '#FFF9F0', border: '2px solid #FF6B35' }}>
+            <h3>✏️ עריכת מוצר</h3>
+            <div className="form-group"><label>שם המוצר *</label><input type="text" value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-group"><label>גודל (גרם) *</label><input type="number" value={editingProduct.size} onChange={e => setEditingProduct({...editingProduct, size: parseInt(e.target.value)})} /></div>
+              <div className="form-group"><label>סוג</label><select value={editingProduct.type} onChange={e => setEditingProduct({...editingProduct, type: e.target.value})}><option value="single">חד-זני</option><option value="blend">תערובת</option></select></div>
+            </div>
+            <div className="form-group"><label>תיאור (אופציונלי)</label><input type="text" value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} /></div>
+            <div className="form-group">
+              <label>מתכון (סה"כ חייב להיות 100%) *</label>
+              {editingProduct.recipe.map((ing, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
+                  <select value={ing.originId} onChange={e => updateRecipeIngredient(index, 'originId', e.target.value, true)}><option value="">בחר זן...</option>{data.origins.map(origin => <option key={origin.id} value={origin.id}>{origin.name}</option>)}</select>
+                  <input type="number" placeholder="%" value={ing.percentage} onChange={e => updateRecipeIngredient(index, 'percentage', e.target.value, true)} />
+                  {editingProduct.recipe.length > 1 && <button onClick={() => removeRecipeIngredient(index, true)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>}
+                </div>
+              ))}
+              <button onClick={() => addRecipeIngredient(true)} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
+              <div style={{ marginTop: '10px', fontSize: '14px', color: editingProduct.recipe.reduce((s, i) => s + (i.percentage || 0), 0) === 100 ? '#059669' : '#DC2626' }}>
+                סה"כ: {editingProduct.recipe.reduce((sum, ing) => sum + (ing.percentage || 0), 0)}%
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button onClick={saveEditProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
+              <button onClick={() => setEditingProduct(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
             </div>
           </div>
         )}
