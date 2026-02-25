@@ -373,11 +373,24 @@ function App() {
       if (weight <= 0 || weight > 20) { alert('⚠️ משקל לא תקין (1-20 ק"ג)'); return; }
       if (origin.stock < weight) { alert(`⚠️ אין מספיק מלאי!\nנדרש: ${weight} ק"ג\nקיים: ${origin.stock} ק"ג`); return; }
       const roastedWeight = parseFloat(calculateRoastedWeight(weight, origin.weight_loss));
+      
+      // Generate batch number
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const todayRoasts = data.roasts.filter(r => r.date && r.date.startsWith(new Date().toISOString().split('T')[0]));
+      const batchNum = `BATCH-${today}-${String(todayRoasts.length + 1).padStart(3, '0')}`;
+      
       try {
-        await roastsDb.insert({ origin_id: origin.id, green_weight: weight, roasted_weight: roastedWeight, operator: selectedOperator, date: new Date().toISOString() });
+        await roastsDb.insert({ 
+          origin_id: origin.id, 
+          green_weight: weight, 
+          roasted_weight: roastedWeight, 
+          operator: selectedOperator, 
+          date: new Date().toISOString(),
+          batch_number: batchNum
+        });
         await originsDb.update(origin.id, { stock: origin.stock - weight, roasted_stock: (origin.roasted_stock || 0) + roastedWeight });
         setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
-        alert(`✅ קלייה נרשמה!\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
+        alert(`✅ קלייה נרשמה!\nBatch: ${batchNum}\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
       } catch (error) {
         console.error('Error recording roast:', error);
         alert('❌ שגיאה ברישום קלייה');
@@ -484,6 +497,7 @@ function App() {
                       </div>
                     </div>
                     <div className="roast-details">
+                      {roast.batch_number && <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#6F4E37', marginBottom: '0.5rem' }}>🏷️ {roast.batch_number}</div>}
                       <div>🌱 ירוק: <strong>{roast.green_weight} ק"ג</strong></div>
                       <div>🔥 קלוי: <strong>{roast.roasted_weight} ק"ג</strong></div>
                       <div>👨‍🍳 מפעיל: <strong>{roast.operator}</strong></div>
