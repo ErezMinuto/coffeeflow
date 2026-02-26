@@ -258,6 +258,7 @@ function App() {
           min_stock: parseFloat(newOrigin.minStock) || 10,
           notes: newOrigin.notes 
         });
+        await originsDb.refresh();
         setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
         alert('✅ זן נוסף בהצלחה!');
       } catch (error) {
@@ -272,7 +273,8 @@ function App() {
         name: origin.name, 
         weightLoss: origin.weight_loss, 
         costPerKg: origin.cost_per_kg, 
-        stock: origin.stock, 
+        stock: origin.stock,
+        roastedStock: origin.roasted_stock || 0,
         minStock: origin.min_stock || 10,
         notes: origin.notes || '' 
       });
@@ -285,11 +287,13 @@ function App() {
           name: editingOrigin.name, 
           weight_loss: parseFloat(editingOrigin.weightLoss), 
           cost_per_kg: parseFloat(editingOrigin.costPerKg), 
-          stock: parseFloat(editingOrigin.stock), 
+          stock: parseFloat(editingOrigin.stock),
+          roasted_stock: parseFloat(editingOrigin.roastedStock) || 0,
           min_stock: parseFloat(editingOrigin.minStock) || 10,
           notes: editingOrigin.notes, 
           updated_at: new Date().toISOString() 
         });
+        await originsDb.refresh();
         setEditingOrigin(null);
         alert('✅ זן עודכן בהצלחה!');
       } catch (error) {
@@ -362,7 +366,8 @@ function App() {
               <div className="form-group"><label>שם הזן</label><input type="text" value={editingOrigin.name} onChange={(e) => setEditingOrigin({...editingOrigin, name: e.target.value})} /></div>
               <div className="form-group"><label>איבוד משקל בקלייה (%)</label><input type="number" value={editingOrigin.weightLoss} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} /></div>
               <div className="form-group"><label>עלות לק"ג (₪)</label><input type="number" step="0.01" value={editingOrigin.costPerKg} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} /></div>
-              <div className="form-group"><label>מלאי (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.stock} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} /></div>
+              <div className="form-group"><label>מלאי ירוק (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.stock} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} /></div>
+              <div className="form-group"><label>מלאי קלוי (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.roastedStock} onChange={(e) => setEditingOrigin({...editingOrigin, roastedStock: e.target.value})} /></div>
               <div className="form-group"><label>מלאי מינימום (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.minStock} onChange={(e) => setEditingOrigin({...editingOrigin, minStock: e.target.value})} placeholder="10" /></div>
             </div>
             <div className="form-group"><label>הערות</label><textarea value={editingOrigin.notes} onChange={(e) => setEditingOrigin({...editingOrigin, notes: e.target.value})} rows="2" /></div>
@@ -373,8 +378,9 @@ function App() {
           </div>
         )}
 
-        <div className="form-card">
-          <h3>➕ הוסף זן חדש</h3>
+        {!editingOrigin && (
+          <div className="form-card">
+            <h3>➕ הוסף זן חדש</h3>
           <div className="form-grid">
             <div className="form-group"><label>שם הזן</label><input type="text" placeholder="למשל: ברזיל סנטוס" value={newOrigin.name} onChange={(e) => setNewOrigin({...newOrigin, name: e.target.value})} /></div>
             <div className="form-group"><label>איבוד משקל בקלייה (%)</label><input type="number" value={newOrigin.weightLoss} onChange={(e) => setNewOrigin({...newOrigin, weightLoss: e.target.value})} /></div>
@@ -385,6 +391,7 @@ function App() {
           <div className="form-group"><label>הערות</label><textarea placeholder="פרטים נוספים..." value={newOrigin.notes} onChange={(e) => setNewOrigin({...newOrigin, notes: e.target.value})} rows="2" /></div>
           <button onClick={addOrigin} className="btn-primary">➕ הוסף זן</button>
         </div>
+        )}
 
         <div className="table-container">
           <table className="data-table">
