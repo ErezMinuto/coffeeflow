@@ -216,10 +216,34 @@ function App() {
         )}
 
         <div className="stats-grid">
-          <div className="stat-card"><div className="stat-icon">🌱</div><div className="stat-info"><div className="stat-label">זנים במלאי</div><div className="stat-value">{data.origins.length}</div></div></div>
-          <div className="stat-card"><div className="stat-icon">📦</div><div className="stat-info"><div className="stat-label">מוצרים</div><div className="stat-value">{data.products.length}</div></div></div>
-          <div className="stat-card"><div className="stat-icon">🔥</div><div className="stat-info"><div className="stat-label">קליות החודש</div><div className="stat-value">{data.roasts.length}</div></div></div>
-          <div className="stat-card"><div className="stat-icon">👥</div><div className="stat-info"><div className="stat-label">מפעילים</div><div className="stat-value">{data.operators.length}</div></div></div>
+          <div className="stat-card" onClick={() => setCurrentPage('origins')} style={{ cursor: 'pointer' }}>
+            <div className="stat-icon">🌱</div>
+            <div className="stat-info">
+              <div className="stat-label">זנים במלאי</div>
+              <div className="stat-value">{data.origins.length}</div>
+            </div>
+          </div>
+          <div className="stat-card" onClick={() => setCurrentPage('products')} style={{ cursor: 'pointer' }}>
+            <div className="stat-icon">📦</div>
+            <div className="stat-info">
+              <div className="stat-label">מוצרים</div>
+              <div className="stat-value">{data.products.length}</div>
+            </div>
+          </div>
+          <div className="stat-card" onClick={() => setCurrentPage('roasting')} style={{ cursor: 'pointer' }}>
+            <div className="stat-icon">🔥</div>
+            <div className="stat-info">
+              <div className="stat-label">קליות החודש</div>
+              <div className="stat-value">{data.roasts.length}</div>
+            </div>
+          </div>
+          <div className="stat-card" onClick={() => setCurrentPage('settings')} style={{ cursor: 'pointer' }}>
+            <div className="stat-icon">👥</div>
+            <div className="stat-info">
+              <div className="stat-label">מפעילים</div>
+              <div className="stat-value">{data.operators.length}</div>
+            </div>
+          </div>
         </div>
         <div className="section">
           <h2>📈 סטטיסטיקות</h2>
