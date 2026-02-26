@@ -433,7 +433,9 @@ function App() {
     
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
-    const [dateFilter, setDateFilter] = useState('all'); // today, week, month, all
+    const [dateFilter, setDateFilter] = useState('all'); // today, week, month, custom, all
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [displayLimit, setDisplayLimit] = useState(20);
 
     const recordRoast = async () => {
@@ -529,6 +531,17 @@ function App() {
         filtered = filtered.filter(r => new Date(r.date) >= weekAgo);
       } else if (dateFilter === 'month') {
         filtered = filtered.filter(r => new Date(r.date) >= monthAgo);
+      } else if (dateFilter === 'custom') {
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(r => new Date(r.date) >= start);
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          filtered = filtered.filter(r => new Date(r.date) <= end);
+        }
       }
 
       if (searchTerm) {
@@ -585,9 +598,9 @@ function App() {
         </div>
 
         <div className="section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
             <h2>📋 היסטוריית קליות ({filteredRoasts.length})</h2>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <input 
                 type="text" 
                 placeholder="🔍 חיפוש זן/מפעיל/Batch..." 
@@ -604,7 +617,27 @@ function App() {
                 <option value="today">📅 היום</option>
                 <option value="week">📅 השבוע</option>
                 <option value="month">📅 החודש</option>
+                <option value="custom">📅 טווח תאריכים</option>
               </select>
+              {dateFilter === 'custom' && (
+                <>
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ddd' }}
+                    placeholder="מתאריך"
+                  />
+                  <span style={{ color: '#999' }}>עד</span>
+                  <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ddd' }}
+                    placeholder="עד תאריך"
+                  />
+                </>
+              )}
             </div>
           </div>
           {filteredRoasts.length === 0 ? (
