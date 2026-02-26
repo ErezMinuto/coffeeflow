@@ -577,3 +577,18 @@ tr:hover {
     grid-template-columns: 1fr;
   }
 }
+/* Add to App.css */
+
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(45, 24, 16, 0.15);
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF7F2 100%);
+}
+
+.stat-card:active {
+  transform: translateY(-2px);
+}
