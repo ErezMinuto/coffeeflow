@@ -430,6 +430,11 @@ function App() {
     const [greenWeight, setGreenWeight] = useState('15');
     const [selectedOperator, setSelectedOperator] = useState('');
     const [editingRoast, setEditingRoast] = useState(null);
+    
+    // Filters
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilter, setDateFilter] = useState('all'); // today, week, month, all
+    const [displayLimit, setDisplayLimit] = useState(20);
 
     const recordRoast = async () => {
       if (!selectedOrigin || !greenWeight || !selectedOperator) { alert('⚠️ נא למלא את כל השדות'); return; }
@@ -455,6 +460,7 @@ function App() {
           batch_number: batchNum
         });
         await originsDb.update(origin.id, { stock: origin.stock - weight, roasted_stock: (origin.roasted_stock || 0) + roastedWeight });
+        await roastsDb.refresh();
         setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
         alert(`✅ קלייה נרשמה!\nBatch: ${batchNum}\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
       } catch (error) {
@@ -509,6 +515,39 @@ function App() {
       }
     };
 
+    // Filter roasts
+    const getFilteredRoasts = () => {
+      let filtered = [...data.roasts];
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      if (dateFilter === 'today') {
+        filtered = filtered.filter(r => new Date(r.date) >= today);
+      } else if (dateFilter === 'week') {
+        filtered = filtered.filter(r => new Date(r.date) >= weekAgo);
+      } else if (dateFilter === 'month') {
+        filtered = filtered.filter(r => new Date(r.date) >= monthAgo);
+      }
+
+      if (searchTerm) {
+        filtered = filtered.filter(r => {
+          const origin = getOriginById(r.origin_id);
+          const matchOrigin = origin?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchOperator = r.operator?.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchBatch = r.batch_number?.toLowerCase().includes(searchTerm.toLowerCase());
+          return matchOrigin || matchOperator || matchBatch;
+        });
+      }
+
+      return filtered.reverse();
+    };
+
+    const filteredRoasts = getFilteredRoasts();
+    const displayedRoasts = filteredRoasts.slice(0, displayLimit);
+    const hasMore = filteredRoasts.length > displayLimit;
+
     return (
       <div className="page">
         <h1>🔥 רישום קלייה</h1>
@@ -546,12 +585,34 @@ function App() {
         </div>
 
         <div className="section">
-          <h2>📋 היסטוריית קליות ({data.roasts.length})</h2>
-          {data.roasts.length === 0 ? (
-            <div className="empty-state">אין קליות עדיין. רשום קלייה ראשונה!</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2>📋 היסטוריית קליות ({filteredRoasts.length})</h2>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                placeholder="🔍 חיפוש זן/מפעיל/Batch..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ddd', minWidth: '200px' }}
+              />
+              <select 
+                value={dateFilter} 
+                onChange={(e) => { setDateFilter(e.target.value); setDisplayLimit(20); }}
+                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="all">📅 כל הזמנים</option>
+                <option value="today">📅 היום</option>
+                <option value="week">📅 השבוע</option>
+                <option value="month">📅 החודש</option>
+              </select>
+            </div>
+          </div>
+          {filteredRoasts.length === 0 ? (
+            <div className="empty-state">{searchTerm || dateFilter !== 'all' ? 'לא נמצאו קליות מתאימות' : 'אין קליות עדיין. רשום קלייה ראשונה!'}</div>
           ) : (
-            <div className="roasts-list">
-              {data.roasts.slice().reverse().map(roast => {
+            <>
+              <div className="roasts-list">
+                {displayedRoasts.map(roast => {
                 const origin = getOriginById(roast.origin_id);
                 return (
                   <div key={roast.id} className="roast-card">
@@ -575,6 +636,21 @@ function App() {
                 );
               })}
             </div>
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                <button 
+                  onClick={() => setDisplayLimit(displayLimit + 20)} 
+                  className="btn-small"
+                  style={{ background: '#6F4E37', color: 'white', padding: '0.75rem 2rem' }}
+                >
+                  ⬇️ טען עוד 20 קליות
+                </button>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#999' }}>
+                  מציג {displayedRoasts.length} מתוך {filteredRoasts.length}
+                </div>
+              </div>
+            )}
+            </>
           )}
         </div>
       </div>
