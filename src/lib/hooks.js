@@ -41,7 +41,6 @@ export const useSupabaseData = (table) => {
       const { data: result, error } = await supabase
         .from(table)
         .select('*')
-        .eq('user_id', user.id)
         .order('id', { ascending: true });
 
       if (error) throw error;
@@ -76,7 +75,6 @@ export const useSupabaseData = (table) => {
         .from(table)
         .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -94,7 +92,6 @@ export const useSupabaseData = (table) => {
         .from(table)
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
 
       if (error) throw error;
     } catch (err) {
@@ -128,7 +125,6 @@ export const useCostSettings = () => {
       const { data, error } = await supabase
         .from('cost_settings')
         .select('*')
-        .eq('user_id', user.id)
         .single();
 
       if (error && error.code === 'PGRST116') {
@@ -171,7 +167,6 @@ export const useCostSettings = () => {
       const { data, error } = await supabase
         .from('cost_settings')
         .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id)
         .select()
         .single();
 
