@@ -947,27 +947,6 @@ function App() {
   const Settings = () => {
     const [newOperator, setNewOperator] = useState('');
     const [editingOperator, setEditingOperator] = useState(null);
-    
-    // Check if user is admin
-    const isAdmin = user?.primaryEmailAddress?.emailAddress === 'erezel71@gmail.com';
-
-    const resetData = async () => {
-      if (!window.confirm('⚠️ האם אתה בטוח? פעולה זו תמחק את כל הנתונים!')) return;
-      if (!window.confirm('⚠️ אזהרה אחרונה! זה ימחק את כל הזנים, מוצרים, קליות ומפעילים. להמשיך?')) return;
-      try {
-        await Promise.all([
-          supabase.from('roasts').delete().eq('user_id', user.id),
-          supabase.from('products').delete().eq('user_id', user.id),
-          supabase.from('operators').delete().eq('user_id', user.id),
-          supabase.from('origins').delete().eq('user_id', user.id)
-        ]);
-        originsDb.refresh(); productsDb.refresh(); roastsDb.refresh(); operatorsDb.refresh();
-        alert('✅ כל הנתונים נמחקו בהצלחה');
-      } catch (error) {
-        console.error('Error resetting data:', error);
-        alert('❌ שגיאה במחיקת נתונים');
-      }
-    };
 
     const addOperator = async () => {
       if (newOperator.trim()) {
@@ -1086,20 +1065,6 @@ function App() {
             <div className="empty-state">טוען הגדרות...</div>
           )}
         </div>
-
-        {isAdmin && (
-          <div className="section" style={{ marginTop: '2rem', border: '2px solid #DC2626', borderRadius: '8px', background: '#FEE2E2' }}>
-            <h2>🔒 אזור אדמין</h2>
-            <p style={{ color: '#991B1B', marginBottom: '1rem', fontWeight: 'bold' }}>⚠️ אזור זה נגיש רק למנהל המערכת</p>
-            <div className="form-card" style={{ background: 'white' }}>
-              <h3 style={{ color: '#DC2626' }}>🔄 איפוס כל הנתונים</h3>
-              <p style={{ color: '#666', marginBottom: '1rem' }}>פעולה זו תמחק לצמיתות את כל הזנים, מוצרים, קליות ומפעילים מהמערכת. לא ניתן לשחזר את הנתונים לאחר מחיקה!</p>
-              <button onClick={resetData} className="btn-small" style={{ background: '#DC2626', color: 'white', padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
-                🗑️ איפוס כל הנתונים
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
