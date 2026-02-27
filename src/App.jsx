@@ -468,6 +468,7 @@ function App() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [displayLimit, setDisplayLimit] = useState(20);
+    const [selectedRoasts, setSelectedRoasts] = useState([]);
 
     const recordRoast = async () => {
       if (!selectedOrigin || !greenWeight || !selectedOperator) { alert('⚠️ נא למלא את כל השדות'); return; }
@@ -545,6 +546,54 @@ function App() {
       } catch (error) {
         console.error('Error deleting roast:', error);
         alert('❌ שגיאה במחיקת קלייה');
+      }
+    };
+
+    const toggleRoastSelection = (roastId) => {
+      setSelectedRoasts(prev => 
+        prev.includes(roastId) 
+          ? prev.filter(id => id !== roastId)
+          : [...prev, roastId]
+      );
+    };
+
+    const toggleSelectAll = () => {
+      if (selectedRoasts.length === displayedRoasts.length) {
+        setSelectedRoasts([]);
+      } else {
+        setSelectedRoasts(displayedRoasts.map(r => r.id));
+      }
+    };
+
+    const deleteSelectedRoasts = async () => {
+      if (selectedRoasts.length === 0) {
+        alert('⚠️ לא נבחרו קליות למחיקה');
+        return;
+      }
+      
+      if (!window.confirm(`⚠️ האם למחוק ${selectedRoasts.length} קליות?\n\nהמלאי יוחזר אוטומטית.`)) return;
+      
+      try {
+        for (const roastId of selectedRoasts) {
+          const roast = data.roasts.find(r => r.id === roastId);
+          if (roast) {
+            await roastsDb.remove(roast.id);
+            const origin = getOriginById(roast.origin_id);
+            if (origin) {
+              await originsDb.update(origin.id, { 
+                stock: origin.stock + roast.green_weight, 
+                roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight 
+              });
+            }
+          }
+        }
+        await roastsDb.refresh();
+        await originsDb.refresh();
+        setSelectedRoasts([]);
+        alert(`✅ ${selectedRoasts.length} קליות נמחקו והמלאי הוחזר!`);
+      } catch (error) {
+        console.error('Error deleting roasts:', error);
+        alert('❌ שגיאה במחיקת קליות');
       }
     };
 
@@ -632,6 +681,26 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
             <h2>📋 היסטוריית קליות ({filteredRoasts.length})</h2>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {displayedRoasts.length > 0 && (
+                <>
+                  <button 
+                    onClick={toggleSelectAll} 
+                    className="btn-small"
+                    style={{ background: '#E0E7FF', color: '#4338CA' }}
+                  >
+                    {selectedRoasts.length === displayedRoasts.length ? '☑️ בטל הכל' : '☐ בחר הכל'}
+                  </button>
+                  {selectedRoasts.length > 0 && (
+                    <button 
+                      onClick={deleteSelectedRoasts} 
+                      className="btn-small"
+                      style={{ background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' }}
+                    >
+                      🗑️ מחק נבחרים ({selectedRoasts.length})
+                    </button>
+                  )}
+                </>
+              )}
               <input 
                 type="text" 
                 placeholder="🔍 חיפוש זן/מפעיל/Batch..." 
@@ -679,9 +748,24 @@ function App() {
                 {displayedRoasts.map(roast => {
                 const origin = getOriginById(roast.origin_id);
                 return (
-                  <div key={roast.id} className="roast-card">
+                  <div 
+                    key={roast.id} 
+                    className="roast-card"
+                    style={{ 
+                      border: selectedRoasts.includes(roast.id) ? '2px solid #4338CA' : undefined,
+                      background: selectedRoasts.includes(roast.id) ? '#F0F4FF' : undefined
+                    }}
+                  >
                     <div className="roast-header">
-                      <h3>{origin?.name || 'זן לא ידוע'}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedRoasts.includes(roast.id)}
+                          onChange={() => toggleRoastSelection(roast.id)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <h3>{origin?.name || 'זן לא ידוע'}</h3>
+                      </div>
                       <div className="roast-actions">
                         <button onClick={() => printRoastLabel(roast, origin)} className="btn-icon" title="הדפס מדבקה">🖨️</button>
                         <button onClick={() => startEditRoast(roast)} className="btn-icon">✏️</button>
