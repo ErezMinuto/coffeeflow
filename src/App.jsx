@@ -410,7 +410,7 @@ function App() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1>🌱 ניהול זנים ({data.origins.length})</h1>
           <button onClick={() => setAddingStock(true)} className="btn-primary" style={{ background: '#10B981' }}>
-            📦 כניסת מלאי
+            📦 קליטת מלאי
           </button>
         </div>
         <div className="toolbar">
@@ -425,7 +425,7 @@ function App() {
 
         {addingStock && (
           <div className="form-card" style={{ marginBottom: '20px', background: '#F0FDF4', border: '2px solid #10B981' }}>
-            <h3>📦 כניסת מלאי חדש</h3>
+            <h3>📦 קליטת מלאי חדש</h3>
             <div className="form-grid">
               <div className="form-group">
                 <label>בחר זן *</label>
