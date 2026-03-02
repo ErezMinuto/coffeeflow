@@ -269,6 +269,8 @@ function App() {
     const [sortBy, setSortBy] = useState('name');
     const [editingOrigin, setEditingOrigin] = useState(null);
     const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
+    const [addingStock, setAddingStock] = useState(false);
+    const [stockEntry, setStockEntry] = useState({ originId: '', quantity: '', notes: '' });
 
     const addOrigin = async () => {
       if (!newOrigin.name || !newOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
@@ -352,6 +354,39 @@ function App() {
       }
     };
 
+    const addStockEntry = async () => {
+      if (!stockEntry.originId || !stockEntry.quantity) {
+        alert('⚠️ נא לבחור זן ולהזין כמות');
+        return;
+      }
+      
+      const quantity = parseFloat(stockEntry.quantity);
+      if (quantity <= 0) {
+        alert('⚠️ כמות חייבת להיות גדולה מ-0');
+        return;
+      }
+
+      const origin = getOriginById(parseInt(stockEntry.originId));
+      if (!origin) {
+        alert('⚠️ זן לא נמצא');
+        return;
+      }
+
+      try {
+        const newStock = (origin.stock || 0) + quantity;
+        await originsDb.update(origin.id, { stock: newStock });
+        await originsDb.refresh();
+        
+        setStockEntry({ originId: '', quantity: '', notes: '' });
+        setAddingStock(false);
+        
+        alert(`✅ הוספת ${quantity} ק"ג ל${origin.name}\n\nמלאי חדש: ${newStock} ק"ג`);
+      } catch (error) {
+        console.error('Error adding stock:', error);
+        alert('❌ שגיאה בהוספת מלאי');
+      }
+    };
+
     const exportToCSV = () => {
       const headers = ['שם,איבוד משקל %,עלות ק"ג,מלאי ק"ג,מלאי קלוי ק"ג,הערות'];
       const rows = filteredOrigins.map(o => `"${o.name}",${o.weight_loss},${o.cost_per_kg},${o.stock || 0},${o.roasted_stock || 0},"${o.notes || ''}"`);
@@ -372,7 +407,12 @@ function App() {
 
     return (
       <div className="page">
-        <h1>🌱 ניהול זנים ({data.origins.length})</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h1>🌱 ניהול זנים ({data.origins.length})</h1>
+          <button onClick={() => setAddingStock(true)} className="btn-primary" style={{ background: '#10B981' }}>
+            📦 כניסת מלאי
+          </button>
+        </div>
         <div className="toolbar">
           <input type="text" placeholder="🔍 חיפוש זן..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
@@ -382,6 +422,62 @@ function App() {
           </select>
           <button onClick={exportToCSV} className="btn-small">📥 ייצא CSV</button>
         </div>
+
+        {addingStock && (
+          <div className="form-card" style={{ marginBottom: '20px', background: '#F0FDF4', border: '2px solid #10B981' }}>
+            <h3>📦 כניסת מלאי חדש</h3>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>בחר זן *</label>
+                <select 
+                  value={stockEntry.originId} 
+                  onChange={(e) => setStockEntry({...stockEntry, originId: e.target.value})}
+                >
+                  <option value="">בחר זן...</option>
+                  {data.origins.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.name} (מלאי נוכחי: {o.stock || 0} ק"ג)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>כמות להוספה (ק"ג) *</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  placeholder="למשל: 25"
+                  value={stockEntry.quantity} 
+                  onChange={(e) => setStockEntry({...stockEntry, quantity: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>הערות (אופציונלי)</label>
+              <textarea 
+                placeholder="למשל: ספק חדש, מספר הזמנה..."
+                value={stockEntry.notes} 
+                onChange={(e) => setStockEntry({...stockEntry, notes: e.target.value})} 
+                rows="2"
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button onClick={addStockEntry} className="btn-primary" style={{ flex: 1, background: '#10B981' }}>
+                ✅ הוסף למלאי
+              </button>
+              <button 
+                onClick={() => {
+                  setAddingStock(false);
+                  setStockEntry({ originId: '', quantity: '', notes: '' });
+                }} 
+                className="btn-small" 
+                style={{ flex: 1 }}
+              >
+                ❌ ביטול
+              </button>
+            </div>
+          </div>
+        )}
 
         {editingOrigin && (
           <div className="form-card" style={{ marginBottom: '20px', background: '#FFF9F0', border: '2px solid #FF6B35' }}>
