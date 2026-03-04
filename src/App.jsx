@@ -410,7 +410,7 @@ function App() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1>🌱 ניהול זנים ({data.origins.length})</h1>
           <button onClick={() => setAddingStock(true)} className="btn-primary" style={{ background: '#10B981' }}>
-            📦 קליטת מלאי
+            📦 כניסת מלאי
           </button>
         </div>
         <div className="toolbar">
@@ -425,7 +425,7 @@ function App() {
 
         {addingStock && (
           <div className="form-card" style={{ marginBottom: '20px', background: '#F0FDF4', border: '2px solid #10B981' }}>
-            <h3>📦 קליטת מלאי חדש</h3>
+            <h3>📦 כניסת מלאי חדש</h3>
             <div className="form-grid">
               <div className="form-group">
                 <label>בחר זן *</label>
@@ -591,6 +591,7 @@ function App() {
         });
         await originsDb.update(origin.id, { stock: origin.stock - weight, roasted_stock: (origin.roasted_stock || 0) + roastedWeight });
         await roastsDb.refresh();
+        await originsDb.refresh();
         setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
         alert(`✅ קלייה נרשמה!\nBatch: ${batchNum}\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
       } catch (error) {
@@ -622,6 +623,8 @@ function App() {
           await originsDb.update(oldOrigin.id, { stock: oldOrigin.stock + oldWeight, roasted_stock: (oldOrigin.roasted_stock || 0) - oldRoastedWeight });
           await originsDb.update(newOrigin.id, { stock: newOrigin.stock - newWeight, roasted_stock: (newOrigin.roasted_stock || 0) + newRoastedWeight });
         }
+        await roastsDb.refresh();
+        await originsDb.refresh();
         setEditingRoast(null);
         alert('✅ קלייה עודכנה!');
       } catch (error) {
@@ -638,6 +641,8 @@ function App() {
         if (origin) {
           await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
         }
+        await roastsDb.refresh();
+        await originsDb.refresh();
         alert('✅ קלייה נמחקה והמלאי הוחזר!');
       } catch (error) {
         console.error('Error deleting roast:', error);
