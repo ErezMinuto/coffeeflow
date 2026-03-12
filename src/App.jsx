@@ -11,6 +11,16 @@ function App() {
   const { getToken } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   
+  // Toast notifications
+  const [toasts, setToasts] = useState([]);
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
+  
   const originsDb = useSupabaseData('origins');
   const productsDb = useSupabaseData('products');
   const roastsDb = useSupabaseData('roasts');
@@ -264,7 +274,7 @@ function App() {
   };
 
   // Origins Component
-  const Origins = () => {
+  const Origins = ({ showToast }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [editingOrigin, setEditingOrigin] = useState(null);
@@ -379,36 +389,35 @@ function App() {
         await originsDb.refresh();
         
         setStockEntry({ originId: '', quantity: '', notes: '' });
-        setActiveForm(null);
         
-        alert(`✅ הוספת ${quantity} ק"ג ל${origin.name}\n\nמלאי חדש: ${newStock} ק"ג`);
+        showToast(`הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
       } catch (error) {
         console.error('Error adding stock:', error);
-        alert('❌ שגיאה בהוספת מלאי');
+        showToast('שגיאה בהוספת מלאי', 'error');
       }
     };
 
     const removeStockForPackaging = async () => {
       if (!stockOut.originId || !stockOut.quantity) {
-        alert('⚠️ נא לבחור זן ולהזין כמות');
+        showToast('נא לבחור זן ולהזין כמות', 'warning');
         return;
       }
       
       const quantity = parseFloat(stockOut.quantity);
       if (quantity <= 0) {
-        alert('⚠️ כמות חייבת להיות גדולה מ-0');
+        showToast('כמות חייבת להיות גדולה מ-0', 'warning');
         return;
       }
 
       const origin = getOriginById(parseInt(stockOut.originId));
       if (!origin) {
-        alert('⚠️ זן לא נמצא');
+        showToast('זן לא נמצא', 'error');
         return;
       }
 
       const currentRoastedStock = origin.roasted_stock || 0;
       if (quantity > currentRoastedStock) {
-        alert(`⚠️ אין מספיק מלאי קלוי!\n\nמלאי קיים: ${currentRoastedStock} ק"ג\nמבוקש: ${quantity} ק"ג`);
+        showToast(`אין מספיק מלאי קלוי! קיים: ${currentRoastedStock} ק"ג, מבוקש: ${quantity} ק"ג`, 'error');
         return;
       }
 
@@ -418,9 +427,8 @@ function App() {
         await originsDb.refresh();
         
         setStockOut({ originId: '', quantity: '', notes: '' });
-        setActiveForm(null);
         
-        alert(`✅ הוצאו ${quantity} ק"ג מ${origin.name} לאריזה\n\nמלאי קלוי נותר: ${newRoastedStock} ק"ג`);
+        showToast(`הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
       } catch (error) {
         console.error('Error removing stock:', error);
         alert('❌ שגיאה בהוצאת מלאי');
@@ -1381,13 +1389,50 @@ function App() {
   // Main return
   return (
     <div className="App" style={{ direction: 'rtl' }}>
+      {/* Toast Notifications */}
+      <div style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px'
+      }}>
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            style={{
+              background: toast.type === 'success' ? '#10B981' : toast.type === 'error' ? '#DC2626' : '#F59E0B',
+              color: 'white',
+              padding: '1rem 1.5rem',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              minWidth: '300px',
+              maxWidth: '500px',
+              animation: 'slideIn 0.3s ease-out',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              fontSize: '0.95rem',
+              fontWeight: '500'
+            }}
+          >
+            <span style={{ fontSize: '1.2rem' }}>
+              {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : '⚠️'}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
+
       <Navigation />
       <div className="container">
         {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'origins' && <Origins />}
-        {currentPage === 'roasting' && <Roasting />}
-        {currentPage === 'products' && <Products />}
-        {currentPage === 'settings' && <Settings />}
+        {currentPage === 'origins' && <Origins showToast={showToast} />}
+        {currentPage === 'roasting' && <Roasting showToast={showToast} />}
+        {currentPage === 'products' && <Products showToast={showToast} />}
+        {currentPage === 'settings' && <Settings showToast={showToast} />}
       </div>
     </div>
   );
