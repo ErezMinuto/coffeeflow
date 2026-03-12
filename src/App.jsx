@@ -630,7 +630,7 @@ function App() {
           </div>
         )}
 
-        {!editingOrigin && (
+        {!editingOrigin && !activeForm && (
           <div className="form-card">
             <h3>➕ הוסף זן חדש</h3>
           <div className="form-grid">
