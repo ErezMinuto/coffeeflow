@@ -21,6 +21,8 @@ function App() {
     }, 4000);
   };
   
+  const [originsActiveForm, setOriginsActiveForm] = useState(null);
+  
   const originsDb = useSupabaseData('origins');
   const productsDb = useSupabaseData('products');
   const roastsDb = useSupabaseData('roasts');
@@ -274,15 +276,13 @@ function App() {
   };
 
   // Origins Component
-  const Origins = ({ showToast }) => {
+  const Origins = ({ showToast, activeForm, setActiveForm }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('name') ;
+    const [sortBy, setSortBy] = useState('name');
     const [editingOrigin, setEditingOrigin] = useState(null);
     const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
-    const [activeForm, setActiveForm] = useState(null); // 'stock-in' | 'stock-out' | null
     const [stockEntry, setStockEntry] = useState({ originId: '', quantity: '', notes: '' });
     const [stockOut, setStockOut] = useState({ originId: '', quantity: '', notes: '' });
-    const [, forceUpdate] = useState({});
 
     const addOrigin = async () => {
       if (!newOrigin.name || !newOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
@@ -387,15 +387,10 @@ function App() {
       try {
         const newStock = (origin.stock || 0) + quantity;
         await originsDb.update(origin.id, { stock: newStock });
-        
-        // Update data in-place and force re-render
-        const originIndex = originsDb.data.findIndex(o => o.id === origin.id);
-        if (originIndex !== -1) {
-          originsDb.data[originIndex] = { ...originsDb.data[originIndex], stock: newStock };
-        }
-        forceUpdate({});
+        await originsDb.refresh(); // Refresh data to update table
         
         setStockEntry({ originId: '', quantity: '', notes: '' });
+        // activeForm stays open!
         
         showToast(`הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
       } catch (error) {
@@ -431,15 +426,10 @@ function App() {
       try {
         const newRoastedStock = currentRoastedStock - quantity;
         await originsDb.update(origin.id, { roasted_stock: newRoastedStock });
-        
-        // Update data in-place and force re-render
-        const originIndex = originsDb.data.findIndex(o => o.id === origin.id);
-        if (originIndex !== -1) {
-          originsDb.data[originIndex] = { ...originsDb.data[originIndex], roasted_stock: newRoastedStock };
-        }
-        forceUpdate({});
+        await originsDb.refresh(); // Refresh data to update table
         
         setStockOut({ originId: '', quantity: '', notes: '' });
+        // activeForm stays open!
         
         showToast(`הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
       } catch (error) {
@@ -1442,7 +1432,7 @@ function App() {
       <Navigation />
       <div className="container">
         {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'origins' && <Origins showToast={showToast} />}
+        {currentPage === 'origins' && <Origins showToast={showToast} activeForm={originsActiveForm} setActiveForm={setOriginsActiveForm} />}
         {currentPage === 'roasting' && <Roasting showToast={showToast} />}
         {currentPage === 'products' && <Products showToast={showToast} />}
         {currentPage === 'settings' && <Settings showToast={showToast} />}
