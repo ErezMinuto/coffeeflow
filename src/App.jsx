@@ -276,12 +276,13 @@ function App() {
   // Origins Component
   const Origins = ({ showToast }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('name');
+    const [sortBy, setSortBy] = useState('name') ;
     const [editingOrigin, setEditingOrigin] = useState(null);
     const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
     const [activeForm, setActiveForm] = useState(null); // 'stock-in' | 'stock-out' | null
     const [stockEntry, setStockEntry] = useState({ originId: '', quantity: '', notes: '' });
     const [stockOut, setStockOut] = useState({ originId: '', quantity: '', notes: '' });
+    const [, forceUpdate] = useState({});
 
     const addOrigin = async () => {
       if (!newOrigin.name || !newOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
@@ -386,7 +387,13 @@ function App() {
       try {
         const newStock = (origin.stock || 0) + quantity;
         await originsDb.update(origin.id, { stock: newStock });
-        await originsDb.refresh();
+        
+        // Update data in-place and force re-render
+        const originIndex = originsDb.data.findIndex(o => o.id === origin.id);
+        if (originIndex !== -1) {
+          originsDb.data[originIndex] = { ...originsDb.data[originIndex], stock: newStock };
+        }
+        forceUpdate({});
         
         setStockEntry({ originId: '', quantity: '', notes: '' });
         
@@ -424,7 +431,13 @@ function App() {
       try {
         const newRoastedStock = currentRoastedStock - quantity;
         await originsDb.update(origin.id, { roasted_stock: newRoastedStock });
-        await originsDb.refresh();
+        
+        // Update data in-place and force re-render
+        const originIndex = originsDb.data.findIndex(o => o.id === origin.id);
+        if (originIndex !== -1) {
+          originsDb.data[originIndex] = { ...originsDb.data[originIndex], roasted_stock: newRoastedStock };
+        }
+        forceUpdate({});
         
         setStockOut({ originId: '', quantity: '', notes: '' });
         
