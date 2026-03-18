@@ -38,3 +38,9 @@
     ]
   }
 }
+"scripts": {
+  "start": "react-scripts start",
+  "build": "rm -rf node_modules/.cache && react-scripts build",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject"
+}
