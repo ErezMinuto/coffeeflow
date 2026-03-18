@@ -2,7 +2,6 @@
   "name": "coffeeflow",
   "version": "0.1.0",
   "private": true,
-  {
   "dependencies": {
     "@clerk/clerk-react": "^4.30.0",
     "@supabase/supabase-js": "^2.39.0",
@@ -14,8 +13,7 @@
   "devDependencies": {
     "@sparticuz/chromium": "^119.0.2",
     "puppeteer-core": "^21.6.1"
-  }
-},
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -40,4 +38,3 @@
     ]
   }
 }
-
