@@ -1,53 +1,35 @@
 import React, { useState } from 'react';
 
-function MFlowSync({ data, showToast }) {
+function MFlowSync({ data, showToast, productsDb }) {
   const [loading, setLoading] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(null);
+  const [importResults, setImportResults] = useState(null);
 
-  const importProducts = async () => {
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
     setLoading(true);
-    showToast('מייבא מוצרים מ-MFlow...', 'info');
-    
+    showToast('מעבד את הקובץ...', 'info');
+
     try {
-      const response = await fetch('/api/mflow-import-products', {
-        method: 'POST'
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/import-products-excel', {
+        method: 'POST',
+        body: formData
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
-        showToast(`✅ יובאו ${result.count} מוצרים מ-MFlow!`);
-        setSyncStatus(result);
+        setImportResults(result);
+        showToast(`✅ יובאו ${result.imported} מוצרים מ-${result.total}!`);
       } else {
         showToast(`❌ שגיאה: ${result.error}`, 'error');
       }
     } catch (error) {
-      showToast('❌ שגיאה בייבוא מוצרים', 'error');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const syncSales = async () => {
-    setLoading(true);
-    showToast('מסנכרן מכירות מ-MFlow...', 'info');
-    
-    try {
-      const response = await fetch('/api/mflow-sync-sales', {
-        method: 'POST'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        showToast(`✅ סונכרנו ${result.salesCount} מכירות!`);
-        setSyncStatus(result);
-      } else {
-        showToast(`❌ שגיאה: ${result.error}`, 'error');
-      }
-    } catch (error) {
-      showToast('❌ שגיאה בסנכרון מכירות', 'error');
+      showToast('❌ שגיאה בייבוא קובץ', 'error');
       console.error(error);
     } finally {
       setLoading(false);
@@ -59,43 +41,70 @@ function MFlowSync({ data, showToast }) {
       <h1>🔄 סנכרון MFlow</h1>
       
       <div className="section">
-        <h2>📦 ייבוא מוצרים</h2>
+        <h2>📦 ייבוא מוצרים מ-Excel</h2>
         <p style={{ color: '#666', marginBottom: '1rem' }}>
-          ייבוא מוצרים מ-MFlow למערכת. המוצרים הקיימים יוחלפו במוצרים החדשים.
-          לאחר הייבוא תצטרך להגדיר את המתכון (Recipe) לכל מוצר.
+          ייבוא מוצרים מקובץ Excel של MFlow. 
+          <br/>
+          המוצרים ייווצרו ללא מתכון - תצטרך להגדיר את המתכון לכל מוצר ידנית.
         </p>
-        <button 
-          onClick={importProducts} 
-          disabled={loading}
-          className="btn-primary"
-          style={{ background: '#3B82F6' }}
-        >
-          {loading ? '⏳ מייבא...' : '📥 ייבא מוצרים מ-MFlow'}
-        </button>
+        
+        <div className="form-card">
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileUpload}
+            disabled={loading}
+            style={{
+              padding: '1rem',
+              border: '2px dashed #3B82F6',
+              borderRadius: '8px',
+              width: '100%',
+              cursor: 'pointer',
+              background: '#F0F9FF'
+            }}
+          />
+          {loading && (
+            <div style={{ marginTop: '1rem', textAlign: 'center', color: '#3B82F6' }}>
+              ⏳ מייבא מוצרים...
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="section" style={{ marginTop: '2rem' }}>
-        <h2>💰 סנכרון מכירות</h2>
-        <p style={{ color: '#666', marginBottom: '1rem' }}>
-          סנכרון מכירות מ-MFlow ועדכון מלאי קלוי.
-          הסנכרון רץ אוטומטית כל יום בשעה 10:00.
-        </p>
-        <button 
-          onClick={syncSales} 
-          disabled={loading}
-          className="btn-primary"
-          style={{ background: '#10B981' }}
-        >
-          {loading ? '⏳ מסנכרן...' : '🔄 סנכרן מכירות עכשיו'}
-        </button>
-      </div>
-
-      {syncStatus && (
-        <div className="section" style={{ marginTop: '2rem', background: '#F0FDF4', padding: '1.5rem', borderRadius: '8px' }}>
-          <h3>📊 סטטוס סנכרון אחרון</h3>
-          <pre style={{ background: 'white', padding: '1rem', borderRadius: '4px', overflow: 'auto' }}>
-            {JSON.stringify(syncStatus, null, 2)}
-          </pre>
+      {importResults && (
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <h3>📊 תוצאות ייבוא</h3>
+          <div className="form-card" style={{ background: '#F0FDF4' }}>
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>סה"כ שורות בקובץ:</strong> {importResults.total}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>יובאו בהצלחה:</strong> {importResults.imported}
+            </div>
+            {importResults.skipped > 0 && (
+              <div style={{ marginBottom: '1rem', color: '#F59E0B' }}>
+                <strong>דולגו:</strong> {importResults.skipped} (כבר קיימים)
+              </div>
+            )}
+            {importResults.errors?.length > 0 && (
+              <div>
+                <strong style={{ color: '#DC2626' }}>שגיאות:</strong>
+                <ul>
+                  {importResults.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="btn-primary"
+            style={{ marginTop: '1rem' }}
+          >
+            ↩️ חזור לדשבורד
+          </button>
         </div>
       )}
     </div>
