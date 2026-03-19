@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase';
+import { useUser } from '@clerk/clerk-react';
 
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY
-);
-
-function MFlowSync({ data, showToast }) {
+function MFlowSync({ showToast }) {
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [importResults, setImportResults] = useState(null);
 
@@ -15,17 +12,15 @@ function MFlowSync({ data, showToast }) {
     const file = event.target.files[0];
     if (!file) return;
 
+    if (!user) {
+      showToast('❌ משתמש לא מחובר', 'error');
+      return;
+    }
+
     setLoading(true);
     showToast('מעבד את הקובץ...', 'info');
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Read Excel file
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -36,7 +31,6 @@ function MFlowSync({ data, showToast }) {
       const errors = [];
       const productMap = new Map();
 
-      // Parse products
       for (const row of jsonData) {
         try {
           const name = row['שם המוצר'];
@@ -66,7 +60,6 @@ function MFlowSync({ data, showToast }) {
         }
       }
 
-      // Insert into Supabase
       for (const [key, product] of productMap) {
         try {
           const { data: existing } = await supabase
@@ -89,7 +82,9 @@ function MFlowSync({ data, showToast }) {
           imported++;
 
         } catch (err) {
-          errors.push(`${product.name} ${product.size}g: ${err.message}`);
+          if (err.message && !err.message.includes('single row')) {
+            errors.push(`${product.name} ${product.size}g: ${err.message}`);
+          }
         }
       }
 
@@ -102,7 +97,7 @@ function MFlowSync({ data, showToast }) {
       });
 
       if (imported > 0) {
-        showToast(`✅ יובאו ${imported} מוצרים!`);
+        showToast(`✅ יובאו ${imported} מוצרים!`, 'success');
         setTimeout(() => window.location.reload(), 2000);
       } else {
         showToast('⚠️ לא יובאו מוצרים חדשים', 'warning');
@@ -125,7 +120,7 @@ function MFlowSync({ data, showToast }) {
         <p style={{ color: '#666', marginBottom: '1rem' }}>
           ייבוא מוצרים מקובץ Excel של MFlow (Products.xlsx).
           <br/>
-          <strong>שים לב:</strong> המוצרים ייווצרו ללא מתכון - תצטרך להגדיר את המתכון (Recipe) לכל מוצר ידנית בדף המוצרים.
+          <strong>שים לב:</strong> המוצרים ייווצרו ללא מתכון - תצטרך להגדיר את המתכון לכל מוצר ידנית.
         </p>
         
         <div className="form-card">
@@ -137,8 +132,7 @@ function MFlowSync({ data, showToast }) {
               borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',
               background: loading ? '#F3F4F6' : '#F0F9FF',
-              textAlign: 'center',
-              transition: 'all 0.2s'
+              textAlign: 'center'
             }}
           >
             <input
@@ -152,9 +146,6 @@ function MFlowSync({ data, showToast }) {
             <div style={{ fontSize: '1.1rem', color: '#3B82F6', fontWeight: 'bold' }}>
               {loading ? '⏳ מעבד...' : 'לחץ לבחירת קובץ Excel'}
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-              Products.xlsx מ-MFlow
-            </div>
           </label>
         </div>
       </div>
@@ -164,29 +155,26 @@ function MFlowSync({ data, showToast }) {
           <h3>📊 תוצאות ייבוא</h3>
           <div className="form-card" style={{ background: importResults.imported > 0 ? '#F0FDF4' : '#FFFBEB' }}>
             <div style={{ marginBottom: '1rem' }}>
-              <strong>סה"כ שורות בקובץ:</strong> {importResults.total}
+              <strong>סה"כ שורות:</strong> {importResults.total}
             </div>
             <div style={{ marginBottom: '1rem' }}>
               <strong>מוצרים ייחודיים:</strong> {importResults.unique}
             </div>
             <div style={{ marginBottom: '1rem', color: '#10B981' }}>
-              <strong>יובאו בהצלחה:</strong> {importResults.imported}
+              <strong>יובאו:</strong> {importResults.imported}
             </div>
             {importResults.skipped > 0 && (
               <div style={{ marginBottom: '1rem', color: '#F59E0B' }}>
-                <strong>דולגו (כבר קיימים):</strong> {importResults.skipped}
+                <strong>דולגו:</strong> {importResults.skipped}
               </div>
             )}
             {importResults.errors?.length > 0 && (
               <div>
-                <strong style={{ color: '#DC2626' }}>שגיאות ({importResults.errors.length}):</strong>
-                <ul style={{ maxHeight: '200px', overflow: 'auto', marginTop: '0.5rem' }}>
+                <strong style={{ color: '#DC2626' }}>שגיאות:</strong>
+                <ul style={{ maxHeight: '200px', overflow: 'auto' }}>
                   {importResults.errors.slice(0, 10).map((err, i) => (
                     <li key={i} style={{ fontSize: '0.85rem' }}>{err}</li>
                   ))}
-                  {importResults.errors.length > 10 && (
-                    <li style={{ color: '#999' }}>...ועוד {importResults.errors.length - 10}</li>
-                  )}
                 </ul>
               </div>
             )}
