@@ -38,10 +38,31 @@ function MFlowSync({ showToast }) {
           
           if (!name || !quantityField) continue;
 
-          const sizeMatch = quantityField.toString().match(/^(\d+)/);
-          if (!sizeMatch) continue;
+         let size = null;
+
+          // Try to extract size from quantity field
+          if (quantityField) {
+            const sizeMatch = quantityField.toString().match(/^(\d+)/);
+            if (sizeMatch) {
+              size = parseInt(sizeMatch[1]);
+            }
+          }
           
-          const size = parseInt(sizeMatch[1]);
+          // If no size in quantity field, try to extract from name
+          if (!size) {
+            // Look for patterns like "1 ק״ג" or "330 גרם" or "330g"
+            const nameMatch = name.match(/(\d+)\s*(ק״ג|קג|kg|גרם|גר|g)/i);
+            if (nameMatch) {
+              size = parseInt(nameMatch[1]);
+              // Convert kg to grams
+              if (nameMatch[2].match(/ק״ג|קג|kg/i)) {
+                size = size * 1000;
+              }
+            }
+          }
+          
+          // Skip if no size found
+          if (!size) continue;
           const key = `${name}-${size}`;
 
           if (productMap.has(key)) continue;
