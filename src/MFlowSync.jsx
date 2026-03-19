@@ -50,11 +50,9 @@ function MFlowSync({ data, showToast }) {
             size: size,
             type: 'single',
             description: '',
-            recipe: [{ originId: null, percentage: 100 }]
+            recipe: [{ originId: null, percentage: 100 }],
+            user_id: (await supabase.auth.getUser()).data.user?.id
           });
-
-        } catch (err) {
-          errors.push(`שגיאה בשורה: ${row['שם המוצר'] || 'לא ידוע'}`);
         }
       }
 
