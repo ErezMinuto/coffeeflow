@@ -36,7 +36,7 @@ function MFlowSync({ showToast }) {
           const name = row['שם המוצר'];
           const quantityField = row['כמות / טחינה'];
           
-          if (!name || !quantityField) continue;
+          if (!name) continue;
 
          let size = null;
 
