@@ -9,7 +9,7 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "puppeteer-core": "^21.6.1",
-    "@sparticuz/chromium": "^119.0.2"
+    "@sparticuz/chromium": "^119.0.2",
     "xlsx": "^0.18.5"   
   },
   "scripts": {
