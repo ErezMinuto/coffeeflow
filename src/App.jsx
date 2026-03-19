@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
-import { SignIn, UserButton, useUser, useAuth } from '@clerk/clerk-react';
+import { SignIn, UserButton, useUser } from '@clerk/clerk-react';
 import { useSupabaseData, useCostSettings } from './lib/hooks';
 import MFlowSync from './MFlowSync'; 
 
