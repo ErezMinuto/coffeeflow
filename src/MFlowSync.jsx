@@ -118,6 +118,144 @@ function MFlowSync({ showToast }) {
         skipped,
         errors
       });
+      const handleSalesUpload = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+    
+      if (!user) {
+        showToast('❌ משתמש לא מחובר', 'error');
+        return;
+      }
+    
+      setLoading(true);
+      showToast('מעבד מכירות...', 'info');
+    
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+        let processed = 0;
+        let errors = [];
+        const salesByProduct = new Map();
+    
+        // Group sales by SKU
+        for (const row of jsonData) {
+          const sku = row['מק"ט'] || row['מק״ט'];
+          if (!sku) continue;
+    
+          const skuStr = String(sku);
+          if (!salesByProduct.has(skuStr)) {
+            salesByProduct.set(skuStr, 0);
+          }
+          salesByProduct.set(skuStr, salesByProduct.get(skuStr) + 1);
+        }
+    
+        // Process each product's sales
+        for (const [sku, quantity] of salesByProduct) {
+          try {
+            // Find product by SKU
+            const { data: products, error: productError } = await supabase
+              .from('products')
+              .select('id, name, size, recipe')
+              .eq('sku', sku)
+              .eq('user_id', user.id);
+    
+            if (productError) throw productError;
+            if (!products || products.length === 0) {
+              errors.push(`SKU ${sku}: מוצר לא נמצא`);
+              continue;
+            }
+    
+            const product = products[0];
+            const recipe = product.recipe;
+    
+            if (!recipe || recipe.length === 0) {
+              errors.push(`${product.name}: אין מתכון`);
+              continue;
+            }
+    
+            // Update roasted stock for each origin in recipe
+            for (const ingredient of recipe) {
+              if (!ingredient.originId || !ingredient.percentage) continue;
+    
+              const amountToDeduct = (product.size * quantity * ingredient.percentage) / 100;
+    
+              const { error: updateError } = await supabase
+                .from('origins')
+                .update({
+                  roasted_stock: supabase.raw(`roasted_stock - ${amountToDeduct}`)
+                })
+                .eq('id', ingredient.originId)
+                .eq('user_id', user.id);
+    
+              if (updateError) {
+                errors.push(`${product.name}: שגיאה בעדכון מלאי - ${updateError.message}`);
+              }
+            }
+    
+            processed++;
+    
+          } catch (err) {
+            errors.push(`SKU ${sku}: ${err.message}`);
+          }
+        }
+        <div className="section" style={{ marginTop: '2rem' }}>
+        <h2>💰 סנכרון מכירות</h2>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          ייבוא מכירות מ-MFlow ועדכון מלאי קלוי.
+          <br/>
+          <strong>שים לב:</strong> המלאי הקלוי יופחת אוטומטית לפי המתכון של כל מוצר.
+        </p>
+        
+        <div className="form-card">
+          <label 
+            style={{
+              display: 'block',
+              padding: '2rem',
+              border: '2px dashed #10B981',
+              borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: loading ? '#F3F4F6' : '#ECFDF5',
+              textAlign: 'center'
+            }}
+          >
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleSalesUpload}
+              disabled={loading}
+              style={{ display: 'none' }}
+            />
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💰</div>
+            <div style={{ fontSize: '1.1rem', color: '#10B981', fontWeight: 'bold' }}>
+              {loading ? '⏳ מעבד...' : 'לחץ לבחירת קובץ מכירות'}
+            </div>
+          </label>
+        </div>
+      </div>
+        setImportResults({
+          total: jsonData.length,
+          unique: salesByProduct.size,
+          processed,
+          errors
+        });
+    
+        if (processed > 0) {
+          showToast(`✅ עודכן מלאי עבור ${processed} מוצרים!`, 'success');
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          showToast('⚠️ לא עודכן מלאי', 'warning');
+        }
+    
+      } catch (error) {
+        showToast('❌ שגיאה בעיבוד הקובץ', 'error');
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
       if (imported > 0) {
         showToast(`✅ יובאו ${imported} מוצרים!`, 'success');
