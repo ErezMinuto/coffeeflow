@@ -10,6 +10,7 @@
     "react-scripts": "5.0.1",
     "puppeteer-core": "^21.6.1",
     "@sparticuz/chromium": "^119.0.2"
+    "xlsx": "^0.18.5"   
   },
   "scripts": {
     "start": "react-scripts start",
@@ -34,4 +35,5 @@
       "last 1 safari version"
     ]
   }
+
 }
