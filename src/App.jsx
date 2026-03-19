@@ -3,6 +3,7 @@ import './App.css';
 import { SignIn, UserButton, useUser, useAuth } from '@clerk/clerk-react';
 import { supabase } from './lib/supabase';
 import { useSupabaseData, useCostSettings } from './lib/hooks';
+import MFlowSync from './MFlowSync'; 
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
