@@ -143,6 +143,7 @@ function App() {
       { id: 'origins', icon: '🌱', label: 'זנים' },
       { id: 'roasting', icon: '🔥', label: 'קלייה' },
       { id: 'products', icon: '📦', label: 'מוצרים' },
+        { id: 'mflow', icon: '🔄', label: 'MFlow' },
       { id: 'settings', icon: '⚙️', label: 'הגדרות' }
     ];
     return (
