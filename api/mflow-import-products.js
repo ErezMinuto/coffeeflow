@@ -1,5 +1,5 @@
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,9 +9,10 @@ export default async function handler(req, res) {
   let browser;
   
   try {
-    // Launch browser
+    // Launch browser with chrome-aws-lambda
     browser = await puppeteer.launch({
       args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
@@ -19,14 +20,25 @@ export default async function handler(req, res) {
     const page = await browser.newPage();
     
     // Login to MFlow
-    await page.goto('https://my.mflow.co.il/login', { waitUntil: 'networkidle0' });
-    await page.type('input[name="email"]', 'erez@gurimi.com');
-    await page.type('input[name="password"]', 'Mowfoz-sibdur-3bihbi');
-    await page.click('button[type="submit"]');
-    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    await page.goto('https://my.mflow.co.il/login', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
+    
+    await page.waitForSelector('input[type="email"], input[name="email"]', { timeout: 10000 });
+    await page.type('input[type="email"], input[name="email"]', 'erez@gurimi.com');
+    await page.type('input[type="password"], input[name="password"]', 'Mowfoz-sibdur-3bihbi');
+    
+    await Promise.all([
+      page.click('button[type="submit"]'),
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 })
+    ]);
 
     // Navigate to products page
-    await page.goto('https://my.mflow.co.il/products', { waitUntil: 'networkidle0' });
+    await page.goto('https://my.mflow.co.il/products', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
 
     // Scrape products
     const products = await page.evaluate(() => {
@@ -43,7 +55,6 @@ export default async function handler(req, res) {
 
     await browser.close();
 
-    // Return products for manual processing
     return res.status(200).json({
       success: true,
       count: products.length,
