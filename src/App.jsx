@@ -1438,6 +1438,7 @@ function App() {
         {currentPage === 'roasting' && <Roasting showToast={showToast} />}
         {currentPage === 'products' && <Products showToast={showToast} />}
         {currentPage === 'settings' && <Settings showToast={showToast} />}
+        {currentPage === 'mflow' && <MFlowSync data={data} showToast={showToast} />}
       </div>
     </div>
   );
