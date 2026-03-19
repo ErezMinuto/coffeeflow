@@ -4,8 +4,6 @@ import { SignIn, UserButton, useUser, useAuth } from '@clerk/clerk-react';
 import { supabase } from './lib/supabase';
 import { useSupabaseData, useCostSettings } from './lib/hooks';
 import MFlowSync from './MFlowSync'; 
-import jsPDF from 'jspdf';
-import QRCode from 'qrcode';
 
 function App() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -96,45 +94,6 @@ function App() {
       return { beansCost: beansCost.toFixed(2), gasCost: gasCost.toFixed(2), roastingLabor: roastingLabor.toFixed(2), packagingLabor: packagingLabor.toFixed(2), packagingCost: packagingCost.toFixed(2), totalCost: totalCost.toFixed(2), bagsPerRoast: bagsPerRoast.toFixed(1) };
     }
     return totalCost.toFixed(2);
-  };
-
-  // Print label function
-  const printRoastLabel = async (roast, origin) => {
-    const doc = new jsPDF({ unit: 'mm', format: [100, 150] });
-    doc.setFillColor(250, 247, 242);
-    doc.rect(0, 0, 100, 150, 'F');
-    doc.setFillColor(111, 78, 55);
-    doc.rect(0, 0, 100, 30, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Minuto Coffee', 50, 15, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('Fresh Roasted Coffee', 50, 23, { align: 'center' });
-    doc.setTextColor(45, 24, 16);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(origin?.name || 'Unknown Origin', 50, 45, { align: 'center' });
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    const yStart = 60;
-    const lineHeight = 12;
-    if (roast.batch_number) {
-      doc.setFont('helvetica', 'bold');
-      doc.text(roast.batch_number, 50, yStart, { align: 'center' });
-    }
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${new Date(roast.date).toLocaleDateString('en-GB')}`, 50, yStart + lineHeight, { align: 'center' });
-    doc.text(`Weight: ${roast.roasted_weight} kg`, 50, yStart + lineHeight * 2, { align: 'center' });
-    doc.text(`Roaster: ${roast.operator}`, 50, yStart + lineHeight * 3, { align: 'center' });
-    try {
-      const qrData = JSON.stringify({ batch: roast.batch_number, origin: origin?.name, date: roast.date, weight: roast.roasted_weight });
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1 });
-      doc.addImage(qrCodeDataUrl, 'PNG', 25, 105, 50, 50);
-    } catch (error) {
-      console.error('QR code error:', error);
-    }
-    doc.save(`label-${roast.batch_number || roast.id}.pdf`);
   };
 
   // Navigation Component
@@ -1005,7 +964,6 @@ function App() {
                         <h3>{origin?.name || 'זן לא ידוע'}</h3>
                       </div>
                       <div className="roast-actions">
-                        <button onClick={() => printRoastLabel(roast, origin)} className="btn-icon" title="הדפס מדבקה">🖨️</button>
                         <button onClick={() => startEditRoast(roast)} className="btn-icon">✏️</button>
                         <button onClick={() => deleteRoast(roast)} className="btn-icon">🗑️</button>
                       </div>
