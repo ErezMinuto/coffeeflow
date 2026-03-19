@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
+import { supabase } from './lib/supabase';
 
-function MFlowSync({ data, showToast, productsDb }) {
+function MFlowSync({ data, showToast }) {
   const [loading, setLoading] = useState(false);
   const [importResults, setImportResults] = useState(null);
 
@@ -12,103 +14,88 @@ function MFlowSync({ data, showToast, productsDb }) {
     showToast('מעבד את הקובץ...', 'info');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Read Excel file
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const response = await fetch('/api/import-products-excel', {
-        method: 'POST',
-        body: formData
+      let imported = 0;
+      let skipped = 0;
+      const errors = [];
+      const productMap = new Map();
+
+      // Parse products
+      for (const row of jsonData) {
+        try {
+          const name = row['שם המוצר'];
+          const quantityField = row['כמות / טחינה'];
+          
+          if (!name || !quantityField) continue;
+
+          const sizeMatch = quantityField.toString().match(/^(\d+)/);
+          if (!sizeMatch) continue;
+          
+          const size = parseInt(sizeMatch[1]);
+          const key = `${name}-${size}`;
+
+          if (productMap.has(key)) continue;
+          
+          productMap.set(key, {
+            name: name,
+            size: size,
+            type: 'single',
+            description: '',
+            recipe: [{ originId: null, percentage: 100 }]
+          });
+
+        } catch (err) {
+          errors.push(`שגיאה בשורה: ${row['שם המוצר'] || 'לא ידוע'}`);
+        }
+      }
+
+      // Insert into Supabase
+      for (const [key, product] of productMap) {
+        try {
+          const { data: existing } = await supabase
+            .from('products')
+            .select('id')
+            .eq('name', product.name)
+            .eq('size', product.size)
+            .single();
+
+          if (existing) {
+            skipped++;
+            continue;
+          }
+
+          const { error } = await supabase
+            .from('products')
+            .insert([product]);
+
+          if (error) throw error;
+          imported++;
+
+        } catch (err) {
+          errors.push(`${product.name} ${product.size}g: ${err.message}`);
+        }
+      }
+
+      setImportResults({
+        total: jsonData.length,
+        unique: productMap.size,
+        imported,
+        skipped,
+        errors
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setImportResults(result);
-        showToast(`✅ יובאו ${result.imported} מוצרים מ-${result.total}!`);
+      if (imported > 0) {
+        showToast(`✅ יובאו ${imported} מוצרים!`);
+        setTimeout(() => window.location.reload(), 2000);
       } else {
-        showToast(`❌ שגיאה: ${result.error}`, 'error');
+        showToast('⚠️ לא יובאו מוצרים חדשים', 'warning');
       }
+
     } catch (error) {
-      showToast('❌ שגיאה בייבוא קובץ', 'error');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="page">
-      <h1>🔄 סנכרון MFlow</h1>
-      
-      <div className="section">
-        <h2>📦 ייבוא מוצרים מ-Excel</h2>
-        <p style={{ color: '#666', marginBottom: '1rem' }}>
-          ייבוא מוצרים מקובץ Excel של MFlow. 
-          <br/>
-          המוצרים ייווצרו ללא מתכון - תצטרך להגדיר את המתכון לכל מוצר ידנית.
-        </p>
-        
-        <div className="form-card">
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            disabled={loading}
-            style={{
-              padding: '1rem',
-              border: '2px dashed #3B82F6',
-              borderRadius: '8px',
-              width: '100%',
-              cursor: 'pointer',
-              background: '#F0F9FF'
-            }}
-          />
-          {loading && (
-            <div style={{ marginTop: '1rem', textAlign: 'center', color: '#3B82F6' }}>
-              ⏳ מייבא מוצרים...
-            </div>
-          )}
-        </div>
-      </div>
-
-      {importResults && (
-        <div className="section" style={{ marginTop: '2rem' }}>
-          <h3>📊 תוצאות ייבוא</h3>
-          <div className="form-card" style={{ background: '#F0FDF4' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong>סה"כ שורות בקובץ:</strong> {importResults.total}
-            </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong>יובאו בהצלחה:</strong> {importResults.imported}
-            </div>
-            {importResults.skipped > 0 && (
-              <div style={{ marginBottom: '1rem', color: '#F59E0B' }}>
-                <strong>דולגו:</strong> {importResults.skipped} (כבר קיימים)
-              </div>
-            )}
-            {importResults.errors?.length > 0 && (
-              <div>
-                <strong style={{ color: '#DC2626' }}>שגיאות:</strong>
-                <ul>
-                  {importResults.errors.map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-          
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="btn-primary"
-            style={{ marginTop: '1rem' }}
-          >
-            ↩️ חזור לדשבורד
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default MFlowSync;
+      showToast('❌ שגיאה בעיבוד הקובץ', 'error');
+      console.error(er
