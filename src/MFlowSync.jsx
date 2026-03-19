@@ -67,13 +67,16 @@ function MFlowSync({ showToast }) {
 
           if (productMap.has(key)) continue;
           
+          const sku = row['מק"ט'] || row['מק״ט וריאציה'];
+
           productMap.set(key, {
             name: name,
             size: size,
             type: 'single',
             description: '',
             recipe: [{ originId: null, percentage: 100 }],
-            user_id: user.id
+            user_id: user.id,
+            sku: sku ? String(sku) : null
           });
 
         } catch (err) {
