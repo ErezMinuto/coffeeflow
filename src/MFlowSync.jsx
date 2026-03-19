@@ -312,12 +312,27 @@ function MFlowSync({ showToast }) {
       </div>
 
       {importResults && (
-        <div className="section" style={{ marginTop: '2rem' }}>
-          <h3>📊 תוצאות ייבוא</h3>
-          <div className="form-card" style={{ background: importResults.imported > 0 ? '#F0FDF4' : '#FFFBEB' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong>סה"כ שורות:</strong> {importResults.total}
-            </div>
+  <div className="section" style={{ marginTop: '2rem' }}>
+    <h3>📊 תוצאות</h3>
+    <div className="form-card" style={{ background: (importResults.imported > 0 || importResults.processed > 0) ? '#F0FDF4' : '#FFFBEB' }}>
+      <div style={{ marginBottom: '1rem' }}>
+        <strong>סה"כ שורות:</strong> {importResults.total}
+      </div>
+      {importResults.unique && (
+        <div style={{ marginBottom: '1rem' }}>
+          <strong>מוצרים ייחודיים:</strong> {importResults.unique}
+        </div>
+      )}
+      {importResults.imported !== undefined && (
+        <div style={{ marginBottom: '1rem', color: '#10B981' }}>
+          <strong>יובאו:</strong> {importResults.imported}
+        </div>
+      )}
+      {importResults.processed !== undefined && (
+        <div style={{ marginBottom: '1rem', color: '#10B981' }}>
+          <strong>עובדו:</strong> {importResults.processed}
+        </div>
+      )}
             <div style={{ marginBottom: '1rem' }}>
               <strong>מוצרים ייחודיים:</strong> {importResults.unique}
             </div>
