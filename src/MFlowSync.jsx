@@ -98,4 +98,84 @@ function MFlowSync({ data, showToast }) {
 
     } catch (error) {
       showToast('❌ שגיאה בעיבוד הקובץ', 'error');
-      console.error(er
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page">
+      <h1>🔄 ייבוא מוצרים מ-MFlow</h1>
+      
+      <div className="section">
+        <h2>📦 העלאת קובץ Excel</h2>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          ייבוא מוצרים מקובץ Excel של MFlow.
+          <br/>
+          <strong>שים לב:</strong> המוצרים ייווצרו ללא מתכון - תצטרך להגדיר מתכון לכל מוצר.
+        </p>
+        
+        <div className="form-card">
+          <label 
+            style={{
+              display: 'block',
+              padding: '2rem',
+              border: '2px dashed #3B82F6',
+              borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: loading ? '#F3F4F6' : '#F0F9FF',
+              textAlign: 'center'
+            }}
+          >
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              disabled={loading}
+              style={{ display: 'none' }}
+            />
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+            <div style={{ fontSize: '1.1rem', color: '#3B82F6', fontWeight: 'bold' }}>
+              {loading ? '⏳ מעבד...' : 'לחץ לבחירת קובץ Excel'}
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {importResults && (
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <h3>📊 תוצאות ייבוא</h3>
+          <div className="form-card" style={{ background: importResults.imported > 0 ? '#F0FDF4' : '#FFFBEB' }}>
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>סה"כ שורות:</strong> {importResults.total}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>מוצרים ייחודיים:</strong> {importResults.unique}
+            </div>
+            <div style={{ marginBottom: '1rem', color: '#10B981' }}>
+              <strong>יובאו:</strong> {importResults.imported}
+            </div>
+            {importResults.skipped > 0 && (
+              <div style={{ marginBottom: '1rem', color: '#F59E0B' }}>
+                <strong>דולגו:</strong> {importResults.skipped}
+              </div>
+            )}
+            {importResults.errors?.length > 0 && (
+              <div>
+                <strong style={{ color: '#DC2626' }}>שגיאות:</strong>
+                <ul style={{ maxHeight: '200px', overflow: 'auto' }}>
+                  {importResults.errors.slice(0, 10).map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default MFlowSync;
