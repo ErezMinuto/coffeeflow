@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import { SignIn, UserButton, useUser, useAuth } from '@clerk/clerk-react';
-import { supabase } from './lib/supabase';
 import { useSupabaseData, useCostSettings } from './lib/hooks';
 import MFlowSync from './MFlowSync'; 
 
 function App() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { getToken } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   
   // Toast notifications
