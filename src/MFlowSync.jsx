@@ -37,7 +37,6 @@ function MFlowSync({ showToast }) {
           const quantityField = row['כמות / טחינה'];
           
           if (!name) continue;
-
          let size = null;
 
           // Try to extract size from quantity field
