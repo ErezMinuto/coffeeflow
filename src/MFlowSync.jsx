@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { supabase } from './lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
+const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL,
+  process.env.REACT_APP_SUPABASE_ANON_KEY
+);
 function MFlowSync({ data, showToast }) {
   const [loading, setLoading] = useState(false);
   const [importResults, setImportResults] = useState(null);
