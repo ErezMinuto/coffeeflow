@@ -102,7 +102,7 @@ function App() {
       { id: 'origins', icon: '🌱', label: 'זנים' },
       { id: 'roasting', icon: '🔥', label: 'קלייה' },
       { id: 'products', icon: '📦', label: 'מוצרים' },
-        { id: 'mflow', icon: '🔄', label: 'MFlow' },
+      { id: 'mflow', icon: '🔄', label: 'MFlow' },
       { id: 'roasting-list', icon: '📋', label: 'רשימת קלייה' },
       { id: 'settings', icon: '⚙️', label: 'הגדרות' }
     ];
@@ -1397,6 +1397,7 @@ function App() {
         {currentPage === 'products' && <Products showToast={showToast} />}
         {currentPage === 'settings' && <Settings showToast={showToast} />}
         {currentPage === 'mflow' && <MFlowSync data={data} showToast={showToast} />}
+        {currentPage === 'roasting-list' && <RoastingList data={data} originsDb={originsDb} showToast={showToast} />}
       </div>
     </div>
   );
