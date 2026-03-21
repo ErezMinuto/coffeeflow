@@ -102,6 +102,7 @@ function App() {
       { id: 'roasting', icon: '🔥', label: 'קלייה' },
       { id: 'products', icon: '📦', label: 'מוצרים' },
         { id: 'mflow', icon: '🔄', label: 'MFlow' },
+      { id: 'roasting-list', icon: '📋', label: 'רשימת קלייה' },
       { id: 'settings', icon: '⚙️', label: 'הגדרות' }
     ];
     return (
