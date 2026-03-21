@@ -8,7 +8,7 @@ const supabase = createClient(
 
 const DEFAULT_ROAST_KG = 15;
 
-export default function RoastingList({ data, originsDb, showToast }) {
+  export default function RoastingList({ data, originsDb, roastsDb, showToast }) {
   const [checked, setChecked] = useState({});
   const [amounts, setAmounts] = useState({});
   const [notes, setNotes] = useState({});
