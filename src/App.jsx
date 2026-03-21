@@ -631,11 +631,11 @@ function App() {
                   <tr key={origin.id} style={isOutOfStock ? { background: '#FEE2E2' } : isLowStock ? { background: '#FFFBEB' } : {}}>
                     <td><strong>{origin.name}</strong> {isOutOfStock && <span style={{ color: '#DC2626', marginRight: '0.5rem' }}>❌</span>} {isLowStock && <span style={{ color: '#F59E0B', marginRight: '0.5rem' }}>⚠️</span>}</td>
                     <td>{origin.weight_loss}%</td>
-                    <td>₪{origin.cost_per_kg}</td>
+                    <td>₪{parseFloat(origin.cost_per_kg || 0).toFixed(2)}</td>
                     <td>₪{costPerKgRoasted}</td>
-                    <td style={stockStyle}>{origin.stock || 0} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
-                    <td>{origin.roasted_stock || 0} ק"ג</td>
-                    <td>{origin.daily_average || 0} ק"ג</td>
+                    <td style={stockStyle}>{parseFloat(origin.stock || 0).toFixed(2)} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
+                    <td>{parseFloat(origin.roasted_stock || 0).toFixed(2)} ק"ג</td>
+                    <td>{parseFloat(origin.daily_average || 0).toFixed(2)} ק"ג</td>
                     <td>
                       <div className="action-buttons">
                         <button onClick={() => startEdit(origin)} className="btn-icon">✏️</button>
