@@ -291,6 +291,7 @@ function App() {
           stock: parseFloat(editingOrigin.stock),
           roasted_stock: parseFloat(editingOrigin.roastedStock) || 0,
           min_stock: parseFloat(editingOrigin.minStock) || 10,
+          daily_average: parseFloat(editingOrigin.dailyAverage) || 0,
           notes: editingOrigin.notes, 
           updated_at: new Date().toISOString() 
         });
