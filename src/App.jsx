@@ -246,7 +246,7 @@ function App() {
     const [stockOut, setStockOut] = useState({ originId: '', quantity: '', notes: '' });
 
     const addOrigin = async () => {
-      if (!newOrigin.name || !newOrigin.costPerKg) { showToast('⚠️ נא למלא שם ועלות'); return; }
+      if (!newOrigin.name || !newOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
       try {
         await originsDb.insert({ 
           name: newOrigin.name, 
@@ -260,10 +260,10 @@ function App() {
         });
         await originsDb.refresh();
         setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
-        showToast('✅ זן נוסף בהצלחה!');
+        alert('✅ זן נוסף בהצלחה!');
       } catch (error) {
         console.error('Error adding origin:', error);
-        showToast('❌ שגיאה בהוספת זן');
+        alert('❌ שגיאה בהוספת זן');
       }
     };
 
@@ -282,7 +282,7 @@ function App() {
     };
     
     const saveEdit = async () => {
-      if (!editingOrigin.name || !editingOrigin.costPerKg) { showToast('⚠️ נא למלא שם ועלות'); return; }
+      if (!editingOrigin.name || !editingOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
       try {
         await originsDb.update(editingOrigin.id, { 
           name: editingOrigin.name, 
@@ -313,38 +313,38 @@ function App() {
       }
       try {
         await originsDb.remove(origin.id);
-        showToast('✅ זן נמחק!');
+        alert('✅ זן נמחק!');
       } catch (error) {
         console.error('Error deleting origin:', error);
-        showToast('❌ שגיאה במחיקת זן');
+        alert('❌ שגיאה במחיקת זן');
       }
     };
 
     const duplicateOrigin = async (origin) => {
       try {
         await originsDb.insert({ name: origin.name + ' (עותק)', weight_loss: origin.weight_loss, cost_per_kg: origin.cost_per_kg, stock: 0, roasted_stock: 0, notes: origin.notes });
-        showToast('✅ זן שוכפל בהצלחה!');
+        alert('✅ זן שוכפל בהצלחה!');
       } catch (error) {
         console.error('Error duplicating origin:', error);
-        showToast('❌ שגיאה בשכפול זן');
+        alert('❌ שגיאה בשכפול זן');
       }
     };
 
     const addStockEntry = async () => {
       if (!stockEntry.originId || !stockEntry.quantity) {
-        showToast('⚠️ נא לבחור זן ולהזין כמות');
+        alert('⚠️ נא לבחור זן ולהזין כמות');
         return;
       }
       
       const quantity = parseFloat(stockEntry.quantity);
       if (quantity <= 0) {
-        showToast('⚠️ כמות חייבת להיות גדולה מ-0');
+        alert('⚠️ כמות חייבת להיות גדולה מ-0');
         return;
       }
 
       const origin = getOriginById(parseInt(stockEntry.originId));
       if (!origin) {
-        showToast('⚠️ זן לא נמצא');
+        alert('⚠️ זן לא נמצא');
         return;
       }
 
@@ -356,34 +356,34 @@ function App() {
         setStockEntry({ originId: '', quantity: '', notes: '' });
         // activeForm stays open!
         
-        showToast(`הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
+        alert(`הוספת ${quantity} ק"ג ל${origin.name} • מלאי חדש: ${newStock} ק"ג`);
       } catch (error) {
         console.error('Error adding stock:', error);
-        showToast('שגיאה בהוספת מלאי', 'error');
+        alert('שגיאה בהוספת מלאי', 'error');
       }
     };
 
     const removeStockForPackaging = async () => {
       if (!stockOut.originId || !stockOut.quantity) {
-        showToast('נא לבחור זן ולהזין כמות', 'warning');
+        alert('נא לבחור זן ולהזין כמות', 'warning');
         return;
       }
       
       const quantity = parseFloat(stockOut.quantity);
       if (quantity <= 0) {
-        showToast('כמות חייבת להיות גדולה מ-0', 'warning');
+        alert('כמות חייבת להיות גדולה מ-0', 'warning');
         return;
       }
 
       const origin = getOriginById(parseInt(stockOut.originId));
       if (!origin) {
-        showToast('זן לא נמצא', 'error');
+        alert('זן לא נמצא', 'error');
         return;
       }
 
       const currentRoastedStock = origin.roasted_stock || 0;
       if (quantity > currentRoastedStock) {
-        showToast(`אין מספיק מלאי קלוי! קיים: ${currentRoastedStock} ק"ג, מבוקש: ${quantity} ק"ג`, 'error');
+        alert(`אין מספיק מלאי קלוי! קיים: ${currentRoastedStock} ק"ג, מבוקש: ${quantity} ק"ג`, 'error');
         return;
       }
 
@@ -395,10 +395,10 @@ function App() {
         setStockOut({ originId: '', quantity: '', notes: '' });
         // activeForm stays open!
         
-        showToast(`הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
+        alert(`הוצאו ${quantity} ק"ג מ${origin.name} לאריזה • נותר: ${newRoastedStock} ק"ג`);
       } catch (error) {
         console.error('Error removing stock:', error);
-        showToast('❌ שגיאה בהוצאת מלאי');
+        alert('❌ שגיאה בהוצאת מלאי');
       }
     };
 
@@ -668,12 +668,12 @@ function App() {
     const [selectedRoasts, setSelectedRoasts] = useState([]);
 
     const recordRoast = async () => {
-      if (!selectedOrigin || !greenWeight || !selectedOperator) { showToast('⚠️ נא למלא את כל השדות'); return; }
+      if (!selectedOrigin || !greenWeight || !selectedOperator) { alert('⚠️ נא למלא את כל השדות'); return; }
       const origin = getOriginById(parseInt(selectedOrigin));
-      if (!origin) { showToast('⚠️ זן לא נמצא'); return; }
+      if (!origin) { alert('⚠️ זן לא נמצא'); return; }
       const weight = parseFloat(greenWeight);
-      if (weight <= 0 || weight > 20) { showToast('⚠️ משקל לא תקין (1-20 ק"ג)'); return; }
-      if (origin.stock < weight) { showToast(`⚠️ אין מספיק מלאי!\nנדרש: ${weight} ק"ג\nקיים: ${origin.stock} ק"ג`); return; }
+      if (weight <= 0 || weight > 20) { alert('⚠️ משקל לא תקין (1-20 ק"ג)'); return; }
+      if (origin.stock < weight) { alert(`⚠️ אין מספיק מלאי!\nנדרש: ${weight} ק"ג\nקיים: ${origin.stock} ק"ג`); return; }
       const roastedWeight = parseFloat(calculateRoastedWeight(weight, origin.weight_loss));
       
       // Generate batch number
@@ -694,10 +694,10 @@ function App() {
         await roastsDb.refresh();
         await originsDb.refresh();
         setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
-        showToast(`✅ קלייה נרשמה!\nBatch: ${batchNum}\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
+        alert(`✅ קלייה נרשמה!\nBatch: ${batchNum}\n${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
       } catch (error) {
         console.error('Error recording roast:', error);
-        showToast('❌ שגיאה ברישום קלייה');
+        alert('❌ שגיאה ברישום קלייה');
       }
     };
 
@@ -706,10 +706,10 @@ function App() {
     };
 
     const saveEditRoast = async () => {
-      if (!editingRoast.originId || !editingRoast.greenWeight || !editingRoast.operator) { showToast('⚠️ נא למלא את כל השדות'); return; }
+      if (!editingRoast.originId || !editingRoast.greenWeight || !editingRoast.operator) { alert('⚠️ נא למלא את כל השדות'); return; }
       const newOrigin = getOriginById(editingRoast.originId);
       const oldOrigin = getOriginById(editingRoast.oldOriginId);
-      if (!newOrigin || !oldOrigin) { showToast('⚠️ זן לא נמצא'); return; }
+      if (!newOrigin || !oldOrigin) { alert('⚠️ זן לא נמצא'); return; }
       const newWeight = parseFloat(editingRoast.greenWeight);
       const newRoastedWeight = parseFloat(calculateRoastedWeight(newWeight, newOrigin.weight_loss));
       const oldWeight = parseFloat(editingRoast.oldGreenWeight);
@@ -727,10 +727,10 @@ function App() {
         await roastsDb.refresh();
         await originsDb.refresh();
         setEditingRoast(null);
-        showToast('✅ קלייה עודכנה!');
+        alert('✅ קלייה עודכנה!');
       } catch (error) {
         console.error('Error updating roast:', error);
-        showToast('❌ שגיאה בעדכון קלייה');
+        alert('❌ שגיאה בעדכון קלייה');
       }
     };
 
@@ -744,10 +744,10 @@ function App() {
         }
         await roastsDb.refresh();
         await originsDb.refresh();
-        showToast('✅ קלייה נמחקה והמלאי הוחזר!');
+        alert('✅ קלייה נמחקה והמלאי הוחזר!');
       } catch (error) {
         console.error('Error deleting roast:', error);
-        showToast('❌ שגיאה במחיקת קלייה');
+        alert('❌ שגיאה במחיקת קלייה');
       }
     };
 
@@ -769,7 +769,7 @@ function App() {
 
     const deleteSelectedRoasts = async () => {
       if (selectedRoasts.length === 0) {
-        showToast('⚠️ לא נבחרו קליות למחיקה');
+        alert('⚠️ לא נבחרו קליות למחיקה');
         return;
       }
       
@@ -792,10 +792,10 @@ function App() {
         await roastsDb.refresh();
         await originsDb.refresh();
         setSelectedRoasts([]);
-        showToast(`✅ ${selectedRoasts.length} קליות נמחקו והמלאי הוחזר!`);
+        alert(`✅ ${selectedRoasts.length} קליות נמחקו והמלאי הוחזר!`);
       } catch (error) {
         console.error('Error deleting roasts:', error);
-        showToast('❌ שגיאה במחיקת קליות');
+        alert('❌ שגיאה במחיקת קליות');
       }
     };
 
@@ -1047,14 +1047,14 @@ function App() {
     };
 
     const validateProduct = (product) => {
-      if (!product.name.trim()) { showToast('⚠️ נא למלא שם מוצר'); return false; }
-      if (!product.size || product.size <= 0) { showToast('⚠️ נא למלא גודל מוצר'); return false; }
-      if (!product.recipe || product.recipe.length === 0) { showToast('⚠️ נא להוסיף לפחות רכיב אחד למתכון'); return false; }
+      if (!product.name.trim()) { alert('⚠️ נא למלא שם מוצר'); return false; }
+      if (!product.size || product.size <= 0) { alert('⚠️ נא למלא גודל מוצר'); return false; }
+      if (!product.recipe || product.recipe.length === 0) { alert('⚠️ נא להוסיף לפחות רכיב אחד למתכון'); return false; }
       for (let ing of product.recipe) {
-        if (!ing.originId) { showToast('⚠️ נא לבחור זן לכל רכיב במתכון'); return false; }
+        if (!ing.originId) { alert('⚠️ נא לבחור זן לכל רכיב במתכון'); return false; }
       }
       const totalPercentage = product.recipe.reduce((sum, ing) => sum + (ing.percentage || 0), 0);
-      if (Math.abs(totalPercentage - 100) > 0.1) { showToast(`⚠️ סכום האחוזים במתכון חייב להיות 100%\n\nכרגע: ${totalPercentage}%`); return false; }
+      if (Math.abs(totalPercentage - 100) > 0.1) { alert(`⚠️ סכום האחוזים במתכון חייב להיות 100%\n\nכרגע: ${totalPercentage}%`); return false; }
       return true;
     };
 
@@ -1064,10 +1064,10 @@ function App() {
         await productsDb.insert({ name: newProduct.name, size: parseInt(newProduct.size), type: newProduct.type, description: newProduct.description, recipe: newProduct.recipe });
         await productsDb.refresh();
         setAddingProduct(false);
-        showToast('✅ מוצר נוסף בהצלחה!');
+        alert('✅ מוצר נוסף בהצלחה!');
       } catch (error) {
         console.error('Error adding product:', error);
-        showToast('❌ שגיאה בהוספת מוצר');
+        alert('❌ שגיאה בהוספת מוצר');
       }
     };
 
@@ -1084,10 +1084,10 @@ function App() {
         await productsDb.update(editingProduct.id, { name: editingProduct.name, size: parseInt(editingProduct.size), type: editingProduct.type, description: editingProduct.description, recipe: editingProduct.recipe, updated_at: new Date().toISOString() });
         await productsDb.refresh();
         setEditingProduct(null);
-        showToast('✅ מוצר עודכן בהצלחה!');
+        alert('✅ מוצר עודכן בהצלחה!');
       } catch (error) {
         console.error('Error updating product:', error);
-        showToast('❌ שגיאה בעדכון מוצר');
+        alert('❌ שגיאה בעדכון מוצר');
       }
     };
 
@@ -1096,20 +1096,20 @@ function App() {
       try {
         await productsDb.remove(product.id);
         await productsDb.refresh();
-        showToast('✅ מוצר נמחק!');
+        alert('✅ מוצר נמחק!');
       } catch (error) {
         console.error('Error deleting product:', error);
-        showToast('❌ שגיאה במחיקת מוצר');
+        alert('❌ שגיאה במחיקת מוצר');
       }
     };
 
     const duplicateProduct = async (product) => {
       try {
         await productsDb.insert({ name: product.name + ' (עותק)', size: product.size, type: product.type, description: product.description, recipe: product.recipe });
-        showToast('✅ מוצר שוכפל בהצלחה!');
+        alert('✅ מוצר שוכפל בהצלחה!');
       } catch (error) {
         console.error('Error duplicating product:', error);
-        showToast('❌ שגיאה בשכפול מוצר');
+        alert('❌ שגיאה בשכפול מוצר');
       }
     };
 
@@ -1238,10 +1238,10 @@ function App() {
         try {
           await operatorsDb.insert({ name: newOperator.trim() });
           setNewOperator('');
-          showToast('✅ מפעיל נוסף!');
+          alert('✅ מפעיל נוסף!');
         } catch (error) {
           console.error('Error adding operator:', error);
-          showToast('❌ שגיאה בהוספת מפעיל');
+          alert('❌ שגיאה בהוספת מפעיל');
         }
       }
     };
@@ -1249,7 +1249,7 @@ function App() {
     const startEditOperator = (operator) => { setEditingOperator({ ...operator }); };
 
     const saveEditOperator = async () => {
-      if (!editingOperator.name.trim()) { showToast('⚠️ נא למלא שם מפעיל'); return; }
+      if (!editingOperator.name.trim()) { alert('⚠️ נא למלא שם מפעיל'); return; }
       try {
         await operatorsDb.update(editingOperator.id, { name: editingOperator.name.trim() });
         const oldOperator = data.operators.find(op => op.id === editingOperator.id);
@@ -1260,10 +1260,10 @@ function App() {
           }
         }
         setEditingOperator(null);
-        showToast('✅ מפעיל עודכן!');
+        alert('✅ מפעיל עודכן!');
       } catch (error) {
         console.error('Error updating operator:', error);
-        showToast('❌ שגיאה בעדכון מפעיל');
+        alert('❌ שגיאה בעדכון מפעיל');
       }
     };
 
@@ -1276,10 +1276,10 @@ function App() {
       }
       try {
         await operatorsDb.remove(operator.id);
-        showToast('✅ מפעיל נמחק!');
+        alert('✅ מפעיל נמחק!');
       } catch (error) {
         console.error('Error deleting operator:', error);
-        showToast('❌ שגיאה במחיקת מפעיל');
+        alert('❌ שגיאה במחיקת מפעיל');
       }
     };
 
