@@ -615,7 +615,7 @@ function App() {
 
         <div className="table-container">
           <table className="data-table">
-            <thead><tr><th>שם</th><th>איבוד משקל</th><th>עלות/ק"ג ירוק</th><th>עלות/ק"ג קלוי</th><th>מלאי ירוק</th><th>מלאי קלוי</th><th>פעולות</th></tr></thead>
+            <thead><tr><th>שם</th><th>איבוד משקל</th><th>עלות/ק"ג ירוק</th><th>עלות/ק"ג קלוי</th><th>מלאי ירוק</th><th>מלאי קלוי</th><th>ממוצע יומי</th><th>פעולות</th></tr></thead>
             <tbody>
               {filteredOrigins.map(origin => {
                 const yieldPercent = 1 - (origin.weight_loss / 100);
@@ -633,6 +633,7 @@ function App() {
                     <td>₪{costPerKgRoasted}</td>
                     <td style={stockStyle}>{origin.stock || 0} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
                     <td>{origin.roasted_stock || 0} ק"ג</td>
+                    <td>{origin.daily_average || 0} ק"ג</td>
                     <td>
                       <div className="action-buttons">
                         <button onClick={() => startEdit(origin)} className="btn-icon">✏️</button>
