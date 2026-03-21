@@ -608,7 +608,7 @@ function App() {
                 const stockStyle = isOutOfStock ? { background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' } : isLowStock ? { background: '#FEF3C7', color: '#D97706', fontWeight: 'bold' } : {};
             
                 if (isEditing) {
-                                  return (
+                          return (
                           <tr key={origin.id} style={{ background: '#FFF9F0', borderTop: '2px solid #FF6B35', borderBottom: '2px solid #FF6B35' }}>
                             <td><input type="number" value={parseFloat(editingOrigin.weightLoss || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} style={{ width: '70px', minWidth: '70px' }} />%</td>
                             <td><input type="number" step="0.01" value={parseFloat(editingOrigin.costPerKg || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} style={{ width: '80px', minWidth: '80px' }} /></td>
@@ -1307,7 +1307,7 @@ function App() {
           )}
 
           <div className="table-container" style={{ marginTop: '15px' }}>
-            <table className="data-table">
+            <table className="data-table" style={{ minWidth: '1200px' }}>
               <thead><tr><th>שם</th><th>מספר קליות</th><th>פעולות</th></tr></thead>
               <tbody>
                 {data.operators.map(operator => {
