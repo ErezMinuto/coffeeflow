@@ -10,7 +10,8 @@
     "react-scripts": "5.0.1",
     "puppeteer-core": "^21.6.1",
     "@sparticuz/chromium": "^119.0.2",
-    "xlsx": "^0.18.5"   
+    "xlsx": "^0.18.5",
+    "formidable": "^3.5.1"
   },
   "scripts": {
     "start": "react-scripts start",
