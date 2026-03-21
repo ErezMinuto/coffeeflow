@@ -1398,7 +1398,7 @@ function App() {
       <div className="container">
         {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'origins' && <Origins showToast={showToast} activeForm={originsActiveForm} setActiveForm={setOriginsActiveForm} />}
-        {currentPage === 'roasting' && <Roasting showToast={showToast} />}
+        {currentPage === 'roasting-list' && <RoastingList data={data} originsDb={originsDb} roastsDb={roastsDb} showToast={showToast} />}
         {currentPage === 'products' && <Products showToast={showToast} />}
         {currentPage === 'settings' && <Settings showToast={showToast} />}
         {currentPage === 'mflow' && <MFlowSync data={data} showToast={showToast} />}
