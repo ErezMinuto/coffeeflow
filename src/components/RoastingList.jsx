@@ -81,6 +81,7 @@ const DEFAULT_ROAST_KG = 15;
     }
 
     await originsDb.refresh();
+    await roastsDb.refresh();
     setSaving(false);
     setChecked({});
     setAmounts({});
