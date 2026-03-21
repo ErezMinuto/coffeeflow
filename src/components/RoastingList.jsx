@@ -66,14 +66,14 @@ export default function RoastingList({ data, originsDb, showToast }) {
         });
 
         // Save roasting session
-        await supabase.from('roasting_sessions').insert({
-          user_id: userId,
+        await supabase.from('roasts').insert({
           origin_id: origin.id,
-          amount_kg: roastedKg,
-          roasted_at: syncTime,
-          notes: notes[origin.id] || ''
+          green_weight: greenKg,
+          roasted_weight: parseFloat(roastedKg),
+          operator: 'מנהל קלייה',
+          date: syncTime,
+          user_id: userId
         });
-
         success++;
       } catch (err) {
         showToast('שגיאה ב' + origin.name + ': ' + err.message, 'error');
