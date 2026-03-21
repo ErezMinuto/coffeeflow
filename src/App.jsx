@@ -275,10 +275,11 @@ function App() {
         stock: origin.stock,
         roastedStock: origin.roasted_stock || 0,
         minStock: origin.min_stock || 10,
-        notes: origin.notes || '' 
+        notes: origin.notes || '',
+        dailyAverage: origin.daily_average || 0
       });
     };
-
+    
     const saveEdit = async () => {
       if (!editingOrigin.name || !editingOrigin.costPerKg) { alert('⚠️ נא למלא שם ועלות'); return; }
       try {
