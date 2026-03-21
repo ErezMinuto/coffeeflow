@@ -241,7 +241,7 @@ function App() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [editingOrigin, setEditingOrigin] = useState(null);
-    const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
+    const [newOrigin, setNewOrigin] = useState({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, dailyAverage: 0, notes: '' });
     const [stockEntry, setStockEntry] = useState({ originId: '', quantity: '', notes: '' });
     const [stockOut, setStockOut] = useState({ originId: '', quantity: '', notes: '' });
 
@@ -254,9 +254,9 @@ function App() {
           cost_per_kg: parseFloat(newOrigin.costPerKg), 
           stock: parseFloat(newOrigin.stock) || 0, 
           roasted_stock: 0, 
-          min_stock: parseFloat(editingOrigin.minStock) || 10,
-          daily_average: parseFloat(editingOrigin.dailyAverage) || 0,
-          notes: editingOrigin.notes, 
+          min_stock: parseFloat(newOrigin.minStock) || 10,
+          daily_average: parseFloat(newOrigin.dailyAverage) || 0,
+          notes: newOrigin.notes, 
         });
         await originsDb.refresh();
         setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
@@ -1398,11 +1398,11 @@ function App() {
       <div className="container">
         {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'origins' && <Origins showToast={showToast} activeForm={originsActiveForm} setActiveForm={setOriginsActiveForm} />}
+        {currentPage === 'roasting' && <Roasting showToast={showToast} />}
         {currentPage === 'roasting-list' && <RoastingList data={data} originsDb={originsDb} roastsDb={roastsDb} showToast={showToast} />}
         {currentPage === 'products' && <Products showToast={showToast} />}
         {currentPage === 'settings' && <Settings showToast={showToast} />}
         {currentPage === 'mflow' && <MFlowSync data={data} showToast={showToast} />}
-        {currentPage === 'roasting-list' && <RoastingList data={data} originsDb={originsDb} showToast={showToast} />}
       </div>
     </div>
   );
