@@ -254,8 +254,9 @@ function App() {
           cost_per_kg: parseFloat(newOrigin.costPerKg), 
           stock: parseFloat(newOrigin.stock) || 0, 
           roasted_stock: 0, 
-          min_stock: parseFloat(newOrigin.minStock) || 10,
-          notes: newOrigin.notes 
+          min_stock: parseFloat(editingOrigin.minStock) || 10,
+          daily_average: parseFloat(editingOrigin.dailyAverage) || 0,
+          notes: editingOrigin.notes, 
         });
         await originsDb.refresh();
         setNewOrigin({ name: '', weightLoss: 20, costPerKg: '', stock: 0, minStock: 10, notes: '' });
@@ -586,6 +587,7 @@ function App() {
               <div className="form-group"><label>מלאי ירוק (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.stock} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} /></div>
               <div className="form-group"><label>מלאי קלוי (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.roastedStock} onChange={(e) => setEditingOrigin({...editingOrigin, roastedStock: e.target.value})} /></div>
               <div className="form-group"><label>מלאי מינימום (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.minStock} onChange={(e) => setEditingOrigin({...editingOrigin, minStock: e.target.value})} placeholder="10" /></div>
+<div className="form-group"><label>ממוצע מכירות יומי (ק"ג)</label><input type="number" step="0.1" value={editingOrigin.dailyAverage || 0} onChange={(e) => setEditingOrigin({...editingOrigin, dailyAverage: e.target.value})} placeholder="0" /></div>
             </div>
             <div className="form-group"><label>הערות</label><textarea value={editingOrigin.notes} onChange={(e) => setEditingOrigin({...editingOrigin, notes: e.target.value})} rows="2" /></div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
