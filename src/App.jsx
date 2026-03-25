@@ -596,56 +596,70 @@ function App() {
 
         <div className="table-container">
           <table className="data-table">
-            <thead><tr><th>שם</th><th>איבוד משקל</th><th>עלות/ק"ג ירוק</th><th>עלות/ק"ג קלוי</th><th>מלאי ירוק</th><th>מלאי קלוי</th><th>ממוצע יומי</th><th>פעולות</th></tr></thead>
-            <tbody>
-              {filteredOrigins.map(origin => {
-                const isEditing = editingOrigin?.id === origin.id;
-                const yieldPercent = 1 - (origin.weight_loss / 100);
-                const costPerKgRoasted = (origin.cost_per_kg / yieldPercent).toFixed(2);
-                const minStock = origin.min_stock || 10;
-                const isLowStock = (origin.stock || 0) < minStock && (origin.stock || 0) > 0;
-                const isOutOfStock = (origin.stock || 0) === 0;
-                const stockStyle = isOutOfStock ? { background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' } : isLowStock ? { background: '#FEF3C7', color: '#D97706', fontWeight: 'bold' } : {};
-            
-                if (isEditing) {
-                          return (
-                          <tr key={origin.id} style={{ background: '#FFF9F0', borderTop: '2px solid #FF6B35', borderBottom: '2px solid #FF6B35', maxWidth: '100%', tableLayout: 'fixed' }}>
-                            <td><input type="text" value={editingOrigin.name} onChange={(e) => setEditingOrigin({...editingOrigin, name: e.target.value})} style={{ width: '100%', minWidth: '120px' }} /></td>
-                            <td><input type="number" value={parseFloat(editingOrigin.weightLoss || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} style={{ width: '70px', minWidth: '70px' }} />%</td>
-                            <td><input type="number" step="0.01" value={parseFloat(editingOrigin.costPerKg || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} style={{ width: '80px', minWidth: '80px' }} /></td>
-                            <td>₪{(parseFloat(editingOrigin.costPerKg) / (1 - parseFloat(editingOrigin.weightLoss) / 100)).toFixed(2)}</td>
-                            <td><input type="number" step="0.1" value={parseFloat(editingOrigin.stock || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
-                            <td><input type="number" step="0.1" value={parseFloat(editingOrigin.roastedStock || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, roastedStock: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
-                            <td><input type="number" step="0.1" value={parseFloat(editingOrigin.dailyAverage || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, dailyAverage: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>                            <td>
-                      <div className="action-buttons">
-                        <button onClick={saveEdit} className="btn-icon" title="שמור">💾</button>
-                        <button onClick={() => setEditingOrigin(null)} className="btn-icon" title="ביטול">❌</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
-            
-                return (
-                  <tr key={origin.id} style={isOutOfStock ? { background: '#FEE2E2' } : isLowStock ? { background: '#FFFBEB' } : {}}>
-                    <td><strong>{origin.name}</strong> {isOutOfStock && <span style={{ color: '#DC2626', marginRight: '0.5rem' }}>❌</span>} {isLowStock && <span style={{ color: '#F59E0B', marginRight: '0.5rem' }}>⚠️</span>}</td>
-                    <td>{origin.weight_loss}%</td>
-                    <td>₪{parseFloat(origin.cost_per_kg || 0).toFixed(2)}</td>
-                    <td>₪{costPerKgRoasted}</td>
-                    <td style={stockStyle}>{parseFloat(origin.stock || 0).toFixed(2)} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
-                    <td>{parseFloat(origin.roasted_stock || 0).toFixed(2)} ק"ג</td>
-                    <td>{parseFloat(origin.daily_average || 0).toFixed(2)} ק"ג</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button onClick={() => startEdit(origin)} className="btn-icon">✏️</button>
-                        <button onClick={() => duplicateOrigin(origin)} className="btn-icon">📋</button>
-                        <button onClick={() => deleteOrigin(origin)} className="btn-icon">🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+           <thead><tr>
+  <th>שם</th>
+  <th>איבוד משקל</th>
+  <th>עלות/ק"ג ירוק</th>
+  <th>עלות/ק"ג קלוי</th>
+  <th>מלאי ירוק</th>
+  <th>מלאי קלוי</th>
+  <th>ממוצע יומי</th>
+  <th>מלאי מינימום</th>
+  <th>פעולות</th>
+</tr>
+   </thead>
+      <tbody>
+        {filteredOrigins.map(origin => {
+          const isEditing = editingOrigin?.id === origin.id;
+          const yieldPercent = 1 - (origin.weight_loss / 100);
+          const costPerKgRoasted = (origin.cost_per_kg / yieldPercent).toFixed(2);
+          const minStock = origin.min_stock || 10;
+          const isLowStock = (origin.stock || 0) < minStock && (origin.stock || 0) > 0;
+          const isOutOfStock = (origin.stock || 0) === 0;
+          const stockStyle = isOutOfStock ? { background: '#FEE2E2', color: '#DC2626', fontWeight: 'bold' } : isLowStock ? { background: '#FEF3C7', color: '#D97706', fontWeight: 'bold' } : {};
+      
+          if (isEditing) {
+            return (
+              <tr key={origin.id} style={{ background: '#FFF9F0', borderTop: '2px solid #FF6B35', borderBottom: '2px solid #FF6B35' }}>
+                <td><input type="text" value={editingOrigin.name} onChange={(e) => setEditingOrigin({...editingOrigin, name: e.target.value})} style={{ width: '100%', minWidth: '120px' }} /></td>
+                <td><input type="number" value={parseFloat(editingOrigin.weightLoss || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} style={{ width: '70px', minWidth: '70px' }} />%</td>
+                <td><input type="number" step="0.01" value={parseFloat(editingOrigin.costPerKg || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} style={{ width: '80px', minWidth: '80px' }} /></td>
+                <td>₪{(parseFloat(editingOrigin.costPerKg) / (1 - parseFloat(editingOrigin.weightLoss) / 100)).toFixed(2)}</td>
+                <td><input type="number" step="0.1" value={parseFloat(editingOrigin.stock || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, stock: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
+                <td><input type="number" step="0.1" value={parseFloat(editingOrigin.roastedStock || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, roastedStock: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
+                <td><input type="number" step="0.1" value={parseFloat(editingOrigin.dailyAverage || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, dailyAverage: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
+                <td><input type="number" step="0.1" value={parseFloat(editingOrigin.minStock || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, minStock: e.target.value})} style={{ width: '70px', minWidth: '70px' }} /></td>
+                <td>
+                  <div className="action-buttons">
+                    <button onClick={saveEdit} className="btn-icon" title="שמור">💾</button>
+                    <button onClick={() => setEditingOrigin(null)} className="btn-icon" title="ביטול">❌</button>
+                  </div>
+                </td>
+              </tr>
+            );
+          }
+      
+          return (
+            <tr key={origin.id} style={isOutOfStock ? { background: '#FEE2E2' } : isLowStock ? { background: '#FFFBEB' } : {}}>
+              <td><strong>{origin.name}</strong> {isOutOfStock && <span style={{ color: '#DC2626', marginRight: '0.5rem' }}>❌</span>} {isLowStock && <span style={{ color: '#F59E0B', marginRight: '0.5rem' }}>⚠️</span>}</td>
+              <td>{origin.weight_loss}%</td>
+              <td>₪{parseFloat(origin.cost_per_kg || 0).toFixed(2)}</td>
+              <td>₪{costPerKgRoasted}</td>
+              <td style={stockStyle}>{parseFloat(origin.stock || 0).toFixed(2)} ק"ג {isLowStock && <span style={{ fontSize: '0.8em', color: '#D97706' }}>(מינימום: {minStock})</span>}</td>
+              <td>{parseFloat(origin.roasted_stock || 0).toFixed(2)} ק"ג</td>
+              <td>{parseFloat(origin.daily_average || 0).toFixed(2)} ק"ג</td>
+              <td>{parseFloat(origin.min_stock || 0).toFixed(2)} ק"ג</td>
+              <td>
+                <div className="action-buttons">
+                  <button onClick={() => startEdit(origin)} className="btn-icon">✏️</button>
+                  <button onClick={() => duplicateOrigin(origin)} className="btn-icon">📋</button>
+                  <button onClick={() => deleteOrigin(origin)} className="btn-icon">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
           </table>
         </div>
         {filteredOrigins.length === 0 && <div className="empty-state">{searchTerm ? 'לא נמצאו תוצאות' : 'אין זנים עדיין. הוסף זן ראשון!'}</div>}
