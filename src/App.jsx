@@ -610,6 +610,7 @@ function App() {
                 if (isEditing) {
                           return (
                           <tr key={origin.id} style={{ background: '#FFF9F0', borderTop: '2px solid #FF6B35', borderBottom: '2px solid #FF6B35', maxWidth: '100%', tableLayout: 'fixed' }}>
+                            <td><input type="text" value={editingOrigin.name} onChange={(e) => setEditingOrigin({...editingOrigin, name: e.target.value})} style={{ width: '100%', minWidth: '120px' }} /></td>
                             <td><input type="number" value={parseFloat(editingOrigin.weightLoss || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, weightLoss: e.target.value})} style={{ width: '70px', minWidth: '70px' }} />%</td>
                             <td><input type="number" step="0.01" value={parseFloat(editingOrigin.costPerKg || 0).toFixed(2)} onChange={(e) => setEditingOrigin({...editingOrigin, costPerKg: e.target.value})} style={{ width: '80px', minWidth: '80px' }} /></td>
                             <td>₪{(parseFloat(editingOrigin.costPerKg) / (1 - parseFloat(editingOrigin.weightLoss) / 100)).toFixed(2)}</td>
