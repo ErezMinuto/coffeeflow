@@ -4,7 +4,7 @@ import RoastProfiles from './RoastProfiles';
 import { getTelegramSettings, saveTelegramSettings, sendTelegramMessage } from '../../lib/telegram';
 
 export default function Settings() {
-  const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast } = useApp();
+  const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast, user } = useApp();
 
   const [newOperator,     setNewOperator]     = useState('');
   const [editingOperator, setEditingOperator] = useState(null);
@@ -203,17 +203,48 @@ export default function Settings() {
       <div className="section" style={{ marginTop: '2rem' }}>
         <h2>📱 חיבור טלגרם</h2>
         <p style={{ color: '#666', marginBottom: '1rem' }}>
-          הגדר בוט טלגרם כדי לקבל התראות על לקוחות ממתינים לאחר כל קלייה.
+          הגדר בוט טלגרם לקבלת התראות וכדי לאפשר לצוות להוסיף לקוחות ממתינים ישירות מהקבוצה.
         </p>
+
+        {/* User ID copy box */}
+        {user && (
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+            <strong style={{ color: '#065F46' }}>🔑 ה-User ID שלך (נדרש להגדרת הבוט):</strong>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center' }}>
+              <code style={{ background: '#DCFCE7', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8rem', flex: 1, wordBreak: 'break-all' }}>
+                {user.id}
+              </code>
+              <button
+                onClick={() => { navigator.clipboard.writeText(user.id); showToast('✅ User ID הועתק!'); }}
+                className="btn-small"
+              >📋 העתק</button>
+            </div>
+          </div>
+        )}
+
         <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#0369A1' }}>
-          <strong>איך מגדירים בוט:</strong>
-          <ol style={{ margin: '0.5rem 0 0 1.2rem', lineHeight: '1.8' }}>
-            <li>פתחו טלגרם ושלחו הודעה ל<strong>@BotFather</strong></li>
-            <li>שלחו <code>/newbot</code> ועקבו אחרי ההוראות</li>
-            <li>קבלו את ה-<strong>Bot Token</strong> והדביקו אותו למטה</li>
-            <li>הוסיפו את הבוט לקבוצת הצוות</li>
-            <li>כדי לקבל את ה-Chat ID: שלחו הודעה לקבוצה, פתחו <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code></li>
+          <strong>איך מגדירים את הבוט לקבלת פקודות מהקבוצה:</strong>
+          <ol style={{ margin: '0.5rem 0 0 1.2rem', lineHeight: '2' }}>
+            <li>שמור את ה-Bot Token וה-Chat ID למטה</li>
+            <li>פתח <strong>Supabase → Edge Functions → Secrets</strong> והוסף:
+              <ul style={{ marginTop: '4px', marginRight: '1rem' }}>
+                <li><code>TELEGRAM_BOT_TOKEN</code> = ה-token של הבוט</li>
+                <li><code>TELEGRAM_CHAT_ID</code> = ה-Chat ID של הקבוצה</li>
+                <li><code>COFFEEFLOW_USER_ID</code> = ה-User ID שלמעלה</li>
+              </ul>
+            </li>
+            <li>הרץ פעם אחת בטרמינל: <br/>
+              <code style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                curl "https://api.telegram.org/bot{'<TOKEN>'}/setWebhook?url=https://{'<PROJECT>'}.supabase.co/functions/v1/telegram-bot"
+              </code>
+            </li>
           </ol>
+          <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: '#E0F2FE', borderRadius: '6px' }}>
+            <strong>פקודות בקבוצה:</strong>
+            <div><code>/task ירון מנחם, מקינטה מוקה מקט 387874, טלפון 054-7373737</code></div>
+            <div><code>/tasks</code> — רשימת ממתינים</div>
+            <div><code>/done 2</code> — סמן #2 כטופל</div>
+          </div>
         </div>
         <div className="form-card">
           <div className="form-group">
