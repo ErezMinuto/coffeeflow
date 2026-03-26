@@ -2,6 +2,13 @@
  * Pure utility functions — no hooks, no imports
  */
 
+export const blendedWeightLoss = (profileIngredients, origins) => {
+  return profileIngredients.reduce((sum, ing) => {
+    const origin = origins.find(o => o.id === ing.origin_id);
+    return sum + ((origin?.weight_loss || 0) * ing.percentage / 100);
+  }, 0);
+};
+
 export const calculateRoastedWeight = (greenWeight, weightLossPercent) => {
   return (greenWeight * (1 - weightLossPercent / 100)).toFixed(1);
 };

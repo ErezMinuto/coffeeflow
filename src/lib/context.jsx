@@ -4,7 +4,8 @@ import { useSupabaseData, useCostSettings } from './hooks';
 import {
   calculateProductCost as _calculateProductCost,
   calculateRoastedWeight,
-  getOriginById as _getOriginById
+  getOriginById as _getOriginById,
+  blendedWeightLoss
 } from './utils';
 
 const AppContext = createContext(null);
@@ -13,18 +14,24 @@ export const AppProvider = ({ children }) => {
   const { user } = useUser();
   const [toasts, setToasts] = useState([]);
 
-  const originsDb   = useSupabaseData('origins');
-  const productsDb  = useSupabaseData('products');
-  const roastsDb    = useSupabaseData('roasts');
-  const operatorsDb = useSupabaseData('operators');
+  const originsDb                = useSupabaseData('origins');
+  const productsDb               = useSupabaseData('products');
+  const roastsDb                 = useSupabaseData('roasts');
+  const operatorsDb              = useSupabaseData('operators');
+  const roastProfilesDb          = useSupabaseData('roast_profiles');
+  const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients');
+  const roastComponentsDb        = useSupabaseData('roast_components');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {
-    origins:      originsDb.data   || [],
-    products:     productsDb.data  || [],
-    roasts:       roastsDb.data    || [],
-    operators:    operatorsDb.data || [],
-    costSettings: costSettings     || {}
+    origins:                 originsDb.data                || [],
+    products:                productsDb.data               || [],
+    roasts:                  roastsDb.data                 || [],
+    operators:               operatorsDb.data              || [],
+    roastProfiles:           roastProfilesDb.data          || [],
+    roastProfileIngredients: roastProfileIngredientsDb.data || [],
+    roastComponents:         roastComponentsDb.data        || [],
+    costSettings:            costSettings                  || {}
   };
 
   const showToast = (message, type = 'success') => {
@@ -43,9 +50,10 @@ export const AppProvider = ({ children }) => {
       user,
       data,
       originsDb, productsDb, roastsDb, operatorsDb,
+      roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
-      calculateProductCost, calculateRoastedWeight, getOriginById
+      calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss
     }}>
       {children}
     </AppContext.Provider>

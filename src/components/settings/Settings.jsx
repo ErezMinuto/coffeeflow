@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
+import RoastProfiles from './RoastProfiles';
 
 export default function Settings() {
   const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast } = useApp();
@@ -168,6 +169,9 @@ export default function Settings() {
           <div className="empty-state">טוען הגדרות...</div>
         )}
       </div>
+
+      {/* Roast Profiles */}
+      <RoastProfiles />
     </div>
   );
 }
