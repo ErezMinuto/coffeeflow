@@ -18,9 +18,10 @@ export const AppProvider = ({ children }) => {
   const productsDb               = useSupabaseData('products');
   const roastsDb                 = useSupabaseData('roasts');
   const operatorsDb              = useSupabaseData('operators');
-  const roastProfilesDb          = useSupabaseData('roast_profiles');
+  const roastProfilesDb           = useSupabaseData('roast_profiles');
   const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients');
-  const roastComponentsDb        = useSupabaseData('roast_components');
+  const roastComponentsDb         = useSupabaseData('roast_components');
+  const waitingCustomersDb        = useSupabaseData('waiting_customers');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {
@@ -28,9 +29,10 @@ export const AppProvider = ({ children }) => {
     products:                productsDb.data               || [],
     roasts:                  roastsDb.data                 || [],
     operators:               operatorsDb.data              || [],
-    roastProfiles:           roastProfilesDb.data          || [],
+    roastProfiles:           roastProfilesDb.data           || [],
     roastProfileIngredients: roastProfileIngredientsDb.data || [],
-    roastComponents:         roastComponentsDb.data        || [],
+    roastComponents:         roastComponentsDb.data         || [],
+    waitingCustomers:        waitingCustomersDb.data        || [],
     costSettings:            costSettings                  || {}
   };
 
@@ -53,7 +55,7 @@ export const AppProvider = ({ children }) => {
       user,
       data,
       originsDb, productsDb, roastsDb, operatorsDb,
-      roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
+      roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss

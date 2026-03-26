@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
+import { notifyTeamIfWaiting } from '../../lib/telegram';
 
 const DEFAULT_ROAST_KG = 15;
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
@@ -242,7 +243,10 @@ export default function RoastingList({
 
     setSaving(false);
     setCheckedOrigins({}); setCheckedProfiles({}); setAmounts({});
-    if (success > 0) showToast(`✅ ${success} קליות נרשמו בהצלחה!`);
+    if (success > 0) {
+      showToast(`✅ ${success} קליות נרשמו בהצלחה!`);
+      await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${success} קליות`, showToast });
+    }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────

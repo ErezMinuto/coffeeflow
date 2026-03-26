@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
+import { notifyTeamIfWaiting } from '../../lib/telegram';
 import RoastingList from './RoastingList';
 
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
@@ -10,7 +11,7 @@ const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37
 export default function Roasting() {
   const {
     data, originsDb, roastsDb, roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
-    getOriginById, calculateRoastedWeight, showToast
+    getOriginById, calculateRoastedWeight, showToast, waitingCustomersDb
   } = useApp();
 
   // Form mode: 'origin' (simple) | 'profile' (blend / multi-level)
@@ -90,6 +91,7 @@ export default function Roasting() {
       await originsDb.refresh();
       setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
       showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי`);
+      await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${origin.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording roast:', err);
       showToast('❌ שגיאה ברישום קלייה', 'error');
@@ -154,6 +156,7 @@ export default function Roasting() {
 
       setGreenWeight('15'); setSelectedProfileId(''); setSelectedOperator('');
       showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
+      await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${profile.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording profile roast:', err);
       showToast('❌ שגיאה ברישום קלייה', 'error');

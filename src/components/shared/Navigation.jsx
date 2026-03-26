@@ -1,18 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
+import { useApp } from '../../lib/context';
 
-const menuItems = [
+const staticItems = [
   { path: '/dashboard',  icon: '📊', label: 'Dashboard'  },
   { path: '/origins',    icon: '🌱', label: 'Origins'    },
   { path: '/roasting',   icon: '🔥', label: 'Roasting'   },
   { path: '/products',   icon: '📦', label: 'Products'   },
   { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
+  { path: '/tasks',      icon: '📋', label: 'Tasks'      },
   { path: '/settings',   icon: '⚙️', label: 'Settings'   },
 ];
 
 export default function Navigation() {
   const { user } = useUser();
+  const { data }  = useApp();
+
+  const pendingTasks = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
 
   return (
     <nav className="navbar">
@@ -26,7 +31,7 @@ export default function Navigation() {
       </div>
 
       <div className="nav-menu">
-        {menuItems.map(item => (
+        {staticItems.map(item => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -34,6 +39,15 @@ export default function Navigation() {
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
+            {item.path === '/tasks' && pendingTasks > 0 && (
+              <span style={{
+                background: '#DC2626', color: 'white',
+                borderRadius: '10px', fontSize: '0.7rem', fontWeight: '700',
+                padding: '1px 6px', marginRight: '4px', lineHeight: '1.4'
+              }}>
+                {pendingTasks}
+              </span>
+            )}
           </NavLink>
         ))}
       </div>

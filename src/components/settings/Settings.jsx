@@ -1,12 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../lib/context';
 import RoastProfiles from './RoastProfiles';
+import { getTelegramSettings, saveTelegramSettings, sendTelegramMessage } from '../../lib/telegram';
 
 export default function Settings() {
   const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast } = useApp();
 
   const [newOperator,     setNewOperator]     = useState('');
   const [editingOperator, setEditingOperator] = useState(null);
+  const [telegram,        setTelegram]        = useState({ botToken: '', chatId: '' });
+  const [telegramSaved,   setTelegramSaved]   = useState(false);
+  const [telegramTesting, setTelegramTesting] = useState(false);
+
+  useEffect(() => {
+    const saved = getTelegramSettings();
+    if (saved.botToken || saved.chatId) setTelegram(saved);
+  }, []);
+
+  const saveTelegram = () => {
+    saveTelegramSettings(telegram);
+    setTelegramSaved(true);
+    setTimeout(() => setTelegramSaved(false), 2000);
+    showToast('✅ הגדרות טלגרם נשמרו!');
+  };
+
+  const testTelegram = async () => {
+    if (!telegram.botToken || !telegram.chatId) { showToast('⚠️ נא למלא טוקן וצ\'אט ID', 'warning'); return; }
+    setTelegramTesting(true);
+    try {
+      await sendTelegramMessage(telegram.botToken, telegram.chatId, '✅ CoffeeFlow מחובר בהצלחה לטלגרם! 🎉');
+      showToast('✅ הודעת בדיקה נשלחה לטלגרם!');
+    } catch (err) {
+      showToast(`❌ שגיאת טלגרם: ${err.message}`, 'error');
+    } finally {
+      setTelegramTesting(false);
+    }
+  };
 
   // ── OPERATORS ─────────────────────────────────────────────────────────────────
 
@@ -168,6 +197,52 @@ export default function Settings() {
         ) : (
           <div className="empty-state">טוען הגדרות...</div>
         )}
+      </div>
+
+      {/* Telegram */}
+      <div className="section" style={{ marginTop: '2rem' }}>
+        <h2>📱 חיבור טלגרם</h2>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          הגדר בוט טלגרם כדי לקבל התראות על לקוחות ממתינים לאחר כל קלייה.
+        </p>
+        <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#0369A1' }}>
+          <strong>איך מגדירים בוט:</strong>
+          <ol style={{ margin: '0.5rem 0 0 1.2rem', lineHeight: '1.8' }}>
+            <li>פתחו טלגרם ושלחו הודעה ל<strong>@BotFather</strong></li>
+            <li>שלחו <code>/newbot</code> ועקבו אחרי ההוראות</li>
+            <li>קבלו את ה-<strong>Bot Token</strong> והדביקו אותו למטה</li>
+            <li>הוסיפו את הבוט לקבוצת הצוות</li>
+            <li>כדי לקבל את ה-Chat ID: שלחו הודעה לקבוצה, פתחו <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code></li>
+          </ol>
+        </div>
+        <div className="form-card">
+          <div className="form-group">
+            <label>Bot Token</label>
+            <input
+              type="text" placeholder="1234567890:AAF..."
+              value={telegram.botToken}
+              onChange={e => setTelegram({ ...telegram, botToken: e.target.value })}
+              style={{ fontFamily: 'monospace' }}
+            />
+          </div>
+          <div className="form-group">
+            <label>Chat ID (קבוצת הצוות)</label>
+            <input
+              type="text" placeholder="-1001234567890"
+              value={telegram.chatId}
+              onChange={e => setTelegram({ ...telegram, chatId: e.target.value })}
+              style={{ fontFamily: 'monospace' }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button onClick={saveTelegram} className="btn-primary" style={{ flex: 1 }}>
+              {telegramSaved ? '✅ נשמר!' : '💾 שמור הגדרות'}
+            </button>
+            <button onClick={testTelegram} disabled={telegramTesting} className="btn-small" style={{ flex: 1 }}>
+              {telegramTesting ? '⏳ שולח...' : '📨 שלח הודעת בדיקה'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Roast Profiles */}
