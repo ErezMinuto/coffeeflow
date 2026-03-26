@@ -70,12 +70,10 @@ export default function RoastProfiles() {
   const saveNew = async () => {
     if (!validate(newProfile)) return;
     try {
-      const { data: inserted, error } = await supabase
-        .from('roast_profiles')
-        .insert({ name: newProfile.name.trim(), roast_level: newProfile.roast_level, notes: newProfile.notes, user_id: data.roastProfiles[0]?.user_id || data.origins[0]?.user_id })
-        .select()
-        .single();
-      if (error) throw error;
+      // roastProfilesDb.insert() auto-injects user_id and returns the inserted row
+      const inserted = await roastProfilesDb.insert({
+        name: newProfile.name.trim(), roast_level: newProfile.roast_level, notes: newProfile.notes
+      });
 
       const ingredientRows = newProfile.ingredients.map(ing => ({
         profile_id: inserted.id, origin_id: ing.origin_id, percentage: ing.percentage
@@ -83,7 +81,6 @@ export default function RoastProfiles() {
       const { error: ingError } = await supabase.from('roast_profile_ingredients').insert(ingredientRows);
       if (ingError) throw ingError;
 
-      await roastProfilesDb.refresh();
       await roastProfileIngredientsDb.refresh();
       setAdding(false);
       setNewProfile(emptyProfile());
@@ -104,10 +101,10 @@ export default function RoastProfiles() {
   const saveEdit = async () => {
     if (!validate(editing)) return;
     try {
-      await supabase.from('roast_profiles').update({
+      await roastProfilesDb.update(editing.id, {
         name: editing.name.trim(), roast_level: editing.roast_level, notes: editing.notes,
         updated_at: new Date().toISOString()
-      }).eq('id', editing.id);
+      });
 
       // Replace all ingredients
       await supabase.from('roast_profile_ingredients').delete().eq('profile_id', editing.id);
