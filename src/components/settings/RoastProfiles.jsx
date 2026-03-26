@@ -109,6 +109,7 @@ export default function RoastProfiles() {
         name: editing.name.trim(), roast_level: editing.roast_level, notes: editing.notes,
         daily_average: parseFloat(editing.daily_average) || 0,
         min_stock: parseFloat(editing.min_stock) || 0,
+        roasted_stock: parseFloat(editing.roasted_stock) || 0,
         updated_at: new Date().toISOString()
       });
 
@@ -245,7 +246,11 @@ export default function RoastProfiles() {
               </select>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>מלאי קלוי נוכחי (ק"ג)</label>
+              <input type="number" step="0.1" value={editing.roasted_stock ?? ''} onChange={e => setEditing({ ...editing, roasted_stock: e.target.value })} />
+            </div>
             <div className="form-group">
               <label>ממוצע מכירות יומי (ק"ג)</label>
               <input type="number" step="0.1" value={editing.daily_average ?? ''} onChange={e => setEditing({ ...editing, daily_average: e.target.value })} />
