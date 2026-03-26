@@ -17,7 +17,19 @@ export const getOriginById = (origins, id) => {
   return origins.find(o => o.id === id);
 };
 
-export const calculateProductCost = (product, origins, costSettings, breakdown = false) => {
+/**
+ * Calculate product cost.
+ * Recipe ingredients can be:
+ *   - New format:    { sourceType: 'origin'|'profile', sourceId: number, percentage }
+ *   - Legacy format: { originId: number, percentage }
+ *
+ * Profile ingredients use the profile's blend recipe (from roastProfileIngredients)
+ * to compute a blended cost-per-kg-roasted.
+ */
+export const calculateProductCost = (
+  product, origins, costSettings, breakdown = false,
+  roastProfiles = [], roastProfileIngredients = []
+) => {
   const settings = costSettings || {
     bag_330g: 0.70,
     bag_250g: 0.60,
@@ -31,19 +43,41 @@ export const calculateProductCost = (product, origins, costSettings, breakdown =
   };
 
   let beansCost = 0;
+
   product.recipe.forEach(ingredient => {
-    const origin = origins.find(o => o.id === ingredient.originId);
-    if (origin) {
-      const weight = (product.size / 1000) * (ingredient.percentage / 100);
-      const yieldPercent = 1 - (origin.weight_loss / 100);
-      const costPerKgRoasted = origin.cost_per_kg / yieldPercent;
-      beansCost += weight * costPerKgRoasted;
+    if (ingredient.sourceType === 'profile' && ingredient.sourceId) {
+      // Profile ingredient — compute blended green cost + blended weight loss
+      const profileIngs = roastProfileIngredients.filter(pi => pi.profile_id === ingredient.sourceId);
+      const wl = blendedWeightLoss(profileIngs, origins);
+      const blendedGreenCostPerKg = profileIngs.reduce((sum, pi) => {
+        const o = origins.find(o => o.id === pi.origin_id);
+        return sum + ((o?.cost_per_kg || 0) * pi.percentage / 100);
+      }, 0);
+      const yieldPct = wl < 100 ? 1 - wl / 100 : 1;
+      const costPerKgRoasted = blendedGreenCostPerKg / yieldPct;
+      beansCost += (product.size / 1000) * (ingredient.percentage / 100) * costPerKgRoasted;
+    } else {
+      // Origin ingredient — new { sourceType:'origin', sourceId } or legacy { originId }
+      const originId = ingredient.sourceId || ingredient.originId;
+      const origin = origins.find(o => o.id === originId);
+      if (origin) {
+        const weight = (product.size / 1000) * (ingredient.percentage / 100);
+        const yieldPercent = 1 - (origin.weight_loss / 100);
+        const costPerKgRoasted = origin.cost_per_kg / yieldPercent;
+        beansCost += weight * costPerKgRoasted;
+      }
     }
   });
 
   const avgWeightLoss = product.recipe.reduce((sum, ing) => {
-    const origin = origins.find(o => o.id === ing.originId);
-    return sum + (origin ? origin.weight_loss * (ing.percentage / 100) : 0);
+    if (ing.sourceType === 'profile' && ing.sourceId) {
+      const profileIngs = roastProfileIngredients.filter(pi => pi.profile_id === ing.sourceId);
+      return sum + (blendedWeightLoss(profileIngs, origins) * (ing.percentage / 100));
+    } else {
+      const originId = ing.sourceId || ing.originId;
+      const origin = origins.find(o => o.id === originId);
+      return sum + (origin ? origin.weight_loss * (ing.percentage / 100) : 0);
+    }
   }, 0);
 
   const roastedKgPerRoast = settings.batch_size_kg * (1 - avgWeightLoss / 100);

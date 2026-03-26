@@ -1,57 +1,76 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Ingredient shape (new):  { sourceType: 'origin'|'profile', sourceId: number, percentage }
+ * Ingredient shape (legacy): { originId: number, percentage }
+ *
+ * emptyIngredient() returns a blank new-format ingredient.
+ */
+const emptyIngredient = () => ({ sourceType: 'origin', sourceId: '', percentage: 0 });
+
+/** Encode ingredient to select value string */
+const toSelectValue = (ing) => {
+  if (ing.sourceType === 'profile' && ing.sourceId) return `profile:${ing.sourceId}`;
+  const sid = ing.sourceId || ing.originId || '';
+  return sid ? `origin:${sid}` : '';
+};
+
+/** Decode select value string to partial ingredient */
+const fromSelectValue = (val) => {
+  if (!val) return { sourceType: 'origin', sourceId: '' };
+  const [type, id] = val.split(':');
+  return { sourceType: type, sourceId: parseInt(id) };
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function Products() {
-  const { data, productsDb, getOriginById, calculateProductCost, showToast } = useApp();
+  const { data, productsDb, calculateProductCost, showToast } = useApp();
 
   const [editingProduct,  setEditingProduct]  = useState(null);
   const [addingProduct,   setAddingProduct]   = useState(false);
   const [showBreakdownId, setShowBreakdownId] = useState(null);
   const [newProduct, setNewProduct] = useState({
     name: '', size: 330, type: 'single', description: '',
-    recipe: [{ originId: '', percentage: 100 }]
+    recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }]
   });
 
-  // ── RECIPE HELPERS ────────────────────────────────────────────────────────────
+  // ── Ingredient name display ─────────────────────────────────────────────────
 
-  const addRecipeIngredient = (isEditing = false) => {
-    if (isEditing) {
-      setEditingProduct({ ...editingProduct, recipe: [...editingProduct.recipe, { originId: '', percentage: 0 }] });
-    } else {
-      setNewProduct({ ...newProduct, recipe: [...newProduct.recipe, { originId: '', percentage: 0 }] });
+  const getIngredientLabel = (ing) => {
+    if (ing.sourceType === 'profile' && ing.sourceId) {
+      return data.roastProfiles.find(p => p.id === ing.sourceId)?.name || '—';
     }
+    const originId = ing.sourceId || ing.originId;
+    return data.origins.find(o => o.id === originId)?.name || '—';
   };
 
-  const removeRecipeIngredient = (index, isEditing = false) => {
-    if (isEditing) {
-      setEditingProduct({ ...editingProduct, recipe: editingProduct.recipe.filter((_, i) => i !== index) });
-    } else {
-      setNewProduct({ ...newProduct, recipe: newProduct.recipe.filter((_, i) => i !== index) });
-    }
+  // ── Recipe helpers ──────────────────────────────────────────────────────────
+
+  const updateRecipe = (product, setProduct, index, changes) => {
+    const r = product.recipe.map((ing, i) => i === index ? { ...ing, ...changes } : ing);
+    setProduct({ ...product, recipe: r });
   };
 
-  const updateRecipeIngredient = (index, field, value, isEditing = false) => {
-    if (isEditing) {
-      const r = [...editingProduct.recipe];
-      r[index][field] = field === 'originId' ? parseInt(value) : parseFloat(value);
-      setEditingProduct({ ...editingProduct, recipe: r });
-    } else {
-      const r = [...newProduct.recipe];
-      r[index][field] = field === 'originId' ? parseInt(value) : parseFloat(value);
-      setNewProduct({ ...newProduct, recipe: r });
-    }
-  };
+  const addIngredient = (product, setProduct) =>
+    setProduct({ ...product, recipe: [...product.recipe, emptyIngredient()] });
 
-  // ── VALIDATION ────────────────────────────────────────────────────────────────
+  const removeIngredient = (product, setProduct, index) =>
+    setProduct({ ...product, recipe: product.recipe.filter((_, i) => i !== index) });
+
+  // ── Validation ──────────────────────────────────────────────────────────────
 
   const validateProduct = (product) => {
     if (!product.name.trim()) { showToast('⚠️ נא למלא שם מוצר', 'warning'); return false; }
     if (!product.size || product.size <= 0) { showToast('⚠️ נא למלא גודל מוצר', 'warning'); return false; }
-    if (!product.recipe || product.recipe.length === 0) { showToast('⚠️ נא להוסיף לפחות רכיב אחד למתכון', 'warning'); return false; }
+    if (!product.recipe || product.recipe.length === 0) { showToast('⚠️ נא להוסיף לפחות רכיב אחד', 'warning'); return false; }
     for (const ing of product.recipe) {
-      if (!ing.originId) { showToast('⚠️ נא לבחור זן לכל רכיב במתכון', 'warning'); return false; }
+      if (!ing.sourceId && !ing.originId) { showToast('⚠️ נא לבחור מקור לכל רכיב', 'warning'); return false; }
     }
-    const total = product.recipe.reduce((s, i) => s + (i.percentage || 0), 0);
+    const total = product.recipe.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
     if (Math.abs(total - 100) > 0.1) {
       showToast(`⚠️ סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
       return false;
@@ -59,24 +78,33 @@ export default function Products() {
     return true;
   };
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────────
+  // ── CRUD ────────────────────────────────────────────────────────────────────
 
   const saveNewProduct = async () => {
     if (!validateProduct(newProduct)) return;
     try {
-      await productsDb.insert({ name: newProduct.name, size: parseInt(newProduct.size), type: newProduct.type, description: newProduct.description, recipe: newProduct.recipe });
+      await productsDb.insert({
+        name: newProduct.name, size: parseInt(newProduct.size),
+        type: newProduct.type, description: newProduct.description,
+        recipe: newProduct.recipe
+      });
       await productsDb.refresh();
       setAddingProduct(false);
-      setNewProduct({ name: '', size: 330, type: 'single', description: '', recipe: [{ originId: '', percentage: 100 }] });
+      setNewProduct({ name: '', size: 330, type: 'single', description: '', recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }] });
       showToast('✅ מוצר נוסף בהצלחה!');
-    } catch (error) {
-      console.error('Error adding product:', error);
+    } catch (err) {
+      console.error(err);
       showToast('❌ שגיאה בהוספת מוצר', 'error');
     }
   };
 
   const startEditProduct = (product) => {
-    setEditingProduct({ ...product, recipe: product.recipe.map(r => ({ ...r })) });
+    // Normalise legacy recipes so the form always uses new format
+    const recipe = (product.recipe || []).map(ing => {
+      if (ing.sourceType) return { ...ing };
+      return { sourceType: 'origin', sourceId: ing.originId, percentage: ing.percentage };
+    });
+    setEditingProduct({ ...product, recipe });
   };
 
   const saveEditProduct = async () => {
@@ -89,8 +117,8 @@ export default function Products() {
       });
       setEditingProduct(null);
       showToast('✅ מוצר עודכן בהצלחה!');
-    } catch (error) {
-      console.error('Error updating product:', error);
+    } catch (err) {
+      console.error(err);
       showToast('❌ שגיאה בעדכון מוצר', 'error');
     }
   };
@@ -100,8 +128,8 @@ export default function Products() {
     try {
       await productsDb.remove(product.id);
       showToast('✅ מוצר נמחק!');
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (err) {
+      console.error(err);
       showToast('❌ שגיאה במחיקת מוצר', 'error');
     }
   };
@@ -109,33 +137,55 @@ export default function Products() {
   const duplicateProduct = async (product) => {
     try {
       await productsDb.insert({ name: product.name + ' (עותק)', size: product.size, type: product.type, description: product.description, recipe: product.recipe });
-      showToast('✅ מוצר שוכפל בהצלחה!');
-    } catch (error) {
-      console.error('Error duplicating product:', error);
+      showToast('✅ מוצר שוכפל!');
+    } catch (err) {
+      console.error(err);
       showToast('❌ שגיאה בשכפול מוצר', 'error');
     }
   };
 
-  // ── RECIPE FORM (shared between add & edit) ───────────────────────────────────
+  // ── Recipe form (shared between add & edit) ─────────────────────────────────
 
-  const RecipeForm = ({ product, isEditing }) => {
-    const total = product.recipe.reduce((s, i) => s + (i.percentage || 0), 0);
+  const RecipeForm = ({ product, setProduct }) => {
+    const total = product.recipe.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
+    const hasProfiles = data.roastProfiles.length > 0;
+
     return (
       <div className="form-group">
         <label>מתכון (סה"כ חייב להיות 100%) *</label>
         {product.recipe.map((ing, index) => (
           <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
-            <select value={ing.originId} onChange={e => updateRecipeIngredient(index, 'originId', e.target.value, isEditing)}>
-              <option value="">בחר זן...</option>
-              {data.origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            <select
+              value={toSelectValue(ing)}
+              onChange={e => updateRecipe(product, setProduct, index, fromSelectValue(e.target.value))}
+            >
+              <option value="">בחר מקור...</option>
+              {hasProfiles && (
+                <optgroup label="🔥 פרופילי קלייה">
+                  {data.roastProfiles.map(p => (
+                    <option key={`profile:${p.id}`} value={`profile:${p.id}`}>
+                      {p.name}{p.roast_level && p.roast_level !== 'none' ? ` (${p.roast_level})` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="🌱 זנים">
+                {data.origins.map(o => (
+                  <option key={`origin:${o.id}`} value={`origin:${o.id}`}>{o.name}</option>
+                ))}
+              </optgroup>
             </select>
-            <input type="number" placeholder="%" value={ing.percentage} onChange={e => updateRecipeIngredient(index, 'percentage', e.target.value, isEditing)} />
+            <input
+              type="number" placeholder="%" min="0" max="100" step="0.1"
+              value={ing.percentage}
+              onChange={e => updateRecipe(product, setProduct, index, { percentage: parseFloat(e.target.value) || 0 })}
+            />
             {product.recipe.length > 1 && (
-              <button onClick={() => removeRecipeIngredient(index, isEditing)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
+              <button onClick={() => removeIngredient(product, setProduct, index)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
             )}
           </div>
         ))}
-        <button onClick={() => addRecipeIngredient(isEditing)} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
+        <button onClick={() => addIngredient(product, setProduct)} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
         <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
           סה"כ: {total}%
         </div>
@@ -143,7 +193,7 @@ export default function Products() {
     );
   };
 
-  // ── RENDER ────────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="page">
@@ -160,7 +210,7 @@ export default function Products() {
           <h3>➕ הוסף מוצר חדש</h3>
           <div className="form-group">
             <label>שם המוצר *</label>
-            <input type="text" placeholder="למשל: Aristo Blend" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+            <input type="text" placeholder="למשל: Kenya Light 250g" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
@@ -177,9 +227,9 @@ export default function Products() {
           </div>
           <div className="form-group">
             <label>תיאור (אופציונלי)</label>
-            <input type="text" placeholder="למשל: שוקולדי ומאוזן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
+            <input type="text" placeholder="למשל: פירותי ומרענן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
           </div>
-          <RecipeForm product={newProduct} isEditing={false} />
+          <RecipeForm product={newProduct} setProduct={setNewProduct} />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveNewProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור מוצר</button>
             <button onClick={() => setAddingProduct(false)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
@@ -212,7 +262,7 @@ export default function Products() {
             <label>תיאור</label>
             <input type="text" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} />
           </div>
-          <RecipeForm product={editingProduct} isEditing={true} />
+          <RecipeForm product={editingProduct} setProduct={setEditingProduct} />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveEditProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
             <button onClick={() => setEditingProduct(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
@@ -224,9 +274,9 @@ export default function Products() {
       {!addingProduct && !editingProduct && (
         <div className="products-grid">
           {data.products.map(product => {
-            const cost       = calculateProductCost(product);
-            const breakdown  = calculateProductCost(product, true);
-            const isOpen     = showBreakdownId === product.id;
+            const cost      = calculateProductCost(product);
+            const breakdown = calculateProductCost(product, true);
+            const isOpen    = showBreakdownId === product.id;
 
             return (
               <div key={product.id} className="product-card">
@@ -243,10 +293,9 @@ export default function Products() {
 
                 <div className="product-recipe">
                   <strong>מתכון:</strong>
-                  {product.recipe.map((ing, i) => {
-                    const origin = getOriginById(ing.originId);
-                    return <div key={i} className="recipe-item">• {ing.percentage}% {origin?.name}</div>;
-                  })}
+                  {(product.recipe || []).map((ing, i) => (
+                    <div key={i} className="recipe-item">• {ing.percentage}% {getIngredientLabel(ing)}</div>
+                  ))}
                 </div>
 
                 <div className="product-cost">

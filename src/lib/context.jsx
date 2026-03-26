@@ -43,7 +43,10 @@ export const AppProvider = ({ children }) => {
   const getOriginById = (id) => _getOriginById(data.origins, id);
 
   const calculateProductCost = (product, breakdown = false) =>
-    _calculateProductCost(product, data.origins, costSettings, breakdown);
+    _calculateProductCost(
+      product, data.origins, costSettings, breakdown,
+      data.roastProfiles, data.roastProfileIngredients
+    );
 
   return (
     <AppContext.Provider value={{
