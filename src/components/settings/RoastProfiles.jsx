@@ -6,52 +6,62 @@ const ROAST_LEVEL_LABELS = { none: 'ללא', light: 'לייט', medium: 'מדי�
 const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37' };
 
 const emptyProfile = () => ({
-  name: '',
-  roast_level: 'none',
-  notes: '',
-  daily_average: '',
-  min_stock: '',
+  name: '', roast_level: 'none', notes: '', daily_average: '', min_stock: '',
   ingredients: [{ origin_id: '', percentage: 100 }]
 });
+
+// ── IngredientForm — defined OUTSIDE RoastProfiles to prevent remounting ──────
+
+function IngredientForm({ ingredients, onChange, origins }) {
+  const total = ingredients.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
+
+  const update = (index, field, value) => {
+    const arr = ingredients.map((ing, i) =>
+      i === index ? { ...ing, [field]: field === 'origin_id' ? parseInt(value) : parseFloat(value) } : ing
+    );
+    onChange(arr);
+  };
+
+  const add    = () => onChange([...ingredients, { origin_id: '', percentage: 0 }]);
+  const remove = (index) => onChange(ingredients.filter((_, i) => i !== index));
+
+  return (
+    <div className="form-group">
+      <label>רכיבים (סה"כ חייב להיות 100%) *</label>
+      {ingredients.map((ing, index) => (
+        <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
+          <select value={ing.origin_id || ''} onChange={e => update(index, 'origin_id', e.target.value)}>
+            <option value="">בחר זן...</option>
+            {origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+          <input
+            type="number" placeholder="%" min="0" max="100" step="0.1"
+            value={ing.percentage}
+            onChange={e => update(index, 'percentage', e.target.value)}
+          />
+          {ingredients.length > 1 && (
+            <button onClick={() => remove(index)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
+          )}
+        </div>
+      ))}
+      <button onClick={add} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף זן</button>
+      <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
+        סה"כ: {total}%
+      </div>
+    </div>
+  );
+}
+
+// ── RoastProfiles ─────────────────────────────────────────────────────────────
 
 export default function RoastProfiles() {
   const { data, roastProfilesDb, roastProfileIngredientsDb, showToast } = useApp();
 
-  const [adding,   setAdding]   = useState(false);
-  const [editing,  setEditing]  = useState(null); // { ...profile, ingredients: [...] }
+  const [adding,     setAdding]     = useState(false);
+  const [editing,    setEditing]    = useState(null);
   const [newProfile, setNewProfile] = useState(emptyProfile());
 
-  // ── INGREDIENT HELPERS ────────────────────────────────────────────────────────
-
-  const addIngredient = (isEditing = false) => {
-    if (isEditing) {
-      setEditing({ ...editing, ingredients: [...editing.ingredients, { origin_id: '', percentage: 0 }] });
-    } else {
-      setNewProfile({ ...newProfile, ingredients: [...newProfile.ingredients, { origin_id: '', percentage: 0 }] });
-    }
-  };
-
-  const removeIngredient = (index, isEditing = false) => {
-    if (isEditing) {
-      setEditing({ ...editing, ingredients: editing.ingredients.filter((_, i) => i !== index) });
-    } else {
-      setNewProfile({ ...newProfile, ingredients: newProfile.ingredients.filter((_, i) => i !== index) });
-    }
-  };
-
-  const updateIngredient = (index, field, value, isEditing = false) => {
-    if (isEditing) {
-      const arr = [...editing.ingredients];
-      arr[index] = { ...arr[index], [field]: field === 'origin_id' ? parseInt(value) : parseFloat(value) };
-      setEditing({ ...editing, ingredients: arr });
-    } else {
-      const arr = [...newProfile.ingredients];
-      arr[index] = { ...arr[index], [field]: field === 'origin_id' ? parseInt(value) : parseFloat(value) };
-      setNewProfile({ ...newProfile, ingredients: arr });
-    }
-  };
-
-  // ── VALIDATION ────────────────────────────────────────────────────────────────
+  // ── Validation ──────────────────────────────────────────────────────────────
 
   const validate = (profile) => {
     if (!profile.name.trim()) { showToast('⚠️ נא למלא שם פרופיל', 'warning'); return false; }
@@ -59,7 +69,7 @@ export default function RoastProfiles() {
     for (const ing of profile.ingredients) {
       if (!ing.origin_id) { showToast('⚠️ נא לבחור זן לכל רכיב', 'warning'); return false; }
     }
-    const total = profile.ingredients.reduce((s, i) => s + (i.percentage || 0), 0);
+    const total = profile.ingredients.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
     if (Math.abs(total - 100) > 0.1) {
       showToast(`⚠️ סכום האחוזים חייב להיות 100% (כרגע: ${total}%)`, 'warning');
       return false;
@@ -67,24 +77,21 @@ export default function RoastProfiles() {
     return true;
   };
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────────
+  // ── CRUD ────────────────────────────────────────────────────────────────────
 
   const saveNew = async () => {
     if (!validate(newProfile)) return;
     try {
-      // roastProfilesDb.insert() auto-injects user_id and returns the inserted row
       const inserted = await roastProfilesDb.insert({
         name: newProfile.name.trim(), roast_level: newProfile.roast_level, notes: newProfile.notes,
         daily_average: parseFloat(newProfile.daily_average) || 0,
         min_stock: parseFloat(newProfile.min_stock) || 0
       });
-
       const ingredientRows = newProfile.ingredients.map(ing => ({
         profile_id: inserted.id, origin_id: ing.origin_id, percentage: ing.percentage
       }));
       const { error: ingError } = await supabase.from('roast_profile_ingredients').insert(ingredientRows);
       if (ingError) throw ingError;
-
       await roastProfileIngredientsDb.refresh();
       setAdding(false);
       setNewProfile(emptyProfile());
@@ -112,15 +119,12 @@ export default function RoastProfiles() {
         roasted_stock: parseFloat(editing.roasted_stock) || 0,
         updated_at: new Date().toISOString()
       });
-
-      // Replace all ingredients
       await supabase.from('roast_profile_ingredients').delete().eq('profile_id', editing.id);
       const ingredientRows = editing.ingredients.map(ing => ({
         profile_id: editing.id, origin_id: ing.origin_id, percentage: ing.percentage
       }));
       const { error: ingError } = await supabase.from('roast_profile_ingredients').insert(ingredientRows);
       if (ingError) throw ingError;
-
       await roastProfilesDb.refresh();
       await roastProfileIngredientsDb.refresh();
       setEditing(null);
@@ -133,9 +137,7 @@ export default function RoastProfiles() {
 
   const deleteProfile = async (profile) => {
     const hasHistory = data.roasts.some(r => r.roast_profile_id === profile.id);
-    if (hasHistory) {
-      showToast('⚠️ לא ניתן למחוק פרופיל עם היסטוריית קליות', 'warning'); return;
-    }
+    if (hasHistory) { showToast('⚠️ לא ניתן למחוק פרופיל עם היסטוריית קליות', 'warning'); return; }
     if (!window.confirm(`האם למחוק את הפרופיל "${profile.name}"?`)) return;
     try {
       await roastProfilesDb.remove(profile.id);
@@ -147,34 +149,7 @@ export default function RoastProfiles() {
     }
   };
 
-  // ── INGREDIENT FORM ───────────────────────────────────────────────────────────
-
-  const IngredientForm = ({ profile, isEditing }) => {
-    const total = profile.ingredients.reduce((s, i) => s + (i.percentage || 0), 0);
-    return (
-      <div className="form-group">
-        <label>רכיבים (סה"כ חייב להיות 100%) *</label>
-        {profile.ingredients.map((ing, index) => (
-          <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
-            <select value={ing.origin_id || ''} onChange={e => updateIngredient(index, 'origin_id', e.target.value, isEditing)}>
-              <option value="">בחר זן...</option>
-              {data.origins.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-            <input type="number" placeholder="%" value={ing.percentage} onChange={e => updateIngredient(index, 'percentage', e.target.value, isEditing)} />
-            {profile.ingredients.length > 1 && (
-              <button onClick={() => removeIngredient(index, isEditing)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
-            )}
-          </div>
-        ))}
-        <button onClick={() => addIngredient(isEditing)} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף זן</button>
-        <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
-          סה"כ: {total}%
-        </div>
-      </div>
-    );
-  };
-
-  // ── RENDER ────────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="section" style={{ marginTop: '2rem' }}>
@@ -220,7 +195,11 @@ export default function RoastProfiles() {
             <label>הערות (אופציונלי)</label>
             <input type="text" placeholder="מידע נוסף..." value={newProfile.notes} onChange={e => setNewProfile({ ...newProfile, notes: e.target.value })} />
           </div>
-          <IngredientForm profile={newProfile} isEditing={false} />
+          <IngredientForm
+            ingredients={newProfile.ingredients}
+            onChange={ingredients => setNewProfile({ ...newProfile, ingredients })}
+            origins={data.origins}
+          />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveNew} className="btn-primary" style={{ flex: 1 }}>💾 שמור פרופיל</button>
             <button onClick={() => { setAdding(false); setNewProfile(emptyProfile()); }} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
@@ -264,7 +243,11 @@ export default function RoastProfiles() {
             <label>הערות</label>
             <input type="text" value={editing.notes || ''} onChange={e => setEditing({ ...editing, notes: e.target.value })} />
           </div>
-          <IngredientForm profile={editing} isEditing={true} />
+          <IngredientForm
+            ingredients={editing.ingredients}
+            onChange={ingredients => setEditing({ ...editing, ingredients })}
+            origins={data.origins}
+          />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveEdit} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
             <button onClick={() => setEditing(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>

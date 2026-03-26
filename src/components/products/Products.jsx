@@ -3,29 +3,82 @@ import { useApp } from '../../lib/context';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Ingredient shape (new):  { sourceType: 'origin'|'profile', sourceId: number, percentage }
- * Ingredient shape (legacy): { originId: number, percentage }
- *
- * emptyIngredient() returns a blank new-format ingredient.
- */
 const emptyIngredient = () => ({ sourceType: 'origin', sourceId: '', percentage: 0 });
 
-/** Encode ingredient to select value string */
 const toSelectValue = (ing) => {
   if (ing.sourceType === 'profile' && ing.sourceId) return `profile:${ing.sourceId}`;
   const sid = ing.sourceId || ing.originId || '';
   return sid ? `origin:${sid}` : '';
 };
 
-/** Decode select value string to partial ingredient */
 const fromSelectValue = (val) => {
   if (!val) return { sourceType: 'origin', sourceId: '' };
   const [type, id] = val.split(':');
   return { sourceType: type, sourceId: parseInt(id) };
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── RecipeForm — defined OUTSIDE Products so React never remounts it ──────────
+
+function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
+  const total = recipe.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
+
+  const updateIngredient = (index, changes) =>
+    onChange(recipe.map((ing, i) => i === index ? { ...ing, ...changes } : ing));
+
+  const addIngredient = () =>
+    onChange([...recipe, emptyIngredient()]);
+
+  const removeIngredient = (index) =>
+    onChange(recipe.filter((_, i) => i !== index));
+
+  return (
+    <div className="form-group">
+      <label>מתכון (סה"כ חייב להיות 100%) *</label>
+      {recipe.map((ing, index) => (
+        <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
+          <select
+            value={toSelectValue(ing)}
+            onChange={e => updateIngredient(index, fromSelectValue(e.target.value))}
+          >
+            <option value="">בחר מקור...</option>
+            {roastProfiles.length > 0 && (
+              <optgroup label="🔥 פרופילי קלייה">
+                {roastProfiles.map(p => (
+                  <option key={`profile:${p.id}`} value={`profile:${p.id}`}>
+                    {p.name}{p.roast_level && p.roast_level !== 'none' ? ` (${p.roast_level})` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="🌱 זנים">
+              {origins.map(o => (
+                <option key={`origin:${o.id}`} value={`origin:${o.id}`}>{o.name}</option>
+              ))}
+            </optgroup>
+          </select>
+          <input
+            type="number" placeholder="%" min="0" max="100" step="0.1"
+            value={ing.percentage}
+            onChange={e => updateIngredient(index, { percentage: parseFloat(e.target.value) || 0 })}
+          />
+          {recipe.length > 1 && (
+            <button
+              onClick={() => removeIngredient(index)}
+              className="btn-small"
+              style={{ background: '#FEE2E2', color: '#991B1B' }}
+            >🗑️</button>
+          )}
+        </div>
+      ))}
+      <button onClick={addIngredient} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
+      <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
+        סה"כ: {total}%
+      </div>
+    </div>
+  );
+}
+
+// ── Products ──────────────────────────────────────────────────────────────────
 
 export default function Products() {
   const { data, productsDb, calculateProductCost, showToast } = useApp();
@@ -47,19 +100,6 @@ export default function Products() {
     const originId = ing.sourceId || ing.originId;
     return data.origins.find(o => o.id === originId)?.name || '—';
   };
-
-  // ── Recipe helpers ──────────────────────────────────────────────────────────
-
-  const updateRecipe = (product, setProduct, index, changes) => {
-    const r = product.recipe.map((ing, i) => i === index ? { ...ing, ...changes } : ing);
-    setProduct({ ...product, recipe: r });
-  };
-
-  const addIngredient = (product, setProduct) =>
-    setProduct({ ...product, recipe: [...product.recipe, emptyIngredient()] });
-
-  const removeIngredient = (product, setProduct, index) =>
-    setProduct({ ...product, recipe: product.recipe.filter((_, i) => i !== index) });
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -99,11 +139,9 @@ export default function Products() {
   };
 
   const startEditProduct = (product) => {
-    // Normalise legacy recipes so the form always uses new format
-    const recipe = (product.recipe || []).map(ing => {
-      if (ing.sourceType) return { ...ing };
-      return { sourceType: 'origin', sourceId: ing.originId, percentage: ing.percentage };
-    });
+    const recipe = (product.recipe || []).map(ing =>
+      ing.sourceType ? { ...ing } : { sourceType: 'origin', sourceId: ing.originId, percentage: ing.percentage }
+    );
     setEditingProduct({ ...product, recipe });
   };
 
@@ -144,55 +182,6 @@ export default function Products() {
     }
   };
 
-  // ── Recipe form (shared between add & edit) ─────────────────────────────────
-
-  const RecipeForm = ({ product, setProduct }) => {
-    const total = product.recipe.reduce((s, i) => s + (parseFloat(i.percentage) || 0), 0);
-    const hasProfiles = data.roastProfiles.length > 0;
-
-    return (
-      <div className="form-group">
-        <label>מתכון (סה"כ חייב להיות 100%) *</label>
-        {product.recipe.map((ing, index) => (
-          <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
-            <select
-              value={toSelectValue(ing)}
-              onChange={e => updateRecipe(product, setProduct, index, fromSelectValue(e.target.value))}
-            >
-              <option value="">בחר מקור...</option>
-              {hasProfiles && (
-                <optgroup label="🔥 פרופילי קלייה">
-                  {data.roastProfiles.map(p => (
-                    <option key={`profile:${p.id}`} value={`profile:${p.id}`}>
-                      {p.name}{p.roast_level && p.roast_level !== 'none' ? ` (${p.roast_level})` : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label="🌱 זנים">
-                {data.origins.map(o => (
-                  <option key={`origin:${o.id}`} value={`origin:${o.id}`}>{o.name}</option>
-                ))}
-              </optgroup>
-            </select>
-            <input
-              type="number" placeholder="%" min="0" max="100" step="0.1"
-              value={ing.percentage}
-              onChange={e => updateRecipe(product, setProduct, index, { percentage: parseFloat(e.target.value) || 0 })}
-            />
-            {product.recipe.length > 1 && (
-              <button onClick={() => removeIngredient(product, setProduct, index)} className="btn-small" style={{ background: '#FEE2E2', color: '#991B1B' }}>🗑️</button>
-            )}
-          </div>
-        ))}
-        <button onClick={() => addIngredient(product, setProduct)} className="btn-small" style={{ marginTop: '5px' }}>➕ הוסף רכיב</button>
-        <div style={{ marginTop: '10px', fontSize: '14px', color: total === 100 ? '#059669' : '#DC2626' }}>
-          סה"כ: {total}%
-        </div>
-      </div>
-    );
-  };
-
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -215,7 +204,7 @@ export default function Products() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
               <label>גודל (גרם) *</label>
-              <input type="number" placeholder="330" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: parseInt(e.target.value)})} />
+              <input type="number" placeholder="330" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: e.target.value})} />
             </div>
             <div className="form-group">
               <label>סוג</label>
@@ -229,7 +218,12 @@ export default function Products() {
             <label>תיאור (אופציונלי)</label>
             <input type="text" placeholder="למשל: פירותי ומרענן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
           </div>
-          <RecipeForm product={newProduct} setProduct={setNewProduct} />
+          <RecipeForm
+            recipe={newProduct.recipe}
+            onChange={recipe => setNewProduct({ ...newProduct, recipe })}
+            origins={data.origins}
+            roastProfiles={data.roastProfiles}
+          />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveNewProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור מוצר</button>
             <button onClick={() => setAddingProduct(false)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
@@ -248,7 +242,7 @@ export default function Products() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
               <label>גודל (גרם) *</label>
-              <input type="number" value={editingProduct.size} onChange={e => setEditingProduct({...editingProduct, size: parseInt(e.target.value)})} />
+              <input type="number" value={editingProduct.size} onChange={e => setEditingProduct({...editingProduct, size: e.target.value})} />
             </div>
             <div className="form-group">
               <label>סוג</label>
@@ -262,7 +256,12 @@ export default function Products() {
             <label>תיאור</label>
             <input type="text" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} />
           </div>
-          <RecipeForm product={editingProduct} setProduct={setEditingProduct} />
+          <RecipeForm
+            recipe={editingProduct.recipe}
+            onChange={recipe => setEditingProduct({ ...editingProduct, recipe })}
+            origins={data.origins}
+            roastProfiles={data.roastProfiles}
+          />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button onClick={saveEditProduct} className="btn-primary" style={{ flex: 1 }}>💾 שמור שינויים</button>
             <button onClick={() => setEditingProduct(null)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
@@ -303,7 +302,10 @@ export default function Products() {
                     <span>עלות ייצור:</span>
                     <strong>₪{cost}</strong>
                   </div>
-                  <button onClick={() => setShowBreakdownId(isOpen ? null : product.id)} style={{ fontSize: '11px', padding: '2px 8px', marginTop: '5px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}>
+                  <button
+                    onClick={() => setShowBreakdownId(isOpen ? null : product.id)}
+                    style={{ fontSize: '11px', padding: '2px 8px', marginTop: '5px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}
+                  >
                     {isOpen ? '🔼 הסתר פירוט' : '🔽 פירוט מלא'}
                   </button>
                   {isOpen && (
