@@ -10,14 +10,17 @@ const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37
 export default function Roasting() {
   const {
     data, originsDb, roastsDb, roastProfilesDb, roastComponentsDb,
-    getOriginById, showToast
+    getOriginById, calculateRoastedWeight, showToast
   } = useApp();
 
+  // Form mode: 'origin' (simple) | 'profile' (blend / multi-level)
+  const [formMode,         setFormMode]         = useState('origin');
+  const [selectedOrigin,   setSelectedOrigin]   = useState('');
   const [selectedProfileId, setSelectedProfileId] = useState('');
-  const [greenWeight,        setGreenWeight]        = useState('15');
-  const [selectedOperator,   setSelectedOperator]   = useState('');
-  const [editingRoast,       setEditingRoast]        = useState(null);
-  const [view,               setView]               = useState('log'); // 'log' | 'list'
+  const [greenWeight,      setGreenWeight]       = useState('15');
+  const [selectedOperator, setSelectedOperator]  = useState('');
+  const [editingRoast,     setEditingRoast]      = useState(null);
+  const [view,             setView]              = useState('log'); // 'log' | 'list'
 
   // Filters
   const [searchTerm,    setSearchTerm]    = useState('');
@@ -37,21 +40,65 @@ export default function Roasting() {
   const previewIngredients = (profileId, totalGreenKg) => {
     const ings = getProfileIngredients(profileId);
     return ings.map(ing => {
-      const origin  = getOriginById(ing.origin_id);
-      const greenUsed = (totalGreenKg * ing.percentage / 100);
+      const origin    = getOriginById(ing.origin_id);
+      const greenUsed = totalGreenKg * ing.percentage / 100;
       return { origin, percentage: ing.percentage, greenUsed };
     });
   };
 
-  const calcRoastedWeight = (profileId, totalGreenKg) => {
-    const ings        = getProfileIngredients(profileId);
-    const weightLoss  = blendedWeightLoss(ings, data.origins);
+  const calcProfileRoastedWeight = (profileId, totalGreenKg) => {
+    const ings       = getProfileIngredients(profileId);
+    const weightLoss = blendedWeightLoss(ings, data.origins);
     return parseFloat((totalGreenKg * (1 - weightLoss / 100)).toFixed(2));
   };
 
-  // ── RECORD ────────────────────────────────────────────────────────────────────
+  const makeBatchNum = () => {
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const todayRoasts = data.roasts.filter(r => r.date && r.date.startsWith(new Date().toISOString().split('T')[0]));
+    return `BATCH-${today}-${String(todayRoasts.length + 1).padStart(3, '0')}`;
+  };
 
-  const recordRoast = async () => {
+  // ── RECORD — SIMPLE ORIGIN ────────────────────────────────────────────────────
+
+  const recordOriginRoast = async () => {
+    if (!selectedOrigin || !greenWeight || !selectedOperator) {
+      showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
+    }
+    const origin = getOriginById(parseInt(selectedOrigin));
+    if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+
+    const weight = parseFloat(greenWeight);
+    if (weight <= 0 || weight > 20) { showToast('⚠️ משקל לא תקין (1-20 ק"ג)', 'warning'); return; }
+    if (origin.stock < weight) {
+      showToast(`⚠️ אין מספיק מלאי! נדרש: ${weight} ק"ג, קיים: ${origin.stock} ק"ג`, 'warning'); return;
+    }
+
+    const roastedWeight = parseFloat(calculateRoastedWeight(weight, origin.weight_loss));
+    const batchNum = makeBatchNum();
+
+    try {
+      await roastsDb.insert({
+        origin_id: origin.id, roast_profile_id: null,
+        green_weight: weight, roasted_weight: roastedWeight,
+        operator: selectedOperator, date: new Date().toISOString(), batch_number: batchNum
+      });
+      await originsDb.update(origin.id, {
+        stock: origin.stock - weight,
+        roasted_stock: (origin.roasted_stock || 0) + roastedWeight
+      });
+      await roastsDb.refresh();
+      await originsDb.refresh();
+      setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
+      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי`);
+    } catch (err) {
+      console.error('Error recording roast:', err);
+      showToast('❌ שגיאה ברישום קלייה', 'error');
+    }
+  };
+
+  // ── RECORD — PROFILE ──────────────────────────────────────────────────────────
+
+  const recordProfileRoast = async () => {
     if (!selectedProfileId || !greenWeight || !selectedOperator) {
       showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
     }
@@ -64,9 +111,8 @@ export default function Roasting() {
     const ings = getProfileIngredients(selectedProfileId);
     if (ings.length === 0) { showToast('⚠️ לפרופיל זה אין רכיבים מוגדרים', 'warning'); return; }
 
-    // Validate each origin has enough green stock
     for (const ing of ings) {
-      const origin   = getOriginById(ing.origin_id);
+      const origin    = getOriginById(ing.origin_id);
       const greenUsed = weight * ing.percentage / 100;
       if (!origin) { showToast(`⚠️ זן לא נמצא (ID ${ing.origin_id})`, 'warning'); return; }
       if (origin.stock < greenUsed) {
@@ -74,42 +120,28 @@ export default function Roasting() {
       }
     }
 
-    const roastedWeight = calcRoastedWeight(selectedProfileId, weight);
-    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const todayRoasts = data.roasts.filter(r => r.date && r.date.startsWith(new Date().toISOString().split('T')[0]));
-    const batchNum = `BATCH-${today}-${String(todayRoasts.length + 1).padStart(3, '0')}`;
+    const roastedWeight = calcProfileRoastedWeight(selectedProfileId, weight);
+    const batchNum = makeBatchNum();
 
     try {
-      // Insert roast row
       const { data: roastRow, error: roastErr } = await supabase
         .from('roasts')
         .insert({
-          roast_profile_id: profile.id,
-          origin_id: null,
-          green_weight: weight,
-          roasted_weight: roastedWeight,
-          operator: selectedOperator,
-          date: new Date().toISOString(),
-          batch_number: batchNum,
-          user_id: data.origins[0]?.user_id
+          roast_profile_id: profile.id, origin_id: null,
+          green_weight: weight, roasted_weight: roastedWeight,
+          operator: selectedOperator, date: new Date().toISOString(),
+          batch_number: batchNum, user_id: data.origins[0]?.user_id
         })
-        .select()
-        .single();
+        .select().single();
       if (roastErr) throw roastErr;
 
-      // Insert components + deduct stock
       for (const ing of ings) {
-        const origin   = getOriginById(ing.origin_id);
+        const origin    = getOriginById(ing.origin_id);
         const greenUsed = parseFloat((weight * ing.percentage / 100).toFixed(4));
-
-        await supabase.from('roast_components').insert({
-          roast_id: roastRow.id, origin_id: ing.origin_id, green_weight_used: greenUsed
-        });
-
+        await supabase.from('roast_components').insert({ roast_id: roastRow.id, origin_id: ing.origin_id, green_weight_used: greenUsed });
         await originsDb.update(origin.id, { stock: parseFloat((origin.stock - greenUsed).toFixed(4)) });
       }
 
-      // Update profile roasted_stock
       await roastProfilesDb.update(profile.id, {
         roasted_stock: parseFloat(((profile.roasted_stock || 0) + roastedWeight).toFixed(4)),
         updated_at: new Date().toISOString()
@@ -123,23 +155,25 @@ export default function Roasting() {
       setGreenWeight('15'); setSelectedProfileId(''); setSelectedOperator('');
       showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
     } catch (err) {
-      console.error('Error recording roast:', err);
+      console.error('Error recording profile roast:', err);
       showToast('❌ שגיאה ברישום קלייה', 'error');
     }
   };
+
+  const recordRoast = () => formMode === 'origin' ? recordOriginRoast() : recordProfileRoast();
 
   // ── EDIT ──────────────────────────────────────────────────────────────────────
 
   const startEditRoast = (roast) => {
     setEditingRoast({
-      id:             roast.id,
-      profileId:      roast.roast_profile_id,
-      originId:       roast.origin_id,         // legacy
-      greenWeight:    roast.green_weight,
-      operator:       roast.operator,
-      oldGreenWeight: roast.green_weight,
+      id:               roast.id,
+      profileId:        roast.roast_profile_id,
+      originId:         roast.origin_id,
+      greenWeight:      roast.green_weight,
+      operator:         roast.operator,
+      oldGreenWeight:   roast.green_weight,
       oldRoastedWeight: roast.roasted_weight,
-      isProfile:      !!roast.roast_profile_id
+      isProfile:        !!roast.roast_profile_id
     });
   };
 
@@ -147,39 +181,33 @@ export default function Roasting() {
     if (!editingRoast.greenWeight || !editingRoast.operator) {
       showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
     }
-
     const newWeight = parseFloat(editingRoast.greenWeight);
     if (newWeight <= 0 || newWeight > 20) { showToast('⚠️ משקל לא תקין', 'warning'); return; }
 
     try {
       if (editingRoast.isProfile) {
-        // Profile-based edit
         const profile  = getProfileById(editingRoast.profileId);
         const ings     = getProfileIngredients(editingRoast.profileId);
         const oldComps = data.roastComponents.filter(c => c.roast_id === editingRoast.id);
 
-        // Phase A: reverse old components
+        // Phase A: reverse
         for (const comp of oldComps) {
           const origin = getOriginById(comp.origin_id);
-          if (origin) {
-            await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
-          }
+          if (origin) await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
         }
-        // Subtract old roasted weight from profile
         await roastProfilesDb.update(profile.id, {
           roasted_stock: parseFloat(((profile.roasted_stock || 0) - editingRoast.oldRoastedWeight).toFixed(4)),
           updated_at: new Date().toISOString()
         });
-        // Delete old components
         await supabase.from('roast_components').delete().eq('roast_id', editingRoast.id);
 
-        // Phase B: validate and apply new
+        // Validate
         for (const ing of ings) {
-          const origin   = getOriginById(ing.origin_id);
+          const origin    = getOriginById(ing.origin_id);
           const greenUsed = newWeight * ing.percentage / 100;
           if (!origin || origin.stock < greenUsed) {
             showToast(`⚠️ אין מספיק מלאי ירוק ל${origin?.name || '?'}`, 'warning');
-            // Rollback A — re-add components
+            // Rollback
             for (const comp of oldComps) {
               const o = getOriginById(comp.origin_id);
               if (o) await originsDb.update(o.id, { stock: parseFloat((o.stock - comp.green_weight_used).toFixed(4)) });
@@ -193,44 +221,32 @@ export default function Roasting() {
           }
         }
 
-        const newRoastedWeight = calcRoastedWeight(editingRoast.profileId, newWeight);
-        await roastsDb.update(editingRoast.id, {
-          green_weight: newWeight, roasted_weight: newRoastedWeight,
-          operator: editingRoast.operator, updated_at: new Date().toISOString()
-        });
-
+        // Phase B: apply
+        const newRoastedWeight = calcProfileRoastedWeight(editingRoast.profileId, newWeight);
+        await roastsDb.update(editingRoast.id, { green_weight: newWeight, roasted_weight: newRoastedWeight, operator: editingRoast.operator, updated_at: new Date().toISOString() });
         for (const ing of ings) {
-          const origin   = getOriginById(ing.origin_id);
+          const origin    = getOriginById(ing.origin_id);
           const greenUsed = parseFloat((newWeight * ing.percentage / 100).toFixed(4));
           await supabase.from('roast_components').insert({ roast_id: editingRoast.id, origin_id: ing.origin_id, green_weight_used: greenUsed });
           await originsDb.update(origin.id, { stock: parseFloat((origin.stock - greenUsed).toFixed(4)) });
         }
-
         await roastProfilesDb.update(profile.id, {
           roasted_stock: parseFloat(((profile.roasted_stock || 0) + newRoastedWeight).toFixed(4)),
           updated_at: new Date().toISOString()
         });
 
       } else {
-        // Legacy origin-based edit
-        const newOrigin    = getOriginById(editingRoast.originId);
-        const oldOrigin    = getOriginById(editingRoast.originId); // same origin; old logic
-        if (!newOrigin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+        // Legacy simple origin edit
+        const origin = getOriginById(editingRoast.originId);
+        if (!origin) { showToast('⚠️ זן לא נמצא', 'warning'); return; }
+        const newRoastedWeight = parseFloat(calculateRoastedWeight(newWeight, origin.weight_loss));
+        const oldWeight        = parseFloat(editingRoast.oldGreenWeight);
+        const oldRoastedWeight = parseFloat(editingRoast.oldRoastedWeight);
 
-        const newRoastedWeight  = parseFloat((newWeight * (1 - (newOrigin.weight_loss || 20) / 100)).toFixed(2));
-        const oldWeight         = parseFloat(editingRoast.oldGreenWeight);
-        const oldRoastedWeight  = parseFloat(editingRoast.oldRoastedWeight);
-
-        await roastsDb.update(editingRoast.id, {
-          green_weight: newWeight, roasted_weight: newRoastedWeight,
-          operator: editingRoast.operator, updated_at: new Date().toISOString()
-        });
-
-        const stockDiff  = newWeight - oldWeight;
-        const roastedDiff = newRoastedWeight - oldRoastedWeight;
-        await originsDb.update(newOrigin.id, {
-          stock: newOrigin.stock - stockDiff,
-          roasted_stock: (newOrigin.roasted_stock || 0) + roastedDiff
+        await roastsDb.update(editingRoast.id, { green_weight: newWeight, roasted_weight: newRoastedWeight, operator: editingRoast.operator, updated_at: new Date().toISOString() });
+        await originsDb.update(origin.id, {
+          stock: origin.stock - (newWeight - oldWeight),
+          roasted_stock: (origin.roasted_stock || 0) + (newRoastedWeight - oldRoastedWeight)
         });
       }
 
@@ -263,20 +279,13 @@ export default function Roasting() {
           const origin = getOriginById(comp.origin_id);
           if (origin) await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
         }
-        if (profile) {
-          await roastProfilesDb.update(profile.id, {
-            roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)),
-            updated_at: new Date().toISOString()
-          });
-        }
+        if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)), updated_at: new Date().toISOString() });
       } else {
         const origin = getOriginById(roast.origin_id);
-        if (origin) {
-          await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
-        }
+        if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
       }
 
-      await roastsDb.remove(roast.id); // cascades roast_components
+      await roastsDb.remove(roast.id);
       await roastsDb.refresh();
       await originsDb.refresh();
       await roastProfilesDb.refresh();
@@ -307,12 +316,7 @@ export default function Roasting() {
             const origin = getOriginById(comp.origin_id);
             if (origin) await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
           }
-          if (profile) {
-            await roastProfilesDb.update(profile.id, {
-              roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)),
-              updated_at: new Date().toISOString()
-            });
-          }
+          if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)), updated_at: new Date().toISOString() });
         } else {
           const origin = getOriginById(roast.origin_id);
           if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
@@ -367,15 +371,13 @@ export default function Roasting() {
   const displayedRoasts = filteredRoasts.slice(0, displayLimit);
   const hasMore         = filteredRoasts.length > displayLimit;
 
-  // ── PREVIEW (new roast form) ───────────────────────────────────────────────────
+  // Preview for profile mode
+  const selectedProfile  = getProfileById(selectedProfileId);
+  const preview          = selectedProfile && greenWeight ? previewIngredients(selectedProfileId, parseFloat(greenWeight)) : [];
+  const previewRoastedKg = selectedProfile && greenWeight ? calcProfileRoastedWeight(selectedProfileId, parseFloat(greenWeight)) : null;
 
-  const selectedProfile = getProfileById(selectedProfileId);
-  const preview = selectedProfile && greenWeight
-    ? previewIngredients(selectedProfileId, parseFloat(greenWeight))
-    : [];
-  const previewRoastedKg = selectedProfile && greenWeight
-    ? calcRoastedWeight(selectedProfileId, parseFloat(greenWeight))
-    : null;
+  // Preview for origin mode
+  const selectedOriginObj = getOriginById(parseInt(selectedOrigin));
 
   // ── LIST VIEW ─────────────────────────────────────────────────────────────────
 
@@ -407,17 +409,14 @@ export default function Roasting() {
         <div className="form-card" style={{ marginBottom: '20px', background: '#FFF9F0', border: '2px solid #FF6B35' }}>
           <h3>✏️ עריכת קלייה</h3>
           <div className="form-grid">
-            {editingRoast.isProfile ? (
-              <div className="form-group">
-                <label>פרופיל</label>
-                <input type="text" disabled value={getProfileById(editingRoast.profileId)?.name || ''} style={{ background: '#F3F4F6', color: '#6B7280' }} />
-              </div>
-            ) : (
-              <div className="form-group">
-                <label>זן</label>
-                <input type="text" disabled value={getOriginById(editingRoast.originId)?.name || ''} style={{ background: '#F3F4F6', color: '#6B7280' }} />
-              </div>
-            )}
+            <div className="form-group">
+              <label>{editingRoast.isProfile ? 'פרופיל' : 'זן'}</label>
+              <input
+                type="text" disabled
+                value={editingRoast.isProfile ? (getProfileById(editingRoast.profileId)?.name || '') : (getOriginById(editingRoast.originId)?.name || '')}
+                style={{ background: '#F3F4F6', color: '#6B7280' }}
+              />
+            </div>
             <div className="form-group">
               <label>משקל ירוק (ק"ג)</label>
               <input type="number" step="0.1" value={editingRoast.greenWeight} onChange={e => setEditingRoast({ ...editingRoast, greenWeight: e.target.value })} />
@@ -432,7 +431,12 @@ export default function Roasting() {
           </div>
           {editingRoast.isProfile && editingRoast.greenWeight && (
             <div className="calculation-display">
-              משקל קלוי משוער: <strong>{calcRoastedWeight(editingRoast.profileId, parseFloat(editingRoast.greenWeight))} ק"ג</strong>
+              משקל קלוי משוער: <strong>{calcProfileRoastedWeight(editingRoast.profileId, parseFloat(editingRoast.greenWeight))} ק"ג</strong>
+            </div>
+          )}
+          {!editingRoast.isProfile && editingRoast.greenWeight && editingRoast.originId && (
+            <div className="calculation-display">
+              משקל קלוי משוער: <strong>{calculateRoastedWeight(parseFloat(editingRoast.greenWeight), getOriginById(editingRoast.originId)?.weight_loss || 20)} ק"ג</strong>
             </div>
           )}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -444,23 +448,43 @@ export default function Roasting() {
 
       {/* New roast form */}
       <div className="form-card">
-        {data.roastProfiles.length === 0 ? (
-          <div style={{ color: '#666', padding: '1rem', textAlign: 'center' }}>
-            ⚠️ עדיין אין פרופילי קלייה.{' '}
-            <a href="/settings" style={{ color: '#6F4E37', fontWeight: 'bold' }}>הגדר פרופילים בהגדרות ←</a>
-          </div>
-        ) : (
+        {/* Mode toggle */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem' }}>
+          <button
+            onClick={() => setFormMode('origin')}
+            style={{
+              padding: '0.4rem 1rem', borderRadius: '6px', border: '2px solid',
+              borderColor: formMode === 'origin' ? '#6F4E37' : '#E5E7EB',
+              background: formMode === 'origin' ? '#6F4E37' : 'white',
+              color: formMode === 'origin' ? 'white' : '#374151',
+              fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem'
+            }}
+          >
+            🌱 זן בודד
+          </button>
+          <button
+            onClick={() => setFormMode('profile')}
+            style={{
+              padding: '0.4rem 1rem', borderRadius: '6px', border: '2px solid',
+              borderColor: formMode === 'profile' ? '#6F4E37' : '#E5E7EB',
+              background: formMode === 'profile' ? '#6F4E37' : 'white',
+              color: formMode === 'profile' ? 'white' : '#374151',
+              fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem'
+            }}
+          >
+            🔥 פרופיל קלייה
+          </button>
+        </div>
+
+        {/* Single origin mode */}
+        {formMode === 'origin' && (
           <>
             <div className="form-grid">
               <div className="form-group">
-                <label>בחר פרופיל קלייה</label>
-                <select value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)}>
-                  <option value="">בחר פרופיל...</option>
-                  {data.roastProfiles.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}{p.roast_level !== 'none' ? ` (${ROAST_LEVEL_LABELS[p.roast_level]})` : ''} — מלאי: {(p.roasted_stock || 0).toFixed(1)} ק"ג
-                    </option>
-                  ))}
+                <label>בחר זן לקלייה</label>
+                <select value={selectedOrigin} onChange={e => setSelectedOrigin(e.target.value)}>
+                  <option value="">בחר זן...</option>
+                  {data.origins.filter(o => o.stock > 0).map(o => <option key={o.id} value={o.id}>{o.name} (מלאי: {o.stock} ק"ג)</option>)}
                 </select>
               </div>
               <div className="form-group">
@@ -475,35 +499,78 @@ export default function Roasting() {
                 </select>
               </div>
             </div>
-
-            {/* Preview */}
-            {selectedProfile && greenWeight && preview.length > 0 && (
+            {selectedOriginObj && greenWeight && (
               <div className="calculation-display">
-                <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', color: '#6F4E37' }}>
-                  {selectedProfile.name}
-                  {selectedProfile.roast_level !== 'none' && (
-                    <span style={{ marginRight: '0.5rem', background: ROAST_LEVEL_COLORS[selectedProfile.roast_level], color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
-                      {ROAST_LEVEL_LABELS[selectedProfile.roast_level]}
-                    </span>
-                  )}
-                </div>
-                {preview.map((p, i) => (
-                  <div key={i} style={{ fontSize: '0.9rem' }}>
-                    🌱 {p.origin?.name || '?'} — {p.percentage}% → <strong>{p.greenUsed.toFixed(2)} ק"ג ירוק</strong>
-                    {p.origin && p.origin.stock < p.greenUsed && (
-                      <span style={{ color: '#DC2626', marginRight: '0.5rem' }}>⚠️ מלאי לא מספיק ({p.origin.stock} ק"ג)</span>
-                    )}
-                  </div>
-                ))}
-                <div style={{ marginTop: '0.5rem', fontWeight: 'bold' }}>
-                  🔥 צפי קלוי: <strong>{previewRoastedKg} ק"ג</strong>
-                </div>
+                <div>איבוד משקל: <strong>{selectedOriginObj.weight_loss}%</strong></div>
+                <div>משקל קלוי צפוי: <strong>{calculateRoastedWeight(greenWeight, selectedOriginObj.weight_loss || 20)} ק"ג</strong></div>
               </div>
             )}
-
-            <button onClick={recordRoast} className="btn-primary">🔥 רשום קלייה</button>
           </>
         )}
+
+        {/* Profile mode */}
+        {formMode === 'profile' && (
+          <>
+            {data.roastProfiles.length === 0 ? (
+              <div style={{ color: '#666', padding: '0.5rem 0 1rem', textAlign: 'center' }}>
+                ⚠️ עדיין אין פרופילי קלייה.{' '}
+                <a href="/settings" style={{ color: '#6F4E37', fontWeight: 'bold' }}>הגדר פרופילים בהגדרות ←</a>
+              </div>
+            ) : (
+              <>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>בחר פרופיל קלייה</label>
+                    <select value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)}>
+                      <option value="">בחר פרופיל...</option>
+                      {data.roastProfiles.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}{p.roast_level !== 'none' ? ` (${ROAST_LEVEL_LABELS[p.roast_level]})` : ''} — מלאי: {(p.roasted_stock || 0).toFixed(1)} ק"ג
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>משקל ירוק (ק"ג)</label>
+                    <input type="number" step="0.1" placeholder="15" value={greenWeight} onChange={e => setGreenWeight(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>מפעיל</label>
+                    <select value={selectedOperator} onChange={e => setSelectedOperator(e.target.value)}>
+                      <option value="">בחר מפעיל...</option>
+                      {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                {selectedProfile && greenWeight && preview.length > 0 && (
+                  <div className="calculation-display">
+                    <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', color: '#6F4E37' }}>
+                      {selectedProfile.name}
+                      {selectedProfile.roast_level !== 'none' && (
+                        <span style={{ marginRight: '0.5rem', background: ROAST_LEVEL_COLORS[selectedProfile.roast_level], color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                          {ROAST_LEVEL_LABELS[selectedProfile.roast_level]}
+                        </span>
+                      )}
+                    </div>
+                    {preview.map((p, i) => (
+                      <div key={i} style={{ fontSize: '0.9rem' }}>
+                        🌱 {p.origin?.name || '?'} — {p.percentage}% → <strong>{p.greenUsed.toFixed(2)} ק"ג</strong>
+                        {p.origin && p.origin.stock < p.greenUsed && (
+                          <span style={{ color: '#DC2626', marginRight: '0.5rem' }}> ⚠️ מלאי לא מספיק ({p.origin.stock} ק"ג)</span>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ marginTop: '0.5rem', fontWeight: 'bold' }}>
+                      🔥 צפי קלוי: <strong>{previewRoastedKg} ק"ג</strong>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        <button onClick={recordRoast} className="btn-primary" style={{ marginTop: '0.75rem' }}>🔥 רשום קלייה</button>
       </div>
 
       {/* History + filters */}
@@ -517,7 +584,6 @@ export default function Roasting() {
           )}
         </div>
 
-        {/* Filters */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <input type="text" placeholder="🔍 חיפוש..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" style={{ maxWidth: '200px' }} />
           <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="sort-select">
@@ -559,9 +625,7 @@ export default function Roasting() {
                     <div className="roast-header">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input type="checkbox" checked={isSelected} onChange={() => toggleRoastSelection(roast.id)} onClick={e => e.stopPropagation()} />
-                        <h3>
-                          {isProfile ? (profile?.name || 'פרופיל לא ידוע') : (origin?.name || 'זן לא ידוע')}
-                        </h3>
+                        <h3>{isProfile ? (profile?.name || 'פרופיל לא ידוע') : (origin?.name || 'זן לא ידוע')}</h3>
                         {isProfile && profile?.roast_level && profile.roast_level !== 'none' && (
                           <span style={{ background: ROAST_LEVEL_COLORS[profile.roast_level], color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                             {ROAST_LEVEL_LABELS[profile.roast_level]}
@@ -582,12 +646,9 @@ export default function Roasting() {
                       <div>🔥 קלוי: <strong>{roast.roasted_weight} ק"ג</strong></div>
                       <div>👨‍🍳 מפעיל: <strong>{roast.operator}</strong></div>
                       <div>📅 תאריך: <strong>{new Date(roast.date).toLocaleDateString('he-IL')}</strong></div>
-                      {roast.updated_at && (
-                        <div style={{ fontSize: '0.85em', color: '#FF6B35' }}>✏️ עודכן: {new Date(roast.updated_at).toLocaleString('he-IL')}</div>
-                      )}
+                      {roast.updated_at && <div style={{ fontSize: '0.85em', color: '#FF6B35' }}>✏️ עודכן: {new Date(roast.updated_at).toLocaleString('he-IL')}</div>}
                     </div>
 
-                    {/* Profile roast: show ingredient breakdown */}
                     {isProfile && comps.length > 0 && (
                       <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#FFFBF5', borderRadius: '6px', fontSize: '0.8rem', borderTop: '1px solid #F4E8D8' }}>
                         {comps.map((comp, i) => {
