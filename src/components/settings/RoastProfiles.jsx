@@ -9,6 +9,8 @@ const emptyProfile = () => ({
   name: '',
   roast_level: 'none',
   notes: '',
+  daily_average: '',
+  min_stock: '',
   ingredients: [{ origin_id: '', percentage: 100 }]
 });
 
@@ -72,7 +74,9 @@ export default function RoastProfiles() {
     try {
       // roastProfilesDb.insert() auto-injects user_id and returns the inserted row
       const inserted = await roastProfilesDb.insert({
-        name: newProfile.name.trim(), roast_level: newProfile.roast_level, notes: newProfile.notes
+        name: newProfile.name.trim(), roast_level: newProfile.roast_level, notes: newProfile.notes,
+        daily_average: parseFloat(newProfile.daily_average) || 0,
+        min_stock: parseFloat(newProfile.min_stock) || 0
       });
 
       const ingredientRows = newProfile.ingredients.map(ing => ({
@@ -103,6 +107,8 @@ export default function RoastProfiles() {
     try {
       await roastProfilesDb.update(editing.id, {
         name: editing.name.trim(), roast_level: editing.roast_level, notes: editing.notes,
+        daily_average: parseFloat(editing.daily_average) || 0,
+        min_stock: parseFloat(editing.min_stock) || 0,
         updated_at: new Date().toISOString()
       });
 
@@ -199,6 +205,16 @@ export default function RoastProfiles() {
               </select>
             </div>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>ממוצע מכירות יומי (ק"ג)</label>
+              <input type="number" step="0.1" placeholder="למשל: 1.5" value={newProfile.daily_average} onChange={e => setNewProfile({ ...newProfile, daily_average: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>מלאי מינימום (ק"ג)</label>
+              <input type="number" step="0.1" placeholder="למשל: 5" value={newProfile.min_stock} onChange={e => setNewProfile({ ...newProfile, min_stock: e.target.value })} />
+            </div>
+          </div>
           <div className="form-group">
             <label>הערות (אופציונלי)</label>
             <input type="text" placeholder="מידע נוסף..." value={newProfile.notes} onChange={e => setNewProfile({ ...newProfile, notes: e.target.value })} />
@@ -227,6 +243,16 @@ export default function RoastProfiles() {
                 <option value="light">לייט</option>
                 <option value="medium">מדיום</option>
               </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>ממוצע מכירות יומי (ק"ג)</label>
+              <input type="number" step="0.1" value={editing.daily_average ?? ''} onChange={e => setEditing({ ...editing, daily_average: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>מלאי מינימום (ק"ג)</label>
+              <input type="number" step="0.1" value={editing.min_stock ?? ''} onChange={e => setEditing({ ...editing, min_stock: e.target.value })} />
             </div>
           </div>
           <div className="form-group">
@@ -269,8 +295,10 @@ export default function RoastProfiles() {
                             return <span key={i}>{i > 0 ? ' · ' : ''}{ing.percentage}% {origin?.name || '?'}</span>;
                           })}
                         </div>
-                        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem' }}>
+                        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
                           <span>📦 מלאי קלוי: <strong>{(profile.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
+                          {profile.daily_average > 0 && <span>📈 יומי: <strong>{profile.daily_average} ק"ג</strong></span>}
+                          {profile.min_stock > 0 && <span>⚠️ מינימום: <strong>{profile.min_stock} ק"ג</strong></span>}
                           <span>🔥 קליות: <strong>{roastCount}</strong></span>
                           {profile.notes && <span style={{ color: '#999' }}>📝 {profile.notes}</span>}
                         </div>

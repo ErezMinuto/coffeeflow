@@ -9,7 +9,7 @@ const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37
 
 export default function Roasting() {
   const {
-    data, originsDb, roastsDb, roastProfilesDb, roastComponentsDb,
+    data, originsDb, roastsDb, roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
     getOriginById, calculateRoastedWeight, showToast
   } = useApp();
 
@@ -388,7 +388,12 @@ export default function Roasting() {
           <h1>📋 רשימת קלייה</h1>
           <button onClick={() => setView('log')} className="btn-small">← חזור לרישום</button>
         </div>
-        <RoastingList data={data} originsDb={originsDb} roastsDb={roastsDb} showToast={showToast} />
+        <RoastingList
+          data={data} originsDb={originsDb} roastsDb={roastsDb} showToast={showToast}
+          roastProfilesDb={roastProfilesDb}
+          roastProfileIngredientsDb={roastProfileIngredientsDb}
+          roastComponentsDb={roastComponentsDb}
+        />
       </div>
     );
   }
