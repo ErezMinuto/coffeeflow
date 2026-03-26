@@ -1,3 +1,4 @@
+import Purchases from './components/Purchases';
 import React, { useState } from 'react';
 import './App.css';
 import { SignIn, UserButton, useUser } from '@clerk/clerk-react';
