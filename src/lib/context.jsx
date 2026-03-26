@@ -1,0 +1,59 @@
+import React, { createContext, useContext, useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { useSupabaseData, useCostSettings } from './hooks';
+import {
+  calculateProductCost as _calculateProductCost,
+  calculateRoastedWeight,
+  getOriginById as _getOriginById
+} from './utils';
+
+const AppContext = createContext(null);
+
+export const AppProvider = ({ children }) => {
+  const { user } = useUser();
+  const [toasts, setToasts] = useState([]);
+
+  const originsDb   = useSupabaseData('origins');
+  const productsDb  = useSupabaseData('products');
+  const roastsDb    = useSupabaseData('roasts');
+  const operatorsDb = useSupabaseData('operators');
+  const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
+
+  const data = {
+    origins:      originsDb.data   || [],
+    products:     productsDb.data  || [],
+    roasts:       roastsDb.data    || [],
+    operators:    operatorsDb.data || [],
+    costSettings: costSettings     || {}
+  };
+
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
+
+  const getOriginById = (id) => _getOriginById(data.origins, id);
+
+  const calculateProductCost = (product, breakdown = false) =>
+    _calculateProductCost(product, data.origins, costSettings, breakdown);
+
+  return (
+    <AppContext.Provider value={{
+      user,
+      data,
+      originsDb, productsDb, roastsDb, operatorsDb,
+      costSettings, updateCostSettings,
+      showToast, toasts,
+      calculateProductCost, calculateRoastedWeight, getOriginById
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useApp = () => {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
+  return ctx;
+};
