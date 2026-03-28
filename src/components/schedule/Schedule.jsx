@@ -53,68 +53,116 @@ function toISO(date) {
 
 function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
   const isPending = emp.user_id === 'pending';
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft]     = React.useState({});
+
+  const startEdit = () => {
+    setDraft({
+      name:           emp.name,
+      role:           emp.role || 'general',
+      barista_skills: !!emp.barista_skills,
+      max_days:       emp.max_days || 5,
+      end_time:       emp.end_time || '',
+      phone:          emp.phone || '',
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    await onUpdate(emp.id, {
+      name:           draft.name.trim(),
+      role:           draft.role,
+      barista_skills: draft.barista_skills,
+      max_days:       draft.max_days,
+      end_time:       draft.end_time || null,
+      phone:          draft.phone.trim() || null,
+    });
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <tr style={{ background: '#F0FDF4', borderBottom: '2px solid #10B981' }}>
+        <td colSpan={8} style={{ padding: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>שם מלא</label>
+              <input value={draft.name} onChange={e => setDraft(p => ({ ...p, name: e.target.value }))}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>טלפון</label>
+              <input value={draft.phone} onChange={e => setDraft(p => ({ ...p, phone: e.target.value }))}
+                placeholder="050-0000000"
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>תפקיד</label>
+              <select value={draft.role} onChange={e => setDraft(p => ({ ...p, role: e.target.value }))}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}>
+                <option value="general">👤 כללי</option>
+                <option value="barista">☕ בריסטה</option>
+                <option value="roaster">🔥 קולה</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>מקס׳ ימים</label>
+              <input type="number" min={1} max={6} value={draft.max_days}
+                onChange={e => setDraft(p => ({ ...p, max_days: parseInt(e.target.value) || 5 }))}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>עובד עד שעה</label>
+              <input type="time" value={draft.end_time}
+                onChange={e => setDraft(p => ({ ...p, end_time: e.target.value }))}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', background: draft.barista_skills ? '#EDE9FE' : 'white', width: '100%', boxSizing: 'border-box' }}>
+                <input type="checkbox" checked={draft.barista_skills}
+                  onChange={e => setDraft(p => ({ ...p, barista_skills: e.target.checked }))} />
+                <span style={{ fontSize: '0.85rem', color: draft.barista_skills ? '#7C3AED' : '#6B7280' }}>☕ כישורי בריסטה</span>
+              </label>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <button onClick={() => setEditing(false)} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
+            <button onClick={saveEdit} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#10B981', color: 'white', cursor: 'pointer', fontWeight: 600 }}>✅ שמור</button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
-    <tr style={{ borderBottom: '1px solid #f0f0f0', opacity: isPending ? 0.8 : 1 }}>
+    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
       <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>{emp.name}</td>
       <td style={{ padding: '0.75rem 0.5rem' }}>
-        {isPending ? (
-          <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' }}>⏳ ממתין לאישור</span>
-        ) : (
-          <select
-            value={emp.role}
-            onChange={e => onUpdate(emp.id, { role: e.target.value })}
-            style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.85rem', color: ROLE_COLORS[emp.role] }}
-          >
-            <option value="general">👤 כללי</option>
-            <option value="barista">☕ בריסטה</option>
-            <option value="roaster">🔥 קולה</option>
-          </select>
-        )}
+        {isPending
+          ? <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' }}>⏳ ממתין לאישור</span>
+          : <span style={{ color: ROLE_COLORS[emp.role], fontWeight: 600, fontSize: '0.85rem' }}>{ROLE_LABELS[emp.role]}</span>
+        }
       </td>
-      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
-        {!isPending && (
-          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={!!emp.barista_skills}
-              onChange={e => onUpdate(emp.id, { barista_skills: e.target.checked })}
-            />
-            <span style={{ fontSize: '0.8rem', color: emp.barista_skills ? '#8B5CF6' : '#ccc' }}>
-              {emp.barista_skills ? '☕ כן' : '—'}
-            </span>
-          </label>
-        )}
+      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.85rem' }}>
+        {emp.barista_skills ? <span style={{ color: '#7C3AED' }}>☕ כן</span> : <span style={{ color: '#ccc' }}>—</span>}
       </td>
-      <td style={{ padding: '0.75rem 0.5rem' }}>
-        {!isPending && (
-          <input
-            type="number" min={1} max={6} value={emp.max_days}
-            onChange={e => onUpdate(emp.id, { max_days: parseInt(e.target.value) })}
-            style={{ width: '50px', padding: '4px', borderRadius: '6px', border: '1px solid #ddd', textAlign: 'center' }}
-          />
-        )}
-      </td>
-      <td style={{ padding: '0.75rem 0.5rem' }}>
-        {!isPending && (
-          <input
-            type="time" value={emp.end_time || ''}
-            onChange={e => onUpdate(emp.id, { end_time: e.target.value || null })}
-            style={{ padding: '4px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem', color: emp.end_time ? '#F59E0B' : '#ccc' }}
-          />
-        )}
+      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.85rem' }}>{emp.max_days}</td>
+      <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', color: emp.end_time ? '#F59E0B' : '#ccc' }}>
+        {emp.end_time || '—'}
       </td>
       <td style={{ padding: '0.75rem 0.5rem', color: '#666', fontSize: '0.85rem' }}>
         {emp.phone || <span style={{ color: '#ccc' }}>—</span>}
       </td>
       <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.8rem' }}>
-        {emp.telegram_id
-          ? <span style={{ color: '#10B981' }}>✅ מחובר</span>
-          : <span style={{ color: '#ccc' }}>לא מחובר</span>}
+        {emp.telegram_id ? <span style={{ color: '#10B981' }}>✅ מחובר</span> : <span style={{ color: '#ccc' }}>לא מחובר</span>}
       </td>
       <td style={{ padding: '0.75rem 0.5rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {isPending && (
             <button onClick={() => onApprove(emp.id)} style={{ background: '#10B981', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>✅ אשר</button>
+          )}
+          {!isPending && (
+            <button onClick={startEdit} style={{ background: '#6B7280', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>✏️</button>
           )}
           <button onClick={() => onRemove(emp.id)} style={{ background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>🗑</button>
         </div>
