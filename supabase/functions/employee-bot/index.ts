@@ -13,11 +13,12 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BOT_TOKEN  = Deno.env.get("EMPLOYEE_BOT_TOKEN")        ?? "";
-const GROUP_ID   = Deno.env.get("EMPLOYEE_GROUP_CHAT_ID")    ?? "";
-const SUPA_URL   = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CLAUDE_KEY = Deno.env.get("ANTHROPIC_API_KEY")         ?? "";
+const BOT_TOKEN      = Deno.env.get("EMPLOYEE_BOT_TOKEN")          ?? "";
+const GROUP_ID       = Deno.env.get("EMPLOYEE_GROUP_CHAT_ID")      ?? "";
+const SUPA_URL       = Deno.env.get("SUPABASE_URL")                ?? "";
+const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")   ?? "";
+const CLAUDE_KEY     = Deno.env.get("ANTHROPIC_API_KEY")           ?? "";
+const WEBHOOK_SECRET = Deno.env.get("EMPLOYEE_BOT_WEBHOOK_SECRET") ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
@@ -260,9 +261,26 @@ async function handleWebhook(req: Request) {
 serve(async (req) => {
   try {
     const action = new URL(req.url).searchParams.get("action");
-    if (action === "onboard") return await handleOnboard();
-    if (action === "remind")  return await handleRemind();
-    if (action === "publish") return await handlePublish(req);
+
+    // Action endpoints (onboard/remind/publish) — verify shared secret
+    if (action) {
+      const authHeader = req.headers.get("x-coffeeflow-secret") ?? "";
+      if (WEBHOOK_SECRET && authHeader !== WEBHOOK_SECRET) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+      if (action === "onboard") return await handleOnboard();
+      if (action === "remind")  return await handleRemind();
+      if (action === "publish") return await handlePublish(req);
+    }
+
+    // Telegram webhook — verify X-Telegram-Bot-Api-Secret-Token header
+    if (WEBHOOK_SECRET) {
+      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+      if (tgSecret !== WEBHOOK_SECRET) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+    }
+
     return await handleWebhook(req);
   } catch (err) {
     console.error("Employee bot error:", err);

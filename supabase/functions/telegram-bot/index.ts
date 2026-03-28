@@ -21,12 +21,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
-const ALLOWED_CHAT   = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
-const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")        ?? "";
-const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY")         ?? "";
-const SUPA_URL       = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN")           ?? "";
+const ALLOWED_CHAT   = Deno.env.get("TELEGRAM_CHAT_ID")             ?? "";
+const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")           ?? "";
+const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY")            ?? "";
+const SUPA_URL       = Deno.env.get("SUPABASE_URL")                 ?? "";
+const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")    ?? "";
+const WEBHOOK_SECRET = Deno.env.get("TASKS_BOT_WEBHOOK_SECRET")     ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
@@ -230,6 +231,14 @@ async function handleDone(chatId: string, text: string) {
 
 serve(async (req) => {
   try {
+    // Verify Telegram webhook secret token
+    if (WEBHOOK_SECRET) {
+      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+      if (tgSecret !== WEBHOOK_SECRET) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+    }
+
     const body    = await req.json();
     const message = body.message;
     if (!message?.text) return new Response("ok");
