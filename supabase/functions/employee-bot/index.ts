@@ -128,40 +128,75 @@ async function handleWebhook(req: Request) {
         `👋 שלום <b>${emp.name}</b>! אתה רשום במערכת.\n` +
         `שלח לי את הימים שתוכל לעבוד השבוע הבא.`
       );
-    } else if (emp && !emp.active) {
-      await send(chatId, `⏳ בקשתך ממתינה לאישור המנהל. נעדכן אותך בקרוב.`);
+    } else if (emp && emp.name === "__AWAITING_NAME__") {
+      await send(chatId, `👋 כבר שאלתי — מה שמך המלא?`);
     } else {
-      // New employee — mark as PENDING, ask for name
+      // Mark this telegram_id as awaiting name input
+      await supabase.from("employees")
+        .delete()
+        .eq("telegram_id", telegramId)
+        .eq("name", "__AWAITING_NAME__");
       await supabase.from("employees").insert({
         user_id:     "pending",
-        name:        "__PENDING__",
+        name:        "__AWAITING_NAME__",
         telegram_id: telegramId,
         active:      false,
       });
       await send(chatId,
         `👋 ברוך הבא למערכת סידור העבודה של מינוטו קפה!\n\n` +
-        `מה שמך המלא?`
+        `מה שמך המלא? (כפי שהמנהל הזין אותך במערכת)`
       );
     }
     return new Response("ok");
   }
 
-  // ── Waiting for name (just registered) ──────────────────────────────────
-  if (emp && emp.name === "__PENDING__") {
+  // ── Waiting for name — match against manager-added employees ─────────────
+  if (emp && emp.name === "__AWAITING_NAME__") {
+    // Search for an existing employee with this name (no telegram_id yet)
+    const { data: matches } = await supabase
+      .from("employees")
+      .select("*")
+      .ilike("name", `%${text}%`)
+      .is("telegram_id", null)
+      .limit(1);
+
+    const match = matches?.[0];
+
+    if (!match) {
+      await send(chatId,
+        `⚠️ לא מצאתי עובד בשם "<b>${text}</b>" במערכת.\n\n` +
+        `בדוק עם המנהל שהשם זהה למה שהוזן, ושלח שוב.`
+      );
+      return new Response("ok");
+    }
+
+    // Link telegram_id to the existing employee record
     await supabase.from("employees")
-      .update({ name: text })
-      .eq("id", emp.id);
-    await send(chatId,
-      `✅ תודה <b>${text}</b>!\n` +
-      `בקשתך נשלחה למנהל לאישור.\n` +
-      `ברגע שתאושר תוכל לשלוח זמינות 😊`
-    );
+      .update({ telegram_id: telegramId })
+      .eq("id", match.id);
+
+    // Delete the temporary __AWAITING_NAME__ row
+    await supabase.from("employees").delete().eq("id", emp.id);
+
+    if (match.active) {
+      await send(chatId,
+        `✅ זוהית! שלום <b>${match.name}</b> 👋\n\n` +
+        `אתה מחובר למערכת. כשתקבל תזכורת בנוגע לזמינות, פשוט שלח לי את הימים שנוח לך.`
+      );
+    } else {
+      await send(chatId,
+        `✅ זוהית! שלום <b>${match.name}</b> 👋\n\n` +
+        `החשבון שלך עדיין לא פעיל. המנהל יפעיל אותך בקרוב.`
+      );
+    }
     return new Response("ok");
   }
 
-  // ── Not approved yet ────────────────────────────────────────────────────
+  // ── Not linked yet ───────────────────────────────────────────────────────
   if (!emp || !emp.active) {
-    await send(chatId, `⏳ בקשתך עדיין ממתינה לאישור המנהל.`);
+    await send(chatId,
+      `שלח /start כדי להתחבר למערכת.`
+    );
     return new Response("ok");
   }
 

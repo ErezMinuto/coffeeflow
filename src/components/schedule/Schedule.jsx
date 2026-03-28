@@ -80,8 +80,13 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
           />
         )}
       </td>
-      <td style={{ padding: '0.75rem 0.5rem', color: '#999', fontSize: '0.8rem' }}>
-        {emp.telegram_id ? `✅ ${emp.telegram_id}` : '—'}
+      <td style={{ padding: '0.75rem 0.5rem', color: '#666', fontSize: '0.85rem' }}>
+        {emp.phone || <span style={{ color: '#ccc' }}>—</span>}
+      </td>
+      <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.8rem' }}>
+        {emp.telegram_id
+          ? <span style={{ color: '#10B981' }}>✅ מחובר</span>
+          : <span style={{ color: '#ccc' }}>לא מחובר</span>}
       </td>
       <td style={{ padding: '0.75rem 0.5rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -107,8 +112,8 @@ export default function Schedule() {
   const [schedule, setSchedule]  = useState({}); // { "sun_opening": "עד", ... }
   const [publishing, setPublishing] = useState(false);
   const [groupChatId, setGroupChatId] = useState(() => localStorage.getItem('employee_group_chat_id') || '');
-  const [newEmpName, setNewEmpName]   = useState('');
-  const [newEmpRole, setNewEmpRole]   = useState('general');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '' });
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
@@ -145,9 +150,17 @@ export default function Schedule() {
   };
 
   const addEmployee = async () => {
-    if (!newEmpName.trim()) return;
-    await employeesDb.add({ user_id: user.id, name: newEmpName.trim(), role: newEmpRole, active: true });
-    setNewEmpName('');
+    if (!newEmp.name.trim()) return;
+    await employeesDb.add({
+      user_id:  user.id,
+      name:     newEmp.name.trim(),
+      role:     newEmp.role,
+      max_days: newEmp.max_days,
+      phone:    newEmp.phone.trim() || null,
+      active:   true,
+    });
+    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '' });
+    setShowAddForm(false);
     showToast('עובד נוסף');
   };
 
@@ -331,16 +344,62 @@ ${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0 }}>עובדים פעילים ({activeEmployees.length})</h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input value={newEmpName} onChange={e => setNewEmpName(e.target.value)} placeholder="שם עובד חדש" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd' }} onKeyDown={e => e.key === 'Enter' && addEmployee()} />
-                <select value={newEmpRole} onChange={e => setNewEmpRole(e.target.value)} style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                  <option value="general">👤 כללי</option>
-                  <option value="barista">☕ בריסטה</option>
-                  <option value="roaster">🔥 קולה</option>
-                </select>
-                <button onClick={addEmployee} className="btn btn-primary">+ הוסף</button>
-              </div>
+              <button onClick={() => setShowAddForm(v => !v)} className="btn btn-primary">
+                {showAddForm ? '✕ סגור' : '+ הוסף עובד'}
+              </button>
             </div>
+
+            {showAddForm && (
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 1rem', color: '#374151' }}>עובד חדש</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>שם מלא *</label>
+                    <input
+                      value={newEmp.name}
+                      onChange={e => setNewEmp(p => ({ ...p, name: e.target.value }))}
+                      placeholder="לדוגמה: דניאל מטזוני"
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                      onKeyDown={e => e.key === 'Enter' && addEmployee()}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>טלפון</label>
+                    <input
+                      value={newEmp.phone}
+                      onChange={e => setNewEmp(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="050-0000000"
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>תפקיד</label>
+                    <select
+                      value={newEmp.role}
+                      onChange={e => setNewEmp(p => ({ ...p, role: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                    >
+                      <option value="general">👤 כללי</option>
+                      <option value="barista">☕ בריסטה</option>
+                      <option value="roaster">🔥 קולה</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>מקסימום ימים בשבוע</label>
+                    <input
+                      type="number" min={1} max={6}
+                      value={newEmp.max_days}
+                      onChange={e => setNewEmp(p => ({ ...p, max_days: parseInt(e.target.value) || 5 }))}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowAddForm(false)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
+                  <button onClick={addEmployee} className="btn btn-primary" disabled={!newEmp.name.trim()}>✅ הוסף עובד</button>
+                </div>
+              </div>
+            )}
 
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -348,6 +407,7 @@ ${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>שם</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>תפקיד</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>מקס׳ ימים</th>
+                  <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלפון</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלגרם</th>
                   <th style={{ padding: '0.75rem 0.5rem' }}></th>
                 </tr>
@@ -357,7 +417,7 @@ ${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים
                   <EmployeeRow key={emp.id} emp={emp} onApprove={approveEmployee} onUpdate={updateEmployee} onRemove={removeEmployee} />
                 ))}
                 {activeEmployees.length === 0 && (
-                  <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>אין עובדים פעילים עדיין</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>אין עובדים פעילים עדיין — לחץ "+ הוסף עובד" כדי להתחיל</td></tr>
                 )}
               </tbody>
             </table>
