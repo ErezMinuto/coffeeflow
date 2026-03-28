@@ -12,6 +12,7 @@ import Products                from './components/products/Products';
 import Purchases               from './components/purchases/Purchases';
 import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
+import Schedule                from './components/schedule/Schedule';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -31,6 +32,7 @@ function AppContent() {
           <Route path="/products"   element={<Products />} />
           <Route path="/purchases"  element={<Purchases />} />
           <Route path="/tasks"      element={<Tasks />} />
+          <Route path="/schedule"   element={<Schedule />} />
           <Route path="/settings"   element={<Settings />} />
           <Route path="*"           element={<Navigate to="/dashboard" replace />} />
         </Routes>

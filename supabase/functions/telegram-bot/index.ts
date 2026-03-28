@@ -1,37 +1,36 @@
 /**
  * CoffeeFlow — Telegram Bot Webhook (Supabase Edge Function)
  *
- * Commands (team group chat only):
- *   /task <free text>   → add a waiting customer — free Hebrew text, bot extracts name + phone
- *   /tasks              → list pending waiting customers
- *   /done <number>      → mark waiting customer #N as handled
+ * Send any free Hebrew text in the group to add a waiting customer.
+ * Claude AI extracts the name, phone, product and SKU automatically.
  *
- * Examples:
- *   /task ירון מנחם, רוצה לדעת כשמקינטה מוקה מקט 387874 חוזרת למלאי, טלפון 0547373737
- *   /task דנה כהן 052-9876543 Kenya Light 250g
+ * Commands:
+ *   /tasks          → list all pending waiting customers
+ *   /done <number>  → mark customer #N as handled
  *
- * Environment variables (Supabase dashboard → Edge Functions → Secrets):
- *   TELEGRAM_BOT_TOKEN    — bot token from BotFather
- *   TELEGRAM_CHAT_ID      — team group chat ID  (e.g. -1001234567890)
- *   COFFEEFLOW_USER_ID    — your Clerk user ID  (find it in CoffeeFlow → Settings)
- *
- * SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.
+ * Environment secrets (Supabase → Edge Functions → Secrets):
+ *   TELEGRAM_BOT_TOKEN       — bot token from BotFather
+ *   TELEGRAM_CHAT_ID         — team group chat ID
+ *   COFFEEFLOW_USER_ID       — your Clerk user ID
+ *   ANTHROPIC_API_KEY        — Claude API key
+ *   SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are injected automatically
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ── Config ────────────────────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────────────────
 
-const BOT_TOKEN    = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
-const ALLOWED_CHAT = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
-const USER_ID      = Deno.env.get("COFFEEFLOW_USER_ID")        ?? "";
-const SUPA_URL     = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
+const ALLOWED_CHAT   = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
+const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")        ?? "";
+const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY")         ?? "";
+const SUPA_URL       = Deno.env.get("SUPABASE_URL")              ?? "";
+const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
-// ── Telegram helper ───────────────────────────────────────────────────────────
+// ── Telegram helper ─────────────────────────────────────────────────────────
 
 async function reply(chatId: string | number, text: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -41,82 +40,131 @@ async function reply(chatId: string | number, text: string) {
   });
 }
 
-// ── Free-text parser ──────────────────────────────────────────────────────────
-// Extracts customer_name, phone, and product from a Hebrew free-text string.
-//
-// Strategy:
-//   1. Find Israeli phone number anywhere in the text
-//   2. Strip the phone (and surrounding label like "טלפון") → clean text
-//   3. Split clean text on first comma: left = name, right = product/request
+// ── Claude AI extractor ────────────────────────────────────────────────────
 
-interface ParsedTask {
-  customer_name: string;
-  phone:         string;
-  product:       string;
-  notes:         string; // always stores the original full text
+interface Extracted {
+  is_customer_request: boolean;
+  is_handled:          boolean;
+  handled_customer:    string;
+  customer_name:       string;
+  phone:               string;
+  product:             string;
+  sku:                 string;
 }
 
-function parseTask(raw: string): ParsedTask {
-  // Israeli phone: 05X-XXXXXXX, 05XXXXXXXX, +972-5X-XXXXXXX, etc.
-  const phoneRe = /(?:\+972[-\s]?|0)(?:5\d|[23489]\d)[-\s]?\d{3}[-\s]?\d{4}/g;
-  const phoneMatches = raw.match(phoneRe);
-  const phone = phoneMatches ? phoneMatches[0].replace(/[-\s]/g, "") : "";
+async function extractWithClaude(text: string): Promise<Extracted | null> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key":         ANTHROPIC_KEY,
+      "anthropic-version": "2023-06-01",
+      "Content-Type":      "application/json",
+    },
+    body: JSON.stringify({
+      model:      "claude-haiku-4-5",
+      max_tokens: 300,
+      system: `אתה עוזר לחנות קפה וציוד קפה ישראלית.
+הודעות בקבוצה הן בעברית. יש שני סוגי הודעות רלוונטיות:
 
-  // Strip phone + preceding label (טלפון / נייד / מספר) from text
-  let clean = raw
-    .replace(/[,\s]*(טלפון|נייד|מס'?|מספר)[:\s]*/gi, ", ")
-    .replace(phoneRe, "")
-    .replace(/,\s*,/g, ",")
-    .replace(/,\s*$/,  "")
-    .trim();
+1. הוספת לקוח ממתין — לקוח שרוצה לדעת מתי מוצר חוזר למלאי
+2. עדכון טיפול — עובד מדווח שטיפל בלקוח / עדכן לקוח שהמוצר חזר
 
-  // Split on first comma → name | product description
-  const commaIdx      = clean.indexOf(",");
-  const customer_name = (commaIdx !== -1 ? clean.slice(0, commaIdx) : clean).trim();
-  const product       = (commaIdx !== -1 ? clean.slice(commaIdx + 1) : "").trim();
-
-  return { customer_name, phone, product, notes: raw };
+החזר JSON בלבד, ללא טקסט נוסף:
+{
+  "is_customer_request": true/false,
+  "customer_name": "שם הלקוח החדש",
+  "phone": "טלפון",
+  "product": "שם המוצר",
+  "sku": "מקט אם צוין",
+  "is_handled": true/false,
+  "handled_customer": "שם הלקוח שטופל"
 }
 
-// ── Command handlers ──────────────────────────────────────────────────────────
+דוגמאות לטיפול: "עדכנתי את דוד", "טיפלתי בשרה לוי", "דוד כהן טופל", "יצרתי קשר עם ירון"
+אם שדה לא קיים — החזר מחרוזת ריקה "".`,
+      messages: [{ role: "user", content: text }],
+    }),
+  });
 
-async function handleTask(chatId: string, text: string, fromName: string) {
-  const content = text.replace(/^\/task\s*/i, "").trim();
+  const json = await res.json();
+  const raw  = json.content?.[0]?.text ?? "";
 
-  if (!content) {
-    await reply(chatId,
-      "❓ <b>שלח את פרטי הלקוח אחרי /task, לדוגמה:</b>\n" +
-      "<code>/task ירון מנחם, רוצה מקינטה מוקה מקט 387874, טלפון 0547373737</code>"
-    );
+  try {
+    // Claude sometimes wraps JSON in markdown code fences — strip them
+    const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    return JSON.parse(clean) as Extracted;
+  } catch {
+    console.error("Claude parse error:", raw);
+    return null;
+  }
+}
+
+// ── Handlers ───────────────────────────────────────────────────────────────
+
+async function handleMarkedDone(chatId: string, customerName: string) {
+  const { data } = await supabase
+    .from("waiting_customers")
+    .select("*")
+    .is("notified_at", null)
+    .ilike("customer_name", `%${customerName}%`)
+    .limit(1);
+
+  const row = data?.[0];
+  if (!row) {
+    await reply(chatId, `⚠️ לא מצאתי לקוח בשם "${customerName}" ברשימת הממתינים`);
     return;
   }
 
-  const parsed = parseTask(content);
+  await supabase
+    .from("waiting_customers")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", row.id);
 
-  if (!parsed.customer_name) {
-    await reply(chatId, "⚠️ לא הצלחתי לזהות שם לקוח — נסה שוב");
+  await reply(chatId, `✅ <b>${row.customer_name}</b> סומן כטופל`);
+}
+
+async function handleFreeText(chatId: string, text: string, fromName: string) {
+  const extracted = await extractWithClaude(text);
+
+  if (!extracted) return;
+
+  // Employee marked a customer as handled
+  if (extracted.is_handled && extracted.handled_customer) {
+    await handleMarkedDone(chatId, extracted.handled_customer);
     return;
   }
+
+  if (!extracted.is_customer_request) return; // unrelated message — ignore silently
+
+  const { customer_name, phone, product, sku } = extracted;
+
+  if (!customer_name) {
+    await reply(chatId, "⚠️ לא הצלחתי לזהות שם לקוח — נסה שוב עם פרטים ברורים יותר");
+    return;
+  }
+
+  const productFull = [product, sku ? `מקט: ${sku}` : ""].filter(Boolean).join(" | ");
 
   const { error } = await supabase.from("waiting_customers").insert({
     user_id:       USER_ID,
-    customer_name: parsed.customer_name,
-    phone:         parsed.phone,
-    product:       parsed.product || parsed.notes,
-    notes:         `נוסף ע"י ${fromName} דרך טלגרם`,
+    customer_name,
+    phone:         phone   || null,
+    product:       productFull || null,
+    notes:         `נוסף ע"י ${fromName} דרך טלגרם | הודעה מקורית: ${text}`,
   });
 
   if (error) {
     console.error("Insert error:", error);
-    await reply(chatId, "❌ שגיאה בשמירה — בדוק את הלוגים");
+    await reply(chatId, "❌ שגיאה בשמירה — נסה שוב");
     return;
   }
 
   const lines = [
     `✅ <b>נוסף לרשימת ממתינים!</b>`,
-    `👤 ${parsed.customer_name}`,
-    parsed.phone   ? `📞 ${parsed.phone}`   : "",
-    parsed.product ? `📦 ${parsed.product}` : "",
+    `👤 ${customer_name}`,
+    phone       ? `📞 ${phone}`       : "",
+    product     ? `📦 ${product}`     : "",
+    sku         ? `🔢 מקט: ${sku}`    : "",
   ].filter(Boolean).join("\n");
 
   await reply(chatId, lines);
@@ -144,7 +192,7 @@ async function handleTasks(chatId: string) {
 
   await reply(chatId,
     `📋 <b>לקוחות ממתינים (${data.length}):</b>\n\n${lines}\n\n` +
-    `לסימון כטופל: /done 1`
+    `לסימון כטופל: <code>/done 1</code>`
   );
 }
 
@@ -152,7 +200,7 @@ async function handleDone(chatId: string, text: string) {
   const num = parseInt(text.replace(/^\/done\s*/i, "").trim());
 
   if (isNaN(num) || num < 1) {
-    await reply(chatId, "❓ פורמט: /done מספר — לדוגמה: <code>/done 2</code>\nראה את המספרים ב-/tasks");
+    await reply(chatId, "❓ פורמט: /done מספר — לדוגמה: <code>/done 2</code>\nראה מספרים ב-/tasks");
     return;
   }
 
@@ -178,7 +226,7 @@ async function handleDone(chatId: string, text: string) {
   await reply(chatId, `✅ <b>${row.customer_name}</b> סומן כטופל`);
 }
 
-// ── Main handler ──────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
   try {
@@ -190,13 +238,13 @@ serve(async (req) => {
     const text     = message.text.trim();
     const fromName = message.from?.first_name ?? "מישהו";
 
-    // Only act in the configured group
     if (chatId !== ALLOWED_CHAT) return new Response("ok");
 
     const lower = text.toLowerCase();
-    if      (lower.startsWith("/task"))  await handleTask(chatId, text, fromName);
-    else if (lower.startsWith("/tasks")) await handleTasks(chatId);
+
+    if      (lower.startsWith("/tasks")) await handleTasks(chatId);
     else if (lower.startsWith("/done"))  await handleDone(chatId, text);
+    else if (!lower.startsWith("/"))     await handleFreeText(chatId, text, fromName);
 
     return new Response("ok");
   } catch (err) {

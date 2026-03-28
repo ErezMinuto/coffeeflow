@@ -10,6 +10,7 @@ const staticItems = [
   { path: '/products',   icon: '📦', label: 'Products'   },
   { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
   { path: '/tasks',      icon: '📋', label: 'Tasks'      },
+  { path: '/schedule',   icon: '📅', label: 'Schedule'   },
   { path: '/settings',   icon: '⚙️', label: 'Settings'   },
 ];
 
@@ -17,7 +18,8 @@ export default function Navigation() {
   const { user } = useUser();
   const { data }  = useApp();
 
-  const pendingTasks = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
+  const pendingTasks      = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
+  const pendingEmployees  = (data.employees || []).filter(e => e.user_id === 'pending').length;
 
   return (
     <nav className="navbar">
@@ -46,6 +48,15 @@ export default function Navigation() {
                 padding: '1px 6px', marginRight: '4px', lineHeight: '1.4'
               }}>
                 {pendingTasks}
+              </span>
+            )}
+            {item.path === '/schedule' && pendingEmployees > 0 && (
+              <span style={{
+                background: '#F59E0B', color: 'white',
+                borderRadius: '10px', fontSize: '0.7rem', fontWeight: '700',
+                padding: '1px 6px', marginRight: '4px', lineHeight: '1.4'
+              }}>
+                {pendingEmployees}
               </span>
             )}
           </NavLink>

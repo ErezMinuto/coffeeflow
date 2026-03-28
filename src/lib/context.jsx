@@ -22,6 +22,10 @@ export const AppProvider = ({ children }) => {
   const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients');
   const roastComponentsDb         = useSupabaseData('roast_components');
   const waitingCustomersDb        = useSupabaseData('waiting_customers');
+  const employeesDb               = useSupabaseData('employees');
+  const availabilityDb            = useSupabaseData('availability_submissions');
+  const schedulesDb               = useSupabaseData('schedules');
+  const assignmentsDb             = useSupabaseData('schedule_assignments');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {
@@ -33,6 +37,10 @@ export const AppProvider = ({ children }) => {
     roastProfileIngredients: roastProfileIngredientsDb.data || [],
     roastComponents:         roastComponentsDb.data         || [],
     waitingCustomers:        waitingCustomersDb.data        || [],
+    employees:               employeesDb.data               || [],
+    availability:            availabilityDb.data            || [],
+    schedules:               schedulesDb.data               || [],
+    assignments:             assignmentsDb.data             || [],
     costSettings:            costSettings                  || {}
   };
 
@@ -56,6 +64,7 @@ export const AppProvider = ({ children }) => {
       data,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
+      employeesDb, availabilityDb, schedulesDb, assignmentsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss
