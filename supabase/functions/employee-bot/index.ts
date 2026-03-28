@@ -164,11 +164,25 @@ async function handleWebhook(req: Request) {
   if (chatId !== GROUP_ID)    return new Response("ok");
   if (text.startsWith("/"))   return new Response("ok");
 
-  // Classify the message
-  const result = await classifyMessage(text);
+  // If message contains a phone number pattern, treat as name registration
+  const phonePattern = /05\d[\d\-]{7,8}/;
+  const hasPhone = phonePattern.test(text);
+  const result = hasPhone
+    ? await classifyMessage(text)
+    : await classifyMessage(text);
+
+  // Fallback: if Claude returned "other" but message has phone → force name classification
+  const finalResult = (result.type === "other" && hasPhone)
+    ? await (async () => {
+        const nameOnly = text.replace(phonePattern, "").trim();
+        const phone    = text.match(phonePattern)?.[0] ?? undefined;
+        return { type: "name" as const, name: nameOnly, phone };
+      })()
+    : result;
 
   // ── Name registration ──────────────────────────────────────────────────────
-  if (result.type === "name" && result.name) {
+  if (finalResult.type === "name" && finalResult.name) {
+    const result = finalResult;
     // Check if already registered by telegram_id
     const { data: existing } = await supabase
       .from("employees")
@@ -213,7 +227,8 @@ async function handleWebhook(req: Request) {
   }
 
   // ── Availability ───────────────────────────────────────────────────────────
-  if (result.type === "availability") {
+  if (finalResult.type === "availability") {
+    const result = finalResult;
     // Find employee by telegram_id
     const { data: empRows } = await supabase
       .from("employees")
