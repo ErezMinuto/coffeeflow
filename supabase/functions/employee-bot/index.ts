@@ -41,7 +41,10 @@ function nextSunday(): string {
   const d = new Date();
   const diff = d.getDay() === 0 ? 7 : 7 - d.getDay();
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 // ── Claude: classify message ──────────────────────────────────────────────────
