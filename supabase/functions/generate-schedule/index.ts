@@ -61,9 +61,11 @@ ${empList.join("\n")}
 - תשבץ רק עובדים שזמינים ביום
 - אם ליום יש "עד XX:XX" בזמינות — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו באותו יום
 
-החזר JSON בלבד בפורמט: {"sun_opening": "שם", "sun_cafe": "שם", ...}
-מפתחות אפשריים: [יום]_opening, [יום]_cafe, [יום]_roasting, [יום]_cashier, [יום]_store1, [יום]_store2, [יום]_store3
-ימים: sun, mon, tue, wed, thu, fri`;
+IMPORTANT: Reply with a single raw JSON object only. No explanation, no markdown, no headings, no text before or after.
+Format: {"sun_opening": "name", "sun_cafe": "name", ...}
+Valid keys: [day]_opening, [day]_cafe, [day]_roasting, [day]_cashier, [day]_store1, [day]_store2, [day]_store3
+Days: sun, mon, tue, wed, thu, fri
+Start your response with { and end with }`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -81,7 +83,9 @@ ${empList.join("\n")}
 
     const json = await res.json();
     const raw = json.content?.[0]?.text ?? "{}";
-    const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    // Extract JSON object even if Claude added surrounding text
+    const match = raw.match(/\{[\s\S]*\}/);
+    const clean = match ? match[0] : "{}";
     const schedule = JSON.parse(clean);
 
     return new Response(JSON.stringify({ schedule }), {
