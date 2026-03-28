@@ -184,7 +184,8 @@ export default function Schedule() {
   const [dayTypes, setDayTypes]  = useState({ sun: 'regular', mon: 'regular', tue: 'regular', wed: 'regular', thu: 'regular', fri: 'friday' });
   const [roastDays, setRoastDays] = useState({ sun: true, tue: true, wed: false });
   const [schedule, setSchedule]  = useState({}); // { "sun_opening": "עד", ... }
-  const [publishing, setPublishing] = useState(false);
+  const [publishing, setPublishing]   = useState(false);
+  const [generating, setGenerating]   = useState(false);
   const [groupChatId, setGroupChatId] = useState(() => localStorage.getItem('employee_group_chat_id') || '');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
@@ -260,75 +261,32 @@ export default function Schedule() {
   // ── AI Generation ───────────────────────────────────────────────────────────
 
   const generateSchedule = async () => {
-    const empList = activeEmployees.map(e => ({
-      name: e.name, role: e.role, baristaSkills: !!e.barista_skills,
-      maxDays: e.max_days,
-      avail: weekAvailability.find(a => a.employee_id === e.id)?.days || null
-    }));
-
-    const prompt = `אתה מנהל בית קפה ישראלי. צור סידור עבודה לשבוע שמתחיל ב-${weekStart}.
-
-עובדים:
-${empList.map(e => {
-  const skills = e.role === 'general' && e.baristaSkills ? ' + כישורי בריסטה (גיבוי)' : '';
-  let availStr = 'לא שלח';
-  if (e.avail) {
-    const parts = Object.entries(e.avail)
-      .filter(([,v]) => v)
-      .map(([k, v]) => v === true ? k : `${k}(עד ${v})`);
-    availStr = parts.length ? parts.join(',') : 'לא זמין';
-  }
-  return `- ${e.name} (${e.role}${skills}, מקסימום ${e.maxDays} ימים, זמין: ${availStr})`;
-}).join('\n')}
-
-ימים פעילים: ${activeDays.map(d => `${d.code}(${dayTypes[d.code]})`).join(', ')}
-ימי קלייה: ${Object.entries(roastDays).filter(([,v])=>v).map(([k])=>k).join(', ')}
-
-עמדות ושעות פתיחה:
-- opening (פתיחת קפה): 07:30 — סיום ~11:00
-- cafe (בית קפה): 07:45 — סיום ~15:00
-- roasting (קלייה): 08:00 — סיום ~13:00
-- cashier (קופה): 08:00 — סיום ~14:00
-- store (חנות): 09:30 ימים רגילים / 09:00 שישי וערב חג — סיום ~18:00 (17:00 שישי)
-
-כללים:
-- עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista). אם אין, שים עובד עם כישורי בריסטה כגיבוי
-- עמדת "בית קפה" — מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
-- בריסטה/קולה יכולים לעבוד בחנות בימים שאין צורך בתפקידם (גמישות מלאה בעמדת חנות)
-- רק הקולה (role=roaster) יכול לקלות. בימים שאינם ימי קלייה — תשבץ אותו לעמדה אחרת
-- ימי שישי/ערב חג: 4 עובדים + קופה, ללא קלייה
-- ימים רגילים: 3-4 עובדים
-- אל תשבץ עובד יותר מהמקסימום שלו לשבוע
-- תשבץ רק עובדים שזמינים ביום
-- אם ליום יש "עד XX:XX" בזמינות — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו באותו יום
-
-החזר JSON בלבד בפורמט: {"sun_opening": "שם", "sun_cafe": "שם", ...}
-מפתחות אפשריים: [יום]_opening, [יום]_cafe, [יום]_roasting, [יום]_cashier, [יום]_store1, [יום]_store2, [יום]_store3
-ימים: sun, mon, tue, wed, thu, fri`;
-
+    setGenerating(true);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-5',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
+      const res = await fetch(
+        'https://ytydgldyeygpzmlxvpvb.supabase.co/functions/v1/generate-schedule',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employees:  activeEmployees,
+            availability: weekAvailability,
+            weekStart,
+            dayTypes,
+            roastDays,
+            activeDays: activeDays.map(d => d.code),
+          }),
+        }
+      );
       const json = await res.json();
-      const raw  = json.content?.[0]?.text ?? '{}';
-      const clean = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-      setSchedule(JSON.parse(clean));
+      if (!res.ok) throw new Error(json.error || 'generate failed');
+      setSchedule(json.schedule);
       showToast('סידור עבודה נוצר בהצלחה ✨');
     } catch (err) {
       console.error('Generate error:', err);
       showToast('שגיאה ביצירת הסידור', 'error');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -630,8 +588,8 @@ ${empList.map(e => {
                 <input value={groupChatId} onChange={e => setGroupChatId(e.target.value)} placeholder="-100xxxxxxxxxx" style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', width: '180px' }} />
               </div>
 
-              <button onClick={generateSchedule} style={{ background: 'linear-gradient(135deg, #6F4E37, #8B6347)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
-                ✨ צור סידור עם AI
+              <button onClick={generateSchedule} disabled={generating} style={{ background: generating ? '#ccc' : 'linear-gradient(135deg, #6F4E37, #8B6347)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: generating ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
+                {generating ? '⏳ מייצר סידור...' : '✨ צור סידור עם AI'}
               </button>
 
               <button onClick={publish} disabled={publishing} style={{ background: publishing ? '#ccc' : '#10B981', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: publishing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
