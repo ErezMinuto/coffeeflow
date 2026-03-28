@@ -71,6 +71,20 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
           </select>
         )}
       </td>
+      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
+        {!isPending && (
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!emp.barista_skills}
+              onChange={e => onUpdate(emp.id, { barista_skills: e.target.checked })}
+            />
+            <span style={{ fontSize: '0.8rem', color: emp.barista_skills ? '#8B5CF6' : '#ccc' }}>
+              {emp.barista_skills ? '☕ כן' : '—'}
+            </span>
+          </label>
+        )}
+      </td>
       <td style={{ padding: '0.75rem 0.5rem' }}>
         {!isPending && (
           <input
@@ -113,7 +127,7 @@ export default function Schedule() {
   const [publishing, setPublishing] = useState(false);
   const [groupChatId, setGroupChatId] = useState(() => localStorage.getItem('employee_group_chat_id') || '');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '' });
+  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false });
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
@@ -152,14 +166,15 @@ export default function Schedule() {
   const addEmployee = async () => {
     if (!newEmp.name.trim()) return;
     await employeesDb.add({
-      user_id:  user.id,
-      name:     newEmp.name.trim(),
-      role:     newEmp.role,
-      max_days: newEmp.max_days,
-      phone:    newEmp.phone.trim() || null,
-      active:   true,
+      user_id:        user.id,
+      name:           newEmp.name.trim(),
+      role:           newEmp.role,
+      max_days:       newEmp.max_days,
+      phone:          newEmp.phone.trim() || null,
+      barista_skills: newEmp.barista_skills,
+      active:         true,
     });
-    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '' });
+    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false });
     setShowAddForm(false);
     showToast('עובד נוסף');
   };
@@ -186,24 +201,28 @@ export default function Schedule() {
 
   const generateSchedule = async () => {
     const empList = activeEmployees.map(e => ({
-      name: e.name, role: e.role, maxDays: e.max_days,
+      name: e.name, role: e.role, baristaSkills: !!e.barista_skills, maxDays: e.max_days,
       available: weekAvailability.find(a => a.employee_id === e.id)?.days || {}
     }));
 
     const prompt = `אתה מנהל בית קפה ישראלי. צור סידור עבודה לשבוע שמתחיל ב-${weekStart}.
 
 עובדים:
-${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים, זמין: ${Object.entries(e.available).filter(([,v])=>v).map(([k])=>k).join(',')})`).join('\n')}
+${empList.map(e => {
+  const skills = e.role === 'general' && e.baristaSkills ? ' + כישורי בריסטה (גיבוי)' : '';
+  return `- ${e.name} (${e.role}${skills}, מקסימום ${e.maxDays} ימים, זמין: ${Object.entries(e.available).filter(([,v])=>v).map(([k])=>k).join(',') || 'לא שלח'})`;
+}).join('\n')}
 
 ימים פעילים: ${activeDays.map(d => `${d.code}(${dayTypes[d.code]})`).join(', ')}
 ימי קלייה: ${Object.entries(roastDays).filter(([,v])=>v).map(([k])=>k).join(', ')}
 
 כללים:
-- לפחות בריסטה 1 בכל יום (עמדת פתיחת קפה)
+- עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista) — אם אין בריסטה זמין, שים עובד עם כישורי בריסטה (גיבוי)
+- עמדת "בית קפה" מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
 - ימי שישי/ערב חג: 4 עובדים + קופה, ללא קלייה
 - ימים רגילים: 3-4 עובדים
-- רק הקולה יכול לקלות
-- מקסימום ימים לעובד לשבוע
+- רק הקולה (role=roaster) יכול לקלות
+- אל תשבץ עובד יותר מהמקסימום שלו לשבוע
 - תשבץ רק עובדים שזמינים ביום
 
 החזר JSON בלבד בפורמט: {"sun_opening": "שם", "sun_cafe": "שם", ...}
@@ -393,6 +412,18 @@ ${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים
                       style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
                     />
                   </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', background: newEmp.barista_skills ? '#EDE9FE' : 'white' }}>
+                      <input
+                        type="checkbox"
+                        checked={newEmp.barista_skills}
+                        onChange={e => setNewEmp(p => ({ ...p, barista_skills: e.target.checked }))}
+                      />
+                      <span style={{ fontSize: '0.9rem', color: newEmp.barista_skills ? '#7C3AED' : '#6B7280' }}>
+                        ☕ כישורי בריסטה — יכול לשמש כבריסטה במידת הצורך (עדיפות שנייה)
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
                   <button onClick={() => setShowAddForm(false)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
@@ -406,6 +437,7 @@ ${empList.map(e => `- ${e.name} (${e.role}, מקסימום ${e.maxDays} ימים
                 <tr style={{ background: '#f9f9f9', borderBottom: '2px solid #eee' }}>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>שם</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>תפקיד</th>
+                  <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>☕ כישורי בריסטה</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>מקס׳ ימים</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלפון</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלגרם</th>
