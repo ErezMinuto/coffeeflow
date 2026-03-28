@@ -165,8 +165,7 @@ export default function Schedule() {
 
   const addEmployee = async () => {
     if (!newEmp.name.trim()) return;
-    await employeesDb.add({
-      user_id:        user.id,
+    await employeesDb.insert({
       name:           newEmp.name.trim(),
       role:           newEmp.role,
       max_days:       newEmp.max_days,
