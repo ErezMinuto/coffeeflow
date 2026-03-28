@@ -22,6 +22,13 @@ const WEBHOOK_SECRET = Deno.env.get("EMPLOYEE_BOT_WEBHOOK_SECRET") ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
+const ALLOWED_ORIGIN = Deno.env.get("COFFEEFLOW_ORIGIN") ?? "https://coffeeflow-thaf.vercel.app";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-coffeeflow-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function send(chatId: number | string, text: string) {
@@ -121,7 +128,7 @@ async function handleOnboard() {
     `כדי להצטרף — שלחו את שמכם המלא ומספר טלפון כאן בקבוצה 👇\n\n` +
     `לדוגמה: <code>טליה אלבז 0501234567</code>`
   );
-  return new Response(JSON.stringify({ ok: true }));
+  return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
 async function handleRemind() {
@@ -132,13 +139,13 @@ async function handleRemind() {
     `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
     `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`
   );
-  return new Response(JSON.stringify({ ok: true }));
+  return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
 async function handlePublish(req: Request) {
   const { chat_id, text } = await req.json();
   await send(chat_id, text);
-  return new Response(JSON.stringify({ ok: true }));
+  return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
 async function handleWebhook(req: Request) {
@@ -259,6 +266,10 @@ async function handleWebhook(req: Request) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const action = new URL(req.url).searchParams.get("action");
 
@@ -266,7 +277,7 @@ serve(async (req) => {
     if (action) {
       const authHeader = req.headers.get("x-coffeeflow-secret") ?? "";
       if (WEBHOOK_SECRET && authHeader !== WEBHOOK_SECRET) {
-        return new Response("Unauthorized", { status: 401 });
+        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
       }
       if (action === "onboard") return await handleOnboard();
       if (action === "remind")  return await handleRemind();
