@@ -259,8 +259,8 @@ export default function Schedule() {
   const generateSchedule = async () => {
     const empList = activeEmployees.map(e => ({
       name: e.name, role: e.role, baristaSkills: !!e.barista_skills,
-      maxDays: e.max_days, endTime: e.end_time || null,
-      available: weekAvailability.find(a => a.employee_id === e.id)?.days || {}
+      maxDays: e.max_days,
+      avail: weekAvailability.find(a => a.employee_id === e.id)?.days || null
     }));
 
     const prompt = `אתה מנהל בית קפה ישראלי. צור סידור עבודה לשבוע שמתחיל ב-${weekStart}.
@@ -268,8 +268,14 @@ export default function Schedule() {
 עובדים:
 ${empList.map(e => {
   const skills = e.role === 'general' && e.baristaSkills ? ' + כישורי בריסטה (גיבוי)' : '';
-  const until  = e.endTime ? ` | עובד עד ${e.endTime}` : '';
-  return `- ${e.name} (${e.role}${skills}${until}, מקסימום ${e.maxDays} ימים, זמין: ${Object.entries(e.available).filter(([,v])=>v).map(([k])=>k).join(',') || 'לא שלח'})`;
+  let availStr = 'לא שלח';
+  if (e.avail) {
+    const parts = Object.entries(e.avail)
+      .filter(([,v]) => v)
+      .map(([k, v]) => v === true ? k : `${k}(עד ${v})`);
+    availStr = parts.length ? parts.join(',') : 'לא זמין';
+  }
+  return `- ${e.name} (${e.role}${skills}, מקסימום ${e.maxDays} ימים, זמין: ${availStr})`;
 }).join('\n')}
 
 ימים פעילים: ${activeDays.map(d => `${d.code}(${dayTypes[d.code]})`).join(', ')}
@@ -291,7 +297,7 @@ ${empList.map(e => {
 - ימים רגילים: 3-4 עובדים
 - אל תשבץ עובד יותר מהמקסימום שלו לשבוע
 - תשבץ רק עובדים שזמינים ביום
-- אם לעובד יש "עובד עד XX:XX" — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו
+- אם ליום יש "עד XX:XX" בזמינות — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו באותו יום
 
 החזר JSON בלבד בפורמט: {"sun_opening": "שם", "sun_cafe": "שם", ...}
 מפתחות אפשריים: [יום]_opening, [יום]_cafe, [יום]_roasting, [יום]_cashier, [יום]_store1, [יום]_store2, [יום]_store3
@@ -567,7 +573,7 @@ ${empList.map(e => {
                 {activeEmployees.map(emp => {
                   const sub = weekAvailability.find(a => a.employee_id === emp.id);
                   const days = sub?.days || {};
-                  const total = Object.values(days).filter(Boolean).length;
+                  const total = Object.values(days).filter(v => v).length;
                   return (
                     <tr key={emp.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                       <td style={{ padding: '0.75rem', fontWeight: 600 }}>
@@ -580,10 +586,12 @@ ${empList.map(e => {
                         <td key={d.code} style={{ padding: '0.5rem', textAlign: 'center' }}>
                           {!sub ? (
                             <span style={{ color: '#ccc', fontSize: '0.8rem' }}>—</span>
+                          ) : days[d.code] === true ? (
+                            <span style={{ background: '#D1FAE5', color: '#065F46', borderRadius: '6px', padding: '4px 6px', fontSize: '0.8rem' }}>✓</span>
                           ) : days[d.code] ? (
-                            <span style={{ background: '#D1FAE5', color: '#065F46', borderRadius: '6px', padding: '4px 8px', fontSize: '0.8rem' }}>✓</span>
+                            <span style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '6px', padding: '4px 6px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>עד {days[d.code]}</span>
                           ) : (
-                            <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: '6px', padding: '4px 8px', fontSize: '0.8rem' }}>✗</span>
+                            <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: '6px', padding: '4px 6px', fontSize: '0.8rem' }}>✗</span>
                           )}
                         </td>
                       ))}

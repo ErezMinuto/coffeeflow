@@ -41,7 +41,8 @@ function nextSunday(): string {
   return d.toISOString().split("T")[0];
 }
 
-async function parseDays(text: string): Promise<string[]> {
+// Returns { sun: true, tue: "14:00", fri: true } — true=full day, "HH:MM"=until that time
+async function parseDays(text: string): Promise<Record<string, boolean | string>> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -51,22 +52,35 @@ async function parseDays(text: string): Promise<string[]> {
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5",
-      max_tokens: 100,
-      system: `Extract work day codes from Hebrew text. Return JSON array only, no other text.
-Codes: sun=ראשון/א, mon=שני/ב, tue=שלישי/ג, wed=רביעי/ד, thu=חמישי/ה, fri=שישי/ו
-"כל הימים"/"הכל" → ["sun","mon","tue","wed","thu","fri"]
-"לא יכול"/"אין לי" → []
-Examples: "ראשון שלישי שישי" → ["sun","tue","fri"]`,
+      max_tokens: 200,
+      system: `Extract work day availability from Hebrew text.
+Return a JSON object only, no other text.
+Keys: sun=ראשון, mon=שני, tue=שלישי, wed=רביעי, thu=חמישי, fri=שישי
+Value: true = available full day, "HH:MM" = available until that time, omit key = not available.
+
+"כל הימים" → {"sun":true,"mon":true,"tue":true,"wed":true,"thu":true,"fri":true}
+"לא יכול" → {}
+"ראשון, שלישי עד 14:00, שישי" → {"sun":true,"tue":"14:00","fri":true}
+"שני וחמישי עד 13:00" → {"mon":true,"thu":"13:00"}`,
       messages: [{ role: "user", content: text }],
     }),
   });
   const json = await res.json();
-  const raw  = json.content?.[0]?.text ?? "[]";
+  const raw  = json.content?.[0]?.text ?? "{}";
   try {
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
-    return Array.isArray(parsed) ? parsed.filter((d: string) => DAY_CODES.includes(d)) : [];
-  } catch { return []; }
+    if (typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    // Validate keys and values
+    const result: Record<string, boolean | string> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (!DAY_CODES.includes(k)) continue;
+      if (v === true || (typeof v === "string" && /^\d{2}:\d{2}$/.test(v))) {
+        result[k] = v as boolean | string;
+      }
+    }
+    return result;
+  } catch { return {}; }
 }
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
@@ -84,9 +98,12 @@ async function handleRemind() {
     await send(emp.telegram_id,
       `👋 שלום <b>${emp.name}</b>!\n\n` +
       `אנא שלח את הימים שתוכל לעבוד בשבוע הבא.\n\n` +
-      `לדוגמה:\n<code>ראשון, שלישי, שישי</code>\n` +
-      `או: <code>כל הימים</code>\n` +
-      `או: <code>לא יכול השבוע</code>`
+      `לדוגמה:\n` +
+      `<code>ראשון, שלישי, שישי</code>\n` +
+      `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
+      `<code>כל הימים</code>\n` +
+      `<code>לא יכול השבוע</code>\n\n` +
+      `אפשר לציין "עד שעה" לכל יום בנפרד 🕑`
     );
     sent++;
   }
@@ -201,10 +218,8 @@ async function handleWebhook(req: Request) {
   }
 
   // ── Active employee — parse availability ─────────────────────────────────
-  const days = await parseDays(text);
-  const week = nextSunday();
-
-  const daysObj = Object.fromEntries(DAY_CODES.map(d => [d, days.includes(d)]));
+  const daysObj = await parseDays(text);
+  const week    = nextSunday();
 
   // Upsert availability for next week
   const { data: existing } = await supabase
@@ -223,10 +238,13 @@ async function handleWebhook(req: Request) {
       .insert({ employee_id: emp.id, week_start: week, days: daysObj });
   }
 
-  if (days.length === 0) {
+  const entries = Object.entries(daysObj);
+  if (entries.length === 0) {
     await send(chatId, `✅ נשמר — לא יכול השבוע הבא.\nאם תשתנה תוכנית, שלח שוב.`);
   } else {
-    const list = days.map((d: string) => DAY_HE[d]).join(", ");
+    const list = entries.map(([d, v]) =>
+      v === true ? DAY_HE[d] : `${DAY_HE[d]} (עד ${v})`
+    ).join(", ");
     await send(chatId,
       `✅ <b>נשמר!</b>\n` +
       `הימים שלך לשבוע הבא:\n📅 ${list}\n\n` +
