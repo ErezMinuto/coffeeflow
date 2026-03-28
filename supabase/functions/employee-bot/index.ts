@@ -168,6 +168,11 @@ async function handleWebhook(req: Request) {
   }
 
   // ── Waiting for name — match against manager-added employees ─────────────
+  if (emp && emp.name === "__AWAITING_NAME__" && text.startsWith("/")) {
+    await send(chatId, `שלח את שמך המלא (לא פקודה) 👇`);
+    return new Response("ok");
+  }
+
   if (emp && emp.name === "__AWAITING_NAME__") {
     // Search for an existing employee with this name (no telegram_id yet)
     const { data: matches } = await supabase
