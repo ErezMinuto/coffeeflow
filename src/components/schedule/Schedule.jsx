@@ -94,6 +94,15 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
           />
         )}
       </td>
+      <td style={{ padding: '0.75rem 0.5rem' }}>
+        {!isPending && (
+          <input
+            type="time" value={emp.end_time || ''}
+            onChange={e => onUpdate(emp.id, { end_time: e.target.value || null })}
+            style={{ padding: '4px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem', color: emp.end_time ? '#F59E0B' : '#ccc' }}
+          />
+        )}
+      </td>
       <td style={{ padding: '0.75rem 0.5rem', color: '#666', fontSize: '0.85rem' }}>
         {emp.phone || <span style={{ color: '#ccc' }}>—</span>}
       </td>
@@ -127,7 +136,7 @@ export default function Schedule() {
   const [publishing, setPublishing] = useState(false);
   const [groupChatId, setGroupChatId] = useState(() => localStorage.getItem('employee_group_chat_id') || '');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false });
+  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
@@ -171,9 +180,10 @@ export default function Schedule() {
       max_days:       newEmp.max_days,
       phone:          newEmp.phone.trim() || null,
       barista_skills: newEmp.barista_skills,
+      end_time:       newEmp.end_time || null,
       active:         true,
     });
-    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false });
+    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
     setShowAddForm(false);
     showToast('עובד נוסף');
   };
@@ -200,7 +210,8 @@ export default function Schedule() {
 
   const generateSchedule = async () => {
     const empList = activeEmployees.map(e => ({
-      name: e.name, role: e.role, baristaSkills: !!e.barista_skills, maxDays: e.max_days,
+      name: e.name, role: e.role, baristaSkills: !!e.barista_skills,
+      maxDays: e.max_days, endTime: e.end_time || null,
       available: weekAvailability.find(a => a.employee_id === e.id)?.days || {}
     }));
 
@@ -209,20 +220,30 @@ export default function Schedule() {
 עובדים:
 ${empList.map(e => {
   const skills = e.role === 'general' && e.baristaSkills ? ' + כישורי בריסטה (גיבוי)' : '';
-  return `- ${e.name} (${e.role}${skills}, מקסימום ${e.maxDays} ימים, זמין: ${Object.entries(e.available).filter(([,v])=>v).map(([k])=>k).join(',') || 'לא שלח'})`;
+  const until  = e.endTime ? ` | עובד עד ${e.endTime}` : '';
+  return `- ${e.name} (${e.role}${skills}${until}, מקסימום ${e.maxDays} ימים, זמין: ${Object.entries(e.available).filter(([,v])=>v).map(([k])=>k).join(',') || 'לא שלח'})`;
 }).join('\n')}
 
 ימים פעילים: ${activeDays.map(d => `${d.code}(${dayTypes[d.code]})`).join(', ')}
 ימי קלייה: ${Object.entries(roastDays).filter(([,v])=>v).map(([k])=>k).join(', ')}
 
+עמדות ושעות פתיחה:
+- opening (פתיחת קפה): 07:30 — סיום ~11:00
+- cafe (בית קפה): 07:45 — סיום ~15:00
+- roasting (קלייה): 08:00 — סיום ~13:00
+- cashier (קופה): 08:00 — סיום ~14:00
+- store (חנות): 09:30 — סיום ~18:00 (17:00 שישי)
+
 כללים:
-- עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista) — אם אין בריסטה זמין, שים עובד עם כישורי בריסטה (גיבוי)
-- עמדת "בית קפה" מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
+- עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista). אם אין, שים עובד עם כישורי בריסטה כגיבוי
+- עמדת "בית קפה" — מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
+- בריסטה/קולה יכולים לעבוד בחנות בימים שאין צורך בתפקידם (גמישות מלאה בעמדת חנות)
+- רק הקולה (role=roaster) יכול לקלות. בימים שאינם ימי קלייה — תשבץ אותו לעמדה אחרת
 - ימי שישי/ערב חג: 4 עובדים + קופה, ללא קלייה
 - ימים רגילים: 3-4 עובדים
-- רק הקולה (role=roaster) יכול לקלות
 - אל תשבץ עובד יותר מהמקסימום שלו לשבוע
 - תשבץ רק עובדים שזמינים ביום
+- אם לעובד יש "עובד עד XX:XX" — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו
 
 החזר JSON בלבד בפורמט: {"sun_opening": "שם", "sun_cafe": "שם", ...}
 מפתחות אפשריים: [יום]_opening, [יום]_cafe, [יום]_roasting, [יום]_cashier, [יום]_store1, [יום]_store2, [יום]_store3
@@ -411,6 +432,16 @@ ${empList.map(e => {
                       style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
                     />
                   </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>עובד עד שעה (אופציונלי)</label>
+                    <input
+                      type="time"
+                      value={newEmp.end_time}
+                      onChange={e => setNewEmp(p => ({ ...p, end_time: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '3px' }}>השאר ריק אם עובד יום מלא</div>
+                  </div>
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', background: newEmp.barista_skills ? '#EDE9FE' : 'white' }}>
                       <input
@@ -438,6 +469,7 @@ ${empList.map(e => {
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>תפקיד</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>☕ כישורי בריסטה</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>מקס׳ ימים</th>
+                  <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>עד שעה</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלפון</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>טלגרם</th>
                   <th style={{ padding: '0.75rem 0.5rem' }}></th>
