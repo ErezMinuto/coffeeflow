@@ -177,7 +177,7 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Schedule() {
-  const { data, employeesDb, availabilityDb, schedulesDb, assignmentsDb, showToast, user, costSettings, updateCostSettings } = useApp();
+  const { data, employeesDb, availabilityDb, schedulesDb, assignmentsDb, showToast, user } = useApp();
 
   const [tab, setTab]           = useState('employees');
   const [weekStart, setWeekStart] = useState(toISO(getNextSunday()));
@@ -186,25 +186,6 @@ export default function Schedule() {
   const [schedule, setSchedule]  = useState({}); // { "sun_opening": "עד", ... }
   const [publishing, setPublishing]   = useState(false);
   const [generating, setGenerating]   = useState(false);
-  const [groupChatId, setGroupChatId] = useState('');
-  const [savingChatId, setSavingChatId] = useState(false);
-
-  // Load group chat ID from Supabase settings
-  useEffect(() => {
-    if (costSettings?.employee_group_chat_id) {
-      setGroupChatId(costSettings.employee_group_chat_id);
-    }
-  }, [costSettings]);
-
-  const saveGroupChatId = async (id) => {
-    setSavingChatId(true);
-    try {
-      await updateCostSettings({ employee_group_chat_id: id });
-    } finally {
-      setSavingChatId(false);
-    }
-  };
-
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
 
@@ -338,10 +319,6 @@ export default function Schedule() {
   };
 
   const publish = async () => {
-    if (!groupChatId) {
-      showToast('הזן מזהה קבוצת טלגרם', 'error');
-      return;
-    }
     setPublishing(true);
     try {
       const text = buildTelegramText();
@@ -350,7 +327,7 @@ export default function Schedule() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: groupChatId, text }),
+          body: JSON.stringify({ text }),
         }
       );
       if (!res.ok) throw new Error('publish failed');
@@ -600,17 +577,6 @@ export default function Schedule() {
                 <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>מזהה קבוצת טלגרם</label>
-                <input
-  value={groupChatId}
-  onChange={e => setGroupChatId(e.target.value)}
-  onBlur={e => saveGroupChatId(e.target.value)}
-  placeholder="-100xxxxxxxxxx"
-  style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', width: '180px' }}
-/>
-{savingChatId && <span style={{ fontSize: '12px', color: '#6B7280' }}>שומר...</span>}
-              </div>
 
               <button onClick={generateSchedule} disabled={generating} style={{ background: generating ? '#ccc' : 'linear-gradient(135deg, #6F4E37, #8B6347)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: generating ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
                 {generating ? '⏳ מייצר סידור...' : '✨ צור סידור עם AI'}

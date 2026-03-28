@@ -143,8 +143,8 @@ async function handleRemind() {
 }
 
 async function handlePublish(req: Request) {
-  const { chat_id, text } = await req.json();
-  await send(chat_id, text);
+  const { text } = await req.json();
+  await send(GROUP_ID, text);
   return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
