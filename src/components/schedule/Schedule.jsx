@@ -17,9 +17,9 @@ const POSITIONS = [
   { id: 'cafe',     label: 'בית קפה',   time: '07:45', icon: '🏠', always: true },
   { id: 'roasting', label: 'קלייה',     time: '',       icon: '🔥', roastingOnly: true },
   { id: 'cashier',  label: 'קופה קפה',  time: '08:00', icon: '💰', fridayOnly: true },
-  { id: 'store1',   label: 'חנות',      time: '09:30', icon: '🏪', always: true },
-  { id: 'store2',   label: 'חנות',      time: '09:30', icon: '🏪', always: true },
-  { id: 'store3',   label: 'חנות',      time: '09:30', icon: '🏪', always: true },
+  { id: 'store1',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
+  { id: 'store2',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
+  { id: 'store3',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
 ];
 
 const ROLE_LABELS = { barista: '☕ בריסטה', roaster: '🔥 קולה', general: '👤 כללי' };
@@ -280,7 +280,7 @@ ${empList.map(e => {
 - cafe (בית קפה): 07:45 — סיום ~15:00
 - roasting (קלייה): 08:00 — סיום ~13:00
 - cashier (קופה): 08:00 — סיום ~14:00
-- store (חנות): 09:30 — סיום ~18:00 (17:00 שישי)
+- store (חנות): 09:30 ימים רגילים / 09:00 שישי וערב חג — סיום ~18:00 (17:00 שישי)
 
 כללים:
 - עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista). אם אין, שים עובד עם כישורי בריסטה כגיבוי
@@ -342,7 +342,9 @@ ${empList.map(e => {
 
       for (const pos of visiblePositions(d.code)) {
         const name = schedule[cellKey(d.code, pos.id)] || '—';
-        const timeStr = pos.time ? ` (${pos.time})` : '';
+        const isFri = dayTypes[d.code] === 'friday' || dayTypes[d.code] === 'holiday-eve';
+        const t = (isFri && pos.timeFriday) ? pos.timeFriday : pos.time;
+        const timeStr = t ? ` (${t})` : '';
         text += `${pos.icon} ${pos.label}${timeStr}: ${name}\n`;
       }
     }
@@ -688,7 +690,6 @@ ${empList.map(e => {
                     <tr key={pos.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                       <td style={{ padding: '0.6rem 1rem', fontWeight: 600, background: '#fafafa', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
                         {pos.icon} {pos.label}
-                        {pos.time && <span style={{ color: '#999', fontWeight: 400, fontSize: '0.8rem', marginRight: '4px' }}>{pos.time}</span>}
                       </td>
                       {activeDays.map(d => {
                         const isVisible = visiblePositions(d.code).find(p => p.id === pos.id);
