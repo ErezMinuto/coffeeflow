@@ -1,14 +1,13 @@
 /**
  * CoffeeFlow — Employee Bot (Supabase Edge Function)
  *
- * Simple flow — everything happens in the GROUP chat:
- *   - Thursday reminder → one message to the group
- *   - Employees reply with availability in the group (free Hebrew text)
- *   - Bot matches them by Telegram first+last name against employees list
- *   - No /start, no private chat, no registration needed
+ * Onboarding: employees write their Hebrew name in the group → auto-registered
+ * Availability: employees reply with days in the group → auto-saved
+ * Manager sets roles in CoffeeFlow after registration
  *
- * ?action=remind  → send weekly availability request to group
- * ?action=publish → publish approved schedule to group
+ * ?action=onboard  → post "write your name" message to group
+ * ?action=remind   → post weekly availability request to group
+ * ?action=publish  → publish approved schedule to group
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
@@ -45,14 +44,16 @@ function nextSunday(): string {
   return d.toISOString().split("T")[0];
 }
 
-// ── Claude: detect availability + extract days ────────────────────────────────
+// ── Claude: classify message ──────────────────────────────────────────────────
 
 interface ParseResult {
-  is_availability: boolean;
-  days: Record<string, boolean | string>;
+  type: "name" | "availability" | "other";
+  name?: string;
+  phone?: string;
+  days?: Record<string, boolean | string>;
 }
 
-async function parseMessage(text: string): Promise<ParseResult> {
+async function classifyMessage(text: string): Promise<ParseResult> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -63,21 +64,21 @@ async function parseMessage(text: string): Promise<ParseResult> {
     body: JSON.stringify({
       model: "claude-haiku-4-5",
       max_tokens: 200,
-      system: `You help a coffee shop manager collect employee work availability.
-Determine if a Hebrew message is an employee reporting their available work days.
-Return JSON only, no other text.
+      system: `You help a coffee shop manager with employee scheduling.
+Classify a Hebrew group chat message into one of three types and return JSON only.
 
-If it IS availability:
-{"is_availability":true,"days":{"sun":true,"tue":"14:00","fri":true}}
+1. "name" — employee writing their Hebrew name and optionally phone number to register
+   {"type":"name","name":"טליה אלבז","phone":"050-1234567"}
+   phone is optional, extract if present, otherwise omit
 
-Keys: sun=ראשון, mon=שני, tue=שלישי, wed=רביעי, thu=חמישי, fri=שישי
-Value: true=full day, "HH:MM"=available until that time, omit=not available
+2. "availability" — employee reporting available work days
+   {"type":"availability","days":{"sun":true,"tue":"14:00","fri":true}}
+   Keys: sun=ראשון, mon=שני, tue=שלישי, wed=רביעי, thu=חמישי, fri=שישי
+   Value: true=full day, "HH:MM"=until that time
+   "כל הימים"→all 6 true, "לא יכול"→{}
 
-"כל הימים" → all 6 days true
-"לא יכול" / "אין לי" → {"is_availability":true,"days":{}}
-
-If it is NOT availability (greeting, question, unrelated chat):
-{"is_availability":false,"days":{}}`,
+3. "other" — anything else (greetings, questions, unrelated)
+   {"type":"other"}`,
       messages: [{ role: "user", content: text }],
     }),
   });
@@ -86,65 +87,46 @@ If it is NOT availability (greeting, question, unrelated chat):
   try {
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
-    const days: Record<string, boolean | string> = {};
-    for (const [k, v] of Object.entries(parsed.days ?? {})) {
-      if (!DAY_CODES.includes(k)) continue;
-      if (v === true || (typeof v === "string" && /^\d{2}:\d{2}$/.test(v))) {
-        days[k] = v as boolean | string;
+
+    if (parsed.type === "name" && parsed.name) {
+      return { type: "name", name: parsed.name, phone: parsed.phone };
+    }
+
+    if (parsed.type === "availability") {
+      const days: Record<string, boolean | string> = {};
+      for (const [k, v] of Object.entries(parsed.days ?? {})) {
+        if (!DAY_CODES.includes(k)) continue;
+        if (v === true || (typeof v === "string" && /^\d{2}:\d{2}$/.test(v))) {
+          days[k] = v as boolean | string;
+        }
       }
+      return { type: "availability", days };
     }
-    return { is_availability: !!parsed.is_availability, days };
+
+    return { type: "other" };
   } catch {
-    return { is_availability: false, days: {} };
+    return { type: "other" };
   }
-}
-
-// ── Match Telegram user to employee ──────────────────────────────────────────
-
-async function findEmployee(telegramId: number, firstName: string, lastName: string) {
-  // First try by telegram_id (already linked)
-  const { data: byId } = await supabase
-    .from("employees")
-    .select("*")
-    .eq("telegram_id", telegramId)
-    .eq("active", true)
-    .limit(1);
-  if (byId?.[0]) return byId[0];
-
-  // Try matching by full name (first + last)
-  const fullName = [firstName, lastName].filter(Boolean).join(" ");
-  const searches = [fullName, firstName].filter(Boolean);
-
-  for (const name of searches) {
-    const { data } = await supabase
-      .from("employees")
-      .select("*")
-      .ilike("name", `%${name}%`)
-      .eq("active", true)
-      .limit(1);
-    if (data?.[0]) {
-      // Auto-link telegram_id for future messages
-      await supabase.from("employees")
-        .update({ telegram_id: telegramId })
-        .eq("id", data[0].id);
-      return data[0];
-    }
-  }
-
-  return null;
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
+
+async function handleOnboard() {
+  await send(GROUP_ID,
+    `👋 <b>ברוכים הבאים לסידור העבודה של מינוטו!</b>\n\n` +
+    `כדי להצטרף — שלחו את שמכם המלא ומספר טלפון כאן בקבוצה 👇\n\n` +
+    `לדוגמה: <code>טליה אלבז 0501234567</code>`
+  );
+  return new Response(JSON.stringify({ ok: true }));
+}
 
 async function handleRemind() {
   await send(GROUP_ID,
     `📅 <b>זמינות לשבוע הבא</b>\n\n` +
     `שלחו כאן את הימים שתוכלו לעבוד 👇\n\n` +
-    `לדוגמה:\n` +
     `<code>ראשון, שלישי, שישי</code>\n` +
     `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
-    `<code>כל הימים</code>\n` +
-    `<code>לא יכול השבוע</code>`
+    `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`
   );
   return new Response(JSON.stringify({ ok: true }));
 }
@@ -165,56 +147,106 @@ async function handleWebhook(req: Request) {
   const text       = message.text.trim();
   const telegramId = message.from?.id;
   const firstName  = message.from?.first_name ?? "";
-  const lastName   = message.from?.last_name  ?? "";
 
-  // Only handle group messages (ignore private, ignore commands)
-  if (chatType === "private" || text.startsWith("/")) return new Response("ok");
+  // Only handle our group, ignore commands
+  if (chatType === "private") return new Response("ok");
+  if (chatId !== GROUP_ID)    return new Response("ok");
+  if (text.startsWith("/"))   return new Response("ok");
 
-  // Only handle our group
-  if (chatId !== GROUP_ID) return new Response("ok");
+  // Classify the message
+  const result = await classifyMessage(text);
 
-  // Check if this looks like availability
-  const parsed = await parseMessage(text);
-  if (!parsed.is_availability) return new Response("ok");
+  // ── Name registration ──────────────────────────────────────────────────────
+  if (result.type === "name" && result.name) {
+    // Check if already registered by telegram_id
+    const { data: existing } = await supabase
+      .from("employees")
+      .select("id, name")
+      .eq("telegram_id", telegramId)
+      .limit(1);
 
-  // Find the employee
-  const emp = await findEmployee(telegramId, firstName, lastName);
-  if (!emp) {
-    // Can't match — ask them to make sure their Telegram name matches
-    await send(GROUP_ID,
-      `@${message.from?.username ?? firstName} — לא מצאתי אותך במערכת 🤔\n` +
-      `בדוק עם המנהל שהשם שלך הוזן נכון.`
-    );
+    if (existing?.[0]) {
+      await send(GROUP_ID, `👋 <b>${existing[0].name}</b> — אתה כבר רשום במערכת!`);
+      return new Response("ok");
+    }
+
+    // Check if name already exists (update telegram_id)
+    const { data: byName } = await supabase
+      .from("employees")
+      .select("id, name")
+      .ilike("name", result.name)
+      .limit(1);
+
+    if (byName?.[0]) {
+      await supabase.from("employees")
+        .update({ telegram_id: telegramId, ...(result.phone ? { phone: result.phone } : {}) })
+        .eq("id", byName[0].id);
+      await send(GROUP_ID, `✅ <b>${byName[0].name}</b> — נרשמת בהצלחה! 🎉`);
+    } else {
+      // Create new employee record
+      await supabase.from("employees").insert({
+        user_id:     "pending",
+        name:        result.name,
+        phone:       result.phone ?? null,
+        telegram_id: telegramId,
+        role:        "general",
+        max_days:    5,
+        active:      false,
+      });
+      await send(GROUP_ID,
+        `✅ <b>${result.name}</b> — נוספת לרשימה! 🎉\n` +
+        `המנהל יגדיר את התפקיד שלך בקרוב.`
+      );
+    }
     return new Response("ok");
   }
 
-  const week = nextSunday();
+  // ── Availability ───────────────────────────────────────────────────────────
+  if (result.type === "availability") {
+    // Find employee by telegram_id
+    const { data: empRows } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("telegram_id", telegramId)
+      .eq("active", true)
+      .limit(1);
 
-  // Upsert availability
-  const { data: existing } = await supabase
-    .from("availability_submissions")
-    .select("id")
-    .eq("employee_id", emp.id)
-    .eq("week_start", week)
-    .limit(1);
+    const emp = empRows?.[0];
+    if (!emp) {
+      await send(GROUP_ID,
+        `@${message.from?.username ?? firstName} — שלח קודם את שמך כדי להירשם 👆`
+      );
+      return new Response("ok");
+    }
 
-  if (existing?.[0]) {
-    await supabase.from("availability_submissions")
-      .update({ days: parsed.days, submitted_at: new Date().toISOString() })
-      .eq("id", existing[0].id);
-  } else {
-    await supabase.from("availability_submissions")
-      .insert({ employee_id: emp.id, week_start: week, days: parsed.days });
-  }
+    const week = nextSunday();
+    const days = result.days!;
 
-  const entries = Object.entries(parsed.days);
-  if (entries.length === 0) {
-    await send(GROUP_ID, `✅ <b>${emp.name}</b> — נשמר, לא יכול השבוע הבא`);
-  } else {
-    const list = entries.map(([d, v]) =>
-      v === true ? DAY_HE[d] : `${DAY_HE[d]} (עד ${v})`
-    ).join(", ");
-    await send(GROUP_ID, `✅ <b>${emp.name}</b> — ${list}`);
+    const { data: existing } = await supabase
+      .from("availability_submissions")
+      .select("id")
+      .eq("employee_id", emp.id)
+      .eq("week_start", week)
+      .limit(1);
+
+    if (existing?.[0]) {
+      await supabase.from("availability_submissions")
+        .update({ days, submitted_at: new Date().toISOString() })
+        .eq("id", existing[0].id);
+    } else {
+      await supabase.from("availability_submissions")
+        .insert({ employee_id: emp.id, week_start: week, days });
+    }
+
+    const entries = Object.entries(days);
+    if (entries.length === 0) {
+      await send(GROUP_ID, `✅ <b>${emp.name}</b> — לא יכול השבוע הבא`);
+    } else {
+      const list = entries.map(([d, v]) =>
+        v === true ? DAY_HE[d] : `${DAY_HE[d]} (עד ${v})`
+      ).join(", ");
+      await send(GROUP_ID, `✅ <b>${emp.name}</b> — ${list}`);
+    }
   }
 
   return new Response("ok");
@@ -225,6 +257,7 @@ async function handleWebhook(req: Request) {
 serve(async (req) => {
   try {
     const action = new URL(req.url).searchParams.get("action");
+    if (action === "onboard") return await handleOnboard();
     if (action === "remind")  return await handleRemind();
     if (action === "publish") return await handlePublish(req);
     return await handleWebhook(req);
