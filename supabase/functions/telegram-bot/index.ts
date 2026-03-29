@@ -106,7 +106,7 @@ async function handleMarkedDone(chatId: string, customerName: string) {
   const { data } = await supabase
     .from("waiting_customers")
     .select("*")
-    .is("notified_at", null)
+    .eq("is_handled", false)
     .ilike("customer_name", `%${customerName}%`)
     .limit(1);
 
@@ -118,7 +118,7 @@ async function handleMarkedDone(chatId: string, customerName: string) {
 
   await supabase
     .from("waiting_customers")
-    .update({ notified_at: new Date().toISOString() })
+    .update({ is_handled: true })
     .eq("id", row.id);
 
   await reply(chatId, `✅ <b>${row.customer_name}</b> סומן כטופל`);
@@ -175,7 +175,7 @@ async function handleTasks(chatId: string) {
   const { data, error } = await supabase
     .from("waiting_customers")
     .select("*")
-    .is("notified_at", null)
+    .eq("is_handled", false)
     .order("created_at", { ascending: false });
 
   if (error) { await reply(chatId, "❌ שגיאה בטעינת הרשימה"); return; }
@@ -208,7 +208,7 @@ async function handleDone(chatId: string, text: string) {
   const { data } = await supabase
     .from("waiting_customers")
     .select("*")
-    .is("notified_at", null)
+    .eq("is_handled", false)
     .order("created_at", { ascending: false });
 
   const row = data?.[num - 1];
@@ -219,7 +219,7 @@ async function handleDone(chatId: string, text: string) {
 
   const { error } = await supabase
     .from("waiting_customers")
-    .update({ notified_at: new Date().toISOString() })
+    .update({ is_handled: true })
     .eq("id", row.id);
 
   if (error) { await reply(chatId, "❌ שגיאה בעדכון"); return; }
