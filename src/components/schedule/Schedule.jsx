@@ -645,6 +645,7 @@ export default function Schedule() {
                     <tr key={pos.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                       <td style={{ padding: '0.6rem 1rem', fontWeight: 600, background: '#fafafa', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
                         {pos.icon} {pos.label}
+                        {pos.time && <span style={{ fontSize: '0.75rem', color: '#999', marginRight: '0.4rem', fontWeight: 400 }}>{pos.time}</span>}
                       </td>
                       {activeDays.map(d => {
                         const isVisible = visiblePositions(d.code).find(p => p.id === pos.id);
