@@ -143,7 +143,7 @@ export default function RoastingList({
   const originsNeeded = data.origins
     .map(origin => {
       const daily    = origin.daily_average || 0;
-      const critical = daily * 7;
+      const critical = daily * 14;
       const needed   = critical - (origin.roasted_stock || 0);
       return { ...origin, critical_stock: critical, needed };
     })
@@ -153,7 +153,7 @@ export default function RoastingList({
   const profilesNeeded = (data.roastProfiles || [])
     .map(profile => {
       const daily    = profile.daily_average || 0;
-      const critical = Math.max(daily * 7, profile.min_stock || 0);
+      const critical = Math.max(daily * 14, profile.min_stock || 0);
       const needed   = critical - (profile.roasted_stock || 0);
       return { ...profile, critical_stock: critical, needed };
     })
