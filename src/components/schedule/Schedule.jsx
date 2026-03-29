@@ -218,13 +218,15 @@ export default function Schedule() {
 
   // ── Save helpers ─────────────────────────────────────────────────────────────
   const saveSchedule = async (grid, sid) => {
-    for (const [key, name] of Object.entries(grid)) {
-      const [day, ...posParts] = key.split('_');
-      const position = posParts.join('_');
-      if (!name) continue;
-      await supabase.from('schedule_assignments')
-        .upsert({ schedule_id: sid, day, position, employee_name: name }, { onConflict: 'schedule_id,day,position' });
-    }
+    // Delete existing assignments for this schedule then re-insert
+    await supabase.from('schedule_assignments').delete().eq('schedule_id', sid);
+    const rows = Object.entries(grid)
+      .filter(([, name]) => name)
+      .map(([key, name]) => {
+        const [day, ...posParts] = key.split('_');
+        return { schedule_id: sid, day, position: posParts.join('_'), employee_name: name };
+      });
+    if (rows.length) await supabase.from('schedule_assignments').insert(rows);
   };
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -282,20 +284,15 @@ export default function Schedule() {
   const cellKey = (dayCode, posId) => `${dayCode}_${posId}`;
 
   const setCell = async (dayCode, posId, value) => {
-    setSchedule(prev => ({ ...prev, [cellKey(dayCode, posId)]: value }));
+    const newSchedule = { ...schedule, [cellKey(dayCode, posId)]: value };
+    setSchedule(newSchedule);
     if (!scheduleId) {
-      // Create schedule record first if not exists
       const { data: schedRow } = await supabase.from('schedules')
         .insert({ week_start: weekStart, status: 'draft', day_types: dayTypes, roast_days: roastDays, user_id: user?.id || 'manager' })
         .select('id').single();
-      if (schedRow?.id) {
-        setScheduleId(schedRow.id);
-        await supabase.from('schedule_assignments')
-          .upsert({ schedule_id: schedRow.id, day: dayCode, position: posId, employee_name: value }, { onConflict: 'schedule_id,day,position' });
-      }
+      if (schedRow?.id) { setScheduleId(schedRow.id); await saveSchedule(newSchedule, schedRow.id); }
     } else {
-      await supabase.from('schedule_assignments')
-        .upsert({ schedule_id: scheduleId, day: dayCode, position: posId, employee_name: value }, { onConflict: 'schedule_id,day,position' });
+      await saveSchedule(newSchedule, scheduleId);
     }
   };
 
@@ -330,11 +327,12 @@ export default function Schedule() {
         showToast('AI לא הצליח לבנות סידור — בדוק זמינות עובדים', 'error');
         return;
       }
-      // Save to Supabase
+      // Save to Supabase — delete old schedule for this week and create fresh
+      if (scheduleId) await supabase.from('schedules').delete().eq('id', scheduleId);
       const { data: schedRow } = await supabase.from('schedules')
-        .upsert({ id: scheduleId || undefined, week_start: weekStart, status: 'draft', day_types: dayTypes, roast_days: roastDays, user_id: user?.id || 'manager' }, { onConflict: scheduleId ? 'id' : undefined })
+        .insert({ week_start: weekStart, status: 'draft', day_types: dayTypes, roast_days: roastDays, user_id: user?.id || 'manager' })
         .select('id').single();
-      const sid = schedRow?.id || scheduleId;
+      const sid = schedRow?.id;
       if (sid) { setScheduleId(sid); await saveSchedule(json.schedule, sid); }
       setSchedule(json.schedule);
       showToast('סידור עבודה נוצר ונשמר בהצלחה ✨');
