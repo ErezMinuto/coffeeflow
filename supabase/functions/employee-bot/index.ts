@@ -132,14 +132,27 @@ async function handleOnboard() {
 }
 
 async function handleRemind() {
-  await send(GROUP_ID,
-    `📅 <b>זמינות לשבוע הבא</b>\n\n` +
-    `שלחו כאן את הימים שתוכלו לעבוד 👇\n\n` +
-    `<code>ראשון, שלישי, שישי</code>\n` +
-    `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
-    `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`
-  );
-  return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+  // Send private DM to each active employee who has a telegram_id
+  const { data: employees } = await supabase
+    .from("employees")
+    .select("telegram_id, name")
+    .eq("active", true)
+    .not("telegram_id", "is", null);
+
+  let sent = 0;
+  for (const emp of employees ?? []) {
+    try {
+      await send(String(emp.telegram_id),
+        `📅 <b>היי ${emp.name}!</b>\n\n` +
+        `שלח/י את הימים שתוכל/י לעבוד השבוע הבא 👇\n\n` +
+        `<code>ראשון, שלישי, שישי</code>\n` +
+        `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
+        `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`
+      );
+      sent++;
+    } catch (_) { /* employee may not have started private chat yet */ }
+  }
+  return new Response(JSON.stringify({ ok: true, sent }), { headers: corsHeaders });
 }
 
 async function handlePublish(req: Request) {
@@ -159,10 +172,10 @@ async function handleWebhook(req: Request) {
   const telegramId = message.from?.id;
   const firstName  = message.from?.first_name ?? "";
 
-  // Only handle our group, ignore commands
-  if (chatType === "private") return new Response("ok");
-  if (chatId !== GROUP_ID)    return new Response("ok");
-  if (text.startsWith("/"))   return new Response("ok");
+  // Allow private chats for availability, only allow our group for registration
+  const isPrivate = chatType === "private";
+  if (!isPrivate && chatId !== GROUP_ID) return new Response("ok");
+  if (text.startsWith("/")) return new Response("ok");
 
   // If message contains a phone number pattern, treat as name registration
   const phonePattern = /05\d[\d\-]{7,8}/;
@@ -239,8 +252,8 @@ async function handleWebhook(req: Request) {
 
     const emp = empRows?.[0];
     if (!emp) {
-      await send(GROUP_ID,
-        `@${message.from?.username ?? firstName} — שלח קודם את שמך כדי להירשם 👆`
+      await send(chatId,
+        `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`
       );
       return new Response("ok");
     }
@@ -266,12 +279,12 @@ async function handleWebhook(req: Request) {
 
     const entries = Object.entries(days);
     if (entries.length === 0) {
-      await send(GROUP_ID, `✅ <b>${emp.name}</b> — לא יכול השבוע הבא`);
+      await send(chatId, `✅ נרשם — לא יכול השבוע הבא`);
     } else {
       const list = entries.map(([d, v]) =>
         v === true ? DAY_HE[d] : `${DAY_HE[d]} (עד ${v})`
       ).join(", ");
-      await send(GROUP_ID, `✅ <b>${emp.name}</b> — ${list}`);
+      await send(chatId, `✅ נרשם! הימים שלך: <b>${list}</b>`);
     }
   }
 
