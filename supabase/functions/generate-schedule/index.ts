@@ -60,9 +60,10 @@ ${empList.join("\n")}
 - עמדת "בית קפה" — מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
 - בריסטה/קולה יכולים לעבוד בחנות בימים שאין צורך בתפקידם (גמישות מלאה בעמדת חנות)
 - רק הקולה (role=roaster) יכול לקלות. בימים שאינם ימי קלייה — תשבץ אותו לעמדה אחרת
-- ימי שישי/ערב חג: בדיוק 4 עובדים (לא יותר, לא פחות) + קופה, ללא קלייה
-- ימים רגילים: 3-4 עובדים — NEVER more than 4 employees per day total
-- CRITICAL: count unique employee names per day — if the same employee appears in multiple positions that is fine, but total unique employees per day must not exceed 4
+- ימי שישי/ערב חג: בדיוק 4 עובדים (opening + cafe + store1 + store2), ללא קלייה
+- ימים רגילים (לא שישי): בדיוק 4 עובדים — opening + store1 + store2 + store3. מלא את כל 4 העמדות אם יש עובדים זמינים. רק אם אין מספיק עובדים זמינים — מלא פחות.
+- ימי קלייה: opening + roasting + store1 + store2 (4 עובדים סה"כ — אל תמלא store3 בימי קלייה)
+- CRITICAL: total unique employees per day must not exceed 4
 - אל תשבץ עובד יותר מהמקסימום שלו לשבוע
 - תשבץ רק עובדים שזמינים ביום
 - אם ליום יש "עד XX:XX" בזמינות — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו באותו יום
