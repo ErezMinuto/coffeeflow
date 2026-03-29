@@ -288,10 +288,11 @@ serve(async (req) => {
   try {
     const action = new URL(req.url).searchParams.get("action");
 
-    // Action endpoints (onboard/remind/publish) — verify shared secret
+    // Action endpoints (onboard/remind/publish) — verify Supabase anon key
     if (action) {
-      const authHeader = req.headers.get("x-coffeeflow-secret") ?? "";
-      if (WEBHOOK_SECRET && authHeader !== WEBHOOK_SECRET) {
+      const apiKey = req.headers.get("apikey") ?? req.headers.get("x-coffeeflow-secret") ?? "";
+      const validKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      if (validKey && apiKey !== validKey && apiKey !== WEBHOOK_SECRET) {
         return new Response("Unauthorized", { status: 401, headers: corsHeaders });
       }
       if (action === "onboard") return await handleOnboard();
