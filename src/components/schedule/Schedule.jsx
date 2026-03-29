@@ -17,7 +17,7 @@ const POSITIONS = [
   { id: 'opening',  label: 'פתיחת קפה', time: '07:30', icon: '☕', always: true },
   { id: 'cafe',     label: 'בית קפה',   time: '07:45', icon: '🏠', always: true },
   { id: 'roasting', label: 'קלייה',     time: '',       icon: '🔥', roastingOnly: true },
-  { id: 'cashier',  label: 'קופה קפה',  time: '08:00', icon: '💰', fridayOnly: true },
+  { id: 'cashier',  label: 'קופה קפה',  time: '07:45', icon: '💰', fridayOnly: true },
   { id: 'store1',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store2',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store3',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
