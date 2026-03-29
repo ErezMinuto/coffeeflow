@@ -185,10 +185,47 @@ export default function Schedule() {
   const [dayTypes, setDayTypes]  = useState({ sun: 'regular', mon: 'regular', tue: 'regular', wed: 'regular', thu: 'regular', fri: 'friday' });
   const [roastDays, setRoastDays] = useState({ sun: true, tue: true, wed: false });
   const [schedule, setSchedule]  = useState({}); // { "sun_opening": "עד", ... }
+  const [scheduleId, setScheduleId] = useState(null);
   const [publishing, setPublishing]   = useState(false);
   const [generating, setGenerating]   = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
+
+  // ── Load saved schedule when week changes ───────────────────────────────────
+  useEffect(() => {
+    const load = async () => {
+      const { data: rows } = await supabase
+        .from('schedules')
+        .select('id, day_types, roast_days')
+        .eq('week_start', weekStart)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!rows?.length) { setSchedule({}); setScheduleId(null); return; }
+      const sid = rows[0].id;
+      setScheduleId(sid);
+      if (rows[0].day_types) setDayTypes(rows[0].day_types);
+      if (rows[0].roast_days) setRoastDays(rows[0].roast_days);
+      const { data: assignments } = await supabase
+        .from('schedule_assignments')
+        .select('day, position, employee_name')
+        .eq('schedule_id', sid);
+      const grid = {};
+      (assignments || []).forEach(a => { grid[`${a.day}_${a.position}`] = a.employee_name; });
+      setSchedule(grid);
+    };
+    load();
+  }, [weekStart]);
+
+  // ── Save helpers ─────────────────────────────────────────────────────────────
+  const saveSchedule = async (grid, sid) => {
+    for (const [key, name] of Object.entries(grid)) {
+      const [day, ...posParts] = key.split('_');
+      const position = posParts.join('_');
+      if (!name) continue;
+      await supabase.from('schedule_assignments')
+        .upsert({ schedule_id: sid, day, position, employee_name: name }, { onConflict: 'schedule_id,day,position' });
+    }
+  };
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
@@ -244,8 +281,22 @@ export default function Schedule() {
 
   const cellKey = (dayCode, posId) => `${dayCode}_${posId}`;
 
-  const setCell = (dayCode, posId, value) => {
+  const setCell = async (dayCode, posId, value) => {
     setSchedule(prev => ({ ...prev, [cellKey(dayCode, posId)]: value }));
+    if (!scheduleId) {
+      // Create schedule record first if not exists
+      const { data: schedRow } = await supabase.from('schedules')
+        .insert({ week_start: weekStart, status: 'draft', day_types: dayTypes, roast_days: roastDays, user_id: user?.id || 'manager' })
+        .select('id').single();
+      if (schedRow?.id) {
+        setScheduleId(schedRow.id);
+        await supabase.from('schedule_assignments')
+          .upsert({ schedule_id: schedRow.id, day: dayCode, position: posId, employee_name: value }, { onConflict: 'schedule_id,day,position' });
+      }
+    } else {
+      await supabase.from('schedule_assignments')
+        .upsert({ schedule_id: scheduleId, day: dayCode, position: posId, employee_name: value }, { onConflict: 'schedule_id,day,position' });
+    }
   };
 
   const visiblePositions = (dayCode) => {
@@ -279,8 +330,14 @@ export default function Schedule() {
         showToast('AI לא הצליח לבנות סידור — בדוק זמינות עובדים', 'error');
         return;
       }
+      // Save to Supabase
+      const { data: schedRow } = await supabase.from('schedules')
+        .upsert({ id: scheduleId || undefined, week_start: weekStart, status: 'draft', day_types: dayTypes, roast_days: roastDays, user_id: user?.id || 'manager' }, { onConflict: scheduleId ? 'id' : undefined })
+        .select('id').single();
+      const sid = schedRow?.id || scheduleId;
+      if (sid) { setScheduleId(sid); await saveSchedule(json.schedule, sid); }
       setSchedule(json.schedule);
-      showToast('סידור עבודה נוצר בהצלחה ✨');
+      showToast('סידור עבודה נוצר ונשמר בהצלחה ✨');
     } catch (err) {
       console.error('Generate error:', err);
       showToast('שגיאה ביצירת הסידור', 'error');
