@@ -25,7 +25,7 @@ const supabase = createClient(SUPA_URL, SUPA_KEY);
 const ALLOWED_ORIGIN = Deno.env.get("COFFEEFLOW_ORIGIN") ?? "https://coffeeflow-thaf.vercel.app";
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-coffeeflow-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-coffeeflow-secret, x-action",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
