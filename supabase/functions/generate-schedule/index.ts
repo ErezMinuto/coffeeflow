@@ -9,6 +9,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const DAY_LABEL: Record<string, string> = {
+  sun: "ראשון", mon: "שני", tue: "שלישי",
+  wed: "רביעי", thu: "חמישי", fri: "שישי",
+};
+
+function addDays(base: string, n: number): string {
+  const d = new Date(base);
+  d.setDate(d.getDate() + n);
+  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+
+const DAY_OFFSET: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -17,61 +30,72 @@ serve(async (req) => {
   try {
     const { employees, availability, weekStart, dayTypes, roastDays, activeDays } = await req.json();
 
-    const DAYS: Record<string, string> = {
-      sun: "ראשון", mon: "שני", tue: "שלישי",
-      wed: "רביעי", thu: "חמישי", fri: "שישי",
-    };
-
+    // Build per-employee availability — explicit allowed days only
     const empList = employees.map((e: any) => {
       const skills = e.role === "general" && e.barista_skills ? " + כישורי בריסטה (גיבוי)" : "";
       const bLevel = (e.role === "barista" || e.barista_skills) && e.barista_level > 1
         ? `, רמת בריסטה ${e.barista_level}/3` : "";
       const rLevel = e.role === "roaster" && e.roaster_level > 1
         ? `, רמת קלייה ${e.roaster_level}/3` : "";
+
       const avail = availability.find((a: any) => a.employee_id === e.id)?.days || null;
-      let availStr = "לא שלח";
-      if (avail) {
-        const parts = Object.entries(avail)
-          .filter(([, v]) => v)
-          .map(([k, v]) => v === true ? k : `${k}(עד ${v})`);
-        availStr = parts.length ? parts.join(",") : "לא זמין";
+      let availStr: string;
+      if (!avail) {
+        availStr = "לא שלח זמינות — אל תשבץ";
+      } else {
+        const parts = (activeDays as string[])
+          .filter((d) => avail[d])
+          .map((d) => {
+            const date = addDays(weekStart, DAY_OFFSET[d]);
+            const limit = avail[d] !== true ? ` (עד ${avail[d]})` : "";
+            return `${DAY_LABEL[d]} ${date}${limit}`;
+          });
+        availStr = parts.length
+          ? `זמין רק בימים: ${parts.join(" | ")}`
+          : "לא זמין השבוע — אל תשבץ";
       }
-      return `- ${e.name} (${e.role}${skills}${bLevel}${rLevel}, מקסימום ${e.max_days || 5} ימים, זמין: ${availStr})`;
+
+      return `- ${e.name} | תפקיד: ${e.role}${skills}${bLevel}${rLevel} | מקס׳ ימים: ${e.max_days || 5} | ${availStr}`;
     });
 
-    const prompt = `אתה מנהל בית קפה ישראלי. צור סידור עבודה לשבוע שמתחיל ב-${weekStart}.
+    // Build active-day descriptions
+    const dayDescriptions = (activeDays as string[]).map((d: string) => {
+      const date = addDays(weekStart, DAY_OFFSET[d]);
+      const type = dayTypes[d] === "friday" ? "שישי" : dayTypes[d] === "holiday-eve" ? "ערב חג" : "רגיל";
+      const roast = roastDays[d] ? " + קלייה" : "";
+      return `${d} = ${DAY_LABEL[d]} ${date} (${type}${roast})`;
+    });
 
-עובדים:
+    const prompt = `אתה מנהל בית קפה ישראלי. בנה סידור עבודה לשבוע שמתחיל ב-${weekStart}.
+
+=== עובדים וזמינות מדויקת ===
 ${empList.join("\n")}
 
-ימים פעילים: ${activeDays.map((d: string) => `${d}(${dayTypes[d]})`).join(", ")}
-ימי קלייה: ${Object.entries(roastDays).filter(([, v]) => v).map(([k]) => k).join(", ") || "אין"}
+=== ימים פעילים השבוע ===
+${dayDescriptions.join("\n")}
 
-עמדות ושעות פתיחה:
-- opening (פתיחת קפה): 07:30 — סיום ~11:00 (כל הימים)
-- cafe (בית קפה): 07:45 — סיום ~15:00 (כל הימים)
-- roasting (קלייה): 08:00 — סיום ~13:00 (ימי קלייה בלבד)
-- cashier (קופה קפה): 07:45 — סיום ~14:00 (שישי/ערב חג בלבד)
-- store (חנות): 09:30 ימים רגילים / 09:00 שישי וערב חג — סיום ~18:00 (17:00 שישי)
+=== כללי שיבוץ ===
+HARD RULE — זמינות: שבץ עובד ONLY ביום שמפורש ברשימת "זמין רק בימים" שלו. כל שיבוץ ביום אחר הוא שגיאה קריטית.
+HARD RULE — מקסימום: אל תשבץ עובד יותר מ-מקס׳ ימים שלו בשבוע.
+HARD RULE — עד שעה: אם הזמינות כוללת "עד XX:XX", אל תשבץ לעמדה שמסתיימת אחרי השעה הזו.
 
-כללים:
-- עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista). אם אין, שים עובד עם כישורי בריסטה כגיבוי
-- עמדת "פתיחת קפה": תתעדף בריסטה עם רמה גבוהה יותר (3 > 2 > 1)
-- עמדת "בית קפה" — מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
-- בריסטה/קולה יכולים לעבוד בחנות בימים שאין צורך בתפקידם (גמישות מלאה בעמדת חנות)
-- רק הקולה (role=roaster) יכול לקלות. בימים שאינם ימי קלייה — תשבץ אותו לעמדה אחרת
-- ימי שישי/ערב חג: בדיוק 4 עובדים (opening + cafe + store1 + store2), ללא קלייה
-- ימים רגילים (לא שישי): בדיוק 4 עובדים — opening + store1 + store2 + store3. מלא את כל 4 העמדות אם יש עובדים זמינים. רק אם אין מספיק עובדים זמינים — מלא פחות.
-- ימי קלייה: opening + roasting + store1 + store2 (4 עובדים סה"כ — אל תמלא store3 בימי קלייה)
-- CRITICAL: total unique employees per day must not exceed 4
-- אל תשבץ עובד יותר מהמקסימום שלו לשבוע
-- תשבץ רק עובדים שזמינים ביום
-- אם ליום יש "עד XX:XX" בזמינות — אל תשבץ אותו לעמדה שמסתיימת אחרי השעה הזו באותו יום
+עמדות לפי סוג יום:
+- יום רגיל (לא קלייה): opening + store1 + store2 + store3 (4 עובדים)
+- יום קלייה: opening + roasting + store1 + store2 (4 עובדים)
+- שישי / ערב חג: opening + cafe + store1 + store2 (4 עובדים, ללא קלייה)
+- אם אין מספיק עובדים זמינים ביום — מלא כמה שיש, לא יותר מ-4
 
-IMPORTANT: Reply with a single raw JSON object only. No explanation, no markdown, no headings, no text before or after.
-Format: {"sun_opening": "name", "sun_cafe": "name", ...}
-Valid keys: [day]_opening, [day]_cafe, [day]_roasting, [day]_cashier, [day]_store1, [day]_store2, [day]_store3
-Days: sun, mon, tue, wed, thu, fri
+עמדות מיוחדות:
+- opening (פתיחת קפה 07:30): חייב להיות role=barista. אם אין בריסטה זמין — שים עובד עם barista_skills כגיבוי.
+  תעדף רמת בריסטה גבוהה יותר (3>2>1).
+- roasting (קלייה): רק role=roaster. בימים שאינם ימי קלייה — שבץ את הקולה לחנות.
+- cafe (בית קפה 07:45): שישי/ערב חג בלבד. מועדף barista, אפשר כישורי בריסטה או כללי.
+- store1/store2/store3: כל עובד (barista/roaster/general — כולם יכולים לעבוד בחנות).
+
+IMPORTANT: Reply with a single raw JSON object only. No explanation, no markdown.
+Format: {"sun_opening": "שם", "sun_store1": "שם", ...}
+Valid position keys: opening, cafe, roasting, store1, store2, store3
+Valid day keys: ${(activeDays as string[]).join(", ")}
 Start your response with { and end with }`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -83,14 +107,13 @@ Start your response with { and end with }`;
       },
       body: JSON.stringify({
         model: "claude-opus-4-5",
-        max_tokens: 1000,
+        max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     const json = await res.json();
     const raw = json.content?.[0]?.text ?? "{}";
-    // Extract JSON object even if Claude added surrounding text
     const match = raw.match(/\{[\s\S]*\}/);
     const clean = match ? match[0] : "{}";
     const schedule = JSON.parse(clean);
