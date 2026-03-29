@@ -26,24 +26,31 @@ const POSITIONS = [
 ];
 
 // ── Google JWT auth ───────────────────────────────────────────────────────────
+function base64url(data: string | Uint8Array): string {
+  const str = typeof data === "string" ? data : String.fromCharCode(...data);
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 async function getGoogleAccessToken(): Promise<string> {
   const sa = JSON.parse(Deno.env.get("GOOGLE_SERVICE_ACCOUNT")!);
   const now = Math.floor(Date.now() / 1000);
-  const payload = {
+
+  const header  = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64url(JSON.stringify({
     iss: sa.client_email,
     scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
     iat: now,
-  };
+  }));
 
-  // Import private key
-  const pemHeader = "-----BEGIN RSA PRIVATE KEY-----";
-  const pemFooter = "-----END RSA PRIVATE KEY-----";
+  const sigInput = `${header}.${payload}`;
+
+  // Import private key (strip PEM headers and newlines)
   const pemContents = sa.private_key
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\n/g, "");
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s+/g, "");
 
   const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
   const privateKey = await crypto.subtle.importKey(
@@ -52,24 +59,21 @@ async function getGoogleAccessToken(): Promise<string> {
     false, ["sign"]
   );
 
-  // Create JWT
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const body   = btoa(JSON.stringify(payload));
-  const sigInput = `${header}.${body}`;
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5", privateKey,
     new TextEncoder().encode(sigInput)
   );
-  const jwt = `${sigInput}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
 
-  // Exchange for access token
+  const jwt = `${sigInput}.${base64url(new Uint8Array(signature))}`;
+
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
-  const { access_token } = await res.json();
-  return access_token;
+  const json = await res.json();
+  if (!json.access_token) throw new Error(`Google auth failed: ${JSON.stringify(json)}`);
+  return json.access_token;
 }
 
 // ── Sheets API helpers ────────────────────────────────────────────────────────
