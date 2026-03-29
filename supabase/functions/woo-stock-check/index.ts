@@ -41,7 +41,7 @@ serve(async (_req) => {
     const { data: pending } = await supabase
       .from("waiting_customers")
       .select("*")
-      .is("notified_at", null);
+      .eq("is_handled", false);
 
     if (!pending || pending.length === 0)
       return new Response(JSON.stringify({ checked: 0, notified: 0 }));
