@@ -24,6 +24,10 @@ serve(async (req) => {
 
     const empList = employees.map((e: any) => {
       const skills = e.role === "general" && e.barista_skills ? " + כישורי בריסטה (גיבוי)" : "";
+      const bLevel = (e.role === "barista" || e.barista_skills) && e.barista_level > 1
+        ? `, רמת בריסטה ${e.barista_level}/3` : "";
+      const rLevel = e.role === "roaster" && e.roaster_level > 1
+        ? `, רמת קלייה ${e.roaster_level}/3` : "";
       const avail = availability.find((a: any) => a.employee_id === e.id)?.days || null;
       let availStr = "לא שלח";
       if (avail) {
@@ -32,7 +36,7 @@ serve(async (req) => {
           .map(([k, v]) => v === true ? k : `${k}(עד ${v})`);
         availStr = parts.length ? parts.join(",") : "לא זמין";
       }
-      return `- ${e.name} (${e.role}${skills}, מקסימום ${e.max_days || 5} ימים, זמין: ${availStr})`;
+      return `- ${e.name} (${e.role}${skills}${bLevel}${rLevel}, מקסימום ${e.max_days || 5} ימים, זמין: ${availStr})`;
     });
 
     const prompt = `אתה מנהל בית קפה ישראלי. צור סידור עבודה לשבוע שמתחיל ב-${weekStart}.
@@ -52,6 +56,7 @@ ${empList.join("\n")}
 
 כללים:
 - עמדת "פתיחת קפה" חייבת להיות בריסטה (role=barista). אם אין, שים עובד עם כישורי בריסטה כגיבוי
+- עמדת "פתיחת קפה": תתעדף בריסטה עם רמה גבוהה יותר (3 > 2 > 1)
 - עמדת "בית קפה" — מועדף בריסטה, אפשר גם כישורי בריסטה או כללי
 - בריסטה/קולה יכולים לעבוד בחנות בימים שאין צורך בתפקידם (גמישות מלאה בעמדת חנות)
 - רק הקולה (role=roaster) יכול לקלות. בימים שאינם ימי קלייה — תשבץ אותו לעמדה אחרת

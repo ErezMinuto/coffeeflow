@@ -55,16 +55,34 @@ function toISO(date) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+function StarPicker({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: '2px' }}>
+      {[1,2,3].map(n => (
+        <button key={n} onClick={() => onChange(n)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 1px', lineHeight: 1 }}>
+          {n <= value ? '⭐' : '☆'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
   const isPending = emp.user_id === 'pending';
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft]     = React.useState({});
+
+  const showBaristaLevel = emp.role === 'barista' || emp.barista_skills;
+  const showRoasterLevel = emp.role === 'roaster';
 
   const startEdit = () => {
     setDraft({
       name:           emp.name,
       role:           emp.role || 'general',
       barista_skills: !!emp.barista_skills,
+      barista_level:  emp.barista_level || 1,
+      roaster_level:  emp.roaster_level || 1,
       max_days:       emp.max_days || 5,
       end_time:       emp.end_time || '',
       phone:          emp.phone || '',
@@ -77,6 +95,8 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
       name:           draft.name.trim(),
       role:           draft.role,
       barista_skills: draft.barista_skills,
+      barista_level:  draft.barista_level,
+      roaster_level:  draft.roaster_level,
       max_days:       draft.max_days,
       end_time:       draft.end_time || null,
       phone:          draft.phone.trim() || null,
@@ -128,6 +148,18 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
                 <span style={{ fontSize: '0.85rem', color: draft.barista_skills ? '#7C3AED' : '#6B7280' }}>☕ כישורי בריסטה</span>
               </label>
             </div>
+            {(draft.role === 'barista' || draft.barista_skills) && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>רמת בריסטה</label>
+                <StarPicker value={draft.barista_level} onChange={v => setDraft(p => ({ ...p, barista_level: v }))} />
+              </div>
+            )}
+            {draft.role === 'roaster' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '3px' }}>רמת קלייה</label>
+                <StarPicker value={draft.roaster_level} onChange={v => setDraft(p => ({ ...p, roaster_level: v }))} />
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <button onClick={() => setEditing(false)} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
@@ -149,6 +181,12 @@ function EmployeeRow({ emp, onApprove, onUpdate, onRemove }) {
       </td>
       <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.85rem' }}>
         {emp.barista_skills ? <span style={{ color: '#7C3AED' }}>☕ כן</span> : <span style={{ color: '#ccc' }}>—</span>}
+        {showBaristaLevel && emp.barista_level > 1 && (
+          <div style={{ fontSize: '0.7rem' }}>{'⭐'.repeat(emp.barista_level)}</div>
+        )}
+        {showRoasterLevel && emp.roaster_level > 1 && (
+          <div style={{ fontSize: '0.7rem' }}>{'⭐'.repeat(emp.roaster_level)}</div>
+        )}
       </td>
       <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.85rem' }}>{emp.max_days}</td>
       <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', color: emp.end_time ? '#F59E0B' : '#ccc' }}>
@@ -191,7 +229,7 @@ export default function Schedule() {
   const [exporting,  setExporting]    = useState(false);
   const [sheetsUrl,  setSheetsUrl]    = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
+  const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '', barista_level: 1, roaster_level: 1 });
 
   // ── Load saved schedule when week changes ───────────────────────────────────
   useEffect(() => {
@@ -273,10 +311,12 @@ export default function Schedule() {
       max_days:       newEmp.max_days,
       phone:          newEmp.phone.trim() || null,
       barista_skills: newEmp.barista_skills,
+      barista_level:  newEmp.barista_level,
+      roaster_level:  newEmp.roaster_level,
       end_time:       newEmp.end_time || null,
       active:         true,
     });
-    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
+    setNewEmp({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '', barista_level: 1, roaster_level: 1 });
     setShowAddForm(false);
     showToast('עובד נוסף');
   };
@@ -536,6 +576,18 @@ export default function Schedule() {
                       </span>
                     </label>
                   </div>
+                  {(newEmp.role === 'barista' || newEmp.barista_skills) && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>רמת בריסטה</label>
+                      <StarPicker value={newEmp.barista_level} onChange={v => setNewEmp(p => ({ ...p, barista_level: v }))} />
+                    </div>
+                  )}
+                  {newEmp.role === 'roaster' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '4px' }}>רמת קלייה</label>
+                      <StarPicker value={newEmp.roaster_level} onChange={v => setNewEmp(p => ({ ...p, roaster_level: v }))} />
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
                   <button onClick={() => setShowAddForm(false)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>ביטול</button>
