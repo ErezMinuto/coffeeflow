@@ -20,6 +20,7 @@ export default function Roasting() {
   const [selectedProfileId, setSelectedProfileId] = useState('');
   const [greenWeight,      setGreenWeight]       = useState('15');
   const [selectedOperator, setSelectedOperator]  = useState('');
+  const [colorReading,     setColorReading]      = useState('');
   const [editingRoast,     setEditingRoast]      = useState(null);
   const [view,             setView]              = useState('log'); // 'log' | 'list'
 
@@ -81,7 +82,8 @@ export default function Roasting() {
       await roastsDb.insert({
         origin_id: origin.id, roast_profile_id: null,
         green_weight: weight, roasted_weight: roastedWeight,
-        operator: selectedOperator, date: new Date().toISOString(), batch_number: batchNum
+        operator: selectedOperator, date: new Date().toISOString(), batch_number: batchNum,
+        color_reading: colorReading ? parseFloat(colorReading) : null,
       });
       await originsDb.update(origin.id, {
         stock: origin.stock - weight,
@@ -132,7 +134,8 @@ export default function Roasting() {
           roast_profile_id: profile.id, origin_id: null,
           green_weight: weight, roasted_weight: roastedWeight,
           operator: selectedOperator, date: new Date().toISOString(),
-          batch_number: batchNum, user_id: data.origins[0]?.user_id
+          batch_number: batchNum, user_id: data.origins[0]?.user_id,
+          color_reading: colorReading ? parseFloat(colorReading) : null,
         })
         .select().single();
       if (roastErr) throw roastErr;
@@ -578,6 +581,18 @@ export default function Roasting() {
           </>
         )}
 
+        <div style={{ marginTop: '0.75rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 'bold', fontSize: '0.9rem' }}>🎨 קריאת צבע (Color Meter)</label>
+          <input
+            type="number"
+            step="0.1"
+            placeholder="למשל: 65.4"
+            value={colorReading}
+            onChange={e => setColorReading(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ddd', fontSize: '1rem' }}
+          />
+        </div>
+
         <button onClick={recordRoast} className="btn-primary" style={{ marginTop: '0.75rem' }}>🔥 רשום קלייה</button>
       </div>
 
@@ -654,6 +669,7 @@ export default function Roasting() {
                       <div>🔥 קלוי: <strong>{roast.roasted_weight} ק"ג</strong></div>
                       <div>👨‍🍳 מפעיל: <strong>{roast.operator}</strong></div>
                       <div>📅 תאריך: <strong>{new Date(roast.date).toLocaleDateString('he-IL')}</strong></div>
+                      {roast.color_reading != null && <div>🎨 צבע: <strong>{roast.color_reading}</strong></div>}
                       {roast.updated_at && <div style={{ fontSize: '0.85em', color: '#FF6B35' }}>✏️ עודכן: {new Date(roast.updated_at).toLocaleString('he-IL')}</div>}
                     </div>
 
