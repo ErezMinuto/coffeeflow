@@ -30,7 +30,9 @@ const ROLE_COLORS = { barista: '#8B5CF6', roaster: '#F59E0B', general: '#6B7280'
 
 function getNextSunday() {
   const d = new Date();
-  const diff = d.getDay() === 0 ? 7 : 7 - d.getDay();
+  const day = d.getDay();
+  // If today is Sunday, use today (current week). Otherwise jump to next Sunday.
+  const diff = day === 0 ? 0 : 7 - day;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d;

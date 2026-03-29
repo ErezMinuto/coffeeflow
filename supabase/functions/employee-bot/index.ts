@@ -47,7 +47,9 @@ const DAY_HE: Record<string, string> = {
 
 function nextSunday(): string {
   const d = new Date();
-  const diff = d.getDay() === 0 ? 7 : 7 - d.getDay();
+  const day = d.getDay();
+  // If today is Sunday, use today (current week). Otherwise jump to next Sunday.
+  const diff = day === 0 ? 0 : 7 - day;
   d.setDate(d.getDate() + diff);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
