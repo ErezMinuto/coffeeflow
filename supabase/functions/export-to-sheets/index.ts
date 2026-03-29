@@ -159,37 +159,130 @@ serve(async (req) => {
       rows.push(row);
     }
 
+    // Add title row at top
+    const titleRow = [`☕ MINUTO Café Roastery — סידור עבודה ${week_start}`, "", "", "", "", "", ""];
+    const allRows = [titleRow, ...rows];
+
     // Write data
     await sheetsRequest(token, "PUT",
       `/${sheetId}/values/A1?valueInputOption=RAW`,
-      { values: rows }
+      { values: allRows }
     );
 
-    // Format: bold header, colors, RTL
-    const numRows = rows.length;
+    // ── Formatting ────────────────────────────────────────────────────────────
+    const numRows = allRows.length;
     const numCols = 7;
+
+    // Minuto brand colors
+    const darkGreen  = { red: 0.239, green: 0.290, blue: 0.180 }; // #3D4A2E
+    const sageGreen  = { red: 0.710, green: 0.776, blue: 0.604 }; // #B5C69A
+    const lightSage  = { red: 0.922, green: 0.937, blue: 0.886 }; // #EBEFE2
+    const white      = { red: 1,     green: 1,     blue: 1     };
+    const darkText   = { red: 0.161, green: 0.196, blue: 0.110 }; // #29321C
+
     await sheetsRequest(token, "POST", `/${sheetId}:batchUpdate`, {
       requests: [
-        // Header row bold + background
+        // RTL sheet direction
+        { updateSheetProperties: { properties: { sheetId: gSheetId, rightToLeft: true }, fields: "rightToLeft" } },
+
+        // Merge title row
+        { mergeCells: { range: { sheetId: gSheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: numCols }, mergeType: "MERGE_ALL" } },
+
+        // Title row — dark green bg, white bold large text
         {
           repeatCell: {
             range: { sheetId: gSheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: numCols },
-            cell: { userEnteredFormat: { backgroundColor: { red: 0.44, green: 0.31, blue: 0.22 }, textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 }, fontSize: 11 }, horizontalAlignment: "CENTER", wrapStrategy: "WRAP" } },
+            cell: { userEnteredFormat: {
+              backgroundColor: darkGreen,
+              textFormat: { bold: true, foregroundColor: white, fontSize: 14, fontFamily: "Arial" },
+              horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE",
+            }},
             fields: "userEnteredFormat",
           }
         },
-        // Data rows alternating colors
+
+        // Header row (row 1) — dark green bg, white bold text
         {
           repeatCell: {
-            range: { sheetId: gSheetId, startRowIndex: 1, endRowIndex: numRows, startColumnIndex: 0, endColumnIndex: numCols },
-            cell: { userEnteredFormat: { wrapStrategy: "WRAP", verticalAlignment: "MIDDLE", horizontalAlignment: "CENTER" } },
+            range: { sheetId: gSheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: numCols },
+            cell: { userEnteredFormat: {
+              backgroundColor: darkGreen,
+              textFormat: { bold: true, foregroundColor: white, fontSize: 12, fontFamily: "Arial" },
+              horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE",
+              wrapStrategy: "WRAP",
+              borders: { bottom: { style: "SOLID_MEDIUM", color: sageGreen } }
+            }},
             fields: "userEnteredFormat",
           }
         },
-        // Auto resize columns
-        { autoResizeDimensions: { dimensions: { sheetId: gSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: numCols } } },
-        // Auto resize rows
-        { autoResizeDimensions: { dimensions: { sheetId: gSheetId, dimension: "ROWS", startIndex: 0, endIndex: numRows } } },
+
+        // Position label column (col 0) — sage green bg
+        {
+          repeatCell: {
+            range: { sheetId: gSheetId, startRowIndex: 2, endRowIndex: numRows, startColumnIndex: 0, endColumnIndex: 1 },
+            cell: { userEnteredFormat: {
+              backgroundColor: sageGreen,
+              textFormat: { bold: true, foregroundColor: darkText, fontSize: 10, fontFamily: "Arial" },
+              horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE",
+              wrapStrategy: "WRAP",
+            }},
+            fields: "userEnteredFormat",
+          }
+        },
+
+        // Even data rows — light sage tint
+        ...Array.from({ length: Math.ceil((numRows - 2) / 2) }, (_, i) => ({
+          repeatCell: {
+            range: { sheetId: gSheetId, startRowIndex: 2 + i * 2, endRowIndex: 3 + i * 2, startColumnIndex: 1, endColumnIndex: numCols },
+            cell: { userEnteredFormat: {
+              backgroundColor: lightSage,
+              textFormat: { fontSize: 11, fontFamily: "Arial", foregroundColor: darkText },
+              horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE",
+              wrapStrategy: "WRAP",
+            }},
+            fields: "userEnteredFormat",
+          }
+        })),
+
+        // Odd data rows — white
+        ...Array.from({ length: Math.floor((numRows - 2) / 2) }, (_, i) => ({
+          repeatCell: {
+            range: { sheetId: gSheetId, startRowIndex: 3 + i * 2, endRowIndex: 4 + i * 2, startColumnIndex: 1, endColumnIndex: numCols },
+            cell: { userEnteredFormat: {
+              backgroundColor: white,
+              textFormat: { fontSize: 11, fontFamily: "Arial", foregroundColor: darkText },
+              horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE",
+              wrapStrategy: "WRAP",
+            }},
+            fields: "userEnteredFormat",
+          }
+        })),
+
+        // Borders for all cells
+        {
+          updateBorders: {
+            range: { sheetId: gSheetId, startRowIndex: 0, endRowIndex: numRows, startColumnIndex: 0, endColumnIndex: numCols },
+            top:    { style: "SOLID", color: sageGreen },
+            bottom: { style: "SOLID", color: sageGreen },
+            left:   { style: "SOLID", color: sageGreen },
+            right:  { style: "SOLID", color: sageGreen },
+            innerHorizontal: { style: "SOLID", color: sageGreen },
+            innerVertical:   { style: "SOLID", color: sageGreen },
+          }
+        },
+
+        // Title row height
+        { updateDimensionProperties: { range: { sheetId: gSheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 56 }, fields: "pixelSize" } },
+
+        // Header row height
+        { updateDimensionProperties: { range: { sheetId: gSheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 48 }, fields: "pixelSize" } },
+
+        // Column widths — wide enough to avoid line breaks
+        { updateDimensionProperties: { range: { sheetId: gSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 160 }, fields: "pixelSize" } },
+        { updateDimensionProperties: { range: { sheetId: gSheetId, dimension: "COLUMNS", startIndex: 1, endIndex: numCols }, properties: { pixelSize: 150 }, fields: "pixelSize" } },
+
+        // Data row heights
+        { updateDimensionProperties: { range: { sheetId: gSheetId, dimension: "ROWS", startIndex: 2, endIndex: numRows }, properties: { pixelSize: 44 }, fields: "pixelSize" } },
       ]
     });
 
