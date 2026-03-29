@@ -125,19 +125,13 @@ serve(async (req) => {
     // Get Google access token
     const token = await getGoogleAccessToken();
 
-    // Create new spreadsheet
-    const title = `סידור עבודה מינוטו - ${week_start}`;
-    const created = await sheetsRequest(token, "POST", "", {
-      properties: { title, locale: "he_IL" },
-      sheets: [{ properties: { title: "סידור עבודה", rightToLeft: true } }],
-    });
-    const sheetId     = created.spreadsheetId;
-    const gSheetId    = created.sheets[0].properties.sheetId;
+    // Use existing shared sheet
+    const sheetId  = Deno.env.get("GOOGLE_SHEET_ID")!;
+    const gSheetId = 0; // default first sheet
 
-    // Share with editor access (optional: make it accessible)
-    await driveRequest(token, "POST", `/${sheetId}/permissions`, {
-      role: "writer", type: "user",
-      emailAddress: "erez@minuto.co.il",
+    // Clear existing content first
+    await sheetsRequest(token, "POST", `/${sheetId}/values:batchClear`, {
+      ranges: ["A1:G50"]
     });
 
     // Build rows
@@ -199,7 +193,7 @@ serve(async (req) => {
       ]
     });
 
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`;
     return new Response(JSON.stringify({ ok: true, url, sheetId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
