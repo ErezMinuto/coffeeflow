@@ -85,10 +85,24 @@ export default function App() {
 
   if (!isSignedIn) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '2rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center', direction: 'rtl' }}>
-          <h1 style={{ marginBottom: '1rem', color: '#6F4E37' }}>☕ CoffeeFlow</h1>
-          <p style={{ marginBottom: '2rem', color: '#666' }}>מערכת ניהול ייצור קפה</p>
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        height: '100vh', flexDirection: 'column', gap: '2rem',
+        background: 'linear-gradient(160deg, #3D4A2E 0%, #556B3A 50%, #6A7D45 100%)',
+      }}>
+        <div style={{
+          background: 'white', padding: '2.5rem 2rem', borderRadius: '20px',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.35)', textAlign: 'center',
+          direction: 'rtl', maxWidth: '420px', width: '90%',
+        }}>
+          <img
+            src="/New_logo.pdf.png"
+            alt="Minuto Café Roastery"
+            style={{ height: '120px', width: 'auto', objectFit: 'contain', marginBottom: '0.5rem' }}
+          />
+          <p style={{ marginBottom: '1.75rem', color: '#8CA870', fontSize: '0.9rem', fontWeight: 500 }}>
+            מערכת ניהול פנימית
+          </p>
           <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl' } } }} />
         </div>
       </div>

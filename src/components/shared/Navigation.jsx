@@ -23,15 +23,27 @@ export default function Navigation() {
 
   return (
     <nav className="navbar">
+      {/* Brand / Logo */}
       <div className="nav-brand">
-        <h2>☕ CoffeeFlow</h2>
-        {user && (
-          <div style={{ fontSize: '0.875rem', color: '#999' }}>
-            {user.primaryEmailAddress?.emailAddress}
-          </div>
-        )}
+        <div style={{
+          background: 'white',
+          borderRadius: '10px',
+          padding: '3px 8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}>
+          <img
+            src="/New_logo.pdf.png"
+            alt="Minuto Café Roastery"
+            className="nav-brand-logo"
+            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+          />
+        </div>
       </div>
 
+      {/* Nav items */}
       <div className="nav-menu">
         {staticItems.map(item => (
           <NavLink
@@ -63,7 +75,8 @@ export default function Navigation() {
         ))}
       </div>
 
-      <div style={{ marginRight: 'auto', paddingLeft: '1rem' }}>
+      {/* User button */}
+      <div style={{ paddingLeft: '0.5rem' }}>
         <UserButton afterSignOutUrl="/" />
       </div>
     </nav>

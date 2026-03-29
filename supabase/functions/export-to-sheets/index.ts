@@ -19,7 +19,7 @@ const POSITIONS = [
   { id: "opening", label: "פתיחת קפה", time: "07:30" },
   { id: "cafe",    label: "בית קפה",   time: "07:45" },
   { id: "roasting",label: "קלייה",     time: "" },
-  { id: "cashier", label: "קופה קפה",  time: "08:00" },
+
   { id: "store1",  label: "חנות",      time: "09:30" },
   { id: "store2",  label: "חנות",      time: "09:30" },
   { id: "store3",  label: "חנות",      time: "09:30" },

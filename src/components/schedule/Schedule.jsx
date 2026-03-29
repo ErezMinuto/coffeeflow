@@ -15,9 +15,9 @@ const DAYS = [
 
 const POSITIONS = [
   { id: 'opening',  label: 'פתיחת קפה', time: '07:30', icon: '☕', always: true },
-  { id: 'cafe',     label: 'בית קפה',   time: '07:45', icon: '🏠', always: true },
+  { id: 'cafe',     label: 'בית קפה',   time: '07:45', icon: '🏠', fridayOnly: true },
   { id: 'roasting', label: 'קלייה',     time: '',       icon: '🔥', roastingOnly: true },
-  { id: 'cashier',  label: 'קופה קפה',  time: '07:45', icon: '💰', fridayOnly: true },
+
   { id: 'store1',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store2',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store3',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
@@ -376,9 +376,11 @@ export default function Schedule() {
   };
 
   const publish = async () => {
+    if (!sheetsUrl) { showToast('יש לייצא ל-Google Sheets קודם', 'error'); return; }
     setPublishing(true);
     try {
-      const text = buildTelegramText();
+      const weekLabel = weekDates.map(d => `${d.label} ${formatDate(d.date)}`).join(' | ');
+      const text = `📅 <b>סידור עבודה שבועי</b>\n${weekLabel}\n\n📊 <a href="${sheetsUrl}">לצפייה בסידור המלא לחצו כאן</a>`;
       const { error } = await supabase.functions.invoke('employee-bot', {
         body: { text },
         headers: { 'x-action': 'publish' },
