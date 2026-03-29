@@ -303,7 +303,7 @@ serve(async (req) => {
 
     // Action endpoints (onboard/remind/publish) — verify Supabase anon key
     if (action) {
-      const apiKey = req.headers.get("apikey") ?? req.headers.get("x-coffeeflow-secret") ?? "";
+      const apiKey = req.headers.get("apikey") ?? req.headers.get("authorization")?.replace("Bearer ", "") ?? req.headers.get("x-coffeeflow-secret") ?? "";
       const validKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
       if (validKey && apiKey !== validKey && apiKey !== WEBHOOK_SECRET) {
         return new Response("Unauthorized", { status: 401, headers: corsHeaders });
