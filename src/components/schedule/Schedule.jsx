@@ -188,6 +188,8 @@ export default function Schedule() {
   const [scheduleId, setScheduleId] = useState(null);
   const [publishing, setPublishing]   = useState(false);
   const [generating, setGenerating]   = useState(false);
+  const [exporting,  setExporting]    = useState(false);
+  const [sheetsUrl,  setSheetsUrl]    = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '' });
 
@@ -382,14 +384,30 @@ export default function Schedule() {
         headers: { 'x-action': 'publish' },
       });
       if (error) throw error;
-
-      // Save to DB
-      await schedulesDb.add({ user_id: user.id, week_start: weekStart, status: 'approved' });
       showToast('סידור פורסם לקבוצה! 🎉');
     } catch (err) {
       showToast('שגיאה בפרסום', 'error');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const exportToSheets = async () => {
+    if (!scheduleId) { showToast('יש לשמור את הסידור קודם', 'error'); return; }
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-to-sheets', {
+        body: { schedule_id: scheduleId, week_start: weekStart },
+      });
+      if (error) throw error;
+      setSheetsUrl(data.url);
+      showToast('סידור יוצא ל-Google Sheets! 📊');
+      window.open(data.url, '_blank');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('שגיאה בייצוא', 'error');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -636,6 +654,16 @@ export default function Schedule() {
               <button onClick={publish} disabled={publishing} style={{ background: publishing ? '#ccc' : '#10B981', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: publishing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
                 {publishing ? '⏳ שולח...' : '📤 פרסם לקבוצה'}
               </button>
+
+              <button onClick={exportToSheets} disabled={exporting} style={{ background: exporting ? '#ccc' : '#1a73e8', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: exporting ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
+                {exporting ? '⏳ מייצא...' : '📊 ייצא ל-Google Sheets'}
+              </button>
+
+              {sheetsUrl && (
+                <a href={sheetsUrl} target="_blank" rel="noreferrer" style={{ color: '#1a73e8', fontWeight: 600, fontSize: '0.9rem', alignSelf: 'center' }}>
+                  🔗 פתח Sheet
+                </a>
+              )}
             </div>
           </div>
 
