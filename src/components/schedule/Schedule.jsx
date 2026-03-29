@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../lib/context';
+import { supabase } from '../../lib/supabase';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -322,18 +323,11 @@ export default function Schedule() {
     setPublishing(true);
     try {
       const text = buildTelegramText();
-      const res  = await fetch(
-        'https://ytydgldyeygpzmlxvpvb.supabase.co/functions/v1/employee-bot?action=publish',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ text }),
-        }
-      );
-      if (!res.ok) throw new Error('publish failed');
+      const { error } = await supabase.functions.invoke('employee-bot', {
+        body: { text },
+        headers: { 'x-action': 'publish' },
+      });
+      if (error) throw error;
 
       // Save to DB
       await schedulesDb.add({ user_id: user.id, week_start: weekStart, status: 'approved' });

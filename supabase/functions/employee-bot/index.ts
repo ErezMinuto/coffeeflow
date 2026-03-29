@@ -286,7 +286,7 @@ serve(async (req) => {
   }
 
   try {
-    const action = new URL(req.url).searchParams.get("action");
+    const action = new URL(req.url).searchParams.get("action") ?? req.headers.get("x-action");
 
     // Action endpoints (onboard/remind/publish) — verify Supabase anon key
     if (action) {
