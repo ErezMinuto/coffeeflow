@@ -9,7 +9,7 @@ const ROAST_LEVEL_COLORS = { none: '#6B7280', light: '#F59E0B', medium: '#6F4E37
 
 // ── Row components — defined OUTSIDE to prevent input focus loss ──────────────
 
-function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange }) {
+function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange, colorReading, onColorChange }) {
   const yieldPct  = 1 - (origin.weight_loss / 100);
   const roastedKg = (parseFloat(amount) * yieldPct).toFixed(1);
 
@@ -49,6 +49,15 @@ function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange }) {
             <div style={{ fontSize: '0.875rem', color: '#059669', paddingBottom: '0.5rem' }}>
               → {roastedKg} ק"ג קלוי ({origin.weight_loss}% איבוד)
             </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>🎨 קריאת צבע</label>
+              <input
+                type="number" step="0.1" placeholder="למשל: 65.4"
+                value={colorReading}
+                onChange={e => onColorChange(e.target.value)}
+                style={{ width: '120px' }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -56,7 +65,7 @@ function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange }) {
   );
 }
 
-function ProfileRow({ profile, isChecked, onToggle, amount, onAmountChange, origins, profileIngredients }) {
+function ProfileRow({ profile, isChecked, onToggle, amount, onAmountChange, origins, profileIngredients, colorReading, onColorChange }) {
   const ings       = (profileIngredients || []).filter(i => i.profile_id === profile.id);
   const weightLoss = blendedWeightLoss(ings, origins);
   const roastedKg  = (parseFloat(amount) * (1 - weightLoss / 100)).toFixed(1);
@@ -118,6 +127,15 @@ function ProfileRow({ profile, isChecked, onToggle, amount, onAmountChange, orig
                 })}
               </div>
             )}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>🎨 קריאת צבע</label>
+              <input
+                type="number" step="0.1" placeholder="למשל: 65.4"
+                value={colorReading}
+                onChange={e => onColorChange(e.target.value)}
+                style={{ width: '120px' }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -134,6 +152,7 @@ export default function RoastingList({
   const [checkedOrigins,  setCheckedOrigins]  = useState({});
   const [checkedProfiles, setCheckedProfiles] = useState({});
   const [amounts,         setAmounts]         = useState({});
+  const [colorReadings,   setColorReadings]   = useState({});
   const [saving,          setSaving]          = useState(false);
 
   const userId = data.origins[0]?.user_id;
@@ -192,7 +211,7 @@ export default function RoastingList({
       if (newGreen < 0) { showToast(`אין מספיק מלאי ירוק ל${origin.name}`, 'error'); continue; }
       try {
         await originsDb.update(origin.id, { roasted_stock: (origin.roasted_stock || 0) + roastedKg, stock: newGreen });
-        await supabase.from('roasts').insert({ origin_id: origin.id, roast_profile_id: null, green_weight: greenKg, roasted_weight: roastedKg, operator: 'מנהל קלייה', date: syncTime, user_id: userId });
+        await supabase.from('roasts').insert({ origin_id: origin.id, roast_profile_id: null, green_weight: greenKg, roasted_weight: roastedKg, operator: 'מנהל קלייה', date: syncTime, user_id: userId, color_reading: colorReadings[`origin_${origin.id}`] ? parseFloat(colorReadings[`origin_${origin.id}`]) : null });
         success++;
       } catch (err) { showToast(`שגיאה ב${origin.name}: ${err.message}`, 'error'); }
     }
@@ -220,7 +239,7 @@ export default function RoastingList({
       try {
         const { data: roastRow, error: roastErr } = await supabase
           .from('roasts')
-          .insert({ roast_profile_id: profile.id, origin_id: null, green_weight: greenKg, roasted_weight: roastedKg, operator: 'מנהל קלייה', date: syncTime, user_id: userId })
+          .insert({ roast_profile_id: profile.id, origin_id: null, green_weight: greenKg, roasted_weight: roastedKg, operator: 'מנהל קלייה', date: syncTime, user_id: userId, color_reading: colorReadings[`profile_${profile.id}`] ? parseFloat(colorReadings[`profile_${profile.id}`]) : null })
           .select().single();
         if (roastErr) throw roastErr;
 
@@ -289,6 +308,8 @@ export default function RoastingList({
                     onAmountChange={val => setAmounts(prev => ({ ...prev, [`p_${profile.id}`]: val }))}
                     origins={data.origins}
                     profileIngredients={data.roastProfileIngredients}
+                    colorReading={colorReadings[`profile_${profile.id}`] || ''}
+                    onColorChange={val => setColorReadings(prev => ({ ...prev, [`profile_${profile.id}`]: val }))}
                   />
                 ))}
               </div>
@@ -309,6 +330,8 @@ export default function RoastingList({
                     onToggle={() => toggleOrigin(origin.id)}
                     amount={amounts[`o_${origin.id}`] || DEFAULT_ROAST_KG}
                     onAmountChange={val => setAmounts(prev => ({ ...prev, [`o_${origin.id}`]: val }))}
+                    colorReading={colorReadings[`origin_${origin.id}`] || ''}
+                    onColorChange={val => setColorReadings(prev => ({ ...prev, [`origin_${origin.id}`]: val }))}
                   />
                 ))}
               </div>
