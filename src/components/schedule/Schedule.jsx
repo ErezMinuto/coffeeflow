@@ -263,23 +263,22 @@ export default function Schedule() {
   const generateSchedule = async () => {
     setGenerating(true);
     try {
-      const res = await fetch(
-        'https://ytydgldyeygpzmlxvpvb.supabase.co/functions/v1/generate-schedule',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employees:  activeEmployees,
-            availability: weekAvailability,
-            weekStart,
-            dayTypes,
-            roastDays,
-            activeDays: activeDays.map(d => d.code),
-          }),
-        }
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'generate failed');
+      const { data: json, error } = await supabase.functions.invoke('generate-schedule', {
+        body: {
+          employees:    activeEmployees,
+          availability: weekAvailability,
+          weekStart,
+          dayTypes,
+          roastDays,
+          activeDays: activeDays.map(d => d.code),
+        },
+      });
+      if (error) throw error;
+      console.log('Schedule from AI:', json?.schedule);
+      if (!json?.schedule || Object.keys(json.schedule).length === 0) {
+        showToast('AI לא הצליח לבנות סידור — בדוק זמינות עובדים', 'error');
+        return;
+      }
       setSchedule(json.schedule);
       showToast('סידור עבודה נוצר בהצלחה ✨');
     } catch (err) {
