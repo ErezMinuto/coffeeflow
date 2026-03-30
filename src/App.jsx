@@ -17,6 +17,13 @@ import Marketing               from './components/marketing/Marketing';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
+function AdminRoute({ children }) {
+  const { isAdmin, roleLoading } = useApp();
+  if (roleLoading) return null;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 function AppContent() {
   const { toasts } = useApp();
 
@@ -28,14 +35,16 @@ function AppContent() {
         <Routes>
           <Route path="/"           element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard"  element={<Dashboard />} />
+          {/* Production — visible to all */}
           <Route path="/origins"    element={<Origins />} />
           <Route path="/roasting"   element={<Roasting />} />
           <Route path="/products"   element={<Products />} />
-          <Route path="/purchases"  element={<Purchases />} />
-          <Route path="/tasks"      element={<Tasks />} />
-          <Route path="/schedule"   element={<Schedule />} />
-          <Route path="/marketing"  element={<Marketing />} />
-          <Route path="/settings"   element={<Settings />} />
+          {/* Operations — admin only */}
+          <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
+          <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
+          <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
+          <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
+          <Route path="/settings"   element={<AdminRoute><Settings /></AdminRoute>} />
           <Route path="*"           element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>

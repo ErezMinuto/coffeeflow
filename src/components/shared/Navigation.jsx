@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { useApp } from '../../lib/context';
 
-const navItems = [
+const allNavItems = [
   { path: '/dashboard', icon: '📊', label: 'Dashboard' },
   {
     label: 'Production', icon: '☕', children: [
@@ -13,14 +13,14 @@ const navItems = [
     ],
   },
   {
-    label: 'Operations', icon: '🏪', children: [
+    label: 'Operations', icon: '🏪', adminOnly: true, children: [
       { path: '/tasks',     icon: '📋', label: 'Tasks'     },
       { path: '/schedule',  icon: '📅', label: 'Schedule'  },
       { path: '/purchases', icon: '🛒', label: 'Purchases' },
     ],
   },
-  { path: '/marketing', icon: '📧', label: 'Marketing' },
-  { path: '/settings',  icon: '⚙️', label: 'Settings'  },
+  { path: '/marketing', icon: '📧', label: 'Marketing', adminOnly: true },
+  { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
 ];
 
 function NavDropdown({ item, badges }) {
@@ -122,8 +122,7 @@ function NavDropdown({ item, badges }) {
 }
 
 export default function Navigation() {
-  const { user } = useUser();
-  const { data } = useApp();
+  const { data, isAdmin } = useApp();
 
   const pendingTasks = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
   const pendingEmployees = (data.employees || []).filter(e => e.user_id === 'pending').length;
@@ -131,6 +130,9 @@ export default function Navigation() {
   const badges = {};
   if (pendingTasks > 0) badges['/tasks'] = { count: pendingTasks, color: '#DC2626' };
   if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, color: '#F59E0B' };
+
+  // Filter nav items based on role
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <nav className="navbar">

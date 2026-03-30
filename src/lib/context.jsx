@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useSupabaseData, useCostSettings } from './hooks';
+import { supabase } from './supabase';
 import {
   calculateProductCost as _calculateProductCost,
   calculateRoastedWeight,
@@ -13,6 +14,26 @@ const AppContext = createContext(null);
 export const AppProvider = ({ children }) => {
   const { user } = useUser();
   const [toasts, setToasts] = useState([]);
+  const [userRole, setUserRole] = useState(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  // Fetch user role from Supabase
+  useEffect(() => {
+    if (!user) { setRoleLoading(false); return; }
+    const fetchRole = async () => {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      // If no role found, treat as admin (first user / owner)
+      setUserRole(roleData?.role || 'admin');
+      setRoleLoading(false);
+    };
+    fetchRole();
+  }, [user]);
+
+  const isAdmin = userRole === 'admin';
 
   const originsDb                = useSupabaseData('origins');
   const productsDb               = useSupabaseData('products');
@@ -66,6 +87,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       user,
       data,
+      isAdmin, userRole, roleLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb,
