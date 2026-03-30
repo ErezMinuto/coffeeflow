@@ -125,7 +125,7 @@ function AutoComposeTab({ data, user, showToast }) {
       showToast('⚠️ אין אנשי קשר שאישרו קבלת מיילים', 'warning');
       return;
     }
-    if (!confirm(`לשלוח את הקמפיין ל-${optedInCount} נמענים?`)) return;
+    if (!window.confirm(`לשלוח את הקמפיין ל-${optedInCount} נמענים?`)) return;
 
     setStep('sending');
     try {
