@@ -26,6 +26,8 @@ export const AppProvider = ({ children }) => {
   const availabilityDb            = useSupabaseData('availability_submissions');
   const schedulesDb               = useSupabaseData('schedules');
   const assignmentsDb             = useSupabaseData('schedule_assignments');
+  const marketingContactsDb       = useSupabaseData('marketing_contacts');
+  const campaignsDb               = useSupabaseData('campaigns');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {
@@ -41,6 +43,8 @@ export const AppProvider = ({ children }) => {
     availability:            availabilityDb.data            || [],
     schedules:               schedulesDb.data               || [],
     assignments:             assignmentsDb.data             || [],
+    marketingContacts:       marketingContactsDb.data       || [],
+    campaigns:               campaignsDb.data               || [],
     costSettings:            costSettings                  || {}
   };
 
@@ -64,7 +68,7 @@ export const AppProvider = ({ children }) => {
       data,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-      employeesDb, availabilityDb, schedulesDb, assignmentsDb,
+      employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss

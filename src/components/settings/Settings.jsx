@@ -276,6 +276,32 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Brevo Marketing */}
+      <div className="section" style={{ marginTop: '2rem' }}>
+        <h2>📧 Brevo Marketing</h2>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          הגדר את Brevo לשליחת קמפיינים במייל ו-WhatsApp לאנשי הקשר שלך.
+        </p>
+
+        <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#0369A1' }}>
+          <strong>איך מגדירים:</strong>
+          <ol style={{ margin: '0.5rem 0 0 1.2rem', lineHeight: '2' }}>
+            <li>הירשם ל-<a href="https://www.brevo.com" target="_blank" rel="noopener noreferrer" style={{ color: '#0369A1', fontWeight: 600 }}>Brevo</a> וצור חשבון</li>
+            <li>צור API Key ב-<strong>Settings → SMTP & API → API Keys</strong></li>
+            <li>פתח <strong>Supabase → Edge Functions → Secrets</strong> והוסף:
+              <ul style={{ marginTop: '4px', marginRight: '1rem' }}>
+                <li><code>BREVO_API_KEY</code> = ה-API Key מ-Brevo</li>
+              </ul>
+            </li>
+            <li>ודא שיש לך Sender Domain מאומת ב-Brevo</li>
+          </ol>
+        </div>
+
+        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '1rem', fontSize: '0.875rem', color: '#065F46' }}>
+          <strong>✅ לאחר ההגדרה:</strong> עבור לדף <strong>Marketing</strong> בתפריט כדי לייבא אנשי קשר, ליצור קמפיינים ולשלוח הודעות.
+        </div>
+      </div>
+
       {/* Roast Profiles */}
       <RoastProfiles />
     </div>

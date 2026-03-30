@@ -11,6 +11,7 @@ const staticItems = [
   { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
   { path: '/tasks',      icon: '📋', label: 'Tasks'      },
   { path: '/schedule',   icon: '📅', label: 'Schedule'   },
+  { path: '/marketing',  icon: '📧', label: 'Marketing'  },
   { path: '/settings',   icon: '⚙️', label: 'Settings'   },
 ];
 

@@ -13,6 +13,7 @@ import Purchases               from './components/purchases/Purchases';
 import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
+import Marketing               from './components/marketing/Marketing';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -33,6 +34,7 @@ function AppContent() {
           <Route path="/purchases"  element={<Purchases />} />
           <Route path="/tasks"      element={<Tasks />} />
           <Route path="/schedule"   element={<Schedule />} />
+          <Route path="/marketing"  element={<Marketing />} />
           <Route path="/settings"   element={<Settings />} />
           <Route path="*"           element={<Navigate to="/dashboard" replace />} />
         </Routes>
