@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../lib/context';
 import { callBrevoFunction, callCampaignFunction } from '../../lib/brevo';
-import { buildEmailHtml, buildCampaignHtml } from '../../lib/emailTemplate';
+// Email HTML is built server-side (edge function) with banner images
 import { supabase } from '../../lib/supabase';
 
 const TABS = [
@@ -86,18 +86,10 @@ function AutoComposeTab({ data, user, showToast }) {
     setStep('idle');
   };
 
-  const rebuildHtml = () => {
-    if (!draft) return draft?.htmlContent || '';
-    return buildCampaignHtml({
-      subject: editSubject,
-      preheader: draft.preheader || '',
-      greeting: draft.greeting || '',
-      body: editBody,
-      ctaText: draft.ctaText || 'לחנות',
-      ctaUrl: draft.ctaUrl || 'https://minuto.co.il/shop',
-      products: draft.products || [],
-      unsubscribeUrl: '{{UNSUBSCRIBE_URL}}',
-    });
+  // Use the server-generated HTML which includes the banner image
+  // When user edits subject/body, we update the draft on the server via update-draft
+  const getPreviewHtml = () => {
+    return draft?.htmlContent || '';
   };
 
   const sendTest = async () => {
@@ -254,7 +246,7 @@ function AutoComposeTab({ data, user, showToast }) {
 
   // ── DRAFT / SENDING: Review & Approve ─────────────────────────────────
 
-  const previewHtml = rebuildHtml();
+  const previewHtml = getPreviewHtml();
 
   return (
     <div className="section">

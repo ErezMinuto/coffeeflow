@@ -1,14 +1,14 @@
 /**
- * Generate Campaign — AI-powered email campaign generator
+ * Generate Campaign -AI-powered email campaign generator
  * With Gemini Imagen banner generation + Resend delivery
  *
  * Actions:
- *   generate          — AI generates complete Hebrew email campaign + banner image
- *   update-draft      — save edits to a draft campaign
- *   sync-woo-products — refresh WooCommerce product cache
- *   send-campaign     — send via Resend API
- *   send-test         — send test email to specific address
- *   unsubscribe       — handle unsubscribe requests (GET)
+ *   generate          -AI generates complete Hebrew email campaign + banner image
+ *   update-draft      -save edits to a draft campaign
+ *   sync-woo-products -refresh WooCommerce product cache
+ *   send-campaign     -send via Resend API
+ *   send-test         -send test email to specific address
+ *   unsubscribe       -handle unsubscribe requests (GET)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -64,7 +64,7 @@ function generateUnsubscribeUrl(email: string): string {
   return `${UNSUBSCRIBE_BASE}?action=unsubscribe&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 }
 
-// ── Gemini Imagen — Generate Banner Image ───────────────────────────────────
+// ── Gemini Imagen -Generate Banner Image ───────────────────────────────────
 
 async function generateBannerImage(prompt: string): Promise<string | null> {
   if (!GEMINI_KEY) {
@@ -73,66 +73,101 @@ async function generateBannerImage(prompt: string): Promise<string | null> {
   }
 
   try {
-    const imagePrompt = `Professional email marketing banner for an artisan coffee roastery called "Minuto".
-Style: warm, inviting, premium feel. Colors: earthy greens, warm browns, cream tones.
-NO TEXT in the image. NO letters, NO words, NO Hebrew, NO English text.
-Photographic style, high quality, landscape format 600x300px.
-Theme: ${prompt}`;
+    const imagePrompt = `Professional email marketing banner for an artisan coffee roastery. Style: warm, inviting, premium feel. Colors: earthy greens, warm browns, cream tones. NO TEXT in the image. NO letters, NO words. Photographic style, high quality, wide landscape format. Theme: ${prompt}`;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
+    let base64: string | null = null;
+    let mime = "image/png";
+
+    // Try models in order: Imagen 4 -> Gemini 2.0 Flash -> Gemini 2.0 Flash Preview
+    const attempts = [
       {
-        method: "POST",
+        name: "Imagen 4",
+        url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
+        headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
+        body: { instances: [{ prompt: imagePrompt }], parameters: { sampleCount: 1, aspectRatio: "16:9" } },
+        parse: (json: any) => {
+          const pred = json.predictions?.[0];
+          return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
+        },
+      },
+      {
+        name: "Gemini 2.0 Flash Preview Image",
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Generate an image: ${imagePrompt}`
-            }]
-          }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-            responseMimeType: "text/plain"
+        body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+        parse: (json: any) => {
+          for (const part of json.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
           }
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Gemini error:", res.status, errText);
-      return null;
-    }
-
-    const json = await res.json();
-    // Look for inline image data in the response
-    const parts = json.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData?.mimeType?.startsWith("image/")) {
-        const base64 = part.inlineData.data;
-        const mime = part.inlineData.mimeType;
-        // Upload to Supabase Storage
-        const filename = `banners/campaign_${Date.now()}.${mime === "image/png" ? "png" : "jpg"}`;
-        const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-
-        const { data: uploadData, error: uploadErr } = await supabase.storage
-          .from("marketing")
-          .upload(filename, fileBytes, { contentType: mime, upsert: true });
-
-        if (uploadErr) {
-          console.error("Upload error:", uploadErr);
           return null;
+        },
+      },
+      {
+        name: "Gemini 2.0 Flash Exp",
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
+        headers: { "Content-Type": "application/json" },
+        body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+        parse: (json: any) => {
+          for (const part of json.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
+          }
+          return null;
+        },
+      },
+    ];
+
+    for (const attempt of attempts) {
+      if (base64) break;
+      try {
+        console.log(`Trying ${attempt.name}...`);
+        const res = await fetch(attempt.url, {
+          method: "POST",
+          headers: attempt.headers,
+          body: JSON.stringify(attempt.body),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const result = attempt.parse(json);
+          if (result) {
+            base64 = result.data;
+            mime = result.mime;
+            console.log(`Banner generated via ${attempt.name}`);
+          } else {
+            console.log(`${attempt.name}: no image in response`);
+          }
+        } else {
+          const errText = await res.text().catch(() => "");
+          console.log(`${attempt.name} failed: ${res.status} ${errText.slice(0, 200)}`);
         }
-
-        const { data: publicUrl } = supabase.storage
-          .from("marketing")
-          .getPublicUrl(filename);
-
-        return publicUrl?.publicUrl || null;
+      } catch (e: any) {
+        console.log(`${attempt.name} error: ${e.message}`);
       }
     }
 
-    console.log("No image in Gemini response");
+    if (base64) {
+      console.log("Banner base64 length:", base64.length, "mime:", mime);
+      const filename = `banners/campaign_${Date.now()}.${mime.includes("png") ? "png" : "jpg"}`;
+      const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+      console.log("Uploading banner:", filename, "size:", fileBytes.length);
+
+      const { error: uploadErr } = await supabase.storage
+        .from("marketing")
+        .upload(filename, fileBytes, { contentType: mime, upsert: true });
+
+      if (uploadErr) {
+        console.error("Upload error:", JSON.stringify(uploadErr));
+        return null;
+      }
+
+      const { data: publicUrl } = supabase.storage
+        .from("marketing")
+        .getPublicUrl(filename);
+
+      console.log("Banner URL:", publicUrl?.publicUrl);
+      return publicUrl?.publicUrl || null;
+    }
+
+    console.log("No image in Gemini response:", JSON.stringify(json).slice(0, 200));
     return null;
   } catch (e: any) {
     console.error("Banner generation error:", e.message);
@@ -156,11 +191,11 @@ function getSeasonalContext(): string {
   if (month === 2 && day >= 10 && day <= 20) holidays.push("טו בשבט");
 
   const seasons: Record<number, string> = {
-    1: "חורף — קפה חם ומחמם", 2: "חורף — קפה חם ומחמם",
-    3: "אביב — טעמים רעננים", 4: "אביב — טעמים רעננים", 5: "אביב — טעמים רעננים",
-    6: "קיץ — קפה קר ומרענן", 7: "קיץ — קפה קר ומרענן", 8: "קיץ — קפה קר ומרענן",
-    9: "סתיו — חזרה לשגרה", 10: "סתיו — חזרה לשגרה",
-    11: "סתיו — חזרה לשגרה", 12: "חורף — קפה חם ומחמם",
+    1: "חורף -קפה חם ומחמם", 2: "חורף -קפה חם ומחמם",
+    3: "אביב -טעמים רעננים", 4: "אביב -טעמים רעננים", 5: "אביב -טעמים רעננים",
+    6: "קיץ -קפה קר ומרענן", 7: "קיץ -קפה קר ומרענן", 8: "קיץ -קפה קר ומרענן",
+    9: "סתיו -חזרה לשגרה", 10: "סתיו -חזרה לשגרה",
+    11: "סתיו -חזרה לשגרה", 12: "חורף -קפה חם ומחמם",
   };
 
   return [
@@ -193,7 +228,7 @@ function buildCampaignHtml(params: {
 }): string {
   const { subject, preheader, greeting, body, ctaText, ctaUrl, bannerUrl, products, unsubscribeUrl } = params;
 
-  // Product cards — 2-column grid for desktop
+  // Product cards -2-column grid for desktop
   const productCardsHtml = products.map(p => {
     const hasDiscount = p.sale_price && p.regular_price && p.sale_price !== p.regular_price;
     const priceHtml = hasDiscount
@@ -339,7 +374,7 @@ function buildCampaignHtml(params: {
           <td style="background:#F5F3EE;padding:28px 32px;text-align:center;border-top:1px solid #E8E8E0;">
             <img src="${LOGO_URL}" width="80" height="33" alt="Minuto" style="display:inline-block;height:33px;width:auto;opacity:0.7;margin-bottom:12px;" />
             <p style="margin:0;font-size:13px;color:#888;font-weight:600;">Minuto Caf&eacute; &amp; Roastery</p>
-            <p style="margin:4px 0 0;font-size:12px;color:#AAA;">קפה טרי מהקלייה — ישירות אליך</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#AAA;">קפה טרי מהקלייה -ישירות אליך</p>
             <div style="margin:16px 0 0;padding-top:12px;border-top:1px solid #E0DDD8;">
               <a href="${SITE_URL}" style="color:#556B3A;text-decoration:none;font-size:12px;margin:0 8px;">לאתר</a>
               <span style="color:#ddd;">|</span>
@@ -416,7 +451,7 @@ async function ensureProductsFresh(userId: string): Promise<void> {
     .limit(1);
 
   const lastSync = data?.[0]?.synced_at;
-  const staleHours = 6;
+  const staleHours = 24;
   const isStale = !lastSync || (Date.now() - new Date(lastSync).getTime()) > staleHours * 60 * 60 * 1000;
 
   if (isStale && WOO_URL && WOO_KEY) {
@@ -475,42 +510,61 @@ async function handleGenerate(p: GeneratePayload) {
   const seasonalContext = getSeasonalContext();
 
   // 5. Call Claude AI
-  const systemPrompt = `אתה קופירייטר שיווקי מומחה לבתי קלייה ובתי קפה בוטיק בישראל.
-אתה כותב עבור "מינוטו" — בית קלייה ובית קפה ישראלי.
+  const systemPrompt = `אתה ארז, בעלים של מינוטו. בית קלייה קטן בישראל. אתה כותב מייל ללקוחות.
 
-המטרה: ליצור ניוזלטר שבועי שמשלב תוכן ערך עם הצעת מוצרים, בטון חם ואישי.
+איך אתה כותב:
+- כמו וואטסאפ לחבר טוב. קצר, ישיר, אמיתי
+- לא "חובבי קפה המתוחכמים". פשוט "היי" או "שלום"
+- מספר מה קרה השבוע בקלייה. משהו ספציפי ואמיתי
+- ממליץ על מוצר? מסביר למה אתה אוהב אותו. חוויה, לא תכונות
+- משפטים קצרים. 5-10 מילים
+- מקסימום 100-120 מילים בסך הכל
 
-כללים:
-- כתוב בעברית תקנית
-- הטון: חם, מקצועי, לא מכירתי מדי. כמו מכתב מבעל בית הקלייה ללקוחות שלו
-- אורך: 150-250 מילים לגוף ההודעה
-- תמיד כלול: פתיח מעניין (טיפ/סיפור/עובדה על קפה), גוף עם ערך, סיום עם הזמנה לפעולה
-- אל תחזור על נושאים מקמפיינים קודמים
-- התחשב בעונתיות ובחגים ישראליים
-- בחר 2-4 מוצרים מהקטלוג שמתאימים לנושא הקמפיין
+דוגמה לטון הנכון:
+"היי,
+השבוע קליתי אצלנו אתיופיה יירגשפה. הארומה שעלתה מהקלייה היתה מטורפת. פירותי, פרחוני.
+שמרתי כמה שקיות. מי שרוצה לנסות, יש באתר."
+
+דוגמה נוספת:
+"מה קורה,
+הבאנו מכונת Jura חדשה לקלייה לבדיקה. עשינו איתה אספרסו כפול מהתערובת שלנו.
+בקיצור, אנחנו מכורים. המכונה עכשיו במבצע באתר למי שמתעניין."
+
+מילים וביטויים אסורים (לא להשתמש בשום מצב):
+- "חובבי הקפה המתוחכמים"
+- "דיוק שוויצרי"
+- "משקה משיי"
+- "בלחיצת כפתור"
+- "מהפכה בטעם"
+- "במיוחד בשבילך"
+- "משהו שווה במיוחד"
+- "המבצע לא נמשך כל השנה"
+- "חוללת מהפכה"
+- "ישירות אליך"
+- "נבחרו במיוחד"
+- שימוש ב-"!" יותר מפעם אחת
+- שימוש ביותר מאימוג'י 1
 
 ${seasonalContext}
 
-נושאים קודמים (הימנע מחזרה): ${pastSubjects.join(", ") || "אין"}
+נושאים קודמים (לא לחזור): ${pastSubjects.join(", ") || "אין"}
 
-${pastPatterns ? `דפוסים של קמפיינים מוצלחים בעבר:\n${pastPatterns}` : ""}
-
-קטלוג מוצרים זמינים:
+מוצרים זמינים:
 ${JSON.stringify(productCatalog, null, 2)}
 
-${p.customInstructions ? `הנחיות מיוחדות מהמשתמש: ${p.customInstructions}` : ""}
+${p.customInstructions ? "הנחיה מהמשתמש: " + p.customInstructions : ""}
 
-החזר JSON בלבד, ללא טקסט נוסף:
+החזר JSON בלבד:
 {
-  "subject": "שורת נושא (עד 60 תווים, מושכת, עם אימוג'י אחד)",
-  "preheader": "טקסט קדם-כותרת (עד 90 תווים)",
-  "greeting": "פתיח קצר (שורה אחת, למשל: שלום חובבי קפה ☕)",
-  "body": "גוף ההודעה בעברית. השתמש ב-\\n לשבירת שורות. כלול תוכן ערך + המלצה טבעית למוצרים",
-  "cta_text": "טקסט לכפתור הפעולה",
+  "subject": "נושא קצר עד 50 תווים, פשוט, עם אימוג'י אחד",
+  "preheader": "משפט אחד קצר עד 60 תווים",
+  "greeting": "היי או שלום, בלי תארים",
+  "body": "גוף קצר בעברית פשוטה. שבירת שורות עם \\n",
+  "cta_text": "טקסט קצר לכפתור",
   "cta_url": "https://minuto.co.il/shop",
-  "product_ids": [מערך של woo_id לפי הקטלוג למעלה],
+  "product_ids": [woo_ids],
   "campaign_theme": "tips|story|promo|seasonal|education",
-  "banner_prompt": "תיאור קצר באנגלית לתמונת באנר — למשל: fresh coffee beans being roasted in artisan roaster with warm lighting"
+  "banner_prompt": "short english description for banner image, photographic style, no text in image"
 }`;
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -521,15 +575,22 @@ ${p.customInstructions ? `הנחיות מיוחדות מהמשתמש: ${p.custom
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-haiku-4-5",
+      model:      "claude-sonnet-4-20250514",
       max_tokens: 1500,
       system:     systemPrompt,
-      messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי מושלם" }],
+      messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
     }),
   });
 
+  if (!aiRes.ok) {
+    const errText = await aiRes.text();
+    console.error("Claude API error:", aiRes.status, errText);
+    return err(500, "Claude API error: " + aiRes.status);
+  }
+
   const aiJson = await aiRes.json();
   const rawText = aiJson.content?.[0]?.text ?? "";
+  console.log("Claude raw response length:", rawText.length);
 
   let campaign: any;
   try {
@@ -793,7 +854,7 @@ async function handleUnsubscribe(url: URL): Promise<Response> {
 }
 
 function htmlPage(title: string, body: string): string {
-  return `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title} — Minuto</title></head>
+  return `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title} -Minuto</title></head>
 <body style="margin:0;padding:40px 20px;background:#F5F5F0;font-family:Arial,sans-serif;direction:rtl;text-align:center;">
 <div style="max-width:500px;margin:0 auto;background:white;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 <h1 style="color:#3D4A2E;font-size:24px;margin-bottom:16px;">${title}</h1>
