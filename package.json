@@ -4,15 +4,16 @@
   "private": true,
   "dependencies": {
     "@clerk/clerk-react": "^4.30.0",
+    "@sparticuz/chromium": "^119.0.2",
     "@supabase/supabase-js": "^2.39.0",
+    "ajv": "^8.18.0",
+    "formidable": "^3.5.1",
+    "puppeteer-core": "^21.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.0",
     "react-scripts": "5.0.1",
-    "puppeteer-core": "^21.6.1",
-    "@sparticuz/chromium": "^119.0.2",
-    "xlsx": "^0.18.5",
-    "formidable": "^3.5.1",
-    "react-router-dom": "^6.22.0"
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -37,5 +38,4 @@
       "last 1 safari version"
     ]
   }
-
 }

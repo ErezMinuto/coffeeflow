@@ -1,17 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../lib/context';
-import { callBrevoFunction } from '../../lib/brevo';
-import { buildEmailHtml } from '../../lib/emailTemplate';
+import { callBrevoFunction, callCampaignFunction } from '../../lib/brevo';
+import { buildEmailHtml, buildCampaignHtml } from '../../lib/emailTemplate';
 import { supabase } from '../../lib/supabase';
 
 const TABS = [
-  { id: 'compose',  label: '✉️ יצירת קמפיין' },
-  { id: 'whatsapp', label: '💬 WhatsApp' },
-  { id: 'contacts', label: '👥 אנשי קשר' },
-  { id: 'history',  label: '📊 היסטוריה' },
+  { id: 'compose',     label: '🚀 קמפיין אוטומטי' },
+  { id: 'automations', label: '⚡ אוטומציות' },
+  { id: 'contacts',    label: '👥 אנשי קשר' },
+  { id: 'history',     label: '📊 היסטוריה' },
 ];
 
-const TYPE_LABELS = {
+const THEME_LABELS = {
   tips:      '💡 טיפים',
   story:     '📖 סיפור',
   promo:     '🏷️ מבצע',
@@ -27,7 +27,6 @@ export default function Marketing() {
     <div className="page">
       <h1>📧 Marketing</h1>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {TABS.map(tab => (
           <button
@@ -41,325 +40,436 @@ export default function Marketing() {
         ))}
       </div>
 
-      {activeTab === 'compose'  && <ComposeTab data={data} user={user} showToast={showToast} campaignsDb={campaignsDb} />}
-      {activeTab === 'whatsapp' && <WhatsAppTab data={data} user={user} showToast={showToast} />}
-      {activeTab === 'contacts' && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
-      {activeTab === 'history'  && <HistoryTab data={data} />}
+      {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} />}
+      {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
+      {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
+      {activeTab === 'history'     && <HistoryTab data={data} />}
     </div>
   );
 }
 
-// ── Compose Tab ─────────────────────────────────────────────────────────────
+// ── Auto Compose Tab (AI-powered one-click) ─────────────────────────────────
 
-function ComposeTab({ data, user, showToast, campaignsDb }) {
-  const [subject, setSubject]       = useState('');
-  const [message, setMessage]       = useState('');
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [ideas, setIdeas]           = useState(null);
-  const [loadingIdeas, setLoadingIdeas] = useState(false);
-  const [sending, setSending]       = useState(false);
-  const [previewHtml, setPreviewHtml] = useState('');
+function AutoComposeTab({ data, user, showToast }) {
+  const [step, setStep]                 = useState('idle'); // idle | generating | draft | sending | sent
+  const [hint, setHint]                 = useState('');
+  const [draft, setDraft]               = useState(null);
+  const [editSubject, setEditSubject]   = useState('');
+  const [editBody, setEditBody]         = useState('');
+  const [testEmail, setTestEmail]       = useState('');
+  const [syncing, setSyncing]           = useState(false);
 
   const optedInCount = (data.marketingContacts || []).filter(c => c.opted_in).length;
 
-  const toggleProduct = (id) => {
-    setSelectedProducts(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
-  };
-
-  const generateIdeas = async () => {
-    setLoadingIdeas(true);
+  const generateCampaign = async () => {
+    setStep('generating');
     try {
-      const pastSubjects = (data.campaigns || [])
-        .filter(c => c.channel === 'email' && c.subject)
-        .map(c => c.subject);
-
-      const products = (data.products || []).map(p => ({
-        name: p.name,
-        description: p.description || '',
-      }));
-
-      const result = await callBrevoFunction(supabase, 'suggest-content', {
+      const result = await callCampaignFunction(supabase, 'generate', {
         userId: user.id,
-        products,
-        pastSubjects,
+        customInstructions: hint.trim() || undefined,
       });
 
-      setIdeas(result.ideas || []);
+      if (!result.ok) throw new Error(result.error || 'Generation failed');
+
+      setDraft(result.campaign);
+      setEditSubject(result.campaign.subject);
+      setEditBody(result.campaign.body);
+      setStep('draft');
     } catch (err) {
-      showToast(`❌ שגיאה ביצירת רעיונות: ${err.message}`, 'error');
-    } finally {
-      setLoadingIdeas(false);
+      showToast(`❌ שגיאה ביצירת קמפיין: ${err.message}`, 'error');
+      setStep('idle');
     }
   };
 
-  const applyIdea = (idea) => {
-    setSubject(idea.subject);
-    setMessage(idea.preview);
-    setIdeas(null);
-    showToast('✅ הרעיון הוחל — ערוך לפי הצורך');
+  const regenerate = () => {
+    setDraft(null);
+    setStep('idle');
   };
 
-  const showPreview = () => {
-    const products = (data.products || []).filter(p => selectedProducts.includes(p.id));
-    const html = buildEmailHtml(message, products);
-    setPreviewHtml(html);
+  const rebuildHtml = () => {
+    if (!draft) return draft?.htmlContent || '';
+    return buildCampaignHtml({
+      subject: editSubject,
+      preheader: draft.preheader || '',
+      greeting: draft.greeting || '',
+      body: editBody,
+      ctaText: draft.ctaText || 'לחנות',
+      ctaUrl: draft.ctaUrl || 'https://minuto.co.il/shop',
+      products: draft.products || [],
+      unsubscribeUrl: '{{UNSUBSCRIBE_URL}}',
+    });
+  };
+
+  const sendTest = async () => {
+    if (!testEmail.trim()) {
+      showToast('⚠️ נא להזין כתובת מייל לטסט', 'warning');
+      return;
+    }
+    setStep('sending');
+    try {
+      const result = await callCampaignFunction(supabase, 'send-test', {
+        userId: user.id,
+        campaignId: draft.id,
+        testEmail: testEmail.trim(),
+      });
+      showToast(`✅ טסט נשלח ל-${testEmail}!`);
+      setStep('draft');
+    } catch (err) {
+      showToast(`❌ שגיאה בשליחת טסט: ${err.message}`, 'error');
+      setStep('draft');
+    }
   };
 
   const sendCampaign = async () => {
-    if (!subject.trim() || !message.trim()) {
-      showToast('⚠️ נא למלא נושא ותוכן', 'warning');
-      return;
-    }
     if (optedInCount === 0) {
       showToast('⚠️ אין אנשי קשר שאישרו קבלת מיילים', 'warning');
       return;
     }
+    if (!confirm(`לשלוח את הקמפיין ל-${optedInCount} נמענים?`)) return;
 
-    setSending(true);
+    setStep('sending');
     try {
-      const products = (data.products || []).filter(p => selectedProducts.includes(p.id));
-      const htmlContent = buildEmailHtml(message, products);
-
-      const result = await callBrevoFunction(supabase, 'send-email', {
+      const result = await callCampaignFunction(supabase, 'send-campaign', {
         userId: user.id,
-        subject: subject.trim(),
-        htmlContent,
+        campaignId: draft.id,
       });
-
-      showToast(`✅ הקמפיין נשלח ל-${result.recipientCount} נמענים!`);
-      setSubject('');
-      setMessage('');
-      setSelectedProducts([]);
-      setPreviewHtml('');
+      showToast(`✅ הקמפיין נשלח ל-${result.sent} נמענים!`);
+      setStep('sent');
     } catch (err) {
       showToast(`❌ שגיאה בשליחה: ${err.message}`, 'error');
-    } finally {
-      setSending(false);
+      setStep('draft');
     }
   };
 
+  const syncProducts = async () => {
+    setSyncing(true);
+    try {
+      const result = await callCampaignFunction(supabase, 'sync-woo-products', {
+        userId: user.id,
+      });
+      showToast(`✅ סונכרנו ${result.synced} מוצרים מ-WooCommerce`);
+    } catch (err) {
+      showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const removeProduct = (wooId) => {
+    if (!draft) return;
+    setDraft({
+      ...draft,
+      products: draft.products.filter(p => p.woo_id !== wooId),
+    });
+  };
+
+  // ── IDLE: Generate button ─────────────────────────────────────────────
+
+  if (step === 'idle') {
+    return (
+      <div className="section">
+        <div style={{
+          textAlign: 'center', padding: '40px 20px',
+          background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
+          borderRadius: '16px', border: '2px solid #BBF7D0',
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
+          <h2 style={{ color: '#3D4A2E', marginBottom: '8px', fontSize: '1.5rem' }}>
+            יצירת קמפיין אוטומטי
+          </h2>
+          <p style={{ color: '#666', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+            ה-AI ייצור מייל מושלם בעברית עם מוצרים מהחנות שלך.
+            <br />רק תאשר ותשלח.
+          </p>
+
+          <div style={{ maxWidth: '400px', margin: '0 auto 16px' }}>
+            <input
+              type="text"
+              placeholder="הנחיה אופציונלית: למשל 'מכונות Jura במבצע' או השאר ריק..."
+              value={hint}
+              onChange={e => setHint(e.target.value)}
+              style={{
+                width: '100%', padding: '12px 16px', borderRadius: '8px',
+                border: '1px solid #ddd', fontSize: '0.95rem', textAlign: 'right',
+                direction: 'rtl',
+              }}
+            />
+          </div>
+
+          <button
+            onClick={generateCampaign}
+            className="btn-primary"
+            style={{ fontSize: '1.1rem', padding: '14px 32px' }}
+          >
+            🚀 צור קמפיין
+          </button>
+
+          <div style={{ marginTop: '16px' }}>
+            <button onClick={syncProducts} disabled={syncing} className="btn-small" style={{ fontSize: '0.8rem' }}>
+              {syncing ? '⏳ מסנכרן...' : '🔄 סנכרן מוצרים מ-WooCommerce'}
+            </button>
+          </div>
+
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '16px' }}>
+            {optedInCount} נמענים מאושרים
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── GENERATING: Loading ────────────────────────────────────────────────
+
+  if (step === 'generating') {
+    return (
+      <div className="section">
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 2s linear infinite' }}>🤖</div>
+          <h2 style={{ color: '#3D4A2E' }}>יוצר את הקמפיין שלך...</h2>
+          <p style={{ color: '#666' }}>מסנכרן מוצרים, יוצר תוכן בעברית, בונה עיצוב</p>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SENT: Success ─────────────────────────────────────────────────────
+
+  if (step === 'sent') {
+    return (
+      <div className="section">
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+          <h2 style={{ color: '#065F46' }}>הקמפיין נשלח בהצלחה!</h2>
+          <p style={{ color: '#666', marginBottom: '24px' }}>
+            המייל נשלח ל-{optedInCount} נמענים
+          </p>
+          <button onClick={() => { setDraft(null); setStep('idle'); setHint(''); }} className="btn-primary">
+            צור קמפיין חדש
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── DRAFT / SENDING: Review & Approve ─────────────────────────────────
+
+  const previewHtml = rebuildHtml();
+
   return (
     <div className="section">
-      <h2>✉️ יצירת קמפיין מייל</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ margin: 0 }}>📝 סקירת הקמפיין</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {draft?.theme && (
+            <span style={{
+              background: '#DCFCE7', padding: '4px 12px', borderRadius: '12px',
+              fontSize: '0.8rem', fontWeight: 600,
+            }}>
+              {THEME_LABELS[draft.theme] || draft.theme}
+            </span>
+          )}
+          <button onClick={regenerate} className="btn-small">🔄 צור מחדש</button>
+        </div>
+      </div>
 
-      {/* AI Ideas */}
-      <div className="form-card" style={{ marginBottom: '1rem' }}>
-        <button onClick={generateIdeas} disabled={loadingIdeas} className="btn-primary">
-          {loadingIdeas ? '⏳ יוצר רעיונות...' : '🤖 קבל רעיונות תוכן מ-AI'}
-        </button>
+      {/* Editable Subject */}
+      <div className="form-card" style={{ marginBottom: '12px' }}>
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label style={{ fontWeight: 600 }}>נושא המייל</label>
+          <input
+            type="text"
+            value={editSubject}
+            onChange={e => setEditSubject(e.target.value)}
+            style={{ fontSize: '1rem', fontWeight: 600 }}
+          />
+        </div>
+      </div>
 
-        {ideas && ideas.length > 0 && (
-          <div style={{ marginTop: '1rem', display: 'grid', gap: '10px' }}>
-            {ideas.map((idea, i) => (
-              <div
-                key={i}
-                onClick={() => applyIdea(idea)}
-                style={{
-                  background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px',
-                  padding: '12px', cursor: 'pointer', transition: 'transform 0.1s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.01)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{
-                    background: '#DCFCE7', padding: '2px 8px', borderRadius: '12px',
-                    fontSize: '0.75rem', fontWeight: 600,
-                  }}>
-                    {TYPE_LABELS[idea.type] || idea.type}
-                  </span>
-                  <strong style={{ color: '#3D4A2E' }}>{idea.title}</strong>
+      {/* Editable Body */}
+      <div className="form-card" style={{ marginBottom: '12px' }}>
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label style={{ fontWeight: 600 }}>תוכן ההודעה</label>
+          <textarea
+            value={editBody}
+            onChange={e => setEditBody(e.target.value)}
+            rows={6}
+            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', direction: 'rtl' }}
+          />
+        </div>
+      </div>
+
+      {/* Products */}
+      {draft?.products && draft.products.length > 0 && (
+        <div className="form-card" style={{ marginBottom: '12px' }}>
+          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+            מוצרים ({draft.products.length})
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {draft.products.map(p => (
+              <div key={p.woo_id} style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: '#F0FDF4', border: '1px solid #BBF7D0',
+                borderRadius: '8px', padding: '6px 10px',
+              }}>
+                {p.image_url && (
+                  <img src={p.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
+                )}
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3D4A2E' }}>{p.name}</div>
+                  {p.price && <div style={{ fontSize: '0.75rem', color: '#556B3A' }}>₪{p.price}</div>}
                 </div>
-                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#555' }}>{idea.preview}</p>
-                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>נושא: {idea.subject}</p>
+                <button
+                  onClick={() => removeProduct(p.woo_id)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: '1rem', color: '#999', padding: '0 4px',
+                  }}
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Compose form */}
-      <div className="form-card">
-        <div className="form-group">
-          <label>נושא המייל</label>
-          <input
-            type="text"
-            placeholder="שורת הנושא..."
-            value={subject}
-            onChange={e => setSubject(e.target.value)}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>תוכן ההודעה</label>
-          <textarea
-            placeholder="כתוב את תוכן המייל כאן..."
-            value={message}
-            onChange={e => setMessage(e.target.value)}
-            rows={6}
-            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
-          />
-        </div>
-
-        {/* Product selector */}
-        {data.products && data.products.length > 0 && (
-          <div className="form-group">
-            <label>צרף מוצרים מומלצים</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-              {data.products.map(p => (
-                <label
-                  key={p.id}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    background: selectedProducts.includes(p.id) ? '#DCFCE7' : '#f5f5f5',
-                    border: `1px solid ${selectedProducts.includes(p.id) ? '#86EFAC' : '#ddd'}`,
-                    borderRadius: '6px', padding: '4px 10px', fontSize: '0.85rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedProducts.includes(p.id)}
-                    onChange={() => toggleProduct(p.id)}
-                    style={{ margin: 0 }}
-                  />
-                  {p.name}
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
-          <button onClick={showPreview} className="btn-small" style={{ flex: 1 }}>
-            👁️ תצוגה מקדימה
-          </button>
-          <button
-            onClick={sendCampaign}
-            disabled={sending || optedInCount === 0}
-            className="btn-primary"
-            style={{ flex: 1 }}
-          >
-            {sending ? '⏳ שולח...' : `📤 שלח ל-${optedInCount} נמענים`}
-          </button>
-        </div>
-      </div>
-
-      {/* Preview */}
-      {previewHtml && (
-        <div className="form-card" style={{ marginTop: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ margin: 0 }}>👁️ תצוגה מקדימה</h3>
-            <button onClick={() => setPreviewHtml('')} className="btn-small">✕ סגור</button>
-          </div>
-          <iframe
-            srcDoc={previewHtml}
-            style={{ width: '100%', height: '500px', border: '1px solid #ddd', borderRadius: '8px' }}
-            title="Email Preview"
-          />
         </div>
       )}
+
+      {/* Email Preview */}
+      <div className="form-card" style={{ marginBottom: '12px' }}>
+        <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>👁️ תצוגה מקדימה</label>
+        <iframe
+          srcDoc={previewHtml}
+          style={{ width: '100%', height: '500px', border: '1px solid #ddd', borderRadius: '8px' }}
+          title="Email Preview"
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="form-card">
+        {/* Test send */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <input
+            type="email"
+            placeholder="מייל לטסט (שלך)"
+            value={testEmail}
+            onChange={e => setTestEmail(e.target.value)}
+            style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.9rem' }}
+          />
+          <button
+            onClick={sendTest}
+            disabled={step === 'sending'}
+            className="btn-small"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {step === 'sending' ? '⏳' : '📧'} שלח טסט
+          </button>
+        </div>
+
+        {/* Approve & Send */}
+        <button
+          onClick={sendCampaign}
+          disabled={step === 'sending' || optedInCount === 0}
+          className="btn-primary"
+          style={{ width: '100%', fontSize: '1.1rem', padding: '14px' }}
+        >
+          {step === 'sending'
+            ? '⏳ שולח...'
+            : `✅ אשר ושלח ל-${optedInCount} נמענים`
+          }
+        </button>
+      </div>
     </div>
   );
 }
 
-// ── WhatsApp Tab ────────────────────────────────────────────────────────────
+// ── Automations Tab ─────────────────────────────────────────────────────────
 
-function WhatsAppTab({ data, user, showToast }) {
-  const [templateId, setTemplateId]       = useState('');
-  const [text, setText]                   = useState('');
-  const [senderNumber, setSenderNumber]   = useState('');
-  const [sending, setSending]             = useState(false);
-
-  const optedInWithPhone = (data.marketingContacts || []).filter(c => c.opted_in && c.phone).length;
-
-  const sendWhatsApp = async () => {
-    if (!senderNumber.trim()) {
-      showToast('⚠️ נא להזין מספר שולח', 'warning');
-      return;
-    }
-    if (!templateId && !text.trim()) {
-      showToast('⚠️ נא להזין Template ID או טקסט', 'warning');
-      return;
-    }
-
-    setSending(true);
-    try {
-      const payload = {
-        userId: user.id,
-        senderNumber: senderNumber.trim(),
-      };
-
-      if (templateId) {
-        payload.templateId = parseInt(templateId);
-      } else {
-        payload.text = text.trim();
-      }
-
-      const result = await callBrevoFunction(supabase, 'send-whatsapp', payload);
-      showToast(`✅ WhatsApp נשלח ל-${result.recipientCount} נמענים!`);
-      setText('');
-      setTemplateId('');
-    } catch (err) {
-      showToast(`❌ שגיאה בשליחה: ${err.message}`, 'error');
-    } finally {
-      setSending(false);
-    }
-  };
+function AutomationsTab({ data, user, showToast }) {
+  const AUTOMATIONS = [
+    {
+      type: 'welcome',
+      icon: '👋',
+      title: 'מייל ברוכים הבאים',
+      description: 'נשלח אוטומטית ללקוח חדש שנרשם באתר',
+      trigger: 'הרשמה חדשה באתר',
+      delay: 'מיידי',
+    },
+    {
+      type: 'cart_abandon',
+      icon: '🛒',
+      title: 'עגלה נטושה',
+      description: 'נשלח כשלקוח מוסיף לעגלה אבל לא משלים רכישה',
+      trigger: 'עגלה נטושה',
+      delay: 'שעה אחרי',
+    },
+    {
+      type: 'post_purchase_tips',
+      icon: '☕',
+      title: 'טיפים אחרי רכישה',
+      description: 'טיפים להכנת הקפה שנרכש',
+      trigger: 'הזמנה הושלמה',
+      delay: '3 ימים אחרי',
+    },
+    {
+      type: 'post_purchase_reorder',
+      icon: '🔄',
+      title: 'תזכורת להזמנה חוזרת',
+      description: '"נגמר הקפה? הגיע הזמן להזמין שוב"',
+      trigger: 'הזמנה הושלמה',
+      delay: '25 ימים אחרי',
+    },
+  ];
 
   return (
     <div className="section">
-      <h2>💬 שליחת WhatsApp</h2>
+      <h2>⚡ אוטומציות מייל</h2>
+      <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+        מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך.
+      </p>
 
-      <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#0369A1' }}>
-        <strong>שים לב:</strong> הודעה ראשונה חייבת להיות מבוססת Template שנוצר בפלטפורמת Brevo.
-        לאחר שהלקוח מגיב, ניתן לשלוח טקסט חופשי.
+      <div style={{ display: 'grid', gap: '12px' }}>
+        {AUTOMATIONS.map(auto => (
+          <div key={auto.type} className="form-card" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+            <div style={{ fontSize: '2rem', lineHeight: 1 }}>{auto.icon}</div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{auto.title}</h3>
+              <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem' }}>{auto.description}</p>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#5B21B6' }}>
+                  טריגר: {auto.trigger}
+                </span>
+                <span style={{ background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#92400E' }}>
+                  עיכוב: {auto.delay}
+                </span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{
+                display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
+                fontSize: '0.8rem', fontWeight: 600,
+                background: '#FEF3C7', color: '#92400E',
+              }}>
+                🔧 בקרוב
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="form-card">
-        <div className="form-group">
-          <label>מספר שולח (עם קידומת מדינה)</label>
-          <input
-            type="text"
-            placeholder="972501234567"
-            value={senderNumber}
-            onChange={e => setSenderNumber(e.target.value)}
-            style={{ fontFamily: 'monospace' }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Template ID (להודעה ראשונה)</label>
-          <input
-            type="text"
-            placeholder="לדוגמה: 1"
-            value={templateId}
-            onChange={e => setTemplateId(e.target.value)}
-            style={{ fontFamily: 'monospace' }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>או טקסט חופשי (לתגובות)</label>
-          <textarea
-            placeholder="תוכן ההודעה..."
-            value={text}
-            onChange={e => setText(e.target.value)}
-            rows={3}
-            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
-          />
-        </div>
-
-        <button
-          onClick={sendWhatsApp}
-          disabled={sending || optedInWithPhone === 0}
-          className="btn-primary"
-          style={{ width: '100%', marginTop: '10px' }}
-        >
-          {sending ? '⏳ שולח...' : `📤 שלח ל-${optedInWithPhone} נמענים עם טלפון`}
-        </button>
+      <div style={{
+        marginTop: '1.5rem', padding: '16px',
+        background: '#F0F9FF', border: '1px solid #BAE6FD',
+        borderRadius: '8px', fontSize: '0.85rem', color: '#0369A1',
+      }}>
+        <strong>💡 איך זה עובד?</strong>
+        <br />
+        1. ה-AI כותב את התוכן בעברית (פעם אחת)
+        <br />
+        2. ה-WooCommerce Plugin שלך שולח אירועים (הזמנה חדשה, עגלה נטושה, לקוח חדש)
+        <br />
+        3. המערכת שולחת את המייל המתאים אוטומטית דרך Resend
+        <br />
+        4. אתה לא עושה כלום — זה פשוט עובד 🎉
       </div>
     </div>
   );
@@ -368,7 +478,7 @@ function WhatsAppTab({ data, user, showToast }) {
 // ── Contacts Tab ────────────────────────────────────────────────────────────
 
 function ContactsTab({ data, user, showToast, marketingContactsDb }) {
-  const [importing, setImporting]   = useState(false);
+  const [importing, setImporting]     = useState(false);
   const [showWooForm, setShowWooForm] = useState(false);
   const [wooUrl, setWooUrl]           = useState('');
   const [wooKey, setWooKey]           = useState('');
@@ -397,10 +507,9 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
       const lines = text.split('\n').filter(l => l.trim());
       const header = lines[0].toLowerCase();
 
-      // Detect columns
       const cols = header.split(',').map(c => c.trim());
       const emailIdx = cols.findIndex(c => c.includes('email') || c.includes('מייל'));
-      const nameIdx  = cols.findIndex(c => c.includes('name') || c.includes('שם'));
+      const nameIdx  = cols.findIndex(c => c.includes('name') || c.includes('שם') || c.includes('first_name'));
       const phoneIdx = cols.findIndex(c => c.includes('phone') || c.includes('טלפון'));
 
       if (emailIdx === -1) {
@@ -477,7 +586,6 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         {optedIn} מתוך {contacts.length} אישרו קבלת הודעות
       </p>
 
-      {/* Import buttons */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <label className="btn-primary" style={{ cursor: 'pointer' }}>
           📄 ייבוא CSV
@@ -492,17 +600,12 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         <button onClick={() => setShowWooForm(!showWooForm)} className="btn-small">
           🛒 ייבוא מ-WooCommerce
         </button>
-        <button onClick={() => bulkOptIn(true)} className="btn-small">
-          ✅ אשר הכל
-        </button>
-        <button onClick={() => bulkOptIn(false)} className="btn-small">
-          🔕 הסר הכל
-        </button>
+        <button onClick={() => bulkOptIn(true)} className="btn-small">✅ אשר הכל</button>
+        <button onClick={() => bulkOptIn(false)} className="btn-small">🔕 הסר הכל</button>
       </div>
 
       {importing && <p style={{ color: '#556B3A' }}>⏳ מייבא אנשי קשר...</p>}
 
-      {/* WooCommerce form */}
       {showWooForm && (
         <div className="form-card" style={{ marginBottom: '1rem', background: '#FFF9F0', border: '1px solid #FDE68A' }}>
           <h3>🛒 ייבוא מ-WooCommerce</h3>
@@ -524,14 +627,9 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
             </button>
             <button onClick={() => setShowWooForm(false)} className="btn-small" style={{ flex: 1 }}>❌ ביטול</button>
           </div>
-
-          <div style={{ marginTop: '12px', padding: '8px', background: '#FEF3C7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400E' }}>
-            <strong>שים לב:</strong> כל הלקוחות המיובאים מתחילים עם "לא מאושר" — יש לאשר ידנית רק לקוחות שנתנו הסכמה.
-          </div>
         </div>
       )}
 
-      {/* Contacts table */}
       {contacts.length > 0 ? (
         <div className="table-container">
           <table className="data-table">
@@ -545,7 +643,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
               </tr>
             </thead>
             <tbody>
-              {contacts.map(c => (
+              {contacts.slice(0, 100).map(c => (
                 <tr key={c.id}>
                   <td><strong>{c.name || '—'}</strong></td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.email}</td>
@@ -574,6 +672,11 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
               ))}
             </tbody>
           </table>
+          {contacts.length > 100 && (
+            <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginTop: '8px' }}>
+              מציג 100 מתוך {contacts.length} אנשי קשר
+            </p>
+          )}
         </div>
       ) : (
         <div className="empty-state">אין אנשי קשר. ייבא מ-CSV או WooCommerce!</div>
@@ -601,6 +704,7 @@ function HistoryTab({ data }) {
                 <th>תאריך</th>
                 <th>ערוץ</th>
                 <th>נושא</th>
+                <th>סוג</th>
                 <th>נמענים</th>
                 <th>סטטוס</th>
               </tr>
@@ -611,7 +715,15 @@ function HistoryTab({ data }) {
                   <td>{new Date(c.created_at).toLocaleDateString('he-IL')}</td>
                   <td>{c.channel === 'email' ? '✉️ מייל' : '💬 WhatsApp'}</td>
                   <td>{c.subject || '—'}</td>
-                  <td>{c.recipient_count}</td>
+                  <td>
+                    <span style={{
+                      background: c.campaign_type === 'auto' ? '#DBEAFE' : '#F3F4F6',
+                      padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem',
+                    }}>
+                      {c.campaign_type === 'auto' ? '🤖 אוטומטי' : '✏️ ידני'}
+                    </span>
+                  </td>
+                  <td>{c.recipient_count || 0}</td>
                   <td>
                     <span style={{
                       background: c.status === 'sent' ? '#DCFCE7' : c.status === 'failed' ? '#FEE2E2' : '#FEF3C7',
