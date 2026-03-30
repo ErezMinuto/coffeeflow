@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../lib/context';
 import RoastProfiles from './RoastProfiles';
 import { getTelegramSettings, saveTelegramSettings, sendTelegramMessage } from '../../lib/telegram';
+import { supabase } from '../../lib/supabase';
 
 export default function Settings() {
   const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast, user } = useApp();
@@ -12,10 +13,51 @@ export default function Settings() {
   const [telegramSaved,   setTelegramSaved]   = useState(false);
   const [telegramTesting, setTelegramTesting] = useState(false);
 
+  // User roles
+  const [roles, setRoles]             = useState([]);
+  const [newRoleEmail, setNewRoleEmail] = useState('');
+  const [newRoleUserId, setNewRoleUserId] = useState('');
+  const [newRoleRole, setNewRoleRole]   = useState('employee');
+
   useEffect(() => {
     const saved = getTelegramSettings();
     if (saved.botToken || saved.chatId) setTelegram(saved);
+    fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    const { data: rolesData } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
+    setRoles(rolesData || []);
+  };
+
+  const addRole = async () => {
+    if (!newRoleUserId.trim()) { showToast('⚠️ נא להזין User ID', 'warning'); return; }
+    try {
+      await supabase.from('user_roles').upsert({
+        user_id: newRoleUserId.trim(),
+        role: newRoleRole,
+      }, { onConflict: 'user_id' });
+      setNewRoleUserId('');
+      setNewRoleEmail('');
+      fetchRoles();
+      showToast(`✅ תפקיד ${newRoleRole === 'admin' ? 'מנהל' : 'עובד'} נוסף!`);
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    }
+  };
+
+  const updateRole = async (userId, role) => {
+    await supabase.from('user_roles').update({ role }).eq('user_id', userId);
+    fetchRoles();
+    showToast(`✅ תפקיד עודכן ל-${role === 'admin' ? 'מנהל' : 'עובד'}`);
+  };
+
+  const deleteRole = async (userId) => {
+    if (!window.confirm('האם להסיר תפקיד? (המשתמש יקבל גישת מנהל כברירת מחדל)')) return;
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    fetchRoles();
+    showToast('✅ תפקיד הוסר');
+  };
 
   const saveTelegram = () => {
     saveTelegramSettings(telegram);
@@ -299,6 +341,102 @@ export default function Settings() {
 
         <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '1rem', fontSize: '0.875rem', color: '#065F46' }}>
           <strong>✅ לאחר ההגדרה:</strong> עבור לדף <strong>Marketing</strong> בתפריט כדי לייבא אנשי קשר, ליצור קמפיינים ולשלוח הודעות.
+        </div>
+      </div>
+
+      {/* User Roles */}
+      <div className="section" style={{ marginTop: '2rem' }}>
+        <h2>🔐 ניהול תפקידים</h2>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          הגדר מי מנהל (גישה מלאה) ומי עובד (דשבורד + ייצור בלבד). משתמש ללא תפקיד מוגדר = מנהל.
+        </p>
+
+        {/* Add new role */}
+        <div className="form-card" style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ flex: 2, minWidth: '200px', marginBottom: 0 }}>
+              <label>User ID (מ-Clerk)</label>
+              <input
+                type="text"
+                placeholder="user_2x..."
+                value={newRoleUserId}
+                onChange={e => setNewRoleUserId(e.target.value)}
+                style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1, minWidth: '120px', marginBottom: 0 }}>
+              <label>תפקיד</label>
+              <select
+                value={newRoleRole}
+                onChange={e => setNewRoleRole(e.target.value)}
+                style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="employee">👤 עובד</option>
+                <option value="admin">👑 מנהל</option>
+              </select>
+            </div>
+            <button onClick={addRole} className="btn-primary" style={{ marginBottom: 0 }}>
+              ➕ הוסף
+            </button>
+          </div>
+        </div>
+
+        {/* Roles table */}
+        {roles.length > 0 ? (
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>תפקיד</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roles.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                      {r.user_id}
+                      {r.user_id === user?.id && (
+                        <span style={{ background: '#DCFCE7', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginRight: '6px', fontFamily: 'inherit' }}>
+                          אני
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        value={r.role}
+                        onChange={e => updateRole(r.user_id, e.target.value)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                      >
+                        <option value="employee">👤 עובד</option>
+                        <option value="admin">👑 מנהל</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button onClick={() => deleteRole(r.user_id)} className="btn-icon">🗑️</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="empty-state">אין תפקידים מוגדרים. כל המשתמשים הם מנהלים כברירת מחדל.</div>
+        )}
+
+        <div style={{ marginTop: '12px', padding: '8px', background: '#FEF3C7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400E' }}>
+          <strong>💡 איפה מוצאים User ID?</strong> ב-Clerk Dashboard → Users → לחץ על משתמש → העתק את ה-User ID.
+          {user && (
+            <div style={{ marginTop: '4px' }}>
+              ה-User ID שלך: <code style={{ background: '#FDE68A', padding: '2px 6px', borderRadius: '4px' }}>{user.id}</code>
+              <button
+                onClick={() => { navigator.clipboard.writeText(user.id); showToast('✅ הועתק!'); }}
+                className="btn-small"
+                style={{ marginRight: '6px', fontSize: '0.75rem', padding: '2px 8px' }}
+              >📋</button>
+            </div>
+          )}
         </div>
       </div>
 
