@@ -1,69 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserButton } from '@clerk/clerk-react';
-import { supabase } from '../../lib/supabase';
 import { useApp } from '../../lib/context';
 
 export default function Dashboard() {
-  const { user, data, originsDb, productsDb, roastsDb, operatorsDb, showToast } = useApp();
+  const { data, showToast } = useApp();
   const navigate = useNavigate();
 
   const lowStockOrigins  = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
   const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
 
-  const resetData = async () => {
-    if (!window.confirm('⚠️ האם אתה בטוח? פעולה זו תמחק את כל הנתונים!')) return;
-    try {
-      await Promise.all([
-        supabase.from('roasts').delete().eq('user_id', user.id),
-        supabase.from('products').delete().eq('user_id', user.id),
-        supabase.from('operators').delete().eq('user_id', user.id),
-        supabase.from('origins').delete().eq('user_id', user.id)
-      ]);
-      originsDb.refresh();
-      productsDb.refresh();
-      roastsDb.refresh();
-      operatorsDb.refresh();
-      showToast('✅ הנתונים נמחקו בהצלחה', 'success');
-    } catch (error) {
-      console.error('Error resetting data:', error);
-      showToast('❌ שגיאה במחיקת נתונים', 'error');
-    }
-  };
-
-  const initializeDemoData = async () => {
-    if (!window.confirm('האם להוסיף נתוני דוגמה?')) return;
-    try {
-      await Promise.all([
-        originsDb.insert({ name: 'ברזיל Fazenda Sertão', weight_loss: 20, cost_per_kg: 34, stock: 50, roasted_stock: 0 }),
-        originsDb.insert({ name: 'ברזיל Cerrado',         weight_loss: 20, cost_per_kg: 33, stock: 35, roasted_stock: 0 }),
-        originsDb.insert({ name: 'אתיופיה Yirgacheffe',   weight_loss: 18, cost_per_kg: 37, stock: 65, roasted_stock: 0 })
-      ]);
-      await Promise.all([
-        operatorsDb.insert({ name: 'יוסי' }),
-        operatorsDb.insert({ name: 'שירה' }),
-        operatorsDb.insert({ name: 'מיכאל' })
-      ]);
-      showToast('✅ נתוני דוגמה נוספו!', 'success');
-    } catch (error) {
-      console.error('Error adding demo data:', error);
-      showToast('❌ שגיאה בהוספת נתונים', 'error');
-    }
-  };
-
   return (
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>📊 דשבורד ראשי</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <UserButton />
-          <button onClick={initializeDemoData} className="btn-small" style={{ background: '#10B981', color: 'white' }}>
-            ➕ נתוני דוגמה
-          </button>
-          <button onClick={resetData} className="btn-small" style={{ background: '#DC2626', color: 'white' }}>
-            🔄 איפוס נתונים
-          </button>
-        </div>
       </div>
 
       {/* Stock alerts */}
