@@ -21,12 +21,20 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!user) { setRoleLoading(false); return; }
     const fetchRole = async () => {
+      const email    = user.primaryEmailAddress?.emailAddress || '';
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+
+      // Upsert display info so roles management page can show name/email
+      await supabase.from('user_roles').upsert(
+        { user_id: user.id, email, full_name: fullName },
+        { onConflict: 'user_id', ignoreDuplicates: false }
+      );
+
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
-      // If no role found, default to employee (least privilege)
       setUserRole(roleData?.role || 'employee');
       setRoleLoading(false);
     };
