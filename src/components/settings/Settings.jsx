@@ -161,9 +161,10 @@ function CostsSection({ costSettings, updateCostSettings }) {
 
 // ── Roles ─────────────────────────────────────────────────────────────────────
 function RolesSection({ user, showToast }) {
-  const [roles,        setRoles]        = useState([]);
-  const [newRoleUserId, setNewRoleUserId] = useState('');
-  const [newRoleRole,  setNewRoleRole]  = useState('employee');
+  const [roles,       setRoles]       = useState([]);
+  const [newEmail,    setNewEmail]    = useState('');
+  const [newRoleRole, setNewRoleRole] = useState('employee');
+  const [looking,     setLooking]     = useState(false);
 
   const fetchRoles = async () => {
     const { data } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
@@ -173,17 +174,25 @@ function RolesSection({ user, showToast }) {
   useEffect(() => { fetchRoles(); }, []);
 
   const addRole = async () => {
-    if (!newRoleUserId.trim()) { showToast('⚠️ נא להזין User ID', 'warning'); return; }
+    if (!newEmail.trim()) { showToast('⚠️ נא להזין אימייל', 'warning'); return; }
+    setLooking(true);
     try {
+      const { data, error } = await supabase.functions.invoke('clerk-user-lookup', {
+        body: { email: newEmail.trim() },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || 'משתמש לא נמצא');
+
       await supabase.from('user_roles').upsert(
-        { user_id: newRoleUserId.trim(), role: newRoleRole },
+        { user_id: data.user_id, email: data.email, full_name: data.full_name, role: newRoleRole },
         { onConflict: 'user_id', ignoreDuplicates: false }
       );
-      setNewRoleUserId('');
+      setNewEmail('');
       fetchRoles();
-      showToast(`✅ תפקיד ${newRoleRole === 'admin' ? 'מנהל' : 'עובד'} נוסף!`);
+      showToast(`✅ ${data.full_name || data.email} נוסף כ${newRoleRole === 'admin' ? 'מנהל' : 'עובד'}!`);
     } catch (err) {
-      showToast(`❌ שגיאה: ${err.message}`, 'error');
+      showToast(`❌ ${err.message}`, 'error');
+    } finally {
+      setLooking(false);
     }
   };
 
@@ -206,11 +215,11 @@ function RolesSection({ user, showToast }) {
       <div className="form-card" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ flex: 2, minWidth: '200px', marginBottom: 0 }}>
-            <label>User ID</label>
+            <label>אימייל משתמש</label>
             <input
-              type="text" placeholder="user_2x..."
-              value={newRoleUserId} onChange={e => setNewRoleUserId(e.target.value)}
-              style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+              type="email" placeholder="user@example.com"
+              value={newEmail} onChange={e => setNewEmail(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && addRole()}
             />
           </div>
           <div className="form-group" style={{ flex: 1, minWidth: '120px', marginBottom: 0 }}>
@@ -221,7 +230,9 @@ function RolesSection({ user, showToast }) {
               <option value="admin">👑 מנהל</option>
             </select>
           </div>
-          <button onClick={addRole} className="btn-primary" style={{ marginBottom: 0 }}>➕ הוסף</button>
+          <button onClick={addRole} disabled={looking} className="btn-primary" style={{ marginBottom: 0 }}>
+            {looking ? '⏳...' : '➕ הוסף'}
+          </button>
         </div>
       </div>
 
