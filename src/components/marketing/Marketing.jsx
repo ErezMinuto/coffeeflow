@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../../lib/context';
-import { callBrevoFunction, callCampaignFunction } from '../../lib/brevo';
+import { callCampaignFunction } from '../../lib/brevo';
 // Email HTML is built server-side (edge function) with banner images
 import { supabase } from '../../lib/supabase';
 

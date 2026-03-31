@@ -11,7 +11,6 @@ const CATEGORIES = [
   { id: 'roast',      icon: '🔥', label: 'פרופילי קלייה' },
   { id: 'roles',      icon: '🔐', label: 'תפקידים' },
   { id: 'telegram',   icon: '📱', label: 'טלגרם' },
-  { id: 'brevo',      icon: '📧', label: 'Brevo' },
 ];
 
 // ── Shared section wrapper ────────────────────────────────────────────────────
@@ -379,26 +378,6 @@ function TelegramSection({ user, showToast }) {
   );
 }
 
-// ── Brevo ─────────────────────────────────────────────────────────────────────
-function BrevoSection() {
-  return (
-    <Section title="📧 Brevo Marketing" description="שליחת קמפיינים במייל ו-WhatsApp.">
-      <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#0369A1' }}>
-        <strong>הגדרה:</strong>
-        <ol style={{ margin: '0.5rem 0 0 1.2rem', lineHeight: 2 }}>
-          <li>הירשם ל-<a href="https://www.brevo.com" target="_blank" rel="noopener noreferrer" style={{ color: '#0369A1', fontWeight: 600 }}>Brevo</a></li>
-          <li>צור API Key ב-<strong>Settings → SMTP & API → API Keys</strong></li>
-          <li>פתח <strong>Supabase → Edge Functions → Secrets</strong> והוסף <code>BREVO_API_KEY</code></li>
-          <li>ודא שיש לך Sender Domain מאומת ב-Brevo</li>
-        </ol>
-      </div>
-      <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '1rem', fontSize: '0.875rem', color: '#065F46' }}>
-        ✅ לאחר ההגדרה עבור לדף <strong>Marketing</strong> בתפריט.
-      </div>
-    </Section>
-  );
-}
-
 // ── Main Settings ─────────────────────────────────────────────────────────────
 export default function Settings() {
   const { data, operatorsDb, roastsDb, costSettings, updateCostSettings, showToast, user } = useApp();
@@ -454,7 +433,6 @@ export default function Settings() {
           {activeCategory === 'roast' && <RoastProfiles />}
           {activeCategory === 'roles' && <RolesSection user={user} showToast={showToast} />}
           {activeCategory === 'telegram' && <TelegramSection user={user} showToast={showToast} />}
-          {activeCategory === 'brevo' && <BrevoSection />}
         </div>
       </div>
     </div>
