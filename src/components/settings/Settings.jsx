@@ -167,8 +167,29 @@ function RolesSection({ user, showToast }) {
   const [looking,     setLooking]     = useState(false);
 
   const fetchRoles = async () => {
-    const { data } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
-    setRoles(data || []);
+    const { data: rows } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
+    const roles = rows || [];
+    setRoles(roles);
+
+    // Auto-populate email/name for rows missing them
+    const missing = roles.filter(r => !r.email).map(r => r.user_id);
+    if (missing.length === 0) return;
+
+    try {
+      const { data: users } = await supabase.functions.invoke('clerk-user-lookup', {
+        body: { user_ids: missing },
+      });
+      if (!users || !Array.isArray(users)) return;
+
+      await Promise.all(users.map(u =>
+        supabase.from('user_roles').update({ email: u.email, full_name: u.full_name })
+          .eq('user_id', u.user_id)
+      ));
+
+      // Refresh to show updated values
+      const { data: updated } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
+      setRoles(updated || []);
+    } catch (_) {}
   };
 
   useEffect(() => { fetchRoles(); }, []);
