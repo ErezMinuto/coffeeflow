@@ -83,11 +83,13 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
 export default function Products() {
   const { data, productsDb, calculateProductCost, showToast } = useApp();
 
-  const [editingProduct,  setEditingProduct]  = useState(null);
-  const [addingProduct,   setAddingProduct]   = useState(false);
-  const [showBreakdownId, setShowBreakdownId] = useState(null);
+  const [editingProduct,    setEditingProduct]    = useState(null);
+  const [addingProduct,     setAddingProduct]     = useState(false);
+  const [showBreakdownId,   setShowBreakdownId]   = useState(null);
+  const [adjustingStockId,  setAdjustingStockId]  = useState(null);
+  const [adjustValue,       setAdjustValue]       = useState("");
   const [newProduct, setNewProduct] = useState({
-    name: '', size: 330, type: 'single', description: '',
+    name: '', size: 330, type: 'single', description: '', min_packed_stock: 0,
     recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }]
   });
 
@@ -126,11 +128,12 @@ export default function Products() {
       await productsDb.insert({
         name: newProduct.name, size: parseInt(newProduct.size),
         type: newProduct.type, description: newProduct.description,
+        min_packed_stock: parseInt(newProduct.min_packed_stock) || 0,
         recipe: newProduct.recipe
       });
       await productsDb.refresh();
       setAddingProduct(false);
-      setNewProduct({ name: '', size: 330, type: 'single', description: '', recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }] });
+      setNewProduct({ name: '', size: 330, type: 'single', description: '', min_packed_stock: 0, recipe: [{ sourceType: 'origin', sourceId: '', percentage: 100 }] });
       showToast('✅ מוצר נוסף בהצלחה!');
     } catch (err) {
       console.error(err);
@@ -151,6 +154,7 @@ export default function Products() {
       await productsDb.update(editingProduct.id, {
         name: editingProduct.name, size: parseInt(editingProduct.size),
         type: editingProduct.type, description: editingProduct.description,
+        min_packed_stock: parseInt(editingProduct.min_packed_stock) || 0,
         recipe: editingProduct.recipe, updated_at: new Date().toISOString()
       });
       setEditingProduct(null);
@@ -169,6 +173,19 @@ export default function Products() {
     } catch (err) {
       console.error(err);
       showToast('❌ שגיאה במחיקת מוצר', 'error');
+    }
+  };
+
+  const savePackedStock = async (product) => {
+    const val = parseInt(adjustValue);
+    if (isNaN(val) || val < 0) { showToast('⚠️ כמות לא תקינה', 'warning'); return; }
+    try {
+      await productsDb.update(product.id, { packed_stock: val });
+      setAdjustingStockId(null);
+      showToast('✅ מלאי עודכן!');
+    } catch (err) {
+      console.error(err);
+      showToast('❌ שגיאה בעדכון מלאי', 'error');
     }
   };
 
@@ -218,6 +235,10 @@ export default function Products() {
             <label>תיאור (אופציונלי)</label>
             <input type="text" placeholder="למשל: פירותי ומרענן" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
           </div>
+          <div className="form-group">
+            <label>מינימום שקיות ארוזות (התראת מלאי)</label>
+            <input type="number" min="0" placeholder="0" value={newProduct.min_packed_stock} onChange={e => setNewProduct({...newProduct, min_packed_stock: e.target.value})} />
+          </div>
           <RecipeForm
             recipe={newProduct.recipe}
             onChange={recipe => setNewProduct({ ...newProduct, recipe })}
@@ -255,6 +276,10 @@ export default function Products() {
           <div className="form-group">
             <label>תיאור</label>
             <input type="text" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label>מינימום שקיות ארוזות (התראת מלאי)</label>
+            <input type="number" min="0" value={editingProduct.min_packed_stock ?? 0} onChange={e => setEditingProduct({...editingProduct, min_packed_stock: e.target.value})} />
           </div>
           <RecipeForm
             recipe={editingProduct.recipe}
@@ -295,6 +320,41 @@ export default function Products() {
                   {(product.recipe || []).map((ing, i) => (
                     <div key={i} className="recipe-item">• {ing.percentage}% {getIngredientLabel(ing)}</div>
                   ))}
+                </div>
+
+                <div style={{ padding: '0.5rem 0', borderBottom: '1px solid #F4E8D8', marginBottom: '0.5rem' }}>
+                  {adjustingStockId === product.id ? (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: '#6F4E37' }}>שקיות ארוזות:</span>
+                      <input
+                        type="number" min="0"
+                        value={adjustValue}
+                        onChange={e => setAdjustValue(e.target.value)}
+                        style={{ width: '70px', padding: '2px 6px', border: '1px solid #D4A574', borderRadius: '4px', fontSize: '13px' }}
+                        autoFocus
+                      />
+                      <button onClick={() => savePackedStock(product)} className="btn-small" style={{ background: '#D1FAE5', color: '#065F46', padding: '2px 8px' }}>✓</button>
+                      <button onClick={() => setAdjustingStockId(null)} className="btn-small" style={{ padding: '2px 8px' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: '#6F4E37' }}>שקיות ארוזות:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          fontWeight: 'bold', fontSize: '14px',
+                          color: (product.packed_stock ?? 0) === 0 ? '#DC2626'
+                               : (product.min_packed_stock > 0 && (product.packed_stock ?? 0) <= product.min_packed_stock) ? '#D97706'
+                               : '#059669'
+                        }}>
+                          {product.packed_stock ?? 0}
+                        </span>
+                        <button
+                          onClick={() => { setAdjustingStockId(product.id); setAdjustValue(String(product.packed_stock ?? 0)); }}
+                          style={{ fontSize: '11px', padding: '1px 6px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}
+                        >עדכן</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="product-cost">

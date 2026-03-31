@@ -7,9 +7,10 @@ const allNavItems = [
   { path: '/dashboard', icon: '📊', label: 'Dashboard' },
   {
     label: 'Production', icon: '☕', children: [
-      { path: '/origins',  icon: '🌱', label: 'Origins'  },
-      { path: '/roasting', icon: '🔥', label: 'Roasting' },
-      { path: '/products', icon: '📦', label: 'Products' },
+      { path: '/origins',   icon: '🌱', label: 'Origins'   },
+      { path: '/roasting',  icon: '🔥', label: 'Roasting'  },
+      { path: '/products',  icon: '📦', label: 'Products'  },
+      { path: '/packaging', icon: '🎁', label: 'Packaging' },
     ],
   },
   {

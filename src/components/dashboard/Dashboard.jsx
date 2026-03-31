@@ -6,14 +6,47 @@ export default function Dashboard() {
   const { data, showToast } = useApp();
   const navigate = useNavigate();
 
-  const lowStockOrigins  = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
+  const lowStockOrigins   = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
   const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
+
+  const outOfPackedStock  = data.products.filter(p => (p.packed_stock ?? 0) === 0 && (p.min_packed_stock ?? 0) > 0);
+  const lowPackedStock    = data.products.filter(p => (p.packed_stock ?? 0) > 0 && (p.min_packed_stock ?? 0) > 0 && (p.packed_stock ?? 0) <= p.min_packed_stock);
 
   return (
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>📊 דשבורד ראשי</h1>
       </div>
+
+      {/* Packed bag alerts */}
+      {(outOfPackedStock.length > 0 || lowPackedStock.length > 0) && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          {outOfPackedStock.length > 0 && (
+            <div style={{ background: '#FEE2E2', border: '2px solid #DC2626', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+              <h3 style={{ color: '#DC2626', marginBottom: '0.5rem' }}>❌ אזהרה: מוצרים ללא שקיות ארוזות ({outOfPackedStock.length})</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {outOfPackedStock.map(p => (
+                  <span key={p.id} style={{ background: 'white', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#DC2626', fontWeight: 'bold' }}>
+                    {p.name} {p.size}g
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {lowPackedStock.length > 0 && (
+            <div style={{ background: '#FEF3C7', border: '2px solid #F59E0B', borderRadius: '8px', padding: '1rem' }}>
+              <h3 style={{ color: '#D97706', marginBottom: '0.5rem' }}>⚠️ מלאי שקיות נמוך — {lowPackedStock.length} מוצרים</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {lowPackedStock.map(p => (
+                  <span key={p.id} style={{ background: 'white', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#D97706' }}>
+                    {p.name} {p.size}g: {p.packed_stock} שקיות
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stock alerts */}
       {(outOfStockOrigins.length > 0 || lowStockOrigins.length > 0) && (
