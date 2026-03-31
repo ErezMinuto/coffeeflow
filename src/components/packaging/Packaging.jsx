@@ -29,7 +29,7 @@ const calcDeductions = (product, bags, origins, roastProfiles) => {
 
 export default function Packaging() {
   const {
-    data, originsDb, roastProfilesDb, productsDb, showToast
+    data, originsDb, roastProfilesDb, productsDb, packingLogsDb, showToast
   } = useApp();
 
   const [packProductId, setPackProductId] = useState('');
