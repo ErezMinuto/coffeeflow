@@ -1019,13 +1019,19 @@ function AutomationsTab({ data, user, showToast }) {
 function ContactsTab({ data, user, showToast }) {
   const [contactFilter, setContactFilter] = useState('all');
   const [syncingResend, setSyncingResend] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(50);
+  const [searchQuery, setSearchQuery] = useState('');
   // Contacts synced from Resend (read-only cache in Supabase)
   const contacts = data.marketingContacts || [];
   const optedIn  = contacts.filter(c => c.opted_in).length;
   const optedOut = contacts.length - optedIn;
   const filteredContacts = contacts.filter(c => {
-    if (contactFilter === 'opted_in') return c.opted_in;
-    if (contactFilter === 'opted_out') return !c.opted_in;
+    if (contactFilter === 'opted_in' && !c.opted_in) return false;
+    if (contactFilter === 'opted_out' && c.opted_in) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      if (!(c.name || '').toLowerCase().includes(q) && !(c.email || '').toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -1104,7 +1110,26 @@ function ContactsTab({ data, user, showToast }) {
         </a>
       </div>
 
-      {/* Read-only contacts table */}
+      {/* Search */}
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          placeholder="🔍 חפש לפי שם או אימייל..."
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setVisibleCount(50); }}
+          style={{
+            width: '100%', padding: '10px 14px', borderRadius: '8px',
+            border: '1px solid #ddd', fontSize: '0.9rem', direction: 'rtl',
+          }}
+        />
+        {searchQuery && (
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '4px' }}>
+            נמצאו {filteredContacts.length} תוצאות
+          </p>
+        )}
+      </div>
+
+      {/* Contacts table */}
       {filteredContacts.length > 0 ? (
         <div className="table-container">
           <table className="data-table">
@@ -1116,7 +1141,7 @@ function ContactsTab({ data, user, showToast }) {
               </tr>
             </thead>
             <tbody>
-              {filteredContacts.slice(0, 100).map(c => (
+              {filteredContacts.slice(0, visibleCount).map(c => (
                 <tr key={c.id}>
                   <td><strong>{c.name || '—'}</strong></td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.email}</td>
@@ -1133,11 +1158,20 @@ function ContactsTab({ data, user, showToast }) {
               ))}
             </tbody>
           </table>
-          {filteredContacts.length > 100 && (
-            <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginTop: '8px' }}>
-              מציג 100 מתוך {filteredContacts.length} אנשי קשר
-            </p>
+          {filteredContacts.length > visibleCount && (
+            <div style={{ textAlign: 'center', marginTop: '12px' }}>
+              <button
+                onClick={() => setVisibleCount(prev => prev + 50)}
+                className="btn-small"
+                style={{ fontSize: '0.85rem' }}
+              >
+                טען עוד ({filteredContacts.length - visibleCount} נותרו)
+              </button>
+            </div>
           )}
+          <p style={{ textAlign: 'center', color: '#888', fontSize: '0.8rem', marginTop: '8px' }}>
+            מציג {Math.min(visibleCount, filteredContacts.length)} מתוך {filteredContacts.length}
+          </p>
         </div>
       ) : (
         <div className="empty-state">

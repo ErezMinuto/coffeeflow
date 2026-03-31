@@ -26,6 +26,7 @@ const SUPA_URL       = Deno.env.get("SUPABASE_URL")             ?? "";
 const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SENDER_EMAIL   = Deno.env.get("SENDER_EMAIL")              ?? "info@minuto.co.il";
 const UNSUBSCRIBE_BASE = Deno.env.get("UNSUBSCRIBE_BASE_URL")   ?? `${SUPA_URL}/functions/v1/generate-campaign`;
+const RESEND_AUDIENCE_ID = Deno.env.get("RESEND_AUDIENCE_ID") ?? "24bb0a2b-eaf8-4a2e-ae57-749bbbc3a2f9";
 const LOGO_URL       = "https://minuto.co.il/content/uploads/2025/03/Frame-14.png";
 const SITE_URL       = "https://minuto.co.il";
 
@@ -1050,7 +1051,7 @@ async function fetchResendContacts(): Promise<Array<{ email: string; name?: stri
   let after: string | null = null;
 
   while (true) {
-    const url = new URL("https://api.resend.com/contacts");
+    const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
     url.searchParams.set("limit", "100");
     if (after) url.searchParams.set("after", after);
 
@@ -1235,7 +1236,7 @@ async function handleSyncResendContacts(userId: string) {
 
   // Paginate through all Resend contacts
   while (true) {
-    const url = new URL("https://api.resend.com/contacts");
+    const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
     url.searchParams.set("limit", "100");
     if (after) url.searchParams.set("after", after);
 
@@ -1289,7 +1290,7 @@ async function handlePublicSubscribe(payload: { email: string; name?: string; ph
   // Single source of truth: Resend Contacts only
   try {
     const nameParts = (payload.name || "").split(" ");
-    const res = await fetch("https://api.resend.com/contacts", {
+    const res = await fetch(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${RESEND_KEY}`,
