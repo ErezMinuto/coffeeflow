@@ -1,0 +1,17 @@
+{
+  "name": "mflow-scraper",
+  "version": "1.0.0",
+  "description": "MFlow sales scraper for CoffeeFlow",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.6.1",
+    "@supabase/supabase-js": "^2.39.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

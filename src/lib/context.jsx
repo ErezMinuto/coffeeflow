@@ -26,8 +26,8 @@ export const AppProvider = ({ children }) => {
         .select('role')
         .eq('user_id', user.id)
         .single();
-      // If no role found, treat as admin (first user / owner)
-      setUserRole(roleData?.role || 'admin');
+      // If no role found, default to employee (least privilege)
+      setUserRole(roleData?.role || 'employee');
       setRoleLoading(false);
     };
     fetchRole();

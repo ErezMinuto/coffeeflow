@@ -20,8 +20,8 @@ export default async function handler(req, res) {
     
     // Login to MFlow
     await page.goto('https://my.mflow.co.il/login', { waitUntil: 'networkidle0' });
-    await page.type('input[name="email"]', 'erez@gurimi.com');
-    await page.type('input[name="password"]', 'Mowfoz-sibdur-3bihbi');
+    await page.type('input[name="email"]', process.env.MFLOW_EMAIL || '');
+    await page.type('input[name="password"]', process.env.MFLOW_PASSWORD || '');
     await page.click('button[type="submit"]');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
 

@@ -14,6 +14,7 @@ import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
 import Marketing               from './components/marketing/Marketing';
+import AIAnalyst               from './components/analyst/AIAnalyst';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -31,23 +32,28 @@ function AppContent() {
     <>
       <Navigation />
 
-      <div className="container" style={{ direction: 'rtl' }}>
-        <Routes>
-          <Route path="/"           element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard"  element={<Dashboard />} />
-          {/* Production — visible to all */}
-          <Route path="/origins"    element={<Origins />} />
-          <Route path="/roasting"   element={<Roasting />} />
-          <Route path="/products"   element={<Products />} />
-          {/* Operations — admin only */}
-          <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
-          <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
-          <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
-          <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
-          <Route path="/settings"   element={<AdminRoute><Settings /></AdminRoute>} />
-          <Route path="*"           element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* AI Analyst — full-height, no container wrapper */}
+        <Route path="/analyst" element={<AdminRoute><AIAnalyst /></AdminRoute>} />
+        {/* All other pages use the standard container */}
+        <Route path="*" element={
+          <div className="container" style={{ direction: 'rtl' }}>
+            <Routes>
+              <Route path="/dashboard"  element={<Dashboard />} />
+              <Route path="/origins"    element={<Origins />} />
+              <Route path="/roasting"   element={<Roasting />} />
+              <Route path="/products"   element={<Products />} />
+              <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
+              <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
+              <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
+              <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
+              <Route path="/settings"   element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="*"           element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </div>
+        } />
+      </Routes>
 
       {/* Toast notifications */}
       <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px' }}>
