@@ -1279,6 +1279,48 @@ async function handleSyncResendContacts(userId: string) {
   return ok({ ok: true, synced, total: allContacts.length });
 }
 
+// ── Push Contacts to Resend ──────────────────────────────────────────────────
+
+async function handlePushToResend(payload: { contacts: Array<{ email: string; name?: string }> }) {
+  if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
+
+  const contacts = payload.contacts;
+  if (!contacts || !Array.isArray(contacts) || contacts.length === 0)
+    return err(400, "contacts array required");
+
+  let pushed = 0;
+  let failed = 0;
+
+  // Resend upserts by email — POST with existing email = update
+  for (const c of contacts) {
+    const email = (c.email || "").toLowerCase().trim();
+    if (!email || !email.includes("@")) { failed++; continue; }
+
+    const nameParts = (c.name || "").trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName  = nameParts.slice(1).join(" ") || "";
+
+    try {
+      const res = await fetch(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
+      });
+      if (res.ok) { pushed++; }
+      else {
+        const txt = await res.text();
+        console.error("Resend push error:", res.status, txt, "email:", email);
+        failed++;
+      }
+    } catch (e: any) {
+      console.error("Resend push exception:", e.message, "email:", email);
+      failed++;
+    }
+  }
+
+  return ok({ ok: true, pushed, failed, total: contacts.length });
+}
+
 // ── Public Subscribe (for website forms) ─────────────────────────────────────
 
 async function handlePublicSubscribe(payload: { email: string; name?: string; phone?: string; userId?: string }) {
@@ -1343,6 +1385,7 @@ serve(async (req) => {
       case "send-campaign":     response = await handleSendCampaign(payload as SendCampaignPayload); break;
       case "send-test":         response = await handleSendCampaign({ ...payload, testEmail: payload.testEmail } as SendCampaignPayload); break;
       case "sync-resend-contacts": response = await handleSyncResendContacts(payload.userId); break;
+      case "push-to-resend":   response = await handlePushToResend(payload as any); break;
       case "subscribe":        response = await handlePublicSubscribe(payload); break;
       default:                  response = err(400, `Unknown action: ${action}`); break;
     }

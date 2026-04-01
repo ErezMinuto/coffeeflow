@@ -1019,6 +1019,7 @@ function AutomationsTab({ data, user, showToast }) {
 function ContactsTab({ data, user, showToast }) {
   const [contactFilter, setContactFilter] = useState('all');
   const [syncingResend, setSyncingResend] = useState(false);
+  const [pushingResend, setPushingResend] = useState(false);
   const [importingFlashy, setImportingFlashy] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1045,6 +1046,29 @@ function ContactsTab({ data, user, showToast }) {
       showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
     } finally {
       setSyncingResend(false);
+    }
+  };
+
+  // Push all opted-in contacts from Supabase → Resend (upserts by email)
+  const pushAllToResend = async (contactList) => {
+    const list = (contactList || contacts).filter(c => c.opted_in !== false);
+    if (list.length === 0) { showToast('⚠️ אין אנשי קשר לדחיפה', 'warning'); return; }
+    setPushingResend(true);
+    try {
+      let totalPushed = 0, totalFailed = 0;
+      // Send in chunks of 200 to avoid Edge Function timeout
+      for (let i = 0; i < list.length; i += 200) {
+        const chunk = list.slice(i, i + 200).map(c => ({ email: c.email, name: c.name || '' }));
+        const result = await callCampaignFunction(supabase, 'push-to-resend', { contacts: chunk });
+        totalPushed += result.pushed || 0;
+        totalFailed += result.failed || 0;
+      }
+      const failMsg = totalFailed > 0 ? ` (${totalFailed} נכשלו)` : '';
+      showToast(`✅ נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
+    } catch (err) {
+      showToast(`❌ שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
+    } finally {
+      setPushingResend(false);
     }
   };
 
@@ -1174,8 +1198,10 @@ function ContactsTab({ data, user, showToast }) {
           imported += batch.length;
         }
         const skippedMsg = skipped > 0 ? ` (${skipped} לא מאושרים דולגו)` : '';
-        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg}`);
+        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg} — דוחף ל-Resend...`);
         marketingContactsDb.refresh();
+        // Auto-push the imported contacts to Resend (upsert)
+        await pushAllToResend(contacts.map(c => ({ email: c.email, name: c.name || '', opted_in: true })));
       } catch (err) {
         showToast(`❌ שגיאה בייבוא: ${err.message}`, 'error');
       } finally {
@@ -1234,8 +1260,11 @@ function ContactsTab({ data, user, showToast }) {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={syncFromResend} disabled={syncingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
+        <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
           {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
+        </button>
+        <button onClick={() => pushAllToResend(null)} disabled={pushingResend || syncingResend || contacts.length === 0} className="btn-small" style={{ fontSize: '0.85rem' }}>
+          {pushingResend ? '⏳ דוחף...' : '📤 דחוף ל-Resend'}
         </button>
         <label style={{ cursor: importingFlashy ? 'not-allowed' : 'pointer' }}>
           <input type="file" accept=".csv" style={{ display: 'none' }} onChange={importFlashyCSV} disabled={importingFlashy} />
