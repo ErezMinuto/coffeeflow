@@ -35,25 +35,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
     detectSessionInUrl: false,
   },
-  global: {
-    fetch: async (url, options = {}) => {
-      // Always rebuild headers so both apikey and Authorization are present.
-      // Using new Headers() handles both plain-object and Headers-instance inputs.
-      const headers = new Headers(options.headers || {});
-      headers.set('apikey', supabaseAnonKey);
-
-      if (_getClerkToken) {
-        try {
-          const token = await _getClerkToken({ template: 'supabase' });
-          if (token) headers.set('Authorization', `Bearer ${token}`);
-        } catch (e) {
-          console.warn('[supabase] Could not get Clerk token:', e?.message);
-        }
-      }
-
-      return fetch(url, { ...options, headers });
-    },
-  },
 });
 
 // Legacy export kept for backwards compat — no longer used.
