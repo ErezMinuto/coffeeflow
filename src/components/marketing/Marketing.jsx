@@ -1064,12 +1064,15 @@ function ContactsTab({ data, user, showToast }) {
         // Parse header — detect column indices case-insensitively
         const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
         const idx = (keys) => { for (const k of keys) { const i = header.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
-        const emailIdx = idx(['email']);
+        const emailIdx  = idx(['email']);
         if (emailIdx < 0) { showToast('❌ לא נמצאה עמודת email בקובץ', 'error'); return; }
         const firstIdx  = idx(['first_name', 'firstname', 'first name', 'שם פרטי']);
         const lastIdx   = idx(['last_name', 'lastname', 'last name', 'שם משפחה']);
         const nameIdx   = idx(['name', 'full_name', 'שם']);
         const phoneIdx  = idx(['phone', 'mobile', 'טלפון']);
+        const statusIdx = idx(['status', 'subscription_status', 'subscribed', 'opted_in', 'opt_in']);
+
+        const APPROVED = new Set(['subscribed', 'active', 'approved', 'yes', '1', 'true', 'opted_in', 'optin']);
 
         const parseRow = (line) => {
           // Handle quoted CSV values
@@ -1089,6 +1092,13 @@ function ContactsTab({ data, user, showToast }) {
           .map(cols => {
             const email = cols[emailIdx]?.replace(/"/g, '').trim().toLowerCase();
             if (!email || !email.includes('@')) return null;
+
+            // Skip unsubscribed contacts if status column exists
+            if (statusIdx >= 0) {
+              const status = (cols[statusIdx] || '').replace(/"/g, '').trim().toLowerCase();
+              if (!APPROVED.has(status)) return null;
+            }
+
             const firstName = firstIdx >= 0 ? (cols[firstIdx] || '').replace(/"/g, '').trim() : '';
             const lastName  = lastIdx  >= 0 ? (cols[lastIdx]  || '').replace(/"/g, '').trim() : '';
             const fullName  = nameIdx  >= 0 ? (cols[nameIdx]  || '').replace(/"/g, '').trim()
@@ -1098,7 +1108,11 @@ function ContactsTab({ data, user, showToast }) {
           })
           .filter(Boolean);
 
-        if (contacts.length === 0) { showToast('⚠️ לא נמצאו אנשי קשר תקינים', 'warning'); return; }
+        const skipped = rows.length - contacts.length;
+        if (contacts.length === 0) {
+          showToast(statusIdx >= 0 ? `⚠️ לא נמצאו אנשי קשר מאושרים (${skipped} לא מאושרים דולגו)` : '⚠️ לא נמצאו אנשי קשר תקינים', 'warning');
+          return;
+        }
 
         // Upsert in batches of 100
         let imported = 0;
@@ -1109,7 +1123,8 @@ function ContactsTab({ data, user, showToast }) {
           if (error) throw new Error(error.message);
           imported += batch.length;
         }
-        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy!`);
+        const skippedMsg = skipped > 0 ? ` (${skipped} לא מאושרים דולגו)` : '';
+        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg}`);
         marketingContactsDb.refresh();
       } catch (err) {
         showToast(`❌ שגיאה בייבוא: ${err.message}`, 'error');
