@@ -9,12 +9,34 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
-const CHAT_ID   = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
-const SUPA_URL  = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const BOT_TOKEN        = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
+const CHAT_ID          = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
+const SUPA_URL         = Deno.env.get("SUPABASE_URL")              ?? "";
+const SUPA_KEY         = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const WOO_WEBHOOK_SECRET = Deno.env.get("WOO_WEBHOOK_SECRET")      ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+// ── WooCommerce HMAC-SHA256 signature verification ────────────────────────────
+// WooCommerce signs the raw body with the webhook secret using HMAC-SHA256,
+// base64-encodes the result, and sends it as X-WC-Webhook-Signature.
+async function verifyWooSignature(req: Request, rawBody: string): Promise<boolean> {
+  if (!WOO_WEBHOOK_SECRET) return false;   // secret not set → deny all
+  const signature = req.headers.get("X-WC-Webhook-Signature") ?? "";
+  if (!signature) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(WOO_WEBHOOK_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const sigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+  const computed = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
+  return computed === signature;
+}
 
 async function sendTelegram(text: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -48,7 +70,15 @@ function findMatches(waitingCustomers: any[], productName: string, sku: string) 
 
 serve(async (req) => {
   try {
-    const body = await req.json();
+    // ── HMAC signature verification ─────────────────────────────────────────
+    const rawBody = await req.text();
+    const valid   = await verifyWooSignature(req, rawBody);
+    if (!valid) {
+      console.error("WooCommerce webhook: invalid or missing HMAC signature");
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
 
     // Only act when product is back in stock
     if (body.stock_status !== "instock") return new Response("ok");

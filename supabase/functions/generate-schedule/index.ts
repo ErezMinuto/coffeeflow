@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")  ?? "";
+const JWT_SECRET        = Deno.env.get("SUPABASE_JWT_SECRET") ?? "";
 
 const ALLOWED_ORIGIN = Deno.env.get("COFFEEFLOW_ORIGIN") ?? "https://coffeeflow.vercel.app";
 
@@ -8,6 +9,27 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// ── JWT verification ──────────────────────────────────────────────────────────
+async function verifyJWT(token: string): Promise<string | null> {
+  try {
+    const [headerB64, payloadB64, sigB64] = token.split(".");
+    if (!headerB64 || !payloadB64 || !sigB64) return null;
+    const key = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(JWT_SECRET),
+      { name: "HMAC", hash: "SHA-256" }, false, ["verify"],
+    );
+    const data      = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+    const signature = Uint8Array.from(
+      atob(sigB64.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0),
+    );
+    const valid = await crypto.subtle.verify("HMAC", key, signature, data);
+    if (!valid) return null;
+    const payload = JSON.parse(atob(payloadB64));
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload.sub ?? null;
+  } catch { return null; }
+}
 
 const DAY_LABEL: Record<string, string> = {
   sun: "ראשון", mon: "שני", tue: "שלישי",
@@ -25,6 +47,17 @@ const DAY_OFFSET: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token      = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const sub        = await verifyJWT(token);
+  if (!sub) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {

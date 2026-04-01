@@ -50,8 +50,31 @@ function getCorsHeaders(req?: Request) {
 // Default cors headers (for backward compat where req isn't available)
 const corsHeaders = getCorsHeaders();
 
+const JWT_SECRET = Deno.env.get("SUPABASE_JWT_SECRET") ?? "";
+
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 const wooAuth  = btoa(`${WOO_KEY}:${WOO_SEC}`);
+
+// ── JWT verification ──────────────────────────────────────────────────────────
+async function verifyJWT(token: string): Promise<string | null> {
+  try {
+    const [headerB64, payloadB64, sigB64] = token.split(".");
+    if (!headerB64 || !payloadB64 || !sigB64) return null;
+    const key = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(JWT_SECRET),
+      { name: "HMAC", hash: "SHA-256" }, false, ["verify"],
+    );
+    const data      = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+    const signature = Uint8Array.from(
+      atob(sigB64.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0),
+    );
+    const valid = await crypto.subtle.verify("HMAC", key, signature, data);
+    if (!valid) return null;
+    const payload = JSON.parse(atob(payloadB64));
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload.sub ?? null;
+  } catch { return null; }
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1444,6 +1467,20 @@ serve(async (req) => {
     const body = await req.json();
     const { action, ...payload } = body;
     console.log("Action:", action, "userId:", payload.userId, "keys:", Object.keys(payload).join(","));
+
+    // ── Auth guard — public actions skip JWT check ───────────────────────────
+    const PUBLIC_ACTIONS = new Set(["subscribe"]);
+    if (!PUBLIC_ACTIONS.has(action)) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token      = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+      const sub        = await verifyJWT(token);
+      if (!sub) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     let response: Response;
     switch (action) {

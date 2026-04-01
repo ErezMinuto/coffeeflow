@@ -13,11 +13,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
+const SUPA_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
+const SUPA_KEY              = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET")     ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+// ── Svix signature verification ───────────────────────────────────────────────
+// Resend uses Svix to sign webhooks.  Secret format: "whsec_<base64>".
+// Signed payload = "<svix-id>.<svix-timestamp>.<raw-body>"
+// Signature     = HMAC-SHA256(signedPayload, rawSecret) → base64
+async function verifyResendSignature(req: Request, rawBody: string): Promise<boolean> {
+  if (!RESEND_WEBHOOK_SECRET) return false;          // secret not configured → deny
+  const svixId        = req.headers.get("svix-id")        ?? "";
+  const svixTimestamp = req.headers.get("svix-timestamp") ?? "";
+  const svixSig       = req.headers.get("svix-signature") ?? "";
+  if (!svixId || !svixTimestamp || !svixSig) return false;
+
+  // Reject payloads older than 5 minutes (replay protection)
+  const ts = parseInt(svixTimestamp, 10);
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
+
+  // Decode the raw secret (strip "whsec_" prefix, base64-decode)
+  const rawSecret = Uint8Array.from(
+    atob(RESEND_WEBHOOK_SECRET.replace(/^whsec_/, "")),
+    c => c.charCodeAt(0),
+  );
+
+  const key = await crypto.subtle.importKey(
+    "raw", rawSecret, { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+
+  const signed    = new TextEncoder().encode(`${svixId}.${svixTimestamp}.${rawBody}`);
+  const sigBytes  = await crypto.subtle.sign("HMAC", key, signed);
+  const computed  = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
+
+  // svix-signature header may contain multiple "v1,<base64>" signatures
+  const received = svixSig.split(" ").map(s => s.replace(/^v1,/, ""));
+  return received.some(r => r === computed);
+}
 
 // Map ALL Resend event types to our stored types
 const EVENT_MAP: Record<string, string> = {
@@ -50,7 +84,6 @@ const STAT_COLUMN: Record<string, string> = {
 };
 
 serve(async (req) => {
-  // Allow any origin for webhooks (Resend POSTs directly)
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200 });
   }
@@ -60,7 +93,15 @@ serve(async (req) => {
   }
 
   try {
-    const payload = await req.json();
+    // ── Svix signature verification ─────────────────────────────────────────
+    const rawBody = await req.text();
+    const valid   = await verifyResendSignature(req, rawBody);
+    if (!valid) {
+      console.error("Resend webhook: invalid or missing Svix signature");
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const payload = JSON.parse(rawBody);
     console.log("Resend webhook:", payload.type, JSON.stringify(payload.data?.email_id || "").slice(0, 50));
 
     const eventType = EVENT_MAP[payload.type];

@@ -7,38 +7,55 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables!');
 }
 
+/**
+ * Module-level Clerk token getter.
+ * Set once on app boot via setClerkTokenGetter(getToken) so the fetch
+ * interceptor below can inject a fresh JWT on every Supabase request.
+ */
+let _getClerkToken = null;
+
+export const setClerkTokenGetter = (fn) => {
+  _getClerkToken = fn;
+};
+
+/**
+ * Supabase client with a custom fetch interceptor.
+ *
+ * Every request automatically carries the current Clerk JWT as the
+ * Authorization header.  Supabase verifies the JWT with the shared
+ * JWT secret and sets auth.jwt() → RLS policies read auth.jwt() ->> 'sub'
+ * to identify the user.
+ *
+ * We disable Supabase's own auth session management entirely — Clerk is
+ * the sole auth provider.
+ */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+  global: {
+    fetch: async (url, options = {}) => {
+      if (_getClerkToken) {
+        try {
+          const token = await _getClerkToken({ template: 'supabase' });
+          if (token) {
+            options.headers = {
+              ...options.headers,
+              Authorization: `Bearer ${token}`,
+            };
+          }
+        } catch (e) {
+          // Token fetch failed (e.g. user signed out mid-request) — fall
+          // through with no Authorization header; RLS will block access.
+          console.warn('[supabase] Could not get Clerk token:', e?.message);
+        }
+      }
+      return fetch(url, options);
+    },
+  },
 });
 
-// Helper function to set Supabase JWT from Clerk
-export const setSupabaseToken = async (getToken) => {
-  try {
-    const token = await getToken({ template: 'supabase' });
-    
-    if (token) {
-      const { data, error } = await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: 'placeholder' // Clerk handles refresh
-      });
-      
-      if (error) {
-        console.error('Error setting Supabase session:', error);
-      }
-      
-      return data;
-    }
-  } catch (error) {
-    console.error('Error getting Clerk token:', error);
-  }
-};
-
-// Get current user ID
-export const getCurrentUserId = async (user) => {
-  if (!user) return null;
-  return user.id;
-};
+// Legacy export kept for backwards compat — no longer used.
+export const getCurrentUserId = (user) => (user ? user.id : null);
