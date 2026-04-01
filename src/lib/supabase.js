@@ -37,25 +37,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     fetch: async (url, options = {}) => {
+      // Always rebuild headers so both apikey and Authorization are present.
+      // Using new Headers() handles both plain-object and Headers-instance inputs.
+      const headers = new Headers(options.headers || {});
+      headers.set('apikey', supabaseAnonKey);
+
       if (_getClerkToken) {
         try {
           const token = await _getClerkToken({ template: 'supabase' });
-          if (token) {
-            // Supabase v2 passes headers as a Headers instance, not a plain
-            // object.  Spreading a Headers instance yields {} so we must use
-            // the Headers API to preserve the existing apikey header while
-            // injecting our Clerk JWT.
-            const headers = new Headers(options.headers || {});
-            headers.set('Authorization', `Bearer ${token}`);
-            options = { ...options, headers };
-          }
+          if (token) headers.set('Authorization', `Bearer ${token}`);
         } catch (e) {
-          // Token fetch failed (e.g. user signed out mid-request) — fall
-          // through with no Authorization header; RLS will block access.
           console.warn('[supabase] Could not get Clerk token:', e?.message);
         }
       }
-      return fetch(url, options);
+
+      return fetch(url, { ...options, headers });
     },
   },
 });
