@@ -8,9 +8,14 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const CLERK_SECRET = Deno.env.get("CLERK_SECRET_KEY")  ?? "";
-const JWT_SECRET   = Deno.env.get("SUPABASE_JWT_SECRET") ?? "";
+const CLERK_SECRET = Deno.env.get("CLERK_SECRET_KEY")           ?? "";
+const JWT_SECRET   = Deno.env.get("SUPABASE_JWT_SECRET")        ?? "";
+const SUPA_URL     = Deno.env.get("SUPABASE_URL")               ?? "";
+const SUPA_KEY     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")  ?? "";
+
+const supabase = createClient(SUPA_URL, SUPA_KEY);
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -73,6 +78,21 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
+
+    // ── get-role: return the authenticated user's role from user_roles ────────
+    // Uses service role key → bypasses RLS entirely. Safe because we already
+    // verified the Clerk JWT above and know exactly who userId is.
+    if (body.action === "get-role") {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+      const role = data?.role ?? "employee";
+      return new Response(JSON.stringify({ role }), {
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
 
     // Bulk lookup by user_ids array
     if (body.user_ids && Array.isArray(body.user_ids)) {

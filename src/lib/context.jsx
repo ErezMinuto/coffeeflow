@@ -66,10 +66,21 @@ export const AppProvider = ({ children }) => {
         p_full_name: fullName,
       });
 
-      // get_my_role() is SECURITY DEFINER — bypasses RLS, always returns
-      // the correct role as long as the JWT sub matches a user_roles row.
-      const { data: role } = await supabase.rpc('get_my_role');
-      setUserRole(role || 'employee');
+      // Fetch role via edge function — the edge function verifies the Clerk
+      // JWT itself using SUPABASE_JWT_SECRET and queries with the service role
+      // key, so it works regardless of whether Supabase can verify the JWT.
+      const token = await getToken({ template: 'supabase' });
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const roleRes = await fetch(`${supabaseUrl}/functions/v1/clerk-user-lookup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'get-role' }),
+      });
+      const roleJson = roleRes.ok ? await roleRes.json() : {};
+      setUserRole(roleJson.role || 'employee');
       setRoleLoading(false);
     };
     fetchRole();
