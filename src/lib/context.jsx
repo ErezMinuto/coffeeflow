@@ -60,27 +60,12 @@ export const AppProvider = ({ children }) => {
       const email    = user.primaryEmailAddress?.emailAddress || '';
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
 
-      // Upsert display info (SECURITY DEFINER — safe even without full JWT).
-      await supabase.rpc('upsert_own_user_info', {
-        p_email: email,
-        p_full_name: fullName,
+      // get_role_for_user is SECURITY DEFINER — safe to call with anon key.
+      // It looks up the role by user_id without relying on JWT verification.
+      const { data: role } = await supabase.rpc('get_role_for_user', {
+        p_user_id: user.id,
       });
-
-      // Fetch role via edge function — the edge function verifies the Clerk
-      // JWT itself using SUPABASE_JWT_SECRET and queries with the service role
-      // key, so it works regardless of whether Supabase can verify the JWT.
-      const token = await getToken({ template: 'supabase' });
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const roleRes = await fetch(`${supabaseUrl}/functions/v1/clerk-user-lookup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action: 'get-role' }),
-      });
-      const roleJson = roleRes.ok ? await roleRes.json() : {};
-      setUserRole(roleJson.role || 'employee');
+      setUserRole(role || 'employee');
       setRoleLoading(false);
     };
     fetchRole();
