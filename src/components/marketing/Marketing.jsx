@@ -1019,6 +1019,7 @@ function AutomationsTab({ data, user, showToast }) {
 function ContactsTab({ data, user, showToast }) {
   const [contactFilter, setContactFilter] = useState('all');
   const [syncingResend, setSyncingResend] = useState(false);
+  const [importingFlashy, setImportingFlashy] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
   // Contacts synced from Resend (read-only cache in Supabase)
@@ -1045,6 +1046,78 @@ function ContactsTab({ data, user, showToast }) {
     } finally {
       setSyncingResend(false);
     }
+  };
+
+  const importFlashyCSV = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ''; // reset so same file can be re-selected
+    setImportingFlashy(true);
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const text = ev.target.result;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { showToast('⚠️ קובץ ריק', 'warning'); return; }
+
+        // Parse header — detect column indices case-insensitively
+        const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+        const idx = (keys) => { for (const k of keys) { const i = header.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; };
+        const emailIdx = idx(['email']);
+        if (emailIdx < 0) { showToast('❌ לא נמצאה עמודת email בקובץ', 'error'); return; }
+        const firstIdx  = idx(['first_name', 'firstname', 'first name', 'שם פרטי']);
+        const lastIdx   = idx(['last_name', 'lastname', 'last name', 'שם משפחה']);
+        const nameIdx   = idx(['name', 'full_name', 'שם']);
+        const phoneIdx  = idx(['phone', 'mobile', 'טלפון']);
+
+        const parseRow = (line) => {
+          // Handle quoted CSV values
+          const cols = [];
+          let cur = '', inQ = false;
+          for (const ch of line) {
+            if (ch === '"') { inQ = !inQ; }
+            else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+            else { cur += ch; }
+          }
+          cols.push(cur.trim());
+          return cols;
+        };
+
+        const rows = lines.slice(1).map(parseRow);
+        const contacts = rows
+          .map(cols => {
+            const email = cols[emailIdx]?.replace(/"/g, '').trim().toLowerCase();
+            if (!email || !email.includes('@')) return null;
+            const firstName = firstIdx >= 0 ? (cols[firstIdx] || '').replace(/"/g, '').trim() : '';
+            const lastName  = lastIdx  >= 0 ? (cols[lastIdx]  || '').replace(/"/g, '').trim() : '';
+            const fullName  = nameIdx  >= 0 ? (cols[nameIdx]  || '').replace(/"/g, '').trim()
+              : [firstName, lastName].filter(Boolean).join(' ');
+            const phone = phoneIdx >= 0 ? (cols[phoneIdx] || '').replace(/"/g, '').trim() : '';
+            return { user_id: user.id, email, name: fullName || null, phone: phone || null, source: 'flashy', opted_in: true };
+          })
+          .filter(Boolean);
+
+        if (contacts.length === 0) { showToast('⚠️ לא נמצאו אנשי קשר תקינים', 'warning'); return; }
+
+        // Upsert in batches of 100
+        let imported = 0;
+        for (let i = 0; i < contacts.length; i += 100) {
+          const batch = contacts.slice(i, i + 100);
+          const { error } = await supabase.from('marketing_contacts')
+            .upsert(batch, { onConflict: 'email', ignoreDuplicates: false });
+          if (error) throw new Error(error.message);
+          imported += batch.length;
+        }
+        showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy!`);
+        marketingContactsDb.refresh();
+      } catch (err) {
+        showToast(`❌ שגיאה בייבוא: ${err.message}`, 'error');
+      } finally {
+        setImportingFlashy(false);
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
   };
 
   return (
@@ -1099,6 +1172,12 @@ function ContactsTab({ data, user, showToast }) {
         <button onClick={syncFromResend} disabled={syncingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
           {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
         </button>
+        <label style={{ cursor: importingFlashy ? 'not-allowed' : 'pointer' }}>
+          <input type="file" accept=".csv" style={{ display: 'none' }} onChange={importFlashyCSV} disabled={importingFlashy} />
+          <span className="btn-small" style={{ fontSize: '0.85rem', pointerEvents: importingFlashy ? 'none' : 'auto', opacity: importingFlashy ? 0.6 : 1 }}>
+            {importingFlashy ? '⏳ מייבא...' : '📥 ייבא מ-Flashy CSV'}
+          </span>
+        </label>
         <a
           href="https://resend.com/contacts"
           target="_blank"
