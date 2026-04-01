@@ -60,19 +60,16 @@ export const AppProvider = ({ children }) => {
       const email    = user.primaryEmailAddress?.emailAddress || '';
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
 
-      // Use SECURITY DEFINER RPC to safely upsert our own display info.
-      // Direct INSERT/UPDATE on user_roles is blocked by RLS for non-admins.
+      // Upsert display info (SECURITY DEFINER — safe even without full JWT).
       await supabase.rpc('upsert_own_user_info', {
         p_email: email,
         p_full_name: fullName,
       });
 
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-      setUserRole(roleData?.role || 'employee');
+      // get_my_role() is SECURITY DEFINER — bypasses RLS, always returns
+      // the correct role as long as the JWT sub matches a user_roles row.
+      const { data: role } = await supabase.rpc('get_my_role');
+      setUserRole(role || 'employee');
       setRoleLoading(false);
     };
     fetchRole();
