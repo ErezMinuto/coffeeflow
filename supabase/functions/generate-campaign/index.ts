@@ -677,7 +677,7 @@ ${p.context ? "הקשר מהמשתמש: " + p.context : ""}
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-3-haiku-20240307",
+      model:      "claude-haiku-4-5-20251001",
       max_tokens: 800,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.context || "תן לי 5 רעיונות לקמפיין הבא" }],
@@ -843,7 +843,7 @@ ${p.customInstructions ? "הנחיה מהמשתמש: " + p.customInstructions : 
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-3-sonnet-20240229",
+      model:      "claude-sonnet-4-5-20250929",
       max_tokens: 1500,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
@@ -1455,6 +1455,13 @@ serve(async (req) => {
       case "send-test":         response = await handleSendCampaign({ ...payload, testEmail: payload.testEmail } as SendCampaignPayload); break;
       case "sync-resend-contacts": response = await handleSyncResendContacts(payload.userId); break;
       case "push-to-resend":   response = await handlePushToResend(payload as any); break;
+      case "list-models":      response = await (async () => {
+        const r = await fetch("https://api.anthropic.com/v1/models", {
+          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+        });
+        const d = await r.json();
+        return ok({ status: r.status, models: d });
+      })(); break;
       case "subscribe":        response = await handlePublicSubscribe(payload); break;
       default:                  response = err(400, `Unknown action: ${action}`); break;
     }
