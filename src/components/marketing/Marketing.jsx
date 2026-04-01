@@ -1049,13 +1049,22 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
     }
   };
 
-  // Push all opted-in contacts from Supabase → Resend (server fetches list itself)
+  // Push all opted-in contacts from Supabase → Resend in pages of 500
   const pushAllToResend = async () => {
     setPushingResend(true);
+    let totalPushed = 0, totalFailed = 0, offset = 0;
     try {
-      const result = await callCampaignFunction(supabase, 'push-to-resend', { userId: user.id });
-      const failMsg = result.failed > 0 ? ` (${result.failed} נכשלו)` : '';
-      showToast(`✅ נדחפו ${result.pushed} אנשי קשר ל-Resend${failMsg}`);
+      while (true) {
+        const result = await callCampaignFunction(supabase, 'push-to-resend', {
+          userId: user.id, offset, limit: 500,
+        });
+        totalPushed += result.pushed || 0;
+        totalFailed += result.failed || 0;
+        offset = result.offset || offset + 500;
+        if (result.done || !result.total) break;
+      }
+      const failMsg = totalFailed > 0 ? ` (${totalFailed} נכשלו)` : '';
+      showToast(`✅ נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
     } catch (err) {
       showToast(`❌ שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
     } finally {

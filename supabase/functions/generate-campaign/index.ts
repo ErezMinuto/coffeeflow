@@ -1283,9 +1283,9 @@ async function handleSyncResendContacts(userId: string) {
 
 async function pushContactsToResend(contacts: Array<{ email: string; name?: string }>) {
   let pushed = 0, failed = 0;
-  const CONCURRENCY = 15; // parallel requests per batch
+  const CONCURRENCY = 5; // conservative parallel requests to avoid Resend rate limits
 
-  async function pushOne(c: { email: string; name?: string }) {
+  async function pushOne(c: { email: string; name?: string }, retries = 3): Promise<void> {
     const email = (c.email || "").toLowerCase().trim();
     if (!email || !email.includes("@")) { failed++; return; }
     const parts = (c.name || "").trim().split(/\s+/);
@@ -1295,46 +1295,68 @@ async function pushContactsToResend(contacts: Array<{ email: string; name?: stri
         headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({ email, first_name: parts[0] || "", last_name: parts.slice(1).join(" ") || "", unsubscribed: false }),
       });
-      if (res.ok) { pushed++; }
-      else { console.error("Resend push error:", res.status, await res.text(), email); failed++; }
+      if (res.ok) { pushed++; return; }
+      if (res.status === 429 && retries > 0) {
+        // Rate limited — wait and retry
+        const retryAfter = parseInt(res.headers.get("retry-after") || "2") * 1000;
+        await new Promise(r => setTimeout(r, retryAfter || 2000));
+        return pushOne(c, retries - 1);
+      }
+      const txt = await res.text();
+      console.error("Resend push error:", res.status, txt, email);
+      failed++;
     } catch (e: any) { console.error("Resend push exception:", e.message, email); failed++; }
   }
 
   // Run CONCURRENCY requests in parallel, chunk by chunk
   for (let i = 0; i < contacts.length; i += CONCURRENCY) {
-    await Promise.all(contacts.slice(i, i + CONCURRENCY).map(pushOne));
+    await Promise.all(contacts.slice(i, i + CONCURRENCY).map(c => pushOne(c)));
   }
 
   return { pushed, failed };
 }
 
-async function handlePushToResend(payload: { contacts?: Array<{ email: string; name?: string }>; userId?: string }) {
+async function handlePushToResend(payload: {
+  contacts?: Array<{ email: string; name?: string }>;
+  userId?: string;
+  offset?: number;
+  limit?: number;
+}) {
   if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
 
   let contacts: Array<{ email: string; name?: string }> = [];
+  let total = 0;
 
   if (payload.contacts && Array.isArray(payload.contacts) && payload.contacts.length > 0) {
-    // Contacts passed directly from the frontend
     contacts = payload.contacts;
+    total = contacts.length;
   } else if (payload.userId) {
-    // Server-side: fetch ALL opted-in contacts from Supabase
-    const { data, error } = await supabase
+    // Server-side: fetch a page of opted-in contacts from Supabase
+    const offset = payload.offset ?? 0;
+    const limit  = payload.limit  ?? 500;
+    const { data, error, count } = await supabase
       .from("marketing_contacts")
-      .select("email, name")
-      .eq("opted_in", true);
+      .select("email, name", { count: "exact" })
+      .eq("opted_in", true)
+      .range(offset, offset + limit - 1);
     if (error) return err(500, "DB error: " + error.message);
     contacts = data || [];
+    total = count ?? 0;
   } else {
     return err(400, "contacts array or userId required");
   }
 
-  if (contacts.length === 0) return ok({ ok: true, pushed: 0, failed: 0, total: 0 });
+  if (contacts.length === 0) return ok({ ok: true, pushed: 0, failed: 0, total, done: true });
 
-  console.log(`Pushing ${contacts.length} contacts to Resend...`);
+  console.log(`Pushing ${contacts.length} contacts to Resend (offset=${payload.offset ?? 0})...`);
   const { pushed, failed } = await pushContactsToResend(contacts);
   console.log(`Done: pushed=${pushed} failed=${failed}`);
 
-  return ok({ ok: true, pushed, failed, total: contacts.length });
+  const offset = payload.offset ?? 0;
+  const limit  = payload.limit  ?? 500;
+  const done   = offset + contacts.length >= total;
+
+  return ok({ ok: true, pushed, failed, total, offset: offset + contacts.length, done });
 }
 
 // ── Public Subscribe (for website forms) ─────────────────────────────────────
