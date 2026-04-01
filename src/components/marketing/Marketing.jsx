@@ -1184,7 +1184,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         for (let i = 0; i < contacts.length; i += 100) {
           const batch = contacts.slice(i, i + 100);
           const { error } = await supabase.from('marketing_contacts')
-            .upsert(batch, { onConflict: 'email', ignoreDuplicates: false });
+            .upsert(batch, { onConflict: 'user_id,email', ignoreDuplicates: false });
           if (error) throw new Error(error.message);
           imported += batch.length;
         }
