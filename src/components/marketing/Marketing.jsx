@@ -1075,14 +1075,42 @@ function ContactsTab({ data, user, showToast }) {
 
         const APPROVED = new Set(['subscribed', 'active', 'approved', 'yes', '1', 'true', 'opted_in', 'optin']);
 
-        // Fix double-encoded Hebrew: Flashy exports UTF-8 bytes that were
-        // misread as Latin-1, then re-encoded as UTF-8.  Re-encode as Latin-1
-        // bytes and decode as UTF-8 to recover the original Hebrew text.
+        // Fix triple-encoded Hebrew: Flashy exports UTF-8 Hebrew that was
+        // misread as CP1252 and re-encoded as UTF-8.
+        // Also handles NBSP (0xA0) normalized to SPACE (0x20) for letter נ.
         const fixHebrew = (str) => {
           if (!str || !/[\xC0-\xFF]/.test(str)) return str;
           try {
-            const bytes = Uint8Array.from(str, c => c.charCodeAt(0) & 0xFF);
-            return new TextDecoder('utf-8').decode(bytes);
+            // Step 1: encode each char back to a raw byte (CP1252-like)
+            const buf = [];
+            for (const ch of str) {
+              const cp = ch.charCodeAt(0);
+              if (cp < 0x80) { buf.push(cp); }
+              else if (cp <= 0x9F) { buf.push(cp); }           // undefined CP1252 → direct byte
+              else if (cp <= 0xFF) { buf.push(cp); }           // Latin-1 range
+              else {
+                // For multi-byte Unicode (e.g. U+2018 ' → 0x91, U+2122 ™ → 0x99)
+                // Use a minimal reverse-CP1252 table for chars Flashy produces
+                const map = { 0x2018:0x91,0x2019:0x92,0x201A:0x82,0x201C:0x93,0x201D:0x94,
+                              0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,
+                              0x0161:0x9A,0x203A:0x9B,0x0153:0x9C,0x017E:0x9E,0x0178:0x9F,
+                              0x20AC:0x80,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,
+                              0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,
+                              0x017D:0x8E };
+                buf.push(map[cp] ?? 0x3F); // '?' fallback
+              }
+            }
+            // Step 2: fix D7 + non-continuation (NBSP normalized to SPACE → restore נ)
+            const fixed = [];
+            for (let i = 0; i < buf.length; i++) {
+              if (buf[i] === 0xD7 && i + 1 < buf.length && (buf[i+1] < 0x80 || buf[i+1] > 0xBF)) {
+                fixed.push(0xD7, 0xA0); // restore נ (NUN)
+                i++;
+              } else {
+                fixed.push(buf[i]);
+              }
+            }
+            return new TextDecoder('utf-8').decode(new Uint8Array(fixed)).replace(/\uFFFD/g, '');
           } catch { return str; }
         };
 
@@ -1216,7 +1244,7 @@ function ContactsTab({ data, user, showToast }) {
           </span>
         </label>
         <a
-          href="https://resend.com/contacts"
+          href="https://resend.com/audience?limit=120"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-small"
