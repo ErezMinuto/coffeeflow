@@ -41,10 +41,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         try {
           const token = await _getClerkToken({ template: 'supabase' });
           if (token) {
-            options.headers = {
-              ...options.headers,
-              Authorization: `Bearer ${token}`,
-            };
+            // Supabase v2 passes headers as a Headers instance, not a plain
+            // object.  Spreading a Headers instance yields {} so we must use
+            // the Headers API to preserve the existing apikey header while
+            // injecting our Clerk JWT.
+            const headers = new Headers(options.headers || {});
+            headers.set('Authorization', `Bearer ${token}`);
+            options = { ...options, headers };
           }
         } catch (e) {
           // Token fetch failed (e.g. user signed out mid-request) — fall
