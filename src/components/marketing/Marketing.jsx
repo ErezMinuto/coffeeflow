@@ -1049,22 +1049,13 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
     }
   };
 
-  // Push all opted-in contacts from Supabase → Resend (upserts by email)
-  const pushAllToResend = async (contactList) => {
-    const list = (contactList || contacts).filter(c => c.opted_in !== false);
-    if (list.length === 0) { showToast('⚠️ אין אנשי קשר לדחיפה', 'warning'); return; }
+  // Push all opted-in contacts from Supabase → Resend (server fetches list itself)
+  const pushAllToResend = async () => {
     setPushingResend(true);
     try {
-      let totalPushed = 0, totalFailed = 0;
-      // Send in chunks of 200 to avoid Edge Function timeout
-      for (let i = 0; i < list.length; i += 200) {
-        const chunk = list.slice(i, i + 200).map(c => ({ email: c.email, name: c.name || '' }));
-        const result = await callCampaignFunction(supabase, 'push-to-resend', { contacts: chunk });
-        totalPushed += result.pushed || 0;
-        totalFailed += result.failed || 0;
-      }
-      const failMsg = totalFailed > 0 ? ` (${totalFailed} נכשלו)` : '';
-      showToast(`✅ נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
+      const result = await callCampaignFunction(supabase, 'push-to-resend', { userId: user.id });
+      const failMsg = result.failed > 0 ? ` (${result.failed} נכשלו)` : '';
+      showToast(`✅ נדחפו ${result.pushed} אנשי קשר ל-Resend${failMsg}`);
     } catch (err) {
       showToast(`❌ שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
     } finally {
@@ -1200,8 +1191,8 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         const skippedMsg = skipped > 0 ? ` (${skipped} לא מאושרים דולגו)` : '';
         showToast(`✅ יובאו ${imported} אנשי קשר מ-Flashy${skippedMsg} — דוחף ל-Resend...`);
         marketingContactsDb.refresh();
-        // Auto-push the imported contacts to Resend (upsert)
-        await pushAllToResend(contacts.map(c => ({ email: c.email, name: c.name || '', opted_in: true })));
+        // Auto-push all opted-in contacts to Resend (server fetches from Supabase)
+        await pushAllToResend();
       } catch (err) {
         showToast(`❌ שגיאה בייבוא: ${err.message}`, 'error');
       } finally {
@@ -1263,7 +1254,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
           {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
         </button>
-        <button onClick={() => pushAllToResend(null)} disabled={pushingResend || syncingResend || contacts.length === 0} className="btn-small" style={{ fontSize: '0.85rem' }}>
+        <button onClick={pushAllToResend} disabled={pushingResend || syncingResend} className="btn-small" style={{ fontSize: '0.85rem' }}>
           {pushingResend ? '⏳ דוחף...' : '📤 דחוף ל-Resend'}
         </button>
         <label style={{ cursor: importingFlashy ? 'not-allowed' : 'pointer' }}>

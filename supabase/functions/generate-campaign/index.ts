@@ -1281,42 +1281,58 @@ async function handleSyncResendContacts(userId: string) {
 
 // ── Push Contacts to Resend ──────────────────────────────────────────────────
 
-async function handlePushToResend(payload: { contacts: Array<{ email: string; name?: string }> }) {
-  if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
+async function pushContactsToResend(contacts: Array<{ email: string; name?: string }>) {
+  let pushed = 0, failed = 0;
+  const CONCURRENCY = 15; // parallel requests per batch
 
-  const contacts = payload.contacts;
-  if (!contacts || !Array.isArray(contacts) || contacts.length === 0)
-    return err(400, "contacts array required");
-
-  let pushed = 0;
-  let failed = 0;
-
-  // Resend upserts by email — POST with existing email = update
-  for (const c of contacts) {
+  async function pushOne(c: { email: string; name?: string }) {
     const email = (c.email || "").toLowerCase().trim();
-    if (!email || !email.includes("@")) { failed++; continue; }
-
-    const nameParts = (c.name || "").trim().split(/\s+/);
-    const firstName = nameParts[0] || "";
-    const lastName  = nameParts.slice(1).join(" ") || "";
-
+    if (!email || !email.includes("@")) { failed++; return; }
+    const parts = (c.name || "").trim().split(/\s+/);
     try {
       const res = await fetch(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`, {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
+        body: JSON.stringify({ email, first_name: parts[0] || "", last_name: parts.slice(1).join(" ") || "", unsubscribed: false }),
       });
       if (res.ok) { pushed++; }
-      else {
-        const txt = await res.text();
-        console.error("Resend push error:", res.status, txt, "email:", email);
-        failed++;
-      }
-    } catch (e: any) {
-      console.error("Resend push exception:", e.message, "email:", email);
-      failed++;
-    }
+      else { console.error("Resend push error:", res.status, await res.text(), email); failed++; }
+    } catch (e: any) { console.error("Resend push exception:", e.message, email); failed++; }
   }
+
+  // Run CONCURRENCY requests in parallel, chunk by chunk
+  for (let i = 0; i < contacts.length; i += CONCURRENCY) {
+    await Promise.all(contacts.slice(i, i + CONCURRENCY).map(pushOne));
+  }
+
+  return { pushed, failed };
+}
+
+async function handlePushToResend(payload: { contacts?: Array<{ email: string; name?: string }>; userId?: string }) {
+  if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
+
+  let contacts: Array<{ email: string; name?: string }> = [];
+
+  if (payload.contacts && Array.isArray(payload.contacts) && payload.contacts.length > 0) {
+    // Contacts passed directly from the frontend
+    contacts = payload.contacts;
+  } else if (payload.userId) {
+    // Server-side: fetch ALL opted-in contacts from Supabase
+    const { data, error } = await supabase
+      .from("marketing_contacts")
+      .select("email, name")
+      .eq("opted_in", true);
+    if (error) return err(500, "DB error: " + error.message);
+    contacts = data || [];
+  } else {
+    return err(400, "contacts array or userId required");
+  }
+
+  if (contacts.length === 0) return ok({ ok: true, pushed: 0, failed: 0, total: 0 });
+
+  console.log(`Pushing ${contacts.length} contacts to Resend...`);
+  const { pushed, failed } = await pushContactsToResend(contacts);
+  console.log(`Done: pushed=${pushed} failed=${failed}`);
 
   return ok({ ok: true, pushed, failed, total: contacts.length });
 }
