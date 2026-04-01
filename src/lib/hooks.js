@@ -38,13 +38,24 @@ export const useSupabaseData = (table) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const { data: result, error } = await supabase
-        .from(table)
-        .select('*')
-        .order('id', { ascending: true });
+      // Paginate to fetch all rows (Supabase default max is 1000 per request)
+      const PAGE = 1000;
+      let allRows = [];
+      let from = 0;
+      while (true) {
+        const { data: result, error } = await supabase
+          .from(table)
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
 
-      if (error) throw error;
-      setData(result || []);
+        if (error) throw error;
+        if (!result || result.length === 0) break;
+        allRows = allRows.concat(result);
+        if (result.length < PAGE) break; // last page
+        from += PAGE;
+      }
+      setData(allRows);
     } catch (err) {
       console.error(`Error fetching ${table}:`, err);
       setError(err.message);
