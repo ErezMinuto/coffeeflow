@@ -1075,6 +1075,17 @@ function ContactsTab({ data, user, showToast }) {
 
         const APPROVED = new Set(['subscribed', 'active', 'approved', 'yes', '1', 'true', 'opted_in', 'optin']);
 
+        // Fix double-encoded Hebrew: Flashy exports UTF-8 bytes that were
+        // misread as Latin-1, then re-encoded as UTF-8.  Re-encode as Latin-1
+        // bytes and decode as UTF-8 to recover the original Hebrew text.
+        const fixHebrew = (str) => {
+          if (!str || !/[\xC0-\xFF]/.test(str)) return str;
+          try {
+            const bytes = Uint8Array.from(str, c => c.charCodeAt(0) & 0xFF);
+            return new TextDecoder('utf-8').decode(bytes);
+          } catch { return str; }
+        };
+
         const parseRow = (line) => {
           // Handle quoted CSV values
           const cols = [];
@@ -1109,9 +1120,10 @@ function ContactsTab({ data, user, showToast }) {
               if (status && !APPROVED.has(status)) return null;
             }
 
-            const firstName = firstIdx >= 0 ? (cols[firstIdx] || '').replace(/"/g, '').trim() : '';
-            const lastName  = lastIdx  >= 0 ? (cols[lastIdx]  || '').replace(/"/g, '').trim() : '';
-            const fullName  = nameIdx  >= 0 ? (cols[nameIdx]  || '').replace(/"/g, '').trim()
+            const firstName = fixHebrew(firstIdx >= 0 ? (cols[firstIdx] || '').replace(/"/g, '').trim() : '');
+            const lastName  = fixHebrew(lastIdx  >= 0 ? (cols[lastIdx]  || '').replace(/"/g, '').trim() : '');
+            const fullName  = nameIdx  >= 0
+              ? fixHebrew((cols[nameIdx] || '').replace(/"/g, '').trim())
               : [firstName, lastName].filter(Boolean).join(' ');
             const phone = phoneIdx >= 0 ? (cols[phoneIdx] || '').replace(/"/g, '').trim() : '';
             return { user_id: user.id, email, name: fullName || null, phone: phone || null, source: 'flashy', opted_in: true };
