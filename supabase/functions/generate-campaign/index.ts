@@ -677,7 +677,7 @@ ${p.context ? "הקשר מהמשתמש: " + p.context : ""}
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-haiku-4-20250514",
+      model:      "claude-3-5-haiku-20241022",
       max_tokens: 800,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.context || "תן לי 5 רעיונות לקמפיין הבא" }],
@@ -843,7 +843,7 @@ ${p.customInstructions ? "הנחיה מהמשתמש: " + p.customInstructions : 
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-sonnet-4-20250514",
+      model:      "claude-sonnet-4-5-20251022",
       max_tokens: 1500,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
