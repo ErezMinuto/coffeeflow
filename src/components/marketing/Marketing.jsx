@@ -48,7 +48,7 @@ export default function Marketing() {
 
       {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} />}
       {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
-      {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} />}
+      {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
       {activeTab === 'history'     && <HistoryTab data={data} user={user} showToast={showToast} onDuplicate={handleDuplicate} />}
     </div>
   );
@@ -1016,7 +1016,7 @@ function AutomationsTab({ data, user, showToast }) {
 
 // ── Contacts Tab ────────────────────────────────────────────────────────────
 
-function ContactsTab({ data, user, showToast }) {
+function ContactsTab({ data, user, showToast, marketingContactsDb }) {
   const [contactFilter, setContactFilter] = useState('all');
   const [syncingResend, setSyncingResend] = useState(false);
   const [pushingResend, setPushingResend] = useState(false);
