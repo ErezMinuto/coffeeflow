@@ -1041,7 +1041,8 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
     setSyncingResend(true);
     try {
       const result = await callCampaignFunction(supabase, 'sync-resend-contacts', { userId: user.id });
-      showToast(`✅ סונכרנו ${result.synced} אנשי קשר מ-Resend`);
+      const removedMsg = result.removed > 0 ? ` (הוסרו ${result.removed} שאינם ב-Resend)` : '';
+      showToast(`✅ סונכרנו ${result.synced} אנשי קשר מ-Resend${removedMsg}`);
     } catch (err) {
       showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
     } finally {

@@ -1234,7 +1234,7 @@ async function handleSyncResendContacts(userId: string) {
   let allContacts: any[] = [];
   let after: string | null = null;
 
-  // Paginate through all Resend contacts
+  // Paginate through ALL Resend contacts (subscribed + unsubscribed)
   while (true) {
     const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
     url.searchParams.set("limit", "100");
@@ -1260,23 +1260,54 @@ async function handleSyncResendContacts(userId: string) {
 
   console.log("Fetched", allContacts.length, "contacts from Resend");
 
+  // Build set of all Resend emails for cleanup
+  const resendEmails = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()));
+
+  // 1. Upsert all Resend contacts into Supabase (update name, opted_in status)
   let synced = 0;
   for (const c of allContacts) {
+    const email = (c.email || "").toLowerCase().trim();
+    if (!email) continue;
     const { error: dbErr } = await supabase
       .from("marketing_contacts")
       .upsert({
-        user_id:   userId,
-        email:     (c.email || "").toLowerCase().trim(),
-        name:      [c.first_name, c.last_name].filter(Boolean).join(" ") || "",
-        opted_in:  !c.unsubscribed,
-        source:    "resend",
+        user_id:  userId,
+        email,
+        name:     [c.first_name, c.last_name].filter(Boolean).join(" ") || undefined,
+        opted_in: !c.unsubscribed,
+        source:   "resend",
       }, { onConflict: "user_id,email" });
 
     if (!dbErr) synced++;
-    else console.error("Sync error:", dbErr.message);
+    else console.error("Sync upsert error:", dbErr.message);
   }
 
-  return ok({ ok: true, synced, total: allContacts.length });
+  // 2. Remove Supabase contacts that Resend rejected / doesn't know about
+  const { data: supaContacts, error: fetchErr } = await supabase
+    .from("marketing_contacts")
+    .select("email")
+    .eq("user_id", userId);
+
+  let removed = 0;
+  if (!fetchErr && supaContacts) {
+    const toDelete = supaContacts
+      .map((r: any) => r.email)
+      .filter((e: string) => !resendEmails.has(e));
+
+    if (toDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from("marketing_contacts")
+        .delete()
+        .eq("user_id", userId)
+        .in("email", toDelete);
+
+      if (!delErr) removed = toDelete.length;
+      else console.error("Sync delete error:", delErr.message);
+    }
+  }
+
+  console.log(`Sync done: synced=${synced}, removed=${removed}, resend_total=${allContacts.length}`);
+  return ok({ ok: true, synced, removed, total: allContacts.length });
 }
 
 // ── Push Contacts to Resend ──────────────────────────────────────────────────
