@@ -1071,6 +1071,7 @@ function ContactsTab({ data, user, showToast }) {
         const nameIdx   = idx(['name', 'full_name', 'שם']);
         const phoneIdx  = idx(['phone', 'mobile', 'טלפון']);
         const statusIdx = idx(['status', 'subscription_status', 'subscribed', 'opted_in', 'opt_in']);
+        const tagsIdx   = idx(['tags']);
 
         const APPROVED = new Set(['subscribed', 'active', 'approved', 'yes', '1', 'true', 'opted_in', 'optin']);
 
@@ -1093,10 +1094,19 @@ function ContactsTab({ data, user, showToast }) {
             const email = cols[emailIdx]?.replace(/"/g, '').trim().toLowerCase();
             if (!email || !email.includes('@')) return null;
 
-            // Skip unsubscribed contacts if status column exists
+            // Skip if tags contain "unsubscribed" (Flashy format)
+            if (tagsIdx >= 0) {
+              const tagsRaw = (cols[tagsIdx] || '').replace(/^"|"$/g, '').trim();
+              try {
+                const tags = tagsRaw ? JSON.parse(tagsRaw) : [];
+                if (tags.includes('unsubscribed')) return null;
+              } catch {}
+            }
+
+            // Skip if explicit status column exists and is not approved
             if (statusIdx >= 0) {
               const status = (cols[statusIdx] || '').replace(/"/g, '').trim().toLowerCase();
-              if (!APPROVED.has(status)) return null;
+              if (status && !APPROVED.has(status)) return null;
             }
 
             const firstName = firstIdx >= 0 ? (cols[firstIdx] || '').replace(/"/g, '').trim() : '';
