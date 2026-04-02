@@ -701,7 +701,7 @@ ${p.context ? "הקשר מהמשתמש: " + p.context : ""}
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 800,
+      max_tokens: 2000,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.context || "תן לי 5 רעיונות לקמפיין הבא" }],
     }),
@@ -719,7 +719,9 @@ ${p.context ? "הקשר מהמשתמש: " + p.context : ""}
   let parsed: any;
   try {
     const clean = rawText.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-    parsed = JSON.parse(clean);
+    // Extract just the JSON object in case Claude adds surrounding text
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
   } catch {
     console.error("AI parse error:", rawText);
     return err(500, "Failed to parse AI response");
@@ -734,6 +736,7 @@ interface GeneratePayload {
   userId: string;
   customInstructions?: string;
   campaignType?: string;
+  pinnedProductIds?: number[];
 }
 
 async function handleGenerate(p: GeneratePayload) {
@@ -750,14 +753,18 @@ async function handleGenerate(p: GeneratePayload) {
     .eq("stock_status", "instock");
 
   // Keep catalog compact to stay under rate limits (30k input tokens/min)
-  // If user mentioned specific products, prioritize those in the catalog
+  // Pinned products (matched from idea suggestions) go first, then rest
   const allProducts = wooProducts || [];
   let prioritized: any[] = [];
-  if (p.customInstructions) {
+  if (p.pinnedProductIds?.length) {
+    // Use exact pinned product IDs from the frontend match
+    prioritized = p.pinnedProductIds
+      .map(id => allProducts.find((pr: any) => pr.woo_id === id))
+      .filter(Boolean);
+  } else if (p.customInstructions) {
     const instr = p.customInstructions.toLowerCase();
     prioritized = allProducts.filter((pr: any) => {
       const name = (pr.name || "").toLowerCase();
-      // Check if any English token from product name is in instructions
       const tokens = name.match(/[a-zA-Z0-9]+/g) || [];
       return tokens.some((t: string) => t.length >= 2 && instr.toLowerCase().includes(t.toLowerCase()));
     });

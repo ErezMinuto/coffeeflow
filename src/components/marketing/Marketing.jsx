@@ -144,10 +144,27 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   const generateFromIdea = async (idea) => {
     const instructions = `${idea.title}: ${idea.description}`;
     setStep('generating');
+    // Pre-load products so we can match suggested names to real woo_products
+    let productsToUse = [];
+    try {
+      const { data: allProds } = await supabase
+        .from('woo_products')
+        .select('woo_id, name, price, image_url, permalink, regular_price, sale_price, short_description')
+        .eq('user_id', user.id)
+        .eq('stock_status', 'instock');
+      if (allProds && idea.suggestedProducts?.length) {
+        // Match suggested product names (fuzzy) to real products
+        productsToUse = idea.suggestedProducts.map(suggested => {
+          const lower = suggested.toLowerCase();
+          return (allProds).find(p => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase().slice(0, 15)));
+        }).filter(Boolean);
+      }
+    } catch (e) { /* ignore, AI will pick products */ }
     try {
       const result = await callCampaignFunction(supabase, 'generate', {
         userId: user.id,
         customInstructions: instructions,
+        pinnedProductIds: productsToUse.map(p => p.woo_id),
       });
       if (!result.ok) throw new Error(result.error || 'Generation failed');
       setDraft(result.campaign);
@@ -654,75 +671,69 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
 
       {/* Products — with add/remove */}
       <div className="form-card" style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <label style={{ fontWeight: 600 }}>
-            מוצרים ({(draft?.products || []).length})
-          </label>
-          <button
-            onClick={() => { setShowProductPicker(!showProductPicker); if (!allProducts.length) loadAllProducts(); }}
-            className="btn-small"
-            style={{ fontSize: '0.8rem', padding: '4px 12px' }}
-          >
-            {showProductPicker ? '✕ סגור' : '➕ הוסף מוצר'}
-          </button>
-        </div>
+        <label style={{ fontWeight: 600, display: 'block', marginBottom: '10px' }}>
+          מוצרים ({(draft?.products || []).length})
+        </label>
 
-        {/* Product picker dropdown */}
-        {showProductPicker && (
-          <div style={{
-            background: '#FAFAF7', border: '1px solid #E8E8E0', borderRadius: '10px',
-            padding: '12px', marginBottom: '12px',
-          }}>
-            <input
-              type="text"
-              value={productSearch}
-              onChange={e => setProductSearch(e.target.value)}
-              placeholder="חפש מוצר..."
-              style={{
-                width: '100%', padding: '8px 12px', borderRadius: '8px',
-                border: '1px solid #ddd', fontSize: '0.9rem', direction: 'rtl', marginBottom: '8px',
-              }}
-            />
-            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+        {/* Always-visible product search with autocomplete dropdown */}
+        <div style={{ position: 'relative', marginBottom: '12px' }}>
+          <input
+            type="text"
+            value={productSearch}
+            onChange={e => { setProductSearch(e.target.value); if (!allProducts.length) loadAllProducts(); }}
+            onFocus={() => { if (!allProducts.length) loadAllProducts(); }}
+            placeholder="🔍 חפש מוצר להוספה..."
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: '8px',
+              border: '1px solid #ddd', fontSize: '0.9rem', direction: 'rtl',
+              boxSizing: 'border-box',
+            }}
+          />
+          {/* Dropdown — show when search has text OR products loaded and field focused */}
+          {productSearch.trim() && (
+            <div style={{
+              position: 'absolute', top: '100%', right: 0, left: 0, zIndex: 100,
+              background: '#fff', border: '1px solid #E8E8E0', borderRadius: '10px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)', maxHeight: '220px', overflowY: 'auto',
+            }}>
               {allProducts
-                .filter(p => {
-                  const q = productSearch.toLowerCase();
-                  if (!q) return true;
-                  return (p.name || '').toLowerCase().includes(q);
-                })
-                .slice(0, 20)
+                .filter(p => (p.name || '').toLowerCase().includes(productSearch.toLowerCase()))
+                .slice(0, 15)
                 .map(p => {
                   const alreadyAdded = (draft?.products || []).some(dp => dp.woo_id === p.woo_id);
                   return (
                     <div
                       key={p.woo_id}
-                      onClick={() => !alreadyAdded && addProduct(p)}
+                      onClick={() => { if (!alreadyAdded) { addProduct(p); setProductSearch(''); } }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '8px', borderRadius: '8px', cursor: alreadyAdded ? 'default' : 'pointer',
-                        opacity: alreadyAdded ? 0.5 : 1,
-                        direction: 'rtl',
+                        padding: '8px 12px', cursor: alreadyAdded ? 'default' : 'pointer',
+                        opacity: alreadyAdded ? 0.5 : 1, direction: 'rtl',
+                        borderBottom: '1px solid #F5F5F0',
                       }}
                       onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.background = '#F0FDF4'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                     >
                       {p.image_url && (
-                        <img src={p.image_url} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <img src={p.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3D4A2E' }}>{p.name}</div>
-                        {p.price && <div style={{ fontSize: '0.75rem', color: '#888' }}>₪{p.price}</div>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3D4A2E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        {p.price && <div style={{ fontSize: '0.75rem', color: '#888' }}>₪{parseFloat(p.price).toLocaleString()}</div>}
                       </div>
                       {alreadyAdded
-                        ? <span style={{ fontSize: '0.75rem', color: '#10B981' }}>✓ נוסף</span>
-                        : <span style={{ fontSize: '0.8rem', color: '#556B3A' }}>➕</span>
+                        ? <span style={{ fontSize: '0.75rem', color: '#10B981', flexShrink: 0 }}>✓ נוסף</span>
+                        : <span style={{ fontSize: '0.8rem', color: '#556B3A', flexShrink: 0 }}>➕</span>
                       }
                     </div>
                   );
                 })}
+              {allProducts.filter(p => (p.name || '').toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                <div style={{ padding: '12px', color: '#999', fontSize: '0.85rem', textAlign: 'center' }}>לא נמצאו מוצרים</div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Current products */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
