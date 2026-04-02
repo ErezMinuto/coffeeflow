@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/erezelbaz/Downloads/CoffeeFlow && git pull origin main 2>&1 || true",
+            "statusMessage": "Syncing with team (git pull)..."
+          }
+        ]
+      }
+    ]
+  }
+}
