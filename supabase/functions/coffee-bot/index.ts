@@ -31,7 +31,11 @@ async function send(chatId: string | number, text: string) {
 
 // ── Claude: extract packing intent ─────────────────────────────────────────
 
-async function extractPacking(text: string): Promise<{ product: string; bags: number } | null> {
+async function extractPacking(text: string, productNames: string[]): Promise<{ product: string; bags: number } | null> {
+  const listStr = productNames.length > 0
+    ? `\n\nAvailable products (return the exact name from this list):\n${productNames.join("\n")}`
+    : "";
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -40,14 +44,15 @@ async function extractPacking(text: string): Promise<{ product: string; bags: nu
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-haiku-4-5",
-      max_tokens: 100,
-      system: `Extract packing info from a Hebrew message. Return JSON only.
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 150,
+      system: `Extract packing info from a Hebrew/English message. Return JSON only.
+Match the product the employee mentions (even if partial, Hebrew phonetic, or accented differently) to the closest product in the available list.
 Examples:
-  "ארזתי 20 שקיות אתיופיה" → {"product":"אתיופיה","bags":20}
-  "עשיתי 15 קניה לייט"     → {"product":"קניה לייט","bags":15}
-  "packed 30 ethiopia"      → {"product":"ethiopia","bags":30}
-  unrelated message          → {"product":"","bags":0}`,
+  "ארזתי 20 שקיות אתיופיה" → {"product":"<exact name from list>","bags":20}
+  "עשיתי 15 קניה לייט"     → {"product":"<exact name from list>","bags":15}
+  "packed 30 sertao"        → {"product":"<exact name from list>","bags":30}
+  unrelated message          → {"product":"","bags":0}${listStr}`,
       messages: [{ role: "user", content: text }],
     }),
   });
@@ -95,10 +100,23 @@ async function handlePacking(chatId: string, fromName: string, productName: stri
     return;
   }
 
-  const norm    = productName.toLowerCase().trim();
-  const matches = products.filter(p =>
-    p.name.toLowerCase().includes(norm) || norm.includes(p.name.toLowerCase())
+  const simplify = (s: string) =>
+    s.toLowerCase()
+     .replace(/[àáâãäå]/g, "a").replace(/[èéêë]/g, "e")
+     .replace(/[ìíîï]/g, "i").replace(/[òóôõöø]/g, "o")
+     .replace(/[ùúûü]/g, "u").replace(/[ñ]/g, "n").replace(/[ç]/g, "c")
+     .trim();
+
+  const normInput = simplify(productName);
+  let matches = products.filter(p =>
+    simplify(`${p.name} ${p.size}g`) === normInput || simplify(p.name) === normInput
   );
+  if (matches.length === 0) {
+    matches = products.filter(p => {
+      const n = simplify(p.name);
+      return n.includes(normInput) || normInput.split(/\s+/).every((w: string) => n.includes(w));
+    });
+  }
 
   if (matches.length === 0) {
     const list = products.map(p => `• ${p.name} ${p.size}g`).join("\n");
@@ -210,7 +228,11 @@ serve(async (req) => {
     if (lower.startsWith("/stock")) {
       await handleStock(chatId);
     } else if (!lower.startsWith("/")) {
-      const packing = await extractPacking(text);
+      const { data: products } = await supabase
+        .from("products").select("name, size").eq("user_id", USER_ID);
+      const productNames = (products ?? []).map(p => `${p.name} ${p.size}g`);
+
+      const packing = await extractPacking(text, productNames);
       if (packing) {
         await handlePacking(chatId, fromName, packing.product, packing.bags);
       } else {
