@@ -134,27 +134,55 @@ async function handleOnboard() {
 }
 
 async function handleRemind() {
-  // Send private DM to each active employee who has a telegram_id
-  const { data: employees } = await supabase
+  const { data: employees, error: empError } = await supabase
     .from("employees")
     .select("telegram_id, name")
     .eq("active", true)
     .not("telegram_id", "is", null);
 
-  let sent = 0;
+  if (empError) {
+    console.error("handleRemind DB error:", empError);
+    return new Response(JSON.stringify({ ok: false, error: empError.message, sent: 0 }), {
+      status: 500, headers: corsHeaders,
+    });
+  }
+
+  console.log(`handleRemind: found ${employees?.length ?? 0} employees`);
+
+  let sent = 0, failed = 0;
   for (const emp of employees ?? []) {
     try {
-      await send(String(emp.telegram_id),
-        `📅 <b>היי ${emp.name}!</b>\n\n` +
-        `שלח/י את הימים שתוכל/י לעבוד השבוע הבא 👇\n\n` +
-        `<code>ראשון, שלישי, שישי</code>\n` +
-        `<code>ראשון, שלישי עד 14:00, שישי</code>\n` +
-        `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`
-      );
-      sent++;
-    } catch (_) { /* employee may not have started private chat yet */ }
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: String(emp.telegram_id),
+          text:
+            `📅 <b>היי ${emp.name}!</b>\n\n` +
+            `שלח/י את הימים שאתה/את פנוי/ה השבוע הבא 👇\n\n` +
+            `הימים האפשריים: <b>ראשון, שני, שלישי, רביעי, חמישי, שישי</b>\n\n` +
+            `דוגמאות לפורמט:\n` +
+            `<code>ראשון, שני, שישי</code>\n` +
+            `<code>שני, חמישי עד 14:00, שישי</code>\n` +
+            `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`,
+          parse_mode: "HTML",
+        }),
+      });
+      const tg = await res.json();
+      if (tg.ok) {
+        sent++;
+      } else {
+        failed++;
+        console.error(`Telegram reject for ${emp.name} (${emp.telegram_id}):`, tg.description);
+      }
+    } catch (e) {
+      failed++;
+      console.error(`Send error for ${emp.name}:`, e);
+    }
   }
-  return new Response(JSON.stringify({ ok: true, sent }), { headers: corsHeaders });
+
+  console.log(`handleRemind done: sent=${sent}, failed=${failed}`);
+  return new Response(JSON.stringify({ ok: true, sent, failed }), { headers: corsHeaders });
 }
 
 async function handlePublish(req: Request) {
