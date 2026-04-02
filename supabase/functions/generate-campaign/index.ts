@@ -1307,23 +1307,31 @@ async function handleSyncResendContacts(userId: string) {
   // Build set of all Resend emails for cleanup
   const resendEmails = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()));
 
-  // 1. Upsert all Resend contacts into Supabase (update name, opted_in status)
-  let synced = 0;
-  for (const c of allContacts) {
-    const email = (c.email || "").toLowerCase().trim();
-    if (!email) continue;
-    const { error: dbErr } = await supabase
-      .from("marketing_contacts")
-      .upsert({
+  // 1. Bulk upsert all Resend contacts into Supabase in one call
+  const rows = allContacts
+    .map((c: any) => {
+      const email = (c.email || "").toLowerCase().trim();
+      if (!email) return null;
+      return {
         user_id:  userId,
         email,
         name:     [c.first_name, c.last_name].filter(Boolean).join(" ") || undefined,
         opted_in: !c.unsubscribed,
         source:   "resend",
-      }, { onConflict: "user_id,email" });
+      };
+    })
+    .filter(Boolean);
 
-    if (!dbErr) synced++;
-    else console.error("Sync upsert error:", dbErr.message);
+  let synced = 0;
+  // Supabase upsert limit ~1000 rows — chunk if needed
+  const CHUNK = 500;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    const { error: dbErr } = await supabase
+      .from("marketing_contacts")
+      .upsert(chunk, { onConflict: "user_id,email" });
+    if (!dbErr) synced += chunk.length;
+    else console.error("Bulk upsert error:", dbErr.message);
   }
 
   // 2. Mark contacts as opted_out if Resend shows them unsubscribed
