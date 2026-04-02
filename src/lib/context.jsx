@@ -73,21 +73,22 @@ export const AppProvider = ({ children }) => {
 
   const isAdmin = userRole === 'admin';
 
-  const originsDb                = useSupabaseData('origins');
-  const productsDb               = useSupabaseData('products');
-  const roastsDb                 = useSupabaseData('roasts');
-  const operatorsDb              = useSupabaseData('operators');
-  const roastProfilesDb           = useSupabaseData('roast_profiles');
+  // Shared org-wide tables — all team members see the same data
+  const originsDb                = useSupabaseData('origins',                   { filterByUser: false });
+  const productsDb               = useSupabaseData('products',                  { filterByUser: false });
+  const roastsDb                 = useSupabaseData('roasts',                    { filterByUser: false });
+  const operatorsDb              = useSupabaseData('operators',                  { filterByUser: false });
+  const roastProfilesDb          = useSupabaseData('roast_profiles',            { filterByUser: false });
   const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients', { filterByUser: false });
-  const roastComponentsDb         = useSupabaseData('roast_components',         { filterByUser: false });
-  const waitingCustomersDb        = useSupabaseData('waiting_customers');
-  const employeesDb               = useSupabaseData('employees');
-  const availabilityDb            = useSupabaseData('availability_submissions', { filterByUser: false });
-  const schedulesDb               = useSupabaseData('schedules');
-  const assignmentsDb             = useSupabaseData('schedule_assignments',     { filterByUser: false });
-  const marketingContactsDb       = useSupabaseData('marketing_contacts');
-  const campaignsDb               = useSupabaseData('campaigns');
-  const packingLogsDb             = useSupabaseData('packing_logs');
+  const roastComponentsDb        = useSupabaseData('roast_components',          { filterByUser: false });
+  const waitingCustomersDb       = useSupabaseData('waiting_customers',         { filterByUser: false });
+  const employeesDb              = useSupabaseData('employees',                 { filterByUser: false });
+  const availabilityDb           = useSupabaseData('availability_submissions',  { filterByUser: false });
+  const schedulesDb              = useSupabaseData('schedules',                 { filterByUser: false });
+  const assignmentsDb            = useSupabaseData('schedule_assignments',      { filterByUser: false });
+  const marketingContactsDb      = useSupabaseData('marketing_contacts',        { filterByUser: false });
+  const campaignsDb              = useSupabaseData('campaigns',                 { filterByUser: false });
+  const packingLogsDb            = useSupabaseData('packing_logs',              { filterByUser: false });
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {

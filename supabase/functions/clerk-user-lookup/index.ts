@@ -114,7 +114,7 @@ serve(async (req) => {
     // Lookup by email
     if (body.email) {
       const res = await fetch(
-        `https://api.clerk.com/v1/users?email_address[]=${encodeURIComponent(body.email)}&limit=1`,
+        `https://api.clerk.com/v1/users?email_address=${encodeURIComponent(body.email)}&limit=1`,
         { headers: { Authorization: `Bearer ${CLERK_SECRET}` } },
       );
       if (!res.ok) {
@@ -137,10 +137,10 @@ serve(async (req) => {
       status: 400, headers: { ...CORS, "Content-Type": "application/json" },
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("clerk-user-lookup error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: err?.message ?? String(err) }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
     );
   }
