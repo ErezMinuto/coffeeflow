@@ -203,12 +203,10 @@ function RolesSection({ user, showToast }) {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || 'משתמש לא נמצא');
 
-      console.log('clerk-user-lookup result:', data);
-      const { error: upsertError, data: upsertData } = await supabase.from('user_roles').upsert(
+      const { error: upsertError } = await supabase.from('user_roles').upsert(
         { user_id: data.user_id, email: data.email, full_name: data.full_name, role: newRoleRole },
         { onConflict: 'user_id', ignoreDuplicates: false }
-      ).select();
-      console.log('upsert result:', { upsertData, upsertError });
+      );
       if (upsertError) throw new Error(upsertError.message);
       setNewEmail('');
       fetchRoles();
