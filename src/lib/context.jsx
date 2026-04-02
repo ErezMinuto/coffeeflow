@@ -78,7 +78,7 @@ export const AppProvider = ({ children }) => {
   const roastsDb                 = useSupabaseData('roasts');
   const operatorsDb              = useSupabaseData('operators');
   const roastProfilesDb           = useSupabaseData('roast_profiles');
-  const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients');
+  const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients', { filterByUser: false });
   const roastComponentsDb         = useSupabaseData('roast_components',         { filterByUser: false });
   const waitingCustomersDb        = useSupabaseData('waiting_customers');
   const employeesDb               = useSupabaseData('employees');

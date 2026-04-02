@@ -114,10 +114,14 @@ serve(async (req) => {
     // Lookup by email
     if (body.email) {
       const res = await fetch(
-        `https://api.clerk.com/v1/users?email_address=${encodeURIComponent(body.email)}&limit=1`,
+        `https://api.clerk.com/v1/users?email_address[]=${encodeURIComponent(body.email)}&limit=1`,
         { headers: { Authorization: `Bearer ${CLERK_SECRET}` } },
       );
-      if (!res.ok) throw new Error("Clerk API error");
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Clerk API error:", res.status, errText);
+        throw new Error(`Clerk API error ${res.status}: ${errText}`);
+      }
       const users = await res.json();
       if (!users.length) {
         return new Response(JSON.stringify({ error: "User not found" }), {
