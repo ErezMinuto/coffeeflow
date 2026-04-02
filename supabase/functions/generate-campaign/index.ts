@@ -1352,12 +1352,11 @@ async function handleSyncResendContacts(userId: string) {
   }
 
   // 3. Delete contacts that exist in CoffeeFlow but not in Resend (Resend is source of truth)
-  // Fetch all current emails in DB for this user, then delete the ones not in Resend
+  // Fetch ALL contacts across all user_ids — frontend shows all contacts regardless of user_id
   const resendEmailSet = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()).filter(Boolean));
   const { data: dbContacts } = await supabase
     .from("marketing_contacts")
-    .select("email")
-    .eq("user_id", userId);
+    .select("email");
 
   const toDelete = (dbContacts || [])
     .map((r: any) => (r.email || "").toLowerCase().trim())
@@ -1370,7 +1369,6 @@ async function handleSyncResendContacts(userId: string) {
     const { error: delErr, count } = await supabase
       .from("marketing_contacts")
       .delete({ count: "exact" })
-      .eq("user_id", userId)
       .in("email", chunk);
     if (!delErr && count) deleted += count;
   }
