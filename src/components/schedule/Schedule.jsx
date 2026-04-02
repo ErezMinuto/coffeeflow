@@ -402,7 +402,10 @@ export default function Schedule() {
         headers: { 'x-action': 'remind' },
       });
       if (error) throw error;
-      showToast(`📩 תזכורת נשלחה ל-${result?.sent ?? 0} עובדים`);
+      const sent   = result?.sent   ?? 0;
+      const failed = result?.failed ?? 0;
+      const failMsg = failed > 0 ? ` (${failed} לא פתחו צ׳אט עם הבוט)` : '';
+      showToast(`📩 תזכורת נשלחה ל-${sent} עובדים${failMsg}`);
     } catch (err) {
       console.error('Remind error:', err);
       showToast('שגיאה בשליחת תזכורת', 'error');
