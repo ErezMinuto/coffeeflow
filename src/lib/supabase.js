@@ -35,6 +35,24 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
     detectSessionInUrl: false,
   },
+  global: {
+    fetch: async (url, options = {}) => {
+      if (_getClerkToken) {
+        try {
+          const token = await _getClerkToken({ template: 'supabase' });
+          if (token) {
+            options.headers = {
+              ...options.headers,
+              Authorization: `Bearer ${token}`,
+            };
+          }
+        } catch (_) {
+          // fall back to anon key if token fetch fails
+        }
+      }
+      return fetch(url, options);
+    },
+  },
 });
 
 // Legacy export kept for backwards compat — no longer used.
