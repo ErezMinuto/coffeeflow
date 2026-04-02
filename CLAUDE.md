@@ -5,6 +5,17 @@ All AI assistants working on this project MUST follow the rules below.
 
 ---
 
+## ⚠️ Ground Rules for All AI Assistants
+
+1. **Always `git pull` before starting any work.** Never assume your local state is current.
+2. **Never push directly to `main`.** Open a PR — another developer reviews it first.
+3. **Never create new bots, new edge functions, or new Supabase projects.** Work within what exists.
+4. **Before touching any edge function** — read its current code first. Do not rewrite from scratch.
+5. **If something "doesn't seem right"** — stop and ask the developer. Do not silently redesign.
+6. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
+
+---
+
 ## Supabase Project
 
 - **Project ID**: `ytydgldyeygpzmlxvpvb`
@@ -14,8 +25,8 @@ All AI assistants working on this project MUST follow the rules below.
 
 ## Bot Architecture — DO NOT CHANGE
 
-There are exactly 3 Telegram bots. Each bot has one dedicated Supabase Edge Function.
-**Never merge responsibilities. Never create new bots.**
+There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase Edge Function.
+**Never merge responsibilities. Never create new bots. Never move logic between functions.**
 
 | Bot | Username | Edge Function | Responsibility |
 |-----|----------|---------------|----------------|
@@ -23,10 +34,25 @@ There are exactly 3 Telegram bots. Each bot has one dedicated Supabase Edge Func
 | Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group) |
 | CoffeeFlow Tasks | (tasks bot) | `telegram-bot` | Waiting customers & task management (group only) |
 
-### Rules
-- **coffee-bot**: Handles `/stock` and free-text packing reports. Deducts `roasted_stock`, increments `packed_stock`, logs to `packing_logs`. Uses `COFFEE_BOT_TOKEN` env var.
-- **employee-bot**: Handles name registration, availability submissions, weekly schedule reminders. Uses `TELEGRAM_BOT_TOKEN` env var.
-- **telegram-bot**: Handles `/tasks`, `/done`, and free-text customer requests in the group chat only. Uses `TELEGRAM_BOT_TOKEN` env var. **No packing or stock logic here.**
+### Per-function rules
+- **coffee-bot**: `/stock` and free-text packing reports only. Deducts `roasted_stock`, increments `packed_stock`, logs to `packing_logs`. Uses `COFFEE_BOT_TOKEN`. No task or schedule logic.
+- **employee-bot**: Name registration, availability submissions, weekly schedule reminders only. Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
+- **telegram-bot**: `/tasks`, `/done`, free-text customer requests in group chat only. Uses `TELEGRAM_BOT_TOKEN`. **No packing, no stock, no schedule logic.**
+
+---
+
+## Frontend Architecture
+
+- **Framework**: React (Create React App) + React Router
+- **Deployed to**: Vercel (auto-deploy on push to `main`)
+- **State**: `src/lib/context.jsx` — AppContext holds all DB hooks + `refreshAll()`
+- **Auto-refresh**: `src/App.jsx` calls `refreshAll()` on every route navigation
+- **DB hooks**: `src/lib/hooks.js` — `useSupabaseData(table, { filterByUser })`
+
+### filterByUser rules
+- `filterByUser: true` (default) — for per-user tables like `cost_settings`
+- `filterByUser: false` — for all shared org-wide tables (products, origins, roasts, operators, employees, schedules, marketing, packing_logs, etc.)
+- **Never add `filterByUser: true` to a shared business table** — it breaks multi-user access
 
 ---
 
@@ -39,18 +65,10 @@ There are exactly 3 Telegram bots. Each bot has one dedicated Supabase Edge Func
 | `TELEGRAM_CHAT_ID` | telegram-bot (group chat ID) |
 | `COFFEEFLOW_USER_ID` | all functions |
 | `ANTHROPIC_API_KEY` | coffee-bot, telegram-bot |
+| `CLERK_SECRET_KEY` | clerk-user-lookup |
 | `SUPABASE_SERVICE_ROLE_KEY` | all functions (auto-injected) |
 
-**Important**: Use the JWT-format service role key (starts with `eyJ`), not the `sb_secret_*` format — the new format does not work with PostgREST role assignment and will cause permission errors on UPDATE/INSERT.
-
----
-
-## Frontend (React + Vite)
-
-- **Framework**: React with React Router
-- **State**: AppContext in `src/lib/context.jsx` — holds all DB hooks + `refreshAll()`
-- **Auto-refresh**: `src/App.jsx` calls `refreshAll()` on every route navigation
-- **Security**: `src/lib/hooks.js` — all `fetchData`, `update`, `remove` filter by `user_id`
+**Critical**: Use the JWT-format service role key (starts with `eyJ`). The `sb_secret_*` format breaks PostgREST UPDATE/INSERT.
 
 ---
 
@@ -60,22 +78,39 @@ There are exactly 3 Telegram bots. Each bot has one dedicated Supabase Edge Func
 # Deploy a single function
 /opt/homebrew/Cellar/supabase/2.75.0/bin/supabase functions deploy <function-name>
 
-# Set a secret
-/opt/homebrew/Cellar/supabase/2.75.0/bin/supabase secrets set KEY=value
-
-# Disable JWT verification (required for Telegram webhooks — do via Management API)
+# After EVERY deploy — re-patch verify_jwt (deploy resets it to true)
 curl -X PATCH "https://api.supabase.com/v1/projects/ytydgldyeygpzmlxvpvb/functions/<slug>" \
   -H "Authorization: Bearer <personal_access_token>" \
   -H "Content-Type: application/json" \
   -d '{"verify_jwt": false}'
 ```
 
-All 3 edge functions have `verify_jwt: false` — Telegram does not send JWTs.
+Functions with `verify_jwt: false` (Telegram webhooks don't send JWTs):
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`
+
+---
+
+## Clerk User Lookup
+
+- Function: `clerk-user-lookup` (edge function, `verify_jwt: false`)
+- Use `email_address=` (not `email_address[]=`) in the Clerk API query — brackets format is broken
+- `CLERK_SECRET_KEY` must be a valid secret key from the Clerk dashboard (`sk_live_` or `sk_test_`)
+
+---
+
+## Database — Key Decisions
+
+- **user_roles**: Stores team member roles (`admin` / `employee`). Grants exist for `anon` role. RLS policy: allow all for anon + authenticated.
+- **cost_settings**: Per-user. Always filter by `user_id`. One row per user.
+- **All other tables**: Org-wide shared data. Do NOT filter by `user_id` on reads.
+- **get_role_for_user(p_user_id)**: SECURITY DEFINER RPC — safe to call with anon key. Returns `admin` or `employee`.
 
 ---
 
 ## Known Issues & Decisions
 
-- **`sb_secret_*` key format**: Does NOT work for server-side Supabase clients that need UPDATE/INSERT. Always use the `eyJ...` JWT format service role key.
-- **One webhook per bot**: Each bot token supports exactly one webhook URL. Do not try to share a webhook between functions.
-- **Teammate sync**: If your local branch is behind, run `git fetch origin && git reset --hard origin/main`. Do not force-push main without coordinating first.
+- **`sb_secret_*` key format**: Breaks PostgREST role assignment → UPDATE/INSERT fail. Always use `eyJ...` JWT format.
+- **verify_jwt resets on deploy**: Must re-PATCH after every function deploy. `config.toml` per-function doesn't persist on cloud deploys.
+- **One webhook per bot**: Each bot token supports exactly one webhook URL.
+- **Clerk email lookup**: Use `email_address=` not `email_address[]=` — bracket format returns wrong user.
+- **Teammate sync**: `git fetch origin && git reset --hard origin/main` before starting work.
