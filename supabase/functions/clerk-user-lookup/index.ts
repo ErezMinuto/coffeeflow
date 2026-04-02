@@ -69,14 +69,16 @@ serve(async (req) => {
   try {
     const body = await req.json();
 
-    // ── get-role: return the authenticated user's role from user_roles ────────
-    // Uses service role key → bypasses RLS entirely. Safe because we already
-    // verified the Clerk JWT above and know exactly who userId is.
+    // ── get-role: return the requesting user's role from user_roles ──────────
     if (body.action === "get-role") {
+      const uid = body.user_id;
+      if (!uid) return new Response(JSON.stringify({ error: "user_id required" }), {
+        status: 400, headers: { ...CORS, "Content-Type": "application/json" },
+      });
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
+        .eq("user_id", uid)
         .single();
       const role = data?.role ?? "employee";
       return new Response(JSON.stringify({ role }), {

@@ -202,17 +202,21 @@ async function handleWebhook(req: Request) {
   const telegramId = message.from?.id;
   const firstName  = message.from?.first_name ?? "";
 
+  console.log(`webhook: chatType=${chatType} chatId=${chatId} telegramId=${telegramId} text="${text}"`);
+
   // Allow private chats for availability, only allow our group for registration
   const isPrivate = chatType === "private";
-  if (!isPrivate && chatId !== GROUP_ID) return new Response("ok");
+  if (!isPrivate && chatId !== GROUP_ID) {
+    console.log(`webhook: ignored — not private and not group (GROUP_ID=${GROUP_ID})`);
+    return new Response("ok");
+  }
   if (text.startsWith("/")) return new Response("ok");
 
   // If message contains a phone number pattern, treat as name registration
   const phonePattern = /05\d[\d\-]{7,8}/;
   const hasPhone = phonePattern.test(text);
-  const result = hasPhone
-    ? await classifyMessage(text)
-    : await classifyMessage(text);
+  const result = await classifyMessage(text);
+  console.log(`webhook: claude classified as type=${result.type}`, JSON.stringify(result));
 
   // Fallback: if Claude returned "other" but message has phone → force name classification
   const finalResult = (result.type === "other" && hasPhone)
@@ -273,15 +277,18 @@ async function handleWebhook(req: Request) {
   if (finalResult.type === "availability") {
     const result = finalResult;
     // Find employee by telegram_id
-    const { data: empRows } = await supabase
+    const { data: empRows, error: empErr } = await supabase
       .from("employees")
       .select("*")
       .eq("telegram_id", telegramId)
       .eq("active", true)
       .limit(1);
 
+    console.log(`availability: lookup telegram_id=${telegramId} active=true → found=${empRows?.length ?? 0}`, empErr ?? "");
+
     const emp = empRows?.[0];
     if (!emp) {
+      console.log(`availability: employee not found for telegram_id=${telegramId}`);
       await send(chatId,
         `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`
       );
@@ -290,6 +297,7 @@ async function handleWebhook(req: Request) {
 
     const week = nextSunday();
     const days = result.days!;
+    console.log(`availability: saving for ${emp.name} week=${week} days=`, JSON.stringify(days));
 
     const { data: existing } = await supabase
       .from("availability_submissions")
@@ -298,15 +306,25 @@ async function handleWebhook(req: Request) {
       .eq("week_start", week)
       .limit(1);
 
+    let saveError = null;
     if (existing?.[0]) {
-      await supabase.from("availability_submissions")
+      const { error } = await supabase.from("availability_submissions")
         .update({ days, submitted_at: new Date().toISOString() })
         .eq("id", existing[0].id);
+      saveError = error;
     } else {
-      await supabase.from("availability_submissions")
+      const { error } = await supabase.from("availability_submissions")
         .insert({ employee_id: emp.id, week_start: week, days });
+      saveError = error;
     }
 
+    if (saveError) {
+      console.error(`availability: DB save error for ${emp.name}:`, saveError);
+      await send(chatId, `❌ שגיאה בשמירת הזמינות. נסה שוב מאוחר יותר.`);
+      return new Response("ok");
+    }
+
+    console.log(`availability: saved successfully for ${emp.name}`);
     const entries = Object.entries(days);
     if (entries.length === 0) {
       await send(chatId, `✅ נרשם — לא יכול השבוע הבא`);
