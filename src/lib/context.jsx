@@ -79,12 +79,12 @@ export const AppProvider = ({ children }) => {
   const operatorsDb              = useSupabaseData('operators');
   const roastProfilesDb           = useSupabaseData('roast_profiles');
   const roastProfileIngredientsDb = useSupabaseData('roast_profile_ingredients');
-  const roastComponentsDb         = useSupabaseData('roast_components');
+  const roastComponentsDb         = useSupabaseData('roast_components',         { filterByUser: false });
   const waitingCustomersDb        = useSupabaseData('waiting_customers');
   const employeesDb               = useSupabaseData('employees');
-  const availabilityDb            = useSupabaseData('availability_submissions');
+  const availabilityDb            = useSupabaseData('availability_submissions', { filterByUser: false });
   const schedulesDb               = useSupabaseData('schedules');
-  const assignmentsDb             = useSupabaseData('schedule_assignments');
+  const assignmentsDb             = useSupabaseData('schedule_assignments',     { filterByUser: false });
   const marketingContactsDb       = useSupabaseData('marketing_contacts');
   const campaignsDb               = useSupabaseData('campaigns');
   const packingLogsDb             = useSupabaseData('packing_logs');

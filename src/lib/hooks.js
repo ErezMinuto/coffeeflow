@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 import { useUser } from '@clerk/clerk-react';
 
 // Hook לטעינת נתונים מטבלה
-export const useSupabaseData = (table) => {
+export const useSupabaseData = (table, { filterByUser = true } = {}) => {
   const { user } = useUser();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +21,8 @@ export const useSupabaseData = (table) => {
     // Subscribe to realtime changes
     const subscription = supabase
       .channel(`${table}_changes`)
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: table, filter: `user_id=eq.${user.id}` },
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: table, ...(filterByUser ? { filter: `user_id=eq.${user.id}` } : {}) },
         (payload) => {
           console.log('Change received!', payload);
           fetchData();
@@ -43,10 +43,9 @@ export const useSupabaseData = (table) => {
       let allRows = [];
       let from = 0;
       while (true) {
-        const { data: result, error } = await supabase
-          .from(table)
-          .select('*')
-          .eq('user_id', user.id)
+        let query = supabase.from(table).select('*');
+        if (filterByUser) query = query.eq('user_id', user.id);
+        const { data: result, error } = await query
           .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
 
