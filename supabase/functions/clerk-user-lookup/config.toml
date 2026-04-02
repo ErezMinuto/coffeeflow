@@ -1,0 +1,2 @@
+[functions.clerk-user-lookup]
+verify_jwt = false
