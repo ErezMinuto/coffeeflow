@@ -334,6 +334,7 @@ async function handleWebhook(req: Request) {
       ).join(", ");
       await send(chatId, `✅ נרשם! הימים שלך: <b>${list}</b>`);
     }
+    return new Response("ok");
   }
 
   return new Response("ok");

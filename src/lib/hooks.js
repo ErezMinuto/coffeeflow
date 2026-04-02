@@ -46,6 +46,7 @@ export const useSupabaseData = (table) => {
         const { data: result, error } = await supabase
           .from(table)
           .select('*')
+          .eq('user_id', user.id)
           .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
 
@@ -86,6 +87,7 @@ export const useSupabaseData = (table) => {
         .from(table)
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -103,6 +105,7 @@ export const useSupabaseData = (table) => {
         .from(table)
         .delete()
         .eq('id', id)
+        .eq('user_id', user.id)
 
       if (error) throw error;
     } catch (err) {

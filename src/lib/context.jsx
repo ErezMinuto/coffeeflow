@@ -123,6 +123,28 @@ export const AppProvider = ({ children }) => {
       data.roastProfiles, data.roastProfileIngredients
     );
 
+  const refreshAll = useCallback(() => {
+    originsDb.refresh();
+    productsDb.refresh();
+    roastsDb.refresh();
+    operatorsDb.refresh();
+    roastProfilesDb.refresh();
+    roastProfileIngredientsDb.refresh();
+    roastComponentsDb.refresh();
+    waitingCustomersDb.refresh();
+    employeesDb.refresh();
+    availabilityDb.refresh();
+    schedulesDb.refresh();
+    assignmentsDb.refresh();
+    marketingContactsDb.refresh();
+    campaignsDb.refresh();
+    packingLogsDb.refresh();
+  }, [
+    originsDb, productsDb, roastsDb, operatorsDb,
+    roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
+    employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb,
+  ]);
+
   return (
     <AppContext.Provider value={{
       user,
@@ -133,7 +155,8 @@ export const AppProvider = ({ children }) => {
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
-      calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss
+      calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,
+      refreshAll,
     }}>
       {children}
     </AppContext.Provider>

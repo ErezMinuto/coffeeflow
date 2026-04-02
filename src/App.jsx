@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './App.css';
 import { SignIn, useUser } from '@clerk/clerk-react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import { AppProvider, useApp } from './lib/context';
 import Navigation              from './components/shared/Navigation';
@@ -27,7 +27,18 @@ function AdminRoute({ children }) {
 }
 
 function AppContent() {
-  const { toasts } = useApp();
+  const { toasts, refreshAll } = useApp();
+  const location = useLocation();
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    // Skip the very first mount — data already loaded by context
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    refreshAll();
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
