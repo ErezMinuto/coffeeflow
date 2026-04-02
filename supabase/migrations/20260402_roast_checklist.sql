@@ -11,8 +11,21 @@ CREATE TABLE IF NOT EXISTS roast_checklist_templates (
 
 ALTER TABLE roast_checklist_templates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users manage own checklist templates"
-  ON roast_checklist_templates
-  FOR ALL
-  USING  (user_id = (auth.jwt() ->> 'sub'))
-  WITH CHECK (user_id = (auth.jwt() ->> 'sub'));
+-- All authenticated users can read templates (shared team data)
+CREATE POLICY "auth_select" ON roast_checklist_templates
+  FOR SELECT TO authenticated
+  USING (TRUE);
+
+-- Only the owner can create/edit/delete
+CREATE POLICY "auth_insert" ON roast_checklist_templates
+  FOR INSERT TO authenticated
+  WITH CHECK ((auth.jwt() ->> 'sub') = user_id);
+
+CREATE POLICY "auth_update" ON roast_checklist_templates
+  FOR UPDATE TO authenticated
+  USING  ((auth.jwt() ->> 'sub') = user_id)
+  WITH CHECK ((auth.jwt() ->> 'sub') = user_id);
+
+CREATE POLICY "auth_delete" ON roast_checklist_templates
+  FOR DELETE TO authenticated
+  USING ((auth.jwt() ->> 'sub') = user_id);
