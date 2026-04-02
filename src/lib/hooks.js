@@ -138,6 +138,7 @@ export const useCostSettings = () => {
       const { data, error } = await supabase
         .from('cost_settings')
         .select('*')
+        .eq('user_id', user.id)
         .single();
 
       if (error && error.code === 'PGRST116') {
@@ -180,6 +181,7 @@ export const useCostSettings = () => {
       const { data, error } = await supabase
         .from('cost_settings')
         .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
         .select()
         .single();
 
