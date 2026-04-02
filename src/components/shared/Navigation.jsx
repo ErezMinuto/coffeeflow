@@ -125,6 +125,8 @@ function NavDropdown({ item, badges }) {
 
 export default function Navigation() {
   const { data, isAdmin } = useApp();
+  const { user } = useUser();
+  const isSagie = user?.primaryEmailAddress?.emailAddress === 'sagieelbaz@gmail.com';
 
   const pendingTasks = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
   const pendingEmployees = (data.employees || []).filter(e => e.user_id === 'pending').length;
@@ -134,7 +136,10 @@ export default function Navigation() {
   if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, color: '#F59E0B' };
 
   // Filter nav items based on role
-  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
+  const navItems = [
+    ...allNavItems.filter(item => !item.adminOnly || isAdmin),
+    ...(isSagie ? [{ path: '/checklist-editor', icon: '📋', label: 'Checklist Editor' }] : []),
+  ];
 
   return (
     <nav className="navbar">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
@@ -31,6 +32,27 @@ export default function Roasting() {
   const [endDate,       setEndDate]       = useState('');
   const [displayLimit,  setDisplayLimit]  = useState(20);
   const [selectedRoasts, setSelectedRoasts] = useState([]);
+
+  const navigate = useNavigate();
+
+  const startChecklist = () => {
+    const profileName = formMode === 'profile'
+      ? data.roastProfiles.find(p => p.id === parseInt(selectedProfileId))?.name || ''
+      : '';
+    const originName = formMode === 'origin'
+      ? data.origins.find(o => o.id === parseInt(selectedOrigin))?.name || ''
+      : '';
+    navigate('/checklist', {
+      state: {
+        prefillVars: {
+          weight:   greenWeight,
+          profile:  profileName || originName,
+          origin:   originName,
+          operator: selectedOperator,
+        }
+      }
+    });
+  };
 
   // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -410,9 +432,16 @@ export default function Roasting() {
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>🔥 רישום קלייה</h1>
-        <button onClick={() => setView('list')} className="btn-small" style={{ background: '#6F4E37', color: 'white' }}>
-          📋 רשימת קלייה
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {data.roastChecklistTemplates?.length > 0 && (
+            <button onClick={startChecklist} className="btn-small" style={{ background: '#3D4A2E', color: 'white' }}>
+              ✅ צ'קליסט קלייה
+            </button>
+          )}
+          <button onClick={() => setView('list')} className="btn-small" style={{ background: '#6F4E37', color: 'white' }}>
+            📋 רשימת קלייה
+          </button>
+        </div>
       </div>
 
       {/* Edit form */}

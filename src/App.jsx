@@ -16,6 +16,8 @@ import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
 import Marketing               from './components/marketing/Marketing';
 import AIAnalyst               from './components/analyst/AIAnalyst';
+import ChecklistEditor         from './components/checklist/ChecklistEditor';
+import RoastChecklist          from './components/checklist/RoastChecklist';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -23,6 +25,14 @@ function AdminRoute({ children }) {
   const { isAdmin, roleLoading } = useApp();
   if (roleLoading) return null;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+function SagieOnlyRoute({ children }) {
+  const { user, roleLoading } = useApp();
+  if (roleLoading) return null;
+  const email = user?.primaryEmailAddress?.emailAddress;
+  if (email !== 'sagieelbaz@gmail.com') return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -61,8 +71,10 @@ function AppContent() {
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
               <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
               <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
-              <Route path="/settings"   element={<AdminRoute><Settings /></AdminRoute>} />
-              <Route path="*"           element={<Navigate to="/dashboard" replace />} />
+              <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="/checklist"        element={<RoastChecklist />} />
+              <Route path="/checklist-editor" element={<SagieOnlyRoute><ChecklistEditor /></SagieOnlyRoute>} />
+              <Route path="*"                 element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </div>
         } />
