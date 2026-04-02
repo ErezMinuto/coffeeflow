@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "puppeteer": "^21.6.1",
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.68.0",
     "node-cron": "^3.0.3"
   },
   "engines": {
