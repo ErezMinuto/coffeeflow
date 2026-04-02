@@ -1352,15 +1352,23 @@ async function handleSyncResendContacts(userId: string) {
   }
 
   // 3. Delete contacts that exist in CoffeeFlow but not in Resend (Resend is source of truth)
-  // Fetch ALL contacts across all user_ids — frontend shows all contacts regardless of user_id
+  // Paginate through ALL contacts — Supabase default limit is 1000 rows
   const resendEmailSet = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()).filter(Boolean));
-  const { data: dbContacts } = await supabase
-    .from("marketing_contacts")
-    .select("email");
+  let allDbEmails: string[] = [];
+  let dbFrom = 0;
+  const DB_PAGE = 1000;
+  while (true) {
+    const { data: page } = await supabase
+      .from("marketing_contacts")
+      .select("email")
+      .range(dbFrom, dbFrom + DB_PAGE - 1);
+    if (!page || page.length === 0) break;
+    allDbEmails = allDbEmails.concat(page.map((r: any) => (r.email || "").toLowerCase().trim()).filter(Boolean));
+    if (page.length < DB_PAGE) break;
+    dbFrom += DB_PAGE;
+  }
 
-  const toDelete = (dbContacts || [])
-    .map((r: any) => (r.email || "").toLowerCase().trim())
-    .filter(email => email && !resendEmailSet.has(email));
+  const toDelete = allDbEmails.filter(email => !resendEmailSet.has(email));
 
   let deleted = 0;
   const DELETE_CHUNK = 200;
