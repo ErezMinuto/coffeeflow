@@ -1,0 +1,2 @@
+[functions.employee-bot]
+verify_jwt = false

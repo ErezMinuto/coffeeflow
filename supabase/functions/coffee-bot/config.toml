@@ -1,0 +1,2 @@
+[functions.coffee-bot]
+verify_jwt = false
