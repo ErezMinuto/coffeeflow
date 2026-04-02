@@ -203,10 +203,11 @@ function RolesSection({ user, showToast }) {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || 'משתמש לא נמצא');
 
-      await supabase.from('user_roles').upsert(
+      const { error: upsertError } = await supabase.from('user_roles').upsert(
         { user_id: data.user_id, email: data.email, full_name: data.full_name, role: newRoleRole },
         { onConflict: 'user_id', ignoreDuplicates: false }
       );
+      if (upsertError) throw new Error(upsertError.message);
       setNewEmail('');
       fetchRoles();
       showToast(`✅ ${data.full_name || data.email} נוסף כ${newRoleRole === 'admin' ? 'מנהל' : 'עובד'}!`);
