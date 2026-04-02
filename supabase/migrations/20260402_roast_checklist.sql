@@ -29,3 +29,6 @@ CREATE POLICY "auth_update" ON roast_checklist_templates
 CREATE POLICY "auth_delete" ON roast_checklist_templates
   FOR DELETE TO authenticated
   USING ((auth.jwt() ->> 'sub') = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON roast_checklist_templates TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE roast_checklist_templates_id_seq TO authenticated;
