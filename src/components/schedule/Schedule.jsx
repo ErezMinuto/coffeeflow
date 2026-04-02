@@ -230,6 +230,7 @@ export default function Schedule() {
   const [publishing, setPublishing]   = useState(false);
   const [generating, setGenerating]   = useState(false);
   const [exporting,  setExporting]    = useState(false);
+  const [reminding,  setReminding]    = useState(false);
   const genProgress = useAnimatedProgress(generating, 20);
   const [sheetsUrl,  setSheetsUrl]    = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -388,6 +389,25 @@ export default function Schedule() {
       showToast('שגיאה ביצירת הסידור', 'error');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // ── Send Availability Reminder ───────────────────────────────────────────────
+
+  const sendReminder = async () => {
+    setReminding(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('employee-bot', {
+        body: {},
+        headers: { 'x-action': 'remind' },
+      });
+      if (error) throw error;
+      showToast(`📩 תזכורת נשלחה ל-${result?.sent ?? 0} עובדים`);
+    } catch (err) {
+      console.error('Remind error:', err);
+      showToast('שגיאה בשליחת תזכורת', 'error');
+    } finally {
+      setReminding(false);
     }
   };
 
@@ -705,6 +725,10 @@ export default function Schedule() {
                 <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }} />
               </div>
 
+
+              <button onClick={sendReminder} disabled={reminding} style={{ background: reminding ? '#ccc' : '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: reminding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
+                {reminding ? '⏳ שולח תזכורת...' : '📩 שלח תזכורת זמינות'}
+              </button>
 
               <button onClick={generateSchedule} disabled={generating} style={{ background: generating ? '#ccc' : 'linear-gradient(135deg, #6F4E37, #8B6347)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: generating ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
                 {generating ? '⏳ מייצר סידור...' : '✨ צור סידור עם AI'}
