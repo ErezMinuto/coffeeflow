@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
+import { ProgressBar, useAnimatedProgress } from '../shared/ProgressBar';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -229,6 +230,7 @@ export default function Schedule() {
   const [publishing, setPublishing]   = useState(false);
   const [generating, setGenerating]   = useState(false);
   const [exporting,  setExporting]    = useState(false);
+  const genProgress = useAnimatedProgress(generating, 20);
   const [sheetsUrl,  setSheetsUrl]    = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmp, setNewEmp]           = useState({ name: '', role: 'general', max_days: 5, phone: '', barista_skills: false, end_time: '', barista_level: 1, roaster_level: 1 });
@@ -379,6 +381,7 @@ export default function Schedule() {
       const sid = schedRow?.id;
       if (sid) { setScheduleId(sid); await saveSchedule(json.schedule, sid); }
       setSchedule(json.schedule);
+      genProgress.complete();
       showToast('סידור עבודה נוצר ונשמר בהצלחה ✨');
     } catch (err) {
       console.error('Generate error:', err);
@@ -721,6 +724,12 @@ export default function Schedule() {
                 </a>
               )}
             </div>
+
+            {generating && (
+              <div style={{ marginTop: '1rem' }}>
+                <ProgressBar progress={genProgress.progress} label="מייצר סידור עבודה עם AI..." color="#6F4E37" />
+              </div>
+            )}
           </div>
 
           {/* Day type markers */}

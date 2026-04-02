@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../../lib/context';
 import { callCampaignFunction } from '../../lib/brevo';
+import { ProgressBar, useAnimatedProgress } from '../shared/ProgressBar';
 // Email HTML is built server-side (edge function) with banner images
 import { supabase } from '../../lib/supabase';
 
@@ -79,6 +80,9 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   const [contactSearch, setContactSearch] = useState('');
   const [selectedContacts, setSelectedContacts] = useState([]);  // [{email, name}]
   const [sendMode, setSendMode]          = useState('all'); // 'all' | 'selected'
+  const genProgress   = useAnimatedProgress(step === 'generating', 18);
+  const ideasProgress = useAnimatedProgress(ideasLoading, 8);
+  const syncProgress  = useAnimatedProgress(syncing, 12);
 
   const optedInCount = (data.marketingContacts || []).filter(c => c.opted_in).length;
 
@@ -167,6 +171,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
         pinnedProductIds: productsToUse.map(p => p.woo_id),
       });
       if (!result.ok) throw new Error(result.error || 'Generation failed');
+      genProgress.complete();
       setDraft(result.campaign);
       setEditSubject(result.campaign.subject);
       setEditBody(result.campaign.body);
@@ -189,7 +194,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
       });
 
       if (!result.ok) throw new Error(result.error || 'Generation failed');
-
+      genProgress.complete();
       setDraft(result.campaign);
       setEditSubject(result.campaign.subject);
       setEditBody(result.campaign.body);
@@ -339,6 +344,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
       const result = await callCampaignFunction(supabase, 'sync-woo-products', {
         userId: user.id,
       });
+      syncProgress.complete();
       showToast(`✅ סונכרנו ${result.synced} מוצרים מ-WooCommerce`);
     } catch (err) {
       showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
@@ -481,6 +487,11 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
             </button>
           </div>
         </div>
+        {ideasLoading && (
+          <div style={{ marginBottom: 16 }}>
+            <ProgressBar progress={ideasProgress.progress} label="מחפש רעיונות..." />
+          </div>
+        )}
 
         {hint.trim() && (
           <div style={{
@@ -548,10 +559,13 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   if (step === 'generating') {
     return (
       <div className="section">
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px 20px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 2s linear infinite' }}>🤖</div>
-          <h2 style={{ color: '#3D4A2E' }}>יוצר את הקמפיין שלך...</h2>
-          <p style={{ color: '#666' }}>מסנכרן מוצרים, יוצר תוכן בעברית, בונה עיצוב</p>
+          <h2 style={{ color: '#3D4A2E', marginBottom: '6px' }}>יוצר את הקמפיין שלך...</h2>
+          <p style={{ color: '#666', marginBottom: '28px' }}>מסנכרן מוצרים, יוצר תוכן בעברית, בונה עיצוב</p>
+          <div style={{ maxWidth: 400, margin: '0 auto' }}>
+            <ProgressBar progress={genProgress.progress} label="יצירת קמפיין" />
+          </div>
           <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
@@ -1031,6 +1045,8 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
   const [contactFilter, setContactFilter] = useState('all');
   const [syncingResend, setSyncingResend] = useState(false);
   const [pushingResend, setPushingResend] = useState(false);
+  const syncResendProgress = useAnimatedProgress(syncingResend, 20);
+  const pushResendProgress = useAnimatedProgress(pushingResend, 30);
   const [importingFlashy, setImportingFlashy] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1053,6 +1069,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
     try {
       const result = await callCampaignFunction(supabase, 'sync-resend-contacts', { userId: user.id });
       const removedMsg = result.removed > 0 ? ` (הוסרו ${result.removed} שאינם ב-Resend)` : '';
+      syncResendProgress.complete();
       showToast(`✅ סונכרנו ${result.synced} אנשי קשר מ-Resend${removedMsg}`);
     } catch (err) {
       showToast(`❌ שגיאה בסנכרון: ${err.message}`, 'error');
@@ -1076,6 +1093,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
         if (result.done || !result.total) break;
       }
       const failMsg = totalFailed > 0 ? ` (${totalFailed} נכשלו)` : '';
+      pushResendProgress.complete();
       showToast(`✅ נדחפו ${totalPushed} אנשי קשר ל-Resend${failMsg}`);
     } catch (err) {
       showToast(`❌ שגיאה בדחיפה ל-Resend: ${err.message}`, 'error');
@@ -1271,7 +1289,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
         <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
           {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
         </button>
@@ -1294,6 +1312,18 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
           📋 ניהול אנשי קשר ב-Resend
         </a>
       </div>
+
+      {/* Progress bars for long-running contact ops */}
+      {syncingResend && (
+        <div style={{ marginBottom: '1rem' }}>
+          <ProgressBar progress={syncResendProgress.progress} label="מסנכרן אנשי קשר מ-Resend..." color="#0369A1" />
+        </div>
+      )}
+      {pushingResend && (
+        <div style={{ marginBottom: '1rem' }}>
+          <ProgressBar progress={pushResendProgress.progress} label="דוחף אנשי קשר ל-Resend..." color="#065F46" />
+        </div>
+      )}
 
       {/* Search */}
       <div style={{ marginBottom: '1rem' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { ProgressBar, useAnimatedProgress } from '../shared/ProgressBar';
 
 // ── Simple markdown renderer (no external lib needed) ────────────────────────
 function MarkdownBubble({ text }) {
@@ -193,6 +194,7 @@ export default function AIAnalyst() {
   const [messages, setMessages]         = useState([]);
   const [input, setInput]               = useState('');
   const [loading, setLoading]           = useState(false);
+  const aiProgress = useAnimatedProgress(loading, 12);
   const [dataLoading, setDataLoading]   = useState(true);
   const [postsData, setPostsData]       = useState([]);
   const [metaAds, setMetaAds]           = useState([]);
@@ -336,6 +338,7 @@ ${dataContext}
       if (error) throw error;
 
       const reply = data?.content?.[0]?.text || data?.reply || 'שגיאה בקבלת תשובה';
+      aiProgress.complete();
       setMessages(prev => [...prev, { type: 'assistant', text: reply }]);
       setConvHistory(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
@@ -455,10 +458,8 @@ ${dataContext}
               ))}
 
               {loading && (
-                <div className="analyst-msg" style={S.typing}>
-                  <div className="typing-dot-1" style={S.typingDot} />
-                  <div className="typing-dot-2" style={S.typingDot} />
-                  <div className="typing-dot-3" style={S.typingDot} />
+                <div style={{ padding: '8px 0 4px' }}>
+                  <ProgressBar progress={aiProgress.progress} label="מנתח נתונים..." color="#4A7C59" />
                 </div>
               )}
 
