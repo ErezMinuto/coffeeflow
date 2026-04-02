@@ -89,7 +89,7 @@ export const AppProvider = ({ children }) => {
   const marketingContactsDb       = useSupabaseData('marketing_contacts',        { filterByUser: false });
   const campaignsDb               = useSupabaseData('campaigns',                 { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
-  const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates');
+  const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates', { filterByUser: false });
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
   const data = {
