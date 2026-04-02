@@ -47,14 +47,14 @@ const DAY_HE: Record<string, string> = {
 
 function nextSunday(): string {
   const d = new Date();
-  const day = d.getDay();
+  const dow = d.getDay();
   // If today is Sunday, use today (current week). Otherwise jump to next Sunday.
-  const diff = day === 0 ? 0 : 7 - day;
+  const diff = dow === 0 ? 0 : 7 - dow;
   d.setDate(d.getDate() + diff);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 // ── Claude: classify message ──────────────────────────────────────────────────
