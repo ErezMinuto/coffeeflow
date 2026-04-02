@@ -1351,8 +1351,32 @@ async function handleSyncResendContacts(userId: string) {
     if (!unsubErr) unsubscribed = unsubscribedEmails.length;
   }
 
-  console.log(`Sync done: synced=${synced}, unsubscribed=${unsubscribed}, resend_total=${allContacts.length}`);
-  return ok({ ok: true, synced, unsubscribed, total: allContacts.length });
+  // 3. Delete contacts that exist in CoffeeFlow but not in Resend (Resend is source of truth)
+  // Fetch all current emails in DB for this user, then delete the ones not in Resend
+  const resendEmailSet = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()).filter(Boolean));
+  const { data: dbContacts } = await supabase
+    .from("marketing_contacts")
+    .select("email")
+    .eq("user_id", userId);
+
+  const toDelete = (dbContacts || [])
+    .map((r: any) => (r.email || "").toLowerCase().trim())
+    .filter(email => email && !resendEmailSet.has(email));
+
+  let deleted = 0;
+  const DELETE_CHUNK = 200;
+  for (let i = 0; i < toDelete.length; i += DELETE_CHUNK) {
+    const chunk = toDelete.slice(i, i + DELETE_CHUNK);
+    const { error: delErr, count } = await supabase
+      .from("marketing_contacts")
+      .delete({ count: "exact" })
+      .eq("user_id", userId)
+      .in("email", chunk);
+    if (!delErr && count) deleted += count;
+  }
+
+  console.log(`Sync done: synced=${synced}, unsubscribed=${unsubscribed}, deleted=${deleted}, resend_total=${allContacts.length}`);
+  return ok({ ok: true, synced, unsubscribed, deleted, total: allContacts.length });
 }
 
 // ── Push Contacts to Resend ──────────────────────────────────────────────────
