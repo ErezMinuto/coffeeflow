@@ -82,13 +82,11 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
 
   const update = async (id, updates) => {
     try {
-      const { data: result, error } = await supabase
-        .from(table)
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+      let query = supabase.from(table).update(updates).eq('id', id);
+      // Only filter by user_id for per-user tables (e.g. cost_settings).
+      // Shared org-wide tables (filterByUser: false) must be updatable by any team member.
+      if (filterByUser) query = query.eq('user_id', user.id);
+      const { data: result, error } = await query.select().single();
 
       if (error) throw error;
       return result;
@@ -100,11 +98,11 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
 
   const remove = async (id) => {
     try {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
+      let query = supabase.from(table).delete().eq('id', id);
+      // Only filter by user_id for per-user tables (e.g. cost_settings).
+      // Shared org-wide tables (filterByUser: false) must be deletable by any team member.
+      if (filterByUser) query = query.eq('user_id', user.id);
+      const { error } = await query;
 
       if (error) throw error;
     } catch (err) {
