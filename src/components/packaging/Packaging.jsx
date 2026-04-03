@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
+import { supabase } from '../../lib/supabase';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,9 @@ export default function Packaging() {
   const [packProductId, setPackProductId] = useState('');
   const [packBags,      setPackBags]      = useState('');
   const [submitting,    setSubmitting]    = useState(false);
+  const [editingLogId,  setEditingLogId]  = useState(null);
+  const [editBags,      setEditBags]      = useState('');
+  const [correcting,    setCorrecting]    = useState(false);
 
   const selectedProduct = data.products.find(p => p.id === parseInt(packProductId));
   const bags            = parseInt(packBags) || 0;
@@ -98,6 +102,57 @@ export default function Packaging() {
       showToast('❌ שגיאה ברישום האריזה', 'error');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ── Correct an existing packing log ──────────────────────────────────────
+
+  const correctPacking = async (log, newBags) => {
+    const diff = newBags - log.bags_count;
+    if (diff === 0) { setEditingLogId(null); return; }
+
+    setCorrecting(true);
+    try {
+      // 1. Adjust roasted_stock for each ingredient by the delta
+      for (const d of log.roasted_deducted) {
+        const deltaKg = parseFloat((d.kg_per_bag * diff).toFixed(3));
+        const currentItem = d.type === 'origin'
+          ? data.origins.find(o => o.id === d.source_id)
+          : data.roastProfiles.find(p => p.id === d.source_id);
+        if (!currentItem) continue;
+        const newStock = parseFloat(((currentItem.roasted_stock || 0) - deltaKg).toFixed(3));
+        if (d.type === 'origin') await originsDb.update(d.source_id, { roasted_stock: newStock });
+        else                     await roastProfilesDb.update(d.source_id, { roasted_stock: newStock });
+      }
+
+      // 2. Adjust packed_stock on the product
+      const product = data.products.find(p => p.id === log.product_id);
+      if (product) {
+        await productsDb.update(log.product_id, {
+          packed_stock: Math.max(0, (product.packed_stock || 0) + diff)
+        });
+      }
+
+      // 3. Update the packing log record with corrected values
+      //    Use direct supabase (not hook) to avoid user_id filter —
+      //    logs from other users or the bot must also be correctable.
+      const updatedDeducted = log.roasted_deducted.map(d => ({
+        ...d,
+        kg: parseFloat((d.kg_per_bag * newBags).toFixed(3))
+      }));
+      const { error: logErr } = await supabase
+        .from('packing_logs')
+        .update({ bags_count: newBags, roasted_deducted: updatedDeducted })
+        .eq('id', log.id);
+      if (logErr) throw logErr;
+
+      setEditingLogId(null);
+      showToast(`✅ תוקן: ${log.product_name} — ${newBags} שקיות`);
+    } catch (err) {
+      console.error(err);
+      showToast('❌ שגיאה בתיקון הרישום', 'error');
+    } finally {
+      setCorrecting(false);
     }
   };
 
@@ -201,6 +256,119 @@ export default function Packaging() {
                   <div style={{ fontSize: '11px', color, marginTop: '6px', fontWeight: '500' }}>
                     {isEmpty ? '❌ אזל מהמלאי' : isLow ? `⚠️ מינימום: ${minStock}` : `✓ מינימום: ${minStock}`}
                   </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {/* Packing logs */}
+      <h3 style={{ margin: '28px 0 12px' }}>📋 היסטוריית אריזות</h3>
+
+      {data.packingLogs && data.packingLogs.length === 0 ? (
+        <div className="empty-state">אין רישומי אריזה עדיין.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {(data.packingLogs || []).slice().reverse().map(log => {
+            const isEditing = editingLogId === log.id;
+            return (
+              <div key={log.id} style={{
+                background: '#FAFAFA', border: '1px solid #E5E7EB',
+                borderRadius: '10px', padding: '14px 16px',
+                display: 'flex', alignItems: 'flex-start', gap: '12px'
+              }}>
+                {/* Log details */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', fontSize: '14px', color: '#111827', marginBottom: '4px' }}>
+                    {log.product_name}
+                  </div>
+
+                  {isEditing ? (
+                    /* ── Inline edit ── */
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                      <span style={{ fontSize: '13px', color: '#6B7280' }}>שקיות:</span>
+                      <input
+                        type="number" min="1"
+                        value={editBags}
+                        onChange={e => setEditBags(e.target.value)}
+                        style={{
+                          width: '80px', padding: '4px 8px', fontSize: '14px',
+                          border: '1.5px solid #059669', borderRadius: '6px',
+                          textAlign: 'center'
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          const n = parseInt(editBags);
+                          if (!n || n <= 0) { showToast('⚠️ כמות לא תקינה', 'warning'); return; }
+                          correctPacking(log, n);
+                        }}
+                        disabled={correcting}
+                        style={{
+                          padding: '4px 12px', fontSize: '13px', cursor: 'pointer',
+                          background: '#059669', color: '#fff', border: 'none',
+                          borderRadius: '6px', fontWeight: '600'
+                        }}
+                      >
+                        {correcting ? '⏳' : '✅ שמור'}
+                      </button>
+                      <button
+                        onClick={() => setEditingLogId(null)}
+                        disabled={correcting}
+                        style={{
+                          padding: '4px 10px', fontSize: '13px', cursor: 'pointer',
+                          background: '#F3F4F6', color: '#374151', border: '1px solid #D1D5DB',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        ביטול
+                      </button>
+                    </div>
+                  ) : (
+                    /* ── Normal view ── */
+                    <div style={{ fontSize: '13px', color: '#374151' }}>
+                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#059669' }}>
+                        {log.bags_count}
+                      </span>
+                      {' '}שקיות
+                      {log.reported_by && (
+                        <span style={{ color: '#9CA3AF', marginRight: '8px' }}>
+                          · {log.reported_by}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Deduction detail */}
+                  {!isEditing && log.roasted_deducted && log.roasted_deducted.length > 0 && (
+                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#6B7280' }}>
+                      {log.roasted_deducted.map((d, i) => (
+                        <span key={i} style={{ marginLeft: '8px' }}>
+                          ♻️ {d.name}: {d.kg?.toFixed(2)} ק"ג
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                    {new Date(log.packed_at).toLocaleString('he-IL')}
+                  </div>
+                </div>
+
+                {/* Edit button */}
+                {!isEditing && (
+                  <button
+                    title="תקן רישום"
+                    onClick={() => { setEditingLogId(log.id); setEditBags(String(log.bags_count)); }}
+                    style={{
+                      background: 'none', border: '1px solid #D1D5DB', borderRadius: '6px',
+                      padding: '5px 8px', cursor: 'pointer', fontSize: '15px', color: '#6B7280',
+                      flexShrink: 0, lineHeight: 1
+                    }}
+                  >
+                    ✏️
+                  </button>
                 )}
               </div>
             );
