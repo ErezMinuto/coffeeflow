@@ -33,24 +33,27 @@ async function generateAlertMessage(lowStockOrigins) {
     // Fallback simple message without Claude
     let message = '☕ *Minuto Coffee — Stock Alert*\n\n';
     for (const origin of lowStockOrigins) {
+      const roasted  = origin.roasted_stock ?? 0;
+      const stock    = origin.stock ?? 0;
       const daysLeft = origin.daily_average > 0
-        ? (origin.roasted_stock / origin.daily_average).toFixed(1)
+        ? (roasted / origin.daily_average).toFixed(1)
         : 'N/A';
       message += `⚠️ *${origin.name}*\n`;
-      message += `  Roasted: ${origin.roasted_stock.toFixed(2)} kg\n`;
+      message += `  Roasted: ${roasted.toFixed(2)} kg\n`;
       message += `  Daily avg: ${origin.daily_average} kg/day\n`;
       message += `  Days left: ${daysLeft}\n`;
-      message += `  Green stock: ${origin.stock.toFixed(1)} kg\n\n`;
+      message += `  Green stock: ${stock.toFixed(1)} kg\n\n`;
     }
     return message;
   }
 
   // Use Claude to generate smart alert
   const originsText = lowStockOrigins.map(o => {
-  const daysLeft = o.daily_average > 0
-    ? (o.stock / o.daily_average).toFixed(1)
-    : 'unknown';
-    return `- ${o.name}: ${o.stock.toFixed(2)}kg green stock, ${o.daily_average}kg/day average, ${daysLeft} days left`;
+    const stock    = o.stock ?? 0;
+    const daysLeft = o.daily_average > 0
+      ? (stock / o.daily_average).toFixed(1)
+      : 'unknown';
+    return `- ${o.name}: ${stock.toFixed(2)}kg green stock, ${o.daily_average}kg/day average, ${daysLeft} days left`;
   }).join('\n');
 
   const prompt = `You are a coffee roastery assistant for Minuto Coffee in Rehovot, Israel.
