@@ -19,29 +19,8 @@ export const setClerkTokenGetter = (fn) => {
 };
 
 /**
- * Custom fetch that injects the current Clerk JWT as Authorization header.
- * Supabase verifies the JWT with the shared JWT secret → user is `authenticated`
- * → RLS policies read auth.jwt() ->> 'sub' to identify the user.
- */
-const clerkFetch = async (input, init = {}) => {
-  if (_getClerkToken) {
-    try {
-      const token = await _getClerkToken({ template: 'supabase' });
-      if (token) {
-        init.headers = {
-          ...init.headers,
-          Authorization: `Bearer ${token}`,
-        };
-      }
-    } catch (_) {
-      // If token fetch fails, fall back to anon key (request continues)
-    }
-  }
-  return fetch(input, init);
-};
-
-/**
- * Supabase client with Clerk JWT injected on every request.
+ * Supabase client using the anon key.
+ * Security is enforced by RLS policies that require the anon key to be present.
  * Clerk is the sole auth provider — Supabase's own session management is disabled.
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -50,7 +29,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
     detectSessionInUrl: false,
   },
-  global: { fetch: clerkFetch },
 });
 
 // Legacy export kept for backwards compat — no longer used.
