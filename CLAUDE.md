@@ -16,10 +16,47 @@ All AI assistants working on this project MUST follow the rules below.
 
 ---
 
-## Supabase Project
+## Supabase Projects
 
-- **Project ID**: `ytydgldyeygpzmlxvpvb`
-- **URL**: `https://ytydgldyeygpzmlxvpvb.supabase.co`
+| Environment | Project ID | URL |
+|-------------|------------|-----|
+| **Production** | `ytydgldyeygpzmlxvpvb` | `https://ytydgldyeygpzmlxvpvb.supabase.co` |
+| **Dev** | *(set after project is created)* | *(set after project is created)* |
+
+> **Rule for AI assistants**: Always deploy to **prod** only when explicitly asked. Never run migrations against prod directly — always apply to dev first.
+
+---
+
+## Dev Environment
+
+### Architecture
+```
+main branch    →  Vercel PRODUCTION  →  Supabase PROD
+feature branch →  Vercel PREVIEW     →  Supabase DEV
+```
+
+### Local Setup (for each developer)
+1. Copy `.env.local.example` → `.env.local`
+2. Fill in the **dev** Supabase URL + anon key (get from project owner)
+3. Run `npm start` — app runs locally pointing at dev DB
+
+### First-time Dev DB Setup
+```bash
+export DEV_DB_URL="postgresql://postgres:<password>@db.<dev-project-id>.supabase.co:5432/postgres"
+./scripts/setup-dev-db.sh
+```
+This applies all migrations and seeds test data.
+
+### Vercel Preview Deployments
+- In Vercel → Project Settings → Environment Variables:
+  - `REACT_APP_SUPABASE_URL` + `REACT_APP_SUPABASE_ANON_KEY` set for **Preview** → dev project values
+  - Same vars set for **Production** → prod project values
+- Every feature branch pushed to GitHub auto-gets a preview URL hitting the dev DB
+
+### Seed Data
+- File: `supabase/seed.sql`
+- Contains: 6 origins, 3 roast profiles, 6 products, 3 employees
+- Replace `'DEV_USER_ID'` with actual Clerk user ID before running
 
 ---
 
