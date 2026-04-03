@@ -21,7 +21,7 @@ All AI assistants working on this project MUST follow the rules below.
 | Environment | Project ID | URL |
 |-------------|------------|-----|
 | **Production** | `ytydgldyeygpzmlxvpvb` | `https://ytydgldyeygpzmlxvpvb.supabase.co` |
-| **Dev** | *(set after project is created)* | *(set after project is created)* |
+| **Dev** | `emnijrlfiuwbddjahkzn` | `https://emnijrlfiuwbddjahkzn.supabase.co` |
 
 > **Rule for AI assistants**: Always deploy to **prod** only when explicitly asked. Never run migrations against prod directly — always apply to dev first.
 
