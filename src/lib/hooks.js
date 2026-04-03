@@ -89,6 +89,7 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
       const { data: result, error } = await query.select().single();
 
       if (error) throw error;
+      await fetchData(); // Refresh local state immediately after update
       return result;
     } catch (err) {
       console.error(`Error updating ${table}:`, err);
@@ -105,6 +106,7 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
       const { error } = await query;
 
       if (error) throw error;
+      await fetchData(); // Refresh local state immediately after delete
     } catch (err) {
       console.error(`Error deleting ${table}:`, err);
       throw err;

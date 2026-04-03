@@ -154,6 +154,14 @@ export default function Packaging() {
         .eq('id', log.id);
       if (logErr) throw logErr;
 
+      // Refresh all affected hooks so UI updates immediately without page reload
+      await Promise.all([
+        originsDb.refresh(),
+        roastProfilesDb.refresh(),
+        productsDb.refresh(),
+        packingLogsDb.refresh(),
+      ]);
+
       setEditingLogId(null);
       showToast(`✅ תוקן: ${log.product_name} — ${newBags} שקיות`);
     } catch (err) {
