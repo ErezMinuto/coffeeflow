@@ -114,23 +114,31 @@ export default function Packaging() {
     setCorrecting(true);
     try {
       // 1. Adjust roasted_stock for each ingredient by the delta
+      //    Use direct supabase (not hook) to avoid user_id filter on shared org tables.
       for (const d of log.roasted_deducted) {
         const deltaKg = parseFloat((d.kg_per_bag * diff).toFixed(3));
+        const table = d.type === 'origin' ? 'origins' : 'roast_profiles';
         const currentItem = d.type === 'origin'
           ? data.origins.find(o => o.id === d.source_id)
           : data.roastProfiles.find(p => p.id === d.source_id);
         if (!currentItem) continue;
         const newStock = parseFloat(((currentItem.roasted_stock || 0) - deltaKg).toFixed(3));
-        if (d.type === 'origin') await originsDb.update(d.source_id, { roasted_stock: newStock });
-        else                     await roastProfilesDb.update(d.source_id, { roasted_stock: newStock });
+        const { error: stockErr } = await supabase
+          .from(table)
+          .update({ roasted_stock: newStock })
+          .eq('id', d.source_id);
+        if (stockErr) throw stockErr;
       }
 
       // 2. Adjust packed_stock on the product
+      //    Use direct supabase to avoid user_id filter on shared org table.
       const product = data.products.find(p => p.id === log.product_id);
       if (product) {
-        await productsDb.update(log.product_id, {
-          packed_stock: Math.max(0, (product.packed_stock || 0) + diff)
-        });
+        const { error: prodErr } = await supabase
+          .from('products')
+          .update({ packed_stock: Math.max(0, (product.packed_stock || 0) + diff) })
+          .eq('id', log.product_id);
+        if (prodErr) throw prodErr;
       }
 
       // 3. Update the packing log record with corrected values
