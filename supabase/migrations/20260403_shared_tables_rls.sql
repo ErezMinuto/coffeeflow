@@ -1,13 +1,13 @@
 -- =============================================================================
 -- Fix RLS for shared org-wide tables
 --
--- The previous migration (20260402_clerk_jwt_rls.sql) applied strict per-user
--- policies to ALL tables, including shared org-wide ones. This means users
--- could only update/delete rows they personally created — breaking multi-user
--- workflows (roasting, packaging, stock management, etc.).
+-- Shared tables: any request carrying the anon key (or an authenticated Clerk
+-- JWT) may read and write all rows. This matches the original working design
+-- where the anon key acts as the org-level API key — without it you can't hit
+-- the API at all, so raw unauthenticated access is still blocked.
 --
--- Shared tables: any authenticated team member may read and write all rows.
--- Per-user tables (cost_settings): keep strict per-user policies.
+-- Per-user tables (cost_settings, user_roles): NOT touched here — keep their
+-- strict per-user policies.
 -- =============================================================================
 
 DO $$ DECLARE t TEXT;
@@ -26,23 +26,22 @@ BEGIN
       DROP POLICY IF EXISTS "auth_insert" ON %I;
       DROP POLICY IF EXISTS "auth_update" ON %I;
       DROP POLICY IF EXISTS "auth_delete" ON %I;
+      DROP POLICY IF EXISTS "anon_select" ON %I;
+      DROP POLICY IF EXISTS "anon_insert" ON %I;
+      DROP POLICY IF EXISTS "anon_update" ON %I;
+      DROP POLICY IF EXISTS "anon_delete" ON %I;
 
-      CREATE POLICY "auth_select" ON %I
-        FOR SELECT TO authenticated
-        USING (true);
+      CREATE POLICY "shared_select" ON %I
+        FOR SELECT TO anon, authenticated USING (true);
 
-      CREATE POLICY "auth_insert" ON %I
-        FOR INSERT TO authenticated
-        WITH CHECK (true);
+      CREATE POLICY "shared_insert" ON %I
+        FOR INSERT TO anon, authenticated WITH CHECK (true);
 
-      CREATE POLICY "auth_update" ON %I
-        FOR UPDATE TO authenticated
-        USING (true)
-        WITH CHECK (true);
+      CREATE POLICY "shared_update" ON %I
+        FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
 
-      CREATE POLICY "auth_delete" ON %I
-        FOR DELETE TO authenticated
-        USING (true);
-    ', t, t, t, t, t, t, t, t);
+      CREATE POLICY "shared_delete" ON %I
+        FOR DELETE TO anon, authenticated USING (true);
+    ', t, t, t, t, t, t, t, t, t, t, t, t);
   END LOOP;
 END $$;
