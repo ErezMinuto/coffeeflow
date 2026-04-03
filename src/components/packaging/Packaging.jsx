@@ -42,32 +42,17 @@ export default function Packaging() {
 
   const selectedProduct = data.products.find(p => p.id === parseInt(packProductId));
   const bags            = parseInt(packBags) || 0;
-  const deductions      = selectedProduct && bags > 0
-    ? calcDeductions(selectedProduct, bags, data.origins, data.roastProfiles)
-    : [];
-  const shortages = deductions.filter(d => (d.item.roasted_stock || 0) < d.kgNeeded);
 
   // ── Record new packing ────────────────────────────────────────────────────
+  // Roasted stock is managed via manual periodic counts only.
+  // Packing only updates packed_stock on the product.
 
   const recordPacking = async () => {
     if (!selectedProduct) { showToast('⚠️ נא לבחור מוצר', 'warning'); return; }
     if (bags <= 0)         { showToast('⚠️ נא להזין כמות שקיות', 'warning'); return; }
-    if (shortages.length > 0) {
-      const msg = shortages.map(s =>
-        `${s.item.name}: יש ${(s.item.roasted_stock || 0).toFixed(1)} ק"ג, צריך ${s.kgNeeded.toFixed(2)} ק"ג`
-      ).join(' | ');
-      showToast(`⛔ אין מספיק מלאי קלוי: ${msg}`, 'error');
-      return;
-    }
 
     setSubmitting(true);
     try {
-      for (const d of deductions) {
-        const newStock = parseFloat(((d.item.roasted_stock || 0) - d.kgNeeded).toFixed(3));
-        if (d.type === 'origin') await originsDb.update(d.item.id, { roasted_stock: newStock });
-        else                     await roastProfilesDb.update(d.item.id, { roasted_stock: newStock });
-      }
-
       await productsDb.update(selectedProduct.id, {
         packed_stock: (selectedProduct.packed_stock || 0) + bags
       });
@@ -76,27 +61,13 @@ export default function Packaging() {
         product_id:       selectedProduct.id,
         product_name:     `${selectedProduct.name} ${selectedProduct.size}g`,
         bags_count:       bags,
-        // Store source_id, type and kg_per_bag so edits/cancels can reverse exactly
-        roasted_deducted: deductions.map(d => ({
-          name:       d.item.name,
-          kg:         parseFloat(d.kgNeeded.toFixed(3)),
-          kg_per_bag: parseFloat(d.kgPerBag.toFixed(6)),
-          type:       d.type,
-          source_id:  d.item.id,
-        })),
-        reported_by: 'מערכת',
+        roasted_deducted: [],
+        reported_by:      'מערכת',
       });
 
       showToast(`✅ נרשמה אריזה: ${bags} שקיות ${selectedProduct.name} ${selectedProduct.size}g`);
       setPackProductId('');
       setPackBags('');
-
-      for (const d of deductions) {
-        const remaining = (d.item.roasted_stock || 0) - d.kgNeeded;
-        if (d.minStock !== null && remaining < d.minStock) {
-          showToast(`⚠️ מלאי נמוך: ${d.item.name} נותרו ${remaining.toFixed(1)} ק"ג`, 'warning');
-        }
-      }
     } catch (err) {
       console.error(err);
       showToast('❌ שגיאה ברישום האריזה', 'error');
@@ -113,25 +84,7 @@ export default function Packaging() {
 
     setCorrecting(true);
     try {
-      // 1. Adjust roasted_stock for each ingredient by the delta
-      //    Use direct supabase (not hook) to avoid user_id filter on shared org tables.
-      for (const d of log.roasted_deducted) {
-        const deltaKg = parseFloat((d.kg_per_bag * diff).toFixed(3));
-        const table = d.type === 'origin' ? 'origins' : 'roast_profiles';
-        const currentItem = d.type === 'origin'
-          ? data.origins.find(o => o.id === d.source_id)
-          : data.roastProfiles.find(p => p.id === d.source_id);
-        if (!currentItem) continue;
-        const newStock = parseFloat(((currentItem.roasted_stock || 0) - deltaKg).toFixed(3));
-        const { error: stockErr } = await supabase
-          .from(table)
-          .update({ roasted_stock: newStock })
-          .eq('id', d.source_id);
-        if (stockErr) throw stockErr;
-      }
-
-      // 2. Adjust packed_stock on the product
-      //    Use direct supabase to avoid user_id filter on shared org table.
+      // Adjust packed_stock on the product only — roasted_stock is managed via manual counts.
       const product = data.products.find(p => p.id === log.product_id);
       if (product) {
         const { error: prodErr } = await supabase
@@ -141,23 +94,15 @@ export default function Packaging() {
         if (prodErr) throw prodErr;
       }
 
-      // 3. Update the packing log record with corrected values
-      //    Use direct supabase (not hook) to avoid user_id filter —
-      //    logs from other users or the bot must also be correctable.
-      const updatedDeducted = log.roasted_deducted.map(d => ({
-        ...d,
-        kg: parseFloat((d.kg_per_bag * newBags).toFixed(3))
-      }));
+      // Update the packing log with corrected bags_count
       const { error: logErr } = await supabase
         .from('packing_logs')
-        .update({ bags_count: newBags, roasted_deducted: updatedDeducted })
+        .update({ bags_count: newBags })
         .eq('id', log.id);
       if (logErr) throw logErr;
 
-      // Refresh all affected hooks so UI updates immediately without page reload
+      // Refresh affected hooks so UI updates immediately
       await Promise.all([
-        originsDb.refresh(),
-        roastProfilesDb.refresh(),
         productsDb.refresh(),
         packingLogsDb.refresh(),
       ]);
@@ -204,33 +149,10 @@ export default function Packaging() {
           </div>
         </div>
 
-        {/* Live deduction preview */}
-        {deductions.length > 0 && (
-          <div style={{
-            background: shortages.length > 0 ? '#FEF2F2' : '#F0FFF4',
-            border: `1px solid ${shortages.length > 0 ? '#FCA5A5' : '#6EE7B7'}`,
-            borderRadius: '6px', padding: '10px', marginBottom: '1rem', fontSize: '13px'
-          }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '6px', color: shortages.length > 0 ? '#DC2626' : '#065F46' }}>
-              {shortages.length > 0 ? '⛔ חסר מלאי קלוי:' : '♻️ ינוכה מהמלאי הקלוי:'}
-            </div>
-            {deductions.map((d, i) => {
-              const current  = d.item.roasted_stock || 0;
-              const shortage = current < d.kgNeeded;
-              return (
-                <div key={i} style={{ color: shortage ? '#DC2626' : '#374151', marginBottom: '2px' }}>
-                  {shortage ? '❌' : '✓'} {d.item.name}: {d.kgNeeded.toFixed(2)} ק"ג
-                  <span style={{ color: '#6B7280', marginRight: '6px' }}>(במלאי: {current.toFixed(1)} ק"ג)</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         <button
           onClick={recordPacking}
           className="btn-primary"
-          disabled={submitting || !packProductId || !packBags || shortages.length > 0}
+          disabled={submitting || !packProductId || !packBags}
           style={{ width: '100%' }}
         >
           {submitting ? '⏳ שומר...' : '✅ שמור אריזה'}
