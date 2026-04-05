@@ -18,6 +18,7 @@ import Marketing               from './components/marketing/Marketing';
 import AIAnalyst               from './components/analyst/AIAnalyst';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
+import PendingOrders           from './components/orders/PendingOrders';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -72,6 +73,7 @@ function AppContent() {
               <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
               <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="/orders"           element={<PendingOrders />} />
               <Route path="/checklist"        element={<RoastChecklist />} />
               <Route path="/checklist-editor" element={<SagieOnlyRoute><ChecklistEditor /></SagieOnlyRoute>} />
               <Route path="*"                 element={<Navigate to="/dashboard" replace />} />

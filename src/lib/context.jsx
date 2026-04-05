@@ -89,6 +89,7 @@ export const AppProvider = ({ children }) => {
   const marketingContactsDb       = useSupabaseData('marketing_contacts',        { filterByUser: false });
   const campaignsDb               = useSupabaseData('campaigns',                 { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
+  const pendingOrdersDb           = useSupabaseData('pending_orders',            { filterByUser: false });
   const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
 
@@ -108,6 +109,7 @@ export const AppProvider = ({ children }) => {
     marketingContacts:       marketingContactsDb.data       || [],
     campaigns:               campaignsDb.data               || [],
     packingLogs:                  packingLogsDb.data                 || [],
+    pendingOrders:                pendingOrdersDb.data               || [],
     roastChecklistTemplates:      roastChecklistTemplatesDb.data     || [],
     costSettings:                 costSettings                       || {}
   };
@@ -142,11 +144,12 @@ export const AppProvider = ({ children }) => {
     marketingContactsDb.refresh();
     campaignsDb.refresh();
     packingLogsDb.refresh();
+    pendingOrdersDb.refresh();
     roastChecklistTemplatesDb.refresh();
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-    employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb,
+    employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, pendingOrdersDb,
     roastChecklistTemplatesDb,
   ]);
 
@@ -157,7 +160,7 @@ export const AppProvider = ({ children }) => {
       isAdmin, userRole, roleLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-      employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, roastChecklistTemplatesDb,
+      employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,

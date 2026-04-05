@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "CoffeeFlow",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["start"],
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["node_modules/.bin/react-scripts", "start"],
       "port": 3000
     }
   ]

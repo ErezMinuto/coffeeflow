@@ -11,6 +11,7 @@ const allNavItems = [
       { path: '/roasting',  icon: '🔥', label: 'Roasting'  },
       { path: '/products',  icon: '📦', label: 'Products'  },
       { path: '/packaging', icon: '🎁', label: 'Packaging' },
+      { path: '/orders',    icon: '📋', label: 'הזמנות'    },
     ],
   },
   {
