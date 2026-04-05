@@ -283,15 +283,7 @@ scrapeSales()
 
 // 05:00 Israel time
 cron.schedule('0 5 * * *', () => {
-  console.log('Running scheduled sync (05:00)...');
-  scrapeSales()
-    .then(() => console.log('Scheduled sync completed'))
-    .catch(err => console.error('Scheduled sync failed:', err.message));
-}, { timezone: 'Asia/Jerusalem' });
-
-// 19:00 Israel time
-cron.schedule('0 19 * * *', () => {
-  console.log('Running scheduled sync (19:00)...');
+  console.log('Running scheduled sync...');
   scrapeSales()
     .then(() => console.log('Scheduled sync completed'))
     .catch(err => console.error('Scheduled sync failed:', err.message));
