@@ -281,12 +281,21 @@ scrapeSales()
   .then(() => console.log('Initial sync completed'))
   .catch(err => console.error('Initial sync failed:', err.message));
 
-cron.schedule('0 6 * * *', () => {
-  console.log('Running scheduled sync...');
+// 05:00 Israel time
+cron.schedule('0 5 * * *', () => {
+  console.log('Running scheduled sync (05:00)...');
   scrapeSales()
     .then(() => console.log('Scheduled sync completed'))
     .catch(err => console.error('Scheduled sync failed:', err.message));
-});
+}, { timezone: 'Asia/Jerusalem' });
+
+// 19:00 Israel time
+cron.schedule('0 19 * * *', () => {
+  console.log('Running scheduled sync (19:00)...');
+  scrapeSales()
+    .then(() => console.log('Scheduled sync completed'))
+    .catch(err => console.error('Scheduled sync failed:', err.message));
+}, { timezone: 'Asia/Jerusalem' });
 
 process.on('SIGTERM', () => {
   console.log('Shutting down gracefully');
