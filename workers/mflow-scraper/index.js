@@ -123,11 +123,14 @@ async function scrapeSales() {
 
     await new Promise(r => setTimeout(r, 3000));
 
-    // Click "דוח מאוחד" to get the consolidated view with quantities
+    // Click "מאוחד" to get the consolidated view with quantities
     await page.evaluate(function() {
-      var buttons = Array.from(document.querySelectorAll('button, a, input[type="button"]'));
-      var btn = buttons.find(function(el) { return el.innerText && el.innerText.includes('מאוחד'); });
-      if (btn) btn.click();
+      var all = Array.from(document.querySelectorAll('*'));
+      var btn = all.find(function(el) {
+        return el.innerText && el.innerText.trim() === 'מאוחד' && el.children.length === 0;
+      });
+      if (btn) { btn.click(); console.log('Clicked מאוחד button'); }
+      else { console.log('מאוחד button NOT found'); }
     });
 
     await new Promise(r => setTimeout(r, 3000));
