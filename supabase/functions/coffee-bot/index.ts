@@ -122,7 +122,7 @@ async function handlePacking(chatId: string, fromName: string, productName: stri
   }
 
   const { data: origins  } = await supabase.from("origins").select("*").eq("user_id", USER_ID);
-  const { data: profiles } = await supabase.from("roast_profiles").select("*").eq("user_id", USER_ID);
+  const { data: profiles } = await supabase.from("roast_profiles").select("*");
 
   interface Deduction {
     type: "origin" | "profile";
