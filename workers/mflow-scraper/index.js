@@ -18,7 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 async function scrapeSales() {
   console.log('Starting sales sync...', new Date().toISOString());
 
-  const DRY_RUN = false;
+  const DRY_RUN = true;
 
   let browser;
 
@@ -47,7 +47,7 @@ async function scrapeSales() {
       const lastSyncISO = new Date(lastSync.last_synced_at)
         .toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
       const todayISO = yYear + '-' + yMonth + '-' + String(israelTime.getDate()).padStart(2, '0');
-      if (lastSyncISO === todayISO) {
+      if (!DRY_RUN && lastSyncISO === todayISO) {
         console.log('Already synced today, skipping...');
         await checkAndAlert();
         return;
@@ -229,16 +229,20 @@ async function scrapeSales() {
         // Deduct sold bags from packed_stock (roasted_stock is managed by packing flow)
         const newPackedStock = Math.max(0, (product.packed_stock ?? 0) - quantity);
 
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({ packed_stock: newPackedStock, last_synced_at: syncTime })
-          .eq('id', product.id)
-          .eq('user_id', USER_ID);
-
-        if (updateError) {
-          errors.push(product.name + ': Error updating packed_stock - ' + updateError.message);
+        if (DRY_RUN) {
+          console.log('[DRY RUN] Would update ' + product.name + ': -' + quantity + ' bags (' + (product.packed_stock ?? 0) + ' → ' + newPackedStock + ')');
         } else {
-          console.log('Updated ' + product.name + ': -' + quantity + ' bags (packed_stock now: ' + newPackedStock + ')');
+          const { error: updateError } = await supabase
+            .from('products')
+            .update({ packed_stock: newPackedStock, last_synced_at: syncTime })
+            .eq('id', product.id)
+            .eq('user_id', USER_ID);
+
+          if (updateError) {
+            errors.push(product.name + ': Error updating packed_stock - ' + updateError.message);
+          } else {
+            console.log('Updated ' + product.name + ': -' + quantity + ' bags (packed_stock now: ' + newPackedStock + ')');
+          }
         }
 
         processed++;
