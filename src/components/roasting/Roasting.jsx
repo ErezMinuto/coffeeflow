@@ -307,10 +307,10 @@ export default function Roasting() {
           const origin = getOriginById(comp.origin_id);
           if (origin) await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
         }
-        if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)), updated_at: new Date().toISOString() });
+        if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat((Math.max(0, (profile.roasted_stock || 0) - roast.roasted_weight)).toFixed(4)), updated_at: new Date().toISOString() });
       } else {
         const origin = getOriginById(roast.origin_id);
-        if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
+        if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: Math.max(0, (origin.roasted_stock || 0) - roast.roasted_weight) });
       }
 
       await roastsDb.remove(roast.id);
@@ -344,10 +344,10 @@ export default function Roasting() {
             const origin = getOriginById(comp.origin_id);
             if (origin) await originsDb.update(origin.id, { stock: parseFloat((origin.stock + comp.green_weight_used).toFixed(4)) });
           }
-          if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat(((profile.roasted_stock || 0) - roast.roasted_weight).toFixed(4)), updated_at: new Date().toISOString() });
+          if (profile) await roastProfilesDb.update(profile.id, { roasted_stock: parseFloat((Math.max(0, (profile.roasted_stock || 0) - roast.roasted_weight)).toFixed(4)), updated_at: new Date().toISOString() });
         } else {
           const origin = getOriginById(roast.origin_id);
-          if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: (origin.roasted_stock || 0) - roast.roasted_weight });
+          if (origin) await originsDb.update(origin.id, { stock: origin.stock + roast.green_weight, roasted_stock: Math.max(0, (origin.roasted_stock || 0) - roast.roasted_weight) });
         }
         await roastsDb.remove(roast.id);
       }
