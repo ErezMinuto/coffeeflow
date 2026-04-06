@@ -123,13 +123,19 @@ async function scrapeSales() {
 
     await new Promise(r => setTimeout(r, 3000));
 
-    // Click "מאוחד" to get the consolidated view with quantities
+    // Click "מאוחד" tab to get consolidated view with quantities
     await page.evaluate(function() {
       var all = Array.from(document.querySelectorAll('*'));
       var btn = all.find(function(el) {
-        return el.innerText && el.innerText.trim() === 'מאוחד' && el.children.length === 0;
+        return el.innerText && el.innerText.includes('מאוחד') && !el.querySelector('*[innerText]');
       });
-      if (btn) { btn.click(); console.log('Clicked מאוחד button'); }
+      // fallback: find any clickable element with מאוחד in text
+      if (!btn) {
+        btn = all.find(function(el) {
+          return ['BUTTON','A','LI','SPAN','DIV'].includes(el.tagName) && el.innerText && el.innerText.includes('מאוחד');
+        });
+      }
+      if (btn) { btn.click(); console.log('Clicked מאוחד: ' + btn.tagName + ' / ' + btn.innerText.trim()); }
       else { console.log('מאוחד button NOT found'); }
     });
 
@@ -155,7 +161,7 @@ async function scrapeSales() {
       var headers = Array.from(document.querySelectorAll('table thead th'));
       var qtyIndex = -1;
       for (var i = 0; i < headers.length; i++) {
-        if (headers[i].innerText && headers[i].innerText.includes('יחידות')) {
+        if (headers[i].innerText && headers[i].innerText.includes('שנמכרו')) {
           qtyIndex = i;
           break;
         }
