@@ -95,10 +95,14 @@ async function handlePacking(chatId: string, fromName: string, productName: stri
     return;
   }
 
-  const norm    = productName.toLowerCase().trim();
-  const matches = products.filter(p =>
-    p.name.toLowerCase().includes(norm) || norm.includes(p.name.toLowerCase())
-  );
+  const stripAccents = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const norm    = stripAccents(productName.toLowerCase().trim());
+  const matches = products.filter(p => {
+    const pNorm = stripAccents(p.name.toLowerCase());
+    return pNorm.includes(norm) || norm.includes(pNorm);
+  });
 
   if (matches.length === 0) {
     const list = products.map(p => `• ${p.name} ${p.size}g`).join("\n");
