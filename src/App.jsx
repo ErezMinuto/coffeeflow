@@ -14,8 +14,6 @@ import Purchases               from './components/purchases/Purchases';
 import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
-import Marketing               from './components/marketing/Marketing';
-import AIAnalyst               from './components/analyst/AIAnalyst';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
 import PendingOrders           from './components/orders/PendingOrders';
@@ -57,8 +55,6 @@ function AppContent() {
 
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        {/* AI Analyst — full-height, no container wrapper */}
-        <Route path="/analyst" element={<AdminRoute><AIAnalyst /></AdminRoute>} />
         {/* All other pages use the standard container */}
         <Route path="*" element={
           <div className="container" style={{ direction: 'rtl' }}>
@@ -71,7 +67,7 @@ function AppContent() {
               <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
               <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
-              <Route path="/marketing"  element={<AdminRoute><Marketing /></AdminRoute>} />
+
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
               <Route path="/orders"           element={<PendingOrders />} />
               <Route path="/checklist"        element={<RoastChecklist />} />

@@ -21,8 +21,6 @@ const allNavItems = [
       { path: '/purchases', icon: '🛒', label: 'Purchases' },
     ],
   },
-  { path: '/marketing', icon: '📧', label: 'Marketing', adminOnly: true },
-  { path: '/analyst',  icon: '🤖', label: 'AI Analyst', adminOnly: true },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
 ];
 
