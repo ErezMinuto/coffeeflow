@@ -18,7 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 async function scrapeSales() {
   console.log('Starting sales sync...', new Date().toISOString());
 
-  const DRY_RUN = true;
+  const DRY_RUN = false;
 
   let browser;
 
@@ -123,30 +123,49 @@ async function scrapeSales() {
 
     await new Promise(r => setTimeout(r, 3000));
 
-    // Click "מאוחד" tab to get consolidated view with quantities
-    await page.evaluate(function() {
-      var all = Array.from(document.querySelectorAll('*'));
-      var btn = all.find(function(el) {
-        return el.innerText && el.innerText.includes('מאוחד') && !el.querySelector('*[innerText]');
-      });
-      // fallback: find any clickable element with מאוחד in text
-      if (!btn) {
-        btn = all.find(function(el) {
-          return ['BUTTON','A','LI','SPAN','DIV'].includes(el.tagName) && el.innerText && el.innerText.includes('מאוחד');
-        });
-      }
-      if (btn) { btn.click(); console.log('Clicked מאוחד: ' + btn.tagName + ' / ' + btn.innerText.trim()); }
-      else { console.log('מאוחד button NOT found'); }
-    });
+    // Click "מאוחד" tab using XPath (most reliable text-based search)
+    const mauchadElements = await page.$x('//*[contains(text(), "מאוחד")]');
+    if (mauchadElements.length > 0) {
+      // Click the last match (most specific/deepest element)
+      const el = mauchadElements[mauchadElements.length - 1];
+      const tagName = await page.evaluate(e => e.tagName + ' / "' + e.innerText.trim() + '"', el);
+      await el.click();
+      console.log('Clicked מאוחד via XPath: ' + tagName);
+    } else {
+      console.log('מאוחד NOT found via XPath');
+    }
 
     await new Promise(r => setTimeout(r, 3000));
 
-    // Show all rows
+    // Show all rows in ALL DataTables on the page
     await page.evaluate(function() {
+      // Method 1: iterate each DataTable instance individually
       try {
-        var table = $('#product_sell_report_table').DataTable();
-        if (table) table.page.len(-1).draw();
+        var rawTables = $.fn.dataTable.tables({ visible: true, api: false });
+        $(rawTables).each(function() {
+          try { $(this).DataTable().page.len(-1).draw(false); } catch(e) {}
+        });
       } catch(e) {}
+
+      // Method 2: change the length-select dropdowns directly
+      try {
+        var selects = Array.from(document.querySelectorAll('select[name$="_length"]'));
+        if (selects.length === 0) {
+          // fallback: any select whose options include 25
+          selects = Array.from(document.querySelectorAll('select')).filter(function(sel) {
+            return Array.from(sel.options).some(function(o) { return o.value === '25'; });
+          });
+        }
+        selects.forEach(function(sel) {
+          if (!sel.querySelector('option[value="-1"]')) {
+            var opt = document.createElement('option');
+            opt.value = '-1'; opt.text = 'הכל';
+            sel.insertBefore(opt, sel.firstChild);
+          }
+          sel.value = '-1';
+          $(sel).trigger('change');
+        });
+      } catch(e2) {}
     });
 
     await new Promise(r => setTimeout(r, 8000));
@@ -156,22 +175,58 @@ async function scrapeSales() {
     const filterValue = await page.$eval('#product_sr_date_filter', function(el) { return el.value; });
     console.log('Date filter value: ' + filterValue);
 
+    // Debug: log info about each table on the page
+    const tableDebug = await page.evaluate(function() {
+      var tables = Array.from(document.querySelectorAll('table'));
+      return tables.map(function(t, idx) {
+        var ths = Array.from(t.querySelectorAll('thead th')).map(function(h) { return h.innerText.trim(); });
+        var rows = t.querySelectorAll('tbody tr').length;
+        var paginateInfo = '';
+        // Check for DataTable pagination info near this table
+        var parent = t.closest('.dataTables_wrapper') || t.parentElement;
+        if (parent) {
+          var infoEl = parent.querySelector('.dataTables_info');
+          if (infoEl) paginateInfo = infoEl.innerText.trim();
+          var lenSelects = parent.querySelectorAll('select[name$="_length"]');
+          lenSelects.forEach(function(sel) {
+            paginateInfo += ' [select:' + sel.name + '=' + sel.value + ']';
+          });
+        }
+        return { idx: idx, rows: rows, headers: ths, pagination: paginateInfo };
+      });
+    });
+    tableDebug.forEach(function(t) {
+      console.log('Table[' + t.idx + '] rows=' + t.rows + ' pagination="' + t.pagination + '" headers=' + JSON.stringify(t.headers.slice(0, 5)));
+    });
+
     const sales = await page.evaluate(function() {
-      // Find quantity column index by header text
-      var headers = Array.from(document.querySelectorAll('table thead th'));
-      var qtyIndex = -1;
-      for (var i = 0; i < headers.length; i++) {
-        if (headers[i].innerText && headers[i].innerText.includes('שנמכרו')) {
-          qtyIndex = i;
-          break;
+      // Find the table with שנמכרו column that has the MOST rows (full data)
+      var tables = Array.from(document.querySelectorAll('table'));
+      var targetTable = null;
+      var localQtyIndex = -1;
+      var maxRows = -1;
+
+      for (var t = 0; t < tables.length; t++) {
+        var ths = Array.from(tables[t].querySelectorAll('thead th'));
+        for (var i = 0; i < ths.length; i++) {
+          if (ths[i].innerText && ths[i].innerText.includes('שנמכרו')) {
+            var rowCount = tables[t].querySelectorAll('tbody tr').length;
+            if (rowCount > maxRows) {
+              maxRows = rowCount;
+              targetTable = tables[t];
+              localQtyIndex = i;
+            }
+            break;
+          }
         }
       }
-      console.log('Quantity column index: ' + qtyIndex);
 
-      var rows = Array.from(document.querySelectorAll('table tbody tr'));
+      if (!targetTable) return [];
+
+      var rows = Array.from(targetTable.querySelectorAll('tbody tr'));
       return rows.map(function(row) {
         var cells = row.querySelectorAll('td');
-        var rawQty = qtyIndex >= 0 && cells[qtyIndex] ? cells[qtyIndex].innerText.trim().replace(/,/g, '') : '1';
+        var rawQty = localQtyIndex >= 0 && cells[localQtyIndex] ? cells[localQtyIndex].innerText.trim().replace(/,/g, '') : '1';
         var qty = parseInt(rawQty, 10);
         return {
           sku: cells[0] && cells[0].innerText ? cells[0].innerText.trim() : '',
@@ -180,6 +235,7 @@ async function scrapeSales() {
         };
       }).filter(function(s) { return s.sku; });
     });
+    console.log('Quantity column local index found, rows: ' + sales.length);
 
     await browser.close();
 
