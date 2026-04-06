@@ -44,25 +44,53 @@ export default function Packaging() {
   const bags            = parseInt(packBags) || 0;
 
   // ── Record new packing ────────────────────────────────────────────────────
-  // Roasted stock is managed via manual periodic counts only.
-  // Packing only updates packed_stock on the product.
 
   const recordPacking = async () => {
     if (!selectedProduct) { showToast('⚠️ נא לבחור מוצר', 'warning'); return; }
     if (bags <= 0)         { showToast('⚠️ נא להזין כמות שקיות', 'warning'); return; }
 
+    const deductions = calcDeductions(selectedProduct, bags, data.origins, data.roastProfiles);
+
+    // Block if not enough roasted stock
+    const shortages = deductions.filter(d => (d.item.roasted_stock ?? 0) < d.kgNeeded);
+    if (shortages.length > 0) {
+      const msg = shortages.map(s =>
+        `${s.item.name}: יש ${(s.item.roasted_stock ?? 0).toFixed(1)} ק"ג, צריך ${s.kgNeeded.toFixed(2)} ק"ג`
+      ).join(' | ');
+      showToast(`⛔ אין מספיק מלאי קלוי: ${msg}`, 'error');
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // Deduct roasted stock from origins / roast profiles
+      for (const d of deductions) {
+        const newStock = parseFloat(((d.item.roasted_stock ?? 0) - d.kgNeeded).toFixed(3));
+        if (d.type === 'origin') {
+          await originsDb.update(d.item.id, { roasted_stock: newStock });
+        } else {
+          await roastProfilesDb.update(d.item.id, { roasted_stock: newStock });
+        }
+      }
+
+      // Increment packed_stock
       await productsDb.update(selectedProduct.id, {
         packed_stock: (selectedProduct.packed_stock || 0) + bags
       });
 
+      // Log with deduction details
       await packingLogsDb.insert({
         product_id:       selectedProduct.id,
         product_name:     `${selectedProduct.name} ${selectedProduct.size}g`,
         bags_count:       bags,
-        roasted_deducted: [],
-        reported_by:      'מערכת',
+        roasted_deducted: deductions.map(d => ({
+          name:       d.item.name,
+          kg:         parseFloat(d.kgNeeded.toFixed(3)),
+          kg_per_bag: parseFloat(d.kgPerBag.toFixed(6)),
+          type:       d.type,
+          source_id:  d.item.id,
+        })),
+        reported_by: 'מערכת',
       });
 
       showToast(`✅ נרשמה אריזה: ${bags} שקיות ${selectedProduct.name} ${selectedProduct.size}g`);
@@ -84,7 +112,25 @@ export default function Packaging() {
 
     setCorrecting(true);
     try {
-      // Adjust packed_stock on the product only — roasted_stock is managed via manual counts.
+      // Adjust roasted_stock for each ingredient based on the bag diff
+      for (const d of (log.roasted_deducted || [])) {
+        const deltaKg = parseFloat((d.kg_per_bag * diff).toFixed(3));
+        if (d.type === 'origin') {
+          const origin = data.origins.find(o => o.id === d.source_id);
+          if (origin) {
+            const newStock = parseFloat(((origin.roasted_stock ?? 0) - deltaKg).toFixed(3));
+            await originsDb.update(d.source_id, { roasted_stock: Math.max(0, newStock) });
+          }
+        } else {
+          const profile = data.roastProfiles.find(p => p.id === d.source_id);
+          if (profile) {
+            const newStock = parseFloat(((profile.roasted_stock ?? 0) - deltaKg).toFixed(3));
+            await roastProfilesDb.update(d.source_id, { roasted_stock: Math.max(0, newStock) });
+          }
+        }
+      }
+
+      // Adjust packed_stock
       const product = data.products.find(p => p.id === log.product_id);
       if (product) {
         const { error: prodErr } = await supabase
@@ -94,15 +140,16 @@ export default function Packaging() {
         if (prodErr) throw prodErr;
       }
 
-      // Update the packing log with corrected bags_count
+      // Update the packing log
       const { error: logErr } = await supabase
         .from('packing_logs')
         .update({ bags_count: newBags })
         .eq('id', log.id);
       if (logErr) throw logErr;
 
-      // Refresh affected hooks so UI updates immediately
       await Promise.all([
+        originsDb.refresh(),
+        roastProfilesDb.refresh(),
         productsDb.refresh(),
         packingLogsDb.refresh(),
       ]);
