@@ -201,7 +201,7 @@ async function scrapeSales() {
       try {
         const { data: products, error: productError } = await supabase
           .from('products')
-          .select('id, name, size, recipe')
+          .select('id, name, size, packed_stock')
           .eq('sku', normalizedSku)
           .eq('user_id', USER_ID);
 
@@ -212,47 +212,20 @@ async function scrapeSales() {
         }
 
         const product = products[0];
-        const recipe = product.recipe;
 
-        if (!recipe || recipe.length === 0) {
-          errors.push(product.name + ': No recipe defined');
-          continue;
-        }
+        // Deduct sold bags from packed_stock (roasted_stock is managed by packing flow)
+        const newPackedStock = Math.max(0, (product.packed_stock ?? 0) - quantity);
 
-        for (const ingredient of recipe) {
-          if (!ingredient.originId || !ingredient.percentage) continue;
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({ packed_stock: newPackedStock, last_synced_at: syncTime })
+          .eq('id', product.id)
+          .eq('user_id', USER_ID);
 
-          const amountToDeduct = (product.size * quantity * ingredient.percentage) / 100 / 1000;
-
-          const { data: origin } = await supabase
-            .from('origins')
-            .select('roasted_stock')
-            .eq('id', ingredient.originId)
-            .eq('user_id', USER_ID)
-            .single();
-
-          if (!origin) {
-            errors.push(product.name + ': Origin ' + ingredient.originId + ' not found');
-            continue;
-          }
-
-          const newStock = Math.max(0, origin.roasted_stock - amountToDeduct);
-
-          if (newStock === 0 && origin.roasted_stock - amountToDeduct < 0) {
-            console.warn('Warning: ' + product.name + ' stock clamped to 0 (would have been ' + (origin.roasted_stock - amountToDeduct).toFixed(3) + 'kg)');
-          }
-
-          const { error: updateError } = await supabase
-            .from('origins')
-            .update({ roasted_stock: newStock, last_synced_at: syncTime })
-            .eq('id', ingredient.originId)
-            .eq('user_id', USER_ID);
-
-          if (updateError) {
-            errors.push(product.name + ': Error updating stock - ' + updateError.message);
-          } else {
-            console.log('Updated ' + product.name + ': -' + amountToDeduct.toFixed(3) + 'kg (stock now: ' + newStock.toFixed(3) + 'kg)');
-          }
+        if (updateError) {
+          errors.push(product.name + ': Error updating packed_stock - ' + updateError.message);
+        } else {
+          console.log('Updated ' + product.name + ': -' + quantity + ' bags (packed_stock now: ' + newPackedStock + ')');
         }
 
         processed++;
