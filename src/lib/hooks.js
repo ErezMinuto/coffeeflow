@@ -92,7 +92,7 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
       await fetchData(); // Refresh local state immediately after update
       return result;
     } catch (err) {
-      console.error(`Error updating ${table}: code=${err?.code} message=${err?.message} details=${err?.details}`, err);
+      console.error(`Error updating ${table}:`, err);
       throw err;
     }
   };
