@@ -123,6 +123,16 @@ async function scrapeSales() {
 
     await new Promise(r => setTimeout(r, 3000));
 
+    // Click "דוח מאוחד" to get the consolidated view with quantities
+    await page.evaluate(function() {
+      var buttons = Array.from(document.querySelectorAll('button, a, input[type="button"]'));
+      var btn = buttons.find(function(el) { return el.innerText && el.innerText.includes('מאוחד'); });
+      if (btn) btn.click();
+    });
+
+    await new Promise(r => setTimeout(r, 3000));
+
+    // Show all rows
     await page.evaluate(function() {
       try {
         var table = $('#product_sell_report_table').DataTable();
@@ -132,31 +142,34 @@ async function scrapeSales() {
 
     await new Promise(r => setTimeout(r, 8000));
 
-    const rowCount = await page.evaluate(function() {
-      var rows = document.querySelectorAll('#product_sell_report_table tbody tr');
-      return rows.length;
-    });
-    console.log('Table rows after pagination fix: ' + rowCount);
-
-    if (rowCount < 100) {
-      await new Promise(r => setTimeout(r, 8000));
-    }
-
     await page.waitForSelector('table', { timeout: 20000 });
 
     const filterValue = await page.$eval('#product_sr_date_filter', function(el) { return el.value; });
     console.log('Date filter value: ' + filterValue);
 
     const sales = await page.evaluate(function() {
+      // Find quantity column index by header text
+      var headers = Array.from(document.querySelectorAll('table thead th'));
+      var qtyIndex = -1;
+      for (var i = 0; i < headers.length; i++) {
+        if (headers[i].innerText && headers[i].innerText.includes('יחידות')) {
+          qtyIndex = i;
+          break;
+        }
+      }
+      console.log('Quantity column index: ' + qtyIndex);
+
       var rows = Array.from(document.querySelectorAll('table tbody tr'));
       return rows.map(function(row) {
         var cells = row.querySelectorAll('td');
+        var rawQty = qtyIndex >= 0 && cells[qtyIndex] ? cells[qtyIndex].innerText.trim().replace(/,/g, '') : '1';
+        var qty = parseInt(rawQty, 10);
         return {
           sku: cells[0] && cells[0].innerText ? cells[0].innerText.trim() : '',
           product: cells[1] && cells[1].innerText ? cells[1].innerText.trim() : '',
-          quantity: 1
+          quantity: isNaN(qty) || qty <= 0 ? 1 : qty
         };
-        }).filter(function(s) { return s.sku; });
+      }).filter(function(s) { return s.sku; });
     });
 
     await browser.close();
