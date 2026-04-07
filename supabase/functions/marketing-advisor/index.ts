@@ -853,6 +853,148 @@ ${wooSalesOrganic}
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
 }
 
+// ── Weekly Email Digest ───────────────────────────────────────────────────────
+
+const RESEND_KEY   = Deno.env.get("RESEND_API_KEY")            ?? "";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL")              ?? "info@minuto.co.il";
+const ADMIN_EMAIL  = Deno.env.get("ADMIN_EMAIL")               ?? "";
+const DASHBOARD_URL = "https://coffeeflow-thaf.vercel.app/advisor";
+
+function buildAdvisorEmailHtml(
+  weekStart: string,
+  weekEnd: string,
+  reports: Record<string, unknown>,
+): string {
+  function esc(s: unknown): string {
+    if (!s) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function reportSection(
+    label: string,
+    color: string,
+    emoji: string,
+    agentType: string,
+  ): string {
+    const r = reports[agentType] as Record<string, unknown> | undefined;
+    if (!r) return "";
+    const summary = esc(r.summary as string ?? "");
+    const insights = ((r.key_insights ?? []) as string[]).slice(0, 3);
+    const insightRows = insights
+      .map(i => `<li style="margin: 6px 0; color: #555; font-size: 14px; line-height: 1.5;">${esc(i)}</li>`)
+      .join("");
+    const focus = esc((r.next_week_focus ?? "") as string);
+
+    return `
+      <tr>
+        <td style="padding: 0 32px 24px;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%"
+                 style="border-radius: 10px; overflow: hidden; border: 1px solid #E5E7EB;">
+            <tr>
+              <td style="background: ${color}; padding: 14px 20px;">
+                <p style="margin: 0; color: white; font-size: 16px; font-weight: 700;">${emoji} ${esc(label)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background: white; padding: 16px 20px;">
+                <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #333;">${summary}</p>
+                ${insightRows ? `<ul style="margin: 0; padding-right: 20px;">${insightRows}</ul>` : ""}
+                ${focus ? `<p style="margin: 12px 0 0; font-size: 13px; color: #6B7280; font-style: italic;">▶ ${esc(focus)}</p>` : ""}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>`;
+  }
+
+  const dateFrom = weekStart.split("-").reverse().join("/");
+  const dateTo   = weekEnd.split("-").reverse().join("/");
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F5F5F0;font-family:Arial,Helvetica,sans-serif;">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F5F0;">
+<tr><td align="center" style="padding:24px 16px;">
+<table cellpadding="0" cellspacing="0" border="0" width="600"
+       style="max-width:600px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr>
+    <td style="background:linear-gradient(135deg,#3D4A2E,#556B3A);padding:28px 24px;text-align:center;">
+      <h1 style="margin:0;color:white;font-size:26px;font-weight:700;">Minuto — יועץ שיווק AI</h1>
+      <p style="margin:8px 0 0;color:#B5C69A;font-size:14px;">דוח שבועי · ${esc(dateFrom)} – ${esc(dateTo)}</p>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr><td style="height:24px;"></td></tr>
+
+  ${reportSection("סוכן צמיחה — Google Ads", "#1D4ED8", "🚀", "google_ads_growth")}
+  ${reportSection("סוכן יעילות — Google Ads", "#D97706", "🛡️", "google_ads_efficiency")}
+  ${reportSection("סוכן תוכן אורגני — Instagram + SEO", "#15803D", "🌿", "organic_content")}
+
+  <!-- CTA -->
+  <tr>
+    <td style="padding:8px 32px 32px;text-align:center;">
+      <a href="${DASHBOARD_URL}"
+         style="display:inline-block;padding:14px 32px;background:#3D4A2E;color:white;border-radius:8px;text-decoration:none;font-size:16px;font-weight:700;">
+        לדוח המלא בדשבורד
+      </a>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#EBEFE2;padding:16px 32px;text-align:center;font-size:12px;color:#666;">
+      <p style="margin:0;">CoffeeFlow — Minuto Café &amp; Roastery</p>
+      <p style="margin:6px 0 0;color:#999;">נשלח אוטומטית על ידי מערכת ה-AI</p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function sendAdvisorEmail(
+  weekStart: string,
+  weekEnd: string,
+  reports: Record<string, unknown>,
+): Promise<void> {
+  if (!RESEND_KEY)   { console.log("[email] RESEND_API_KEY not set — skipping email"); return; }
+  if (!ADMIN_EMAIL)  { console.log("[email] ADMIN_EMAIL not set — skipping email"); return; }
+
+  const dateFrom = weekStart.split("-").reverse().join("/");
+  const dateTo   = weekEnd.split("-").reverse().join("/");
+  const subject  = `דוח שיווק שבועי Minuto — ${dateFrom}–${dateTo}`;
+  const html     = buildAdvisorEmailHtml(weekStart, weekEnd, reports);
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from:    `Minuto AI <${SENDER_EMAIL}>`,
+      to:      [ADMIN_EMAIL],
+      subject,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error(`[email] Resend error (${res.status}):`, err.substring(0, 200));
+  } else {
+    const data = await res.json();
+    console.log(`[email] Sent successfully. Resend ID: ${data.id}`);
+  }
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -880,6 +1022,7 @@ serve(async (req) => {
 
   const agentsRun: string[] = [];
   const errors: Record<string, string> = {};
+  const completedReports: Record<string, unknown> = {};
 
   const runAgent = async (
     type: string,
@@ -893,6 +1036,7 @@ serve(async (req) => {
         status: "done", report, model, tokens_used: tokensUsed, error_msg: null,
       });
       agentsRun.push(type);
+      completedReports[type] = report;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[${type}] Error:`, msg);
@@ -907,6 +1051,14 @@ serve(async (req) => {
     runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart, focus), MODEL_ADS)    : Promise.resolve(),
     runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart, focus),   MODEL_ORGANIC) : Promise.resolve(),
   ]);
+
+  // Send email digest if at least one agent succeeded
+  if (agentsRun.length > 0) {
+    const weekEnd = addDays(weekStart, 6);
+    sendAdvisorEmail(weekStart, weekEnd, completedReports).catch(e =>
+      console.error("[email] Failed to send digest:", e.message)
+    );
+  }
 
   const hasErrors = Object.keys(errors).length > 0;
   return new Response(
