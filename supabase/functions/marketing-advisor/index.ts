@@ -70,7 +70,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -82,6 +82,12 @@ async function callClaude(
   }
 
   const data = await response.json();
+
+  // If Claude hit the token limit mid-response the JSON will be truncated
+  if (data.stop_reason === "max_tokens") {
+    throw new Error("Claude response was truncated (max_tokens reached). Try reducing the focus text or contact support.");
+  }
+
   return {
     text: data.content?.[0]?.text ?? "",
     inputTokens:  data.usage?.input_tokens  ?? 0,
