@@ -44,18 +44,14 @@ serve(async (req) => {
 
     if (!tokenRow) throw new Error('Google not connected')
 
-    // Always refresh token to be safe
-    console.log('Refreshing Google token...')
     const accessToken = await refreshGoogleToken(tokenRow.refresh_token)
     await supabase.from('oauth_tokens').update({
       access_token: accessToken,
       expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
     }).eq('platform', 'google')
-    console.log('Token refreshed OK')
 
     const rawCustomerId = Deno.env.get('GOOGLE_CUSTOMER_ID')!
     const customerId = rawCustomerId.replace(/-/g, '')
-    console.log('Customer ID:', customerId)
 
     const today = new Date().toISOString().split('T')[0]
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -80,24 +76,19 @@ serve(async (req) => {
       LIMIT 200
     `
 
-    const url = `https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search`
-    console.log('Calling URL:', url)
+    const url = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:search`
 
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': devToken,
-        'login-customer-id': Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID') || '',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query }),
     })
 
-    console.log('Response status:', res.status)
     const rawText = await res.text()
-    console.log('Raw response (first 500):', rawText.substring(0, 500))
-
     let data
     try {
       data = JSON.parse(rawText)
