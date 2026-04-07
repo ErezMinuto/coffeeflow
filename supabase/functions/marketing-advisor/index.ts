@@ -200,6 +200,56 @@ function buildGoogleDataBlock(
   return { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock };
 }
 
+// ── WooCommerce Sales Helper ──────────────────────────────────────────────────
+
+async function fetchWooSales(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+  weekEnd: string,
+): Promise<string> {
+  const fourWksAgo = subtractDays(weekStart, 28);
+  const { data, error } = await supabase
+    .from("woo_orders")
+    .select("order_date,total,items,status")
+    .gte("order_date", fourWksAgo)
+    .lte("order_date", weekEnd)
+    .in("status", ["completed", "processing"]);
+
+  if (error || !data?.length) return "  אין נתוני מכירות WooCommerce";
+
+  // Aggregate this week
+  const thisWeek = data.filter((o: any) => o.order_date >= weekStart && o.order_date <= weekEnd);
+  const prevWeeks = data.filter((o: any) => o.order_date < weekStart);
+
+  const weekRevenue = thisWeek.reduce((s: number, o: any) => s + (o.total || 0), 0);
+  const prevRevenue = prevWeeks.reduce((s: number, o: any) => s + (o.total || 0), 0);
+  const prevAvgWeekly = prevRevenue / 4;
+
+  // Top products this week
+  const productMap: Record<string, { qty: number; revenue: number }> = {};
+  for (const order of thisWeek) {
+    for (const item of (order.items ?? [])) {
+      if (!productMap[item.product_name]) productMap[item.product_name] = { qty: 0, revenue: 0 };
+      productMap[item.product_name].qty     += item.quantity || 0;
+      productMap[item.product_name].revenue += item.subtotal || 0;
+    }
+  }
+  const topProducts = Object.entries(productMap)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, 8)
+    .map(([name, v]) => `  ${name}: ${v.qty} יח' | ₪${Math.round(v.revenue)}`)
+    .join("\n");
+
+  const trend = prevAvgWeekly > 0
+    ? `${weekRevenue > prevAvgWeekly ? "↑" : "↓"} ${Math.abs(Math.round((weekRevenue / prevAvgWeekly - 1) * 100))}% ממוצע 4 שבועות`
+    : "";
+
+  return `  הכנסות השבוע: ₪${Math.round(weekRevenue)} ${trend}
+  מספר הזמנות: ${thisWeek.length}
+  מוצרים מובילים:
+${topProducts || "  אין נתונים"}`;
+}
+
 // ── Google Ads Agent — GROWTH ─────────────────────────────────────────────────
 
 async function runGrowthAgent(
@@ -210,7 +260,10 @@ async function runGrowthAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const { currentAgg, prevAgg } = await fetchGoogleData(supabase, weekStart, weekEnd);
+  const [{ currentAgg, prevAgg }, wooSales] = await Promise.all([
+    fetchGoogleData(supabase, weekStart, weekEnd),
+    fetchWooSales(supabase, weekStart, weekEnd),
+  ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
 
@@ -230,6 +283,9 @@ ${campaignBlock}
 
 === 3 שבועות קודמים (מגמה) ===
 ${prevBlock}
+
+=== מכירות WooCommerce השבוע ===
+${wooSales}
 
 החזר JSON בפורמט:
 {
@@ -286,7 +342,10 @@ async function runEfficiencyAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const { currentAgg, prevAgg } = await fetchGoogleData(supabase, weekStart, weekEnd);
+  const [{ currentAgg, prevAgg }, wooSales] = await Promise.all([
+    fetchGoogleData(supabase, weekStart, weekEnd),
+    fetchWooSales(supabase, weekStart, weekEnd),
+  ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
 
@@ -305,6 +364,9 @@ ${campaignBlock}
 
 === 3 שבועות קודמים (מגמה) ===
 ${prevBlock}
+
+=== מכירות WooCommerce השבוע ===
+${wooSales}
 
 החזר JSON בפורמט:
 {
@@ -363,7 +425,7 @@ async function runOrganicAgent(
   const thirtyDaysAgo = subtractDays(weekStart, 30);
   console.log(`[organic] Fetching data from ${thirtyDaysAgo}`);
 
-  const [postsRes, insightsRes, productsRes, originsRes, gscRes] = await Promise.all([
+  const [postsRes, insightsRes, productsRes, originsRes, gscRes, wooSalesOrganic] = await Promise.all([
     supabase
       .from("meta_organic_posts")
       .select("post_id,post_type,message,created_at,reach,impressions,likes,comments,shares,saves")
@@ -389,6 +451,7 @@ async function runOrganicAgent(
       .gte("date", thirtyDaysAgo)
       .order("impressions", { ascending: false })
       .limit(50),
+    fetchWooSales(supabase, weekStart, weekEnd),
   ]);
 
   const posts    = postsRes.data    ?? [];
@@ -480,6 +543,9 @@ ${gscBlock}
 
 === מלאי ===
 ${inventoryBlock}
+
+=== מכירות WooCommerce (השבוע האחרון) ===
+${wooSalesOrganic}
 
 === לוח תוכן לשבוע ${weekStart}–${weekEnd} ===
 

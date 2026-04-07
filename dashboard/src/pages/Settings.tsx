@@ -16,11 +16,14 @@ export default function SettingsPage() {
     { platform: 'google', connected: false },
   ])
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState<'meta' | 'google' | 'google_search' | null>(null)
+  const [syncing, setSyncing] = useState<'meta' | 'google' | 'google_search' | 'woo_orders' | null>(null)
+  const [wooOrderCount, setWooOrderCount] = useState<number | null>(null)
   const [syncResult, setSyncResult] = useState<{ platform: string; message: string; success: boolean } | null>(null)
 
   useEffect(() => {
     loadConnections()
+    supabase.from('woo_orders').select('*', { count: 'exact', head: true })
+      .then(({ count }) => setWooOrderCount(count ?? 0))
   }, [])
 
   async function loadConnections() {
@@ -49,20 +52,27 @@ export default function SettingsPage() {
     await loadConnections()
   }
 
-  async function sync(platform: 'meta' | 'google' | 'google_search') {
+  async function sync(platform: 'meta' | 'google' | 'google_search' | 'woo_orders') {
     setSyncing(platform)
     setSyncResult(null)
     try {
       const functionName =
         platform === 'meta'          ? 'meta-sync' :
         platform === 'google_search' ? 'google-search-sync' :
+        platform === 'woo_orders'    ? 'woo-orders-sync' :
                                        'google-sync'
       const { data, error } = await supabase.functions.invoke(functionName)
       if (error) throw error
-      setSyncResult({ platform, message: `Sync successful! ${JSON.stringify(data)}`, success: true })
+      if (platform === 'woo_orders') {
+        const d = data as { fetched?: number; upserted?: number }
+        setSyncResult({ platform, message: `סונכרנו ${d?.upserted ?? 0} הזמנות מ-WooCommerce`, success: true })
+        setWooOrderCount(prev => (prev ?? 0) + (d?.upserted ?? 0))
+      } else {
+        setSyncResult({ platform, message: `סנכרון הצליח! ${JSON.stringify(data)}`, success: true })
+      }
       await loadConnections()
     } catch (err: any) {
-      setSyncResult({ platform, message: `Error: ${err.message || 'Sync failed'}`, success: false })
+      setSyncResult({ platform, message: `שגיאה: ${err.message || 'Sync failed'}`, success: false })
     } finally {
       setSyncing(null)
     }
@@ -168,6 +178,41 @@ export default function SettingsPage() {
             </div>
           )
         })}
+      </div>
+
+      {/* WooCommerce */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-surface-500 uppercase tracking-wider">חנות מקוונת</h3>
+        <div className="card flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <span className="text-2xl">🛒</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-surface-900">WooCommerce</h4>
+                <span className="badge badge-success"><CheckCircle size={10} /> מחובר</span>
+              </div>
+              <p className="text-sm text-surface-400 mt-0.5">הזמנות ומכירות — מועבר לסוכני ה-AI</p>
+              {wooOrderCount !== null && (
+                <p className="text-xs text-surface-500 mt-1">
+                  {wooOrderCount.toLocaleString()} הזמנות במסד הנתונים
+                </p>
+              )}
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['orders read', 'products read'].map(s => (
+                  <span key={s} className="text-xs bg-surface-100 text-surface-500 px-2 py-0.5 rounded font-mono">{s}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => sync('woo_orders')}
+            disabled={!!syncing}
+            className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-brand-50 disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw size={12} className={syncing === 'woo_orders' ? 'animate-spin' : ''} />
+            {syncing === 'woo_orders' ? 'מסנכרן...' : 'סנכרן הזמנות'}
+          </button>
+        </div>
       </div>
     </div>
   )
