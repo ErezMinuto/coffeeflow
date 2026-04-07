@@ -101,7 +101,12 @@ export default function GoogleAdsPage() {
             ) : (
               campaigns.map(c => (
                 <tr key={c.id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-5 py-3 font-medium text-surface-800">{c.name}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-green-500' : c.status === 'PAUSED' ? 'bg-amber-400' : 'bg-surface-300'}`} />
+                      <span className="font-medium text-surface-800">{c.name}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 font-mono text-surface-700">{formatCurrency(c.cost)}</td>
                   <td className="px-4 py-3 font-mono text-surface-600">{formatNumber(c.clicks)}</td>
                   <td className="px-4 py-3 font-mono text-surface-600">{(c.ctr * 100).toFixed(2)}%</td>
