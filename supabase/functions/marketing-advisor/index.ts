@@ -75,7 +75,7 @@ async function callClaude(
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4096,
+        max_tokens: 8192,
         system,
         messages: [{ role: "user", content: userMessage }],
       }),
