@@ -20,9 +20,9 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// All agents: claude-3-7-sonnet — fast, reliable, good Hebrew + JSON output
-const MODEL_ADS     = "claude-3-7-sonnet-20250219";
-const MODEL_ORGANIC = "claude-3-7-sonnet-20250219";
+// All agents: claude-3-5-sonnet — fast, reliable, good Hebrew + JSON output
+const MODEL_ADS     = "claude-3-5-sonnet-20241022";
+const MODEL_ORGANIC = "claude-3-5-sonnet-20241022";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
