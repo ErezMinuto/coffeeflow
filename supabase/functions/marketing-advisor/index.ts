@@ -61,7 +61,7 @@ async function callClaude(
   userMessage: string,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000); // 2-minute hard timeout
+  const timeout = setTimeout(() => controller.abort(), 240_000); // 4-minute hard timeout
 
   let response: Response;
   try {
@@ -682,7 +682,7 @@ async function runOrganicAgent(
       .select("post_id,post_type,message,created_at,reach,impressions,likes,comments,shares,saves")
       .gte("created_at", thirtyDaysAgo)
       .order("created_at", { ascending: false })
-      .limit(60),
+      .limit(25),
     supabase
       .from("meta_daily_insights")
       .select("date,reach,impressions,follower_count,profile_views")
@@ -701,7 +701,7 @@ async function runOrganicAgent(
       .neq("keyword", "__page__")
       .gte("date", thirtyDaysAgo)
       .order("impressions", { ascending: false })
-      .limit(50),
+      .limit(20),
     fetchWooSales(supabase, weekStart, weekEnd),
   ]);
 
@@ -755,7 +755,7 @@ async function runOrganicAgent(
 
   const topPosts = [...posts]
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
-    .slice(0, 5);
+    .slice(0, 3);
 
   const systemPrompt = `אתה מומחה תוכן דיגיטלי של Minuto Coffee, בית קפה ספשלטי ברחובות.
 יש לך שתי אחריויות שוות במעמד — אל תזניח אף אחת מהן:
