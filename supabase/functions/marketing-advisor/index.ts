@@ -1057,76 +1057,101 @@ serve(async (req) => {
   if (focus) console.log(`[marketing-advisor] Focus context: ${focus.slice(0, 100)}`);
 
   const agentArg = body.agent ?? "all";
-  const runGrowth     = agentArg === "google_ads_growth"     || agentArg === "all";
-  const runEfficiency = agentArg === "google_ads_efficiency" || agentArg === "all";
-  const runOrganic    = agentArg === "organic_content"       || agentArg === "all";
-
-  // Also support legacy "both" from old button invocations
-  const runGrowthFinal     = runGrowth     || agentArg === "both";
-  const runEfficiencyFinal = runEfficiency || agentArg === "both";
-  const runOrganicFinal    = runOrganic    || agentArg === "both";
-
   const weekEnd = addDays(weekStart, 6);
+  const SINGLE_AGENTS = ["google_ads_growth", "google_ads_efficiency", "organic_content"];
+  const isOrchestrator = agentArg === "all" || agentArg === "both";
+  const isSingleAgent  = SINGLE_AGENTS.includes(agentArg);
 
-  // Mark all requested agents as "running" BEFORE returning — so the frontend
-  // poll sees the status change immediately.
-  await Promise.all([
-    runGrowthFinal     ? upsertReport(supabase, "google_ads_growth",    weekStart, { status: "running", error_msg: null }) : null,
-    runEfficiencyFinal ? upsertReport(supabase, "google_ads_efficiency", weekStart, { status: "running", error_msg: null }) : null,
-    runOrganicFinal    ? upsertReport(supabase, "organic_content",       weekStart, { status: "running", error_msg: null }) : null,
-  ].filter(Boolean));
+  // ── ORCHESTRATOR MODE ────────────────────────────────────────────────────────
+  // Called by the frontend with agent="all". Marks all 3 as "running", fires
+  // one self-invocation per agent (each gets its own HTTP connection + timeout),
+  // then returns 202 immediately. No EdgeRuntime tricks needed.
+  if (isOrchestrator) {
+    await Promise.all(
+      SINGLE_AGENTS.map(type =>
+        upsertReport(supabase, type, weekStart, { status: "running", error_msg: null })
+      )
+    );
 
-  // Background work — runs after the 202 response is sent.
-  // EdgeRuntime.waitUntil keeps the function alive until the promise resolves.
-  const backgroundWork = async () => {
-    const agentsRun: string[] = [];
-    const completedReports: Record<string, unknown> = {};
-
-    const runAgent = async (
-      type: string,
-      fn: () => Promise<{ report: unknown; tokensUsed: number }>,
-      model: string,
-    ) => {
-      try {
-        const { report, tokensUsed } = await fn();
-        await upsertReport(supabase, type, weekStart, {
-          status: "done", report, model, tokens_used: tokensUsed, error_msg: null,
-        });
-        agentsRun.push(type);
-        completedReports[type] = report;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[${type}] Error:`, msg);
-        await upsertReport(supabase, type, weekStart, { status: "error", error_msg: msg });
-      }
-    };
-
-    await Promise.all([
-      runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart, focus),    MODEL_ADS)     : Promise.resolve(),
-      runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart, focus), MODEL_ADS)    : Promise.resolve(),
-      runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart, focus),   MODEL_ORGANIC) : Promise.resolve(),
-    ]);
-
-    if (agentsRun.length > 0) {
-      await sendAdvisorEmail(weekStart, weekEnd, completedReports).catch(e =>
-        console.error("[email] Failed to send digest:", e.message)
-      );
+    const selfUrl = `${SUPA_URL}/functions/v1/marketing-advisor`;
+    for (const agent of SINGLE_AGENTS) {
+      fetch(selfUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPA_KEY}`,
+        },
+        body: JSON.stringify({ agent, focus }),
+      }).catch(e => console.error(`[orchestrator] fire ${agent} error:`, e.message));
     }
-  };
 
-  // Use EdgeRuntime.waitUntil if available (Supabase-specific global that keeps
-  // the function alive after the response is sent). Safe fallback if not present.
-  const er = (globalThis as Record<string, unknown>)["EdgeRuntime"] as
-    { waitUntil?: (p: Promise<unknown>) => void } | undefined;
-  if (er?.waitUntil) {
-    er.waitUntil(backgroundWork());
-  } else {
-    backgroundWork().catch(e => console.error("[bg] error:", e.message));
+    return new Response(
+      JSON.stringify({ started: true, week_start: weekStart }),
+      { status: 202, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
   }
 
-  // Return 202 immediately — frontend is already polling the DB
-  return new Response(
-    JSON.stringify({ started: true, week_start: weekStart }),
-    { status: 202, headers: { ...CORS, "Content-Type": "application/json" } },
-  );
+  // ── SINGLE AGENT MODE ────────────────────────────────────────────────────────
+  // Called by the orchestrator (or directly) with a specific agent name.
+  // Runs one agent synchronously — no background tricks, no timeouts from proxy.
+  if (!isSingleAgent) {
+    return new Response(
+      JSON.stringify({ error: `Unknown agent: ${agentArg}` }),
+      { status: 400, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  }
+
+  console.log(`[${agentArg}] Starting single-agent run for week ${weekStart}`);
+  await upsertReport(supabase, agentArg, weekStart, { status: "running", error_msg: null });
+
+  try {
+    let result: { report: unknown; tokensUsed: number };
+    let model: string;
+
+    if (agentArg === "google_ads_growth") {
+      result = await runGrowthAgent(supabase, weekStart, focus);
+      model  = MODEL_ADS;
+    } else if (agentArg === "google_ads_efficiency") {
+      result = await runEfficiencyAgent(supabase, weekStart, focus);
+      model  = MODEL_ADS;
+    } else {
+      result = await runOrganicAgent(supabase, weekStart, focus);
+      model  = MODEL_ORGANIC;
+    }
+
+    await upsertReport(supabase, agentArg, weekStart, {
+      status: "done", report: result.report, model,
+      tokens_used: result.tokensUsed, error_msg: null,
+    });
+    console.log(`[${agentArg}] Done. Tokens: ${result.tokensUsed}`);
+
+    // If all 3 agents are now done → send email digest
+    const { data: allRows } = await supabase
+      .from("advisor_reports")
+      .select("agent_type,status,report")
+      .eq("week_start", weekStart)
+      .in("agent_type", SINGLE_AGENTS);
+
+    const doneRows = (allRows ?? []).filter((r: { status: string }) => r.status === "done");
+    if (doneRows.length === SINGLE_AGENTS.length) {
+      const reports: Record<string, unknown> = {};
+      for (const r of doneRows) reports[r.agent_type] = r.report;
+      sendAdvisorEmail(weekStart, weekEnd, reports).catch(e =>
+        console.error("[email] Failed:", e.message)
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, agent: agentArg, week_start: weekStart }),
+      { status: 200, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[${agentArg}] Error:`, msg);
+    await upsertReport(supabase, agentArg, weekStart, { status: "error", error_msg: msg });
+    return new Response(
+      JSON.stringify({ success: false, agent: agentArg, error: msg }),
+      { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  }
 });
