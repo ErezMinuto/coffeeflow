@@ -1,15 +1,16 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Instagram, Megaphone, Search, Bot, Mail, Settings, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Instagram, Megaphone, Search, Globe, Bot, Mail, Settings, TrendingUp } from 'lucide-react'
 
 const NAV = [
-  { to: '/',          icon: LayoutDashboard, label: 'סקירה כללית' },
-  { to: '/meta',      icon: Instagram,       label: 'Instagram' },
-  { to: '/ads',       icon: Megaphone,       label: 'Meta Ads' },
-  { to: '/google',    icon: Search,          label: 'Google Ads' },
-  { to: '/advisor',   icon: TrendingUp,      label: 'יועץ שיווק AI' },
-  { to: '/analyst',   icon: Bot,             label: 'AI Analyst' },
-  { to: '/marketing', icon: Mail,            label: 'Email Generator' },
-  { to: '/settings',  icon: Settings,        label: 'הגדרות' },
+  { to: '/',               icon: LayoutDashboard, label: 'סקירה כללית' },
+  { to: '/meta',           icon: Instagram,       label: 'Instagram' },
+  { to: '/ads',            icon: Megaphone,       label: 'Meta Ads' },
+  { to: '/google',         icon: Search,          label: 'Google Ads' },
+  { to: '/google-organic', icon: Globe,           label: 'Google Organic' },
+  { to: '/advisor',        icon: TrendingUp,      label: 'יועץ שיווק AI' },
+  { to: '/analyst',        icon: Bot,             label: 'AI Analyst' },
+  { to: '/marketing',      icon: Mail,            label: 'Email Generator' },
+  { to: '/settings',       icon: Settings,        label: 'הגדרות' },
 ]
 
 export function Sidebar() {

@@ -9,6 +9,7 @@ import { MetaCallback, GoogleCallback } from './pages/OAuthCallback'
 import AIAnalystPage from './pages/AIAnalyst'
 import MarketingPage from './pages/Marketing'
 import AdvisorPage from './pages/Advisor'
+import GoogleOrganicPage from './pages/GoogleOrganic'
 import { AppProvider } from './lib/context'
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/meta" element={<Layout><MetaOrganicPage /></Layout>} />
           <Route path="/ads" element={<Layout><MetaAdsPage /></Layout>} />
           <Route path="/google" element={<Layout><GoogleAdsPage /></Layout>} />
+          <Route path="/google-organic" element={<Layout><GoogleOrganicPage /></Layout>} />
           <Route path="/advisor" element={<Layout><AdvisorPage /></Layout>} />
           <Route path="/analyst" element={<AIAnalystPage />} />
           <Route path="/marketing" element={<Layout><MarketingPage /></Layout>} />

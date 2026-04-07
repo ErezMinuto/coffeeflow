@@ -16,7 +16,7 @@ export default function SettingsPage() {
     { platform: 'google', connected: false },
   ])
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState<'meta' | 'google' | null>(null)
+  const [syncing, setSyncing] = useState<'meta' | 'google' | 'google_search' | null>(null)
   const [syncResult, setSyncResult] = useState<{ platform: string; message: string; success: boolean } | null>(null)
 
   useEffect(() => {
@@ -44,11 +44,14 @@ export default function SettingsPage() {
     await loadConnections()
   }
 
-  async function sync(platform: 'meta' | 'google') {
+  async function sync(platform: 'meta' | 'google' | 'google_search') {
     setSyncing(platform)
     setSyncResult(null)
     try {
-      const functionName = platform === 'meta' ? 'meta-sync' : 'google-sync'
+      const functionName =
+        platform === 'meta'          ? 'meta-sync' :
+        platform === 'google_search' ? 'google-search-sync' :
+                                       'google-sync'
       const { data, error } = await supabase.functions.invoke(functionName)
       if (error) throw error
       setSyncResult({ platform, message: `Sync successful! ${JSON.stringify(data)}`, success: true })
@@ -69,11 +72,11 @@ export default function SettingsPage() {
       scopes: ['instagram_basic', 'instagram_manage_insights', 'ads_read'],
     },
     google: {
-      name: 'Google Ads',
-      description: 'מחבר קמפיינים ב-Google Search ו-Shopping',
+      name: 'Google (Ads + Search Console)',
+      description: 'מחבר קמפיינים ממומנים ונתוני חיפוש אורגני',
       icon: '🔴',
       authUrl: getGoogleAuthUrl,
-      scopes: ['Google Ads API'],
+      scopes: ['Google Ads API', 'Search Console'],
     },
   }
 
@@ -118,17 +121,27 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                 {connected ? (
                   <>
                     <button
                       onClick={() => sync(platform)}
-                      disabled={syncing === platform}
+                      disabled={!!syncing}
                       className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-brand-50 disabled:opacity-50"
                     >
                       <RefreshCw size={12} className={syncing === platform ? 'animate-spin' : ''} />
                       {syncing === platform ? 'מסנכרן...' : 'סנכרן'}
                     </button>
+                    {platform === 'google' && (
+                      <button
+                        onClick={() => sync('google_search')}
+                        disabled={!!syncing}
+                        className="flex items-center gap-1.5 text-xs text-green-600 hover:text-green-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50 disabled:opacity-50"
+                      >
+                        <RefreshCw size={12} className={syncing === 'google_search' ? 'animate-spin' : ''} />
+                        {syncing === 'google_search' ? 'מסנכרן...' : 'סנכרן Search Console'}
+                      </button>
+                    )}
                     <button
                       onClick={() => disconnect(platform)}
                       className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50"
