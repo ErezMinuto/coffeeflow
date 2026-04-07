@@ -216,7 +216,7 @@ async function fetchWooSales(
   const fourWksAgo = subtractDays(weekStart, 28);
   const { data, error } = await supabase
     .from("woo_orders")
-    .select("order_date,total,items,status")
+    .select("order_date,total,items,status,utm_source,utm_medium,utm_campaign")
     .gte("order_date", fourWksAgo)
     .lte("order_date", weekEnd)
     .in("status", ["completed", "processing"]);
@@ -250,8 +250,25 @@ async function fetchWooSales(
     ? `${weekRevenue > prevAvgWeekly ? "↑" : "↓"} ${Math.abs(Math.round((weekRevenue / prevAvgWeekly - 1) * 100))}% ממוצע 4 שבועות`
     : "";
 
+  // UTM attribution breakdown
+  const utmMap: Record<string, { orders: number; revenue: number }> = {};
+  for (const order of thisWeek) {
+    const src = order.utm_source
+      ? `${order.utm_source}/${order.utm_medium ?? "?"}${order.utm_campaign ? ` (${order.utm_campaign})` : ""}`
+      : "ישיר / לא מזוהה";
+    if (!utmMap[src]) utmMap[src] = { orders: 0, revenue: 0 };
+    utmMap[src].orders++;
+    utmMap[src].revenue += order.total || 0;
+  }
+  const utmBlock = Object.entries(utmMap)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .map(([src, v]) => `  ${src}: ${v.orders} הזמנות | ₪${Math.round(v.revenue)}`)
+    .join("\n");
+
   return `  הכנסות השבוע: ₪${Math.round(weekRevenue)} ${trend}
   מספר הזמנות: ${thisWeek.length}
+  מקורות (UTM):
+${utmBlock || "  אין נתוני UTM"}
   מוצרים מובילים:
 ${topProducts || "  אין נתונים"}`;
 }

@@ -33,6 +33,11 @@ interface WooLineItem {
   subtotal: string;
 }
 
+interface WooMeta {
+  key:   string;
+  value: string;
+}
+
 interface WooOrder {
   id:            number;
   date_created:  string;
@@ -41,6 +46,27 @@ interface WooOrder {
   currency:      string;
   line_items:    WooLineItem[];
   billing:       { email?: string };
+  meta_data:     WooMeta[];
+}
+
+// Extract UTM params from order meta_data
+// Plugins like WooCommerce Google Analytics Pro / Pixel Caffeine / PixelYourSite
+// store them under various key names — check the most common ones
+function extractUtm(meta: WooMeta[]): Record<string, string | null> {
+  const find = (...keys: string[]) => {
+    for (const k of keys) {
+      const m = meta.find(m => m.key === k);
+      if (m?.value) return String(m.value);
+    }
+    return null;
+  };
+  return {
+    utm_source:   find('utm_source',   '_utm_source',   'ga_utm_source',   'woo_ga_utm_source'),
+    utm_medium:   find('utm_medium',   '_utm_medium',   'ga_utm_medium',   'woo_ga_utm_medium'),
+    utm_campaign: find('utm_campaign', '_utm_campaign', 'ga_utm_campaign', 'woo_ga_utm_campaign'),
+    utm_content:  find('utm_content',  '_utm_content',  'ga_utm_content'),
+    utm_term:     find('utm_term',     '_utm_term',     'ga_utm_term'),
+  };
 }
 
 async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
@@ -51,6 +77,7 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
     status: "completed,processing",
     orderby: "date",
     order: "asc",
+    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data",
   });
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params}`;
   const res  = await fetch(url, { headers: { Authorization: `Basic ${wooAuth}` } });
@@ -91,21 +118,29 @@ serve(async (req) => {
     const orders = await fetchOrders(after, page);
     if (!orders.length) break;
 
-    const rows = orders.map((o: WooOrder) => ({
-      woo_order_id:   o.id,
-      order_date:     o.date_created.slice(0, 10),
-      status:         o.status,
-      total:          parseFloat(o.total) || 0,
-      currency:       o.currency ?? "ILS",
-      customer_email: o.billing?.email ?? null,
-      items: (o.line_items ?? []).map((li: WooLineItem) => ({
-        product_name: li.name,
-        sku:          li.sku,
-        quantity:     li.quantity,
-        subtotal:     parseFloat(li.subtotal) || 0,
-      })),
-      synced_at: new Date().toISOString(),
-    }));
+    const rows = orders.map((o: WooOrder) => {
+      const utm = extractUtm(o.meta_data ?? []);
+      return {
+        woo_order_id:   o.id,
+        order_date:     o.date_created.slice(0, 10),
+        status:         o.status,
+        total:          parseFloat(o.total) || 0,
+        currency:       o.currency ?? "ILS",
+        customer_email: o.billing?.email ?? null,
+        utm_source:     utm.utm_source,
+        utm_medium:     utm.utm_medium,
+        utm_campaign:   utm.utm_campaign,
+        utm_content:    utm.utm_content,
+        utm_term:       utm.utm_term,
+        items: (o.line_items ?? []).map((li: WooLineItem) => ({
+          product_name: li.name,
+          sku:          li.sku,
+          quantity:     li.quantity,
+          subtotal:     parseFloat(li.subtotal) || 0,
+        })),
+        synced_at: new Date().toISOString(),
+      };
+    });
 
     const { error } = await supabase
       .from("woo_orders")

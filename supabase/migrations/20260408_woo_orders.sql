@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS woo_orders (
   currency      TEXT NOT NULL DEFAULT 'ILS',
   items         JSONB NOT NULL DEFAULT '[]',     -- [{product_name, sku, quantity, subtotal}]
   customer_email TEXT,
+  utm_source    TEXT,                            -- e.g. google, facebook
+  utm_medium    TEXT,                            -- e.g. cpc, organic
+  utm_campaign  TEXT,                            -- campaign name
+  utm_content   TEXT,
+  utm_term      TEXT,
   synced_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
