@@ -1020,57 +1020,60 @@ serve(async (req) => {
   const runEfficiencyFinal = runEfficiency || agentArg === "both";
   const runOrganicFinal    = runOrganic    || agentArg === "both";
 
-  const agentsRun: string[] = [];
-  const errors: Record<string, string> = {};
-  const completedReports: Record<string, unknown> = {};
+  const weekEnd = addDays(weekStart, 6);
 
-  const runAgent = async (
-    type: string,
-    fn: () => Promise<{ report: unknown; tokensUsed: number }>,
-    model: string,
-  ) => {
-    await upsertReport(supabase, type, weekStart, { status: "running", error_msg: null });
-    try {
-      const { report, tokensUsed } = await fn();
-      await upsertReport(supabase, type, weekStart, {
-        status: "done", report, model, tokens_used: tokensUsed, error_msg: null,
-      });
-      agentsRun.push(type);
-      completedReports[type] = report;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[${type}] Error:`, msg);
-      await upsertReport(supabase, type, weekStart, { status: "error", error_msg: msg });
-      errors[type] = msg;
+  // Mark all requested agents as "running" BEFORE returning — so the frontend
+  // poll sees the status change immediately.
+  await Promise.all([
+    runGrowthFinal     ? upsertReport(supabase, "google_ads_growth",    weekStart, { status: "running", error_msg: null }) : null,
+    runEfficiencyFinal ? upsertReport(supabase, "google_ads_efficiency", weekStart, { status: "running", error_msg: null }) : null,
+    runOrganicFinal    ? upsertReport(supabase, "organic_content",       weekStart, { status: "running", error_msg: null }) : null,
+  ].filter(Boolean));
+
+  // Background work — runs after the 202 response is sent.
+  // EdgeRuntime.waitUntil keeps the function alive until the promise resolves.
+  const backgroundWork = async () => {
+    const agentsRun: string[] = [];
+    const completedReports: Record<string, unknown> = {};
+
+    const runAgent = async (
+      type: string,
+      fn: () => Promise<{ report: unknown; tokensUsed: number }>,
+      model: string,
+    ) => {
+      try {
+        const { report, tokensUsed } = await fn();
+        await upsertReport(supabase, type, weekStart, {
+          status: "done", report, model, tokens_used: tokensUsed, error_msg: null,
+        });
+        agentsRun.push(type);
+        completedReports[type] = report;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[${type}] Error:`, msg);
+        await upsertReport(supabase, type, weekStart, { status: "error", error_msg: msg });
+      }
+    };
+
+    await Promise.all([
+      runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart, focus),    MODEL_ADS)     : Promise.resolve(),
+      runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart, focus), MODEL_ADS)    : Promise.resolve(),
+      runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart, focus),   MODEL_ORGANIC) : Promise.resolve(),
+    ]);
+
+    if (agentsRun.length > 0) {
+      await sendAdvisorEmail(weekStart, weekEnd, completedReports).catch(e =>
+        console.error("[email] Failed to send digest:", e.message)
+      );
     }
   };
 
-  // Run all requested agents in parallel — reduces total time from ~3x to ~1x
-  await Promise.all([
-    runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart, focus),    MODEL_ADS)     : Promise.resolve(),
-    runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart, focus), MODEL_ADS)    : Promise.resolve(),
-    runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart, focus),   MODEL_ORGANIC) : Promise.resolve(),
-  ]);
+  // @ts-ignore — EdgeRuntime is a Supabase-specific global
+  EdgeRuntime.waitUntil(backgroundWork());
 
-  // Send email digest if at least one agent succeeded
-  if (agentsRun.length > 0) {
-    const weekEnd = addDays(weekStart, 6);
-    sendAdvisorEmail(weekStart, weekEnd, completedReports).catch(e =>
-      console.error("[email] Failed to send digest:", e.message)
-    );
-  }
-
-  const hasErrors = Object.keys(errors).length > 0;
+  // Return 202 immediately — frontend is already polling the DB
   return new Response(
-    JSON.stringify({
-      success: !hasErrors || agentsRun.length > 0,
-      week_start: weekStart,
-      agents_run: agentsRun,
-      errors: hasErrors ? errors : undefined,
-    }),
-    {
-      status: hasErrors && agentsRun.length === 0 ? 500 : 200,
-      headers: { ...CORS, "Content-Type": "application/json" },
-    },
+    JSON.stringify({ started: true, week_start: weekStart }),
+    { status: 202, headers: { ...CORS, "Content-Type": "application/json" } },
   );
 });
