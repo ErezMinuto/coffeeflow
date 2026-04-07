@@ -122,15 +122,94 @@ serve(async (req) => {
       records++
     }
 
+    // ── Fetch RSA ad creatives ─────────────────────────────────────────────
+    const adQuery = `
+      SELECT
+        ad_group_ad.ad.id,
+        ad_group_ad.ad.responsive_search_ad.headlines,
+        ad_group_ad.ad.responsive_search_ad.descriptions,
+        ad_group_ad.ad.final_urls,
+        ad_group_ad.ad_strength,
+        ad_group_ad.status,
+        ad_group.id,
+        ad_group.name,
+        campaign.id,
+        campaign.name,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.ctr,
+        metrics.conversions
+      FROM ad_group_ad
+      WHERE ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+        AND ad_group_ad.status != 'REMOVED'
+        AND campaign.status != 'REMOVED'
+        AND segments.date BETWEEN '${monthAgo}' AND '${today}'
+    `
+
+    const adRes = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'developer-token': devToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: adQuery }),
+    })
+
+    const adRawText = await adRes.text()
+    let adData
+    try { adData = JSON.parse(adRawText) } catch {
+      console.error('Ad creative API non-JSON:', adRawText.substring(0, 200))
+      adData = { results: [] }
+    }
+
+    let adRecords = 0
+    for (const row of adData.results || []) {
+      const rsa = row.adGroupAd?.ad?.responsiveSearchAd ?? {}
+      const headlines    = (rsa.headlines    ?? []).map((h: { text: string }) => h.text).filter(Boolean)
+      const descriptions = (rsa.descriptions ?? []).map((d: { text: string }) => d.text).filter(Boolean)
+      const finalUrls    = row.adGroupAd?.ad?.finalUrls ?? []
+      const adStrengthRaw = row.adGroupAd?.adStrength ?? ''
+
+      const adStrengthMap: Record<string, string> = {
+        EXCELLENT: 'מצוין', GOOD: 'טוב', AVERAGE: 'ממוצע',
+        POOR: 'חלש', PENDING: 'בבדיקה',
+      }
+
+      await supabase.from('google_ads').upsert({
+        ad_id:        String(row.adGroupAd?.ad?.id ?? ''),
+        ad_group_id:  String(row.adGroup?.id ?? ''),
+        ad_group_name: row.adGroup?.name ?? '',
+        campaign_id:  String(row.campaign?.id ?? ''),
+        campaign_name: row.campaign?.name ?? '',
+        status:       row.adGroupAd?.status ?? '',
+        ad_strength:  adStrengthMap[adStrengthRaw] ?? adStrengthRaw,
+        headlines,
+        descriptions,
+        final_urls:   finalUrls,
+        impressions:  row.metrics?.impressions ?? 0,
+        clicks:       row.metrics?.clicks ?? 0,
+        cost:         (row.metrics?.costMicros ?? 0) / 1_000_000,
+        ctr:          row.metrics?.ctr ?? 0,
+        conversions:  row.metrics?.conversions ?? 0,
+        synced_at:    new Date().toISOString(),
+      }, { onConflict: 'ad_id' })
+
+      adRecords++
+    }
+
+    console.log(`[google-sync] Ad creatives synced: ${adRecords}`)
+
     await supabase.from('sync_log').insert({
       platform: 'google',
       status: 'success',
-      records,
+      records: records + adRecords,
       started_at: startedAt,
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, records }), {
+    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

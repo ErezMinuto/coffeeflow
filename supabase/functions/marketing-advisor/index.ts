@@ -302,6 +302,38 @@ function buildGoogleDataBlock(
   return { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock };
 }
 
+// ── Google Ads Creative Helper ────────────────────────────────────────────────
+
+async function fetchAdCreatives(
+  supabase: ReturnType<typeof createClient>,
+): Promise<string> {
+  const { data: ads } = await supabase
+    .from("google_ads")
+    .select("campaign_name,ad_group_name,status,ad_strength,headlines,descriptions,impressions,clicks,ctr,conversions")
+    .neq("status", "REMOVED")
+    .order("impressions", { ascending: false });
+
+  if (!ads || ads.length === 0) return "  אין נתוני מודעות — סנכרן Google Ads כדי לקבל קריאייטיב.";
+
+  const lines = ads.map((ad: {
+    campaign_name: string; ad_group_name: string; status: string;
+    ad_strength: string; headlines: string[]; descriptions: string[];
+    impressions: number; clicks: number; ctr: number; conversions: number;
+  }) => {
+    const hl = (ad.headlines    ?? []).map((h: string) => `"${h}"`).join(" | ");
+    const ds = (ad.descriptions ?? []).map((d: string) => `"${d}"`).join(" | ");
+    const ctrPct = ((ad.ctr ?? 0) * 100).toFixed(1);
+    return [
+      `  📢 קמפיין: ${ad.campaign_name} → קבוצה: ${ad.ad_group_name}`,
+      `     חוזק מודעה: ${ad.ad_strength || "לא ידוע"} | חשיפות: ${ad.impressions} | קליקים: ${ad.clicks} | CTR: ${ctrPct}% | המרות: ${ad.conversions}`,
+      `     כותרות: ${hl || "אין"}`,
+      `     תיאורים: ${ds || "אין"}`,
+    ].join("\n");
+  }).join("\n\n");
+
+  return lines;
+}
+
 // ── WooCommerce Sales Helper ──────────────────────────────────────────────────
 
 async function fetchWooSales(
@@ -379,9 +411,10 @@ async function runGrowthAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const [{ currentAgg, prevAgg }, wooSales] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
+    fetchAdCreatives(supabase),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -415,7 +448,11 @@ ${prevBlock}
 === מכירות WooCommerce השבוע ===
 ${wooSales}
 
+=== קריאייטיב מודעות נוכחי (RSA) ===
+${adCreatives}
+
 השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
+בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
 
 החזר JSON בפורמט:
 {
@@ -485,9 +522,10 @@ async function runEfficiencyAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const [{ currentAgg, prevAgg }, wooSales] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
+    fetchAdCreatives(supabase),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -520,7 +558,11 @@ ${prevBlock}
 === מכירות WooCommerce השבוע ===
 ${wooSales}
 
+=== קריאייטיב מודעות נוכחי (RSA) ===
+${adCreatives}
+
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
+נתח את הכותרות והתיאורים הקיימים: האם הם חזקים? רלוונטיים? האם חוזק המודעה (Ad Strength) נמוך? ה-ads_to_rewrite צריך להתבסס על הקריאייטיב האמיתי שמוצג למעלה.
 
 החזר JSON בפורמט:
 {
