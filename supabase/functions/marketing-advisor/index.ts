@@ -1068,8 +1068,15 @@ serve(async (req) => {
     }
   };
 
-  // @ts-ignore — EdgeRuntime is a Supabase-specific global
-  EdgeRuntime.waitUntil(backgroundWork());
+  // Use EdgeRuntime.waitUntil if available (Supabase-specific global that keeps
+  // the function alive after the response is sent). Safe fallback if not present.
+  const er = (globalThis as Record<string, unknown>)["EdgeRuntime"] as
+    { waitUntil?: (p: Promise<unknown>) => void } | undefined;
+  if (er?.waitUntil) {
+    er.waitUntil(backgroundWork());
+  } else {
+    backgroundWork().catch(e => console.error("[bg] error:", e.message));
+  }
 
   // Return 202 immediately — frontend is already polling the DB
   return new Response(
