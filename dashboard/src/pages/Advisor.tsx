@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2 } from 'lucide-react'
+import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,12 +33,43 @@ interface BudgetRec {
   suggested_budget_change_pct: number
 }
 
+interface CampaignToCreate {
+  campaign_name: string
+  campaign_type: string
+  target_audience: string
+  keywords: string[]
+  headlines: string[]
+  descriptions: string[]
+  daily_budget_ils: number
+  rationale: string
+}
+
+interface AdToRewrite {
+  campaign: string
+  problem: string
+  new_headlines: string[]
+  new_descriptions: string[]
+  expected_improvement: string
+}
+
+interface PostToPublish {
+  type: string
+  topic: string
+  best_day: string
+  best_time: string
+  caption: string
+  hashtags: string[]
+  hook: string
+  visual_direction: string
+}
+
 interface GrowthReport {
   agent_philosophy: string
   summary: string
   google: GoogleKPIs | null
   budget_recommendations: BudgetRec[]
   growth_opportunities: { opportunity: string; action: string; expected_impact: string }[]
+  campaigns_to_create: CampaignToCreate[]
   key_insights: string[]
   next_week_focus: string
 }
@@ -49,6 +80,7 @@ interface EfficiencyReport {
   google: GoogleKPIs | null
   budget_recommendations: BudgetRec[]
   waste_identified: { campaign: string; issue: string; estimated_waste: string; fix: string }[]
+  ads_to_rewrite: AdToRewrite[]
   key_insights: string[]
   next_week_focus: string
 }
@@ -60,6 +92,7 @@ interface OrganicReport {
   content_recommendations: { priority: number; content_type: string; topic: string; reason: string; caption_idea: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
   next_week_calendar: { day: string; type: string; topic: string }[]
+  posts_to_publish: PostToPublish[]
   key_insights: string[]
   what_worked_last_week: string[]
 }
@@ -193,6 +226,18 @@ function KeyInsights({ insights }: { insights: string[] }) {
 
 // ── Growth Panel ──────────────────────────────────────────────────────────────
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+      className="shrink-0 flex items-center gap-1 text-xs text-surface-400 hover:text-brand-600 transition-colors px-2 py-1 rounded-lg hover:bg-brand-50"
+    >
+      {copied ? <><Check size={11} className="text-green-500" /> הועתק</> : <><Copy size={11} /> העתק</>}
+    </button>
+  )
+}
+
 function GrowthPanel({ row }: { row: AdvisorReport | null }) {
   if (!row)                     return <PanelEmpty label="סוכן צמיחה" />
   if (row.status === 'running') return <PanelRunning />
@@ -238,6 +283,55 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
                 <p className="text-sm font-medium text-blue-900 mb-1">{op.opportunity}</p>
                 <p className="text-xs text-blue-700 mb-1">▶ {op.action}</p>
                 <p className="text-xs text-blue-600 italic">{op.expected_impact}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Campaigns to create */}
+      {r.campaigns_to_create?.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">🎯 קמפיינים ליצירה</h4>
+          <div className="space-y-3">
+            {r.campaigns_to_create.map((c, i) => (
+              <div key={i} className="card p-3 border border-blue-200 bg-blue-50 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">{c.campaign_name}</p>
+                    <p className="text-xs text-blue-600">{c.campaign_type} · ₪{c.daily_budget_ils}/יום · {c.target_audience}</p>
+                  </div>
+                </div>
+                {c.keywords?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {c.keywords.map((kw, j) => (
+                      <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="bg-white rounded-lg p-2.5 space-y-1.5">
+                  <p className="text-xs font-semibold text-surface-500 mb-1">כותרות (העתק לGoogle Ads):</p>
+                  {c.headlines?.map((h, j) => (
+                    <div key={j} className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-surface-800 font-mono">{h}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`text-xs font-mono ${h.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{h.length}/30</span>
+                        <CopyButton text={h} />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs font-semibold text-surface-500 mt-2 mb-1">תיאורים:</p>
+                  {c.descriptions?.map((d, j) => (
+                    <div key={j} className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-surface-700">{d}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`text-xs font-mono ${d.length > 90 ? 'text-red-500' : 'text-surface-400'}`}>{d.length}/90</span>
+                        <CopyButton text={d} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-blue-700 italic">{c.rationale}</p>
               </div>
             ))}
           </div>
@@ -309,6 +403,44 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
                 </div>
                 <p className="text-xs text-red-700 mb-1">{w.issue}</p>
                 <p className="text-xs text-surface-600">✓ {w.fix}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ads to rewrite */}
+      {r.ads_to_rewrite?.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">✏️ מודעות לשכתוב</h4>
+          <div className="space-y-3">
+            {r.ads_to_rewrite.map((a, i) => (
+              <div key={i} className="card p-3 border border-amber-200 bg-amber-50 space-y-2">
+                <p className="text-sm font-semibold text-amber-900">{a.campaign}</p>
+                <p className="text-xs text-red-600">⚠ {a.problem}</p>
+                <div className="bg-white rounded-lg p-2.5 space-y-1.5">
+                  <p className="text-xs font-semibold text-surface-500 mb-1">כותרות חדשות:</p>
+                  {a.new_headlines?.map((h, j) => (
+                    <div key={j} className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-surface-800 font-mono">{h}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`text-xs font-mono ${h.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{h.length}/30</span>
+                        <CopyButton text={h} />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs font-semibold text-surface-500 mt-2 mb-1">תיאורים חדשים:</p>
+                  {a.new_descriptions?.map((d, j) => (
+                    <div key={j} className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-surface-700">{d}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`text-xs font-mono ${d.length > 90 ? 'text-red-500' : 'text-surface-400'}`}>{d.length}/90</span>
+                        <CopyButton text={d} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-green-700">✓ {a.expected_improvement}</p>
               </div>
             ))}
           </div>
@@ -426,6 +558,41 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
                   </span>
                 </div>
                 <p className="text-xs text-surface-500">{p.content_angle}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Posts to publish */}
+      {r.posts_to_publish?.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">📲 פוסטים מוכנים לפרסום</h4>
+          <div className="space-y-3">
+            {r.posts_to_publish.map((p, i) => (
+              <div key={i} className="card p-3 border border-green-200 bg-green-50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{contentTypeIcon(p.type)}</span>
+                    <span className="text-sm font-semibold text-green-900">{p.topic}</span>
+                  </div>
+                  <span className="text-xs text-surface-500">{p.best_day} {p.best_time}</span>
+                </div>
+                {p.hook && (
+                  <p className="text-xs font-medium text-surface-600 italic border-r-2 border-green-400 pr-2">"{p.hook}"</p>
+                )}
+                <div className="bg-white rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs text-surface-800 leading-relaxed whitespace-pre-line flex-1">{p.caption}</p>
+                    <CopyButton text={`${p.caption}\n\n${(p.hashtags ?? []).join(' ')}`} />
+                  </div>
+                  {p.hashtags?.length > 0 && (
+                    <p className="text-xs text-blue-600">{p.hashtags.join(' ')}</p>
+                  )}
+                </div>
+                {p.visual_direction && (
+                  <p className="text-xs text-surface-500">📷 {p.visual_direction}</p>
+                )}
               </div>
             ))}
           </div>
