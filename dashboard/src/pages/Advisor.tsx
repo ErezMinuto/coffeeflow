@@ -450,6 +450,7 @@ export default function AdvisorPage() {
   const [selectedWeek, setSelectedWeek]     = useState<string | null>(null)
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
+  const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -524,7 +525,7 @@ export default function AdvisorPage() {
   async function runAdvisor() {
     setRunning(true)
     await supabase.functions.invoke('marketing-advisor', {
-      body: { trigger: 'manual', agent: 'all' },
+      body: { trigger: 'manual', agent: 'all', focus: focus.trim() || undefined },
     })
     await loadWeeks()
     if (selectedWeek) startPolling(selectedWeek)
@@ -578,6 +579,29 @@ export default function AdvisorPage() {
             ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
             : <><RefreshCw size={14} /> הרץ עכשיו</>}
         </button>
+      </div>
+
+      {/* Focus context */}
+      <div className="card p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-surface-500 uppercase tracking-wider">
+            הוראות לסוכנים
+          </label>
+          {focus.trim() && (
+            <span className="text-xs text-brand-600 font-medium">● פעיל</span>
+          )}
+        </div>
+        <textarea
+          value={focus}
+          onChange={e => { setFocus(e.target.value); localStorage.setItem('advisor_focus', e.target.value) }}
+          placeholder="לדוגמה: התמקד במכירות קפה ספשלטי, אנחנו רוצים לגדול בתחום זה. שים דגש על מילות מפתח הקשורות לספשלטי ועל פוסטים שמדגישים את מקור הפולים."
+          rows={2}
+          dir="rtl"
+          className="w-full text-sm border border-surface-200 rounded-xl px-4 py-2.5 bg-surface-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition placeholder:text-surface-300 resize-none"
+        />
+        <p className="text-xs text-surface-400">
+          ההוראות יישלחו לכל שלושת הסוכנים בלחיצה על "הרץ עכשיו". נשמר אוטומטית.
+        </p>
       </div>
 
       {/* 3 panels */}

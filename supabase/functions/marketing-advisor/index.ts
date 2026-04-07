@@ -205,6 +205,7 @@ function buildGoogleDataBlock(
 async function runGrowthAgent(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
+  focus?: string,
 ) {
   const weekEnd = addDays(weekStart, 6);
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
@@ -263,8 +264,12 @@ ${prevBlock}
   "next_week_focus": "המהלך העיקרי לצמיחה השבוע הבא"
 }`;
 
+  const finalMessage = focus
+    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
+    : userMessage;
+
   console.log(`[growth] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, userMessage);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
   const parsed = JSON.parse(stripCodeFences(text));
   console.log(`[growth] Done. Tokens: ${inputTokens + outputTokens}`);
 
@@ -276,6 +281,7 @@ ${prevBlock}
 async function runEfficiencyAgent(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
+  focus?: string,
 ) {
   const weekEnd = addDays(weekStart, 6);
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
@@ -334,8 +340,12 @@ ${prevBlock}
   "next_week_focus": "המהלך העיקרי לשיפור יעילות השבוע הבא"
 }`;
 
+  const finalMessage = focus
+    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
+    : userMessage;
+
   console.log(`[efficiency] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, userMessage);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
   const parsed = JSON.parse(stripCodeFences(text));
   console.log(`[efficiency] Done. Tokens: ${inputTokens + outputTokens}`);
 
@@ -347,6 +357,7 @@ ${prevBlock}
 async function runOrganicAgent(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
+  focus?: string,
 ) {
   const weekEnd       = addDays(weekStart, 6);
   const thirtyDaysAgo = subtractDays(weekStart, 30);
@@ -516,8 +527,12 @@ ${inventoryBlock}
   "what_worked_last_week": ["מה עבד", "מה לא עבד"]
 }`;
 
+  const finalMessage = focus
+    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
+    : userMessage;
+
   console.log(`[organic] Calling Claude (${MODEL_ORGANIC})...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, userMessage);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, finalMessage);
   const parsed = JSON.parse(stripCodeFences(text));
   console.log(`[organic] Done. Tokens: ${inputTokens + outputTokens}`);
 
@@ -533,8 +548,11 @@ serve(async (req) => {
   const weekStart = getPreviousWeekStart();
   console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
-  let body: { trigger?: string; agent?: string } = {};
+  let body: { trigger?: string; agent?: string; focus?: string } = {};
   try { body = await req.json() } catch { /* default to all */ }
+
+  const focus = body.focus?.trim() || undefined;
+  if (focus) console.log(`[marketing-advisor] Focus context: ${focus.slice(0, 100)}`);
 
   const agentArg = body.agent ?? "all";
   const runGrowth     = agentArg === "google_ads_growth"     || agentArg === "all";
@@ -571,9 +589,9 @@ serve(async (req) => {
 
   // Run all requested agents in parallel — reduces total time from ~3x to ~1x
   await Promise.all([
-    runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart),    MODEL_ADS)     : Promise.resolve(),
-    runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart), MODEL_ADS)    : Promise.resolve(),
-    runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart),   MODEL_ORGANIC) : Promise.resolve(),
+    runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart, focus),    MODEL_ADS)     : Promise.resolve(),
+    runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart, focus), MODEL_ADS)    : Promise.resolve(),
+    runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart, focus),   MODEL_ORGANIC) : Promise.resolve(),
   ]);
 
   const hasErrors = Object.keys(errors).length > 0;
