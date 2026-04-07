@@ -166,24 +166,61 @@ export default function GoogleOrganicPage() {
     })
   }
 
-  const q = query.trim().toLowerCase()
+  const q = query.trim()
 
-  const sortedKeywords = sortRows(
-    q ? keywords.filter(k => k.keyword.toLowerCase().includes(q)) : keywords
-  )
-  const sortedPages = sortRows(
-    q ? pages.filter(p => p.page.toLowerCase().includes(q)) : pages
-  )
+  // Build a case-insensitive regex from the query.
+  // Supports: | for OR  (e.g. specialty|ספשלטי)
+  //           space as AND — all space-separated terms must match
+  // Falls back to plain substring if the regex is invalid.
+  const { regex, isAnd } = (() => {
+    if (!q) return { regex: null, isAnd: false }
+    try {
+      if (q.includes('|')) {
+        // OR mode — any part of the pipe-expression matches
+        return { regex: new RegExp(q, 'gi'), isAnd: false }
+      } else {
+        // AND mode — every space-separated term must appear somewhere
+        const terms = q.split(/\s+/).filter(Boolean)
+        return { regex: terms.map(t => new RegExp(t, 'gi')), isAnd: true }
+      }
+    } catch {
+      return { regex: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), isAnd: false }
+    }
+  })()
+
+  function matches(text: string) {
+    if (!regex) return true
+    if (isAnd) return (regex as RegExp[]).every(r => { r.lastIndex = 0; return r.test(text) })
+    const r = regex as RegExp; r.lastIndex = 0; return r.test(text)
+  }
+
+  const sortedKeywords = sortRows(q ? keywords.filter(k => matches(k.keyword)) : keywords)
+  const sortedPages    = sortRows(q ? pages.filter(p => matches(p.page))       : pages)
 
   function highlight(text: string) {
-    if (!q) return <>{text}</>
-    const idx = text.toLowerCase().indexOf(q)
-    if (idx === -1) return <>{text}</>
+    if (!regex) return <>{text}</>
+    const regexes = isAnd ? (regex as RegExp[]) : [regex as RegExp]
+    // Split text by all matches across all regexes and wrap matches in <mark>
+    let result = text
+    const parts: Array<{ str: string; marked: boolean }> = [{ str: text, marked: false }]
+    for (const r of regexes) {
+      r.lastIndex = 0
+      const next: typeof parts = []
+      for (const part of parts) {
+        if (part.marked) { next.push(part); continue }
+        const segs = part.str.split(new RegExp(`(${r.source})`, 'gi'))
+        const rTest = new RegExp(r.source, 'i')
+        segs.forEach(seg => next.push({ str: seg, marked: rTest.test(seg) && seg.length > 0 }))
+      }
+      parts.splice(0, parts.length, ...next)
+    }
     return (
       <>
-        {text.slice(0, idx)}
-        <mark className="bg-yellow-200 text-yellow-900 rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
-        {text.slice(idx + q.length)}
+        {parts.map((p, i) =>
+          p.marked
+            ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">{p.str}</mark>
+            : <span key={i}>{p.str}</span>
+        )}
       </>
     )
   }
@@ -259,7 +296,7 @@ export default function GoogleOrganicPage() {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="חפש מילת מפתח או עמוד..."
+            placeholder="חפש מילה, ביטוי, או specialty|ספשלטי לOR..."
             className="w-full pr-9 pl-9 py-2.5 text-sm rounded-xl border border-surface-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 placeholder:text-surface-300 transition"
             dir="rtl"
           />
