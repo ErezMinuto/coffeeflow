@@ -712,20 +712,28 @@ async function runOrganicAgent(
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
     .slice(0, 5);
 
-  const systemPrompt = `אתה מומחה תוכן אינסטגרם ו-SEO של Minuto Coffee, בית קפה ספשיאלטי ברחובות.
-הקהל שלך: ישראלים אוהבי קפה, 25–45, שגדלו על פייסבוק ועכשיו גוללים אינסטגרם.
-יש לך גישה לנתוני ביצועי אינסטגרם ול-Google Search Console — השתמש בשניהם ביחד.
-תובנות GSC: מה שאנשים מחפשים = נושאים שאפשר להפוך לתוכן אינסטגרם שיכה.
-כתוב פוסטים מוכנים לפרסום — כיתוב מלא להעתיק ישירות לאינסטגרם, כולל אמוג'ים, ריווח שורות, קריאה לפעולה, והאשטגים.
-חשוב ישראלי. כתוב בעברית ישראלית אמיתית — לא מתורגמת מאנגלית. איך בן אדם ישראלי מדבר על קפה עם חבר: ספונטני, קצת הומוריסטי, מאוד אנושי. לפעמים אפשר לשים מילה באנגלית כמו שמדברים בישראל. אל תהיה שיווקי. אל תהיה מנופח.
+  const systemPrompt = `אתה מומחה תוכן דיגיטלי של Minuto Coffee, בית קפה ספשלטי ברחובות.
+יש לך שתי אחריויות שוות במעמד — אל תזניח אף אחת מהן:
+
+1. אינסטגרם — ניהול תוכן ואסטרטגיית תוכן חברתי
+2. Google אורגני — SEO, בלוג, דפי נחיתה, ותוכן שמדורג בחיפוש
+
+הקהל: ישראלים אוהבי קפה, 25–45, שמחפשים בגוגל וגוללים אינסטגרם.
+GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר את זה גם לתוכן SEO (בלוג/דפים) וגם לפוסטי אינסטגרם.
+
+כתוב פוסטים אינסטגרם מוכנים לפרסום — כיתוב מלא, אמוג'ים, קריאה לפעולה, האשטגים.
+כתוב המלצות תוכן SEO קונקרטיות — כותרת מוצעת, נקודות עיקריות, מה לכתוב ולמה זה ידורג.
+
+חשוב ישראלי. עברית אמיתית — לא מתורגמת. ספונטני, קצת הומוריסטי, אנושי. לא שיווקי, לא מנופח.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי". כך אומרים בישראל.
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
   const gscBlock = topKeywords.length > 0
     ? topKeywords.map(k =>
-        `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`
+        `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום ממוצע: ${k.position}`
       ).join("\n")
-    : "  אין נתוני Search Console עדיין";
+    : "  אין נתוני Search Console עדיין — השתמש בידע הכללי שלך על קפה ספשלטי ישראל";
+
 
   const topPostsBlock = topPosts.map((p: { post_type: string; created_at: string; reach: number; likes: number; saves: number; message: string }) =>
     `  [${p.post_type}] ${p.created_at?.split("T")[0]} | reach: ${p.reach} | saves: ${p.saves} | likes: ${p.likes} | "${p.message?.substring(0, 60) ?? ""}"`
@@ -742,6 +750,8 @@ async function runOrganicAgent(
 
   const userMessage = `${seasonalContext}
 
+=== משימה כפולה: (1) אינסטגרם — פוסטים, ריילס, סטוריז | (2) Google אורגני — בלוג, דפי נחיתה, SEO ===
+
 === אינסטגרם — 30 יום אחרונים ===
 עוקבים: ${followerCount.toLocaleString()}
 ריילס (${reels.length}): reach ממוצע ${avgReach(reels)}, engagement ${avgEng(reels)}%
@@ -750,8 +760,9 @@ async function runOrganicAgent(
 פוסטים מובילים:
 ${topPostsBlock || "אין נתונים"}
 
-=== Google Search Console — שאילתות מובילות ===
+=== Google Search Console — שאילתות מובילות (בסיס ל-SEO ולאינסטגרם) ===
 ${gscBlock}
+הנחיה: השתמש בנתוני GSC כדי להמליץ גם על תוכן Google אורגני (בלוג/דפים) וגם על זווית לפוסטי אינסטגרם.
 
 === מלאי ===
 ${inventoryBlock}
@@ -764,19 +775,31 @@ ${wooSalesOrganic}
 
 החזר JSON:
 {
-  "summary": "2-3 משפטים — מה עבד, מה GSC מראה, מה הכיוון",
+  "summary": "2-3 משפטים — מה עבד באינסטגרם, מה GSC מראה, ומה ההזדמנות הגדולה ביותר בתוכן אורגני",
   "account_health": {
     "avg_reach_30d": ${avgReach(posts)},
     "follower_count": ${followerCount},
     "best_post_type": "reel|post|story",
     "engagement_rate_pct": ${avgEng(posts)}
   },
+  "google_organic_recommendations": [
+    {
+      "keyword": "מילת מפתח מ-GSC שכדאי לתקוף אורגנית",
+      "current_position": 8.5,
+      "search_volume_signal": "impressions: X",
+      "content_type": "blog_post|landing_page|product_page|faq_page",
+      "suggested_title": "כותרת מוצעת לעמוד/בלוג (H1)",
+      "key_points": ["נקודה 1 לכסות", "נקודה 2", "נקודה 3"],
+      "why_now": "למה הנושא הזה רלוונטי עכשיו — עונה, חג, מגמה",
+      "estimated_difficulty": "קל|בינוני|קשה"
+    }
+  ],
   "seo_content_opportunities": [
     {
       "keyword": "מילת מפתח מ-GSC",
       "search_volume_signal": "impressions: X",
       "current_position": 8.5,
-      "instagram_angle": "איך להפוך את זה לפוסט אינסטגרם"
+      "instagram_angle": "איך להפוך את זה לפוסט אינסטגרם מנצח"
     }
   ],
   "content_recommendations": [

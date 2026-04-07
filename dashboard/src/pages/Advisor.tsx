@@ -87,9 +87,21 @@ interface EfficiencyReport {
   next_week_focus: string
 }
 
+interface GoogleOrganicRec {
+  keyword: string
+  current_position: number
+  search_volume_signal: string
+  content_type: 'blog_post' | 'landing_page' | 'product_page' | 'faq_page'
+  suggested_title: string
+  key_points: string[]
+  why_now: string
+  estimated_difficulty: 'קל' | 'בינוני' | 'קשה'
+}
+
 interface OrganicReport {
   summary: string
   account_health: { avg_reach_30d: number; follower_count: number; best_post_type: string; engagement_rate_pct: number }
+  google_organic_recommendations: GoogleOrganicRec[]
   seo_content_opportunities: { keyword: string; search_volume_signal: string; current_position: number; instagram_angle: string }[]
   content_recommendations: { priority: number; content_type: string; topic: string; reason: string; caption_idea: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
@@ -524,10 +536,65 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
         </div>
       )}
 
-      {/* SEO content opportunities */}
+      {/* Google Organic Recommendations */}
+      {r.google_organic_recommendations?.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">🔍 Google אורגני — תוכן לכתוב</h4>
+          <div className="space-y-3">
+            {r.google_organic_recommendations.map((rec, i) => (
+              <div key={i} className="card p-3 border-r-4 border-indigo-400 bg-indigo-50 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-indigo-900">"{rec.keyword}"</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-indigo-600 font-mono">מיקום {rec.current_position}</span>
+                      <span className="text-xs text-surface-400">·</span>
+                      <span className="text-xs text-surface-500">{rec.search_volume_signal}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                      rec.estimated_difficulty === 'קל' ? 'bg-green-100 text-green-700' :
+                      rec.estimated_difficulty === 'בינוני' ? 'bg-amber-100 text-amber-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>{rec.estimated_difficulty}</span>
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full">
+                      {rec.content_type === 'blog_post' ? '📝 בלוג' :
+                       rec.content_type === 'landing_page' ? '🎯 דף נחיתה' :
+                       rec.content_type === 'product_page' ? '🛍️ דף מוצר' :
+                       '❓ FAQ'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-2.5 space-y-1">
+                  <p className="text-xs font-semibold text-surface-600">כותרת מוצעת:</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-surface-800">{rec.suggested_title}</p>
+                    <CopyButton text={rec.suggested_title} />
+                  </div>
+                </div>
+                {rec.key_points?.length > 0 && (
+                  <ul className="space-y-1">
+                    {rec.key_points.map((pt, j) => (
+                      <li key={j} className="text-xs text-indigo-800 flex gap-1.5">
+                        <span className="text-indigo-400 shrink-0">•</span>{pt}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {rec.why_now && (
+                  <p className="text-xs text-surface-500 italic">⏰ {rec.why_now}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SEO content opportunities → Instagram */}
       {r.seo_content_opportunities?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">הזדמנויות SEO → אינסטגרם</h4>
+          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">📱 SEO → אינסטגרם</h4>
           <div className="space-y-2">
             {r.seo_content_opportunities.slice(0, 3).map((op, i) => (
               <div key={i} className="card p-3 border-r-4 border-purple-400 bg-purple-50">
