@@ -49,6 +49,21 @@ interface WooOrder {
   meta_data:     WooMeta[];
 }
 
+// Orders created by mflow (B2B invoicing) have source_type = "Advanced Purchase Tracking (APT)"
+// Regular website orders have source_type = "Tag" or "API"
+// We skip mflow orders entirely — they are not real customer orders.
+const MFLOW_TRACKING_TYPE = "Advanced Purchase Tracking (APT)";
+
+function getTrackingType(meta: WooMeta[]): string | null {
+  const m = meta.find(m => m.key === "_wc_order_attribution_source_type");
+  return m?.value ? String(m.value) : null;
+}
+
+function isMflowOrder(meta: WooMeta[]): boolean {
+  const t = getTrackingType(meta);
+  return t !== null && t.toLowerCase().includes("advanced purchase tracking");
+}
+
 // Extract UTM params from order meta_data
 // Plugins like WooCommerce Google Analytics Pro / Pixel Caffeine / PixelYourSite
 // store them under various key names — check the most common ones
@@ -112,35 +127,48 @@ serve(async (req) => {
 
   let page = 1;
   let totalFetched = 0;
+  let totalSkipped = 0;
   let totalUpserted = 0;
 
   while (true) {
     const orders = await fetchOrders(after, page);
     if (!orders.length) break;
 
-    const rows = orders.map((o: WooOrder) => {
-      const utm = extractUtm(o.meta_data ?? []);
-      return {
-        woo_order_id:   o.id,
-        order_date:     o.date_created.slice(0, 10),
-        status:         o.status,
-        total:          parseFloat(o.total) || 0,
-        currency:       o.currency ?? "ILS",
-        customer_email: o.billing?.email ?? null,
-        utm_source:     utm.utm_source,
-        utm_medium:     utm.utm_medium,
-        utm_campaign:   utm.utm_campaign,
-        utm_content:    utm.utm_content,
-        utm_term:       utm.utm_term,
-        items: (o.line_items ?? []).map((li: WooLineItem) => ({
-          product_name: li.name,
-          sku:          li.sku,
-          quantity:     li.quantity,
-          subtotal:     parseFloat(li.subtotal) || 0,
-        })),
-        synced_at: new Date().toISOString(),
-      };
-    });
+    const rows = orders
+      .filter((o: WooOrder) => {
+        const meta = o.meta_data ?? [];
+        if (isMflowOrder(meta)) {
+          console.log(`[woo-orders-sync] Skipping mflow order #${o.id} (tracking: ${getTrackingType(meta)})`);
+          totalSkipped++;
+          return false;
+        }
+        return true;
+      })
+      .map((o: WooOrder) => {
+        const meta = o.meta_data ?? [];
+        const utm  = extractUtm(meta);
+        return {
+          woo_order_id:   o.id,
+          order_date:     o.date_created.slice(0, 10),
+          status:         o.status,
+          total:          parseFloat(o.total) || 0,
+          currency:       o.currency ?? "ILS",
+          customer_email: o.billing?.email ?? null,
+          tracking_type:  getTrackingType(meta),
+          utm_source:     utm.utm_source,
+          utm_medium:     utm.utm_medium,
+          utm_campaign:   utm.utm_campaign,
+          utm_content:    utm.utm_content,
+          utm_term:       utm.utm_term,
+          items: (o.line_items ?? []).map((li: WooLineItem) => ({
+            product_name: li.name,
+            sku:          li.sku,
+            quantity:     li.quantity,
+            subtotal:     parseFloat(li.subtotal) || 0,
+          })),
+          synced_at: new Date().toISOString(),
+        };
+      });
 
     const { error } = await supabase
       .from("woo_orders")
@@ -154,18 +182,18 @@ serve(async (req) => {
       );
     }
 
-    totalFetched   += orders.length;
-    totalUpserted  += rows.length;
-    console.log(`[woo-orders-sync] Page ${page}: ${orders.length} orders`);
+    totalFetched  += orders.length;
+    totalUpserted += rows.length;
+    console.log(`[woo-orders-sync] Page ${page}: ${orders.length} fetched, ${rows.length} upserted, ${orders.length - rows.length} skipped (mflow)`);
 
     if (orders.length < 100) break; // last page
     page++;
   }
 
-  console.log(`[woo-orders-sync] Done. Fetched: ${totalFetched}, Upserted: ${totalUpserted}`);
+  console.log(`[woo-orders-sync] Done. Fetched: ${totalFetched}, Upserted: ${totalUpserted}, Skipped (mflow): ${totalSkipped}`);
 
   return new Response(
-    JSON.stringify({ success: true, fetched: totalFetched, upserted: totalUpserted, after }),
+    JSON.stringify({ success: true, fetched: totalFetched, upserted: totalUpserted, skipped_mflow: totalSkipped, after }),
     { headers: { ...CORS, "Content-Type": "application/json" } },
   );
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check } from 'lucide-react'
+import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@ interface AdvisorReport {
   id: string
   agent_type: 'google_ads_growth' | 'google_ads_efficiency' | 'organic_content'
   week_start: string
-  status: 'pending' | 'running' | 'done' | 'error'
+  status: 'pending' | 'running' | 'done' | 'error' | 'cancelled'
   report: GrowthReport | EfficiencyReport | OrganicReport | null
   error_msg: string | null
   model: string | null
@@ -42,6 +42,7 @@ interface CampaignToCreate {
   descriptions: string[]
   daily_budget_ils: number
   rationale: string
+  creation_steps?: string[]
 }
 
 interface AdToRewrite {
@@ -50,6 +51,7 @@ interface AdToRewrite {
   new_headlines: string[]
   new_descriptions: string[]
   expected_improvement: string
+  creation_steps?: string[]
 }
 
 interface PostToPublish {
@@ -132,9 +134,10 @@ function contentTypeIcon(type: string) {
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: AdvisorReport['status'] }) {
-  if (status === 'done')    return <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✓ הושלם</span>
-  if (status === 'running') return <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"><Loader2 size={10} className="animate-spin" />מנתח...</span>
-  if (status === 'error')   return <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">✗ שגיאה</span>
+  if (status === 'done')      return <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✓ הושלם</span>
+  if (status === 'running')   return <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"><Loader2 size={10} className="animate-spin" />מנתח...</span>
+  if (status === 'error')     return <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">✗ שגיאה</span>
+  if (status === 'cancelled') return <span className="text-xs bg-surface-100 text-surface-500 px-2 py-0.5 rounded-full font-medium">✕ בוטל</span>
   return <span className="text-xs bg-surface-100 text-surface-500 px-2 py-0.5 rounded-full font-medium">ממתין</span>
 }
 
@@ -238,11 +241,37 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
+function StepsAccordion({ steps, label = '📋 הוראות יצירה ב-Google Ads' }: { steps: string[]; label?: string }) {
+  const [open, setOpen] = useState(false)
+  if (!steps?.length) return null
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-700 transition-colors w-full py-1"
+      >
+        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        {label}
+      </button>
+      {open && (
+        <ol className="mt-1.5 space-y-1.5 pr-2 border-r-2 border-surface-200">
+          {steps.map((step, i) => (
+            <li key={i} className="text-xs text-surface-600 leading-relaxed">
+              <span className="font-mono text-surface-400 ml-1">{i + 1}.</span> {step.replace(/^שלב \d+[:.]\s*/i, '')}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 function GrowthPanel({ row }: { row: AdvisorReport | null }) {
-  if (!row)                     return <PanelEmpty label="סוכן צמיחה" />
-  if (row.status === 'running') return <PanelRunning />
-  if (row.status === 'error')   return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)              return <PanelEmpty label="סוכן צמיחה" />
+  if (!row)                        return <PanelEmpty label="סוכן צמיחה" />
+  if (row.status === 'running')    return <PanelRunning />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן צמיחה" />
+  if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
+  if (!row.report)                 return <PanelEmpty label="סוכן צמיחה" />
   const r = row.report as GrowthReport
 
   return (
@@ -332,6 +361,7 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
                   ))}
                 </div>
                 <p className="text-xs text-blue-700 italic">{c.rationale}</p>
+                {c.creation_steps && <StepsAccordion steps={c.creation_steps} />}
               </div>
             ))}
           </div>
@@ -353,10 +383,11 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
 // ── Efficiency Panel ──────────────────────────────────────────────────────────
 
 function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
-  if (!row)                     return <PanelEmpty label="סוכן יעילות" />
-  if (row.status === 'running') return <PanelRunning />
-  if (row.status === 'error')   return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)              return <PanelEmpty label="סוכן יעילות" />
+  if (!row)                        return <PanelEmpty label="סוכן יעילות" />
+  if (row.status === 'running')    return <PanelRunning />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן יעילות" />
+  if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
+  if (!row.report)                 return <PanelEmpty label="סוכן יעילות" />
   const r = row.report as EfficiencyReport
 
   return (
@@ -441,6 +472,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
                   ))}
                 </div>
                 <p className="text-xs text-green-700">✓ {a.expected_improvement}</p>
+                {a.creation_steps && <StepsAccordion steps={a.creation_steps} label="📋 איך לערוך ב-Google Ads" />}
               </div>
             ))}
           </div>
@@ -462,10 +494,11 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
 function OrganicPanel({ row }: { row: AdvisorReport | null }) {
-  if (!row)                     return <PanelEmpty label="סוכן תוכן אורגני" />
-  if (row.status === 'running') return <PanelRunning />
-  if (row.status === 'error')   return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)              return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (!row)                        return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (row.status === 'running')    return <PanelRunning />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
+  if (!row.report)                 return <PanelEmpty label="סוכן תוכן אורגני" />
   const r = row.report as OrganicReport
 
   return (
@@ -634,7 +667,7 @@ export default function AdvisorPage() {
     const { data } = await supabase
       .from('advisor_reports')
       .select('week_start')
-      .in('status', ['done', 'running', 'error'])
+      .in('status', ['done', 'running', 'error', 'cancelled'])
       .order('week_start', { ascending: false })
       .limit(16)
 
@@ -681,6 +714,7 @@ export default function AdvisorPage() {
       }
       setRows(newRows)
 
+      // Stop polling when nothing is running (done, error, or cancelled)
       if (!fetched.some(r => r.status === 'running')) {
         clearInterval(pollRef.current!)
         setRunning(false)
@@ -691,11 +725,29 @@ export default function AdvisorPage() {
 
   async function runAdvisor() {
     setRunning(true)
-    await supabase.functions.invoke('marketing-advisor', {
+    // Don't await — let it run in background; polling tracks progress
+    supabase.functions.invoke('marketing-advisor', {
       body: { trigger: 'manual', agent: 'all', focus: focus.trim() || undefined },
-    })
+    }).catch(() => {/* edge fn errors are stored in DB by the function itself */})
+    // Wait briefly for the function to write "running" rows, then start polling
+    await new Promise(r => setTimeout(r, 1500))
     await loadWeeks()
-    if (selectedWeek) startPolling(selectedWeek)
+    const week = selectedWeek
+    if (week) startPolling(week)
+  }
+
+  async function cancelAdvisor() {
+    if (pollRef.current) clearInterval(pollRef.current)
+    setRunning(false)
+    // Mark all running rows as cancelled in DB
+    if (selectedWeek) {
+      await supabase
+        .from('advisor_reports')
+        .update({ status: 'cancelled', error_msg: 'בוטל על ידי המשתמש' })
+        .eq('week_start', selectedWeek)
+        .eq('status', 'running')
+      await loadReports(selectedWeek)
+    }
   }
 
   const isRunning = Object.values(rows).some(r => r?.status === 'running') || running
@@ -737,15 +789,25 @@ export default function AdvisorPage() {
             {selectedWeek ? `שבוע ${formatWeek(selectedWeek)}` : 'טרם הופעל'} · 3 סוכנים
           </p>
         </div>
-        <button
-          onClick={runAdvisor}
-          disabled={isRunning}
-          className="btn btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isRunning
-            ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
-            : <><RefreshCw size={14} /> הרץ עכשיו</>}
-        </button>
+        <div className="flex items-center gap-2">
+          {isRunning && (
+            <button
+              onClick={cancelAdvisor}
+              className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 bg-white px-3 py-1.5 rounded-xl transition-colors"
+            >
+              <XCircle size={14} /> עצור
+            </button>
+          )}
+          <button
+            onClick={runAdvisor}
+            disabled={isRunning}
+            className="btn btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRunning
+              ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
+              : <><RefreshCw size={14} /> הרץ עכשיו</>}
+          </button>
+        </div>
       </div>
 
       {/* Focus context */}

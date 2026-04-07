@@ -95,6 +95,102 @@ async function callClaude(
   };
 }
 
+// ── Israeli Seasonal & Holiday Context ───────────────────────────────────────
+
+interface CalendarEvent {
+  name:          string;
+  date:          string;  // YYYY-MM-DD (start date)
+  endDate?:      string;  // for multi-day events
+  type:          'major_holiday' | 'national' | 'commercial';
+  marketingNote: string;
+}
+
+const CALENDAR_EVENTS: CalendarEvent[] = [
+  // ── 5785 / 2025 ──
+  { name: 'ראש השנה', date: '2025-09-22', endDate: '2025-09-24', type: 'major_holiday', marketingNote: 'עונת מתנות גדולה — סלסלות, קפה כמתנה, ארוחות משפחתיות. לקוחות קונים מראש.' },
+  { name: 'יום כיפור', date: '2025-10-01', endDate: '2025-10-02', type: 'national', marketingNote: 'יום צום — עצור פרסום ביום עצמו ויום לפניו. אחריו: חזרה לשגרה ולקפה.' },
+  { name: 'סוכות', date: '2025-10-06', endDate: '2025-10-12', type: 'major_holiday', marketingNote: 'שבוע חופש — אנשים פנויים, בילויים, קניות. הזדמנות לתוכן חגיגי.' },
+  { name: 'שמחת תורה', date: '2025-10-14', type: 'major_holiday', marketingNote: 'סיום חגי תשרי — אחרי כן חזרה לשגרה מלאה.' },
+  { name: 'חנוכה', date: '2025-12-14', endDate: '2025-12-22', type: 'major_holiday', marketingNote: 'עונת מתנות — חנוכה = קניות, מתנות, כינוסים משפחתיים. קפה כמתנה מעולה.' },
+  // ── 5786 / 2026 ──
+  { name: 'ט"ו בשבט', date: '2026-02-12', type: 'national', marketingNote: 'חיבור לטבע וקיימות — מתאים לתוכן על קפה מגידול אתי, טרייסביליטי, השפעה סביבתית.' },
+  { name: 'פורים', date: '2026-03-03', type: 'major_holiday', marketingNote: 'חג שמח ומשוחרר — תוכן מהנה, משנה תחפושות, מתנות. אנשים במצב רוח קנייה.' },
+  { name: 'פסח', date: '2026-04-01', endDate: '2026-04-08', type: 'major_holiday', marketingNote: 'שבוע חופש — אנשים בבית, סדרים משפחתיים. קפה חינם מחמץ = מותר. הזמנות מראש לחג.' },
+  { name: 'יום השואה', date: '2026-04-16', type: 'national', marketingNote: 'יום זיכרון — אין פרסום שמח, אין קמפיינים ביום עצמו.' },
+  { name: 'יום הזיכרון', date: '2026-04-28', type: 'national', marketingNote: 'יום זיכרון חללים — אין פרסום שמח ביום עצמו.' },
+  { name: 'יום העצמאות', date: '2026-04-29', type: 'national', marketingNote: 'יום חגיגות — BBQ, אירועים בחוץ, ביקורים. הזדמנות לתוכן פטריוטי ולהגעה למשפחות.' },
+  { name: 'שבועות', date: '2026-05-21', endDate: '2026-05-22', type: 'major_holiday', marketingNote: 'חג חלבי — לילות לבנים, ארוחות חלביות. קפה מתאים לאווירה.' },
+  { name: 'ראש השנה', date: '2026-09-11', endDate: '2026-09-13', type: 'major_holiday', marketingNote: 'עונת מתנות גדולה — כנ"ל ראש השנה 2025.' },
+  { name: 'יום כיפור', date: '2026-09-20', type: 'national', marketingNote: 'יום צום — עצור פרסום ביום ויום לפניו.' },
+  { name: 'סוכות', date: '2026-09-25', endDate: '2026-10-01', type: 'major_holiday', marketingNote: 'שבוע חופש — תוכן חגיגי, אנשים פנויים.' },
+  { name: 'חנוכה', date: '2026-12-13', endDate: '2026-12-21', type: 'major_holiday', marketingNote: 'עונת מתנות — קפה כמתנה מושלמת לחנוכה.' },
+  // ── 5787 / 2027 ──
+  { name: 'פורים', date: '2027-03-03', type: 'major_holiday', marketingNote: 'חג שמח — תוכן מהנה ומתנות.' },
+  { name: 'פסח', date: '2027-03-22', endDate: '2027-03-30', type: 'major_holiday', marketingNote: 'שבוע חופש ומשפחות.' },
+  // ── Commercial / International ──
+  { name: 'ולנטיין', date: '2026-02-14', type: 'commercial', marketingNote: 'מתנות זוגיות — חוויית קפה כמתנה, מארזים לזוגות.' },
+  { name: "יום האישה הבינ'ל", date: '2026-03-08', type: 'commercial', marketingNote: 'הזדמנות לתוכן שמציין נשים בשרשרת הקפה (מגדלות, קולות).' },
+  { name: 'יום הקפה הבינ"ל', date: '2026-10-01', type: 'commercial', marketingNote: 'יום חגיגה לענף — תוכן, מבצע, סיפורי מקור. גדול בקהילת ספשיאלטי.' },
+  { name: 'בלאק פריידי', date: '2026-11-27', type: 'commercial', marketingNote: 'עונת מכירות — ישראלים קונים בלאק פריידי. מבצעים, הנחות, מארזים.' },
+];
+
+function getSeasonalContext(weekStart: string): string {
+  const date   = new Date(weekStart);
+  const month  = date.getMonth() + 1; // 1–12
+  const dayMs  = 1000 * 60 * 60 * 24;
+
+  // Israeli seasons (adjusted for Mediterranean climate)
+  let season: string;
+  let coffeeNote: string;
+  if (month === 12 || month <= 2) {
+    season    = 'חורף';
+    coffeeNote = 'עונת קפה חם — אספרסו, פילטר, מקורות מיוחדים. לקוחות מחפשים חוויה חמה ואווירה נעימה.';
+  } else if (month >= 3 && month <= 5) {
+    season    = 'אביב (ישראל = כבר חם)';
+    coffeeNote = 'מעבר מהיר לקפה קר — באפריל-מאי כבר חם. Cold Brew ואייס לאטה מתחילים לקחת עליונות. מתאים לצילומי חוץ.';
+  } else if (month >= 6 && month <= 9) {
+    season    = 'קיץ';
+    coffeeNote = 'עונת קפה קר — Cold Brew, Nitro, אייס לאטה. קיץ ישראלי = 35°+. תוכן שמראה רענון וקרירות.';
+  } else {
+    season    = 'סתיו';
+    coffeeNote = 'חזרה לקפה חם — אחרי הקיץ הארוך, אנשים שמחים לשוב לאספרסו ומשקאות חמים. עונה טובה לסיפורי מקור.';
+  }
+
+  // Find events in window: 7 days before weekStart to 21 days after
+  const windowStart = new Date(date.getTime() - 7  * dayMs);
+  const windowEnd   = new Date(date.getTime() + 21 * dayMs);
+
+  const relevant = CALENDAR_EVENTS.filter(ev => {
+    const start = new Date(ev.date);
+    const end   = ev.endDate ? new Date(ev.endDate) : start;
+    return end >= windowStart && start <= windowEnd;
+  });
+
+  const lines: string[] = [];
+  for (const ev of relevant) {
+    const evDate  = new Date(ev.date);
+    const diffDays = Math.round((evDate.getTime() - date.getTime()) / dayMs);
+    let when: string;
+    if (diffDays < -1)       when = `מתרחש עכשיו / לפני ${Math.abs(diffDays)} ימים`;
+    else if (diffDays === -1) when = 'אתמול';
+    else if (diffDays === 0)  when = 'היום';
+    else if (diffDays === 1)  when = 'מחר';
+    else if (diffDays <= 7)  when = `בעוד ${diffDays} ימים`;
+    else                      when = `בעוד ${diffDays} ימים (${ev.date})`;
+
+    const urgency = ev.type === 'national' ? '⚠️' : ev.type === 'major_holiday' ? '🎉' : '📅';
+    lines.push(`${urgency} ${ev.name} — ${when}\n   → ${ev.marketingNote}`);
+  }
+
+  const eventsBlock = lines.length > 0
+    ? `\nאירועים רלוונטיים (שבוע אחורה ועד 3 שבועות קדימה):\n${lines.join('\n')}`
+    : '\nאין חגים או אירועים מיוחדים בשלושת השבועות הקרובים — שגרה מלאה.';
+
+  return `=== הקשר עונתי ואירועים ===
+עונה: ${season}
+${coffeeNote}${eventsBlock}`;
+}
+
 async function upsertReport(
   supabase: ReturnType<typeof createClient>,
   agentType: string,
@@ -295,10 +391,16 @@ async function runGrowthAgent(
 אתה מוכן לקחת סיכון מחושב כדי לבנות מותג ולגדול.
 אל תמליץ לצמצם אלא אם הנתונים מאוד גרועים — העדף להגדיל תקציב, לרחב קהל, לבדוק קריאייטיב חדש.
 בנוסף להמלצות, תכתוב קמפיינים ממומנים מוכנים ליצירה עם כותרות ותיאורים אמיתיים.
-כותרות Google Ads: עד 30 תווים כל אחת. תיאורים: עד 90 תווים כל אחד. כתוב בעברית.
+כותרות Google Ads: עד 30 תווים כל אחת. תיאורים: עד 90 תווים כל אחד.
+לכל קמפיין תוסיף creation_steps — שלבים מדויקים ומספרים איך ליצור אותו ב-Google Ads UI, לפי סוג הקמפיין (Search / Performance Max / Shopping). השלבים צריכים להיות מעשיים כאילו כתבת מדריך למשתמש.
+חשוב בעברית ישראלית ישירות — לא מתרגם מאנגלית. כתוב כמו שישראלי מדבר: ישיר, תכליתי, לפעמים קצת בוטה. סלנג ישראלי מותר ומעודד. אל תהיה פורמלי מדי.
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
-  const userMessage = `נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
+  const seasonalContext = getSeasonalContext(weekStart);
+
+  const userMessage = `${seasonalContext}
+
+נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
 
 === קמפיינים השבוע ===
 ${campaignBlock}
@@ -311,6 +413,8 @@ ${prevBlock}
 
 === מכירות WooCommerce השבוע ===
 ${wooSales}
+
+השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
 
 החזר JSON בפורמט:
 {
@@ -350,7 +454,8 @@ ${wooSales}
       "headlines": ["כותרת 1 (עד 30 תווים)", "כותרת 2 (עד 30 תווים)", "כותרת 3 (עד 30 תווים)"],
       "descriptions": ["תיאור 1 (עד 90 תווים)", "תיאור 2 (עד 90 תווים)"],
       "daily_budget_ils": 50,
-      "rationale": "למה הקמפיין הזה עכשיו"
+      "rationale": "למה הקמפיין הזה עכשיו",
+      "creation_steps": ["שלב 1: כנס ל-Google Ads → לחץ + קמפיין חדש", "שלב 2: בחר מטרה...", "שלב 3: ..."]
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
@@ -390,10 +495,16 @@ async function runEfficiencyAgent(
 הפילוסופיה שלך: יעילות. כל שקל צריך להחזיר ערך. לחתוך בזבוז, לרכז תקציב בקמפיינים שמוכיחים ROI.
 אתה מחפש דפוסי בזבוז, קמפיינים שמפסידים כסף, ומקומות שאפשר לשפר CPA בלי להגדיל תקציב.
 בנוסף לניתוח, תכתוב מודעות משופרות מוכנות להחלפה — כותרות ותיאורים חדשים לקמפיינים החלשים.
-כותרות Google Ads: עד 30 תווים כל אחת. תיאורים: עד 90 תווים כל אחד. כתוב בעברית.
+כותרות Google Ads: עד 30 תווים כל אחת. תיאורים: עד 90 תווים כל אחד.
+לכל מודעה לשכתוב תוסיף creation_steps — שלבים מספרים ומדויקים איך לערוך את המודעה ב-Google Ads UI (איפה ללחוץ, מה לשנות, איך לשמור). כאילו אתה כותב מדריך למשתמש שלא מכיר את הממשק.
+חשוב בעברית ישראלית ישירות — לא מתרגם מאנגלית. כתוב כמו שישראלי מדבר: קצר, עניני, ישיר. סלנג מותר. אל תהיה פורמלי.
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
-  const userMessage = `נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
+  const seasonalContext = getSeasonalContext(weekStart);
+
+  const userMessage = `${seasonalContext}
+
+נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
 
 === קמפיינים השבוע ===
 ${campaignBlock}
@@ -406,6 +517,8 @@ ${prevBlock}
 
 === מכירות WooCommerce השבוע ===
 ${wooSales}
+
+השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
 
 החזר JSON בפורמט:
 {
@@ -443,7 +556,8 @@ ${wooSales}
       "problem": "מה לא עובד במודעה הנוכחית",
       "new_headlines": ["כותרת חדשה 1 (עד 30 תווים)", "כותרת חדשה 2 (עד 30 תווים)", "כותרת חדשה 3 (עד 30 תווים)"],
       "new_descriptions": ["תיאור חדש 1 (עד 90 תווים)", "תיאור חדש 2 (עד 90 תווים)"],
-      "expected_improvement": "מה ישתפר"
+      "expected_improvement": "מה ישתפר",
+      "creation_steps": ["שלב 1: כנס ל-Google Ads → קמפיינים → [שם הקמפיין]", "שלב 2: לחץ על 'מודעות'...", "שלב 3: ..."]
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
@@ -554,12 +668,12 @@ async function runOrganicAgent(
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
     .slice(0, 5);
 
-  const systemPrompt = `אתה מומחה אסטרטגיית תוכן לאינסטגרם ו-SEO של Minuto Coffee, בית קפה ספשיאלטי ברחובות.
-הקהל: אוהבי קפה ישראלים, 25–45. שפה: עברית אותנטית, לא שיווקית.
-יש לך גישה לנתוני אינסטגרם אורגני וגם ל-Google Search Console — השתמש בשניהם.
-תובנות GSC: מילות מפתח שאנשים מחפשים עליהן = נושאים שכדאי לדבר עליהם גם באינסטגרם.
-בנוסף לניתוח, תכתוב פוסטים מוכנים לפרסום — כיתוב מלא שניתן להעתיק ישירות לאינסטגרם, כולל אמוג'ים, שורות ריווח, קריאה לפעולה, והאשטגים.
-הכיתוב צריך להיות אותנטי, קצת סיפורי, ולא מרגיש כמו פרסומת.
+  const systemPrompt = `אתה מומחה תוכן אינסטגרם ו-SEO של Minuto Coffee, בית קפה ספשיאלטי ברחובות.
+הקהל שלך: ישראלים אוהבי קפה, 25–45, שגדלו על פייסבוק ועכשיו גוללים אינסטגרם.
+יש לך גישה לנתוני ביצועי אינסטגרם ול-Google Search Console — השתמש בשניהם ביחד.
+תובנות GSC: מה שאנשים מחפשים = נושאים שאפשר להפוך לתוכן אינסטגרם שיכה.
+כתוב פוסטים מוכנים לפרסום — כיתוב מלא להעתיק ישירות לאינסטגרם, כולל אמוג'ים, ריווח שורות, קריאה לפעולה, והאשטגים.
+חשוב ישראלי. כתוב בעברית ישראלית אמיתית — לא מתורגמת מאנגלית. איך בן אדם ישראלי מדבר על קפה עם חבר: ספונטני, קצת הומוריסטי, מאוד אנושי. לפעמים אפשר לשים מילה באנגלית כמו שמדברים בישראל. אל תהיה שיווקי. אל תהיה מנופח.
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
   const gscBlock = topKeywords.length > 0
@@ -579,7 +693,10 @@ async function runOrganicAgent(
     ...healthyStock.map((p: { name: string; packed_stock: number }) => `  ✅ ${p.name}: ${p.packed_stock} שקיות`),
   ].join("\n");
 
-  const userMessage = `
+  const seasonalContext = getSeasonalContext(weekStart);
+
+  const userMessage = `${seasonalContext}
+
 === אינסטגרם — 30 יום אחרונים ===
 עוקבים: ${followerCount.toLocaleString()}
 ריילס (${reels.length}): reach ממוצע ${avgReach(reels)}, engagement ${avgEng(reels)}%
@@ -598,6 +715,7 @@ ${inventoryBlock}
 ${wooSalesOrganic}
 
 === לוח תוכן לשבוע ${weekStart}–${weekEnd} ===
+התחשב בעונה ובחגים הקרובים בלוח התוכן — תזמן פוסטים לפני חגים, הימנע מפוסטים שמחים בימי זיכרון.
 
 החזר JSON:
 {

@@ -31,7 +31,16 @@ async function send(chatId: string | number, text: string) {
 
 // ── Claude: extract packing intent ─────────────────────────────────────────
 
-async function extractPacking(text: string): Promise<{ product: string; bags: number } | null> {
+interface Product { id: number; name: string; size: number; [key: string]: unknown }
+
+async function extractPacking(
+  text: string,
+  products: Product[],
+): Promise<{ productId: number; bags: number } | null> {
+  const productList = products
+    .map(p => `id:${p.id} → "${p.name} ${p.size}g"`)
+    .join("\n");
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -42,12 +51,16 @@ async function extractPacking(text: string): Promise<{ product: string; bags: nu
     body: JSON.stringify({
       model:      "claude-haiku-4-5",
       max_tokens: 100,
-      system: `Extract packing info from a Hebrew message. Return JSON only.
-Examples:
-  "ארזתי 20 שקיות אתיופיה" → {"product":"אתיופיה","bags":20}
-  "עשיתי 15 קניה לייט"     → {"product":"קניה לייט","bags":15}
-  "packed 30 ethiopia"      → {"product":"ethiopia","bags":30}
-  unrelated message          → {"product":"","bags":0}`,
+      system: `אתה מזהה דיווחי אריזה מהודעות עברית.
+רשימת המוצרים הזמינים:
+${productList}
+
+החזר JSON בלבד:
+  {"product_id": <id של המוצר המתאים>, "bags": <כמות שקיות>}
+אם לא מדובר בדיווח אריזה, או שהמוצר לא קיים ברשימה:
+  {"product_id": 0, "bags": 0}
+
+דוגמאות: "ארזתי 20 אתיופיה" → זהה לפי שם קרוב ברשימה. "אתיופיה דיי בנסה חד זני קלייה בהירה" — מצא את המוצר הכי קרוב גם אם הניסוח שונה.`,
       messages: [{ role: "user", content: text }],
     }),
   });
@@ -57,7 +70,9 @@ Examples:
   try {
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
-    if (parsed.product && parsed.bags > 0) return { product: parsed.product, bags: parsed.bags };
+    if (parsed.product_id > 0 && parsed.bags > 0) {
+      return { productId: parsed.product_id, bags: parsed.bags };
+    }
     return null;
   } catch {
     return null;
@@ -87,36 +102,14 @@ async function handleStock(chatId: string) {
   await send(chatId, `📦 <b>מלאי שקיות ארוזות:</b>\n\n${lines}`);
 }
 
-async function handlePacking(chatId: string, fromName: string, productName: string, bagsCount: number) {
-  const { data: products } = await supabase.from("products").select("*").eq("user_id", USER_ID);
+async function handlePacking(chatId: string, fromName: string, productId: number, bagsCount: number, allProducts: Product[]) {
+  const product = allProducts.find(p => p.id === productId);
 
-  if (!products || products.length === 0) {
-    await send(chatId, "❌ לא נמצאו מוצרים במערכת");
+  if (!product) {
+    const list = allProducts.map(p => `• ${p.name} ${p.size}g`).join("\n");
+    await send(chatId, `⚠️ לא מצאתי את המוצר במערכת\n\nמוצרים זמינים:\n${list}`);
     return;
   }
-
-  const stripAccents = (s: string) =>
-    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-  const norm    = stripAccents(productName.toLowerCase().trim());
-  const matches = products.filter(p => {
-    const pNorm = stripAccents(p.name.toLowerCase());
-    return pNorm.includes(norm) || norm.includes(pNorm);
-  });
-
-  if (matches.length === 0) {
-    const list = products.map(p => `• ${p.name} ${p.size}g`).join("\n");
-    await send(chatId, `⚠️ לא מצאתי מוצר בשם "<b>${productName}</b>"\n\nמוצרים זמינים:\n${list}`);
-    return;
-  }
-
-  if (matches.length > 1) {
-    const list = matches.map((p, i) => `${i + 1}. ${p.name} ${p.size}g`).join("\n");
-    await send(chatId, `❓ מצאתי כמה מוצרים תואמים:\n\n${list}\n\nנסה שוב עם שם מדויק יותר`);
-    return;
-  }
-
-  const product = matches[0];
   const sizeKg  = product.size / 1000;
   const recipe: Array<{ sourceType: string; sourceId?: number; originId?: number; percentage: number }> = product.recipe ?? [];
 
@@ -214,14 +207,27 @@ serve(async (req) => {
     if (lower.startsWith("/stock")) {
       await handleStock(chatId);
     } else if (!lower.startsWith("/")) {
-      const packing = await extractPacking(text);
+      // Fetch products once — passed to both Claude (for smart matching) and handlePacking
+      const { data: allProducts } = await supabase
+        .from("products")
+        .select("*")
+        .eq("user_id", USER_ID);
+
+      if (!allProducts || allProducts.length === 0) {
+        await send(chatId, "❌ לא נמצאו מוצרים במערכת");
+        return new Response("ok");
+      }
+
+      const packing = await extractPacking(text, allProducts as Product[]);
       if (packing) {
-        await handlePacking(chatId, fromName, packing.product, packing.bags);
+        await handlePacking(chatId, fromName, packing.productId, packing.bags, allProducts as Product[]);
       } else {
+        const list = (allProducts as Product[]).map(p => `• ${p.name} ${p.size}g`).join("\n");
         await send(chatId,
           `לא הבנתי 🤔\n\n` +
           `לדיווח אריזה:\n<code>ארזתי 20 שקיות אתיופיה</code>\n\n` +
-          `לצפייה במלאי:\n<code>/stock</code>`
+          `לצפייה במלאי:\n<code>/stock</code>\n\n` +
+          `מוצרים במערכת:\n${list}`
         );
       }
     }
