@@ -20,10 +20,9 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// Growth + Efficiency: sonnet (structured numerical analysis)
-// Organic: opus (creative content + cultural nuance)
-const MODEL_ADS     = "claude-sonnet-4-5-20250929";
-const MODEL_ORGANIC = "claude-opus-4-5";
+// All agents: claude-3-7-sonnet — fast, reliable, good Hebrew + JSON output
+const MODEL_ADS     = "claude-3-7-sonnet-20250219";
+const MODEL_ORGANIC = "claude-3-7-sonnet-20250219";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -76,7 +75,7 @@ async function callClaude(
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8192,
+        max_tokens: 4096,
         system,
         messages: [{ role: "user", content: userMessage }],
       }),
