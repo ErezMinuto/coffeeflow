@@ -66,8 +66,8 @@ serve(async (req) => {
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
-  let days = 90;
-  try { const b = await req.json(); days = b.days ?? 90; } catch { /* use default */ }
+  let days = 60;
+  try { const b = await req.json(); days = b.days ?? 60; } catch { /* use default */ }
 
   // Find latest order already stored → incremental sync
   const { data: latest } = await supabase
