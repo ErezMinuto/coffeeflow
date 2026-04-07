@@ -35,159 +35,6 @@ const QUICK_ASKS = [
   { icon: '📋', label: 'דוח מנהלים מלא', q: 'תנתח את הביצועים שלנו ותן לי דוח מנהלים קצר עם 3 נקודות חוזק ו-3 תחומי שיפור' },
 ];
 
-// ── Styles ───────────────────────────────────────────────────────────────────
-const S = {
-  page: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: 'calc(100vh - 70px)',
-    overflow: 'hidden',
-    background: '#f7f2ea',
-    direction: 'rtl',
-  },
-  header: {
-    background: '#2c1a0e',
-    padding: '14px 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottom: '2px solid #c8923a',
-    flexShrink: 0,
-  },
-  headerTitle: {
-    fontFamily: 'serif',
-    color: '#f7f2ea',
-    fontSize: '1.25rem',
-    fontWeight: 700,
-  },
-  headerGold: { color: '#c8923a' },
-  statusDot: {
-    width: 8, height: 8,
-    borderRadius: '50%',
-    background: '#4ade80',
-    display: 'inline-block',
-    marginLeft: 8,
-    animation: 'pulse 2s infinite',
-  },
-  statusLabel: { color: '#9b8778', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 6 },
-  body: { display: 'flex', flex: 1, overflow: 'hidden' },
-  sidebar: {
-    width: 260,
-    background: '#2c1a0e',
-    padding: '20px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    overflowY: 'auto',
-    borderLeft: '1px solid rgba(255,255,255,0.08)',
-    flexShrink: 0,
-  },
-  sidebarTitle: {
-    color: '#c8923a',
-    fontSize: '0.72rem',
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-    fontWeight: 600,
-  },
-  quickBtn: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    color: '#f7f2ea',
-    padding: '9px 12px',
-    borderRadius: 10,
-    fontSize: '0.8rem',
-    cursor: 'pointer',
-    textAlign: 'right',
-    transition: 'all 0.2s',
-    lineHeight: 1.4,
-    width: '100%',
-  },
-  dataPreview: {
-    marginTop: 8,
-    padding: 12,
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.08)',
-  },
-  dataTitle: { color: '#9b8778', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 },
-  statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' },
-  statLabel: { color: '#9b8778', fontSize: '0.74rem' },
-  statVal: { color: '#f7f2ea', fontSize: '0.82rem', fontWeight: 500 },
-  chatArea: { display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' },
-  messages: { flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18 },
-  welcome: { textAlign: 'center', padding: '40px 20px', color: '#9b8778' },
-  welcomeIcon: { fontSize: '2.5rem', marginBottom: 12 },
-  welcomeTitle: { fontFamily: 'serif', color: '#2c1a0e', fontSize: '1.5rem', marginBottom: 8 },
-  msgUser: { alignSelf: 'flex-start', maxWidth: '78%' },
-  msgAssistant: { alignSelf: 'flex-end', maxWidth: '78%' },
-  senderLabel: { fontSize: '0.68rem', color: '#9b8778', marginBottom: 4, padding: '0 4px' },
-  bubbleUser: {
-    background: '#2c1a0e',
-    color: '#f7f2ea',
-    padding: '12px 16px',
-    borderRadius: 16,
-    borderBottomRightRadius: 4,
-    fontSize: '0.9rem',
-    lineHeight: 1.6,
-  },
-  bubbleAssistant: {
-    background: '#ffffff',
-    color: '#1a1208',
-    padding: '14px 18px',
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    border: '1px solid #e4d8c8',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-  },
-  typing: {
-    display: 'flex', gap: 4, padding: '14px 18px',
-    background: '#fff', border: '1px solid #e4d8c8',
-    borderRadius: 16, borderBottomLeftRadius: 4,
-    width: 'fit-content', alignSelf: 'flex-end',
-  },
-  typingDot: { width: 7, height: 7, background: '#c8923a', borderRadius: '50%' },
-  inputArea: {
-    padding: '14px 20px 18px',
-    background: '#ffffff',
-    borderTop: '1px solid #e4d8c8',
-    display: 'flex',
-    gap: 10,
-    alignItems: 'flex-end',
-    flexShrink: 0,
-  },
-  textarea: {
-    flex: 1,
-    border: '1.5px solid #e4d8c8',
-    borderRadius: 14,
-    padding: '11px 15px',
-    fontFamily: 'inherit',
-    fontSize: '0.9rem',
-    color: '#1a1208',
-    background: '#f7f2ea',
-    resize: 'none',
-    outline: 'none',
-    minHeight: 44,
-    maxHeight: 120,
-    lineHeight: 1.5,
-    direction: 'rtl',
-  },
-  sendBtn: {
-    background: '#2c1a0e',
-    color: '#f7f2ea',
-    border: 'none',
-    borderRadius: 12,
-    width: 46,
-    height: 46,
-    cursor: 'pointer',
-    fontSize: '1.1rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s',
-    flexShrink: 0,
-  },
-};
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function AIAnalyst() {
@@ -392,136 +239,134 @@ ${dataContext}
 
   const isEmpty = messages.length === 0;
 
-  return (
-    <>
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .analyst-msg { animation: fadeUp 0.25s ease; }
-        .quick-btn-analyst:hover { background: rgba(200,146,58,0.15) !important; border-color: #c8923a !important; color: #c8923a !important; }
-        .analyst-send:hover:not(:disabled) { background: #6b3a1f !important; transform: scale(1.05); }
-        .analyst-send:disabled { opacity: 0.4; cursor: not-allowed; }
-        .analyst-textarea:focus { border-color: #c8923a !important; }
-        .typing-dot-1 { animation: bounce 1.2s infinite; }
-        .typing-dot-2 { animation: bounce 1.2s 0.2s infinite; }
-        .typing-dot-3 { animation: bounce 1.2s 0.4s infinite; }
-      `}</style>
+  const STAT_ROWS = [
+    ['פוסטים אורגניים', dataLoading ? '...' : (stats?.posts ?? '—')],
+    ['ריילס',           dataLoading ? '...' : (stats?.reels ?? '—')],
+    ['לייקים סה״כ',    dataLoading ? '...' : (stats?.totalLikes?.toLocaleString() ?? '—')],
+    ['תגובות סה״כ',    dataLoading ? '...' : (stats?.totalComments?.toLocaleString() ?? '—')],
+    ['מעורבות ממוצעת', dataLoading ? '...' : (stats?.avgEng ?? '—')],
+    ['קמפיינים Meta',  dataLoading ? '...' : (stats?.metaCampaigns ?? '—')],
+    ['קמפיינים Google',dataLoading ? '...' : (stats?.googleCampaigns ?? '—')],
+    ['שקיות (שבוע)',   dataLoading ? '...' : (stats?.bagsThisWeek ?? '—')],
+    ['הזמנות ממתינות', dataLoading ? '...' : (stats?.pendingOrders ?? '—')],
+  ];
 
-      <div style={S.page}>
-        {/* Header */}
-        <div style={S.header}>
-          <div style={S.headerTitle}>
-            Minuto <span style={S.headerGold}>✦</span> AI Analyst
-          </div>
-          <div style={S.statusLabel}>
-            <span style={S.statusDot} />
-            {dataLoading ? 'טוען נתונים...' : 'מחובר לנתונים בזמן אמת'}
+  return (
+    <div className="flex flex-col fade-up" style={{ height: 'calc(100vh - 7rem)' }}>
+
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <div>
+          <h2 className="text-2xl font-display font-semibold text-surface-900">AI Analyst</h2>
+          <p className="text-sm text-surface-400 mt-1">שאל שאלות על הנתונים שלך בזמן אמת</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-surface-400">
+          <span className={`w-2 h-2 rounded-full ${dataLoading ? 'bg-amber-400 animate-pulse' : 'bg-green-400'}`} />
+          {dataLoading ? 'טוען נתונים...' : 'מחובר לנתונים'}
+        </div>
+      </div>
+
+      {/* Two-column body */}
+      <div className="flex gap-4 flex-1 min-h-0">
+
+        {/* Quick-asks sidebar */}
+        <div className="w-56 shrink-0 flex flex-col gap-2 overflow-y-auto">
+          <p className="text-xs font-semibold text-surface-400 uppercase tracking-wider px-1 shrink-0">שאלות מהירות</p>
+          {QUICK_ASKS.map(qa => (
+            <button
+              key={qa.q}
+              onClick={() => sendMessage(qa.q)}
+              disabled={loading}
+              className="text-right text-sm text-surface-700 bg-white border border-surface-200 hover:bg-brand-50 hover:border-brand-300 hover:text-brand-700 rounded-xl px-3 py-2.5 transition-all disabled:opacity-40 leading-snug w-full"
+            >
+              {qa.icon} {qa.label}
+            </button>
+          ))}
+
+          {/* Data stats */}
+          <div className="card p-3 mt-1 shrink-0">
+            <p className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">נתונים טעונים</p>
+            <div className="space-y-1.5">
+              {STAT_ROWS.map(([label, val]) => (
+                <div key={label} className="flex justify-between items-center text-xs border-b border-surface-50 pb-1 last:border-0 last:pb-0">
+                  <span className="text-surface-400">{label}</span>
+                  <span className="text-surface-700 font-medium font-mono">{val}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div style={S.body}>
-          {/* Sidebar */}
-          <div style={S.sidebar}>
-            <div style={S.sidebarTitle}>שאלות מהירות</div>
-            {QUICK_ASKS.map(qa => (
-              <button
-                key={qa.q}
-                className="quick-btn-analyst"
-                style={S.quickBtn}
-                onClick={() => sendMessage(qa.q)}
-                disabled={loading}
-              >
-                {qa.icon} {qa.label}
-              </button>
+        {/* Chat */}
+        <div className="flex-1 card flex flex-col min-h-0 p-0 overflow-hidden">
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+            {isEmpty && (
+              <div className="flex flex-col items-center justify-center flex-1 text-center text-surface-400 py-10">
+                <div className="text-4xl mb-3">☕</div>
+                <h3 className="font-display text-xl text-surface-700 mb-2">שלום!</h3>
+                <p className="text-sm leading-relaxed max-w-xs">
+                  אני מנתח את נתוני הביצועים של Minuto בזמן אמת.<br />
+                  שאל אותי כל שאלה על אינסטגרם, קמפיינים ממומנים ואסטרטגיה.
+                </p>
+              </div>
+            )}
+
+            {messages.map((m, i) => (
+              <div key={i} className={`flex flex-col gap-1 ${m.type === 'user' ? 'items-start' : 'items-end'}`}>
+                <span className="text-xs text-surface-400 px-1">
+                  {m.type === 'user' ? 'אתה' : 'AI Analyst'}
+                </span>
+                {m.type === 'user' ? (
+                  <div className="max-w-[78%] bg-surface-900 text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm leading-relaxed">
+                    {m.text}
+                  </div>
+                ) : (
+                  <div className="max-w-[78%] bg-white border border-surface-200 shadow-sm px-4 py-3 rounded-2xl rounded-bl-sm text-sm">
+                    <MarkdownBubble text={m.text} />
+                  </div>
+                )}
+              </div>
             ))}
 
-            {/* Data stats */}
-            <div style={S.dataPreview}>
-              <div style={S.dataTitle}>נתונים טעונים</div>
-              {[
-                ['פוסטים אורגניים', dataLoading ? 'טוען...' : (stats?.posts ?? '—')],
-                ['ריילס', dataLoading ? '...' : (stats?.reels ?? '—')],
-                ['סה״כ לייקים', dataLoading ? '...' : (stats?.totalLikes?.toLocaleString() ?? '—')],
-                ['סה״כ תגובות', dataLoading ? '...' : (stats?.totalComments?.toLocaleString() ?? '—')],
-                ['מעורבות ממוצעת', dataLoading ? '...' : (stats?.avgEng ?? '—')],
-                ['קמפיינים Meta', dataLoading ? '...' : (stats?.metaCampaigns ?? '—')],
-                ['קמפיינים Google', dataLoading ? '...' : (stats?.googleCampaigns ?? '—')],
-                ['שקיות נמכרו (שבוע)', dataLoading ? '...' : (stats?.bagsThisWeek ?? '—')],
-                ['הזמנות ממתינות', dataLoading ? '...' : (stats?.pendingOrders ?? '—')],
-              ].map(([label, val]) => (
-                <div key={label} style={{ ...S.statRow, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={S.statLabel}>{label}</span>
-                  <span style={S.statVal}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat area */}
-          <div style={S.chatArea}>
-            <div style={S.messages}>
-              {isEmpty && (
-                <div style={S.welcome}>
-                  <div style={S.welcomeIcon}>☕</div>
-                  <h2 style={S.welcomeTitle}>שלום!</h2>
-                  <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    אני מנתח את נתוני הביצועים של Minuto בזמן אמת.<br />
-                    שאל אותי כל שאלה על אינסטגרם, קמפיינים ממומנים ואסטרטגיה.
-                  </p>
-                </div>
-              )}
-
-              {messages.map((m, i) => (
-                <div key={i} className="analyst-msg" style={m.type === 'user' ? S.msgUser : S.msgAssistant}>
-                  <div style={{ ...S.senderLabel, textAlign: m.type === 'user' ? 'right' : 'left' }}>
-                    {m.type === 'user' ? 'אתה' : 'AI Analyst'}
-                  </div>
-                  {m.type === 'user' ? (
-                    <div style={S.bubbleUser}>{m.text}</div>
-                  ) : (
-                    <div style={S.bubbleAssistant}>
-                      <MarkdownBubble text={m.text} />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {loading && (
-                <div style={{ padding: '8px 0 4px' }}>
+            {loading && (
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-surface-400 px-1">AI Analyst</span>
+                <div className="px-4 py-3">
                   <ProgressBar progress={aiProgress.progress} label="מנתח נתונים..." color="#4A7C59" />
                 </div>
-              )}
+              </div>
+            )}
 
-              <div ref={messagesEndRef} />
-            </div>
+            <div ref={messagesEndRef} />
+          </div>
 
-            {/* Input */}
-            <div style={S.inputArea}>
-              <textarea
-                ref={textareaRef}
-                className="analyst-textarea"
-                style={S.textarea}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onInput={autoResize}
-                placeholder="שאל אותי על הביצועים שלך..."
-                rows={1}
-                disabled={loading}
-              />
-              <button
-                className="analyst-send"
-                style={S.sendBtn}
-                onClick={() => sendMessage()}
-                disabled={loading || !input.trim()}
-              >
-                ➤
-              </button>
-            </div>
+          {/* Input */}
+          <div className="shrink-0 border-t border-surface-100 p-4 flex gap-3 items-end bg-white">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onInput={autoResize}
+              placeholder="שאל אותי על הביצועים שלך..."
+              rows={1}
+              disabled={loading}
+              dir="rtl"
+              className="flex-1 border border-surface-200 rounded-xl px-4 py-2.5 text-sm text-surface-800 bg-surface-50 resize-none outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition placeholder:text-surface-300 disabled:opacity-50"
+              style={{ minHeight: 44, maxHeight: 120, lineHeight: 1.5 }}
+            />
+            <button
+              onClick={() => sendMessage()}
+              disabled={loading || !input.trim()}
+              className="btn-primary w-11 h-11 flex items-center justify-center shrink-0 disabled:opacity-40 disabled:cursor-not-allowed text-base"
+            >
+              ➤
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

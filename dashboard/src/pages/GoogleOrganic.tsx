@@ -4,7 +4,7 @@ import { KPICard } from '../components/shared/KPICard'
 import { DateRangePicker } from '../components/shared/DateRangePicker'
 import { DateRange } from '../lib/types'
 import { getDefaultDateRange, formatNumber } from '../lib/utils'
-import { AlertCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { AlertCircle, TrendingUp, TrendingDown, Minus, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react'
 
 interface GSCRow {
   id: string
@@ -45,6 +45,16 @@ function positionColor(pos: number) {
   return 'text-red-500'
 }
 
+type SortField = 'clicks' | 'impressions' | 'ctr' | 'position'
+type SortDir   = 'asc' | 'desc'
+
+function SortIcon({ field, sortBy, sortDir }: { field: SortField; sortBy: SortField; sortDir: SortDir }) {
+  if (sortBy !== field) return <ChevronsUpDown size={12} className="text-surface-300" />
+  return sortDir === 'asc'
+    ? <ChevronUp size={12} className="text-brand-600" />
+    : <ChevronDown size={12} className="text-brand-600" />
+}
+
 export default function GoogleOrganicPage() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange())
   const [keywords, setKeywords]   = useState<AggregatedKeyword[]>([])
@@ -53,6 +63,9 @@ export default function GoogleOrganicPage() {
   const [connected, setConnected] = useState(false)
   const [hasData, setHasData]     = useState(false)
   const [tab, setTab]             = useState<'keywords' | 'pages'>('keywords')
+  const [sortBy, setSortBy]       = useState<SortField>('clicks')
+  const [sortDir, setSortDir]     = useState<SortDir>('desc')
+  const [query, setQuery]         = useState('')
 
   useEffect(() => { loadData() }, [dateRange])
 
@@ -136,6 +149,45 @@ export default function GoogleOrganicPage() {
     setLoading(false)
   }
 
+  function handleSort(field: SortField) {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      // Position: lower is better → default asc; everything else: higher is better → default desc
+      setSortDir(field === 'position' ? 'asc' : 'desc')
+    }
+  }
+
+  function sortRows<T extends { clicks: number; impressions: number; ctr: number; position: number }>(rows: T[]): T[] {
+    return [...rows].sort((a, b) => {
+      const diff = a[sortBy] - b[sortBy]
+      return sortDir === 'asc' ? diff : -diff
+    })
+  }
+
+  const q = query.trim().toLowerCase()
+
+  const sortedKeywords = sortRows(
+    q ? keywords.filter(k => k.keyword.toLowerCase().includes(q)) : keywords
+  )
+  const sortedPages = sortRows(
+    q ? pages.filter(p => p.page.toLowerCase().includes(q)) : pages
+  )
+
+  function highlight(text: string) {
+    if (!q) return <>{text}</>
+    const idx = text.toLowerCase().indexOf(q)
+    if (idx === -1) return <>{text}</>
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark className="bg-yellow-200 text-yellow-900 rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
+        {text.slice(idx + q.length)}
+      </>
+    )
+  }
+
   // KPIs
   const totalClicks      = keywords.reduce((s, k) => s + k.clicks, 0)
   const totalImpressions = keywords.reduce((s, k) => s + k.impressions, 0)
@@ -153,8 +205,12 @@ export default function GoogleOrganicPage() {
           <h2 className="text-2xl font-display font-semibold text-surface-900">Google Organic</h2>
           <p className="text-sm text-surface-400 mt-1">
             {hasData
-              ? `${keywords.length} מילות מפתח · ${pages.length} עמודים`
-              : 'Google Search Console'}
+              ? q
+                ? `${sortedKeywords.length} / ${keywords.length} מילות מפתח · ${sortedPages.length} / ${pages.length} עמודים`
+                : `${keywords.length} מילות מפתח · ${pages.length} עמודים`
+              : connected
+                ? 'Google Search Console'
+                : 'לא מחובר'}
           </p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
@@ -195,6 +251,29 @@ export default function GoogleOrganicPage() {
         <KPICard label="מיקום ממוצע" value={avgPosition > 0 ? avgPosition.toFixed(1) : '—'} loading={loading} />
       </div>
 
+      {/* Search bar */}
+      {connected && (
+        <div className="relative">
+          <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="חפש מילת מפתח או עמוד..."
+            className="w-full pr-9 pl-9 py-2.5 text-sm rounded-xl border border-surface-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 placeholder:text-surface-300 transition"
+            dir="rtl"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Tab switcher */}
       <div className="card overflow-hidden p-0">
         <div className="flex border-b border-surface-100">
@@ -202,13 +281,13 @@ export default function GoogleOrganicPage() {
             onClick={() => setTab('keywords')}
             className={`px-5 py-3 text-sm font-medium transition-colors ${tab === 'keywords' ? 'border-b-2 border-brand-600 text-brand-700' : 'text-surface-500 hover:text-surface-700'}`}
           >
-            מילות מפתח ({keywords.length})
+            מילות מפתח ({q ? `${sortedKeywords.length} / ${keywords.length}` : keywords.length})
           </button>
           <button
             onClick={() => setTab('pages')}
             className={`px-5 py-3 text-sm font-medium transition-colors ${tab === 'pages' ? 'border-b-2 border-brand-600 text-brand-700' : 'text-surface-500 hover:text-surface-700'}`}
           >
-            עמודים ({pages.length})
+            עמודים ({q ? `${sortedPages.length} / ${pages.length}` : pages.length})
           </button>
         </div>
 
@@ -218,10 +297,17 @@ export default function GoogleOrganicPage() {
             <thead>
               <tr className="border-b border-surface-100 bg-surface-50">
                 <th className="text-right px-5 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">מילת מפתח</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">קליקים</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">חשיפות</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">CTR</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">מיקום</th>
+                {(['clicks', 'impressions', 'ctr', 'position'] as SortField[]).map(field => (
+                  <th key={field} className="px-4 py-3">
+                    <button
+                      onClick={() => handleSort(field)}
+                      className="flex items-center gap-1 text-xs font-semibold text-surface-400 uppercase tracking-wider hover:text-brand-600 transition-colors"
+                    >
+                      <SortIcon field={field} sortBy={sortBy} sortDir={sortDir} />
+                      {field === 'clicks' ? 'קליקים' : field === 'impressions' ? 'חשיפות' : field === 'ctr' ? 'CTR' : 'מיקום'}
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-50">
@@ -231,16 +317,16 @@ export default function GoogleOrganicPage() {
                     <td key={j} className="px-4 py-3"><div className="h-3 bg-surface-100 rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
-              ) : keywords.length === 0 ? (
+              ) : sortedKeywords.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-surface-400">
                     {connected ? 'אין נתונים לתקופה זו' : 'חבר את Google בהגדרות'}
                   </td>
                 </tr>
               ) : (
-                keywords.map((kw, i) => (
+                sortedKeywords.map((kw, i) => (
                   <tr key={i} className="hover:bg-surface-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-surface-800 max-w-xs truncate">{kw.keyword}</td>
+                    <td className="px-5 py-3 font-medium text-surface-800 max-w-xs truncate">{highlight(kw.keyword)}</td>
                     <td className="px-4 py-3 font-mono text-surface-700">{kw.clicks.toLocaleString()}</td>
                     <td className="px-4 py-3 font-mono text-surface-500">{kw.impressions.toLocaleString()}</td>
                     <td className="px-4 py-3 font-mono text-surface-600">{(kw.ctr * 100).toFixed(1)}%</td>
@@ -263,10 +349,17 @@ export default function GoogleOrganicPage() {
             <thead>
               <tr className="border-b border-surface-100 bg-surface-50">
                 <th className="text-right px-5 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">עמוד</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">קליקים</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">חשיפות</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">CTR</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">מיקום</th>
+                {(['clicks', 'impressions', 'ctr', 'position'] as SortField[]).map(field => (
+                  <th key={field} className="px-4 py-3">
+                    <button
+                      onClick={() => handleSort(field)}
+                      className="flex items-center gap-1 text-xs font-semibold text-surface-400 uppercase tracking-wider hover:text-brand-600 transition-colors"
+                    >
+                      <SortIcon field={field} sortBy={sortBy} sortDir={sortDir} />
+                      {field === 'clicks' ? 'קליקים' : field === 'impressions' ? 'חשיפות' : field === 'ctr' ? 'CTR' : 'מיקום'}
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-50">
@@ -276,14 +369,14 @@ export default function GoogleOrganicPage() {
                     <td key={j} className="px-4 py-3"><div className="h-3 bg-surface-100 rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
-              ) : pages.length === 0 ? (
+              ) : sortedPages.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-surface-400">
                     {connected ? 'אין נתונים לתקופה זו' : 'חבר את Google בהגדרות'}
                   </td>
                 </tr>
               ) : (
-                pages.map((pg, i) => {
+                sortedPages.map((pg, i) => {
                   // Show just the path, not full URL
                   const displayUrl = pg.page.replace(/^https?:\/\/[^/]+/, '') || '/'
                   return (
@@ -296,7 +389,7 @@ export default function GoogleOrganicPage() {
                           className="font-mono text-xs text-brand-600 hover:text-brand-800 truncate block"
                           title={pg.page}
                         >
-                          {displayUrl}
+                          {highlight(displayUrl)}
                         </a>
                       </td>
                       <td className="px-4 py-3 font-mono text-surface-700">{pg.clicks.toLocaleString()}</td>

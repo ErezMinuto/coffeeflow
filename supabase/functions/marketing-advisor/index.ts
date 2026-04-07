@@ -1,17 +1,16 @@
 /**
  * CoffeeFlow — Marketing Advisor Edge Function
  *
- * Runs two independent AI agents weekly:
- *   1. paid_ads         — Google Ads performance analysis + budget recommendations
- *   2. organic_content  — Instagram organic content planning + inventory-based suggestions
+ * Three independent AI agents, each with a distinct philosophy:
  *
- * Invocation:
- *   POST /functions/v1/marketing-advisor
- *   Body: { "trigger": "manual"|"cron", "agent": "paid_ads"|"organic_content"|"both" }
+ *   google_ads_growth     — Aggressive: scale winners, increase budgets, maximize reach
+ *   google_ads_efficiency — Conservative: maximize ROAS, cut waste, protect profitability
+ *   organic_content       — Instagram + GSC content planning, inventory-aware
  *
- * Results stored in advisor_reports table (one row per agent_type + week_start, upserted).
+ * POST body: { "trigger": "manual"|"cron", "agent": "google_ads_growth"|"google_ads_efficiency"|"organic_content"|"all" }
  *
- * Secrets required: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Results stored in advisor_reports (one row per agent_type + week_start, upserted).
+ * Secrets: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -21,10 +20,10 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// Paid ads: sonnet for structured numerical analysis
-// Organic: opus for creative content ideas + cultural nuance
-const MODEL_PAID_ADS = "claude-sonnet-4-5-20250929";
-const MODEL_ORGANIC  = "claude-opus-4-5";
+// Growth + Efficiency: sonnet (structured numerical analysis)
+// Organic: opus (creative content + cultural nuance)
+const MODEL_ADS     = "claude-sonnet-4-5-20250929";
+const MODEL_ORGANIC = "claude-opus-4-5";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -33,13 +32,10 @@ const CORS = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns Monday of the previous full week (Mon–Sun) */
 function getPreviousWeekStart(): string {
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun
-  // Days since last Monday: if today is Mon (1), go back 7; if Sun (0), go back 6
+  const dayOfWeek = now.getDay();
   const daysToLastMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  // Always go to previous week (not current week), so add 7 more days
   const monday = new Date(now);
   monday.setDate(now.getDate() - daysToLastMonday - 7);
   monday.setHours(0, 0, 0, 0);
@@ -56,15 +52,10 @@ function subtractDays(dateStr: string, days: number): string {
   return addDays(dateStr, -days);
 }
 
-/** Strip markdown code fences Claude sometimes wraps JSON in */
 function stripCodeFences(text: string): string {
-  return text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/, "")
-    .trim();
+  return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 }
 
-/** Call Claude API — returns response text */
 async function callClaude(
   model: string,
   system: string,
@@ -98,7 +89,6 @@ async function callClaude(
   };
 }
 
-/** Upsert an advisor_reports row */
 async function upsertReport(
   supabase: ReturnType<typeof createClient>,
   agentType: string,
@@ -113,18 +103,12 @@ async function upsertReport(
     );
 }
 
-// ── Aggregation helpers ───────────────────────────────────────────────────────
+// ── Data fetching ─────────────────────────────────────────────────────────────
 
 interface GoogleRow {
   campaign_id: string; name: string; status: string;
   date: string; impressions: number; clicks: number; cost: number;
   ctr: number; cpc: number; conversions: number; conversion_value: number; roas: number;
-}
-
-interface MetaAdRow {
-  campaign_id: string; name: string; status: string; objective: string;
-  date: string; spend: number; impressions: number; clicks: number;
-  cpm: number; cpc: number; ctr: number; conversions: number;
 }
 
 function aggregateGoogleCampaigns(rows: GoogleRow[]) {
@@ -133,15 +117,14 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
     cost: number; clicks: number; impressions: number;
     conversions: number; convValue: number;
   }>();
-
   for (const r of rows) {
-    const existing = map.get(r.campaign_id);
-    if (existing) {
-      existing.cost        += r.cost;
-      existing.clicks      += r.clicks;
-      existing.impressions += r.impressions;
-      existing.conversions += r.conversions;
-      existing.convValue   += r.conversion_value;
+    const e = map.get(r.campaign_id);
+    if (e) {
+      e.cost        += r.cost;
+      e.clicks      += r.clicks;
+      e.impressions += r.impressions;
+      e.conversions += r.conversions;
+      e.convValue   += r.conversion_value;
     } else {
       map.set(r.campaign_id, {
         name: r.name, status: r.status,
@@ -150,50 +133,50 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
       });
     }
   }
-
   return Array.from(map.entries()).map(([id, v]) => ({
-    id,
-    name: v.name,
-    status: v.status,
-    cost: Math.round(v.cost * 100) / 100,
-    clicks: v.clicks,
+    id, name: v.name, status: v.status,
+    cost:        Math.round(v.cost * 100) / 100,
+    clicks:      v.clicks,
     impressions: v.impressions,
     conversions: Math.round(v.conversions * 10) / 10,
-    roas: v.cost > 0 ? Math.round((v.convValue / v.cost) * 100) / 100 : 0,
-    cpa:  v.conversions > 0 ? Math.round((v.cost / v.conversions) * 100) / 100 : null,
+    roas:        v.cost > 0 ? Math.round((v.convValue / v.cost) * 100) / 100 : 0,
+    cpa:         v.conversions > 0 ? Math.round((v.cost / v.conversions) * 100) / 100 : null,
   }));
 }
 
-// ── Paid Ads Agent ────────────────────────────────────────────────────────────
-
-async function runPaidAdsAgent(
+async function fetchGoogleData(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
+  weekEnd: string,
 ) {
-  const weekEnd     = addDays(weekStart, 6);
-  const fourWksAgo  = subtractDays(weekStart, 28);
-
-  console.log(`[paid_ads] Fetching Google Ads data from ${fourWksAgo} to ${weekEnd}`);
-
-  const { data: googleRows, error: gErr } = await supabase
+  const fourWksAgo = subtractDays(weekStart, 28);
+  const { data, error } = await supabase
     .from("google_campaigns")
     .select("campaign_id,name,status,date,impressions,clicks,cost,ctr,cpc,conversions,conversion_value,roas")
     .gte("date", fourWksAgo)
     .lte("date", weekEnd)
     .order("date", { ascending: false });
 
-  if (gErr) throw new Error(`Google fetch error: ${gErr.message}`);
+  if (error) throw new Error(`Google fetch error: ${error.message}`);
 
-  const allRows = (googleRows ?? []) as GoogleRow[];
+  const all = (data ?? []) as GoogleRow[];
+  const currentWeek = all.filter(r => r.date >= weekStart);
+  const prevWeeks   = all.filter(r => r.date < weekStart);
 
-  // Split current week vs previous 3 weeks for trend context
-  const currentWeekRows = allRows.filter(r => r.date >= weekStart);
-  const prevWeeksRows   = allRows.filter(r => r.date < weekStart);
+  return {
+    currentAgg: aggregateGoogleCampaigns(currentWeek),
+    prevAgg:    aggregateGoogleCampaigns(prevWeeks),
+    weekStart,
+    weekEnd,
+  };
+}
 
-  const currentAgg = aggregateGoogleCampaigns(currentWeekRows);
-  const prevAgg    = aggregateGoogleCampaigns(prevWeeksRows);
-
-  // Totals for the week
+function buildGoogleDataBlock(
+  currentAgg: ReturnType<typeof aggregateGoogleCampaigns>,
+  prevAgg:    ReturnType<typeof aggregateGoogleCampaigns>,
+  weekStart: string,
+  weekEnd: string,
+) {
   const totalCost        = currentAgg.reduce((s, c) => s + c.cost, 0);
   const totalClicks      = currentAgg.reduce((s, c) => s + c.clicks, 0);
   const totalImpressions = currentAgg.reduce((s, c) => s + c.impressions, 0);
@@ -202,89 +185,159 @@ async function runPaidAdsAgent(
     ? currentAgg.reduce((s, c) => s + c.cost * c.roas, 0) / totalCost
     : 0;
 
-  const systemPrompt = `אתה יועץ פרסום ממומן מומחה לעסקי קפה מיוחד בישראל.
-המותג: Minuto Coffee — בית קפה ספשיאלטי ברחובות.
-המשימה שלך: לנתח את ביצועי קמפיינים ממומנים (כרגע Google Ads בלבד, Meta בהמתנה לאישור) ולהמליץ המלצות ספציפיות ומעשיות.
-חשוב מאוד:
-- ענה אך ורק ב-JSON תקין ומלא — ללא טקסט לפניו או אחריו, ללא markdown.
-- כל שדות הטקסט יהיו בעברית.
-- אל תמציא נתונים — בסס את הכל על הנתונים שסופקו.
-- אם אין מספיק נתונים לקמפיין מסוים, ציין זאת בשדה reason.`;
-
-  const campaignSummary = currentAgg.length > 0
+  const campaignBlock = currentAgg.length > 0
     ? currentAgg.map(c =>
-        `  קמפיין: ${c.name} | סטטוס: ${c.status} | הוצאה: ₪${c.cost} | קליקים: ${c.clicks} | המרות: ${c.conversions} | ROAS: ${c.roas}x | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"}`
+        `  ${c.name} | סטטוס: ${c.status} | עלות: ₪${c.cost} | קליקים: ${c.clicks} | המרות: ${c.conversions} | ROAS: ${c.roas}x | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"}`
       ).join("\n")
-    : "  אין נתוני קמפיין לתקופה זו";
+    : "  אין נתוני קמפיין";
 
-  const prevSummary = prevAgg.length > 0
+  const prevBlock = prevAgg.length > 0
     ? prevAgg.map(c =>
-        `  קמפיין: ${c.name} | הוצאה: ₪${c.cost} | המרות: ${c.conversions} | ROAS: ${c.roas}x`
+        `  ${c.name} | עלות: ₪${c.cost} | המרות: ${c.conversions} | ROAS: ${c.roas}x`
       ).join("\n")
     : "  אין נתוני השוואה";
 
-  const userMessage = `
-נתוני Google Ads לשבוע ${weekStart} עד ${weekEnd}:
+  return { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock };
+}
 
-=== ביצועי השבוע (מצטבר לפי קמפיין) ===
-${campaignSummary}
+// ── Google Ads Agent — GROWTH ─────────────────────────────────────────────────
 
-=== סיכום כולל לשבוע ===
-הוצאה כוללת: ₪${Math.round(totalCost * 100) / 100}
-קליקים כוללים: ${totalClicks}
-חשיפות כוללות: ${totalImpressions}
-המרות כוללות: ${Math.round(totalConversions * 10) / 10}
-ROAS ממוצע משוקלל: ${Math.round(overallRoas * 100) / 100}x
+async function runGrowthAgent(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+) {
+  const weekEnd = addDays(weekStart, 6);
+  console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
-=== ביצועי 3 שבועות קודמים (להשוואת מגמה) ===
-${prevSummary}
+  const { currentAgg, prevAgg } = await fetchGoogleData(supabase, weekStart, weekEnd);
+  const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
+    = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
 
-=== הנחיות ===
-החזר JSON אחד בדיוק בפורמט הבא:
+  const systemPrompt = `אתה יועץ צמיחה אגרסיבי לפרסום ממומן של Minuto Coffee — בית קפה ספשיאלטי ברחובות.
+הפילוסופיה שלך: צמיחה. להגדיל את הנוכחות, לשנות את הסקייל על מה שעובד, לבדוק דברים חדשים.
+אתה מוכן לקחת סיכון מחושב כדי לבנות מותג ולגדול.
+אל תמליץ לצמצם אלא אם הנתונים מאוד גרועים — העדף להגדיל תקציב, לרחב קהל, לבדוק קריאייטיב חדש.
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
+  const userMessage = `נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
+
+=== קמפיינים השבוע ===
+${campaignBlock}
+
+=== סיכום ===
+עלות כוללת: ₪${Math.round(totalCost * 100) / 100} | קליקים: ${totalClicks} | חשיפות: ${totalImpressions} | המרות: ${Math.round(totalConversions * 10) / 10} | ROAS: ${Math.round(overallRoas * 100) / 100}x
+
+=== 3 שבועות קודמים (מגמה) ===
+${prevBlock}
+
+החזר JSON בפורמט:
 {
-  "summary": "2-3 משפטי סיכום בעברית",
+  "agent_philosophy": "צמיחה אגרסיבית",
+  "summary": "2-3 משפטים — מה הזדמנויות הצמיחה שאתה רואה?",
   "google": {
     "total_cost": ${Math.round(totalCost * 100) / 100},
     "total_clicks": ${totalClicks},
     "total_impressions": ${totalImpressions},
     "total_conversions": ${Math.round(totalConversions * 10) / 10},
     "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "שם הקמפיין הטוב ביותר (לפי ROAS)",
-    "worst_campaign": "שם הקמפיין הגרוע ביותר"
+    "top_campaign": "הקמפיין עם הפוטנציאל הגדול ביותר לסקייל",
+    "worst_campaign": "הקמפיין שדורש תשומת לב"
   },
-  "meta": null,
+  "budget_recommendations": [
+    {
+      "platform": "google",
+      "campaign": "שם קמפיין",
+      "action": "increase|decrease|pause|keep|test_new",
+      "reason": "הסבר מנקודת מבט צמיחה",
+      "suggested_budget_change_pct": 30
+    }
+  ],
+  "growth_opportunities": [
+    {
+      "opportunity": "הזדמנות ספציפית",
+      "action": "מה לעשות",
+      "expected_impact": "מה אתה מצפה לקרות"
+    }
+  ],
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
+  "next_week_focus": "המהלך העיקרי לצמיחה השבוע הבא"
+}`;
+
+  console.log(`[growth] Calling Claude...`);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, userMessage);
+  const parsed = JSON.parse(stripCodeFences(text));
+  console.log(`[growth] Done. Tokens: ${inputTokens + outputTokens}`);
+
+  return { report: parsed, tokensUsed: inputTokens + outputTokens };
+}
+
+// ── Google Ads Agent — EFFICIENCY ─────────────────────────────────────────────
+
+async function runEfficiencyAgent(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+) {
+  const weekEnd = addDays(weekStart, 6);
+  console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
+
+  const { currentAgg, prevAgg } = await fetchGoogleData(supabase, weekStart, weekEnd);
+  const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
+    = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
+
+  const systemPrompt = `אתה יועץ יעילות שמרני לפרסום ממומן של Minuto Coffee — בית קפה ספשיאלטי ברחובות.
+הפילוסופיה שלך: יעילות. כל שקל צריך להחזיר ערך. לחתוך בזבוז, לרכז תקציב בקמפיינים שמוכיחים ROI.
+אתה מחפש דפוסי בזבוז, קמפיינים שמפסידים כסף, ומקומות שאפשר לשפר CPA בלי להגדיל תקציב.
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
+
+  const userMessage = `נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
+
+=== קמפיינים השבוע ===
+${campaignBlock}
+
+=== סיכום ===
+עלות כוללת: ₪${Math.round(totalCost * 100) / 100} | קליקים: ${totalClicks} | חשיפות: ${totalImpressions} | המרות: ${Math.round(totalConversions * 10) / 10} | ROAS: ${Math.round(overallRoas * 100) / 100}x
+
+=== 3 שבועות קודמים (מגמה) ===
+${prevBlock}
+
+החזר JSON בפורמט:
+{
+  "agent_philosophy": "יעילות ו-ROAS",
+  "summary": "2-3 משפטים — איפה הכסף מתבזבז ואיפה אפשר לשפר?",
+  "google": {
+    "total_cost": ${Math.round(totalCost * 100) / 100},
+    "total_clicks": ${totalClicks},
+    "total_impressions": ${totalImpressions},
+    "total_conversions": ${Math.round(totalConversions * 10) / 10},
+    "roas": ${Math.round(overallRoas * 100) / 100},
+    "top_campaign": "הקמפיין עם ה-ROAS הטוב ביותר",
+    "worst_campaign": "הקמפיין שמבזבז הכי הרבה כסף"
+  },
   "budget_recommendations": [
     {
       "platform": "google",
       "campaign": "שם קמפיין",
       "action": "increase|decrease|pause|keep",
-      "reason": "הסבר קצר",
-      "suggested_budget_change_pct": 20
+      "reason": "הסבר מנקודת מבט יעילות ו-ROAS",
+      "suggested_budget_change_pct": -20
     }
   ],
-  "campaign_changes": [
+  "waste_identified": [
     {
-      "platform": "google",
       "campaign": "שם קמפיין",
-      "action": "pause|activate|test_new_creative|review_targeting",
-      "reason": "הסבר קצר"
+      "issue": "תיאור הבעיה",
+      "estimated_waste": "₪X בשבוע",
+      "fix": "מה לעשות כדי לתקן"
     }
   ],
-  "key_insights": [
-    "תובנה 1",
-    "תובנה 2",
-    "תובנה 3"
-  ],
-  "next_week_focus": "המלצה עיקרית אחת לשבוע הבא"
-}
-`;
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
+  "next_week_focus": "המהלך העיקרי לשיפור יעילות השבוע הבא"
+}`;
 
-  console.log(`[paid_ads] Calling Claude (${MODEL_PAID_ADS})...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_PAID_ADS, systemPrompt, userMessage);
-
+  console.log(`[efficiency] Calling Claude...`);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, userMessage);
   const parsed = JSON.parse(stripCodeFences(text));
-  console.log(`[paid_ads] Done. Tokens: ${inputTokens}in / ${outputTokens}out`);
+  console.log(`[efficiency] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
 }
@@ -295,12 +348,11 @@ async function runOrganicAgent(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
 ) {
-  const thirtyDaysAgo = subtractDays(weekStart, 30);
   const weekEnd       = addDays(weekStart, 6);
+  const thirtyDaysAgo = subtractDays(weekStart, 30);
+  console.log(`[organic] Fetching data from ${thirtyDaysAgo}`);
 
-  console.log(`[organic] Fetching organic data from ${thirtyDaysAgo}`);
-
-  const [postsRes, insightsRes, productsRes, originsRes] = await Promise.all([
+  const [postsRes, insightsRes, productsRes, originsRes, gscRes] = await Promise.all([
     supabase
       .from("meta_organic_posts")
       .select("post_id,post_type,message,created_at,reach,impressions,likes,comments,shares,saves")
@@ -318,137 +370,156 @@ async function runOrganicAgent(
     supabase
       .from("origins")
       .select("name,roasted_stock,critical_stock"),
+    // Google Search Console — top keywords for content inspiration
+    supabase
+      .from("google_search_console")
+      .select("keyword,clicks,impressions,ctr,position")
+      .neq("keyword", "__page__")
+      .gte("date", thirtyDaysAgo)
+      .order("impressions", { ascending: false })
+      .limit(50),
   ]);
 
-  const posts    = (postsRes.data    ?? []);
-  const insights = (insightsRes.data ?? []);
-  const products = (productsRes.data ?? []);
-  const origins  = (originsRes.data  ?? []);
+  const posts    = postsRes.data    ?? [];
+  const insights = insightsRes.data ?? [];
+  const products = productsRes.data ?? [];
+  const origins  = originsRes.data  ?? [];
+  const gscRows  = gscRes.data      ?? [];
 
-  // Compute engagement stats per post type
+  // Aggregate GSC keywords
+  const kwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
+  for (const r of gscRows) {
+    const e = kwMap.get(r.keyword);
+    if (e) {
+      e.clicks      += r.clicks;
+      e.impressions += r.impressions;
+      e.positions.push(r.position);
+    } else {
+      kwMap.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
+    }
+  }
+  const topKeywords = Array.from(kwMap.entries())
+    .map(([kw, v]) => ({
+      keyword:    kw,
+      clicks:     v.clicks,
+      impressions: v.impressions,
+      position:   Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10,
+    }))
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 20);
+
+  // Instagram stats by type
   const byType = (type: string) => posts.filter((p: { post_type: string }) => p.post_type === type);
   const avgReach = (arr: { reach: number }[]) =>
     arr.length > 0 ? Math.round(arr.reduce((s, p) => s + (p.reach || 0), 0) / arr.length) : 0;
-  const avgEngagement = (arr: { likes: number; comments: number; saves: number; reach: number }[]) => {
-    if (arr.length === 0 || avgReach(arr) === 0) return 0;
-    const totalEng = arr.reduce((s, p) => s + (p.likes || 0) + (p.comments || 0) + (p.saves || 0), 0);
-    return Math.round((totalEng / arr.reduce((s, p) => s + (p.reach || 0), 0)) * 1000) / 10;
+  const avgEng = (arr: { likes: number; comments: number; saves: number; reach: number }[]) => {
+    if (!arr.length || !avgReach(arr)) return 0;
+    return Math.round(
+      (arr.reduce((s, p) => s + (p.likes || 0) + (p.comments || 0) + (p.saves || 0), 0) /
+       arr.reduce((s, p) => s + (p.reach || 0), 0)) * 1000
+    ) / 10;
   };
 
   const reels  = byType("reel");
   const posts2 = byType("post");
-  const stories = byType("story");
-
-  // Latest follower count
-  const latestInsight = insights[0] ?? {};
+  const latestInsight = (insights[0] ?? {}) as { follower_count?: number };
   const followerCount = latestInsight.follower_count ?? 0;
 
-  // Products that need attention
-  const lowStock    = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock < p.min_packed_stock);
+  const lowStock = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock < p.min_packed_stock);
   const healthyStock = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock >= p.min_packed_stock);
-  const criticalOrigins = origins.filter((o: { roasted_stock: number; critical_stock: number }) => o.roasted_stock < o.critical_stock);
 
-  // Top posts for context
   const topPosts = [...posts]
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
     .slice(0, 5);
 
-  const systemPrompt = `אתה מומחה אסטרטגיית תוכן לאינסטגרם עבור Minuto Coffee, בית קפה ספשיאלטי ברחובות, ישראל.
-הקהל: אוהבי קפה ישראלים, גילאי 25–45, המכירים את עולם הספשיאלטי.
-שפת התוכן: עברית, אותנטית, לא שיווקית מדי — יותר אהבה לקפה, פחות פרסום.
-המשימה: לנתח ביצועי תוכן אורגני ומצב מלאי, ולהמליץ על לוח תוכן לשבוע הבא.
-חשוב מאוד:
-- ענה אך ורק ב-JSON תקין ומלא — ללא טקסט לפניו או אחריו, ללא markdown.
-- כל שדות הטקסט יהיו בעברית.
-- הצע רעיונות ספציפיים ומעשיים, לא כלליים.
-- התחשב במלאי — אל תמליץ להציג מוצר שאין בו מלאי.`;
+  const systemPrompt = `אתה מומחה אסטרטגיית תוכן לאינסטגרם ו-SEO של Minuto Coffee, בית קפה ספשיאלטי ברחובות.
+הקהל: אוהבי קפה ישראלים, 25–45. שפה: עברית אותנטית, לא שיווקית.
+יש לך גישה לנתוני אינסטגרם אורגני וגם ל-Google Search Console — השתמש בשניהם.
+תובנות GSC: מילות מפתח שאנשים מחפשים עליהן = נושאים שכדאי לדבר עליהם גם באינסטגרם.
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
-  const postTypeSummary = [
-    `ריילס (${reels.length} פוסטים): reach ממוצע ${avgReach(reels)}, engagement ${avgEngagement(reels)}%`,
-    `פוסטים (${posts2.length} פוסטים): reach ממוצע ${avgReach(posts2)}, engagement ${avgEngagement(posts2)}%`,
-    `סטוריז (${stories.length} פוסטים): reach ממוצע ${avgReach(stories)}`,
-  ].join("\n");
+  const gscBlock = topKeywords.length > 0
+    ? topKeywords.map(k =>
+        `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`
+      ).join("\n")
+    : "  אין נתוני Search Console עדיין";
 
-  const topPostsSummary = topPosts.map((p: { post_type: string; created_at: string; reach: number; likes: number; saves: number; message: string }) =>
-    `  [${p.post_type}] ${p.created_at?.split("T")[0]} | reach: ${p.reach} | saves: ${p.saves} | likes: ${p.likes} | "${p.message?.substring(0, 60) ?? ""}..."`
+  const topPostsBlock = topPosts.map((p: { post_type: string; created_at: string; reach: number; likes: number; saves: number; message: string }) =>
+    `  [${p.post_type}] ${p.created_at?.split("T")[0]} | reach: ${p.reach} | saves: ${p.saves} | likes: ${p.likes} | "${p.message?.substring(0, 60) ?? ""}"`
   ).join("\n");
 
-  const inventorySummary = [
-    `מוצרים עם מלאי נמוך (${lowStock.length}):`,
-    ...lowStock.map((p: { name: string; packed_stock: number; min_packed_stock: number }) => `  ⚠️ ${p.name}: ${p.packed_stock} שקיות (מינימום: ${p.min_packed_stock})`),
-    `\nמוצרים עם מלאי תקין (${healthyStock.length}):`,
+  const inventoryBlock = [
+    `מלאי נמוך (${lowStock.length} מוצרים):`,
+    ...lowStock.map((p: { name: string; packed_stock: number; min_packed_stock: number }) => `  ⚠️ ${p.name}: ${p.packed_stock}/${p.min_packed_stock} שקיות`),
+    `מלאי תקין (${healthyStock.length} מוצרים):`,
     ...healthyStock.map((p: { name: string; packed_stock: number }) => `  ✅ ${p.name}: ${p.packed_stock} שקיות`),
-    criticalOrigins.length > 0
-      ? `\nמקורות במלאי קריטי:\n${criticalOrigins.map((o: { name: string; roasted_stock: number; critical_stock: number }) => `  ⚠️ ${o.name}: ${o.roasted_stock}ג' (קריטי: ${o.critical_stock}ג')`).join("\n")}`
-      : "",
-  ].filter(Boolean).join("\n");
+  ].join("\n");
 
   const userMessage = `
-=== נתוני ביצועי תוכן אורגני — 30 יום אחרונים ===
+=== אינסטגרם — 30 יום אחרונים ===
+עוקבים: ${followerCount.toLocaleString()}
+ריילס (${reels.length}): reach ממוצע ${avgReach(reels)}, engagement ${avgEng(reels)}%
+פוסטים (${posts2.length}): reach ממוצע ${avgReach(posts2)}, engagement ${avgEng(posts2)}%
 
-מעקב: ${followerCount.toLocaleString()} עוקבים
+פוסטים מובילים:
+${topPostsBlock || "אין נתונים"}
 
-ביצועים לפי סוג תוכן:
-${postTypeSummary}
+=== Google Search Console — שאילתות מובילות ===
+${gscBlock}
 
-הפוסטים המובילים (לפי saves + likes):
-${topPostsSummary || "אין נתונים"}
+=== מלאי ===
+${inventoryBlock}
 
-=== מצב מלאי ===
-${inventorySummary}
+=== לוח תוכן לשבוע ${weekStart}–${weekEnd} ===
 
-=== שבוע המלצות: ${weekStart} עד ${weekEnd} ===
-
-החזר JSON אחד בדיוק בפורמט הבא:
-
+החזר JSON:
 {
-  "summary": "2-3 משפטי סיכום על מה עבד, מה לא, ומה הכיוון לשבוע הבא",
+  "summary": "2-3 משפטים — מה עבד, מה GSC מראה, מה הכיוון",
   "account_health": {
     "avg_reach_30d": ${avgReach(posts)},
     "follower_count": ${followerCount},
     "best_post_type": "reel|post|story",
-    "engagement_rate_pct": ${avgEngagement(posts)}
+    "engagement_rate_pct": ${avgEng(posts)}
   },
+  "seo_content_opportunities": [
+    {
+      "keyword": "מילת מפתח מ-GSC",
+      "search_volume_signal": "impressions: X",
+      "current_position": 8.5,
+      "instagram_angle": "איך להפוך את זה לפוסט אינסטגרם"
+    }
+  ],
   "content_recommendations": [
     {
       "priority": 1,
       "content_type": "reel|post|story",
-      "topic": "נושא ספציפי לפוסט",
-      "reason": "למה עכשיו — מה בנתונים מצדיק את זה",
-      "caption_idea": "רעיון לכיתוב — משפטים ספציפיים, לא כללי",
-      "best_day": "ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת",
-      "best_time": "שעה מומלצת כ-09:00"
+      "topic": "נושא ספציפי",
+      "reason": "למה עכשיו — מה בנתונים מצדיק",
+      "caption_idea": "רעיון קצר לכיתוב",
+      "best_day": "ראשון|שני|שלישי|רביעי|חמישי|שישי",
+      "best_time": "09:00"
     }
   ],
   "products_to_feature": [
     {
       "product": "שם מוצר",
-      "reason": "low_stock_urgency|new_batch|bestseller|seasonal",
-      "content_angle": "זווית תוכן ספציפית — מה לספר על המוצר"
+      "reason": "low_stock_urgency|new_batch|bestseller",
+      "content_angle": "זווית תוכן ספציפית"
     }
   ],
   "next_week_calendar": [
-    { "day": "ראשון", "type": "reel", "topic": "נושא קצר" },
-    { "day": "רביעי", "type": "post", "topic": "נושא קצר" },
-    { "day": "שישי",  "type": "story", "topic": "נושא קצר" }
+    { "day": "ראשון", "type": "reel", "topic": "נושא" },
+    { "day": "רביעי", "type": "post", "topic": "נושא" },
+    { "day": "שישי",  "type": "story", "topic": "נושא" }
   ],
-  "key_insights": [
-    "תובנה 1 מהנתונים",
-    "תובנה 2 מהנתונים",
-    "תובנה 3 מהנתונים"
-  ],
-  "what_worked_last_week": [
-    "מה עבד טוב",
-    "מה לא עבד"
-  ]
-}
-`;
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
+  "what_worked_last_week": ["מה עבד", "מה לא עבד"]
+}`;
 
   console.log(`[organic] Calling Claude (${MODEL_ORGANIC})...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, userMessage);
-
   const parsed = JSON.parse(stripCodeFences(text));
-  console.log(`[organic] Done. Tokens: ${inputTokens}in / ${outputTokens}out`);
+  console.log(`[organic] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
 }
@@ -456,73 +527,53 @@ ${inventorySummary}
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
-
   const weekStart = getPreviousWeekStart();
   console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
   let body: { trigger?: string; agent?: string } = {};
-  try {
-    body = await req.json();
-  } catch {
-    // ignore — default to "both"
-  }
+  try { body = await req.json() } catch { /* default to all */ }
 
-  const agentArg = body.agent ?? "both";
-  const runPaid    = agentArg === "paid_ads"        || agentArg === "both";
-  const runOrganic = agentArg === "organic_content" || agentArg === "both";
+  const agentArg = body.agent ?? "all";
+  const runGrowth     = agentArg === "google_ads_growth"     || agentArg === "all";
+  const runEfficiency = agentArg === "google_ads_efficiency" || agentArg === "all";
+  const runOrganic    = agentArg === "organic_content"       || agentArg === "all";
+
+  // Also support legacy "both" from old button invocations
+  const runGrowthFinal     = runGrowth     || agentArg === "both";
+  const runEfficiencyFinal = runEfficiency || agentArg === "both";
+  const runOrganicFinal    = runOrganic    || agentArg === "both";
 
   const agentsRun: string[] = [];
   const errors: Record<string, string> = {};
 
-  // ── Paid Ads Agent ──
-  if (runPaid) {
-    await upsertReport(supabase, "paid_ads", weekStart, { status: "running", error_msg: null });
+  const runAgent = async (
+    type: string,
+    fn: () => Promise<{ report: unknown; tokensUsed: number }>,
+    model: string,
+  ) => {
+    await upsertReport(supabase, type, weekStart, { status: "running", error_msg: null });
     try {
-      const { report, tokensUsed } = await runPaidAdsAgent(supabase, weekStart);
-      await upsertReport(supabase, "paid_ads", weekStart, {
-        status: "done",
-        report,
-        model: MODEL_PAID_ADS,
-        tokens_used: tokensUsed,
-        error_msg: null,
+      const { report, tokensUsed } = await fn();
+      await upsertReport(supabase, type, weekStart, {
+        status: "done", report, model, tokens_used: tokensUsed, error_msg: null,
       });
-      agentsRun.push("paid_ads");
+      agentsRun.push(type);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[paid_ads] Error:", msg);
-      await upsertReport(supabase, "paid_ads", weekStart, { status: "error", error_msg: msg });
-      errors["paid_ads"] = msg;
+      console.error(`[${type}] Error:`, msg);
+      await upsertReport(supabase, type, weekStart, { status: "error", error_msg: msg });
+      errors[type] = msg;
     }
-  }
+  };
 
-  // ── Organic Content Agent ──
-  if (runOrganic) {
-    await upsertReport(supabase, "organic_content", weekStart, { status: "running", error_msg: null });
-    try {
-      const { report, tokensUsed } = await runOrganicAgent(supabase, weekStart);
-      await upsertReport(supabase, "organic_content", weekStart, {
-        status: "done",
-        report,
-        model: MODEL_ORGANIC,
-        tokens_used: tokensUsed,
-        error_msg: null,
-      });
-      agentsRun.push("organic_content");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("[organic] Error:", msg);
-      await upsertReport(supabase, "organic_content", weekStart, { status: "error", error_msg: msg });
-      errors["organic_content"] = msg;
-    }
-  }
+  if (runGrowthFinal)     await runAgent("google_ads_growth",     () => runGrowthAgent(supabase, weekStart),     MODEL_ADS);
+  if (runEfficiencyFinal) await runAgent("google_ads_efficiency",  () => runEfficiencyAgent(supabase, weekStart),  MODEL_ADS);
+  if (runOrganicFinal)    await runAgent("organic_content",         () => runOrganicAgent(supabase, weekStart),     MODEL_ORGANIC);
 
   const hasErrors = Object.keys(errors).length > 0;
-
   return new Response(
     JSON.stringify({
       success: !hasErrors || agentsRun.length > 0,

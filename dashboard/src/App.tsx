@@ -39,7 +39,7 @@ export default function App() {
           <Route path="/google" element={<Layout><GoogleAdsPage /></Layout>} />
           <Route path="/google-organic" element={<Layout><GoogleOrganicPage /></Layout>} />
           <Route path="/advisor" element={<Layout><AdvisorPage /></Layout>} />
-          <Route path="/analyst" element={<AIAnalystPage />} />
+          <Route path="/analyst" element={<Layout><AIAnalystPage /></Layout>} />
           <Route path="/marketing" element={<Layout><MarketingPage /></Layout>} />
           <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
         </Routes>

@@ -27,6 +27,11 @@ export default function SettingsPage() {
     setLoading(true)
     try {
       const { data } = await supabase.from('oauth_tokens').select('*')
+      // Always reset all platforms to disconnected first, then apply what's actually in the DB
+      setPlatforms([
+        { platform: 'meta',   connected: false },
+        { platform: 'google', connected: false },
+      ])
       if (data) {
         setPlatforms(prev => prev.map(p => {
           const token = data.find(t => t.platform === p.platform)
