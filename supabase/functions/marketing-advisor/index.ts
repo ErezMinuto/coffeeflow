@@ -569,9 +569,12 @@ serve(async (req) => {
     }
   };
 
-  if (runGrowthFinal)     await runAgent("google_ads_growth",     () => runGrowthAgent(supabase, weekStart),     MODEL_ADS);
-  if (runEfficiencyFinal) await runAgent("google_ads_efficiency",  () => runEfficiencyAgent(supabase, weekStart),  MODEL_ADS);
-  if (runOrganicFinal)    await runAgent("organic_content",         () => runOrganicAgent(supabase, weekStart),     MODEL_ORGANIC);
+  // Run all requested agents in parallel — reduces total time from ~3x to ~1x
+  await Promise.all([
+    runGrowthFinal     ? runAgent("google_ads_growth",    () => runGrowthAgent(supabase, weekStart),    MODEL_ADS)     : Promise.resolve(),
+    runEfficiencyFinal ? runAgent("google_ads_efficiency", () => runEfficiencyAgent(supabase, weekStart), MODEL_ADS)    : Promise.resolve(),
+    runOrganicFinal    ? runAgent("organic_content",       () => runOrganicAgent(supabase, weekStart),   MODEL_ORGANIC) : Promise.resolve(),
+  ]);
 
   const hasErrors = Object.keys(errors).length > 0;
   return new Response(
