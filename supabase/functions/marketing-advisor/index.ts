@@ -74,6 +74,47 @@ function stripCodeFences(text: string): string {
   return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 }
 
+/**
+ * Try to parse JSON from Claude's response.
+ * Claude sometimes produces invalid JSON (unescaped newlines / quotes inside strings).
+ * Strategy:
+ *   1. Direct parse — fastest path, works most of the time.
+ *   2. Sanitize literal newlines/tabs inside string values, then re-parse.
+ *   3. Extract the outermost {...} block and retry.
+ */
+function parseClaudeJson(raw: string): unknown {
+  const text = stripCodeFences(raw);
+
+  // Pass 1 — direct
+  try { return JSON.parse(text); } catch (_) { /* fall through */ }
+
+  // Pass 2 — fix unescaped control characters inside string values
+  // Replace literal \n, \r, \t that appear inside "..." with their escape sequences
+  const sanitized = text.replace(/"((?:[^"\\]|\\.)*)"/gs, (_match, inner: string) => {
+    const fixed = inner
+      .replace(/\n/g, "\\n")
+      .replace(/\r/g, "\\r")
+      .replace(/\t/g, "\\t");
+    return `"${fixed}"`;
+  });
+  try { return JSON.parse(sanitized); } catch (_) { /* fall through */ }
+
+  // Pass 3 — extract outermost { ... } block and retry both ways
+  const start = text.indexOf("{");
+  const end   = text.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    const slice = text.slice(start, end + 1);
+    try { return JSON.parse(slice); } catch (_) { /* fall through */ }
+    const sanitizedSlice = slice.replace(/"((?:[^"\\]|\\.)*)"/gs, (_m, inner: string) => {
+      const fixed = inner.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+      return `"${fixed}"`;
+    });
+    try { return JSON.parse(sanitizedSlice); } catch (_) { /* fall through */ }
+  }
+
+  throw new SyntaxError(`Could not parse Claude JSON response. Preview: ${text.slice(0, 200)}`);
+}
+
 async function callClaude(
   model: string,
   system: string,
@@ -574,7 +615,7 @@ ${adCreatives}
 
   console.log(`[growth] Calling Claude...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
-  const parsed = JSON.parse(stripCodeFences(text));
+  const parsed = parseClaudeJson(text);
   console.log(`[growth] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
@@ -699,7 +740,7 @@ ${adCreatives}
 
   console.log(`[efficiency] Calling Claude...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
-  const parsed = JSON.parse(stripCodeFences(text));
+  const parsed = parseClaudeJson(text);
   console.log(`[efficiency] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
@@ -923,7 +964,7 @@ ${wooSalesOrganic}
 
   console.log(`[organic] Calling Claude (${MODEL_ORGANIC})...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, finalMessage);
-  const parsed = JSON.parse(stripCodeFences(text));
+  const parsed = parseClaudeJson(text);
   console.log(`[organic] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
