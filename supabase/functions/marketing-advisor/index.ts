@@ -24,6 +24,25 @@ const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MODEL_ADS     = "claude-haiku-4-5-20251001";
 const MODEL_ORGANIC = "claude-haiku-4-5-20251001";
 
+// ── Business Brief (injected into every agent prompt) ─────────────────────────
+const BUSINESS_BRIEF = `
+=== העסק: Minuto Coffee ===
+מה אנחנו: בית קלייה ספשלטי ברחובות. קולים קפה בעצמנו ומוכרים ישירות.
+
+מקור הרווח הראשי — פולי קפה:
+• אנחנו מייצרים ומוכרים פולי קפה קלויים טרי — זה הבידול שלנו וזה עיקר ההכנסה.
+• הלקוח מקבל קפה שנקלה אצלנו, לא מדף ולא מחסן — טריות אמיתית.
+• מכירה online (משלוח לכל הארץ) + איסוף עצמי מהקלייה.
+• יש לנו מגוון פולים: חד זניים ממדינות שונות (Ethiopia, Kenya, Brazil וכו') + בלנדים.
+
+פעילות משנית — בית קפה:
+• יש לנו בית קפה ברחובות — הוא משמש גם כמקום יצירת תוכן לאינסטגרם/פייסבוק.
+• התוכן מבית הקפה מחזק את המותג ומושך קהל לפולי הקפה.
+
+פריוריטי לפרסום ממומן: קמפיינים על מכירת פולי קפה — ביטויים של קנייה/הזמנה.
+פריוריטי לתוכן אורגני: הקלייה, הטריות, המגוון, חוויית בית הקפה.
+=== סוף תיאור העסק ===`;
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -433,8 +452,9 @@ async function runGrowthAgent(
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
 
-  const systemPrompt = `אתה יועץ צמיחה אגרסיבי לפרסום ממומן של Minuto Coffee — בית קלייה ספשלטי ברחובות.
-הפילוסופיה שלך: צמיחה. להגדיל את הנוכחות, לסקייל על מה שעובד, לבדוק דברים חדשים.
+  const systemPrompt = `אתה יועץ צמיחה אגרסיבי לפרסום ממומן של Minuto Coffee.
+${BUSINESS_BRIEF}
+הפילוסופיה שלך: צמיחה. להגדיל מכירות פולי קפה — זה הפוקוס. לסקייל על מה שעובד, לבדוק דברים חדשים.
 אל תמליץ לצמצם אלא אם הנתונים מאוד גרועים — העדף להגדיל תקציב, לרחב קהל, לבדוק קריאייטיב חדש.
 
 === חוקי כתיבת קופי לGoogle Ads — קריטי ===
@@ -559,8 +579,9 @@ async function runEfficiencyAgent(
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
 
-  const systemPrompt = `אתה יועץ יעילות שמרני לפרסום ממומן של Minuto Coffee — בית קלייה ספשלטי ברחובות.
-הפילוסופיה שלך: יעילות. כל שקל צריך להחזיר ערך. לחתוך בזבוז, לרכז תקציב בקמפיינים שמוכיחים ROI.
+  const systemPrompt = `אתה יועץ יעילות שמרני לפרסום ממומן של Minuto Coffee.
+${BUSINESS_BRIEF}
+הפילוסופיה שלך: יעילות. כל שקל שמושקע בפרסום צריך לייצר מכירות פולי קפה. לחתוך בזבוז, לרכז תקציב בקמפיינים שמוכיחים ROI.
 אתה מחפש דפוסי בזבוז, קמפיינים שמפסידים כסף, ומקומות שאפשר לשפר CPA בלי להגדיל תקציב.
 בנוסף לניתוח, תכתוב מודעות משופרות מוכנות להחלפה — כותרות ותיאורים חדשים לקמפיינים החלשים.
 
@@ -757,11 +778,12 @@ async function runOrganicAgent(
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
     .slice(0, 3);
 
-  const systemPrompt = `אתה מומחה תוכן דיגיטלי של Minuto Coffee, בית קפה ספשלטי ברחובות.
-יש לך שתי אחריויות שוות במעמד — אל תזניח אף אחת מהן:
+  const systemPrompt = `אתה מומחה תוכן דיגיטלי של Minuto Coffee.
+${BUSINESS_BRIEF}
+יש לך שתי אחריויות — שתיהן משרתות את המטרה הראשית: מכירת פולי קפה.
 
-1. אינסטגרם — ניהול תוכן ואסטרטגיית תוכן חברתי
-2. Google אורגני — SEO, בלוג, דפי נחיתה, ותוכן שמדורג בחיפוש
+1. אינסטגרם/פייסבוק — תוכן שמחזק את המותג ומושך אנשים לקנות פולים
+2. Google אורגני — SEO, בלוג, דפי נחיתה על קפה ספשלטי שמדורגים בחיפוש
 
 הקהל: ישראלים אוהבי קפה, 25–45, שמחפשים בגוגל וגוללים אינסטגרם.
 GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר את זה גם לתוכן SEO (בלוג/דפים) וגם לפוסטי אינסטגרם.
