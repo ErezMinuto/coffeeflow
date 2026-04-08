@@ -490,7 +490,7 @@ ${insights || "    אין"}`;
   }).filter(Boolean).join("\n\n");
 }
 
-// ── Keyword Planner — Israeli market demand ───────────────────────────────────
+// ── Campaign keyword performance (from keyword_view GAQL sync) ────────────────
 async function fetchKeywordIdeas(
   supabase: ReturnType<typeof createClient>,
 ): Promise<string> {
@@ -499,27 +499,28 @@ async function fetchKeywordIdeas(
     .select("keyword,avg_monthly_searches,competition,competition_index,low_top_bid_micros,high_top_bid_micros")
     .gt("avg_monthly_searches", 0)
     .order("avg_monthly_searches", { ascending: false })
-    .limit(50);
+    .limit(60);
 
   if (!data || data.length === 0) {
-    return "  אין נתוני Keyword Planner עדיין — הרץ google-sync כדי לייבא נתוני שוק.";
+    return "  אין נתוני ביצועי מילות מפתח עדיין — הרץ google-sync כדי לייבא נתונים.";
   }
 
-  // Group by competition level for clarity
-  const high   = data.filter((k: any) => k.competition === "HIGH");
-  const medium = data.filter((k: any) => k.competition === "MEDIUM");
-  const low    = data.filter((k: any) => k.competition === "LOW" || k.competition === "UNSPECIFIED");
-
+  // Fields: avg_monthly_searches = actual impressions, competition = match type, competition_index = impression share %
   const fmt = (k: any) => {
-    const lowBid  = k.low_top_bid_micros  ? `₪${(k.low_top_bid_micros  / 1_000_000).toFixed(2)}` : "—";
-    const highBid = k.high_top_bid_micros ? `₪${(k.high_top_bid_micros / 1_000_000).toFixed(2)}` : "—";
-    return `  "${k.keyword}" | ${k.avg_monthly_searches.toLocaleString()} חיפושים/חודש | תחרות: ${k.competition_index ?? "?"}/100 | CPC: ${lowBid}–${highBid}`;
+    const cpc     = k.low_top_bid_micros ? `₪${(k.low_top_bid_micros / 1_000_000).toFixed(2)}` : "—";
+    const impShare = k.competition_index ? `${k.competition_index}% impression share` : "";
+    return `  "${k.keyword}" [${k.competition ?? "?"}] | חשיפות: ${k.avg_monthly_searches.toLocaleString()} | CPC: ${cpc}${impShare ? ` | ${impShare}` : ""}`;
   };
 
-  const lines: string[] = [];
-  if (high.length   > 0) lines.push(`תחרות גבוהה (${high.length} ביטויים):\n${high.slice(0, 15).map(fmt).join("\n")}`);
-  if (medium.length > 0) lines.push(`תחרות בינונית (${medium.length} ביטויים):\n${medium.slice(0, 15).map(fmt).join("\n")}`);
-  if (low.length    > 0) lines.push(`תחרות נמוכה (${low.length} ביטויים — הזדמנות):\n${low.slice(0, 10).map(fmt).join("\n")}`);
+  // Group by match type
+  const exact  = data.filter((k: any) => k.competition === "EXACT");
+  const phrase = data.filter((k: any) => k.competition === "PHRASE");
+  const broad  = data.filter((k: any) => !["EXACT", "PHRASE"].includes(k.competition ?? ""));
+
+  const lines: string[] = [`מילות המפתח של Minuto — ביצועים בפועל (30 יום, מסודר לפי חשיפות):`];
+  if (exact.length  > 0) lines.push(`התאמה מדויקת:\n${exact.slice(0, 15).map(fmt).join("\n")}`);
+  if (phrase.length > 0) lines.push(`התאמת ביטוי:\n${phrase.slice(0, 15).map(fmt).join("\n")}`);
+  if (broad.length  > 0) lines.push(`התאמה רחבה:\n${broad.slice(0, 10).map(fmt).join("\n")}`);
 
   return lines.join("\n\n");
 }
@@ -792,8 +793,8 @@ ${adCreatives}
 אלה הביטויים שבהם Minuto כבר מופיעה בגוגל. השתמש בהם כבסיס להמלצות.
 ${gscBlock}
 
-=== Keyword Planner — ביקוש שוק הקפה הישראלי (נתוני Google, עודכן לאחרונה) ===
-נתוני נפח חיפוש ותחרות ביטויים — ישראל בלבד. הצלב עם GSC: ביטויים בנפח גבוה שMinuto לא מדורגת בהם = הזדמנות לפרסום.
+=== מילות מפתח — ביצועי קמפיינים Minuto בפועל (30 יום) ===
+אלה מילות המפתח שפועלות בקמפיינים הנוכחיים + ביצועיהן האמיתיים. השתמש בהן כבסיס להמלצות — אל תמציא ביטויים שאינם כאן או ב-GSC.
 ${kwIdeas}
 
 === היסטוריית המלצות קודמות — למד מהן ===
@@ -950,8 +951,8 @@ ${adCreatives}
 === Google Search Console — נתוני Minuto בפועל (30 יום אחרונים) ===
 ${gscBlockEff}
 
-=== Keyword Planner — ביקוש שוק הקפה הישראלי (נתוני Google, עודכן לאחרונה) ===
-השתמש בנתונים אלה לניתוח: האם Minuto מפרסמת על הביטויים בנפח הגבוה? האם CPC הנוכחי גבוה מהרף הצפוי? האם יש ביטויים עם תחרות נמוכה שאפשר לנצל?
+=== מילות מפתח — ביצועי קמפיינים Minuto בפועל (30 יום) ===
+ביצועים אמיתיים לפי מילת מפתח. בדוק: אילו ביטויים מביאים קליקים יקרים עם המרות נמוכות? אילו ביטויים יש להם CPC גבוה בלי תוצאות? אלה מועמדים להסרה. ביטויים עם impression share נמוך = שווה להגדיל תקציב.
 ${kwIdeasEff}
 
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.

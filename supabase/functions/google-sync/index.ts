@@ -202,79 +202,82 @@ serve(async (req) => {
 
     console.log(`[google-sync] Ad creatives synced: ${adRecords}`)
 
-    // ── Keyword Planner — Israeli coffee market demand ─────────────────────
+    // ── Keyword-level performance (keyword_view GAQL) ─────────────────────────
+    // Note: Google Ads Keyword Planner has no REST API — gRPC only.
+    // Instead we query keyword_view for real performance data from Minuto's own campaigns.
     let keywordRecords = 0
-    let kwDebug = ''
     try {
-      const SEED_KEYWORDS = [
-        'קפה', 'פולי קפה', 'קפה ספיישלטי', 'קפה איכותי', 'קפה טרי',
-        'פולי קפה טרי', 'קלייה', 'קפה מיוחד', 'קפה להכנה בבית',
-        'קפה מנויים', 'מתנה קפה', 'קפה אונליין', 'לקנות קפה',
-        'פולי אספרסו', 'קפה פילטר', 'coffee beans israel',
-        'specialty coffee', 'single origin coffee',
-      ]
+      const kwQuery = `
+        SELECT
+          ad_group_criterion.keyword.text,
+          ad_group_criterion.keyword.match_type,
+          ad_group_criterion.status,
+          campaign.name,
+          metrics.impressions,
+          metrics.clicks,
+          metrics.cost_micros,
+          metrics.ctr,
+          metrics.average_cpc,
+          metrics.conversions,
+          metrics.search_impression_share,
+          metrics.search_top_impression_share
+        FROM keyword_view
+        WHERE campaign.status != 'REMOVED'
+          AND ad_group_criterion.type = 'KEYWORD'
+          AND ad_group_criterion.status != 'REMOVED'
+          AND segments.date BETWEEN '${monthAgo}' AND '${today}'
+        ORDER BY metrics.impressions DESC
+        LIMIT 150
+      `
 
-      const kwHeaders: Record<string, string> = {
-        'Authorization': `Bearer ${accessToken}`,
-        'developer-token': devToken,
-        'Content-Type': 'application/json',
-      }
-      // Manager account header — required for Keyword Planner when using MCC token
-      if (loginCustomerId) kwHeaders['login-customer-id'] = loginCustomerId
+      const kwRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'developer-token': devToken,
+          'Content-Type': 'application/json',
+          ...(loginCustomerId ? { 'login-customer-id': loginCustomerId } : {}),
+        },
+        body: JSON.stringify({ query: kwQuery }),
+      })
 
-      // For Keyword Planner, use loginCustomerId (manager) as the URL customer if available,
-      // otherwise fall back to regular customerId
-      const kwCustomerId = loginCustomerId || customerId
-      console.log(`[google-sync] Calling Keyword Planner (kwCustomerId=${kwCustomerId}, loginCustomerId=${loginCustomerId || 'not set'}, customerId=${customerId})`)
-
-      // Test with v17 (known stable for Keyword Planner) and also regular customerId
-      const kwRes = await fetch(
-        `https://googleads.googleapis.com/v17/customers/${customerId}/keywordPlanIdeas:generateKeywordIdeas`,
-        {
-          method: 'POST',
-          headers: kwHeaders,
-          body: JSON.stringify({
-            language: 'languageConstants/1027',               // Hebrew
-            geoTargetConstants: ['geoTargetConstants/2376'],  // Israel
-            keywordPlanNetwork: 'GOOGLE_SEARCH_AND_PARTNERS',
-            keywordSeed: { keywords: SEED_KEYWORDS },
-          }),
-        }
-      )
-
-      const kwText = await kwRes.text()
-      kwDebug = `HTTP ${kwRes.status}: ${kwText.substring(0, 500)}`
-      console.log(`[google-sync] Keyword Planner ${kwDebug}`)
+      const kwRawText = await kwRes.text()
       let kwData: any
-      try { kwData = JSON.parse(kwText) } catch {
-        console.error('[google-sync] Keyword Planner non-JSON:', kwText.substring(0, 300))
-        kwData = {}
+      try { kwData = JSON.parse(kwRawText) } catch {
+        console.error('[google-sync] keyword_view non-JSON:', kwRawText.substring(0, 200))
+        kwData = { results: [] }
       }
 
       if (kwData.error) {
-        kwDebug = `Error: ${JSON.stringify(kwData.error).substring(0, 400)}`
-        console.warn('[google-sync] Keyword Planner error:', kwDebug)
+        console.warn('[google-sync] keyword_view error:', JSON.stringify(kwData.error).substring(0, 300))
       } else {
-        const ideas: any[] = kwData.results ?? []
-        console.log(`[google-sync] Keyword ideas received: ${ideas.length}`)
+        console.log(`[google-sync] keyword_view results: ${(kwData.results ?? []).length}`)
+        for (const row of kwData.results ?? []) {
+          const kw     = row.adGroupCriterion?.keyword?.text ?? ''
+          const match  = row.adGroupCriterion?.keyword?.matchType ?? 'UNSPECIFIED'
+          const impr   = row.metrics?.impressions ?? 0
+          const clicks = row.metrics?.clicks ?? 0
+          const cost   = (row.metrics?.costMicros ?? 0) / 1_000_000
+          const cpc    = (row.metrics?.averageCpc ?? 0) / 1_000_000
+          const impShare = row.metrics?.searchImpressionShare ?? 0
+          const topShare = row.metrics?.searchTopImpressionShare ?? 0
 
-        for (const idea of ideas) {
-          const kwMetrics = idea.keywordIdeaMetrics ?? {}
+          if (!kw) continue
+
           await supabase.from('keyword_ideas').upsert({
-            keyword:               idea.text ?? '',
-            avg_monthly_searches:  kwMetrics.avgMonthlySearches ?? 0,
-            competition:           kwMetrics.competition ?? 'UNSPECIFIED',
-            competition_index:     kwMetrics.competitionIndex ?? 0,
-            low_top_bid_micros:    kwMetrics.lowTopOfPageBidMicros ?? 0,
-            high_top_bid_micros:   kwMetrics.highTopOfPageBidMicros ?? 0,
+            keyword:               kw,
+            avg_monthly_searches:  impr,   // reuse field: lifetime impressions from our campaigns
+            competition:           match,  // reuse field: match type
+            competition_index:     parseFloat((impShare * 100).toFixed(1)),   // impression share %
+            low_top_bid_micros:    Math.round(cpc * 1_000_000),               // actual CPC in micros
+            high_top_bid_micros:   Math.round((cost > 0 ? cost / Math.max(clicks, 1) : cpc) * 1_000_000 * 1.2),
             synced_at:             new Date().toISOString(),
           }, { onConflict: 'keyword' })
           keywordRecords++
         }
       }
     } catch (kwErr: any) {
-      kwDebug = `Exception: ${kwErr.message}`
-      console.warn('[google-sync] Keyword Planner fetch failed:', kwErr.message)
+      console.warn('[google-sync] keyword_view fetch failed:', kwErr.message)
     }
 
     console.log(`[google-sync] Keyword ideas synced: ${keywordRecords}`)
@@ -287,7 +290,7 @@ serve(async (req) => {
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords, kw_debug: kwDebug }), {
+    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
