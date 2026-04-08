@@ -813,7 +813,12 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 חשוב ישראלי. עברית אמיתית — לא מתורגמת. ספונטני, קצת הומוריסטי, אנושי. לא שיווקי, לא מנופח.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-הגבלות פלט: google_organic_recommendations — עד 2 פריטים. seo_content_opportunities — עד 2. content_recommendations — עד 3. products_to_feature — עד 2. posts_to_publish — פוסט אחד מלא בלבד (הכי חשוב לשבוע). key_insights — עד 3.
+הגבלות פלט קפדניות — חרוג מהן = שגיאה:
+• google_organic_recommendations — פריט אחד בלבד
+• content_recommendations — עד 2 פריטים
+• products_to_feature — פריט אחד בלבד
+• posts_to_publish — פוסט אחד בלבד; caption — עד 120 תווים; hashtags — עד 5
+• key_insights — עד 2
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
   const gscBlock = topKeywords.length > 0
@@ -861,9 +866,9 @@ ${wooSalesOrganic}
 === לוח תוכן לשבוע ${weekStart}–${weekEnd} ===
 התחשב בעונה ובחגים הקרובים בלוח התוכן — תזמן פוסטים לפני חגים, הימנע מפוסטים שמחים בימי זיכרון.
 
-החזר JSON:
+החזר JSON (בדיוק מבנה זה, ללא שדות נוספים):
 {
-  "summary": "2-3 משפטים — מה עבד באינסטגרם, מה GSC מראה, ומה ההזדמנות הגדולה ביותר בתוכן אורגני",
+  "summary": "2 משפטים בלבד",
   "account_health": {
     "avg_reach_30d": ${avgReach(posts)},
     "follower_count": ${followerCount},
@@ -876,15 +881,8 @@ ${wooSalesOrganic}
       "current_position": 8.5,
       "content_type": "blog_post|landing_page|product_page|faq_page",
       "suggested_title": "כותרת H1 מוצעת",
-      "key_points": ["נקודה 1", "נקודה 2"],
+      "key_points": ["נקודה 1"],
       "estimated_difficulty": "קל|בינוני|קשה"
-    }
-  ],
-  "seo_content_opportunities": [
-    {
-      "keyword": "מילת מפתח מ-GSC",
-      "current_position": 8.5,
-      "instagram_angle": "זווית לפוסט אינסטגרם"
     }
   ],
   "content_recommendations": [
@@ -892,8 +890,7 @@ ${wooSalesOrganic}
       "priority": 1,
       "content_type": "reel|post|story",
       "topic": "נושא ספציפי",
-      "reason": "למה עכשיו",
-      "caption_idea": "רעיון קצר לכיתוב",
+      "reason": "למה עכשיו — משפט קצר",
       "best_day": "ראשון|שני|שלישי|רביעי|חמישי|שישי",
       "best_time": "09:00"
     }
@@ -902,7 +899,7 @@ ${wooSalesOrganic}
     {
       "product": "שם מוצר",
       "reason": "low_stock_urgency|new_batch|bestseller",
-      "content_angle": "זווית תוכן"
+      "content_angle": "זווית קצרה"
     }
   ],
   "posts_to_publish": [
@@ -911,10 +908,10 @@ ${wooSalesOrganic}
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
       "best_time": "09:00",
-      "caption": "כיתוב מלא לאינסטגרם כולל אמוג'ים וקריאה לפעולה",
-      "hashtags": ["#קפה", "#מינוטו", "#ספשלטי"],
-      "hook": "המשפט הראשון שיעצור את הגלילה",
-      "visual_direction": "מה לצלם ואיך"
+      "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
+      "hashtags": ["#קפה", "#מינוטו"],
+      "hook": "משפט פתיחה קצר",
+      "visual_direction": "הנחיה קצרה"
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2"]

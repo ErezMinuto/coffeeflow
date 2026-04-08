@@ -102,8 +102,7 @@ interface OrganicReport {
   summary: string
   account_health: { avg_reach_30d: number; follower_count: number; best_post_type: string; engagement_rate_pct: number }
   google_organic_recommendations: GoogleOrganicRec[]
-  seo_content_opportunities: { keyword: string; search_volume_signal: string; current_position: number; instagram_angle: string }[]
-  content_recommendations: { priority: number; content_type: string; topic: string; reason: string; caption_idea: string; best_day: string; best_time: string }[]
+  content_recommendations: { priority: number; content_type: string; topic: string; reason: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
   posts_to_publish: PostToPublish[]
   key_insights: string[]
@@ -589,24 +588,6 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
         </div>
       )}
 
-      {/* SEO content opportunities → Instagram */}
-      {r.seo_content_opportunities?.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">📱 SEO → אינסטגרם</h4>
-          <div className="space-y-2">
-            {r.seo_content_opportunities.slice(0, 3).map((op, i) => (
-              <div key={i} className="card p-3 border-r-4 border-purple-400 bg-purple-50">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium text-purple-900">"{op.keyword}"</p>
-                  <span className="text-xs text-purple-600 font-mono shrink-0 mr-2">מיקום {op.current_position}</span>
-                </div>
-                <p className="text-xs text-purple-700">{op.instagram_angle}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Content recommendations */}
       {r.content_recommendations?.slice(0, 2).map((rec, i) => (
         <div key={i} className="card p-3 border-r-4 border-green-400">
@@ -616,11 +597,6 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
           </div>
           <p className="font-medium text-surface-800 text-sm mb-1">{rec.topic}</p>
           <p className="text-xs text-surface-500 mb-1">{rec.reason}</p>
-          {rec.caption_idea && (
-            <blockquote className="text-xs text-surface-600 bg-surface-50 border-r-2 border-surface-200 pr-2 py-1 italic">
-              "{rec.caption_idea}"
-            </blockquote>
-          )}
         </div>
       ))}
 
