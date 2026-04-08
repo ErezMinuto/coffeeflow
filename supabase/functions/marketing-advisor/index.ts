@@ -312,7 +312,11 @@ async function callClaude(
   userMessage: string,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 100_000); // 100s — Haiku finishes in ~20s
+  const timeout = setTimeout(() => controller.abort(), 120_000); // 120s hard limit
+
+  // max_tokens capped at 3000 — JSON schemas need ~800-1500 tokens.
+  // 8192 caused timeouts: Sonnet at 60 tok/s × 8192 = 136s > 150s edge limit.
+  const maxTokens = 3000;
 
   let response: Response;
   try {
@@ -326,7 +330,7 @@ async function callClaude(
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8192,
+        max_tokens: maxTokens,
         system,
         messages: [{ role: "user", content: userMessage }],
       }),
