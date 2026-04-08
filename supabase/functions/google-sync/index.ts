@@ -222,10 +222,13 @@ serve(async (req) => {
       // Manager account header — required for Keyword Planner when using MCC token
       if (loginCustomerId) kwHeaders['login-customer-id'] = loginCustomerId
 
-      console.log(`[google-sync] Calling Keyword Planner (customerId=${customerId}, loginCustomerId=${loginCustomerId || 'not set'})`)
+      // For Keyword Planner, use loginCustomerId (manager) as the URL customer if available,
+      // otherwise fall back to regular customerId
+      const kwCustomerId = loginCustomerId || customerId
+      console.log(`[google-sync] Calling Keyword Planner (kwCustomerId=${kwCustomerId}, loginCustomerId=${loginCustomerId || 'not set'}, customerId=${customerId})`)
 
       const kwRes = await fetch(
-        `https://googleads.googleapis.com/v20/customers/${customerId}/keywordPlanIdeas:generateKeywordIdeas`,
+        `https://googleads.googleapis.com/v20/customers/${kwCustomerId}/keywordPlanIdeas:generateKeywordIdeas`,
         {
           method: 'POST',
           headers: kwHeaders,
