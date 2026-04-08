@@ -256,19 +256,28 @@ function getSeasonalContext(weekStart: string): string {
     const evEnd    = ev.endDate ? new Date(ev.endDate) : evDate;
     const diffDays = Math.round((evDate.getTime() - today.getTime()) / dayMs);
 
-    let when: string;
-    if (evDate <= today && evEnd >= today) when = 'מתרחש עכשיו';
-    else if (diffDays === 0)  when = 'מתחיל היום';
-    else if (diffDays === 1)  when = 'מחר';
-    else if (diffDays <= 7)   when = `בעוד ${diffDays} ימים`;
-    else                      when = `בעוד ${diffDays} ימים (${ev.date})`;
+    // Days until the event ENDS (negative = already ending/ended today)
+    const daysUntilEnd = Math.round((evEnd.getTime() - today.getTime()) / dayMs);
+    const endingToday  = daysUntilEnd === 0;
+    const endingSoon   = daysUntilEnd > 0 && daysUntilEnd <= 1; // ends tomorrow
 
-    // Planning urgency hint based on days away
+    let when: string;
+    if (endingToday)                        when = 'מסתיים היום';
+    else if (endingSoon)                    when = 'מסתיים מחר';
+    else if (evDate <= today && evEnd >= today) when = 'מתרחש עכשיו';
+    else if (diffDays === 0)               when = 'מתחיל היום';
+    else if (diffDays === 1)               when = 'מחר';
+    else if (diffDays <= 7)                when = `בעוד ${diffDays} ימים`;
+    else                                   when = `בעוד ${diffDays} ימים (${ev.date})`;
+
+    // Planning urgency hint — NEVER recommend starting campaigns for ending/past events
     let planningNote = '';
-    if (diffDays > 30)       planningNote = ' 📋 התחל לתכנן קמפיינים עכשיו';
-    else if (diffDays > 14)  planningNote = ' ⏰ זמן לבנות קריאייטיב ולהכין תקציב';
-    else if (diffDays > 7)   planningNote = ' 🔥 עדיפות גבוהה — הפעל קמפיינים';
-    else if (diffDays > 0)   planningNote = ' 🚨 דחוף';
+    if (endingToday || endingSoon) {
+      planningNote = ' ⛔ החג מסתיים — עצור קמפיינים ספציפיים לחג. אל תפתח חדשים.';
+    } else if (diffDays > 30)  planningNote = ' 📋 התחל לתכנן קמפיינים עכשיו';
+    else if (diffDays > 14)    planningNote = ' ⏰ זמן לבנות קריאייטיב ולהכין תקציב';
+    else if (diffDays > 7)     planningNote = ' 🔥 עדיפות גבוהה — הפעל קמפיינים';
+    else if (diffDays > 0)     planningNote = ' 🚨 דחוף';
 
     const urgency = ev.type === 'national' ? '⚠️' : ev.type === 'major_holiday' ? '🎉' : '📅';
     lines.push(`${urgency} ${ev.name} — ${when}${planningNote}\n   → ${ev.marketingNote}`);
@@ -280,7 +289,9 @@ function getSeasonalContext(weekStart: string): string {
 
   return `=== הקשר עונתי ואירועים ===
 עונה: ${season}
-${coffeeNote}${eventsBlock}`;
+${coffeeNote}${eventsBlock}
+
+⛔ כלל קריטי: אירועים שמסומנים "מסתיים היום" או "מסתיים מחר" — אסור להמליץ על קמפיינים חדשים לאותו אירוע. הוא נגמר. תמקד את ההמלצות בפעילות הרגילה או באירוע הבא.`;
 }
 
 async function upsertReport(
