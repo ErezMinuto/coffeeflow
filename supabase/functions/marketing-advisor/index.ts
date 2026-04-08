@@ -515,13 +515,37 @@ async function runGrowthAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives] = await Promise.all([
+  const thirtyDaysAgo = subtractDays(weekStart, 30);
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
+    supabase
+      .from("google_search_console")
+      .select("keyword,clicks,impressions,position")
+      .neq("keyword", "__page__")
+      .gte("date", thirtyDaysAgo)
+      .order("impressions", { ascending: false })
+      .limit(30),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
+
+  // Aggregate GSC keywords
+  const gscKwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
+  for (const r of (gscRes.data ?? [])) {
+    const e = gscKwMap.get(r.keyword);
+    if (e) { e.clicks += r.clicks; e.impressions += r.impressions; e.positions.push(r.position); }
+    else gscKwMap.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
+  }
+  const gscKeywords = Array.from(gscKwMap.entries())
+    .map(([kw, v]) => ({ keyword: kw, clicks: v.clicks, impressions: v.impressions,
+      position: Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10 }))
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 20);
+  const gscBlock = gscKeywords.length > 0
+    ? gscKeywords.map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`).join("\n")
+    : "  אין נתוני GSC עדיין";
 
   const systemPrompt = `אתה יועץ צמיחה אגרסיבי לפרסום ממומן של Minuto Coffee.
 ${BUSINESS_BRIEF}
@@ -549,6 +573,7 @@ ${BUSINESS_BRIEF}
 ✗ מילים מחוברות ב-ועם/אשר/אשר — אלה תרגום מאנגלית. בעברית מדוברת לא מדברים ככה
 ✓ שמות מקור כותבים באנגלית: Ethiopia Yirgacheffe, Kenya AA, Brazil Natural
 
+חוק קריטי לגבי מילות מפתח: המלץ רק על מילות מפתח שמופיעות בנתוני Google Search Console למטה עם חשיפות משמעותיות. אל תמציא מילות מפתח. אם "cold brew" לא מופיע ב-GSC עם חשיפות — אל תמליץ עליו. הלקוחות מחפשים מה שה-GSC מראה — לא מה שנדמה לך הגיוני.
 לכל קמפיין תוסיף creation_steps — שלבים מספרים ומדויקים איך ליצור אותו ב-Google Ads UI.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
@@ -574,6 +599,10 @@ ${wooSales}
 
 === קריאייטיב מודעות נוכחי (RSA) ===
 ${adCreatives}
+
+=== Google Search Console — מה לקוחות אמיתיים מחפשים (30 יום אחרונים) ===
+השתמש רק במילות מפתח שמופיעות כאן עם חשיפות גבוהות. אל תמציא מילות מפתח חדשות.
+${gscBlock}
 
 השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
 בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
@@ -637,13 +666,34 @@ async function runEfficiencyAgent(
   const weekEnd = addDays(weekStart, 6);
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
 
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives] = await Promise.all([
+  const thirtyDaysAgoEff = subtractDays(weekStart, 30);
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
+    supabase
+      .from("google_search_console")
+      .select("keyword,clicks,impressions,position")
+      .neq("keyword", "__page__")
+      .gte("date", thirtyDaysAgoEff)
+      .order("impressions", { ascending: false })
+      .limit(30),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
+
+  const gscKwMapEff = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
+  for (const r of (gscResEff.data ?? [])) {
+    const e = gscKwMapEff.get(r.keyword);
+    if (e) { e.clicks += r.clicks; e.impressions += r.impressions; e.positions.push(r.position); }
+    else gscKwMapEff.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
+  }
+  const gscBlockEff = Array.from(gscKwMapEff.entries())
+    .map(([kw, v]) => ({ keyword: kw, clicks: v.clicks, impressions: v.impressions,
+      position: Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10 }))
+    .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
+    .map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`)
+    .join("\n") || "  אין נתוני GSC עדיין";
 
   const systemPrompt = `אתה יועץ יעילות שמרני לפרסום ממומן של Minuto Coffee.
 ${BUSINESS_BRIEF}
@@ -697,6 +747,10 @@ ${wooSales}
 
 === קריאייטיב מודעות נוכחי (RSA) ===
 ${adCreatives}
+
+=== Google Search Console — מה לקוחות אמיתיים מחפשים (30 יום אחרונים) ===
+השתמש רק במילות מפתח שמופיעות כאן. אל תמציא ביטויים. אם "cold brew" לא מופיע כאן — אין לו חיפוש אמיתי ואין להמליץ עליו.
+${gscBlockEff}
 
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
 נתח את הכותרות והתיאורים הקיימים: האם הם חזקים? רלוונטיים? האם חוזק המודעה (Ad Strength) נמוך? ה-ads_to_rewrite צריך להתבסס על הקריאייטיב האמיתי שמוצג למעלה.
