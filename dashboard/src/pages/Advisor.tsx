@@ -559,7 +559,11 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
 
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
-function OrganicPanel({ row }: { row: AdvisorReport | null }) {
+function OrganicPanel({ row, blogState, writeBlogPost }: {
+  row: AdvisorReport | null
+  blogState: Record<string, { loading: boolean; post: BlogPost | null }>
+  writeBlogPost: (rec: GoogleOrganicRec) => void
+}) {
   if (!row)                        return <PanelEmpty label="סוכן תוכן אורגני" />
   if (row.status === 'running')    return <PanelRunning />
   if (row.status === 'cancelled')  return <PanelEmpty label="סוכן תוכן אורגני" />
@@ -946,7 +950,7 @@ export default function AdvisorPage() {
       sublabel: 'אינסטגרם · Google Search · מלאי',
       icon: <Leaf size={16} className="text-green-500" />,
       headerColor: 'border-green-100',
-      component: (row: AdvisorReport | null) => <OrganicPanel row={row} />,
+      component: (row: AdvisorReport | null) => <OrganicPanel row={row} blogState={blogState} writeBlogPost={writeBlogPost} />,
     },
   ]
 
