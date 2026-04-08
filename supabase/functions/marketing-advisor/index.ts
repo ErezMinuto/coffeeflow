@@ -406,6 +406,45 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
   }));
 }
 
+// ── Past Advisor Reports — builds the learning feedback loop ─────────────────
+async function fetchPastReports(
+  supabase: ReturnType<typeof createClient>,
+  agentType: string,
+  currentWeekStart: string,
+  limit = 4,
+): Promise<string> {
+  const { data } = await supabase
+    .from("advisor_reports")
+    .select("week_start, report, status")
+    .eq("agent_type", agentType)
+    .eq("status", "done")
+    .lt("week_start", currentWeekStart)
+    .order("week_start", { ascending: false })
+    .limit(limit);
+
+  if (!data || data.length === 0) return "אין היסטוריית דוחות קודמים עדיין.";
+
+  return data.map((row) => {
+    const r = row.report as Record<string, unknown> | null;
+    if (!r) return null;
+    const summary      = (r.summary as string ?? "").slice(0, 200);
+    const focus        = (r.next_week_focus as string ?? "").slice(0, 150);
+    const recs         = ((r.budget_recommendations ?? []) as { campaign: string; action: string; reason: string }[])
+      .slice(0, 3)
+      .map(b => `    • ${b.campaign}: ${b.action} — ${b.reason}`)
+      .join("\n");
+    const insights     = ((r.key_insights ?? []) as string[]).slice(0, 2).map(i => `    • ${i}`).join("\n");
+
+    return `שבוע ${row.week_start}:
+  סיכום: ${summary}
+  פוקוס שהומלץ: ${focus}
+  המלצות תקציב שניתנו:
+${recs || "    אין"}
+  תובנות:
+${insights || "    אין"}`;
+  }).filter(Boolean).join("\n\n");
+}
+
 async function fetchGoogleData(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
@@ -573,7 +612,7 @@ async function runGrowthAgent(
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
   const thirtyDaysAgo = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, pastReports] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
@@ -584,6 +623,7 @@ async function runGrowthAgent(
       .gte("date", thirtyDaysAgo)
       .order("impressions", { ascending: false })
       .limit(30),
+    fetchPastReports(supabase, "google_ads_growth", weekStart),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -672,6 +712,10 @@ ${adCreatives}
 אלה הביטויים שבהם Minuto כבר מופיעה בגוגל. השתמש בהם כבסיס להמלצות.
 ${gscBlock}
 
+=== היסטוריית המלצות קודמות — למד מהן ===
+${pastReports}
+השווה: מה המלצת בעבר → מה קרה בפועל בנתוני הקמפיינים השבוע. אם המלצה עבדה — חזק אותה. אם לא עבדה — הסבר למה ותכנן אחרת.
+
 השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
 בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
 
@@ -735,7 +779,7 @@ async function runEfficiencyAgent(
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
 
   const thirtyDaysAgoEff = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff, pastReportsEff] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
@@ -746,6 +790,7 @@ async function runEfficiencyAgent(
       .gte("date", thirtyDaysAgoEff)
       .order("impressions", { ascending: false })
       .limit(30),
+    fetchPastReports(supabase, "google_ads_efficiency", weekStart),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -827,6 +872,10 @@ ${gscBlockEff}
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
 נתח את הכותרות והתיאורים הקיימים: האם הם חזקים? רלוונטיים? האם חוזק המודעה (Ad Strength) נמוך? ה-ads_to_rewrite צריך להתבסס על הקריאייטיב האמיתי שמוצג למעלה.
 
+=== היסטוריית המלצות קודמות — למד מהן ===
+${pastReportsEff}
+השווה: מה המלצת בעבר → מה קרה בפועל. המלצות שעבדו — חזק. שלא עבדו — נתח למה.
+
 הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, ads_to_rewrite עד 1, key_insights עד 2.
 
 החזר JSON בפורמט (בדיוק מבנה זה):
@@ -884,7 +933,7 @@ async function runOrganicAgent(
   const thirtyDaysAgo = subtractDays(weekStart, 30);
   console.log(`[organic] Fetching data from ${thirtyDaysAgo}`);
 
-  const [postsRes, insightsRes, productsRes, originsRes, gscRes, wooSalesOrganic] = await Promise.all([
+  const [postsRes, insightsRes, productsRes, originsRes, gscRes, wooSalesOrganic, pastReportsOrganic] = await Promise.all([
     supabase
       .from("meta_organic_posts")
       .select("post_id,post_type,message,created_at,reach,impressions,likes,comments,shares,saves")
@@ -911,6 +960,7 @@ async function runOrganicAgent(
       .order("impressions", { ascending: false })
       .limit(20),
     fetchWooSales(supabase, weekStart, weekEnd),
+    fetchPastReports(supabase, "organic_content", weekStart),
   ]);
 
   const posts    = postsRes.data    ?? [];
@@ -1076,6 +1126,10 @@ ${wooSalesOrganic}
 
 === לוח תוכן לשבוע ${weekStart}–${weekEnd} ===
 התחשב בעונה ובחגים הקרובים בלוח התוכן — תזמן פוסטים לפני חגים, הימנע מפוסטים שמחים בימי זיכרון.
+
+=== היסטוריית המלצות תוכן קודמות — למד מהן ===
+${pastReportsOrganic}
+בדוק: איזה תוכן המלצת בעבר → מה הביצועים בפועל (reach, saves, likes בנתוני הפוסטים). תוכן שעבד — חזור לנוסחה. תוכן שלא עבד — נסה זווית אחרת.
 
 החזר JSON (בדיוק מבנה זה, ללא שדות נוספים):
 {
