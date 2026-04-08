@@ -230,13 +230,13 @@ serve(async (req) => {
         LIMIT 150
       `
 
+      // Note: use same headers as campaign queries (no login-customer-id) — that's what works
       const kwRes = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'developer-token': devToken,
           'Content-Type': 'application/json',
-          ...(loginCustomerId ? { 'login-customer-id': loginCustomerId } : {}),
         },
         body: JSON.stringify({ query: kwQuery }),
       })
