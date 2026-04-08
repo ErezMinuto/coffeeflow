@@ -1022,17 +1022,15 @@ export default function AdvisorPage() {
               </div>
               <div className="flex items-center gap-2">
                 {rows[key] && <StatusBadge status={rows[key]!.status} />}
-                {rows[key]?.status !== 'running' && (
-                  <button
-                    onClick={() => runAdvisor(key)}
-                    disabled={isRunning}
-                    title="הרץ סוכן זה בלבד"
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-200 bg-white text-surface-500 hover:bg-surface-50 hover:text-surface-800 hover:border-surface-300 disabled:opacity-30 transition-colors"
-                  >
-                    <RefreshCw size={11} />
-                    הרץ
-                  </button>
-                )}
+                <button
+                  onClick={() => runAdvisor(key)}
+                  disabled={rows[key]?.status === 'running'}
+                  title="הרץ סוכן זה בלבד"
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-surface-900 disabled:opacity-30 transition-colors"
+                >
+                  <RefreshCw size={11} />
+                  הרץ
+                </button>
               </div>
             </div>
             <div className="flex-1">
