@@ -249,9 +249,27 @@ serve(async (req) => {
       }
 
       if (kwData.error) {
-        console.warn('[google-sync] keyword_view error:', JSON.stringify(kwData.error).substring(0, 300))
+        console.warn('[google-sync] keyword_view error:', JSON.stringify(kwData.error).substring(0, 500))
+        // Store debug info in sync_log for visibility
+        await supabase.from('sync_log').insert({
+          platform: 'google_kw_debug', status: 'error',
+          error_msg: JSON.stringify(kwData.error).substring(0, 500),
+          started_at: startedAt, finished_at: new Date().toISOString(),
+        })
       } else {
-        console.log(`[google-sync] keyword_view results: ${(kwData.results ?? []).length}`)
+        const kwResults = kwData.results ?? []
+        console.log(`[google-sync] keyword_view results: ${kwResults.length}`)
+        // Store first result structure for debugging
+        if (kwResults.length > 0) {
+          console.log('[google-sync] First KW result keys:', Object.keys(kwResults[0]).join(', '))
+          console.log('[google-sync] First KW result:', JSON.stringify(kwResults[0]).substring(0, 400))
+        } else {
+          await supabase.from('sync_log').insert({
+            platform: 'google_kw_debug', status: 'empty',
+            error_msg: `keyword_view returned 0 results. HTTP ${kwRes.status}. Preview: ${kwRawText.substring(0, 300)}`,
+            started_at: startedAt, finished_at: new Date().toISOString(),
+          })
+        }
         for (const row of kwData.results ?? []) {
           const kw     = row.adGroupCriterion?.keyword?.text ?? ''
           const match  = row.adGroupCriterion?.keyword?.matchType ?? 'UNSPECIFIED'
