@@ -45,11 +45,17 @@ interface CampaignToCreate {
   creation_steps?: string[]
 }
 
+interface CopyFix {
+  original: string
+  problem: string
+  replacement: string
+}
+
 interface AdToRewrite {
   campaign: string
-  problem: string
-  new_headlines: string[]
-  new_descriptions: string[]
+  ad_strength: string
+  headline_fixes: CopyFix[]
+  description_fixes: CopyFix[]
   expected_improvement: string
   creation_steps?: string[]
 }
@@ -462,32 +468,76 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
           <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">✏️ מודעות לשכתוב</h4>
           <div className="space-y-3">
             {r.ads_to_rewrite.map((a, i) => (
-              <div key={i} className="card p-3 border border-amber-200 bg-amber-50 space-y-2">
-                <p className="text-sm font-semibold text-amber-900">{a.campaign}</p>
-                <p className="text-xs text-red-600">⚠ {a.problem}</p>
-                <div className="bg-white rounded-lg p-2.5 space-y-1.5">
-                  <p className="text-xs font-semibold text-surface-500 mb-1">כותרות חדשות:</p>
-                  {a.new_headlines?.map((h, j) => (
-                    <div key={j} className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-surface-800 font-mono">{h}</p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className={`text-xs font-mono ${h.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{h.length}/30</span>
-                        <CopyButton text={h} />
-                      </div>
-                    </div>
-                  ))}
-                  <p className="text-xs font-semibold text-surface-500 mt-2 mb-1">תיאורים חדשים:</p>
-                  {a.new_descriptions?.map((d, j) => (
-                    <div key={j} className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-surface-700">{d}</p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className={`text-xs font-mono ${d.length > 90 ? 'text-red-500' : 'text-surface-400'}`}>{d.length}/90</span>
-                        <CopyButton text={d} />
-                      </div>
-                    </div>
-                  ))}
+              <div key={i} className="card p-3 border border-amber-200 bg-amber-50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-amber-900">{a.campaign}</p>
+                  {a.ad_strength && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      a.ad_strength === 'POOR' ? 'bg-red-100 text-red-700' :
+                      a.ad_strength === 'AVERAGE' ? 'bg-amber-100 text-amber-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>Ad Strength: {a.ad_strength}</span>
+                  )}
                 </div>
-                <p className="text-xs text-green-700">✓ {a.expected_improvement}</p>
+
+                {/* Headline fixes */}
+                {a.headline_fixes?.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-surface-500">כותרות:</p>
+                    {a.headline_fixes.map((fix, j) => (
+                      <div key={j} className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+                        {/* Old */}
+                        <div className="flex items-start justify-between gap-2 px-3 py-2 bg-red-50 border-b border-red-100">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-red-500 font-semibold mb-0.5">❌ קיים</p>
+                            <p className="text-xs text-red-800 font-mono break-all">{fix.original}</p>
+                            {fix.problem && <p className="text-xs text-red-600 mt-1 leading-relaxed">↳ {fix.problem}</p>}
+                          </div>
+                          <span className={`text-xs font-mono shrink-0 ${fix.original?.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{fix.original?.length}/30</span>
+                        </div>
+                        {/* New */}
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-green-50">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-green-600 font-semibold mb-0.5">✅ החלפה</p>
+                            <p className="text-xs text-green-900 font-mono">{fix.replacement}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-xs font-mono ${fix.replacement?.length > 30 ? 'text-red-500' : 'text-green-600'}`}>{fix.replacement?.length}/30</span>
+                            <CopyButton text={fix.replacement} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Description fixes */}
+                {a.description_fixes?.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-surface-500">תיאורים:</p>
+                    {a.description_fixes.map((fix, j) => (
+                      <div key={j} className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+                        <div className="px-3 py-2 bg-red-50 border-b border-red-100">
+                          <p className="text-xs text-red-500 font-semibold mb-0.5">❌ קיים</p>
+                          <p className="text-xs text-red-800 break-all">{fix.original}</p>
+                          {fix.problem && <p className="text-xs text-red-600 mt-1">↳ {fix.problem}</p>}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-green-50">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-green-600 font-semibold mb-0.5">✅ החלפה</p>
+                            <p className="text-xs text-green-900">{fix.replacement}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-xs font-mono ${fix.replacement?.length > 90 ? 'text-red-500' : 'text-green-600'}`}>{fix.replacement?.length}/90</span>
+                            <CopyButton text={fix.replacement} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-xs text-green-700 bg-green-50 rounded px-2 py-1">✓ {a.expected_improvement}</p>
                 {a.creation_steps && <StepsAccordion steps={a.creation_steps} label="📋 איך לערוך ב-Google Ads" />}
               </div>
             ))}
