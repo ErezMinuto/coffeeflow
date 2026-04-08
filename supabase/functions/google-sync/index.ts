@@ -204,6 +204,7 @@ serve(async (req) => {
 
     // ── Keyword Planner — Israeli coffee market demand ─────────────────────
     let keywordRecords = 0
+    let kwDebug = ''
     try {
       const SEED_KEYWORDS = [
         'קפה', 'פולי קפה', 'קפה ספיישלטי', 'קפה איכותי', 'קפה טרי',
@@ -238,7 +239,8 @@ serve(async (req) => {
       )
 
       const kwText = await kwRes.text()
-      console.log(`[google-sync] Keyword Planner HTTP ${kwRes.status}, response preview: ${kwText.substring(0, 400)}`)
+      kwDebug = `HTTP ${kwRes.status}: ${kwText.substring(0, 500)}`
+      console.log(`[google-sync] Keyword Planner ${kwDebug}`)
       let kwData: any
       try { kwData = JSON.parse(kwText) } catch {
         console.error('[google-sync] Keyword Planner non-JSON:', kwText.substring(0, 300))
@@ -246,7 +248,8 @@ serve(async (req) => {
       }
 
       if (kwData.error) {
-        console.warn('[google-sync] Keyword Planner error:', JSON.stringify(kwData.error).substring(0, 500))
+        kwDebug = `Error: ${JSON.stringify(kwData.error).substring(0, 400)}`
+        console.warn('[google-sync] Keyword Planner error:', kwDebug)
       } else {
         const ideas: any[] = kwData.results ?? []
         console.log(`[google-sync] Keyword ideas received: ${ideas.length}`)
@@ -266,6 +269,7 @@ serve(async (req) => {
         }
       }
     } catch (kwErr: any) {
+      kwDebug = `Exception: ${kwErr.message}`
       console.warn('[google-sync] Keyword Planner fetch failed:', kwErr.message)
     }
 
@@ -279,7 +283,7 @@ serve(async (req) => {
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords }), {
+    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords, kw_debug: kwDebug }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
