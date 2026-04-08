@@ -314,9 +314,9 @@ async function callClaude(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000); // 120s hard limit
 
-  // max_tokens capped at 3000 — JSON schemas need ~800-1500 tokens.
-  // 8192 caused timeouts: Sonnet at 60 tok/s × 8192 = 136s > 150s edge limit.
-  const maxTokens = 3000;
+  // max_tokens: 5000 — fits creation_steps JSON (~83s at 60 tok/s, safely under 150s limit).
+  // 3000 caused truncation after adding creation_steps. 8192 caused timeout (136s).
+  const maxTokens = 5000;
 
   let response: Response;
   try {
