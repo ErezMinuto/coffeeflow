@@ -1023,9 +1023,10 @@ export default function AdvisorPage() {
                     onClick={() => runAdvisor(key)}
                     disabled={isRunning}
                     title="הרץ סוכן זה בלבד"
-                    className="text-surface-400 hover:text-surface-700 disabled:opacity-30 transition-colors"
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-200 bg-white text-surface-500 hover:bg-surface-50 hover:text-surface-800 hover:border-surface-300 disabled:opacity-30 transition-colors"
                   >
-                    <RefreshCw size={12} />
+                    <RefreshCw size={11} />
+                    הרץ
                   </button>
                 )}
               </div>
