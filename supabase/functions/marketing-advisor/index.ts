@@ -20,9 +20,9 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// Both agents use sonnet-4-5 (same model used by ai-analyst + generate-campaign)
-const MODEL_ADS     = "claude-sonnet-4-5-20250929";
-const MODEL_ORGANIC = "claude-sonnet-4-5-20250929";
+// Haiku: fast enough (15-25s), same model used by generate-campaign
+const MODEL_ADS     = "claude-haiku-4-5-20251001";
+const MODEL_ORGANIC = "claude-haiku-4-5-20251001";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -61,7 +61,7 @@ async function callClaude(
   userMessage: string,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 240_000); // 4-minute hard timeout
+  const timeout = setTimeout(() => controller.abort(), 100_000); // 100s — Haiku finishes in ~20s
 
   let response: Response;
   try {
