@@ -52,6 +52,7 @@ serve(async (req) => {
 
     const rawCustomerId = Deno.env.get('GOOGLE_CUSTOMER_ID')!
     const customerId = rawCustomerId.replace(/-/g, '')
+    const loginCustomerId = (Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID') ?? '').replace(/-/g, '')
 
     const today = new Date().toISOString().split('T')[0]
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -212,26 +213,32 @@ serve(async (req) => {
         'specialty coffee', 'single origin coffee',
       ]
 
+      const kwHeaders: Record<string, string> = {
+        'Authorization': `Bearer ${accessToken}`,
+        'developer-token': devToken,
+        'Content-Type': 'application/json',
+      }
+      // Manager account header — required for Keyword Planner when using MCC token
+      if (loginCustomerId) kwHeaders['login-customer-id'] = loginCustomerId
+
+      console.log(`[google-sync] Calling Keyword Planner (customerId=${customerId}, loginCustomerId=${loginCustomerId || 'not set'})`)
+
       const kwRes = await fetch(
         `https://googleads.googleapis.com/v20/customers/${customerId}/keywordPlanIdeas:generateKeywordIdeas`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'developer-token': devToken,
-            'Content-Type': 'application/json',
-          },
+          headers: kwHeaders,
           body: JSON.stringify({
             language: 'languageConstants/1027',               // Hebrew
             geoTargetConstants: ['geoTargetConstants/2376'],  // Israel
-            keywordPlanNetwork: 'GOOGLE_SEARCH',
+            keywordPlanNetwork: 'GOOGLE_SEARCH_AND_PARTNERS',
             keywordSeed: { keywords: SEED_KEYWORDS },
-            pageSize: 200,
           }),
         }
       )
 
       const kwText = await kwRes.text()
+      console.log(`[google-sync] Keyword Planner HTTP ${kwRes.status}, response preview: ${kwText.substring(0, 400)}`)
       let kwData: any
       try { kwData = JSON.parse(kwText) } catch {
         console.error('[google-sync] Keyword Planner non-JSON:', kwText.substring(0, 300))
@@ -239,7 +246,7 @@ serve(async (req) => {
       }
 
       if (kwData.error) {
-        console.warn('[google-sync] Keyword Planner error:', JSON.stringify(kwData.error).substring(0, 300))
+        console.warn('[google-sync] Keyword Planner error:', JSON.stringify(kwData.error).substring(0, 500))
       } else {
         const ideas: any[] = kwData.results ?? []
         console.log(`[google-sync] Keyword ideas received: ${ideas.length}`)
