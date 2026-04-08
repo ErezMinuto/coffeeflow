@@ -384,7 +384,6 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
                   ))}
                 </div>
                 <p className="text-xs text-blue-700 italic">{c.rationale}</p>
-                {c.creation_steps && <StepsAccordion steps={c.creation_steps} defaultOpen={true} />}
               </div>
             ))}
           </div>
@@ -539,7 +538,6 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
                 )}
 
                 <p className="text-xs text-green-700 bg-green-50 rounded px-2 py-1">✓ {a.expected_improvement}</p>
-                {a.creation_steps && <StepsAccordion steps={a.creation_steps} label="📋 איך לערוך ב-Google Ads" />}
               </div>
             ))}
           </div>
