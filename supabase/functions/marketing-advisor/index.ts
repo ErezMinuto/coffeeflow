@@ -863,7 +863,7 @@ ${ADS_EXPERTISE}
 לכל קמפיין תוסיף creation_steps — שלבים מספרים ומדויקים איך ליצור אותו ב-Google Ads UI.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-Reply in valid JSON only — no text before or after. Language rules: all analysis, summaries, insights, reasons, problems, and recommendations → English. Ad copy only (headlines, descriptions, replacements) → Hebrew, as they target Israeli customers.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
 
   const seasonalContext = getSeasonalContext(weekStart);
 
@@ -904,39 +904,39 @@ ${pastReports}
 
 הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
 
-Return JSON in exactly this structure:
+החזר JSON בפורמט הזה בדיוק:
 {
-  "agent_philosophy": "one sentence in English",
-  "summary": "2 sentences in English",
+  "agent_philosophy": "משפט אחד",
+  "summary": "2 משפטים בלבד",
   "google": {
     "total_cost": ${Math.round(totalCost * 100) / 100},
     "total_clicks": ${totalClicks},
     "total_impressions": ${totalImpressions},
     "total_conversions": ${Math.round(totalConversions * 10) / 10},
     "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "campaign name",
-    "worst_campaign": "campaign name"
+    "top_campaign": "שם הקמפיין",
+    "worst_campaign": "שם הקמפיין"
   },
   "budget_recommendations": [
-    { "platform": "google", "campaign": "name", "action": "increase|decrease|pause|keep|test_new", "reason": "English reason", "suggested_budget_change_pct": 30 }
+    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep|test_new", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
   ],
   "growth_opportunities": [
-    { "opportunity": "English", "action": "English", "expected_impact": "English" }
+    { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
   ],
   "campaigns_to_create": [
     {
-      "campaign_name": "English name",
+      "campaign_name": "שם",
       "campaign_type": "Search|Performance Max|Shopping",
-      "target_audience": "English",
-      "keywords": ["Hebrew keyword 1", "Hebrew keyword 2"],
-      "headlines": ["Hebrew headline 1", "Hebrew headline 2", "Hebrew headline 3"],
-      "descriptions": ["Hebrew description"],
+      "target_audience": "קהל יעד",
+      "keywords": ["מילה 1", "מילה 2"],
+      "headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
+      "descriptions": ["תיאור 1"],
       "daily_budget_ils": 50,
-      "rationale": "English rationale"
+      "rationale": "הסבר קצר"
     }
   ],
-  "key_insights": ["English insight 1", "English insight 2"],
-  "next_week_focus": "English — one sentence"
+  "key_insights": ["תובנה 1", "תובנה 2"],
+  "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
   const finalMessage = focus
@@ -1030,7 +1030,7 @@ ${ADS_EXPERTISE}
 לכל מודעה לשכתוב תוסיף creation_steps — שלבים מספרים איך לערוך את המודעה ב-Google Ads UI.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-Reply in valid JSON only — no text before or after. Language rules: all analysis, summaries, insights, reasons, problems, and recommendations → English. Ad copy only (headlines, descriptions, replacements) → Hebrew, as they target Israeli customers.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
 
   const seasonalContext = getSeasonalContext(weekStart);
 
@@ -1068,50 +1068,51 @@ ${kwIdeasEff}
 ${pastReportsEff}
 השווה: מה המלצת בעבר → מה קרה בפועל. המלצות שעבדו — חזק. שלא עבדו — נתח למה.
 
-הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, ads_to_rewrite עד 1, key_insights עד 2.
+הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, key_insights עד 2.
+חובה: ads_to_rewrite חייב תמיד להכיל לפחות פריט אחד — בחר את הקמפיין עם הקריאייטיב החלש ביותר (Ad Strength נמוך, CTR נמוך, או כותרות גנריות). אם כל הקמפיינים נראים טובים — בחר אחד ושפר את הכותרות לפי הכללים. אל תחזיר ads_to_rewrite ריק.
 
-Return JSON in exactly this structure:
+החזר JSON בפורמט הזה בדיוק:
 {
-  "agent_philosophy": "one sentence in English",
-  "summary": "2 sentences in English",
+  "agent_philosophy": "משפט אחד",
+  "summary": "2 משפטים בלבד",
   "google": {
     "total_cost": ${Math.round(totalCost * 100) / 100},
     "total_clicks": ${totalClicks},
     "total_impressions": ${totalImpressions},
     "total_conversions": ${Math.round(totalConversions * 10) / 10},
     "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "campaign name",
-    "worst_campaign": "campaign name"
+    "top_campaign": "שם הקמפיין",
+    "worst_campaign": "שם הקמפיין"
   },
   "budget_recommendations": [
-    { "platform": "google", "campaign": "name", "action": "increase|decrease|pause|keep", "reason": "English reason", "suggested_budget_change_pct": -20 }
+    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": -20 }
   ],
   "waste_identified": [
-    { "campaign": "name", "issue": "English issue", "estimated_waste": "₪X/week", "fix": "English fix" }
+    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר" }
   ],
   "ads_to_rewrite": [
     {
-      "campaign": "campaign name",
+      "campaign": "שם הקמפיין",
       "ad_strength": "POOR|AVERAGE|GOOD",
       "headline_fixes": [
         {
-          "original": "exact existing Hebrew headline",
-          "problem": "English diagnosis — why this headline is weak",
-          "replacement": "improved Hebrew headline"
+          "original": "הכותרת הקיימת בדיוק כמו שהיא",
+          "problem": "למה זו כותרת חלשה — ספציפי",
+          "replacement": "הכותרת החדשה המוצעת"
         }
       ],
       "description_fixes": [
         {
-          "original": "exact existing Hebrew description",
-          "problem": "English diagnosis",
-          "replacement": "improved Hebrew description"
+          "original": "התיאור הקיים בדיוק כמו שהוא",
+          "problem": "למה זה תיאור חלש",
+          "replacement": "התיאור החדש המוצע"
         }
       ],
-      "expected_improvement": "English — what will improve"
+      "expected_improvement": "מה ישתפר"
     }
   ],
-  "key_insights": ["English insight 1", "English insight 2"],
-  "next_week_focus": "English — one sentence"
+  "key_insights": ["תובנה 1", "תובנה 2"],
+  "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
   const finalMessage = focus
@@ -1289,7 +1290,7 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 • products_to_feature — פריט אחד בלבד
 • posts_to_publish — פוסט אחד בלבד; caption — עד 120 תווים; hashtags — עד 5
 • key_insights — עד 2
-Reply in valid JSON only — no text before or after. Language rules: all analysis, summaries, insights, reasons, problems, and recommendations → English. Ad copy only (headlines, descriptions, replacements) → Hebrew, as they target Israeli customers.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
 
   const gscBlock = topKeywords.length > 0
     ? topKeywords.map(k =>
@@ -1340,9 +1341,9 @@ ${wooSalesOrganic}
 ${pastReportsOrganic}
 בדוק: איזה תוכן המלצת בעבר → מה הביצועים בפועל (reach, saves, likes בנתוני הפוסטים). תוכן שעבד — חזור לנוסחה. תוכן שלא עבד — נסה זווית אחרת.
 
-Return JSON in exactly this structure (no extra fields):
+החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {
-  "summary": "2 sentences in English",
+  "summary": "2 משפטים בלבד",
   "account_health": {
     "avg_reach_30d": ${avgReach(posts)},
     "follower_count": ${followerCount},
@@ -1351,13 +1352,13 @@ Return JSON in exactly this structure (no extra fields):
   },
   "google_organic_recommendations": [
     {
-      "keyword": "Hebrew keyword from GSC",
+      "keyword": "מילת מפתח מ-GSC",
       "current_position": 8.5,
-      "search_volume_signal": "X impressions in GSC / high|medium|low volume",
+      "search_volume_signal": "X חשיפות ב-GSC / נפח גבוה|בינוני|נמוך",
       "content_type": "blog_post|landing_page|product_page|faq_page",
-      "suggested_title": "Hebrew H1 title",
-      "key_points": ["Hebrew point 1", "Hebrew point 2"],
-      "why_now": "English — one sentence why now",
+      "suggested_title": "כותרת H1 מוצעת",
+      "key_points": ["נקודה 1", "נקודה 2"],
+      "why_now": "למה לכתוב את זה עכשיו — משפט אחד",
       "estimated_difficulty": "קל|בינוני|קשה"
     }
   ],
@@ -1365,32 +1366,32 @@ Return JSON in exactly this structure (no extra fields):
     {
       "priority": 1,
       "content_type": "reel|post|story",
-      "topic": "Hebrew topic",
-      "reason": "English — short reason",
+      "topic": "נושא ספציפי",
+      "reason": "למה עכשיו — משפט קצר",
       "best_day": "ראשון|שני|שלישי|רביעי|חמישי|שישי",
       "best_time": "09:00"
     }
   ],
   "products_to_feature": [
     {
-      "product": "product name",
+      "product": "שם מוצר",
       "reason": "low_stock_urgency|new_batch|bestseller",
-      "content_angle": "English angle"
+      "content_angle": "זווית קצרה"
     }
   ],
   "posts_to_publish": [
     {
       "type": "reel|post|story",
-      "topic": "Hebrew topic",
+      "topic": "נושא הפוסט",
       "best_day": "ראשון",
       "best_time": "09:00",
-      "caption": "Hebrew caption up to 120 chars with emojis",
+      "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
       "hashtags": ["#קפה", "#מינוטו"],
-      "hook": "Hebrew opening hook",
-      "visual_direction": "English visual direction"
+      "hook": "משפט פתיחה קצר",
+      "visual_direction": "הנחיה קצרה למצלם"
     }
   ],
-  "key_insights": ["English insight 1", "English insight 2"]
+  "key_insights": ["תובנה 1", "תובנה 2"]
 }`;
 
   const finalMessage = focus
