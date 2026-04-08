@@ -21,8 +21,8 @@ const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 // Haiku: fast enough (15-25s), same model used by generate-campaign
-const MODEL_ADS     = "claude-3-5-sonnet-20241022";
-const MODEL_ORGANIC = "claude-3-5-sonnet-20241022";
+const MODEL_ADS     = "claude-haiku-4-5-20251001";
+const MODEL_ORGANIC = "claude-haiku-4-5-20251001";
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
@@ -867,7 +867,15 @@ ${ADS_EXPERTISE}
 לכל קמפיין תוסיף creation_steps — שלבים מספרים ומדויקים איך ליצור אותו ב-Google Ads UI.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
+
+דוגמאות לסגנון עברית נכון לשדות הטקסט:
+✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
+✓ "ה-ROAS של MM|SRC ירד ב-40% למרות CTR גבוה — בעיה ב-landing page, לא במודעה."
+✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
+✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
+✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
+✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
 
   const seasonalContext = getSeasonalContext(weekStart);
 
@@ -1034,7 +1042,15 @@ ${ADS_EXPERTISE}
 לכל מודעה לשכתוב תוסיף creation_steps — שלבים מספרים איך לערוך את המודעה ב-Google Ads UI.
 חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
 חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
+
+דוגמאות לסגנון עברית נכון לשדות הטקסט:
+✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
+✓ "ה-ROAS של MM|SRC ירד ב-40% למרות CTR גבוה — בעיה ב-landing page, לא במודעה."
+✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
+✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
+✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
+✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
 
   const seasonalContext = getSeasonalContext(weekStart);
 
@@ -1294,7 +1310,15 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 • products_to_feature — פריט אחד בלבד
 • posts_to_publish — פוסט אחד בלבד; caption — עד 120 תווים; hashtags — עד 5
 • key_insights — עד 2
-ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כתוב בעברית ישראלית שוטפת כמו מנהל שיווק ישראלי מנוסה — ישיר, קצר, ביטחון עצמי. לא תרגום מאנגלית, לא משפטים עם "אשר" ו"הינו", לא ז'רגון מנופח. מונחים מקצועיים (CTR, ROAS, landing page) מותרים כשהם המונח הנכון — אבל המשפט מסביבם בעברית טבעית.`;
+ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
+
+דוגמאות לסגנון עברית נכון לשדות הטקסט:
+✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
+✓ "ה-ROAS של MM|SRC ירד ב-40% למרות CTR גבוה — בעיה ב-landing page, לא במודעה."
+✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
+✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
+✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
+✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
 
   const gscBlock = topKeywords.length > 0
     ? topKeywords.map(k =>
@@ -1598,7 +1622,7 @@ ${key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 }`;
 
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-3-5-sonnet-20241022", systemPrompt, userMessage);
+  const { text, inputTokens, outputTokens } = await callClaude("claude-haiku-4-5-20251001", systemPrompt, userMessage);
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}`);
 
   const parsed = parseClaudeJson(text);
