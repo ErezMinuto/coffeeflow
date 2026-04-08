@@ -566,50 +566,41 @@ ${adCreatives}
 השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
 בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
 
-החזר JSON בפורמט:
+הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
+
+החזר JSON בפורמט (בדיוק מבנה זה):
 {
   "agent_philosophy": "צמיחה אגרסיבית",
-  "summary": "2-3 משפטים — מה הזדמנויות הצמיחה שאתה רואה?",
+  "summary": "2 משפטים בלבד",
   "google": {
     "total_cost": ${Math.round(totalCost * 100) / 100},
     "total_clicks": ${totalClicks},
     "total_impressions": ${totalImpressions},
     "total_conversions": ${Math.round(totalConversions * 10) / 10},
     "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "הקמפיין עם הפוטנציאל הגדול ביותר לסקייל",
-    "worst_campaign": "הקמפיין שדורש תשומת לב"
+    "top_campaign": "שם הקמפיין",
+    "worst_campaign": "שם הקמפיין"
   },
   "budget_recommendations": [
-    {
-      "platform": "google",
-      "campaign": "שם קמפיין",
-      "action": "increase|decrease|pause|keep|test_new",
-      "reason": "הסבר מנקודת מבט צמיחה",
-      "suggested_budget_change_pct": 30
-    }
+    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep|test_new", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
   ],
   "growth_opportunities": [
-    {
-      "opportunity": "הזדמנות ספציפית",
-      "action": "מה לעשות",
-      "expected_impact": "מה אתה מצפה לקרות"
-    }
+    { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
   ],
   "campaigns_to_create": [
     {
-      "campaign_name": "שם הקמפיין המוצע",
+      "campaign_name": "שם",
       "campaign_type": "Search|Performance Max|Shopping",
-      "target_audience": "תיאור קהל היעד",
-      "keywords": ["מילת מפתח 1", "מילת מפתח 2", "מילת מפתח 3"],
-      "headlines": ["כותרת 1 (עד 30 תווים)", "כותרת 2 (עד 30 תווים)", "כותרת 3 (עד 30 תווים)"],
-      "descriptions": ["תיאור 1 (עד 90 תווים)", "תיאור 2 (עד 90 תווים)"],
+      "target_audience": "קהל יעד",
+      "keywords": ["מילה 1", "מילה 2", "מילה 3"],
+      "headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
+      "descriptions": ["תיאור 1"],
       "daily_budget_ils": 50,
-      "rationale": "למה הקמפיין הזה עכשיו",
-      "creation_steps": ["שלב 1: כנס ל-Google Ads → לחץ + קמפיין חדש", "שלב 2: בחר מטרה...", "שלב 3: ..."]
+      "rationale": "הסבר קצר"
     }
   ],
-  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
-  "next_week_focus": "המהלך העיקרי לצמיחה השבוע הבא"
+  "key_insights": ["תובנה 1", "תובנה 2"],
+  "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
   const finalMessage = focus
@@ -696,48 +687,38 @@ ${adCreatives}
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
 נתח את הכותרות והתיאורים הקיימים: האם הם חזקים? רלוונטיים? האם חוזק המודעה (Ad Strength) נמוך? ה-ads_to_rewrite צריך להתבסס על הקריאייטיב האמיתי שמוצג למעלה.
 
-החזר JSON בפורמט:
+הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, ads_to_rewrite עד 1, key_insights עד 2.
+
+החזר JSON בפורמט (בדיוק מבנה זה):
 {
   "agent_philosophy": "יעילות ו-ROAS",
-  "summary": "2-3 משפטים — איפה הכסף מתבזבז ואיפה אפשר לשפר?",
+  "summary": "2 משפטים בלבד",
   "google": {
     "total_cost": ${Math.round(totalCost * 100) / 100},
     "total_clicks": ${totalClicks},
     "total_impressions": ${totalImpressions},
     "total_conversions": ${Math.round(totalConversions * 10) / 10},
     "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "הקמפיין עם ה-ROAS הטוב ביותר",
-    "worst_campaign": "הקמפיין שמבזבז הכי הרבה כסף"
+    "top_campaign": "שם הקמפיין",
+    "worst_campaign": "שם הקמפיין"
   },
   "budget_recommendations": [
-    {
-      "platform": "google",
-      "campaign": "שם קמפיין",
-      "action": "increase|decrease|pause|keep",
-      "reason": "הסבר מנקודת מבט יעילות ו-ROAS",
-      "suggested_budget_change_pct": -20
-    }
+    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": -20 }
   ],
   "waste_identified": [
-    {
-      "campaign": "שם קמפיין",
-      "issue": "תיאור הבעיה",
-      "estimated_waste": "₪X בשבוע",
-      "fix": "מה לעשות כדי לתקן"
-    }
+    { "campaign": "שם", "issue": "בעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר" }
   ],
   "ads_to_rewrite": [
     {
-      "campaign": "שם הקמפיין הקיים",
-      "problem": "מה לא עובד במודעה הנוכחית",
-      "new_headlines": ["כותרת חדשה 1 (עד 30 תווים)", "כותרת חדשה 2 (עד 30 תווים)", "כותרת חדשה 3 (עד 30 תווים)"],
-      "new_descriptions": ["תיאור חדש 1 (עד 90 תווים)", "תיאור חדש 2 (עד 90 תווים)"],
-      "expected_improvement": "מה ישתפר",
-      "creation_steps": ["שלב 1: כנס ל-Google Ads → קמפיינים → [שם הקמפיין]", "שלב 2: לחץ על 'מודעות'...", "שלב 3: ..."]
+      "campaign": "שם הקמפיין",
+      "problem": "בעיה קצרה",
+      "new_headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
+      "new_descriptions": ["תיאור 1"],
+      "expected_improvement": "מה ישתפר"
     }
   ],
-  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
-  "next_week_focus": "המהלך העיקרי לשיפור יעילות השבוע הבא"
+  "key_insights": ["תובנה 1", "תובנה 2"],
+  "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
   const finalMessage = focus
