@@ -227,8 +227,9 @@ serve(async (req) => {
       const kwCustomerId = loginCustomerId || customerId
       console.log(`[google-sync] Calling Keyword Planner (kwCustomerId=${kwCustomerId}, loginCustomerId=${loginCustomerId || 'not set'}, customerId=${customerId})`)
 
+      // Test with v17 (known stable for Keyword Planner) and also regular customerId
       const kwRes = await fetch(
-        `https://googleads.googleapis.com/v20/customers/${kwCustomerId}/keywordPlanIdeas:generateKeywordIdeas`,
+        `https://googleads.googleapis.com/v17/customers/${customerId}/keywordPlanIdeas:generateKeywordIdeas`,
         {
           method: 'POST',
           headers: kwHeaders,
