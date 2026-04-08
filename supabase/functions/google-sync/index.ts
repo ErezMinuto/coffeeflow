@@ -201,15 +201,78 @@ serve(async (req) => {
 
     console.log(`[google-sync] Ad creatives synced: ${adRecords}`)
 
+    // ── Keyword Planner — Israeli coffee market demand ─────────────────────
+    let keywordRecords = 0
+    try {
+      const SEED_KEYWORDS = [
+        'קפה', 'פולי קפה', 'קפה ספיישלטי', 'קפה איכותי', 'קפה טרי',
+        'פולי קפה טרי', 'קלייה', 'קפה מיוחד', 'קפה להכנה בבית',
+        'קפה מנויים', 'מתנה קפה', 'קפה אונליין', 'לקנות קפה',
+        'פולי אספרסו', 'קפה פילטר', 'coffee beans israel',
+        'specialty coffee', 'single origin coffee',
+      ]
+
+      const kwRes = await fetch(
+        `https://googleads.googleapis.com/v20/customers/${customerId}/keywordPlanIdeas:generateKeywordIdeas`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'developer-token': devToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            language: 'languageConstants/1027',               // Hebrew
+            geoTargetConstants: ['geoTargetConstants/2376'],  // Israel
+            keywordPlanNetwork: 'GOOGLE_SEARCH',
+            keywordSeed: { keywords: SEED_KEYWORDS },
+            pageSize: 200,
+          }),
+        }
+      )
+
+      const kwText = await kwRes.text()
+      let kwData: any
+      try { kwData = JSON.parse(kwText) } catch {
+        console.error('[google-sync] Keyword Planner non-JSON:', kwText.substring(0, 300))
+        kwData = {}
+      }
+
+      if (kwData.error) {
+        console.warn('[google-sync] Keyword Planner error:', JSON.stringify(kwData.error).substring(0, 300))
+      } else {
+        const ideas: any[] = kwData.results ?? []
+        console.log(`[google-sync] Keyword ideas received: ${ideas.length}`)
+
+        for (const idea of ideas) {
+          const kwMetrics = idea.keywordIdeaMetrics ?? {}
+          await supabase.from('keyword_ideas').upsert({
+            keyword:               idea.text ?? '',
+            avg_monthly_searches:  kwMetrics.avgMonthlySearches ?? 0,
+            competition:           kwMetrics.competition ?? 'UNSPECIFIED',
+            competition_index:     kwMetrics.competitionIndex ?? 0,
+            low_top_bid_micros:    kwMetrics.lowTopOfPageBidMicros ?? 0,
+            high_top_bid_micros:   kwMetrics.highTopOfPageBidMicros ?? 0,
+            synced_at:             new Date().toISOString(),
+          }, { onConflict: 'keyword' })
+          keywordRecords++
+        }
+      }
+    } catch (kwErr: any) {
+      console.warn('[google-sync] Keyword Planner fetch failed:', kwErr.message)
+    }
+
+    console.log(`[google-sync] Keyword ideas synced: ${keywordRecords}`)
+
     await supabase.from('sync_log').insert({
       platform: 'google',
       status: 'success',
-      records: records + adRecords,
+      records: records + adRecords + keywordRecords,
       started_at: startedAt,
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords }), {
+    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

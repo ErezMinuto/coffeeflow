@@ -490,6 +490,40 @@ ${insights || "    אין"}`;
   }).filter(Boolean).join("\n\n");
 }
 
+// ── Keyword Planner — Israeli market demand ───────────────────────────────────
+async function fetchKeywordIdeas(
+  supabase: ReturnType<typeof createClient>,
+): Promise<string> {
+  const { data } = await supabase
+    .from("keyword_ideas")
+    .select("keyword,avg_monthly_searches,competition,competition_index,low_top_bid_micros,high_top_bid_micros")
+    .gt("avg_monthly_searches", 0)
+    .order("avg_monthly_searches", { ascending: false })
+    .limit(50);
+
+  if (!data || data.length === 0) {
+    return "  אין נתוני Keyword Planner עדיין — הרץ google-sync כדי לייבא נתוני שוק.";
+  }
+
+  // Group by competition level for clarity
+  const high   = data.filter((k: any) => k.competition === "HIGH");
+  const medium = data.filter((k: any) => k.competition === "MEDIUM");
+  const low    = data.filter((k: any) => k.competition === "LOW" || k.competition === "UNSPECIFIED");
+
+  const fmt = (k: any) => {
+    const lowBid  = k.low_top_bid_micros  ? `₪${(k.low_top_bid_micros  / 1_000_000).toFixed(2)}` : "—";
+    const highBid = k.high_top_bid_micros ? `₪${(k.high_top_bid_micros / 1_000_000).toFixed(2)}` : "—";
+    return `  "${k.keyword}" | ${k.avg_monthly_searches.toLocaleString()} חיפושים/חודש | תחרות: ${k.competition_index ?? "?"}/100 | CPC: ${lowBid}–${highBid}`;
+  };
+
+  const lines: string[] = [];
+  if (high.length   > 0) lines.push(`תחרות גבוהה (${high.length} ביטויים):\n${high.slice(0, 15).map(fmt).join("\n")}`);
+  if (medium.length > 0) lines.push(`תחרות בינונית (${medium.length} ביטויים):\n${medium.slice(0, 15).map(fmt).join("\n")}`);
+  if (low.length    > 0) lines.push(`תחרות נמוכה (${low.length} ביטויים — הזדמנות):\n${low.slice(0, 10).map(fmt).join("\n")}`);
+
+  return lines.join("\n\n");
+}
+
 async function fetchGoogleData(
   supabase: ReturnType<typeof createClient>,
   weekStart: string,
@@ -657,7 +691,7 @@ async function runGrowthAgent(
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
   const thirtyDaysAgo = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, pastReports] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, pastReports, kwIdeas] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
@@ -669,6 +703,7 @@ async function runGrowthAgent(
       .order("impressions", { ascending: false })
       .limit(30),
     fetchPastReports(supabase, "google_ads_growth", weekStart),
+    fetchKeywordIdeas(supabase),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -757,12 +792,17 @@ ${adCreatives}
 אלה הביטויים שבהם Minuto כבר מופיעה בגוגל. השתמש בהם כבסיס להמלצות.
 ${gscBlock}
 
+=== Keyword Planner — ביקוש שוק הקפה הישראלי (נתוני Google, עודכן לאחרונה) ===
+נתוני נפח חיפוש ותחרות ביטויים — ישראל בלבד. הצלב עם GSC: ביטויים בנפח גבוה שMinuto לא מדורגת בהם = הזדמנות לפרסום.
+${kwIdeas}
+
 === היסטוריית המלצות קודמות — למד מהן ===
 ${pastReports}
 השווה: מה המלצת בעבר → מה קרה בפועל בנתוני הקמפיינים השבוע. אם המלצה עבדה — חזק אותה. אם לא עבדה — הסבר למה ותכנן אחרת.
 
 השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
 בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
+בהמלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC של Minuto + Keyword Planner. אל תמציא ביטויים.
 
 הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
 
@@ -824,7 +864,7 @@ async function runEfficiencyAgent(
   console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
 
   const thirtyDaysAgoEff = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff, pastReportsEff] = await Promise.all([
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff, pastReportsEff, kwIdeasEff] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
@@ -836,6 +876,7 @@ async function runEfficiencyAgent(
       .order("impressions", { ascending: false })
       .limit(30),
     fetchPastReports(supabase, "google_ads_efficiency", weekStart),
+    fetchKeywordIdeas(supabase),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -906,16 +947,16 @@ ${wooSales}
 === קריאייטיב מודעות נוכחי (RSA) ===
 ${adCreatives}
 
-=== ידע שוק — חיפושי קפה בישראל (נתוני שוק כלליים) ===
-נפח גבוה: "קפה" | "פולי קפה" | "מכונת קפה" | "קפה טחון"
-נפח בינוני (פוטנציאל): "פולי קפה איכותיים" | "קפה ספשלטי" | "קפה טרי" | "בית קלייה קפה" | "Ethiopia coffee" | "Kenya coffee"
-נפח נמוך — לא משתלם: "cold brew" | "cold brew coffee" | "nitro coffee" | "chemex" — ישראלים לא מחפשים אלה בגוגל.
-
 === Google Search Console — נתוני Minuto בפועל (30 יום אחרונים) ===
 ${gscBlockEff}
 
+=== Keyword Planner — ביקוש שוק הקפה הישראלי (נתוני Google, עודכן לאחרונה) ===
+השתמש בנתונים אלה לניתוח: האם Minuto מפרסמת על הביטויים בנפח הגבוה? האם CPC הנוכחי גבוה מהרף הצפוי? האם יש ביטויים עם תחרות נמוכה שאפשר לנצל?
+${kwIdeasEff}
+
 השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
 נתח את הכותרות והתיאורים הקיימים: האם הם חזקים? רלוונטיים? האם חוזק המודעה (Ad Strength) נמוך? ה-ads_to_rewrite צריך להתבסס על הקריאייטיב האמיתי שמוצג למעלה.
+בהמלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC + Keyword Planner. אל תמציא ביטויים.
 
 === היסטוריית המלצות קודמות — למד מהן ===
 ${pastReportsEff}
