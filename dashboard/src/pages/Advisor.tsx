@@ -263,23 +263,24 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function StepsAccordion({ steps, label = '📋 הוראות יצירה ב-Google Ads' }: { steps: string[]; label?: string }) {
-  const [open, setOpen] = useState(false)
+function StepsAccordion({ steps, label = '📋 הוראות יצירה ב-Google Ads', defaultOpen = false }: { steps: string[]; label?: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   if (!steps?.length) return null
   return (
-    <div className="mt-1">
+    <div className="mt-2 border border-surface-200 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-700 transition-colors w-full py-1"
+        className="flex items-center justify-between gap-2 w-full px-3 py-2.5 bg-surface-50 hover:bg-surface-100 transition-colors text-xs font-semibold text-surface-600"
       >
-        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        {label}
+        <span>{label}</span>
+        {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
       </button>
       {open && (
-        <ol className="mt-1.5 space-y-1.5 pr-2 border-r-2 border-surface-200">
+        <ol className="px-3 py-2 space-y-2 bg-white">
           {steps.map((step, i) => (
-            <li key={i} className="text-xs text-surface-600 leading-relaxed">
-              <span className="font-mono text-surface-400 ml-1">{i + 1}.</span> {step.replace(/^שלב \d+[:.]\s*/i, '')}
+            <li key={i} className="text-xs text-surface-700 leading-relaxed flex gap-2">
+              <span className="font-bold text-brand-600 shrink-0">{i + 1}.</span>
+              <span>{step.replace(/^שלב \d+[:.]\s*/i, '')}</span>
             </li>
           ))}
         </ol>
@@ -383,7 +384,7 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
                   ))}
                 </div>
                 <p className="text-xs text-blue-700 italic">{c.rationale}</p>
-                {c.creation_steps && <StepsAccordion steps={c.creation_steps} />}
+                {c.creation_steps && <StepsAccordion steps={c.creation_steps} defaultOpen={true} />}
               </div>
             ))}
           </div>
