@@ -895,13 +895,12 @@ export default function AdvisorPage() {
     }, 5000)
   }
 
-  async function runAdvisor() {
+  async function runAdvisor(agentType?: AgentType) {
     setRunning(true)
-    // Don't await — let it run in background; polling tracks progress
+    const agent = agentType ?? 'all'
     supabase.functions.invoke('marketing-advisor', {
-      body: { trigger: 'manual', agent: 'all', focus: focus.trim() || undefined },
-    }).catch(() => {/* edge fn errors are stored in DB by the function itself */})
-    // Wait briefly for the function to write "running" rows, then start polling
+      body: { trigger: 'manual', agent, focus: focus.trim() || undefined },
+    }).catch(() => {})
     await new Promise(r => setTimeout(r, 1500))
     await loadWeeks()
     const week = selectedWeek
@@ -1017,7 +1016,19 @@ export default function AdvisorPage() {
                 </div>
                 <p className="text-xs text-surface-400 mt-0.5 mr-6">{sublabel}</p>
               </div>
-              {rows[key] && <StatusBadge status={rows[key]!.status} />}
+              <div className="flex items-center gap-2">
+                {rows[key] && <StatusBadge status={rows[key]!.status} />}
+                {rows[key]?.status !== 'running' && (
+                  <button
+                    onClick={() => runAdvisor(key)}
+                    disabled={isRunning}
+                    title="הרץ סוכן זה בלבד"
+                    className="text-surface-400 hover:text-surface-700 disabled:opacity-30 transition-colors"
+                  >
+                    <RefreshCw size={12} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex-1">
               {loading
