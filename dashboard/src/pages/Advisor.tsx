@@ -98,6 +98,13 @@ interface GoogleOrganicRec {
   estimated_difficulty: 'קל' | 'בינוני' | 'קשה'
 }
 
+interface BlogPost {
+  title: string
+  meta_description: string
+  slug: string
+  body: string
+}
+
 interface OrganicReport {
   summary: string
   account_health: { avg_reach_30d: number; follower_count: number; best_post_type: string; engagement_rate_pct: number }
@@ -591,6 +598,54 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
                 {rec.why_now && (
                   <p className="text-xs text-indigo-700 bg-indigo-100 rounded px-2 py-1">⏰ {rec.why_now}</p>
                 )}
+                {/* Blog post writer */}
+                {rec.content_type === 'blog_post' && (() => {
+                  const bs = blogState[rec.keyword]
+                  return (
+                    <div className="pt-1">
+                      {!bs && (
+                        <button
+                          onClick={() => writeBlogPost(rec)}
+                          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+                        >
+                          ✍️ כתוב פוסט בלוג מלא
+                        </button>
+                      )}
+                      {bs?.loading && (
+                        <div className="flex items-center gap-2 py-2 px-3 bg-indigo-50 rounded-lg">
+                          <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                          <span className="text-xs text-indigo-600">כותב פוסט... (~30 שניות)</span>
+                        </div>
+                      )}
+                      {bs?.post && (
+                        <div className="space-y-2 border border-indigo-200 rounded-xl overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-2 bg-indigo-600">
+                            <span className="text-xs font-bold text-white">📝 פוסט מוכן לפרסום</span>
+                            <div className="flex items-center gap-2">
+                              <CopyButton text={bs.post.body} />
+                              <button
+                                onClick={() => setBlogState(s => ({ ...s, [rec.keyword]: { loading: false, post: null } }))}
+                                className="text-indigo-200 hover:text-white text-xs"
+                              >✕</button>
+                            </div>
+                          </div>
+                          <div className="px-3 pb-1 space-y-1">
+                            <p className="text-xs text-surface-500 font-semibold">Meta description:</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-indigo-800 flex-1">{bs.post.meta_description}</p>
+                              <CopyButton text={bs.post.meta_description} />
+                            </div>
+                            <p className="text-xs text-surface-500 font-semibold mt-1">Slug: <span className="font-normal text-indigo-700">/{bs.post.slug}</span></p>
+                          </div>
+                          <div className="px-3 pb-3">
+                            <p className="text-xs text-surface-500 font-semibold mb-1">תוכן המאמר (Markdown):</p>
+                            <pre className="text-xs text-surface-700 whitespace-pre-wrap bg-gray-50 rounded-lg p-3 max-h-96 overflow-y-auto leading-relaxed" dir="rtl">{bs.post.body}</pre>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             ))}
           </div>
@@ -695,7 +750,30 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null }>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function writeBlogPost(rec: GoogleOrganicRec) {
+    const key = rec.keyword
+    setBlogState(s => ({ ...s, [key]: { loading: true, post: null } }))
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: {
+          agent: 'blog_writer',
+          keyword: rec.keyword,
+          title: rec.suggested_title,
+          key_points: rec.key_points ?? [],
+          position: rec.current_position,
+          search_volume_signal: rec.search_volume_signal,
+        },
+      })
+      if (error) throw error
+      setBlogState(s => ({ ...s, [key]: { loading: false, post: data as BlogPost } }))
+    } catch (e) {
+      console.error('blog_writer error', e)
+      setBlogState(s => ({ ...s, [key]: { loading: false, post: null } }))
+    }
+  }
 
   useEffect(() => {
     loadWeeks()

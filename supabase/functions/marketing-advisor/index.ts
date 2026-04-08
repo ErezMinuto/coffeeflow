@@ -1535,6 +1535,59 @@ async function sendAdvisorEmail(
   }
 }
 
+// ── Blog Writer Agent ─────────────────────────────────────────────────────────
+
+async function runBlogWriterAgent(params: {
+  keyword: string;
+  title: string;
+  key_points: string[];
+  position?: number;
+  search_volume_signal?: string;
+}): Promise<{ title: string; meta_description: string; slug: string; body: string }> {
+  const { keyword, title, key_points, position, search_volume_signal } = params;
+
+  const systemPrompt = `אתה כותב תוכן מקצועי ומומחה SEO לבלוג של Minuto Coffee — בית קלייה ספשלטי ברחובות.
+${BUSINESS_BRIEF}
+${ORGANIC_EXPERTISE}
+
+המשימה שלך: לכתוב פוסט בלוג מלא בעברית, מקצועי, מעניין ומאופטם לגוגל.
+
+חוקי כתיבת תוכן SEO:
+• מילת המפתח הראשית חייבת להופיע: בכותרת H1, בפסקה הראשונה, ב-2-3 כותרות H2, וטבעי לאורך הטקסט (צפיפות 1-2%).
+• כותרות H2 — מינימום 4 כותרות H2, כל אחת עם זווית שונה.
+• אורך: 700-1000 מילים. לא קצר יותר — גוגל מעדיף תוכן מקיף.
+• כתוב כמו מומחה קפה, לא כמו משווק. עובדות, הסברים, טיפים שימושיים.
+• כלול המלצה ספציפית על מוצר Minuto (פולי קפה/בית הקלייה) באופן טבעי — לא בצורה של "קנו עכשיו".
+• בסוף — CTA עדין: "אפשר להזמין ישירות מהאתר עם משלוח לכל הארץ".
+• שפה: עברית ישראלית מדוברת. לא פורמלית. לא תרגום מאנגלית.
+• פורמט תשובה: JSON בלבד (ללא טקסט לפניו/אחריו).`;
+
+  const userMessage = `כתוב פוסט בלוג מלא לפי הפרמטרים הבאים:
+
+מילת מפתח ראשית: "${keyword}"
+${position ? `מיקום נוכחי בגוגל: ${position} (יש לנו דריסת רגל — כדאי לחזק)` : ''}
+${search_volume_signal ? `נפח חיפוש: ${search_volume_signal}` : ''}
+כותרת מוצעת (H1): "${title}"
+
+נקודות חובה לכלול בתוכן:
+${key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+החזר JSON בפורמט הזה בדיוק:
+{
+  "title": "כותרת H1 סופית (מכילה את מילת המפתח)",
+  "meta_description": "תיאור מטא לגוגל — עד 155 תווים, מכיל את מילת המפתח, מניע לקליק",
+  "slug": "כתובת-url-בעברית-עם-מקפים",
+  "body": "טקסט המאמר המלא בפורמט Markdown. H1 בראש, אחריו H2 לכל פרק, פסקאות, bullet points איפה שמתאים. 700-1000 מילים."
+}`;
+
+  console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
+  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-5", systemPrompt, userMessage);
+  console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}`);
+
+  const parsed = parseClaudeJson(text);
+  return parsed as { title: string; meta_description: string; slug: string; body: string };
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -1544,8 +1597,35 @@ serve(async (req) => {
   const weekStart = getPreviousWeekStart();
   console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
-  let body: { trigger?: string; agent?: string; focus?: string } = {};
+  let body: {
+    trigger?: string; agent?: string; focus?: string;
+    keyword?: string; title?: string; key_points?: string[];
+    position?: number; search_volume_signal?: string;
+  } = {};
   try { body = await req.json() } catch { /* default to all */ }
+
+  // ── BLOG WRITER — instant response, not stored in DB ──────────────────────
+  if (body.agent === "blog_writer") {
+    if (!body.keyword || !body.title) {
+      return new Response(JSON.stringify({ error: "keyword and title are required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+    try {
+      const post = await runBlogWriterAgent({
+        keyword: body.keyword,
+        title: body.title,
+        key_points: body.key_points ?? [],
+        position: body.position,
+        search_volume_signal: body.search_volume_signal,
+      });
+      return new Response(JSON.stringify(post),
+        { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return new Response(JSON.stringify({ error: msg }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
 
   const focus = body.focus?.trim() || undefined;
   if (focus) console.log(`[marketing-advisor] Focus context: ${focus.slice(0, 100)}`);
