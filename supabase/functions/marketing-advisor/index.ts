@@ -188,17 +188,25 @@ function getSeasonalContext(weekStart: string): string {
     coffeeNote = 'חזרה לקפה חם — אחרי הקיץ הארוך, אנשים שמחים לשוב לאספרסו ומשקאות חמים. עונה טובה לסיפורי מקור.';
   }
 
-  // Find events in window: today to 21 days ahead.
-  // Use actual today (not weekStart) so ended holidays are never shown as strategy.
-  const today      = new Date();
+  // Tiered lookahead windows — bigger events need earlier planning:
+  //   national blackout days  → 14 days  (just need to know to pause ads)
+  //   major holidays          → 45 days  (gift campaigns, stock, content)
+  //   commercial events       → 60 days  (Black Friday needs 8 weeks prep)
+  const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const windowEnd  = new Date(today.getTime() + 21 * dayMs);
+
+  const lookahead: Record<CalendarEvent['type'], number> = {
+    national:      14,
+    major_holiday: 45,
+    commercial:    60,
+  };
 
   const relevant = CALENDAR_EVENTS.filter(ev => {
     const end = ev.endDate ? new Date(ev.endDate) : new Date(ev.date);
     end.setHours(23, 59, 59, 0);
-    // exclude events that ended before today
-    return end >= today && new Date(ev.date) <= windowEnd;
+    if (end < today) return false; // already ended
+    const windowEnd = new Date(today.getTime() + lookahead[ev.type] * dayMs);
+    return new Date(ev.date) <= windowEnd;
   });
 
   const lines: string[] = [];
@@ -206,16 +214,23 @@ function getSeasonalContext(weekStart: string): string {
     const evDate   = new Date(ev.date);
     const evEnd    = ev.endDate ? new Date(ev.endDate) : evDate;
     const diffDays = Math.round((evDate.getTime() - today.getTime()) / dayMs);
+
     let when: string;
-    // Event is currently ongoing (started but not ended)
-    if (evDate <= today && evEnd >= today) when = 'מתרחש עכשיו — מסתיים בקרוב';
+    if (evDate <= today && evEnd >= today) when = 'מתרחש עכשיו';
     else if (diffDays === 0)  when = 'מתחיל היום';
     else if (diffDays === 1)  when = 'מחר';
     else if (diffDays <= 7)   when = `בעוד ${diffDays} ימים`;
     else                      when = `בעוד ${diffDays} ימים (${ev.date})`;
 
+    // Planning urgency hint based on days away
+    let planningNote = '';
+    if (diffDays > 30)       planningNote = ' 📋 התחל לתכנן קמפיינים עכשיו';
+    else if (diffDays > 14)  planningNote = ' ⏰ זמן לבנות קריאייטיב ולהכין תקציב';
+    else if (diffDays > 7)   planningNote = ' 🔥 עדיפות גבוהה — הפעל קמפיינים';
+    else if (diffDays > 0)   planningNote = ' 🚨 דחוף';
+
     const urgency = ev.type === 'national' ? '⚠️' : ev.type === 'major_holiday' ? '🎉' : '📅';
-    lines.push(`${urgency} ${ev.name} — ${when}\n   → ${ev.marketingNote}`);
+    lines.push(`${urgency} ${ev.name} — ${when}${planningNote}\n   → ${ev.marketingNote}`);
   }
 
   const eventsBlock = lines.length > 0
