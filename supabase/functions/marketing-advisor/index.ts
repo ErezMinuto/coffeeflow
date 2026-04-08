@@ -811,8 +811,9 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 כתוב המלצות תוכן SEO קונקרטיות — כותרת מוצעת, נקודות עיקריות, מה לכתוב ולמה זה ידורג.
 
 חשוב ישראלי. עברית אמיתית — לא מתורגמת. ספונטני, קצת הומוריסטי, אנושי. לא שיווקי, לא מנופח.
-חשוב: הנתונים כוללים רק הזמנות B2C מהאתר — הזמנות B2B של לקוחות עסקיים (mflow / Advanced Purchase Tracking) כבר סוננו ואינן בנתונים. אל תציין B2B בניתוח שלך.
-חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי". כך אומרים בישראל.
+חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
+חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
+הגבלות פלט: google_organic_recommendations — עד 2 פריטים. seo_content_opportunities — עד 2. content_recommendations — עד 3. products_to_feature — עד 2. posts_to_publish — פוסט אחד מלא בלבד (הכי חשוב לשבוע). key_insights — עד 3.
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו. כל שדות טקסט בעברית.`;
 
   const gscBlock = topKeywords.length > 0
@@ -871,22 +872,19 @@ ${wooSalesOrganic}
   },
   "google_organic_recommendations": [
     {
-      "keyword": "מילת מפתח מ-GSC שכדאי לתקוף אורגנית",
+      "keyword": "מילת מפתח מ-GSC",
       "current_position": 8.5,
-      "search_volume_signal": "impressions: X",
       "content_type": "blog_post|landing_page|product_page|faq_page",
-      "suggested_title": "כותרת מוצעת לעמוד/בלוג (H1)",
-      "key_points": ["נקודה 1 לכסות", "נקודה 2", "נקודה 3"],
-      "why_now": "למה הנושא הזה רלוונטי עכשיו — עונה, חג, מגמה",
+      "suggested_title": "כותרת H1 מוצעת",
+      "key_points": ["נקודה 1", "נקודה 2"],
       "estimated_difficulty": "קל|בינוני|קשה"
     }
   ],
   "seo_content_opportunities": [
     {
       "keyword": "מילת מפתח מ-GSC",
-      "search_volume_signal": "impressions: X",
       "current_position": 8.5,
-      "instagram_angle": "איך להפוך את זה לפוסט אינסטגרם מנצח"
+      "instagram_angle": "זווית לפוסט אינסטגרם"
     }
   ],
   "content_recommendations": [
@@ -894,7 +892,7 @@ ${wooSalesOrganic}
       "priority": 1,
       "content_type": "reel|post|story",
       "topic": "נושא ספציפי",
-      "reason": "למה עכשיו — מה בנתונים מצדיק",
+      "reason": "למה עכשיו",
       "caption_idea": "רעיון קצר לכיתוב",
       "best_day": "ראשון|שני|שלישי|רביעי|חמישי|שישי",
       "best_time": "09:00"
@@ -904,13 +902,8 @@ ${wooSalesOrganic}
     {
       "product": "שם מוצר",
       "reason": "low_stock_urgency|new_batch|bestseller",
-      "content_angle": "זווית תוכן ספציפית"
+      "content_angle": "זווית תוכן"
     }
-  ],
-  "next_week_calendar": [
-    { "day": "ראשון", "type": "reel", "topic": "נושא" },
-    { "day": "רביעי", "type": "post", "topic": "נושא" },
-    { "day": "שישי",  "type": "story", "topic": "נושא" }
   ],
   "posts_to_publish": [
     {
@@ -918,14 +911,13 @@ ${wooSalesOrganic}
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
       "best_time": "09:00",
-      "caption": "הכיתוב המלא שאפשר להעתיק ישירות לאינסטגרם — כולל אמוג'ים, שורות, קריאה לפעולה",
+      "caption": "כיתוב מלא לאינסטגרם כולל אמוג'ים וקריאה לפעולה",
       "hashtags": ["#קפה", "#מינוטו", "#ספשלטי"],
       "hook": "המשפט הראשון שיעצור את הגלילה",
-      "visual_direction": "תיאור קצר של מה לצלם / איך לצלם"
+      "visual_direction": "מה לצלם ואיך"
     }
   ],
-  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"],
-  "what_worked_last_week": ["מה עבד", "מה לא עבד"]
+  "key_insights": ["תובנה 1", "תובנה 2"]
 }`;
 
   const finalMessage = focus

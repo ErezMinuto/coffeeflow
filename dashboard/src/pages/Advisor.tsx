@@ -105,10 +105,8 @@ interface OrganicReport {
   seo_content_opportunities: { keyword: string; search_volume_signal: string; current_position: number; instagram_angle: string }[]
   content_recommendations: { priority: number; content_type: string; topic: string; reason: string; caption_idea: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
-  next_week_calendar: { day: string; type: string; topic: string }[]
   posts_to_publish: PostToPublish[]
   key_insights: string[]
-  what_worked_last_week: string[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -603,24 +601,6 @@ function OrganicPanel({ row }: { row: AdvisorReport | null }) {
                   <span className="text-xs text-purple-600 font-mono shrink-0 mr-2">מיקום {op.current_position}</span>
                 </div>
                 <p className="text-xs text-purple-700">{op.instagram_angle}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Content calendar */}
-      {r.next_week_calendar?.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">לוח תוכן לשבוע הבא</h4>
-          <div className="space-y-1.5">
-            {r.next_week_calendar.map((item, i) => (
-              <div key={i} className="card p-2.5 flex items-center gap-3">
-                <span className="text-lg">{contentTypeIcon(item.type)}</span>
-                <div>
-                  <span className="text-xs font-medium text-surface-500">{item.day}</span>
-                  <p className="text-sm text-surface-800">{item.topic}</p>
-                </div>
               </div>
             ))}
           </div>
