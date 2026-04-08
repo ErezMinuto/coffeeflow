@@ -779,6 +779,46 @@ async function runOrganicAgent(
   const origins  = originsRes.data  ?? [];
   const gscRows  = gscRes.data      ?? [];
 
+  // ── Fetch live Instagram follower count ──────────────────────────────────
+  let liveFollowerCount = 0;
+  try {
+    const { data: tokenRow } = await supabase
+      .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
+    if (tokenRow?.access_token) {
+      const pagesRes = await fetch(
+        `https://graph.facebook.com/v18.0/me/accounts?access_token=${tokenRow.access_token}`
+      );
+      const pages = await pagesRes.json();
+      if (pages.data?.length) {
+        const pageToken = pages.data[0].access_token;
+        const pageId    = pages.data[0].id;
+        const igRes = await fetch(
+          `https://graph.facebook.com/v18.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
+        );
+        const igData = await igRes.json();
+        const igId   = igData.instagram_business_account?.id;
+        if (igId) {
+          const acctRes = await fetch(
+            `https://graph.facebook.com/v18.0/${igId}?fields=followers_count&access_token=${pageToken}`
+          );
+          const acct = await acctRes.json();
+          liveFollowerCount = acct.followers_count ?? 0;
+          console.log(`[organic] Live IG followers: ${liveFollowerCount}`);
+          // Back-fill today's row so future advisor runs use DB
+          if (liveFollowerCount > 0) {
+            const today = new Date().toISOString().split("T")[0];
+            await supabase.from("meta_daily_insights").upsert(
+              { date: today, follower_count: liveFollowerCount },
+              { onConflict: "date" }
+            );
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.log("[organic] Could not fetch live follower count:", (e as Error).message);
+  }
+
   // Aggregate GSC keywords
   const kwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
   for (const r of gscRows) {
@@ -815,9 +855,9 @@ async function runOrganicAgent(
 
   const reels  = byType("reel");
   const posts2 = byType("post");
-  // Find the most recent row that actually has a follower count (> 0)
-  const latestInsight = (insights.find((i: { follower_count?: number }) => (i.follower_count ?? 0) > 0) ?? insights[0] ?? {}) as { follower_count?: number };
-  const followerCount = latestInsight.follower_count ?? 0;
+  // Live fetch wins; fall back to most recent DB row with a real value
+  const dbFollower = (insights.find((i: { follower_count?: number }) => (i.follower_count ?? 0) > 0) as { follower_count?: number } | undefined)?.follower_count ?? 0;
+  const followerCount = liveFollowerCount > 0 ? liveFollowerCount : dbFollower;
   const followerStr = followerCount > 0 ? followerCount.toLocaleString() : "לא זמין";
 
   const lowStock = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock < p.min_packed_stock);
