@@ -188,26 +188,30 @@ function getSeasonalContext(weekStart: string): string {
     coffeeNote = 'חזרה לקפה חם — אחרי הקיץ הארוך, אנשים שמחים לשוב לאספרסו ומשקאות חמים. עונה טובה לסיפורי מקור.';
   }
 
-  // Find events in window: 7 days before weekStart to 21 days after
-  const windowStart = new Date(date.getTime() - 7  * dayMs);
-  const windowEnd   = new Date(date.getTime() + 21 * dayMs);
+  // Find events in window: today to 21 days ahead.
+  // Use actual today (not weekStart) so ended holidays are never shown as strategy.
+  const today      = new Date();
+  today.setHours(0, 0, 0, 0);
+  const windowEnd  = new Date(today.getTime() + 21 * dayMs);
 
   const relevant = CALENDAR_EVENTS.filter(ev => {
-    const start = new Date(ev.date);
-    const end   = ev.endDate ? new Date(ev.endDate) : start;
-    return end >= windowStart && start <= windowEnd;
+    const end = ev.endDate ? new Date(ev.endDate) : new Date(ev.date);
+    end.setHours(23, 59, 59, 0);
+    // exclude events that ended before today
+    return end >= today && new Date(ev.date) <= windowEnd;
   });
 
   const lines: string[] = [];
   for (const ev of relevant) {
-    const evDate  = new Date(ev.date);
-    const diffDays = Math.round((evDate.getTime() - date.getTime()) / dayMs);
+    const evDate   = new Date(ev.date);
+    const evEnd    = ev.endDate ? new Date(ev.endDate) : evDate;
+    const diffDays = Math.round((evDate.getTime() - today.getTime()) / dayMs);
     let when: string;
-    if (diffDays < -1)       when = `מתרחש עכשיו / לפני ${Math.abs(diffDays)} ימים`;
-    else if (diffDays === -1) when = 'אתמול';
-    else if (diffDays === 0)  when = 'היום';
+    // Event is currently ongoing (started but not ended)
+    if (evDate <= today && evEnd >= today) when = 'מתרחש עכשיו — מסתיים בקרוב';
+    else if (diffDays === 0)  when = 'מתחיל היום';
     else if (diffDays === 1)  when = 'מחר';
-    else if (diffDays <= 7)  when = `בעוד ${diffDays} ימים`;
+    else if (diffDays <= 7)   when = `בעוד ${diffDays} ימים`;
     else                      when = `בעוד ${diffDays} ימים (${ev.date})`;
 
     const urgency = ev.type === 'national' ? '⚠️' : ev.type === 'major_holiday' ? '🎉' : '📅';
