@@ -70,6 +70,24 @@ serve(async (req) => {
         console.log('IG account id:', igId)
 
         if (igId) {
+          // Fetch account follower count and store in meta_daily_insights
+          try {
+            const igAccountRes = await fetch(
+              `https://graph.facebook.com/v18.0/${igId}?fields=followers_count,media_count&access_token=${pageToken}`
+            )
+            const igAccount = await igAccountRes.json()
+            const followerCount = igAccount.followers_count ?? 0
+            console.log('IG followers:', followerCount)
+            if (followerCount > 0) {
+              await supabase.from('meta_daily_insights').upsert({
+                date: today,
+                follower_count: followerCount,
+              }, { onConflict: 'date' })
+            }
+          } catch (fcErr) {
+            console.log('Follower count fetch error:', fcErr.message)
+          }
+
           // Fetch media with thumbnail
           const postsRes = await fetch(
             `https://graph.facebook.com/v18.0/${igId}/media?fields=id,media_type,caption,timestamp,like_count,comments_count,thumbnail_url,media_url&limit=50&access_token=${pageToken}`

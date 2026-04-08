@@ -828,8 +828,10 @@ async function runOrganicAgent(
 
   const reels  = byType("reel");
   const posts2 = byType("post");
-  const latestInsight = (insights[0] ?? {}) as { follower_count?: number };
+  // Find the most recent row that actually has a follower count (> 0)
+  const latestInsight = (insights.find((i: { follower_count?: number }) => (i.follower_count ?? 0) > 0) ?? insights[0] ?? {}) as { follower_count?: number };
   const followerCount = latestInsight.follower_count ?? 0;
+  const followerStr = followerCount > 0 ? followerCount.toLocaleString() : "לא זמין";
 
   const lowStock = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock < p.min_packed_stock);
   const healthyStock = products.filter((p: { packed_stock: number; min_packed_stock: number }) => p.packed_stock >= p.min_packed_stock);
@@ -887,7 +889,7 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 === משימה כפולה: (1) אינסטגרם — פוסטים, ריילס, סטוריז | (2) Google אורגני — בלוג, דפי נחיתה, SEO ===
 
 === אינסטגרם — 30 יום אחרונים ===
-עוקבים: ${followerCount.toLocaleString()}
+עוקבים: ${followerStr}
 ריילס (${reels.length}): reach ממוצע ${avgReach(reels)}, engagement ${avgEng(reels)}%
 פוסטים (${posts2.length}): reach ממוצע ${avgReach(posts2)}, engagement ${avgEng(posts2)}%
 
