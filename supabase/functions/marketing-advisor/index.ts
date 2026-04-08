@@ -21,8 +21,8 @@ const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 // Haiku: fast enough (15-25s), same model used by generate-campaign
-const MODEL_ADS     = "claude-sonnet-4-5";
-const MODEL_ORGANIC = "claude-sonnet-4-5";
+const MODEL_ADS     = "claude-3-5-sonnet-20241022";
+const MODEL_ORGANIC = "claude-3-5-sonnet-20241022";
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
@@ -1594,7 +1594,7 @@ ${key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 }`;
 
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-5", systemPrompt, userMessage);
+  const { text, inputTokens, outputTokens } = await callClaude("claude-3-5-sonnet-20241022", systemPrompt, userMessage);
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}`);
 
   const parsed = parseClaudeJson(text);
