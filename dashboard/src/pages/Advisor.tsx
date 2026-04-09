@@ -829,7 +829,9 @@ export default function AdvisorPage() {
       })
       console.log('[blog_writer] invoke result:', { data, error })
       if (error) throw error
-      if (!data || !data.body) throw new Error(`תגובה לא תקינה מהשרת: ${JSON.stringify(data)}`)
+      // Function always returns 200; check for server-side error in body
+      if (data?.error) throw new Error(data.error)
+      if (!data || !data.body) throw new Error(`תגובה ריקה מהשרת. נסה שוב.`)
       setBlogState(s => ({ ...s, [key]: { loading: false, post: data as BlogPost } }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
