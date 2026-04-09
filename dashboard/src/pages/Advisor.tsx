@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle } from 'lucide-react'
 
@@ -558,10 +558,12 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
 
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
-function OrganicPanel({ row, blogState, writeBlogPost }: {
+function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts }: {
   row: AdvisorReport | null
-  blogState: Record<string, { loading: boolean; post: BlogPost | null }>
-  writeBlogPost: (rec: GoogleOrganicRec) => void
+  blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>
+  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>>>
+  writeBlogPost: (rec: GoogleOrganicRec, selectedProducts: string[]) => void
+  allProducts: string[]
 }) {
   if (!row)                        return <PanelEmpty label="סוכן תוכן אורגני" />
   if (row.status === 'running')    return <PanelRunning />
@@ -654,20 +656,49 @@ function OrganicPanel({ row, blogState, writeBlogPost }: {
                 {/* Blog post writer */}
                 {rec.content_type === 'blog_post' && (() => {
                   const bs = blogState[rec.keyword]
+                  const picked = bs?.selectedProducts ?? []
+                  const toggleProduct = (name: string) => {
+                    const cur = blogState[rec.keyword]?.selectedProducts ?? []
+                    const next = cur.includes(name) ? cur.filter(n => n !== name) : [...cur, name]
+                    setBlogState(s => ({ ...s, [rec.keyword]: { ...(s[rec.keyword] ?? { loading: false, post: null }), selectedProducts: next } }))
+                  }
                   return (
-                    <div className="pt-1">
+                    <div className="pt-1 space-y-2">
+                      {/* Product picker */}
+                      {(!bs?.loading && !bs?.post) && allProducts.length > 0 && (
+                        <div>
+                          <p className="text-xs text-surface-500 font-semibold mb-1.5">🛍️ מוצרים לציין בפוסט (אופציונלי):</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {allProducts.map(name => (
+                              <button
+                                key={name}
+                                onClick={() => toggleProduct(name)}
+                                className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                                  picked.includes(name)
+                                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                                    : 'bg-white border-surface-300 text-surface-600 hover:border-indigo-400 hover:text-indigo-600'
+                                }`}
+                              >
+                                {picked.includes(name) ? '✓ ' : ''}{name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {(!bs || bs.error) && (
                         <>
                           {bs?.error && (
-                            <div className="mb-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
+                            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
                               ⚠️ שגיאה: {bs.error}
                             </div>
                           )}
                           <button
-                            onClick={() => writeBlogPost(rec)}
+                            onClick={() => writeBlogPost(rec, picked)}
                             className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
                           >
                             ✍️ {bs?.error ? 'נסה שוב' : 'כתוב פוסט בלוג מלא'}
+                            {picked.length > 0 && <span className="bg-indigo-500 rounded-full px-1.5 py-0.5">{picked.length} מוצרים</span>}
                           </button>
                         </>
                       )}
@@ -810,12 +841,13 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
-  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string }>>({})
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>>({})
+  const [allProducts, setAllProducts]       = useState<string[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  async function writeBlogPost(rec: GoogleOrganicRec) {
+  async function writeBlogPost(rec: GoogleOrganicRec, selectedProducts: string[]) {
     const key = rec.keyword
-    setBlogState(s => ({ ...s, [key]: { loading: true, post: null, error: undefined } }))
+    setBlogState(s => ({ ...s, [key]: { loading: true, post: null, error: undefined, selectedProducts } }))
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
         body: {
@@ -825,23 +857,26 @@ export default function AdvisorPage() {
           key_points: rec.key_points ?? [],
           position: rec.current_position,
           search_volume_signal: rec.search_volume_signal,
+          products_to_mention: selectedProducts,
         },
       })
       console.log('[blog_writer] invoke result:', { data, error })
       if (error) throw error
-      // Function always returns 200; check for server-side error in body
       if (data?.error) throw new Error(data.error)
       if (!data || !data.body) throw new Error(`תגובה ריקה מהשרת. נסה שוב.`)
-      setBlogState(s => ({ ...s, [key]: { loading: false, post: data as BlogPost } }))
+      setBlogState(s => ({ ...s, [key]: { loading: false, post: data as BlogPost, selectedProducts } }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('blog_writer error', msg)
-      setBlogState(s => ({ ...s, [key]: { loading: false, post: null, error: msg } }))
+      setBlogState(s => ({ ...s, [key]: { loading: false, post: null, error: msg, selectedProducts } }))
     }
   }
 
   useEffect(() => {
     loadWeeks()
+    supabase.from('products').select('name').order('name').then(({ data }) => {
+      if (data) setAllProducts(data.map((p: { name: string }) => p.name))
+    })
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
@@ -961,7 +996,7 @@ export default function AdvisorPage() {
       sublabel: 'אינסטגרם · Google Search · מלאי',
       icon: <Leaf size={16} className="text-green-500" />,
       headerColor: 'border-green-100',
-      component: (row: AdvisorReport | null) => <OrganicPanel row={row} blogState={blogState} writeBlogPost={writeBlogPost} />,
+      component: (row: AdvisorReport | null) => <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} allProducts={allProducts} />,
     },
   ]
 
