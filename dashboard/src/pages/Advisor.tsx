@@ -913,10 +913,9 @@ export default function AdvisorPage() {
     supabase
       .from('woo_products')
       .select('name')
-      .eq('user_id', user?.id ?? 'dashboard-user')
-      .eq('stock_status', 'instock')
       .order('name')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        console.log('[advisor] woo_products fetch:', { count: data?.length, error })
         if (data) setAllProducts(data.map((p: { name: string }) => p.name))
       })
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
