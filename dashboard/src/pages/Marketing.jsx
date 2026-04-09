@@ -80,6 +80,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   const [contactSearch, setContactSearch] = useState('');
   const [selectedContacts, setSelectedContacts] = useState([]);  // [{email, name}]
   const [sendMode, setSendMode]          = useState('all'); // 'all' | 'selected'
+  const [showSendConfirm, setShowSendConfirm] = useState(false);
   const genProgress   = useAnimatedProgress(step === 'generating', 18);
   const ideasProgress = useAnimatedProgress(ideasLoading, 8);
   const syncProgress  = useAnimatedProgress(syncing, 12);
@@ -312,14 +313,17 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
     }
   };
 
-  const sendCampaign = async () => {
+  const sendCampaign = () => {
     const recipientCount = sendMode === 'selected' ? selectedContacts.length : optedInCount;
     if (recipientCount === 0) {
       showToast(sendMode === 'selected' ? '⚠️ לא נבחרו נמענים' : '⚠️ אין אנשי קשר שאישרו קבלת מיילים', 'warning');
       return;
     }
-    if (!window.confirm(`לשלוח את הקמפיין ל-${recipientCount} נמענים?`)) return;
+    setShowSendConfirm(true);
+  };
 
+  const executeSend = async () => {
+    setShowSendConfirm(false);
     setStep('sending');
     try {
       const payload = {
@@ -942,6 +946,96 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
           }
         </button>
       </div>
+
+      {/* ── Send Confirmation Modal ─────────────────────────────────────────── */}
+      {showSendConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', padding: '28px',
+            maxWidth: '440px', width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            direction: 'rtl',
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '1.8rem' }}>📤</span>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#1a1a1a' }}>
+                אישור שליחת קמפיין
+              </h3>
+            </div>
+
+            {/* What */}
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 600, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px' }}>נושא המייל</p>
+              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#14532D' }}>
+                {editSubject || draft?.subject || '—'}
+              </p>
+            </div>
+
+            {/* To whom */}
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '14px', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '0.78rem', fontWeight: 600, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>נמענים</p>
+              {sendMode === 'all' ? (
+                <p style={{ margin: 0, fontSize: '1rem', color: '#1E3A8A' }}>
+                  <strong>{optedInCount}</strong> אנשי קשר שאישרו קבלת מיילים
+                </p>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 8px', fontSize: '1rem', color: '#1E3A8A' }}>
+                    <strong>{selectedContacts.length}</strong> נמענים שנבחרו ידנית
+                  </p>
+                  {selectedContacts.slice(0, 5).map((c, i) => (
+                    <div key={i} style={{ fontSize: '0.82rem', color: '#3B82F6', marginTop: '2px' }}>
+                      • {c.name || c.email} {c.name ? `(${c.email})` : ''}
+                    </div>
+                  ))}
+                  {selectedContacts.length > 5 && (
+                    <div style={{ fontSize: '0.8rem', color: '#93C5FD', marginTop: '4px' }}>
+                      + עוד {selectedContacts.length - 5} נמענים...
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Warning */}
+            <p style={{ margin: '0 0 20px', fontSize: '0.85rem', color: '#6B7280', textAlign: 'center' }}>
+              ⚠️ לאחר השליחה לא ניתן לבטל. בדוק שהנושא והתוכן נכונים לפני שמאשר.
+            </p>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowSendConfirm(false)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '10px',
+                  border: '1.5px solid #E5E7EB', background: '#fff',
+                  fontSize: '0.95rem', fontWeight: 600, color: '#6B7280',
+                  cursor: 'pointer',
+                }}
+              >
+                ביטול
+              </button>
+              <button
+                onClick={executeSend}
+                style={{
+                  flex: 2, padding: '12px', borderRadius: '10px',
+                  border: 'none', background: '#16A34A',
+                  fontSize: '0.95rem', fontWeight: 700, color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                ✅ כן, שלח עכשיו
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
