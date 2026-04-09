@@ -86,11 +86,13 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
       // Only filter by user_id for per-user tables (e.g. cost_settings).
       // Shared org-wide tables (filterByUser: false) must be updatable by any team member.
       if (filterByUser) query = query.eq('user_id', user.id);
-      const { data: result, error } = await query.select().single();
+      // Use select() without .single() — .single() adds an Accept header that
+      // causes Safari to fail with "Load failed" in Supabase JS v2.
+      const { data: rows, error } = await query.select();
 
       if (error) throw error;
       await fetchData(); // Refresh local state immediately after update
-      return result;
+      return rows?.[0] ?? null;
     } catch (err) {
       console.error(`Error updating ${table}:`, err);
       throw err;
