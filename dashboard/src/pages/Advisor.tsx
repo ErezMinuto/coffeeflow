@@ -656,13 +656,20 @@ function OrganicPanel({ row, blogState, writeBlogPost }: {
                   const bs = blogState[rec.keyword]
                   return (
                     <div className="pt-1">
-                      {!bs && (
-                        <button
-                          onClick={() => writeBlogPost(rec)}
-                          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
-                        >
-                          ✍️ כתוב פוסט בלוג מלא
-                        </button>
+                      {(!bs || bs.error) && (
+                        <>
+                          {bs?.error && (
+                            <div className="mb-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
+                              ⚠️ שגיאה: {bs.error}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => writeBlogPost(rec)}
+                            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+                          >
+                            ✍️ {bs?.error ? 'נסה שוב' : 'כתוב פוסט בלוג מלא'}
+                          </button>
+                        </>
                       )}
                       {bs?.loading && (
                         <div className="flex items-center gap-2 py-2 px-3 bg-indigo-50 rounded-lg">
@@ -803,12 +810,12 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
-  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null }>>({})
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string }>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function writeBlogPost(rec: GoogleOrganicRec) {
     const key = rec.keyword
-    setBlogState(s => ({ ...s, [key]: { loading: true, post: null } }))
+    setBlogState(s => ({ ...s, [key]: { loading: true, post: null, error: undefined } }))
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
         body: {
@@ -820,11 +827,14 @@ export default function AdvisorPage() {
           search_volume_signal: rec.search_volume_signal,
         },
       })
+      console.log('[blog_writer] invoke result:', { data, error })
       if (error) throw error
+      if (!data || !data.body) throw new Error(`תגובה לא תקינה מהשרת: ${JSON.stringify(data)}`)
       setBlogState(s => ({ ...s, [key]: { loading: false, post: data as BlogPost } }))
     } catch (e) {
-      console.error('blog_writer error', e)
-      setBlogState(s => ({ ...s, [key]: { loading: false, post: null } }))
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('blog_writer error', msg)
+      setBlogState(s => ({ ...s, [key]: { loading: false, post: null, error: msg } }))
     }
   }
 
