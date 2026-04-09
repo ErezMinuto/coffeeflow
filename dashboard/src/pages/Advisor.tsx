@@ -674,8 +674,8 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
 
                   return (
                     <div className="pt-1 space-y-2">
-                      {/* Product picker — only show when not loading/done */}
-                      {(!bs?.loading && !bs?.post) && (
+                      {/* Product picker — only show when not loading and no post yet */}
+                      {!bs?.loading && !bs?.post && (
                         <div className="space-y-2">
                           <p className="text-xs text-surface-500 font-semibold">🛍️ מוצרים לציין בפוסט (אופציונלי):</p>
 
@@ -710,7 +710,7 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                         </div>
                       )}
 
-                      {(!bs || bs.error) && (
+                      {!bs?.loading && !bs?.post && (
                         <>
                           {bs?.error && (
                             <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
