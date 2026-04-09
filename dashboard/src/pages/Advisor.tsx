@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { useApp } from '../lib/context'
 import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -856,6 +857,7 @@ const ALL_AGENT_TYPES = ['google_ads_growth', 'google_ads_efficiency', 'organic_
 type AgentType = typeof ALL_AGENT_TYPES[number]
 
 export default function AdvisorPage() {
+  const { user } = useApp()
   const [rows, setRows]               = useState<Record<AgentType, AdvisorReport | null>>({
     google_ads_growth: null, google_ads_efficiency: null, organic_content: null,
   })
@@ -897,9 +899,15 @@ export default function AdvisorPage() {
 
   useEffect(() => {
     loadWeeks()
-    supabase.from('products').select('name').order('name').then(({ data }) => {
-      if (data) setAllProducts(data.map((p: { name: string }) => p.name))
-    })
+    supabase
+      .from('woo_products')
+      .select('name')
+      .eq('user_id', user?.id ?? 'dashboard-user')
+      .eq('stock_status', 'instock')
+      .order('name')
+      .then(({ data }) => {
+        if (data) setAllProducts(data.map((p: { name: string }) => p.name))
+      })
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
