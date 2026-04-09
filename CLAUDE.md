@@ -112,18 +112,14 @@ There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase E
 ## Supabase Edge Functions — Deployment
 
 ```bash
-# Deploy a single function
-/opt/homebrew/Cellar/supabase/2.75.0/bin/supabase functions deploy <function-name>
-
-# After EVERY deploy — re-patch verify_jwt (deploy resets it to true)
-curl -X PATCH "https://api.supabase.com/v1/projects/ytydgldyeygpzmlxvpvb/functions/<slug>" \
-  -H "Authorization: Bearer <personal_access_token>" \
-  -H "Content-Type: application/json" \
-  -d '{"verify_jwt": false}'
+# Deploy a single function — always use --no-verify-jwt for functions that need it
+/opt/homebrew/bin/supabase functions deploy <function-name> --project-ref ytydgldyeygpzmlxvpvb --no-verify-jwt
 ```
 
-Functions with `verify_jwt: false` (Telegram webhooks don't send JWTs):
-- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`
+Functions that MUST always be deployed with `--no-verify-jwt`:
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`
+
+> The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 
 ---
 
