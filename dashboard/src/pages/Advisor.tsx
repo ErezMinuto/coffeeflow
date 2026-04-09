@@ -561,7 +561,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
 function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts }: {
   row: AdvisorReport | null
   blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>
-  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>>>
+  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string }>>>
   writeBlogPost: (rec: GoogleOrganicRec, selectedProducts: string[]) => void
   allProducts: string[]
 }) {
@@ -657,32 +657,55 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                 {rec.content_type === 'blog_post' && (() => {
                   const bs = blogState[rec.keyword]
                   const picked = bs?.selectedProducts ?? []
+                  const customText = bs?.customProductText ?? ''
+
+                  const updateState = (patch: Partial<{ selectedProducts: string[]; customProductText: string }>) =>
+                    setBlogState(s => ({ ...s, [rec.keyword]: { ...(s[rec.keyword] ?? { loading: false, post: null }), ...patch } }))
+
                   const toggleProduct = (name: string) => {
-                    const cur = blogState[rec.keyword]?.selectedProducts ?? []
-                    const next = cur.includes(name) ? cur.filter(n => n !== name) : [...cur, name]
-                    setBlogState(s => ({ ...s, [rec.keyword]: { ...(s[rec.keyword] ?? { loading: false, post: null }), selectedProducts: next } }))
+                    const next = picked.includes(name) ? picked.filter(n => n !== name) : [...picked, name]
+                    updateState({ selectedProducts: next })
                   }
+
+                  // Combine DB picks + custom free-text entries
+                  const customItems = customText.split(',').map(s => s.trim()).filter(Boolean)
+                  const allPicked = [...picked, ...customItems]
+
                   return (
                     <div className="pt-1 space-y-2">
-                      {/* Product picker */}
-                      {(!bs?.loading && !bs?.post) && allProducts.length > 0 && (
-                        <div>
-                          <p className="text-xs text-surface-500 font-semibold mb-1.5">🛍️ מוצרים לציין בפוסט (אופציונלי):</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {allProducts.map(name => (
-                              <button
-                                key={name}
-                                onClick={() => toggleProduct(name)}
-                                className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                                  picked.includes(name)
-                                    ? 'bg-indigo-600 border-indigo-600 text-white'
-                                    : 'bg-white border-surface-300 text-surface-600 hover:border-indigo-400 hover:text-indigo-600'
-                                }`}
-                              >
-                                {picked.includes(name) ? '✓ ' : ''}{name}
-                              </button>
-                            ))}
-                          </div>
+                      {/* Product picker — only show when not loading/done */}
+                      {(!bs?.loading && !bs?.post) && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-surface-500 font-semibold">🛍️ מוצרים לציין בפוסט (אופציונלי):</p>
+
+                          {/* DB products as pills */}
+                          {allProducts.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {allProducts.map(name => (
+                                <button
+                                  key={name}
+                                  onClick={() => toggleProduct(name)}
+                                  className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                                    picked.includes(name)
+                                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                                      : 'bg-white border-surface-300 text-surface-600 hover:border-indigo-400 hover:text-indigo-600'
+                                  }`}
+                                >
+                                  {picked.includes(name) ? '✓ ' : ''}{name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Free-text for custom products (grinders, accessories, etc.) */}
+                          <input
+                            type="text"
+                            value={customText}
+                            onChange={e => updateState({ customProductText: e.target.value })}
+                            placeholder="מוצרים נוספים — הקלד שמות מופרדים בפסיק (למשל: Baratza Encore, Comandante C40)"
+                            className="w-full text-xs border border-surface-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-400 placeholder-surface-400"
+                            dir="rtl"
+                          />
                         </div>
                       )}
 
@@ -694,11 +717,11 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                             </div>
                           )}
                           <button
-                            onClick={() => writeBlogPost(rec, picked)}
+                            onClick={() => writeBlogPost(rec, allPicked)}
                             className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
                           >
                             ✍️ {bs?.error ? 'נסה שוב' : 'כתוב פוסט בלוג מלא'}
-                            {picked.length > 0 && <span className="bg-indigo-500 rounded-full px-1.5 py-0.5">{picked.length} מוצרים</span>}
+                            {allPicked.length > 0 && <span className="bg-indigo-500 rounded-full px-1.5 py-0.5">{allPicked.length} מוצרים</span>}
                           </button>
                         </>
                       )}
@@ -841,7 +864,7 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
-  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>>({})
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string }>>({})
   const [allProducts, setAllProducts]       = useState<string[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
