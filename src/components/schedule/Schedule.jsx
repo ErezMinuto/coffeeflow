@@ -444,11 +444,11 @@ export default function Schedule() {
   };
 
   const publish = async () => {
-    if (!sheetsUrl) { showToast('יש לייצא ל-Google Sheets קודם', 'error'); return; }
     setPublishing(true);
     try {
-      const weekLabel = weekDates.map(d => `${d.label} ${formatDate(d.date)}`).join(' | ');
-      const text = `📅 <b>סידור עבודה שבועי</b>\n${weekLabel}\n\n📊 <a href="${sheetsUrl}">לצפייה בסידור המלא לחצו כאן</a>`;
+      // Use detailed schedule text always; append Sheets link if available
+      let text = buildTelegramText();
+      if (sheetsUrl) text += `\n\n📊 <a href="${sheetsUrl}">לצפייה בסידור המלא</a>`;
       const { error } = await supabase.functions.invoke('employee-bot', {
         body: { text },
         headers: { 'x-action': 'publish' },
