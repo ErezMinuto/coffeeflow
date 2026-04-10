@@ -1331,11 +1331,21 @@ async function handleSendCampaign(p: SendCampaignPayload) {
             }
           } catch (_) { /* non-critical */ }
         } else {
-          const errBody = await res.json();
-          errors.push(`${recipient.email}: ${errBody.message || res.status}`);
+          // Capture the full Resend error response so the frontend can
+          // show something actionable (e.g., "domain not verified").
+          let detail = `${res.status}`;
+          try {
+            const errBody = await res.json();
+            detail = `${res.status} ${errBody.name || ""}: ${errBody.message || JSON.stringify(errBody)}`.trim();
+          } catch {
+            try { detail = `${res.status} ${await res.text()}`; } catch { /* ignore */ }
+          }
+          console.error("Resend send failed for", recipient.email, "-", detail);
+          errors.push(`${recipient.email}: ${detail}`);
         }
       } catch (e: any) {
-        errors.push(`${recipient.email}: ${e.message}`);
+        console.error("Resend fetch threw for", recipient.email, "-", e?.message);
+        errors.push(`${recipient.email}: ${e?.message || "unknown fetch error"}`);
       }
     }
 
@@ -1356,7 +1366,16 @@ async function handleSendCampaign(p: SendCampaignPayload) {
       .eq("id", p.campaignId);
   }
 
-  return ok({ ok: true, sent, total: recipients.length, errors: errors.length, isTest: !!p.testEmail });
+  // Return the actual error messages (not just the count) so the frontend
+  // can show why a send failed. Capped to 5 messages to avoid huge payloads.
+  return ok({
+    ok:          sent > 0,
+    sent,
+    total:       recipients.length,
+    errorCount:  errors.length,
+    errors:      errors.slice(0, 5),
+    isTest:      !!p.testEmail,
+  });
 }
 
 // ── Unsubscribe Handler ─────────────────────────────────────────────────────

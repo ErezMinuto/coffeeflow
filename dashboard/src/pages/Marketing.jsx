@@ -507,10 +507,21 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         campaignId: draft.id,
         testEmail: testEmail.trim(),
       });
-      showToast(`✅ טסט נשלח ל-${testEmail}!`);
+      // The function returns 200 even when Resend rejected the email —
+      // check sent/errors explicitly so the user sees what really happened.
+      if (result && result.sent > 0) {
+        showToast(`✅ טסט נשלח ל-${testEmail}!`);
+      } else {
+        const firstErr = Array.isArray(result?.errors) && result.errors.length > 0
+          ? result.errors[0]
+          : 'Resend rejected the send (no details)';
+        console.error('send-test failed:', result);
+        showToast(`❌ הטסט לא נשלח: ${firstErr}`, 'error');
+      }
       setStep('draft');
     } catch (err) {
-      showToast(`❌ שגיאה בשליחת טסט: ${err.message}`, 'error');
+      console.error('send-test threw:', err);
+      showToast(`❌ שגיאה בשליחת טסט: ${err?.message || 'unknown'}`, 'error');
       setStep('draft');
     }
   };
