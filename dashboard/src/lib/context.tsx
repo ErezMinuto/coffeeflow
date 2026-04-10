@@ -6,6 +6,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabase'
 
+interface TableDb {
+  insert: (item: any) => Promise<any>
+  update: (id: any, updates: any) => Promise<any>
+  remove: (id: any) => Promise<void>
+  refresh: () => Promise<void>
+}
+
 interface AppContextValue {
   data: {
     products: any[]
@@ -13,20 +20,14 @@ interface AppContextValue {
     campaigns: any[]
     packingLogs: any[]
     pendingOrders: any[]
+    contactGroups: any[]
+    contactGroupMembers: any[]
   }
   user: { id: string } | null
-  marketingContactsDb: {
-    insert: (item: any) => Promise<any>
-    update: (id: any, updates: any) => Promise<any>
-    remove: (id: any) => Promise<void>
-    refresh: () => Promise<void>
-  }
-  campaignsDb: {
-    insert: (item: any) => Promise<any>
-    update: (id: any, updates: any) => Promise<any>
-    remove: (id: any) => Promise<void>
-    refresh: () => Promise<void>
-  }
+  marketingContactsDb: TableDb
+  campaignsDb: TableDb
+  contactGroupsDb: TableDb
+  contactGroupMembersDb: TableDb
   showToast: (msg: string, type?: string) => void
   refreshAll: () => Promise<void>
 }
@@ -99,6 +100,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const campaignsDb       = useTable('campaigns')
   const packingLogsDb     = useTable('packing_logs')
   const pendingOrdersDb   = useTable('pending_orders')
+  const contactGroupsDb       = useTable('contact_groups')
+  const contactGroupMembersDb = useTable('contact_group_members')
 
   const showToast = (msg: string, type = 'success') => {
     setToast({ msg, type })
@@ -112,20 +115,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       campaignsDb.refresh(),
       packingLogsDb.refresh(),
       pendingOrdersDb.refresh(),
+      contactGroupsDb.refresh(),
+      contactGroupMembersDb.refresh(),
     ])
   }
 
   const value: AppContextValue = {
     data: {
-      products:         productsDb.data,
-      marketingContacts: marketingContactsDb.data,
-      campaigns:        campaignsDb.data,
-      packingLogs:      packingLogsDb.data,
-      pendingOrders:    pendingOrdersDb.data,
+      products:            productsDb.data,
+      marketingContacts:   marketingContactsDb.data,
+      campaigns:           campaignsDb.data,
+      packingLogs:         packingLogsDb.data,
+      pendingOrders:       pendingOrdersDb.data,
+      contactGroups:       contactGroupsDb.data,
+      contactGroupMembers: contactGroupMembersDb.data,
     },
     user: { id: 'dashboard-user' },
     marketingContactsDb,
     campaignsDb,
+    contactGroupsDb,
+    contactGroupMembersDb,
     showToast,
     refreshAll,
   }
