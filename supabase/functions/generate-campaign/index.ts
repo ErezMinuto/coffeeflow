@@ -33,6 +33,7 @@ const SITE_URL       = "https://minuto.co.il";
 // Allowed origins for CORS (CoffeeFlow app + Minuto website)
 const ALLOWED_ORIGINS = [
   Deno.env.get("COFFEEFLOW_ORIGIN") || "https://coffeeflow-thaf.vercel.app",
+  "https://coffeeflow-neon.vercel.app",
   "https://minuto.co.il",
   "https://www.minuto.co.il",
 ];
@@ -44,6 +45,8 @@ function getCorsHeaders(req?: Request) {
     "Access-Control-Allow-Origin":  allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Max-Age":       "86400",
+    "Vary":                          "Origin",
   };
 }
 
@@ -121,8 +124,21 @@ async function generateBannerImage(prompt: string): Promise<string | null> {
     return null;
   }
 
+  // Sanitize the theme: strip words that routinely hijack Gemini into
+  // generating landscapes/vehicles instead of coffee imagery.
+  const banned = /\b(motorcycle|motorbike|bike|bicycle|car|truck|vehicle|road|highway|mountain|mountains|forest|journey|travel|ride|landscape|sunset|sunrise|sky|cloud|nature|scenic|adventure)\b/gi;
+  const safeTheme = (prompt || "").replace(banned, "").replace(/\s+/g, " ").trim();
+
   try {
-    const imagePrompt = `A wide landscape photograph for a coffee roastery email newsletter. Prefer showing: coffee beans, roasted coffee, latte art, steaming cups, coffee bags, roasting drum, café counter atmosphere. If the theme mentions a specific machine type, you may show it — but NEVER invent machine details or add parts that don't belong (e.g. don't add a portafilter to a super-automatic machine). When in doubt, focus on beans and cups rather than equipment. Style: warm and inviting, artisan premium feel with earthy tones (dark browns, cream, olive green). Lighting: soft natural or warm studio lighting. ABSOLUTELY NO people, NO faces, NO hands, NO human figures. ABSOLUTELY NO text, NO letters, NO words, NO numbers, NO logos in the image. Clean composition, high quality, 16:9 aspect ratio. Theme: ${prompt}`;
+    const imagePrompt = `PRIMARY SUBJECT (mandatory): coffee. The image MUST clearly and prominently show coffee content — one or more of: raw or roasted coffee beans, a steaming cup of coffee, latte art, a coffee bag, a portafilter shot pouring, a roasting drum, or a café counter. This is for a specialty coffee roastery email newsletter.
+
+Style: warm and inviting, artisan premium feel with earthy tones (dark browns, cream, olive green). Soft natural or warm studio lighting. Close to mid-range product photography. 16:9 wide landscape format. High quality.
+
+STRICTLY FORBIDDEN — do NOT include any of: people, faces, hands, human figures, text, letters, words, numbers, logos, motorcycles, bicycles, cars, trucks, vehicles, roads, highways, mountains, forests, landscapes, skies, clouds, sunsets, sunrises, animals, or any outdoor scenery. If the theme hint below suggests such things, IGNORE it and default to coffee beans and a steaming cup.
+
+Equipment rule: if a specific machine is relevant you may show it, but NEVER invent parts. When in doubt, show beans and cups instead of equipment. Never show a super-automatic machine with a portafilter.
+
+Theme hint (use only if it fits the above — coffee-only imagery): ${safeTheme || "close-up of freshly roasted specialty coffee beans with a steaming cup"}`;
 
     let base64: string | null = null;
     let mime = "image/png";
@@ -226,18 +242,85 @@ async function generateBannerImage(prompt: string): Promise<string | null> {
 
 // ── Israeli Holiday Calendar ────────────────────────────────────────────────
 
+// Jewish holiday windows (Gregorian), keyed by year. Each entry is [startMonth, startDay, endMonth, endDay] inclusive.
+// Windows start ~5 days before the holiday (lead-up marketing) and end on the last day.
+const JEWISH_HOLIDAYS: Record<number, Array<{ name: string; range: [number, number, number, number] }>> = {
+  2026: [
+    { name: "טו בשבט",        range: [1, 28, 2, 2]   }, // Feb 2
+    { name: "פסח",            range: [3, 27, 4, 9]   }, // Apr 1–9
+    { name: "יום העצמאות",   range: [4, 17, 4, 22]  }, // Apr 22
+    { name: "שבועות",         range: [5, 17, 5, 22]  }, // May 21–22
+    { name: "תקופת החגים (ראש השנה, יום כיפור, סוכות)", range: [9, 7, 10, 6] }, // Sep 12 – Oct 4
+    { name: "חנוכה",          range: [11, 30, 12, 12] }, // Dec 4–12
+  ],
+  2027: [
+    { name: "טו בשבט",        range: [1, 17, 1, 22]  }, // Jan 22
+    { name: "פסח",            range: [4, 16, 4, 29]  }, // Apr 21–29
+    { name: "יום העצמאות",   range: [5, 7, 5, 12]   }, // May 12
+    { name: "שבועות",         range: [6, 6, 6, 11]   }, // Jun 10–11
+    { name: "תקופת החגים (ראש השנה, יום כיפור, סוכות)", range: [9, 27, 10, 26] }, // Oct 2 – Oct 23
+    { name: "חנוכה",          range: [12, 20, 12, 31] }, // Dec 24 – Jan 1
+  ],
+  2028: [
+    { name: "טו בשבט",        range: [2, 6, 2, 11]   }, // Feb 11
+    { name: "פסח",            range: [4, 5, 4, 18]   }, // Apr 10–18
+    { name: "יום העצמאות",   range: [4, 26, 5, 1]   }, // May 1
+    { name: "שבועות",         range: [5, 26, 5, 31]  }, // May 30–31
+    { name: "תקופת החגים (ראש השנה, יום כיפור, סוכות)", range: [9, 15, 10, 14] }, // Sep 21 – Oct 11
+    { name: "חנוכה",          range: [12, 7, 12, 19] }, // Dec 12–19
+  ],
+};
+
+// Fixed-date commercial/secular events — same window every year.
+const FIXED_COMMERCIAL_EVENTS: Array<{ name: string; range: [number, number, number, number] }> = [
+  { name: "ולנטיין",           range: [2, 7, 2, 14]   }, // Feb 14
+  { name: "יום המשפחה",        range: [2, 15, 2, 21]  }, // Feb 21 (IL)
+  { name: "יום האישה הבינלאומי", range: [3, 1, 3, 8]    }, // Mar 8
+  { name: "יום האם",            range: [5, 5, 5, 12]   }, // 2nd Sun of May (approx window)
+  { name: "11.11 (יום הרווקים / מבצעי נובמבר)", range: [11, 8, 11, 11] }, // Nov 11
+  { name: "תחילת שנת הלימודים", range: [8, 25, 9, 5]   }, // Sep 1
+];
+
+// Year-specific commercial events (Black Friday / Cyber Monday shift yearly).
+const COMMERCIAL_EVENTS_BY_YEAR: Record<number, Array<{ name: string; range: [number, number, number, number] }>> = {
+  2026: [
+    { name: "בלאק פריידיי",    range: [11, 23, 11, 27] }, // Fri Nov 27
+    { name: "סייבר מאנדיי",    range: [11, 28, 11, 30] }, // Mon Nov 30
+  ],
+  2027: [
+    { name: "בלאק פריידיי",    range: [11, 22, 11, 26] }, // Fri Nov 26
+    { name: "סייבר מאנדיי",    range: [11, 27, 11, 29] }, // Mon Nov 29
+  ],
+  2028: [
+    { name: "בלאק פריידיי",    range: [11, 20, 11, 24] }, // Fri Nov 24
+    { name: "סייבר מאנדיי",    range: [11, 25, 11, 27] }, // Mon Nov 27
+  ],
+};
+
 function getSeasonalContext(): string {
   const now = new Date();
+  const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const holidays: string[] = [];
 
-  if (month === 9 || (month === 10 && day <= 15)) holidays.push("תקופת החגים (ראש השנה, יום כיפור, סוכות)");
-  if (month === 12) holidays.push("חנוכה");
-  if (month === 3 || (month === 4 && day <= 15)) holidays.push("פסח");
-  if (month === 5 && day <= 15) holidays.push("יום העצמאות");
-  if (month === 6) holidays.push("שבועות");
-  if (month === 2 && day >= 10 && day <= 20) holidays.push("טו בשבט");
+  const inRange = (r: [number, number, number, number]) => {
+    const [sM, sD, eM, eD] = r;
+    const cur = month * 100 + day;
+    const start = sM * 100 + sD;
+    const end = eM * 100 + eD;
+    return cur >= start && cur <= end;
+  };
+
+  for (const h of JEWISH_HOLIDAYS[year] ?? []) {
+    if (inRange(h.range)) holidays.push(h.name);
+  }
+  for (const e of FIXED_COMMERCIAL_EVENTS) {
+    if (inRange(e.range)) holidays.push(e.name);
+  }
+  for (const e of COMMERCIAL_EVENTS_BY_YEAR[year] ?? []) {
+    if (inRange(e.range)) holidays.push(e.name);
+  }
 
   const seasons: Record<number, string> = {
     1: "חורף -קפה חם ומחמם", 2: "חורף -קפה חם ומחמם",
@@ -862,7 +945,7 @@ ${p.customInstructions ? "הנחיה מהמשתמש: " + p.customInstructions : 
   "cta_url": "https://minuto.co.il/shop",
   "product_ids": ["חובה! woo_id מספרים מהקטלוג למעלה. לפחות 2 מוצרים"],
   "campaign_theme": "tips|story|promo|seasonal|education",
-  "banner_prompt": "Prefer: coffee beans close-up, latte art, roasting process, steaming cup, café atmosphere. Avoid super-automatic machines (AI renders them wrong). Barista/portafilter machines are OK if relevant. Short english description, photographic style, no text in image"
+  "banner_prompt": "A short English description of a CONCRETE coffee-only scene — beans, cup, latte art, bag, roasting drum, or café counter. NO metaphors. NO 'journey', 'road', 'mountain', 'landscape', 'travel', 'adventure'. NO people, vehicles, or outdoor scenery. Example: 'close-up of dark roasted coffee beans next to a white ceramic cup with steam, warm lighting, wooden table'. 10-20 words max."
 }`;
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -1028,48 +1111,103 @@ interface UpdateDraftPayload {
   promoDeadline?: string | null;
 }
 
+// Extract the banner image URL from a previously-generated campaign HTML
+// (banner_url isn't stored as a column, so we recover it from html_content)
+function extractBannerUrl(html: string | null | undefined): string | null {
+  if (!html) return null;
+  // Matches the generated: background:url('...') or <v:fill src="...">
+  const m1 = html.match(/background:url\('([^']+)'\)/);
+  if (m1) return m1[1];
+  const m2 = html.match(/<v:fill[^>]*src="([^"]+)"/);
+  if (m2) return m2[1];
+  return null;
+}
+
 async function handleUpdateDraft(p: UpdateDraftPayload) {
-  // Fetch existing campaign
-  const { data: existing, error: fetchErr } = await supabase
-    .from("campaigns")
-    .select("*")
-    .eq("id", p.campaignId)
-    .eq("user_id", p.userId)
-    .single();
-
-  if (fetchErr || !existing) return err(404, "Campaign not found");
-
-  // Rebuild HTML with edits
-  const htmlContent = buildCampaignHtml({
-    subject:        p.subject || existing.subject,
-    preheader:      p.preheader ?? existing.preheader ?? "",
-    greeting:       p.greeting ?? "",
-    body:           p.body || existing.message,
-    ctaText:        p.ctaText ?? existing.cta_text ?? "לחנות",
-    ctaUrl:         p.ctaUrl ?? existing.cta_url ?? "https://minuto.co.il/shop",
-    bannerUrl:      p.bannerUrl !== undefined ? p.bannerUrl : null,
-    products:       p.products || [],
-    unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
-    promoDeadline:  p.promoDeadline || null,
+  console.log("update-draft:start", {
+    campaignId: p.campaignId,
+    userId: p.userId,
+    productCount: (p.products || []).length,
+    hasBody: !!p.body,
+    hasCta: !!p.ctaUrl,
   });
 
-  // Save updates
-  const { error: updateErr } = await supabase
-    .from("campaigns")
-    .update({
-      subject:      p.subject || existing.subject,
-      message:      p.body || existing.message,
-      html_content: htmlContent,
-      preheader:    p.preheader ?? existing.preheader,
-      cta_text:     p.ctaText ?? existing.cta_text,
-      cta_url:      p.ctaUrl ?? existing.cta_url,
-      product_ids:  p.products ? p.products.map((pr: any) => String(pr.woo_id)) : existing.product_ids,
-    })
-    .eq("id", p.campaignId);
+  try {
+    // Fetch existing campaign
+    const { data: existing, error: fetchErr } = await supabase
+      .from("campaigns")
+      .select("*")
+      .eq("id", p.campaignId)
+      .eq("user_id", p.userId)
+      .single();
 
-  if (updateErr) return err(500, updateErr.message);
+    if (fetchErr || !existing) {
+      console.error("update-draft:not-found", { campaignId: p.campaignId, fetchErr: fetchErr?.message });
+      return err(404, "Campaign not found");
+    }
 
-  return ok({ ok: true, htmlContent });
+    // Normalize products to the shape buildCampaignHtml expects.
+    // Anything missing a woo_id or name is dropped to avoid HTML-build surprises.
+    const safeProducts = (p.products || []).filter((pr: any) => pr && pr.woo_id != null).map((pr: any) => ({
+      woo_id:            pr.woo_id,
+      name:              String(pr.name ?? ""),
+      price:             pr.price != null ? String(pr.price) : undefined,
+      regular_price:     pr.regular_price != null ? String(pr.regular_price) : undefined,
+      sale_price:        pr.sale_price != null ? String(pr.sale_price) : undefined,
+      short_description: pr.short_description != null ? String(pr.short_description) : undefined,
+      image_url:         pr.image_url != null ? String(pr.image_url) : undefined,
+      permalink:         pr.permalink != null ? String(pr.permalink) : undefined,
+    }));
+
+    // Preserve banner URL from the existing HTML if caller didn't provide one
+    const bannerUrl =
+      p.bannerUrl !== undefined ? p.bannerUrl : extractBannerUrl(existing.html_content);
+
+    // Rebuild HTML with edits
+    let htmlContent: string;
+    try {
+      htmlContent = buildCampaignHtml({
+        subject:        p.subject || existing.subject,
+        preheader:      p.preheader ?? existing.preheader ?? "",
+        greeting:       p.greeting ?? "",
+        body:           p.body || existing.message || "",
+        ctaText:        p.ctaText ?? existing.cta_text ?? "",
+        ctaUrl:         p.ctaUrl ?? existing.cta_url ?? "https://minuto.co.il/shop",
+        bannerUrl,
+        products:       safeProducts,
+        unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
+        promoDeadline:  p.promoDeadline || null,
+      });
+    } catch (buildErr: any) {
+      console.error("update-draft:build-html-failed", buildErr?.message, buildErr?.stack);
+      return err(500, `Failed to build HTML: ${buildErr?.message || "unknown"}`);
+    }
+
+    // Save updates
+    const { error: updateErr } = await supabase
+      .from("campaigns")
+      .update({
+        subject:      p.subject || existing.subject,
+        message:      p.body || existing.message,
+        html_content: htmlContent,
+        preheader:    p.preheader ?? existing.preheader,
+        cta_text:     p.ctaText ?? existing.cta_text,
+        cta_url:      p.ctaUrl ?? existing.cta_url,
+        product_ids:  p.products ? safeProducts.map(pr => String(pr.woo_id)) : existing.product_ids,
+      })
+      .eq("id", p.campaignId);
+
+    if (updateErr) {
+      console.error("update-draft:db-update-failed", updateErr.message);
+      return err(500, updateErr.message);
+    }
+
+    console.log("update-draft:ok", { campaignId: p.campaignId, htmlLength: htmlContent.length });
+    return ok({ ok: true, htmlContent });
+  } catch (e: any) {
+    console.error("update-draft:uncaught", e?.message, e?.stack);
+    return err(500, `update-draft failed: ${e?.message || "unknown"}`);
+  }
 }
 
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────
