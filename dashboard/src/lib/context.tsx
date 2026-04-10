@@ -42,9 +42,28 @@ export function useApp() {
 function useTable(table: string) {
   const [data, setData] = useState<any[]>([])
 
+  // PostgREST caps every select at 1000 rows by default. Paginate in 1000-row
+  // chunks until we get a short page so tables like marketing_contacts show
+  // all their rows instead of silently truncating at 1000.
   const fetchData = useCallback(async () => {
-    const { data: rows } = await supabase.from(table).select('*')
-    setData(rows || [])
+    const pageSize = 1000
+    const all: any[] = []
+    let from = 0
+    for (;;) {
+      const { data: rows, error } = await supabase
+        .from(table)
+        .select('*')
+        .range(from, from + pageSize - 1)
+      if (error) {
+        console.error(`useTable(${table}) fetch error:`, error.message)
+        break
+      }
+      if (!rows || rows.length === 0) break
+      all.push(...rows)
+      if (rows.length < pageSize) break
+      from += pageSize
+    }
+    setData(all)
   }, [table])
 
   useEffect(() => { fetchData() }, [fetchData])
