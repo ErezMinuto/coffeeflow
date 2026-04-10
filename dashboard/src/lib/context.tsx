@@ -130,7 +130,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       contactGroups:       contactGroupsDb.data,
       contactGroupMembers: contactGroupMembersDb.data,
     },
-    user: { id: 'dashboard-user' },
+    // Pinned to the original Clerk user_id that owns the marketing_contacts
+    // rows in production. The marketing tables predate the dashboard's own
+    // auth flow, and using a different user_id here causes the unique
+    // constraint on (user_id, email) to miss, which inserts duplicates on
+    // every sync. See PR #12 for the cleanup. Once the constraint is changed
+    // to (email) only this can become any string.
+    user: { id: 'user_3A4KMEUku7p11snyPMiFv6VsL1Q' },
     marketingContactsDb,
     campaignsDb,
     contactGroupsDb,
