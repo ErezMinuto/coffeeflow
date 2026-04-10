@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>הוסרת מרשימת התפוצה — Minuto</title>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #F5F0EB;
+      font-family: 'Heebo', 'Segoe UI', Arial, Helvetica, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+      text-align: center;
+      padding: 60px 20px;
+      color: #2C3522;
+    }
+    .card {
+      max-width: 520px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 48px 36px;
+      box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
+    }
+    .accent {
+      height: 4px;
+      background: linear-gradient(90deg, #3D4A2E, #7C9A5E, #3D4A2E);
+      border-radius: 4px 4px 0 0;
+      margin: 0 auto 0;
+      max-width: 520px;
+    }
+    h1 { font-size: 26px; font-weight: 800; margin: 0 0 14px; color: #2C3522; }
+    p  { font-size: 16px; line-height: 1.7; color: #4A4A42; margin: 0 0 12px; }
+    .email {
+      display: inline-block;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 600;
+      color: #3D4A2E;
+      direction: ltr;
+      unicode-bidi: embed;
+      margin: 6px 0 18px;
+    }
+    .warn {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #FEF3C7;
+      border: 1px solid #FDE68A;
+      border-radius: 8px;
+      color: #92400E;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 28px;
+      font-size: 13px;
+      color: #888;
+    }
+    .logo {
+      display: block;
+      max-width: 130px;
+      height: auto;
+      margin: 0 auto 18px;
+    }
+    a { color: #3D4A2E; }
+  </style>
+</head>
+<body>
+  <div class="accent"></div>
+  <div class="card">
+    <img class="logo" src="https://minuto.co.il/content/uploads/2025/03/Frame-14.png" alt="Minuto">
+    <h1>הוסרת בהצלחה</h1>
+    <p>הכתובת</p>
+    <div class="email" id="email-line">—</div>
+    <p>הוסרה מרשימת התפוצה של מינוטו.</p>
+    <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
+    <div class="warn" id="warn-box" style="display:none;">
+      ⚠️ הבקשה התקבלה אך עדכון הרשימה החיצונית נכשל — צוות מינוטו יטפל ידנית.
+    </div>
+    <div class="footer">תודה, צוות מינוטו ☕</div>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var email = params.get('email') || '';
+      var status = params.get('status') || 'ok';
+      if (email) {
+        var el = document.getElementById('email-line');
+        el.textContent = email;
+      }
+      if (status !== 'ok') {
+        document.getElementById('warn-box').style.display = 'block';
+      }
+    })();
+  </script>
+</body>
+</html>
