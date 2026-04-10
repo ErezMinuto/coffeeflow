@@ -20,13 +20,64 @@ const THEME_LABELS = {
   education: '📚 חינוך',
 };
 
+// localStorage key used to remember the campaign the user is currently editing
+// so a page refresh drops them back into the editor with the same draft loaded.
+const ACTIVE_DRAFT_KEY = 'coffeeflow:marketing:activeDraftId';
+// Debounce window (ms) between edits and autosave.
+const AUTOSAVE_DEBOUNCE_MS = 1500;
+
+function AutosaveStatus({ saving, dirty, lastSavedAt, onSaveNow, hasDraftId }) {
+  if (!hasDraftId) return null;
+  let label, color, bg, border;
+  if (saving) {
+    label = '⏳ שומר...';
+    color = '#92400E'; bg = '#FEF3C7'; border = '#FDE68A';
+  } else if (dirty) {
+    label = '✏️ שינויים לא שמורים';
+    color = '#92400E'; bg = '#FEF3C7'; border = '#FDE68A';
+  } else if (lastSavedAt) {
+    label = '✅ נשמר אוטומטית';
+    color = '#065F46'; bg = '#DCFCE7'; border = '#BBF7D0';
+  } else {
+    label = '💾 שמירה אוטומטית פעילה';
+    color = '#3D4A2E'; bg = '#F0FDF4'; border = '#BBF7D0';
+  }
+  return (
+    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+      <span style={{
+        background: bg, border: `1px solid ${border}`, color,
+        padding: '4px 12px', borderRadius: '12px',
+        fontSize: '0.78rem', fontWeight: 600, direction: 'rtl',
+      }}>
+        {label}
+      </span>
+      {dirty && !saving && (
+        <button
+          onClick={onSaveNow}
+          className="btn-small"
+          style={{ fontSize: '0.75rem', padding: '3px 10px' }}
+          title="שמור עכשיו בלי להמתין"
+        >
+          שמור עכשיו
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Marketing() {
   const { data, user, showToast, marketingContactsDb, campaignsDb } = useApp();
   const [activeTab, setActiveTab] = useState('compose');
   const [duplicateData, setDuplicateData] = useState(null);
+  const [editData, setEditData] = useState(null);
 
   const handleDuplicate = (campaign) => {
     setDuplicateData(campaign);
+    setActiveTab('compose');
+  };
+
+  const handleEdit = (campaign) => {
+    setEditData(campaign);
     setActiveTab('compose');
   };
 
@@ -47,17 +98,17 @@ export default function Marketing() {
         ))}
       </div>
 
-      {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} />}
+      {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} editData={editData} clearEdit={() => setEditData(null)} />}
       {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
       {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
-      {activeTab === 'history'     && <HistoryTab data={data} user={user} showToast={showToast} onDuplicate={handleDuplicate} />}
+      {activeTab === 'history'     && <HistoryTab data={data} user={user} showToast={showToast} onDuplicate={handleDuplicate} onEdit={handleEdit} />}
     </div>
   );
 }
 
 // ── Auto Compose Tab (AI-powered one-click) ─────────────────────────────────
 
-function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }) {
+function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, editData, clearEdit }) {
   const [step, setStep]                 = useState('idle'); // idle | ideas | generating | draft | sending | sent
   const [hint, setHint]                 = useState('');
   const [ideas, setIdeas]               = useState([]);
@@ -65,6 +116,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   const [draft, setDraft]               = useState(null);
   const [editSubject, setEditSubject]   = useState('');
   const [editBody, setEditBody]         = useState('');
+  const [editCtaText, setEditCtaText]   = useState('');
+  const [editCtaUrl, setEditCtaUrl]     = useState('');
   const [testEmail, setTestEmail]       = useState('');
   const [syncing, setSyncing]           = useState(false);
   const [showContext, setShowContext]    = useState(false);
@@ -81,6 +134,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
   const [selectedContacts, setSelectedContacts] = useState([]);  // [{email, name}]
   const [sendMode, setSendMode]          = useState('all'); // 'all' | 'selected'
   const [showSendConfirm, setShowSendConfirm] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const genProgress   = useAnimatedProgress(step === 'generating', 18);
   const ideasProgress = useAnimatedProgress(ideasLoading, 8);
   const syncProgress  = useAnimatedProgress(syncing, 12);
@@ -105,6 +159,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
         setEditBody(result.campaign.body);
         setEditPreheader(result.campaign.preheader || '');
         setEditGreeting(result.campaign.greeting || '');
+        setEditCtaText(result.campaign.ctaText || '');
+        setEditCtaUrl(result.campaign.ctaUrl || '');
         setDirty(false);
         setStep('draft');
       } catch (err) {
@@ -113,11 +169,15 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
         setEditBody(duplicateData.message || '');
         setEditPreheader(duplicateData.preheader || '');
         setEditGreeting('');
+        setEditCtaText(duplicateData.cta_text || '');
+        setEditCtaUrl(duplicateData.cta_url || '');
         setDraft({
           id: null,
           subject: duplicateData.subject,
           body: duplicateData.message,
           htmlContent: duplicateData.html_content || '',
+          ctaText: duplicateData.cta_text || '',
+          ctaUrl: duplicateData.cta_url || '',
           products: [],
         });
         setDirty(true);
@@ -178,6 +238,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
       setEditBody(result.campaign.body);
       setEditPreheader(result.campaign.preheader || '');
       setEditGreeting(result.campaign.greeting || '');
+      setEditCtaText(result.campaign.ctaText || '');
+      setEditCtaUrl(result.campaign.ctaUrl || '');
       setDirty(false);
       setStep('draft');
     } catch (err) {
@@ -201,6 +263,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
       setEditBody(result.campaign.body);
       setEditPreheader(result.campaign.preheader || '');
       setEditGreeting(result.campaign.greeting || '');
+      setEditCtaText(result.campaign.ctaText || '');
+      setEditCtaUrl(result.campaign.ctaUrl || '');
       setDirty(false);
       setStep('draft');
     } catch (err) {
@@ -213,11 +277,110 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
     setDraft(null);
     setDirty(false);
     setStep('idle');
+    try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
   };
 
-  // Save edits — calls update-draft to rebuild HTML with current edits
-  const saveEdits = async () => {
-    if (!draft) return;
+  // Fetch products for a campaign row, then populate the editor state in one place.
+  // Shared by: history-edit (editData), resume-on-refresh.
+  const loadCampaignIntoEditor = async (campaign) => {
+    let products = [];
+    const ids = (campaign.product_ids || []).map(String);
+    if (ids.length) {
+      const { data: prods } = await supabase
+        .from('woo_products')
+        .select('woo_id, name, price, image_url, permalink, regular_price, sale_price, short_description')
+        .eq('user_id', user.id)
+        .in('woo_id', ids);
+      if (prods) {
+        // Preserve the original order from product_ids
+        const byId = new Map(prods.map(p => [String(p.woo_id), p]));
+        products = ids.map(id => byId.get(id)).filter(Boolean);
+      }
+    }
+    setDraft({
+      id: campaign.id,
+      subject: campaign.subject || '',
+      preheader: campaign.preheader || '',
+      greeting: '',
+      body: campaign.message || '',
+      ctaText: campaign.cta_text || '',
+      ctaUrl: campaign.cta_url || '',
+      htmlContent: campaign.html_content || '',
+      products,
+      theme: campaign.campaign_type || null,
+    });
+    setEditSubject(campaign.subject || '');
+    setEditBody(campaign.message || '');
+    setEditPreheader(campaign.preheader || '');
+    setEditGreeting('');
+    setEditCtaText(campaign.cta_text || '');
+    setEditCtaUrl(campaign.cta_url || '');
+    setDirty(false);
+    setStep('draft');
+  };
+
+  // Load an existing campaign from history directly into the editor (no AI call)
+  useEffect(() => {
+    if (!editData) return;
+    (async () => {
+      try {
+        await loadCampaignIntoEditor(editData);
+      } catch (err) {
+        showToast(`❌ שגיאה בטעינת הקמפיין: ${err.message}`, 'error');
+      }
+      clearEdit();
+    })();
+  }, [editData]);
+
+  // Resume-on-refresh: on first mount, if there's a remembered draft id,
+  // reload it so a page refresh lands the user back in the editor.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    let savedId;
+    try { savedId = localStorage.getItem(ACTIVE_DRAFT_KEY); } catch { return; }
+    if (!savedId) return;
+    (async () => {
+      try {
+        const { data: campaign, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', Number(savedId))
+          .eq('user_id', user.id)
+          .eq('status', 'draft')
+          .maybeSingle();
+        if (error || !campaign) {
+          try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
+          return;
+        }
+        await loadCampaignIntoEditor(campaign);
+      } catch {
+        try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
+      }
+    })();
+  }, []);
+
+  // Remember the active draft id so refresh can resume the editor.
+  useEffect(() => {
+    if (!draft?.id) return;
+    try { localStorage.setItem(ACTIVE_DRAFT_KEY, String(draft.id)); } catch {}
+  }, [draft?.id]);
+
+  // Ref guard against concurrent saves (manual + autosave race).
+  const savingLockRef = useRef(false);
+
+  // Save edits — calls update-draft to rebuild HTML with current edits.
+  // `isAuto` suppresses the toast for silent autosaves.
+  const saveEdits = async (isAuto = false) => {
+    if (!draft || !draft.id) return;
+    if (savingLockRef.current) {
+      // Another save is in flight; mark dirty so the autosave effect re-queues
+      // once it finishes.
+      if (!isAuto) showToast('⏳ עוד שמירה מתבצעת — נסה שוב בעוד רגע', 'warning');
+      return;
+    }
+    savingLockRef.current = true;
     setSaving(true);
     try {
       const result = await callCampaignFunction(supabase, 'update-draft', {
@@ -227,23 +390,62 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
         body: editBody,
         preheader: editPreheader,
         greeting: editGreeting,
-        bannerUrl: draft.bannerUrl || null,
-        ctaText: draft.ctaText,
-        ctaUrl: draft.ctaUrl,
+        // bannerUrl intentionally omitted — backend preserves it from stored HTML
+        ctaText: editCtaText,
+        ctaUrl: editCtaUrl,
         products: draft.products || [],
         promoDeadline: promoDeadline || null,
       });
-      if (result.htmlContent) {
-        setDraft(prev => ({ ...prev, htmlContent: result.htmlContent, subject: editSubject, body: editBody, preheader: editPreheader, greeting: editGreeting }));
+      if (result?.htmlContent) {
+        setDraft(prev => ({
+          ...prev,
+          htmlContent: result.htmlContent,
+          subject: editSubject,
+          body: editBody,
+          preheader: editPreheader,
+          greeting: editGreeting,
+          ctaText: editCtaText,
+          ctaUrl: editCtaUrl,
+        }));
         setDirty(false);
-        showToast('✅ השינויים נשמרו');
+        setLastSavedAt(Date.now());
+        if (!isAuto) showToast('✅ השינויים נשמרו');
+      } else if (result?.error) {
+        throw new Error(result.error);
       }
     } catch (err) {
-      showToast(`❌ שגיאה בשמירה: ${err.message}`, 'error');
+      console.error('saveEdits failed:', err);
+      const msg = err?.message || 'שגיאה לא ידועה';
+      showToast(`❌ שגיאה בשמירה: ${msg}`, 'error');
     } finally {
+      savingLockRef.current = false;
       setSaving(false);
     }
   };
+
+  // Keep a stable ref to the latest saveEdits so the autosave timer
+  // always calls the latest closure (with latest state) without being in deps.
+  const saveEditsRef = useRef(saveEdits);
+  saveEditsRef.current = saveEdits;
+
+  // Debounced autosave — fires AUTOSAVE_DEBOUNCE_MS after the last edit.
+  useEffect(() => {
+    if (!draft?.id || !dirty || saving) return;
+    const timer = setTimeout(() => { saveEditsRef.current(true); }, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [
+    dirty,
+    saving,
+    draft?.id,
+    editSubject,
+    editBody,
+    editPreheader,
+    editGreeting,
+    editCtaText,
+    editCtaUrl,
+    promoDeadline,
+    draft?.products,
+  ]);
 
   // Mark dirty when any field changes
   const onFieldChange = (setter) => (e) => {
@@ -587,7 +789,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
           <p style={{ color: '#666', marginBottom: '24px' }}>
             המייל נשלח ל-{optedInCount} נמענים
           </p>
-          <button onClick={() => { setDraft(null); setStep('idle'); setHint(''); }} className="btn-primary">
+          <button onClick={() => {
+            setDraft(null); setStep('idle'); setHint('');
+            try { localStorage.removeItem(ACTIVE_DRAFT_KEY); } catch {}
+          }} className="btn-primary">
             צור קמפיין חדש
           </button>
         </div>
@@ -610,16 +815,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
               {THEME_LABELS[draft.theme] || draft.theme}
             </span>
           )}
-          {dirty && (
-            <button
-              onClick={saveEdits}
-              disabled={saving}
-              className="btn-primary"
-              style={{ fontSize: '0.85rem', padding: '6px 16px', animation: 'pulse 2s infinite' }}
-            >
-              {saving ? '⏳ שומר...' : '💾 שמור שינויים'}
-            </button>
-          )}
+          <AutosaveStatus saving={saving} dirty={dirty} lastSavedAt={lastSavedAt} onSaveNow={() => saveEdits(false)} hasDraftId={!!draft?.id} />
           <button onClick={regenerate} className="btn-small">🔄 צור מחדש</button>
         </div>
       </div>
@@ -685,6 +881,36 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
             </p>
           )}
         </div>
+      </div>
+
+      {/* CTA button — text + link */}
+      <div className="form-card" style={{ marginBottom: '12px' }}>
+        <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>🔘 כפתור פעולה (CTA)</label>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="form-group" style={{ flex: '1 1 180px', marginBottom: 0 }}>
+            <label style={{ fontSize: '0.8rem', color: '#888' }}>טקסט הכפתור</label>
+            <input
+              type="text"
+              value={editCtaText}
+              onChange={onFieldChange(setEditCtaText)}
+              placeholder="לחנות"
+              style={{ fontSize: '0.9rem', direction: 'rtl' }}
+            />
+          </div>
+          <div className="form-group" style={{ flex: '2 1 280px', marginBottom: 0 }}>
+            <label style={{ fontSize: '0.8rem', color: '#888' }}>קישור</label>
+            <input
+              type="url"
+              value={editCtaUrl}
+              onChange={onFieldChange(setEditCtaUrl)}
+              placeholder="https://minuto.co.il/shop"
+              style={{ fontSize: '0.9rem', direction: 'ltr', fontFamily: 'monospace' }}
+            />
+          </div>
+        </div>
+        <p style={{ fontSize: '0.75rem', color: '#888', margin: '6px 0 0' }}>
+          השאר ריק כדי להסתיר את הכפתור. שמור שינויים כדי לעדכן את התצוגה.
+        </p>
       </div>
 
       {/* Products — with add/remove */}
@@ -785,19 +1011,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate }
         </div>
       </div>
 
-      {/* Save reminder + Preview */}
-      {dirty && (
-        <div style={{
-          background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '8px',
-          padding: '10px 14px', marginBottom: '12px', fontSize: '0.85rem',
-          color: '#92400E', direction: 'rtl', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span>⚠️ יש שינויים שלא נשמרו. שמור כדי לעדכן את התצוגה המקדימה.</span>
-          <button onClick={saveEdits} disabled={saving} className="btn-primary" style={{ fontSize: '0.8rem', padding: '4px 14px' }}>
-            {saving ? '⏳' : '💾'} שמור
-          </button>
-        </div>
-      )}
+      {/* Preview updates automatically after autosave. No banner needed. */}
 
       <div className="form-card" style={{ marginBottom: '12px' }}>
         <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>👁️ תצוגה מקדימה</label>
@@ -1496,7 +1710,7 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
 
 // ── History Tab ─────────────────────────────────────────────────────────────
 
-function HistoryTab({ data, user, showToast, onDuplicate }) {
+function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
   const [expandedId, setExpandedId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -1711,7 +1925,7 @@ function HistoryTab({ data, user, showToast, onDuplicate }) {
                     </button>
                     {c.status === 'draft' && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDuplicate(c); }}
+                        onClick={(e) => { e.stopPropagation(); onEdit(c); }}
                         className="btn-small"
                         style={{ fontSize: '0.85rem' }}
                       >
