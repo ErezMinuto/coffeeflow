@@ -1362,6 +1362,76 @@ async function handleSendCampaign(p: SendCampaignPayload) {
 
 // ── Unsubscribe Handler ─────────────────────────────────────────────────────
 
+// Mark a contact as unsubscribed in Resend (source of truth for the list).
+// Tries PATCH by-email first (the stable, documented shape), then falls back
+// to looking up the contact id and patching by id.
+async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?: string }> {
+  if (!RESEND_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
+  if (!RESEND_AUDIENCE_ID) return { ok: false, error: "RESEND_AUDIENCE_ID not configured" };
+  const normalized = email.toLowerCase().trim();
+
+  // Attempt 1: PATCH directly by email
+  try {
+    const res = await fetch(
+      `https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts/${encodeURIComponent(normalized)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${RESEND_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ unsubscribed: true }),
+      },
+    );
+    if (res.ok) return { ok: true };
+    const body = await res.text().catch(() => "");
+    console.warn("Resend PATCH by-email failed:", res.status, body.slice(0, 200));
+  } catch (e: any) {
+    console.warn("Resend PATCH by-email threw:", e?.message);
+  }
+
+  // Attempt 2: paginate the audience to find the contact id, then PATCH by id
+  try {
+    let after: string | null = null;
+    for (let page = 0; page < 50; page++) {
+      const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
+      url.searchParams.set("limit", "100");
+      if (after) url.searchParams.set("after", after);
+      const listRes = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${RESEND_KEY}` },
+      });
+      if (!listRes.ok) {
+        return { ok: false, error: `Resend list failed: ${listRes.status}` };
+      }
+      const listJson = await listRes.json();
+      const contacts: any[] = listJson.data || [];
+      const hit = contacts.find((c: any) => (c.email || "").toLowerCase() === normalized);
+      if (hit?.id) {
+        const patchRes = await fetch(
+          `https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts/${hit.id}`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${RESEND_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ unsubscribed: true }),
+          },
+        );
+        if (patchRes.ok) return { ok: true };
+        const body = await patchRes.text().catch(() => "");
+        return { ok: false, error: `Resend PATCH by-id failed: ${patchRes.status} ${body.slice(0, 200)}` };
+      }
+      if (contacts.length < 100) break;
+      after = contacts[contacts.length - 1]?.id || null;
+      if (!after) break;
+    }
+    return { ok: false, error: "Contact not found in Resend audience" };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "unknown Resend error" };
+  }
+}
+
 async function handleUnsubscribe(url: URL): Promise<Response> {
   const email = url.searchParams.get("email");
   const token = url.searchParams.get("token");
@@ -1372,15 +1442,32 @@ async function handleUnsubscribe(url: URL): Promise<Response> {
     });
   }
 
+  const normalized = email.toLowerCase().trim();
+
+  // 1. Resend is the source of truth for the list — unsubscribe there first.
+  const resendResult = await unsubscribeInResend(normalized);
+  if (!resendResult.ok) {
+    console.error("handleUnsubscribe: Resend unsubscribe failed for", normalized, "-", resendResult.error);
+  }
+
+  // 2. Mirror to marketing_contacts so the current send-filter (which still
+  //    reads from Supabase) immediately stops including this address.
   await supabase
     .from("marketing_contacts")
     .update({ opted_in: false, updated_at: new Date().toISOString() })
-    .eq("email", email.toLowerCase().trim());
+    .eq("email", normalized);
+
+  // Surface a gentle warning if Resend rejected the update — the user is still
+  // shown success because we removed them locally, but ops will see it in logs.
+  const note = resendResult.ok
+    ? ""
+    : `<p style="margin-top:16px;color:#B45309;font-size:13px;">שים לב: ההסרה נרשמה במערכת אך לא הצלחנו לעדכן את הרשימה החיצונית — צוות מינוטו יטפל באופן ידני.</p>`;
 
   return new Response(
     htmlPage("הוסרת בהצלחה",
       `<p>הכתובת <strong>${escapeHtml(email)}</strong> הוסרה מרשימת התפוצה של מינוטו.</p>
        <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
+       ${note}
        <p style="margin-top:24px;color:#888;font-size:14px;">תודה, צוות מינוטו ☕</p>`),
     { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
   );
