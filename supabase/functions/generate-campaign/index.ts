@@ -1381,26 +1381,26 @@ async function handleSendCampaign(p: SendCampaignPayload) {
 // ── Unsubscribe Handler ─────────────────────────────────────────────────────
 
 // Mark a contact as unsubscribed in Resend (source of truth for the list).
-// Tries PATCH by-email first (the stable, documented shape), then falls back
-// to looking up the contact id and patching by id.
+//
+// IMPORTANT: Resend's contact update endpoint is TOP-LEVEL `/contacts/{email}`,
+// NOT the audience-nested `/audiences/{aid}/contacts/{email}` path. The nested
+// one returns 404 even for contacts that exist in that audience. The top-level
+// path accepts either a contact ID or an email string and resolves across all
+// audiences the API key has access to.
 //
 // Return shape:
-//   { ok: true }                        — actually patched, or never on list
-//   { ok: false, error, notFound?: true } — Resend API genuinely failed
+//   { ok: true }                         — patched, or genuinely not found
+//   { ok: false, error }                 — Resend API failure (401/500/network)
 //
-// "Not on the list" is treated as success because the desired end state
-// (recipient not receiving mail) is already true. We don't want to scare
-// the user with a warning just because they tested with a random address.
+// "Not found" is treated as success because the desired end state ("recipient
+// won't get mail") is already true.
 async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?: string; notFound?: boolean }> {
   if (!RESEND_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
-  if (!RESEND_AUDIENCE_ID) return { ok: false, error: "RESEND_AUDIENCE_ID not configured" };
   const normalized = email.toLowerCase().trim();
 
-  // Attempt 1: PATCH directly by email
-  let byEmailStatus: number | null = null;
   try {
     const res = await fetch(
-      `https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts/${encodeURIComponent(normalized)}`,
+      `https://api.resend.com/contacts/${encodeURIComponent(normalized)}`,
       {
         method: "PATCH",
         headers: {
@@ -1410,56 +1410,21 @@ async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?
         body: JSON.stringify({ unsubscribed: true }),
       },
     );
-    if (res.ok) return { ok: true };
-    byEmailStatus = res.status;
-    const body = await res.text().catch(() => "");
-    console.warn("Resend PATCH by-email failed:", res.status, body.slice(0, 200));
-  } catch (e: any) {
-    console.warn("Resend PATCH by-email threw:", e?.message);
-  }
-
-  // Attempt 2: paginate the audience to find the contact id, then PATCH by id
-  try {
-    let after: string | null = null;
-    for (let page = 0; page < 50; page++) {
-      const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
-      url.searchParams.set("limit", "100");
-      if (after) url.searchParams.set("after", after);
-      const listRes = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${RESEND_KEY}` },
-      });
-      if (!listRes.ok) {
-        return { ok: false, error: `Resend list failed: ${listRes.status}` };
-      }
-      const listJson = await listRes.json();
-      const contacts: any[] = listJson.data || [];
-      const hit = contacts.find((c: any) => (c.email || "").toLowerCase() === normalized);
-      if (hit?.id) {
-        const patchRes = await fetch(
-          `https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts/${hit.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${RESEND_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ unsubscribed: true }),
-          },
-        );
-        if (patchRes.ok) return { ok: true };
-        const body = await patchRes.text().catch(() => "");
-        return { ok: false, error: `Resend PATCH by-id failed: ${patchRes.status} ${body.slice(0, 200)}` };
-      }
-      if (contacts.length < 100) break;
-      after = contacts[contacts.length - 1]?.id || null;
-      if (!after) break;
+    if (res.ok) {
+      console.log("unsubscribeInResend:ok", normalized);
+      return { ok: true };
     }
-    // We walked the whole audience and the email isn't there. That's not a
-    // failure — the recipient was never on the list, so "unsubscribed" is
-    // the current state. Treat as success but flag it so callers can log.
-    console.log("unsubscribeInResend: contact not in audience, treating as success:", normalized);
-    return { ok: true, notFound: true };
+    if (res.status === 404) {
+      // Contact isn't in any audience we have access to — already in the
+      // desired state ("not receiving mail").
+      console.log("unsubscribeInResend: not found, treating as success:", normalized);
+      return { ok: true, notFound: true };
+    }
+    const body = await res.text().catch(() => "");
+    console.error("unsubscribeInResend: Resend PATCH failed:", res.status, body.slice(0, 200));
+    return { ok: false, error: `Resend PATCH failed: ${res.status} ${body.slice(0, 120)}` };
   } catch (e: any) {
+    console.error("unsubscribeInResend: fetch threw:", e?.message);
     return { ok: false, error: e?.message || "unknown Resend error" };
   }
 }
