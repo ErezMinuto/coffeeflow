@@ -9,6 +9,7 @@ const TABS = [
   { id: 'compose',     label: '🚀 קמפיין אוטומטי' },
   { id: 'automations', label: '⚡ אוטומציות' },
   { id: 'contacts',    label: '👥 אנשי קשר' },
+  { id: 'groups',      label: '🗂️ קבוצות' },
   { id: 'history',     label: '📊 היסטוריה' },
 ];
 
@@ -66,7 +67,7 @@ function AutosaveStatus({ saving, dirty, lastSavedAt, onSaveNow, hasDraftId }) {
 }
 
 export default function Marketing() {
-  const { data, user, showToast, marketingContactsDb, campaignsDb } = useApp();
+  const { data, user, showToast, marketingContactsDb, campaignsDb, contactGroupsDb, contactGroupMembersDb } = useApp();
   const [activeTab, setActiveTab] = useState('compose');
   const [duplicateData, setDuplicateData] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -101,6 +102,7 @@ export default function Marketing() {
       {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} editData={editData} clearEdit={() => setEditData(null)} />}
       {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
       {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
+      {activeTab === 'groups'      && <GroupsTab data={data} showToast={showToast} contactGroupsDb={contactGroupsDb} contactGroupMembersDb={contactGroupMembersDb} />}
       {activeTab === 'history'     && <HistoryTab data={data} user={user} showToast={showToast} onDuplicate={handleDuplicate} onEdit={handleEdit} />}
     </div>
   );
@@ -132,7 +134,8 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
   const [selectedContacts, setSelectedContacts] = useState([]);  // [{email, name}]
-  const [sendMode, setSendMode]          = useState('all'); // 'all' | 'selected'
+  const [sendMode, setSendMode]          = useState('all'); // 'all' | 'selected' | 'group'
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const genProgress   = useAnimatedProgress(step === 'generating', 18);
@@ -140,6 +143,22 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
   const syncProgress  = useAnimatedProgress(syncing, 12);
 
   const optedInCount = (data.marketingContacts || []).filter(c => c.opted_in).length;
+
+  // Members of any group flagged as is_test_group — deduplicated by email.
+  // Powers the one-click "send to test group" button next to the test email input.
+  const testGroupMembers = useMemo(() => {
+    const testGroupIds = new Set(
+      (data.contactGroups || []).filter(g => g.is_test_group).map(g => g.id)
+    );
+    const byEmail = new Map();
+    for (const m of data.contactGroupMembers || []) {
+      if (!testGroupIds.has(m.group_id)) continue;
+      const email = (m.email || '').toLowerCase().trim();
+      if (!email) continue;
+      if (!byEmail.has(email)) byEmail.set(email, { email, name: m.name || undefined });
+    }
+    return Array.from(byEmail.values());
+  }, [data.contactGroups, data.contactGroupMembers]);
 
   // Handle duplicate campaign data arriving from history tab
   useEffect(() => {
@@ -527,9 +546,20 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
   };
 
   const sendCampaign = () => {
-    const recipientCount = sendMode === 'selected' ? selectedContacts.length : optedInCount;
+    // Recipient count depends on send mode:
+    //   all      → every opted-in contact
+    //   selected → manually picked contacts
+    //   group    → all members of the chosen group (already mirrored into selectedContacts)
+    const recipientCount = (sendMode === 'selected' || sendMode === 'group')
+      ? selectedContacts.length
+      : optedInCount;
     if (recipientCount === 0) {
-      showToast(sendMode === 'selected' ? '⚠️ לא נבחרו נמענים' : '⚠️ אין אנשי קשר שאישרו קבלת מיילים', 'warning');
+      const msg = sendMode === 'group'
+        ? '⚠️ לא נבחרה קבוצה או שהקבוצה ריקה'
+        : sendMode === 'selected'
+          ? '⚠️ לא נבחרו נמענים'
+          : '⚠️ אין אנשי קשר שאישרו קבלת מיילים';
+      showToast(msg, 'warning');
       return;
     }
     setShowSendConfirm(true);
@@ -543,7 +573,9 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         userId: user.id,
         campaignId: draft.id,
       };
-      if (sendMode === 'selected' && selectedContacts.length > 0) {
+      // Both 'selected' and 'group' ride the same selectedRecipients backend
+      // path — 'group' just pre-populates selectedContacts from a saved group.
+      if ((sendMode === 'selected' || sendMode === 'group') && selectedContacts.length > 0) {
         payload.selectedRecipients = selectedContacts;
       }
       const result = await callCampaignFunction(supabase, 'send-campaign', payload);
@@ -551,6 +583,37 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       setStep('sent');
     } catch (err) {
       showToast(`❌ שגיאה בשליחה: ${err.message}`, 'error');
+      setStep('draft');
+    }
+  };
+
+  // One-click send to every member of every test-flagged group.
+  // Uses the same selectedRecipients backend path as manual/group sends.
+  const sendToTestGroups = async () => {
+    if (!draft?.id) return;
+    if (testGroupMembers.length === 0) {
+      showToast('⚠️ אין חברים בקבוצות הבדיקה', 'warning');
+      return;
+    }
+    if (!window.confirm(`לשלוח את הקמפיין ל-${testGroupMembers.length} חברי קבוצת הבדיקה?`)) return;
+    setStep('sending');
+    try {
+      const result = await callCampaignFunction(supabase, 'send-campaign', {
+        userId: user.id,
+        campaignId: draft.id,
+        selectedRecipients: testGroupMembers,
+      });
+      if (result && result.sent > 0) {
+        showToast(`✅ נשלח ל-${result.sent} חברי קבוצת בדיקה!`);
+      } else {
+        const firstErr = Array.isArray(result?.errors) && result.errors.length > 0
+          ? result.errors[0]
+          : 'Resend rejected the send (no details)';
+        showToast(`❌ שליחה לקבוצת בדיקה נכשלה: ${firstErr}`, 'error');
+      }
+      setStep('draft');
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err?.message || 'unknown'}`, 'error');
       setStep('draft');
     }
   };
@@ -1036,13 +1099,13 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
       {/* Actions */}
       <div className="form-card">
         {/* Test send */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <input
             type="email"
             placeholder="מייל לטסט (שלך)"
             value={testEmail}
             onChange={e => setTestEmail(e.target.value)}
-            style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.9rem' }}
+            style={{ flex: '1 1 200px', fontFamily: 'monospace', fontSize: '0.9rem' }}
           />
           <button
             onClick={sendTest}
@@ -1052,28 +1115,106 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
           >
             {step === 'sending' ? '⏳' : '📧'} שלח טסט
           </button>
+          {/* One-click: send draft to every member of every test-flagged group */}
+          {testGroupMembers.length > 0 && (
+            <button
+              onClick={sendToTestGroups}
+              disabled={step === 'sending'}
+              className="btn-small"
+              style={{ whiteSpace: 'nowrap', background: '#FEF3C7', borderColor: '#FDE68A', color: '#92400E' }}
+              title={`שליחה לקבוצות הבדיקה (${testGroupMembers.length} נמענים)`}
+            >
+              🧪 שלח לקבוצת בדיקה ({testGroupMembers.length})
+            </button>
+          )}
         </div>
 
         {/* Send mode toggle */}
         <div style={{ marginBottom: '12px' }}>
           <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>📬 שלח אל:</label>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
-              onClick={() => { setSendMode('all'); setShowContactPicker(false); }}
+              onClick={() => { setSendMode('all'); setShowContactPicker(false); setSelectedGroupId(null); }}
               className={sendMode === 'all' ? 'btn-primary' : 'btn-small'}
               style={{ fontSize: '0.85rem', padding: '6px 16px' }}
             >
               כל הנמענים ({optedInCount})
             </button>
             <button
-              onClick={() => { setSendMode('selected'); setShowContactPicker(true); }}
+              onClick={() => { setSendMode('group'); setShowContactPicker(false); }}
+              className={sendMode === 'group' ? 'btn-primary' : 'btn-small'}
+              style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+            >
+              קבוצה {selectedGroupId ? `(${selectedContacts.length})` : ''}
+            </button>
+            <button
+              onClick={() => { setSendMode('selected'); setShowContactPicker(true); setSelectedGroupId(null); }}
               className={sendMode === 'selected' ? 'btn-primary' : 'btn-small'}
               style={{ fontSize: '0.85rem', padding: '6px 16px' }}
             >
-              בחירה ידנית {selectedContacts.length > 0 ? `(${selectedContacts.length})` : ''}
+              בחירה ידנית {sendMode === 'selected' && selectedContacts.length > 0 ? `(${selectedContacts.length})` : ''}
             </button>
           </div>
         </div>
+
+        {/* Group picker */}
+        {sendMode === 'group' && (
+          <div style={{
+            border: '1px solid #D4E8C2', borderRadius: '10px', padding: '12px',
+            marginBottom: '12px', background: '#FAFFF5',
+          }}>
+            {(data.contactGroups || []).length === 0 ? (
+              <div style={{ color: '#888', fontSize: '0.85rem', textAlign: 'center', padding: '8px' }}>
+                אין קבוצות עדיין. צור קבוצה בלשונית "קבוצות" מעל.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {(data.contactGroups || []).map(g => {
+                  const count = (data.contactGroupMembers || []).filter(m => m.group_id === g.id).length;
+                  const isSelected = selectedGroupId === g.id;
+                  return (
+                    <label
+                      key={g.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
+                        borderRadius: '8px', cursor: 'pointer', direction: 'rtl',
+                        background: isSelected ? '#F0FDF4' : '#FFFFFF',
+                        border: isSelected ? '1px solid #86EFAC' : '1px solid #E8E8E0',
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="group-pick"
+                        checked={isSelected}
+                        onChange={() => {
+                          setSelectedGroupId(g.id);
+                          const members = (data.contactGroupMembers || [])
+                            .filter(m => m.group_id === g.id)
+                            .map(m => ({ email: m.email, name: m.name || undefined }));
+                          setSelectedContacts(members);
+                        }}
+                        style={{ accentColor: '#3D4A2E' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2C3522' }}>{g.name}</span>
+                        {g.is_test_group && (
+                          <span style={{
+                            marginRight: '6px', background: '#FEF3C7', color: '#92400E',
+                            border: '1px solid #FDE68A', borderRadius: '10px', padding: '1px 8px',
+                            fontSize: '0.7rem', fontWeight: 600,
+                          }}>🧪 בדיקה</span>
+                        )}
+                        <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                          {count} חברים {g.description ? `• ${g.description}` : ''}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Contact picker */}
         {showContactPicker && (
@@ -1165,9 +1306,11 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         >
           {step === 'sending'
             ? '⏳ שולח...'
-            : sendMode === 'selected'
-              ? `✅ שלח ל-${selectedContacts.length} נמענים שנבחרו`
-              : `✅ אשר ושלח ל-${optedInCount} נמענים`
+            : sendMode === 'group'
+              ? `✅ שלח לקבוצה (${selectedContacts.length} חברים)`
+              : sendMode === 'selected'
+                ? `✅ שלח ל-${selectedContacts.length} נמענים שנבחרו`
+                : `✅ אשר ושלח ל-${optedInCount} נמענים`
           }
         </button>
       </div>
@@ -1212,7 +1355,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
               ) : (
                 <>
                   <p style={{ margin: '0 0 8px', fontSize: '1rem', color: '#1E3A8A' }}>
-                    <strong>{selectedContacts.length}</strong> נמענים שנבחרו ידנית
+                    <strong>{selectedContacts.length}</strong>
+                    {sendMode === 'group'
+                      ? ` חברים בקבוצה "${(data.contactGroups || []).find(g => g.id === selectedGroupId)?.name || ''}"`
+                      : ' נמענים שנבחרו ידנית'}
                   </p>
                   {selectedContacts.slice(0, 5).map((c, i) => (
                     <div key={i} style={{ fontSize: '0.82rem', color: '#3B82F6', marginTop: '2px' }}>
@@ -1369,6 +1515,49 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
   const [importingFlashy, setImportingFlashy] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactName, setNewContactName] = useState('');
+  const [addingContact, setAddingContact] = useState(false);
+
+  const addManualContact = async () => {
+    const email = newContactEmail.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      showToast('⚠️ כתובת מייל לא תקינה', 'warning');
+      return;
+    }
+    setAddingContact(true);
+    try {
+      // 1. Push to Resend (source of truth) — uses the existing subscribe action
+      await callCampaignFunction(supabase, 'subscribe', {
+        email,
+        name: newContactName.trim() || undefined,
+        userId: user.id,
+      });
+      // 2. Mirror immediately into Supabase so the UI shows it without waiting
+      //    for the next full sync.
+      try {
+        await marketingContactsDb.insert({
+          email,
+          name: newContactName.trim() || null,
+          opted_in: true,
+          source: 'manual',
+        });
+      } catch (mirrorErr) {
+        // Likely a unique constraint hit — already in marketing_contacts.
+        // Not fatal; Resend has it now and the next sync will reconcile.
+        console.warn('mirror insert skipped:', mirrorErr?.message);
+      }
+      showToast(`✅ נוסף ${email}`);
+      setNewContactEmail('');
+      setNewContactName('');
+      setShowAddForm(false);
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err?.message || 'unknown'}`, 'error');
+    } finally {
+      setAddingContact(false);
+    }
+  };
   // Contacts synced from Resend (read-only cache in Supabase)
   const contacts = data.marketingContacts || [];
   const optedIn  = contacts.filter(c => c.opted_in).length;
@@ -1609,7 +1798,10 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-        <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-primary" style={{ fontSize: '0.85rem' }}>
+        <button onClick={() => setShowAddForm(v => !v)} className="btn-primary" style={{ fontSize: '0.85rem' }}>
+          {showAddForm ? '✕ סגור' : '➕ הוסף איש קשר'}
+        </button>
+        <button onClick={syncFromResend} disabled={syncingResend || pushingResend} className="btn-small" style={{ fontSize: '0.85rem' }}>
           {syncingResend ? '⏳ מסנכרן...' : '🔄 סנכרן מ-Resend'}
         </button>
         <button onClick={pushAllToResend} disabled={pushingResend || syncingResend} className="btn-small" style={{ fontSize: '0.85rem' }}>
@@ -1631,6 +1823,43 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
           📋 ניהול אנשי קשר ב-Resend
         </a>
       </div>
+
+      {/* Manual add contact form */}
+      {showAddForm && (
+        <div className="form-card" style={{ marginTop: '12px', marginBottom: '12px', background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>➕ הוסף איש קשר ידנית</label>
+          <p style={{ fontSize: '0.78rem', color: '#666', margin: '0 0 10px' }}>
+            יתווסף ל-Resend ולרשימה המקומית מיד. אין צורך בסנכרון.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <input
+              type="email"
+              value={newContactEmail}
+              onChange={e => setNewContactEmail(e.target.value)}
+              placeholder="example@gmail.com"
+              style={{ flex: '2 1 220px', fontFamily: 'monospace', fontSize: '0.9rem', direction: 'ltr' }}
+              onKeyDown={e => { if (e.key === 'Enter') addManualContact(); }}
+              autoFocus
+            />
+            <input
+              type="text"
+              value={newContactName}
+              onChange={e => setNewContactName(e.target.value)}
+              placeholder="שם (אופציונלי)"
+              style={{ flex: '1 1 140px', fontSize: '0.9rem' }}
+              onKeyDown={e => { if (e.key === 'Enter') addManualContact(); }}
+            />
+            <button
+              onClick={addManualContact}
+              disabled={addingContact || !newContactEmail.trim()}
+              className="btn-primary"
+              style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+            >
+              {addingContact ? '⏳ מוסיף...' : '✅ הוסף'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Progress bars for long-running contact ops */}
       {syncingResend && (
@@ -1713,6 +1942,330 @@ function ContactsTab({ data, user, showToast, marketingContactsDb }) {
             ? 'אין אנשי קשר. לחץ "סנכרן מ-Resend" לטעינת הרשימה.'
             : 'אין תוצאות לפילטר הנוכחי.'
           }
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Groups Tab ──────────────────────────────────────────────────────────────
+
+function GroupsTab({ data, showToast, contactGroupsDb, contactGroupMembersDb }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [nameDraft, setNameDraft] = useState('');
+  const [descDraft, setDescDraft] = useState('');
+  const [isTestDraft, setIsTestDraft] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const groups = data.contactGroups || [];
+  const members = data.contactGroupMembers || [];
+  const contacts = data.marketingContacts || [];
+
+  // Member counts per group
+  const countByGroup = new Map();
+  for (const m of members) {
+    countByGroup.set(m.group_id, (countByGroup.get(m.group_id) || 0) + 1);
+  }
+
+  const resetForm = () => {
+    setShowCreate(false);
+    setEditingId(null);
+    setNameDraft('');
+    setDescDraft('');
+    setIsTestDraft(false);
+  };
+
+  const saveGroup = async () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      showToast('⚠️ שם הקבוצה חובה', 'warning');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingId) {
+        await contactGroupsDb.update(editingId, {
+          name: trimmed,
+          description: descDraft.trim() || null,
+          is_test_group: isTestDraft,
+          updated_at: new Date().toISOString(),
+        });
+        showToast('✅ הקבוצה עודכנה');
+      } else {
+        await contactGroupsDb.insert({
+          name: trimmed,
+          description: descDraft.trim() || null,
+          is_test_group: isTestDraft,
+        });
+        showToast('✅ הקבוצה נוצרה');
+      }
+      resetForm();
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteGroup = async (group) => {
+    const memberCount = countByGroup.get(group.id) || 0;
+    const confirmMsg = memberCount > 0
+      ? `למחוק את הקבוצה "${group.name}" ו-${memberCount} חברים?`
+      : `למחוק את הקבוצה "${group.name}"?`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      await contactGroupsDb.remove(group.id);
+      await contactGroupMembersDb.refresh();
+      showToast('🗑️ הקבוצה נמחקה');
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    }
+  };
+
+  const startEdit = (group) => {
+    setEditingId(group.id);
+    setNameDraft(group.name || '');
+    setDescDraft(group.description || '');
+    setIsTestDraft(!!group.is_test_group);
+    setShowCreate(true);
+  };
+
+  return (
+    <div className="section">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ margin: 0 }}>🗂️ קבוצות אנשי קשר</h2>
+        {!showCreate && (
+          <button onClick={() => setShowCreate(true)} className="btn-primary" style={{ fontSize: '0.9rem', padding: '8px 18px' }}>
+            ➕ צור קבוצה
+          </button>
+        )}
+      </div>
+      <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '16px' }}>
+        קבוצות מאפשרות לשלוח קמפיינים לתת-קבוצה של אנשי קשר. סמן קבוצה כ"קבוצת בדיקה" כדי לשלוח אליה בלחיצה אחת מתוך מחולל הקמפיינים.
+      </p>
+
+      {/* Create / edit form */}
+      {showCreate && (
+        <div className="form-card" style={{ marginBottom: '16px', background: '#F9F8F5', border: '1px solid #D4E8C2' }}>
+          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+            {editingId ? '✏️ עריכת קבוצה' : '➕ קבוצה חדשה'}
+          </label>
+          <div className="form-group" style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '0.8rem', color: '#888' }}>שם הקבוצה</label>
+            <input
+              type="text"
+              value={nameDraft}
+              onChange={e => setNameDraft(e.target.value)}
+              placeholder="למשל: לקוחות VIP, צוות בדיקה, בעלי Jura"
+              autoFocus
+            />
+          </div>
+          <div className="form-group" style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '0.8rem', color: '#888' }}>תיאור (אופציונלי)</label>
+            <input
+              type="text"
+              value={descDraft}
+              onChange={e => setDescDraft(e.target.value)}
+              placeholder="למה משמשת הקבוצה"
+            />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: 'pointer', direction: 'rtl' }}>
+            <input
+              type="checkbox"
+              checked={isTestDraft}
+              onChange={e => setIsTestDraft(e.target.checked)}
+              style={{ accentColor: '#3D4A2E' }}
+            />
+            <span style={{ fontSize: '0.9rem' }}>🧪 סמן כקבוצת בדיקה (תופיע כפתור מהיר במחולל הקמפיינים)</span>
+          </label>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+            <button onClick={saveGroup} disabled={saving} className="btn-primary" style={{ fontSize: '0.85rem', padding: '8px 20px' }}>
+              {saving ? '⏳ שומר...' : '💾 שמור'}
+            </button>
+            <button onClick={resetForm} className="btn-small" style={{ fontSize: '0.85rem' }}>ביטול</button>
+          </div>
+        </div>
+      )}
+
+      {/* Groups list */}
+      {groups.length === 0 ? (
+        <div className="empty-state">אין קבוצות עדיין. לחץ "צור קבוצה" כדי להתחיל.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '10px' }}>
+          {groups.map(g => (
+            <GroupRow
+              key={g.id}
+              group={g}
+              memberCount={countByGroup.get(g.id) || 0}
+              members={members.filter(m => m.group_id === g.id)}
+              contacts={contacts}
+              contactGroupMembersDb={contactGroupMembersDb}
+              onEdit={() => startEdit(g)}
+              onDelete={() => deleteGroup(g)}
+              showToast={showToast}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupRow({ group, memberCount, members, contacts, contactGroupMembersDb, onEdit, onDelete, showToast }) {
+  const [expanded, setExpanded] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+
+  const memberEmails = new Set(members.map(m => (m.email || '').toLowerCase()));
+
+  const addContact = async (c) => {
+    const email = (c.email || '').toLowerCase().trim();
+    if (!email || memberEmails.has(email)) return;
+    try {
+      await contactGroupMembersDb.insert({ group_id: group.id, email, name: c.name || null });
+      setMemberSearch('');
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    }
+  };
+
+  const addManualEmail = async () => {
+    const email = manualEmail.toLowerCase().trim();
+    if (!email || !email.includes('@')) {
+      showToast('⚠️ כתובת מייל לא תקינה', 'warning');
+      return;
+    }
+    if (memberEmails.has(email)) {
+      showToast('⚠️ המייל כבר בקבוצה', 'warning');
+      return;
+    }
+    try {
+      await contactGroupMembersDb.insert({ group_id: group.id, email, name: null });
+      setManualEmail('');
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    }
+  };
+
+  const removeMember = async (memberId) => {
+    try {
+      await contactGroupMembersDb.remove(memberId);
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    }
+  };
+
+  return (
+    <div style={{
+      background: '#FFFFFF',
+      border: '1px solid #E8E8E0',
+      borderRadius: '12px',
+      padding: '14px 16px',
+      direction: 'rtl',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ fontWeight: 600, color: '#2C3522', fontSize: '0.95rem' }}>{group.name}</span>
+            {group.is_test_group && (
+              <span style={{
+                background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A',
+                borderRadius: '12px', padding: '2px 10px', fontSize: '0.7rem', fontWeight: 600,
+              }}>🧪 קבוצת בדיקה</span>
+            )}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#888' }}>
+            {memberCount} חברים {group.description ? `• ${group.description}` : ''}
+          </div>
+        </div>
+        <button onClick={() => setExpanded(v => !v)} className="btn-small" style={{ fontSize: '0.8rem' }}>
+          {expanded ? '✕ סגור' : '👥 חברים'}
+        </button>
+        <button onClick={onEdit} className="btn-small" style={{ fontSize: '0.8rem' }}>✏️ ערוך</button>
+        <button onClick={onDelete} className="btn-small" style={{ fontSize: '0.8rem', color: '#991B1B' }}>🗑️</button>
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px dashed #E8E8E0' }}>
+          {/* Current members */}
+          {members.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+              {members.map(m => (
+                <span key={m.id} style={{
+                  background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '16px',
+                  padding: '3px 10px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  direction: 'ltr',
+                }}>
+                  <span>{m.email}</span>
+                  <button
+                    onClick={() => removeMember(m.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0, fontSize: '0.85rem' }}
+                  >✕</button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: '#999', fontStyle: 'italic', fontSize: '0.85rem', marginBottom: '12px' }}>
+              אין חברים עדיין. הוסף למטה.
+            </div>
+          )}
+
+          {/* Add manual email */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+            <input
+              type="email"
+              value={manualEmail}
+              onChange={e => setManualEmail(e.target.value)}
+              placeholder="הוסף מייל ידני (למשל tester@gmail.com)"
+              style={{ flex: 1, fontSize: '0.85rem', direction: 'ltr', fontFamily: 'monospace' }}
+              onKeyDown={e => { if (e.key === 'Enter') addManualEmail(); }}
+            />
+            <button onClick={addManualEmail} className="btn-small" style={{ fontSize: '0.8rem' }}>➕</button>
+          </div>
+
+          {/* Pick from existing contacts */}
+          <input
+            type="text"
+            value={memberSearch}
+            onChange={e => setMemberSearch(e.target.value)}
+            placeholder="🔍 חפש בין אנשי הקשר הקיימים..."
+            style={{ width: '100%', fontSize: '0.85rem', marginBottom: '6px', boxSizing: 'border-box' }}
+          />
+          {memberSearch.trim() && (
+            <div style={{
+              maxHeight: '160px', overflowY: 'auto', background: '#FAFAF7',
+              border: '1px solid #E8E8E0', borderRadius: '8px',
+            }}>
+              {contacts
+                .filter(c => c.opted_in)
+                .filter(c => {
+                  const q = memberSearch.toLowerCase();
+                  return (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q);
+                })
+                .slice(0, 20)
+                .map(c => {
+                  const already = memberEmails.has((c.email || '').toLowerCase());
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => !already && addContact(c)}
+                      style={{
+                        padding: '6px 10px', cursor: already ? 'default' : 'pointer',
+                        opacity: already ? 0.5 : 1, fontSize: '0.82rem',
+                        display: 'flex', justifyContent: 'space-between', gap: '8px',
+                        borderBottom: '1px solid #F0F0E8',
+                      }}
+                      onMouseEnter={e => { if (!already) e.currentTarget.style.background = '#F0FDF4'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <span>{c.name || '—'} <span style={{ color: '#888', fontFamily: 'monospace', fontSize: '0.78rem' }}>{c.email}</span></span>
+                      {already ? <span style={{ color: '#10B981' }}>✓</span> : <span>➕</span>}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
     </div>

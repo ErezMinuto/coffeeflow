@@ -1474,14 +1474,15 @@ async function handleUnsubscribe(url: URL): Promise<Response> {
 async function handleSyncResendContacts(userId: string) {
   if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
 
+  const startedAt = Date.now();
   let allContacts: any[] = [];
   let after: string | null = null;
 
-  // Paginate through ALL Resend contacts (subscribed + unsubscribed)
-  // Add delay between pages to avoid Resend rate limits
+  // Paginate through all Resend contacts. No artificial delay between pages —
+  // Resend's published limit is 10 req/s and we're nowhere near that for a
+  // few-thousand-contact audience. Only back off on an actual 429.
   let page = 0;
   while (true) {
-    if (page > 0) await new Promise(r => setTimeout(r, 500)); // 500ms between pages
     page++;
 
     const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
@@ -1493,11 +1494,10 @@ async function handleSyncResendContacts(userId: string) {
     });
 
     if (res.status === 429) {
-      // Rate limited — wait longer and retry this page
-      const retryAfter = parseInt(res.headers.get("retry-after") || "5") * 1000;
-      console.warn(`Rate limited on page ${page}, waiting ${retryAfter}ms...`);
+      const retryAfter = parseInt(res.headers.get("retry-after") || "2") * 1000;
+      console.warn(`Rate limited on page ${page}, waiting ${retryAfter}ms`);
       await new Promise(r => setTimeout(r, retryAfter));
-      page--; // retry same page
+      page--;
       continue;
     }
 
@@ -1515,7 +1515,7 @@ async function handleSyncResendContacts(userId: string) {
     after = contacts[contacts.length - 1].id;
   }
 
-  console.log("Fetched", allContacts.length, "contacts from Resend");
+  console.log(`Fetched ${allContacts.length} contacts from Resend in ${Date.now() - startedAt}ms (${page} pages)`);
 
   // Build set of all Resend emails for cleanup
   const resendEmails = new Set(allContacts.map((c: any) => (c.email || "").toLowerCase().trim()));
