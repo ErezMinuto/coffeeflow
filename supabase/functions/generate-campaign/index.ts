@@ -1292,6 +1292,17 @@ async function handleSendCampaign(p: SendCampaignPayload) {
   let sent = 0;
   let errors: string[] = [];
 
+  // Israeli Communications Law §30א requires commercial emails to be clearly
+  // identified as advertising. Prepend "פרסומת" to every sent subject line.
+  // Idempotent: won't double-prefix if the AI (or a duplicated draft) already
+  // put it there. Applied at send time only — the stored subject in the
+  // editor stays clean so the word doesn't bleed into the preview / history.
+  const sendSubject = (() => {
+    const raw = (campaign.subject || "").trim();
+    if (/^פרסומת\b/.test(raw)) return raw;
+    return `פרסומת ${raw}`;
+  })();
+
   for (let i = 0; i < recipients.length; i += batchSize) {
     const batch = recipients.slice(i, i + batchSize);
 
@@ -1309,7 +1320,7 @@ async function handleSendCampaign(p: SendCampaignPayload) {
           body: JSON.stringify({
             from:    `Minuto <${SENDER_EMAIL}>`,
             to:      [recipient.email],
-            subject: campaign.subject,
+            subject: sendSubject,
             html:    personalizedHtml,
             headers: { "List-Unsubscribe": `<${unsubUrl}>` },
           }),
