@@ -1432,14 +1432,24 @@ async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?
   }
 }
 
+// Where to send the user after we've unsubscribed them. Must be a plain
+// static page — Supabase Edge Functions' gateway forces text/plain +
+// Content-Security-Policy: sandbox on any HTML we try to return directly,
+// so we do the work then 302 to a page Vercel serves.
+const UNSUBSCRIBE_REDIRECT_BASE =
+  Deno.env.get("UNSUBSCRIBE_REDIRECT_BASE") ||
+  "https://coffeeflow-neon.vercel.app/unsubscribed.html";
+
+function redirectTo(target: string): Response {
+  return new Response(null, { status: 302, headers: { Location: target } });
+}
+
 async function handleUnsubscribe(url: URL): Promise<Response> {
   const email = url.searchParams.get("email");
   const token = url.searchParams.get("token");
 
   if (!email || !token) {
-    return new Response(htmlPage("שגיאה", "קישור לא תקין."), {
-      status: 400, headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
+    return redirectTo(`${UNSUBSCRIBE_REDIRECT_BASE}?status=invalid`);
   }
 
   const normalized = email.toLowerCase().trim();
@@ -1450,35 +1460,16 @@ async function handleUnsubscribe(url: URL): Promise<Response> {
     console.error("handleUnsubscribe: Resend unsubscribe failed for", normalized, "-", resendResult.error);
   }
 
-  // 2. Mirror to marketing_contacts so the current send-filter (which still
-  //    reads from Supabase) immediately stops including this address.
+  // 2. Mirror to marketing_contacts so any Supabase-backed reads stay
+  //    consistent. The send flow already reads from Resend directly.
   await supabase
     .from("marketing_contacts")
     .update({ opted_in: false, updated_at: new Date().toISOString() })
     .eq("email", normalized);
 
-  // Surface a gentle warning if Resend rejected the update — the user is still
-  // shown success because we removed them locally, but ops will see it in logs.
-  const note = resendResult.ok
-    ? ""
-    : `<p style="margin-top:16px;color:#B45309;font-size:13px;">שים לב: ההסרה נרשמה במערכת אך לא הצלחנו לעדכן את הרשימה החיצונית — צוות מינוטו יטפל באופן ידני.</p>`;
-
-  return new Response(
-    htmlPage("הוסרת בהצלחה",
-      `<p>הכתובת <strong>${escapeHtml(email)}</strong> הוסרה מרשימת התפוצה של מינוטו.</p>
-       <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
-       ${note}
-       <p style="margin-top:24px;color:#888;font-size:14px;">תודה, צוות מינוטו ☕</p>`),
-    { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-  );
-}
-
-function htmlPage(title: string, body: string): string {
-  return `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title} -Minuto</title></head>
-<body style="margin:0;padding:40px 20px;background:#F5F5F0;font-family:Arial,sans-serif;direction:rtl;text-align:center;">
-<div style="max-width:500px;margin:0 auto;background:white;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-<h1 style="color:#3D4A2E;font-size:24px;margin-bottom:16px;">${title}</h1>
-<div style="font-size:16px;line-height:1.6;color:#333;">${body}</div></div></body></html>`;
+  const status = resendResult.ok ? "ok" : "partial";
+  const target = `${UNSUBSCRIBE_REDIRECT_BASE}?email=${encodeURIComponent(normalized)}&status=${status}`;
+  return redirectTo(target);
 }
 
 // ── Sync Contacts from Resend ────────────────────────────────────────────────
