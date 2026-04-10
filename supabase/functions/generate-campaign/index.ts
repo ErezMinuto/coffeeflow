@@ -1719,6 +1719,41 @@ async function handlePublicSubscribe(payload: { email: string; name?: string; ph
   return ok({ ok: true, email });
 }
 
+// ── Inbound Unsubscribe (webhook from Gmail Apps Script) ────────────────────
+//
+// Google Apps Script runs inside the info@minuto.co.il Google Workspace
+// account on a 5-minute trigger, scans unread mail for a reply whose subject
+// or first non-empty body line is exactly "הסר", and POSTs matches here.
+// Protected by a shared secret stored in the INBOUND_UNSUBSCRIBE_SECRET env
+// var. See README for the full setup and the Apps Script source.
+async function handleInboundUnsubscribe(p: any) {
+  const expected = Deno.env.get("INBOUND_UNSUBSCRIBE_SECRET");
+  if (!expected) {
+    console.error("inbound-unsubscribe: INBOUND_UNSUBSCRIBE_SECRET not configured");
+    return err(500, "Server not configured");
+  }
+  if (!p?.secret || p.secret !== expected) {
+    console.warn("inbound-unsubscribe: invalid secret");
+    return err(401, "Invalid secret");
+  }
+  const raw = String(p.email || "").toLowerCase().trim();
+  // Reject obvious garbage and self-sends to avoid feedback loops.
+  if (!raw || !raw.includes("@")) return err(400, "Missing or invalid email");
+  if (raw === SENDER_EMAIL.toLowerCase()) return err(400, "Refusing to unsubscribe the sender address");
+
+  const resendResult = await unsubscribeInResend(raw);
+  if (!resendResult.ok) {
+    console.error("inbound-unsubscribe: Resend unsubscribe failed for", raw, "-", resendResult.error);
+  }
+  await supabase
+    .from("marketing_contacts")
+    .update({ opted_in: false, updated_at: new Date().toISOString() })
+    .eq("email", raw);
+
+  console.log("inbound-unsubscribe:ok", { email: raw, resend: resendResult.ok });
+  return ok({ ok: true, email: raw, resend: resendResult.ok });
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -1756,6 +1791,7 @@ serve(async (req) => {
         return ok({ status: r.status, models: d });
       })(); break;
       case "subscribe":        response = await handlePublicSubscribe(payload); break;
+      case "inbound-unsubscribe": response = await handleInboundUnsubscribe(payload); break;
       default:                  response = err(400, `Unknown action: ${action}`); break;
     }
     // Override CORS headers with dynamic origin
