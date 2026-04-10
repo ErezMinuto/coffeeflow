@@ -1383,12 +1383,21 @@ async function handleSendCampaign(p: SendCampaignPayload) {
 // Mark a contact as unsubscribed in Resend (source of truth for the list).
 // Tries PATCH by-email first (the stable, documented shape), then falls back
 // to looking up the contact id and patching by id.
-async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?: string }> {
+//
+// Return shape:
+//   { ok: true }                        — actually patched, or never on list
+//   { ok: false, error, notFound?: true } — Resend API genuinely failed
+//
+// "Not on the list" is treated as success because the desired end state
+// (recipient not receiving mail) is already true. We don't want to scare
+// the user with a warning just because they tested with a random address.
+async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?: string; notFound?: boolean }> {
   if (!RESEND_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
   if (!RESEND_AUDIENCE_ID) return { ok: false, error: "RESEND_AUDIENCE_ID not configured" };
   const normalized = email.toLowerCase().trim();
 
   // Attempt 1: PATCH directly by email
+  let byEmailStatus: number | null = null;
   try {
     const res = await fetch(
       `https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts/${encodeURIComponent(normalized)}`,
@@ -1402,6 +1411,7 @@ async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?
       },
     );
     if (res.ok) return { ok: true };
+    byEmailStatus = res.status;
     const body = await res.text().catch(() => "");
     console.warn("Resend PATCH by-email failed:", res.status, body.slice(0, 200));
   } catch (e: any) {
@@ -1444,7 +1454,11 @@ async function unsubscribeInResend(email: string): Promise<{ ok: boolean; error?
       after = contacts[contacts.length - 1]?.id || null;
       if (!after) break;
     }
-    return { ok: false, error: "Contact not found in Resend audience" };
+    // We walked the whole audience and the email isn't there. That's not a
+    // failure — the recipient was never on the list, so "unsubscribed" is
+    // the current state. Treat as success but flag it so callers can log.
+    console.log("unsubscribeInResend: contact not in audience, treating as success:", normalized);
+    return { ok: true, notFound: true };
   } catch (e: any) {
     return { ok: false, error: e?.message || "unknown Resend error" };
   }
