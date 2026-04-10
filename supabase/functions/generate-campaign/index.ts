@@ -981,6 +981,17 @@ ${p.customInstructions ? "הנחיה מהמשתמש: " + p.customInstructions : 
     return err(500, "Failed to parse AI response");
   }
 
+  // Append the "| פרסומת" marker to the end of the body so it's editable in
+  // the composer (user can reposition or restyle it) and becomes part of the
+  // stored campaigns.message field. Idempotent: don't double it if the AI
+  // already put it there. Israeli Communications Law §30א requires clear
+  // identification of commercial emails; we also prefix the subject at send
+  // time as a non-editable safety rail.
+  const ADVERTISEMENT_MARKER = "| פרסומת";
+  if (campaign.body && !campaign.body.trim().endsWith(ADVERTISEMENT_MARKER)) {
+    campaign.body = `${campaign.body.trimEnd()}\n\n${ADVERTISEMENT_MARKER}`;
+  }
+
   // 6. Generate banner image with Gemini
   let bannerUrl: string | null = null;
   if (campaign.banner_prompt) {
