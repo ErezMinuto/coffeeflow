@@ -13,13 +13,62 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BOT_TOKEN     = Deno.env.get("COFFEE_BOT_TOKEN")          ?? "";
-const USER_ID       = Deno.env.get("COFFEEFLOW_USER_ID")        ?? "";
-const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY")         ?? "";
-const SUPA_URL      = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const BOT_TOKEN      = Deno.env.get("COFFEE_BOT_TOKEN")           ?? "";
+const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")         ?? "";
+const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY")          ?? "";
+const SUPA_URL       = Deno.env.get("SUPABASE_URL")               ?? "";
+const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")  ?? "";
+const WEBHOOK_SECRET = Deno.env.get("COFFEE_BOT_WEBHOOK_SECRET")  ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
+
+// ── Security helpers ─────────────────────────────────────────────────────────
+
+// Rate limit: 20 messages per telegram_id per 60-second window.
+// Per-bot (check_bot_rate_limit in SQL uses (telegram_id, bot_name) as PK).
+const RATE_LIMIT_PER_WINDOW = 20;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+
+async function checkRateLimit(telegramId: string | number | undefined): Promise<boolean> {
+  if (!telegramId) return true; // Can't rate-limit anonymous/missing sender — don't block
+  try {
+    const { data, error } = await supabase.rpc("check_bot_rate_limit", {
+      p_telegram_id:    String(telegramId),
+      p_bot_name:       "coffee-bot",
+      p_limit:          RATE_LIMIT_PER_WINDOW,
+      p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+    });
+    if (error) {
+      console.error("rate-limit RPC error, allowing request:", error.message);
+      return true; // Fail open — don't break the bot if the RPC is down
+    }
+    return data === true;
+  } catch (e: any) {
+    console.error("rate-limit RPC threw, allowing request:", e?.message);
+    return true;
+  }
+}
+
+// Reject messages that look like prompt injection attempts before they reach
+// Claude. Crude pattern match — bounded protection since the JSON output
+// schema already limits what a successful injection can do, but cheap enough
+// to add another layer. Covers English patterns; Hebrew attempts are rare.
+const INJECTION_PATTERNS = [
+  /ignore\s+(all|previous|the|above|prior)/i,
+  /disregard\s+(all|previous|the|above|prior)/i,
+  /forget\s+(everything|all|previous|the\s+above)/i,
+  /new\s+instructions?/i,
+  /system\s*:\s*/i,
+  /\[INST\]/i,
+  /\[\/INST\]/i,
+  /<\|im_start\|>/i,
+  /<\|im_end\|>/i,
+  /you\s+are\s+(now|actually)/i,
+];
+
+function looksLikeInjection(text: string): boolean {
+  return INJECTION_PATTERNS.some((p) => p.test(text));
+}
 
 async function send(chatId: string | number, text: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -195,14 +244,53 @@ async function handlePacking(chatId: string, fromName: string, productId: number
 
 serve(async (req) => {
   try {
+    // ── Webhook authentication ─────────────────────────────────────────────
+    // Reject any request that doesn't carry the Telegram secret token header.
+    // This is set when the webhook is registered via Telegram's setWebhook
+    // API with ?secret_token=... and echoed back on every update. Without
+    // this check, anyone on the internet could forge Telegram updates.
+    if (WEBHOOK_SECRET) {
+      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+      if (tgSecret !== WEBHOOK_SECRET) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+    }
+
     const body    = await req.json();
     const message = body.message;
     if (!message?.text) return new Response("ok");
 
-    const chatId   = String(message.chat.id);
-    const text     = message.text.trim();
-    const fromName = message.from?.first_name ?? "עובד";
-    const lower    = text.toLowerCase();
+    const chatId      = String(message.chat.id);
+    const text        = message.text.trim();
+    const telegramId  = message.from?.id;
+    const lower       = text.toLowerCase();
+
+    // ── Rate limit ─────────────────────────────────────────────────────────
+    // 20 messages per telegram_id per 60-second window. Silently drops
+    // excess requests — don't reply, or the attacker gets feedback.
+    if (!(await checkRateLimit(telegramId))) {
+      console.warn(`coffee-bot rate-limited telegram_id=${telegramId}`);
+      return new Response("ok");
+    }
+
+    // ── Injection pre-filter ───────────────────────────────────────────────
+    // Reject obvious prompt-injection attempts before they reach Claude.
+    if (looksLikeInjection(text)) {
+      console.warn(`coffee-bot rejected injection attempt from telegram_id=${telegramId}: "${text.slice(0, 100)}"`);
+      await send(chatId, "לא הבנתי 🤔 — שלח דיווח אריזה כמו 'ארזתי 20 שקיות אתיופיה' או /stock");
+      return new Response("ok");
+    }
+
+    // Prefer the Hebrew name stored in employees table over the Telegram profile name
+    let fromName = message.from?.first_name ?? "עובד";
+    if (telegramId) {
+      const { data: emp } = await supabase
+        .from("employees")
+        .select("name")
+        .eq("telegram_id", telegramId)
+        .maybeSingle();
+      if (emp?.name) fromName = emp.name;
+    }
 
     if (lower.startsWith("/stock")) {
       await handleStock(chatId);

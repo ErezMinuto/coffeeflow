@@ -29,6 +29,48 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// ── Security helpers ─────────────────────────────────────────────────────────
+
+const RATE_LIMIT_PER_WINDOW = 20;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+
+async function checkRateLimit(telegramId: string | number | undefined): Promise<boolean> {
+  if (!telegramId) return true;
+  try {
+    const { data, error } = await supabase.rpc("check_bot_rate_limit", {
+      p_telegram_id:    String(telegramId),
+      p_bot_name:       "employee-bot",
+      p_limit:          RATE_LIMIT_PER_WINDOW,
+      p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+    });
+    if (error) {
+      console.error("rate-limit RPC error, allowing request:", error.message);
+      return true;
+    }
+    return data === true;
+  } catch (e: any) {
+    console.error("rate-limit RPC threw, allowing request:", e?.message);
+    return true;
+  }
+}
+
+const INJECTION_PATTERNS = [
+  /ignore\s+(all|previous|the|above|prior)/i,
+  /disregard\s+(all|previous|the|above|prior)/i,
+  /forget\s+(everything|all|previous|the\s+above)/i,
+  /new\s+instructions?/i,
+  /system\s*:\s*/i,
+  /\[INST\]/i,
+  /\[\/INST\]/i,
+  /<\|im_start\|>/i,
+  /<\|im_end\|>/i,
+  /you\s+are\s+(now|actually)/i,
+];
+
+function looksLikeInjection(text: string): boolean {
+  return INJECTION_PATTERNS.some((p) => p.test(text));
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function send(chatId: number | string, text: string) {
@@ -212,6 +254,18 @@ async function handleWebhook(req: Request) {
   }
   if (text.startsWith("/")) return new Response("ok");
 
+  // ── Rate limit ─────────────────────────────────────────────────────────
+  if (!(await checkRateLimit(telegramId))) {
+    console.warn(`employee-bot rate-limited telegram_id=${telegramId}`);
+    return new Response("ok");
+  }
+
+  // ── Injection pre-filter ───────────────────────────────────────────────
+  if (looksLikeInjection(text)) {
+    console.warn(`employee-bot rejected injection attempt from telegram_id=${telegramId}: "${text.slice(0, 100)}"`);
+    return new Response("ok");
+  }
+
   // If message contains a phone number pattern, treat as name registration
   const phonePattern = /05\d[\d\-]{7,8}/;
   const hasPhone = phonePattern.test(text);
@@ -242,18 +296,38 @@ async function handleWebhook(req: Request) {
       return new Response("ok");
     }
 
-    // Check if name already exists (update telegram_id)
+    // Check if name already exists. Only bind this telegram_id to an
+    // existing record if that record currently has NO telegram_id (i.e.
+    // it was pre-created by an admin in the dashboard and is waiting for
+    // the employee to register). If the existing record already has a
+    // telegram_id, this would be a hijack — an attacker who knows a
+    // coworker's name could bind their own Telegram account to it and
+    // impersonate them. Refuse the rebind and alert the user.
     const { data: byName } = await supabase
       .from("employees")
-      .select("id, name")
+      .select("id, name, telegram_id")
       .ilike("name", result.name)
       .limit(1);
 
     if (byName?.[0]) {
+      const existingRecord = byName[0];
+      if (existingRecord.telegram_id) {
+        // Already bound to someone else — refuse and log.
+        console.warn(
+          `employee-bot refused hijack attempt: name="${result.name}" ` +
+          `attacker_tg=${telegramId} existing_tg=${existingRecord.telegram_id}`
+        );
+        await send(chatId,
+          `⚠️ השם "${result.name}" כבר רשום במערכת עם חשבון אחר.\n` +
+          `אם זה אתה, פנה למנהל כדי לעדכן את החשבון.`
+        );
+        return new Response("ok");
+      }
+      // Safe to bind — record has no telegram_id yet, likely pre-created by admin
       await supabase.from("employees")
         .update({ telegram_id: telegramId, ...(result.phone ? { phone: result.phone } : {}) })
-        .eq("id", byName[0].id);
-      await send(GROUP_ID, `✅ <b>${byName[0].name}</b> — נרשמת בהצלחה! 🎉`);
+        .eq("id", existingRecord.id);
+      await send(GROUP_ID, `✅ <b>${existingRecord.name}</b> — נרשמת בהצלחה! 🎉`);
     } else {
       // Create new employee record
       await supabase.from("employees").insert({
