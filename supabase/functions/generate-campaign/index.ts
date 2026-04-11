@@ -361,6 +361,15 @@ function buildCampaignHtml(params: {
 }): string {
   const { subject, preheader, greeting, body, ctaText, ctaUrl, bannerUrl, products, unsubscribeUrl, promoDeadline } = params;
 
+  // The stored subject has the legal "פרסומת" prefix for mail-client display,
+  // but the visual banner heading should show only the creative subject — the
+  // legal marker belongs in the mail client header, not on the marketing
+  // image. Strip the prefix (and any RTL marks around it) for the in-banner
+  // h1 rendering only. The email subject in the mail client is unaffected.
+  const bannerSubject = String(subject || "")
+    .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/, "")
+    .trim();
+
   // Append UTM parameters to minuto.co.il links only. Uses a {{UTM_CAMPAIGN}}
   // placeholder because the campaign id isn't known at build time —
   // handleSendCampaign substitutes the real value per-send. Encoded manually
@@ -508,7 +517,7 @@ function buildCampaignHtml(params: {
               <div style="display:table-cell;vertical-align:end;padding:0;">
                 <div style="background:linear-gradient(0deg,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.25) 60%,transparent 100%);padding:60px 36px 28px;direction:rtl;text-align:right;">
                   <h1 style="margin:0 0 4px;color:#FFFFFF;font-size:26px;font-weight:800;line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,0.4);">
-                    ${escapeHtml(subject)}
+                    ${escapeHtml(bannerSubject)}
                   </h1>
                   ${preheader ? `<p style="margin:0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:400;text-shadow:0 1px 2px rgba(0,0,0,0.3);">${escapeHtml(preheader)}</p>` : ""}
                 </div>
@@ -524,7 +533,7 @@ function buildCampaignHtml(params: {
         <tr>
           <td style="background:linear-gradient(135deg,#2C3522 0%,#4A6332 40%,#6B8F4A 100%);padding:48px 36px;direction:rtl;text-align:right;">
             <h1 style="margin:0 0 4px;color:white;font-size:26px;font-weight:800;line-height:1.3;">
-              ${escapeHtml(subject)}
+              ${escapeHtml(bannerSubject)}
             </h1>
             ${preheader ? `<p style="margin:0;color:rgba(255,255,255,0.8);font-size:14px;">${escapeHtml(preheader)}</p>` : ""}
           </td>
