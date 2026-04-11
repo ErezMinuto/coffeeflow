@@ -104,21 +104,21 @@ HARD RULE — מקסימום: אל תשבץ עובד יותר מ-מקס׳ ימי
 HARD RULE — עד שעה: אם הזמינות כוללת "עד XX:XX", אל תשבץ לעמדה שמסתיימת אחרי השעה הזו.
 
 עמדות לפי סוג יום:
-- יום רגיל (לא קלייה): opening + store1 + store2 + store3 (4 עובדים)
-- יום קלייה: opening + roasting + store1 + store2 (4 עובדים)
-- שישי / ערב חג: opening + cafe + store1 + store2 (4 עובדים, ללא קלייה)
-- אם אין מספיק עובדים זמינים ביום — מלא כמה שיש, לא יותר מ-4
+- יום רגיל (לא קלייה): opening + store1 + store2 + store3 + store4 (5 עובדים)
+- יום קלייה: opening + roasting + store1 + store2 + store3 (5 עובדים)
+- שישי / ערב חג: opening + cafe + store1 + store2 + store3 (5 עובדים, ללא קלייה)
+- מינימום 4 עובדים ליום, מקסימום 5. אם יש רק 4 זמינים — מלא 4. אם יש 5 או יותר — תמיד מלא 5.
 
 עמדות מיוחדות:
 - opening (פתיחת קפה 07:30): חייב להיות role=barista. אם אין בריסטה זמין — שים עובד עם barista_skills כגיבוי.
   תעדף רמת בריסטה גבוהה יותר (3>2>1).
 - roasting (קלייה): רק role=roaster. בימים שאינם ימי קלייה — שבץ את הקולה לחנות.
 - cafe (בית קפה 07:45): שישי/ערב חג בלבד. מועדף barista, אפשר כישורי בריסטה או כללי.
-- store1/store2/store3: כל עובד (barista/roaster/general — כולם יכולים לעבוד בחנות).
+- store1/store2/store3/store4: כל עובד (barista/roaster/general — כולם יכולים לעבוד בחנות).
 
 IMPORTANT: Reply with a single raw JSON object only. No explanation, no markdown.
 Format: {"sun_opening": "שם", "sun_store1": "שם", ...}
-Valid position keys: opening, cafe, roasting, store1, store2, store3
+Valid position keys: opening, cafe, roasting, store1, store2, store3, store4
 Valid day keys: ${(activeDays as string[]).join(", ")}
 Start your response with { and end with }`;
 

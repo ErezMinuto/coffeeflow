@@ -23,6 +23,7 @@ const POSITIONS = [
   { id: "store1",  label: "חנות",      time: "09:30" },
   { id: "store2",  label: "חנות",      time: "09:30" },
   { id: "store3",  label: "חנות",      time: "09:30" },
+  { id: "store4",  label: "חנות",      time: "09:30" },
 ];
 
 // ── Google JWT auth ───────────────────────────────────────────────────────────

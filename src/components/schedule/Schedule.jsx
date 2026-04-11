@@ -22,6 +22,7 @@ const POSITIONS = [
   { id: 'store1',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store2',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
   { id: 'store3',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
+  { id: 'store4',   label: 'חנות',      time: '09:30', timeFriday: '09:00', icon: '🏪', always: true },
 ];
 
 const ROLE_LABELS = { barista: '☕ בריסטה', roaster: '🔥 קולה', general: '👤 כללי' };
