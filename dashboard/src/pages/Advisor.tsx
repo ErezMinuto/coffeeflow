@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/context'
-import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle } from 'lucide-react'
+import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle, Zap } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -152,6 +152,318 @@ function actionLabel(action: string) {
 
 function contentTypeIcon(type: string) {
   return ({ reel: '🎬', post: '🖼️', story: '⏱' } as Record<string, string>)[type] ?? '📌'
+}
+
+// ── Triage action queue ──────────────────────────────────────────────────────
+//
+// The 3 panels together produce ~30 recommendations (budget changes, waste
+// alerts, ad copy rewrites, content ideas, SEO targets, etc). Users can't
+// start at "bullet #1 of 30" — they need a ranked shortlist of the things
+// that will actually move the needle THIS WEEK. This module builds that
+// shortlist across all 3 reports and tracks which items the user has
+// marked as done / skipped / snoozed in localStorage keyed to the week.
+//
+// No backend changes. No `advisor_actions` table yet. Frontend-only ranking
+// using deterministic rules — later we can promote this to server-side
+// ranking with cross-week memory, but v1 is purely a UX layer on top of
+// the data we already have.
+//
+// (AgentType is declared lower down near the main component — we hoist the
+// tuple-derived version so the whole file shares one definition.)
+
+interface TriageAction {
+  id:            string   // stable hash so localStorage state survives a re-run
+  agent:         AgentType
+  priority:      number   // higher = more urgent, used for sort
+  headline:      string   // the one-sentence action
+  context?:      string   // optional secondary line (reason / expected impact)
+  sourceLabel?:  string   // optional small tag (campaign name, estimated waste, etc)
+}
+
+type ActionState = 'done' | 'skipped' | 'snoozed' | null
+
+// Deterministic rules for ranking across the 3 reports. Priority scores
+// are intentionally coarse (buckets of 10) so the ordering is stable and
+// the top N ends up covering all 3 agents rather than being dominated by
+// whichever one happens to produce the most items.
+function buildTriageQueue(
+  growth:     AdvisorReport | null,
+  efficiency: AdvisorReport | null,
+  organic:    AdvisorReport | null,
+): TriageAction[] {
+  const out: TriageAction[] = []
+
+  // ── Efficiency: waste (score 100) — stopping the bleed is always first
+  const eff = efficiency?.status === 'done' ? (efficiency.report as EfficiencyReport | null) : null
+  if (eff?.waste_identified) {
+    for (const w of eff.waste_identified) {
+      out.push({
+        id:          `eff::waste::${w.campaign}`,
+        agent:       'google_ads_efficiency',
+        priority:    100,
+        headline:    `עצור בזבוז: ${w.fix}`,
+        context:     w.issue,
+        sourceLabel: w.estimated_waste || w.campaign,
+      })
+    }
+  }
+
+  // ── Efficiency budget recs: pause = score 90, decrease = 70
+  if (eff?.budget_recommendations) {
+    for (const r of eff.budget_recommendations) {
+      if (r.action === 'pause') {
+        out.push({
+          id:          `eff::pause::${r.campaign}`,
+          agent:       'google_ads_efficiency',
+          priority:    90,
+          headline:    `השהה את ${r.campaign}`,
+          context:     r.reason,
+        })
+      } else if (r.action === 'decrease' && r.suggested_budget_change_pct < 0) {
+        out.push({
+          id:          `eff::decrease::${r.campaign}`,
+          agent:       'google_ads_efficiency',
+          priority:    70,
+          headline:    `הקטן תקציב ב-${Math.abs(r.suggested_budget_change_pct)}%: ${r.campaign}`,
+          context:     r.reason,
+        })
+      }
+    }
+  }
+
+  // ── Growth budget recs: increase = 80 if ≥ 20%, else 60. test_new = 50.
+  const grw = growth?.status === 'done' ? (growth.report as GrowthReport | null) : null
+  if (grw?.budget_recommendations) {
+    for (const r of grw.budget_recommendations) {
+      if (r.action === 'increase') {
+        const isSignificant = r.suggested_budget_change_pct >= 20
+        out.push({
+          id:          `grw::increase::${r.campaign}`,
+          agent:       'google_ads_growth',
+          priority:    isSignificant ? 80 : 60,
+          headline:    `הגדל תקציב ב-${r.suggested_budget_change_pct}%: ${r.campaign}`,
+          context:     r.reason,
+        })
+      } else if (r.action === 'test_new') {
+        out.push({
+          id:          `grw::test::${r.campaign}`,
+          agent:       'google_ads_growth',
+          priority:    50,
+          headline:    `התחל ניסוי: ${r.campaign}`,
+          context:     r.reason,
+        })
+      }
+    }
+  }
+
+  // ── Efficiency ads_to_rewrite (score 75) — concrete, actionable copy fixes
+  if (eff?.ads_to_rewrite) {
+    for (const a of eff.ads_to_rewrite) {
+      out.push({
+        id:          `eff::rewrite::${a.campaign}`,
+        agent:       'google_ads_efficiency',
+        priority:    75,
+        headline:    `שכתב מודעות: ${a.campaign}`,
+        context:     a.expected_improvement,
+        sourceLabel: a.ad_strength ? `Ad Strength: ${a.ad_strength}` : undefined,
+      })
+    }
+  }
+
+  // ── Growth growth_opportunities (score 55)
+  if (grw?.growth_opportunities) {
+    for (const op of grw.growth_opportunities) {
+      out.push({
+        id:          `grw::opp::${op.opportunity}`,
+        agent:       'google_ads_growth',
+        priority:    55,
+        headline:    op.opportunity,
+        context:     op.action,
+        sourceLabel: op.expected_impact,
+      })
+    }
+  }
+
+  // ── Organic posts_to_publish (score 65) — ready content, just needs posting
+  const org = organic?.status === 'done' ? (organic.report as OrganicReport | null) : null
+  if (org?.posts_to_publish) {
+    for (const p of org.posts_to_publish) {
+      out.push({
+        id:          `org::post::${p.topic}`,
+        agent:       'organic_content',
+        priority:    65,
+        headline:    `פרסם: ${p.topic}`,
+        context:     p.best_day ? `${p.best_day} ${p.best_time}` : undefined,
+        sourceLabel: p.type ? `${contentTypeIcon(p.type)} ${p.type}` : undefined,
+      })
+    }
+  }
+
+  // ── Organic google_organic_recommendations (score 45)
+  if (org?.google_organic_recommendations) {
+    for (const rec of org.google_organic_recommendations) {
+      out.push({
+        id:          `org::seo::${rec.keyword}`,
+        agent:       'organic_content',
+        priority:    rec.estimated_difficulty === 'קל' ? 55 : 45,
+        headline:    `כתוב תוכן ל-"${rec.keyword}"`,
+        context:     rec.why_now,
+        sourceLabel: rec.current_position > 0 ? `מיקום ${rec.current_position}` : undefined,
+      })
+    }
+  }
+
+  // Sort by priority desc, cap at 6 — any more becomes a wall of information
+  // again, which is the problem we're trying to solve.
+  return out.sort((a, b) => b.priority - a.priority).slice(0, 6)
+}
+
+// Persist per-week action state in localStorage. Key is the week_start date
+// so switching weeks loads a different state bucket and marking "done" on
+// this week doesn't affect the historical view of last week.
+function useActionStates(weekKey: string | null) {
+  const storageKey = weekKey ? `advisor_actions_${weekKey}` : null
+  const [states, setStates] = useState<Record<string, ActionState>>({})
+
+  useEffect(() => {
+    if (!storageKey) { setStates({}); return }
+    try {
+      const raw = localStorage.getItem(storageKey)
+      setStates(raw ? JSON.parse(raw) : {})
+    } catch {
+      setStates({})
+    }
+  }, [storageKey])
+
+  const setState = (id: string, state: ActionState) => {
+    setStates(prev => {
+      const next = { ...prev }
+      if (state === null) delete next[id]
+      else next[id] = state
+      if (storageKey) {
+        try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* quota */ }
+      }
+      return next
+    })
+  }
+
+  return [states, setState] as const
+}
+
+// Visual tag per agent — matches the color system in the 3 panels
+// (blue=growth, amber=efficiency, green=organic) so the user can tell at
+// a glance which panel an action came from.
+const AGENT_TAGS: Record<AgentType, { label: string; bg: string }> = {
+  google_ads_growth:     { label: 'צמיחה',    bg: 'bg-blue-50 text-blue-700 border-blue-100' },
+  google_ads_efficiency: { label: 'יעילות',   bg: 'bg-amber-50 text-amber-700 border-amber-100' },
+  organic_content:       { label: 'תוכן',     bg: 'bg-green-50 text-green-700 border-green-100' },
+}
+
+function ActionQueue({ rows, weekKey }: { rows: Record<AgentType, AdvisorReport | null>; weekKey: string | null }) {
+  const actions = useMemo(
+    () => buildTriageQueue(rows.google_ads_growth, rows.google_ads_efficiency, rows.organic_content),
+    [rows.google_ads_growth, rows.google_ads_efficiency, rows.organic_content],
+  )
+  const [states, setState] = useActionStates(weekKey)
+
+  if (actions.length === 0) return null
+
+  const doneCount = actions.filter(a => states[a.id] === 'done').length
+  const inactiveCount = actions.filter(a => states[a.id] != null).length
+  const activeCount = actions.length - inactiveCount
+
+  // Sort pending first, then inactive (done / skipped / snoozed) to the
+  // bottom so the user's next-action eye-line always lands on fresh items.
+  const sorted = [...actions].sort((a, b) => {
+    const aInactive = states[a.id] != null
+    const bInactive = states[b.id] != null
+    if (aInactive !== bInactive) return aInactive ? 1 : -1
+    return b.priority - a.priority
+  })
+
+  return (
+    <div className="card p-4 lg:p-5">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Zap size={16} className="text-amber-500" />
+          <h2 className="text-base font-display font-semibold text-surface-900">לפעולה השבוע</h2>
+        </div>
+        <span className="text-xs text-surface-500">
+          {activeCount > 0
+            ? `${activeCount} פעולות פתוחות${doneCount > 0 ? ` · ${doneCount} הושלמו` : ''}`
+            : `${doneCount}/${actions.length} הושלמו 🎉`}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {sorted.map(a => (
+          <ActionRow key={a.id} action={a} state={states[a.id] ?? null} onChange={s => setState(a.id, s)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ActionRow({ action, state, onChange }: { action: TriageAction; state: ActionState; onChange: (s: ActionState) => void }) {
+  const inactive = state != null
+  const tag = AGENT_TAGS[action.agent]
+
+  return (
+    <div className={`flex items-start gap-3 p-3 rounded-xl border transition-opacity ${inactive ? 'bg-surface-50 border-surface-100 opacity-50' : 'bg-white border-surface-200'}`}>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${tag.bg}`}>{tag.label}</span>
+          {action.sourceLabel && (
+            <span className="text-[10px] text-surface-400 truncate max-w-[200px]">{action.sourceLabel}</span>
+          )}
+          {state === 'done'    && <span className="text-[10px] text-green-600">✓ הושלם</span>}
+          {state === 'skipped' && <span className="text-[10px] text-surface-500">⏭ דילגתי</span>}
+          {state === 'snoozed' && <span className="text-[10px] text-blue-600">🕐 שבוע הבא</span>}
+        </div>
+        <p className={`text-sm font-medium text-surface-800 leading-snug ${inactive ? 'line-through' : ''}`}>
+          {action.headline}
+        </p>
+        {action.context && !inactive && (
+          <p className="text-xs text-surface-500 mt-1 leading-relaxed">{action.context}</p>
+        )}
+      </div>
+      {!inactive ? (
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onChange('done')}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 text-surface-500 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-colors"
+            title="עשיתי"
+            aria-label="סמן כהושלם"
+          >
+            ✓
+          </button>
+          <button
+            onClick={() => onChange('snoozed')}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 text-surface-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors text-[11px]"
+            title="שבוע הבא"
+            aria-label="דחה לשבוע הבא"
+          >
+            🕐
+          </button>
+          <button
+            onClick={() => onChange('skipped')}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 text-surface-500 hover:bg-surface-100 hover:text-surface-700 transition-colors"
+            title="דלג"
+            aria-label="דלג"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => onChange(null)}
+          className="shrink-0 text-xs text-surface-400 hover:text-surface-700 transition-colors px-2"
+          title="בטל סימון"
+        >
+          החזר
+        </button>
+      )}
+    </div>
+  )
 }
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
@@ -683,8 +995,16 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                 {rec.why_now && (
                   <p className="text-xs text-indigo-700 bg-indigo-100 rounded px-2 py-1">⏰ {rec.why_now}</p>
                 )}
-                {/* Blog post writer */}
-                {rec.content_type === 'blog_post' && (() => {
+                {/* Blog post writer — available on every organic rec, not
+                    just ones the AI tagged as content_type='blog_post'. The
+                    agent classifies targets into blog_post / landing_page /
+                    product_page / faq_page but in practice the user may
+                    want a written draft for any of them, and the server-
+                    side writer is content-type-agnostic. The previous gate
+                    hid the button entirely when the agent picked
+                    landing_page, which made the Organic panel look broken
+                    on weeks with no explicit blog_post recs. */}
+                {(() => {
                   const bs = blogState[rec.keyword]
                   const picked = bs?.selectedProducts ?? []
                   const searchText = bs?.customProductText ?? ''
@@ -1137,6 +1457,12 @@ export default function AdvisorPage() {
           </div>
         )}
       </div>
+
+      {/* Triage — the top N actions ranked across all 3 agents. This is
+          the "what should I actually do this week" layer on top of the
+          raw recommendations the 3 panels below expose. Hidden when no
+          reports have loaded yet (and when no actionable items parsed). */}
+      <ActionQueue rows={rows} weekKey={selectedWeek} />
 
       {/* Focus context */}
       <div className="card p-4 space-y-2">
