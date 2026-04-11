@@ -608,7 +608,7 @@ function buildCampaignHtml(params: {
           <td style="background:#2C3522;padding:36px 36px 28px;text-align:center;">
             <img src="${LOGO_URL}" width="90" height="37" alt="Minuto" style="display:inline-block;height:37px;width:auto;margin-bottom:16px;filter:brightness(10);" />
             <p style="margin:0 0 2px;font-size:14px;color:rgba(255,255,255,0.85);font-weight:600;">Minuto Caf&eacute; &amp; Roastery</p>
-            <p style="margin:0 0 20px;font-size:12px;color:rgba(255,255,255,0.5);">קפה טרי מהקלייה</p>
+            <p style="margin:0 0 20px;font-size:12px;color:rgba(255,255,255,0.5);">קפה טרי בקלייה מקומית</p>
             <div style="margin:0 auto;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
               <a href="${SITE_URL}" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:12px;margin:0 10px;">לאתר</a>
               <span style="color:rgba(255,255,255,0.2);">|</span>
