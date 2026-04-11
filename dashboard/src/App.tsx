@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Sidebar } from './components/shared/Sidebar'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import OverviewPage from './pages/Overview'
 import MetaOrganicPage from './pages/MetaOrganic'
 import MetaAdsPage from './pages/MetaAds'
@@ -23,25 +24,37 @@ function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Each top-level page is wrapped in its own ErrorBoundary so a render
+// crash in one page can't take down the whole app. Neighboring routes
+// keep working and the user sees a scoped error message instead of a
+// blank page.
+function Page({ name, children }: { name: string; children: React.ReactNode }) {
+  return (
+    <Layout>
+      <ErrorBoundary sectionName={name}>{children}</ErrorBoundary>
+    </Layout>
+  )
+}
+
 export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
         <Routes>
-          {/* OAuth callbacks — no sidebar */}
+          {/* OAuth callbacks — no sidebar, no boundary (trivial pages) */}
           <Route path="/auth/meta/callback" element={<MetaCallback />} />
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
-          {/* Main app */}
-          <Route path="/" element={<Layout><OverviewPage /></Layout>} />
-          <Route path="/meta" element={<Layout><MetaOrganicPage /></Layout>} />
-          <Route path="/ads" element={<Layout><MetaAdsPage /></Layout>} />
-          <Route path="/google" element={<Layout><GoogleAdsPage /></Layout>} />
-          <Route path="/google-organic" element={<Layout><GoogleOrganicPage /></Layout>} />
-          <Route path="/advisor" element={<Layout><AdvisorPage /></Layout>} />
-          <Route path="/analyst" element={<Layout><AIAnalystPage /></Layout>} />
-          <Route path="/marketing" element={<Layout><MarketingPage /></Layout>} />
-          <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+          {/* Main app — each route isolated by its own ErrorBoundary */}
+          <Route path="/"                element={<Page name="סקירה כללית"><OverviewPage /></Page>} />
+          <Route path="/meta"            element={<Page name="Meta אורגני"><MetaOrganicPage /></Page>} />
+          <Route path="/ads"             element={<Page name="Meta Ads"><MetaAdsPage /></Page>} />
+          <Route path="/google"          element={<Page name="Google Ads"><GoogleAdsPage /></Page>} />
+          <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
+          <Route path="/advisor"         element={<Page name="יועץ שיווק"><AdvisorPage /></Page>} />
+          <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
+          <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
+          <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />
         </Routes>
       </BrowserRouter>
     </AppProvider>
