@@ -361,8 +361,23 @@ function buildCampaignHtml(params: {
 }): string {
   const { subject, preheader, greeting, body, ctaText, ctaUrl, bannerUrl, products, unsubscribeUrl, promoDeadline } = params;
 
+  // Append UTM parameters to minuto.co.il links only. Uses a {{UTM_CAMPAIGN}}
+  // placeholder because the campaign id isn't known at build time —
+  // handleSendCampaign substitutes the real value per-send. Encoded manually
+  // instead of via URL/URLSearchParams so the curly-brace placeholder survives
+  // (URLSearchParams would percent-encode it as %7B%7BUTM_CAMPAIGN%7D%7D and
+  // break the string replace downstream).
+  const addUtms = (rawUrl: string | undefined, content: string): string => {
+    if (!rawUrl) return "";
+    if (!rawUrl.includes("minuto.co.il")) return rawUrl;
+    if (rawUrl.includes("utm_source=")) return rawUrl; // don't double-up
+    const sep = rawUrl.includes("?") ? "&" : "?";
+    return `${rawUrl}${sep}utm_source=newsletter&utm_medium=email&utm_campaign={{UTM_CAMPAIGN}}&utm_content=${encodeURIComponent(content)}`;
+  };
+
   // Build a single product card cell — fixed dimensions, no description, consistent height
   const buildProductCell = (p: any) => {
+    const productUrl = addUtms(p.permalink || ctaUrl, `product_${p.woo_id || "unknown"}`);
     const hasDiscount = p.sale_price && p.regular_price && p.sale_price !== p.regular_price;
     const priceHtml = hasDiscount
       ? `<span style="text-decoration:line-through;color:#B0A898;font-size:12px;">₪${formatPrice(p.regular_price!)}</span>&nbsp;
@@ -375,7 +390,7 @@ function buildCampaignHtml(params: {
     return `<td valign="top" width="50%" style="padding:6px;">
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;border-radius:12px;border:1px solid #EAE6DF;">
     <tr><td style="padding:0;background:#FAFAF7;">
-      <a href="${escapeHtml(p.permalink || ctaUrl)}" style="text-decoration:none;display:block;">
+      <a href="${escapeHtml(productUrl)}" style="text-decoration:none;display:block;">
         ${p.image_url ? `
         <!--[if mso]>
         <img src="${escapeHtml(p.image_url)}" width="260" height="200" alt="${escapeHtml(shortName)}" style="display:block;width:260px;height:200px;border:0;" />
@@ -391,13 +406,13 @@ function buildCampaignHtml(params: {
       </a>
     </td></tr>
     <tr><td style="padding:14px 12px;direction:rtl;text-align:right;">
-      <a href="${escapeHtml(p.permalink || ctaUrl)}" style="font-size:13px;font-weight:700;color:#2C3522;text-decoration:none;display:block;margin-bottom:8px;line-height:1.3;min-height:34px;">
+      <a href="${escapeHtml(productUrl)}" style="font-size:13px;font-weight:700;color:#2C3522;text-decoration:none;display:block;margin-bottom:8px;line-height:1.3;min-height:34px;">
         ${escapeHtml(shortName)}
       </a>
       ${priceHtml ? `<div style="margin-bottom:12px;">${priceHtml}</div>` : ""}
       <table cellpadding="0" cellspacing="0" border="0">
         <tr><td style="background:#3D4A2E;border-radius:8px;">
-          <a href="${escapeHtml(p.permalink || ctaUrl)}" style="display:inline-block;padding:8px 18px;color:white;text-decoration:none;font-size:12px;font-weight:600;">
+          <a href="${escapeHtml(productUrl)}" style="display:inline-block;padding:8px 18px;color:white;text-decoration:none;font-size:12px;font-weight:600;">
             לרכישה &larr;
           </a>
         </td></tr>
@@ -536,7 +551,7 @@ function buildCampaignHtml(params: {
           <td style="padding:0 36px 36px;text-align:center;">
             <table cellpadding="0" cellspacing="0" border="0" align="center">
               <tr><td style="background:#3D4A2E;border-radius:10px;">
-                <a href="${escapeHtml(ctaUrl)}" style="display:inline-block;padding:16px 48px;color:white;text-decoration:none;font-size:16px;font-weight:700;letter-spacing:0.3px;">
+                <a href="${escapeHtml(addUtms(ctaUrl, "cta_button"))}" style="display:inline-block;padding:16px 48px;color:white;text-decoration:none;font-size:16px;font-weight:700;letter-spacing:0.3px;">
                   ${escapeHtml(ctaText)} &larr;
                 </a>
               </td></tr>
@@ -1461,12 +1476,21 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     return `פרסומת ${raw}`;
   })();
 
+  // UTM campaign tag — substituted into every {{UTM_CAMPAIGN}} placeholder
+  // that buildCampaignHtml baked into links. Test sends get a suffix so
+  // they don't pollute production analytics.
+  const utmCampaignTag = p.testEmail
+    ? `campaign_${p.campaignId}_test`
+    : `campaign_${p.campaignId}`;
+
   for (let i = 0; i < recipients.length; i += batchSize) {
     const batch = recipients.slice(i, i + batchSize);
 
     for (const recipient of batch) {
       const unsubUrl = generateUnsubscribeUrl(recipient.email);
-      const personalizedHtml = campaign.html_content.replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubUrl);
+      const personalizedHtml = campaign.html_content
+        .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubUrl)
+        .replace(/\{\{UTM_CAMPAIGN\}\}/g, utmCampaignTag);
 
       try {
         const res = await fetch("https://api.resend.com/emails", {
