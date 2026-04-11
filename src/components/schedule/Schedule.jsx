@@ -225,7 +225,7 @@ export default function Schedule() {
   const [tab, setTab]           = useState('employees');
   const [weekStart, setWeekStart] = useState(toISO(getNextSunday()));
   const [dayTypes, setDayTypes]  = useState({ sun: 'regular', mon: 'regular', tue: 'regular', wed: 'regular', thu: 'regular', fri: 'friday' });
-  const [roastDays, setRoastDays] = useState({ sun: true, tue: true, wed: false });
+  const [roastDays, setRoastDays] = useState({ sun: true, mon: false, tue: true, wed: false, thu: false });
   const [schedule, setSchedule]  = useState({}); // { "sun_opening": "עד", ... }
   const [scheduleId, setScheduleId] = useState(null);
   const [publishing, setPublishing]   = useState(false);
@@ -783,7 +783,8 @@ export default function Schedule() {
 
             <div style={{ marginTop: '0.75rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#666' }}>ימי קלייה:</span>
-              {['sun', 'tue', 'wed'].map(d => (
+              {/* Friday excluded — it's always the cafe/pre-holiday day type, no roasting */}
+              {['sun', 'mon', 'tue', 'wed', 'thu'].map(d => (
                 <label key={d} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={roastDays[d] || false} onChange={e => setRoastDays(prev => ({ ...prev, [d]: e.target.checked }))} />
                   {DAYS.find(day => day.code === d)?.label}
