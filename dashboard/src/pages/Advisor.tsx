@@ -164,11 +164,48 @@ function StatusBadge({ status }: { status: AdvisorReport['status'] }) {
   return <span className="text-xs bg-surface-100 text-surface-500 px-2 py-0.5 rounded-full font-medium">ממתין</span>
 }
 
-function PanelEmpty({ label }: { label: string }) {
+// Small caption shown above a panel section. Previously the codebase used a
+// `text-xs uppercase tracking-wider text-surface-400` treatment everywhere
+// which made every header basically invisible — users couldn't scan to the
+// section they cared about. A darker, slightly bigger, non-uppercase label
+// gives the eye real anchor points without shouting.
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return <h4 className="text-sm font-semibold text-surface-800 mb-2">{children}</h4>
+}
+
+// Hero "TL;DR" card — the panel's `next_week_focus` directive plus the
+// agent's prose summary, rendered prominently at the top of the panel.
+// This used to be the LAST element in each panel (you had to scroll past
+// every detail card to get to the actual takeaway); moving it to the top
+// flips the reading order so the scan-friendly "what should I actually do
+// this week" appears first and the drill-down cards support it below.
+function HeroCard({ focus, summary }: { focus?: string; summary?: string }) {
+  if (!focus && !summary) return null
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center text-surface-400">
+    <div className="rounded-2xl bg-surface-900 text-white p-4 shadow-sm">
+      <p className="text-[10px] font-semibold text-surface-400 tracking-[0.15em] mb-1.5">★ מוקד השבוע הבא</p>
+      {focus && <p className="text-[15px] font-semibold leading-relaxed mb-2">{focus}</p>}
+      {summary && <p className="text-xs text-surface-300 leading-relaxed">{summary}</p>}
+    </div>
+  )
+}
+
+function PanelEmpty({ label, onRun, running }: { label: string; onRun?: () => void; running?: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
       <div className="text-3xl mb-2">🤖</div>
-      <p className="text-sm text-surface-500">{label} טרם הופעל</p>
+      <p className="text-sm text-surface-500 mb-4">{label} טרם הופעל</p>
+      {onRun && (
+        <button
+          onClick={onRun}
+          disabled={running}
+          className="btn btn-primary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {running
+            ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
+            : <><RefreshCw size={14} /> הפעל סוכן</>}
+        </button>
+      )}
     </div>
   )
 }
@@ -192,17 +229,20 @@ function PanelError({ msg }: { msg: string }) {
 }
 
 function GoogleKPIGrid({ g }: { g: GoogleKPIs }) {
+  // Bumped from text-base to text-xl so the actual data is the biggest
+  // thing in the panel — users should be able to skim ROAS / cost / clicks
+  // in under a second, not hunt for it in 13px mono text.
   return (
     <div className="grid grid-cols-2 gap-2">
       {[
         { label: 'הוצאה', value: `₪${g.total_cost.toLocaleString()}` },
         { label: 'קליקים', value: g.total_clicks.toLocaleString() },
         { label: 'המרות', value: g.total_conversions },
-        { label: 'ROAS', value: `${g.roas}x` },
+        { label: 'ROAS', value: `${g.roas}×` },
       ].map(k => (
-        <div key={k.label} className="bg-surface-50 rounded-xl p-2.5 text-center">
-          <p className="text-base font-bold font-mono text-surface-900">{k.value}</p>
-          <p className="text-xs text-surface-400 mt-0.5">{k.label}</p>
+        <div key={k.label} className="bg-surface-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{k.value}</p>
+          <p className="text-[11px] text-surface-500 mt-1">{k.label}</p>
         </div>
       ))}
     </div>
@@ -213,7 +253,7 @@ function BudgetRecs({ recs }: { recs: BudgetRec[] }) {
   if (!recs?.length) return null
   return (
     <div>
-      <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">המלצות תקציב</h4>
+      <SectionHeader>המלצות תקציב</SectionHeader>
       <div className="space-y-2">
         {recs.map((r, i) => (
           <div key={i} className={`rounded-xl border-r-4 p-3 ${actionColor(r.action)}`}>
@@ -226,7 +266,7 @@ function BudgetRecs({ recs }: { recs: BudgetRec[] }) {
               )}
             </div>
             <p className="text-sm font-medium text-surface-800 truncate">{r.campaign}</p>
-            <p className="text-xs text-surface-500 mt-1">{r.reason}</p>
+            <p className="text-xs text-surface-600 mt-1 leading-relaxed">{r.reason}</p>
           </div>
         ))}
       </div>
@@ -238,10 +278,10 @@ function KeyInsights({ insights }: { insights: string[] }) {
   if (!insights?.length) return null
   return (
     <div>
-      <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">תובנות</h4>
-      <ul className="space-y-1">
+      <SectionHeader>תובנות</SectionHeader>
+      <ul className="space-y-1.5">
         {insights.map((ins, i) => (
-          <li key={i} className="text-sm text-surface-700 flex gap-2">
+          <li key={i} className="text-sm text-surface-700 flex gap-2 leading-relaxed">
             <span className="text-surface-300 shrink-0 mt-0.5">•</span>{ins}
           </li>
         ))}
@@ -290,19 +330,21 @@ function StepsAccordion({ steps, label = '📋 הוראות יצירה ב-Google
   )
 }
 
-function GrowthPanel({ row }: { row: AdvisorReport | null }) {
-  if (!row)                        return <PanelEmpty label="סוכן צמיחה" />
+function GrowthPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun?: () => void; running?: boolean }) {
+  if (!row)                        return <PanelEmpty label="סוכן צמיחה" onRun={onRun} running={running} />
   if (row.status === 'running')    return <PanelRunning />
-  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן צמיחה" />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן צמיחה" onRun={onRun} running={running} />
   if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)                 return <PanelEmpty label="סוכן צמיחה" />
+  if (!row.report)                 return <PanelEmpty label="סוכן צמיחה" onRun={onRun} running={running} />
   const r = row.report as GrowthReport
 
   return (
     <div className="space-y-4">
-      <div className="card bg-blue-50 border-blue-100 p-3">
-        <p className="text-sm text-blue-900 leading-relaxed">{r.summary}</p>
-      </div>
+      {/* Hero: next_week_focus + summary. Previously these two pieces lived
+          in opposite ends of the panel — summary at top, focus buried after
+          every recommendation. Merging them at the top gives the user a real
+          TL;DR on first scroll. */}
+      <HeroCard focus={r.next_week_focus} summary={r.summary} />
 
       {r.google && <GoogleKPIGrid g={r.google} />}
 
@@ -329,12 +371,12 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
       {/* Growth opportunities */}
       {r.growth_opportunities?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">הזדמנויות צמיחה</h4>
+          <SectionHeader>הזדמנויות צמיחה</SectionHeader>
           <div className="space-y-2">
             {r.growth_opportunities.map((op, i) => (
               <div key={i} className="card p-3 border-r-4 border-blue-400 bg-blue-50">
                 <p className="text-sm font-medium text-blue-900 mb-1">{op.opportunity}</p>
-                <p className="text-xs text-blue-700 mb-1">▶ {op.action}</p>
+                <p className="text-xs text-blue-700 mb-1 leading-relaxed">▶ {op.action}</p>
                 <p className="text-xs text-blue-600 italic">{op.expected_impact}</p>
               </div>
             ))}
@@ -345,7 +387,7 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
       {/* Campaigns to create */}
       {r.campaigns_to_create?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">🎯 קמפיינים ליצירה</h4>
+          <SectionHeader>🎯 קמפיינים ליצירה</SectionHeader>
           <div className="space-y-3">
             {r.campaigns_to_create.map((c, i) => (
               <div key={i} className="card p-3 border border-blue-200 bg-blue-50 space-y-2">
@@ -392,32 +434,23 @@ function GrowthPanel({ row }: { row: AdvisorReport | null }) {
       )}
 
       <KeyInsights insights={r.key_insights} />
-
-      {r.next_week_focus && (
-        <div className="card bg-surface-800 text-white p-4">
-          <p className="text-xs font-semibold text-surface-300 mb-1">מוקד שבוע הבא</p>
-          <p className="text-sm leading-relaxed">{r.next_week_focus}</p>
-        </div>
-      )}
     </div>
   )
 }
 
 // ── Efficiency Panel ──────────────────────────────────────────────────────────
 
-function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
-  if (!row)                        return <PanelEmpty label="סוכן יעילות" />
+function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun?: () => void; running?: boolean }) {
+  if (!row)                        return <PanelEmpty label="סוכן יעילות" onRun={onRun} running={running} />
   if (row.status === 'running')    return <PanelRunning />
-  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן יעילות" />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן יעילות" onRun={onRun} running={running} />
   if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)                 return <PanelEmpty label="סוכן יעילות" />
+  if (!row.report)                 return <PanelEmpty label="סוכן יעילות" onRun={onRun} running={running} />
   const r = row.report as EfficiencyReport
 
   return (
     <div className="space-y-4">
-      <div className="card bg-amber-50 border-amber-100 p-3">
-        <p className="text-sm text-amber-900 leading-relaxed">{r.summary}</p>
-      </div>
+      <HeroCard focus={r.next_week_focus} summary={r.summary} />
 
       {r.google && <GoogleKPIGrid g={r.google} />}
 
@@ -443,7 +476,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
       {/* Waste identified */}
       {r.waste_identified?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">בזבוז מזוהה</h4>
+          <SectionHeader>בזבוז מזוהה</SectionHeader>
           <div className="space-y-2">
             {r.waste_identified.map((w, i) => (
               <div key={i} className="card p-3 border-r-4 border-red-400 bg-red-50">
@@ -466,7 +499,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
       {/* Ads to rewrite */}
       {r.ads_to_rewrite?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">✏️ מודעות לשכתוב</h4>
+          <SectionHeader>✏️ מודעות לשכתוב</SectionHeader>
           <div className="space-y-3">
             {r.ads_to_rewrite.map((a, i) => (
               <div key={i} className="card p-3 border border-amber-200 bg-amber-50 space-y-3">
@@ -491,7 +524,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
                         <div className="flex items-start justify-between gap-2 px-3 py-2 bg-red-50 border-b border-red-100">
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-red-500 font-semibold mb-0.5">❌ קיים</p>
-                            <p className="text-xs text-red-800 font-mono break-all">{fix.original}</p>
+                            <p className="text-xs text-red-800 font-mono break-words">{fix.original}</p>
                             {fix.problem && <p className="text-xs text-red-600 mt-1 leading-relaxed">↳ {fix.problem}</p>}
                           </div>
                           <span className={`text-xs font-mono shrink-0 ${fix.original?.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{fix.original?.length}/30</span>
@@ -520,7 +553,7 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
                       <div key={j} className="bg-white rounded-xl border border-surface-200 overflow-hidden">
                         <div className="px-3 py-2 bg-red-50 border-b border-red-100">
                           <p className="text-xs text-red-500 font-semibold mb-0.5">❌ קיים</p>
-                          <p className="text-xs text-red-800 break-all">{fix.original}</p>
+                          <p className="text-xs text-red-800 break-words">{fix.original}</p>
                           {fix.problem && <p className="text-xs text-red-600 mt-1">↳ {fix.problem}</p>}
                         </div>
                         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-green-50">
@@ -546,38 +579,34 @@ function EfficiencyPanel({ row }: { row: AdvisorReport | null }) {
       )}
 
       <KeyInsights insights={r.key_insights} />
-
-      {r.next_week_focus && (
-        <div className="card bg-surface-800 text-white p-4">
-          <p className="text-xs font-semibold text-surface-300 mb-1">מוקד שבוע הבא</p>
-          <p className="text-sm leading-relaxed">{r.next_week_focus}</p>
-        </div>
-      )}
     </div>
   )
 }
 
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
-function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts }: {
+function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts, onRun, running }: {
   row: AdvisorReport | null
   blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>
   setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string }>>>
   writeBlogPost: (rec: GoogleOrganicRec, selectedProducts: string[]) => void
   allProducts: string[]
+  onRun?: () => void
+  running?: boolean
 }) {
-  if (!row)                        return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (!row)                        return <PanelEmpty label="סוכן תוכן אורגני" onRun={onRun} running={running} />
   if (row.status === 'running')    return <PanelRunning />
-  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (row.status === 'cancelled')  return <PanelEmpty label="סוכן תוכן אורגני" onRun={onRun} running={running} />
   if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
-  if (!row.report)                 return <PanelEmpty label="סוכן תוכן אורגני" />
+  if (!row.report)                 return <PanelEmpty label="סוכן תוכן אורגני" onRun={onRun} running={running} />
   const r = row.report as OrganicReport
 
+  // OrganicReport has no next_week_focus field — the hero card falls back
+  // to rendering just the summary as the focus. Still gets the dark TL;DR
+  // treatment at the top so the three panels feel visually parallel.
   return (
     <div className="space-y-4">
-      <div className="card bg-green-50 border-green-100 p-3">
-        <p className="text-sm text-green-900 leading-relaxed">{r.summary}</p>
-      </div>
+      <HeroCard focus={r.summary} />
 
       {/* Account health */}
       {r.account_health && (
@@ -755,16 +784,23 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                               >✕</button>
                             </div>
                           </div>
-                          <div className="px-3 pb-1 space-y-1">
-                            <p className="text-xs text-surface-500 font-semibold">Meta description:</p>
+                          <div className="px-3 pb-1 space-y-1.5">
                             <div className="flex items-center gap-2">
-                              <p className="text-xs text-indigo-800 flex-1">{bs.post.meta_description}</p>
+                              <p className="text-xs text-surface-500 font-semibold">Meta description:</p>
                               <CopyButton text={bs.post.meta_description} />
                             </div>
-                            <p className="text-xs text-surface-500 font-semibold mt-1">Slug: <span className="font-normal text-indigo-700">/{bs.post.slug}</span></p>
+                            <p className="text-xs text-indigo-800">{bs.post.meta_description}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-xs text-surface-500 font-semibold">Slug:</p>
+                              <span className="font-normal text-xs text-indigo-700">/{bs.post.slug}</span>
+                              <CopyButton text={bs.post.slug} />
+                            </div>
                           </div>
                           <div className="px-3 pb-3">
-                            <p className="text-xs text-surface-500 font-semibold mb-1">תוכן המאמר (Markdown):</p>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs text-surface-500 font-semibold">תוכן המאמר (Markdown):</p>
+                              <CopyButton text={bs.post.body} />
+                            </div>
                             <pre className="text-xs text-surface-700 whitespace-pre-wrap bg-gray-50 rounded-lg p-3 max-h-96 overflow-y-auto leading-relaxed" dir="rtl">{bs.post.body}</pre>
                           </div>
                         </div>
@@ -805,7 +841,7 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
       {/* Products to feature */}
       {r.products_to_feature?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">מוצרים לקדם</h4>
+          <SectionHeader>מוצרים לקדם</SectionHeader>
           <div className="space-y-1.5">
             {r.products_to_feature.map((p, i) => (
               <div key={i} className="card p-2.5">
@@ -825,7 +861,7 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
       {/* Posts to publish */}
       {r.posts_to_publish?.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">📲 פוסטים מוכנים לפרסום</h4>
+          <SectionHeader>📲 פוסטים מוכנים לפרסום</SectionHeader>
           <div className="space-y-3">
             {r.posts_to_publish.map((p, i) => (
               <div key={i} className="card p-3 border border-green-200 bg-green-50 space-y-2">
@@ -1014,6 +1050,10 @@ export default function AdvisorPage() {
 
   const isRunning = Object.values(rows).some(r => r?.status === 'running') || running
 
+  // `running` on each panel is derived from the global isRunning state so
+  // the empty-state CTA can disable itself while ANY agent is running. We
+  // don't have per-agent in-flight tracking yet, so showing all three as
+  // disabled during a global run is the safest UX.
   const panels = [
     {
       key: 'google_ads_growth' as AgentType,
@@ -1021,7 +1061,8 @@ export default function AdvisorPage() {
       sublabel: 'סקייל · הגדלת תקציב · חיפוש הזדמנויות',
       icon: <TrendingUp size={16} className="text-blue-500" />,
       headerColor: 'border-blue-100',
-      component: (row: AdvisorReport | null) => <GrowthPanel row={row} />,
+      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
+        <GrowthPanel row={row} onRun={onRun} running={running} />,
     },
     {
       key: 'google_ads_efficiency' as AgentType,
@@ -1029,7 +1070,8 @@ export default function AdvisorPage() {
       sublabel: 'ROAS · חיתוך בזבוז · שיפור רווחיות',
       icon: <Shield size={16} className="text-amber-500" />,
       headerColor: 'border-amber-100',
-      component: (row: AdvisorReport | null) => <EfficiencyPanel row={row} />,
+      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
+        <EfficiencyPanel row={row} onRun={onRun} running={running} />,
     },
     {
       key: 'organic_content' as AgentType,
@@ -1037,39 +1079,63 @@ export default function AdvisorPage() {
       sublabel: 'אינסטגרם · Google Search · מלאי',
       icon: <Leaf size={16} className="text-green-500" />,
       headerColor: 'border-green-100',
-      component: (row: AdvisorReport | null) => <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} allProducts={allProducts} />,
+      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
+        <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} allProducts={allProducts} onRun={onRun} running={running} />,
     },
   ]
 
   return (
     <div className="space-y-6 fade-up">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-display font-semibold text-surface-900">יועץ שיווק AI</h2>
-          <p className="text-sm text-surface-400 mt-1">
-            {selectedWeek ? `שבוע ${formatWeek(selectedWeek)}` : 'טרם הופעל'} · 3 סוכנים
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isRunning && (
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-display font-semibold text-surface-900">יועץ שיווק AI</h2>
+            <p className="text-sm text-surface-400 mt-1">
+              {selectedWeek ? `שבוע ${formatWeek(selectedWeek)}` : 'טרם הופעל'} · 3 סוכנים
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isRunning && (
+              <button
+                onClick={cancelAdvisor}
+                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 bg-white px-3 py-1.5 rounded-xl transition-colors"
+              >
+                <XCircle size={14} /> עצור
+              </button>
+            )}
             <button
-              onClick={cancelAdvisor}
-              className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 bg-white px-3 py-1.5 rounded-xl transition-colors"
+              onClick={runAdvisor}
+              disabled={isRunning}
+              className="btn btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="הרץ את שלושת הסוכנים"
             >
-              <XCircle size={14} /> עצור
+              {isRunning
+                ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
+                : <><RefreshCw size={14} /> הרץ הכל</>}
             </button>
-          )}
-          <button
-            onClick={runAdvisor}
-            disabled={isRunning}
-            className="btn btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isRunning
-              ? <><Loader2 size={14} className="animate-spin" /> מנתח...</>
-              : <><RefreshCw size={14} /> הרץ עכשיו</>}
-          </button>
+          </div>
         </div>
+
+        {/* Week history — moved from the bottom of the page into the header.
+            Comparing weeks is a first-class action, so the week pills belong
+            right next to the "current week" label, not buried 3,000px down
+            the page. Only renders when there's more than one week to switch
+            between. */}
+        {availableWeeks.length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-surface-400 font-medium">שבועות:</span>
+            {availableWeeks.slice(0, 8).map(week => (
+              <button
+                key={week}
+                onClick={() => setSelectedWeek(week)}
+                className={`text-xs px-3 py-1 rounded-full transition-colors ${week === selectedWeek ? 'bg-surface-900 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}
+              >
+                {formatWeek(week)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Focus context */}
@@ -1100,52 +1166,34 @@ export default function AdvisorPage() {
         {panels.map(({ key, label, sublabel, icon, headerColor, component }) => (
           <div key={key} className="card flex flex-col">
             <div className={`flex items-start justify-between mb-4 pb-3 border-b ${headerColor}`}>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   {icon}
                   <h3 className="font-display font-semibold text-surface-900 text-sm">{label}</h3>
                 </div>
                 <p className="text-xs text-surface-400 mt-0.5 mr-6">{sublabel}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {rows[key] && <StatusBadge status={rows[key]!.status} />}
                 <button
                   onClick={() => runAdvisor(key)}
-                  disabled={rows[key]?.status === 'running'}
-                  title="הרץ סוכן זה בלבד"
+                  disabled={rows[key]?.status === 'running' || running}
+                  title="הרץ רק את הסוכן הזה"
                   className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-surface-900 disabled:opacity-30 transition-colors"
                 >
                   <RefreshCw size={11} />
-                  הרץ
+                  הרץ רק את זה
                 </button>
               </div>
             </div>
             <div className="flex-1">
               {loading
                 ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-10 bg-surface-100 rounded animate-pulse" />)}</div>
-                : component(rows[key])}
+                : component(rows[key], () => runAdvisor(key), isRunning)}
             </div>
           </div>
         ))}
       </div>
-
-      {/* Week history */}
-      {availableWeeks.length > 1 && (
-        <div className="card p-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-surface-400 font-medium ml-2">שבועות קודמים:</span>
-            {availableWeeks.map(week => (
-              <button
-                key={week}
-                onClick={() => setSelectedWeek(week)}
-                className={`text-xs px-3 py-1.5 rounded-full transition-colors ${week === selectedWeek ? 'bg-surface-900 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}
-              >
-                {formatWeek(week)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Full empty state */}
       {!loading && availableWeeks.length === 0 && (
