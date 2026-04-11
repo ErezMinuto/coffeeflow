@@ -971,7 +971,7 @@ async function handleGenerate(p: GeneratePayload) {
 - "השנה החלטנו" / "החלטנו לקחת"
 - "הקיץ כבר כאן" / "החורף הגיע" / "האביב פה" / "הסתיו מתקרב"
 - "חוויה בלתי נשכחת" / "חוויה ייחודית" / "חוויית קפה"
-- "הטריק הוא" / "הסוד הוא" / "רק צריך" / "רק סבלנות"
+- "הטריק הוא" / "הסוד הוא" / "הטיפ" / "הטיפ הוא" / "הטיפ שלי" / "רק צריך" / "רק סבלנות"
 - "כדאי לנסות" / "שווה לנסות" (סתמיים)
 - "יאללה לחנות" / "מחכה לך" / "בא לקחת"
 - כל ביטוי עם המילה "מיוחד" — קלישאה. תמיד יש דרך ספציפית יותר.
@@ -979,6 +979,12 @@ async function handleGenerate(p: GeneratePayload) {
 - שימוש ב-"!" יותר מפעם אחת
 - שימוש ביותר מאימוג'י 1
 - bullet lists עם אמוג'י — זה לא מייל, זה פוסט לינקדאין
+- **מקף ארוך (—, em dash) או מקף רגיל (–, en dash) כסימן פיסוק.** זה "טלפון" של AI — קופירייטרים אנושיים כמעט לא משתמשים במקפים באמצע משפט. **השתמש בנקודות ופסיקים במקום.** אם אתה רוצה לומר "X, Y, Z" — תשבור לשני משפטים: "X. Y ו-Z." אם אתה רוצה סוגרי משנה — תשבור גם אותם למשפטים נפרדים.
+
+**חוק בלתי-עביר: לא להמציא מבצעים, הנחות, אחוזים, או מחירים ספציפיים.**
+אם המשתמש לא ציין בהנחיות שלו "יש X% הנחה" או "המחיר ירד ל-Y", **אסור לך לכתוב שום דבר שכולל אחוז, מילה "הנחה", "מבצע", "חסכון", או "במחיר מיוחד".** זו עבירה על חוק הגנת הצרכן הישראלי ועל חוק הספאם. אם תכתוב "15% הנחה השבוע" כשאין כזה מבצע, העסק חשוף לתביעה ייצוגית. זה לא עניין של סגנון, זה עניין של חוקיות.
+
+אם אתה רוצה לסיים עם CTA, תשתמש ב-"באתר." פשוט — או "זמין באתר." או "במלאי באתר." אף פעם לא אחוז שלא אומת.
 
 **מבנה אסור:** אף פעם לא "מה מחכה לך בחנות?" ואחריו רשימת bullet points. זה קטלוג, לא מייל.
 
@@ -1046,6 +1052,30 @@ ${p.customInstructions
   } catch {
     console.error("AI parse error:", rawText);
     return err(500, "Failed to parse AI response");
+  }
+
+  // ── Anti-hallucinated-promotion safety net ──────────────────────────────
+  // The prompt tells the AI not to invent percentage discounts, but it
+  // occasionally does anyway. Sending a campaign with a fake "15% הנחה"
+  // line is a Consumer Protection Law §7 violation (misleading advertising)
+  // and a class-action risk. This post-processor strips any line that
+  // contains promotional language when the user's customInstructions
+  // didn't authorize a promotion.
+  const userAuthorizedPromo = /\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד/.test(p.customInstructions || "");
+  if (!userAuthorizedPromo && campaign.body) {
+    const originalBody = String(campaign.body);
+    const promoLineRegex = /^.*(\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד).*$/gm;
+    const cleaned = originalBody.replace(promoLineRegex, "");
+    if (cleaned !== originalBody) {
+      console.warn(
+        "Stripped hallucinated promotion lines from body. Original length:",
+        originalBody.length,
+        "cleaned length:",
+        cleaned.length,
+      );
+      // Collapse multi-blank runs created by the strip.
+      campaign.body = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+    }
   }
 
   // Israeli Communications Law §30א requires clear identification of
