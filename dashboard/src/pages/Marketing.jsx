@@ -99,7 +99,7 @@ export default function Marketing() {
         ))}
       </div>
 
-      {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} editData={editData} clearEdit={() => setEditData(null)} />}
+      {activeTab === 'compose'     && <AutoComposeTab data={data} user={user} showToast={showToast} duplicateData={duplicateData} clearDuplicate={() => setDuplicateData(null)} editData={editData} clearEdit={() => setEditData(null)} campaignsDb={campaignsDb} />}
       {activeTab === 'automations' && <AutomationsTab data={data} user={user} showToast={showToast} />}
       {activeTab === 'contacts'    && <ContactsTab data={data} user={user} showToast={showToast} marketingContactsDb={marketingContactsDb} />}
       {activeTab === 'groups'      && <GroupsTab data={data} showToast={showToast} contactGroupsDb={contactGroupsDb} contactGroupMembersDb={contactGroupMembersDb} />}
@@ -110,7 +110,7 @@ export default function Marketing() {
 
 // ── Auto Compose Tab (AI-powered one-click) ─────────────────────────────────
 
-function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, editData, clearEdit }) {
+function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, editData, clearEdit, campaignsDb }) {
   const [step, setStep]                 = useState('idle'); // idle | ideas | generating | draft | sending | sent
   const [hint, setHint]                 = useState('');
   const [ideas, setIdeas]               = useState([]);
@@ -428,6 +428,12 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         }));
         setDirty(false);
         setLastSavedAt(Date.now());
+        // Re-fetch the shared campaigns cache so the History tab shows
+        // the updated subject/body/html_content immediately. Without this,
+        // data.campaigns stays stuck on whatever was loaded when the app
+        // first mounted, and the history tab shows stale pre-edit content.
+        // Fire-and-forget so autosave doesn't block on the network round trip.
+        campaignsDb?.refresh?.().catch((e) => console.warn('campaigns refresh failed:', e));
         if (!isAuto) showToast('✅ השינויים נשמרו');
       } else if (result?.error) {
         throw new Error(result.error);
