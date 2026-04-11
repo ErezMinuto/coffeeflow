@@ -23,6 +23,48 @@ const WEBHOOK_SECRET = Deno.env.get("TASKS_BOT_WEBHOOK_SECRET")  ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
+// ── Security helpers ─────────────────────────────────────────────────────────
+
+const RATE_LIMIT_PER_WINDOW = 20;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+
+async function checkRateLimit(telegramId: string | number | undefined): Promise<boolean> {
+  if (!telegramId) return true;
+  try {
+    const { data, error } = await supabase.rpc("check_bot_rate_limit", {
+      p_telegram_id:    String(telegramId),
+      p_bot_name:       "telegram-bot",
+      p_limit:          RATE_LIMIT_PER_WINDOW,
+      p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+    });
+    if (error) {
+      console.error("rate-limit RPC error, allowing request:", error.message);
+      return true;
+    }
+    return data === true;
+  } catch (e: any) {
+    console.error("rate-limit RPC threw, allowing request:", e?.message);
+    return true;
+  }
+}
+
+const INJECTION_PATTERNS = [
+  /ignore\s+(all|previous|the|above|prior)/i,
+  /disregard\s+(all|previous|the|above|prior)/i,
+  /forget\s+(everything|all|previous|the\s+above)/i,
+  /new\s+instructions?/i,
+  /system\s*:\s*/i,
+  /\[INST\]/i,
+  /\[\/INST\]/i,
+  /<\|im_start\|>/i,
+  /<\|im_end\|>/i,
+  /you\s+are\s+(now|actually)/i,
+];
+
+function looksLikeInjection(text: string): boolean {
+  return INJECTION_PATTERNS.some((p) => p.test(text));
+}
+
 async function reply(chatId: string | number, text: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
@@ -184,16 +226,30 @@ serve(async (req) => {
     const message = body.message;
     if (!message?.text) return new Response("ok");
 
-    const chatId   = String(message.chat.id);
-    const text     = message.text.trim();
-    const fromName = message.from?.first_name ?? "מישהו";
+    const chatId     = String(message.chat.id);
+    const text       = message.text.trim();
+    const telegramId = message.from?.id;
+    const fromName   = message.from?.first_name ?? "מישהו";
 
     if (chatId !== ALLOWED_CHAT) return new Response("ok");
 
+    // Rate limit per telegram_id within the allowed group
+    if (!(await checkRateLimit(telegramId))) {
+      console.warn(`telegram-bot rate-limited telegram_id=${telegramId}`);
+      return new Response("ok");
+    }
+
+    // Injection pre-filter — only for free-text messages that reach Claude
     const lower = text.toLowerCase();
     if      (lower.startsWith("/tasks")) await handleTasks(chatId);
     else if (lower.startsWith("/done"))  await handleDone(chatId, text);
-    else if (!lower.startsWith("/"))     await handleFreeText(chatId, text, fromName);
+    else if (!lower.startsWith("/")) {
+      if (looksLikeInjection(text)) {
+        console.warn(`telegram-bot rejected injection attempt from telegram_id=${telegramId}: "${text.slice(0, 100)}"`);
+        return new Response("ok");
+      }
+      await handleFreeText(chatId, text, fromName);
+    }
 
     return new Response("ok");
   } catch (err) {
