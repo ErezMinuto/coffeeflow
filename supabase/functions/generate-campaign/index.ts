@@ -1941,49 +1941,6 @@ async function handlePublicSubscribe(payload: { email: string; name?: string; ph
   return ok({ ok: true, email });
 }
 
-// ── TEMP: verify erez is in the audience and in supabase ───────────────────
-async function handleDebugVerifyErez() {
-  const target = "erez@minuto.co.il";
-  const out: any = { target };
-
-  // 1. Walk the audience to confirm erez is now a member
-  try {
-    let after: string | null = null;
-    let found = false;
-    let totalWalked = 0;
-    for (let p = 0; p < 200; p++) {
-      const url = new URL(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`);
-      url.searchParams.set("limit", "100");
-      if (after) url.searchParams.set("after", after);
-      const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${RESEND_KEY}` } });
-      if (!r.ok) { out.audience_list_error = `${r.status}`; break; }
-      const j = await r.json();
-      const contacts = j.data || [];
-      totalWalked += contacts.length;
-      if (contacts.find((c: any) => (c.email || "").toLowerCase() === target)) {
-        found = true;
-        break;
-      }
-      if (contacts.length < 100) break;
-      after = contacts[contacts.length - 1]?.id || null;
-      if (!after) break;
-    }
-    out.in_audience = found;
-    out.audience_total_walked = totalWalked;
-  } catch (e: any) {
-    out.audience_walk_threw = e?.message;
-  }
-
-  // 2. Check Supabase
-  const { data: rows } = await supabase
-    .from("marketing_contacts")
-    .select("*")
-    .eq("email", target);
-  out.supabase_rows = rows;
-
-  return ok(out);
-}
-
 // ── Main ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -2021,7 +1978,6 @@ serve(async (req) => {
         return ok({ status: r.status, models: d });
       })(); break;
       case "subscribe":        response = await handlePublicSubscribe(payload); break;
-      case "debug-verify-erez":    response = await handleDebugVerifyErez(); break;
       default:                  response = err(400, `Unknown action: ${action}`); break;
     }
     // Override CORS headers with dynamic origin
