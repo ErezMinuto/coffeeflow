@@ -995,8 +995,16 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                 {rec.why_now && (
                   <p className="text-xs text-indigo-700 bg-indigo-100 rounded px-2 py-1">⏰ {rec.why_now}</p>
                 )}
-                {/* Blog post writer */}
-                {rec.content_type === 'blog_post' && (() => {
+                {/* Blog post writer — available on every organic rec, not
+                    just ones the AI tagged as content_type='blog_post'. The
+                    agent classifies targets into blog_post / landing_page /
+                    product_page / faq_page but in practice the user may
+                    want a written draft for any of them, and the server-
+                    side writer is content-type-agnostic. The previous gate
+                    hid the button entirely when the agent picked
+                    landing_page, which made the Organic panel look broken
+                    on weeks with no explicit blog_post recs. */}
+                {(() => {
                   const bs = blogState[rec.keyword]
                   const picked = bs?.selectedProducts ?? []
                   const searchText = bs?.customProductText ?? ''
