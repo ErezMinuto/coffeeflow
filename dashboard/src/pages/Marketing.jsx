@@ -608,6 +608,9 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         userId: user.id,
         campaignId: draft.id,
         selectedRecipients: testGroupMembers,
+        // Test-group sends go to real people but leave the draft editable —
+        // backend skips the campaigns.status='sent' update when this is true.
+        isTestSend: true,
       });
       if (result && result.sent > 0) {
         showToast(`✅ נשלח ל-${result.sent} חברי קבוצת בדיקה!`);

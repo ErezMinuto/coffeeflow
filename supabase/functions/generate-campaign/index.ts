@@ -1443,6 +1443,10 @@ interface SendCampaignPayload {
   campaignId: number;
   testEmail?: string;
   selectedRecipients?: Array<{ email: string; name?: string }>;
+  // When true, the campaign's status stays 'draft' after the send so the
+  // user can keep iterating. Used by the "send to test group" button — it
+  // goes to real people but the campaign isn't considered "sent for real".
+  isTestSend?: boolean;
 }
 
 async function handleSendCampaign(p: SendCampaignPayload) {
@@ -1563,7 +1567,12 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     }
   }
 
-  if (!p.testEmail) {
+  // Real sends flip the draft to 'sent' so the History tab shows the right
+  // state and the Edit button hides. Test sends (single-address testEmail
+  // OR the test-group isTestSend flag) leave the draft alone so the user
+  // can keep iterating after a pre-flight blast to testers.
+  const isTest = !!p.testEmail || !!p.isTestSend;
+  if (!isTest) {
     await supabase
       .from("campaigns")
       .update({
