@@ -2288,6 +2288,30 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
   const [previewUrl, setPreviewUrl] = useState('');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [resumingId, setResumingId] = useState(null);
+
+  const handleResume = async (c) => {
+    const remaining = (data.marketing_contacts || []).filter(mc => mc.opted_in).length - (c.recipient_count || 0);
+    if (remaining <= 0) {
+      showToast('✅ כל הנמענים כבר קיבלו את הקמפיין', 'info');
+      return;
+    }
+    if (!window.confirm(`לשלוח את הקמפיין ל-${remaining} הנותרים שטרם קיבלו?`)) return;
+    setResumingId(c.id);
+    try {
+      const result = await callCampaignFunction(supabase, 'send-campaign', {
+        userId: user.id,
+        campaignId: c.id,
+        resume: true,
+      });
+      const errMsg = result.errorCount > 0 ? ` (${result.errorCount} שגיאות)` : '';
+      showToast(`✅ נשלח ל-${result.sent} נמענים נוספים${errMsg}`);
+    } catch (err) {
+      showToast(`❌ שגיאה: ${err.message}`, 'error');
+    } finally {
+      setResumingId(null);
+    }
+  };
 
   const campaigns = (data.campaigns || []).sort((a, b) =>
     new Date(b.created_at) - new Date(a.created_at)
@@ -2503,6 +2527,17 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
                         style={{ fontSize: '0.85rem' }}
                       >
                         ✏️ המשך עריכה
+                      </button>
+                    )}
+                    {c.status === 'sent' && c.channel === 'email' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResume(c); }}
+                        disabled={resumingId === c.id}
+                        className="btn-small"
+                        style={{ fontSize: '0.85rem' }}
+                        title="שלח למי שעדיין לא קיבל (מדלג על מי שכבר קיבל)"
+                      >
+                        {resumingId === c.id ? '⏳ שולח...' : '📨 שלח לנותרים'}
                       </button>
                     )}
                     <button

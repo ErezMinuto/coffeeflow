@@ -1447,6 +1447,12 @@ interface SendCampaignPayload {
   // user can keep iterating. Used by the "send to test group" button — it
   // goes to real people but the campaign isn't considered "sent for real".
   isTestSend?: boolean;
+  // When true, pre-filter the recipient list to exclude addresses that
+  // already have a `sent` event for this campaign_id. Used to finish a
+  // partial send that got cut short by rate limits or plan quota — one
+  // click from the History tab picks up where the first run left off
+  // without double-mailing anyone who already received it.
+  resume?: boolean;
 }
 
 async function handleSendCampaign(p: SendCampaignPayload) {
@@ -1470,16 +1476,76 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     recipients = p.selectedRecipients;
     console.log(`Sending to ${recipients.length} selected recipients`);
   } else {
-    // Fetch all subscribed recipients from Resend Contacts
-    recipients = await fetchResendContacts();
-    console.log(`Fetched ${recipients.length} subscribed contacts from Resend`);
+    // Default audience = all opted-in rows in marketing_contacts. Previously
+    // this pulled from Resend's Audience list, which silently capped the
+    // reachable audience to whatever had been "pushed to Resend" — one send
+    // shipped to 172/3,582 contacts because the rest weren't in the audience.
+    // Reading from the DB directly makes the opted-in column the single
+    // source of truth for who gets a campaign, and drops the extra "push to
+    // Resend" step that used to be required before every bulk send.
+    recipients = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: rows, error: dbErr } = await supabase
+        .from("marketing_contacts")
+        .select("email, name")
+        .eq("opted_in", true)
+        .range(from, from + 999);
+      if (dbErr) {
+        console.error("marketing_contacts fetch error:", dbErr.message);
+        break;
+      }
+      if (!rows || rows.length === 0) break;
+      for (const r of rows) {
+        if (r.email) recipients.push({ email: r.email, name: r.name || undefined });
+      }
+      if (rows.length < 1000) break;
+    }
+    console.log(`Fetched ${recipients.length} opted-in contacts from DB`);
+  }
+
+  // Resume mode — drop anyone we already emailed for this campaign so a
+  // rate-limited / quota-capped prior run can be finished without double
+  // mailing. Skip for test sends since those have a synthetic recipient.
+  if (p.resume === true && !p.testEmail) {
+    const alreadySent = new Set<string>();
+    // Paginate in 1,000-row chunks — Supabase client caps a single query at
+    // 1,000 rows by default and we have campaigns with 3,000+ recipients.
+    for (let from = 0; ; from += 1000) {
+      const { data: batch } = await supabase
+        .from("campaign_events")
+        .select("recipient_email")
+        .eq("campaign_id", p.campaignId)
+        .eq("event_type", "sent")
+        .range(from, from + 999);
+      if (!batch || batch.length === 0) break;
+      for (const row of batch) {
+        if (row.recipient_email) alreadySent.add(String(row.recipient_email).toLowerCase().trim());
+      }
+      if (batch.length < 1000) break;
+    }
+    const before = recipients.length;
+    recipients = recipients.filter(r => !alreadySent.has(r.email.toLowerCase().trim()));
+    console.log(`Resume: ${before} -> ${recipients.length} (excluded ${alreadySent.size} already-sent)`);
   }
 
   if (recipients.length === 0) return err(400, "No recipients");
 
-  const batchSize = 50;
+  // Resend Batch API: up to 100 personalized emails per request. This keeps
+  // us well under any rate limit (each call = 1 request, not N) and is the
+  // only practical way to blast 3,000+ contacts from within a 60-second
+  // edge function invocation window.
+  //
+  // Even with batching, Resend can return 429 sporadically — we retry the
+  // batch up to 3 times with exponential backoff (1s, 2s, 4s) plus respect
+  // for any Retry-After header. If it still fails after the 3rd attempt,
+  // the recipients are recorded as errors and the caller can `resume: true`
+  // on a later run to pick them back up.
+  const BATCH_SIZE = 100;
+  const BATCH_DELAY_MS = 1100; // ~0.9 batches/sec — headroom under 2/sec
+  const MAX_RETRIES = 3;
   let sent = 0;
   let errors: string[] = [];
+  const sentEvents: Array<Record<string, unknown>> = [];
 
   // Israeli Communications Law §30א requires commercial emails to be clearly
   // identified as advertising. Append " | פרסומת" to every sent subject line.
@@ -1503,67 +1569,100 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     ? `campaign_${p.campaignId}_test`
     : `campaign_${p.campaignId}`;
 
-  for (let i = 0; i < recipients.length; i += batchSize) {
-    const batch = recipients.slice(i, i + batchSize);
+  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+    const chunk = recipients.slice(i, i + BATCH_SIZE);
 
-    for (const recipient of batch) {
-      const unsubUrl = generateUnsubscribeUrl(recipient.email);
+    // Build a per-recipient payload so each email gets its own unique
+    // unsubscribe URL (HMAC-signed per address) and UTM tag.
+    const batchPayload = chunk.map(r => {
+      const unsubUrl = generateUnsubscribeUrl(r.email);
       const personalizedHtml = campaign.html_content
         .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubUrl)
         .replace(/\{\{UTM_CAMPAIGN\}\}/g, utmCampaignTag);
+      return {
+        from:    `Minuto <${SENDER_EMAIL}>`,
+        to:      [r.email],
+        subject: sendSubject,
+        html:    personalizedHtml,
+        headers: { "List-Unsubscribe": `<${unsubUrl}>` },
+      };
+    });
 
-      try {
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${RESEND_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from:    `Minuto <${SENDER_EMAIL}>`,
-            to:      [recipient.email],
-            subject: sendSubject,
-            html:    personalizedHtml,
-            headers: { "List-Unsubscribe": `<${unsubUrl}>` },
-          }),
-        });
-
-        if (res.ok) {
-          sent++;
-          // Store Resend email ID for webhook event tracking
-          try {
-            const resBody = await res.json();
-            if (resBody.id) {
-              await supabase.from("campaign_events").insert({
-                user_id: p.userId,
-                campaign_id: p.campaignId,
-                resend_email_id: resBody.id,
-                event_type: "sent",
-                recipient_email: recipient.email,
-              });
-            }
-          } catch (_) { /* non-critical */ }
-        } else {
-          // Capture the full Resend error response so the frontend can
-          // show something actionable (e.g., "domain not verified").
-          let detail = `${res.status}`;
-          try {
-            const errBody = await res.json();
-            detail = `${res.status} ${errBody.name || ""}: ${errBody.message || JSON.stringify(errBody)}`.trim();
-          } catch {
-            try { detail = `${res.status} ${await res.text()}`; } catch { /* ignore */ }
-          }
-          console.error("Resend send failed for", recipient.email, "-", detail);
-          errors.push(`${recipient.email}: ${detail}`);
-        }
-      } catch (e: any) {
-        console.error("Resend fetch threw for", recipient.email, "-", e?.message);
-        errors.push(`${recipient.email}: ${e?.message || "unknown fetch error"}`);
-      }
+    let res: Response | null = null;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(batchPayload),
+      });
+      if (res.status !== 429) break;
+      if (attempt === MAX_RETRIES) break;
+      // 429 — honor Retry-After if present, else exponential backoff
+      const headerRetry = parseInt(res.headers.get("retry-after") || "0", 10) * 1000;
+      const backoff = headerRetry || (1000 * Math.pow(2, attempt));
+      console.warn(`Batch 429 on attempt ${attempt + 1}, sleeping ${backoff}ms`);
+      await new Promise(r => setTimeout(r, backoff));
     }
 
-    if (i + batchSize < recipients.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+    try {
+      if (!res) throw new Error("no response");
+
+      if (res.ok) {
+        const resBody = await res.json();
+        // Batch API returns { data: [{ id: "..." }, ...] } preserving order.
+        const ids: Array<{ id?: string }> = Array.isArray(resBody?.data) ? resBody.data : [];
+        for (let j = 0; j < chunk.length; j++) {
+          const id = ids[j]?.id;
+          if (id) {
+            sent++;
+            sentEvents.push({
+              user_id:         p.userId,
+              campaign_id:     p.campaignId,
+              resend_email_id: id,
+              event_type:      "sent",
+              recipient_email: chunk[j].email,
+            });
+          } else {
+            errors.push(`${chunk[j].email}: missing id in batch response`);
+          }
+        }
+      } else {
+        // Batch as a whole failed — record the error for every recipient in
+        // the chunk so the user sees the full scope in the History error
+        // column rather than just an opaque "send failed".
+        let detail = `${res.status}`;
+        try {
+          const errBody = await res.json();
+          detail = `${res.status} ${errBody.name || ""}: ${errBody.message || JSON.stringify(errBody)}`.trim();
+        } catch {
+          try { detail = `${res.status} ${await res.text()}`; } catch { /* ignore */ }
+        }
+        console.error("Resend batch send failed -", detail);
+        for (const r of chunk) errors.push(`${r.email}: ${detail}`);
+      }
+    } catch (e: any) {
+      console.error("Resend batch fetch threw -", e?.message);
+      for (const r of chunk) errors.push(`${r.email}: ${e?.message || "unknown fetch error"}`);
+    }
+
+    if (i + BATCH_SIZE < recipients.length) {
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+    }
+  }
+
+  // Bulk-insert every sent event in one round trip. 3k rows fits fine in a
+  // single insert and avoids 3k individual PostgREST calls that used to run
+  // inline in the old per-email loop.
+  if (sentEvents.length > 0) {
+    // Chunk the insert too — Postgres tolerates huge inserts but PostgREST
+    // limits payload size at ~4MB; 1k rows per chunk is safe.
+    for (let i = 0; i < sentEvents.length; i += 1000) {
+      const chunk = sentEvents.slice(i, i + 1000);
+      const { error: insertErr } = await supabase.from("campaign_events").insert(chunk);
+      if (insertErr) console.error("sent event bulk insert error:", insertErr.message);
     }
   }
 
@@ -1573,11 +1672,15 @@ async function handleSendCampaign(p: SendCampaignPayload) {
   // can keep iterating after a pre-flight blast to testers.
   const isTest = !!p.testEmail || !!p.isTestSend;
   if (!isTest) {
+    // On resume, add to the existing recipient_count instead of overwriting
+    // it — otherwise a follow-up send would clobber the first run's count.
+    const priorCount = p.resume ? (campaign.recipient_count || 0) : 0;
+    const totalCount = priorCount + sent;
     await supabase
       .from("campaigns")
       .update({
-        status:          sent > 0 ? "sent" : "failed",
-        recipient_count: sent,
+        status:          totalCount > 0 ? "sent" : "failed",
+        recipient_count: totalCount,
         sent_at:         new Date().toISOString(),
         error:           errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
       })
@@ -1827,9 +1930,13 @@ async function handleSyncResendContacts(userId: string) {
 
 async function pushContactsToResend(contacts: Array<{ email: string; name?: string }>) {
   let pushed = 0, failed = 0;
-  const CONCURRENCY = 5; // conservative parallel requests to avoid Resend rate limits
+  // Resend's contacts API is 5 req/sec hard limit. A single sequential loop
+  // with 300ms spacing gives ~3.3 req/sec — well inside the cap and leaves
+  // headroom if the edge function is processing other Resend traffic in
+  // parallel (e.g. an in-flight campaign send).
+  const REQUEST_SPACING_MS = 300;
 
-  async function pushOne(c: { email: string; name?: string }, retries = 3): Promise<void> {
+  async function pushOne(c: { email: string; name?: string }, attempt = 0): Promise<void> {
     const email = (c.email || "").toLowerCase().trim();
     if (!email || !email.includes("@")) { failed++; return; }
     const parts = (c.name || "").trim().split(/\s+/);
@@ -1840,11 +1947,13 @@ async function pushContactsToResend(contacts: Array<{ email: string; name?: stri
         body: JSON.stringify({ email, first_name: parts[0] || "", last_name: parts.slice(1).join(" ") || "", unsubscribed: false }),
       });
       if (res.ok) { pushed++; return; }
-      if (res.status === 429 && retries > 0) {
-        // Rate limited — wait and retry
-        const retryAfter = parseInt(res.headers.get("retry-after") || "2") * 1000;
-        await new Promise(r => setTimeout(r, retryAfter || 2000));
-        return pushOne(c, retries - 1);
+      if (res.status === 429 && attempt < 4) {
+        // Exponential backoff — start at 1s, double each retry. Respects
+        // Retry-After header when Resend provides one.
+        const headerRetry = parseInt(res.headers.get("retry-after") || "0", 10) * 1000;
+        const backoff = headerRetry || (1000 * Math.pow(2, attempt));
+        await new Promise(r => setTimeout(r, backoff));
+        return pushOne(c, attempt + 1);
       }
       const txt = await res.text();
       console.error("Resend push error:", res.status, txt, email);
@@ -1852,9 +1961,13 @@ async function pushContactsToResend(contacts: Array<{ email: string; name?: stri
     } catch (e: any) { console.error("Resend push exception:", e.message, email); failed++; }
   }
 
-  // Run CONCURRENCY requests in parallel, chunk by chunk
-  for (let i = 0; i < contacts.length; i += CONCURRENCY) {
-    await Promise.all(contacts.slice(i, i + CONCURRENCY).map(c => pushOne(c)));
+  // Sequential with fixed spacing — predictable, not bursty, and easy to
+  // reason about. Parallel CONCURRENCY loops were the origin of the prior
+  // 429 storms because Promise.all + no inter-group sleep fires all N
+  // requests at once, blowing past a per-second cap immediately.
+  for (const c of contacts) {
+    await pushOne(c);
+    await new Promise(r => setTimeout(r, REQUEST_SPACING_MS));
   }
 
   return { pushed, failed };
