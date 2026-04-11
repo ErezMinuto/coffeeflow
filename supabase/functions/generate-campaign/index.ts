@@ -361,13 +361,17 @@ function buildCampaignHtml(params: {
 }): string {
   const { subject, preheader, greeting, body, ctaText, ctaUrl, bannerUrl, products, unsubscribeUrl, promoDeadline } = params;
 
-  // The stored subject has the legal "פרסומת" prefix for mail-client display,
-  // but the visual banner heading should show only the creative subject — the
-  // legal marker belongs in the mail client header, not on the marketing
-  // image. Strip the prefix (and any RTL marks around it) for the in-banner
-  // h1 rendering only. The email subject in the mail client is unaffected.
+  // The stored subject has a " | פרסומת" suffix for mail-client display
+  // (Communications Law §30א compliance), but the visual banner heading
+  // should show only the creative subject — the legal marker belongs in
+  // the mail client header, not on the marketing image. Strip any form of
+  // the marker (new suffix format, legacy prefix format, RTL variants) for
+  // the in-banner h1 rendering only. The email subject in the mail client
+  // is unaffected.
   const bannerSubject = String(subject || "")
     .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/, "")
+    .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/, "")
+    .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
     .trim();
 
   // Append UTM parameters to minuto.co.il links only. Uses a {{UTM_CAMPAIGN}}
@@ -1040,10 +1044,10 @@ ${p.customInstructions
 
 החזר JSON בלבד:
 {
-  "subject": "נושא קצר עד 50 תווים, אימוג'י אחד מקסימום. **אסור לכלול את המילה 'פרסומת'** — המערכת מוסיפה אותה אוטומטית בהתחלה. אם תכלול אותה, היא תופיע פעמיים.",
+  "subject": "נושא קצר עד 50 תווים, אימוג'י אחד מקסימום. **אסור לכלול את המילה 'פרסומת'** — המערכת מוסיפה ' | פרסומת' בסוף אוטומטית. אם תכלול אותה, היא תופיע פעמיים.",
   "preheader": "משפט אחד קצר עד 60 תווים",
   "greeting": "חובה: 'היי' או 'שלום' או 'מה קורה' — בלי תארים",
-  "body": "גוף קצר בעברית פשוטה, 70-110 מילים. שבירת שורות עם \\n. **אסור לכלול את הטקסט '| פרסומת' או כל וריאציה שלו בגוף** — המערכת מוסיפה אותה אוטומטית בסוף. אם תכלול אותה, היא תופיע פעמיים.",
+  "body": "גוף קצר בעברית פשוטה, 70-110 מילים. שבירת שורות עם \\n. **אסור לכלול את המילה 'פרסומת' בגוף.** המערכת מוסיפה אותה רק לנושא (subject), לא לגוף.",
   "cta_text": "טקסט קצר לכפתור",
   "cta_url": "https://minuto.co.il/shop",
   "product_ids": ["חובה! woo_id מספרים מהקטלוג למעלה. לפחות 2 מוצרים"],
@@ -1133,34 +1137,33 @@ ${p.customInstructions
   }
 
   // Israeli Communications Law §30א requires clear identification of
-  // commercial emails. We enforce "פרסומת" in two editable places at
-  // generation time so the user sees it in the composer and can reposition
-  // it if needed:
-  //   1. Prefix of the subject line (must be first word per legal convention)
-  //   2. End-of-body marker in the form "| פרסומת"
-  // Additionally, handleSendCampaign applies the same subject prefix at send
-  // time as an idempotent non-editable safety rail.
+  // commercial emails. The convention: a " | פרסומת" suffix on the subject
+  // line. Body stays clean — "פרסומת" belongs in the subject only.
   //
-  // Idempotence is enforced by STRIPPING any existing markers the AI might
-  // have included (often with invisible RTL marks or stray whitespace that
-  // break string equality), then re-appending a single clean marker. This
-  // is more robust than endsWith() checks which the AI occasionally evaded.
-  const SUBJECT_PREFIX = "פרסומת ";
-  const BODY_MARKER = "| פרסומת";
+  // Idempotence is enforced by STRIPPING any existing "פרסומת" markers the
+  // AI might have included (as prefix, suffix, or in the body), then
+  // appending a single clean suffix on the subject. This is more robust
+  // than endsWith() checks which the AI occasionally evaded via RTL marks.
+  const SUBJECT_SUFFIX = " | פרסומת";
   if (campaign.subject) {
     const subj = String(campaign.subject)
-      .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/g, "") // strip any existing prefix, incl. RTL marks
+      // Strip any legacy prefix form "פרסומת <text>"
+      .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/g, "")
+      // Strip any existing suffix form "<text> | פרסומת"
+      .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/g, "")
+      // Strip stray "פרסומת" tokens anywhere else
+      .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
       .trim();
-    campaign.subject = `${SUBJECT_PREFIX}${subj}`;
+    campaign.subject = `${subj}${SUBJECT_SUFFIX}`;
   }
+  // Body: strip any "פרסומת" / "| פרסומת" the AI accidentally produced.
+  // Do NOT re-append — the marker belongs in the subject only.
   if (campaign.body) {
-    const cleaned = String(campaign.body)
-      // Strip every "| פרסומת" occurrence regardless of surrounding
-      // whitespace, pipe variants, or RTL marks. Anchored to a pipe
-      // followed by optional spacing then the Hebrew word.
+    campaign.body = String(campaign.body)
       .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/g, "")
+      .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
+      .replace(/\n{3,}/g, "\n\n")
       .trimEnd();
-    campaign.body = `${cleaned}\n\n${BODY_MARKER}`;
   }
 
   // 6. Generate banner image with Gemini
@@ -1475,14 +1478,18 @@ async function handleSendCampaign(p: SendCampaignPayload) {
   let errors: string[] = [];
 
   // Israeli Communications Law §30א requires commercial emails to be clearly
-  // identified as advertising. Prepend "פרסומת" to every sent subject line.
-  // Idempotent: won't double-prefix if the AI (or a duplicated draft) already
-  // put it there. Applied at send time only — the stored subject in the
-  // editor stays clean so the word doesn't bleed into the preview / history.
+  // identified as advertising. Append " | פרסומת" to every sent subject line.
+  // Idempotent: strips any existing "פרסומת" marker (prefix, suffix, or
+  // stray) then re-appends a single clean suffix. Applied at send time as
+  // a safety rail — the stored subject in handleGenerate's post-processor
+  // already does this on generation, so normally this is a no-op.
   const sendSubject = (() => {
-    const raw = (campaign.subject || "").trim();
-    if (/^פרסומת\b/.test(raw)) return raw;
-    return `פרסומת ${raw}`;
+    const raw = String(campaign.subject || "")
+      .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/, "")
+      .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/, "")
+      .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
+      .trim();
+    return `${raw} | פרסומת`;
   })();
 
   // UTM campaign tag — substituted into every {{UTM_CAMPAIGN}} placeholder
