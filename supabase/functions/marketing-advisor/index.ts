@@ -582,15 +582,25 @@ async function upsertReport(
 // Serper.dev search queries — each one returns ads, organic results, People
 // Also Ask, and related searches from Israeli Google. This is what a real
 // marketing researcher would search.
+// Serper search queries — structured by research purpose
 const SERPER_SEARCHES = [
-  // Core purchase-intent keywords — who's advertising here?
-  { q: "פולי קפה", gl: "il", hl: "he" },
-  { q: "קפה ספשלטי", gl: "il", hl: "he" },
-  { q: "פולי קפה אונליין", gl: "il", hl: "he" },
-  { q: "בית קלייה קפה", gl: "il", hl: "he" },
-  // Upgrade intent — who captures the "I want better coffee" audience?
-  { q: "פולי קפה טריים משלוח", gl: "il", hl: "he" },
-  { q: "שדרוג קפה ביתי", gl: "il", hl: "he" },
+  // Core purchase-intent — who's advertising and ranking?
+  { q: "פולי קפה", gl: "il", hl: "he", type: "search" },
+  { q: "קפה ספשלטי", gl: "il", hl: "he", type: "search" },
+  { q: "פולי קפה אונליין", gl: "il", hl: "he", type: "search" },
+  { q: "בית קלייה קפה", gl: "il", hl: "he", type: "search" },
+  { q: "פולי קפה טריים משלוח", gl: "il", hl: "he", type: "search" },
+  // Competitor brand searches — what shows when people search for competitors?
+  { q: "נחת קפה פולים", gl: "il", hl: "he", type: "search" },
+  { q: "jera coffee פולי קפה", gl: "il", hl: "he", type: "search" },
+  { q: "blooms coffee roastery", gl: "il", hl: "he", type: "search" },
+];
+
+// Serper Places queries — Google Business reviews of coffee roasters
+// Shows what customers love/hate about competitors
+const SERPER_PLACES = [
+  { q: "בית קלייה קפה ספשלטי", gl: "il", hl: "he" },
+  { q: "חנות פולי קפה", gl: "il", hl: "he" },
 ];
 
 // Google Suggest for real-time autocomplete
@@ -643,6 +653,25 @@ async function searchSerper(query: string, gl = "il", hl = "he"): Promise<Serper
     return await res.json() as SerperResult;
   } catch (e: any) {
     console.log(`[serper] ${query}: ${e.message}`);
+    return null;
+  }
+}
+
+// Serper Places API — returns Google Business listings with ratings and reviews
+async function searchSerperPlaces(query: string, gl = "il", hl = "he"): Promise<any[] | null> {
+  if (!SERPER_KEY) return null;
+  try {
+    const res = await fetch("https://google.serper.dev/places", {
+      method: "POST",
+      headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, gl, hl }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.places ?? [];
+  } catch (e: any) {
+    console.log(`[serper-places] ${query}: ${e.message}`);
     return null;
   }
 }
@@ -805,7 +834,76 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     }
   }
 
-  // 3. Google Suggest — what Israelis are ACTUALLY searching right now
+  // 3. Google Business Reviews — what customers say about competing roasters
+  if (SERPER_KEY) {
+    for (const search of SERPER_PLACES) {
+      try {
+        console.log(`[research] Serper Places: "${search.q}"...`);
+        const places = await searchSerperPlaces(search.q, search.gl, search.hl);
+        if (places && places.length > 0) {
+          const cleaned = places.slice(0, 10).map((p: any) => ({
+            title: p.title,
+            rating: p.rating,
+            reviews: p.reviews,
+            address: p.address,
+            category: p.category,
+          }));
+          await supabase.from("market_research").upsert(
+            { research_date: today, source: `places_${search.q.replace(/\s+/g, '_').slice(0, 30)}`, raw_data: { query: search.q, places: cleaned } },
+            { onConflict: "research_date,source" },
+          );
+          sources++;
+        }
+      } catch (e: any) {
+        console.error(`[research] Places "${search.q}": ${e.message}`);
+        errors++;
+      }
+    }
+  }
+
+  // 4. Price change tracking — compare today's competitor scrape to yesterday's
+  try {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const { data: yesterdayData } = await supabase
+      .from("market_research")
+      .select("source, raw_data")
+      .eq("research_date", yesterday)
+      .like("source", "competitor_%");
+
+    if (yesterdayData && yesterdayData.length > 0) {
+      const { data: todayData } = await supabase
+        .from("market_research")
+        .select("source, raw_data")
+        .eq("research_date", today)
+        .like("source", "competitor_%");
+
+      if (todayData) {
+        const changes: string[] = [];
+        for (const todayRow of todayData) {
+          const yesterdayRow = yesterdayData.find((y: any) => y.source === todayRow.source);
+          if (yesterdayRow) {
+            const todayText = (todayRow.raw_data as any)?.text ?? "";
+            const yesterdayText = (yesterdayRow.raw_data as any)?.text ?? "";
+            if (todayText !== yesterdayText) {
+              changes.push(`${todayRow.source}: content changed`);
+            }
+          }
+        }
+        if (changes.length > 0) {
+          await supabase.from("market_research").upsert(
+            { research_date: today, source: "price_changes", raw_data: { changes, note: "Competitor pages that changed since yesterday" } },
+            { onConflict: "research_date,source" },
+          );
+          sources++;
+          console.log(`[research] Price tracking: ${changes.length} competitor pages changed`);
+        }
+      }
+    }
+  } catch (e: any) {
+    console.error(`[research] Price tracking error: ${e.message}`);
+  }
+
+  // 5. Google Suggest — what Israelis are ACTUALLY searching right now
   // This is the most valuable research source because it shows real intent
   try {
     console.log("[research] Fetching Google Suggest (20 queries)...");
@@ -948,10 +1046,21 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       const text = (r.raw_data as any).text ?? "";
       lines.push(`\n--- אתר מתחרה: ${name} ---`);
       lines.push(text.slice(0, 400));
-    } else if (r.source === "google_trends_daily" && r.raw_data) {
-      lines.push("\n--- טרנדים בישראל היום ---");
-      for (const [topic, traffic] of Object.entries(r.raw_data as Record<string, string>).slice(0, 10)) {
-        lines.push(`  • ${topic} (${traffic})`);
+    } else if (r.source.startsWith("places_") && r.raw_data) {
+      const places = (r.raw_data as any).places ?? [];
+      if (places.length > 0) {
+        lines.push(`\n--- ביקורות גוגל: "${(r.raw_data as any).query}" ---`);
+        for (const p of places) {
+          lines.push(`  ⭐ ${p.title} — ${p.rating}/5 (${p.reviews} ביקורות) — ${p.address ?? ""}`);
+        }
+      }
+    } else if (r.source === "price_changes" && r.raw_data) {
+      const changes = (r.raw_data as any).changes ?? [];
+      if (changes.length > 0) {
+        lines.push(`\n--- ⚠️ שינויים באתרי מתחרים (מאתמול) ---`);
+        for (const c of changes) {
+          lines.push(`  • ${c}`);
+        }
       }
     }
   }
