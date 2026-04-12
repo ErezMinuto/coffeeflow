@@ -347,13 +347,15 @@ function useActionStates(weekKey: string | null) {
 // Visual tag per agent — matches the color system in the 3 panels
 // (blue=growth, amber=efficiency, green=organic) so the user can tell at
 // a glance which panel an action came from.
-const AGENT_TAGS: Record<AgentType, { label: string; bg: string }> = {
+const AGENT_TAGS: Record<string, { label: string; bg: string }> = {
+  strategist_aggressive: { label: 'אגרסיבי',  bg: 'bg-red-50 text-red-700 border-red-100' },
+  strategist_precise:    { label: 'מדויק',    bg: 'bg-blue-50 text-blue-700 border-blue-100' },
   google_ads_growth:     { label: 'צמיחה',    bg: 'bg-blue-50 text-blue-700 border-blue-100' },
   google_ads_efficiency: { label: 'יעילות',   bg: 'bg-amber-50 text-amber-700 border-amber-100' },
   organic_content:       { label: 'תוכן',     bg: 'bg-green-50 text-green-700 border-green-100' },
 }
 
-function ActionQueue({ rows, weekKey }: { rows: Record<AgentType, AdvisorReport | null>; weekKey: string | null }) {
+function ActionQueue({ rows, weekKey }: { rows: Record<string, AdvisorReport | null>; weekKey: string | null }) {
   const actions = useMemo(
     () => buildTriageQueue(rows.google_ads_growth, rows.google_ads_efficiency, rows.organic_content),
     [rows.google_ads_growth, rows.google_ads_efficiency, rows.organic_content],
@@ -1320,13 +1322,14 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const ALL_AGENT_TYPES = ['google_ads_growth', 'google_ads_efficiency', 'organic_content'] as const
-type AgentType = typeof ALL_AGENT_TYPES[number]
+// New competing agent types — the two strategists replace growth + efficiency
+const ALL_AGENT_TYPES = ['strategist_aggressive', 'strategist_precise', 'organic_content'] as const
+type NewAgentType = typeof ALL_AGENT_TYPES[number]
 
 export default function AdvisorPage() {
   const { user } = useApp()
-  const [rows, setRows]               = useState<Record<AgentType, AdvisorReport | null>>({
-    google_ads_growth: null, google_ads_efficiency: null, organic_content: null,
+  const [rows, setRows]               = useState<Record<string, AdvisorReport | null>>({
+    strategist_aggressive: null, strategist_precise: null, organic_content: null,
   })
   const [availableWeeks, setAvailableWeeks] = useState<string[]>([])
   const [selectedWeek, setSelectedWeek]     = useState<string | null>(null)
@@ -1455,7 +1458,7 @@ export default function AdvisorPage() {
         .eq('week_start', weekStart)
 
       const fetched = (data ?? []) as AdvisorReport[]
-      const newRows = { google_ads_growth: null, google_ads_efficiency: null, organic_content: null } as Record<AgentType, AdvisorReport | null>
+      const newRows = { strategist_aggressive: null, strategist_precise: null, organic_content: null } as Record<string, AdvisorReport | null>
       for (const type of ALL_AGENT_TYPES) {
         newRows[type] = fetched.find(r => r.agent_type === type) ?? null
       }
@@ -1502,35 +1505,201 @@ export default function AdvisorPage() {
   // the empty-state CTA can disable itself while ANY agent is running. We
   // don't have per-agent in-flight tracking yet, so showing all three as
   // disabled during a global run is the safest UX.
-  const panels = [
+  // Two competing strategists side-by-side + organic content below.
+  // Both strategists use the same StrategyPanel component since they
+  // return the same JSON format — the only difference is the agent
+  // philosophy and the color coding.
+  const strategistPanels = [
     {
-      key: 'google_ads_growth' as AgentType,
-      label: 'Google Ads — צמיחה',
-      sublabel: 'סקייל · הגדלת תקציב · חיפוש הזדמנויות',
-      icon: <TrendingUp size={16} className="text-blue-500" />,
+      key: 'strategist_aggressive',
+      label: 'אסטרטג אגרסיבי',
+      sublabel: 'כיבוש שוק · תקציב נדיב · תקיפת מתחרים',
+      icon: <TrendingUp size={16} className="text-red-500" />,
+      headerColor: 'border-red-100',
+    },
+    {
+      key: 'strategist_precise',
+      label: 'אסטרטג מדויק',
+      sublabel: 'ROAS מקסימלי · אופטימיזציה · צמיחה מוכחת',
+      icon: <Shield size={16} className="text-blue-500" />,
       headerColor: 'border-blue-100',
-      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
-        <GrowthPanel row={row} onRun={onRun} running={running} />,
-    },
-    {
-      key: 'google_ads_efficiency' as AgentType,
-      label: 'Google Ads — יעילות',
-      sublabel: 'ROAS · חיתוך בזבוז · שיפור רווחיות',
-      icon: <Shield size={16} className="text-amber-500" />,
-      headerColor: 'border-amber-100',
-      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
-        <EfficiencyPanel row={row} onRun={onRun} running={running} />,
-    },
-    {
-      key: 'organic_content' as AgentType,
-      label: 'תוכן אורגני',
-      sublabel: 'אינסטגרם · Google Search · מלאי',
-      icon: <Leaf size={16} className="text-green-500" />,
-      headerColor: 'border-green-100',
-      component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
-        <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} generateBanner={generateBanner} allProducts={allProducts} onRun={onRun} running={running} />,
     },
   ]
+
+  const organicPanel = {
+    key: 'organic_content',
+    label: 'תוכן אורגני',
+    sublabel: 'אינסטגרם · Google Search · מלאי',
+    icon: <Leaf size={16} className="text-green-500" />,
+    headerColor: 'border-green-100',
+  }
+
+  // Backward compat: reuse GrowthPanel and EfficiencyPanel for the new
+  // strategists since the JSON format is a superset. The HeroCard,
+  // BudgetRecs, and CampaignsToCreate sections all render from the
+  // same fields. New fields (competitor_insights, market_opportunities,
+  // confidence_level, risk_assessment) are rendered via optional sections.
+  const renderStrategyPanel = (row: AdvisorReport | null, onRun: () => void, running: boolean, key: string) => {
+    // Both strategist types produce the full strategy format which is
+    // a superset of both Growth and Efficiency reports. We render them
+    // with the same panel, showing all available sections.
+    if (!row)                        return <PanelEmpty label={key === 'strategist_aggressive' ? 'אסטרטג אגרסיבי' : 'אסטרטג מדויק'} onRun={onRun} running={running} />
+    if (row.status === 'running')    return <PanelRunning />
+    if (row.status === 'cancelled')  return <PanelEmpty label="אסטרטג" onRun={onRun} running={running} />
+    if (row.status === 'error')      return <PanelError msg={row.error_msg ?? 'שגיאה לא ידועה'} />
+    if (!row.report)                 return <PanelEmpty label="אסטרטג" onRun={onRun} running={running} />
+    const r = row.report as any
+
+    return (
+      <div className="space-y-4">
+        <HeroCard focus={r.next_week_focus} summary={r.summary} />
+
+        {/* Confidence + Risk */}
+        {(r.confidence_level || r.risk_assessment) && (
+          <div className="flex gap-2 flex-wrap">
+            {r.confidence_level && (
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                r.confidence_level === 'high' ? 'bg-green-100 text-green-700' :
+                r.confidence_level === 'medium' ? 'bg-amber-100 text-amber-700' :
+                'bg-red-100 text-red-700'
+              }`}>ביטחון: {r.confidence_level === 'high' ? 'גבוה' : r.confidence_level === 'medium' ? 'בינוני' : 'נמוך'}</span>
+            )}
+            {r.risk_assessment && (
+              <p className="text-xs text-surface-600 italic flex-1">{r.risk_assessment}</p>
+            )}
+          </div>
+        )}
+
+        {r.google && <GoogleKPIGrid g={r.google} />}
+
+        <BudgetRecs recs={r.budget_recommendations} />
+
+        {/* Competitor insights */}
+        {r.competitor_insights?.length > 0 && (
+          <div>
+            <SectionHeader>🔍 תובנות מתחרים</SectionHeader>
+            <div className="space-y-2">
+              {r.competitor_insights.map((ci: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-purple-400 bg-purple-50">
+                  <p className="text-sm font-medium text-purple-900 mb-1">{ci.competitor}</p>
+                  <p className="text-xs text-purple-700 mb-1">{ci.finding}</p>
+                  <p className="text-xs text-purple-600">▶ {ci.action}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Market opportunities */}
+        {r.market_opportunities?.length > 0 && (
+          <div>
+            <SectionHeader>הזדמנויות שוק</SectionHeader>
+            <div className="space-y-2">
+              {r.market_opportunities.map((mo: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-blue-400 bg-blue-50">
+                  <p className="text-sm font-medium text-blue-900 mb-1">{mo.opportunity}</p>
+                  <p className="text-xs text-blue-700 mb-1">▶ {mo.action}</p>
+                  <p className="text-xs text-blue-600 italic">{mo.expected_impact}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Campaigns to create */}
+        {r.campaigns_to_create?.length > 0 && (
+          <div>
+            <SectionHeader>🎯 קמפיינים ליצירה</SectionHeader>
+            <div className="space-y-3">
+              {r.campaigns_to_create.map((c: any, i: number) => (
+                <div key={i} className="card p-3 border border-blue-200 bg-blue-50 space-y-2">
+                  <p className="text-sm font-semibold text-blue-900">{c.campaign_name}</p>
+                  <p className="text-xs text-blue-600">{c.campaign_type} · ₪{c.daily_budget_ils}/יום · {c.target_audience}</p>
+                  {c.keywords?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.keywords.map((kw: string, j: number) => (
+                        <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
+                      ))}
+                    </div>
+                  )}
+                  {c.headlines?.length > 0 && (
+                    <div className="bg-white rounded-lg p-2.5 space-y-1">
+                      <p className="text-xs font-semibold text-surface-500">כותרות:</p>
+                      {c.headlines.map((h: string, j: number) => (
+                        <div key={j} className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-surface-800 font-mono">{h}</p>
+                          <span className={`text-xs font-mono ${h.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{h.length}/30</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {c.landing_page_url && (
+                    <div className="flex items-center gap-2 bg-blue-100 rounded-lg px-2.5 py-1.5">
+                      <span className="text-[10px] text-blue-600 font-semibold shrink-0">🔗</span>
+                      <a href={c.landing_page_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-800 hover:underline truncate flex-1 font-mono" dir="ltr">{c.landing_page_url}</a>
+                      <CopyButton text={c.landing_page_url} />
+                    </div>
+                  )}
+                  <p className="text-xs text-blue-700 italic">{c.rationale}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Ads to rewrite */}
+        {r.ads_to_rewrite?.length > 0 && (
+          <div>
+            <SectionHeader>✏️ מודעות לשכתוב</SectionHeader>
+            <div className="space-y-2">
+              {r.ads_to_rewrite.map((a: any, i: number) => (
+                <div key={i} className="card p-3 border border-amber-200 bg-amber-50 space-y-2">
+                  <p className="text-sm font-semibold text-amber-900">{a.campaign}</p>
+                  {a.headline_fixes?.map((fix: any, j: number) => (
+                    <div key={j} className="bg-white rounded-lg border border-surface-200 overflow-hidden">
+                      <div className="px-3 py-2 bg-red-50 border-b border-red-100">
+                        <p className="text-xs text-red-500 font-semibold mb-0.5">❌ קיים</p>
+                        <p className="text-xs text-red-800 break-words">{fix.original}</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-green-50">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-green-600 font-semibold mb-0.5">✅ החלפה</p>
+                          <p className="text-xs text-green-900">{fix.replacement}</p>
+                        </div>
+                        <CopyButton text={fix.replacement} />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-green-700 bg-green-50 rounded px-2 py-1">✓ {a.expected_improvement}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Negative keywords */}
+        {r.negative_keywords_to_add?.length > 0 && (
+          <div>
+            <SectionHeader>🚫 מילות מפתח שליליות</SectionHeader>
+            <div className="space-y-2">
+              {r.negative_keywords_to_add.map((nk: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-amber-400 bg-amber-50">
+                  <p className="text-sm font-medium text-amber-900 mb-1">{nk.campaign}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {nk.keywords.map((kw: string, j: number) => (
+                      <span key={j} className="text-xs bg-white border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full">-{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <KeyInsights insights={r.key_insights} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 fade-up">
@@ -1615,9 +1784,9 @@ export default function AdvisorPage() {
         </p>
       </div>
 
-      {/* 3 panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {panels.map(({ key, label, sublabel, icon, headerColor, component }) => (
+      {/* Two competing strategists — side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {strategistPanels.map(({ key, label, sublabel, icon, headerColor }) => (
           <div key={key} className="card flex flex-col">
             <div className={`flex items-start justify-between mb-4 pb-3 border-b ${headerColor}`}>
               <div className="min-w-0">
@@ -1636,17 +1805,47 @@ export default function AdvisorPage() {
                   className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-surface-900 disabled:opacity-30 transition-colors"
                 >
                   <RefreshCw size={11} />
-                  הרץ רק את זה
+                  הרץ
                 </button>
               </div>
             </div>
             <div className="flex-1">
               {loading
                 ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-10 bg-surface-100 rounded animate-pulse" />)}</div>
-                : component(rows[key], () => runAdvisor(key), isRunning)}
+                : renderStrategyPanel(rows[key], () => runAdvisor(key), isRunning, key)}
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Organic content — full width below the strategists */}
+      <div className="card flex flex-col">
+        <div className={`flex items-start justify-between mb-4 pb-3 border-b ${organicPanel.headerColor}`}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              {organicPanel.icon}
+              <h3 className="font-display font-semibold text-surface-900 text-sm">{organicPanel.label}</h3>
+            </div>
+            <p className="text-xs text-surface-400 mt-0.5 mr-6">{organicPanel.sublabel}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {rows[organicPanel.key] && <StatusBadge status={rows[organicPanel.key]!.status} />}
+            <button
+              onClick={() => runAdvisor(organicPanel.key)}
+              disabled={rows[organicPanel.key]?.status === 'running' || running}
+              title="הרץ רק את הסוכן הזה"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-surface-900 disabled:opacity-30 transition-colors"
+            >
+              <RefreshCw size={11} />
+              הרץ
+            </button>
+          </div>
+        </div>
+        <div className="flex-1">
+          {loading
+            ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-10 bg-surface-100 rounded animate-pulse" />)}</div>
+            : <OrganicPanel row={rows[organicPanel.key]} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} generateBanner={generateBanner} allProducts={allProducts} onRun={() => runAdvisor(organicPanel.key)} running={isRunning} />}
+        </div>
       </div>
 
       {/* Full empty state */}
