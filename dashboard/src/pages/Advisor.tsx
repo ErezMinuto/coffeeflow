@@ -1512,15 +1512,15 @@ export default function AdvisorPage() {
   const strategistPanels = [
     {
       key: 'strategist_aggressive',
-      label: 'אסטרטג אגרסיבי',
-      sublabel: 'כיבוש שוק · תקציב נדיב · תקיפת מתחרים',
+      label: 'גניבת לקוחות',
+      sublabel: 'תקיפת מתחרים · גניבת ביטויים · כיבוש קהלים',
       icon: <TrendingUp size={16} className="text-red-500" />,
       headerColor: 'border-red-100',
     },
     {
       key: 'strategist_precise',
-      label: 'אסטרטג מדויק',
-      sublabel: 'ROAS מקסימלי · אופטימיזציה · צמיחה מוכחת',
+      label: 'בניית ערך',
+      sublabel: 'שימור לקוחות · הגדלת סל · הצעת ערך חזקה',
       icon: <Shield size={16} className="text-blue-500" />,
       headerColor: 'border-blue-100',
     },
