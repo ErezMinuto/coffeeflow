@@ -74,55 +74,20 @@ const BUSINESS_BRIEF = `
 // Real data from competitor websites, updated periodically. Injected into all
 // 3 agents so they can position Minuto strategically against real alternatives.
 const COMPETITIVE_INTELLIGENCE = `
-=== מודיעין תחרותי — בתי קלייה ספשלטי בישראל ===
+=== מודיעין תחרותי ===
 
---- מתחרה #1: קפה נחת (nahatcoffee.com) ---
-מיקום: תל אביב (3 סניפים — דיזנגוף, פרישמן, מתחם התחנה). בית קלייה + בתי קפה.
-מיצוב: פרימיום-יוקרתי. נוכחות חזקה ב-TLV. קהילה נאמנה. מותג "lifestyle".
-תמחור: ₪45-220 לק"ג. Ethiopia/Brazil ₪50-220. בלנדים ₪45-201. פולים מיוחדים (Thailand Anaerobic) ₪85.
-יתרונות: מותג חזק, סניפים פיזיים בתל אביב, תוכן ידע (בלוג מפורט), מקורות ייחודיים (Thailand).
-חולשות: מחירים גבוהים, ממוקדים ב-TLV — אין נגישות לפריפריה, אין משלוח חינם ברור.
-מבצעים: 25% הנחה על ק"ג שני, 50% הנחה למשלוח מעל ₪150.
-מה לנצל: Minuto זול יותר, מציע משלוח ארצי, קולה את הפולים ביום ההזמנה — טריות שנחת לא יכולה להתחרות בה.
+⚠️ חשוב: אל תתבסס רק על השמות למטה. השתמש במחקר השוק היומי (google_search_results + google_suggest) כדי לגלות מי באמת מתחרה על המילים שלנו. המתחרים משתנים — תמיד תבדוק מי מופיע בתוצאות החיפוש היום.
 
---- מתחרה #2: אגרוקפה / AgroCafe (agrocafe.co.il) ---
-מיקום: שריגים (בית שמש). בית קלייה + בית קפה + חנות אונליין.
-מיצוב: סחר הוגן + קיימות + "מהשדה לכוס". אגרונומיה כסיפור מותג.
-תמחור: ₪45-165 לק"ג. Specialty (87 score Colombia Pink Bourbon) ₪78. ערכת היכרות ₪89.
-משלוח חינם: מעל ₪250.
-יתרונות: סיפור חזק (קיימות, סחר הוגן, ביקור בחוות), מועדון לקוחות עם 5% cashback, ציוני SCA על המוצרים.
-חולשות: מותג פחות מוכר מנחת, אתר לא מלוטש, מחירי משלוח חינם גבוהים (₪250).
-מבצעים: 5% הנחה לרשומים, חברות מועדון.
-מה לנצל: Minuto יכול להדגיש טריות (קלייה ביום ההזמנה) לעומת אגרו שלא מבטיח תאריך קלייה. ו-Minuto יותר זול ב-specialty.
+=== היתרונות של Minuto שאף מתחרה לא יכול להעתיק ===
+1. טריות: קולים ביום ההזמנה. אף בית קלייה לא מבטיח את זה — רוב קולים למלאי.
+2. מחיר: זול יותר מרוב בתי הקלייה הספשלטי (בדוק מול מה שמופיע במחקר השוק).
+3. משלוח ארצי: לכל ישראל, לא רק TLV או מרכז.
+4. 10+ שנים ניסיון, 88+ בלנדים, 13 יצרנים — מגוון שקשה להתחרות בו.
 
---- מתחרה #3: Jera Coffee (jera-coffee.co.il) ---
-מיקום: ראשון לציון + תל אביב. בית קלייה + בתי קפה.
-מיצוב: "קלייה שהיא תרבות". מגוון רחב, מחירים נגישים, Fair Trade.
-תמחור: ₪48-65 ל-250g (₪192-260 לק"ג). Kenya AA ₪60/250g. Brazil ₪55/250g. בלנד ₪55/250g.
-יתרונות: מגוון גדול (13+ origins), הכי הרבה זנים מיוחדים (Anaerobic, Natural, Washed), מחירים תחרותיים.
-חולשות: מחירים לק"ג גבוהים (₪200+), פחות מוכר מנחת, אין תוכנית מנוי ברורה.
-מה לנצל: Minuto זול יותר לק"ג, ו-Minuto מדגיש טריות — Jera לא מפרסם תאריך קלייה.
-
---- מתחרים נוספים (רקע) ---
-• נגרו (negro.co.il) — בית קלייה עם מגוון אספרסו/פילטר. משלוח חינם מ-₪450. מחירים בינוניים.
-• קפה עלית — שוק המון (הכי נמכר בישראל). לא מתחרה ישיר אך "גונב" לקוחות שלא מכירים ספשלטי.
-• נספרסו/דולצ'ה גוסטו/L'OR — קפסולות. המתחרה העיקרי ב-convenience. ₪2.5-4 לכוס. פולי ספשלטי = ₪1-1.5 לכוס — זול יותר וטעים יותר.
-• Lavazza/Illy/Mauro/Bristot/Hausbrandt — פולי קפה איטלקי מסחרי. נמכרים בסופרים ובחנויות מיוחדות. מחירים ₪60-120 לק"ג. קלויים חודשים לפני המכירה. הם ה-"שדרוג" שישראלים מכירים — Minuto הוא השדרוג הבא מעליהם.
-• Kimbo/Segafredo — עוד מותגי קפה איטלקי מסחרי. פחות נפוצים בישראל מ-Lavazza.
-• שרשראות קפה (ארומה, לנדוור, קפה קפה, גרג) — הישראלי הממוצע שותה שם אספרסו ב-₪12-18. הם יודעים מה זה "קפה טוב" אבל לא קונים פולים הביתה. הם הקהל הפוטנציאלי הכי גדול.
-
-=== היתרונות התחרותיים של Minuto ===
-1. טריות: קולים ביום ההזמנה → שום מתחרה לא מבטיח את זה (נחת/Jera קולים לפי מלאי).
-2. מחיר: זול יותר מנחת (₪45 vs ₪50-85 ל-250g) ו-Jera (₪48-65 ל-250g).
-3. משלוח ארצי: נגישות לכל ישראל — נחת רק ב-TLV, Jera ב-ראשל"צ/TLV.
-4. מומחיות: 10+ שנים, 13 יצרנים, 88 בלנדים — יותר ניסיון וגיוון מרוב המתחרים.
-5. חנות פיזית ברחובות: נגישות למרכז-דרום (לא רק TLV).
-
-=== אסטרטגיות שיווק לנצח את המתחרים ===
-• נגד נחת: הדגש מחיר + טריות. "למה לשלם ₪220 לק"ג כשאתה מקבל קפה טרי יותר ב-₪X?"
-• נגד אגרו: הדגש ציוני טעם ספציפיים + מהירות משלוח. אגרו מוכר "סיפור", Minuto מוכר "תוצאה בכוס".
-• נגד Jera: הדגש מחיר לק"ג + תאריך קלייה. Jera ₪200+/ק"ג, Minuto פחות.
-• נגד נספרסו: "קפסולה = קפה ישן + פלסטיק + ₪3 לכוס. פולים טריים = ₪1.5 לכוס + טעם אמיתי."
+=== סוגי מתחרים (גלה מי הם מהמחקר) ===
+• בתי קלייה ספשלטי: גלה מהמחקר מי מדורג ומפרסם על "פולי קפה ספשלטי" ו"בית קלייה". מה הם מציעים? מה המחירים? מה היתרון שלנו?
+• מותגי סופר: Lavazza, Illy, Mauro, Bristot, Hausbrandt — פולים שנקלו חודשים לפני. ₪60-120/ק"ג. הם הקהל הכי גדול לגנוב ממנו.
+• קפסולות: Nespresso, Dolce Gusto — לא קהל יעד (לא קונים פולים). אל תפנה אליהם.
 === סוף מודיעין תחרותי ===`;
 
 // ── Deep Market Expertise (injected into ads agents) ──────────────────────────
@@ -609,21 +574,33 @@ async function upsertReport(
 }
 
 // ── Market Research Module ────────────────────────────────────────────────────
-// Scrapes competitor websites and Google Suggest to gather fresh market data.
-// Results stored in `market_research` table. Both strategist agents consume
-// this pre-fetched data instead of doing their own scraping — keeps the
-// Claude call path fast and ensures both agents see the same research.
+// Real web search-based research — discovers what's happening in the Israeli
+// coffee market TODAY. No hardcoded competitor list. The module searches
+// Google like a human researcher would, finds who's advertising and ranking,
+// and stores fresh findings for the strategist agents.
 
-const COMPETITOR_URLS = [
-  { source: "competitor_nahat", url: "https://www.nahatcoffee.com/shop-coffee-beans/", name: "קפה נחת" },
-  { source: "competitor_agro", url: "https://agrocafe.co.il/", name: "אגרוקפה" },
-  { source: "competitor_jera", url: "https://www.jera-coffee.co.il/product-category/coffee/", name: "Jera Coffee" },
+// Google Suggest queries — MORE valuable than search scraping because Google
+// blocks server-side scraping but Suggest API works perfectly. These queries
+// reveal what Israelis are ACTUALLY typing right now — real search intent.
+const SUGGEST_QUERIES = [
+  "פולי קפה", "קפה ספשלטי", "קפה טרי", "פולי קפה טריים",
+  "פולי קפה אונליין", "פולי קפה משלוח", "פולי קפה למכונת אספרסו",
+  "שדרוג קפה ביתי", "קפה טרי לבית", "בית קלייה",
+  "פולי קפה איכותיים", "קפה חד זני",
+  "פולי קפה Lavazza", "פולי קפה illy", "פולי קפה bristot",
+  "בית קלייה קפה ישראל", "קפה ספשלטי ישראל",
+  "פולי קפה אתיופי", "פולי קפה ברזיל",
+  "לקנות פולי קפה", "הזמנת פולי קפה",
 ];
 
-const GOOGLE_SUGGEST_QUERIES = [
-  "קפה ספשלטי", "פולי קפה", "קפה טרי", "בית קלייה",
-  "פולי קפה אונליין", "קפה חד זני", "שדרוג קפה ביתי",
-  "אלטרנטיבה לנספרסו", "פולי קפה Lavazza",
+// Competitor pages to scrape for pricing and product changes.
+// This list grows as we discover new competitors.
+const COMPETITOR_PAGES = [
+  { source: "competitor_nahat", url: "https://www.nahatcoffee.com/shop-coffee-beans/", name: "נחת" },
+  { source: "competitor_agro", url: "https://agrocafe.co.il/", name: "אגרו" },
+  { source: "competitor_jera", url: "https://www.jera-coffee.co.il/product-category/coffee/", name: "Jera" },
+  { source: "competitor_negro", url: "https://negro.co.il/product-category/espresso/", name: "נגרו" },
+  { source: "competitor_coffee4u", url: "https://www.coffee4u.co.il/", name: "Coffee4U" },
 ];
 
 async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
@@ -669,38 +646,36 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
   const today = new Date().toISOString().split("T")[0];
   let sources = 0, errors = 0;
 
-  // 1. Scrape competitor pages
-  for (const comp of COMPETITOR_URLS) {
+  // 1. Scrape competitor websites — prices, products, promotions
+  for (const comp of COMPETITOR_PAGES) {
     try {
-      console.log(`[research] Scraping ${comp.name} (${comp.url})...`);
+      console.log(`[research] Scraping ${comp.name}...`);
       const text = await scrapeCompetitorPage(comp.url);
       if (text) {
         await supabase.from("market_research").upsert(
-          { research_date: today, source: comp.source, raw_data: { text, url: comp.url }, summary: null },
+          { research_date: today, source: comp.source, raw_data: { text: text.slice(0, 3000), url: comp.url, name: comp.name } },
           { onConflict: "research_date,source" },
         );
         sources++;
-        console.log(`[research] ${comp.name}: ${text.length} chars scraped`);
-      } else {
-        errors++;
       }
     } catch (e: any) {
-      console.error(`[research] ${comp.name} error: ${e.message}`);
+      console.error(`[research] ${comp.name}: ${e.message}`);
       errors++;
     }
   }
 
-  // 2. Google Suggest — trending searches
+  // 2. Google Suggest — what Israelis are ACTUALLY searching right now
+  // This is the most valuable research source because it shows real intent
   try {
-    console.log("[research] Fetching Google Suggest...");
+    console.log("[research] Fetching Google Suggest (20 queries)...");
     const allSuggestions: Record<string, string[]> = {};
-    for (const q of GOOGLE_SUGGEST_QUERIES) {
+    for (const q of SUGGEST_QUERIES) {
       const suggestions = await fetchGoogleSuggest(q);
       if (suggestions.length > 0) allSuggestions[q] = suggestions;
     }
     if (Object.keys(allSuggestions).length > 0) {
       await supabase.from("market_research").upsert(
-        { research_date: today, source: "google_suggest", raw_data: allSuggestions, summary: null },
+        { research_date: today, source: "google_suggest", raw_data: allSuggestions },
         { onConflict: "research_date,source" },
       );
       sources++;
@@ -733,18 +708,15 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
 
   for (const r of rows) {
     if (r.source === "google_suggest" && r.raw_data) {
-      lines.push("\n--- חיפושים פופולריים בגוגל (ישראל, עברית) ---");
+      lines.push("\n--- מה ישראלים מחפשים עכשיו (Google Suggest) ---");
       for (const [query, suggestions] of Object.entries(r.raw_data as Record<string, string[]>)) {
         lines.push(`"${query}" → ${(suggestions as string[]).join(", ")}`);
       }
     } else if (r.source.startsWith("competitor_") && r.raw_data) {
-      const name = COMPETITOR_URLS.find(c => c.source === r.source)?.name ?? r.source;
-      // Extract a 1500-char summary — enough for Claude to understand products/pricing
+      const name = (r.raw_data as any).name ?? r.source;
       const text = (r.raw_data as any).text ?? "";
-      lines.push(`\n--- ${name} ---`);
-      // Keep it short — competitive intel constant already has deep profiles.
-      // Research data adds only TODAY's prices/promos.
-      lines.push(text.slice(0, 600));
+      lines.push(`\n--- ${name} (${(r.raw_data as any).url}) ---`);
+      lines.push(text.slice(0, 500));
     }
   }
 
