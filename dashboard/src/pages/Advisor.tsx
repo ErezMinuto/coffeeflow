@@ -110,6 +110,7 @@ interface BlogPost {
   meta_description: string
   slug: string
   body: string
+  banner_url?: string | null
 }
 
 interface OrganicReport {
@@ -897,11 +898,12 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
 
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
-function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts, onRun, running }: {
+function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBanner, allProducts, onRun, running }: {
   row: AdvisorReport | null
-  blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[] }>
-  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string }>>>
+  blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; bannerLoading?: boolean }>
+  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerLoading?: boolean }>>>
   writeBlogPost: (rec: GoogleOrganicRec, selectedProducts: string[]) => void
+  generateBanner: (keyword: string, title: string) => void
   allProducts: string[]
   onRun?: () => void
   running?: boolean
@@ -1104,6 +1106,46 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, allProducts
                               >✕</button>
                             </div>
                           </div>
+                          {/* Banner image — shows the generated banner or a
+                              button to trigger generation on demand. */}
+                          <div className="px-3 pt-2 space-y-1.5">
+                            {bs.post.banner_url ? (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-surface-500 font-semibold">🖼️ באנר:</p>
+                                  <CopyButton text={bs.post.banner_url} />
+                                  <a
+                                    href={bs.post.banner_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] text-indigo-600 hover:underline"
+                                  >
+                                    פתח בטאב חדש
+                                  </a>
+                                </div>
+                                <a href={bs.post.banner_url} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={bs.post.banner_url}
+                                    alt={`Banner for ${bs.post.title}`}
+                                    className="w-full rounded-lg border border-surface-200"
+                                    style={{ aspectRatio: '16/9', objectFit: 'cover' }}
+                                  />
+                                </a>
+                              </>
+                            ) : bs?.bannerLoading ? (
+                              <div className="flex items-center gap-2 py-2 px-3 bg-indigo-50 rounded-lg">
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                                <span className="text-xs text-indigo-600">מייצר באנר... (~10-15 שניות)</span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => generateBanner(rec.keyword, bs.post!.title)}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors"
+                              >
+                                🖼️ צור באנר לפוסט
+                              </button>
+                            )}
+                          </div>
                           <div className="px-3 pb-1 space-y-1.5">
                             <div className="flex items-center gap-2">
                               <p className="text-xs text-surface-500 font-semibold">Meta description:</p>
@@ -1233,7 +1275,7 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
-  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string }>>({})
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerLoading?: boolean }>>({})
   const [allProducts, setAllProducts]       = useState<string[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -1261,6 +1303,34 @@ export default function AdvisorPage() {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('blog_writer error', msg)
       setBlogState(s => ({ ...s, [key]: { loading: false, post: null, error: msg, selectedProducts } }))
+    }
+  }
+
+  async function generateBanner(keyword: string, title: string) {
+    setBlogState(s => {
+      const cur = s[keyword]
+      if (!cur?.post) return s
+      return { ...s, [keyword]: { ...cur, bannerLoading: true } }
+    })
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: { agent: 'blog_banner', keyword, title },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      setBlogState(s => {
+        const cur = s[keyword]
+        if (!cur?.post) return s
+        return { ...s, [keyword]: { ...cur, bannerLoading: false, post: { ...cur.post!, banner_url: data.banner_url } } }
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('blog_banner error', msg)
+      setBlogState(s => {
+        const cur = s[keyword]
+        if (!cur) return s
+        return { ...s, [keyword]: { ...cur, bannerLoading: false } }
+      })
     }
   }
 
@@ -1400,7 +1470,7 @@ export default function AdvisorPage() {
       icon: <Leaf size={16} className="text-green-500" />,
       headerColor: 'border-green-100',
       component: (row: AdvisorReport | null, onRun: () => void, running: boolean) =>
-        <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} allProducts={allProducts} onRun={onRun} running={running} />,
+        <OrganicPanel row={row} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} generateBanner={generateBanner} allProducts={allProducts} onRun={onRun} running={running} />,
     },
   ]
 
