@@ -19,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY") ?? "";
 
 // Haiku: fast enough (15-25s), same model used by generate-campaign
 const MODEL_ADS     = "claude-sonnet-4-5";
@@ -930,6 +931,11 @@ ${pastReports}
 
 הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
 
+לכל קמפיין חדש (campaigns_to_create):
+- צור landing_page_url מלא עם UTM. הפורמט: https://www.minuto.co.il/product/SLUG?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+  אם אין מוצר ספציפי, השתמש ב-https://www.minuto.co.il?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+- הוסף negative_keywords — מילים שליליות שימנעו תנועה לא רלוונטית. למשל: "חינם", "מתכון", "נמס".
+
 החזר JSON בפורמט הזה בדיוק:
 {
   "agent_philosophy": "משפט אחד",
@@ -955,10 +961,12 @@ ${pastReports}
       "campaign_type": "Search|Performance Max|Shopping",
       "target_audience": "קהל יעד",
       "keywords": ["מילה 1", "מילה 2"],
+      "negative_keywords": ["מילה שלילית 1", "מילה שלילית 2"],
       "headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
       "descriptions": ["תיאור 1"],
       "daily_budget_ils": 50,
-      "rationale": "הסבר קצר"
+      "rationale": "הסבר קצר",
+      "landing_page_url": "https://www.minuto.co.il/product/xxx?utm_source=google&utm_medium=cpc&utm_campaign=campaign_name"
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2"],
@@ -1104,6 +1112,8 @@ ${pastReportsEff}
 הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, key_insights עד 2.
 חובה: ads_to_rewrite חייב תמיד להכיל לפחות פריט אחד — בחר את הקמפיין עם הקריאייטיב החלש ביותר (Ad Strength נמוך, CTR נמוך, או כותרות גנריות). אם כל הקמפיינים נראים טובים — בחר אחד ושפר את הכותרות לפי הכללים. אל תחזיר ads_to_rewrite ריק.
 
+מילות מפתח שליליות (negative_keywords_to_add): נתח את הביטויים שהביאו תנועה יקרה ללא המרות ואת נתוני GSC. המלץ על מילים שליליות שחייבים להוסיף כדי לחסום תנועה לא רלוונטית. לכל פריט waste — הוסף negative_keywords עם מילים ספציפיות לחסימה. בנוסף, הוסף negative_keywords_to_add עם המלצות ברמת החשבון/קמפיין.
+
 החזר JSON בפורמט הזה בדיוק:
 {
   "agent_philosophy": "משפט אחד",
@@ -1121,7 +1131,10 @@ ${pastReportsEff}
     { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": -20 }
   ],
   "waste_identified": [
-    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר" }
+    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר", "negative_keywords": ["מילה שלילית רלוונטית"] }
+  ],
+  "negative_keywords_to_add": [
+    { "campaign": "שם הקמפיין או account-level", "keywords": ["חינם", "נמס", "קפסולות"], "reason": "הסבר למה לחסום מילים אלו" }
   ],
   "ads_to_rewrite": [
     {
@@ -1589,6 +1602,130 @@ async function sendAdvisorEmail(
   }
 }
 
+// ── Banner Image Generation (Gemini Imagen) ─────────────────────────────────
+// Same model fallback chain used by generate-campaign for email banners.
+// Stores the result in Supabase Storage `marketing` bucket so it gets a
+// permanent public URL the user can paste into their CMS.
+
+async function generateBlogBanner(title: string, keyword: string, supabase: ReturnType<typeof createClient>): Promise<string | null> {
+  if (!GEMINI_KEY) {
+    console.log("[blog_writer] No GEMINI_API_KEY, skipping banner");
+    return null;
+  }
+
+  const banned = /\b(motorcycle|motorbike|bike|bicycle|car|truck|vehicle|road|highway|mountain|mountains|forest|journey|travel|ride|landscape|sunset|sunrise|sky|cloud|nature|scenic|adventure)\b/gi;
+  const safeTitle = (title || "").replace(banned, "").replace(/\s+/g, " ").trim();
+  const safeKeyword = (keyword || "").replace(banned, "").replace(/\s+/g, " ").trim();
+
+  const imagePrompt = `Professional hero banner for a specialty coffee blog post.
+Blog title: "${safeTitle}"
+Topic: ${safeKeyword}
+
+PRIMARY SUBJECT (mandatory): coffee. The image MUST clearly and prominently show coffee content — one or more of: raw or roasted coffee beans, a steaming cup of coffee, latte art, a coffee bag, a portafilter shot pouring, a roasting drum, or a café counter. This is for a specialty coffee roastery website blog.
+
+Style: warm and inviting, artisan premium feel with earthy tones (dark browns, cream, olive green). Soft natural or warm studio lighting. Close to mid-range product photography. 16:9 wide landscape format. High quality.
+
+STRICTLY FORBIDDEN — do NOT include any of: people, faces, hands, human figures, text, letters, words, numbers, logos, motorcycles, bicycles, cars, trucks, vehicles, roads, highways, mountains, forests, landscapes, skies, clouds, sunsets, sunrises, animals, or any outdoor scenery.`;
+
+  let base64: string | null = null;
+  let mime = "image/png";
+
+  const attempts = [
+    {
+      name: "Imagen 4",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
+      headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
+      body: { instances: [{ prompt: imagePrompt }], parameters: { sampleCount: 1, aspectRatio: "16:9" } },
+      parse: (json: any) => {
+        const pred = json.predictions?.[0];
+        return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
+      },
+    },
+    {
+      name: "Gemini 2.0 Flash Preview Image",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`,
+      headers: { "Content-Type": "application/json" },
+      body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+      parse: (json: any) => {
+        for (const part of json.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
+        }
+        return null;
+      },
+    },
+    {
+      name: "Gemini 2.0 Flash Exp",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
+      headers: { "Content-Type": "application/json" },
+      body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+      parse: (json: any) => {
+        for (const part of json.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
+        }
+        return null;
+      },
+    },
+  ];
+
+  for (const attempt of attempts) {
+    if (base64) break;
+    try {
+      console.log(`[blog_writer] Trying ${attempt.name}...`);
+      const res = await fetch(attempt.url, {
+        method: "POST",
+        headers: attempt.headers,
+        body: JSON.stringify(attempt.body),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const result = attempt.parse(json);
+        if (result) {
+          base64 = result.data;
+          mime = result.mime;
+          console.log(`[blog_writer] Banner generated via ${attempt.name}`);
+        } else {
+          console.log(`[blog_writer] ${attempt.name}: no image in response`);
+        }
+      } else {
+        const errText = await res.text().catch(() => "");
+        console.log(`[blog_writer] ${attempt.name} failed: ${res.status} ${errText.slice(0, 200)}`);
+      }
+    } catch (e: any) {
+      console.log(`[blog_writer] ${attempt.name} error: ${e.message}`);
+    }
+  }
+
+  if (!base64) {
+    console.log("[blog_writer] All image generation attempts failed");
+    return null;
+  }
+
+  try {
+    const filename = `banners/blog_${Date.now()}.${mime.includes("png") ? "png" : "jpg"}`;
+    const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    console.log(`[blog_writer] Uploading banner: ${filename} (${fileBytes.length} bytes)`);
+
+    const { error: uploadErr } = await supabase.storage
+      .from("marketing")
+      .upload(filename, fileBytes, { contentType: mime, upsert: true });
+
+    if (uploadErr) {
+      console.error("[blog_writer] Upload error:", JSON.stringify(uploadErr));
+      return null;
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from("marketing")
+      .getPublicUrl(filename);
+
+    console.log("[blog_writer] Banner URL:", publicUrl?.publicUrl);
+    return publicUrl?.publicUrl || null;
+  } catch (e: any) {
+    console.error("[blog_writer] Banner upload error:", e.message);
+    return null;
+  }
+}
+
 // ── Blog Writer Agent ─────────────────────────────────────────────────────────
 
 async function runBlogWriterAgent(params: {
@@ -1600,6 +1737,28 @@ async function runBlogWriterAgent(params: {
   products_to_mention?: string[];
 }): Promise<{ title: string; meta_description: string; slug: string; body: string }> {
   const { keyword, title, key_points, position, search_volume_signal, products_to_mention } = params;
+
+  // Look up product permalinks from DB so the blog body can contain real
+  // UTM-tagged links to the Minuto store. The frontend only passes product
+  // names — we resolve them server-side to avoid leaking the full product
+  // catalog to the client and to keep the permalink as the single source
+  // of truth (if the slug changes in WooCommerce, the DB reflects it).
+  let productLinks: Array<{ name: string; url: string }> = [];
+  if (products_to_mention && products_to_mention.length > 0) {
+    const supabase = createClient(SUPA_URL, SUPA_KEY);
+    const { data: rows } = await supabase
+      .from('woo_products')
+      .select('name, permalink')
+      .in('name', products_to_mention);
+    if (rows) {
+      productLinks = rows
+        .filter((r: any) => r.permalink)
+        .map((r: any) => ({
+          name: r.name,
+          url: `${r.permalink}?utm_source=blog&utm_medium=article&utm_campaign=${encodeURIComponent(keyword)}`,
+        }));
+    }
+  }
 
   // Ask Claude ONLY for the blog body in plain Markdown — no JSON, no XML, no formatting wrappers.
   // The server constructs title, slug, and meta_description itself to avoid any parsing errors.
@@ -1635,7 +1794,11 @@ ${search_volume_signal ? `נפח חיפוש: ${search_volume_signal}` : ''}
 
 נקודות חובה לכלול בתוכן:
 ${key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}
-${products_to_mention && products_to_mention.length > 0
+${productLinks.length > 0
+  ? `\nמוצרים של Minuto לציין בפוסט (ציין אותם באופן טבעי, לא בצורת פרסומת).
+כשאתה מזכיר מוצר, הפוך את שם המוצר ללינק Markdown עם ה-URL שניתן. חובה להשתמש בלינקים בדיוק כפי שניתנו (כולל פרמטרי UTM):
+${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
+  : products_to_mention && products_to_mention.length > 0
   ? `\nמוצרים של Minuto לציין בפוסט (ציין אותם באופן טבעי, לא בצורת פרסומת):\n${products_to_mention.map(p => `- ${p}`).join('\n')}`
   : ''}
 
@@ -1733,6 +1896,25 @@ serve(withCors(async (req) => {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[blog_writer] FAILED: ${msg}`);
       return new Response(JSON.stringify({ error: msg }),
+        { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
+  // ── BLOG BANNER — separate action, generates just the hero image ──────────
+  if (body.agent === "blog_banner") {
+    if (!body.keyword || !body.title) {
+      return new Response(JSON.stringify({ error: "keyword and title are required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+    try {
+      console.log(`[blog_banner] Generating banner for: "${body.title}"`);
+      const bannerUrl = await generateBlogBanner(body.title, body.keyword, supabase);
+      return new Response(JSON.stringify({ banner_url: bannerUrl }),
+        { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[blog_banner] FAILED: ${msg}`);
+      return new Response(JSON.stringify({ error: msg, banner_url: null }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     }
   }
