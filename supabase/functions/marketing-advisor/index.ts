@@ -20,6 +20,7 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY") ?? "";
+const SERPER_KEY    = Deno.env.get("SERPER_API_KEY") ?? "";
 
 // Haiku: fast enough (15-25s), same model used by generate-campaign
 const MODEL_ADS     = "claude-sonnet-4-5";
@@ -574,22 +575,29 @@ async function upsertReport(
 }
 
 // ── Market Research Module ────────────────────────────────────────────────────
-// Real web search-based research — discovers what's happening in the Israeli
-// coffee market TODAY. No hardcoded competitor list. The module searches
-// Google like a human researcher would, finds who's advertising and ranking,
-// and stores fresh findings for the strategist agents.
+// Uses Serper.dev API for REAL Google search data — who's advertising, who's
+// ranking, what people ask, what's trending. Plus competitor page scraping
+// for pricing and Google Suggest for real-time search intent.
 
-// Google Suggest queries — MORE valuable than search scraping because Google
-// blocks server-side scraping but Suggest API works perfectly. These queries
-// reveal what Israelis are ACTUALLY typing right now — real search intent.
+// Serper.dev search queries — each one returns ads, organic results, People
+// Also Ask, and related searches from Israeli Google. This is what a real
+// marketing researcher would search.
+const SERPER_SEARCHES = [
+  // Core purchase-intent keywords — who's advertising here?
+  { q: "פולי קפה", gl: "il", hl: "he" },
+  { q: "קפה ספשלטי", gl: "il", hl: "he" },
+  { q: "פולי קפה אונליין", gl: "il", hl: "he" },
+  { q: "בית קלייה קפה", gl: "il", hl: "he" },
+  // Upgrade intent — who captures the "I want better coffee" audience?
+  { q: "פולי קפה טריים משלוח", gl: "il", hl: "he" },
+  { q: "שדרוג קפה ביתי", gl: "il", hl: "he" },
+];
+
+// Google Suggest for real-time autocomplete
 const SUGGEST_QUERIES = [
   "פולי קפה", "קפה ספשלטי", "קפה טרי", "פולי קפה טריים",
   "פולי קפה אונליין", "פולי קפה משלוח", "פולי קפה למכונת אספרסו",
-  "שדרוג קפה ביתי", "קפה טרי לבית", "בית קלייה",
-  "פולי קפה איכותיים", "קפה חד זני",
-  "פולי קפה Lavazza", "פולי קפה illy", "פולי קפה bristot",
-  "בית קלייה קפה ישראל", "קפה ספשלטי ישראל",
-  "פולי קפה אתיופי", "פולי קפה ברזיל",
+  "שדרוג קפה ביתי", "בית קלייה", "פולי קפה איכותיים",
   "לקנות פולי קפה", "הזמנת פולי קפה",
 ];
 
@@ -602,6 +610,42 @@ const COMPETITOR_PAGES = [
   { source: "competitor_negro", url: "https://negro.co.il/product-category/espresso/", name: "נגרו" },
   { source: "competitor_coffee4u", url: "https://www.coffee4u.co.il/", name: "Coffee4U" },
 ];
+
+// Serper.dev API — returns structured Google search results including:
+// - Paid ads (who's advertising, what ad copy they use)
+// - Organic results (who's ranking, what content exists)
+// - People Also Ask (what questions people have)
+// - Related searches (what else people search for)
+interface SerperResult {
+  ads?: Array<{ title: string; link: string; snippet: string; sitelinks?: Array<{ title: string }> }>;
+  organic?: Array<{ title: string; link: string; snippet: string; position: number }>;
+  peopleAlsoAsk?: Array<{ question: string; snippet: string }>;
+  relatedSearches?: Array<{ query: string }>;
+  searchParameters?: { q: string };
+}
+
+async function searchSerper(query: string, gl = "il", hl = "he"): Promise<SerperResult | null> {
+  if (!SERPER_KEY) return null;
+  try {
+    const res = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": SERPER_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ q: query, gl, hl, num: 10 }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) {
+      console.log(`[serper] ${query}: HTTP ${res.status}`);
+      return null;
+    }
+    return await res.json() as SerperResult;
+  } catch (e: any) {
+    console.log(`[serper] ${query}: ${e.message}`);
+    return null;
+  }
+}
 
 async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
   try {
@@ -705,7 +749,45 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
   const today = new Date().toISOString().split("T")[0];
   let sources = 0, errors = 0;
 
-  // 1. Scrape competitor websites — prices, products, promotions
+  // 1. SERPER.DEV — Real Google search results (ads + organic + PAA)
+  // This is the most valuable research source. Each query shows:
+  // - Who's paying for ads on this keyword (competitor ad copy!)
+  // - Who ranks organically (competitor content strategy)
+  // - What questions people ask (content opportunities)
+  // - Related searches (keyword expansion)
+  if (SERPER_KEY) {
+    for (const search of SERPER_SEARCHES) {
+      try {
+        console.log(`[research] Serper: "${search.q}"...`);
+        const result = await searchSerper(search.q, search.gl, search.hl);
+        if (result) {
+          // Store the full structured result — ads, organic, PAA, related
+          await supabase.from("market_research").upsert(
+            {
+              research_date: today,
+              source: `serper_${search.q.replace(/\s+/g, '_').slice(0, 40)}`,
+              raw_data: {
+                query: search.q,
+                ads: (result.ads ?? []).slice(0, 5).map(a => ({ title: a.title, link: a.link, snippet: a.snippet })),
+                organic: (result.organic ?? []).slice(0, 8).map(o => ({ title: o.title, link: o.link, snippet: o.snippet, position: o.position })),
+                peopleAlsoAsk: (result.peopleAlsoAsk ?? []).slice(0, 5).map(p => ({ question: p.question })),
+                relatedSearches: (result.relatedSearches ?? []).slice(0, 5).map(r => r.query),
+              },
+            },
+            { onConflict: "research_date,source" },
+          );
+          sources++;
+        }
+      } catch (e: any) {
+        console.error(`[research] Serper "${search.q}": ${e.message}`);
+        errors++;
+      }
+    }
+  } else {
+    console.log("[research] No SERPER_API_KEY — skipping Google search research");
+  }
+
+  // 2. Competitor page scraping — pricing/products/promotions
   for (const comp of COMPETITOR_PAGES) {
     try {
       console.log(`[research] Scraping ${comp.name}...`);
@@ -723,7 +805,7 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     }
   }
 
-  // 2. Google Suggest — what Israelis are ACTUALLY searching right now
+  // 3. Google Suggest — what Israelis are ACTUALLY searching right now
   // This is the most valuable research source because it shows real intent
   try {
     console.log("[research] Fetching Google Suggest (20 queries)...");
@@ -804,30 +886,72 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
 
   const lines: string[] = [`\n=== מחקר שוק יומי (${rows[0].research_date}) ===`];
 
-  for (const r of rows) {
+  // Separate Serper results from other sources for better organization
+  const serperRows = rows.filter(r => r.source.startsWith("serper_"));
+  const otherRows = rows.filter(r => !r.source.startsWith("serper_"));
+
+  // Serper data first — this is the most valuable intelligence
+  if (serperRows.length > 0) {
+    lines.push("\n=== מי מפרסם ומדורג בגוגל ישראל (נתוני SERP אמיתיים) ===");
+    lines.push("(מודעות ממומנות = מי משלם על הביטוי, תוצאות אורגניות = מי מדורג בחינם)\n");
+
+    for (const r of serperRows) {
+      const d = r.raw_data as any;
+      if (!d) continue;
+      lines.push(`--- חיפוש: "${d.query}" ---`);
+
+      // Paid ads — WHO is advertising on this keyword
+      if (d.ads?.length > 0) {
+        lines.push("  מודעות ממומנות (מי משלם):");
+        for (const ad of d.ads) {
+          lines.push(`    💰 ${ad.title}`);
+          lines.push(`       ${ad.link}`);
+          if (ad.snippet) lines.push(`       "${ad.snippet.slice(0, 100)}"`);
+        }
+      } else {
+        lines.push("  אין מודעות ממומנות — אף אחד לא מפרסם על הביטוי הזה!");
+      }
+
+      // Organic — who's ranking
+      if (d.organic?.length > 0) {
+        lines.push("  תוצאות אורגניות (מי מדורג):");
+        for (const o of d.organic.slice(0, 5)) {
+          lines.push(`    #${o.position} ${o.title} — ${o.link}`);
+        }
+      }
+
+      // People Also Ask
+      if (d.peopleAlsoAsk?.length > 0) {
+        lines.push("  שאלות שאנשים שואלים:");
+        for (const p of d.peopleAlsoAsk) {
+          lines.push(`    ? ${p.question}`);
+        }
+      }
+
+      // Related searches
+      if (d.relatedSearches?.length > 0) {
+        lines.push(`  חיפושים קשורים: ${d.relatedSearches.join(", ")}`);
+      }
+      lines.push("");
+    }
+  }
+
+  // Other sources
+  for (const r of otherRows) {
     if (r.source === "google_suggest" && r.raw_data) {
-      lines.push("\n--- מה ישראלים מחפשים עכשיו (Google Suggest) ---");
+      lines.push("\n--- Autocomplete — מה ישראלים מקלידים עכשיו ---");
       for (const [query, suggestions] of Object.entries(r.raw_data as Record<string, string[]>)) {
         lines.push(`"${query}" → ${(suggestions as string[]).join(", ")}`);
       }
     } else if (r.source.startsWith("competitor_") && r.raw_data) {
       const name = (r.raw_data as any).name ?? r.source;
       const text = (r.raw_data as any).text ?? "";
-      lines.push(`\n--- מתחרה: ${name} (${(r.raw_data as any).url}) ---`);
-      lines.push(text.slice(0, 500));
+      lines.push(`\n--- אתר מתחרה: ${name} ---`);
+      lines.push(text.slice(0, 400));
     } else if (r.source === "google_trends_daily" && r.raw_data) {
-      lines.push("\n--- טרנדים בישראל היום (Google Trends) ---");
-      const trends = r.raw_data as Record<string, string>;
-      for (const [topic, traffic] of Object.entries(trends).slice(0, 15)) {
+      lines.push("\n--- טרנדים בישראל היום ---");
+      for (const [topic, traffic] of Object.entries(r.raw_data as Record<string, string>).slice(0, 10)) {
         lines.push(`  • ${topic} (${traffic})`);
-      }
-    } else if (r.source === "people_also_ask" && r.raw_data) {
-      lines.push("\n--- שאלות שישראלים שואלים בגוגל (People Also Ask) ---");
-      for (const [query, questions] of Object.entries(r.raw_data as Record<string, string[]>)) {
-        lines.push(`\n"${query}":`);
-        for (const q of (questions as string[])) {
-          lines.push(`  ? ${q}`);
-        }
       }
     }
   }
