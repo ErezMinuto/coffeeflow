@@ -511,12 +511,17 @@ async function upsertReport(
   weekStart: string,
   fields: Record<string, unknown>,
 ) {
-  await supabase
+  const { error } = await supabase
     .from("advisor_reports")
     .upsert(
       { agent_type: agentType, week_start: weekStart, ...fields },
       { onConflict: "agent_type,week_start" },
     );
+  if (error) {
+    console.error(`[upsertReport] FAILED for ${agentType}/${weekStart}:`, JSON.stringify(error));
+  } else {
+    console.log(`[upsertReport] OK ${agentType}/${weekStart} status=${fields.status ?? '?'}`);
+  }
 }
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -1207,7 +1212,7 @@ ${pastReportsEff}
   const finalMessage = userMessage;
 
   console.log(`[efficiency] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage, { maxTokens: 7000 });
   const parsed = parseClaudeJson(text);
   console.log(`[efficiency] Done. Tokens: ${inputTokens + outputTokens}`);
 
