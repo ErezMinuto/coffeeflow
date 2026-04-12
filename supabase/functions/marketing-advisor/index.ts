@@ -1583,35 +1583,46 @@ function getStrategyJsonSchema(d: any) {
 }
 
 function buildStrategistUserMessage(d: any, weekStart: string) {
-  return `${d.seasonalContext}
+  // STRATEGY-FIRST structure: the agent thinks about the market and strategy
+  // BEFORE seeing our internal data. This prevents "data commentary" mode
+  // where the agent just reacts to campaign metrics instead of thinking
+  // strategically about what we should be doing.
+  return `=== שלב 1: חשוב על השוק (לפני שתסתכל על הנתונים שלנו) ===
+
+${d.seasonalContext}
 
 ${d.researchBlock}
 
-נתוני Google Ads שבוע ${weekStart}–${d.weekEnd}:
+בהתבסס על מחקר השוק למעלה, חשוב:
+• מי קונה פולי קפה בישראל עכשיו? מה הם מחפשים?
+• מה המתחרים מציעים? מה היתרון שלנו עליהם?
+• איפה ההזדמנות הכי גדולה — איזה קהל עדיין לא מגיעים אליו?
+• מה האסטרטגיה שתביא את ההחזר הכי גבוה ב-30 הימים הקרובים?
 
-=== קמפיינים ===
-${d.campaignBlock}
+קח דקה לחשוב על זה לפני שתמשיך לנתונים.
 
-=== סיכום ===
-עלות כוללת: ₪${Math.round(d.totalCost * 100) / 100} | קליקים: ${d.totalClicks} | חשיפות: ${d.totalImpressions} | המרות: ${Math.round(d.totalConversions * 10) / 10} | ROAS: ${Math.round(d.overallRoas * 100) / 100}x
-
-=== 3 שבועות קודמים (מגמה) ===
-${d.prevBlock}
-
-=== מכירות WooCommerce השבוע ===
-${d.wooSales}
-
-=== קריאייטיב מודעות נוכחי (RSA) ===
-${d.adCreatives}
-
-=== מוצרים עם מלאי ===
+=== שלב 2: המוצרים שלנו (מה אנחנו יכולים למכור) ===
 ${d.productsBlock}
 
-=== Google Search Console (30 יום) ===
+=== שלב 3: מה ישראלים מחפשים בגוגל (GSC + Keyword Planner) ===
 ${d.gscBlock}
 
-=== Keyword Planner ===
-${d.kwIdeas}`;
+${d.kwIdeas}
+
+=== שלב 4: הנתונים הקיימים שלנו (רק לרפרנס — אל תתבסס רק על זה) ===
+שים לב: הנתונים למטה הם מה שרץ עכשיו. אתה לא חייב להמשיך עם מה שיש — אם האסטרטגיה שלך אומרת לעצור הכל ולהתחיל מחדש, זה בסדר.
+
+סיכום Google Ads שבוע ${weekStart}–${d.weekEnd}:
+עלות כוללת: ₪${Math.round(d.totalCost * 100) / 100} | קליקים: ${d.totalClicks} | המרות: ${Math.round(d.totalConversions * 10) / 10} | ROAS: ${Math.round(d.overallRoas * 100) / 100}x
+
+קמפיינים:
+${d.campaignBlock}
+
+קריאייטיב:
+${d.adCreatives}
+
+מכירות:
+${d.wooSales}`;
 }
 
 async function runAggressiveStrategist(
