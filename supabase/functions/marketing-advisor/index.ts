@@ -24,6 +24,10 @@ const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY") ?? "";
 // Haiku: fast enough (15-25s), same model used by generate-campaign
 const MODEL_ADS     = "claude-sonnet-4-5";
 const MODEL_ORGANIC = "claude-sonnet-4-5";
+// Strategist agents need to respond within the 150s edge function gateway
+// timeout. Sonnet 4.5 is too slow with the large prompt. Sonnet 4 is
+// fast enough and still excellent for Hebrew marketing strategy.
+const MODEL_STRATEGIST = "claude-sonnet-4-20250514";
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
@@ -593,6 +597,172 @@ async function upsertReport(
   } else {
     console.log(`[upsertReport] OK ${agentType}/${weekStart} status=${fields.status ?? '?'}`);
   }
+}
+
+// ── Market Research Module ────────────────────────────────────────────────────
+// Scrapes competitor websites and Google Suggest to gather fresh market data.
+// Results stored in `market_research` table. Both strategist agents consume
+// this pre-fetched data instead of doing their own scraping — keeps the
+// Claude call path fast and ensures both agents see the same research.
+
+const COMPETITOR_URLS = [
+  { source: "competitor_nahat", url: "https://www.nahatcoffee.com/shop-coffee-beans/", name: "קפה נחת" },
+  { source: "competitor_agro", url: "https://agrocafe.co.il/", name: "אגרוקפה" },
+  { source: "competitor_jera", url: "https://www.jera-coffee.co.il/product-category/coffee/", name: "Jera Coffee" },
+];
+
+const GOOGLE_SUGGEST_QUERIES = [
+  "קפה ספשלטי", "פולי קפה", "קפה טרי", "בית קלייה",
+  "פולי קפה אונליין", "קפה חד זני", "שדרוג קפה ביתי",
+  "אלטרנטיבה לנספרסו", "פולי קפה Lavazza",
+];
+
+async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "CoffeeFlow-Research/1.0", "Accept-Language": "he-IL,he;q=0.9" },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const html = await res.text();
+    // Extract just the body content, strip scripts/styles
+    const body = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 4000); // Keep first 4K chars — products/prices/promos
+    return body;
+  } catch (e: any) {
+    console.log(`[research] Scrape failed for ${url}: ${e.message}`);
+    return null;
+  }
+}
+
+async function fetchGoogleSuggest(query: string): Promise<string[]> {
+  try {
+    const url = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(query)}&hl=he&gl=il`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return [];
+    const json = await res.json();
+    // Firefox suggest returns [query, [suggestions]]
+    return Array.isArray(json[1]) ? json[1].slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function runMarketResearch(supabase: ReturnType<typeof createClient>): Promise<{ sources: number; errors: number }> {
+  const today = new Date().toISOString().split("T")[0];
+  let sources = 0, errors = 0;
+
+  // 1. Scrape competitor pages
+  for (const comp of COMPETITOR_URLS) {
+    try {
+      console.log(`[research] Scraping ${comp.name} (${comp.url})...`);
+      const text = await scrapeCompetitorPage(comp.url);
+      if (text) {
+        await supabase.from("market_research").upsert(
+          { research_date: today, source: comp.source, raw_data: { text, url: comp.url }, summary: null },
+          { onConflict: "research_date,source" },
+        );
+        sources++;
+        console.log(`[research] ${comp.name}: ${text.length} chars scraped`);
+      } else {
+        errors++;
+      }
+    } catch (e: any) {
+      console.error(`[research] ${comp.name} error: ${e.message}`);
+      errors++;
+    }
+  }
+
+  // 2. Google Suggest — trending searches
+  try {
+    console.log("[research] Fetching Google Suggest...");
+    const allSuggestions: Record<string, string[]> = {};
+    for (const q of GOOGLE_SUGGEST_QUERIES) {
+      const suggestions = await fetchGoogleSuggest(q);
+      if (suggestions.length > 0) allSuggestions[q] = suggestions;
+    }
+    if (Object.keys(allSuggestions).length > 0) {
+      await supabase.from("market_research").upsert(
+        { research_date: today, source: "google_suggest", raw_data: allSuggestions, summary: null },
+        { onConflict: "research_date,source" },
+      );
+      sources++;
+      console.log(`[research] Google Suggest: ${Object.keys(allSuggestions).length} queries`);
+    }
+  } catch (e: any) {
+    console.error(`[research] Google Suggest error: ${e.message}`);
+    errors++;
+  }
+
+  console.log(`[research] Done: ${sources} sources, ${errors} errors`);
+  return { sources, errors };
+}
+
+// Format research data for injection into strategist system prompts
+async function getResearchBlock(supabase: ReturnType<typeof createClient>): Promise<string> {
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+  // Get today's or yesterday's research
+  const { data: rows } = await supabase
+    .from("market_research")
+    .select("source, raw_data, research_date")
+    .in("research_date", [today, yesterday])
+    .order("research_date", { ascending: false });
+
+  if (!rows || rows.length === 0) return "\nאין מחקר שוק זמין — הסוכנים רצים ללא נתוני מתחרים עדכניים.\n";
+
+  const lines: string[] = [`\n=== מחקר שוק יומי (${rows[0].research_date}) ===`];
+
+  for (const r of rows) {
+    if (r.source === "google_suggest" && r.raw_data) {
+      lines.push("\n--- חיפושים פופולריים בגוגל (ישראל, עברית) ---");
+      for (const [query, suggestions] of Object.entries(r.raw_data as Record<string, string[]>)) {
+        lines.push(`"${query}" → ${(suggestions as string[]).join(", ")}`);
+      }
+    } else if (r.source.startsWith("competitor_") && r.raw_data) {
+      const name = COMPETITOR_URLS.find(c => c.source === r.source)?.name ?? r.source;
+      // Extract a 1500-char summary — enough for Claude to understand products/pricing
+      const text = (r.raw_data as any).text ?? "";
+      lines.push(`\n--- ${name} ---`);
+      // Keep it short — competitive intel constant already has deep profiles.
+      // Research data adds only TODAY's prices/promos.
+      lines.push(text.slice(0, 600));
+    }
+  }
+
+  lines.push("\n=== סוף מחקר שוק ===");
+  return lines.join("\n");
+}
+
+// Fetch historical scores for a strategist agent
+async function getScoreHistory(supabase: ReturnType<typeof createClient>, agentType: string): Promise<string> {
+  const { data: scores } = await supabase
+    .from("advisor_scores")
+    .select("week_start, winning_agent, score, feedback_text")
+    .order("week_start", { ascending: false })
+    .limit(8);
+
+  if (!scores || scores.length === 0) return "\nאין היסטוריית ציונים עדיין — זו ההרצה הראשונה.\n";
+
+  const lines: string[] = ["\n=== היסטוריית ציונים שלך ==="];
+  for (const s of scores) {
+    const won = s.winning_agent === agentType;
+    const emoji = won ? (s.score >= 4 ? "🏆" : "✓") : "✗";
+    const status = won ? `ציון ${s.score}/5` : "לא נבחר";
+    const feedback = s.feedback_text ? ` — "${s.feedback_text}"` : "";
+    lines.push(`${emoji} שבוע ${s.week_start}: ${status}${feedback}`);
+  }
+  lines.push("למד מהפידבק — חזק מה שעבד, שנה מה שנכשל.\n");
+  return lines.join("\n");
 }
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -1288,6 +1458,244 @@ ${pastReportsEff}
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage, { maxTokens: 7000, timeoutMs: 180_000 });
   const parsed = parseClaudeJson(text);
   console.log(`[efficiency] Done. Tokens: ${inputTokens + outputTokens}`);
+
+  return { report: parsed, tokensUsed: inputTokens + outputTokens };
+}
+
+// ── Competing Strategist Agents ──────────────────────────────────────────────
+// Both agents receive identical data (Google Ads + GSC + WooCommerce + market
+// research + ad creatives) but have fundamentally different philosophies.
+// They produce the same JSON output format so the frontend can render them
+// side-by-side for comparison.
+
+async function fetchStrategistData(supabase: ReturnType<typeof createClient>, weekStart: string) {
+  const weekEnd = addDays(weekStart, 6);
+  const thirtyDaysAgo = subtractDays(weekStart, 30);
+
+  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, kwIdeas, productsRes] = await Promise.all([
+    fetchGoogleData(supabase, weekStart, weekEnd),
+    fetchWooSales(supabase, weekStart, weekEnd),
+    fetchAdCreatives(supabase),
+    supabase.from("google_search_console").select("keyword,clicks,impressions,position")
+      .neq("keyword", "__page__").gte("date", thirtyDaysAgo)
+      .order("impressions", { ascending: false }).limit(30),
+    fetchKeywordIdeas(supabase),
+    supabase.from("woo_products").select("name,price,packed_stock").order("name"),
+  ]);
+
+  const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
+    = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
+
+  const gscKwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
+  for (const r of (gscRes.data ?? [])) {
+    const e = gscKwMap.get(r.keyword);
+    if (e) { e.clicks += r.clicks; e.impressions += r.impressions; e.positions.push(r.position); }
+    else gscKwMap.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
+  }
+  const gscBlock = Array.from(gscKwMap.entries())
+    .map(([kw, v]) => ({ keyword: kw, clicks: v.clicks, impressions: v.impressions,
+      position: Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10 }))
+    .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
+    .map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`)
+    .join("\n") || "  אין נתוני GSC עדיין";
+
+  const productsBlock = (productsRes.data ?? [])
+    .filter((p: any) => p.packed_stock > 0)
+    .map((p: any) => `  ${p.name} | ₪${p.price} | מלאי: ${p.packed_stock}`)
+    .join("\n") || "  אין נתוני מוצרים";
+
+  const seasonalContext = getSeasonalContext(weekStart);
+  const researchBlock = await getResearchBlock(supabase);
+
+  return {
+    weekEnd, totalCost, totalClicks, totalImpressions, totalConversions, overallRoas,
+    campaignBlock, prevBlock, wooSales, adCreatives, gscBlock, kwIdeas, productsBlock,
+    seasonalContext, researchBlock,
+  };
+}
+
+// Unified JSON schema instruction for both strategists
+function getStrategyJsonSchema(d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק:
+{
+  "agent_philosophy": "משפט אחד",
+  "summary": "2-3 משפטים",
+  "confidence_level": "low|medium|high",
+  "risk_assessment": "מה הסיכון באסטרטגיה שלי ואיך להקטין אותו",
+  "google": {
+    "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_clicks": ${d.totalClicks},
+    "total_impressions": ${d.totalImpressions},
+    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
+    "roas": ${Math.round(d.overallRoas * 100) / 100},
+    "top_campaign": "שם הקמפיין",
+    "worst_campaign": "שם הקמפיין"
+  },
+  "budget_recommendations": [
+    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep|test_new", "reason": "הסבר", "suggested_budget_change_pct": 30 }
+  ],
+  "campaigns_to_create": [
+    {
+      "campaign_name": "שם",
+      "campaign_type": "Search|Performance Max|Shopping",
+      "target_audience": "קהל יעד",
+      "keywords": ["מילה 1"],
+      "negative_keywords": ["מילה שלילית 1"],
+      "headlines": ["כותרת (עד 30 תווים)"],
+      "descriptions": ["תיאור (עד 90 תווים)"],
+      "daily_budget_ils": 50,
+      "rationale": "הסבר",
+      "landing_page_url": "https://www.minuto.co.il/...",
+      "creation_steps": ["צעד 1"]
+    }
+  ],
+  "ads_to_rewrite": [
+    {
+      "campaign": "שם",
+      "ad_strength": "POOR|AVERAGE|GOOD",
+      "headline_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
+      "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
+      "expected_improvement": "מה ישתפר"
+    }
+  ],
+  "negative_keywords_to_add": [
+    { "campaign": "שם או account-level", "keywords": ["מילה"], "reason": "למה" }
+  ],
+  "competitor_insights": [
+    { "competitor": "שם מתחרה", "finding": "מה גילינו", "action": "מה לעשות" }
+  ],
+  "market_opportunities": [
+    { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
+  ],
+  "key_insights": ["תובנה 1", "תובנה 2"],
+  "next_week_focus": "משפט אחד — המהלך העיקרי"
+}`;
+}
+
+function buildStrategistUserMessage(d: any, weekStart: string) {
+  return `${d.seasonalContext}
+
+${d.researchBlock}
+
+נתוני Google Ads שבוע ${weekStart}–${d.weekEnd}:
+
+=== קמפיינים ===
+${d.campaignBlock}
+
+=== סיכום ===
+עלות כוללת: ₪${Math.round(d.totalCost * 100) / 100} | קליקים: ${d.totalClicks} | חשיפות: ${d.totalImpressions} | המרות: ${Math.round(d.totalConversions * 10) / 10} | ROAS: ${Math.round(d.overallRoas * 100) / 100}x
+
+=== 3 שבועות קודמים (מגמה) ===
+${d.prevBlock}
+
+=== מכירות WooCommerce השבוע ===
+${d.wooSales}
+
+=== קריאייטיב מודעות נוכחי (RSA) ===
+${d.adCreatives}
+
+=== מוצרים עם מלאי ===
+${d.productsBlock}
+
+=== Google Search Console (30 יום) ===
+${d.gscBlock}
+
+=== Keyword Planner ===
+${d.kwIdeas}`;
+}
+
+async function runAggressiveStrategist(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+  focus?: string,
+) {
+  console.log(`[aggressive] Fetching data...`);
+  const d = await fetchStrategistData(supabase, weekStart);
+  const scoreHistory = await getScoreHistory(supabase, "strategist_aggressive");
+  const pastReports = await fetchPastReports(supabase, "strategist_aggressive", weekStart);
+
+  const focusOverride = focus
+    ? `=== הוראות מנהל — עדיפות עליונה ===\n${focus}\nהתעלם מכל נתון שסותר הוראות אלה.\n\n`
+    : '';
+
+  const systemPrompt = `${focusOverride}אתה אסטרטג שיווק דיגיטלי אגרסיבי. אתה מאמין בהשקעה כדי לנצח.
+${BUSINESS_BRIEF}
+${ADS_EXPERTISE}
+
+=== הפילוסופיה שלך: אגרסיבי ===
+אתה מאמין שצריך להשקיע כדי לנצח. תקדיש תקציב נדיב לקמפיינים חדשים, תיכנס לקהלים חדשים, תתקוף חולשות של מתחרים.
+אתה מעדיף לבזבז ₪500 וללמוד משהו חדש מאשר לחסוך ₪500 ולפספס הזדמנות.
+
+כללים:
+• חשוב על השוק הישראלי — מי מחפש מה, מי המתחרים, איפה החולשות שלהם
+• התבסס על מחקר השוק שניתן לך — נתוני מתחרים אמיתיים, חיפושים פופולריים
+• כל מילות המפתח והכותרות — בעברית שיווקית מדוברת
+• כותרות: עד 30 תווים. תיאורים: עד 90 תווים.
+• אל תמציא ביטויים. השתמש ב-GSC + Keyword Planner + Google Suggest.
+${scoreHistory}
+
+=== היסטוריית המלצות קודמות ===
+${pastReports}
+
+הגבלות: budget_recommendations עד 3, campaigns_to_create עד 2, ads_to_rewrite עד 1, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
+${getStrategyJsonSchema(d)}
+ענה אך ורק ב-JSON תקין.`;
+
+  const userMessage = buildStrategistUserMessage(d, weekStart);
+
+  console.log(`[aggressive] Calling Claude...`);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const parsed = parseClaudeJson(text);
+  console.log(`[aggressive] Done. Tokens: ${inputTokens + outputTokens}`);
+
+  return { report: parsed, tokensUsed: inputTokens + outputTokens };
+}
+
+async function runPreciseStrategist(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+  focus?: string,
+) {
+  console.log(`[precise] Fetching data...`);
+  const d = await fetchStrategistData(supabase, weekStart);
+  const scoreHistory = await getScoreHistory(supabase, "strategist_precise");
+  const pastReports = await fetchPastReports(supabase, "strategist_precise", weekStart);
+
+  const focusOverride = focus
+    ? `=== הוראות מנהל — עדיפות עליונה ===\n${focus}\nהתעלם מכל נתון שסותר הוראות אלה.\n\n`
+    : '';
+
+  const systemPrompt = `${focusOverride}אתה אסטרטג שיווק דיגיטלי מדויק. כל שקל חייב להוכיח את עצמו.
+${BUSINESS_BRIEF}
+${ADS_EXPERTISE}
+
+=== הפילוסופיה שלך: מדויק ===
+אתה מאמין שצמיחה אמיתית מגיעה מאופטימיזציה, לא מזריקת כסף. תמצא את הנישה עם ה-ROAS הכי גבוה ותסקייל רק אותה.
+אתה מעדיף לפספס הזדמנות מאשר לבזבז תקציב. כל קמפיין חדש חייב להיות מבוסס על הוכחה מנתונים קיימים.
+
+כללים:
+• חשוב על השוק הישראלי — מי מחפש מה, מי המתחרים, איפה אנחנו יכולים לנצח בROAS
+• התבסס על מחקר השוק שניתן לך — נתוני מתחרים אמיתיים, חיפושים פופולריים
+• כל מילות המפתח והכותרות — בעברית שיווקית מדוברת
+• כותרות: עד 30 תווים. תיאורים: עד 90 תווים.
+• אל תמציא ביטויים. השתמש ב-GSC + Keyword Planner + Google Suggest.
+• לפני שאתה ממליץ על קמפיין חדש — הסבר למה הנתונים מצדיקים את ההשקעה
+${scoreHistory}
+
+=== היסטוריית המלצות קודמות ===
+${pastReports}
+
+הגבלות: budget_recommendations עד 3, campaigns_to_create עד 1, ads_to_rewrite עד 2, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
+${getStrategyJsonSchema(d)}
+ענה אך ורק ב-JSON תקין.`;
+
+  const userMessage = buildStrategistUserMessage(d, weekStart);
+
+  console.log(`[precise] Calling Claude...`);
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const parsed = parseClaudeJson(text);
+  console.log(`[precise] Done. Tokens: ${inputTokens + outputTokens}`);
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
 }
@@ -2045,52 +2453,94 @@ serve(withCors(async (req) => {
     }
   }
 
+  // ── SCORE ENDPOINT — user rates which strategy won ──────────────────────────
+  if (body.agent === "score") {
+    const { winning_agent, score: scoreVal, feedback_text } = body as any;
+    if (!winning_agent || !scoreVal) {
+      return new Response(JSON.stringify({ error: "winning_agent and score are required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+    const { error: scoreErr } = await supabase.from("advisor_scores").upsert(
+      { week_start: weekStart, winning_agent, score: scoreVal, feedback_text: feedback_text || null },
+      { onConflict: "week_start" },
+    );
+    if (scoreErr) console.error("[score] Upsert error:", JSON.stringify(scoreErr));
+    return new Response(JSON.stringify({ ok: !scoreErr, week_start: weekStart }),
+      { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
   const focus = body.focus?.trim() || undefined;
   if (focus) console.log(`[marketing-advisor] Focus context: ${focus.slice(0, 100)}`);
 
   const agentArg = body.agent ?? "all";
   const weekEnd = addDays(weekStart, 6);
-  const SINGLE_AGENTS = ["google_ads_growth", "google_ads_efficiency", "organic_content"];
+
+  // New agent types: two competing strategists + organic (keeping old ones for backward compat)
+  const NEW_AGENTS = ["strategist_aggressive", "strategist_precise", "organic_content"];
+  const OLD_AGENTS = ["google_ads_growth", "google_ads_efficiency", "organic_content"];
+  const ALL_VALID = [...NEW_AGENTS, ...OLD_AGENTS, "market_research"];
   const isOrchestrator = agentArg === "all" || agentArg === "both";
-  const isSingleAgent  = SINGLE_AGENTS.includes(agentArg);
+  const isSingleAgent  = ALL_VALID.includes(agentArg);
 
   // ── ORCHESTRATOR MODE ────────────────────────────────────────────────────────
-  // Called by the frontend with agent="all". Marks all 3 as "running", fires
-  // one self-invocation per agent (each gets its own HTTP connection + timeout),
-  // then returns 202 immediately. No EdgeRuntime tricks needed.
+  // 1. Fire market_research first
+  // 2. Fire the two competing strategists + organic in parallel
+  // The strategists will poll for research data — if it's not ready in 30s
+  // they proceed without it.
   if (isOrchestrator) {
+    // Mark new agents as running
     await Promise.all(
-      SINGLE_AGENTS.map(type =>
+      NEW_AGENTS.map(type =>
         upsertReport(supabase, type, weekStart, { status: "running", error_msg: null })
       )
     );
 
     const selfUrl = `${SUPA_URL}/functions/v1/marketing-advisor`;
-    for (const agent of SINGLE_AGENTS) {
-      fetch(selfUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPA_KEY}`,
-        },
-        body: JSON.stringify({ agent, focus }),
-      }).catch(e => console.error(`[orchestrator] fire ${agent} error:`, e.message));
-    }
+    const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` };
+
+    // Fire research first (fire-and-forget — strategists will poll for it)
+    fetch(selfUrl, { method: "POST", headers, body: JSON.stringify({ agent: "market_research" }) })
+      .catch(e => console.error("[orchestrator] fire research error:", e.message));
+
+    // Fire all 3 agents after a short delay to give research a head start
+    setTimeout(() => {
+      for (const agent of NEW_AGENTS) {
+        fetch(selfUrl, { method: "POST", headers, body: JSON.stringify({ agent, focus }) })
+          .catch(e => console.error(`[orchestrator] fire ${agent} error:`, e.message));
+      }
+    }, 2000);
 
     return new Response(
-      JSON.stringify({ started: true, week_start: weekStart }),
+      JSON.stringify({ started: true, week_start: weekStart, agents: NEW_AGENTS }),
       { status: 202, headers: { ...CORS, "Content-Type": "application/json" } },
     );
   }
 
   // ── SINGLE AGENT MODE ────────────────────────────────────────────────────────
-  // Called by the orchestrator (or directly) with a specific agent name.
-  // Runs one agent synchronously — no background tricks, no timeouts from proxy.
   if (!isSingleAgent) {
     return new Response(
       JSON.stringify({ error: `Unknown agent: ${agentArg}` }),
       { status: 400, headers: { ...CORS, "Content-Type": "application/json" } },
     );
+  }
+
+  // Market research agent — runs synchronously, stores results in market_research table
+  if (agentArg === "market_research") {
+    console.log("[market_research] Starting...");
+    try {
+      const result = await runMarketResearch(supabase);
+      return new Response(
+        JSON.stringify({ success: true, agent: "market_research", ...result }),
+        { status: 200, headers: { ...CORS, "Content-Type": "application/json" } },
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[market_research] Error:", msg);
+      return new Response(
+        JSON.stringify({ success: false, agent: "market_research", error: msg }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
+      );
+    }
   }
 
   console.log(`[${agentArg}] Starting single-agent run for week ${weekStart}`);
@@ -2100,11 +2550,19 @@ serve(withCors(async (req) => {
     let result: { report: unknown; tokensUsed: number };
     let model: string;
 
-    if (agentArg === "google_ads_growth") {
-      result = await runGrowthAgent(supabase, weekStart, focus);
+    if (agentArg === "strategist_aggressive") {
+      result = await runAggressiveStrategist(supabase, weekStart, focus);
+      model  = MODEL_ADS;
+    } else if (agentArg === "strategist_precise") {
+      result = await runPreciseStrategist(supabase, weekStart, focus);
+      model  = MODEL_ADS;
+    } else if (agentArg === "google_ads_growth") {
+      // Backward compat — old agent type routes to aggressive strategist
+      result = await runAggressiveStrategist(supabase, weekStart, focus);
       model  = MODEL_ADS;
     } else if (agentArg === "google_ads_efficiency") {
-      result = await runEfficiencyAgent(supabase, weekStart, focus);
+      // Backward compat — old agent type routes to precise strategist
+      result = await runPreciseStrategist(supabase, weekStart, focus);
       model  = MODEL_ADS;
     } else {
       result = await runOrganicAgent(supabase, weekStart, focus);
@@ -2117,15 +2575,15 @@ serve(withCors(async (req) => {
     });
     console.log(`[${agentArg}] Done. Tokens: ${result.tokensUsed}`);
 
-    // If all 3 agents are now done → send email digest
+    // If all 3 new agents are done → send email digest
     const { data: allRows } = await supabase
       .from("advisor_reports")
       .select("agent_type,status,report")
       .eq("week_start", weekStart)
-      .in("agent_type", SINGLE_AGENTS);
+      .in("agent_type", NEW_AGENTS);
 
     const doneRows = (allRows ?? []).filter((r: { status: string }) => r.status === "done");
-    if (doneRows.length === SINGLE_AGENTS.length) {
+    if (doneRows.length === NEW_AGENTS.length) {
       const reports: Record<string, unknown> = {};
       for (const r of doneRows) reports[r.agent_type] = r.report;
       sendAdvisorEmail(weekStart, weekEnd, reports).catch(e =>
