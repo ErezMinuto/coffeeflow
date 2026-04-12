@@ -642,6 +642,65 @@ async function fetchGoogleSuggest(query: string): Promise<string[]> {
   }
 }
 
+// Google Trends — shows what's trending in Israel for coffee-related topics.
+// Uses the unofficial explore API which returns interest-over-time data.
+async function fetchGoogleTrends(keywords: string[]): Promise<Record<string, string> | null> {
+  try {
+    // Google Trends daily trends API for Israel
+    const dailyUrl = `https://trends.google.com/trends/api/dailytrends?hl=he&tz=-120&geo=IL&ns=15`;
+    const dailyRes = await fetch(dailyUrl, { signal: AbortSignal.timeout(8000) });
+    if (!dailyRes.ok) return null;
+    // Google Trends prefixes response with ")]}'," — strip it
+    let text = await dailyRes.text();
+    text = text.replace(/^\)\]\}',?\n?/, "");
+    const json = JSON.parse(text);
+
+    // Extract trending topics
+    const trends: Record<string, string> = {};
+    const trendingSearches = json?.default?.trendingSearchesDays ?? [];
+    for (const day of trendingSearches.slice(0, 2)) {
+      for (const search of (day.trendingSearches ?? []).slice(0, 10)) {
+        const title = search.title?.query ?? "";
+        const traffic = search.formattedTraffic ?? "";
+        if (title) trends[title] = traffic;
+      }
+    }
+    return Object.keys(trends).length > 0 ? trends : null;
+  } catch (e: any) {
+    console.log(`[research] Google Trends error: ${e.message}`);
+    return null;
+  }
+}
+
+// Google "People Also Ask" — scrape related questions from Google search
+// These are gold for content and long-tail keywords
+async function fetchRelatedQuestions(query: string): Promise<string[]> {
+  try {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=he&gl=il`;
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Accept-Language": "he-IL,he;q=0.9",
+      },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    // Extract "People Also Ask" questions — they're in data-q attributes or specific divs
+    const questions: string[] = [];
+    const regex = /data-q="([^"]+)"/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      if (match[1].length > 10 && match[1].length < 150) {
+        questions.push(match[1]);
+      }
+    }
+    return questions.slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
 async function runMarketResearch(supabase: ReturnType<typeof createClient>): Promise<{ sources: number; errors: number }> {
   const today = new Date().toISOString().split("T")[0];
   let sources = 0, errors = 0;
@@ -686,6 +745,45 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     errors++;
   }
 
+  // 3. Google Trends — what's trending in Israel today
+  try {
+    console.log("[research] Fetching Google Trends (Israel)...");
+    const trends = await fetchGoogleTrends(["קפה", "פולי קפה"]);
+    if (trends) {
+      await supabase.from("market_research").upsert(
+        { research_date: today, source: "google_trends_daily", raw_data: trends },
+        { onConflict: "research_date,source" },
+      );
+      sources++;
+      console.log(`[research] Google Trends: ${Object.keys(trends).length} trending topics`);
+    }
+  } catch (e: any) {
+    console.error(`[research] Google Trends error: ${e.message}`);
+    errors++;
+  }
+
+  // 4. "People Also Ask" — what questions Israelis ask about coffee
+  try {
+    console.log("[research] Fetching People Also Ask...");
+    const paaQueries = ["פולי קפה", "קפה ספשלטי", "בית קלייה קפה"];
+    const allQuestions: Record<string, string[]> = {};
+    for (const q of paaQueries) {
+      const questions = await fetchRelatedQuestions(q);
+      if (questions.length > 0) allQuestions[q] = questions;
+    }
+    if (Object.keys(allQuestions).length > 0) {
+      await supabase.from("market_research").upsert(
+        { research_date: today, source: "people_also_ask", raw_data: allQuestions },
+        { onConflict: "research_date,source" },
+      );
+      sources++;
+      console.log(`[research] PAA: ${Object.values(allQuestions).flat().length} questions found`);
+    }
+  } catch (e: any) {
+    console.error(`[research] PAA error: ${e.message}`);
+    errors++;
+  }
+
   console.log(`[research] Done: ${sources} sources, ${errors} errors`);
   return { sources, errors };
 }
@@ -715,8 +813,22 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
     } else if (r.source.startsWith("competitor_") && r.raw_data) {
       const name = (r.raw_data as any).name ?? r.source;
       const text = (r.raw_data as any).text ?? "";
-      lines.push(`\n--- ${name} (${(r.raw_data as any).url}) ---`);
+      lines.push(`\n--- מתחרה: ${name} (${(r.raw_data as any).url}) ---`);
       lines.push(text.slice(0, 500));
+    } else if (r.source === "google_trends_daily" && r.raw_data) {
+      lines.push("\n--- טרנדים בישראל היום (Google Trends) ---");
+      const trends = r.raw_data as Record<string, string>;
+      for (const [topic, traffic] of Object.entries(trends).slice(0, 15)) {
+        lines.push(`  • ${topic} (${traffic})`);
+      }
+    } else if (r.source === "people_also_ask" && r.raw_data) {
+      lines.push("\n--- שאלות שישראלים שואלים בגוגל (People Also Ask) ---");
+      for (const [query, questions] of Object.entries(r.raw_data as Record<string, string[]>)) {
+        lines.push(`\n"${query}":`);
+        for (const q of (questions as string[])) {
+          lines.push(`  ? ${q}`);
+        }
+      }
     }
   }
 
