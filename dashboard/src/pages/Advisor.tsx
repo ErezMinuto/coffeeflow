@@ -39,10 +39,12 @@ interface CampaignToCreate {
   campaign_type: string
   target_audience: string
   keywords: string[]
+  negative_keywords?: string[]
   headlines: string[]
   descriptions: string[]
   daily_budget_ils: number
   rationale: string
+  landing_page_url?: string
   creation_steps?: string[]
 }
 
@@ -88,7 +90,8 @@ interface EfficiencyReport {
   summary: string
   google: GoogleKPIs | null
   budget_recommendations: BudgetRec[]
-  waste_identified: { campaign: string; issue: string; estimated_waste: string; fix: string }[]
+  waste_identified: { campaign: string; issue: string; estimated_waste: string; fix: string; negative_keywords?: string[] }[]
+  negative_keywords_to_add?: { campaign: string; keywords: string[]; reason: string }[]
   ads_to_rewrite: AdToRewrite[]
   key_insights: string[]
   next_week_focus: string
@@ -711,10 +714,23 @@ function GrowthPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun
                   </div>
                 </div>
                 {c.keywords?.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {c.keywords.map((kw, j) => (
-                      <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
-                    ))}
+                  <div>
+                    <p className="text-[10px] text-surface-500 font-semibold mb-1">מילות מפתח:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {c.keywords.map((kw, j) => (
+                        <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {c.negative_keywords && c.negative_keywords.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-surface-500 font-semibold mb-1">מילות מפתח שליליות:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {c.negative_keywords.map((kw, j) => (
+                        <span key={j} className="text-xs bg-red-50 border border-red-200 text-red-600 px-2 py-0.5 rounded-full">-{kw}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div className="bg-white rounded-lg p-2.5 space-y-1.5">
@@ -740,6 +756,13 @@ function GrowthPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun
                   ))}
                 </div>
                 <p className="text-xs text-blue-700 italic">{c.rationale}</p>
+                {c.landing_page_url && (
+                  <div className="flex items-center gap-2 bg-blue-100 rounded-lg px-2.5 py-1.5">
+                    <span className="text-[10px] text-blue-600 font-semibold shrink-0">🔗 Landing page:</span>
+                    <a href={c.landing_page_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-800 hover:underline truncate flex-1 min-w-0 font-mono" dir="ltr">{c.landing_page_url}</a>
+                    <CopyButton text={c.landing_page_url} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -803,6 +826,37 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
                 </div>
                 <p className="text-xs text-red-700 mb-1">{w.issue}</p>
                 <p className="text-xs text-surface-600">✓ {w.fix}</p>
+                {w.negative_keywords && w.negative_keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    <span className="text-[10px] text-red-600 font-semibold ml-1">מילות מפתח שליליות:</span>
+                    {w.negative_keywords.map((kw, j) => (
+                      <span key={j} className="text-[10px] bg-red-100 border border-red-200 text-red-700 px-1.5 py-0.5 rounded-full">-{kw}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Negative keywords recommendations */}
+      {r.negative_keywords_to_add && r.negative_keywords_to_add.length > 0 && (
+        <div>
+          <SectionHeader>🚫 מילות מפתח שליליות להוספה</SectionHeader>
+          <div className="space-y-2">
+            {r.negative_keywords_to_add.map((nk, i) => (
+              <div key={i} className="card p-3 border-r-4 border-amber-400 bg-amber-50">
+                <p className="text-sm font-medium text-amber-900 mb-1">{nk.campaign}</p>
+                <p className="text-xs text-surface-600 mb-1.5">{nk.reason}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {nk.keywords.map((kw, j) => (
+                      <span key={j} className="text-xs bg-white border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full">-{kw}</span>
+                    ))}
+                  </div>
+                  <CopyButton text={nk.keywords.map(k => `-${k}`).join('\n')} />
+                </div>
               </div>
             ))}
           </div>

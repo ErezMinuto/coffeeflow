@@ -931,6 +931,11 @@ ${pastReports}
 
 הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
 
+לכל קמפיין חדש (campaigns_to_create):
+- צור landing_page_url מלא עם UTM. הפורמט: https://www.minuto.co.il/product/SLUG?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+  אם אין מוצר ספציפי, השתמש ב-https://www.minuto.co.il?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+- הוסף negative_keywords — מילים שליליות שימנעו תנועה לא רלוונטית. למשל: "חינם", "מתכון", "נמס".
+
 החזר JSON בפורמט הזה בדיוק:
 {
   "agent_philosophy": "משפט אחד",
@@ -956,10 +961,12 @@ ${pastReports}
       "campaign_type": "Search|Performance Max|Shopping",
       "target_audience": "קהל יעד",
       "keywords": ["מילה 1", "מילה 2"],
+      "negative_keywords": ["מילה שלילית 1", "מילה שלילית 2"],
       "headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
       "descriptions": ["תיאור 1"],
       "daily_budget_ils": 50,
-      "rationale": "הסבר קצר"
+      "rationale": "הסבר קצר",
+      "landing_page_url": "https://www.minuto.co.il/product/xxx?utm_source=google&utm_medium=cpc&utm_campaign=campaign_name"
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2"],
@@ -1105,6 +1112,8 @@ ${pastReportsEff}
 הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, key_insights עד 2.
 חובה: ads_to_rewrite חייב תמיד להכיל לפחות פריט אחד — בחר את הקמפיין עם הקריאייטיב החלש ביותר (Ad Strength נמוך, CTR נמוך, או כותרות גנריות). אם כל הקמפיינים נראים טובים — בחר אחד ושפר את הכותרות לפי הכללים. אל תחזיר ads_to_rewrite ריק.
 
+מילות מפתח שליליות (negative_keywords_to_add): נתח את הביטויים שהביאו תנועה יקרה ללא המרות ואת נתוני GSC. המלץ על מילים שליליות שחייבים להוסיף כדי לחסום תנועה לא רלוונטית. לכל פריט waste — הוסף negative_keywords עם מילים ספציפיות לחסימה. בנוסף, הוסף negative_keywords_to_add עם המלצות ברמת החשבון/קמפיין.
+
 החזר JSON בפורמט הזה בדיוק:
 {
   "agent_philosophy": "משפט אחד",
@@ -1122,7 +1131,10 @@ ${pastReportsEff}
     { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": -20 }
   ],
   "waste_identified": [
-    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר" }
+    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר", "negative_keywords": ["מילה שלילית רלוונטית"] }
+  ],
+  "negative_keywords_to_add": [
+    { "campaign": "שם הקמפיין או account-level", "keywords": ["חינם", "נמס", "קפסולות"], "reason": "הסבר למה לחסום מילים אלו" }
   ],
   "ads_to_rewrite": [
     {
