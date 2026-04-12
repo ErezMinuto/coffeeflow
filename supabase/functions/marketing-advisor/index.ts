@@ -801,10 +801,13 @@ async function runGrowthAgent(
   console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
 
   const thirtyDaysAgo = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, pastReports, kwIdeas] = await Promise.all([
+  // Growth agent gets: campaign metrics (for context), GSC opportunities,
+  // Keyword Planner, WooCommerce trends, and product inventory — but NOT
+  // ad creatives (that's Efficiency's job). This ensures Growth focuses on
+  // "what new campaigns should we create" instead of "how to fix existing ads".
+  const [{ currentAgg, prevAgg }, wooSales, gscRes, pastReports, kwIdeas, productsRes] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
-    fetchAdCreatives(supabase),
     supabase
       .from("google_search_console")
       .select("keyword,clicks,impressions,position")
@@ -814,6 +817,7 @@ async function runGrowthAgent(
       .limit(30),
     fetchPastReports(supabase, "google_ads_growth", weekStart),
     fetchKeywordIdeas(supabase),
+    supabase.from("woo_products").select("name,price,packed_stock").order("name"),
   ]);
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
@@ -834,11 +838,41 @@ async function runGrowthAgent(
     ? gscKeywords.map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`).join("\n")
     : "  אין נתוני GSC עדיין";
 
-  const systemPrompt = `אתה יועץ Google Ads בכיר עם 10 שנות ניסיון ב-e-commerce קפה ספשלטי. אתה מייעץ ל-Minuto Coffee.
+  // Focus override — injected at the TOP of the system prompt so it takes
+  // precedence over data-driven recommendations. If the user says "don't
+  // promote grinders", the agent must respect that even if GSC shows an
+  // opportunity for "מטחנת קפה".
+  const focusOverride = focus
+    ? `=== הוראות מנהל — עדיפות עליונה ===
+${focus}
+התעלם מכל נתון שסותר הוראות אלה. אם GSC מראה הזדמנות שמנהל ביקש לא לקדם — דלג עליה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
+    : '';
+
+  // Product inventory for Growth to know what's sellable
+  const productsBlock = (productsRes.data ?? [])
+    .filter((p: any) => p.packed_stock > 0)
+    .map((p: any) => `  ${p.name} | ₪${p.price} | מלאי: ${p.packed_stock}`)
+    .join("\n") || "  אין נתוני מוצרים";
+
+  const systemPrompt = `${focusOverride}אתה אסטרטג שיווק דיגיטלי בכיר המתמחה בגילוי הזדמנויות צמיחה חדשות בשוק הקפה הישראלי. אתה מייעץ ל-Minuto Coffee.
 ${BUSINESS_BRIEF}
 ${ADS_EXPERTISE}
-הפילוסופיה שלך: צמיחה חכמה. לסקייל על קמפיינים שמראים ROAS אמיתי, לבדוק הזדמנויות חדשות מבוססות נתונים, להגדיל LTV על ידי המרת קונים ראשונים לחוזרים.
-אל תמליץ על "cold brew" ואל תמציא ביטויים. כל המלצה חייבת להתבסס על נתוני GSC/Ads שניתנו לך.
+
+=== התפקיד שלך: מציאת הזדמנויות חדשות בלבד ===
+אתה אחראי אך ורק על מציאת הזדמנויות חדשות. אתה לא נוגע בקמפיינים קיימים.
+❌ אסור לך: להמליץ על שינויי תקציב לקמפיינים פעילים, לשכתב מודעות קיימות, להשהות/לעצור קמפיינים.
+✅ התפקיד שלך: לגלות מילות מפתח חדשות, להמליץ על קמפיינים חדשים ליצירה, לזהות הזדמנויות עונתיות, לנתח מה הישראלים מחפשים.
+
+אל תמליץ על "cold brew" ואל תמציא ביטויים. כל המלצה חייבת להתבסס על נתוני GSC/Keyword Planner שניתנו לך.
+
+=== מודיעין שוק ישראלי ===
+כללי כתיבה:
+- עברית שיווקית מדוברת. "קפה טרי" ולא "משקה חם מרענן".
+- מילות מפתח בעברית: "פולי קפה", "קפה טרי", "קפה ספשלטי", "קפה חד זני", "קפה אתיופי", "שקית קפה", "קפה לבית"
+- ביטויי חיפוש ישראליים: "איפה קונים פולי קפה", "קפה טרי משלוח", "פולי קפה אונליין", "קפה ספשלטי ישראל"
+- מתחרים: עלית (mass market), לנדוור/ארומה (chains), נספרסו/דולצ'ה גוסטו (קפסולות). Minuto מתחרה על "ספשלטי" — לא על "קפה" הכללי.
+- חגים: ראש השנה (ספט — מתנות), סוכות (אוקט), חנוכה (דצמ — מתנות), פורים (מרץ — משלוחי מנות), פסח (אפריל), שבועות (יוני — חלבי + לילות לבנים)
+- תרבות רכישה: תשלומים (3-6), סף משלוח חינם, תמיכה בWhatsApp
 
 === כתיבת קופי לGoogle Ads — כללים וסגנון ===
 
@@ -896,45 +930,40 @@ ${ADS_EXPERTISE}
 
   const userMessage = `${seasonalContext}
 
-נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
+נתוני Google Ads שבוע ${weekStart}–${weekEnd} (לידיעה כללית — אתה לא נוגע בקמפיינים האלה):
 
-=== קמפיינים השבוע ===
+=== קמפיינים פעילים ===
 ${campaignBlock}
 
 === סיכום ===
 עלות כוללת: ₪${Math.round(totalCost * 100) / 100} | קליקים: ${totalClicks} | חשיפות: ${totalImpressions} | המרות: ${Math.round(totalConversions * 10) / 10} | ROAS: ${Math.round(overallRoas * 100) / 100}x
 
-=== 3 שבועות קודמים (מגמה) ===
-${prevBlock}
-
 === מכירות WooCommerce השבוע ===
 ${wooSales}
 
-=== קריאייטיב מודעות נוכחי (RSA) ===
-${adCreatives}
+=== מוצרים עם מלאי (ניתן לקדם) ===
+${productsBlock}
 
-=== Google Search Console — נתוני Minuto בפועל (30 יום אחרונים) ===
-אלה הביטויים שבהם Minuto כבר מופיעה בגוגל. השתמש בהם כבסיס להמלצות.
+=== Google Search Console — הביטויים שבהם Minuto כבר מופיעה (30 יום) ===
+חפש הזדמנויות: ביטויים עם חשיפות גבוהות אך מיקום 5+ = אפשר לחזק עם קמפיין ממומן.
 ${gscBlock}
 
-=== מילות מפתח — ביצועי קמפיינים Minuto בפועל (30 יום) ===
-אלה מילות המפתח שפועלות בקמפיינים הנוכחיים + ביצועיהן האמיתיים. השתמש בהן כבסיס להמלצות — אל תמציא ביטויים שאינם כאן או ב-GSC.
+=== Keyword Planner — ביטויי חיפוש בשוק הישראלי ===
 ${kwIdeas}
 
-=== היסטוריית המלצות קודמות — למד מהן ===
+=== היסטוריית המלצות קודמות ===
 ${pastReports}
-השווה: מה המלצת בעבר → מה קרה בפועל בנתוני הקמפיינים השבוע. אם המלצה עבדה — חזק אותה. אם לא עבדה — הסבר למה ותכנן אחרת.
+השווה: מה המלצת בעבר → מה קרה בפועל. אם קמפיין חדש שהמלצת כבר קיים (בקמפיינים הפעילים למעלה) — אל תמליץ עליו שוב.
 
-השתמש בהקשר העונתי למעלה — חגים קרובים, עונה, אירועים — כדי לתזמן קמפיינים ולהמליץ על תוכן רלוונטי.
-בהמלצות הקריאייטיב — התבסס על הכותרות והתיאורים הקיימים, הצבע על מה שחלש ומה שאפשר לשפר.
-בהמלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC של Minuto + Keyword Planner. אל תמציא ביטויים.
+המלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC + Keyword Planner. אל תמציא ביטויים.
 
-הגבלות פלט קפדניות: budget_recommendations עד 3, growth_opportunities עד 2, campaigns_to_create עד 1, key_insights עד 2.
+הגבלות פלט: growth_opportunities עד 3, campaigns_to_create עד 2, market_insights עד 2, key_insights עד 2.
 
 לכל קמפיין חדש (campaigns_to_create):
-- צור landing_page_url מלא עם UTM. הפורמט: https://www.minuto.co.il/product/SLUG?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
-  אם אין מוצר ספציפי, השתמש ב-https://www.minuto.co.il?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
-- הוסף negative_keywords — מילים שליליות שימנעו תנועה לא רלוונטית. למשל: "חינם", "מתכון", "נמס".
+- צור landing_page_url מלא עם UTM: https://www.minuto.co.il/product/SLUG?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+  אם אין מוצר ספציפי: https://www.minuto.co.il?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
+- הוסף negative_keywords: מילים שליליות שימנעו תנועה לא רלוונטית ("חינם", "מתכון", "נמס", "קפסולות")
+- הוסף creation_steps: הוראות צעד-אחר-צעד ליצירת הקמפיין בGoogle Ads (איפה ללחוץ, מה לבחור)
 
 החזר JSON בפורמט הזה בדיוק:
 {
@@ -949,11 +978,11 @@ ${pastReports}
     "top_campaign": "שם הקמפיין",
     "worst_campaign": "שם הקמפיין"
   },
-  "budget_recommendations": [
-    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep|test_new", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
-  ],
   "growth_opportunities": [
     { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
+  ],
+  "market_insights": [
+    { "insight": "תובנה שוקית", "relevance": "למה זה רלוונטי ל-Minuto", "action": "מה לעשות" }
   ],
   "campaigns_to_create": [
     {
@@ -962,20 +991,21 @@ ${pastReports}
       "target_audience": "קהל יעד",
       "keywords": ["מילה 1", "מילה 2"],
       "negative_keywords": ["מילה שלילית 1", "מילה שלילית 2"],
-      "headlines": ["כותרת 1", "כותרת 2", "כותרת 3"],
-      "descriptions": ["תיאור 1"],
+      "headlines": ["כותרת 1 (עד 30 תווים)", "כותרת 2", "כותרת 3"],
+      "descriptions": ["תיאור 1 (עד 90 תווים)"],
       "daily_budget_ils": 50,
       "rationale": "הסבר קצר",
-      "landing_page_url": "https://www.minuto.co.il/product/xxx?utm_source=google&utm_medium=cpc&utm_campaign=campaign_name"
+      "landing_page_url": "https://www.minuto.co.il/product/xxx?utm_source=google&utm_medium=cpc&utm_campaign=campaign_name",
+      "creation_steps": ["צעד 1", "צעד 2"]
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2"],
   "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
-  const finalMessage = focus
-    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
-    : userMessage;
+  // Focus is already injected at the TOP of the system prompt as an override,
+  // so we don't append it again to the user message.
+  const finalMessage = userMessage;
 
   console.log(`[growth] Calling Claude...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
@@ -1026,9 +1056,21 @@ async function runEfficiencyAgent(
     .map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`)
     .join("\n") || "  אין נתוני GSC עדיין";
 
-  const systemPrompt = `אתה יועץ Google Ads בכיר המתמחה ב-ROAS optimization לעסקי e-commerce קפה. אתה מייעץ ל-Minuto Coffee.
+  const focusOverride = focus
+    ? `=== הוראות מנהל — עדיפות עליונה ===
+${focus}
+התעלם מכל נתון שסותר הוראות אלה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
+    : '';
+
+  const systemPrompt = `${focusOverride}אתה יועץ Google Ads בכיר המתמחה באופטימיזציה של קמפיינים קיימים. אתה מייעץ ל-Minuto Coffee.
 ${BUSINESS_BRIEF}
 ${ADS_EXPERTISE}
+
+=== התפקיד שלך: שיפור קמפיינים קיימים בלבד ===
+אתה אחראי אך ורק על אופטימיזציה של מה שכבר רץ.
+❌ אסור לך: להמליץ על קמפיינים חדשים, להציע מילות מפתח שלא קיימות בקמפיינים הנוכחיים, להמליץ על הגדלת תקציב כללית.
+✅ התפקיד שלך: לזהות בזבוז, לשפר קופי מודעות, לתקן מילות מפתח שליליות, להמליץ על שינויי תקציב בין קמפיינים קיימים, לשכתב מודעות חלשות.
+
 הפילוסופיה שלך: יעילות ורווחיות. כל שקל חייב לייצר החזר מדיד. אתה מזהה בזבוז לפני שמישהו אחר רואה אותו — CTR נמוך, Quality Score גרוע, קמפיין שמקבל קליקים ולא המרות.
 בנוסף לניתוח, תכתוב מודעות משופרות אמיתיות — כותרות ותיאורים מבוססי נתוני GSC וביצועי הקמפיין.
 
@@ -1161,9 +1203,8 @@ ${pastReportsEff}
   "next_week_focus": "משפט אחד — המהלך העיקרי"
 }`;
 
-  const finalMessage = focus
-    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
-    : userMessage;
+  // Focus is already injected at the TOP of the system prompt as an override.
+  const finalMessage = userMessage;
 
   console.log(`[efficiency] Calling Claude...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ADS, systemPrompt, finalMessage);
@@ -1308,7 +1349,13 @@ async function runOrganicAgent(
     .sort((a: { saves: number; likes: number }, b: { saves: number; likes: number }) => (b.saves + b.likes) - (a.saves + a.likes))
     .slice(0, 3);
 
-  const systemPrompt = `אתה מנהל שיווק דיגיטלי בכיר עם ניסיון בתוכן ו-SEO לעסקי מזון/קפה. אתה מייעץ ל-Minuto Coffee.
+  const focusOverride = focus
+    ? `=== הוראות מנהל — עדיפות עליונה ===
+${focus}
+התעלם מכל נתון שסותר הוראות אלה. אם GSC מראה הזדמנות שמנהל ביקש לא לקדם — דלג עליה ואל תזכיר אותה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
+    : '';
+
+  const systemPrompt = `${focusOverride}אתה מנהל שיווק דיגיטלי בכיר עם ניסיון בתוכן ו-SEO לעסקי מזון/קפה. אתה מייעץ ל-Minuto Coffee.
 ${BUSINESS_BRIEF}
 ${ORGANIC_EXPERTISE}
 יש לך שתי אחריויות — שתיהן משרתות את המטרה הראשית: מכירת פולי קפה.
@@ -1449,7 +1496,7 @@ ${pastReportsOrganic}
 }`;
 
   const finalMessage = focus
-    ? `${userMessage}\n\n=== הוראות מיוחדות מהצוות ===\n${focus}\nהתמקד בהוראות אלו בניתוח שלך ובהמלצות.`
+    ? userMessage // Focus is already injected at the TOP of the system prompt
     : userMessage;
 
   console.log(`[organic] Calling Claude (${MODEL_ORGANIC})...`);
