@@ -634,6 +634,63 @@ interface SerperResult {
   searchParameters?: { q: string };
 }
 
+// Serper Shopping — Google Shopping product listings with prices
+async function searchSerperShopping(query: string): Promise<any[] | null> {
+  if (!SERPER_KEY) return null;
+  try {
+    const res = await fetch("https://google.serper.dev/shopping", {
+      method: "POST",
+      headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, gl: "il", hl: "he" }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.shopping ?? [];
+  } catch (e: any) {
+    console.log(`[serper-shopping] ${query}: ${e.message}`);
+    return null;
+  }
+}
+
+// Serper News — Google News results
+async function searchSerperNews(query: string): Promise<any[] | null> {
+  if (!SERPER_KEY) return null;
+  try {
+    const res = await fetch("https://google.serper.dev/news", {
+      method: "POST",
+      headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, gl: "il", hl: "he" }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.news ?? [];
+  } catch (e: any) {
+    console.log(`[serper-news] ${query}: ${e.message}`);
+    return null;
+  }
+}
+
+// Google PageSpeed Insights — free, no key needed
+async function fetchPageSpeed(url: string): Promise<{ score: number; fcp: number; lcp: number } | null> {
+  try {
+    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=mobile`;
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const audit = json.lighthouseResult;
+    return {
+      score: Math.round((audit?.categories?.performance?.score ?? 0) * 100),
+      fcp: Math.round(audit?.audits?.["first-contentful-paint"]?.numericValue ?? 0),
+      lcp: Math.round(audit?.audits?.["largest-contentful-paint"]?.numericValue ?? 0),
+    };
+  } catch (e: any) {
+    console.log(`[pagespeed] ${url}: ${e.message}`);
+    return null;
+  }
+}
+
 async function searchSerper(query: string, gl = "il", hl = "he"): Promise<SerperResult | null> {
   if (!SERPER_KEY) return null;
   try {
@@ -903,7 +960,74 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     console.error(`[research] Price tracking error: ${e.message}`);
   }
 
-  // 5. Google Suggest — what Israelis are ACTUALLY searching right now
+  // 5. Google Shopping — competitor product prices
+  if (SERPER_KEY) {
+    try {
+      console.log("[research] Serper Shopping: פולי קפה...");
+      const shopping = await searchSerperShopping("פולי קפה");
+      if (shopping && shopping.length > 0) {
+        await supabase.from("market_research").upsert(
+          {
+            research_date: today, source: "google_shopping",
+            raw_data: {
+              query: "פולי קפה",
+              products: shopping.slice(0, 15).map((p: any) => ({
+                title: p.title, price: p.price, source: p.source, link: p.link, rating: p.rating, reviews: p.ratingCount,
+              })),
+            },
+          },
+          { onConflict: "research_date,source" },
+        );
+        sources++;
+        console.log(`[research] Shopping: ${shopping.length} products found`);
+      }
+    } catch (e: any) { errors++; }
+  }
+
+  // 6. Google News — coffee industry news in Israel
+  if (SERPER_KEY) {
+    try {
+      console.log("[research] Serper News: קפה ספשלטי ישראל...");
+      const news = await searchSerperNews("קפה ספשלטי ישראל");
+      if (news && news.length > 0) {
+        await supabase.from("market_research").upsert(
+          {
+            research_date: today, source: "google_news",
+            raw_data: news.slice(0, 8).map((n: any) => ({ title: n.title, snippet: n.snippet, source: n.source, date: n.date })),
+          },
+          { onConflict: "research_date,source" },
+        );
+        sources++;
+        console.log(`[research] News: ${news.length} articles`);
+      }
+    } catch (e: any) { errors++; }
+  }
+
+  // 7. PageSpeed — competitor site speed (slow site = our advantage)
+  try {
+    console.log("[research] PageSpeed: checking competitor sites...");
+    const speedResults: Record<string, any> = {};
+    const sitesToCheck = [
+      { name: "Minuto", url: "https://www.minuto.co.il" },
+      { name: "נחת", url: "https://www.nahatcoffee.com" },
+      { name: "Jera", url: "https://www.jera-coffee.co.il" },
+      { name: "אגרו", url: "https://agrocafe.co.il" },
+    ];
+    for (const site of sitesToCheck) {
+      const speed = await fetchPageSpeed(site.url);
+      if (speed) speedResults[site.name] = { ...speed, url: site.url };
+    }
+    if (Object.keys(speedResults).length > 0) {
+      await supabase.from("market_research").upsert(
+        { research_date: today, source: "pagespeed", raw_data: speedResults },
+        { onConflict: "research_date,source" },
+      );
+      sources++;
+      console.log(`[research] PageSpeed: ${Object.keys(speedResults).length} sites checked`);
+    }
+  } catch (e: any) { errors++; }
+
+  // 8. Google Suggest — what Israelis are ACTUALLY searching right now
   // This is the most valuable research source because it shows real intent
   try {
     console.log("[research] Fetching Google Suggest (20 queries)...");
@@ -1053,6 +1177,30 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
         for (const p of places) {
           lines.push(`  ⭐ ${p.title} — ${p.rating}/5 (${p.reviews} ביקורות) — ${p.address ?? ""}`);
         }
+      }
+    } else if (r.source === "google_shopping" && r.raw_data) {
+      const products = (r.raw_data as any).products ?? [];
+      if (products.length > 0) {
+        lines.push("\n--- Google Shopping — מי מוכר פולי קפה ובאיזה מחיר ---");
+        for (const p of products) {
+          const rating = p.rating ? ` ⭐${p.rating}` : "";
+          lines.push(`  ${p.price ?? "?"} — ${p.title} (${p.source})${rating}`);
+        }
+      }
+    } else if (r.source === "google_news" && r.raw_data) {
+      const news = r.raw_data as any[];
+      if (news?.length > 0) {
+        lines.push("\n--- חדשות קפה בישראל ---");
+        for (const n of news) {
+          lines.push(`  📰 ${n.title} (${n.source}, ${n.date})`);
+        }
+      }
+    } else if (r.source === "pagespeed" && r.raw_data) {
+      lines.push("\n--- מהירות אתרים (מובייל) — אתר איטי = לקוחות בורחים ---");
+      for (const [name, data] of Object.entries(r.raw_data as Record<string, any>)) {
+        const score = data.score;
+        const emoji = score >= 90 ? "🟢" : score >= 50 ? "🟡" : "🔴";
+        lines.push(`  ${emoji} ${name}: ${score}/100 (FCP: ${Math.round(data.fcp / 1000 * 10) / 10}s, LCP: ${Math.round(data.lcp / 1000 * 10) / 10}s)`);
       }
     } else if (r.source === "price_changes" && r.raw_data) {
       const changes = (r.raw_data as any).changes ?? [];
