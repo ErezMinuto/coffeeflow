@@ -78,8 +78,8 @@ interface GrowthReport {
   agent_philosophy: string
   summary: string
   google: GoogleKPIs | null
-  budget_recommendations: BudgetRec[]
   growth_opportunities: { opportunity: string; action: string; expected_impact: string }[]
+  market_insights?: { insight: string; relevance: string; action: string }[]
   campaigns_to_create: CampaignToCreate[]
   key_insights: string[]
   next_week_focus: string
@@ -235,28 +235,18 @@ function buildTriageQueue(
     }
   }
 
-  // ── Growth budget recs: increase = 80 if ≥ 20%, else 60. test_new = 50.
+  // ── Growth campaigns_to_create (score 70) — new campaign suggestions
   const grw = growth?.status === 'done' ? (growth.report as GrowthReport | null) : null
-  if (grw?.budget_recommendations) {
-    for (const r of grw.budget_recommendations) {
-      if (r.action === 'increase') {
-        const isSignificant = r.suggested_budget_change_pct >= 20
-        out.push({
-          id:          `grw::increase::${r.campaign}`,
-          agent:       'google_ads_growth',
-          priority:    isSignificant ? 80 : 60,
-          headline:    `הגדל תקציב ב-${r.suggested_budget_change_pct}%: ${r.campaign}`,
-          context:     r.reason,
-        })
-      } else if (r.action === 'test_new') {
-        out.push({
-          id:          `grw::test::${r.campaign}`,
-          agent:       'google_ads_growth',
-          priority:    50,
-          headline:    `התחל ניסוי: ${r.campaign}`,
-          context:     r.reason,
-        })
-      }
+  if (grw?.campaigns_to_create) {
+    for (const c of grw.campaigns_to_create) {
+      out.push({
+        id:          `grw::campaign::${c.campaign_name}`,
+        agent:       'google_ads_growth',
+        priority:    70,
+        headline:    `צור קמפיין: ${c.campaign_name}`,
+        context:     c.rationale,
+        sourceLabel: `${c.campaign_type} · ₪${c.daily_budget_ils}/יום`,
+      })
     }
   }
 
@@ -682,7 +672,21 @@ function GrowthPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun
         </div>
       )}
 
-      <BudgetRecs recs={r.budget_recommendations} />
+      {/* Market insights — Israeli market intelligence, seasonal, competitor */}
+      {r.market_insights && r.market_insights.length > 0 && (
+        <div>
+          <SectionHeader>🇮🇱 תובנות שוק</SectionHeader>
+          <div className="space-y-2">
+            {r.market_insights.map((mi, i) => (
+              <div key={i} className="card p-3 border-r-4 border-purple-400 bg-purple-50">
+                <p className="text-sm font-medium text-purple-900 mb-1">{mi.insight}</p>
+                <p className="text-xs text-purple-700 mb-1 leading-relaxed">📎 {mi.relevance}</p>
+                <p className="text-xs text-purple-600">▶ {mi.action}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Growth opportunities */}
       {r.growth_opportunities?.length > 0 && (
