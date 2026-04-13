@@ -1617,9 +1617,14 @@ export default function AdvisorPage() {
                   <p className="text-xs text-blue-600">{c.campaign_type} · ₪{c.daily_budget_ils}/יום · {c.target_audience}</p>
                   {c.keywords?.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {c.keywords.map((kw: string, j: number) => (
-                        <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
-                      ))}
+                      {c.keywords.map((kw: any, j: number) => {
+                        // Handle both formats: string (old) or {keyword, match_type, expected_cpc} (tactical)
+                        const label = typeof kw === 'string' ? kw : `${kw.keyword} [${kw.match_type}]`;
+                        const cpc = typeof kw === 'object' && kw.expected_cpc ? ` ₪${kw.expected_cpc}` : '';
+                        return (
+                          <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{label}{cpc}</span>
+                        );
+                      })}
                     </div>
                   )}
                   {c.headlines?.length > 0 && (
