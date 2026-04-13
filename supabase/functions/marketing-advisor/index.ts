@@ -2011,61 +2011,127 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
 }
 
 // Unified JSON schema instruction for both strategists
-function getStrategyJsonSchema(d: any) {
+// TACTICAL agent schema — hyper-specific, ready to execute THIS WEEK
+function getTacticalJsonSchema(d: any) {
   return `
-החזר JSON בפורמט הזה בדיוק:
+החזר JSON בפורמט הזה בדיוק. כל שדה חייב להיות מלא ומפורט:
 {
   "agent_philosophy": "משפט אחד",
-  "summary": "2-3 משפטים",
+  "summary": "2-3 משפטים — מה לעשות השבוע",
   "confidence_level": "low|medium|high",
-  "risk_assessment": "מה הסיכון באסטרטגיה שלי ואיך להקטין אותו",
   "google": {
     "total_cost": ${Math.round(d.totalCost * 100) / 100},
     "total_clicks": ${d.totalClicks},
     "total_impressions": ${d.totalImpressions},
     "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
     "roas": ${Math.round(d.overallRoas * 100) / 100},
-    "top_campaign": "שם הקמפיין",
-    "worst_campaign": "שם הקמפיין"
+    "top_campaign": "שם",
+    "worst_campaign": "שם"
   },
-  "budget_recommendations": [
-    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep|test_new", "reason": "הסבר", "suggested_budget_change_pct": 30 }
+  "weekly_action_plan": [
+    {
+      "day": "ראשון|שני|שלישי|רביעי|חמישי",
+      "action": "מה בדיוק לעשות",
+      "expected_result": "מה צפוי לקרות",
+      "how_to_measure": "איך נדע שעבד"
+    }
   ],
   "campaigns_to_create": [
     {
       "campaign_name": "שם",
-      "campaign_type": "Search|Performance Max|Shopping",
-      "target_audience": "קהל יעד",
-      "keywords": ["מילה 1"],
-      "negative_keywords": ["מילה שלילית 1"],
-      "headlines": ["כותרת (עד 30 תווים)"],
-      "descriptions": ["תיאור (עד 90 תווים)"],
-      "daily_budget_ils": 50,
-      "rationale": "הסבר",
+      "campaign_type": "Search",
+      "launch_day": "ראשון|שני|שלישי",
+      "daily_budget_ils": 60,
+      "bid_strategy": "Maximize Conversions|Manual CPC|Target ROAS",
+      "target_audience": "תיאור מדויק של הקהל",
+      "keywords": [
+        { "keyword": "פולי קפה", "match_type": "phrase", "expected_cpc": 2.5 },
+        { "keyword": "קפה טרי", "match_type": "broad", "expected_cpc": 1.8 }
+      ],
+      "negative_keywords": ["מטחנ", "מכונ", "cold brew", "קפסול", "נמס", "חינם", "מתכון"],
+      "headlines": ["כותרת 1 (30 תווים מקס)", "כותרת 2", "כותרת 3", "כותרת 4", "כותרת 5", "כותרת 6", "כותרת 7", "כותרת 8", "כותרת 9", "כותרת 10", "כותרת 11", "כותרת 12", "כותרת 13", "כותרת 14", "כותרת 15"],
+      "descriptions": ["תיאור 1 (90 תווים מקס)", "תיאור 2", "תיאור 3", "תיאור 4"],
       "landing_page_url": "https://www.minuto.co.il/...",
-      "creation_steps": ["צעד 1"]
+      "rationale": "למה דווקא הקמפיין הזה, למה עכשיו, למה התקציב הזה",
+      "expected_results_7_days": "כמה קליקים, המרות, ועלות צפויים ב-7 ימים"
     }
+  ],
+  "budget_recommendations": [
+    { "campaign": "שם קמפיין קיים", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
   ],
   "ads_to_rewrite": [
     {
       "campaign": "שם",
-      "ad_strength": "POOR|AVERAGE|GOOD",
       "headline_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
-      "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
-      "expected_improvement": "מה ישתפר"
+      "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }]
     }
   ],
-  "negative_keywords_to_add": [
-    { "campaign": "שם או account-level", "keywords": ["מילה"], "reason": "למה" }
+  "wednesday_check": "מה לבדוק ביום רביעי — אילו מדדים, מה סף ההצלחה, מה לעשות אם לא עובד",
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
+}`;
+}
+
+// STRATEGIC agent schema — 90-day roadmap with monthly milestones
+function getStrategicJsonSchema(d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק. כל שדה חייב להיות מלא ומפורט:
+{
+  "agent_philosophy": "משפט אחד",
+  "summary": "2-3 משפטים — האסטרטגיה ל-90 ימים",
+  "confidence_level": "low|medium|high",
+  "google": {
+    "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_clicks": ${d.totalClicks},
+    "total_impressions": ${d.totalImpressions},
+    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
+    "roas": ${Math.round(d.overallRoas * 100) / 100},
+    "top_campaign": "שם",
+    "worst_campaign": "שם"
+  },
+  "current_diagnosis": "מה המצב עכשיו — בשני משפטים חריפים",
+  "target_90_days": "איפה רוצים להיות בעוד 90 ימים — מספרים ספציפיים (הכנסות, ROAS, לקוחות)",
+  "monthly_roadmap": [
+    {
+      "month": "חודש 1 (אפריל-מאי)",
+      "theme": "נושא מרכזי לחודש",
+      "budget_total": 3000,
+      "campaigns": ["שם קמפיין 1", "שם קמפיין 2"],
+      "audience_focus": "על מי מתמקדים החודש",
+      "content_strategy": "מה מפרסמים באינסטגרם/בלוג שתומך במודעות",
+      "kpi_targets": { "roas": 2.5, "conversions_per_week": 15, "new_customers": 40 },
+      "seasonal_events": "חגים/אירועים שצריך לנצל"
+    },
+    {
+      "month": "חודש 2",
+      "theme": "...",
+      "budget_total": 4000,
+      "campaigns": [],
+      "audience_focus": "",
+      "content_strategy": "",
+      "kpi_targets": {},
+      "seasonal_events": ""
+    },
+    {
+      "month": "חודש 3",
+      "theme": "...",
+      "budget_total": 5000,
+      "campaigns": [],
+      "audience_focus": "",
+      "content_strategy": "",
+      "kpi_targets": {},
+      "seasonal_events": ""
+    }
   ],
-  "competitor_insights": [
-    { "competitor": "שם מתחרה", "finding": "מה גילינו", "action": "מה לעשות" }
+  "competitor_strategy": [
+    { "competitor": "שם", "their_weakness": "חולשה שלהם", "our_attack": "איך ננצל את זה לאורך 90 ימים" }
   ],
-  "market_opportunities": [
-    { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
+  "audience_build_plan": [
+    { "phase": "שבועות 1-4", "audience": "מי מטרגטים", "message": "מה המסר", "budget_pct": 50 },
+    { "phase": "שבועות 5-8", "audience": "", "message": "", "budget_pct": 30 },
+    { "phase": "שבועות 9-12", "audience": "", "message": "", "budget_pct": 20 }
   ],
-  "key_insights": ["תובנה 1", "תובנה 2"],
-  "next_week_focus": "משפט אחד — המהלך העיקרי"
+  "risk_and_pivot": "מה הסיכון הגדול ומתי וכיצד לשנות כיוון אם לא עובד",
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
 }`;
 }
 
@@ -2126,39 +2192,35 @@ async function runAggressiveStrategist(
     ? `=== הוראות מנהל — עדיפות עליונה ===\n${focus}\nהתעלם מכל נתון שסותר הוראות אלה.\n\n`
     : '';
 
-  const systemPrompt = `${focusOverride}אתה אסטרטג "גניבת לקוחות" — מתמחה בתקיפה ישירה על מתחרים ובגניבת לקוחות שכבר קונים פולי קפה ממישהו אחר.
+  const systemPrompt = `${focusOverride}אתה מנהל הקמפיינים של מינוטו לשבוע הקרוב.
 ${BUSINESS_BRIEF}
 ${ADS_EXPERTISE}
 
-=== הכיוון האסטרטגי שלך: גניבת לקוחות מהמתחרים ===
-אתה מתמקד אך ורק בגניבת לקוחות שכבר קונים פולי קפה — מהסופר או ממתחרים ספשלטי.
-אתה לא מנסה "לחנך" אנשים חדשים. אתה לא בונה מודעות. אתה תוקף ישירות.
+=== אתה מנהל הקמפיינים של השבוע הקרוב — 7 ימים בלבד ===
+התפקיד שלך: לתת תכנית פעולה שבועית מדויקת שאפשר לבצע מחר בבוקר.
+אתה לא חושב על "אסטרטגיה" — אתה חושב על "מה עושים ביום ראשון, מה בודקים ביום רביעי, מה משנים ביום חמישי".
 
-⚠️ כללים קריטיים — הפרה = כישלון:
-• אנחנו מוכרים פולי קפה בלבד. לא מכונות, לא מטחנות, לא cold brew, לא אביזרים.
-• אם ביטוי מכיל "מטחנ", "מכונ", "cold brew", "קפה קר", "אביזר" — דלג עליו. לא להמליץ.
-• אם קמפיין PAUSED — הוא טופל. אל תזכיר אותו בכלל.
-• אם קמפיין הוא מכונות/מטחנות — התעלם לחלוטין גם אם ה-ROAS מעולה.
+⚠️ כללים קריטיים:
+• פולי קפה בלבד. אם ביטוי מכיל "מטחנ", "מכונ", "cold brew", "קפה קר", "אביזר" — דלג.
+• PAUSED קמפיינים — אל תזכיר.
+• אל תשתמש בשמות מתחרים בכותרות מודעות (trademark policy).
+• כותרות: עד 30 תווים. תיאורים: עד 90 תווים. עברית שיווקית מדוברת.
+• ספק בדיוק 15 כותרות ו-4 תיאורים לכל קמפיין חדש — מוכן להעתקה ישירה לGoogle Ads.
+• לכל מילת מפתח: ציין match type (broad/phrase/exact) ו-CPC צפוי.
 
-=== הקהל שלך ===
-אנשים שכבר קונים פולי קפה ויש להם מטחנה/מכונת אספרסו:
-1. קונים Lavazza/Illy/Bristot/Mauro/Hausbrandt בסופר (₪60-120/ק"ג) — לא יודעים שיש טרי יותר
-2. קונים מנחת/Jera/אגרו — כבר ספשלטי, צריכים סיבה לעבור
+=== מה אתה מחפש? ===
+• איזה קמפיין להקים מחר — עם כל הפרטים שצריך כדי ליצור אותו בGoogle Ads
+• מה לשנות בקמפיינים קיימים — תקציב, מילות מפתח, קופי
+• מה לבדוק ביום רביעי — אילו מדדים, מה סף ההצלחה
+• תכנית יום-יום לשבוע
 
-=== הגישה שלך: תקיפה ישירה ===
-• תקוף על מילות מפתח של מתחרים: "נחת קפה", "jera coffee", "אגרו קפה"
-• תקוף על מותגים מסחריים: "פולי קפה Lavazza", "Illy פולים", "Bristot ישראל"
-• מצא ביטויים עם intent גבוה: "לקנות פולי קפה", "הזמנת פולי קפה", "משלוח פולי קפה"
-• כל קמפיין = תקיפה על קהל ספציפי שעכשיו קונה ממישהו אחר
-
-כללים: עברית שיווקית מדוברת. כותרות: עד 30 תווים. תיאורים: עד 90 תווים. אל תמציא ביטויים.
 ${scoreHistory}
 
 === היסטוריית המלצות קודמות ===
 ${pastReports}
 
 הגבלות: budget_recommendations עד 3, campaigns_to_create עד 2, ads_to_rewrite עד 1, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
-${getStrategyJsonSchema(d)}
+${getTacticalJsonSchema(d)}
 ענה אך ורק ב-JSON תקין.`;
 
   const userMessage = buildStrategistUserMessage(d, weekStart);
@@ -2189,36 +2251,31 @@ async function runPreciseStrategist(
 ${BUSINESS_BRIEF}
 ${ADS_EXPERTISE}
 
-=== הכיוון האסטרטגי שלך: הגדלת סל הקנייה ושימור לקוחות ===
-אתה מתמקד על מי שכבר מכיר את מינוטו או כבר קנה פעם — ואיך לגרום לו לקנות יותר, לחזור, ולהמליץ.
-אתה לא תוקף מתחרים. אתה בונה ערך. אתה מייצר נאמנות.
+=== אתה בונה את תכנית השיווק ל-90 ימים הקרובים ===
+התפקיד שלך: לתת תכנית אסטרטגית רבעונית עם יעדים חודשיים מדידים.
+אתה לא חושב על "מה עושים מחר" — אתה חושב על "איפה אנחנו צריכים להיות בעוד 3 חודשים ואיך מגיעים לשם".
 
-⚠️ כללים קריטיים — הפרה = כישלון:
-• אנחנו מוכרים פולי קפה בלבד. לא מכונות, לא מטחנות, לא cold brew, לא אביזרים.
-• אם ביטוי מכיל "מטחנ", "מכונ", "cold brew", "קפה קר", "אביזר" — דלג עליו. לא להמליץ.
-• אם קמפיין PAUSED — הוא טופל. אל תזכיר אותו בכלל.
-• אם קמפיין הוא מכונות/מטחנות — התעלם לחלוטין.
+⚠️ כללים קריטיים:
+• פולי קפה בלבד. התעלם ממכונות/מטחנות/cold brew.
+• אל תשתמש בשמות מתחרים בכותרות מודעות.
+• עברית שיווקית מדוברת.
 
-=== הקהל שלך ===
-1. לקוחות קיימים של מינוטו — מי שקנה פעם. איך לגרום לו לחזור ולקנות שוב?
-2. אנשים שמחפשים "פולי קפה" באופן כללי — עדיין לא בחרו מותג. איך לתפוס אותם?
-3. אנשים שקונים פולים בסופר — איך להראות להם שטרי = טעם אחר?
+=== מה אתה מחפש? ===
+• אבחון מצב נוכחי — איפה אנחנו עכשיו (בשני משפטים חריפים)
+• יעד ל-90 ימים — מספרים ספציפיים (הכנסות חודשיות, ROAS יעד, מספר לקוחות)
+• מפת דרכים חודשית — חודש 1, חודש 2, חודש 3. מה עושים בכל חודש, כמה מוציאים, על מי מתמקדים
+• אסטרטגיית קהלים — מי קהל #1 (הכי קל להמיר), מי #2 (גדול אבל קשה יותר), מי #3 (שלב שלישי)
+• תכנון עונתי — חגים ואירועים ב-90 הימים הקרובים ואיך לנצל אותם
+• אסטרטגיית מתחרים — חולשות שננצל לאורך 3 חודשים (לא בשבוע אחד)
+• תכנון תקציב — כמה להוציא בחודש 1, 2, 3 ולמה
 
-=== הגישה שלך: בניית ערך וחזרה ===
-• שפר מודעות קיימות — כותרות חזקות יותר, CTA ברור, הצעת ערך ייחודית
-• בנה קמפיינים remarketing — מי שביקר באתר ולא קנה, מי שקנה פעם ולא חזר
-• מצא ביטויים שמביאים לקוחות עם LTV גבוה (קונים חוזרים, סל גבוה)
-• כל מודעה = הבטחה ספציפית ("נקלה היום, אצלכם מחר", "ציון 85+", "טריות מובטחת")
-• אופטימיזציה לlandling page — מה קורה אחרי הקליק? מה אפשר לשפר?
-
-כללים: עברית שיווקית מדוברת. כותרות: עד 30 תווים. תיאורים: עד 90 תווים. אל תמציא ביטויים.
 ${scoreHistory}
 
 === היסטוריית המלצות קודמות ===
 ${pastReports}
 
 הגבלות: budget_recommendations עד 3, campaigns_to_create עד 1, ads_to_rewrite עד 2, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
-${getStrategyJsonSchema(d)}
+${getStrategicJsonSchema(d)}
 ענה אך ורק ב-JSON תקין.`;
 
   const userMessage = buildStrategistUserMessage(d, weekStart);
@@ -2376,6 +2433,11 @@ ${focus}
 ${BUSINESS_BRIEF}
 ${COMPETITIVE_INTELLIGENCE}
 ${ORGANIC_EXPERTISE}
+
+⚠️ כלל קריטי: אנחנו מוכרים פולי קפה בלבד.
+אם GSC מראה הזדמנות על "מטחנת קפה" או "מכונת קפה" — דלג עליה לגמרי ואל תזכיר אותה, גם אם המיקום מצוין.
+לא לכתוב תוכן על מטחנות, מכונות, cold brew, אביזרים. רק על פולי קפה, קלייה, מקורות, טעמים.
+
 יש לך שתי אחריויות — שתיהן משרתות את המטרה הראשית: מכירת פולי קפה.
 
 1. אינסטגרם/פייסבוק — תוכן שמחזק את המותג ומושך אנשים לקנות פולים
