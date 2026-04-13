@@ -2755,20 +2755,28 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
   const safeTitle = (title || "").replace(banned, "").replace(/\s+/g, " ").trim();
   const safeKeyword = (keyword || "").replace(banned, "").replace(/\s+/g, " ").trim();
 
-  const imagePrompt = `Professional hero banner for a specialty coffee blog post.
+  // Build a photorealistic prompt like a photographer's brief — specific,
+  // visual, detailed about what the drink/product should look like.
+  // NOT a generic "professional banner" spec.
+  const imagePrompt = `Create a high-quality, realistic photo for a specialty coffee blog post.
 Blog title: "${safeTitle}"
 Topic: ${safeKeyword}
 
-IMPORTANT: The image must match the SPECIFIC topic of the blog post. Read the title carefully:
-- If the title mentions macchiato/מקיאטו/כתם חלב: show a SMALL espresso cup with just a tiny dot of milk foam on top of dark espresso. NOT a latte, NOT latte art, NOT a big cup of milky coffee.
-- If the title mentions espresso/אספרסו: show a small espresso cup with dark crema.
-- If the title mentions beans/פולים/קלייה: show roasted coffee beans.
-- If the title mentions brewing/הכנה: show brewing equipment with coffee.
-- Default: roasted coffee beans on a wooden surface with warm lighting.
+The image must look like a REAL PHOTO taken at Minuto Cafe — not an AI illustration, not a stock photo, not a graphic design.
 
-Style: warm and inviting, artisan premium feel with earthy tones (dark browns, cream, olive green). Soft natural or warm studio lighting. Close to mid-range product photography. 16:9 wide landscape format. High quality.
+MATCH THE SPECIFIC TOPIC:
+- If about macchiato/מקיאטו/כתם חלב: a traditional Italian Caffè Macchiato in a small glass espresso cup. Rich dark espresso with thick hazelnut-colored crema, topped ONLY with a small dollop of white velvety milk foam in the center. NO latte art, NO hearts, NO large foam patterns. The foam is a simple "spot" on the espresso.
+- If about espresso/אספרסו: a small espresso cup with rich dark crema, on a saucer with a small spoon.
+- If about beans/פולים/קלייה: freshly roasted dark coffee beans scattered on a rustic wooden surface, some in a burlap bag, warm side lighting showing the oily sheen.
+- If about brewing/הכנה/פילטר: a pour-over or espresso machine mid-brew, coffee dripping into a cup, steam rising.
+- If about a specific origin (Ethiopia/Brazil/Kenya): roasted beans with the origin country's colors subtly in the background.
+- Default: freshly roasted specialty coffee beans on a wooden cafe table with warm natural lighting.
 
-STRICTLY FORBIDDEN — do NOT include any of: people, faces, hands, human figures, text, letters, words, numbers, logos, latte art (unless specifically about latte), motorcycles, bicycles, cars, trucks, vehicles, roads, highways, mountains, forests, landscapes, skies, clouds, sunsets, sunrises, animals, or any outdoor scenery.`;
+Setting: wooden cafe table at a cozy specialty coffee shop. Soft blurred background of a warm cafe interior with exposed brick or shelves. Warm natural lighting from the side.
+
+Format: 16:9 wide landscape. Photorealistic. High resolution.
+
+STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, numbers, logos, watermarks, AI artifacts, motorcycles, vehicles, outdoor scenery, animals.`;
 
   let base64: string | null = null;
   let mime = "image/png";
