@@ -2759,11 +2759,16 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
 Blog title: "${safeTitle}"
 Topic: ${safeKeyword}
 
-PRIMARY SUBJECT (mandatory): coffee. The image MUST clearly and prominently show coffee content — one or more of: raw or roasted coffee beans, a steaming cup of coffee, latte art, a coffee bag, a portafilter shot pouring, a roasting drum, or a café counter. This is for a specialty coffee roastery website blog.
+IMPORTANT: The image must match the SPECIFIC topic of the blog post. Read the title carefully:
+- If the title mentions macchiato/מקיאטו/כתם חלב: show a SMALL espresso cup with just a tiny dot of milk foam on top of dark espresso. NOT a latte, NOT latte art, NOT a big cup of milky coffee.
+- If the title mentions espresso/אספרסו: show a small espresso cup with dark crema.
+- If the title mentions beans/פולים/קלייה: show roasted coffee beans.
+- If the title mentions brewing/הכנה: show brewing equipment with coffee.
+- Default: roasted coffee beans on a wooden surface with warm lighting.
 
 Style: warm and inviting, artisan premium feel with earthy tones (dark browns, cream, olive green). Soft natural or warm studio lighting. Close to mid-range product photography. 16:9 wide landscape format. High quality.
 
-STRICTLY FORBIDDEN — do NOT include any of: people, faces, hands, human figures, text, letters, words, numbers, logos, motorcycles, bicycles, cars, trucks, vehicles, roads, highways, mountains, forests, landscapes, skies, clouds, sunsets, sunrises, animals, or any outdoor scenery.`;
+STRICTLY FORBIDDEN — do NOT include any of: people, faces, hands, human figures, text, letters, words, numbers, logos, latte art (unless specifically about latte), motorcycles, bicycles, cars, trucks, vehicles, roads, highways, mountains, forests, landscapes, skies, clouds, sunsets, sunrises, animals, or any outdoor scenery.`;
 
   let base64: string | null = null;
   let mime = "image/png";
