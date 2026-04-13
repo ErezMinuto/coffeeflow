@@ -1701,6 +1701,122 @@ export default function AdvisorPage() {
           </div>
         )}
 
+        {/* === Strategic 90-day fields (only present in strategist_precise) === */}
+
+        {/* Current diagnosis */}
+        {r.current_diagnosis && (
+          <div className="card p-3 bg-amber-50 border-amber-200">
+            <p className="text-xs font-semibold text-amber-800 mb-1">🔍 אבחון מצב</p>
+            <p className="text-sm text-amber-900 leading-relaxed">{r.current_diagnosis}</p>
+          </div>
+        )}
+
+        {/* 90-day target */}
+        {r.target_90_days && (
+          <div className="card p-3 bg-green-50 border-green-200">
+            <p className="text-xs font-semibold text-green-800 mb-1">🎯 יעד ל-90 ימים</p>
+            <p className="text-sm text-green-900 leading-relaxed">{r.target_90_days}</p>
+          </div>
+        )}
+
+        {/* Monthly roadmap */}
+        {r.monthly_roadmap?.length > 0 && (
+          <div>
+            <SectionHeader>🗺️ מפת דרכים חודשית</SectionHeader>
+            <div className="space-y-3">
+              {r.monthly_roadmap.map((m: any, i: number) => (
+                <div key={i} className="card p-4 border-r-4 border-indigo-400 bg-indigo-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-indigo-900">{m.month}</p>
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-mono">₪{m.budget_total?.toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm font-medium text-indigo-800">{m.theme}</p>
+                  {m.audience_focus && <p className="text-xs text-indigo-700">👥 {m.audience_focus}</p>}
+                  {m.content_strategy && <p className="text-xs text-indigo-600">📝 {m.content_strategy}</p>}
+                  {m.seasonal_events && <p className="text-xs text-purple-600">📅 {m.seasonal_events}</p>}
+                  {m.kpi_targets && typeof m.kpi_targets === 'object' && Object.keys(m.kpi_targets).length > 0 && (
+                    <div className="flex gap-2 flex-wrap mt-1">
+                      {m.kpi_targets.roas && <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">ROAS {m.kpi_targets.roas}x</span>}
+                      {m.kpi_targets.conversions_per_week && <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">{m.kpi_targets.conversions_per_week} המרות/שבוע</span>}
+                      {m.kpi_targets.new_customers && <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">{m.kpi_targets.new_customers} לקוחות חדשים</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Audience build plan */}
+        {r.audience_build_plan?.length > 0 && (
+          <div>
+            <SectionHeader>👥 תכנית בניית קהלים</SectionHeader>
+            <div className="space-y-2">
+              {r.audience_build_plan.map((a: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-blue-400 bg-blue-50">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium text-blue-900">{a.phase}</p>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{a.budget_pct}% תקציב</span>
+                  </div>
+                  <p className="text-xs text-blue-800">{a.audience}</p>
+                  {a.message && <p className="text-xs text-blue-600 italic mt-1">"{a.message}"</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Competitor long-term strategy */}
+        {r.competitor_strategy?.length > 0 && (
+          <div>
+            <SectionHeader>🏴 אסטרטגיית מתחרים</SectionHeader>
+            <div className="space-y-2">
+              {r.competitor_strategy.map((cs: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-red-400 bg-red-50">
+                  <p className="text-sm font-medium text-red-900 mb-1">{cs.competitor}</p>
+                  <p className="text-xs text-red-700">חולשה: {cs.their_weakness}</p>
+                  <p className="text-xs text-red-600 mt-1">▶ {cs.our_attack}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Risk and pivot */}
+        {r.risk_and_pivot && (
+          <div className="card p-3 bg-amber-50 border-amber-200">
+            <p className="text-xs font-semibold text-amber-800 mb-1">⚠️ סיכון ותכנית B</p>
+            <p className="text-xs text-amber-900 leading-relaxed">{r.risk_and_pivot}</p>
+          </div>
+        )}
+
+        {/* === Tactical weekly fields (only present in strategist_aggressive) === */}
+
+        {/* Weekly action plan */}
+        {r.weekly_action_plan?.length > 0 && (
+          <div>
+            <SectionHeader>📅 תכנית פעולה שבועית</SectionHeader>
+            <div className="space-y-2">
+              {r.weekly_action_plan.map((a: any, i: number) => (
+                <div key={i} className="card p-3 border-r-4 border-green-400 bg-green-50">
+                  <p className="text-sm font-bold text-green-900 mb-1">{a.day}</p>
+                  <p className="text-xs text-green-800">{a.action}</p>
+                  {a.expected_result && <p className="text-xs text-green-600 mt-1">צפי: {a.expected_result}</p>}
+                  {a.how_to_measure && <p className="text-xs text-green-500 mt-0.5">📊 {a.how_to_measure}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Wednesday check */}
+        {r.wednesday_check && (
+          <div className="card p-3 bg-yellow-50 border-yellow-300">
+            <p className="text-xs font-semibold text-yellow-800 mb-1">📊 בדיקת רביעי</p>
+            <p className="text-xs text-yellow-900 leading-relaxed">{r.wednesday_check}</p>
+          </div>
+        )}
+
         <KeyInsights insights={r.key_insights} />
       </div>
     )
