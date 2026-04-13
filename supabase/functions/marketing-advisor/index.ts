@@ -2755,28 +2755,46 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
   const safeTitle = (title || "").replace(banned, "").replace(/\s+/g, " ").trim();
   const safeKeyword = (keyword || "").replace(banned, "").replace(/\s+/g, " ").trim();
 
-  // Build a photorealistic prompt like a photographer's brief — specific,
-  // visual, detailed about what the drink/product should look like.
-  // NOT a generic "professional banner" spec.
-  const imagePrompt = `Create a high-quality, realistic photo for a specialty coffee blog post.
-Blog title: "${safeTitle}"
-Topic: ${safeKeyword}
+  // Build the prompt like a photographer's brief for a specific shot.
+  // Every image should look like it was taken at Minuto Cafe by a pro
+  // photographer with a 50mm lens — not a stock photo, not a graphic.
+  //
+  // The key: describe ONE specific scene in detail, don't give options.
+  // Bad: "show coffee beans or a cup or brewing equipment"
+  // Good: "close-up of freshly roasted dark beans on a worn wooden board,
+  //        warm side light catching the oily sheen, shallow depth of field"
 
-The image must look like a REAL PHOTO taken at Minuto Cafe — not an AI illustration, not a stock photo, not a graphic design.
+  // Use Claude to generate a specific photographer's brief based on the topic
+  // For now, use smart defaults based on topic keywords
+  const titleLower = (safeTitle + " " + safeKeyword).toLowerCase();
 
-MATCH THE SPECIFIC TOPIC:
-- If about macchiato/מקיאטו/כתם חלב: a traditional Italian Caffè Macchiato in a small glass espresso cup. Rich dark espresso with thick hazelnut-colored crema, topped ONLY with a small dollop of white velvety milk foam in the center. NO latte art, NO hearts, NO large foam patterns. The foam is a simple "spot" on the espresso.
-- If about espresso/אספרסו: a small espresso cup with rich dark crema, on a saucer with a small spoon.
-- If about beans/פולים/קלייה: freshly roasted dark coffee beans scattered on a rustic wooden surface, some in a burlap bag, warm side lighting showing the oily sheen.
-- If about brewing/הכנה/פילטר: a pour-over or espresso machine mid-brew, coffee dripping into a cup, steam rising.
-- If about a specific origin (Ethiopia/Brazil/Kenya): roasted beans with the origin country's colors subtly in the background.
-- Default: freshly roasted specialty coffee beans on a wooden cafe table with warm natural lighting.
+  let sceneDescription: string;
 
-Setting: wooden cafe table at a cozy specialty coffee shop. Soft blurred background of a warm cafe interior with exposed brick or shelves. Warm natural lighting from the side.
+  if (titleLower.includes("מקיאטו") || titleLower.includes("macchiato") || titleLower.includes("כתם חלב")) {
+    sceneDescription = "A traditional Italian Caffè Macchiato served in a small clear glass espresso cup on a white saucer with a small spoon. The drink is a rich, dark espresso shot with thick hazelnut-colored crema, topped with ONLY a small dollop of white velvety milk foam in the center — like a tiny white spot on dark coffee. NO latte art, NO hearts, NO swirl patterns, NO large foam. The cup sits on a rustic wooden cafe table. Soft blurred background of a cozy coffee shop interior with warm lighting.";
+  } else if (titleLower.includes("אספרסו") || titleLower.includes("espresso")) {
+    sceneDescription = "A freshly pulled espresso shot in a small white ceramic demitasse cup on a saucer. The espresso has a thick, rich, tiger-striped crema — deep amber with darker streaks. A thin wisp of steam rises from the surface. The cup sits on a worn wooden cafe counter. Behind it, out of focus, the chrome group head of an espresso machine glistens. Warm side lighting from a cafe window.";
+  } else if (titleLower.includes("פולי") || titleLower.includes("beans") || titleLower.includes("קלייה") || titleLower.includes("roast")) {
+    sceneDescription = "A close-up of freshly roasted specialty coffee beans spread on a rustic worn wooden board. The beans are dark chocolate brown with a visible oily sheen. Some beans are whole, a few are cracked open showing the lighter interior. Warm side lighting from the left catches the oils and textures. A small burlap coffee sack is partially visible in the soft background. Shallow depth of field — front beans sharp, back beans soft. The image smells like fresh coffee.";
+  } else if (titleLower.includes("ethiopia") || titleLower.includes("אתיופי")) {
+    sceneDescription = "Medium-roasted Ethiopian coffee beans with a distinctive reddish-brown color, spread on a dark slate surface. A few green unroasted beans sit beside them for contrast. Warm overhead lighting. A small ceramic cup of brewed coffee with a light amber color sits in the background, slightly out of focus. The mood is earthy, authentic, and artisanal.";
+  } else if (titleLower.includes("brazil") || titleLower.includes("ברזיל")) {
+    sceneDescription = "Freshly roasted Brazilian coffee beans — uniform medium-dark roast with a smooth, chocolate-brown surface. They sit in a small ceramic bowl on a wooden cafe table. Next to the bowl, an espresso cup with thick golden crema. Warm natural light from the side. Background: soft bokeh of a roastery interior with copper and wood tones.";
+  } else if (titleLower.includes("פילטר") || titleLower.includes("filter") || titleLower.includes("pour over") || titleLower.includes("chemex") || titleLower.includes("v60")) {
+    sceneDescription = "A pour-over coffee setup on a wooden counter — a glass Chemex or V60 dripper with fresh coffee dripping through. The coffee stream is thin and golden. Steam rises gently. A small pile of medium-roasted beans sits on a wooden board beside it. Morning light from a window creates warm shadows. Clean, minimal, artisanal atmosphere.";
+  } else if (titleLower.includes("מתנ") || titleLower.includes("gift") || titleLower.includes("חג") || titleLower.includes("שבועות")) {
+    sceneDescription = "An elegant coffee gift set on a wooden surface — a kraft paper bag of specialty coffee beans with a simple string bow, next to a small ceramic espresso cup. Warm holiday lighting with soft golden bokeh in the background. The mood is thoughtful and premium — this is a gift someone would be proud to give. Clean, minimal styling.";
+  } else {
+    sceneDescription = "A close-up of freshly roasted specialty coffee beans on a rustic wooden cafe table at Minuto Cafe. The beans are dark and glossy with visible oils. Warm side lighting from a cafe window creates depth and shadows. A ceramic espresso cup with thick crema sits slightly behind the beans, out of focus. The atmosphere is warm, artisanal, and inviting. Shallow depth of field.";
+  }
 
-Format: 16:9 wide landscape. Photorealistic. High resolution.
+  const imagePrompt = `Create a high-quality, realistic photo. NOT an AI illustration, NOT a stock photo, NOT a graphic design. This should look like it was shot by a professional photographer with a 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
 
-STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, numbers, logos, watermarks, AI artifacts, motorcycles, vehicles, outdoor scenery, animals.`;
+${sceneDescription}
+
+Format: 16:9 wide landscape. Photorealistic. High resolution. Natural color grading — warm tones, no oversaturation.
+
+STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, numbers, logos, watermarks, AI artifacts, motorcycles, vehicles, outdoor scenery, animals. Do not add any text overlay or watermark.`;
 
   let base64: string | null = null;
   let mime = "image/png";

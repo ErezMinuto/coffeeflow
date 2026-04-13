@@ -1182,6 +1182,13 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
                                   >
                                     פתח בטאב חדש
                                   </a>
+                                  <button
+                                    onClick={() => generateBanner(rec.keyword, bs.post!.title)}
+                                    disabled={bs?.bannerLoading}
+                                    className="text-[10px] text-amber-600 hover:underline disabled:opacity-50"
+                                  >
+                                    🔄 באנר חדש
+                                  </button>
                                 </div>
                                 <a href={bs.post.banner_url} target="_blank" rel="noopener noreferrer">
                                   <img
