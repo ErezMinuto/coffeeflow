@@ -97,24 +97,43 @@ serve(async (req) => {
 
           if (postsData.data) {
             for (const post of postsData.data) {
-              // Try to get insights (may fail without instagram_manage_insights)
+              // Instagram Graph API metric deprecation history:
+              //   - `impressions` was deprecated for IG media in late 2024 — including
+              //     it in the metric list makes the WHOLE request fail, which the old
+              //     code silently swallowed and stored 0 for every metric.
+              //   - `views` is the modern replacement for impressions on REEL/VIDEO.
+              //   - `total_interactions` is the new aggregate engagement field.
+              //   - `reach`, `saved`, `shares` still supported across types.
+              // We pick the metric set per media_type and log every failure instead
+              // of silently catching, so future deprecations are visible in the logs.
+              const isVideo = post.media_type === 'VIDEO' || post.media_type === 'REELS'
+              const metricList = isVideo
+                ? 'reach,views,saved,shares,total_interactions'
+                : 'reach,saved,shares,total_interactions'
+
               let reach = 0, impressions = 0, saves = 0, shares = 0
               try {
                 const insRes = await fetch(
-                  `https://graph.facebook.com/v18.0/${post.id}/insights?metric=reach,impressions,saved,shares&access_token=${pageToken}`
+                  `https://graph.facebook.com/v18.0/${post.id}/insights?metric=${metricList}&access_token=${pageToken}`
                 )
                 const insData = await insRes.json()
-                if (insData.data) {
+                if (insData.error) {
+                  console.error('[meta-sync] IG insights error', post.id, post.media_type, insData.error.message)
+                } else if (insData.data) {
                   for (const m of insData.data) {
-                    if (m.name === 'reach') reach = m.values?.[0]?.value || 0
-                    if (m.name === 'impressions') impressions = m.values?.[0]?.value || 0
-                    if (m.name === 'saved') saves = m.values?.[0]?.value || 0
-                    if (m.name === 'shares') shares = m.values?.[0]?.value || 0
+                    const v = m.values?.[0]?.value || 0
+                    if (m.name === 'reach')              reach       = v
+                    else if (m.name === 'views')         impressions = v   // store views as impressions for backwards compat
+                    else if (m.name === 'saved')         saves       = v
+                    else if (m.name === 'shares')        shares      = v
+                    // total_interactions is logged but not stored — likes+comments+shares+saves already covers it
                   }
                 }
-              } catch (_) { /* insights not available */ }
+              } catch (e: any) {
+                console.error('[meta-sync] IG insights fetch threw', post.id, e?.message)
+              }
 
-              await supabase.from('meta_organic_posts').upsert({
+              const { error: upErr } = await supabase.from('meta_organic_posts').upsert({
                 post_id: post.id,
                 post_type: post.media_type === 'VIDEO' ? 'reel' : 'post',
                 message: post.caption,
@@ -124,7 +143,11 @@ serve(async (req) => {
                 thumbnail_url: post.thumbnail_url || post.media_url || null,
                 reach, impressions, saves, shares,
               }, { onConflict: 'post_id' })
-              records++
+              if (upErr) {
+                console.error('[meta-sync] post upsert failed', post.id, upErr.message)
+              } else {
+                records++
+              }
             }
           }
         }
