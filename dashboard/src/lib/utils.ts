@@ -40,20 +40,20 @@ export function formatAPIDate(date: Date): string {
 
 // Meta OAuth URL
 export function getMetaAuthUrl(): string {
-  // Full scope set needed by meta-sync:
-  //   pages_show_list           — /me/accounts (find managed Pages)
-  //   pages_read_engagement     — Page metadata + insights
-  //   instagram_basic           — list IG account + media
-  //   instagram_manage_insights — IG post insights (reach, saves, shares)
-  //   ads_read                  — campaigns + insights from the ad account
-  //   business_management       — required for Business-owned ad accounts
-  // Missing any of these silently zeroes out that part of the sync.
+  // Facebook Login for Business (FLB) uses a pre-created Configuration that
+  // bundles the permissions — not an ad-hoc scope list. The config_id below
+  // points to "CoffeeFlow Full Sync" (created April 2026) which includes:
+  //   pages_show_list, pages_read_engagement,
+  //   instagram_basic, instagram_manage_insights,
+  //   ads_read, business_management
+  // If new permissions are ever needed, add them to the Configuration in the
+  // Meta dashboard rather than changing this URL — the config_id stays stable.
   const params = new URLSearchParams({
-    client_id: import.meta.env.VITE_META_APP_ID,
-    redirect_uri: `${window.location.origin}/auth/meta/callback`,
-    scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_insights,ads_read,business_management',
+    client_id:     import.meta.env.VITE_META_APP_ID,
+    redirect_uri:  `${window.location.origin}/auth/meta/callback`,
+    config_id:     '1481857106803912',
     response_type: 'code',
-    state: crypto.randomUUID(),
+    state:         crypto.randomUUID(),
   })
   return `https://www.facebook.com/v18.0/dialog/oauth?${params}`
 }
