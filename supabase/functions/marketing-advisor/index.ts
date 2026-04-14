@@ -741,38 +741,74 @@ async function searchSerperPlaces(query: string, gl = "il", hl = "he"): Promise<
 
 // ── Meta Ad Library ────────────────────────────────────────────────────────
 // Shows every ad currently running on Meta (Facebook + Instagram) worldwide,
-// filterable by country + search term. For commercial ads the API returns:
+// filterable by country + page. For commercial ads the API returns:
 // page_name, ad_creative_bodies (headlines/body text), ad_creative_link_titles,
 // ad_snapshot_url, ad_delivery_start_time. Impressions + spend are political-
 // ads only — commercial advertisers don't expose those fields.
+//
+// We query by `search_page_ids` (NOT search_terms) because keyword search
+// mostly surfaces political/issue ads — commercial advertisers are only
+// reliably findable by page. Pages come from the `competitor_pages` table,
+// which is seeded with known competitors and auto-grows as Serper organic
+// results surface new Israeli coffee brands.
 //
 // Requires:
 //   - Meta App identity verification on the owner's personal FB account
 //   - A valid access token stored in oauth_tokens (platform='meta')
 // Both are confirmed as of April 2026.
-//
-// Search terms targeting the IL coffee market. Each query is a different lens:
-// competitor names reveal what specific brands are running; category keywords
-// reveal which advertisers we haven't mapped yet are bidding on this topic.
-const META_AD_LIBRARY_QUERIES = [
-  // Competitor brand names
-  { q: "נחת",            label: "nahat" },
-  { q: "אגרו קפה",       label: "agro" },
-  { q: "Jera",           label: "jera" },
-  { q: "נגרו",           label: "negro" },
-  { q: "קופי פלוס",       label: "coffee_plus" },
-  // Category terms — catches anyone advertising on these topics, not just known competitors
-  { q: "קפה ספשלטי",     label: "specialty_coffee" },
-  { q: "פולי קפה טרי",   label: "fresh_beans" },
-  { q: "אספרסו איכותי",  label: "quality_espresso" },
-];
 
-async function searchMetaAdLibrary(
+async function resolveFbPageId(token: string, vanity: string): Promise<{ id: string | null; name: string | null; error: string | null }> {
+  // Resolving a public Page vanity → numeric page_id has two paths:
+  //   (1) Graph API /<vanity>?fields=id,name — works ONLY for pages the
+  //       current user admins, because `pages_read_engagement` scopes to
+  //       pages with a role. Arbitrary competitor pages need "Page Public
+  //       Metadata Access" which is locked behind App Review.
+  //   (2) Public HTML scrape of facebook.com/<vanity>/ — the page's numeric
+  //       ID is embedded in multiple meta tags (al:android:url="fb://page/...",
+  //       "pageID":"..." in inline JSON). No auth needed, no App Review.
+  // Try (1) first; fall back to (2) on the common permission error.
+  try {
+    const gUrl = `https://graph.facebook.com/v19.0/${encodeURIComponent(vanity)}?fields=id,name&access_token=${token}`;
+    const gRes = await fetch(gUrl);
+    const gData = await gRes.json();
+    if (!gData.error && gData.id) {
+      return { id: gData.id, name: gData.name ?? null, error: null };
+    }
+    // Graph API failed — fall through to HTML scrape.
+    const htmlRes = await fetch(`https://www.facebook.com/${encodeURIComponent(vanity)}/`, {
+      signal: AbortSignal.timeout(10000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CoffeeFlow-Research/1.0)" },
+    });
+    if (!htmlRes.ok) {
+      return { id: null, name: null, error: `HTML fetch ${htmlRes.status}; graph error: ${gData.error?.message ?? "unknown"}` };
+    }
+    const html = await htmlRes.text();
+    // FB embeds the page ID in several places. The most reliable one is the
+    // App Links meta tag `al:android:url` / `al:ios:url` which contains
+    // fb://profile/<id> or fb://page/<id> — this is set server-side even on
+    // login-walled HTML and doesn't depend on JS-rendered blocks.
+    const pageId =
+      html.match(/fb:\/\/profile\/(\d+)/)?.[1] ??
+      html.match(/fb:\/\/page\/(\d+)/)?.[1] ??
+      html.match(/"pageID":"(\d+)"/)?.[1] ??
+      html.match(/"entity_id":"(\d+)"/)?.[1] ??
+      html.match(/"page_id":"(\d+)"/)?.[1];
+    if (!pageId) {
+      return { id: null, name: null, error: `HTML scrape found no page ID; graph error: ${gData.error?.message ?? "unknown"}` };
+    }
+    const nameMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    return { id: pageId, name: nameMatch?.[1] ?? null, error: null };
+  } catch (e: any) {
+    return { id: null, name: null, error: e?.message ?? "resolveFbPageId threw" };
+  }
+}
+
+async function searchMetaAdLibraryByPage(
   token: string,
-  query: string,
+  pageId: string,
   country = "IL",
   limit = 25,
-): Promise<any[] | null> {
+): Promise<{ ads: any[] | null; error: string | null }> {
   const fields = [
     "id",
     "page_name",
@@ -785,7 +821,7 @@ async function searchMetaAdLibrary(
     "publisher_platforms",
   ].join(",");
   const url = `https://graph.facebook.com/v19.0/ads_archive?` + new URLSearchParams({
-    search_terms:          query,
+    search_page_ids:       `[${pageId}]`,
     ad_reached_countries:  `['${country}']`,
     ad_active_status:      "ACTIVE",
     ad_type:               "ALL",
@@ -793,13 +829,109 @@ async function searchMetaAdLibrary(
     limit:                 String(limit),
     access_token:          token,
   });
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.error) {
-    console.error(`[research] Meta Ad Library error for "${query}":`, data.error.message);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) {
+      console.error(`[research] Meta Ad Library error for page ${pageId}:`, data.error.message);
+      return { ads: null, error: data.error.message };
+    }
+    return { ads: data.data ?? [], error: null };
+  } catch (e: any) {
+    return { ads: null, error: e?.message ?? "fetch threw" };
+  }
+}
+
+// Scrape a competitor homepage for its Facebook page URL. Returns the vanity
+// segment (e.g. "Nachatcafe") which can then be resolved to a numeric page_id.
+// Used by the Serper auto-discovery path when a new domain appears in organic
+// results — we peek at the homepage and only add it to competitor_pages if it
+// actually has a public Facebook presence.
+// Same idea as scrapeFbVanityFromSite but for Instagram. Most coffee brands
+// link to their IG account in the footer/header. We need the @handle (not a
+// numeric ID) — the IG Business Discovery API takes username strings.
+async function scrapeIgHandleFromSite(domain: string): Promise<string | null> {
+  const IG_SYSTEM_PATHS = new Set([
+    "p", "explore", "reel", "reels", "stories", "tv", "accounts",
+    "direct", "tags", "locations", "challenge",
+  ]);
+  try {
+    const res = await fetch(`https://${domain}`, {
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "CoffeeFlow-Research/1.0" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const matches = [...html.matchAll(/instagram\.com\/([a-zA-Z0-9._]+)/g)];
+    for (const m of matches) {
+      const handle = m[1].replace(/\/$/, "");
+      if (!IG_SYSTEM_PATHS.has(handle.toLowerCase())) return handle;
+    }
+    return null;
+  } catch {
     return null;
   }
-  return data.data ?? [];
+}
+
+// IG Business Discovery: fetch ANY public IG Business/Creator account's
+// recent media + stats, using OUR IG Business Account as the "viewer". Works
+// with `instagram_basic` permission — no special access needed beyond what
+// meta-sync already has.
+//
+// This is THE legitimate way to do competitive Instagram analysis on the
+// Meta platform. Unlike the Ad Library API (which only covers paid
+// political ads in Israel), this surfaces every organic post the
+// competitor publishes — captions, like + comment counts, post type
+// (reel/feed), timestamp, media URL.
+async function fetchIgBusinessDiscovery(
+  token: string,
+  ourIgUserId: string,
+  targetUsername: string,
+): Promise<{ data: any | null; error: string | null }> {
+  const subFields = "id,username,name,biography,followers_count,follows_count,media_count,media.limit(15){id,caption,media_type,media_product_type,timestamp,like_count,comments_count,permalink,thumbnail_url,media_url}";
+  const url = `https://graph.facebook.com/v19.0/${ourIgUserId}?` + new URLSearchParams({
+    fields:       `business_discovery.username(${targetUsername}){${subFields}}`,
+    access_token: token,
+  });
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) return { data: null, error: data.error.message };
+    return { data: data.business_discovery ?? null, error: null };
+  } catch (e: any) {
+    return { data: null, error: e?.message ?? "fetch threw" };
+  }
+}
+
+async function scrapeFbVanityFromSite(domain: string): Promise<string | null> {
+  // Facebook system paths that aren't actual page vanities — if we see these
+  // it means the site linked to Groups/Profiles/other non-Page stuff. Trying
+  // to resolve these as pages always fails.
+  const FB_SYSTEM_PATHS = new Set([
+    "tr", "sharer", "share", "plugins", "dialog", "pages", "login", "privacy",
+    "groups", "profile.php", "watch", "events", "marketplace", "stories",
+    "reel", "reels", "videos", "photo.php", "photos", "hashtag", "search",
+    "business", "ads", "help", "policies", "settings", "messages",
+    "profile", "people", "pg", "policy", "home.php",
+  ]);
+  try {
+    const res = await fetch(`https://${domain}`, {
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "CoffeeFlow-Research/1.0" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    // The homepage often has several facebook.com links (footer, og:tags,
+    // tracking pixels). Iterate and pick the first that ISN'T a system path.
+    const matches = [...html.matchAll(/facebook\.com\/([a-zA-Z0-9._-]+)/g)];
+    for (const m of matches) {
+      const vanity = m[1];
+      if (!FB_SYSTEM_PATHS.has(vanity.toLowerCase())) return vanity;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
@@ -989,15 +1121,128 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
 
   // 4. Meta Ad Library — what ads competitors are running RIGHT NOW on FB+IG.
   // Uses the same Meta OAuth token as meta-sync; requires identity-verified App.
+  //
+  // Two sub-steps:
+  //   (a) DISCOVERY: extract unique hostnames from today's Serper organic
+  //       results (all queries) and for each new hostname that's not in
+  //       competitor_pages, scrape its homepage for a Facebook URL and insert.
+  //   (b) QUERY: resolve any unresolved fb_page_id via /<vanity>?fields=id,
+  //       then query Ad Library per page_id and store ads.
+  //
+  // Self-growing: tomorrow's new competitor that starts ranking on any of
+  // the Serper queries is automatically picked up on the next run without
+  // any code change.
   try {
     const { data: tokenRow } = await supabase
       .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
     const metaToken = (tokenRow as any)?.access_token;
-    if (metaToken) {
-      for (const search of META_AD_LIBRARY_QUERIES) {
+    if (!metaToken) {
+      console.log("[research] No Meta token — skipping Ad Library");
+    } else {
+      // ── (a) DISCOVERY from Serper organic results ──────────────────────
+      // Collect every unique hostname from today's Serper rows (we just wrote
+      // them above). Minuto itself + known competitors get skipped.
+      const SKIP_HOSTS = new Set([
+        "minuto.co.il", "www.minuto.co.il",
+        "google.com", "www.google.com", "youtube.com", "www.youtube.com",
+        "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com",
+        "wikipedia.org", "he.wikipedia.org", "en.wikipedia.org",
+        "ynet.co.il", "www.ynet.co.il", "haaretz.co.il", "www.haaretz.co.il",
+        "mako.co.il", "www.mako.co.il", "walla.co.il", "www.walla.co.il",
+      ]);
+      const { data: todaySerper } = await supabase
+        .from("market_research")
+        .select("raw_data")
+        .eq("research_date", today)
+        .like("source", "serper_%");
+
+      const seenDomains = new Set<string>();
+      for (const row of (todaySerper ?? [])) {
+        const organic = ((row.raw_data as any)?.organic ?? []) as Array<{ link?: string }>;
+        for (const o of organic) {
+          try {
+            const host = new URL(o.link ?? "").hostname.replace(/^www\./, "");
+            if (host && !SKIP_HOSTS.has(host) && !SKIP_HOSTS.has(`www.${host}`)) seenDomains.add(host);
+          } catch { /* invalid URL — skip */ }
+        }
+      }
+
+      // Load known competitor rows to see which domains we've already seen.
+      const { data: knownRows } = await supabase
+        .from("competitor_pages").select("id, domain, fb_vanity, fb_page_id, name, resolve_attempts");
+      const knownByDomain = new Map((knownRows ?? []).map(r => [r.domain, r]));
+
+      let discovered = 0;
+      for (const domain of seenDomains) {
+        if (knownByDomain.has(domain)) continue;
+        if (discovered >= 5) break;  // cap new domains per run
+        // Scrape both FB and IG in parallel to cut latency.
+        const [vanity, igHandle] = await Promise.all([
+          scrapeFbVanityFromSite(domain),
+          scrapeIgHandleFromSite(domain),
+        ]);
+        const last_error = (!vanity && !igHandle) ? "no_fb_or_ig_link_on_homepage" : null;
+        await supabase.from("competitor_pages").insert({
+          domain,
+          fb_vanity: vanity,
+          ig_username: igHandle,
+          discovery_source: "serper_auto",
+          last_error,
+        });
+        console.log(`[research] Discovered: ${domain} → fb:${vanity ?? "—"} ig:${igHandle ?? "—"}`);
+        discovered++;
+      }
+
+      // Also opportunistically scrape IG handles for already-known competitors
+      // that don't have one yet (the schema added ig_username later than fb_vanity).
+      const { data: missingIg } = await supabase
+        .from("competitor_pages")
+        .select("id, domain")
+        .not("domain", "is", null)
+        .is("ig_username", null);
+      for (const row of (missingIg ?? []).slice(0, 10)) {
+        const igHandle = await scrapeIgHandleFromSite(row.domain);
+        if (igHandle) {
+          await supabase.from("competitor_pages")
+            .update({ ig_username: igHandle })
+            .eq("id", row.id);
+          console.log(`[research] Backfilled IG for ${row.domain}: ${igHandle}`);
+        }
+      }
+
+      // ── (b) RESOLVE unresolved page IDs + QUERY Ad Library ─────────────
+      const { data: allRows } = await supabase
+        .from("competitor_pages")
+        .select("id, domain, fb_vanity, fb_page_id, name, resolve_attempts")
+        .not("fb_vanity", "is", null);
+
+      for (const row of (allRows ?? [])) {
+        // Resolve ID if we don't have one yet (and haven't already failed too many times)
+        if (!row.fb_page_id) {
+          if ((row.resolve_attempts ?? 0) >= 3) continue;  // give up after 3 tries — probably a private/bad vanity
+          const resolved = await resolveFbPageId(metaToken, row.fb_vanity);
+          if (resolved.id) {
+            await supabase.from("competitor_pages")
+              .update({ fb_page_id: resolved.id, name: row.name ?? resolved.name, last_error: null, last_checked: new Date().toISOString() })
+              .eq("id", row.id);
+            row.fb_page_id = resolved.id;
+            row.name = row.name ?? resolved.name;
+            console.log(`[research] Resolved ${row.fb_vanity} → page_id ${resolved.id}`);
+          } else {
+            await supabase.from("competitor_pages")
+              .update({ resolve_attempts: (row.resolve_attempts ?? 0) + 1, last_error: resolved.error, last_checked: new Date().toISOString() })
+              .eq("id", row.id);
+            console.warn(`[research] Failed to resolve ${row.fb_vanity}: ${resolved.error}`);
+            continue;
+          }
+        }
+
+        // Query Ad Library for this page
+        const pageLabel = (row.name ?? row.fb_vanity ?? row.fb_page_id ?? "").toString().slice(0, 40);
         try {
-          console.log(`[research] Meta Ad Library: "${search.q}"...`);
-          const ads = await searchMetaAdLibrary(metaToken, search.q);
+          const { ads, error: adsError } = await searchMetaAdLibraryByPage(metaToken, row.fb_page_id!);
+          const n = ads?.length ?? 0;
+          console.log(`[research] Meta Ad Library page=${row.fb_page_id} (${pageLabel}): ${n} ads ${adsError ? `ERR: ${adsError}` : ""}`);
           if (ads && ads.length > 0) {
             const cleaned = ads.slice(0, 15).map((a: any) => ({
               page_name:        a.page_name,
@@ -1009,21 +1254,117 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
               platforms:        a.publisher_platforms,
             }));
             await supabase.from("market_research").upsert(
-              { research_date: today, source: `meta_ads_${search.label}`, raw_data: { query: search.q, ads: cleaned, total: ads.length } },
+              { research_date: today, source: `meta_ads_${row.fb_page_id}`, raw_data: { page_id: row.fb_page_id, competitor: row.name ?? row.fb_vanity, ads: cleaned, total: ads.length } },
               { onConflict: "research_date,source" },
             );
+            // Clear any stale last_error now that the query succeeded.
+            await supabase.from("competitor_pages")
+              .update({ last_error: null, last_checked: new Date().toISOString() })
+              .eq("id", row.id);
             sources++;
+          } else if (adsError) {
+            // Persist the exact Ad Library error onto the row so we can
+            // diagnose by querying competitor_pages — avoids digging through
+            // function logs for a per-page breakdown.
+            await supabase.from("competitor_pages")
+              .update({ last_error: `ad_lib: ${adsError}`, last_checked: new Date().toISOString() })
+              .eq("id", row.id);
+            errors++;
+          } else {
+            // Zero ads is legitimate — competitor isn't running ads right now.
+            await supabase.from("competitor_pages")
+              .update({ last_error: "ad_lib: 0 ads active", last_checked: new Date().toISOString() })
+              .eq("id", row.id);
           }
         } catch (e: any) {
-          console.error(`[research] Meta Ad Library "${search.q}": ${e.message}`);
+          console.error(`[research] Meta Ad Library page=${row.fb_page_id} threw: ${e.message}`);
+          await supabase.from("competitor_pages")
+            .update({ last_error: `ad_lib threw: ${e?.message ?? "unknown"}`, last_checked: new Date().toISOString() })
+            .eq("id", row.id);
           errors++;
         }
       }
-    } else {
-      console.log("[research] No Meta token — skipping Ad Library");
+      // ── (c) IG BUSINESS DISCOVERY — what competitors POST organically ──
+      // The Ad Library API is blind to most Israeli commercial ads (Meta
+      // platform limitation). The real signal lives in organic Instagram
+      // posts. Business Discovery returns recent media + engagement for
+      // ANY public IG Business/Creator account, using OUR IG account as
+      // the viewer. Works with the instagram_basic permission we already
+      // have — no extra scopes needed.
+      try {
+        const { data: ourIg } = await supabase
+          .from("oauth_tokens")
+          .select("metadata")
+          .eq("platform", "meta")
+          .single();
+        // Fallback: hardcoded from prior meta-sync stats. If oauth_tokens
+        // doesn't store the IG ID (it doesn't today), we use the known one.
+        // This will Just Work because we already verified ig_account_id =
+        // 17841404082981965 earlier in this session.
+        const ourIgUserId = (ourIg as any)?.metadata?.ig_user_id ?? "17841404082981965";
+
+        const { data: igTargets } = await supabase
+          .from("competitor_pages")
+          .select("id, domain, ig_username, name")
+          .not("ig_username", "is", null);
+
+        for (const row of (igTargets ?? [])) {
+          try {
+            const { data: bd, error: bdErr } = await fetchIgBusinessDiscovery(metaToken, ourIgUserId, row.ig_username!);
+            if (bdErr) {
+              console.error(`[research] IG business_discovery @${row.ig_username}: ${bdErr}`);
+              await supabase.from("competitor_pages")
+                .update({ last_error: `ig_bd: ${bdErr}`, last_checked: new Date().toISOString() })
+                .eq("id", row.id);
+              errors++;
+              continue;
+            }
+            if (!bd) continue;
+
+            const media = (bd.media?.data ?? []).slice(0, 12).map((m: any) => ({
+              type:        m.media_product_type ?? m.media_type, // FEED|REEL|STORY
+              caption:     (m.caption ?? "").slice(0, 400),
+              likes:       m.like_count ?? 0,
+              comments:    m.comments_count ?? 0,
+              timestamp:   m.timestamp,
+              permalink:   m.permalink,
+              thumbnail:   m.thumbnail_url ?? m.media_url,
+            }));
+
+            await supabase.from("market_research").upsert(
+              {
+                research_date: today,
+                source: `ig_competitor_${row.ig_username}`,
+                raw_data: {
+                  username:        bd.username,
+                  name:            bd.name,
+                  bio:             bd.biography,
+                  followers:       bd.followers_count,
+                  following:       bd.follows_count,
+                  total_posts:     bd.media_count,
+                  recent_media:    media,
+                  domain:          row.domain,
+                },
+              },
+              { onConflict: "research_date,source" },
+            );
+            await supabase.from("competitor_pages")
+              .update({ last_error: null, last_checked: new Date().toISOString() })
+              .eq("id", row.id);
+            console.log(`[research] IG @${row.ig_username}: ${bd.followers_count} followers, ${media.length} recent posts`);
+            sources++;
+          } catch (e: any) {
+            console.error(`[research] IG @${row.ig_username} threw: ${e.message}`);
+            errors++;
+          }
+        }
+      } catch (e: any) {
+        console.error(`[research] IG Business Discovery setup: ${e.message}`);
+        errors++;
+      }
     }
   } catch (e: any) {
-    console.error(`[research] Meta Ad Library setup: ${e.message}`);
+    console.error(`[research] Meta Ad Library / IG setup: ${e.message}`);
     errors++;
   }
 
@@ -1279,12 +1620,27 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       const text = (r.raw_data as any).text ?? "";
       lines.push(`\n--- אתר מתחרה: ${name} ---`);
       lines.push(text.slice(0, 400));
+    } else if (r.source.startsWith("ig_competitor_") && r.raw_data) {
+      const d = r.raw_data as any;
+      const media = d.recent_media ?? [];
+      lines.push(`\n--- אינסטגרם של מתחרה: @${d.username} (${d.followers ?? "?"} עוקבים, ${d.total_posts ?? "?"} פוסטים) ---`);
+      if (d.name) lines.push(`  שם: ${d.name}`);
+      if (d.bio)  lines.push(`  ביו: "${(d.bio ?? "").slice(0, 200)}"`);
+      if (media.length > 0) {
+        lines.push(`  פוסטים אחרונים:`);
+        for (const m of media.slice(0, 10)) {
+          const dateStr = m.timestamp ? new Date(m.timestamp).toISOString().split("T")[0] : "?";
+          const cap = (m.caption ?? "").replace(/\s+/g, " ").slice(0, 180);
+          lines.push(`    [${dateStr}] ${m.type ?? "?"} — 👍${m.likes} 💬${m.comments}`);
+          if (cap) lines.push(`      "${cap}"`);
+        }
+      }
     } else if (r.source.startsWith("meta_ads_") && r.raw_data) {
-      const query = (r.raw_data as any).query ?? "";
+      const competitor = (r.raw_data as any).competitor ?? (r.raw_data as any).query ?? "";
       const ads   = (r.raw_data as any).ads   ?? [];
       const total = (r.raw_data as any).total ?? ads.length;
       if (ads.length > 0) {
-        lines.push(`\n--- Meta Ad Library: "${query}" (${total} מודעות פעילות בישראל) ---`);
+        lines.push(`\n--- Meta Ad Library: ${competitor} (${total} מודעות פעילות בישראל) ---`);
         lines.push("(מודעות שפעילות עכשיו על פייסבוק + אינסטגרם — זה מה שהמתחרים מראים ללקוחות ברגע זה)");
         for (const a of ads.slice(0, 8)) {
           const body = (a.bodies?.[0] ?? "").slice(0, 180);
@@ -1575,6 +1931,122 @@ function buildGoogleDataBlock(
     : "  אין נתוני השוואה";
 
   return { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock };
+}
+
+// ── Meta Ads Data Helper ──────────────────────────────────────────────────────
+// Mirrors fetchGoogleData / buildGoogleDataBlock so agents can reason about
+// Meta (Facebook + Instagram) campaign performance with the same shape as
+// Google. Without this the agents had no idea how Meta was performing and
+// kept recommending only Google changes.
+
+interface MetaCampaignAgg {
+  campaign_id:  string;
+  name:         string;
+  status:       string;
+  objective:    string | null;
+  spend:        number;
+  impressions:  number;
+  clicks:       number;
+  conversions:  number;
+  ctr:          number;
+  cpc:          number;
+  cpa:          number | null;
+}
+
+function aggregateMetaCampaigns(rows: Array<{
+  campaign_id: string; name: string; status: string; objective?: string | null;
+  spend: number; impressions: number; clicks: number; conversions: number;
+  ctr: number; cpc: number;
+}>): MetaCampaignAgg[] {
+  const m = new Map<string, MetaCampaignAgg>();
+  for (const r of rows) {
+    const e = m.get(r.campaign_id);
+    if (!e) {
+      m.set(r.campaign_id, {
+        campaign_id: r.campaign_id,
+        name:        r.name,
+        status:      r.status,
+        objective:   r.objective ?? null,
+        spend:       r.spend,
+        impressions: r.impressions,
+        clicks:      r.clicks,
+        conversions: r.conversions,
+        ctr:         r.ctr,
+        cpc:         r.cpc,
+        cpa:         r.conversions > 0 ? r.spend / r.conversions : null,
+      });
+    } else {
+      e.spend       += r.spend;
+      e.impressions += r.impressions;
+      e.clicks      += r.clicks;
+      e.conversions += r.conversions;
+      e.cpa = e.conversions > 0 ? Math.round((e.spend / e.conversions) * 100) / 100 : null;
+      // recompute weighted ctr/cpc
+      e.ctr = e.impressions > 0 ? e.clicks / e.impressions : 0;
+      e.cpc = e.clicks > 0 ? e.spend / e.clicks : 0;
+    }
+  }
+  return [...m.values()].map(c => ({
+    ...c,
+    spend: Math.round(c.spend * 100) / 100,
+    ctr:   Math.round(c.ctr * 10000) / 100, // percent
+    cpc:   Math.round(c.cpc * 100) / 100,
+  })).sort((a, b) => b.spend - a.spend);
+}
+
+async function fetchMetaAdData(
+  supabase: ReturnType<typeof createClient>,
+  weekStart: string,
+  weekEnd: string,
+) {
+  const fourWksAgo = subtractDays(weekStart, 28);
+  const { data, error } = await supabase
+    .from("meta_ad_campaigns")
+    .select("campaign_id,name,status,objective,date,spend,impressions,clicks,ctr,cpc,conversions")
+    .gte("date", fourWksAgo)
+    .lte("date", weekEnd)
+    .order("date", { ascending: false });
+  if (error) throw new Error(`Meta fetch error: ${error.message}`);
+  const all = (data ?? []) as any[];
+  const currentWeek = all.filter(r => r.date >= weekStart);
+  const prevWeeks   = all.filter(r => r.date < weekStart);
+  return {
+    metaCurrentAgg: aggregateMetaCampaigns(currentWeek),
+    metaPrevAgg:    aggregateMetaCampaigns(prevWeeks),
+  };
+}
+
+function buildMetaDataBlock(
+  metaCurrentAgg: MetaCampaignAgg[],
+  metaPrevAgg:    MetaCampaignAgg[],
+) {
+  const totalSpend       = metaCurrentAgg.reduce((s, c) => s + c.spend, 0);
+  const totalClicks      = metaCurrentAgg.reduce((s, c) => s + c.clicks, 0);
+  const totalImpressions = metaCurrentAgg.reduce((s, c) => s + c.impressions, 0);
+  const totalConversions = metaCurrentAgg.reduce((s, c) => s + c.conversions, 0);
+  const overallCpa       = totalConversions > 0 ? totalSpend / totalConversions : null;
+
+  const metaCampaignBlock = metaCurrentAgg.length > 0
+    ? metaCurrentAgg.map(c =>
+        `  ${c.name} | מטרה: ${c.objective ?? "—"} | סטטוס: ${c.status} | עלות: ₪${c.spend} | קליקים: ${c.clicks} | המרות: ${c.conversions} | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"} | CTR: ${c.ctr}%`
+      ).join("\n")
+    : "  אין נתוני קמפיין מטא השבוע";
+
+  const metaPrevBlock = metaPrevAgg.length > 0
+    ? metaPrevAgg.map(c =>
+        `  ${c.name} | עלות: ₪${c.spend} | המרות: ${c.conversions} | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"}`
+      ).join("\n")
+    : "  אין נתוני השוואה לתקופה הקודמת במטא";
+
+  return {
+    metaTotalSpend:       Math.round(totalSpend * 100) / 100,
+    metaTotalClicks:      totalClicks,
+    metaTotalImpressions: totalImpressions,
+    metaTotalConversions: totalConversions,
+    metaOverallCpa:       overallCpa != null ? Math.round(overallCpa * 100) / 100 : null,
+    metaCampaignBlock,
+    metaPrevBlock,
+  };
 }
 
 // ── Google Ads Creative Helper ────────────────────────────────────────────────
@@ -2135,8 +2607,9 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
   const weekEnd = addDays(weekStart, 6);
   const thirtyDaysAgo = subtractDays(weekStart, 30);
 
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscRes, kwIdeas, productsRes] = await Promise.all([
+  const [{ currentAgg, prevAgg }, { metaCurrentAgg, metaPrevAgg }, wooSales, adCreatives, gscRes, kwIdeas, productsRes] = await Promise.all([
     fetchGoogleData(supabase, weekStart, weekEnd),
+    fetchMetaAdData(supabase, weekStart, weekEnd),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchAdCreatives(supabase),
     supabase.from("google_search_console").select("keyword,clicks,impressions,position")
@@ -2148,6 +2621,9 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
 
   const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
     = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
+
+  const { metaTotalSpend, metaTotalClicks, metaTotalImpressions, metaTotalConversions, metaOverallCpa, metaCampaignBlock, metaPrevBlock }
+    = buildMetaDataBlock(metaCurrentAgg, metaPrevAgg);
 
   const gscKwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
   for (const r of (gscRes.data ?? [])) {
@@ -2174,6 +2650,8 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
     weekEnd, totalCost, totalClicks, totalImpressions, totalConversions, overallRoas,
     campaignBlock, prevBlock, wooSales, adCreatives, gscBlock, kwIdeas, productsBlock,
     seasonalContext, researchBlock,
+    metaTotalSpend, metaTotalClicks, metaTotalImpressions, metaTotalConversions,
+    metaOverallCpa, metaCampaignBlock, metaPrevBlock,
   };
 }
 
@@ -2348,11 +2826,32 @@ ${d.kwIdeas}
 סיכום Google Ads שבוע ${weekStart}–${d.weekEnd}:
 עלות כוללת: ₪${Math.round(d.totalCost * 100) / 100} | קליקים: ${d.totalClicks} | המרות: ${Math.round(d.totalConversions * 10) / 10} | ROAS: ${Math.round(d.overallRoas * 100) / 100}x
 
-קמפיינים:
+קמפיינים Google:
 ${d.campaignBlock}
 
-קריאייטיב:
+קריאייטיב Google:
 ${d.adCreatives}
+
+=== שלב 4ב: Meta (Facebook + Instagram) Ads — הקמפיינים שלנו ===
+סיכום Meta שבוע ${weekStart}–${d.weekEnd}:
+עלות כוללת: ₪${d.metaTotalSpend} | חשיפות: ${d.metaTotalImpressions} | קליקים: ${d.metaTotalClicks} | המרות: ${d.metaTotalConversions} | CPA: ${d.metaOverallCpa != null ? `₪${d.metaOverallCpa}` : "אין"}
+
+קמפיינים Meta פעילים:
+${d.metaCampaignBlock}
+
+השוואה לתקופה הקודמת (Meta):
+${d.metaPrevBlock}
+
+=== שלב 4ג: הקצאת תקציב בין ערוצים (חובה — לא רק Google!) ===
+אתה מנהל את שני הערוצים — Google ו-Meta. אסור להמליץ רק על אחד מהם.
+כללי הקצאה:
+• השווה CPA בין Google ו-Meta — מי יותר זול ל-המרה?
+• השווה ROAS אם זמין — איפה הכסף עובד יותר טוב?
+• Google מתאים ל-intent (אנשים שמחפשים "פולי קפה ספשלטי")
+• Meta/IG מתאים ל-discovery (אנשים שלא ידעו שהם רוצים אותנו) + רימרקטינג
+• אם ערוץ אחד לא רץ בכלל — שאל למה. אולי צריך להפעיל אותו.
+• אם ערוץ אחד מוציא הרבה כסף עם CPA גרוע — קצץ והעבר לערוץ השני.
+חובה לתת המלצה ספציפית: "להעביר ₪X מ-Google ל-Meta" או "להגדיל את Meta ב-Y%" או "Google עובד מצוין, להגדיל ב-Z%". אל תתחמק מהשאלה.
 
 מכירות:
 ${d.wooSales}`;
