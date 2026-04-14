@@ -458,7 +458,7 @@ const CALENDAR_EVENTS: CalendarEvent[] = [
   { name: 'פסח', date: '2026-04-01', endDate: '2026-04-08', type: 'major_holiday', marketingNote: 'שבוע חופש — אנשים בבית, סדרים משפחתיים. קפה חינם מחמץ = מותר. הזמנות מראש לחג.' },
   { name: 'יום השואה', date: '2026-04-16', type: 'national', marketingNote: 'יום זיכרון — אין פרסום שמח, אין קמפיינים ביום עצמו.' },
   { name: 'יום הזיכרון', date: '2026-04-28', type: 'national', marketingNote: 'יום זיכרון חללים — אין פרסום שמח ביום עצמו.' },
-  { name: 'יום העצמאות', date: '2026-04-29', type: 'national', marketingNote: 'יום חגיגות — BBQ, אירועים בחוץ, ביקורים. הזדמנות לתוכן פטריוטי ולהגעה למשפחות.' },
+  { name: 'יום העצמאות', date: '2026-04-29', type: 'major_holiday', marketingNote: 'יום חגיגות — BBQ, אירועים בחוץ, ביקורי משפחה. הזדמנות לקפה כמתנה (חבר מארח), חבילות מנגל מורחבות עם קפה איכותי, ותוכן פטריוטי. התחל קמפיין 2-3 שבועות לפני.' },
   { name: 'שבועות', date: '2026-05-21', endDate: '2026-05-22', type: 'major_holiday', marketingNote: 'חג חלבי — לילות לבנים, ארוחות חלביות. קפה מתאים לאווירה.' },
   { name: 'ראש השנה', date: '2026-09-11', endDate: '2026-09-13', type: 'major_holiday', marketingNote: 'עונת מתנות גדולה — כנ"ל ראש השנה 2025.' },
   { name: 'יום כיפור', date: '2026-09-20', type: 'national', marketingNote: 'יום צום — עצור פרסום ביום ויום לפניו.' },
@@ -504,7 +504,7 @@ function getSeasonalContext(weekStart: string): string {
   today.setHours(0, 0, 0, 0);
 
   const lookahead: Record<CalendarEvent['type'], number> = {
-    national:      14,
+    national:      30,  // bumped from 14 — need prep time for blackout days
     major_holiday: 45,
     commercial:    60,
   };
