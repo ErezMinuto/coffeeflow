@@ -5,9 +5,11 @@
  *
  * Commands:
  *   /stock            → show current packed bag inventory
+ *   /shop             → show grams taken to the coffee shop this week
  *
  * Free text:
- *   "ארזתי 20 שקיות Ethiopia Light" → deducts roasted stock, logs packing
+ *   "ארזתי 20 שקיות Ethiopia Light"           → packing: deducts roasted stock by recipe, adds packed bags
+ *   "ארזתי 660 גר דיי בנסה לבית הקפה"          → shop consumption: deducts grams directly from roasted stock
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
@@ -128,6 +130,80 @@ ${productList}
   }
 }
 
+// ── Claude: extract shop-consumption intent ────────────────────────────────
+// Shop consumption = roasted coffee taken from the roastery to the coffee
+// shop grinders. Measured in grams (or kg), not bags, and does NOT use the
+// product recipe — it's a direct deduction from a single origin or profile.
+//
+// Trigger phrase: "לבית הקפה" / "לבית קפה" / "לחנות" anywhere in the text.
+
+interface Origin          { id: number; name: string; roasted_stock: number | null; critical_stock: number | null }
+interface RoastProfile    { id: number; name: string; roasted_stock: number | null; min_stock: number | null }
+
+function isShopConsumption(text: string): boolean {
+  return /לבית\s*הקפה|לבית\s*קפה|לחנות/.test(text);
+}
+
+async function extractShopConsumption(
+  text: string,
+  origins: Origin[],
+  profiles: RoastProfile[],
+): Promise<{ sourceType: "origin" | "profile"; sourceId: number; grams: number } | null> {
+  const originList  = origins.map(o  => `origin:${o.id}  → "${o.name}"`).join("\n");
+  const profileList = profiles.map(p => `profile:${p.id} → "${p.name}"`).join("\n");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key":         ANTHROPIC_KEY,
+      "anthropic-version": "2023-06-01",
+      "Content-Type":      "application/json",
+    },
+    body: JSON.stringify({
+      model:      "claude-haiku-4-5",
+      max_tokens: 120,
+      system: `אתה מזהה דיווחים על קפה קלוי שנלקח לבית הקפה.
+מקורות זמינים (מוצא ירוק):
+${originList}
+
+פרופילי קלייה זמינים:
+${profileList}
+
+החזר JSON בלבד:
+  {"source_type": "origin" | "profile", "source_id": <id>, "grams": <מספר שלם בגרמים>}
+
+המרה: "1 ק״ג" או "1 קג" או "1 kg" = 1000 גרם. "0.5 ק״ג" = 500 גרם. "גר" או "גרם" = גרמים.
+בחר origin אם השם מזכיר מוצא ספציפי (אתיופיה, דיי בנסה, קולומביה וכו׳).
+בחר profile אם השם מזכיר תערובת/בלנד/פרופיל קלייה.
+
+אם לא מדובר בקפה שנלקח לבית הקפה, או שאין התאמה:
+  {"source_type": "origin", "source_id": 0, "grams": 0}`,
+      messages: [{ role: "user", content: text }],
+    }),
+  });
+
+  const json = await res.json();
+  const raw  = json.content?.[0]?.text ?? "";
+  try {
+    const clean  = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    if (
+      (parsed.source_type === "origin" || parsed.source_type === "profile") &&
+      parsed.source_id > 0 &&
+      parsed.grams > 0
+    ) {
+      return {
+        sourceType: parsed.source_type,
+        sourceId:   parsed.source_id,
+        grams:      Math.round(parsed.grams),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Handlers ────────────────────────────────────────────────────────────────
 
 async function handleStock(chatId: string) {
@@ -240,6 +316,93 @@ async function handlePacking(chatId: string, fromName: string, productId: number
   await send(chatId, msg);
 }
 
+async function handleShopStock(chatId: string) {
+  // Show grams taken to the shop in the last 7 days, grouped by source.
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: logs } = await supabase
+    .from("shop_consumption_logs")
+    .select("source_name, grams")
+    .eq("user_id", USER_ID)
+    .gte("taken_at", since);
+
+  if (!logs || logs.length === 0) {
+    await send(chatId, "☕ לא נלקח קפה לבית הקפה ב-7 הימים האחרונים");
+    return;
+  }
+
+  const totals = new Map<string, number>();
+  for (const l of logs) totals.set(l.source_name, (totals.get(l.source_name) ?? 0) + l.grams);
+
+  const lines = [...totals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, g]) => `• ${name}: <b>${(g / 1000).toFixed(2)} ק"ג</b>`)
+    .join("\n");
+
+  await send(chatId, `☕ <b>נלקח לבית הקפה (7 ימים אחרונים):</b>\n\n${lines}`);
+}
+
+async function handleShopConsumption(
+  chatId:     string,
+  fromName:   string,
+  sourceType: "origin" | "profile",
+  sourceId:   number,
+  grams:      number,
+  origins:    Origin[],
+  profiles:   RoastProfile[],
+) {
+  const source = sourceType === "origin"
+    ? origins.find(o  => o.id === sourceId)
+    : profiles.find(p => p.id === sourceId);
+
+  if (!source) {
+    await send(chatId, "⚠️ לא מצאתי את המקור במערכת");
+    return;
+  }
+
+  const kgNeeded    = grams / 1000;
+  const currentKg   = source.roasted_stock ?? 0;
+  const minStockKg  = sourceType === "origin"
+    ? (source as Origin).critical_stock
+    : (source as RoastProfile).min_stock;
+
+  if (currentKg < kgNeeded) {
+    await send(chatId,
+      `⛔ <b>אין מספיק מלאי קלוי:</b>\n\n` +
+      `• ${source.name}: יש ${currentKg.toFixed(2)} ק"ג, צריך ${kgNeeded.toFixed(3)} ק"ג`
+    );
+    return;
+  }
+
+  const newStock = parseFloat((currentKg - kgNeeded).toFixed(3));
+  if (sourceType === "origin") {
+    await supabase.from("origins").update({ roasted_stock: newStock }).eq("id", sourceId);
+  } else {
+    await supabase.from("roast_profiles").update({ roasted_stock: newStock }).eq("id", sourceId);
+  }
+
+  await supabase.from("shop_consumption_logs").insert({
+    user_id:     USER_ID,
+    source_type: sourceType,
+    source_id:   sourceId,
+    source_name: source.name,
+    grams,
+    reported_by: fromName,
+  });
+
+  let msg = [
+    `✅ <b>נרשמה העברה לבית הקפה!</b>`,
+    `☕ ${source.name}: ${grams} גרם (${kgNeeded.toFixed(3)} ק"ג)`,
+    ``,
+    `📊 מלאי קלוי כעת: <b>${newStock.toFixed(2)} ק"ג</b>`,
+  ].join("\n");
+
+  if (minStockKg !== null && minStockKg !== undefined && newStock < minStockKg) {
+    msg += `\n\n🚨 <b>התראת מלאי נמוך!</b>\n⚠️ ${source.name}: נותרו ${newStock.toFixed(2)} ק"ג (מינימום: ${minStockKg} ק"ג)`;
+  }
+
+  await send(chatId, msg);
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -294,7 +457,39 @@ serve(async (req) => {
 
     if (lower.startsWith("/stock")) {
       await handleStock(chatId);
+    } else if (lower.startsWith("/shop")) {
+      await handleShopStock(chatId);
     } else if (!lower.startsWith("/")) {
+      // Shop consumption takes priority — triggered by "לבית הקפה" / "לחנות".
+      // Same message may contain "ארזתי", but the destination phrase is what
+      // distinguishes a shop transfer (grams) from a packing report (bags).
+      if (isShopConsumption(text)) {
+        const [{ data: origins }, { data: profiles }] = await Promise.all([
+          supabase.from("origins").select("id, name, roasted_stock, critical_stock").eq("user_id", USER_ID),
+          supabase.from("roast_profiles").select("id, name, roasted_stock, min_stock"),
+        ]);
+
+        if ((!origins || origins.length === 0) && (!profiles || profiles.length === 0)) {
+          await send(chatId, "❌ לא נמצאו מקורות קפה במערכת");
+          return new Response("ok");
+        }
+
+        const shop = await extractShopConsumption(text, (origins ?? []) as Origin[], (profiles ?? []) as RoastProfile[]);
+        if (shop) {
+          await handleShopConsumption(
+            chatId, fromName,
+            shop.sourceType, shop.sourceId, shop.grams,
+            (origins ?? []) as Origin[], (profiles ?? []) as RoastProfile[],
+          );
+        } else {
+          await send(chatId,
+            `לא הבנתי איזה קפה וכמה 🤔\n\n` +
+            `דוגמה:\n<code>ארזתי 660 גר דיי בנסה לבית הקפה</code>`
+          );
+        }
+        return new Response("ok");
+      }
+
       // Fetch products once — passed to both Claude (for smart matching) and handlePacking
       const { data: allProducts } = await supabase
         .from("products")
@@ -314,7 +509,8 @@ serve(async (req) => {
         await send(chatId,
           `לא הבנתי 🤔\n\n` +
           `לדיווח אריזה:\n<code>ארזתי 20 שקיות אתיופיה</code>\n\n` +
-          `לצפייה במלאי:\n<code>/stock</code>\n\n` +
+          `להעברה לבית הקפה:\n<code>ארזתי 660 גר דיי בנסה לבית הקפה</code>\n\n` +
+          `לצפייה במלאי:\n<code>/stock</code>   <code>/shop</code>\n\n` +
           `מוצרים במערכת:\n${list}`
         );
       }
