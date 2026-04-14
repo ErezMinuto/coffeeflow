@@ -26,6 +26,8 @@ serve(async (req) => {
     ig_post_errors:    0,
     follower_count:    0,
     last_meta_error:   null as string | null,
+    token_granted:     [] as string[],
+    token_declined:    [] as string[],
   }
 
   try {
@@ -33,6 +35,26 @@ serve(async (req) => {
       .from('oauth_tokens').select('access_token').eq('platform', 'meta').single()
     if (!tokenRow) throw new Error('Meta not connected')
     const token = tokenRow.access_token
+
+    // Diagnostic: what permissions did OAuth actually grant vs decline? This
+    // is the source of truth — the FLB Configuration UI is unreliable because
+    // a permission can appear selected there but fail to reach the token if
+    // the user skipped a consent step or the permission needs App Review for
+    // Advanced Access and the app is still in Development mode.
+    try {
+      const permsRes = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${token}`)
+      const perms = await permsRes.json()
+      if (perms.error) {
+        stats.last_meta_error = perms.error.message
+      } else if (Array.isArray(perms.data)) {
+        for (const p of perms.data) {
+          if (p.status === 'granted') stats.token_granted.push(p.permission)
+          else if (p.status === 'declined') stats.token_declined.push(p.permission)
+        }
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] /me/permissions fetch error:', e?.message)
+    }
 
     const today = new Date().toISOString().split('T')[0]
 
