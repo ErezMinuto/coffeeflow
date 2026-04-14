@@ -23,32 +23,91 @@ serve(async (req) => {
     const today = new Date().toISOString().split('T')[0]
 
     // ── Ads sync ──────────────────────────────────────────────
-    const campaignsRes = await fetch(
+    // Two old bugs fixed here:
+    //
+    // 1. Conversion type filter was hardcoded to `purchase`. Meta returns an
+    //    `actions` array containing every action type the campaign drove —
+    //    leads, add_to_cart, custom pixel events, subscribes, etc. The old
+    //    code only counted purchases, so any campaign optimizing for leads or
+    //    custom events showed conversions=0 in the dashboard.
+    //
+    // 2. Insights used `date_preset=last_90d` which returns ONE aggregated
+    //    row covering the whole 90 days, but the upsert stamped `date: today`.
+    //    Every sync overwrote the same row, so per-day historical data was
+    //    impossible. Now uses `time_increment=1` to get one row per day.
+    //
+    // Conversion definition: sum of every action_type that's a real
+    // conversion event. Excludes engagement actions (link_click,
+    // post_engagement, video_view, etc.) which Meta lumps into the same
+    // `actions` array but shouldn't count as conversions.
+
+    const CONVERSION_TYPE_PATTERNS = [
+      /^purchase$/, /^lead$/, /^complete_registration$/, /^subscribe$/,
+      /^add_to_cart$/, /^initiate_checkout$/, /^add_payment_info$/,
+      /^offsite_conversion\./,            // Pixel events
+      /^onsite_conversion\.purchase$/,    // On-FB purchases
+      /^onsite_conversion\.lead/,         // On-FB leads
+    ]
+    const isConversionType = (t: string) => CONVERSION_TYPE_PATTERNS.some(rx => rx.test(t))
+
+    // Helper: page through all results when Meta returns paging.next.
+    async function fetchAll<T = any>(url: string): Promise<T[]> {
+      const out: T[] = []
+      let next: string | null = url
+      while (next) {
+        const r = await fetch(next)
+        const j: any = await r.json()
+        if (j.error) {
+          console.error('[meta-sync] paged fetch error:', j.error.message)
+          break
+        }
+        if (Array.isArray(j.data)) out.push(...j.data)
+        next = j.paging?.next ?? null
+      }
+      return out
+    }
+
+    const campaigns = await fetchAll<any>(
       `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/campaigns?fields=name,status,objective&limit=50&access_token=${token}`
     )
-    const campaignsData = await campaignsRes.json()
-    console.log('Campaigns:', JSON.stringify(campaignsData).slice(0, 300))
+    console.log(`[meta-sync] campaigns fetched: ${campaigns.length}`)
 
-    if (campaignsData.data) {
-      for (const campaign of campaignsData.data) {
-        const insightsRes = await fetch(
-          `https://graph.facebook.com/v18.0/${campaign.id}/insights?fields=spend,impressions,clicks,cpm,cpc,ctr,actions&date_preset=last_90d&access_token=${token}`
-        )
-        const ins = await insightsRes.json()
-        const i = ins.data?.[0] || {}
-        const conversions = i.actions?.find((a: any) =>
-          a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase'
-        )?.value || 0
+    for (const campaign of campaigns) {
+      // time_increment=1 → one insights row per day, each with date_start.
+      const insightsUrl =
+        `https://graph.facebook.com/v18.0/${campaign.id}/insights` +
+        `?fields=spend,impressions,clicks,cpm,cpc,ctr,actions` +
+        `&date_preset=last_90d&time_increment=1&access_token=${token}`
+      const dailyRows = await fetchAll<any>(insightsUrl)
 
-        await supabase.from('meta_ad_campaigns').upsert({
-          campaign_id: campaign.id, date: today, name: campaign.name,
-          status: campaign.status, objective: campaign.objective,
-          spend: parseFloat(i.spend || '0'), impressions: parseInt(i.impressions || '0'),
-          clicks: parseInt(i.clicks || '0'), cpm: parseFloat(i.cpm || '0'),
-          cpc: parseFloat(i.cpc || '0'), ctr: parseFloat(i.ctr || '0'),
-          conversions: parseInt(conversions),
+      for (const i of dailyRows) {
+        const dayDate = i.date_start ?? today
+        let conversions = 0
+        for (const a of (i.actions || [])) {
+          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
+        }
+
+        const { error: upErr } = await supabase.from('meta_ad_campaigns').upsert({
+          campaign_id: String(campaign.id),
+          date:        dayDate,
+          name:        campaign.name,
+          status:      campaign.status,
+          objective:   campaign.objective,
+          spend:       parseFloat(i.spend || '0'),
+          impressions: parseInt(i.impressions || '0'),
+          clicks:      parseInt(i.clicks || '0'),
+          cpm:         parseFloat(i.cpm || '0'),
+          cpc:         parseFloat(i.cpc || '0'),
+          ctr:         parseFloat(i.ctr || '0'),
+          conversions,
+          synced_at:   new Date().toISOString(),
         }, { onConflict: 'campaign_id,date' })
-        records++
+
+        if (upErr) {
+          console.error('[meta-sync] campaign upsert failed', campaign.id, dayDate, upErr.message)
+        } else {
+          records++
+        }
       }
     }
 
