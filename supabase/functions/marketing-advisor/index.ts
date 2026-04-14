@@ -739,6 +739,69 @@ async function searchSerperPlaces(query: string, gl = "il", hl = "he"): Promise<
   }
 }
 
+// ── Meta Ad Library ────────────────────────────────────────────────────────
+// Shows every ad currently running on Meta (Facebook + Instagram) worldwide,
+// filterable by country + search term. For commercial ads the API returns:
+// page_name, ad_creative_bodies (headlines/body text), ad_creative_link_titles,
+// ad_snapshot_url, ad_delivery_start_time. Impressions + spend are political-
+// ads only — commercial advertisers don't expose those fields.
+//
+// Requires:
+//   - Meta App identity verification on the owner's personal FB account
+//   - A valid access token stored in oauth_tokens (platform='meta')
+// Both are confirmed as of April 2026.
+//
+// Search terms targeting the IL coffee market. Each query is a different lens:
+// competitor names reveal what specific brands are running; category keywords
+// reveal which advertisers we haven't mapped yet are bidding on this topic.
+const META_AD_LIBRARY_QUERIES = [
+  // Competitor brand names
+  { q: "נחת",            label: "nahat" },
+  { q: "אגרו קפה",       label: "agro" },
+  { q: "Jera",           label: "jera" },
+  { q: "נגרו",           label: "negro" },
+  { q: "קופי פלוס",       label: "coffee_plus" },
+  // Category terms — catches anyone advertising on these topics, not just known competitors
+  { q: "קפה ספשלטי",     label: "specialty_coffee" },
+  { q: "פולי קפה טרי",   label: "fresh_beans" },
+  { q: "אספרסו איכותי",  label: "quality_espresso" },
+];
+
+async function searchMetaAdLibrary(
+  token: string,
+  query: string,
+  country = "IL",
+  limit = 25,
+): Promise<any[] | null> {
+  const fields = [
+    "id",
+    "page_name",
+    "ad_creative_bodies",
+    "ad_creative_link_titles",
+    "ad_creative_link_descriptions",
+    "ad_snapshot_url",
+    "ad_delivery_start_time",
+    "ad_delivery_stop_time",
+    "publisher_platforms",
+  ].join(",");
+  const url = `https://graph.facebook.com/v19.0/ads_archive?` + new URLSearchParams({
+    search_terms:          query,
+    ad_reached_countries:  `['${country}']`,
+    ad_active_status:      "ACTIVE",
+    ad_type:               "ALL",
+    fields,
+    limit:                 String(limit),
+    access_token:          token,
+  });
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.error) {
+    console.error(`[research] Meta Ad Library error for "${query}":`, data.error.message);
+    return null;
+  }
+  return data.data ?? [];
+}
+
 async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -924,7 +987,47 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     }
   }
 
-  // 4. Price change tracking — compare today's competitor scrape to yesterday's
+  // 4. Meta Ad Library — what ads competitors are running RIGHT NOW on FB+IG.
+  // Uses the same Meta OAuth token as meta-sync; requires identity-verified App.
+  try {
+    const { data: tokenRow } = await supabase
+      .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
+    const metaToken = (tokenRow as any)?.access_token;
+    if (metaToken) {
+      for (const search of META_AD_LIBRARY_QUERIES) {
+        try {
+          console.log(`[research] Meta Ad Library: "${search.q}"...`);
+          const ads = await searchMetaAdLibrary(metaToken, search.q);
+          if (ads && ads.length > 0) {
+            const cleaned = ads.slice(0, 15).map((a: any) => ({
+              page_name:        a.page_name,
+              bodies:           (a.ad_creative_bodies           ?? []).slice(0, 3),
+              link_titles:      (a.ad_creative_link_titles      ?? []).slice(0, 3),
+              link_descriptions:(a.ad_creative_link_descriptions ?? []).slice(0, 3),
+              snapshot_url:     a.ad_snapshot_url,
+              started:          a.ad_delivery_start_time,
+              platforms:        a.publisher_platforms,
+            }));
+            await supabase.from("market_research").upsert(
+              { research_date: today, source: `meta_ads_${search.label}`, raw_data: { query: search.q, ads: cleaned, total: ads.length } },
+              { onConflict: "research_date,source" },
+            );
+            sources++;
+          }
+        } catch (e: any) {
+          console.error(`[research] Meta Ad Library "${search.q}": ${e.message}`);
+          errors++;
+        }
+      }
+    } else {
+      console.log("[research] No Meta token — skipping Ad Library");
+    }
+  } catch (e: any) {
+    console.error(`[research] Meta Ad Library setup: ${e.message}`);
+    errors++;
+  }
+
+  // 5. Price change tracking — compare today's competitor scrape to yesterday's
   try {
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     const { data: yesterdayData } = await supabase
@@ -1176,6 +1279,22 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       const text = (r.raw_data as any).text ?? "";
       lines.push(`\n--- אתר מתחרה: ${name} ---`);
       lines.push(text.slice(0, 400));
+    } else if (r.source.startsWith("meta_ads_") && r.raw_data) {
+      const query = (r.raw_data as any).query ?? "";
+      const ads   = (r.raw_data as any).ads   ?? [];
+      const total = (r.raw_data as any).total ?? ads.length;
+      if (ads.length > 0) {
+        lines.push(`\n--- Meta Ad Library: "${query}" (${total} מודעות פעילות בישראל) ---`);
+        lines.push("(מודעות שפעילות עכשיו על פייסבוק + אינסטגרם — זה מה שהמתחרים מראים ללקוחות ברגע זה)");
+        for (const a of ads.slice(0, 8)) {
+          const body = (a.bodies?.[0] ?? "").slice(0, 180);
+          const title = (a.link_titles?.[0] ?? "").slice(0, 100);
+          const platforms = Array.isArray(a.platforms) ? a.platforms.join("+") : "";
+          lines.push(`  🎯 ${a.page_name} [${platforms}] — מאז ${a.started ?? "?"}`);
+          if (title) lines.push(`     כותרת: ${title}`);
+          if (body)  lines.push(`     גוף:   "${body}"`);
+        }
+      }
     } else if (r.source.startsWith("places_") && r.raw_data) {
       const places = (r.raw_data as any).places ?? [];
       if (places.length > 0) {
