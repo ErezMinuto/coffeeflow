@@ -29,6 +29,9 @@ function OriginRow({ origin, isChecked, onToggle, amount, onAmountChange, colorR
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap' }}>
             <span>מלאי קלוי: <strong>{(origin.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
+            {origin.packed_kg > 0 && (
+              <span>בשקיות ארוזות: <strong>{origin.packed_kg.toFixed(1)} ק"ג</strong></span>
+            )}
             <span>מלאי קריטי: <strong>{origin.critical_stock.toFixed(1)} ק"ג</strong></span>
             <span>מלאי ירוק: <strong>{(origin.stock || 0).toFixed(1)} ק"ג</strong></span>
           </div>
@@ -99,6 +102,9 @@ function ProfileRow({ profile, isChecked, onToggle, amount, onAmountChange, orig
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap' }}>
             <span>מלאי קלוי: <strong>{(profile.roasted_stock || 0).toFixed(1)} ק"ג</strong></span>
+            {profile.packed_kg > 0 && (
+              <span>בשקיות ארוזות: <strong>{profile.packed_kg.toFixed(1)} ק"ג</strong></span>
+            )}
             <span>מלאי קריטי: <strong>{profile.critical_stock.toFixed(1)} ק"ג</strong></span>
           </div>
         </div>
@@ -158,23 +164,56 @@ export default function RoastingList({
   const userId = data.origins[0]?.user_id;
 
   // ── What needs roasting ─────────────────────────────────────────────────────
+  // Roasted inventory is split between two buckets:
+  //   1. roasted_stock — bulk roasted coffee waiting to be packed
+  //   2. packed bags sitting in shelves (products.packed_stock × bag size)
+  // Both are "already roasted" — so the recommender must add them together
+  // before comparing against the daily-consumption critical threshold.
+  // Otherwise the system keeps recommending roasting an origin even when
+  // that origin is already living inside dozens of packed bags.
+
+  const packedKgByOrigin  = {};
+  const packedKgByProfile = {};
+  for (const product of (data.products || [])) {
+    const bags    = product.packed_stock || 0;
+    const sizeKg  = (product.size || 0) / 1000;
+    const recipe  = Array.isArray(product.recipe) ? product.recipe : [];
+    if (bags <= 0 || sizeKg <= 0 || recipe.length === 0) continue;
+
+    for (const ing of recipe) {
+      const kg = bags * sizeKg * ((ing.percentage || 0) / 100);
+      const id = ing.sourceId ?? ing.originId;
+      if (!id) continue;
+      if (ing.sourceType === 'profile') {
+        packedKgByProfile[id] = (packedKgByProfile[id] || 0) + kg;
+      } else {
+        packedKgByOrigin[id]  = (packedKgByOrigin[id]  || 0) + kg;
+      }
+    }
+  }
 
   const originsNeeded = data.origins
     .map(origin => {
-      const daily    = origin.daily_average || 0;
-      const critical = daily * 10;
-      const needed   = critical - (origin.roasted_stock || 0);
-      return { ...origin, critical_stock: critical, needed };
+      const daily        = origin.daily_average || 0;
+      const critical     = daily * 10;
+      const roastedKg    = origin.roasted_stock || 0;
+      const packedKg     = packedKgByOrigin[origin.id] || 0;
+      const availableKg  = roastedKg + packedKg;
+      const needed       = critical - availableKg;
+      return { ...origin, critical_stock: critical, packed_kg: packedKg, available_kg: availableKg, needed };
     })
     .filter(o => o.needed > 0)
     .sort((a, b) => b.needed - a.needed);
 
   const profilesNeeded = (data.roastProfiles || [])
     .map(profile => {
-      const daily    = profile.daily_average || 0;
-      const critical = Math.max(daily * 10, profile.min_stock || 0);
-      const needed   = critical - (profile.roasted_stock || 0);
-      return { ...profile, critical_stock: critical, needed };
+      const daily        = profile.daily_average || 0;
+      const critical     = Math.max(daily * 10, profile.min_stock || 0);
+      const roastedKg    = profile.roasted_stock || 0;
+      const packedKg     = packedKgByProfile[profile.id] || 0;
+      const availableKg  = roastedKg + packedKg;
+      const needed       = critical - availableKg;
+      return { ...profile, critical_stock: critical, packed_kg: packedKg, available_kg: availableKg, needed };
     })
     .filter(p => p.needed > 0)
     .sort((a, b) => b.needed - a.needed);
