@@ -326,6 +326,19 @@ function getPreviousWeekStart(): string {
   return monday.toISOString().split("T")[0];
 }
 
+// Current-week Monday — used to let agents analyze running-week campaign
+// performance in real time (the owner wants to see how this-week ads are
+// trending, not wait for the week to complete).
+function getCurrentWeekStart(): string {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const daysToThisMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysToThisMonday);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().split("T")[0];
+}
+
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
@@ -567,10 +580,15 @@ async function upsertReport(
   weekStart: string,
   fields: Record<string, unknown>,
 ) {
+  // Explicitly stamp updated_at — Postgres doesn't auto-bump on UPDATE
+  // without a trigger, so without this the column stays at the original
+  // insert time. That made it look like reruns weren't producing new
+  // reports when in fact they were (the report JSON updated, the
+  // timestamp didn't).
   const { error } = await supabase
     .from("advisor_reports")
     .upsert(
-      { agent_type: agentType, week_start: weekStart, ...fields },
+      { agent_type: agentType, week_start: weekStart, updated_at: new Date().toISOString(), ...fields },
       { onConflict: "agent_type,week_start" },
     );
   if (error) {
@@ -592,10 +610,12 @@ async function upsertReport(
 const SERPER_SEARCHES = [
   // Core purchase-intent — who's advertising and ranking?
   { q: "פולי קפה", gl: "il", hl: "he", type: "search" },
+  { q: "קפה טרי", gl: "il", hl: "he", type: "search" },
   { q: "קפה ספשלטי", gl: "il", hl: "he", type: "search" },
   { q: "פולי קפה אונליין", gl: "il", hl: "he", type: "search" },
   { q: "בית קלייה קפה", gl: "il", hl: "he", type: "search" },
   { q: "פולי קפה טריים משלוח", gl: "il", hl: "he", type: "search" },
+  { q: "קפה לאספרסו", gl: "il", hl: "he", type: "search" },
   // Competitor brand searches — what shows when people search for competitors?
   { q: "נחת קפה פולים", gl: "il", hl: "he", type: "search" },
   { q: "jera coffee פולי קפה", gl: "il", hl: "he", type: "search" },
@@ -1046,19 +1066,34 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     for (const search of SERPER_SEARCHES) {
       try {
         console.log(`[research] Serper: "${search.q}"...`);
-        const result = await searchSerper(search.q, search.gl, search.hl);
-        if (result) {
-          // Store the full structured result — ads, organic, PAA, related
+        // Text search + Shopping in parallel. Google shows SHOPPING ads
+        // (product carousel) for many commercial queries instead of — or in
+        // addition to — text ads. The old code only looked at text ads, so
+        // queries like "פולי קפה" appeared to have "no advertisers" even
+        // though competitors dominate the shopping carousel. Fetching both
+        // gives the agent the complete "who's paying to appear" picture.
+        const [result, shopping] = await Promise.all([
+          searchSerper(search.q, search.gl, search.hl),
+          searchSerperShopping(search.q),
+        ]);
+        if (result || (shopping && shopping.length > 0)) {
           await supabase.from("market_research").upsert(
             {
               research_date: today,
               source: `serper_${search.q.replace(/\s+/g, '_').slice(0, 40)}`,
               raw_data: {
                 query: search.q,
-                ads: (result.ads ?? []).slice(0, 5).map(a => ({ title: a.title, link: a.link, snippet: a.snippet })),
-                organic: (result.organic ?? []).slice(0, 8).map(o => ({ title: o.title, link: o.link, snippet: o.snippet, position: o.position })),
-                peopleAlsoAsk: (result.peopleAlsoAsk ?? []).slice(0, 5).map(p => ({ question: p.question })),
-                relatedSearches: (result.relatedSearches ?? []).slice(0, 5).map(r => r.query),
+                ads: (result?.ads ?? []).slice(0, 5).map(a => ({ title: a.title, link: a.link, snippet: a.snippet })),
+                organic: (result?.organic ?? []).slice(0, 8).map(o => ({ title: o.title, link: o.link, snippet: o.snippet, position: o.position })),
+                peopleAlsoAsk: (result?.peopleAlsoAsk ?? []).slice(0, 5).map(p => ({ question: p.question })),
+                relatedSearches: (result?.relatedSearches ?? []).slice(0, 5).map(r => r.query),
+                shopping: (shopping ?? []).slice(0, 10).map((p: any) => ({
+                  title:  p.title,
+                  price:  p.price,
+                  source: p.source,          // advertiser / store name
+                  link:   p.link,
+                  rating: p.rating,
+                })),
               },
             },
             { onConflict: "research_date,source" },
@@ -1572,16 +1607,28 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       if (!d) continue;
       lines.push(`--- חיפוש: "${d.query}" ---`);
 
-      // Paid ads — WHO is advertising on this keyword
-      if (d.ads?.length > 0) {
-        lines.push("  מודעות ממומנות (מי משלם):");
+      // Who's paying to appear on this keyword — text ads AND shopping ads.
+      // Google shows shopping ads (product carousel) for many commercial
+      // queries instead of text ads, so checking only `ads` misses most
+      // advertisers. If neither is populated THEN nobody's paying.
+      const hasTextAds  = (d.ads?.length ?? 0) > 0;
+      const hasShopping = (d.shopping?.length ?? 0) > 0;
+      if (hasTextAds) {
+        lines.push("  מודעות טקסט ממומנות (Google Ads Search):");
         for (const ad of d.ads) {
           lines.push(`    💰 ${ad.title}`);
           lines.push(`       ${ad.link}`);
           if (ad.snippet) lines.push(`       "${ad.snippet.slice(0, 100)}"`);
         }
-      } else {
-        lines.push("  אין מודעות ממומנות — אף אחד לא מפרסם על הביטוי הזה!");
+      }
+      if (hasShopping) {
+        lines.push("  מודעות שופינג (Google Shopping — מי מוכר כרגע):");
+        for (const p of d.shopping.slice(0, 8)) {
+          lines.push(`    🛒 ${p.price ?? "?"} — ${p.title}  (${p.source})`);
+        }
+      }
+      if (!hasTextAds && !hasShopping) {
+        lines.push("  אין מודעות ממומנות (לא טקסט ולא שופינג) — אף אחד לא מפרסם על הביטוי הזה!");
       }
 
       // Organic — who's ranking
@@ -2701,11 +2748,18 @@ function getTacticalJsonSchema(d: any) {
       "expected_results_7_days": "כמה קליקים, המרות, ועלות צפויים ב-7 ימים"
     }
   ],
+  "channel_allocation": {
+    "summary": "המלצה ברורה על איך לחלק תקציב בין Google ו-Meta השבוע — חובה לענות!",
+    "google_change_pct": 0,
+    "meta_change_pct": 0,
+    "reasoning": "למה — CPA/ROAS/נפח לפי הנתונים שראית למעלה"
+  },
   "budget_recommendations": [
-    { "campaign": "שם קמפיין קיים", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
+    { "channel": "google|meta", "campaign": "שם קמפיין קיים", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
   ],
   "ads_to_rewrite": [
     {
+      "channel": "google|meta",
       "campaign": "שם",
       "headline_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
       "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }]
@@ -2732,6 +2786,19 @@ function getStrategicJsonSchema(d: any) {
     "roas": ${Math.round(d.overallRoas * 100) / 100},
     "top_campaign": "שם",
     "worst_campaign": "שם"
+  },
+  "meta": {
+    "total_spend": ${d.metaTotalSpend ?? 0},
+    "total_clicks": ${d.metaTotalClicks ?? 0},
+    "total_impressions": ${d.metaTotalImpressions ?? 0},
+    "total_conversions": ${d.metaTotalConversions ?? 0},
+    "cpa": ${d.metaOverallCpa ?? 0}
+  },
+  "channel_allocation_90d": {
+    "summary": "איך לחלק תקציב בין Google ו-Meta ב-90 הימים הבאים — חובה!",
+    "google_pct_of_total": 50,
+    "meta_pct_of_total": 50,
+    "reasoning": "למה החלוקה הזו — לפי CPA/ROAS/שלב המשפך/היתרון היחסי של כל ערוץ"
   },
   "current_diagnosis": "מה המצב עכשיו — בשני משפטים חריפים",
   "target_90_days": "איפה רוצים להיות בעוד 90 ימים — מספרים ספציפיים (הכנסות, ROAS, לקוחות)",
@@ -3718,16 +3785,23 @@ serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
-  const weekStart = getPreviousWeekStart();
-  console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
   let body: {
     trigger?: string; agent?: string; focus?: string;
     keyword?: string; title?: string; key_points?: string[];
     position?: number; search_volume_signal?: string;
     products_to_mention?: string[];
+    week?: "current" | "previous";
+    week_start?: string;
   } = {};
   try { body = await req.json() } catch { /* default to all */ }
+
+  // Default to the CURRENT week so the owner can monitor running campaigns
+  // as they perform. The body can still override with week:"previous" or an
+  // explicit week_start=YYYY-MM-DD for backfilling analysis of a prior week.
+  const weekStart = body.week_start
+    ?? (body.week === "previous" ? getPreviousWeekStart() : getCurrentWeekStart());
+  console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
   // ── BLOG WRITER — instant response, not stored in DB ──────────────────────
   if (body.agent === "blog_writer") {
