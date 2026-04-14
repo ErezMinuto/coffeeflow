@@ -69,12 +69,13 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('GOOGLE_SITE_URL') || 'https://www.minuto.co.il'
     const encodedSite = encodeURIComponent(siteUrl)
 
-    // Date range: last 30 days
+    // Date range: last 90 days. Search Console retains 16 months of data and
+    // a 30-day window dropped queries that were still ranking but slow-moving.
     const today = new Date()
     // Search Console has a ~2-day delay, so end at yesterday
     today.setDate(today.getDate() - 1)
     const endDate = today.toISOString().split('T')[0]
-    const startDate = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000)
+    const startDate = new Date(today.getTime() - 89 * 24 * 60 * 60 * 1000)
       .toISOString().split('T')[0]
 
     console.log(`Fetching GSC data for ${siteUrl} from ${startDate} to ${endDate}`)

@@ -55,7 +55,10 @@ serve(async (req) => {
     const loginCustomerId = (Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID') ?? '').replace(/-/g, '')
 
     const today = new Date().toISOString().split('T')[0]
-    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    // 90 days — Google Ads attributes conversions up to 90 days after the
+    // click. A 30-day window meant late-attributed conversions never made it
+    // into the upsert because the row had already aged out of the query.
+    const monthAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const query = `
       SELECT

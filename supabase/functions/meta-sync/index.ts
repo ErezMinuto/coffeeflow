@@ -32,7 +32,7 @@ serve(async (req) => {
     if (campaignsData.data) {
       for (const campaign of campaignsData.data) {
         const insightsRes = await fetch(
-          `https://graph.facebook.com/v18.0/${campaign.id}/insights?fields=spend,impressions,clicks,cpm,cpc,ctr,actions&date_preset=last_30d&access_token=${token}`
+          `https://graph.facebook.com/v18.0/${campaign.id}/insights?fields=spend,impressions,clicks,cpm,cpc,ctr,actions&date_preset=last_90d&access_token=${token}`
         )
         const ins = await insightsRes.json()
         const i = ins.data?.[0] || {}
