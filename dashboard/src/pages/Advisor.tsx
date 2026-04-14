@@ -1748,6 +1748,55 @@ export default function AdvisorPage() {
                       {m.kpi_targets.new_customers && <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">{m.kpi_targets.new_customers} לקוחות חדשים</span>}
                     </div>
                   )}
+                  {/* Implementation — campaigns with full specs */}
+                  {m.implementation?.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {m.implementation.map((impl: any, j: number) => (
+                        <div key={j} className="bg-white rounded-lg border border-indigo-200 p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-indigo-900">{impl.campaign_name}</p>
+                            <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{impl.campaign_type} · ₪{impl.daily_budget_ils}/יום</span>
+                          </div>
+                          {impl.launch_when && <p className="text-[10px] text-indigo-600">🚀 השקה: {impl.launch_when}</p>}
+                          {impl.keywords?.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {impl.keywords.map((kw: any, k: number) => (
+                                <span key={k} className="text-[10px] bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded-full">{typeof kw === 'string' ? kw : `${kw.keyword} [${kw.match_type}]`}</span>
+                              ))}
+                            </div>
+                          )}
+                          {impl.headlines?.length > 0 && (
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] text-surface-500 font-semibold">כותרות:</p>
+                              {impl.headlines.slice(0, 5).map((h: string, k: number) => (
+                                <div key={k} className="flex items-center justify-between gap-1">
+                                  <p className="text-[10px] text-surface-800 font-mono">{h}</p>
+                                  <span className={`text-[9px] font-mono ${h.length > 30 ? 'text-red-500' : 'text-surface-400'}`}>{h.length}/30</span>
+                                </div>
+                              ))}
+                              {impl.headlines.length > 5 && <p className="text-[9px] text-surface-400">+{impl.headlines.length - 5} עוד</p>}
+                            </div>
+                          )}
+                          {impl.descriptions?.length > 0 && (
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] text-surface-500 font-semibold">תיאורים:</p>
+                              {impl.descriptions.map((d: string, k: number) => (
+                                <p key={k} className="text-[10px] text-surface-700">{d}</p>
+                              ))}
+                            </div>
+                          )}
+                          {impl.landing_page_url && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] text-indigo-500">🔗</span>
+                              <a href={impl.landing_page_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-indigo-600 hover:underline truncate font-mono" dir="ltr">{impl.landing_page_url}</a>
+                              <CopyButton text={impl.landing_page_url} />
+                            </div>
+                          )}
+                          {impl.success_criteria && <p className="text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1">📊 סף הצלחה: {impl.success_criteria}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

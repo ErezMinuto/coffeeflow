@@ -2095,31 +2095,44 @@ function getStrategicJsonSchema(d: any) {
       "month": "חודש 1 (אפריל-מאי)",
       "theme": "נושא מרכזי לחודש",
       "budget_total": 3000,
-      "campaigns": ["שם קמפיין 1", "שם קמפיין 2"],
-      "audience_focus": "על מי מתמקדים החודש",
-      "content_strategy": "מה מפרסמים באינסטגרם/בלוג שתומך במודעות",
+      "audience_focus": "על מי מתמקדים",
+      "content_strategy": "מה מפרסמים באינסטגרם/בלוג",
       "kpi_targets": { "roas": 2.5, "conversions_per_week": 15, "new_customers": 40 },
-      "seasonal_events": "חגים/אירועים שצריך לנצל"
+      "seasonal_events": "חגים/אירועים",
+      "implementation": [
+        {
+          "campaign_name": "שם הקמפיין",
+          "campaign_type": "Search",
+          "daily_budget_ils": 60,
+          "keywords": ["מילה 1 [match_type]", "מילה 2 [match_type]"],
+          "headlines": ["כותרת 1 (30 תווים)", "כותרת 2", "כותרת 3"],
+          "descriptions": ["תיאור 1 (90 תווים)", "תיאור 2"],
+          "landing_page_url": "https://www.minuto.co.il/...",
+          "negative_keywords": ["מילה שלילית 1"],
+          "launch_when": "מתי להשיק (באיזה שבוע בחודש)",
+          "success_criteria": "מה הסף — מתחת לזה עוצרים/משנים"
+        }
+      ]
     },
     {
       "month": "חודש 2",
       "theme": "...",
       "budget_total": 4000,
-      "campaigns": [],
       "audience_focus": "",
       "content_strategy": "",
       "kpi_targets": {},
-      "seasonal_events": ""
+      "seasonal_events": "",
+      "implementation": []
     },
     {
       "month": "חודש 3",
       "theme": "...",
       "budget_total": 5000,
-      "campaigns": [],
       "audience_focus": "",
       "content_strategy": "",
       "kpi_targets": {},
-      "seasonal_events": ""
+      "seasonal_events": "",
+      "implementation": []
     }
   ],
   "competitor_strategy": [
