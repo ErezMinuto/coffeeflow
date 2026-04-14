@@ -13,6 +13,20 @@ serve(async (req) => {
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const startedAt = new Date().toISOString()
   let records = 0
+  // Per-stage diagnostic counters returned in the response so we don't have
+  // to dig through function logs to figure out where a 0-records sync died.
+  const stats = {
+    campaigns_found:   0,
+    campaign_rows:     0,
+    campaign_errors:   0,
+    pages_found:       0,
+    ig_account_id:     null as string | null,
+    ig_posts_found:    0,
+    ig_post_rows:      0,
+    ig_post_errors:    0,
+    follower_count:    0,
+    last_meta_error:   null as string | null,
+  }
 
   try {
     const { data: tokenRow } = await supabase
@@ -70,6 +84,7 @@ serve(async (req) => {
     const campaigns = await fetchAll<any>(
       `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/campaigns?fields=name,status,objective&limit=50&access_token=${token}`
     )
+    stats.campaigns_found = campaigns.length
     console.log(`[meta-sync] campaigns fetched: ${campaigns.length}`)
 
     for (const campaign of campaigns) {
@@ -104,8 +119,11 @@ serve(async (req) => {
         }, { onConflict: 'campaign_id,date' })
 
         if (upErr) {
+          stats.campaign_errors++
+          stats.last_meta_error = upErr.message
           console.error('[meta-sync] campaign upsert failed', campaign.id, dayDate, upErr.message)
         } else {
+          stats.campaign_rows++
           records++
         }
       }
@@ -117,6 +135,11 @@ serve(async (req) => {
       const pages = await pagesRes.json()
       console.log('Pages:', JSON.stringify(pages).slice(0, 300))
 
+      stats.pages_found = pages.data?.length ?? 0
+      if (pages.error) {
+        stats.last_meta_error = pages.error.message
+        console.error('[meta-sync] /me/accounts error:', pages.error.message)
+      }
       if (pages.data?.length) {
         const pageToken = pages.data[0].access_token
         const pageId = pages.data[0].id
@@ -126,6 +149,11 @@ serve(async (req) => {
         )
         const igData = await igRes.json()
         const igId = igData.instagram_business_account?.id
+        stats.ig_account_id = igId ?? null
+        if (igData.error) {
+          stats.last_meta_error = igData.error.message
+          console.error('[meta-sync] page IG lookup error:', igData.error.message)
+        }
         console.log('IG account id:', igId)
 
         if (igId) {
@@ -136,6 +164,11 @@ serve(async (req) => {
             )
             const igAccount = await igAccountRes.json()
             const followerCount = igAccount.followers_count ?? 0
+            stats.follower_count = followerCount
+            if (igAccount.error) {
+              stats.last_meta_error = igAccount.error.message
+              console.error('[meta-sync] IG account fetch error:', igAccount.error.message)
+            }
             console.log('IG followers:', followerCount)
             if (followerCount > 0) {
               await supabase.from('meta_daily_insights').upsert({
@@ -152,6 +185,11 @@ serve(async (req) => {
             `https://graph.facebook.com/v18.0/${igId}/media?fields=id,media_type,caption,timestamp,like_count,comments_count,thumbnail_url,media_url&limit=50&access_token=${pageToken}`
           )
           const postsData = await postsRes.json()
+          stats.ig_posts_found = postsData.data?.length ?? 0
+          if (postsData.error) {
+            stats.last_meta_error = postsData.error.message
+            console.error('[meta-sync] IG media fetch error:', postsData.error.message)
+          }
           console.log('Posts:', JSON.stringify(postsData).slice(0, 300))
 
           if (postsData.data) {
@@ -203,8 +241,11 @@ serve(async (req) => {
                 reach, impressions, saves, shares,
               }, { onConflict: 'post_id' })
               if (upErr) {
+                stats.ig_post_errors++
+                stats.last_meta_error = upErr.message
                 console.error('[meta-sync] post upsert failed', post.id, upErr.message)
               } else {
+                stats.ig_post_rows++
                 records++
               }
             }
@@ -220,7 +261,7 @@ serve(async (req) => {
       started_at: startedAt, finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, records }), {
+    return new Response(JSON.stringify({ success: true, records, stats }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (err) {
