@@ -1245,6 +1245,48 @@ async function getScoreHistory(supabase: ReturnType<typeof createClient>, agentT
   return lines.join("\n");
 }
 
+// Fetch what the user already DID, SKIPPED, or SNOOZED across the last few
+// weeks. The agents see this so they don't re-recommend things the user
+// already handled (e.g. don't suggest "write a blog post on macchiato"
+// if the user already marked that done).
+async function getCompletedActions(supabase: ReturnType<typeof createClient>): Promise<string> {
+  // Look back 8 weeks of action history
+  const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
+  const { data: rows } = await supabase
+    .from("advisor_completed_actions")
+    .select("week_start, action_id, action_label, state")
+    .gte("week_start", eightWeeksAgo)
+    .order("week_start", { ascending: false });
+
+  if (!rows || rows.length === 0) return "";
+
+  const done    = (rows as any[]).filter(r => r.state === "done");
+  const skipped = (rows as any[]).filter(r => r.state === "skipped");
+  const snoozed = (rows as any[]).filter(r => r.state === "snoozed");
+
+  const lines: string[] = ["\n=== מה כבר ביצעת / דחית (אל תמליץ שוב) ==="];
+  if (done.length > 0) {
+    lines.push("\n✓ כבר בוצע (אל תחזור על המלצה זו):");
+    for (const r of done.slice(0, 30)) {
+      lines.push(`  • [${r.week_start}] ${r.action_label || r.action_id}`);
+    }
+  }
+  if (skipped.length > 0) {
+    lines.push("\n⏭ דילגת בעבר (חזור רק אם משהו השתנה):");
+    for (const r of skipped.slice(0, 15)) {
+      lines.push(`  • [${r.week_start}] ${r.action_label || r.action_id}`);
+    }
+  }
+  if (snoozed.length > 0) {
+    lines.push("\n🕐 דחוי לשבוע הבא — אפשר להציע שוב:");
+    for (const r of snoozed.slice(0, 15)) {
+      lines.push(`  • [${r.week_start}] ${r.action_label || r.action_id}`);
+    }
+  }
+  lines.push("\nכלל קריטי: אם המלצה דומה למשהו ב-✓ — אל תחזור עליה. הצע את הצעד הבא, לא את אותו צעד.\n");
+  return lines.join("\n");
+}
+
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
 interface GoogleRow {
@@ -2206,6 +2248,7 @@ async function runAggressiveStrategist(
   const d = await fetchStrategistData(supabase, weekStart);
   const scoreHistory = await getScoreHistory(supabase, "strategist_aggressive");
   const pastReports = await fetchPastReports(supabase, "strategist_aggressive", weekStart);
+  const completedActions = await getCompletedActions(supabase);
 
   const focusOverride = focus
     ? `=== הוראות מנהל — עדיפות עליונה ===\n${focus}\nהתעלם מכל נתון שסותר הוראות אלה.\n\n`
@@ -2234,6 +2277,7 @@ ${ADS_EXPERTISE}
 • תכנית יום-יום לשבוע
 
 ${scoreHistory}
+${completedActions}
 
 === היסטוריית המלצות קודמות ===
 ${pastReports}
@@ -2261,6 +2305,7 @@ async function runPreciseStrategist(
   const d = await fetchStrategistData(supabase, weekStart);
   const scoreHistory = await getScoreHistory(supabase, "strategist_precise");
   const pastReports = await fetchPastReports(supabase, "strategist_precise", weekStart);
+  const completedActions = await getCompletedActions(supabase);
 
   const focusOverride = focus
     ? `=== הוראות מנהל — עדיפות עליונה ===\n${focus}\nהתעלם מכל נתון שסותר הוראות אלה.\n\n`
@@ -2291,6 +2336,7 @@ ${ADS_EXPERTISE}
 • תכנון תקציב — כמה להוציא בחודש 1, 2, 3 ולמה
 
 ${scoreHistory}
+${completedActions}
 
 === היסטוריית המלצות קודמות ===
 ${pastReports}
@@ -2349,6 +2395,7 @@ async function runOrganicAgent(
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchPastReports(supabase, "organic_content", weekStart),
   ]);
+  const completedActions = await getCompletedActions(supabase);
 
   const posts    = postsRes.data    ?? [];
   const insights = insightsRes.data ?? [];
@@ -2551,6 +2598,7 @@ ${wooSalesOrganic}
 === היסטוריית המלצות תוכן קודמות — למד מהן ===
 ${pastReportsOrganic}
 בדוק: איזה תוכן המלצת בעבר → מה הביצועים בפועל (reach, saves, likes בנתוני הפוסטים). תוכן שעבד — חזור לנוסחה. תוכן שלא עבד — נסה זווית אחרת.
+${completedActions}
 
 החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {

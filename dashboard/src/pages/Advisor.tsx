@@ -315,21 +315,50 @@ function buildTriageQueue(
 // Persist per-week action state in localStorage. Key is the week_start date
 // so switching weeks loads a different state bucket and marking "done" on
 // this week doesn't affect the historical view of last week.
+// Action states are persisted BOTH to localStorage (instant UI) and to
+// the advisor_completed_actions DB table (so the agents can see what the
+// user already did and stop recommending those things again).
 function useActionStates(weekKey: string | null) {
   const storageKey = weekKey ? `advisor_actions_${weekKey}` : null
   const [states, setStates] = useState<Record<string, ActionState>>({})
+  const [labels, setLabels] = useState<Record<string, string>>({})
 
+  // Initial load: prefer DB (authoritative across devices), fall back to localStorage.
   useEffect(() => {
-    if (!storageKey) { setStates({}); return }
-    try {
-      const raw = localStorage.getItem(storageKey)
-      setStates(raw ? JSON.parse(raw) : {})
-    } catch {
-      setStates({})
-    }
-  }, [storageKey])
+    if (!weekKey) { setStates({}); return }
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('advisor_completed_actions')
+        .select('action_id, state')
+        .eq('week_start', weekKey)
+      if (cancelled) return
+      if (!error && data && data.length > 0) {
+        const fromDb: Record<string, ActionState> = {}
+        for (const row of data as Array<{ action_id: string; state: ActionState }>) {
+          fromDb[row.action_id] = row.state
+        }
+        setStates(fromDb)
+        // Mirror DB → localStorage for fast subsequent loads
+        if (storageKey) {
+          try { localStorage.setItem(storageKey, JSON.stringify(fromDb)) } catch { /* quota */ }
+        }
+      } else if (storageKey) {
+        // No DB data yet — fall back to whatever the browser had cached
+        try {
+          const raw = localStorage.getItem(storageKey)
+          setStates(raw ? JSON.parse(raw) : {})
+        } catch {
+          setStates({})
+        }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [storageKey, weekKey])
 
-  const setState = (id: string, state: ActionState) => {
+  // Caller passes a label so we can show useful context to the agent:
+  // "user marked done: 'Write blog post on macchiato'" instead of just an opaque ID.
+  const setState = (id: string, state: ActionState, label?: string) => {
     setStates(prev => {
       const next = { ...prev }
       if (state === null) delete next[id]
@@ -339,6 +368,27 @@ function useActionStates(weekKey: string | null) {
       }
       return next
     })
+    if (label) setLabels(prev => ({ ...prev, [id]: label }))
+
+    // Persist to DB so the agents see this on their next run.
+    // Fire-and-forget — the localStorage write above guarantees instant UI feedback.
+    if (weekKey) {
+      const finalLabel = label ?? labels[id] ?? id
+      if (state === null) {
+        supabase.from('advisor_completed_actions')
+          .delete()
+          .eq('week_start', weekKey)
+          .eq('action_id', id)
+          .then(({ error }) => { if (error) console.error('[action-state] delete failed:', error.message) })
+      } else {
+        supabase.from('advisor_completed_actions')
+          .upsert(
+            { week_start: weekKey, action_id: id, action_label: finalLabel, state },
+            { onConflict: 'week_start,action_id' },
+          )
+          .then(({ error }) => { if (error) console.error('[action-state] upsert failed:', error.message) })
+      }
+    }
   }
 
   return [states, setState] as const
@@ -392,7 +442,7 @@ function ActionQueue({ rows, weekKey }: { rows: Record<string, AdvisorReport | n
       </div>
       <div className="space-y-2">
         {sorted.map(a => (
-          <ActionRow key={a.id} action={a} state={states[a.id] ?? null} onChange={s => setState(a.id, s)} />
+          <ActionRow key={a.id} action={a} state={states[a.id] ?? null} onChange={s => setState(a.id, s, a.headline)} />
         ))}
       </div>
     </div>
