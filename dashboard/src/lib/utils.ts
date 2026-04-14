@@ -40,10 +40,18 @@ export function formatAPIDate(date: Date): string {
 
 // Meta OAuth URL
 export function getMetaAuthUrl(): string {
+  // Full scope set needed by meta-sync:
+  //   pages_show_list           — /me/accounts (find managed Pages)
+  //   pages_read_engagement     — Page metadata + insights
+  //   instagram_basic           — list IG account + media
+  //   instagram_manage_insights — IG post insights (reach, saves, shares)
+  //   ads_read                  — campaigns + insights from the ad account
+  //   business_management       — required for Business-owned ad accounts
+  // Missing any of these silently zeroes out that part of the sync.
   const params = new URLSearchParams({
     client_id: import.meta.env.VITE_META_APP_ID,
     redirect_uri: `${window.location.origin}/auth/meta/callback`,
-    scope: 'instagram_basic,pages_read_engagement,business_management',
+    scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_insights,ads_read,business_management',
     response_type: 'code',
     state: crypto.randomUUID(),
   })
