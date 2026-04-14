@@ -60,6 +60,12 @@ serve(async (req) => {
     // into the upsert because the row had already aged out of the query.
     const monthAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
+    // metrics.conversions = Primary conversion actions only
+    // metrics.all_conversions = every conversion action (incl. Secondary).
+    // The Google Ads UI's "All conv." column uses all_conversions, so when
+    // a new conversion action is created and left as Secondary, it appears
+    // in the UI but is invisible to a metrics.conversions query. We fetch
+    // both and prefer all_conversions (matches what the user sees in the UI).
     const query = `
       SELECT
         campaign.id,
@@ -72,6 +78,8 @@ serve(async (req) => {
         metrics.average_cpc,
         metrics.conversions,
         metrics.conversions_value,
+        metrics.all_conversions,
+        metrics.all_conversions_value,
         segments.date
       FROM campaign
       WHERE segments.date BETWEEN '${monthAgo}' AND '${today}'
@@ -104,12 +112,18 @@ serve(async (req) => {
 
     for (const row of data.results || []) {
       const cost = (row.metrics.costMicros || 0) / 1_000_000
-      const conversions = row.metrics.conversions || 0
-      const convValue = row.metrics.conversionsValue || 0
+      // Prefer all_conversions (matches Google Ads UI "All conv." column).
+      // Fall back to primary conversions if all_conversions isn't returned.
+      const allConv     = Number(row.metrics.allConversions      ?? 0)
+      const primaryConv = Number(row.metrics.conversions         ?? 0)
+      const allValue    = Number(row.metrics.allConversionsValue ?? 0)
+      const primaryVal  = Number(row.metrics.conversionsValue    ?? 0)
+      const conversions = allConv     > 0 ? allConv    : primaryConv
+      const convValue   = allValue    > 0 ? allValue   : primaryVal
       const roas = cost > 0 ? convValue / cost : 0
 
-      await supabase.from('google_campaigns').upsert({
-        campaign_id: row.campaign.id,
+      const { error: upErr } = await supabase.from('google_campaigns').upsert({
+        campaign_id: String(row.campaign.id),
         date: row.segments.date,
         name: row.campaign.name,
         status: row.campaign.status,
@@ -121,9 +135,14 @@ serve(async (req) => {
         conversions,
         conversion_value: convValue,
         roas,
+        synced_at: new Date().toISOString(),
       }, { onConflict: 'campaign_id,date' })
 
-      records++
+      if (upErr) {
+        console.error('[google-sync] campaign upsert failed:', row.campaign.id, row.segments.date, upErr.message)
+      } else {
+        records++
+      }
     }
 
     // ── Fetch RSA ad creatives ─────────────────────────────────────────────
