@@ -1007,20 +1007,15 @@ async function fetchGoogleSuggest(query: string): Promise<string[]> {
 // candidates. Deduped + stripped of the seeds themselves, that's typically
 // 30-50 NOVEL long-tail queries we never would have typed ourselves.
 async function deepSuggestExpand(seeds: string[]): Promise<string[]> {
-  const level1 = new Set<string>();
+  // Single level only — level-2 chaining hits Supabase's worker resource
+  // limit when combined with the rest of market_research. One level still
+  // surfaces 30-50 long-tail candidates per 5 seeds, which is plenty.
+  const expanded = new Set<string>();
   for (const seed of seeds) {
     const sug = await fetchGoogleSuggest(seed);
-    for (const s of sug) if (s && s !== seed) level1.add(s);
+    for (const s of sug) if (s && s !== seed) expanded.add(s);
   }
-  const level2 = new Set<string>();
-  // Limit level-2 expansion to the first 12 level-1 suggestions to bound
-  // API pressure (Google Suggest has no docs rate-limit but will 429 under
-  // abuse). Gives us ~100 candidate queries total for < 20 requests.
-  for (const seed of [...level1].slice(0, 12)) {
-    const sug = await fetchGoogleSuggest(seed);
-    for (const s of sug) if (s && !level1.has(s) && !seeds.includes(s)) level2.add(s);
-  }
-  return [...new Set([...level1, ...level2])];
+  return [...expanded];
 }
 
 // ── Tier 2: LLM-powered novel keyword brainstorm ───────────────────────────
@@ -1270,11 +1265,13 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
     const brainstormed = await llmBrainstormKeywords(seedTexts);
     console.log(`[research] LLM brainstorm: ${brainstormed.length} candidates`);
 
-    // Merge + dedupe, prioritizing LLM (usually more creative) over deep Suggest
-    const candidates = [...new Set([...brainstormed, ...deepSuggested])].slice(0, 40);
+    // Merge + dedupe, prioritizing LLM (usually more creative) over deep Suggest.
+    // Cap at 15 to stay under Supabase's worker CPU limit (each validation is
+    // a Serper call and the whole function is already doing ~30 API fetches).
+    const candidates = [...new Set([...brainstormed, ...deepSuggested])].slice(0, 15);
 
     // Validate: check which have real shopping demand in Israel
-    const validated = await validateKeywordsViaSerper(candidates, 40);
+    const validated = await validateKeywordsViaSerper(candidates, 15);
 
     // Keep the top 20 by demand signal (most advertisers = most commercial intent).
     // Also keep up to 5 zero-shopping ones as "organic content opportunities"
