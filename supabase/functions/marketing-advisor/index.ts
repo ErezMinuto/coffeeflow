@@ -1618,21 +1618,29 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       const hasTextAds  = (d.ads?.length ?? 0) > 0;
       const hasShopping = (d.shopping?.length ?? 0) > 0;
       if (hasTextAds) {
-        lines.push("  מודעות טקסט ממומנות (Google Ads Search):");
+        lines.push("  💰 מודעות טקסט ממומנות (Google Ads Search — מי משלם על קליק):");
         for (const ad of d.ads) {
-          lines.push(`    💰 ${ad.title}`);
-          lines.push(`       ${ad.link}`);
-          if (ad.snippet) lines.push(`       "${ad.snippet.slice(0, 100)}"`);
+          lines.push(`    • ${ad.title}`);
+          lines.push(`      ${ad.link}`);
+          if (ad.snippet) lines.push(`      "${ad.snippet.slice(0, 100)}"`);
         }
       }
       if (hasShopping) {
-        lines.push("  מודעות שופינג (Google Shopping — מי מוכר כרגע):");
-        for (const p of d.shopping.slice(0, 8)) {
-          lines.push(`    🛒 ${p.price ?? "?"} — ${p.title}  (${p.source})`);
+        // Reframe: Shopping results ARE PAID ADS. Merchants bid via Google
+        // Merchant Center + Shopping campaigns for the product carousel
+        // placement. Previous wording ("מי מוכר") made the agent dismiss
+        // these as organic listings and conclude "nobody advertises".
+        lines.push(`  💰 מודעות Google Shopping ממומנות (${d.shopping.length} מפרסמים משלמים לגוגל להופיע בקרוסלת המוצרים):`);
+        lines.push(`     זה פרסום בתשלום בדיוק כמו Search Ads — הסוחרים מציעים מחיר למיקום.`);
+        for (const p of d.shopping.slice(0, 10)) {
+          lines.push(`    • ${p.source} — ${p.price ?? "?"} — ${p.title}`);
         }
       }
       if (!hasTextAds && !hasShopping) {
-        lines.push("  אין מודעות ממומנות (לא טקסט ולא שופינג) — אף אחד לא מפרסם על הביטוי הזה!");
+        lines.push("  ✅ אין מודעות ממומנות (לא טקסט ולא שופינג) — אף אחד לא משלם לגוגל על הביטוי הזה!");
+      } else {
+        const channels = [hasTextAds && "Search", hasShopping && "Shopping"].filter(Boolean).join(" + ");
+        lines.push(`  ⚠️ מסקנה: יש תחרות בתשלום על הביטוי הזה (${channels}). לא לטעון שאף אחד לא מפרסם.`);
       }
 
       // Organic — who's ranking
