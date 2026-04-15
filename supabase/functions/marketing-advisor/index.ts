@@ -28,11 +28,15 @@ const MODEL_ORGANIC = "claude-sonnet-4-5";
 // Strategist agents need to respond within the 150s edge function gateway
 // timeout. Sonnet 4.5 is too slow with the large prompt. Sonnet 4 is
 // fast enough and still excellent for Hebrew marketing strategy.
-// Upgraded from claude-sonnet-4-20250514 (deprecated June 15, 2026) to
-// Sonnet 4.5. We originally picked 4 over 4.5 for speed (Supabase's 150s
-// gateway timeout). If the strategists start hitting timeouts again, bump
-// `timeoutMs` on the callClaude calls or split the prompt.
-const MODEL_STRATEGIST = "claude-sonnet-4-5";
+// Reverted to Sonnet 4 after 4.5 consistently timed out on the strategist
+// prompts against Supabase's 150s gateway — even with 145s timeout and
+// 7000 max_tokens. Sonnet 4 is ~20% faster and fits the window.
+//
+// ⚠️ TODO before May 14, 2026 (Sonnet 4 degradation starts):
+// Split the strategist into two smaller Claude calls OR trim the research
+// block before handing to Sonnet 4.5. Leaving on `claude-sonnet-4-20250514`
+// is a temporary measure until then.
+const MODEL_STRATEGIST = "claude-sonnet-4-20250514";
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
