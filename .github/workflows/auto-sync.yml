@@ -1,8 +1,19 @@
 name: Auto-sync marketing data
 
 # Pulls Google Ads, Google Search Console, and Meta+Instagram metrics into
-# Supabase every 6 hours so the dashboard and the marketing-advisor agents
-# always see fresh conversions, impressions, and follower counts.
+# Supabase twice daily — morning + evening Israel time — so the dashboard
+# and the marketing-advisor agents always see fresh conversions,
+# impressions, and follower counts.
+#
+# Why twice daily and not more often:
+#   - Google Search Console has a 2-3 day lag by design; syncing more often
+#     is wasted API calls.
+#   - Google Ads + Meta update hourly but decisions happen on daily rolls.
+#   - The advisor agents fire their own Serper research on-demand when you
+#     click "Run advisor" — that's independent of this cron.
+#
+# If you ever need intraday sync (e.g. mid-day bid tuning), add another
+# cron line or click "Run workflow" manually.
 #
 # Manual trigger button: Actions → Auto-sync marketing data → Run workflow.
 #
@@ -12,8 +23,9 @@ name: Auto-sync marketing data
 
 on:
   schedule:
-    # 00:00, 06:00, 12:00, 18:00 UTC  (03/09/15/21 Israel)
-    - cron: '0 */6 * * *'
+    # 04:00 UTC (07:00 Israel) — fresh yesterday data before the workday
+    # 18:00 UTC (21:00 Israel) — intraday data captured before overnight
+    - cron: '0 4,18 * * *'
   workflow_dispatch:
 
 jobs:
