@@ -995,10 +995,103 @@ async function fetchGoogleSuggest(query: string): Promise<string[]> {
     if (!res.ok) return [];
     const json = await res.json();
     // Firefox suggest returns [query, [suggestions]]
-    return Array.isArray(json[1]) ? json[1].slice(0, 5) : [];
+    return Array.isArray(json[1]) ? json[1].slice(0, 8) : [];
   } catch {
     return [];
   }
+}
+
+// ── Tier 1: Deep Suggest Expansion ─────────────────────────────────────────
+// Chains Google Suggest 2 levels deep. A single seed "פולי קפה" returns 8
+// suggestions. Taking the top 5 of those as new seeds gives ~40 next-level
+// candidates. Deduped + stripped of the seeds themselves, that's typically
+// 30-50 NOVEL long-tail queries we never would have typed ourselves.
+async function deepSuggestExpand(seeds: string[]): Promise<string[]> {
+  const level1 = new Set<string>();
+  for (const seed of seeds) {
+    const sug = await fetchGoogleSuggest(seed);
+    for (const s of sug) if (s && s !== seed) level1.add(s);
+  }
+  const level2 = new Set<string>();
+  // Limit level-2 expansion to the first 12 level-1 suggestions to bound
+  // API pressure (Google Suggest has no docs rate-limit but will 429 under
+  // abuse). Gives us ~100 candidate queries total for < 20 requests.
+  for (const seed of [...level1].slice(0, 12)) {
+    const sug = await fetchGoogleSuggest(seed);
+    for (const s of sug) if (s && !level1.has(s) && !seeds.includes(s)) level2.add(s);
+  }
+  return [...new Set([...level1, ...level2])];
+}
+
+// ── Tier 2: LLM-powered novel keyword brainstorm ───────────────────────────
+// Haiku generates 50 novel long-tail Hebrew coffee queries that a real
+// Israeli might type — problem-based, question-based, journey-stage-based.
+// Explicitly excludes the obvious seed terms we already research so the
+// output is genuinely additive, not a rehash.
+async function llmBrainstormKeywords(existingSeeds: string[]): Promise<string[]> {
+  if (!ANTHROPIC_KEY) return [];
+  const systemPrompt = `אתה מומחה למחקר מילות מפתח בשוק הקפה הישראלי (B2C).
+המשימה: הפק 50 שאילתות Hebrew ארוכות-זנב שישראלי אמיתי עשוי להקליד בגוגל — אבל לא הביטויים הברורים.
+
+כללים:
+✓ שאילתות מבוססות בעיה: "למה הקפה שלי יוצא מר", "איך להפיק אספרסו חזק מפולים רגילים", "מכונת קפה לא מייצרת קרם"
+✓ שאילתות מבוססות שאלה: "כמה זמן פולי קפה נשארים טריים", "מה ההבדל בין ערביקה לרובוסטה", "האם פולים ישנים בטוחים לשתייה"
+✓ שאילתות משלב-מסע: "רוצה לשדרג את הקפה בבוקר", "עברתי ממכונת קפסולות למכונת אספרסו", "בחירת פולים למכונת דלונגי ביתית"
+✓ שאילתות סביב כאב ספציפי: "קפה שעלה 100 שקל ולא טעים", "קרמה חלשה באספרסו", "ריח כימי בקפה"
+✓ בעברית תקינה ומדוברת — לא תרגום ממכונה
+
+✗ אסור: הביטויים הברורים שכבר ברשימת היציאה למטה
+✗ אסור: תרגומים מאנגלית ("coffee beans fresh" → "פולי קפה טריים" — כבר יש)
+✗ אסור: שאילתות של מילה אחת או שתיים
+
+הביטויים שכבר קיימים אצלנו (אל תחזיר אותם ולא וריאציות טריוויאליות):
+${existingSeeds.map(s => `- ${s}`).join("\n")}
+
+החזר JSON בלבד במבנה: { "queries": ["שאילתה 1", "שאילתה 2", ...] } — 50 שאילתות שונות.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 2500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: "הפק את 50 השאילתות עכשיו." }],
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+    const json = await res.json();
+    const raw  = json.content?.[0]?.text ?? "";
+    const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    return Array.isArray(parsed.queries) ? parsed.queries.filter((q: any) => typeof q === "string" && q.length > 8).slice(0, 50) : [];
+  } catch (e: any) {
+    console.error("[llm-brainstorm] failed:", e?.message);
+    return [];
+  }
+}
+
+// Batch-validate keywords by quick Serper shopping check. A keyword with
+// 3+ shopping advertisers has real commercial demand and is worth feeding
+// to the strategist agents. Keywords with 0 shopping are usually informational
+// (or too niche) — keep a few for SEO/content strategy, drop the rest.
+async function validateKeywordsViaSerper(
+  keywords: string[],
+  cap = 30,
+): Promise<Array<{ keyword: string; shopping_count: number; top_advertiser: string | null }>> {
+  const out: Array<{ keyword: string; shopping_count: number; top_advertiser: string | null }> = [];
+  for (const kw of keywords.slice(0, cap)) {
+    try {
+      const shopping = await searchSerperShopping(kw);
+      const count = shopping?.length ?? 0;
+      const topAdv = count > 0 ? ((shopping?.[0] as any)?.source ?? null) : null;
+      out.push({ keyword: kw, shopping_count: count, top_advertiser: topAdv });
+    } catch {
+      out.push({ keyword: kw, shopping_count: 0, top_advertiser: null });
+    }
+  }
+  return out;
 }
 
 // Google Trends — shows what's trending in Israel for coffee-related topics.
@@ -1160,6 +1253,54 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
         errors++;
       }
     }
+  }
+
+  // 3.5 Novel keyword discovery — Tier 1 (deep Suggest) + Tier 2 (LLM brainstorm)
+  // + Serper shopping validation. Gives agents genuinely non-obvious long-tail
+  // keywords they wouldn't recommend from the 10-query hardcoded seed list.
+  try {
+    console.log("[research] Novel keyword discovery starting...");
+    const seedTexts = SERPER_SEARCHES.map(s => s.q);
+
+    // Tier 1: chain Google Suggest 2 levels deep (free, fast, ~100 candidates)
+    const deepSuggested = await deepSuggestExpand(seedTexts.slice(0, 5));
+    console.log(`[research] Deep Suggest: ${deepSuggested.length} candidates`);
+
+    // Tier 2: Haiku brainstorm 50 novel long-tail queries (~$0.005, cheap)
+    const brainstormed = await llmBrainstormKeywords(seedTexts);
+    console.log(`[research] LLM brainstorm: ${brainstormed.length} candidates`);
+
+    // Merge + dedupe, prioritizing LLM (usually more creative) over deep Suggest
+    const candidates = [...new Set([...brainstormed, ...deepSuggested])].slice(0, 40);
+
+    // Validate: check which have real shopping demand in Israel
+    const validated = await validateKeywordsViaSerper(candidates, 40);
+
+    // Keep the top 20 by demand signal (most advertisers = most commercial intent).
+    // Also keep up to 5 zero-shopping ones as "organic content opportunities"
+    // — keywords with search volume but no paid competition → pure SEO targets.
+    const withDemand = validated.filter(v => v.shopping_count >= 2).sort((a, b) => b.shopping_count - a.shopping_count).slice(0, 20);
+    const openField  = validated.filter(v => v.shopping_count === 0).slice(0, 5);
+
+    await supabase.from("market_research").upsert(
+      {
+        research_date: today,
+        source: "novel_keywords",
+        raw_data: {
+          with_paid_demand:     withDemand,   // real commercial intent — worth paid campaigns
+          open_field_seo:       openField,    // no paid competition — pure SEO/content
+          total_generated:      candidates.length,
+          from_deep_suggest:    deepSuggested.length,
+          from_llm_brainstorm:  brainstormed.length,
+        },
+      },
+      { onConflict: "research_date,source" },
+    );
+    sources++;
+    console.log(`[research] Novel keywords stored: ${withDemand.length} with demand, ${openField.length} open-field`);
+  } catch (e: any) {
+    console.error("[research] Novel keyword discovery failed:", e?.message);
+    errors++;
   }
 
   // 4. Meta Ad Library — what ads competitors are running RIGHT NOW on FB+IG.
@@ -1683,6 +1824,27 @@ async function getResearchBlock(supabase: ReturnType<typeof createClient>): Prom
       const text = (r.raw_data as any).text ?? "";
       lines.push(`\n--- אתר מתחרה: ${name} ---`);
       lines.push(text.slice(0, 400));
+    } else if (r.source === "novel_keywords" && r.raw_data) {
+      const d = r.raw_data as any;
+      const withDemand = d.with_paid_demand ?? [];
+      const openField  = d.open_field_seo   ?? [];
+      if (withDemand.length > 0 || openField.length > 0) {
+        lines.push(`\n--- 🔍 מילות מפתח חדשות (גילוי אוטומטי — LLM brainstorm + deep Suggest) ---`);
+        lines.push(`(אלה מילות מפתח שלא היו ברשימה הקבועה. גילוי דרך שרשור Google Suggest + brainstorm של Haiku, ואומתו מול Serper Shopping.)`);
+        if (withDemand.length > 0) {
+          lines.push(`\n  ✅ עם ביקוש מסחרי (יש מפרסמי Shopping — מתאים לקמפיינים ממומנים):`);
+          for (const k of withDemand.slice(0, 15)) {
+            lines.push(`    • "${k.keyword}" — ${k.shopping_count} מפרסמים${k.top_advertiser ? ` (ראשון: ${k.top_advertiser})` : ""}`);
+          }
+        }
+        if (openField.length > 0) {
+          lines.push(`\n  🌱 שטח פתוח (אין מתחרים משלמים — הזדמנות SEO/תוכן טהורה):`);
+          for (const k of openField.slice(0, 5)) {
+            lines.push(`    • "${k.keyword}"`);
+          }
+        }
+        lines.push(`  מסקנה: השתמש בביטויים האלה בהמלצות — זה לא אותן 10 מילים הרגילות. הקהל מחפש אותן, וחלק אין תחרות.`);
+      }
     } else if (r.source.startsWith("ig_competitor_") && r.raw_data) {
       const d = r.raw_data as any;
       const media = d.recent_media ?? [];
