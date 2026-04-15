@@ -1395,7 +1395,31 @@ export default function AdvisorPage() {
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
   const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerLoading?: boolean }>>({})
   const [allProducts, setAllProducts]       = useState<string[]>([])
+  // Meta campaign build-on-demand: keyed by idea_id. Each entry tracks
+  // loading state + the returned spec so we can render it inline below the
+  // idea card the owner clicked to build.
+  const [metaBuild, setMetaBuild]           = useState<Record<string, { loading: boolean; spec: any | null; error?: string }>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function buildMetaCampaign(idea: any) {
+    const ideaId = idea.idea_id ?? idea.campaign_name ?? JSON.stringify(idea).slice(0, 40)
+    setMetaBuild(s => ({ ...s, [ideaId]: { loading: true, spec: null } }))
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: {
+          agent: 'build_meta_campaign',
+          idea: `${idea.campaign_name ?? ''} — ${idea.one_line_pitch ?? ''}`.trim(),
+          audience_lens: idea.audience_lens ?? 'auto',
+          daily_budget_ils: idea.daily_budget_ils ?? idea.monthly_budget_ils ? Math.round((idea.monthly_budget_ils ?? 2400) / 30) : 80,
+        },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Build failed')
+      setMetaBuild(s => ({ ...s, [ideaId]: { loading: false, spec: data.spec } }))
+    } catch (e: any) {
+      setMetaBuild(s => ({ ...s, [ideaId]: { loading: false, spec: null, error: e?.message ?? 'Unknown error' } }))
+    }
+  }
 
   async function writeBlogPost(rec: GoogleOrganicRec, selectedProducts: string[]) {
     const key = rec.keyword
@@ -1705,6 +1729,177 @@ export default function AdvisorPage() {
                   <p className="text-xs text-blue-700 italic">{c.rationale}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Meta campaign ideas — with on-demand "build full spec" button */}
+        {r.meta_campaign_ideas?.length > 0 && (
+          <div>
+            <SectionHeader>📘 רעיונות קמפיין Meta (FB + IG)</SectionHeader>
+            <p className="text-xs text-surface-500 mb-3">לחץ על "בנה מפרט מלא" כדי לקבל הוראות יישום ל-Ads Manager.</p>
+            <div className="space-y-3">
+              {r.meta_campaign_ideas.map((idea: any, i: number) => {
+                const ideaId = idea.idea_id ?? idea.campaign_name ?? `idea_${i}`
+                const build = metaBuild[ideaId]
+                return (
+                  <div key={i} className="card p-3 border border-indigo-200 bg-indigo-50 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-indigo-900">{idea.campaign_name}</p>
+                        <p className="text-xs text-indigo-700 mt-0.5">{idea.one_line_pitch}</p>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {idea.audience_lens && (
+                            <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">
+                              🎯 {idea.audience_lens}
+                            </span>
+                          )}
+                          {(idea.daily_budget_ils || idea.monthly_budget_ils) && (
+                            <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">
+                              💰 {idea.daily_budget_ils ? `₪${idea.daily_budget_ils}/יום` : `₪${idea.monthly_budget_ils}/חודש`}
+                            </span>
+                          )}
+                          {idea.expected_cpa_range_ils && (
+                            <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">
+                              CPA צפוי: {idea.expected_cpa_range_ils}
+                            </span>
+                          )}
+                          {idea.launch_month && (
+                            <span className="text-[10px] bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">
+                              חודש {idea.launch_month}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => buildMetaCampaign(idea)}
+                        disabled={build?.loading}
+                        className="text-xs shrink-0 bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {build?.loading ? '⏳ בונה...' : build?.spec ? '🔄 בנה שוב' : '🛠 בנה מפרט מלא'}
+                      </button>
+                    </div>
+
+                    {build?.error && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
+                        ❌ {build.error}
+                      </div>
+                    )}
+
+                    {build?.spec && (
+                      <div className="mt-2 bg-white border border-indigo-200 rounded-lg p-3 space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold text-surface-500 mb-1">Campaign</p>
+                          <p className="text-sm font-mono">{build.spec.campaign_name}</p>
+                          <p className="text-xs text-surface-500 mt-1">
+                            Objective: <strong>{build.spec.objective}</strong> · ₪{build.spec.daily_budget_ils}/day · {build.spec.duration_days} days · Placements: {build.spec.placements}
+                          </p>
+                        </div>
+
+                        {build.spec.audience && (
+                          <div>
+                            <p className="text-xs font-semibold text-surface-500 mb-1">Audience — {build.spec.audience.type}</p>
+                            {Array.isArray(build.spec.audience.definition_step_by_step) && build.spec.audience.definition_step_by_step.length > 0 && (
+                              <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
+                                {build.spec.audience.definition_step_by_step.map((step: string, j: number) => (
+                                  <li key={j}>{step}</li>
+                                ))}
+                              </ol>
+                            )}
+                            <p className="text-xs text-surface-500 mt-1">
+                              גיל {build.spec.audience.age_range} · {build.spec.audience.geo} · {(build.spec.audience.languages ?? []).join(', ')}
+                            </p>
+                            {build.spec.audience.interests_or_behaviors?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {build.spec.audience.interests_or_behaviors.map((x: string, j: number) => (
+                                  <span key={j} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">{x}</span>
+                                ))}
+                              </div>
+                            )}
+                            {build.spec.audience.why_this_audience && (
+                              <p className="text-xs text-indigo-600 italic mt-1">{build.spec.audience.why_this_audience}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {build.spec.creative && (
+                          <div>
+                            <p className="text-xs font-semibold text-surface-500 mb-1">Creative — {build.spec.creative.format}</p>
+                            <p className="text-xs text-surface-700 italic mb-1">{build.spec.creative.visual_brief}</p>
+                            <div className="bg-surface-50 rounded p-2 space-y-1">
+                              <p className="text-xs"><strong>Primary text:</strong> {build.spec.creative.primary_text}</p>
+                              <p className="text-xs"><strong>Headline:</strong> {build.spec.creative.headline}</p>
+                              {build.spec.creative.description && (
+                                <p className="text-xs"><strong>Description:</strong> {build.spec.creative.description}</p>
+                              )}
+                              <p className="text-xs"><strong>CTA:</strong> {build.spec.creative.cta_button}</p>
+                            </div>
+                            {Array.isArray(build.spec.creative.alternate_creative_variants) && build.spec.creative.alternate_creative_variants.length > 0 && (
+                              <div className="mt-1">
+                                <p className="text-xs font-semibold text-surface-500 mb-0.5">וריאנטים ל-A/B:</p>
+                                <ul className="text-xs text-surface-700 list-disc list-inside pr-2">
+                                  {build.spec.creative.alternate_creative_variants.map((v: string, j: number) => <li key={j}>{v}</li>)}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {Array.isArray(build.spec.step_by_step_build) && build.spec.step_by_step_build.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-surface-500 mb-1">צעדים ב-Ads Manager</p>
+                            <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
+                              {build.spec.step_by_step_build.map((step: string, j: number) => <li key={j}>{step}</li>)}
+                            </ol>
+                          </div>
+                        )}
+
+                        {build.spec.success_metrics && (
+                          <div className="flex gap-2 flex-wrap text-[10px]">
+                            <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
+                              CPA צפוי: ₪{build.spec.success_metrics.expected_cpa_ils}
+                            </span>
+                            <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
+                              CTR: {build.spec.success_metrics.expected_ctr_pct}%
+                            </span>
+                            <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-full">
+                              עצור אם CPA &gt; ₪{build.spec.success_metrics.kill_threshold_cpa_ils}
+                            </span>
+                            <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
+                              הגדל אם CPA &lt; ₪{build.spec.success_metrics.scale_threshold_cpa_ils}
+                            </span>
+                          </div>
+                        )}
+
+                        {build.spec.tracking && (
+                          <div className="bg-surface-50 rounded p-2">
+                            <p className="text-xs font-semibold text-surface-500 mb-0.5">UTM</p>
+                            <p className="text-xs font-mono text-surface-700">
+                              ?utm_source={build.spec.tracking.utm_source}&amp;utm_medium={build.spec.tracking.utm_medium}&amp;utm_campaign={build.spec.tracking.utm_campaign}&amp;utm_content={build.spec.tracking.utm_content}
+                            </p>
+                          </div>
+                        )}
+
+                        {build.spec.landing_page_url && (
+                          <div className="flex items-center gap-2 bg-indigo-100 rounded-lg px-2.5 py-1.5">
+                            <span className="text-[10px] text-indigo-700 font-semibold">🔗 Landing</span>
+                            <a href={build.spec.landing_page_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-900 hover:underline truncate flex-1 font-mono" dir="ltr">{build.spec.landing_page_url}</a>
+                            <CopyButton text={build.spec.landing_page_url} />
+                          </div>
+                        )}
+
+                        {build.spec.notes && (
+                          <p className="text-xs text-surface-600 italic">💡 {build.spec.notes}</p>
+                        )}
+
+                        <div className="pt-1">
+                          <CopyButton text={JSON.stringify(build.spec, null, 2)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
