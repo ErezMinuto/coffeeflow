@@ -1383,6 +1383,122 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
 const ALL_AGENT_TYPES = ['strategist_aggressive', 'strategist_precise', 'organic_content'] as const
 type NewAgentType = typeof ALL_AGENT_TYPES[number]
 
+// Defensive renderer for the build_meta_campaign response. Claude may omit
+// fields, nest differently, or return strings where arrays are expected. We
+// normalize everything to primitives/arrays and skip any field that's the
+// wrong shape rather than crashing the whole panel.
+function MetaSpecView({ spec }: { spec: any }) {
+  if (!spec || typeof spec !== 'object') return null
+  const str = (v: any): string => (v == null ? '' : typeof v === 'string' ? v : typeof v === 'number' ? String(v) : JSON.stringify(v))
+  const arr = (v: any): any[] => (Array.isArray(v) ? v : [])
+  const audience  = spec.audience  && typeof spec.audience  === 'object' ? spec.audience  : null
+  const creative  = spec.creative  && typeof spec.creative  === 'object' ? spec.creative  : null
+  const metrics   = spec.success_metrics && typeof spec.success_metrics === 'object' ? spec.success_metrics : null
+  const tracking  = spec.tracking  && typeof spec.tracking  === 'object' ? spec.tracking  : null
+  return (
+    <div className="mt-2 bg-white border border-indigo-200 rounded-lg p-3 space-y-3">
+      {spec.campaign_name && (
+        <div>
+          <p className="text-xs font-semibold text-surface-500 mb-1">Campaign</p>
+          <p className="text-sm font-mono break-all">{str(spec.campaign_name)}</p>
+          <p className="text-xs text-surface-500 mt-1">
+            {spec.objective && <>Objective: <strong>{str(spec.objective)}</strong> · </>}
+            {spec.daily_budget_ils && <>₪{str(spec.daily_budget_ils)}/day · </>}
+            {spec.duration_days && <>{str(spec.duration_days)} days · </>}
+            {spec.placements && <>Placements: {str(spec.placements)}</>}
+          </p>
+        </div>
+      )}
+
+      {audience && (
+        <div>
+          <p className="text-xs font-semibold text-surface-500 mb-1">Audience{audience.type ? ` — ${str(audience.type)}` : ''}</p>
+          {arr(audience.definition_step_by_step).length > 0 && (
+            <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
+              {arr(audience.definition_step_by_step).map((step: any, j: number) => <li key={j}>{str(step)}</li>)}
+            </ol>
+          )}
+          <p className="text-xs text-surface-500 mt-1">
+            {audience.age_range && <>גיל {str(audience.age_range)} · </>}
+            {audience.geo && <>{str(audience.geo)} · </>}
+            {arr(audience.languages).map(str).filter(Boolean).join(', ')}
+          </p>
+          {arr(audience.interests_or_behaviors).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {arr(audience.interests_or_behaviors).map((x: any, j: number) => (
+                <span key={j} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">{str(x)}</span>
+              ))}
+            </div>
+          )}
+          {audience.why_this_audience && <p className="text-xs text-indigo-600 italic mt-1">{str(audience.why_this_audience)}</p>}
+        </div>
+      )}
+
+      {creative && (
+        <div>
+          <p className="text-xs font-semibold text-surface-500 mb-1">Creative{creative.format ? ` — ${str(creative.format)}` : ''}</p>
+          {creative.visual_brief && <p className="text-xs text-surface-700 italic mb-1">{str(creative.visual_brief)}</p>}
+          <div className="bg-surface-50 rounded p-2 space-y-1">
+            {creative.primary_text && <p className="text-xs"><strong>Primary text:</strong> {str(creative.primary_text)}</p>}
+            {creative.headline && <p className="text-xs"><strong>Headline:</strong> {str(creative.headline)}</p>}
+            {creative.description && <p className="text-xs"><strong>Description:</strong> {str(creative.description)}</p>}
+            {creative.cta_button && <p className="text-xs"><strong>CTA:</strong> {str(creative.cta_button)}</p>}
+          </div>
+          {arr(creative.alternate_creative_variants).length > 0 && (
+            <div className="mt-1">
+              <p className="text-xs font-semibold text-surface-500 mb-0.5">וריאנטים ל-A/B:</p>
+              <ul className="text-xs text-surface-700 list-disc list-inside pr-2">
+                {arr(creative.alternate_creative_variants).map((v: any, j: number) => <li key={j}>{str(v)}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {arr(spec.step_by_step_build).length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-surface-500 mb-1">צעדים ב-Ads Manager</p>
+          <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
+            {arr(spec.step_by_step_build).map((step: any, j: number) => <li key={j}>{str(step)}</li>)}
+          </ol>
+        </div>
+      )}
+
+      {metrics && (
+        <div className="flex gap-2 flex-wrap text-[10px]">
+          {metrics.expected_cpa_ils != null && <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">CPA צפוי: ₪{str(metrics.expected_cpa_ils)}</span>}
+          {metrics.expected_ctr_pct != null && <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">CTR: {str(metrics.expected_ctr_pct)}%</span>}
+          {metrics.kill_threshold_cpa_ils != null && <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-full">עצור אם CPA &gt; ₪{str(metrics.kill_threshold_cpa_ils)}</span>}
+          {metrics.scale_threshold_cpa_ils != null && <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">הגדל אם CPA &lt; ₪{str(metrics.scale_threshold_cpa_ils)}</span>}
+        </div>
+      )}
+
+      {tracking && (
+        <div className="bg-surface-50 rounded p-2">
+          <p className="text-xs font-semibold text-surface-500 mb-0.5">UTM</p>
+          <p className="text-xs font-mono text-surface-700 break-all">
+            ?utm_source={str(tracking.utm_source)}&amp;utm_medium={str(tracking.utm_medium)}&amp;utm_campaign={str(tracking.utm_campaign)}&amp;utm_content={str(tracking.utm_content)}
+          </p>
+        </div>
+      )}
+
+      {spec.landing_page_url && (
+        <div className="flex items-center gap-2 bg-indigo-100 rounded-lg px-2.5 py-1.5">
+          <span className="text-[10px] text-indigo-700 font-semibold">🔗 Landing</span>
+          <a href={str(spec.landing_page_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-900 hover:underline truncate flex-1 font-mono" dir="ltr">{str(spec.landing_page_url)}</a>
+          <CopyButton text={str(spec.landing_page_url)} />
+        </div>
+      )}
+
+      {spec.notes && <p className="text-xs text-surface-600 italic">💡 {str(spec.notes)}</p>}
+
+      <div className="pt-1">
+        <CopyButton text={JSON.stringify(spec, null, 2)} />
+      </div>
+    </div>
+  )
+}
+
 export default function AdvisorPage() {
   const { user } = useApp()
   const [rows, setRows]               = useState<Record<string, AdvisorReport | null>>({
@@ -1402,15 +1518,22 @@ export default function AdvisorPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function buildMetaCampaign(idea: any) {
-    const ideaId = idea.idea_id ?? idea.campaign_name ?? JSON.stringify(idea).slice(0, 40)
+    if (!idea || typeof idea !== 'object') return
+    const ideaId = idea.idea_id ?? idea.campaign_name ?? 'idea'
+    // Derive daily budget cleanly: prefer daily, else monthly/30, else 80.
+    const daily = typeof idea.daily_budget_ils === 'number'
+      ? idea.daily_budget_ils
+      : typeof idea.monthly_budget_ils === 'number'
+        ? Math.max(30, Math.round(idea.monthly_budget_ils / 30))
+        : 80
     setMetaBuild(s => ({ ...s, [ideaId]: { loading: true, spec: null } }))
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
         body: {
           agent: 'build_meta_campaign',
-          idea: `${idea.campaign_name ?? ''} — ${idea.one_line_pitch ?? ''}`.trim(),
+          idea: `${idea.campaign_name ?? ''} — ${idea.one_line_pitch ?? ''}`.trim() || 'Meta campaign',
           audience_lens: idea.audience_lens ?? 'auto',
-          daily_budget_ils: idea.daily_budget_ils ?? idea.monthly_budget_ils ? Math.round((idea.monthly_budget_ils ?? 2400) / 30) : 80,
+          daily_budget_ils: daily,
         },
       })
       if (error) throw error
@@ -1786,117 +1909,7 @@ export default function AdvisorPage() {
                       </div>
                     )}
 
-                    {build?.spec && (
-                      <div className="mt-2 bg-white border border-indigo-200 rounded-lg p-3 space-y-3">
-                        <div>
-                          <p className="text-xs font-semibold text-surface-500 mb-1">Campaign</p>
-                          <p className="text-sm font-mono">{build.spec.campaign_name}</p>
-                          <p className="text-xs text-surface-500 mt-1">
-                            Objective: <strong>{build.spec.objective}</strong> · ₪{build.spec.daily_budget_ils}/day · {build.spec.duration_days} days · Placements: {build.spec.placements}
-                          </p>
-                        </div>
-
-                        {build.spec.audience && (
-                          <div>
-                            <p className="text-xs font-semibold text-surface-500 mb-1">Audience — {build.spec.audience.type}</p>
-                            {Array.isArray(build.spec.audience.definition_step_by_step) && build.spec.audience.definition_step_by_step.length > 0 && (
-                              <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
-                                {build.spec.audience.definition_step_by_step.map((step: string, j: number) => (
-                                  <li key={j}>{step}</li>
-                                ))}
-                              </ol>
-                            )}
-                            <p className="text-xs text-surface-500 mt-1">
-                              גיל {build.spec.audience.age_range} · {build.spec.audience.geo} · {(build.spec.audience.languages ?? []).join(', ')}
-                            </p>
-                            {build.spec.audience.interests_or_behaviors?.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {build.spec.audience.interests_or_behaviors.map((x: string, j: number) => (
-                                  <span key={j} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">{x}</span>
-                                ))}
-                              </div>
-                            )}
-                            {build.spec.audience.why_this_audience && (
-                              <p className="text-xs text-indigo-600 italic mt-1">{build.spec.audience.why_this_audience}</p>
-                            )}
-                          </div>
-                        )}
-
-                        {build.spec.creative && (
-                          <div>
-                            <p className="text-xs font-semibold text-surface-500 mb-1">Creative — {build.spec.creative.format}</p>
-                            <p className="text-xs text-surface-700 italic mb-1">{build.spec.creative.visual_brief}</p>
-                            <div className="bg-surface-50 rounded p-2 space-y-1">
-                              <p className="text-xs"><strong>Primary text:</strong> {build.spec.creative.primary_text}</p>
-                              <p className="text-xs"><strong>Headline:</strong> {build.spec.creative.headline}</p>
-                              {build.spec.creative.description && (
-                                <p className="text-xs"><strong>Description:</strong> {build.spec.creative.description}</p>
-                              )}
-                              <p className="text-xs"><strong>CTA:</strong> {build.spec.creative.cta_button}</p>
-                            </div>
-                            {Array.isArray(build.spec.creative.alternate_creative_variants) && build.spec.creative.alternate_creative_variants.length > 0 && (
-                              <div className="mt-1">
-                                <p className="text-xs font-semibold text-surface-500 mb-0.5">וריאנטים ל-A/B:</p>
-                                <ul className="text-xs text-surface-700 list-disc list-inside pr-2">
-                                  {build.spec.creative.alternate_creative_variants.map((v: string, j: number) => <li key={j}>{v}</li>)}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {Array.isArray(build.spec.step_by_step_build) && build.spec.step_by_step_build.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-surface-500 mb-1">צעדים ב-Ads Manager</p>
-                            <ol className="text-xs text-surface-800 list-decimal list-inside space-y-0.5 pr-2">
-                              {build.spec.step_by_step_build.map((step: string, j: number) => <li key={j}>{step}</li>)}
-                            </ol>
-                          </div>
-                        )}
-
-                        {build.spec.success_metrics && (
-                          <div className="flex gap-2 flex-wrap text-[10px]">
-                            <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
-                              CPA צפוי: ₪{build.spec.success_metrics.expected_cpa_ils}
-                            </span>
-                            <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
-                              CTR: {build.spec.success_metrics.expected_ctr_pct}%
-                            </span>
-                            <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-full">
-                              עצור אם CPA &gt; ₪{build.spec.success_metrics.kill_threshold_cpa_ils}
-                            </span>
-                            <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
-                              הגדל אם CPA &lt; ₪{build.spec.success_metrics.scale_threshold_cpa_ils}
-                            </span>
-                          </div>
-                        )}
-
-                        {build.spec.tracking && (
-                          <div className="bg-surface-50 rounded p-2">
-                            <p className="text-xs font-semibold text-surface-500 mb-0.5">UTM</p>
-                            <p className="text-xs font-mono text-surface-700">
-                              ?utm_source={build.spec.tracking.utm_source}&amp;utm_medium={build.spec.tracking.utm_medium}&amp;utm_campaign={build.spec.tracking.utm_campaign}&amp;utm_content={build.spec.tracking.utm_content}
-                            </p>
-                          </div>
-                        )}
-
-                        {build.spec.landing_page_url && (
-                          <div className="flex items-center gap-2 bg-indigo-100 rounded-lg px-2.5 py-1.5">
-                            <span className="text-[10px] text-indigo-700 font-semibold">🔗 Landing</span>
-                            <a href={build.spec.landing_page_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-900 hover:underline truncate flex-1 font-mono" dir="ltr">{build.spec.landing_page_url}</a>
-                            <CopyButton text={build.spec.landing_page_url} />
-                          </div>
-                        )}
-
-                        {build.spec.notes && (
-                          <p className="text-xs text-surface-600 italic">💡 {build.spec.notes}</p>
-                        )}
-
-                        <div className="pt-1">
-                          <CopyButton text={JSON.stringify(build.spec, null, 2)} />
-                        </div>
-                      </div>
-                    )}
+                    {build?.spec && <MetaSpecView spec={build.spec} />}
                   </div>
                 )
               })}
