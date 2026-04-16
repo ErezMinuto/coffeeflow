@@ -33,16 +33,18 @@ export const AppProvider = ({ children }) => {
   // other RLS policies read via `auth.jwt() ->> 'sub'`.
   useEffect(() => {
     setClerkTokenGetter(async () => {
+      // ONLY send a token if the supabase JWT template exists in Clerk.
+      // The default Clerk session token isn't verifiable by Supabase,
+      // so sending it causes 401 on every request (breaks reads too).
+      // If the template is missing, return null → supabase.js falls back
+      // to anon-only, which lets anon-read policies work as before.
       try {
-        // Primary: token minted against the supabase JWT template.
         const tpl = await getToken({ template: 'supabase' });
-        if (tpl) return tpl;
+        return tpl ?? null;
       } catch (e) {
-        console.warn('[clerk] supabase template failed, falling back:', e?.message);
+        console.warn('[clerk] supabase JWT template missing or errored:', e?.message);
+        return null;
       }
-      // Fallback: default session token. Works only if Supabase is
-      // configured to accept Clerk's default signer. Better than no token.
-      return getToken();
     });
   }, [getToken]);
 
