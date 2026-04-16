@@ -3303,6 +3303,106 @@ function getStrategicJsonSchema(d: any) {
 }`;
 }
 
+// STRATEGIC split — strategy half
+function getStrategicStrategySchema(d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק — רק שדות האסטרטגיה:
+{
+  "agent_philosophy": "משפט אחד — חובה להזכיר שהקהל הוא הקונה המסחרי",
+  "summary": "2-3 משפטים — האסטרטגיה ל-90 ימים",
+  "confidence_level": "low|medium|high",
+  "wild_ideas": {
+    "audiences_untapped":       ["תת-קהל מסחרי 1 (ספציפי, לא 'קונים לוואצה' כללי)", "תת-קהל 2"],
+    "messaging_angles_unused":  ["זווית 1", "זווית 2"],
+    "channels_or_partnerships": ["ערוץ/שותפות 1", "ערוץ/שותפות 2"],
+    "bundle_or_pricing":        ["חבילה 1", "חבילה 2"],
+    "cross_industry_analogy":   "אנלוגיה חוצת-תעשיות חובה",
+    "picked_for_roadmap":       ["2-3 רעיונות שיגדירו חודש 1, 2, 3"]
+  },
+  "devils_advocate": {
+    "strongest_counterargument": "למה התכנית ל-90 ימים עלולה להיכשל",
+    "what_would_change_my_mind":  "איזה אות ב-30 הימים הראשונים יגרום לי לבטל"
+  },
+  "google": {
+    "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
+    "roas": ${Math.round(d.overallRoas * 100) / 100},
+    "top_campaign": "שם", "worst_campaign": "שם"
+  },
+  "meta": {
+    "total_spend": ${d.metaTotalSpend ?? 0},
+    "total_conversions": ${d.metaTotalConversions ?? 0},
+    "cpa": ${d.metaOverallCpa ?? 0}
+  },
+  "channel_allocation_90d": {
+    "summary": "איך לחלק תקציב בין Google ו-Meta ב-90 ימים",
+    "google_pct_of_total": 50, "meta_pct_of_total": 50,
+    "reasoning": "למה החלוקה הזו — לפי CPA/ROAS/שלב המשפך/היתרון היחסי"
+  },
+  "current_diagnosis": "שני משפטים חריפים — איפה אנחנו עכשיו",
+  "target_90_days": "איפה רוצים להיות — מספרים ספציפיים (הכנסות, ROAS, לקוחות)",
+  "capital_allocation_90d": {
+    "top_priority_bet": "השקעה #1 ספציפית עם מספר",
+    "top_priority_evidence": "נתון מהמחקר שמוכיח",
+    "total_90d_spend_ils": 0,
+    "expected_90d_revenue_ils": { "low": 0, "likely": 0, "high": 0 },
+    "projected_90d_roas": 0,
+    "payback_month": 1,
+    "confidence_tier": "proven|likely|speculative",
+    "funding_sources": ["מקור מימון 1"],
+    "what_to_stop_spending_on": ["קמפיין/פעילות לעצור + ₪ משוחררים"],
+    "risk_adjusted_roi": "אחרי הורדת סבירות כישלון, ציפייה ריאלית"
+  },
+  "no_regret_moves": ["פעולה 1 — עלות נמוכה + upside ברור", "פעולה 2"],
+  "speculative_bets": ["פעולה 1 — upside גדול לא מוכח + cap ₪X"],
+  "competitor_strategy": [
+    { "competitor": "שם", "their_weakness": "חולשה", "our_attack": "איך ננצל ב-90 ימים" }
+  ],
+  "risk_and_pivot": "הסיכון הגדול + מתי ואיך לשנות כיוון",
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
+}`;
+}
+
+// STRATEGIC split — execution half
+function getStrategicExecutionSchema(_d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק — רק שדות הביצוע (בלי שדות האסטרטגיה):
+{
+  "monthly_roadmap": [
+    {
+      "month": "חודש 1 (...)", "theme": "נושא מרכזי",
+      "budget_total": 3000, "audience_focus": "על מי",
+      "content_strategy": "מה מפרסמים",
+      "kpi_targets": { "roas": 2.5, "conversions_per_week": 15, "new_customers": 40 },
+      "seasonal_events": "חגים/אירועים",
+      "implementation": [
+        {
+          "campaign_name": "שם", "campaign_type": "Search",
+          "daily_budget_ils": 60,
+          "keywords": ["מילה 1 [match_type]", "מילה 2 [match_type]"],
+          "headlines": ["5 כותרות — כל אחת עד 30 תווים"],
+          "descriptions": ["2 תיאורים — כל אחד עד 90 תווים"],
+          "landing_page_url": "https://www.minuto.co.il/...",
+          "negative_keywords": ["מילה שלילית 1"],
+          "launch_when": "מתי להשיק",
+          "success_criteria": "הסף לעצירה/שינוי"
+        }
+      ]
+    },
+    { "month": "חודש 2", "theme": "", "budget_total": 4000, "audience_focus": "", "content_strategy": "", "kpi_targets": {}, "seasonal_events": "", "implementation": [] },
+    { "month": "חודש 3", "theme": "", "budget_total": 5000, "audience_focus": "", "content_strategy": "", "kpi_targets": {}, "seasonal_events": "", "implementation": [] }
+  ],
+  "meta_campaign_ideas": [
+    { "idea_id": "unique_slug", "campaign_name": "שם קצר", "launch_month": 1, "one_line_pitch": "משפט אחד", "audience_lens": "specialty_enthusiast|commercial_buyer|retargeting_warm|custom", "monthly_budget_ils": 2400 }
+  ],
+  "audience_build_plan": [
+    { "phase": "שבועות 1-4", "audience": "מי", "message": "מסר", "budget_pct": 50 },
+    { "phase": "שבועות 5-8", "audience": "", "message": "", "budget_pct": 30 },
+    { "phase": "שבועות 9-12", "audience": "", "message": "", "budget_pct": 20 }
+  ]
+}`;
+}
+
 function buildStrategistUserMessage(d: any, weekStart: string) {
   // STRATEGY-FIRST structure: the agent thinks about the market and strategy
   // BEFORE seeing our internal data. This prevents "data commentary" mode
@@ -3543,17 +3643,17 @@ ${completedActions}
 ${pastReports}
 
 הגבלות: budget_recommendations עד 3, campaigns_to_create עד 1, ads_to_rewrite עד 2, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
-${getStrategicJsonSchema(d)}
-ענה אך ורק ב-JSON תקין. חובה למלא את שדה wild_ideas ואת devils_advocate.`;
+חובה למלא את שדה wild_ideas, devils_advocate, capital_allocation_90d, no_regret_moves, speculative_bets.`;
 
   const userMessage = buildStrategistUserMessage(d, weekStart);
 
-  console.log(`[precise] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 12000, timeoutMs: 145_000 });
-  const parsed = parseClaudeJson(text);
-  console.log(`[precise] Done. Tokens: ${inputTokens + outputTokens}`);
-
-  return { report: parsed, tokensUsed: inputTokens + outputTokens };
+  return await runStrategistSplit(
+    systemPrompt,
+    userMessage,
+    getStrategicStrategySchema(d),
+    getStrategicExecutionSchema(d),
+    "precise",
+  );
 }
 
 // ── Organic Content Agent ─────────────────────────────────────────────────────
