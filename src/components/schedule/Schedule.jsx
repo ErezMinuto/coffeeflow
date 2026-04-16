@@ -295,8 +295,27 @@ export default function Schedule() {
   // ── Employee actions ────────────────────────────────────────────────────────
 
   const approveEmployee = async (id) => {
-    await employeesDb.update(id, { active: true, user_id: user.id });
-    showToast('עובד אושר בהצלחה');
+    // Was showing "success" toast even when RLS rejected the update —
+    // employees table has admin-only UPDATE policy (20260411_admin_only_employees.sql)
+    // so non-admin users would silently fail. Toast also fired immediately
+    // before the async update resolved, so even genuine errors went unseen.
+    try {
+      const row = await employeesDb.update(id, { active: true, user_id: user.id });
+      if (!row) {
+        showToast('העדכון לא החזיר שורה — ייתכן שאין לך הרשאת אדמין לעובדים', 'error');
+        return;
+      }
+      showToast('עובד אושר בהצלחה');
+    } catch (err) {
+      const msg = err?.message ?? 'שגיאה לא ידועה';
+      console.error('approveEmployee failed:', err);
+      // Most likely cause: RLS requires is_admin(). Surface it clearly.
+      if (msg.includes('row-level security') || msg.includes('policy')) {
+        showToast('אין לך הרשאת אדמין לאישור עובדים — פנה/י למנהל המערכת', 'error');
+      } else {
+        showToast(`שגיאה באישור: ${msg.slice(0, 120)}`, 'error');
+      }
+    }
   };
 
   const updateEmployee = async (id, fields) => {
