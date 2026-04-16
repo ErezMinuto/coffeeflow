@@ -1522,6 +1522,61 @@ export default function AdvisorPage() {
   // loading state + the returned spec so we can render it inline below the
   // idea card the owner clicked to build.
   const [metaBuild, setMetaBuild]           = useState<Record<string, { loading: boolean; spec: any | null; error?: string }>>({})
+
+  // Ad-hoc Q&A with the advisor_chat endpoint. History is per-week —
+  // switching weeks loads a different thread because the grounding data
+  // (current campaigns, current reports, current research) is week-specific.
+  const chatKey = selectedWeek ? `advisor_chat_${selectedWeek}` : null
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>(() => {
+    if (!chatKey) return []
+    try { return JSON.parse(localStorage.getItem(chatKey) ?? '[]') } catch { return [] }
+  })
+  const [chatInput, setChatInput]   = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatOpen, setChatOpen]     = useState(false)
+  useEffect(() => {
+    // Load history bucket when week changes
+    if (!chatKey) { setChatMessages([]); return }
+    try { setChatMessages(JSON.parse(localStorage.getItem(chatKey) ?? '[]')) } catch { setChatMessages([]) }
+  }, [chatKey])
+
+  async function sendChatQuestion(q?: string) {
+    const question = (q ?? chatInput).trim()
+    if (!question || chatLoading || !selectedWeek) return
+    const nextHistory = [...chatMessages, { role: 'user' as const, content: question }]
+    setChatMessages(nextHistory)
+    setChatInput('')
+    setChatLoading(true)
+    if (chatKey) localStorage.setItem(chatKey, JSON.stringify(nextHistory))
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: {
+          agent: 'advisor_chat',
+          question,
+          week_start: selectedWeek,
+          // Send the conversation minus the just-added question (backend re-adds it)
+          history: chatMessages,
+        },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Chat failed')
+      const withAnswer = [...nextHistory, { role: 'assistant' as const, content: data.answer }]
+      setChatMessages(withAnswer)
+      if (chatKey) localStorage.setItem(chatKey, JSON.stringify(withAnswer))
+    } catch (e: any) {
+      const errMsg = `❌ ${e?.message ?? 'Unknown error'}`
+      const withError = [...nextHistory, { role: 'assistant' as const, content: errMsg }]
+      setChatMessages(withError)
+      if (chatKey) localStorage.setItem(chatKey, JSON.stringify(withError))
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
+  function clearChat() {
+    setChatMessages([])
+    if (chatKey) localStorage.removeItem(chatKey)
+  }
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function buildMetaCampaign(idea: any) {
@@ -2224,6 +2279,109 @@ export default function AdvisorPage() {
         <p className="text-xs text-surface-400">
           ההוראות יישלחו לכל שלושת הסוכנים בלחיצה על "הרץ עכשיו". נשמר אוטומטית.
         </p>
+      </div>
+
+      {/* Chat with the advisor — ad-hoc questions grounded in this week's data */}
+      <div className="card p-4 space-y-3 border border-indigo-200 bg-gradient-to-br from-indigo-50/40 to-transparent">
+        <button
+          onClick={() => setChatOpen(o => !o)}
+          className="w-full flex items-center justify-between text-right focus:outline-none"
+          dir="rtl"
+        >
+          <span className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
+            💬 שאל את היועץ
+            {chatMessages.length > 0 && (
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{chatMessages.length} הודעות</span>
+            )}
+          </span>
+          <span className="text-xs text-indigo-500">{chatOpen ? 'סגור' : 'פתח'}</span>
+        </button>
+
+        {chatOpen && (
+          <>
+            {chatMessages.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-indigo-700">שאלות פופולריות — לחץ על אחת או הקלד שאלה משלך:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'איזה קמפיין Meta הכי משתלם לי, וכמה ₪ להעביר אליו ומאיפה?',
+                    'האם להגדיל קמפיין קיים או לפתוח חדש?',
+                    'מה הקמפיין הכי מבזבז לי כסף?',
+                    'מה חולשה אצל נחת שאני יכול לנצל השבוע?',
+                    'איזה כותרת מודעה בעלת CTR הכי גבוה?',
+                    'מה ה-ROAS של Google מול Meta השבוע?',
+                  ].map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendChatQuestion(q)}
+                      disabled={chatLoading}
+                      className="text-xs bg-white border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-full hover:bg-indigo-50 disabled:opacity-50"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {chatMessages.length > 0 && (
+              <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1" dir="rtl">
+                {chatMessages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-lg p-2.5 text-sm whitespace-pre-wrap ${
+                      m.role === 'user'
+                        ? 'bg-indigo-100 text-indigo-900 mr-8'
+                        : 'bg-white border border-indigo-200 text-surface-800 ml-8'
+                    }`}
+                  >
+                    <p className="text-[10px] font-semibold opacity-60 mb-1">{m.role === 'user' ? '🧑 אתה' : '🤖 היועץ'}</p>
+                    <p className="leading-relaxed">{m.content}</p>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="bg-white border border-indigo-200 rounded-lg p-2.5 ml-8 text-sm text-surface-500">
+                    <p className="text-[10px] font-semibold opacity-60 mb-1">🤖 היועץ</p>
+                    <p>חושב...</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatQuestion(); } }}
+                placeholder="שאל שאלה — לדוגמה 'מה הקמפיין הכי משתלם שלי ב-Google?'"
+                disabled={chatLoading}
+                dir="rtl"
+                className="flex-1 text-sm border border-indigo-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-50"
+              />
+              <button
+                onClick={() => sendChatQuestion()}
+                disabled={chatLoading || !chatInput.trim()}
+                className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                שאל
+              </button>
+              {chatMessages.length > 0 && (
+                <button
+                  onClick={clearChat}
+                  disabled={chatLoading}
+                  className="text-xs bg-surface-100 text-surface-600 px-2 py-2 rounded-xl hover:bg-surface-200 disabled:opacity-50"
+                  title="נקה היסטוריה"
+                >
+                  🗑
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-surface-400" dir="rtl">
+              מבוסס על הנתונים של השבוע הזה ({selectedWeek}) — הסוכנים, הקמפיינים, ומחקר השוק. היסטוריה נשמרת בדפדפן.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Two competing strategists — side by side on desktop */}

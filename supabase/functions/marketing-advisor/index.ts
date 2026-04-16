@@ -4576,6 +4576,118 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
     }
   }
 
+  // ── ADVISOR CHAT — ad-hoc questions grounded in current week's data ────────
+  // Instead of re-running the full 2-phase strategist pipeline for a small
+  // question ("which Meta campaign should I scale?"), pull the existing
+  // weekly reports + raw performance tables + market research into the
+  // prompt and let Claude answer conversationally. One call, ~30s typical,
+  // free-form text (no JSON schema to wrestle with).
+  if (body.agent === "advisor_chat") {
+    const question = (body as any).question as string | undefined;
+    const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: string }>;
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return new Response(JSON.stringify({ error: "question is required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+
+    try {
+      // Pull same data the strategists see — reports + performance + research.
+      // Limit history to last 8 exchanges so prompt doesn't balloon.
+      const weekEnd2 = addDays(weekStart, 6);
+      const [googleData, metaData, recentReports, researchBlock] = await Promise.all([
+        fetchGoogleData(supabase, weekStart, weekEnd2),
+        fetchMetaAdData(supabase, weekStart, weekEnd2),
+        supabase.from("advisor_reports")
+          .select("agent_type, report, status, updated_at")
+          .eq("week_start", weekStart)
+          .order("updated_at", { ascending: false })
+          .limit(3),
+        getResearchBlock(supabase),
+      ]);
+
+      const googleBlock = buildGoogleDataBlock(googleData.currentAgg, googleData.prevAgg, weekStart, weekEnd2);
+      const metaBlock   = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
+
+      // Compact summaries of the existing reports — agents already did the
+      // heavy analysis, chat should reference it, not redo it.
+      const reportSummaries = (recentReports.data ?? [])
+        .filter((r: any) => r.status === "done" && r.report)
+        .map((r: any) => {
+          const rep = r.report as any;
+          const lines = [`[${r.agent_type}] סיכום: ${rep.summary ?? "אין סיכום"}`];
+          if (rep.capital_allocation?.top_priority_action)
+            lines.push(`  העדיפות העיקרית: ${rep.capital_allocation.top_priority_action}`);
+          if (rep.capital_allocation_90d?.top_priority_bet)
+            lines.push(`  השקעה #1 ל-90 ימים: ${rep.capital_allocation_90d.top_priority_bet}`);
+          if (rep.channel_allocation?.reasoning)
+            lines.push(`  ערוצים: ${rep.channel_allocation.reasoning}`);
+          return lines.join("\n");
+        }).join("\n\n");
+
+      const sysPromptChat = `אתה עוזר חכם על דף "יועץ שיווק" של מינוטו קפה (בית קלייה ישראלי).
+${BUSINESS_BRIEF}
+
+המשתמש הוא הבעלים. אתה עונה בעברית, קצר, ממוקד, עם מספרים ספציפיים.
+
+⚠️ כללים חובה:
+• תמיד תן שמות קמפיינים ספציפיים מהנתונים, לא "הקמפיינים שלך" באופן כללי.
+• תמיד תן מספרים בשקלים, לא באחוזים ("₪28/יום" לא "30% יותר").
+• אם אין לך את הנתון לענות על השאלה — תגיד "אין לי את הנתון הזה" במפורש. **אל תזייף מספרים.**
+• אם ההמלצה כרוכה בהוצאה — חייב לציין מקור מימון (מה לקצץ) או לאשר שזה תקציב נוסף.
+• תזכור: השאלה ספציפית, אל תתן רשימה של 10 המלצות — תענה רק על השאלה.
+• תתנסח כמו שותף עסקי, לא כמו AI: "הייתי מגדיל את X" לא "ניתן לשקול את האפשרות".
+
+=== נתוני השבוע (${weekStart} עד ${weekEnd2}) ===
+
+--- Google Ads ---
+סיכום: ₪${googleBlock.totalCost} הוצאה | ${googleBlock.totalClicks} קליקים | ${Math.round(googleBlock.totalConversions * 10) / 10} המרות | ROAS ${Math.round(googleBlock.overallRoas * 100) / 100}x
+
+קמפיינים פעילים:
+${googleBlock.campaignBlock}
+
+--- Meta (FB + IG) Ads ---
+סיכום: ₪${metaBlock.metaTotalSpend} הוצאה | ${metaBlock.metaTotalClicks} קליקים | ${metaBlock.metaTotalConversions} המרות | CPA ${metaBlock.metaOverallCpa != null ? `₪${metaBlock.metaOverallCpa}` : "אין"}
+
+קמפיינים פעילים:
+${metaBlock.metaCampaignBlock}
+
+--- דוחות הסוכנים של השבוע ---
+${reportSummaries || "הסוכנים עוד לא רצו השבוע."}
+
+--- מחקר שוק ---
+${researchBlock.slice(0, 3500)}
+`;
+
+      // Build Claude messages array with history + new question
+      const messages = [
+        ...history.slice(-8).map(h => ({ role: h.role, content: h.content })),
+        { role: "user" as const, content: question },
+      ];
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: 2000,
+          system: sysPromptChat,
+          messages,
+        }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message ?? "Claude error");
+      const answer = json.content?.[0]?.text ?? "";
+      const tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+      return new Response(JSON.stringify({ success: true, answer, tokensUsed }),
+        { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[advisor_chat] error:", err?.message);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
   const focus = body.focus?.trim() || undefined;
   if (focus) console.log(`[marketing-advisor] Focus context: ${focus.slice(0, 100)}`);
 
