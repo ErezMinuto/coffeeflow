@@ -25,8 +25,25 @@ export const AppProvider = ({ children }) => {
 
   // Wire Clerk JWT getter into the Supabase fetch interceptor so every
   // request carries a valid JWT and RLS can enforce per-user security.
+  //
+  // Clerk needs a "supabase" JWT template configured in the Clerk dashboard
+  // (Dashboard → JWT Templates → supabase). That template signs tokens with
+  // the JWT secret Supabase is configured to verify against, and puts the
+  // Clerk user_id in the `sub` claim — which is what public.is_admin() and
+  // other RLS policies read via `auth.jwt() ->> 'sub'`.
   useEffect(() => {
-    setClerkTokenGetter(getToken);
+    setClerkTokenGetter(async () => {
+      try {
+        // Primary: token minted against the supabase JWT template.
+        const tpl = await getToken({ template: 'supabase' });
+        if (tpl) return tpl;
+      } catch (e) {
+        console.warn('[clerk] supabase template failed, falling back:', e?.message);
+      }
+      // Fallback: default session token. Works only if Supabase is
+      // configured to accept Clerk's default signer. Better than no token.
+      return getToken();
+    });
   }, [getToken]);
 
   // ── Inactivity timeout ────────────────────────────────────────────────────
