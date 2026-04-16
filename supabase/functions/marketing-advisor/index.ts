@@ -2936,6 +2936,39 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
   };
 }
 
+// ── Two-phase strategist call ──────────────────────────────────────────────
+// Single-call strategists kept timing out at 145s as the schema grew
+// (capital_allocation + wild_ideas + staged_rollout + meta_campaign_ideas
+// + etc. pushed output to 12k+ tokens). Splitting into Strategy first,
+// then Execution, keeps each call under ~6k output tokens / ~60s. Total
+// wall-clock ≈ 100-120s sequentially — still under the edge function's
+// Supabase worker runtime (~6 min).
+async function runStrategistSplit(
+  baseSystem:       string,
+  userMessage:      string,
+  strategySchema:   string,
+  executionSchema:  string,
+  label:            string,
+): Promise<{ report: any; tokensUsed: number }> {
+  // Phase 1 — Strategy
+  console.log(`[${label}] Phase 1/2: strategy...`);
+  const sysStrategy = `${baseSystem}\n\n=== פאזה 1: אסטרטגיה ===\nבפאזה זו אתה מחזיר רק את שדות האסטרטגיה. אל תיצור weekly_action_plan / campaigns_to_create / ads_to_rewrite / meta_campaign_ideas — אלה יגיעו בפאזה 2.\n${strategySchema}\nענה אך ורק ב-JSON תקין.`;
+  const s = await callClaude(MODEL_STRATEGIST, sysStrategy, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const strategy = parseClaudeJson(s.text);
+
+  // Phase 2 — Execution, given the strategy
+  console.log(`[${label}] Phase 2/2: execution...`);
+  const sysExecution = `${baseSystem}\n\n=== פאזה 2: ביצוע ===\nבפאזה 1 פיתחת את האסטרטגיה הבאה:\n\`\`\`json\n${JSON.stringify(strategy, null, 2).slice(0, 4000)}\n\`\`\`\nעכשיו בנה את שכבת הביצוע — weekly_action_plan, campaigns_to_create, meta_campaign_ideas, budget_recommendations, ads_to_rewrite, wednesday_check. הביצוע חייב להיגזר ישירות מהאסטרטגיה (wild_ideas + capital_allocation) — לא מהלכים גנריים.\n${executionSchema}\nענה אך ורק ב-JSON תקין.`;
+  const e = await callClaude(MODEL_STRATEGIST, sysExecution, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const execution = parseClaudeJson(e.text);
+
+  console.log(`[${label}] Both phases done. Tokens: ${s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens}`);
+  return {
+    report: { ...strategy, ...execution },
+    tokensUsed: s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens,
+  };
+}
+
 // Unified JSON schema instruction for both strategists
 // TACTICAL agent schema — hyper-specific, ready to execute THIS WEEK
 function getTacticalJsonSchema(d: any) {
@@ -2987,8 +3020,8 @@ function getTacticalJsonSchema(d: any) {
         { "keyword": "קפה טרי", "match_type": "broad", "expected_cpc": 1.8 }
       ],
       "negative_keywords": ["מטחנ", "מכונ", "cold brew", "קפסול", "נמס", "חינם", "מתכון"],
-      "headlines": ["כותרת 1 (30 תווים מקס)", "כותרת 2", "כותרת 3", "כותרת 4", "כותרת 5", "כותרת 6", "כותרת 7", "כותרת 8", "כותרת 9", "כותרת 10", "כותרת 11", "כותרת 12", "כותרת 13", "כותרת 14", "כותרת 15"],
-      "descriptions": ["תיאור 1 (90 תווים מקס)", "תיאור 2", "תיאור 3", "תיאור 4"],
+      "headlines": ["10 כותרות — כל אחת עד 30 תווים"],
+      "descriptions": ["3 תיאורים — כל אחד עד 90 תווים"],
       "landing_page_url": "https://www.minuto.co.il/...",
       "rationale": "למה דווקא הקמפיין הזה, למה עכשיו, למה התקציב הזה",
       "expected_results_7_days": "כמה קליקים, המרות, ועלות צפויים ב-7 ימים"
@@ -3040,6 +3073,98 @@ function getTacticalJsonSchema(d: any) {
   ],
   "wednesday_check": "מה לבדוק ביום רביעי — אילו מדדים, מה סף ההצלחה, מה לעשות אם לא עובד",
   "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
+}`;
+}
+
+// TACTICAL split — strategy half (phase 1 of two-call flow)
+function getTacticalStrategySchema(d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק — רק שדות האסטרטגיה:
+{
+  "agent_philosophy": "משפט אחד — חובה להזכיר שהקהל הוא חובבי ספשלטי",
+  "summary": "2-3 משפטים — מה לעשות השבוע, כולל הרעיון הפרוע שבחרת",
+  "confidence_level": "low|medium|high",
+  "wild_ideas": {
+    "audiences_untapped":      ["קהל 1", "קהל 2"],
+    "messaging_angles_unused": ["זווית 1", "זווית 2"],
+    "formats_or_channels":     ["ערוץ 1", "ערוץ 2"],
+    "product_or_bundle":       ["רעיון 1", "רעיון 2"],
+    "cross_industry_analogy":  "אנלוגיה חוצת-תעשיות חובה",
+    "picked_for_this_week":    ["2-3 רעיונות נבחרים"]
+  },
+  "google": {
+    "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
+    "roas": ${Math.round(d.overallRoas * 100) / 100},
+    "top_campaign": "שם", "worst_campaign": "שם"
+  },
+  "devils_advocate": {
+    "strongest_counterargument": "למה התכנית שלך עלולה להיכשל",
+    "what_would_change_my_mind":  "איזה אות/נתון יגרום לי לנטוש"
+  },
+  "channel_allocation": {
+    "summary": "איך לחלק תקציב בין Google ו-Meta השבוע",
+    "google_change_pct": 0, "meta_change_pct": 0,
+    "reasoning": "למה — לפי CPA/ROAS שראית"
+  },
+  "capital_allocation": {
+    "top_priority_action": "פעולה אחת ספציפית",
+    "top_priority_evidence": "נתון שמוכיח למה זו הפעולה",
+    "funding_source": "מאיפה הכסף — 'לקצץ X ב-₪Y'",
+    "expected_weekly_revenue_ils": { "low": 0, "likely": 0, "high": 0 },
+    "payback_period_weeks": 4,
+    "confidence_tier": "proven|likely|speculative",
+    "why_not_the_obvious_choice": "למה לא ההמלצה המובנת מאליה"
+  },
+  "staged_rollout": [
+    { "phase": 1, "daily_budget_ils": 30, "duration_days": 3, "advance_if": "CPA<X", "kill_if": "₪90 ללא המרות" },
+    { "phase": 2, "daily_budget_ils": 60, "duration_days": 4, "advance_if": "CPA<X", "kill_if": "CPA>Z" },
+    { "phase": 3, "daily_budget_ils": 120, "duration_days": 7, "advance_if": "ROAS>3", "kill_if": "ROAS<1.5" }
+  ],
+  "what_to_stop_doing": ["הוצאה אחת לבטל — שם קמפיין + ₪ משוחררים"],
+  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
+}`;
+}
+
+// TACTICAL split — execution half (phase 2, depends on phase 1 output)
+function getTacticalExecutionSchema(_d: any) {
+  return `
+החזר JSON בפורמט הזה בדיוק — רק שדות הביצוע (בלי שדות האסטרטגיה שכבר מילאת):
+{
+  "weekly_action_plan": [
+    { "day": "ראשון|שני|שלישי|רביעי|חמישי", "action": "מה בדיוק לעשות", "expected_result": "מה צפוי", "how_to_measure": "איך נדע שעבד" }
+  ],
+  "campaigns_to_create": [
+    {
+      "campaign_name": "שם",
+      "campaign_type": "Search",
+      "launch_day": "ראשון|שני|שלישי",
+      "daily_budget_ils": 60,
+      "bid_strategy": "Maximize Conversions|Manual CPC|Target ROAS",
+      "target_audience": "תיאור קהל",
+      "keywords": [{ "keyword": "...", "match_type": "phrase", "expected_cpc": 2.5 }],
+      "negative_keywords": ["מטחנ","מכונ","cold brew","קפסול","נמס","חינם"],
+      "headlines": ["10 כותרות — כל אחת עד 30 תווים"],
+      "descriptions": ["3 תיאורים — כל אחד עד 90 תווים"],
+      "landing_page_url": "https://www.minuto.co.il/...",
+      "rationale": "למה הקמפיין הזה עכשיו",
+      "expected_results_7_days": "כמה קליקים/המרות/עלות"
+    }
+  ],
+  "meta_campaign_ideas": [
+    { "idea_id": "unique_slug", "campaign_name": "שם קצר", "one_line_pitch": "משפט אחד", "audience_lens": "specialty_enthusiast|commercial_buyer|retargeting_warm|custom", "expected_cpa_range_ils": "₪8-15", "daily_budget_ils": 80 }
+  ],
+  "budget_recommendations": [
+    { "channel": "google|meta", "campaign": "שם קיים", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
+  ],
+  "ads_to_rewrite": [
+    {
+      "channel": "google|meta", "campaign": "שם",
+      "headline_fixes":    [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
+      "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }]
+    }
+  ],
+  "wednesday_check": "מה לבדוק ביום רביעי — מדדים, סף הצלחה, מה לעשות אם לא עובד"
 }`;
 }
 
@@ -3330,17 +3455,20 @@ ${completedActions}
 ${pastReports}
 
 הגבלות: budget_recommendations עד 3, campaigns_to_create עד 2, ads_to_rewrite עד 1, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
-${getTacticalJsonSchema(d)}
-ענה אך ורק ב-JSON תקין. חובה למלא את שדה wild_ideas ואת devils_advocate.`;
+חובה למלא את שדה wild_ideas, devils_advocate, capital_allocation, staged_rollout, what_to_stop_doing.`;
 
   const userMessage = buildStrategistUserMessage(d, weekStart);
 
-  console.log(`[aggressive] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 12000, timeoutMs: 145_000 });
-  const parsed = parseClaudeJson(text);
-  console.log(`[aggressive] Done. Tokens: ${inputTokens + outputTokens}`);
-
-  return { report: parsed, tokensUsed: inputTokens + outputTokens };
+  // Two-phase call — strategy first, then execution. Keeps each Claude
+  // request under the Supabase gateway timeout even with the capital-
+  // allocator schema. See runStrategistSplit docstring.
+  return await runStrategistSplit(
+    systemPrompt,
+    userMessage,
+    getTacticalStrategySchema(d),
+    getTacticalExecutionSchema(d),
+    "aggressive",
+  );
 }
 
 async function runPreciseStrategist(
