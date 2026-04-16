@@ -3336,7 +3336,7 @@ ${getTacticalJsonSchema(d)}
   const userMessage = buildStrategistUserMessage(d, weekStart);
 
   console.log(`[aggressive] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 9000, timeoutMs: 145_000 });
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 12000, timeoutMs: 145_000 });
   const parsed = parseClaudeJson(text);
   console.log(`[aggressive] Done. Tokens: ${inputTokens + outputTokens}`);
 
@@ -3421,7 +3421,7 @@ ${getStrategicJsonSchema(d)}
   const userMessage = buildStrategistUserMessage(d, weekStart);
 
   console.log(`[precise] Calling Claude...`);
-  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 9000, timeoutMs: 145_000 });
+  const { text, inputTokens, outputTokens } = await callClaude(MODEL_STRATEGIST, systemPrompt, userMessage, { maxTokens: 12000, timeoutMs: 145_000 });
   const parsed = parseClaudeJson(text);
   console.log(`[precise] Done. Tokens: ${inputTokens + outputTokens}`);
 
