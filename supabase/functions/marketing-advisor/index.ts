@@ -841,6 +841,68 @@ async function searchSerperPlaces(query: string, gl = "il", hl = "he"): Promise<
   }
 }
 
+// ── Creative compliance filter ────────────────────────────────────────────
+// Agents repeatedly slip competitor brand names + "blurred logo" tricks
+// into Meta ad briefs despite system-prompt bans. Trademark law + Israeli
+// Consumer Protection law + Meta ad policies all forbid naming or visually
+// depicting competitors in ads — even blurred/neutral-styled logos are
+// recognizable and legally actionable.
+//
+// This function runs on all creative output (advisor_chat, build_meta_campaign).
+// If it finds any violation, it fires a second Claude call asking Claude to
+// REWRITE the brief removing the violations while keeping the strategic intent.
+// One extra call (~10-15s) is worth it to never ship an illegal brief.
+const COMPETITOR_BRANDS_PATTERN = /\b(Lavazza|Illy|Illycaff[eé]|Nespresso|Hausbrandt|Mauro|Bristot|Kimbo|Segafredo|Dolce\s*Gusto|נחת|Jera|ג'רה|אגרו|נגרו|Negro|Blooms\s*Roastery|Coffee4U|עלית|לנדוור|ארומה|Nahat|Agro)\b/i;
+const COMPARATIVE_TRICK_PATTERN = /(לוגו\s*מטושט|מטושטש|blurred\s*logo|neutral\s*bag\s*that\s*looks|שקית\s*ניטרלית\s*דמוי|competitor\s*bag|bag\s*of\s*[A-Za-z]+\s*\(competitor|מותג\s*מתחרה.*(ויז'ואל|בתמונה|בפריים))/i;
+
+function detectCreativeViolations(text: string): { hasViolation: boolean; issues: string[] } {
+  const issues: string[] = [];
+  const brandMatches = [...text.matchAll(new RegExp(COMPETITOR_BRANDS_PATTERN.source, "gi"))].map(m => m[0]);
+  if (brandMatches.length) issues.push(`שמות מתחרים בטקסט: ${[...new Set(brandMatches)].join(", ")}`);
+  if (COMPARATIVE_TRICK_PATTERN.test(text)) issues.push(`"לוגו מטושטש"/"שקית מתחרה ניטרלית" — זה לא פטור משפטי`);
+  return { hasViolation: issues.length > 0, issues };
+}
+
+async function rewriteToCompliantCreative(
+  originalAnswer: string,
+  issues: string[],
+  originalQuestion: string,
+): Promise<string> {
+  const sysPrompt = `אתה עורך משפטי-שיווקי. התשובה המקורית כוללת הפרות: ${issues.join(" | ")}.
+
+חובה לשכתב את התשובה כך ש:
+✓ לא יופיע שום שם מתחרה בטקסט, בוויז'ואל, או כהפניה ("לוגו מטושטש של X" עדיין אסור).
+✓ אין "שקית ניטרלית דמוית X" — גם זה trademark/misleading.
+✓ אין טענות על מתחרים אלא אם הן מגובות בהוכחה ציבורית מאומתת. תאריך שקריא על שקית של מישהו אחר = הפקת ראיות = אסור.
+✓ הברייף חייב לעבוד ללא שום התייחסות חזותית או מילולית למתחרה. מינוטו על המסך בלבד.
+✓ שמור על הכוונה האסטרטגית והרעיון היצירתי המרכזי.
+
+שמור על עברית, כותרות, מבנה ה-timeline של הברייף המקורי — רק הוצא את ההפרות. החזר את הגרסה המתוקנת בלבד, בלי להסביר את השינויים.`;
+
+  const userMsg = `שאלה מקורית של הבעלים:\n${originalQuestion}\n\nהתשובה עם ההפרות:\n${originalAnswer}\n\nשכתב לגרסה חוקית.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 3000,
+        system: sysPrompt,
+        messages: [{ role: "user", content: userMsg }],
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error.message ?? "rewrite error");
+    const rewritten = json.content?.[0]?.text ?? "";
+    return rewritten || originalAnswer;
+  } catch (e: any) {
+    console.error("[compliance] rewrite failed, returning original with warning:", e?.message);
+    return `⚠️ זוהו הפרות בברייף המקורי: ${issues.join(", ")}. נסה לשאול שוב ללא התייחסות למתחרים.\n\n---\n\n${originalAnswer}`;
+  }
+}
+
 // ── Meta Ad Library ────────────────────────────────────────────────────────
 // Shows every ad currently running on Meta (Facebook + Instagram) worldwide,
 // filterable by country + page. For commercial ads the API returns:
@@ -4582,6 +4644,27 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
     try {
       const { text: out } = await callClaude("claude-sonnet-4-5", sysPrompt, userMsg, { maxTokens: 4000, timeoutMs: 120_000 });
       const spec = parseClaudeJson(out);
+
+      // Compliance sweep — stringify the creative-bearing fields + any
+      // audience hints and scan for violations. If found, ask Claude to
+      // return a compliant spec. Rewriting a structured JSON is trickier
+      // than rewriting free-text — we ask for JSON back again.
+      const flatForScan = JSON.stringify({
+        name:      spec?.campaign_name,
+        creative:  spec?.creative,
+        audience:  { why: spec?.audience?.why_this_audience },
+        notes:     spec?.notes,
+      });
+      const violations = detectCreativeViolations(flatForScan);
+      if (violations.hasViolation) {
+        console.warn("[build_meta_campaign] creative violations detected:", violations.issues.join(" | "));
+        const fixSys = `${sysPrompt}\n\n⚠️ הגרסה הקודמת שלך הכילה הפרות: ${violations.issues.join(" | ")}. אסור לנקוב בשם מתחרה (כולל "לוגו מטושטש" או "שקית ניטרלית דמוית X"). החזר את אותו מפרט JSON עם אותה אסטרטגיה אבל בלי שום התייחסות למתחרה — מינוטו בלבד על המסך.`;
+        const retry = await callClaude("claude-sonnet-4-5", fixSys, userMsg, { maxTokens: 4000, timeoutMs: 120_000 });
+        const fixedSpec = parseClaudeJson(retry.text);
+        return new Response(JSON.stringify({ success: true, spec: fixedSpec, compliance_rewritten: true }),
+          { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+
       return new Response(JSON.stringify({ success: true, spec }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
@@ -4699,9 +4782,20 @@ ${researchBlock.slice(0, 3500)}
       });
       const json = await res.json();
       if (json.error) throw new Error(json.error.message ?? "Claude error");
-      const answer = json.content?.[0]?.text ?? "";
-      const tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
-      return new Response(JSON.stringify({ success: true, answer, tokensUsed }),
+      let answer = json.content?.[0]?.text ?? "";
+      let tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+
+      // Compliance check — no competitor names, no "blurred logo" tricks
+      const violations = detectCreativeViolations(answer);
+      let compliance_rewritten = false;
+      if (violations.hasViolation) {
+        console.warn("[advisor_chat] creative violations detected:", violations.issues.join(" | "));
+        answer = await rewriteToCompliantCreative(answer, violations.issues, question);
+        compliance_rewritten = true;
+        tokensUsed += 3000;  // approximate for the rewrite call
+      }
+
+      return new Response(JSON.stringify({ success: true, answer, tokensUsed, compliance_rewritten }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
       console.error("[advisor_chat] error:", err?.message);
