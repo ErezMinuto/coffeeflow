@@ -593,10 +593,10 @@ function GoogleKPIGrid({ g }: { g: GoogleKPIs }) {
   return (
     <div className="grid grid-cols-2 gap-2">
       {[
-        { label: 'הוצאה', value: `₪${g.total_cost.toLocaleString()}` },
-        { label: 'קליקים', value: g.total_clicks.toLocaleString() },
-        { label: 'המרות', value: g.total_conversions },
-        { label: 'ROAS', value: `${g.roas}×` },
+        { label: 'הוצאה', value: `₪${(g.total_cost ?? 0).toLocaleString()}` },
+        { label: 'קליקים', value: (g.total_clicks ?? 0).toLocaleString() },
+        { label: 'המרות', value: g.total_conversions ?? 0 },
+        { label: 'ROAS', value: `${g.roas ?? 0}×` },
       ].map(k => (
         <div key={k.label} className="bg-surface-50 rounded-xl p-3 text-center">
           <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{k.value}</p>

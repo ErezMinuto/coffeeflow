@@ -3094,6 +3094,8 @@ function getTacticalStrategySchema(d: any) {
   },
   "google": {
     "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_clicks": ${d.totalClicks},
+    "total_impressions": ${d.totalImpressions},
     "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
     "roas": ${Math.round(d.overallRoas * 100) / 100},
     "top_campaign": "שם", "worst_campaign": "שם"
@@ -3325,12 +3327,16 @@ function getStrategicStrategySchema(d: any) {
   },
   "google": {
     "total_cost": ${Math.round(d.totalCost * 100) / 100},
+    "total_clicks": ${d.totalClicks},
+    "total_impressions": ${d.totalImpressions},
     "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
     "roas": ${Math.round(d.overallRoas * 100) / 100},
     "top_campaign": "שם", "worst_campaign": "שם"
   },
   "meta": {
     "total_spend": ${d.metaTotalSpend ?? 0},
+    "total_clicks": ${d.metaTotalClicks ?? 0},
+    "total_impressions": ${d.metaTotalImpressions ?? 0},
     "total_conversions": ${d.metaTotalConversions ?? 0},
     "cpa": ${d.metaOverallCpa ?? 0}
   },
