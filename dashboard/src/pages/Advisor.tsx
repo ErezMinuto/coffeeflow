@@ -773,9 +773,16 @@ function GrowthPanel({ row, onRun, running }: { row: AdvisorReport | null; onRun
                   <div>
                     <p className="text-[10px] text-surface-500 font-semibold mb-1">מילות מפתח:</p>
                     <div className="flex flex-wrap gap-1">
-                      {c.keywords.map((kw, j) => (
-                        <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{kw}</span>
-                      ))}
+                      {c.keywords.map((kw: any, j: number) => {
+                        // Handle both legacy string and new {keyword, match_type, expected_cpc} format.
+                        // Rendering an object directly causes React error #31 and crashes the whole panel.
+                        const label = typeof kw === 'string'
+                          ? kw
+                          : `${kw.keyword ?? ''}${kw.match_type ? ` [${kw.match_type}]` : ''}${kw.expected_cpc ? ` ₪${kw.expected_cpc}` : ''}`
+                        return (
+                          <span key={j} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">{label}</span>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
