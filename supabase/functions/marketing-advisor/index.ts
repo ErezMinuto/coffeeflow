@@ -4154,10 +4154,97 @@ ${(existingBlogPosts ?? []).length > 0
 
   console.log(`[organic] Calling Claude (${MODEL_ORGANIC})...`);
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, finalMessage);
-  const parsed = parseClaudeJson(text);
+  const parsed = parseClaudeJson(text) as any;
   console.log(`[organic] Done. Tokens: ${inputTokens + outputTokens}`);
 
+  // ── Post-process: filter out recommendations too similar to existing posts ──
+  // The in-prompt self-check is too soft — agent's "nearly-identical" threshold
+  // differs from ours. Deterministic filter: for each recommendation, if its
+  // suggested_title OR keyword overlaps heavily with any existing post, drop it.
+  if (parsed && Array.isArray(parsed.google_organic_recommendations) && existingBlogPosts) {
+    const filtered = filterDuplicateRecommendations(
+      parsed.google_organic_recommendations,
+      existingBlogPosts,
+    );
+    if (filtered.length < parsed.google_organic_recommendations.length) {
+      console.log(`[organic] Filtered ${parsed.google_organic_recommendations.length - filtered.length} duplicate recs`);
+    }
+    parsed.google_organic_recommendations = filtered;
+  }
+
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
+}
+
+// Decode common HTML entities (&#8211;, &amp;, &#124;) + extract distinctive
+// Hebrew/English words, ignoring the boilerplate that appears in every Minuto
+// title ("מינוטו", "קפה", common connectors). Two titles with ≥2 shared
+// distinctive words are considered the same topic.
+const BOILERPLATE_WORDS = new Set([
+  "מינוטו", "קפה", "של", "על", "את", "עם", "לא", "או", "גם",
+  "בית", "קלייה", "רחובות", "ישראל", "online", "shop", "minuto",
+  "coffee", "the", "a", "in", "of", "and", "for", "to", "is", "&#8211;",
+]);
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#8211;|&ndash;/g, "–")
+    .replace(/&#8212;|&mdash;/g, "—")
+    .replace(/&#124;|&vert;/g, "|")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
+}
+
+function distinctiveWords(text: string): Set<string> {
+  const decoded = decodeEntities(text || "").toLowerCase();
+  // Split on non-Hebrew/non-Latin characters
+  const tokens = decoded.split(/[^\u0590-\u05FFa-z0-9]+/).filter(Boolean);
+  const out = new Set<string>();
+  for (const t of tokens) {
+    if (t.length < 2) continue;
+    if (BOILERPLATE_WORDS.has(t)) continue;
+    // Strip common Hebrew affixes (ו, ה, ב, ל, מ prefixes; -ים, -ות suffixes)
+    const normalized = t
+      .replace(/^[והבלמש]/, "")
+      .replace(/(ים|ות|ית|ה)$/, "");
+    if (normalized.length >= 2 && !BOILERPLATE_WORDS.has(normalized)) {
+      out.add(normalized);
+    }
+  }
+  return out;
+}
+
+function filterDuplicateRecommendations(
+  recs: any[],
+  existingPosts: Array<{ title: string; url: string }>,
+): any[] {
+  const existingSignatures = existingPosts.map(p => ({
+    title: p.title,
+    words: distinctiveWords(p.title),
+  }));
+
+  return recs.filter((rec: any) => {
+    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""}`;
+    const recWords = distinctiveWords(recText);
+    if (recWords.size === 0) return true;  // nothing to match on, keep it
+
+    for (const sig of existingSignatures) {
+      if (sig.words.size === 0) continue;
+      // Count shared distinctive words
+      let shared = 0;
+      for (const w of recWords) {
+        if (sig.words.has(w)) shared++;
+      }
+      // Drop if ≥2 shared distinctive words AND ≥40% of recommendation overlaps
+      const overlapPct = shared / recWords.size;
+      if (shared >= 2 && overlapPct >= 0.4) {
+        console.log(`[organic] Dropping dup rec "${rec.keyword}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%)`);
+        return false;
+      }
+    }
+    return true;
+  });
 }
 
 // ── Weekly Email Digest ───────────────────────────────────────────────────────
