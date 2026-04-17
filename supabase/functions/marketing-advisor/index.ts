@@ -4645,10 +4645,10 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
       const { text: out } = await callClaude("claude-sonnet-4-5", sysPrompt, userMsg, { maxTokens: 4000, timeoutMs: 120_000 });
       const spec = parseClaudeJson(out);
 
-      // Compliance sweep — stringify the creative-bearing fields + any
-      // audience hints and scan for violations. If found, ask Claude to
-      // return a compliant spec. Rewriting a structured JSON is trickier
-      // than rewriting free-text — we ask for JSON back again.
+      // Compliance sweep — flag violations so the frontend can show a warning,
+      // but don't fire a second Claude call (that pushes us past the gateway
+      // for longer prompts). Real enforcement is the system-prompt self-check
+      // that runs before the model returns.
       const flatForScan = JSON.stringify({
         name:      spec?.campaign_name,
         creative:  spec?.creative,
@@ -4656,16 +4656,14 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         notes:     spec?.notes,
       });
       const violations = detectCreativeViolations(flatForScan);
+      const extras = violations.hasViolation
+        ? { compliance_flagged: true, compliance_issues: violations.issues }
+        : {};
       if (violations.hasViolation) {
         console.warn("[build_meta_campaign] creative violations detected:", violations.issues.join(" | "));
-        const fixSys = `${sysPrompt}\n\n⚠️ הגרסה הקודמת שלך הכילה הפרות: ${violations.issues.join(" | ")}. אסור לנקוב בשם מתחרה (כולל "לוגו מטושטש" או "שקית ניטרלית דמוית X"). החזר את אותו מפרט JSON עם אותה אסטרטגיה אבל בלי שום התייחסות למתחרה — מינוטו בלבד על המסך.`;
-        const retry = await callClaude("claude-sonnet-4-5", fixSys, userMsg, { maxTokens: 4000, timeoutMs: 120_000 });
-        const fixedSpec = parseClaudeJson(retry.text);
-        return new Response(JSON.stringify({ success: true, spec: fixedSpec, compliance_rewritten: true }),
-          { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
       }
 
-      return new Response(JSON.stringify({ success: true, spec }),
+      return new Response(JSON.stringify({ success: true, spec, ...extras }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
       console.error("[build_meta_campaign] error:", err?.message);
@@ -4735,10 +4733,15 @@ ${META_ADS_EXPERTISE}
 • אם ההמלצה כרוכה בהוצאה — חייב לציין מקור מימון (מה לקצץ) או לאשר שזה תקציב נוסף.
 • לגבי Meta: כשנשאל על קהלים/אודיינס — השתמש בידע המלא של META_ADS_EXPERTISE למעלה. תן שם interest ספציפי ("Specialty coffee", "De'Longhi", "1% LAL of Past Purchasers") לא "טרג לאנשים שאוהבים קפה". תציע שכבות (Custom → LAL → Advantage+ → Detailed) לפי הנתונים שיש.
 • **קריאייטיב למודעות — כללים משפטיים + איכותיים:**
-  - 🚫 **לעולם** לא לנקוב בשם מתחרה בטקסט/ויז'ואל של מודעה (Lavazza, Illy, נחת, Jera...). זה trademark + הגנת הצרכן. "הפולים של X נקלו לפני 4 חודשים" גם אסור — השמצה.
+  - 🚫 **לעולם** לא לנקוב בשם מתחרה בטקסט/ויז'ואל של מודעה (Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, נגרו, עלית, לנדוור, ארומה). זה trademark + הגנת הצרכן. גם "לוגו מטושטש של X" / "שקית דמוית לוואצה" אסור — עדיין מזוהה + עדיין הפרה.
+  - 🚫 לעולם לא לטעון משהו ספציפי על מתחרה ("הפולים של X נקלו לפני 4 חודשים") — גם אם נכון, זו השמצה.
   - ✓ תקוף את הקטגוריה: "הפולים מהסופר" / "השקית הקיימת שלכם" / "קפה מסחרי".
   - ✓ גרום לצופה להסתכל על עצמו: "בשקית שלך יש תאריך קלייה?" במקום "בשקית של X אין".
   - כשאתה מציע ברייף לוויז'ואל/וידאו — Hook חייב להיות payoff, משפט אחד על המסך, חוויה חושית ולא מפרט, CTA/לוגו מופיע מרגע 3 לא רק בסוף. אם הברייף שלך נראה כמו דף מוצר עם מוזיקה — שנה אותו.
+
+  🔍 **SELF-CHECK חובה לפני שאתה שולח** — אם כל ברייף קריאייטיב שכתבת מכיל את אחד מהשמות או הביטויים הבאים, **עצור ושכתב לפני שאתה מחזיר את התשובה**:
+    Lavazza | Illy | Nespresso | Hausbrandt | Mauro | Bristot | Kimbo | Segafredo | Dolce Gusto | נחת | Jera | אגרו | נגרו | Negro | Blooms Roastery | Coffee4U | עלית | לנדוור | ארומה | Nahat | Agro | "לוגו מטושטש" | "blurred logo" | "שקית ניטרלית דמוית" | "neutral bag that looks like"
+  אם מצאת אחד מאלה — שכתב את הברייף ללא שום התייחסות למתחרה. רק מינוטו על המסך. רק אז החזר.
 • תזכור: השאלה ספציפית, אל תתן רשימה של 10 המלצות — תענה רק על השאלה.
 • תתנסח כמו שותף עסקי, לא כמו AI: "הייתי מגדיל את X" לא "ניתן לשקול את האפשרות".
 
@@ -4782,20 +4785,21 @@ ${researchBlock.slice(0, 3500)}
       });
       const json = await res.json();
       if (json.error) throw new Error(json.error.message ?? "Claude error");
-      let answer = json.content?.[0]?.text ?? "";
-      let tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+      const answer = json.content?.[0]?.text ?? "";
+      const tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
 
-      // Compliance check — no competitor names, no "blurred logo" tricks
+      // Post-check: log violations but don't rewrite synchronously — a second
+      // Claude call can blow the gateway on long prompts. Instead, prepend a
+      // warning so the owner sees the issue AND still gets the content. The
+      // stronger enforcement is in the system prompt itself (self-check loop).
       const violations = detectCreativeViolations(answer);
-      let compliance_rewritten = false;
       if (violations.hasViolation) {
         console.warn("[advisor_chat] creative violations detected:", violations.issues.join(" | "));
-        answer = await rewriteToCompliantCreative(answer, violations.issues, question);
-        compliance_rewritten = true;
-        tokensUsed += 3000;  // approximate for the rewrite call
+        const banner = `⚠️ **ברייף זה מכיל הפרות פוטנציאליות**: ${violations.issues.join(", ")}.\nבדוק לפני שתפעיל — שמות מתחרים/לוגו מטושטש אסורים בחוק. נסח שאלה חדשה או בקש שכתוב.\n\n---\n\n`;
+        return new Response(JSON.stringify({ success: true, answer: banner + answer, tokensUsed, compliance_flagged: true, compliance_issues: violations.issues }),
+          { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
       }
-
-      return new Response(JSON.stringify({ success: true, answer, tokensUsed, compliance_rewritten }),
+      return new Response(JSON.stringify({ success: true, answer, tokensUsed }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
       console.error("[advisor_chat] error:", err?.message);
