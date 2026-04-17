@@ -1098,6 +1098,83 @@ async function scrapeFbVanityFromSite(domain: string): Promise<string | null> {
   }
 }
 
+// ── Minuto blog — fetch what's already published ───────────────────────────
+// The organic agent needs to know which topics are already on the site so
+// it stops re-recommending posts the owner already published. Hits the
+// WordPress RSS feed (works even when /wp-json is blocked by CF/security).
+//
+// Lightweight XML parse — RSS 2.0 is simple enough that regex is fine and
+// avoids pulling a parser library. Each <item> has title/link/pubDate.
+async function fetchMinutoBlogFromRss(): Promise<Array<{ url: string; title: string; published_at: string | null; description: string | null }>> {
+  try {
+    const res = await fetch("https://www.minuto.co.il/feed/", {
+      signal: AbortSignal.timeout(10000),
+      headers: { "User-Agent": "CoffeeFlow-Research/1.0" },
+    });
+    if (!res.ok) {
+      console.error(`[blog-rss] ${res.status} from minuto.co.il/feed/`);
+      return [];
+    }
+    const xml = await res.text();
+    const items: Array<{ url: string; title: string; published_at: string | null; description: string | null }> = [];
+
+    // Match each <item>...</item> block
+    const itemMatches = xml.matchAll(/<item\b[\s\S]*?<\/item>/gi);
+    for (const match of itemMatches) {
+      const block = match[0];
+      const title       = block.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)?.[1]?.trim() ?? "";
+      const link        = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() ?? "";
+      const pubDate     = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() ?? null;
+      const description = block.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/)?.[1]?.trim() ?? null;
+      if (!link || !title) continue;
+      let iso: string | null = null;
+      if (pubDate) {
+        const d = new Date(pubDate);
+        if (!isNaN(d.getTime())) iso = d.toISOString();
+      }
+      items.push({
+        url: link,
+        title,
+        published_at: iso,
+        description: description ? description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 400) : null,
+      });
+    }
+    return items;
+  } catch (e: any) {
+    console.error("[blog-rss] failed:", e?.message);
+    return [];
+  }
+}
+
+// Upsert posts + mark them "last_seen" so stale rows can be detected later.
+async function refreshMinutoBlogCache(supabase: ReturnType<typeof createClient>): Promise<{ total: number; new_since_yesterday: number }> {
+  const posts = await fetchMinutoBlogFromRss();
+  if (posts.length === 0) return { total: 0, new_since_yesterday: 0 };
+
+  const yesterday = new Date(Date.now() - 86400000).toISOString();
+  let newCount = 0;
+
+  for (const p of posts) {
+    const { data: existing } = await supabase
+      .from("minuto_blog_posts")
+      .select("id, first_seen")
+      .eq("url", p.url)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("minuto_blog_posts")
+        .update({ last_seen: new Date().toISOString(), title: p.title, published_at: p.published_at, description: p.description })
+        .eq("id", (existing as any).id);
+    } else {
+      await supabase.from("minuto_blog_posts").insert({
+        url: p.url, title: p.title, published_at: p.published_at, description: p.description,
+      });
+      if (p.published_at && p.published_at > yesterday) newCount++;
+    }
+  }
+  return { total: posts.length, new_since_yesterday: newCount };
+}
+
 async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -1384,6 +1461,17 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
         errors++;
       }
     }
+  }
+
+  // 3.4 Minuto blog cache — refresh our own RSS so the organic agent knows
+  // what's already been published and stops re-recommending those topics.
+  try {
+    const blogStats = await refreshMinutoBlogCache(supabase);
+    console.log(`[research] Minuto blog: ${blogStats.total} posts total, ${blogStats.new_since_yesterday} new since yesterday`);
+    if (blogStats.total > 0) sources++;
+  } catch (e: any) {
+    console.error("[research] Minuto blog refresh failed:", e?.message);
+    errors++;
   }
 
   // 3.5 Novel keyword discovery — Tier 1 (deep Suggest) + Tier 2 (LLM brainstorm)
@@ -3781,6 +3869,13 @@ async function runOrganicAgent(
   ]);
   const completedActions = await getCompletedActions(supabase);
 
+  // Minuto blog posts already published — agent must NOT re-recommend these
+  const { data: existingBlogPosts } = await supabase
+    .from("minuto_blog_posts")
+    .select("title, url, published_at")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(100);
+
   const posts    = postsRes.data    ?? [];
   const insights = insightsRes.data ?? [];
   const products = productsRes.data ?? [];
@@ -3983,6 +4078,19 @@ ${wooSalesOrganic}
 ${pastReportsOrganic}
 בדוק: איזה תוכן המלצת בעבר → מה הביצועים בפועל (reach, saves, likes בנתוני הפוסטים). תוכן שעבד — חזור לנוסחה. תוכן שלא עבד — נסה זווית אחרת.
 ${completedActions}
+
+=== 📚 פוסטים שכבר פורסמו ב-minuto.co.il/blog (${(existingBlogPosts ?? []).length} פוסטים) ===
+${(existingBlogPosts ?? []).length > 0
+  ? (existingBlogPosts ?? []).map((p: any) => {
+      const when = p.published_at ? new Date(p.published_at).toISOString().split("T")[0] : "";
+      return `  • ${p.title}${when ? ` (${when})` : ""}\n    ${p.url}`;
+    }).join("\n")
+  : "  (אין רשימה זמינה — ייתכן שה-RSS לא הצליח לטעון)"}
+
+🚫 **אסור לחלוטין להמליץ על פוסט עם נושא שכבר פורסם**. לפני שאתה מחזיר google_organic_recommendations, בדוק את הרשימה למעלה. אם הנושא שאתה עומד להמליץ עליו כבר שם (אפילו בזווית דומה) — אל תחזיר אותו. במקום זאת:
+  ✓ בחר נושא שונה מהותית שלא פורסם
+  ✓ או הצע עדכון/הרחבה של פוסט קיים ("update X with 2026 data") — אבל רק אם יש סיבה אמיתית (מידע שהשתנה, לא סתם בדיוק אותו דבר)
+  ✗ **לעולם לא** להחזיר כותרת זהה או כמעט-זהה לפוסט שכבר מופיע ברשימה.
 
 החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {
