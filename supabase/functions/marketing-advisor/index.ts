@@ -3869,10 +3869,13 @@ async function runOrganicAgent(
   ]);
   const completedActions = await getCompletedActions(supabase);
 
-  // Minuto blog posts already published — agent must NOT re-recommend these
+  // Minuto blog posts already published — agent must NOT re-recommend these.
+  // Cutoff: only posts from 2026-04-01 onwards count as "recently covered".
+  // Older posts can be revisited with fresh angles without the agent blocking.
   const { data: existingBlogPosts } = await supabase
     .from("minuto_blog_posts")
     .select("title, url, published_at")
+    .gte("published_at", "2026-04-01T00:00:00Z")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(100);
 
