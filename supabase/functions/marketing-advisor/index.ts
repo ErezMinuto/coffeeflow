@@ -4162,14 +4162,49 @@ ${(existingBlogPosts ?? []).length > 0
   // differs from ours. Deterministic filter: for each recommendation, if its
   // suggested_title OR keyword overlaps heavily with any existing post, drop it.
   if (parsed && Array.isArray(parsed.google_organic_recommendations) && existingBlogPosts) {
-    const filtered = filterDuplicateRecommendations(
-      parsed.google_organic_recommendations,
-      existingBlogPosts,
-    );
-    if (filtered.length < parsed.google_organic_recommendations.length) {
-      console.log(`[organic] Filtered ${parsed.google_organic_recommendations.length - filtered.length} duplicate recs`);
+    const original = parsed.google_organic_recommendations;
+    const filtered = filterDuplicateRecommendations(original, existingBlogPosts);
+    if (filtered.length < original.length) {
+      console.log(`[organic] Filtered ${original.length - filtered.length} duplicate recs`);
     }
-    parsed.google_organic_recommendations = filtered;
+
+    // If the filter killed everything (or agent had nothing to begin with),
+    // fall back to novel_keywords from the research phase. Those are problem/
+    // question/pain-based long-tail queries — very unlikely to overlap with
+    // existing broad SEO posts, and they already validated commercial demand.
+    if (filtered.length === 0) {
+      console.log(`[organic] No GSC recs survived filter — falling back to novel_keywords`);
+      const { data: novelRow } = await supabase
+        .from("market_research")
+        .select("raw_data, research_date")
+        .eq("source", "novel_keywords")
+        .order("research_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const novelList = ((novelRow as any)?.raw_data?.with_paid_demand ?? []) as Array<{ keyword: string; shopping_count: number; top_advertiser?: string }>;
+      const candidateRecs = novelList.slice(0, 15).map(n => ({
+        keyword:              n.keyword,
+        suggested_title:      n.keyword,
+        content_type:         "blog_post",
+        current_position:     0,
+        estimated_difficulty: "קל",
+        why_now:              `שאילתה עם ${n.shopping_count} מפרסמי שופינג ב-Serper — ביקוש מסחרי אמיתי שמינוטו לא מכסה עדיין. long-tail, תחרות נמוכה.`,
+        key_points: [
+          `תן תשובה ישירה וברורה לשאלה "${n.keyword}" במשפט הראשון`,
+          "הבא חוויה אישית מבית הקלייה — לא רק מידע מילוני",
+          "קישור פנימי לפולי קפה רלוונטיים שעונים על הצורך",
+        ],
+        search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
+      }));
+      // Apply the same filter to the fallback (belt and suspenders)
+      const cleanFallback = filterDuplicateRecommendations(candidateRecs, existingBlogPosts).slice(0, 3);
+      parsed.google_organic_recommendations = cleanFallback;
+      parsed._fallback_source = "novel_keywords";
+      console.log(`[organic] Fallback added ${cleanFallback.length} novel-keyword recs`);
+    } else {
+      parsed.google_organic_recommendations = filtered;
+    }
   }
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
