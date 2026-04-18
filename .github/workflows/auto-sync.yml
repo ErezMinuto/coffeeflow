@@ -39,6 +39,8 @@ jobs:
           - google-sync          # Google Ads — campaigns, ads, keywords, conversions
           - google-search-sync   # Google Search Console — queries, clicks, impressions
           - meta-sync            # Meta Ads + Instagram organic
+          - woo-orders-sync      # WooCommerce orders (RFM + LTV depend on fresh data)
+          - rfm-sync             # Customer RFM segmentation (runs after orders refresh)
     steps:
       - name: Trigger ${{ matrix.function }}
         run: |
