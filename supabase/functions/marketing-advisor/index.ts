@@ -4850,6 +4850,73 @@ async function sendAdvisorEmail(
 // Stores the result in Supabase Storage `marketing` bucket so it gets a
 // permanent public URL the user can paste into their CMS.
 
+// Haiku-generated photographer's brief for blog banners. Reads the Hebrew
+// post title and produces a detailed, topic-specific scene description in
+// English (the image models handle English photo briefs much more
+// reliably than Hebrew). Randomized style/lighting hints ensure variety
+// even when multiple posts share themes.
+async function generateSceneDescription(title: string, keyword: string): Promise<string | null> {
+  if (!ANTHROPIC_KEY) return null;
+  // Pick one variation hint at random so the same topic produces different
+  // shots across runs — no two Minuto banners look identical.
+  const styleHints = [
+    "morning window light, warm tones, Scandinavian aesthetic",
+    "dramatic side lighting, deep shadows, moody editorial feel",
+    "soft overhead light, minimal styling, clean magazine look",
+    "close-up macro shot, 100mm lens feel, shallow depth of field",
+    "wider establishing shot showing cafe context, 35mm lens feel",
+    "steam catching backlight, golden hour warmth",
+    "overhead flat-lay composition, wooden board props, artisanal",
+    "tight cinematic close-up, restaurant photography style",
+  ];
+  const pickedStyle = styleHints[Math.floor(Math.random() * styleHints.length)];
+
+  const systemPrompt = `You are a food photographer who shoots for specialty coffee brands. Given a Hebrew blog post title about coffee, write a ONE-paragraph photo brief in English describing a single specific, photographable scene.
+
+Rules:
+✓ Be SPECIFIC — exact objects, exact positions, exact lighting. Not "coffee stuff" — "Bialetti Moka pot on induction stove, steam rising from spout, small ceramic cup beside it on wooden board".
+✓ Every brief should feel DIFFERENT from other briefs — vary the subject matter, angle, framing. If the post is about brewing → show brewing. About storage → show a coffee bag with date stamp. About machines → show a machine detail. About crema → show crema texture. About problems → show a diagnostic shot.
+✓ Apply this style hint: "${pickedStyle}"
+✓ Always end with "Shallow depth of field. Photorealistic."
+
+Forbidden:
+✗ People, faces, hands, human figures
+✗ Text, letters, numbers, logos, watermarks
+✗ Vehicles, outdoor scenery, mountains, roads, sky
+✗ Generic "coffee beans on wooden table" shots — be topic-specific
+✗ AI illustration style — aim for real photography
+
+Return only the brief paragraph, no intro, no explanation.`;
+
+  const userMsg = `Blog post title (Hebrew): "${title}"
+Primary keyword: "${keyword}"
+
+Write the photo brief.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error.message ?? "claude error");
+    const brief = (json.content?.[0]?.text ?? "").trim();
+    if (brief.length < 40) return null;
+    console.log(`[banner] Generated brief (${brief.length} chars) for: "${title.slice(0, 50)}"`);
+    return brief;
+  } catch (e: any) {
+    console.warn("[banner] scene brief generation failed, using fallback:", e?.message);
+    return null;
+  }
+}
+
 async function generateBlogBanner(title: string, keyword: string, supabase: ReturnType<typeof createClient>): Promise<string | null> {
   if (!GEMINI_KEY) {
     console.log("[blog_writer] No GEMINI_API_KEY, skipping banner");
@@ -4869,28 +4936,31 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
   // Good: "close-up of freshly roasted dark beans on a worn wooden board,
   //        warm side light catching the oily sheen, shallow depth of field"
 
-  // Use Claude to generate a specific photographer's brief based on the topic
-  // For now, use smart defaults based on topic keywords
-  const titleLower = (safeTitle + " " + safeKeyword).toLowerCase();
-
-  let sceneDescription: string;
-
-  if (titleLower.includes("מקיאטו") || titleLower.includes("macchiato") || titleLower.includes("כתם חלב")) {
-    sceneDescription = "A traditional Italian Caffè Macchiato served in a small clear glass espresso cup on a white saucer with a small spoon. The drink is a rich, dark espresso shot with thick hazelnut-colored crema, topped with ONLY a small dollop of white velvety milk foam in the center — like a tiny white spot on dark coffee. NO latte art, NO hearts, NO swirl patterns, NO large foam. The cup sits on a rustic wooden cafe table. Soft blurred background of a cozy coffee shop interior with warm lighting.";
-  } else if (titleLower.includes("אספרסו") || titleLower.includes("espresso")) {
-    sceneDescription = "A freshly pulled espresso shot in a small white ceramic demitasse cup on a saucer. The espresso has a thick, rich, tiger-striped crema — deep amber with darker streaks. A thin wisp of steam rises from the surface. The cup sits on a worn wooden cafe counter. Behind it, out of focus, the chrome group head of an espresso machine glistens. Warm side lighting from a cafe window.";
-  } else if (titleLower.includes("פולי") || titleLower.includes("beans") || titleLower.includes("קלייה") || titleLower.includes("roast")) {
-    sceneDescription = "A close-up of freshly roasted specialty coffee beans spread on a rustic worn wooden board. The beans are dark chocolate brown with a visible oily sheen. Some beans are whole, a few are cracked open showing the lighter interior. Warm side lighting from the left catches the oils and textures. A small burlap coffee sack is partially visible in the soft background. Shallow depth of field — front beans sharp, back beans soft. The image smells like fresh coffee.";
-  } else if (titleLower.includes("ethiopia") || titleLower.includes("אתיופי")) {
-    sceneDescription = "Medium-roasted Ethiopian coffee beans with a distinctive reddish-brown color, spread on a dark slate surface. A few green unroasted beans sit beside them for contrast. Warm overhead lighting. A small ceramic cup of brewed coffee with a light amber color sits in the background, slightly out of focus. The mood is earthy, authentic, and artisanal.";
-  } else if (titleLower.includes("brazil") || titleLower.includes("ברזיל")) {
-    sceneDescription = "Freshly roasted Brazilian coffee beans — uniform medium-dark roast with a smooth, chocolate-brown surface. They sit in a small ceramic bowl on a wooden cafe table. Next to the bowl, an espresso cup with thick golden crema. Warm natural light from the side. Background: soft bokeh of a roastery interior with copper and wood tones.";
-  } else if (titleLower.includes("פילטר") || titleLower.includes("filter") || titleLower.includes("pour over") || titleLower.includes("chemex") || titleLower.includes("v60")) {
-    sceneDescription = "A pour-over coffee setup on a wooden counter — a glass Chemex or V60 dripper with fresh coffee dripping through. The coffee stream is thin and golden. Steam rises gently. A small pile of medium-roasted beans sits on a wooden board beside it. Morning light from a window creates warm shadows. Clean, minimal, artisanal atmosphere.";
-  } else if (titleLower.includes("מתנ") || titleLower.includes("gift") || titleLower.includes("חג") || titleLower.includes("שבועות")) {
-    sceneDescription = "An elegant coffee gift set on a wooden surface — a kraft paper bag of specialty coffee beans with a simple string bow, next to a small ceramic espresso cup. Warm holiday lighting with soft golden bokeh in the background. The mood is thoughtful and premium — this is a gift someone would be proud to give. Clean, minimal styling.";
-  } else {
-    sceneDescription = "A close-up of freshly roasted specialty coffee beans on a rustic wooden cafe table at Minuto Cafe. The beans are dark and glossy with visible oils. Warm side lighting from a cafe window creates depth and shadows. A ceramic espresso cup with thick crema sits slightly behind the beans, out of focus. The atmosphere is warm, artisanal, and inviting. Shallow depth of field.";
+  // Dynamic scene description — a quick Haiku call interprets the post title
+  // and produces a SPECIFIC photographer's brief. This replaces the hardcoded
+  // if/else ladder that forced every post to one of 7 scenes (and because
+  // almost every title contained "פולי" or "קפה", 95% landed on the same
+  // "beans on wooden board" look). Now each post gets a unique visual brief.
+  //
+  // Fallback to hardcoded defaults if Haiku is unavailable — never silently
+  // break banner generation.
+  let sceneDescription = await generateSceneDescription(safeTitle, safeKeyword);
+  if (!sceneDescription) {
+    // Old hardcoded ladder as safety net
+    const titleLower = (safeTitle + " " + safeKeyword).toLowerCase();
+    if (titleLower.includes("מקיאטו") || titleLower.includes("macchiato") || titleLower.includes("כתם חלב")) {
+      sceneDescription = "A traditional Italian Caffè Macchiato served in a small clear glass espresso cup on a white saucer with a small spoon. The drink is a rich, dark espresso shot with thick hazelnut-colored crema, topped with ONLY a small dollop of white velvety milk foam in the center. NO latte art. The cup sits on a rustic wooden cafe table. Soft blurred background, warm lighting.";
+    } else if (titleLower.includes("אספרסו") || titleLower.includes("espresso")) {
+      sceneDescription = "A freshly pulled espresso shot in a small white ceramic demitasse cup. Thick tiger-striped crema — deep amber with darker streaks. Thin wisp of steam. The cup sits on a worn wooden cafe counter. Chrome espresso machine group head glistening out of focus behind. Warm side lighting from a cafe window.";
+    } else if (titleLower.includes("קרמה") || titleLower.includes("crema")) {
+      sceneDescription = "Macro shot of espresso crema — swirling tiger-stripe pattern in golden amber with darker streaks, captured just as it forms on a freshly-pulled shot in a clear glass cup. Condensation on glass, soft cafe bokeh behind. Intimate lifestyle feel, 100mm macro aesthetic.";
+    } else if (titleLower.includes("דלונגי") || titleLower.includes("delonghi") || titleLower.includes("מכונת קפה") || titleLower.includes("espresso machine")) {
+      sceneDescription = "A modern home espresso machine on a kitchen counter — chrome portafilter with fresh coffee grounds tamped evenly, steam wand releasing a fine jet, morning light from a window hitting the machine's chrome edge. Wooden counter, ceramic cup waiting underneath. No hands. Clean Scandinavian kitchen aesthetic.";
+    } else if (titleLower.includes("פילטר") || titleLower.includes("filter") || titleLower.includes("chemex") || titleLower.includes("v60") || titleLower.includes("aeropress")) {
+      sceneDescription = "A pour-over setup on a wooden counter — glass V60 dripper with fresh coffee blooming, thin golden stream pouring. A small pile of medium-roasted beans beside it. Morning window light creating warm shadows. Minimal artisanal atmosphere.";
+    } else {
+      sceneDescription = "A close-up of freshly roasted specialty coffee beans on a rustic wooden cafe table. Dark glossy beans with visible oils. Warm side lighting creates depth. A ceramic espresso cup with thick crema sits slightly behind, out of focus. Shallow depth of field.";
+    }
   }
 
   const imagePrompt = `Create a high-quality, realistic photo. NOT an AI illustration, NOT a stock photo, NOT a graphic design. This should look like it was shot by a professional photographer with a 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
