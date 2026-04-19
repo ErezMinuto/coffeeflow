@@ -3049,6 +3049,224 @@ ${pastReportsEff}
 // They produce the same JSON output format so the frontend can render them
 // side-by-side for comparison.
 
+// ── New campaign monitoring ───────────────────────────────────────────────
+// Detects campaigns that launched recently (≤14 days) in Google or Meta,
+// computes performance + stage classification, returns a structured list
+// the strategists use to give per-campaign monitoring advice instead of
+// ignoring fresh campaigns or treating them like established ones.
+//
+// Stage rules (coffee DTC defaults):
+//   - Learning:     age < 3 days OR conversions < 50 → don't touch, CPA inflated
+//   - Early Signal: 3-7 days with >=10 conversions → trend-based tweak
+//   - Optimization: 7-14 days → creative/ad-level cuts
+//   - Established:  14+ days → scaling playbook (not "new")
+//
+// Returns empty array if no new campaigns — strategist then skips the
+// monitoring section entirely.
+interface NewCampaignSummary {
+  channel:       "google" | "meta";
+  campaign_id:   string;
+  name:          string;
+  status:        string;
+  first_date:    string;
+  days_live:     number;
+  total_spend:   number;
+  total_clicks:  number;
+  total_convs:   number;
+  cpa:           number | null;
+  ctr_pct:       number;
+  stage:         "learning" | "early_signal" | "optimization" | "established";
+  trend_note:    string;   // "CPA dropping day-over-day" | "flat" | "rising" | "n/a"
+}
+
+async function fetchNewCampaigns(
+  supabase: ReturnType<typeof createClient>,
+  weekEnd: string,
+): Promise<NewCampaignSummary[]> {
+  const lookbackDate = subtractDays(weekEnd, 14);
+  const out: NewCampaignSummary[] = [];
+
+  // ── Google campaigns that first appeared in last 14 days ─────────────────
+  const { data: googleRows } = await supabase
+    .from("google_campaigns")
+    .select("campaign_id, name, status, date, impressions, clicks, cost, conversions")
+    .gte("date", lookbackDate)
+    .order("date", { ascending: true });
+
+  const googleByCamp = new Map<string, any[]>();
+  for (const r of (googleRows ?? [])) {
+    const arr = googleByCamp.get(r.campaign_id) ?? [];
+    arr.push(r);
+    googleByCamp.set(r.campaign_id, arr);
+  }
+
+  // Filter to those whose FIRST observed row is within 14d — proxy for "new"
+  for (const [cid, rows] of googleByCamp.entries()) {
+    const firstDate = rows[0].date;
+    if (firstDate < lookbackDate) continue;  // existing campaign, not new
+
+    const totalSpend  = rows.reduce((s: number, r: any) => s + Number(r.cost ?? 0), 0);
+    const totalClicks = rows.reduce((s: number, r: any) => s + Number(r.clicks ?? 0), 0);
+    const totalImps   = rows.reduce((s: number, r: any) => s + Number(r.impressions ?? 0), 0);
+    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.conversions ?? 0), 0);
+    const daysLive    = Math.max(1, Math.floor((new Date(weekEnd).getTime() - new Date(firstDate).getTime()) / 86400000) + 1);
+    const cpa         = totalConvs > 0 ? Math.round((totalSpend / totalConvs) * 100) / 100 : null;
+    const ctr         = totalImps > 0 ? Math.round((totalClicks / totalImps) * 10000) / 100 : 0;
+
+    out.push({
+      channel:     "google",
+      campaign_id: cid,
+      name:        rows[rows.length - 1].name,
+      status:      rows[rows.length - 1].status,
+      first_date:  firstDate,
+      days_live:   daysLive,
+      total_spend: Math.round(totalSpend * 100) / 100,
+      total_clicks: totalClicks,
+      total_convs: Math.round(totalConvs * 10) / 10,
+      cpa,
+      ctr_pct:     ctr,
+      stage:       classifyStage(daysLive, totalConvs),
+      trend_note:  trendNote(rows, "cost", "conversions"),
+    });
+  }
+
+  // ── Meta campaigns that first appeared in last 14 days ───────────────────
+  const { data: metaRows } = await supabase
+    .from("meta_ad_campaigns")
+    .select("campaign_id, name, status, objective, date, impressions, clicks, spend, conversions")
+    .gte("date", lookbackDate)
+    .order("date", { ascending: true });
+
+  const metaByCamp = new Map<string, any[]>();
+  for (const r of (metaRows ?? [])) {
+    const arr = metaByCamp.get(r.campaign_id) ?? [];
+    arr.push(r);
+    metaByCamp.set(r.campaign_id, arr);
+  }
+
+  for (const [cid, rows] of metaByCamp.entries()) {
+    const firstDate = rows[0].date;
+    if (firstDate < lookbackDate) continue;
+
+    const totalSpend  = rows.reduce((s: number, r: any) => s + Number(r.spend ?? 0), 0);
+    const totalClicks = rows.reduce((s: number, r: any) => s + Number(r.clicks ?? 0), 0);
+    const totalImps   = rows.reduce((s: number, r: any) => s + Number(r.impressions ?? 0), 0);
+    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.conversions ?? 0), 0);
+    const daysLive    = Math.max(1, Math.floor((new Date(weekEnd).getTime() - new Date(firstDate).getTime()) / 86400000) + 1);
+    const cpa         = totalConvs > 0 ? Math.round((totalSpend / totalConvs) * 100) / 100 : null;
+    const ctr         = totalImps > 0 ? Math.round((totalClicks / totalImps) * 10000) / 100 : 0;
+
+    out.push({
+      channel:     "meta",
+      campaign_id: cid,
+      name:        rows[rows.length - 1].name,
+      status:      rows[rows.length - 1].status,
+      first_date:  firstDate,
+      days_live:   daysLive,
+      total_spend: Math.round(totalSpend * 100) / 100,
+      total_clicks: totalClicks,
+      total_convs: Math.round(totalConvs * 10) / 10,
+      cpa,
+      ctr_pct:     ctr,
+      stage:       classifyStage(daysLive, totalConvs),
+      trend_note:  trendNote(rows, "spend", "conversions"),
+    });
+  }
+
+  return out.sort((a, b) => a.days_live - b.days_live);
+}
+
+function classifyStage(daysLive: number, conversions: number): NewCampaignSummary["stage"] {
+  if (daysLive < 3 || conversions < 50) return "learning";
+  if (daysLive <= 7)                   return "early_signal";
+  if (daysLive <= 14)                  return "optimization";
+  return "established";
+}
+
+// Trend: is CPA dropping, flat, or rising across the campaign's life?
+// Compares first-half CPA to second-half CPA. Only meaningful if both halves
+// have conversions.
+function trendNote(rows: any[], spendKey: string, convKey: string): string {
+  if (rows.length < 4) return "טרם ניתן לקבוע מגמה (צריך לפחות 4 ימי נתונים)";
+  const mid = Math.floor(rows.length / 2);
+  const firstHalf = rows.slice(0, mid);
+  const secondHalf = rows.slice(mid);
+  const h1Spend = firstHalf.reduce((s, r) => s + Number(r[spendKey] ?? 0), 0);
+  const h1Conv  = firstHalf.reduce((s, r) => s + Number(r[convKey] ?? 0), 0);
+  const h2Spend = secondHalf.reduce((s, r) => s + Number(r[spendKey] ?? 0), 0);
+  const h2Conv  = secondHalf.reduce((s, r) => s + Number(r[convKey] ?? 0), 0);
+  if (h1Conv < 2 || h2Conv < 2) return "אין מספיק המרות למגמה";
+  const h1Cpa = h1Spend / h1Conv;
+  const h2Cpa = h2Spend / h2Conv;
+  const deltaPct = ((h2Cpa - h1Cpa) / h1Cpa) * 100;
+  if (deltaPct < -10) return `CPA יורד ${Math.round(Math.abs(deltaPct))}% (Meta/Google לומדים — סימן טוב)`;
+  if (deltaPct > 10)  return `CPA עולה ${Math.round(deltaPct)}% (אזהרה — creative fatigue או קהל רווי)`;
+  return "CPA יציב (-10% עד +10%)";
+}
+
+function buildNewCampaignMonitoringBlock(campaigns: NewCampaignSummary[]): string {
+  // Cooldown logic — the owner specifically doesn't want the agent jumping
+  // to "create new campaign" every week. If ANY campaign is still Learning
+  // (<7 days since launch), new-campaign proposals are OFF-LIMITS this
+  // cycle. Let the platform finish learning before stacking more.
+  const youngestDays = campaigns.length > 0
+    ? Math.min(...campaigns.map(c => c.days_live))
+    : 999;
+  const inLearning = campaigns.filter(c => c.stage === "learning" || c.stage === "early_signal");
+
+  if (campaigns.length === 0) {
+    return "\n=== ניטור קמפיינים חדשים ===\nאין קמפיינים חדשים (שנולדו ב-14 הימים האחרונים) לנטר השבוע.\n(קמפיינים ותיקים — תן להם המלצות רגילות של scaling/בדיקה/קיצוץ.)\n";
+  }
+
+  const STAGE_LABEL: Record<NewCampaignSummary["stage"], string> = {
+    learning:      "🟡 Learning",
+    early_signal:  "🔵 Early Signal",
+    optimization:  "🟢 Optimization",
+    established:   "⚫ Established (לא באמת חדש)",
+  };
+
+  const STAGE_RULES: Record<NewCampaignSummary["stage"], string> = {
+    learning:      "אל תגע! CPA תמיד גבוה בימים הראשונים. עצור רק אם CPA > 3× היעד אחרי ₪200 הוצאה.",
+    early_signal:  "בדוק מגמה: CPA יורד → תקציב +20%. CPA קבוע/עולה → שכתב creative לפני הגדלת תקציב.",
+    optimization:  "רמת ad-level: עצור את ה-creative הגרוע ביותר, הכפל תקציב על הטוב ביותר.",
+    established:   "לא 'חדש' באמת — עבר לפלייבוק scaling רגיל.",
+  };
+
+  const lines = [`\n=== 🎯 ניטור קמפיינים חדשים (14 ימים אחרונים) — ${campaigns.length} קמפיינים ===`];
+  lines.push("לפי שלב הלמידה של הקמפיין — תן המלצת פעולה ספציפית, לא כללית.\n");
+
+  for (const c of campaigns) {
+    lines.push(`── ${c.channel === "google" ? "🔵 Google" : "📘 Meta"} | ${c.name} | ${STAGE_LABEL[c.stage]}`);
+    lines.push(`   גיל: ${c.days_live} ימים | הוצאה: ₪${c.total_spend} | המרות: ${c.total_convs} | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין המרות"} | CTR: ${c.ctr_pct}% | סטטוס: ${c.status}`);
+    lines.push(`   מגמה: ${c.trend_note}`);
+    lines.push(`   📋 חוק השלב: ${STAGE_RULES[c.stage]}`);
+    lines.push("");
+  }
+
+  lines.push("⚠️ **חובה**: בשדה new_campaign_monitoring של הפלט, תן המלצה ספציפית לכל קמפיין חדש ברשימה — עם thresholds בשקלים, לא באחוזים. 'לעצור אם CPA > ₪30 אחרי ₪240 הוצאה' — לא 'אם CPA גבוה'.");
+
+  // Cooldown rule — hard block on new-campaign recommendations while anyone's learning
+  if (inLearning.length > 0) {
+    lines.push("");
+    lines.push("🛑 **חוק קירור (COOLDOWN) — חובה לציית**:");
+    lines.push(`יש ${inLearning.length} קמפיין(ים) ב-Learning/Early Signal stage. אסור להציע קמפיינים חדשים עכשיו. הסברים:`);
+    lines.push("• Meta ו-Google צריכים 7-14 ימים של Learning Phase כדי לייצב ביצועים.");
+    lines.push("• הוספת קמפיין חדש מעכשיו מפזרת את התקציב ומאיטה את הלמידה של כל הקמפיינים.");
+    lines.push("• תן לפלטפורמות לסיים את הלמידה לפני שאתה מוסיף עוד.");
+    lines.push("");
+    lines.push("**כללים קשים על הפלט שלך השבוע**:");
+    lines.push("✗ campaigns_to_create חייב להיות **ריק** ([])");
+    lines.push("✗ meta_campaign_ideas חייב להיות **ריק** ([])");
+    lines.push("✓ המלצות מותרות: scaling/פאוז/שכתוב creative על קמפיינים קיימים, לא קמפיינים חדשים");
+    lines.push(`✓ ב-summary: ציין במפורש שהשבוע ממתינים לסיום Learning phase — מוקדם הכי מוקדם שאפשר להציע חדש: ${Math.max(7 - youngestDays, 0)} ימים מעכשיו.`);
+  } else {
+    lines.push("");
+    lines.push(`ℹ️ הקמפיין הצעיר ביותר כבר ${youngestDays} ימים — יצא מ-Learning phase. מותר להציע קמפיין חדש אם יש הצדקה חזקה (לא "נחמד יהיה"), ובתנאי שיש מקור מימון ברור (מה מקצצים כדי לממן).`);
+  }
+
+  return lines.join("\n");
+}
+
 async function fetchStrategistData(supabase: ReturnType<typeof createClient>, weekStart: string) {
   const weekEnd = addDays(weekStart, 6);
   const thirtyDaysAgo = subtractDays(weekStart, 30);
@@ -3092,12 +3310,19 @@ async function fetchStrategistData(supabase: ReturnType<typeof createClient>, we
   const seasonalContext = getSeasonalContext(weekStart);
   const researchBlock = await getResearchBlock(supabase);
 
+  // New-campaign monitoring — scan last 14d across Google + Meta, classify
+  // each by stage, enforce cooldown rule if anything is still Learning.
+  const newCampaigns = await fetchNewCampaigns(supabase, weekEnd);
+  const newCampaignBlock = buildNewCampaignMonitoringBlock(newCampaigns);
+  const newCampaignCooldown = newCampaigns.some(c => c.stage === "learning" || c.stage === "early_signal");
+
   return {
     weekEnd, totalCost, totalClicks, totalImpressions, totalConversions, overallRoas,
     campaignBlock, prevBlock, wooSales, adCreatives, gscBlock, kwIdeas, productsBlock,
     seasonalContext, researchBlock,
     metaTotalSpend, metaTotalClicks, metaTotalImpressions, metaTotalConversions,
     metaOverallCpa, metaCampaignBlock, metaPrevBlock,
+    newCampaignBlock, newCampaignCooldown, newCampaigns,
   };
 }
 
@@ -3289,6 +3514,9 @@ function getTacticalStrategySchema(d: any) {
     { "phase": 3, "daily_budget_ils": 120, "duration_days": 7, "advance_if": "ROAS>3", "kill_if": "ROAS<1.5" }
   ],
   "what_to_stop_doing": ["הוצאה אחת לבטל — שם קמפיין + ₪ משוחררים"],
+  "new_campaign_monitoring": [
+    { "campaign_name": "שם מדויק מהרשימה למעלה", "channel": "google|meta", "stage": "learning|early_signal|optimization|established", "action": "מה לעשות השבוע — פעולה ספציפית אחת", "kill_threshold_ils": "למשל '₪240 הוצאה ללא המרות → עצור'", "scale_threshold_ils": "למשל 'CPA < ₪8 → הגדל 20%'" }
+  ],
   "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
 }`;
 }
@@ -3530,6 +3758,9 @@ function getStrategicStrategySchema(d: any) {
     { "competitor": "שם", "their_weakness": "חולשה", "our_attack": "איך ננצל ב-90 ימים" }
   ],
   "risk_and_pivot": "הסיכון הגדול + מתי ואיך לשנות כיוון",
+  "new_campaign_monitoring": [
+    { "campaign_name": "שם מדויק מהרשימה למעלה", "channel": "google|meta", "stage": "learning|early_signal|optimization|established", "action_this_quarter": "מה לעשות איתו בחודשים 1-3", "kill_threshold_ils": "למשל '₪500 הוצאה ללא המרות → עצור'", "scale_threshold_ils": "למשל 'CPA < ₪15 → הגדל 50%'" }
+  ],
   "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
 }`;
 }
@@ -3635,6 +3866,8 @@ ${d.metaPrevBlock}
 • אם ערוץ אחד לא רץ בכלל — שאל למה. אולי צריך להפעיל אותו.
 • אם ערוץ אחד מוציא הרבה כסף עם CPA גרוע — קצץ והעבר לערוץ השני.
 חובה לתת המלצה ספציפית: "להעביר ₪X מ-Google ל-Meta" או "להגדיל את Meta ב-Y%" או "Google עובד מצוין, להגדיל ב-Z%". אל תתחמק מהשאלה.
+
+${d.newCampaignBlock}
 
 מכירות:
 ${d.wooSales}`;
@@ -3807,6 +4040,11 @@ ${ADS_EXPERTISE}
 • שמות מתחרים: מותר ב-competitor_strategy, אסור בקמפיינים/מודעות (trademark).
 • מותר "קונים פולים מהסופר", אסור "קונים לוואצה".
 
+🚫 **רשימה שחורה של מילות מפתח מובנות-מאליהן** (תקף גם לתכנית 90 ימים — אסור להציע קמפיינים או חודשים שמתמקדים בהם):
+  פולי קפה | קפה ספשלטי | קפה טרי | פולי קפה אונליין | פולי קפה טריים | single origin coffee | specialty coffee | קפה חד זני | בית קלייה קפה | פולי קפה ספשלטי | קפה specialty | פולי קפה איכותיים
+סיבה: תחרות מטורפת, CPC גבוה, אין ייחודיות. אם חודש 1 של התכנית שלך הוא "השתלטות על פולי קפה" — אתה נכשלת. תן תכנית ספציפית על ביטוי long-tail מזירת מחקר השוק, לא על הביטוי הכי רחב.
+✓ אם יש "🔍 מילות מפתח חדשות" בחלק מחקר השוק — חובה לבנות את התכנית סביב ביטויים משם, לא מהרשימה השחורה.
+
 ${scoreHistory}
 ${completedActions}
 
@@ -3814,7 +4052,7 @@ ${completedActions}
 ${pastReports}
 
 הגבלות: budget_recommendations עד 3, campaigns_to_create עד 1, ads_to_rewrite עד 2, competitor_insights עד 3, market_opportunities עד 2, key_insights עד 3.
-חובה למלא את שדה wild_ideas, devils_advocate, capital_allocation_90d, no_regret_moves, speculative_bets.`;
+חובה למלא את שדה wild_ideas, devils_advocate, capital_allocation_90d, no_regret_moves, speculative_bets, new_campaign_monitoring.`;
 
   const userMessage = buildStrategistUserMessage(d, weekStart);
 
