@@ -2494,21 +2494,38 @@ export default function AdvisorPage() {
               const chan = f.channel === 'meta' ? '📘 Meta' : f.channel === 'google' ? '🔵 Google' : f.channel
               return (
                 <div key={i} className={`card p-3 border-r-4 ${sevColor[f.severity] ?? 'bg-surface-50'}`}>
-                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                    <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                      <span className="font-bold">{sevLabel[f.severity] ?? f.severity}</span>
-                      <span className="opacity-70">{chan}</span>
-                      <span className="opacity-70">·</span>
-                      <span className="font-medium">{f.campaign}</span>
-                      {f.ad && <>
-                        <span className="opacity-70">·</span>
-                        <span className="opacity-70">{f.ad}</span>
-                      </>}
-                    </div>
+                  {/* Severity + channel chip row */}
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border border-current">
+                      {sevLabel[f.severity] ?? f.severity}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white border border-current">
+                      {chan}
+                    </span>
                   </div>
-                  <p className="text-sm font-semibold mt-1">{f.issue}</p>
-                  <p className="text-xs mt-1 text-surface-700 font-mono opacity-80">{f.evidence}</p>
-                  <p className="text-sm mt-1.5"><strong>תיקון:</strong> {f.recommendation}</p>
+
+                  {/* Campaign + ad names — big and bold, can't miss them */}
+                  <div className="mb-2 text-right" dir="rtl">
+                    <p className="text-sm font-bold text-surface-900 break-words">
+                      📢 {f.campaign || '(ללא שם קמפיין)'}
+                    </p>
+                    {f.ad && (
+                      <p className="text-xs text-surface-700 mt-0.5 break-words">
+                        ↳ מודעה: <span className="font-mono">{f.ad}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Issue + evidence + fix */}
+                  <div className="space-y-1" dir="rtl">
+                    <p className="text-sm font-semibold">🔍 {f.issue}</p>
+                    {f.evidence && (
+                      <p className="text-xs text-surface-700 bg-white/60 rounded px-2 py-1 font-mono break-words">
+                        {f.evidence}
+                      </p>
+                    )}
+                    <p className="text-sm"><strong>💡 תיקון:</strong> {f.recommendation}</p>
+                  </div>
                 </div>
               )
             })}
