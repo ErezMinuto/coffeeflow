@@ -5405,6 +5405,299 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
   // weekly reports + raw performance tables + market research into the
   // prompt and let Claude answer conversationally. One call, ~30s typical,
   // free-form text (no JSON schema to wrestle with).
+  // ── AUDIT CAMPAIGNS — deterministic checks + Claude review ──────────────────
+  // Scans active Google + Meta campaigns for common mistakes: character-limit
+  // overflows, POOR ad strength, banned keywords in headlines (trademark),
+  // Meta objective mismatches (Sales pixel but Engagement objective), URLs
+  // missing UTMs, paused ads in active campaigns wasting impression share.
+  // Returns structured findings list with severity + evidence + fix action.
+  if (body.agent === "audit_campaigns") {
+    try {
+      // Pull what we actually have access to via existing syncs
+      const [
+        { data: googleCampaignsRaw },
+        { data: googleAdsRaw },
+        { data: metaCampaignsRaw },
+        { data: liveKeywordsRaw },
+        { data: novelKwRow },
+      ] = await Promise.all([
+        supabase.from("google_campaigns").select("campaign_id, name, status, cost, conversions, roas, date")
+          .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
+        supabase.from("google_ads").select("ad_id, campaign_name, ad_group_name, status, ad_strength, headlines, descriptions, final_urls, impressions, clicks, conversions")
+          .neq("status", "REMOVED"),
+        supabase.from("meta_ad_campaigns").select("campaign_id, name, status, objective, spend, conversions, date")
+          .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
+        // Live keywords from our Google campaigns (keyword_view via google-sync)
+        supabase.from("keyword_ideas").select("keyword, competition, competition_index, avg_monthly_searches, low_top_bid_micros")
+          .order("avg_monthly_searches", { ascending: false }).limit(200),
+        // Novel keywords discovered from research (Serper-validated long-tail)
+        supabase.from("market_research").select("raw_data")
+          .eq("source", "novel_keywords")
+          .order("research_date", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+
+      // Deduplicate google campaigns (rows are per-day) — latest status per campaign
+      const googleCampaigns = new Map<string, any>();
+      for (const r of (googleCampaignsRaw ?? [])) {
+        if (!googleCampaigns.has(r.campaign_id)) googleCampaigns.set(r.campaign_id, r);
+      }
+      const metaCampaigns = new Map<string, any>();
+      for (const r of (metaCampaignsRaw ?? [])) {
+        if (!metaCampaigns.has(r.campaign_id)) metaCampaigns.set(r.campaign_id, r);
+      }
+
+      // ── Deterministic findings — rule-based, no AI needed ──────────────────
+      const findings: Array<{
+        channel: "google" | "meta";
+        severity: "critical" | "warning" | "info";
+        campaign: string;
+        ad?: string;
+        issue: string;
+        evidence: string;
+        recommendation: string;
+      }> = [];
+
+      const BANNED_IN_COPY = /\b(Lavazza|Illy|Illycaff[eé]|Nespresso|Hausbrandt|Mauro|Bristot|Kimbo|Segafredo|נחת|Jera|אגרו|נגרו|עלית|לנדוור|ארומה)\b/i;
+
+      // Google ad-level checks
+      for (const ad of (googleAdsRaw ?? [])) {
+        if (ad.status === "PAUSED") continue;  // paused ads analyzed separately
+        const headlines = Array.isArray(ad.headlines) ? ad.headlines : [];
+        const descriptions = Array.isArray(ad.descriptions) ? ad.descriptions : [];
+
+        // Character-limit overflow
+        for (const h of headlines) {
+          if (typeof h === "string" && h.length > 30) {
+            findings.push({
+              channel: "google", severity: "critical",
+              campaign: ad.campaign_name, ad: ad.ad_group_name,
+              issue: "כותרת ארוכה מ-30 תווים",
+              evidence: `"${h}" (${h.length} תווים)`,
+              recommendation: "Google חותך ל-30. קצר לפני שהוא חותך באמצע מילה.",
+            });
+          }
+        }
+        for (const d of descriptions) {
+          if (typeof d === "string" && d.length > 90) {
+            findings.push({
+              channel: "google", severity: "critical",
+              campaign: ad.campaign_name, ad: ad.ad_group_name,
+              issue: "תיאור ארוך מ-90 תווים",
+              evidence: `"${d.slice(0, 50)}..." (${d.length} תווים)`,
+              recommendation: "Google יחתוך. קצר לפחות ל-88 כדי להישאר בבטוח.",
+            });
+          }
+        }
+
+        // Trademark violations
+        for (const text of [...headlines, ...descriptions]) {
+          if (typeof text !== "string") continue;
+          const m = text.match(BANNED_IN_COPY);
+          if (m) {
+            findings.push({
+              channel: "google", severity: "critical",
+              campaign: ad.campaign_name, ad: ad.ad_group_name,
+              issue: `שם מותג מתחרה בטקסט המודעה: ${m[0]}`,
+              evidence: `"${text}"`,
+              recommendation: "Google יכול לדחות + תלונת trademark. החלף במושג קטגורי ('הפולים מהסופר').",
+            });
+          }
+        }
+
+        // Ad strength
+        if (ad.ad_strength === "POOR") {
+          findings.push({
+            channel: "google", severity: "warning",
+            campaign: ad.campaign_name, ad: ad.ad_group_name,
+            issue: "Ad Strength = POOR",
+            evidence: `Google נותן עדיפות נמוכה למודעה. חשיפות: ${ad.impressions ?? 0}, קליקים: ${ad.clicks ?? 0}`,
+            recommendation: "הוסף עוד וריאציות כותרות (Google רוצה 10-15) ותיאורים (4+). ודא שמילת המפתח מופיעה בכותרת 1.",
+          });
+        }
+
+        // URLs without UTMs — can't attribute conversions properly
+        const urls = Array.isArray(ad.final_urls) ? ad.final_urls : [];
+        for (const url of urls) {
+          if (typeof url !== "string") continue;
+          if (url.includes("minuto.co.il") && !url.includes("utm_source=")) {
+            findings.push({
+              channel: "google", severity: "warning",
+              campaign: ad.campaign_name, ad: ad.ad_group_name,
+              issue: "Landing URL ללא UTM",
+              evidence: url,
+              recommendation: `הוסף ?utm_source=google&utm_medium=cpc&utm_campaign=${ad.campaign_name?.replace(/\s+/g, "_") || "campaign"} כדי לראות את ה-ROAS ב-GA4.`,
+            });
+          }
+        }
+      }
+
+      // Meta checks
+      for (const [_, c] of metaCampaigns) {
+        if (c.status !== "ACTIVE") continue;
+
+        // Objective mismatch — if you're selling but objective is engagement, you're wasting spend
+        if (c.objective === "OUTCOME_ENGAGEMENT" && Number(c.spend ?? 0) > 50) {
+          findings.push({
+            channel: "meta", severity: "critical",
+            campaign: c.name,
+            issue: "Objective = ENGAGEMENT על קמפיין שמוציא יותר מ-₪50",
+            evidence: `Objective: ${c.objective}, Spend: ₪${c.spend}, Conversions: ${c.conversions}`,
+            recommendation: "Engagement מייעל על לייקים/שיתופים, לא על מכירות. שנה ל-OUTCOME_SALES (Conversions). תאבד Learning phase ~7 ימים אבל CPA יקטן משמעותית.",
+          });
+        }
+        if (c.objective === "OUTCOME_TRAFFIC" && Number(c.spend ?? 0) > 100) {
+          findings.push({
+            channel: "meta", severity: "warning",
+            campaign: c.name,
+            issue: "Objective = TRAFFIC על קמפיין שמוציא יותר מ-₪100",
+            evidence: `Objective: ${c.objective}, Spend: ₪${c.spend}`,
+            recommendation: "Traffic מייעל על קליקים, לא המרות. אם יש לך Pixel + Purchase event — עבור ל-Sales objective.",
+          });
+        }
+
+        // Spending without conversions → likely setup problem
+        if (Number(c.spend ?? 0) > 200 && (!c.conversions || Number(c.conversions) === 0)) {
+          findings.push({
+            channel: "meta", severity: "critical",
+            campaign: c.name,
+            issue: "יותר מ-₪200 הוצאה ללא המרות",
+            evidence: `Spend: ₪${c.spend}, Conversions: 0`,
+            recommendation: "בדוק: (1) Pixel פעיל ב-minuto.co.il (2) אירוע Purchase יורה (3) Objective מתאים (4) Landing page נטען. 99% מקרים זה Pixel/event.",
+          });
+        }
+      }
+
+      // ── Keyword coverage checks ─────────────────────────────────────────────
+      // Cross-reference live keywords (keyword_ideas) against novel_keywords
+      // (problem/question/pain queries we've discovered but never targeted)
+      // to flag commercial-demand gaps.
+      const liveKeywords = (liveKeywordsRaw ?? []) as Array<{ keyword: string; competition: string; competition_index: number; avg_monthly_searches: number; low_top_bid_micros: number }>;
+      const liveKeywordSet = new Set(liveKeywords.map(k => (k.keyword ?? "").toLowerCase().trim()));
+
+      // Low impression share on active keywords — money we're missing
+      for (const k of liveKeywords.slice(0, 30)) {
+        if (k.avg_monthly_searches >= 100 && k.competition_index < 40 && k.competition_index > 0) {
+          findings.push({
+            channel: "google", severity: "warning",
+            campaign: "(keyword across campaigns)", ad: k.keyword,
+            issue: `Impression share נמוך (${k.competition_index}%) על ביטוי פעיל`,
+            evidence: `${k.avg_monthly_searches} חשיפות, match: ${k.competition}, CPC: ₪${(k.low_top_bid_micros / 1000000).toFixed(2)}`,
+            recommendation: "הגדל את ה-bid או עבור ל-match type רחב יותר. אתה מפסיד 60%+ מהחיפושים.",
+          });
+        }
+      }
+
+      // Banned generics that ARE active — costly + generic
+      const BANNED_ROOTS = ["פולי קפה", "קפה ספשלטי", "קפה טרי", "specialty coffee", "single origin"];
+      for (const k of liveKeywords) {
+        const lc = (k.keyword ?? "").toLowerCase();
+        const match = BANNED_ROOTS.find(r => lc === r.toLowerCase() || lc === `[${r.toLowerCase()}]`);
+        if (match) {
+          findings.push({
+            channel: "google", severity: "warning",
+            campaign: "(keyword-level)", ad: k.keyword,
+            issue: `ביטוי גנרי פעיל — תחרות גבוהה, CPC יקר`,
+            evidence: `"${k.keyword}" match: ${k.competition}, CPC: ₪${(k.low_top_bid_micros / 1000000).toFixed(2)}`,
+            recommendation: "החלף בביטוי long-tail ספציפי (מהרשימה שהתגלתה במחקר). תקבל CPA טוב יותר ב-50%+.",
+          });
+        }
+      }
+
+      // Missing high-demand long-tail — gaps vs novel_keywords discovery
+      const novelKeywords = ((novelKwRow as any)?.raw_data?.with_paid_demand ?? []) as Array<{ keyword: string; shopping_count: number }>;
+      for (const nk of novelKeywords.slice(0, 10)) {
+        const nkLc = nk.keyword.toLowerCase();
+        // Consider "missing" if none of our active keywords contains a meaningful overlap
+        const isPartOfActive = Array.from(liveKeywordSet).some(lk =>
+          lk.length >= 5 && (lk.includes(nkLc.slice(0, 10)) || nkLc.includes(lk.slice(0, 10)))
+        );
+        if (!isPartOfActive) {
+          findings.push({
+            channel: "google", severity: "info",
+            campaign: "(missing coverage)", ad: nk.keyword,
+            issue: "ביטוי long-tail עם ביקוש מסחרי לא מכוסה בקמפיינים שלך",
+            evidence: `${nk.shopping_count} מפרסמי Shopping פעילים על "${nk.keyword}" — יש ביקוש, תחרות נמוכה`,
+            recommendation: "הוסף כקמפיין/ad group חדש. או לפחות כ-phrase match באחד הקיימים. ה-CPC אמור להיות נמוך.",
+          });
+        }
+      }
+
+      // Ask Claude for ADDITIONAL issues the rules can't catch (strategy-level)
+      const flatData = JSON.stringify({
+        google_campaigns: Array.from(googleCampaigns.values()).slice(0, 10),
+        google_ads:       (googleAdsRaw ?? []).slice(0, 15).map(a => ({
+          campaign: a.campaign_name, ad_group: a.ad_group_name, status: a.status,
+          strength: a.ad_strength,
+          headlines: (a.headlines ?? []).slice(0, 5),
+          descriptions: (a.descriptions ?? []).slice(0, 2),
+          impressions: a.impressions, clicks: a.clicks, conversions: a.conversions,
+        })),
+        meta_campaigns: Array.from(metaCampaigns.values()).slice(0, 10),
+      }, null, 2).slice(0, 8000);
+
+      const claudeSys = `${BUSINESS_BRIEF}
+אתה מבקר קמפיינים (campaign auditor). נותנים לך snapshot של הקמפיינים הפעילים של מינוטו — אתה מחפש טעויות אסטרטגיות שלא נתפסות ב-rules (רק בני אדם חכמים). דוגמאות:
+• קמפיינים עם שמות זהים/חופפים (duplicate bidding על אותו קהל)
+• שילוב mediocre creative + תקציב גבוה (השקעה בלי חומר טוב)
+• חוסר consistency בין קמפיינים (חלקם ברואזינג "Buy" cta, אחרים "Learn more" — נטרפה התמקדות)
+• פער בין headline לkey טרם (כותרת לא מבטיחה מה שהtargeting מרמז)
+• Ad groups בלי headlines מספיקות (Google רוצה 10-15 לRSA)
+
+החזר JSON בלבד — רק טעויות אמיתיות, לא כללי:
+{
+  "strategic_findings": [
+    { "channel": "google|meta", "campaign": "שם", "severity": "critical|warning|info", "issue": "...", "evidence": "...", "recommendation": "..." }
+  ]
+}
+אם אין טעויות אסטרטגיות — החזר { "strategic_findings": [] }. ענה אך ורק ב-JSON.`;
+
+      let strategicFindings: any[] = [];
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2000,
+            system: claudeSys,
+            messages: [{ role: "user", content: `נתוני הקמפיינים:\n${flatData}` }],
+          }),
+          signal: AbortSignal.timeout(60_000),
+        });
+        const json = await res.json();
+        const raw = json.content?.[0]?.text ?? "";
+        const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+        const parsed = JSON.parse(clean);
+        strategicFindings = Array.isArray(parsed.strategic_findings) ? parsed.strategic_findings : [];
+      } catch (e: any) {
+        console.warn("[audit] strategic Claude call failed:", e?.message);
+      }
+
+      const allFindings = [...findings, ...strategicFindings];
+      // Sort: critical first, then warning, then info
+      const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+      allFindings.sort((a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3));
+
+      return new Response(JSON.stringify({
+        success:   true,
+        total:     allFindings.length,
+        critical:  allFindings.filter(f => f.severity === "critical").length,
+        warning:   allFindings.filter(f => f.severity === "warning").length,
+        info:      allFindings.filter(f => f.severity === "info").length,
+        findings:  allFindings,
+        checked:   {
+          google_campaigns: googleCampaigns.size,
+          google_ads:       (googleAdsRaw ?? []).length,
+          meta_campaigns:   metaCampaigns.size,
+        },
+      }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[audit_campaigns] error:", err?.message);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
   if (body.agent === "advisor_chat") {
     const question = (body as any).question as string | undefined;
     const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: string }>;

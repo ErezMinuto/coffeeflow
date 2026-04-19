@@ -1588,6 +1588,31 @@ export default function AdvisorPage() {
   const [chatInput, setChatInput]   = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [chatOpen, setChatOpen]     = useState(false)
+
+  // Campaign audit state — deterministic rule + Claude findings
+  const [auditOpen, setAuditOpen]   = useState(false)
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditResult, setAuditResult] = useState<any>(null)
+  const [auditError, setAuditError] = useState<string | null>(null)
+
+  async function runCampaignAudit() {
+    if (auditLoading) return
+    setAuditLoading(true)
+    setAuditError(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: { agent: 'audit_campaigns' },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Audit failed')
+      setAuditResult(data)
+      setAuditOpen(true)
+    } catch (e: any) {
+      setAuditError(e?.message ?? 'Unknown error')
+    } finally {
+      setAuditLoading(false)
+    }
+  }
   useEffect(() => {
     // Load history bucket when week changes
     if (!chatKey) { setChatMessages([]); return }
@@ -2407,6 +2432,90 @@ export default function AdvisorPage() {
       </div>
 
       {/* Chat with the advisor — ad-hoc questions grounded in this week's data */}
+      {/* Campaign audit — rule-based + Claude strategic findings */}
+      <div className="card p-4 space-y-3 border border-rose-200 bg-gradient-to-br from-rose-50/40 to-transparent">
+        <div className="flex items-center justify-between gap-3 flex-wrap" dir="rtl">
+          <div>
+            <p className="text-sm font-semibold text-rose-900 flex items-center gap-2">
+              🔍 ביקורת קמפיינים
+              {auditResult && (
+                <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
+                  {auditResult.critical} קריטי · {auditResult.warning} אזהרות
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-rose-700 mt-0.5">
+              בודק טעויות בקמפיינים שלך — trademark, character limits, objective mismatch, keyword coverage ועוד.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={runCampaignAudit}
+              disabled={auditLoading}
+              className="text-sm bg-rose-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-rose-700 disabled:opacity-50"
+            >
+              {auditLoading ? '🔍 בודק...' : auditResult ? '🔄 הרץ שוב' : '🔍 הרץ ביקורת'}
+            </button>
+            {auditResult && (
+              <button
+                onClick={() => setAuditOpen(o => !o)}
+                className="text-sm bg-white border border-rose-200 text-rose-700 px-3 py-2 rounded-xl hover:bg-rose-50"
+              >
+                {auditOpen ? 'סגור' : 'פתח'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {auditError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700" dir="rtl">
+            ❌ {auditError}
+          </div>
+        )}
+
+        {auditResult && auditOpen && (
+          <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1" dir="rtl">
+            <p className="text-xs text-rose-700">
+              נבדקו {auditResult.checked.google_campaigns} קמפיינים ו-{auditResult.checked.google_ads} מודעות ב-Google,
+              ו-{auditResult.checked.meta_campaigns} קמפיינים ב-Meta.
+              נמצאו <strong>{auditResult.total}</strong> ממצאים.
+            </p>
+            {(auditResult.findings ?? []).map((f: any, i: number) => {
+              const sevColor: Record<string, string> = {
+                critical: 'border-red-300 bg-red-50',
+                warning:  'border-amber-300 bg-amber-50',
+                info:     'border-blue-200 bg-blue-50',
+              }
+              const sevLabel: Record<string, string> = {
+                critical: '🛑 קריטי',
+                warning:  '⚠️ אזהרה',
+                info:     'ℹ️ מידע',
+              }
+              const chan = f.channel === 'meta' ? '📘 Meta' : f.channel === 'google' ? '🔵 Google' : f.channel
+              return (
+                <div key={i} className={`card p-3 border-r-4 ${sevColor[f.severity] ?? 'bg-surface-50'}`}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                    <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                      <span className="font-bold">{sevLabel[f.severity] ?? f.severity}</span>
+                      <span className="opacity-70">{chan}</span>
+                      <span className="opacity-70">·</span>
+                      <span className="font-medium">{f.campaign}</span>
+                      {f.ad && <>
+                        <span className="opacity-70">·</span>
+                        <span className="opacity-70">{f.ad}</span>
+                      </>}
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold mt-1">{f.issue}</p>
+                  <p className="text-xs mt-1 text-surface-700 font-mono opacity-80">{f.evidence}</p>
+                  <p className="text-sm mt-1.5"><strong>תיקון:</strong> {f.recommendation}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="card p-4 space-y-3 border border-indigo-200 bg-gradient-to-br from-indigo-50/40 to-transparent">
         <button
           onClick={() => setChatOpen(o => !o)}
