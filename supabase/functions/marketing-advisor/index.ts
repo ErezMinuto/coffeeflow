@@ -5450,6 +5450,13 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         if (!metaCampaigns.has(r.campaign_id)) metaCampaigns.set(r.campaign_id, r);
       }
 
+      // Build active-campaign NAME set (google_ads rows key on campaign_name
+      // not campaign_id). Ads whose parent campaign is paused won't serve
+      // impressions — shouldn't be audited.
+      const activeGoogleCampaignNames = new Set(
+        Array.from(googleCampaigns.values()).map(c => (c.name || "").trim())
+      );
+
       // ── Deterministic findings — rule-based, no AI needed ──────────────────
       const findings: Array<{
         channel: "google" | "meta";
@@ -5473,8 +5480,10 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         return RESELLER_CONTEXT.test(campaignName || "");
       };
 
-      // Google ad-level checks — only ENABLED ads (already filtered in query)
+      // Google ad-level checks — only ENABLED ads whose parent campaign is
+      // ALSO ENABLED (paused-campaign ads don't serve, not worth flagging)
       for (const ad of (googleAdsRaw ?? [])) {
+        if (!activeGoogleCampaignNames.has((ad.campaign_name || "").trim())) continue;
         const headlines = Array.isArray(ad.headlines) ? ad.headlines : [];
         const descriptions = Array.isArray(ad.descriptions) ? ad.descriptions : [];
         const resellerContext = isResellerCampaign(ad.campaign_name);
