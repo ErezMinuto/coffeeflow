@@ -2170,6 +2170,21 @@ async function getScoreHistory(supabase: ReturnType<typeof createClient>, agentT
 // weeks. The agents see this so they don't re-recommend things the user
 // already handled (e.g. don't suggest "write a blog post on macchiato"
 // if the user already marked that done).
+// Raw rows — used by post-processing filters that need to check action_id
+// text against proposed recommendations. Keeps getCompletedActions() as a
+// string builder for prompt injection, unchanged.
+async function fetchCompletedActionRows(
+  supabase: ReturnType<typeof createClient>,
+): Promise<Array<{ week_start: string; action_id: string; action_label: string | null; state: string }>> {
+  const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("advisor_completed_actions")
+    .select("week_start, action_id, action_label, state")
+    .gte("week_start", eightWeeksAgo)
+    .in("state", ["done", "skipped"]);
+  return (data ?? []) as any[];
+}
+
 async function getCompletedActions(supabase: ReturnType<typeof createClient>): Promise<string> {
   // Look back 8 weeks of action history
   const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
@@ -4436,8 +4451,45 @@ ${(existingBlogPosts ?? []).length > 0
         .limit(1)
         .maybeSingle();
 
+      // Pull done/skipped actions so we don't re-suggest things the owner
+      // already acted on. The prompt-level check doesn't catch this because
+      // the fallback is a deterministic post-processor that bypasses Claude.
+      const doneRows = await fetchCompletedActionRows(supabase);
+      const doneKeywordFragments = doneRows
+        .map(r => {
+          // action_id format: "org::seo::<keyword>" or similar
+          const idKeyword = (r.action_id || "").split("::").pop() ?? "";
+          // action_label format: 'כתוב תוכן ל-"<keyword>"' or the headline
+          const labelMatch = (r.action_label || "").match(/"([^"]+)"/);
+          const labelKeyword = labelMatch ? labelMatch[1] : "";
+          return [idKeyword, labelKeyword, r.action_label || ""].filter(Boolean);
+        })
+        .flat()
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s.length >= 5);
+
+      const isAlreadyHandled = (keyword: string): boolean => {
+        const lc = (keyword || "").trim().toLowerCase();
+        if (!lc) return false;
+        // Exact match or substring match either direction
+        return doneKeywordFragments.some(frag =>
+          frag.includes(lc) || lc.includes(frag)
+        );
+      };
+
       const novelList = ((novelRow as any)?.raw_data?.with_paid_demand ?? []) as Array<{ keyword: string; shopping_count: number; top_advertiser?: string }>;
-      const candidateRecs = novelList.slice(0, 15).map(n => ({
+
+      // Drop novel keywords that were already marked done/skipped before
+      // we even build the synthetic recs. Logs each drop for visibility.
+      const usable = novelList.filter(n => {
+        if (isAlreadyHandled(n.keyword)) {
+          console.log(`[organic] skipping already-handled novel keyword: "${n.keyword}"`);
+          return false;
+        }
+        return true;
+      });
+
+      const candidateRecs = usable.slice(0, 15).map(n => ({
         keyword:              n.keyword,
         suggested_title:      n.keyword,
         content_type:         "blog_post",
@@ -4451,13 +4503,24 @@ ${(existingBlogPosts ?? []).length > 0
         ],
         search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
       }));
-      // Apply the same filter to the fallback (belt and suspenders)
+      // Apply the dup filter to the fallback (belt and suspenders against blog posts)
       const cleanFallback = filterDuplicateRecommendations(candidateRecs, existingBlogPosts).slice(0, 3);
       parsed.google_organic_recommendations = cleanFallback;
       parsed._fallback_source = "novel_keywords";
-      console.log(`[organic] Fallback added ${cleanFallback.length} novel-keyword recs`);
+      console.log(`[organic] Fallback added ${cleanFallback.length} novel-keyword recs (${novelList.length - usable.length} dropped for prior completion)`);
     } else {
-      parsed.google_organic_recommendations = filtered;
+      // Even when GSC recs survive, cross-check against done actions
+      const doneRows = await fetchCompletedActionRows(supabase);
+      const doneText = doneRows.map(r => `${r.action_id} ${r.action_label || ""}`).join(" ").toLowerCase();
+      const stillFresh = filtered.filter((rec: any) => {
+        const kw = (rec.keyword || "").trim().toLowerCase();
+        if (kw && doneText.includes(kw)) {
+          console.log(`[organic] dropping GSC rec already completed: "${rec.keyword}"`);
+          return false;
+        }
+        return true;
+      });
+      parsed.google_organic_recommendations = stillFresh;
     }
   }
 
