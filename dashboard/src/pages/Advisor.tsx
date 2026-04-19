@@ -1838,6 +1838,76 @@ export default function AdvisorPage() {
 
         {r.google && <GoogleKPIGrid g={r.google} />}
 
+        {/* New campaign monitoring — tells the owner what to do with campaigns
+            launched in the last 14 days. Only renders if there's actually data. */}
+        {Array.isArray(r.new_campaign_monitoring) && r.new_campaign_monitoring.length > 0 && (
+          <div>
+            <SectionHeader>🎯 ניטור קמפיינים חדשים (14 ימים אחרונים)</SectionHeader>
+            <div className="space-y-2">
+              {r.new_campaign_monitoring.map((m: any, i: number) => {
+                const stageColor: Record<string, string> = {
+                  learning:     'bg-yellow-50 border-yellow-200 text-yellow-800',
+                  early_signal: 'bg-blue-50 border-blue-200 text-blue-800',
+                  optimization: 'bg-green-50 border-green-200 text-green-800',
+                  established:  'bg-surface-50 border-surface-200 text-surface-700',
+                }
+                const stageLabel: Record<string, string> = {
+                  learning:     '🟡 Learning',
+                  early_signal: '🔵 Early Signal',
+                  optimization: '🟢 Optimization',
+                  established:  '⚫ Established',
+                }
+                const cls = stageColor[m.stage] ?? stageColor.established
+                const chan = m.channel === 'meta'   ? '📘 Meta'
+                           : m.channel === 'google' ? '🔵 Google'
+                           : m.channel ?? ''
+                return (
+                  <div key={i} className={`card p-3 border-r-4 ${cls}`}>
+                    <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium opacity-80">{chan}</span>
+                        <span className="text-sm font-semibold">{m.campaign_name}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-current">
+                        {stageLabel[m.stage] ?? m.stage}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-2">
+                      <span className="font-medium">פעולה השבוע:</span> {m.action ?? m.action_this_quarter}
+                    </p>
+                    <div className="flex gap-2 mt-2 flex-wrap text-[11px]">
+                      {m.kill_threshold_ils && (
+                        <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-full">
+                          🛑 עצור אם: {m.kill_threshold_ils}
+                        </span>
+                      )}
+                      {m.scale_threshold_ils && (
+                        <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded-full">
+                          📈 הגדל אם: {m.scale_threshold_ils}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Cooldown banner — when the backend blocked new campaigns this cycle */}
+        {r._compliance?.cooldownActive && (
+          <div className="card p-3 border-r-4 bg-amber-50 border-amber-200">
+            <p className="text-sm font-semibold text-amber-900 mb-1">⏸ קירור קמפיינים חדשים פעיל</p>
+            <p className="text-xs text-amber-800">
+              קמפיין אחד או יותר נמצא ב-Learning או Early Signal (פחות מ-7 ימים).
+              המערכת חוסמת הצעות לקמפיינים חדשים עד שהפלטפורמות מסיימות את שלב הלמידה.
+              {r._compliance.cooldownClears > 0 && (
+                <> הוסרו {r._compliance.cooldownClears} קמפיינים שהוצעו בטעות בחודש 1.</>
+              )}
+            </p>
+          </div>
+        )}
+
         <BudgetRecs recs={r.budget_recommendations} />
 
         {/* Competitor insights */}

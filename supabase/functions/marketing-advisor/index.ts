@@ -3353,8 +3353,24 @@ async function runStrategistSplit(
   const execution = parseClaudeJson(e.text);
 
   console.log(`[${label}] Both phases done. Tokens: ${s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens}`);
+
+  const merged = { ...strategy, ...execution } as any;
+
+  // Deterministic compliance sweep — catches what the prompt rules miss.
+  // Strips blacklisted keyword roots from every keywords[] array + clears
+  // month-1 implementation if any campaign is in Learning (cooldown).
+  const cooldown = cooldownActive(merged.new_campaign_monitoring ?? []);
+  const { blacklistDrops, cooldownClears } = enforceComplianceOnReport(merged, {
+    stripBlacklist:   true,
+    enforceCooldown:  cooldown,
+  });
+  if (blacklistDrops > 0 || cooldownClears > 0) {
+    console.log(`[${label}] compliance: ${blacklistDrops} keywords dropped, ${cooldownClears} cooldown clears`);
+    merged._compliance = { blacklistDrops, cooldownClears, cooldownActive: cooldown };
+  }
+
   return {
-    report: { ...strategy, ...execution },
+    report: merged,
     tokensUsed: s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens,
   };
 }
@@ -4486,6 +4502,110 @@ function distinctiveWords(text: string): Set<string> {
     }
   }
   return out;
+}
+
+// ── Blacklisted-keyword scrubber ───────────────────────────────────────────
+// Agents keep slipping banned keywords into compound variants ("פולי קפה
+// למכונת אספרסו") because they read each as a distinct long-tail. This
+// deterministic scrubber scans every keywords[] array in the report and
+// drops any entry whose text contains a banned root.
+//
+// Root substrings (not whole-word match — catches "פולי קפה X"):
+const BANNED_KEYWORD_ROOTS = [
+  "פולי קפה",
+  "קפה ספשלטי",
+  "קפה טרי",
+  "specialty coffee",
+  "single origin",
+  "בית קלייה",
+  "קפה חד זני",
+];
+
+function isBlacklistedKeyword(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const lc = text.toLowerCase();
+  return BANNED_KEYWORD_ROOTS.some(root => lc.includes(root.toLowerCase()));
+}
+
+// Normalize a keyword entry to its text regardless of whether it's a string
+// or {keyword, match_type, expected_cpc} object.
+function keywordText(kw: any): string {
+  if (typeof kw === "string") return kw;
+  if (kw && typeof kw === "object") return kw.keyword ?? kw.text ?? "";
+  return "";
+}
+
+// Cooldown active check — looks at new_campaign_monitoring for any campaign
+// in learning or early_signal stage.
+function cooldownActive(monitoring: any[]): boolean {
+  if (!Array.isArray(monitoring)) return false;
+  return monitoring.some((m: any) => m?.stage === "learning" || m?.stage === "early_signal");
+}
+
+// Scrub blacklisted keywords + enforce cooldown across the whole report
+// structure. Logs each drop for visibility. Mutates the report in place.
+function enforceComplianceOnReport(
+  report: any,
+  options: { stripBlacklist: boolean; enforceCooldown: boolean },
+): { blacklistDrops: number; cooldownClears: number } {
+  let blacklistDrops = 0;
+  let cooldownClears = 0;
+
+  // Tactical: campaigns_to_create[].keywords
+  if (options.stripBlacklist && Array.isArray(report?.campaigns_to_create)) {
+    for (const c of report.campaigns_to_create) {
+      if (Array.isArray(c?.keywords)) {
+        const before = c.keywords.length;
+        c.keywords = c.keywords.filter((k: any) => {
+          const t = keywordText(k);
+          if (isBlacklistedKeyword(t)) {
+            console.log(`[compliance] dropped blacklisted keyword: "${t}"`);
+            return false;
+          }
+          return true;
+        });
+        blacklistDrops += (before - c.keywords.length);
+      }
+    }
+  }
+
+  // Strategic: monthly_roadmap[].implementation[].keywords
+  if (Array.isArray(report?.monthly_roadmap)) {
+    for (const month of report.monthly_roadmap) {
+      if (!Array.isArray(month?.implementation)) continue;
+
+      // Cooldown rule: if active, clear month 1's implementation (no new
+      // campaigns in the first month while other campaigns are learning).
+      if (options.enforceCooldown && month.month && String(month.month).includes("1")) {
+        if (month.implementation.length > 0) {
+          console.log(`[compliance] cooldown active — clearing month 1 implementation (${month.implementation.length} campaigns)`);
+          cooldownClears += month.implementation.length;
+          month.implementation = [];
+          month.theme = (month.theme ?? "") + " (קירור פעיל — ללא קמפיינים חדשים החודש)";
+        }
+      }
+
+      // Strip blacklisted keywords from whatever remains
+      if (options.stripBlacklist) {
+        for (const impl of month.implementation) {
+          if (Array.isArray(impl?.keywords)) {
+            const before = impl.keywords.length;
+            impl.keywords = impl.keywords.filter((k: any) => {
+              const t = keywordText(k);
+              if (isBlacklistedKeyword(t)) {
+                console.log(`[compliance] dropped blacklisted keyword in roadmap: "${t}"`);
+                return false;
+              }
+              return true;
+            });
+            blacklistDrops += (before - impl.keywords.length);
+          }
+        }
+      }
+    }
+  }
+
+  return { blacklistDrops, cooldownClears };
 }
 
 function filterDuplicateRecommendations(
