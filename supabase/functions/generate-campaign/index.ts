@@ -374,18 +374,20 @@ function buildCampaignHtml(params: {
     .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
     .trim();
 
-  // Append UTM parameters to minuto.co.il links only. Uses a {{UTM_CAMPAIGN}}
-  // placeholder because the campaign id isn't known at build time —
-  // handleSendCampaign substitutes the real value per-send. Encoded manually
-  // instead of via URL/URLSearchParams so the curly-brace placeholder survives
-  // (URLSearchParams would percent-encode it as %7B%7BUTM_CAMPAIGN%7D%7D and
-  // break the string replace downstream).
+  // Append UTM parameters to minuto.co.il links only.
+  // Convention: utm_source=email, utm_medium=email (industry standard).
+  // Two placeholders substituted per-send by handleSendCampaign:
+  //   {{UTM_CAMPAIGN}} → human-readable campaign slug (e.g. moka_bialetti_apr2026)
+  //   {{UTM_GROUP}}    → contact group / RFM segment slug (e.g. rfm_champions)
+  // utm_content combines link position + group so GA4 can answer both
+  // "which link in the email got clicks" and "which segment converted".
+  // Encoded manually — URLSearchParams would percent-encode {{}} and break the replace.
   const addUtms = (rawUrl: string | undefined, content: string): string => {
     if (!rawUrl) return "";
     if (!rawUrl.includes("minuto.co.il")) return rawUrl;
     if (rawUrl.includes("utm_source=")) return rawUrl; // don't double-up
     const sep = rawUrl.includes("?") ? "&" : "?";
-    return `${rawUrl}${sep}utm_source=newsletter&utm_medium=email&utm_campaign={{UTM_CAMPAIGN}}&utm_content=${encodeURIComponent(content)}`;
+    return `${rawUrl}${sep}utm_source=email&utm_medium=email&utm_campaign={{UTM_CAMPAIGN}}&utm_content=${encodeURIComponent(content)}__{{UTM_GROUP}}`;
   };
 
   // Build a single product card cell — fixed dimensions, no description, consistent height
@@ -1443,6 +1445,13 @@ interface SendCampaignPayload {
   campaignId: number;
   testEmail?: string;
   selectedRecipients?: Array<{ email: string; name?: string }>;
+  // Target a specific contact_group (e.g. 'rfm_champions'). Recipients will
+  // be intersected with opted_in marketing_contacts. The group name is also
+  // injected as {{UTM_GROUP}} so tracking shows WHICH segment got the mail.
+  groupName?: string;
+  // Optional human-readable campaign slug for UTM. Falls back to
+  // `campaign_<id>` if not provided.
+  utmCampaignSlug?: string;
   // When true, the campaign's status stays 'draft' after the send so the
   // user can keep iterating. Used by the "send to test group" button — it
   // goes to real people but the campaign isn't considered "sent for real".
@@ -1475,6 +1484,39 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     // User selected specific recipients
     recipients = p.selectedRecipients;
     console.log(`Sending to ${recipients.length} selected recipients`);
+  } else if (p.groupName) {
+    // Target a specific contact_group — intersect with opted-in marketing_contacts.
+    const { data: groupRow } = await supabase
+      .from("contact_groups")
+      .select("id")
+      .eq("name", p.groupName)
+      .maybeSingle();
+    if (!groupRow) return err(404, `Contact group '${p.groupName}' not found`);
+
+    const { data: groupMembers } = await supabase
+      .from("contact_group_members")
+      .select("email, name")
+      .eq("group_id", (groupRow as any).id);
+
+    const groupEmails = new Set(((groupMembers ?? []) as Array<{ email: string }>).map(m => m.email.toLowerCase()));
+
+    // Filter to opted-in only — group membership ≠ consent, always respect opt-in
+    recipients = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: rows } = await supabase
+        .from("marketing_contacts")
+        .select("email, name")
+        .eq("opted_in", true)
+        .range(from, from + 999);
+      if (!rows || rows.length === 0) break;
+      for (const r of rows) {
+        if (r.email && groupEmails.has(r.email.toLowerCase())) {
+          recipients.push({ email: r.email, name: r.name || undefined });
+        }
+      }
+      if (rows.length < 1000) break;
+    }
+    console.log(`Sending to ${recipients.length} ${p.groupName} members (opted-in)`);
   } else {
     // Default audience = all opted-in rows in marketing_contacts. Previously
     // this pulled from Resend's Audience list, which silently capped the
@@ -1562,12 +1604,19 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     return `${raw} | פרסומת`;
   })();
 
-  // UTM campaign tag — substituted into every {{UTM_CAMPAIGN}} placeholder
-  // that buildCampaignHtml baked into links. Test sends get a suffix so
-  // they don't pollute production analytics.
-  const utmCampaignTag = p.testEmail
-    ? `campaign_${p.campaignId}_test`
-    : `campaign_${p.campaignId}`;
+  // UTM campaign tag — human-readable slug if provided, otherwise
+  // fallback to `campaign_<id>`. Test sends get a suffix so they don't
+  // pollute production analytics.
+  const baseSlug = p.utmCampaignSlug?.trim() || `campaign_${p.campaignId}`;
+  const utmCampaignTag = p.testEmail ? `${baseSlug}_test` : baseSlug;
+
+  // UTM group tag — which contact_group this send targets. Used in
+  // utm_content so analytics can break down conversion by RFM segment
+  // (rfm_champions converts X%, rfm_atrisk converts Y%). Defaults to
+  // 'all_optedin' when no group was specified.
+  const utmGroupTag = p.testEmail
+    ? "test"
+    : (p.groupName || "all_optedin").replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
 
   for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
     const chunk = recipients.slice(i, i + BATCH_SIZE);
@@ -1578,7 +1627,8 @@ async function handleSendCampaign(p: SendCampaignPayload) {
       const unsubUrl = generateUnsubscribeUrl(r.email);
       const personalizedHtml = campaign.html_content
         .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubUrl)
-        .replace(/\{\{UTM_CAMPAIGN\}\}/g, utmCampaignTag);
+        .replace(/\{\{UTM_CAMPAIGN\}\}/g, utmCampaignTag)
+        .replace(/\{\{UTM_GROUP\}\}/g, utmGroupTag);
       return {
         from:    `Minuto <${SENDER_EMAIL}>`,
         to:      [r.email],
