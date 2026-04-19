@@ -5605,7 +5605,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         if (k.avg_monthly_searches >= 100 && k.competition_index < 40 && k.competition_index > 0) {
           findings.push({
             channel: "google", severity: "warning",
-            campaign: "(keyword across campaigns)", ad: k.keyword,
+            campaign: `מילת מפתח: "${k.keyword}"`,
             issue: `Impression share נמוך (${k.competition_index}%) על ביטוי פעיל`,
             evidence: `${k.avg_monthly_searches} חשיפות, match: ${k.competition}, CPC: ₪${(k.low_top_bid_micros / 1000000).toFixed(2)}`,
             recommendation: "הגדל את ה-bid או עבור ל-match type רחב יותר. אתה מפסיד 60%+ מהחיפושים.",
@@ -5621,9 +5621,9 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         if (match) {
           findings.push({
             channel: "google", severity: "warning",
-            campaign: "(keyword-level)", ad: k.keyword,
+            campaign: `מילת מפתח: "${k.keyword}"`,
             issue: `ביטוי גנרי פעיל — תחרות גבוהה, CPC יקר`,
-            evidence: `"${k.keyword}" match: ${k.competition}, CPC: ₪${(k.low_top_bid_micros / 1000000).toFixed(2)}`,
+            evidence: `match: ${k.competition}, CPC: ₪${(k.low_top_bid_micros / 1000000).toFixed(2)}`,
             recommendation: "החלף בביטוי long-tail ספציפי (מהרשימה שהתגלתה במחקר). תקבל CPA טוב יותר ב-50%+.",
           });
         }
@@ -5633,16 +5633,15 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
       const novelKeywords = ((novelKwRow as any)?.raw_data?.with_paid_demand ?? []) as Array<{ keyword: string; shopping_count: number }>;
       for (const nk of novelKeywords.slice(0, 10)) {
         const nkLc = nk.keyword.toLowerCase();
-        // Consider "missing" if none of our active keywords contains a meaningful overlap
         const isPartOfActive = Array.from(liveKeywordSet).some(lk =>
           lk.length >= 5 && (lk.includes(nkLc.slice(0, 10)) || nkLc.includes(lk.slice(0, 10)))
         );
         if (!isPartOfActive) {
           findings.push({
             channel: "google", severity: "info",
-            campaign: "(missing coverage)", ad: nk.keyword,
+            campaign: `הזדמנות חדשה: "${nk.keyword}"`,
             issue: "ביטוי long-tail עם ביקוש מסחרי לא מכוסה בקמפיינים שלך",
-            evidence: `${nk.shopping_count} מפרסמי Shopping פעילים על "${nk.keyword}" — יש ביקוש, תחרות נמוכה`,
+            evidence: `${nk.shopping_count} מפרסמי Shopping פעילים — יש ביקוש, תחרות נמוכה`,
             recommendation: "הוסף כקמפיין/ad group חדש. או לפחות כ-phrase match באחד הקיימים. ה-CPC אמור להיות נמוך.",
           });
         }
@@ -5661,18 +5660,31 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         meta_campaigns: Array.from(metaCampaigns.values()).slice(0, 10),
       }, null, 2).slice(0, 8000);
 
+      // Whitelist of real campaign names — Claude must reference only these,
+      // never hallucinate generics like "Various campaigns" or "פולי קפה general".
+      const realGoogleNames = Array.from(googleCampaigns.values()).map(c => c.name).filter(Boolean);
+      const realMetaNames   = Array.from(metaCampaigns.values()).map(c => c.name).filter(Boolean);
+
       const claudeSys = `${BUSINESS_BRIEF}
 אתה מבקר קמפיינים (campaign auditor). נותנים לך snapshot של הקמפיינים הפעילים של מינוטו — אתה מחפש טעויות אסטרטגיות שלא נתפסות ב-rules (רק בני אדם חכמים). דוגמאות:
 • קמפיינים עם שמות זהים/חופפים (duplicate bidding על אותו קהל)
 • שילוב mediocre creative + תקציב גבוה (השקעה בלי חומר טוב)
 • חוסר consistency בין קמפיינים (חלקם ברואזינג "Buy" cta, אחרים "Learn more" — נטרפה התמקדות)
-• פער בין headline לkey טרם (כותרת לא מבטיחה מה שהtargeting מרמז)
+• פער בין headline לkey term (כותרת לא מבטיחה מה שהtargeting מרמז)
 • Ad groups בלי headlines מספיקות (Google רוצה 10-15 לRSA)
+
+🚫 **חוק קשה על שדה campaign**: חובה להחזיר שם קמפיין **אמיתי מדויק** מהרשימה הבאה. אסור להמציא שמות כלליים כמו "Various campaigns", "Multiple campaigns", "פולי קפה general" וכו'. אם הטעות מתפרשת על כמה קמפיינים — צור ממצא נפרד לכל אחד, כל אחד עם השם המדויק שלו.
+
+רשימת הקמפיינים הפעילים (חובה לצטט בדיוק, כולל רווחים ו-|):
+Google:
+${realGoogleNames.length > 0 ? realGoogleNames.map(n => `  - ${n}`).join("\n") : "  (אין קמפיינים פעילים ב-Google)"}
+Meta:
+${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  (אין קמפיינים פעילים ב-Meta)"}
 
 החזר JSON בלבד — רק טעויות אמיתיות, לא כללי:
 {
   "strategic_findings": [
-    { "channel": "google|meta", "campaign": "שם", "severity": "critical|warning|info", "issue": "...", "evidence": "...", "recommendation": "..." }
+    { "channel": "google|meta", "campaign": "<שם מהרשימה בדיוק>", "severity": "critical|warning|info", "issue": "...", "evidence": "...", "recommendation": "..." }
   ]
 }
 אם אין טעויות אסטרטגיות — החזר { "strategic_findings": [] }. ענה אך ורק ב-JSON.`;
@@ -5695,6 +5707,15 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(clean);
         strategicFindings = Array.isArray(parsed.strategic_findings) ? parsed.strategic_findings : [];
+
+        // Reject hallucinated campaign names — only allow whitelist matches
+        const realNameSet = new Set([...realGoogleNames, ...realMetaNames].map(n => n.trim()));
+        strategicFindings = strategicFindings.filter((f: any) => {
+          if (!f?.campaign) return false;
+          if (realNameSet.has(String(f.campaign).trim())) return true;
+          console.warn(`[audit] dropping hallucinated strategic finding — campaign not in whitelist: "${f.campaign}"`);
+          return false;
+        });
       } catch (e: any) {
         console.warn("[audit] strategic Claude call failed:", e?.message);
       }
