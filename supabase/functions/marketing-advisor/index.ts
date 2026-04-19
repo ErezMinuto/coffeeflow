@@ -5413,7 +5413,9 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
   // Returns structured findings list with severity + evidence + fix action.
   if (body.agent === "audit_campaigns") {
     try {
-      // Pull what we actually have access to via existing syncs
+      // Pull what we actually have access to via existing syncs.
+      // Audit scope = ACTIVE only. Paused/removed campaigns aren't wasting
+      // money or showing to customers, so issues there aren't actionable.
       const [
         { data: googleCampaignsRaw },
         { data: googleAdsRaw },
@@ -5422,10 +5424,12 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         { data: novelKwRow },
       ] = await Promise.all([
         supabase.from("google_campaigns").select("campaign_id, name, status, cost, conversions, roas, date")
+          .eq("status", "ENABLED")
           .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
         supabase.from("google_ads").select("ad_id, campaign_name, ad_group_name, status, ad_strength, headlines, descriptions, final_urls, impressions, clicks, conversions")
-          .neq("status", "REMOVED"),
+          .eq("status", "ENABLED"),
         supabase.from("meta_ad_campaigns").select("campaign_id, name, status, objective, spend, conversions, date")
+          .eq("status", "ACTIVE")
           .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
         // Live keywords from our Google campaigns (keyword_view via google-sync)
         supabase.from("keyword_ideas").select("keyword, competition, competition_index, avg_monthly_searches, low_top_bid_micros")
@@ -5459,11 +5463,21 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
 
       const BANNED_IN_COPY = /\b(Lavazza|Illy|Illycaff[eé]|Nespresso|Hausbrandt|Mauro|Bristot|Kimbo|Segafredo|נחת|Jera|אגרו|נגרו|עלית|לנדוור|ארומה)\b/i;
 
-      // Google ad-level checks
+      // Branded-reseller exemption — if the campaign is for reselling branded
+      // products (Lavazza capsules, Nespresso-compatible pods, etc.), the
+      // brand names in ad copy are legitimate product identifiers, not
+      // trademark infringement. The ban is for own-beans positioning, not
+      // resale listings. Checked via campaign-name substrings.
+      const RESELLER_CONTEXT = /(capsule|capsules|קפסול|pod|pods|compatible|תואם|nespresso[\s_-]*compat|dolce[\s_-]*gusto)/i;
+      const isResellerCampaign = (campaignName: string): boolean => {
+        return RESELLER_CONTEXT.test(campaignName || "");
+      };
+
+      // Google ad-level checks — only ENABLED ads (already filtered in query)
       for (const ad of (googleAdsRaw ?? [])) {
-        if (ad.status === "PAUSED") continue;  // paused ads analyzed separately
         const headlines = Array.isArray(ad.headlines) ? ad.headlines : [];
         const descriptions = Array.isArray(ad.descriptions) ? ad.descriptions : [];
+        const resellerContext = isResellerCampaign(ad.campaign_name);
 
         // Character-limit overflow
         for (const h of headlines) {
@@ -5489,18 +5503,21 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
           }
         }
 
-        // Trademark violations
-        for (const text of [...headlines, ...descriptions]) {
-          if (typeof text !== "string") continue;
-          const m = text.match(BANNED_IN_COPY);
-          if (m) {
-            findings.push({
-              channel: "google", severity: "critical",
-              campaign: ad.campaign_name, ad: ad.ad_group_name,
-              issue: `שם מותג מתחרה בטקסט המודעה: ${m[0]}`,
-              evidence: `"${text}"`,
-              recommendation: "Google יכול לדחות + תלונת trademark. החלף במושג קטגורי ('הפולים מהסופר').",
-            });
+        // Trademark violations — skip for reseller-context campaigns where
+        // brand names are legitimate product identifiers (capsules, pods)
+        if (!resellerContext) {
+          for (const text of [...headlines, ...descriptions]) {
+            if (typeof text !== "string") continue;
+            const m = text.match(BANNED_IN_COPY);
+            if (m) {
+              findings.push({
+                channel: "google", severity: "critical",
+                campaign: ad.campaign_name, ad: ad.ad_group_name,
+                issue: `שם מותג מתחרה בטקסט המודעה: ${m[0]}`,
+                evidence: `"${text}"`,
+                recommendation: "Google יכול לדחות + תלונת trademark. החלף במושג קטגורי ('הפולים מהסופר'). אם זה קמפיין לממכר קפסולות — הוסף 'capsule' לשם הקמפיין כדי שהביקורת תדלג.",
+              });
+            }
           }
         }
 
