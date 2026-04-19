@@ -587,22 +587,76 @@ function PanelError({ msg }: { msg: string }) {
 }
 
 function GoogleKPIGrid({ g }: { g: GoogleKPIs }) {
-  // Bumped from text-base to text-xl so the actual data is the biggest
-  // thing in the panel — users should be able to skim ROAS / cost / clicks
-  // in under a second, not hunt for it in 13px mono text.
+  // CPA derived — not stored separately on the Google block, but it's
+  // the one number owners ask about most. Compute here + color-code
+  // against a ₪30 target (anything >₪30 = red, <₪30 = green).
+  const cost = Number(g.total_cost ?? 0)
+  const convs = Number(g.total_conversions ?? 0)
+  const cpa = convs > 0 ? cost / convs : null
+  const cpaColor = cpa == null ? 'text-surface-400'
+                 : cpa <= 15  ? 'text-green-600'
+                 : cpa <= 30  ? 'text-amber-600'
+                 :              'text-red-600'
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {[
-        { label: 'הוצאה', value: `₪${(g.total_cost ?? 0).toLocaleString()}` },
-        { label: 'קליקים', value: (g.total_clicks ?? 0).toLocaleString() },
-        { label: 'המרות', value: g.total_conversions ?? 0 },
-        { label: 'ROAS', value: `${g.roas ?? 0}×` },
-      ].map(k => (
-        <div key={k.label} className="bg-surface-50 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{k.value}</p>
-          <p className="text-[11px] text-surface-500 mt-1">{k.label}</p>
+    <div>
+      <p className="text-[11px] font-semibold text-surface-500 mb-1.5 flex items-center gap-1.5">🔵 Google Ads</p>
+      <div className="grid grid-cols-4 gap-2">
+        <div className="bg-surface-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">₪{cost.toLocaleString()}</p>
+          <p className="text-[11px] text-surface-500 mt-1">הוצאה</p>
         </div>
-      ))}
+        <div className="bg-surface-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{convs}</p>
+          <p className="text-[11px] text-surface-500 mt-1">המרות</p>
+        </div>
+        <div className="bg-surface-50 rounded-xl p-3 text-center">
+          <p className={`text-xl font-bold font-mono leading-tight ${cpaColor}`}>{cpa != null ? `₪${cpa.toFixed(2)}` : '—'}</p>
+          <p className="text-[11px] text-surface-500 mt-1">CPA</p>
+        </div>
+        <div className="bg-surface-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{g.roas ?? 0}×</p>
+          <p className="text-[11px] text-surface-500 mt-1">ROAS</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Meta KPI grid — mirrors GoogleKPIGrid. Meta doesn't track ROAS in our
+// sync (no conversion_value), so the 4th card is CTR instead.
+function MetaKPIGrid({ m }: { m: any }) {
+  if (!m) return null
+  const spend  = Number(m.total_spend ?? 0)
+  const convs  = Number(m.total_conversions ?? 0)
+  const clicks = Number(m.total_clicks ?? 0)
+  const imps   = Number(m.total_impressions ?? 0)
+  const cpa    = convs > 0 ? spend / convs : null
+  const ctr    = imps > 0  ? (clicks / imps) * 100 : null
+  const cpaColor = cpa == null ? 'text-surface-400'
+                 : cpa <= 15  ? 'text-green-600'
+                 : cpa <= 30  ? 'text-amber-600'
+                 :              'text-red-600'
+  return (
+    <div>
+      <p className="text-[11px] font-semibold text-surface-500 mb-1.5 flex items-center gap-1.5">📘 Meta Ads (FB + IG)</p>
+      <div className="grid grid-cols-4 gap-2">
+        <div className="bg-indigo-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">₪{spend.toLocaleString()}</p>
+          <p className="text-[11px] text-surface-500 mt-1">הוצאה</p>
+        </div>
+        <div className="bg-indigo-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{convs}</p>
+          <p className="text-[11px] text-surface-500 mt-1">המרות</p>
+        </div>
+        <div className="bg-indigo-50 rounded-xl p-3 text-center">
+          <p className={`text-xl font-bold font-mono leading-tight ${cpaColor}`}>{cpa != null ? `₪${cpa.toFixed(2)}` : '—'}</p>
+          <p className="text-[11px] text-surface-500 mt-1">CPA</p>
+        </div>
+        <div className="bg-indigo-50 rounded-xl p-3 text-center">
+          <p className="text-xl font-bold font-mono text-surface-900 leading-tight">{ctr != null ? `${ctr.toFixed(1)}%` : '—'}</p>
+          <p className="text-[11px] text-surface-500 mt-1">CTR</p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1837,6 +1891,7 @@ export default function AdvisorPage() {
         )}
 
         {r.google && <GoogleKPIGrid g={r.google} />}
+        {r.meta && <MetaKPIGrid m={r.meta} />}
 
         {/* New campaign monitoring — tells the owner what to do with campaigns
             launched in the last 14 days. Only renders if there's actually data. */}
