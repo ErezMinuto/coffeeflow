@@ -2354,8 +2354,12 @@ async function fetchGoogleData(
   if (error) throw new Error(`Google fetch error: ${error.message}`);
 
   const all = (data ?? []) as GoogleRow[];
-  const currentWeek = all.filter(r => r.date >= weekStart);
-  const prevWeeks   = all.filter(r => r.date < weekStart);
+  // Rolling 7-day window ending at weekEnd. Using weekStart-to-weekEnd means
+  // on Mondays (weekStart = today) the window is empty because Google Ads has
+  // a 1-day sync lag. Rolling-7 always shows real running performance.
+  const rollingStart = subtractDays(weekEnd, 6);
+  const currentWeek = all.filter(r => r.date >= rollingStart);
+  const prevWeeks   = all.filter(r => r.date < rollingStart);
 
   return {
     currentAgg: aggregateGoogleCampaigns(currentWeek),
@@ -2469,8 +2473,10 @@ async function fetchMetaAdData(
     .order("date", { ascending: false });
   if (error) throw new Error(`Meta fetch error: ${error.message}`);
   const all = (data ?? []) as any[];
-  const currentWeek = all.filter(r => r.date >= weekStart);
-  const prevWeeks   = all.filter(r => r.date < weekStart);
+  // Rolling 7-day window — see fetchGoogleData for rationale.
+  const rollingStart = subtractDays(weekEnd, 6);
+  const currentWeek = all.filter(r => r.date >= rollingStart);
+  const prevWeeks   = all.filter(r => r.date < rollingStart);
   return {
     metaCurrentAgg: aggregateMetaCampaigns(currentWeek),
     metaPrevAgg:    aggregateMetaCampaigns(prevWeeks),
