@@ -1595,6 +1595,34 @@ export default function AdvisorPage() {
   const [auditResult, setAuditResult] = useState<any>(null)
   const [auditError, setAuditError] = useState<string | null>(null)
 
+  // Campaign Doctor — deeper per-campaign diagnosis + full fix plan
+  // (20 headlines / 4 descriptions / keyword tiers / negatives / budget /
+  // landing / tracking fixes — ready to paste into Google Ads).
+  const [doctorOpen, setDoctorOpen]       = useState(false)
+  const [doctorLoading, setDoctorLoading] = useState(false)
+  const [doctorResult, setDoctorResult]   = useState<any>(null)
+  const [doctorError, setDoctorError]     = useState<string | null>(null)
+  const [doctorExpandedCampaign, setDoctorExpandedCampaign] = useState<string | null>(null)
+
+  async function runCampaignDoctor() {
+    if (doctorLoading) return
+    setDoctorLoading(true)
+    setDoctorError(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: { agent: 'campaign_doctor' },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Doctor failed')
+      setDoctorResult(data)
+      setDoctorOpen(true)
+    } catch (e: any) {
+      setDoctorError(e?.message ?? 'Unknown error')
+    } finally {
+      setDoctorLoading(false)
+    }
+  }
+
   async function runCampaignAudit() {
     if (auditLoading) return
     setAuditLoading(true)
@@ -2526,6 +2554,239 @@ export default function AdvisorPage() {
                     )}
                     <p className="text-sm"><strong>💡 תיקון:</strong> {f.recommendation}</p>
                   </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Campaign Doctor — deep per-campaign diagnosis + ready-to-paste fix plan */}
+      <div className="card p-4 space-y-3 border border-emerald-200 bg-gradient-to-br from-emerald-50/40 to-transparent">
+        <div className="flex items-center justify-between gap-3 flex-wrap" dir="rtl">
+          <div>
+            <p className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
+              🧑‍⚕️ דוקטור הקמפיינים
+              {doctorResult && (
+                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                  {doctorResult.campaigns_analyzed} קמפיינים אובחנו
+                </span>
+              )}
+              {doctorResult?.signals?.budget_cap_suspected && (
+                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  ⚠️ חשד לתקרת תקציב
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              לכל קמפיין פעיל: אבחון מלא + 20 כותרות חדשות + 4 תיאורים + מבנה מילות מפתח EXACT/PHRASE/BROAD + negatives + פעולת תקציב + תיקוני מעקב. מוכן להדבקה ב-Google Ads.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={runCampaignDoctor}
+              disabled={doctorLoading}
+              className="text-sm bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {doctorLoading ? '🧑‍⚕️ מאבחן... (עד 2 דקות)' : doctorResult ? '🔄 אבחן שוב' : '🧑‍⚕️ אבחן קמפיינים'}
+            </button>
+            {doctorResult && (
+              <button
+                onClick={() => setDoctorOpen(o => !o)}
+                className="text-sm bg-white border border-emerald-200 text-emerald-700 px-3 py-2 rounded-xl hover:bg-emerald-50"
+              >
+                {doctorOpen ? 'סגור' : 'פתח'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {doctorError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700" dir="rtl">
+            ❌ {doctorError}
+          </div>
+        )}
+
+        {doctorResult && doctorOpen && (
+          <div className="space-y-3" dir="rtl">
+            {(doctorResult.campaigns ?? []).map((c: any, i: number) => {
+              const priColor: Record<string, string> = {
+                critical: 'border-red-400 bg-red-50',
+                high:     'border-amber-400 bg-amber-50',
+                medium:   'border-blue-300 bg-blue-50',
+              }
+              const priLabel: Record<string, string> = {
+                critical: '🛑 קריטי',
+                high:     '🔥 גבוה',
+                medium:   'ℹ️ בינוני',
+              }
+              const chan = c.channel === 'meta' ? '📘 Meta' : '🔵 Google'
+              const expanded = doctorExpandedCampaign === c.name
+              const kp = c.keyword_plan || {}
+              return (
+                <div key={i} className={`card p-3 border-r-4 ${priColor[c.priority] ?? 'bg-surface-50'}`}>
+                  {/* Header row */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border">
+                        {priLabel[c.priority] ?? c.priority}
+                      </span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-white border">
+                        {chan}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setDoctorExpandedCampaign(expanded ? null : c.name)}
+                      className="text-xs text-emerald-700 hover:text-emerald-900 underline"
+                    >
+                      {expanded ? 'קפל' : 'הצג הכל'}
+                    </button>
+                  </div>
+
+                  {/* Campaign name */}
+                  <p className="text-sm font-bold text-surface-900 break-words mb-2">
+                    📢 {c.name}
+                  </p>
+
+                  {/* Diagnosis — always visible */}
+                  <div className="mb-2">
+                    <p className="text-xs font-semibold text-surface-700 mb-1">🔍 אבחון:</p>
+                    <ul className="text-xs space-y-0.5 list-disc pr-5">
+                      {(c.diagnosis ?? []).map((d: string, j: number) => (
+                        <li key={j}>{d}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Quick actions — always visible */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                    {c.budget_action && (
+                      <div className="bg-white/70 rounded px-2 py-1.5 text-xs">
+                        <strong>💰 תקציב:</strong> {c.budget_action.type}
+                        {c.budget_action.from_ils != null && c.budget_action.to_ils != null
+                          ? ` ₪${c.budget_action.from_ils} → ₪${c.budget_action.to_ils}` : ''}
+                        <p className="text-surface-600 mt-0.5">{c.budget_action.reason}</p>
+                      </div>
+                    )}
+                    {c.landing_action && (
+                      <div className="bg-white/70 rounded px-2 py-1.5 text-xs">
+                        <strong>🎯 עמוד נחיתה:</strong> {c.landing_action.type}
+                        {c.landing_action.new_url && (
+                          <p className="font-mono text-[10px] break-all mt-0.5">{c.landing_action.new_url}</p>
+                        )}
+                        <p className="text-surface-600 mt-0.5">{c.landing_action.reason}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {c.tracking_fixes?.length > 0 && (
+                    <div className="bg-amber-100/50 border border-amber-200 rounded px-2 py-1.5 text-xs mb-2">
+                      <p className="font-semibold text-amber-900">🛠️ תיקוני מעקב:</p>
+                      <ul className="list-disc pr-5 mt-0.5 space-y-0.5">
+                        {c.tracking_fixes.map((t: string, j: number) => (
+                          <li key={j}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {c.expected_improvement && (
+                    <p className="text-xs text-emerald-800 font-medium mb-1">
+                      📈 צפוי: {c.expected_improvement}
+                    </p>
+                  )}
+
+                  {/* Expanded — creative + full keyword plan */}
+                  {expanded && (
+                    <div className="mt-3 space-y-3 border-t border-emerald-200 pt-3">
+                      {c.new_headlines?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-surface-700 mb-1">
+                            ✍️ 20 כותרות חדשות (העתק ל-Google Ads):
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                            {c.new_headlines.map((h: string, j: number) => (
+                              <div key={j} className="text-xs bg-white rounded px-2 py-1 font-mono break-words">
+                                {j + 1}. {h}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {c.new_descriptions?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-surface-700 mb-1">
+                            📝 4 תיאורים חדשים:
+                          </p>
+                          <div className="space-y-1">
+                            {c.new_descriptions.map((d: string, j: number) => (
+                              <div key={j} className="text-xs bg-white rounded px-2 py-1.5 break-words">
+                                {j + 1}. {d}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {(kp.exact?.length || kp.phrase?.length || kp.broad?.length) && (
+                        <div>
+                          <p className="text-xs font-semibold text-surface-700 mb-1">
+                            🎯 מבנה מילות מפתח (3 רבדים):
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            {kp.exact?.length > 0 && (
+                              <div className="bg-white rounded p-2">
+                                <p className="text-[11px] font-bold text-emerald-700 mb-1">EXACT (כוונה גבוהה)</p>
+                                <div className="space-y-0.5">
+                                  {kp.exact.map((k: string, j: number) => (
+                                    <div key={j} className="text-[11px] font-mono break-words">{k}</div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {kp.phrase?.length > 0 && (
+                              <div className="bg-white rounded p-2">
+                                <p className="text-[11px] font-bold text-blue-700 mb-1">PHRASE (וריאציות)</p>
+                                <div className="space-y-0.5">
+                                  {kp.phrase.map((k: string, j: number) => (
+                                    <div key={j} className="text-[11px] font-mono break-words">{k}</div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {kp.broad?.length > 0 && (
+                              <div className="bg-white rounded p-2">
+                                <p className="text-[11px] font-bold text-amber-700 mb-1">BROAD (עם Smart Bidding)</p>
+                                <div className="space-y-0.5">
+                                  {kp.broad.map((k: string, j: number) => (
+                                    <div key={j} className="text-[11px] font-mono break-words">{k}</div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {kp.negatives?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-surface-700 mb-1">
+                            🚫 Negative keywords (הדבק ברמת הקמפיין):
+                          </p>
+                          <div className="bg-red-50 border border-red-200 rounded p-2">
+                            <div className="flex flex-wrap gap-1">
+                              {kp.negatives.map((k: string, j: number) => (
+                                <span key={j} className="text-[11px] font-mono bg-white rounded px-1.5 py-0.5 border border-red-200">
+                                  -{k.replace(/^-/, '')}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
