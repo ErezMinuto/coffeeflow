@@ -5800,6 +5800,280 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
     }
   }
 
+  // ── Campaign Doctor — per-campaign diagnosis + fix plan ─────────────────────
+  // Different from audit_campaigns (list of findings across all campaigns).
+  // Doctor takes each active campaign and produces a complete fix: diagnosis,
+  // 20 new headlines, 4 new descriptions, EXACT/PHRASE/BROAD keyword plan,
+  // negatives, budget action, landing action, tracking fixes, expected result.
+  // Ready to paste into Google Ads.
+  if (body.agent === "campaign_doctor") {
+    try {
+      const weekEnd2 = addDays(weekStart, 6);
+      const fourteenDaysAgo = subtractDays(weekEnd2, 13);
+
+      const [
+        { data: googleTrendRaw },
+        { data: googleAdsRaw },
+        { data: keywordsRaw },
+        { data: metaTrendRaw },
+      ] = await Promise.all([
+        supabase.from("google_campaigns")
+          .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,ctr,cpc,roas")
+          .eq("status", "ENABLED")
+          .gte("date", fourteenDaysAgo)
+          .order("date", { ascending: false }),
+        supabase.from("google_ads")
+          .select("ad_id,campaign_name,ad_group_name,status,ad_strength,headlines,descriptions,final_urls,impressions,clicks,conversions")
+          .eq("status", "ENABLED"),
+        supabase.from("keyword_ideas")
+          .select("keyword,competition,competition_index,avg_monthly_searches,low_top_bid_micros,high_top_bid_micros")
+          .order("avg_monthly_searches", { ascending: false })
+          .limit(100),
+        supabase.from("meta_ad_campaigns")
+          .select("campaign_id,name,status,objective,date,spend,impressions,clicks,conversions")
+          .eq("status", "ACTIVE")
+          .gte("date", fourteenDaysAgo)
+          .order("date", { ascending: false }),
+      ]);
+
+      // Group google trend by campaign, compute totals + tracking-gap flag
+      const googleByCampaign = new Map<string, any>();
+      for (const r of (googleTrendRaw ?? []) as any[]) {
+        const key = r.campaign_id;
+        let e = googleByCampaign.get(key);
+        if (!e) {
+          e = {
+            campaign_id: key, name: r.name, days: [],
+            totalSpend: 0, totalConvs: 0, totalImps: 0, totalClicks: 0,
+            totalConvValue: 0, daysWithConvsNoValue: 0,
+          };
+          googleByCampaign.set(key, e);
+        }
+        e.days.push(r);
+        e.totalSpend      += Number(r.cost) || 0;
+        e.totalConvs      += Number(r.conversions) || 0;
+        e.totalImps       += Number(r.impressions) || 0;
+        e.totalClicks     += Number(r.clicks) || 0;
+        e.totalConvValue  += Number(r.conversion_value) || 0;
+        if ((Number(r.conversions) || 0) > 0 && (Number(r.conversion_value) || 0) === 0) {
+          e.daysWithConvsNoValue++;
+        }
+      }
+
+      const metaByCampaign = new Map<string, any>();
+      for (const r of (metaTrendRaw ?? []) as any[]) {
+        const key = r.campaign_id;
+        let e = metaByCampaign.get(key);
+        if (!e) {
+          e = {
+            campaign_id: key, name: r.name, objective: r.objective, days: [],
+            totalSpend: 0, totalConvs: 0, totalImps: 0, totalClicks: 0,
+          };
+          metaByCampaign.set(key, e);
+        }
+        e.days.push(r);
+        e.totalSpend  += Number(r.spend) || 0;
+        e.totalConvs  += Number(r.conversions) || 0;
+        e.totalImps   += Number(r.impressions) || 0;
+        e.totalClicks += Number(r.clicks) || 0;
+      }
+
+      const adsByCampaign = new Map<string, any[]>();
+      for (const ad of (googleAdsRaw ?? []) as any[]) {
+        const n = ad.campaign_name;
+        if (!adsByCampaign.has(n)) adsByCampaign.set(n, []);
+        adsByCampaign.get(n)!.push(ad);
+      }
+
+      // Budget-cap heuristic: flat low impression-share across many keywords
+      const kwSample = ((keywordsRaw ?? []) as any[]).slice(0, 40);
+      const lowISCount = kwSample.filter(k => (Number(k.competition_index) || 0) <= 15).length;
+      const budgetCapSignal = lowISCount >= 5 && kwSample.length >= 8;
+
+      const campaignsForPrompt: any[] = [];
+
+      for (const [, g] of googleByCampaign) {
+        const ads = adsByCampaign.get(g.name) ?? [];
+        const cpa = g.totalConvs > 0 ? g.totalSpend / g.totalConvs : null;
+        const cvr = g.totalClicks > 0 ? (g.totalConvs / g.totalClicks) * 100 : 0;
+        const ctr = g.totalImps > 0 ? (g.totalClicks / g.totalImps) * 100 : 0;
+        const trackingGap = g.totalConvs > 0
+          && (g.daysWithConvsNoValue / Math.max(g.days.length, 1)) >= 0.5;
+        const weakStrength = ads.some((a: any) =>
+          ["ממוצע", "Average", "פחות מהממוצע", "Below average", "Poor"].includes(a.ad_strength || ""));
+
+        campaignsForPrompt.push({
+          channel: "google",
+          name: g.name,
+          totals_14d: {
+            spend: Math.round(g.totalSpend * 100) / 100,
+            conversions: Math.round(g.totalConvs * 10) / 10,
+            conversion_value: Math.round(g.totalConvValue * 100) / 100,
+            impressions: g.totalImps,
+            clicks: g.totalClicks,
+            cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            cvr_pct: Math.round(cvr * 100) / 100,
+            ctr_pct: Math.round(ctr * 100) / 100,
+            daily_avg_spend: Math.round((g.totalSpend / Math.max(g.days.length, 1)) * 100) / 100,
+          },
+          flags: {
+            conversion_value_tracking_gap: trackingGap,
+            days_with_conv_but_no_value: g.daysWithConvsNoValue,
+            total_days_tracked: g.days.length,
+            weak_ad_strength: weakStrength,
+            budget_cap_suspected: budgetCapSignal,
+          },
+          ads: ads.map((a: any) => ({
+            ad_group:     a.ad_group_name,
+            ad_strength:  a.ad_strength,
+            headlines:    a.headlines ?? [],
+            descriptions: a.descriptions ?? [],
+            final_urls:   a.final_urls ?? [],
+            impressions:  a.impressions,
+            clicks:       a.clicks,
+            conversions:  a.conversions,
+          })),
+          daily_trend: g.days.slice(0, 14).map((d: any) => ({
+            date: d.date,
+            impressions: d.impressions,
+            clicks: d.clicks,
+            cost: Number(d.cost).toFixed(2),
+            conversions: d.conversions,
+            conversion_value: d.conversion_value,
+          })),
+        });
+      }
+
+      for (const [, m] of metaByCampaign) {
+        const cpa = m.totalConvs > 0 ? m.totalSpend / m.totalConvs : null;
+        campaignsForPrompt.push({
+          channel: "meta",
+          name: m.name,
+          objective: m.objective,
+          totals_14d: {
+            spend: Math.round(m.totalSpend * 100) / 100,
+            conversions: m.totalConvs,
+            impressions: m.totalImps,
+            clicks: m.totalClicks,
+            cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            daily_avg_spend: Math.round((m.totalSpend / Math.max(m.days.length, 1)) * 100) / 100,
+          },
+          daily_trend: m.days.slice(0, 14).map((d: any) => ({
+            date: d.date,
+            impressions: d.impressions,
+            clicks: d.clicks,
+            spend: Number(d.spend).toFixed(2),
+            conversions: d.conversions,
+          })),
+        });
+      }
+
+      const keywordDataset = kwSample.map((k: any) => ({
+        keyword: k.keyword,
+        match_type: k.competition,
+        impressions: k.avg_monthly_searches,
+        impression_share_pct: k.competition_index,
+        cpc_low:  k.low_top_bid_micros  ? Math.round((k.low_top_bid_micros  / 1e6) * 100) / 100 : null,
+        cpc_high: k.high_top_bid_micros ? Math.round((k.high_top_bid_micros / 1e6) * 100) / 100 : null,
+      }));
+
+      const sysPrompt = `אתה דוקטור הקמפיינים של מינוטו קפה — מומחה Google Ads + Meta Ads שתפקידו לאבחן כל קמפיין פעיל ולהפיק תכנית תיקון מוכנה להעתקה ישירות לפלטפורמה.
+
+הקונטקסט העסקי:
+• מינוטו היא קלייה בוטיק ברחובות, מוכרת פולי קפה ספשלטי לחובבי קפה ביתיים + עסקים קטנים.
+• המכירה דרך minuto.co.il + WooCommerce. AOV ~₪150. Target CPA ₪20-40. Target ROAS 2-3x.
+• אסור trademark של מתחרים בכותרות (נספרסו, סטרבקס, עלית, לוואצה, ג'ייקובס) — אלא אם הקמפיין הוא קפסולות תואמות (capsules/compatible).
+
+לכל קמפיין פעיל הפק JSON מלא:
+
+1. **diagnosis** — 2-5 נקודות מה הבעיה האמיתית. דוגמאות:
+   • "10 ימים עם המרות אבל ללא conversion_value — תקלת מעקב ערך"
+   • "CTR 3.3% טוב, CVR 0.4% — הבעיה בעמוד הנחיתה לא במודעה"
+   • "Impression share 10% על כל המילים — התקציב היומי נגמר מוקדם"
+   • "כל המילים BROAD — מפספס שליטה, מושך queries רחבים לא רלוונטיים"
+
+2. **priority** — critical|high|medium לפי השפעה על רווח.
+
+3. **new_headlines** — בדיוק 20 כותרות (עד 30 תווים, עברית), מגוון זוויות: טריות / מומחיות / חברתי / כאב-ניגוד / הצעה / CTA / מוצר ספציפי.
+
+4. **new_descriptions** — בדיוק 4 תיאורים (עד 90 תווים), כל אחד זווית אחרת.
+
+5. **keyword_plan** (רק Google):
+   • exact:  6-10 מילים בצורה [keyword] — הכוונה הגבוהה
+   • phrase: 6-10 מילים בצורה "keyword" — וריאציות
+   • broad:  0-2 מילים — רק עם Smart Bidding
+   • negatives: 15-30 (ירוקים, רובוסטה, נספרסו, קפסולה, מכונה, זול, חינם, קורס, סטרבקס, ג'ייקובס, עלית, decaf, נטול, ...)
+
+6. **budget_action** — פעולה אחת: { type: raise_budget|lower_budget|pause|keep|raise_bid|switch_bid_strategy, from_ils?, to_ils?, reason }
+
+7. **landing_action** — { type: keep|change_to|test_ab, new_url?, reason }
+
+8. **tracking_fixes** — רק אם flag של conversion_value_tracking_gap. רשימת פעולות:
+   • בדוק ב-Google Ads → Tools → Conversions שהערך מוגדר "Use different values for each conversion"
+   • ודא ב-GTM/GA4 שאירוע הרכישה מעביר שדה value אמיתי מ-WooCommerce
+   • הפעל Enhanced Conversions
+
+9. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
+
+כללים:
+• אסור להמציא מספרים שלא ראית בנתונים. אם אין — אמור "לא ידוע עד בדיקה ידנית".
+• אסור להמליץ על מילות מפתח שכבר רצות BROAD בדאטה-סט (הן כבר בחשבון).
+• כותרות: עברית שיווקית חדה, בלי קלישאות שחוקות.
+• החזר JSON בלבד — בלי טקסט מסביב, בלי markdown fences.`;
+
+      const userMsg2 = `=== קמפיינים פעילים (14 ימים אחרונים) ===\n${JSON.stringify(campaignsForPrompt, null, 2).slice(0, 18000)}\n\n=== מילות מפתח בחשבון (עם IS + match type) ===\n${JSON.stringify(keywordDataset, null, 2).slice(0, 3000)}\n\nהחזר JSON בפורמט:\n{\n  "campaigns": [\n    {\n      "name": "שם מדויק מהרשימה",\n      "channel": "google|meta",\n      "priority": "critical|high|medium",\n      "diagnosis": ["..."],\n      "new_headlines": ["..."],\n      "new_descriptions": ["..."],\n      "keyword_plan": { "exact": [], "phrase": [], "broad": [], "negatives": [] },\n      "budget_action": { "type": "...", "from_ils": 0, "to_ils": 0, "reason": "..." },\n      "landing_action": { "type": "...", "new_url": "...", "reason": "..." },\n      "tracking_fixes": ["..."],\n      "expected_improvement": "..."\n    }\n  ]\n}`;
+
+      // Sonnet-4 (not 4.5) — the 4.5 model consistently blows the 150s
+      // Supabase gateway timeout on ~20k-char input prompts. Sonnet-4 is
+      // 2-3x faster for this workload with equivalent output quality.
+      const { text } = await callClaude(
+        "claude-sonnet-4-20250514",
+        sysPrompt,
+        userMsg2,
+        { maxTokens: 7000, timeoutMs: 135_000 },
+      );
+
+      let parsed: any = null;
+      try {
+        const cleaned = text.replace(/```json\n?|```\n?/g, "").trim();
+        parsed = JSON.parse(cleaned);
+      } catch (_e) {
+        return new Response(JSON.stringify({
+          success: false, error: "claude response not valid json", raw: text.slice(0, 600),
+        }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+
+      // Whitelist — drop hallucinated campaign names
+      const realNames = new Set<string>([
+        ...Array.from(googleByCampaign.values()).map(c => c.name),
+        ...Array.from(metaByCampaign.values()).map(c => c.name),
+      ]);
+      const filtered = ((parsed?.campaigns ?? []) as any[]).filter((c: any) => {
+        if (!c?.name || !realNames.has(c.name)) {
+          console.warn(`[campaign_doctor] dropping unknown campaign: ${c?.name}`);
+          return false;
+        }
+        return true;
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        analyzed_at: new Date().toISOString(),
+        campaigns_analyzed: filtered.length,
+        campaigns: filtered,
+        signals: {
+          google_active: googleByCampaign.size,
+          meta_active: metaByCampaign.size,
+          budget_cap_suspected: budgetCapSignal,
+        },
+      }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[campaign_doctor] error:", err?.message);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
   if (body.agent === "advisor_chat") {
     const question = (body as any).question as string | undefined;
     const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: string }>;
