@@ -6008,10 +6008,13 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
 7. **landing_action** — { type: keep|change_to|test_ab, new_url?, reason }
 
-8. **tracking_fixes** — רק אם flag של conversion_value_tracking_gap. רשימת פעולות:
-   • בדוק ב-Google Ads → Tools → Conversions שהערך מוגדר "Use different values for each conversion"
-   • ודא ב-GTM/GA4 שאירוע הרכישה מעביר שדה value אמיתי מ-WooCommerce
-   • הפעל Enhanced Conversions
+8. **tracking_fixes** — רק אם flag של conversion_value_tracking_gap. רשימת פעולות ספציפיות עם נתיבים עדכניים ב-UI:
+   • ב-Google Ads לחץ על 🎯 Goals בסרגל הצד → Conversions → Summary → לחץ על "Purchase/רכישה" → ב-Value הגדר "Use different values for each conversion"
+   • חלופה: Tools & settings (🔧 למעלה מימין) → Measurement → Conversions — מגיע לאותו מקום
+   • ודא ש-Count = "Every" (לא "One") כדי שהזמנות חוזרות ייספרו
+   • בדוק Attribution model — אם זה "Last click" עבור ל-"Data-driven" (דורש 300+ המרות/30 ימים)
+   • פתח Google Tag Assistant בדפדפן, בצע רכישת בדיקה, ובדוק שאירוע purchase כולל שדה value עם מספר אמיתי. אם אין value — הבעיה ב-GTM/GA4/WooCommerce plugin, לא בהגדרות Google Ads
+   • הפעל Enhanced Conversions (ב-Conversion action → Enhanced conversions toggle)
 
 9. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
 
