@@ -36,11 +36,12 @@ jobs:
       fail-fast: false  # one failed source shouldn't block the others
       matrix:
         function:
-          - google-sync          # Google Ads — campaigns, ads, keywords, conversions
-          - google-search-sync   # Google Search Console — queries, clicks, impressions
-          - meta-sync            # Meta Ads + Instagram organic
-          - woo-orders-sync      # WooCommerce orders (RFM + LTV depend on fresh data)
-          - rfm-sync             # Customer RFM segmentation (runs after orders refresh)
+          # google-sync, meta-sync, woo-orders-sync disabled — they hit paid APIs
+          # (Google Ads API quota, Meta Graph insights, WooCommerce host bandwidth)
+          # and the owner prefers to trigger them manually from the dashboard.
+          # Re-enable by adding them back to this list.
+          - google-search-sync   # Google Search Console — free, keep on cron
+          - rfm-sync             # Customer RFM segmentation — local compute, free
     steps:
       - name: Trigger ${{ matrix.function }}
         run: |
