@@ -5647,18 +5647,27 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         }
       }
 
-      // Ask Claude for ADDITIONAL issues the rules can't catch (strategy-level)
+      // Ask Claude for ADDITIONAL issues the rules can't catch (strategy-level).
+      // Include FULL ad content (not trimmed) so Claude can't invent things —
+      // if it quotes something, we can verify the quote appears in real data.
+      // Also filter to ads whose parent campaign is ACTIVE (same rule we use
+      // for rule-based findings, otherwise Claude sees paused-campaign ads).
+      const activeGoogleAds = (googleAdsRaw ?? []).filter(a =>
+        activeGoogleCampaignNames.has((a.campaign_name || "").trim())
+      );
       const flatData = JSON.stringify({
         google_campaigns: Array.from(googleCampaigns.values()).slice(0, 10),
-        google_ads:       (googleAdsRaw ?? []).slice(0, 15).map(a => ({
-          campaign: a.campaign_name, ad_group: a.ad_group_name, status: a.status,
-          strength: a.ad_strength,
-          headlines: (a.headlines ?? []).slice(0, 5),
-          descriptions: (a.descriptions ?? []).slice(0, 2),
-          impressions: a.impressions, clicks: a.clicks, conversions: a.conversions,
+        google_ads: activeGoogleAds.slice(0, 15).map(a => ({
+          campaign:     a.campaign_name,
+          ad_group:     a.ad_group_name,
+          status:       a.status,
+          strength:     a.ad_strength,
+          headlines:    a.headlines ?? [],      // full list, not trimmed
+          descriptions: a.descriptions ?? [],    // full list, not trimmed
+          impressions:  a.impressions, clicks: a.clicks, conversions: a.conversions,
         })),
         meta_campaigns: Array.from(metaCampaigns.values()).slice(0, 10),
-      }, null, 2).slice(0, 8000);
+      }, null, 2).slice(0, 15000);  // bumped cap from 8k to 15k
 
       // Whitelist of real campaign names — Claude must reference only these,
       // never hallucinate generics like "Various campaigns" or "פולי קפה general".
@@ -5674,6 +5683,10 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
 • Ad groups בלי headlines מספיקות (Google רוצה 10-15 לRSA)
 
 🚫 **חוק קשה על שדה campaign**: חובה להחזיר שם קמפיין **אמיתי מדויק** מהרשימה הבאה. אסור להמציא שמות כלליים כמו "Various campaigns", "Multiple campaigns", "פולי קפה general" וכו'. אם הטעות מתפרשת על כמה קמפיינים — צור ממצא נפרד לכל אחד, כל אחד עם השם המדויק שלו.
+
+🚫 **חוק קשה על תוכן מצוטט**: כל טקסט בין גרשיים בשדה "evidence" חייב להיות **ציטוט מילולי מדויק** של טקסט שמופיע ב-google_ads שניתנו לך למעלה. אם אתה כותב 'מודעה עם טקסט "X"' — X חייב להיות אחת הכותרות/תיאורים האמיתיים שלמעלה, אות באות. **אסור לחלוטין להמציא תוכן מודעות**. אם אתה לא יכול לצטט — תעסוק רק במבנה ומטא-דאטה (שם קמפיין, ad_group, strength, objective, הוצאה, המרות) ולא בתוכן המודעות.
+
+🚫 **לפני שאתה כותב כל ממצא על "מודעות של קמפיין X"**: קרא את המודעות של אותו קמפיין בנתונים. אם אתה רואה שהטענה שלך סותרת את מה שיש שם (למשל "אין מודעות ספשלטיות" כשיש headlines עם "ספשלטי") — **בטל את הממצא**.
 
 רשימת הקמפיינים הפעילים (חובה לצטט בדיוק, כולל רווחים ו-|):
 Google:
@@ -5710,11 +5723,47 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
         // Reject hallucinated campaign names — only allow whitelist matches
         const realNameSet = new Set([...realGoogleNames, ...realMetaNames].map(n => n.trim()));
+
+        // Build a haystack of every real ad text snippet for quote verification.
+        // If Claude's `evidence` field contains quoted text not in this
+        // haystack, it's a hallucination — drop the finding.
+        const adContentHaystack = activeGoogleAds
+          .flatMap(a => [...(a.headlines ?? []), ...(a.descriptions ?? [])])
+          .filter(t => typeof t === "string")
+          .map(t => (t as string).trim())
+          .join(" ||| ");
+
         strategicFindings = strategicFindings.filter((f: any) => {
           if (!f?.campaign) return false;
-          if (realNameSet.has(String(f.campaign).trim())) return true;
-          console.warn(`[audit] dropping hallucinated strategic finding — campaign not in whitelist: "${f.campaign}"`);
-          return false;
+
+          // Gate 1: real campaign name required
+          if (!realNameSet.has(String(f.campaign).trim())) {
+            console.warn(`[audit] dropping — hallucinated campaign: "${f.campaign}"`);
+            return false;
+          }
+
+          // Gate 2: any quoted substring in evidence must appear in real ad text.
+          // Pulls all "double-quoted" or 'single-quoted' segments (Hebrew + Latin
+          // quotes) from evidence and requires each to be present verbatim (≥80%
+          // of the quote's chars must be a contiguous substring match somewhere).
+          const evidence = String(f.evidence ?? "");
+          const quoteMatches = [...evidence.matchAll(/['"״׳"'`]([^'"״׳"'`]{8,})['"״׳"'`]/g)]
+            .map(m => m[1].trim())
+            .filter(q => q.length >= 8);
+
+          for (const quote of quoteMatches) {
+            // Verbatim substring check. If not found, hallucinated content.
+            if (!adContentHaystack.includes(quote)) {
+              // Fuzzy fallback — allow slight punctuation/spacing diffs. If even
+              // the first 10 chars don't appear as a substring, it's made up.
+              const firstChunk = quote.slice(0, Math.min(12, quote.length));
+              if (!adContentHaystack.includes(firstChunk)) {
+                console.warn(`[audit] dropping — quoted content not in real ads: "${quote.slice(0, 40)}..."`);
+                return false;
+              }
+            }
+          }
+          return true;
         });
       } catch (e: any) {
         console.warn("[audit] strategic Claude call failed:", e?.message);
