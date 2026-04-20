@@ -5816,6 +5816,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         { data: googleAdsRaw },
         { data: keywordsRaw },
         { data: metaTrendRaw },
+        { data: wooOrdersRaw },
       ] = await Promise.all([
         supabase.from("google_campaigns")
           .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,ctr,cpc,roas")
@@ -5834,6 +5835,13 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           .eq("status", "ACTIVE")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
+        // Independent ground-truth for what Google "should" be counting as
+        // real purchases — lets us detect when Google is counting 10× more
+        // conversions than actual orders (= soft actions leaking into Primary).
+        supabase.from("woo_orders")
+          .select("order_date,utm_source,utm_medium")
+          .gte("order_date", fourteenDaysAgo)
+          .in("status", ["completed", "processing"]),
       ]);
 
       // Group google trend by campaign, compute totals + tracking-gap flag
@@ -5890,6 +5898,26 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       const lowISCount = kwSample.filter(k => (Number(k.competition_index) || 0) <= 15).length;
       const budgetCapSignal = lowISCount >= 5 && kwSample.length >= 8;
 
+      // Soft-conversion-primary detector — the pattern we hit on 2026-04-20:
+      // Google Ads counts Page views + Add to cart + Begin checkout + Purchase
+      // all as "Primary" conversions. Result: `conversions` column is 10× the
+      // real purchase count, CVR looks fake-high, `conversion_value` is zero
+      // on most days because only Purchase carries value.
+      //
+      // Signal: total Google attributed orders (WooCommerce with utm_source=google)
+      // << total conversions reported by Google campaigns.
+      const wooGoogleOrders = ((wooOrdersRaw ?? []) as any[])
+        .filter(o => (o.utm_source ?? "").toLowerCase().includes("google"))
+        .length;
+      const totalGoogleConversions = Array.from(googleByCampaign.values())
+        .reduce((s, g) => s + (g.totalConvs || 0), 0);
+      // At least 3× inflation AND at least 10 reported conversions before we
+      // flag it (avoids false positives on tiny accounts).
+      const softConversionPrimarySuspected =
+        totalGoogleConversions >= 10 &&
+        wooGoogleOrders >= 0 &&
+        totalGoogleConversions >= Math.max(wooGoogleOrders * 3, wooGoogleOrders + 20);
+
       const campaignsForPrompt: any[] = [];
 
       for (const [, g] of googleByCampaign) {
@@ -5922,6 +5950,9 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             total_days_tracked: g.days.length,
             weak_ad_strength: weakStrength,
             budget_cap_suspected: budgetCapSignal,
+            soft_conversion_primary_suspected: softConversionPrimarySuspected,
+            google_reported_conversions_14d: Math.round(totalGoogleConversions * 10) / 10,
+            woo_google_orders_14d: wooGoogleOrders,
           },
           ads: ads.map((a: any) => ({
             ad_group:     a.ad_group_name,
@@ -6008,13 +6039,17 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
 7. **landing_action** — { type: keep|change_to|test_ab, new_url?, reason }
 
-8. **tracking_fixes** — רק אם flag של conversion_value_tracking_gap. רשימת פעולות ספציפיות עם נתיבים עדכניים ב-UI:
-   • ב-Google Ads לחץ על 🎯 Goals בסרגל הצד → Conversions → Summary → לחץ על "Purchase/רכישה" → ב-Value הגדר "Use different values for each conversion"
-   • חלופה: Tools & settings (🔧 למעלה מימין) → Measurement → Conversions — מגיע לאותו מקום
-   • ודא ש-Count = "Every" (לא "One") כדי שהזמנות חוזרות ייספרו
-   • בדוק Attribution model — אם זה "Last click" עבור ל-"Data-driven" (דורש 300+ המרות/30 ימים)
-   • פתח Google Tag Assistant בדפדפן, בצע רכישת בדיקה, ובדוק שאירוע purchase כולל שדה value עם מספר אמיתי. אם אין value — הבעיה ב-GTM/GA4/WooCommerce plugin, לא בהגדרות Google Ads
-   • הפעל Enhanced Conversions (ב-Conversion action → Enhanced conversions toggle)
+8. **tracking_fixes** — בחר פרופיל אחד לפי הflags (אסור להחזיר את שני הפרופילים):
+
+   אם flag.soft_conversion_primary_suspected=true: ${totalGoogleConversions.toFixed(0)} "המרות" Google מול ${wooGoogleOrders} הזמנות אמיתיות — Page views+Add to cart+Begin checkout מוגדרים כ-Primary conversion ולכן הנתונים מנופחים ו-ROAS אפס. תיקון:
+   • Goals → Conversions → Summary → לטבלת Conversion actions → לכל פעולה חוץ מ-Purchases: Goal type → Secondary action (observation only)
+   • השאר Purchases בתור Primary
+   • עבור bid strategy ל-Target ROAS 2.5 או Maximize conversion value
+
+   אם רק flag.conversion_value_tracking_gap=true:
+   • Goals → Summary → Purchases → Value = "Use different values for each conversion"
+   • Count = Every, Attribution = Data-driven
+   • Tag Assistant: ודא שפעולת purchase מעבירה value מספרי. אם לא — GTM/GA4/WooCommerce plugin.
 
 9. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
 
@@ -6068,6 +6103,9 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           google_active: googleByCampaign.size,
           meta_active: metaByCampaign.size,
           budget_cap_suspected: budgetCapSignal,
+          soft_conversion_primary_suspected: softConversionPrimarySuspected,
+          google_reported_conversions_14d: Math.round(totalGoogleConversions * 10) / 10,
+          woo_google_orders_14d: wooGoogleOrders,
         },
       }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
