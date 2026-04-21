@@ -1201,14 +1201,30 @@ async function scrapeCompetitorPage(url: string, timeout = 10000): Promise<strin
   }
 }
 
+// U+FFFD replacement char — appears when a response had invalid UTF-8 bytes
+// (Google's Firefox suggest endpoint intermittently returns ISO-8859 Hebrew).
+// Any suggestion containing one of these has lost its content and is useless.
+function hasEncodingDamage(s: string): boolean {
+  return typeof s !== "string" || s.length === 0 || s.includes("\uFFFD");
+}
+
 async function fetchGoogleSuggest(query: string): Promise<string[]> {
   try {
     const url = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(query)}&hl=he&gl=il`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return [];
-    const json = await res.json();
-    // Firefox suggest returns [query, [suggestions]]
-    return Array.isArray(json[1]) ? json[1].slice(0, 8) : [];
+    // Read as ArrayBuffer + force UTF-8 decode. Google's Firefox suggest
+    // endpoint sometimes sends Hebrew in non-UTF-8 bytes even when the
+    // Content-Type header claims UTF-8 — res.json() silently mojibakes them
+    // into U+FFFD. Decoding explicitly with fatal:false lets us at least
+    // see what we got; the hasEncodingDamage filter drops the bad ones.
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+    const json = JSON.parse(text);
+    const suggestions = Array.isArray(json[1]) ? json[1] : [];
+    // Drop any suggestion that came back with replacement chars — better to
+    // return fewer clean keywords than pollute novel_keywords with "ksp ??? ????"
+    return suggestions.filter((s: unknown): s is string => typeof s === "string" && !hasEncodingDamage(s)).slice(0, 8);
   } catch {
     return [];
   }
@@ -1273,7 +1289,9 @@ ${existingSeeds.map(s => `- ${s}`).join("\n")}
     const raw  = json.content?.[0]?.text ?? "";
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
-    return Array.isArray(parsed.queries) ? parsed.queries.filter((q: any) => typeof q === "string" && q.length > 8).slice(0, 50) : [];
+    return Array.isArray(parsed.queries)
+      ? parsed.queries.filter((q: any) => typeof q === "string" && q.length > 8 && !hasEncodingDamage(q)).slice(0, 50)
+      : [];
   } catch (e: any) {
     console.error("[llm-brainstorm] failed:", e?.message);
     return [];
@@ -4488,6 +4506,13 @@ ${(existingBlogPosts ?? []).length > 0
       // Drop novel keywords that were already marked done/skipped before
       // we even build the synthetic recs. Logs each drop for visibility.
       const usable = novelList.filter(n => {
+        // Drop any novel keyword with replacement chars — legacy rows from
+        // before the encoding-damage filter was in place may still contain
+        // "ksp ??? ????"-style broken Hebrew that we don't want to recommend.
+        if (hasEncodingDamage(n.keyword ?? "")) {
+          console.log(`[organic] skipping encoding-damaged keyword: ${JSON.stringify(n.keyword)}`);
+          return false;
+        }
         if (isAlreadyHandled(n.keyword)) {
           console.log(`[organic] skipping already-handled novel keyword: "${n.keyword}"`);
           return false;
