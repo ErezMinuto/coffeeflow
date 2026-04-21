@@ -5930,6 +5930,20 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const weakStrength = ads.some((a: any) =>
           ["ממוצע", "Average", "פחות מהממוצע", "Below average", "Poor"].includes(a.ad_strength || ""));
 
+        // Per-day CPA for the last 14 days — lets the doctor's prompt (and
+        // the UI) show "current CPA" vs "14-day CPA" and flag kill-criteria
+        // triggers ("5 consecutive days over ₪X").
+        const sortedDays = [...g.days].sort((a, b) => a.date.localeCompare(b.date));
+        const dailyCpa = sortedDays.map((d: any) => {
+          const cost = Number(d.cost) || 0;
+          const conv = Number(d.conversions) || 0;
+          return { date: d.date, cpa: conv > 0 ? Math.round((cost / conv) * 100) / 100 : null, cost, conv };
+        });
+        const last5 = dailyCpa.slice(-5);
+        const last5Cost = last5.reduce((s, d) => s + d.cost, 0);
+        const last5Conv = last5.reduce((s, d) => s + d.conv, 0);
+        const cpa5 = last5Conv > 0 ? Math.round((last5Cost / last5Conv) * 100) / 100 : null;
+
         campaignsForPrompt.push({
           channel: "google",
           name: g.name,
@@ -5940,10 +5954,12 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             impressions: g.totalImps,
             clicks: g.totalClicks,
             cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            cpa_last_5_days: cpa5,
             cvr_pct: Math.round(cvr * 100) / 100,
             ctr_pct: Math.round(ctr * 100) / 100,
             daily_avg_spend: Math.round((g.totalSpend / Math.max(g.days.length, 1)) * 100) / 100,
           },
+          daily_cpa: dailyCpa.map(d => ({ date: d.date, cpa: d.cpa })),
           flags: {
             conversion_value_tracking_gap: trackingGap,
             days_with_conv_but_no_value: g.daysWithConvsNoValue,
@@ -5977,6 +5993,17 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
       for (const [, m] of metaByCampaign) {
         const cpa = m.totalConvs > 0 ? m.totalSpend / m.totalConvs : null;
+        const sortedMetaDays = [...m.days].sort((a, b) => a.date.localeCompare(b.date));
+        const metaDailyCpa = sortedMetaDays.map((d: any) => {
+          const spend = Number(d.spend) || 0;
+          const conv = Number(d.conversions) || 0;
+          return { date: d.date, cpa: conv > 0 ? Math.round((spend / conv) * 100) / 100 : null, spend, conv };
+        });
+        const metaLast5 = metaDailyCpa.slice(-5);
+        const metaLast5Spend = metaLast5.reduce((s, d) => s + d.spend, 0);
+        const metaLast5Conv  = metaLast5.reduce((s, d) => s + d.conv, 0);
+        const metaCpa5 = metaLast5Conv > 0 ? Math.round((metaLast5Spend / metaLast5Conv) * 100) / 100 : null;
+
         campaignsForPrompt.push({
           channel: "meta",
           name: m.name,
@@ -5987,8 +6014,10 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             impressions: m.totalImps,
             clicks: m.totalClicks,
             cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            cpa_last_5_days: metaCpa5,
             daily_avg_spend: Math.round((m.totalSpend / Math.max(m.days.length, 1)) * 100) / 100,
           },
+          daily_cpa: metaDailyCpa.map(d => ({ date: d.date, cpa: d.cpa })),
           daily_trend: m.days.slice(0, 14).map((d: any) => ({
             date: d.date,
             impressions: d.impressions,

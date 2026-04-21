@@ -2648,6 +2648,34 @@ export default function AdvisorPage() {
                     📢 {c.name}
                   </p>
 
+                  {/* Current KPIs — always visible, top of card */}
+                  {c.totals_14d && (
+                    <div className="grid grid-cols-3 gap-1.5 mb-3 text-center">
+                      <div className="bg-white/80 rounded px-2 py-1.5">
+                        <p className="text-[10px] text-surface-500">CPA · 5 ימים</p>
+                        <p className="text-sm font-bold font-mono text-surface-900">
+                          {c.totals_14d.cpa_last_5_days != null
+                            ? `₪${c.totals_14d.cpa_last_5_days.toFixed(2)}`
+                            : '—'}
+                        </p>
+                      </div>
+                      <div className="bg-white/80 rounded px-2 py-1.5">
+                        <p className="text-[10px] text-surface-500">CPA · 14 ימים</p>
+                        <p className="text-sm font-bold font-mono text-surface-900">
+                          {c.totals_14d.cpa != null
+                            ? `₪${c.totals_14d.cpa.toFixed(2)}`
+                            : '—'}
+                        </p>
+                      </div>
+                      <div className="bg-white/80 rounded px-2 py-1.5">
+                        <p className="text-[10px] text-surface-500">הוצאה · 14 ימים</p>
+                        <p className="text-sm font-bold font-mono text-surface-900">
+                          ₪{(c.totals_14d.spend ?? 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Diagnosis — always visible */}
                   <div className="mb-2">
                     <p className="text-xs font-semibold text-surface-700 mb-1">🔍 אבחון:</p>
