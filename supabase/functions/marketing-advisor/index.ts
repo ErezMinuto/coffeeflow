@@ -6025,15 +6025,15 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
 2. **priority** — critical|high|medium לפי השפעה על רווח.
 
-3. **new_headlines** — בדיוק 20 כותרות (עד 30 תווים, עברית), מגוון זוויות: טריות / מומחיות / חברתי / כאב-ניגוד / הצעה / CTA / מוצר ספציפי.
+3. **new_headlines** — בדיוק 12 כותרות (עד 30 תווים, עברית), מגוון זוויות: טריות / מומחיות / חברתי / כאב-ניגוד / הצעה / CTA / מוצר ספציפי.
 
-4. **new_descriptions** — בדיוק 4 תיאורים (עד 90 תווים), כל אחד זווית אחרת.
+4. **new_descriptions** — בדיוק 3 תיאורים (עד 90 תווים), כל אחד זווית אחרת.
 
 5. **keyword_plan** (רק Google):
-   • exact:  6-10 מילים בצורה [keyword] — הכוונה הגבוהה
-   • phrase: 6-10 מילים בצורה "keyword" — וריאציות
+   • exact:  5-8 מילים בצורה [keyword] — הכוונה הגבוהה
+   • phrase: 5-8 מילים בצורה "keyword" — וריאציות
    • broad:  0-2 מילים — רק עם Smart Bidding
-   • negatives: 15-30 (ירוקים, רובוסטה, נספרסו, קפסולה, מכונה, זול, חינם, קורס, סטרבקס, ג'ייקובס, עלית, decaf, נטול, ...)
+   • negatives: 12-20 (ירוקים, רובוסטה, נספרסו, קפסולה, מכונה, זול, חינם, קורס, סטרבקס, decaf, נטול, ...)
 
 6. **budget_action** — פעולה אחת: { type: raise_budget|lower_budget|pause|keep|raise_bid|switch_bid_strategy, from_ils?, to_ils?, reason }
 
@@ -6064,11 +6064,14 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       // Sonnet-4 (not 4.5) — the 4.5 model consistently blows the 150s
       // Supabase gateway timeout on ~20k-char input prompts. Sonnet-4 is
       // 2-3x faster for this workload with equivalent output quality.
+      // Prompt asks for 12 headlines + 3 descriptions per campaign (reduced
+      // from 20/4) to fit in the timeout; max_tokens 7500 gives enough room
+      // for ~5 campaigns of Hebrew output without truncation.
       const { text } = await callClaude(
         "claude-sonnet-4-20250514",
         sysPrompt,
         userMsg2,
-        { maxTokens: 7000, timeoutMs: 135_000 },
+        { maxTokens: 7500, timeoutMs: 135_000 },
       );
 
       let parsed: any = null;
