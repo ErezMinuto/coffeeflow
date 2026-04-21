@@ -120,23 +120,45 @@ serve(async (req) => {
     if (typeof b.days_back === "number" && b.days_back > 0) forceDaysBack = b.days_back;
   } catch { /* use default */ }
 
+  // Find the highest woo_order_id already stored. Using ID instead of
+  // order_date eliminates the gap bug where:
+  //   - past sync failures left some days missing
+  //   - latest order_date in DB is advanced by later syncs
+  //   - incremental sync "after latest_date" then permanently skips the
+  //     missing days because they sit BETWEEN the last-in-DB and now
+  // Order IDs are monotonically increasing in Woo, so "max_id + 1 onwards"
+  // catches every order regardless of date or past failures.
+  const { data: maxIdRow } = await supabase
+    .from("woo_orders")
+    .select("woo_order_id")
+    .order("woo_order_id", { ascending: false })
+    .limit(1)
+    .single();
+  const lastSyncedId = (maxIdRow as any)?.woo_order_id ?? 0;
+
   let after: string;
   if (forceDaysBack !== null) {
     after = new Date(Date.now() - forceDaysBack * 86400_000).toISOString();
   } else {
-    // Incremental sync — start from last stored order
-    const { data: latest } = await supabase
+    // Default: look back 3 days from last synced order's date as a safety
+    // buffer — catches any orders where date_created was back-dated, and
+    // covers short gaps where sync was failing. The ID filter below is the
+    // real gap-proofing; the date just limits how much data we fetch.
+    const { data: lastOrder } = await supabase
       .from("woo_orders")
       .select("order_date")
-      .order("order_date", { ascending: false })
-      .limit(1)
-      .single();
-    after = latest?.order_date
-      ? new Date(latest.order_date).toISOString()
-      : new Date(Date.now() - days * 86400_000).toISOString();
+      .eq("woo_order_id", lastSyncedId || 0)
+      .maybeSingle();
+    const lastOrderDate = (lastOrder as any)?.order_date;
+    if (lastOrderDate) {
+      const t = new Date(lastOrderDate).getTime() - 3 * 86400_000;
+      after = new Date(t).toISOString();
+    } else {
+      after = new Date(Date.now() - days * 86400_000).toISOString();
+    }
   }
 
-  console.log(`[woo-orders-sync] Fetching orders after ${after}`);
+  console.log(`[woo-orders-sync] Last synced order_id=${lastSyncedId}, fetching orders after=${after}`);
 
   let page = 1;
   let totalFetched = 0;
