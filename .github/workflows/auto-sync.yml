@@ -22,10 +22,15 @@ name: Auto-sync marketing data
 #   SUPABASE_SERVICE_ROLE_KEY    eyJ... (JWT format, NOT sb_secret_*)
 
 on:
-  schedule:
-    # 04:00 UTC (07:00 Israel) — fresh yesterday data before the workday
-    # 18:00 UTC (21:00 Israel) — intraday data captured before overnight
-    - cron: '0 4,18 * * *'
+  # Schedule disabled — the sync functions kept hitting Supabase's
+  # WORKER_RESOURCE_LIMIT and failing on every run, which flooded the owner
+  # with failure emails. Manual dispatch remains so the workflow can still
+  # be fired on demand from Actions → Auto-sync marketing data → Run workflow.
+  # Re-enable by uncommenting the schedule block once the resource issue is
+  # resolved (likely needs edge function memory tuning or splitting the sync
+  # into smaller per-source runs).
+  # schedule:
+  #   - cron: '0 4,18 * * *'
   workflow_dispatch:
 
 jobs:
