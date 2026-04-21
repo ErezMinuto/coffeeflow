@@ -1606,23 +1606,33 @@ export default function AdvisorPage() {
         const today = new Date()
         const start = new Date(today); start.setDate(today.getDate() - 13)
         const startStr = start.toISOString().slice(0, 10)
-        const [{ data: g }, { data: m }] = await Promise.all([
+        const [{ data: g, error: eg }, { data: m, error: em }] = await Promise.all([
           supabase.from('google_campaigns').select('name,date,cost,conversions').gte('date', startStr),
           supabase.from('meta_ad_campaigns').select('name,date,spend,conversions').gte('date', startStr),
         ])
         if (cancelled) return
+        if (eg) console.warn('[advisor] google_campaigns fetch error:', eg)
+        if (em) console.warn('[advisor] meta_ad_campaigns fetch error:', em)
+        // Normalize aggressively — the strategist's JSON occasionally differs
+        // from the DB in underscores/pipes/spacing. Collapse to plain words.
+        const norm = (s: string) => (s ?? '')
+          .toLowerCase()
+          .replace(/[_\s|\-]+/g, ' ')
+          .trim()
         const agg: Record<string, { cost14: number; conv14: number; cost5: number; conv5: number }> = {}
         const five = new Date(today); five.setDate(today.getDate() - 4)
         const fiveStr = five.toISOString().slice(0, 10)
         for (const r of (g ?? []) as any[]) {
-          const k = (r.name ?? '').toLowerCase().trim()
+          const k = norm(r.name)
+          if (!k) continue
           if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
           agg[k].cost14 += Number(r.cost) || 0
           agg[k].conv14 += Number(r.conversions) || 0
           if (r.date >= fiveStr) { agg[k].cost5 += Number(r.cost) || 0; agg[k].conv5 += Number(r.conversions) || 0 }
         }
         for (const r of (m ?? []) as any[]) {
-          const k = (r.name ?? '').toLowerCase().trim()
+          const k = norm(r.name)
+          if (!k) continue
           if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
           agg[k].cost14 += Number(r.spend) || 0
           agg[k].conv14 += Number(r.conversions) || 0
@@ -1636,6 +1646,7 @@ export default function AdvisorPage() {
             spend14: Math.round(v.cost14 * 100) / 100,
           }
         }
+        console.log('[advisor] CPA data loaded for campaigns:', Object.keys(out))
         setCampaignCpa(out)
       } catch (e) {
         console.warn('[advisor] CPA fetch failed:', e)
@@ -2034,26 +2045,29 @@ export default function AdvisorPage() {
                       <span className="font-medium">פעולה השבוע:</span> {m.action ?? m.action_this_quarter}
                     </p>
                     {(() => {
-                      const cpaInfo = campaignCpa[(m.campaign_name ?? '').toLowerCase().trim()]
-                      if (!cpaInfo) return null
+                      const nk = (m.campaign_name ?? '').toLowerCase().replace(/[_\s|\-]+/g, ' ').trim()
+                      const cpaInfo = campaignCpa[nk]
+                      // Always render the tile strip — if the lookup missed,
+                      // show "—" so the owner can see the panel is working,
+                      // not silently missing.
                       return (
                         <div className="grid grid-cols-3 gap-1.5 mt-2 text-center">
                           <div className="bg-white/80 rounded px-2 py-1">
                             <p className="text-[10px] text-surface-500">CPA עכשיו · 5 ימים</p>
                             <p className="text-xs font-bold font-mono">
-                              {cpaInfo.cpa5 != null ? `₪${cpaInfo.cpa5.toFixed(2)}` : 'אין המרות'}
+                              {cpaInfo?.cpa5 != null ? `₪${cpaInfo.cpa5.toFixed(2)}` : '—'}
                             </p>
                           </div>
                           <div className="bg-white/80 rounded px-2 py-1">
                             <p className="text-[10px] text-surface-500">CPA · 14 ימים</p>
                             <p className="text-xs font-bold font-mono">
-                              {cpaInfo.cpa14 != null ? `₪${cpaInfo.cpa14.toFixed(2)}` : 'אין המרות'}
+                              {cpaInfo?.cpa14 != null ? `₪${cpaInfo.cpa14.toFixed(2)}` : '—'}
                             </p>
                           </div>
                           <div className="bg-white/80 rounded px-2 py-1">
                             <p className="text-[10px] text-surface-500">הוצאה · 14 ימים</p>
                             <p className="text-xs font-bold font-mono">
-                              ₪{cpaInfo.spend14.toLocaleString()}
+                              {cpaInfo ? `₪${cpaInfo.spend14.toLocaleString()}` : '—'}
                             </p>
                           </div>
                         </div>
