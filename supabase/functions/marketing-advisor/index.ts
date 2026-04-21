@@ -6178,6 +6178,29 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
     }
   }
 
+  // One-shot cleanup — delete orphan advisor_reports rows from before the
+  // Monday→Sunday week-start fix. Rows where week_start falls on a Monday
+  // are from the old logic and will confuse the UI's "latest week" picker
+  // by sorting above the new Sunday-based rows.
+  if (body.agent === "purge_monday_reports") {
+    const { data: rows, error } = await supabase
+      .from("advisor_reports")
+      .select("id,week_start,agent_type")
+      .gte("week_start", "2026-04-01");
+    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: CORS });
+    const mondays = (rows ?? []).filter((r: any) => {
+      const d = new Date(r.week_start);
+      return d.getUTCDay() === 1; // Monday
+    });
+    for (const r of mondays) {
+      await supabase.from("advisor_reports").delete().eq("id", (r as any).id);
+    }
+    return new Response(JSON.stringify({
+      deleted: mondays.length,
+      details: mondays.map((r: any) => ({ week_start: r.week_start, agent_type: r.agent_type })),
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
   // Debug — woo_orders counts + what the organic agent sees after filtering.
   // Used 2026-04-21 to track down a week-window definition mismatch between
   // the agent (Mon-Sun ISO week) and the owner's mental model (last 7 days).
