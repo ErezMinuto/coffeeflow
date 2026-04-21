@@ -1595,6 +1595,56 @@ export default function AdvisorPage() {
   const [auditResult, setAuditResult] = useState<any>(null)
   const [auditError, setAuditError] = useState<string | null>(null)
 
+  // Current CPA per campaign — fed into "Campaign monitoring" chips so the
+  // strategist's ₪X kill/scale thresholds are compared against real numbers,
+  // not displayed in a vacuum. Keyed by lowercased campaign name.
+  const [campaignCpa, setCampaignCpa] = useState<Record<string, { cpa5: number | null; cpa14: number | null; spend14: number }>>({})
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const today = new Date()
+        const start = new Date(today); start.setDate(today.getDate() - 13)
+        const startStr = start.toISOString().slice(0, 10)
+        const [{ data: g }, { data: m }] = await Promise.all([
+          supabase.from('google_campaigns').select('name,date,cost,conversions').gte('date', startStr),
+          supabase.from('meta_ad_campaigns').select('name,date,spend,conversions').gte('date', startStr),
+        ])
+        if (cancelled) return
+        const agg: Record<string, { cost14: number; conv14: number; cost5: number; conv5: number }> = {}
+        const five = new Date(today); five.setDate(today.getDate() - 4)
+        const fiveStr = five.toISOString().slice(0, 10)
+        for (const r of (g ?? []) as any[]) {
+          const k = (r.name ?? '').toLowerCase().trim()
+          if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
+          agg[k].cost14 += Number(r.cost) || 0
+          agg[k].conv14 += Number(r.conversions) || 0
+          if (r.date >= fiveStr) { agg[k].cost5 += Number(r.cost) || 0; agg[k].conv5 += Number(r.conversions) || 0 }
+        }
+        for (const r of (m ?? []) as any[]) {
+          const k = (r.name ?? '').toLowerCase().trim()
+          if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
+          agg[k].cost14 += Number(r.spend) || 0
+          agg[k].conv14 += Number(r.conversions) || 0
+          if (r.date >= fiveStr) { agg[k].cost5 += Number(r.spend) || 0; agg[k].conv5 += Number(r.conversions) || 0 }
+        }
+        const out: Record<string, { cpa5: number | null; cpa14: number | null; spend14: number }> = {}
+        for (const [k, v] of Object.entries(agg)) {
+          out[k] = {
+            cpa5: v.conv5 > 0 ? Math.round((v.cost5 / v.conv5) * 100) / 100 : null,
+            cpa14: v.conv14 > 0 ? Math.round((v.cost14 / v.conv14) * 100) / 100 : null,
+            spend14: Math.round(v.cost14 * 100) / 100,
+          }
+        }
+        setCampaignCpa(out)
+      } catch (e) {
+        console.warn('[advisor] CPA fetch failed:', e)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
   // Campaign Doctor — deeper per-campaign diagnosis + full fix plan
   // (20 headlines / 4 descriptions / keyword tiers / negatives / budget /
   // landing / tracking fixes — ready to paste into Google Ads).
@@ -1983,6 +2033,32 @@ export default function AdvisorPage() {
                     <p className="text-sm mt-2">
                       <span className="font-medium">פעולה השבוע:</span> {m.action ?? m.action_this_quarter}
                     </p>
+                    {(() => {
+                      const cpaInfo = campaignCpa[(m.campaign_name ?? '').toLowerCase().trim()]
+                      if (!cpaInfo) return null
+                      return (
+                        <div className="grid grid-cols-3 gap-1.5 mt-2 text-center">
+                          <div className="bg-white/80 rounded px-2 py-1">
+                            <p className="text-[10px] text-surface-500">CPA עכשיו · 5 ימים</p>
+                            <p className="text-xs font-bold font-mono">
+                              {cpaInfo.cpa5 != null ? `₪${cpaInfo.cpa5.toFixed(2)}` : 'אין המרות'}
+                            </p>
+                          </div>
+                          <div className="bg-white/80 rounded px-2 py-1">
+                            <p className="text-[10px] text-surface-500">CPA · 14 ימים</p>
+                            <p className="text-xs font-bold font-mono">
+                              {cpaInfo.cpa14 != null ? `₪${cpaInfo.cpa14.toFixed(2)}` : 'אין המרות'}
+                            </p>
+                          </div>
+                          <div className="bg-white/80 rounded px-2 py-1">
+                            <p className="text-[10px] text-surface-500">הוצאה · 14 ימים</p>
+                            <p className="text-xs font-bold font-mono">
+                              ₪{cpaInfo.spend14.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })()}
                     <div className="flex gap-2 mt-2 flex-wrap text-[11px]">
                       {m.kill_threshold_ils && (
                         <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-full">
