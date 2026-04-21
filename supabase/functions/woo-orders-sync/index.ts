@@ -85,6 +85,9 @@ function extractUtm(meta: WooMeta[]): Record<string, string | null> {
 }
 
 async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
+  // Owner's preference: only sync paid orders — processing (paid, awaiting
+  // shipment) and completed (paid + shipped). Pending/on-hold/failed are
+  // not "real orders" from a revenue perspective.
   const params = new URLSearchParams({
     per_page: "100",
     page: String(page),
@@ -110,9 +113,14 @@ serve(async (req) => {
 
   let days = 60;
   let forceDaysBack: number | null = null;
+  let countOnly = false;
   try {
     const b = await req.json();
     days = b.days ?? 60;
+    // count_only: skip upserts, just return Woo's count of real paid orders
+    // (processing + completed) for the last N days. Used to diagnose when
+    // the owner's dashboard number doesn't match what we have in DB.
+    if (b.count_only) countOnly = true;
     // days_back: skip the incremental "latest order" logic and force a
     // backfill of the last N days. Useful when the sync silently missed
     // a gap (e.g. while the cron was failing) — call with {"days_back":10}
@@ -159,6 +167,42 @@ serve(async (req) => {
   }
 
   console.log(`[woo-orders-sync] Last synced order_id=${lastSyncedId}, fetching orders after=${after}`);
+
+  // count_only branch — fetch every page from Woo to get a true count
+  // (processing + completed), no upserts, just return numbers so we can
+  // compare with what's in our DB.
+  if (countOnly) {
+    const statuses: Record<string, number> = {};
+    let totalFromWoo = 0;
+    let pageC = 1;
+    const ids: number[] = [];
+    while (true) {
+      const batch = await fetchOrders(after, pageC);
+      if (!batch.length) break;
+      for (const o of batch) {
+        statuses[o.status] = (statuses[o.status] ?? 0) + 1;
+        totalFromWoo++;
+        ids.push(o.id);
+      }
+      if (batch.length < 100) break;
+      pageC++;
+    }
+    // Compare with what's in our DB for the same window
+    const { data: dbRows } = await supabase
+      .from("woo_orders")
+      .select("woo_order_id,order_date,status")
+      .gte("order_date", after.slice(0, 10));
+    const dbIds = new Set(((dbRows ?? []) as any[]).map(r => r.woo_order_id));
+    const inWooNotDb = ids.filter(id => !dbIds.has(id));
+    return new Response(JSON.stringify({
+      after,
+      woo_total_paid: totalFromWoo,
+      woo_by_status: statuses,
+      woo_order_ids: ids,
+      db_total: dbIds.size,
+      missing_from_db: inWooNotDb,
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
+  }
 
   let page = 1;
   let totalFetched = 0;

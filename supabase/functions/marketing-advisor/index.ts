@@ -398,27 +398,28 @@ const CORS = getCorsHeaders();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Israeli week runs Sunday → Friday. All week boundaries use Sunday as the
+// first day. Saturday is the last day (Sun-Sat = 7 days for clean rolling
+// comparisons). Using Monday as week start caused "6 orders this week" bugs
+// on Tuesdays because agents were measuring only Mon-Tue while the owner
+// was mentally including the Sunday performance.
+
 function getPreviousWeekStart(): string {
   const now = new Date();
-  const dayOfWeek = now.getDay();
-  const daysToLastMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - daysToLastMonday - 7);
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().split("T")[0];
+  const dayOfWeek = now.getDay(); // 0 = Sunday
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() - dayOfWeek - 7);
+  sunday.setHours(0, 0, 0, 0);
+  return sunday.toISOString().split("T")[0];
 }
 
-// Current-week Monday — used to let agents analyze running-week campaign
-// performance in real time (the owner wants to see how this-week ads are
-// trending, not wait for the week to complete).
 function getCurrentWeekStart(): string {
   const now = new Date();
-  const dayOfWeek = now.getDay();
-  const daysToThisMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - daysToThisMonday);
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().split("T")[0];
+  const dayOfWeek = now.getDay(); // 0 = Sunday → 0 days back
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() - dayOfWeek);
+  sunday.setHours(0, 0, 0, 0);
+  return sunday.toISOString().split("T")[0];
 }
 
 function addDays(dateStr: string, days: number): string {
@@ -2584,9 +2585,14 @@ async function fetchWooSales(
 
   if (error || !data?.length) return "  אין נתוני מכירות WooCommerce";
 
-  // Aggregate this week
-  const thisWeek = data.filter((o: any) => o.order_date >= weekStart && o.order_date <= weekEnd);
-  const prevWeeks = data.filter((o: any) => o.order_date < weekStart);
+  // Rolling 7-day window instead of Mon-to-Sun ISO week. On Mondays/Tuesdays
+  // the ISO window only contains 1-2 days of data, which makes agents
+  // report "revenue collapsed 80%" when it's actually just "2 days vs 7".
+  // Rolling-7 matches how owners think about "this week" and matches the
+  // WooCommerce admin's default 7-day view.
+  const rollingStart = subtractDays(weekEnd, 6);
+  const thisWeek  = data.filter((o: any) => o.order_date >= rollingStart && o.order_date <= weekEnd);
+  const prevWeeks = data.filter((o: any) => o.order_date < rollingStart);
 
   const weekRevenue = thisWeek.reduce((s: number, o: any) => s + (o.total || 0), 0);
   const prevRevenue = prevWeeks.reduce((s: number, o: any) => s + (o.total || 0), 0);
@@ -6170,6 +6176,59 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
         { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
     }
+  }
+
+  // Debug — woo_orders counts + what the organic agent sees after filtering.
+  // Used 2026-04-21 to track down a week-window definition mismatch between
+  // the agent (Mon-Sun ISO week) and the owner's mental model (last 7 days).
+  if (body.agent === "woo_diagnose") {
+    const weekEnd2 = addDays(weekStart, 6);
+    const fourWksAgo = subtractDays(weekStart, 28);
+    const { data: allRaw } = await supabase
+      .from("woo_orders")
+      .select("woo_order_id,order_date,status,tracking_type,total,utm_source,utm_medium,utm_campaign")
+      .gte("order_date", fourWksAgo)
+      .order("order_date", { ascending: false });
+
+    const rows = (allRaw ?? []) as any[];
+    const rollingStart2 = subtractDays(weekEnd2, 6);
+    const thisWeekAll = rows.filter(r => r.order_date >= weekStart && r.order_date <= weekEnd2);
+    const rolling7All = rows.filter(r => r.order_date >= rollingStart2 && r.order_date <= weekEnd2);
+    const withStatus  = rows.filter(r => ["completed", "processing"].includes(r.status));
+    const exMflow     = withStatus.filter(r => !((r.tracking_type ?? "").toLowerCase().includes("advanced purchase tracking")));
+    const agentSeesMonSun    = exMflow.filter(r => r.order_date >= weekStart && r.order_date <= weekEnd2);
+    const agentSeesRolling7  = exMflow.filter(r => r.order_date >= rollingStart2 && r.order_date <= weekEnd2);
+
+    // status + tracking breakdown for this week
+    const byStatus: Record<string, number> = {};
+    const byTracking: Record<string, number> = {};
+    for (const r of thisWeekAll) {
+      byStatus[r.status || "(null)"]       = (byStatus[r.status || "(null)"] ?? 0) + 1;
+      byTracking[r.tracking_type || "(null)"] = (byTracking[r.tracking_type || "(null)"] ?? 0) + 1;
+    }
+
+    return new Response(JSON.stringify({
+      week_window: { weekStart, weekEnd: weekEnd2, rollingStart: rollingStart2 },
+      counts: {
+        total_rows_28d: rows.length,
+        mon_sun_raw: thisWeekAll.length,
+        rolling_7d_raw: rolling7All.length,
+        after_status_filter: withStatus.length,
+        after_mflow_filter: exMflow.length,
+        agent_sees_mon_sun: agentSeesMonSun.length,
+        agent_sees_rolling_7: agentSeesRolling7.length,
+      },
+      this_week_by_status: byStatus,
+      this_week_by_tracking_type: byTracking,
+      this_week_sample: thisWeekAll.slice(0, 20).map(r => ({
+        woo_order_id: r.woo_order_id,
+        order_date: r.order_date,
+        status: r.status,
+        tracking_type: r.tracking_type,
+        total: r.total,
+        utm_source: r.utm_source,
+      })),
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
   if (body.agent === "advisor_chat") {
