@@ -109,19 +109,32 @@ serve(async (req) => {
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
   let days = 60;
-  try { const b = await req.json(); days = b.days ?? 60; } catch { /* use default */ }
+  let forceDaysBack: number | null = null;
+  try {
+    const b = await req.json();
+    days = b.days ?? 60;
+    // days_back: skip the incremental "latest order" logic and force a
+    // backfill of the last N days. Useful when the sync silently missed
+    // a gap (e.g. while the cron was failing) — call with {"days_back":10}
+    // to re-scan the last 10 days and upsert anything missing.
+    if (typeof b.days_back === "number" && b.days_back > 0) forceDaysBack = b.days_back;
+  } catch { /* use default */ }
 
-  // Find latest order already stored → incremental sync
-  const { data: latest } = await supabase
-    .from("woo_orders")
-    .select("order_date")
-    .order("order_date", { ascending: false })
-    .limit(1)
-    .single();
-
-  const after = latest?.order_date
-    ? new Date(latest.order_date).toISOString()  // start from last stored date
-    : new Date(Date.now() - days * 86400_000).toISOString();
+  let after: string;
+  if (forceDaysBack !== null) {
+    after = new Date(Date.now() - forceDaysBack * 86400_000).toISOString();
+  } else {
+    // Incremental sync — start from last stored order
+    const { data: latest } = await supabase
+      .from("woo_orders")
+      .select("order_date")
+      .order("order_date", { ascending: false })
+      .limit(1)
+      .single();
+    after = latest?.order_date
+      ? new Date(latest.order_date).toISOString()
+      : new Date(Date.now() - days * 86400_000).toISOString();
+  }
 
   console.log(`[woo-orders-sync] Fetching orders after ${after}`);
 
