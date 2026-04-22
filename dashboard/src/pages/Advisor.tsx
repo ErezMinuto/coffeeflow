@@ -1611,10 +1611,29 @@ export default function AdvisorPage() {
   const [auditResult, setAuditResult] = useState<any>(null)
   const [auditError, setAuditError] = useState<string | null>(null)
 
-  // Current CPA per campaign — fed into "Campaign monitoring" chips so the
-  // strategist's ₪X kill/scale thresholds are compared against real numbers,
-  // not displayed in a vacuum. Keyed by lowercased campaign name.
-  const [campaignCpa, setCampaignCpa] = useState<Record<string, { cpa5: number | null; cpa14: number | null; spend14: number }>>({})
+  // Campaign KPIs fed into "Campaign monitoring" chips. Uses WooCommerce
+  // orders (ground truth) instead of platform-reported conversions — Meta &
+  // Google both inflate "conversions" with soft events (add-to-cart, view-
+  // content, initiate-checkout). Ad spend comes from the platform tables;
+  // real order count + revenue come from woo_orders matched by utm_source.
+  //
+  // Match heuristic — platform level first (utm_source contains "google" /
+  // "facebook"|"fb"|"instagram"|"meta"), then per-campaign when utm_campaign
+  // exactly matches the campaign name. If the campaign's UTM template is
+  // broken (seen in real data: utm_campaign="g"), we still get platform-
+  // level attribution even if per-campaign matching fails.
+  interface CpaInfo {
+    spend14: number
+    realOrders14: number
+    realRevenue14: number
+    realCpa14: number | null
+    realRoas14: number | null
+    realOrders5: number
+    realCpa5: number | null
+    // Platform-reported (for comparison / debugging)
+    reportedCpa14: number | null
+  }
+  const [campaignCpa, setCampaignCpa] = useState<Record<string, CpaInfo>>({})
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -1622,47 +1641,124 @@ export default function AdvisorPage() {
         const today = new Date()
         const start = new Date(today); start.setDate(today.getDate() - 13)
         const startStr = start.toISOString().slice(0, 10)
-        const [{ data: g, error: eg }, { data: m, error: em }] = await Promise.all([
+        const five = new Date(today); five.setDate(today.getDate() - 4)
+        const fiveStr = five.toISOString().slice(0, 10)
+        const [
+          { data: g, error: eg },
+          { data: m, error: em },
+          { data: woo, error: ew },
+        ] = await Promise.all([
           supabase.from('google_campaigns').select('name,date,cost,conversions').gte('date', startStr),
           supabase.from('meta_ad_campaigns').select('name,date,spend,conversions').gte('date', startStr),
+          supabase
+            .from('woo_orders')
+            .select('order_date,total,utm_source,utm_campaign,status')
+            .gte('order_date', startStr)
+            .in('status', ['completed', 'processing']),
         ])
         if (cancelled) return
         if (eg) console.warn('[advisor] google_campaigns fetch error:', eg)
         if (em) console.warn('[advisor] meta_ad_campaigns fetch error:', em)
-        // Normalize aggressively — the strategist's JSON occasionally differs
-        // from the DB in underscores/pipes/spacing. Collapse to plain words.
-        const norm = (s: string) => (s ?? '')
-          .toLowerCase()
-          .replace(/[_\s|\-]+/g, ' ')
-          .trim()
-        const agg: Record<string, { cost14: number; conv14: number; cost5: number; conv5: number }> = {}
-        const five = new Date(today); five.setDate(today.getDate() - 4)
-        const fiveStr = five.toISOString().slice(0, 10)
+        if (ew) console.warn('[advisor] woo_orders fetch error:', ew)
+
+        const norm = (s: string) => (s ?? '').toLowerCase().replace(/[_\s|\-]+/g, ' ').trim()
+
+        // Aggregate spend per campaign (normalized name → platform + spend windows)
+        type Agg = { platform: 'google' | 'meta'; cost14: number; cost5: number; reportedConv14: number }
+        const agg: Record<string, Agg> = {}
         for (const r of (g ?? []) as any[]) {
-          const k = norm(r.name)
-          if (!k) continue
-          if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
+          const k = norm(r.name); if (!k) continue
+          if (!agg[k]) agg[k] = { platform: 'google', cost14: 0, cost5: 0, reportedConv14: 0 }
           agg[k].cost14 += Number(r.cost) || 0
-          agg[k].conv14 += Number(r.conversions) || 0
-          if (r.date >= fiveStr) { agg[k].cost5 += Number(r.cost) || 0; agg[k].conv5 += Number(r.conversions) || 0 }
+          agg[k].reportedConv14 += Number(r.conversions) || 0
+          if (r.date >= fiveStr) agg[k].cost5 += Number(r.cost) || 0
         }
         for (const r of (m ?? []) as any[]) {
-          const k = norm(r.name)
-          if (!k) continue
-          if (!agg[k]) agg[k] = { cost14: 0, conv14: 0, cost5: 0, conv5: 0 }
+          const k = norm(r.name); if (!k) continue
+          if (!agg[k]) agg[k] = { platform: 'meta', cost14: 0, cost5: 0, reportedConv14: 0 }
           agg[k].cost14 += Number(r.spend) || 0
-          agg[k].conv14 += Number(r.conversions) || 0
-          if (r.date >= fiveStr) { agg[k].cost5 += Number(r.spend) || 0; agg[k].conv5 += Number(r.conversions) || 0 }
+          agg[k].reportedConv14 += Number(r.conversions) || 0
+          if (r.date >= fiveStr) agg[k].cost5 += Number(r.spend) || 0
         }
-        const out: Record<string, { cpa5: number | null; cpa14: number | null; spend14: number }> = {}
-        for (const [k, v] of Object.entries(agg)) {
-          out[k] = {
-            cpa5: v.conv5 > 0 ? Math.round((v.cost5 / v.conv5) * 100) / 100 : null,
-            cpa14: v.conv14 > 0 ? Math.round((v.cost14 / v.conv14) * 100) / 100 : null,
-            spend14: Math.round(v.cost14 * 100) / 100,
+
+        // Classify each Woo order to a platform + (optionally) a campaign.
+        // Returns an object with flags so a single order can feed per-campaign
+        // AND per-platform aggregates at once.
+        const orders = (woo ?? []) as any[]
+        const isGoogleOrder = (o: any) => {
+          const s = (o.utm_source ?? '').toLowerCase()
+          return s.includes('google')
+        }
+        const isMetaOrder = (o: any) => {
+          const s = (o.utm_source ?? '').toLowerCase()
+          return /facebook|\bfb\b|instagram|\big\b|meta/.test(s)
+        }
+
+        // Platform-level totals — used as fallback when per-campaign match fails
+        const platformTotals = {
+          google: { orders14: 0, revenue14: 0, orders5: 0, spend14: 0, spend5: 0 },
+          meta:   { orders14: 0, revenue14: 0, orders5: 0, spend14: 0, spend5: 0 },
+        }
+        for (const k of Object.keys(agg)) {
+          platformTotals[agg[k].platform].spend14 += agg[k].cost14
+          platformTotals[agg[k].platform].spend5  += agg[k].cost5
+        }
+        for (const o of orders) {
+          const total = Number(o.total) || 0
+          const recent = o.order_date >= fiveStr
+          if (isGoogleOrder(o)) {
+            platformTotals.google.orders14++
+            platformTotals.google.revenue14 += total
+            if (recent) platformTotals.google.orders5++
+          }
+          if (isMetaOrder(o)) {
+            platformTotals.meta.orders14++
+            platformTotals.meta.revenue14 += total
+            if (recent) platformTotals.meta.orders5++
           }
         }
-        console.log('[advisor] CPA data loaded for campaigns:', Object.keys(out))
+
+        // Per-campaign attribution — matches utm_campaign to campaign name.
+        // If zero orders match, falls back to the platform's share of orders
+        // weighted by this campaign's share of platform spend.
+        const out: Record<string, CpaInfo> = {}
+        for (const [k, v] of Object.entries(agg)) {
+          const platform = v.platform
+          const wantsPlatformFilter = platform === 'google' ? isGoogleOrder : isMetaOrder
+          const campaignOrders = orders.filter(o =>
+            wantsPlatformFilter(o) && norm(o.utm_campaign ?? '') === k,
+          )
+          const hasPerCampaignMatch = campaignOrders.length > 0
+
+          let realOrders14 = 0, realOrders5 = 0, realRevenue14 = 0
+          if (hasPerCampaignMatch) {
+            for (const o of campaignOrders) {
+              realOrders14++
+              realRevenue14 += Number(o.total) || 0
+              if (o.order_date >= fiveStr) realOrders5++
+            }
+          } else {
+            // Fallback: share platform-level attribution by spend ratio
+            const pt = platformTotals[platform]
+            const share = pt.spend14 > 0 ? v.cost14 / pt.spend14 : 0
+            realOrders14  = Math.round(pt.orders14 * share * 10) / 10
+            realOrders5   = Math.round(pt.orders5 * share * 10) / 10
+            realRevenue14 = Math.round(pt.revenue14 * share * 100) / 100
+          }
+
+          out[k] = {
+            spend14:        Math.round(v.cost14 * 100) / 100,
+            realOrders14,
+            realRevenue14:  Math.round(realRevenue14 * 100) / 100,
+            realCpa14:      realOrders14 > 0 ? Math.round((v.cost14 / realOrders14) * 100) / 100 : null,
+            realRoas14:     v.cost14 > 0 ? Math.round((realRevenue14 / v.cost14) * 100) / 100 : null,
+            realOrders5,
+            realCpa5:       realOrders5 > 0 ? Math.round((v.cost5 / realOrders5) * 100) / 100 : null,
+            reportedCpa14:  v.reportedConv14 > 0 ? Math.round((v.cost14 / v.reportedConv14) * 100) / 100 : null,
+          }
+        }
+
+        console.log('[advisor] Real-orders CPA loaded. Platform totals:', platformTotals, 'campaigns:', Object.keys(out))
         setCampaignCpa(out)
       } catch (e) {
         console.warn('[advisor] CPA fetch failed:', e)
@@ -2062,31 +2158,47 @@ export default function AdvisorPage() {
                     </p>
                     {(() => {
                       const nk = (m.campaign_name ?? '').toLowerCase().replace(/[_\s|\-]+/g, ' ').trim()
-                      const cpaInfo = campaignCpa[nk]
-                      // Always render the tile strip — if the lookup missed,
-                      // show "—" so the owner can see the panel is working,
-                      // not silently missing.
+                      const info = campaignCpa[nk]
+                      // Real numbers from WooCommerce (ground truth) — NOT
+                      // the inflated platform-reported "conversions" which
+                      // include add-to-cart, view-content, etc. If the CPA
+                      // looks too-good-to-be-true (<₪5), that means the
+                      // platform filter didn't match any real orders and
+                      // we're falling back to an estimate.
                       return (
-                        <div className="grid grid-cols-3 gap-1.5 mt-2 text-center">
-                          <div className="bg-white/80 rounded px-2 py-1">
-                            <p className="text-[10px] text-surface-500">CPA עכשיו · 5 ימים</p>
-                            <p className="text-xs font-bold font-mono">
-                              {cpaInfo?.cpa5 != null ? `₪${cpaInfo.cpa5.toFixed(2)}` : '—'}
-                            </p>
+                        <>
+                          <div className="grid grid-cols-4 gap-1.5 mt-2 text-center">
+                            <div className="bg-white/80 rounded px-2 py-1">
+                              <p className="text-[10px] text-surface-500">הזמנות אמיתיות · 14 ימים</p>
+                              <p className="text-xs font-bold font-mono text-emerald-700">
+                                {info?.realOrders14 != null ? Number(info.realOrders14).toFixed(info.realOrders14 % 1 === 0 ? 0 : 1) : '—'}
+                              </p>
+                            </div>
+                            <div className="bg-white/80 rounded px-2 py-1">
+                              <p className="text-[10px] text-surface-500">CPA אמיתי · 14 ימים</p>
+                              <p className="text-xs font-bold font-mono">
+                                {info?.realCpa14 != null ? `₪${info.realCpa14.toFixed(0)}` : '—'}
+                              </p>
+                            </div>
+                            <div className="bg-white/80 rounded px-2 py-1">
+                              <p className="text-[10px] text-surface-500">ROAS אמיתי</p>
+                              <p className={`text-xs font-bold font-mono ${info?.realRoas14 != null ? (info.realRoas14 >= 2 ? 'text-emerald-700' : info.realRoas14 >= 1 ? 'text-amber-700' : 'text-red-700') : ''}`}>
+                                {info?.realRoas14 != null ? `${info.realRoas14.toFixed(2)}×` : '—'}
+                              </p>
+                            </div>
+                            <div className="bg-white/80 rounded px-2 py-1">
+                              <p className="text-[10px] text-surface-500">הוצאה · 14 ימים</p>
+                              <p className="text-xs font-bold font-mono">
+                                {info ? `₪${info.spend14.toLocaleString()}` : '—'}
+                              </p>
+                            </div>
                           </div>
-                          <div className="bg-white/80 rounded px-2 py-1">
-                            <p className="text-[10px] text-surface-500">CPA · 14 ימים</p>
-                            <p className="text-xs font-bold font-mono">
-                              {cpaInfo?.cpa14 != null ? `₪${cpaInfo.cpa14.toFixed(2)}` : '—'}
+                          {info?.reportedCpa14 != null && info?.realCpa14 != null && info.realCpa14 > info.reportedCpa14 * 5 && (
+                            <p className="text-[10px] text-amber-600 mt-1">
+                              ℹ️ הפלטפורמה מדווחת CPA ₪{info.reportedCpa14.toFixed(2)} (כולל add-to-cart), אבל רק {Number(info.realOrders14).toFixed(0)} הזמנות אמיתיות ב-WooCommerce = CPA אמיתי ₪{info.realCpa14.toFixed(0)}
                             </p>
-                          </div>
-                          <div className="bg-white/80 rounded px-2 py-1">
-                            <p className="text-[10px] text-surface-500">הוצאה · 14 ימים</p>
-                            <p className="text-xs font-bold font-mono">
-                              {cpaInfo ? `₪${cpaInfo.spend14.toLocaleString()}` : '—'}
-                            </p>
-                          </div>
-                        </div>
+                          )}
+                        </>
                       )
                     })()}
                     <div className="flex gap-2 mt-2 flex-wrap text-[11px]">

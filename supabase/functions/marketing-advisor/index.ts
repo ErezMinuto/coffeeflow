@@ -5983,11 +5983,10 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           .eq("status", "ACTIVE")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
-        // Independent ground-truth for what Google "should" be counting as
-        // real purchases — lets us detect when Google is counting 10× more
-        // conversions than actual orders (= soft actions leaking into Primary).
+        // WooCommerce orders = ground truth. Platforms inflate "conversions"
+        // by counting soft events; we compute real CPA/ROAS from these rows.
         supabase.from("woo_orders")
-          .select("order_date,utm_source,utm_medium")
+          .select("order_date,total,utm_source,utm_medium,utm_campaign")
           .gte("order_date", fourteenDaysAgo)
           .in("status", ["completed", "processing"]),
       ]);
@@ -6046,17 +6045,39 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       const lowISCount = kwSample.filter(k => (Number(k.competition_index) || 0) <= 15).length;
       const budgetCapSignal = lowISCount >= 5 && kwSample.length >= 8;
 
-      // Soft-conversion-primary detector — the pattern we hit on 2026-04-20:
-      // Google Ads counts Page views + Add to cart + Begin checkout + Purchase
-      // all as "Primary" conversions. Result: `conversions` column is 10× the
-      // real purchase count, CVR looks fake-high, `conversion_value` is zero
-      // on most days because only Purchase carries value.
-      //
-      // Signal: total Google attributed orders (WooCommerce with utm_source=google)
-      // << total conversions reported by Google campaigns.
-      const wooGoogleOrders = ((wooOrdersRaw ?? []) as any[])
-        .filter(o => (o.utm_source ?? "").toLowerCase().includes("google"))
-        .length;
+      // Soft-conversion-primary detector — Google/Meta both inflate
+      // "conversions" by counting Page views + Add to cart + Begin checkout
+      // alongside actual purchases. Ground truth is WooCommerce orders
+      // matched by utm_source. The per-campaign match uses utm_campaign too.
+      const wooRows = (wooOrdersRaw ?? []) as any[];
+      const isGoogleOrder = (o: any) => (o.utm_source ?? "").toLowerCase().includes("google");
+      const isMetaOrder   = (o: any) => /facebook|\bfb\b|instagram|\big\b|meta/.test((o.utm_source ?? "").toLowerCase());
+      const wooGoogleOrders = wooRows.filter(isGoogleOrder).length;
+      const wooMetaOrders   = wooRows.filter(isMetaOrder).length;
+      const wooGoogleRevenue = wooRows.filter(isGoogleOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
+      const wooMetaRevenue   = wooRows.filter(isMetaOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
+
+      // Per-campaign real orders (when utm_campaign matches) + fallback to
+      // platform-share-by-spend when UTM template is broken.
+      const normName = (s: string) => (s ?? "").toLowerCase().replace(/[_\s|\-]+/g, " ").trim();
+      function realOrdersForCampaign(campaignName: string, platform: "google" | "meta", campaignSpend: number, platformTotalSpend: number) {
+        const nk = normName(campaignName);
+        const platformFilter = platform === "google" ? isGoogleOrder : isMetaOrder;
+        const perCampaignOrders = wooRows.filter(o => platformFilter(o) && normName(o.utm_campaign ?? "") === nk);
+        if (perCampaignOrders.length > 0) {
+          const revenue = perCampaignOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+          return { orders: perCampaignOrders.length, revenue, attribution: "direct_utm" };
+        }
+        // Fallback: share of platform orders weighted by spend share
+        const platformOrders = platform === "google" ? wooGoogleOrders : wooMetaOrders;
+        const platformRevenue = platform === "google" ? wooGoogleRevenue : wooMetaRevenue;
+        const share = platformTotalSpend > 0 ? campaignSpend / platformTotalSpend : 0;
+        return {
+          orders: Math.round(platformOrders * share * 10) / 10,
+          revenue: Math.round(platformRevenue * share * 100) / 100,
+          attribution: "spend_share_estimate",
+        };
+      }
       const totalGoogleConversions = Array.from(googleByCampaign.values())
         .reduce((s, g) => s + (g.totalConvs || 0), 0);
       // At least 3× inflation AND at least 10 reported conversions before we
@@ -6065,6 +6086,10 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         totalGoogleConversions >= 10 &&
         wooGoogleOrders >= 0 &&
         totalGoogleConversions >= Math.max(wooGoogleOrders * 3, wooGoogleOrders + 20);
+
+      // Platform-level spend totals — needed for fallback attribution
+      const googleTotalSpend = Array.from(googleByCampaign.values()).reduce((s, g) => s + g.totalSpend, 0);
+      const metaTotalSpend   = Array.from(metaByCampaign.values()).reduce((s, m) => s + m.totalSpend, 0);
 
       const campaignsForPrompt: any[] = [];
 
@@ -6092,17 +6117,29 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const last5Conv = last5.reduce((s, d) => s + d.conv, 0);
         const cpa5 = last5Conv > 0 ? Math.round((last5Cost / last5Conv) * 100) / 100 : null;
 
+        // GROUND TRUTH: real orders from WooCommerce joined by UTM
+        const real = realOrdersForCampaign(g.name, "google", g.totalSpend, googleTotalSpend);
+        const realCpa  = real.orders > 0 ? Math.round((g.totalSpend / real.orders) * 100) / 100 : null;
+        const realRoas = g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
+
         campaignsForPrompt.push({
           channel: "google",
           name: g.name,
           totals_14d: {
             spend: Math.round(g.totalSpend * 100) / 100,
-            conversions: Math.round(g.totalConvs * 10) / 10,
-            conversion_value: Math.round(g.totalConvValue * 100) / 100,
+            // GROUND TRUTH numbers — use these for decisions
+            real_orders: real.orders,
+            real_revenue_ils: real.revenue,
+            real_cpa_ils: realCpa,
+            real_roas: realRoas,
+            attribution_source: real.attribution,
+            // Platform-reported — inflated, for comparison only
+            platform_reported_conversions: Math.round(g.totalConvs * 10) / 10,
+            platform_reported_cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            platform_reported_conv_value: Math.round(g.totalConvValue * 100) / 100,
+            cpa_last_5_days: cpa5,
             impressions: g.totalImps,
             clicks: g.totalClicks,
-            cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
-            cpa_last_5_days: cpa5,
             cvr_pct: Math.round(cvr * 100) / 100,
             ctr_pct: Math.round(ctr * 100) / 100,
             daily_avg_spend: Math.round((g.totalSpend / Math.max(g.days.length, 1)) * 100) / 100,
@@ -6152,17 +6189,27 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const metaLast5Conv  = metaLast5.reduce((s, d) => s + d.conv, 0);
         const metaCpa5 = metaLast5Conv > 0 ? Math.round((metaLast5Spend / metaLast5Conv) * 100) / 100 : null;
 
+        // GROUND TRUTH for Meta too
+        const realM = realOrdersForCampaign(m.name, "meta", m.totalSpend, metaTotalSpend);
+        const realMCpa  = realM.orders > 0 ? Math.round((m.totalSpend / realM.orders) * 100) / 100 : null;
+        const realMRoas = m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
+
         campaignsForPrompt.push({
           channel: "meta",
           name: m.name,
           objective: m.objective,
           totals_14d: {
             spend: Math.round(m.totalSpend * 100) / 100,
-            conversions: m.totalConvs,
+            real_orders: realM.orders,
+            real_revenue_ils: realM.revenue,
+            real_cpa_ils: realMCpa,
+            real_roas: realMRoas,
+            attribution_source: realM.attribution,
+            platform_reported_conversions: m.totalConvs,
+            platform_reported_cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
+            cpa_last_5_days: metaCpa5,
             impressions: m.totalImps,
             clicks: m.totalClicks,
-            cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
-            cpa_last_5_days: metaCpa5,
             daily_avg_spend: Math.round((m.totalSpend / Math.max(m.days.length, 1)) * 100) / 100,
           },
           daily_cpa: metaDailyCpa.map(d => ({ date: d.date, cpa: d.cpa })),
@@ -6186,6 +6233,46 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       }));
 
       const sysPrompt = `אתה דוקטור הקמפיינים של מינוטו קפה — מומחה Google Ads + Meta Ads שתפקידו לאבחן כל קמפיין פעיל ולהפיק תכנית תיקון מוכנה להעתקה ישירות לפלטפורמה.
+
+⚠️ **חוק זהב — מקור האמת** ⚠️
+לכל קמפיין יש שתי קבוצות נתונים:
+1. **real_***  — הזמנות אמיתיות מ-WooCommerce (real_orders, real_cpa_ils, real_roas, real_revenue_ils). זה מקור האמת.
+2. **platform_reported_***  — מה Google/Meta מדווחים. זה **מנופח** — כולל add-to-cart, view-content, begin-checkout.
+
+**חובה**: בכל המלצה, החלטה, kill/scale threshold — השתמש רק ב-real_* שדות.
+• אם real_orders = 0 על הוצאה > ₪100 — זה FAIL, גם אם platform_reported_cpa ₪0.92.
+• אם attribution_source = "spend_share_estimate" — סמן "הערכה — UTMs שבורים".
+
+=== 🎯 ניתוח פאנל — חובה לבצע לכל קמפיין לפני שאתה כותב המלצה ===
+
+קמפיין טוב = שרשרת של 5 שלבים שכולם חייבים לעבוד:
+שלב 1: IMPRESSIONS — תלוי בתקציב ו-bid
+שלב 2: CLICKS — תלוי בקריאייטיב ובקהל
+שלב 3: LANDING — תלוי בעמוד הנחיתה
+שלב 4: CART — תלוי במחיר/תיאור המוצר
+שלב 5: PURCHASE — תלוי ב-checkout ובתשלום
+
+**לכל קמפיין, זהה את הצוואר בקבוק הספציפי** לפי הנתונים:
+
+| שלב שבור | סימן מובהק | הפעולה |
+|---|---|---|
+| (1) Impressions | impression_share < 20% | הגדל תקציב או בידים, לא קריאייטיב |
+| (2) Clicks | CTR < 2% | שכתב כותרות/תיאורים — הקהל לא נמשך |
+| (3) Landing | CTR טוב (>3%) אבל real_orders = 0 | בעיית עמוד נחיתה — URL שגוי, תוכן לא מתאים, מוצר לא קיים |
+| (4) Cart | יש add-to-cart אבל אין real_orders | מחיר הלם, משלוח יקר, או מוצר לא מתאים לקהל |
+| (5) Purchase | real_roas < 1× אבל יש הזמנות | CPA > AOV — קהל לא-ROI או מוצר במחיר לא מספיק |
+
+**חובה בdiagnosis**: ציין את השלב השבור הספציפי, לא "קמפיין לא טוב".
+
+דוגמה נכונה:
+✓ "CTR 4.2% (שלב 2 תקין), 180 קליקים, 0 הזמנות ב-WooCommerce (שלב 3 או 4 שבור). עמוד הנחיתה הוא דף קטגוריה של 12 שקיות — קונים מרגישים מותש. לבדוק עמוד נחיתה."
+✗ "קמפיין לא מצליח, נסה לשפר" — גנרי, לא שימושי.
+
+דוגמה נכונה שנייה:
+✓ "impression_share 10%, CTR 3.5%, 1 הזמנה אמיתית — הצוואר בקבוק בשלב 1 (תקציב/bid). הקריאייטיב עובד אבל לא רואים אותו. להוסיף ₪20/יום לפני לגעת בקריאייטיב."
+
+**כלל**: אל תמליץ על פעולה שלא מטפלת בצוואר הבקבוק. אם בעיה בעמוד הנחיתה, לא לשנות קריאייטיב. אם בעיה בקריאייטיב, לא לשנות תקציב.
+
 
 הקונטקסט העסקי:
 • מינוטו היא קלייה בוטיק ברחובות, מוכרת פולי קפה ספשלטי לחובבי קפה ביתיים + עסקים קטנים.
