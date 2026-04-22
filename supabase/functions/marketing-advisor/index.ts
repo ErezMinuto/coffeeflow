@@ -5071,13 +5071,19 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
     }
   }
 
-  const imagePrompt = `Create a high-quality, realistic photo. NOT an AI illustration, NOT a stock photo, NOT a graphic design. This should look like it was shot by a professional photographer with a 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
+  const imagePrompt = `PRODUCT PHOTOGRAPHY ONLY. The subject of this photo is coffee equipment or coffee itself — NEVER a person. This is a still-life / product shot for a specialty coffee brand's blog. 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
 
-${sceneDescription}
+SUBJECT MATTER: ${sceneDescription}
 
-Format: 16:9 wide landscape. Photorealistic. High resolution. Natural color grading — warm tones, no oversaturation.
+Format: 16:9 wide landscape. Photorealistic food/product photography. High resolution. Natural warm color grading.
 
-STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, numbers, logos, watermarks, AI artifacts, motorcycles, vehicles, outdoor scenery, animals. Do not add any text overlay or watermark.`;
+ABSOLUTELY FORBIDDEN (image will be rejected if it contains any of these):
+- People, humans, faces, heads, bodies, hands, fingers, portraits
+- Text, letters, words, numbers, logos, watermarks, captions
+- AI illustration style, graphic design, stock-photo look
+- Vehicles, outdoor scenery, sky, landscape, animals
+
+The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafilters, moka pots, grinders, wooden surfaces, steam, machines, bags, etc. NO living beings of any kind.`;
 
   let base64: string | null = null;
   let mime = "image/png";
@@ -5119,6 +5125,40 @@ STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, n
     },
   ];
 
+  // Claude vision check — after each attempt, verify the image actually
+  // looks like coffee-product photography (not a person, not totally
+  // off-topic). Image models sometimes ignore the "NO people" instruction
+  // (we saw a bearded man on a "crema" post before this check was added).
+  // If rejected, we retry with the next attempt provider.
+  async function imageIsValidCoffeeBanner(b64: string, mimeType: string): Promise<boolean> {
+    if (!ANTHROPIC_KEY) return true; // can't check — assume good
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5",
+          max_tokens: 50,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mimeType, data: b64 } },
+              { type: "text", text: `This should be a coffee-related product/still-life photo for a specialty coffee blog. The image MUST NOT contain any people, faces, hands, or body parts.\n\nAnswer with exactly ONE word:\n- "OK" if the image shows only coffee/equipment/food objects and no humans\n- "REJECT" if it contains any person, face, hand, or body part, OR if it's not related to coffee at all` }
+            ],
+          }],
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      const json = await res.json();
+      const verdict = (json.content?.[0]?.text ?? "").trim().toUpperCase();
+      console.log(`[banner-vision] verdict: ${verdict}`);
+      return verdict.startsWith("OK");
+    } catch (e: any) {
+      console.warn(`[banner-vision] check failed (assuming OK): ${e?.message}`);
+      return true;
+    }
+  }
+
   for (const attempt of attempts) {
     if (base64) break;
     try {
@@ -5132,9 +5172,15 @@ STRICTLY FORBIDDEN: people, faces, hands, human figures, text, letters, words, n
         const json = await res.json();
         const result = attempt.parse(json);
         if (result) {
-          base64 = result.data;
-          mime = result.mime;
-          console.log(`[blog_writer] Banner generated via ${attempt.name}`);
+          // Vision check before accepting the image
+          const valid = await imageIsValidCoffeeBanner(result.data, result.mime || "image/png");
+          if (valid) {
+            base64 = result.data;
+            mime = result.mime;
+            console.log(`[blog_writer] Banner generated via ${attempt.name} (vision-verified)`);
+          } else {
+            console.log(`[blog_writer] ${attempt.name}: vision rejected (contains person or off-topic), trying next provider`);
+          }
         } else {
           console.log(`[blog_writer] ${attempt.name}: no image in response`);
         }
