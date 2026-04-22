@@ -208,6 +208,8 @@ serve(async (req) => {
   let totalFetched = 0;
   let totalSkipped = 0;
   let totalUpserted = 0;
+  let totalNew = 0;       // orders with woo_order_id > lastSyncedId
+  let totalRefreshed = 0; // orders already in DB — just got status/data refreshed
 
   while (true) {
     const orders = await fetchOrders(after, page);
@@ -261,18 +263,34 @@ serve(async (req) => {
       );
     }
 
-    totalFetched  += orders.length;
-    totalUpserted += rows.length;
-    console.log(`[woo-orders-sync] Page ${page}: ${orders.length} fetched, ${rows.length} upserted, ${orders.length - rows.length} skipped (mflow)`);
+    // Split the rows into "new" (id > lastSyncedId) vs "refreshed" (already
+    // in DB, status/data just gets updated). The old count conflated them
+    // and confused the owner — "21 upserted" sounded like 21 new orders
+    // when most were just the 3-day safety buffer re-syncing itself.
+    const newRows       = rows.filter((r: any) => r.woo_order_id > lastSyncedId);
+    const refreshedRows = rows.filter((r: any) => r.woo_order_id <= lastSyncedId);
+    totalNew       += newRows.length;
+    totalRefreshed += refreshedRows.length;
+    totalFetched   += orders.length;
+    totalUpserted  += rows.length;
+    console.log(`[woo-orders-sync] Page ${page}: ${orders.length} fetched → ${newRows.length} NEW (id>${lastSyncedId}), ${refreshedRows.length} refreshed, ${orders.length - rows.length} skipped`);
 
     if (orders.length < 100) break; // last page
     page++;
   }
 
-  console.log(`[woo-orders-sync] Done. Fetched: ${totalFetched}, Upserted: ${totalUpserted}, Skipped (mflow): ${totalSkipped}`);
+  console.log(`[woo-orders-sync] Done. New: ${totalNew}, Refreshed: ${totalRefreshed}, Skipped mflow: ${totalSkipped}`);
 
   return new Response(
-    JSON.stringify({ success: true, fetched: totalFetched, upserted: totalUpserted, skipped_mflow: totalSkipped, after }),
+    JSON.stringify({
+      success: true,
+      new_orders: totalNew,          // actual new orders since last sync
+      refreshed_orders: totalRefreshed, // existing orders that got status/data update
+      fetched: totalFetched,
+      skipped_mflow: totalSkipped,
+      last_synced_id_before: lastSyncedId,
+      window_after: after,
+    }),
     { headers: { ...CORS, "Content-Type": "application/json" } },
   );
 });
