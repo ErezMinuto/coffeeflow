@@ -65,6 +65,7 @@ interface AdToRewrite {
 
 interface PostToPublish {
   type: string
+  intent?: 'save' | 'share' | 'behind_the_scenes' | string
   topic: string
   best_day: string
   best_time: string
@@ -72,6 +73,7 @@ interface PostToPublish {
   hashtags: string[]
   hook: string
   visual_direction: string
+  why_this_intent?: string
 }
 
 interface GrowthReport {
@@ -1398,37 +1400,51 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
         </div>
       )}
 
-      {/* Posts to publish */}
+      {/* Posts to publish — grouped by intent (save / share / BTS) */}
       {r.posts_to_publish?.length > 0 && (
         <div>
           <SectionHeader>📲 פוסטים מוכנים לפרסום</SectionHeader>
           <div className="space-y-3">
-            {r.posts_to_publish.map((p, i) => (
-              <div key={i} className="card p-3 border border-green-200 bg-green-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>{contentTypeIcon(p.type)}</span>
-                    <span className="text-sm font-semibold text-green-900">{p.topic}</span>
+            {r.posts_to_publish.map((p, i) => {
+              const intentMap: Record<string, { label: string; emoji: string; color: string; bg: string; border: string }> = {
+                save: { label: 'לשמירה', emoji: '🔖', color: 'text-blue-900', bg: 'bg-blue-50', border: 'border-blue-300' },
+                share: { label: 'לשיתוף', emoji: '📣', color: 'text-rose-900', bg: 'bg-rose-50', border: 'border-rose-300' },
+                behind_the_scenes: { label: 'מאחורי הקלעים', emoji: '🎬', color: 'text-amber-900', bg: 'bg-amber-50', border: 'border-amber-300' },
+              }
+              const intent = intentMap[p.intent ?? ''] ?? { label: 'כללי', emoji: '📱', color: 'text-green-900', bg: 'bg-green-50', border: 'border-green-300' }
+              return (
+                <div key={i} className={`card p-3 border ${intent.border} ${intent.bg} space-y-2`}>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border ${intent.border} ${intent.color}`}>
+                        {intent.emoji} {intent.label}
+                      </span>
+                      <span>{contentTypeIcon(p.type)}</span>
+                      <span className={`text-sm font-semibold ${intent.color}`}>{p.topic}</span>
+                    </div>
+                    <span className="text-xs text-surface-500">{p.best_day} {p.best_time}</span>
                   </div>
-                  <span className="text-xs text-surface-500">{p.best_day} {p.best_time}</span>
-                </div>
-                {p.hook && (
-                  <p className="text-xs font-medium text-surface-600 italic border-r-2 border-green-400 pr-2">"{p.hook}"</p>
-                )}
-                <div className="bg-white rounded-lg p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs text-surface-800 leading-relaxed whitespace-pre-line flex-1">{p.caption}</p>
-                    <CopyButton text={`${p.caption}\n\n${(p.hashtags ?? []).join(' ')}`} />
+                  {p.why_this_intent && (
+                    <p className="text-[11px] text-surface-600 italic">💡 {p.why_this_intent}</p>
+                  )}
+                  {p.hook && (
+                    <p className={`text-xs font-medium text-surface-600 italic border-r-2 ${intent.border} pr-2`}>"{p.hook}"</p>
+                  )}
+                  <div className="bg-white rounded-lg p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs text-surface-800 leading-relaxed whitespace-pre-line flex-1">{p.caption}</p>
+                      <CopyButton text={`${p.caption}\n\n${(p.hashtags ?? []).join(' ')}`} />
+                    </div>
+                    {p.hashtags?.length > 0 && (
+                      <p className="text-xs text-blue-600">{p.hashtags.join(' ')}</p>
+                    )}
                   </div>
-                  {p.hashtags?.length > 0 && (
-                    <p className="text-xs text-blue-600">{p.hashtags.join(' ')}</p>
+                  {p.visual_direction && (
+                    <p className="text-xs text-surface-500">📷 {p.visual_direction}</p>
                   )}
                 </div>
-                {p.visual_direction && (
-                  <p className="text-xs text-surface-500">📷 {p.visual_direction}</p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

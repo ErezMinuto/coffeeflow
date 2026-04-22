@@ -4319,9 +4319,37 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 • google_organic_recommendations — פריט אחד בלבד
 • content_recommendations — עד 2 פריטים
 • products_to_feature — פריט אחד בלבד
-• posts_to_publish — פוסט אחד בלבד; caption — עד 120 תווים; hashtags — עד 5
+• posts_to_publish — **בדיוק 3 פוסטים**. השדה intent חייב להיות אחד משלושה ערכים בלבד: "save" OR "share" OR "behind_the_scenes". אסור לחזור על intent. אסור ערכים אחרים (NO "promote_product", NO "educate", NO "engage"). אם החזרת פחות מ-3 או עם intent אחר — הדוח נדחה ומוחזר שגיאה.
 • key_insights — עד 2
 ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
+
+=== מה זה save / share / behind_the_scenes (חובה להבין לפני שכותבים) ===
+
+**intent: "save"** — תוכן שימושי שאנשים שומרים כדי לחזור אליו:
+  • מדריך/רפרנס ("יחסי V60 לכל כמות קפה", "טמפרטורת מים לכל שיטה")
+  • תיקון בעיה ("5 סיבות שהאספרסו שלך מר", "איך לנקות מקינטה נכון")
+  • טבלה/צ'ק-ליסט ("זמני חליטה לפי שיטה", "מדריך בחירת פולים לפי מכונה")
+  • צורה מועדפת: carousel או ריל עם טקסט-על-גבי-סרטון שאפשר לעצור ולצלם
+  • מדד הצלחה: saves > likes*2
+
+**intent: "share"** — תוכן שגורם לאנשים לשלוח לחבר או לסטורי:
+  • הומור פנימי של החובבים ("5 דברים שחובבי קפה אומרים שאוהבי נס-קפה לא מבינים")
+  • דעה שנויה במחלוקת ("המקינטה עדיפה על האספרסו הביתי — הנה למה")
+  • חשיפה/סוד מהתעשייה ("זה מה שהסופר לא מספר לכם על הקפה שלכם")
+  • אתגר/בדיקה עיוורת ("לוואצה נגד מינוטו — מי מנצח?")
+  • טריוויה שמפתיעה ("כמה זמן באמת נשאר פולי קפה טריים?")
+  • צורה מועדפת: ריל עם hook ב-2 שניות הראשונות
+  • מדד הצלחה: shares > 10, יחס reach:followers גדול מ-3
+
+**intent: "behind_the_scenes"** — תוכן שבונה מותג לאורך זמן:
+  • הקלייה עצמה (מכונת הקלייה, מדידת טמפרטורה, קירור הפולים)
+  • הצוות (ברריסטות בעבודה, הטעימה היומית, הגעת שקי פולים ירוקים)
+  • הלקוחות (לקוחות קבועים, משלוחים יוצאים, הזמנות B2B)
+  • סיפורי מקור (חוואים, טיולי השקה, נסיעות לאתיופיה/ברזיל)
+  • צורה מועדפת: סטורי אותנטי או ריל קצר לא מלוטש
+  • מדד הצלחה: engagement rate + הגדלת היכרות-עם-המותג (follower growth)
+
+**חובה לוודא שהמיקס מאוזן — save + share + BTS = שלושה פוסטים שונים לחלוטין, לא וריאציות של אותו רעיון.**
 
 דוגמאות לסגנון עברית נכון לשדות הטקסט:
 ✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
@@ -4434,14 +4462,16 @@ ${(existingBlogPosts ?? []).length > 0
   ],
   "posts_to_publish": [
     {
-      "type": "reel|post|story",
+      "type": "reel|post|story|carousel",
+      "intent": "save|share|behind_the_scenes",
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
       "best_time": "09:00",
       "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
       "hashtags": ["#קפה", "#מינוטו"],
       "hook": "משפט פתיחה קצר",
-      "visual_direction": "הנחיה קצרה למצלם"
+      "visual_direction": "הנחיה קצרה למצלם",
+      "why_this_intent": "למה זה save/share/BTS — משפט אחד"
     }
   ],
   "key_insights": ["תובנה 1", "תובנה 2"]
@@ -4455,6 +4485,47 @@ ${(existingBlogPosts ?? []).length > 0
   const { text, inputTokens, outputTokens } = await callClaude(MODEL_ORGANIC, systemPrompt, finalMessage);
   const parsed = parseClaudeJson(text) as any;
   console.log(`[organic] Done. Tokens: ${inputTokens + outputTokens}`);
+
+  // Normalize posts_to_publish intents. Model likes to return its own
+  // categorization ("promote_product", "educate", "engage") even when the
+  // prompt demands save|share|behind_the_scenes. Map them, then enforce
+  // exactly one post per canonical intent.
+  if (parsed && Array.isArray(parsed.posts_to_publish)) {
+    const canonicals = new Set(["save", "share", "behind_the_scenes"]);
+    const legacyMap: Record<string, "save" | "share" | "behind_the_scenes"> = {
+      educate:         "save",
+      tutorial:        "save",
+      how_to:          "save",
+      guide:           "save",
+      promote_product: "share",
+      promotion:       "share",
+      engage:          "share",
+      announcement:    "share",
+      behind_scenes:   "behind_the_scenes",
+      bts:             "behind_the_scenes",
+      story:           "behind_the_scenes",
+    };
+    for (const p of parsed.posts_to_publish) {
+      const cur = String(p.intent ?? "").toLowerCase().trim();
+      if (canonicals.has(cur)) continue;
+      const mapped = legacyMap[cur];
+      if (mapped) {
+        console.log(`[organic] remapped intent "${cur}" → "${mapped}"`);
+        p.intent = mapped;
+      } else {
+        // Unknown intent — default to behind_the_scenes so something shows
+        console.log(`[organic] unknown intent "${cur}" → default "behind_the_scenes"`);
+        p.intent = "behind_the_scenes";
+      }
+    }
+    // De-duplicate by intent — keep first occurrence of each canonical intent
+    const seen = new Set<string>();
+    parsed.posts_to_publish = parsed.posts_to_publish.filter((p: any) => {
+      if (seen.has(p.intent)) return false;
+      seen.add(p.intent);
+      return true;
+    });
+  }
 
   // ── Post-process: filter out recommendations too similar to existing posts ──
   // The in-prompt self-check is too soft — agent's "nearly-identical" threshold
@@ -6176,6 +6247,30 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
         { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
     }
+  }
+
+  // Dump the latest organic report's posts_to_publish — lets us verify
+  // intent field without needing DB console access.
+  if (body.agent === "dump_organic_posts") {
+    const { data } = await supabase
+      .from("advisor_reports")
+      .select("week_start,updated_at,report")
+      .eq("agent_type", "organic_content")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const row = (data ?? [])[0] as any;
+    const posts = row?.report?.posts_to_publish ?? [];
+    return new Response(JSON.stringify({
+      week_start: row?.week_start,
+      updated_at: row?.updated_at,
+      posts: posts.map((p: any) => ({
+        intent: p.intent,
+        type: p.type,
+        topic: p.topic,
+        hook: p.hook,
+        why_this_intent: p.why_this_intent,
+      })),
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
   // One-shot cleanup — delete orphan advisor_reports rows from before the
