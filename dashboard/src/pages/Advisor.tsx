@@ -2856,6 +2856,154 @@ export default function AdvisorPage() {
           )
         )}
 
+        {/* Portfolio ranking block — the top-level view the doctor v2 produces.
+            This is the headline insight: which campaigns are winning, which
+            need more budget, which should pause. Sorted by real ROAS. */}
+        {doctorResult?.portfolio_ranking?.length > 0 && doctorOpen && (
+          <div className="bg-white border border-emerald-200 rounded-xl p-3" dir="rtl">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-surface-900">🏆 דירוג קמפיינים לפי ROAS אמיתי (14 ימים)</h4>
+              {doctorResult.attribution_health && (
+                <span className="text-[10px] text-surface-500">
+                  {doctorResult.attribution_health.gclid_matched}/{doctorResult.attribution_health.total_orders} הזמנות מיוחסות בוודאות (gclid)
+                  {doctorResult.attribution_health.auto_tagging_enabled ? ' · auto-tagging פעיל' : ' · ⚠️ auto-tagging כבוי'}
+                </span>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-surface-200 text-surface-500 text-right">
+                    <th className="pb-1 pr-2">קמפיין</th>
+                    <th className="pb-1 px-1 text-center">ערוץ</th>
+                    <th className="pb-1 px-1 text-center">המלצה</th>
+                    <th className="pb-1 px-1 text-center">הוצאה</th>
+                    <th className="pb-1 px-1 text-center">הזמנות</th>
+                    <th className="pb-1 px-1 text-center">הכנסות</th>
+                    <th className="pb-1 px-1 text-center">ROAS</th>
+                    <th className="pb-1 px-1 text-center">CPA</th>
+                    <th className="pb-1 px-1 text-center">קפה%</th>
+                    <th className="pb-1 px-1 text-center">IS</th>
+                    <th className="pb-1 px-1 text-center">Budget Lost</th>
+                    <th className="pb-1 px-1 text-center">attribution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doctorResult.portfolio_ranking.map((p: any, i: number) => {
+                    const signalStyle: Record<string, string> = {
+                      SCALE_NOW:      'bg-emerald-100 text-emerald-800 border-emerald-300',
+                      SCALE_CAUTIOUS: 'bg-green-50 text-green-700 border-green-200',
+                      OBSERVE:        'bg-sky-50 text-sky-700 border-sky-200',
+                      CUT:            'bg-amber-50 text-amber-800 border-amber-300',
+                      PAUSE:          'bg-red-50 text-red-700 border-red-300',
+                    }
+                    const signalLabel: Record<string, string> = {
+                      SCALE_NOW:      '🚀 הגדל',
+                      SCALE_CAUTIOUS: '📈 הגדל בזהירות',
+                      OBSERVE:        '👁️ המתן',
+                      CUT:            '✂️ צמצם',
+                      PAUSE:          '⛔ עצור',
+                    }
+                    const confStyle: Record<string, string> = {
+                      high:   'text-emerald-700',
+                      medium: 'text-amber-700',
+                      low:    'text-red-600',
+                    }
+                    return (
+                      <tr key={i} className="border-b border-surface-100 hover:bg-surface-50">
+                        <td className="py-1.5 pr-2 font-medium text-surface-900 truncate max-w-[180px]" title={p.name}>{p.name}</td>
+                        <td className="py-1.5 px-1 text-center text-[10px] text-surface-600">{p.channel}</td>
+                        <td className="py-1.5 px-1 text-center">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${signalStyle[p.scale_signal] ?? 'bg-surface-100'}`}>
+                            {signalLabel[p.scale_signal] ?? p.scale_signal}
+                          </span>
+                        </td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">₪{Math.round(p.spend_14d ?? 0)}</td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">{p.real_orders ?? 0}</td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">₪{Math.round(p.real_revenue ?? 0)}</td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px] font-bold">
+                          {p.real_roas != null ? `${p.real_roas.toFixed(1)}x` : '—'}
+                        </td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">
+                          {p.real_cpa != null ? `₪${Math.round(p.real_cpa)}` : '—'}
+                        </td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">{p.coffee_pct ?? 0}%</td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">
+                          {p.avg_is != null ? `${p.avg_is.toFixed(0)}%` : '—'}
+                        </td>
+                        <td className="py-1.5 px-1 text-center font-mono text-[11px]">
+                          {p.avg_budget_lost != null ? `${p.avg_budget_lost.toFixed(0)}%` : '—'}
+                        </td>
+                        <td className={`py-1.5 px-1 text-center text-[10px] ${confStyle[p.attribution_confidence] ?? ''}`}>
+                          {p.attribution_confidence ?? '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Budget reallocation suggestions */}
+            {doctorResult.budget_reallocation_plan?.length > 0 && (
+              <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded p-2">
+                <p className="text-xs font-semibold text-emerald-900 mb-1">💰 תכנית הקצאת תקציב מחדש:</p>
+                <ul className="text-xs space-y-0.5 pr-5 list-disc text-emerald-900">
+                  {doctorResult.budget_reallocation_plan.map((r: any, i: number) => (
+                    <li key={i}>
+                      {r.to ? (
+                        <>הגדל <strong>{r.to}</strong> מ-₪{r.current_daily_ils}/יום ל-₪{r.suggested_daily_ils}/יום ({r.reason})</>
+                      ) : (
+                        <>
+                          {r.action === 'pause' ? 'השהה' : 'צמצם ב-50%'} את <strong>{r.from}</strong> (מוציא ₪{r.from_daily_ils}/יום)
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Wasteful search terms */}
+            {doctorResult.wasteful_search_terms?.length > 0 && (
+              <div className="mt-3 bg-red-50 border border-red-200 rounded p-2">
+                <p className="text-xs font-semibold text-red-900 mb-1">
+                  🚫 מילות חיפוש בזבזניות ({doctorResult.wasteful_search_terms.length}) — הוסף כ-negatives:
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {doctorResult.wasteful_search_terms.slice(0, 15).map((w: any, i: number) => (
+                    <span key={i} className="text-[10px] font-mono bg-white rounded px-1.5 py-0.5 border border-red-200">
+                      -"{w.search_term}" (₪{w.cost_ils})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Product revenue split */}
+            {doctorResult.product_revenue_by_channel && (
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                {(['google', 'meta'] as const).map(ch => {
+                  const rev = doctorResult.product_revenue_by_channel[ch];
+                  const total = (rev?.coffee ?? 0) + (rev?.machine ?? 0) + (rev?.grinder ?? 0) + (rev?.accessory ?? 0);
+                  if (total === 0) return null;
+                  return (
+                    <div key={ch} className="bg-surface-50 rounded p-2 text-xs">
+                      <p className="font-semibold mb-1">פילוח הכנסות {ch} (₪{Math.round(total)})</p>
+                      <div className="grid grid-cols-4 gap-1 text-[10px]">
+                        <div>☕ קפה: <strong>₪{Math.round(rev.coffee)}</strong></div>
+                        <div>🎛️ מכונות: <strong>₪{Math.round(rev.machine)}</strong></div>
+                        <div>⚙️ מטחנות: <strong>₪{Math.round(rev.grinder)}</strong></div>
+                        <div>🧰 עזרים: <strong>₪{Math.round(rev.accessory)}</strong></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {doctorResult && doctorOpen && (
           <div className="space-y-3" dir="rtl">
             {(doctorResult.campaigns ?? []).map((c: any, i: number) => {
