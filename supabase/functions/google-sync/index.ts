@@ -1,5 +1,28 @@
+/**
+ * CoffeeFlow — Google Ads Sync
+ *
+ * Modes (controlled by ?mode=... query param):
+ *
+ *   performance  — daily insights, creatives, keywords, search terms,
+ *                  ad-group daily, gclid→campaign click mapping. Run
+ *                  before every doctor check.
+ *
+ *   settings     — account-level settings, campaign settings, ad group
+ *                  settings, audiences, conversion actions. Run rarely:
+ *                  on-demand when user makes changes in Google Ads, or
+ *                  on a daily cron.
+ *
+ *   all (default) — both. Preserves the backwards-compatible cron behavior.
+ *
+ * The split exists so the doctor's pre-run performance sync is fast (doesn't
+ * re-fetch config that rarely changes) and the settings tables stay a stable
+ * source of truth for all campaign/ad-group/audience configuration.
+ */
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function refreshGoogleToken(refreshToken: string): Promise<string> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -17,6 +40,39 @@ async function refreshGoogleToken(refreshToken: string): Promise<string> {
   return data.access_token
 }
 
+/**
+ * Generic GAQL caller with built-in pagination. Google Ads API returns
+ * results page-by-page; nextPageToken is appended to the body. Caller gets
+ * all results merged. Errors are thrown so call sites can try/catch per-block.
+ */
+async function gaqlSearch(
+  url: string, headers: Record<string, string>, query: string, label: string
+): Promise<any[]> {
+  const all: any[] = []
+  let pageToken: string | undefined = undefined
+  let pageCount = 0
+  while (true) {
+    const body: any = { query }
+    if (pageToken) body.pageToken = pageToken
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
+    const raw = await res.text()
+    let data: any
+    try { data = JSON.parse(raw) }
+    catch { throw new Error(`[${label}] non-JSON response (${res.status}): ${raw.slice(0, 200)}`) }
+    if (data.error) throw new Error(`[${label}] ${JSON.stringify(data.error).slice(0, 500)}`)
+    if (Array.isArray(data.results)) all.push(...data.results)
+    pageToken = data.nextPageToken
+    pageCount++
+    if (!pageToken || pageCount > 50) break // safety cap
+  }
+  return all
+}
+
+const toIsoDate = (d: Date) => d.toISOString().split('T')[0]
+const daysAgo = (n: number) => toIsoDate(new Date(Date.now() - n * 86400_000))
+
+// ── Handler ──────────────────────────────────────────────────────────────────
+
 serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -29,324 +85,121 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
+  const urlObj = new URL(req.url)
+  // Default to 'all' for back-compat with the existing cron that calls this
+  // function with no params. Doctor will call ?mode=performance explicitly.
+  const mode = (urlObj.searchParams.get('mode') ?? 'all').toLowerCase()
+  const runSettings    = mode === 'settings'    || mode === 'all'
+  const runPerformance = mode === 'performance' || mode === 'all'
+
   const startedAt = new Date().toISOString()
-  let records = 0
+  const stats: Record<string, any> = {
+    mode,
+    campaign_rows: 0, ad_rows: 0, keyword_rows: 0, search_term_rows: 0,
+    ad_group_daily_rows: 0, click_mapping_rows: 0,
+    account_settings_rows: 0, campaign_settings_rows: 0, ad_group_settings_rows: 0,
+    audience_rows: 0, conversion_action_rows: 0,
+    errors: [] as string[],
+  }
 
   try {
     const devToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN')
     if (!devToken) throw new Error('GOOGLE_DEVELOPER_TOKEN not set')
 
     const { data: tokenRow } = await supabase
-      .from('oauth_tokens')
-      .select('*')
-      .eq('platform', 'google')
-      .single()
-
+      .from('oauth_tokens').select('*').eq('platform', 'google').single()
     if (!tokenRow) throw new Error('Google not connected')
 
     const accessToken = await refreshGoogleToken(tokenRow.refresh_token)
     await supabase.from('oauth_tokens').update({
       access_token: accessToken,
-      expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+      expires_at:   new Date(Date.now() + 3600 * 1000).toISOString(),
     }).eq('platform', 'google')
 
-    const rawCustomerId = Deno.env.get('GOOGLE_CUSTOMER_ID')!
-    const customerId = rawCustomerId.replace(/-/g, '')
-    const loginCustomerId = (Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID') ?? '').replace(/-/g, '')
-
-    const today = new Date().toISOString().split('T')[0]
-    // 90 days — Google Ads attributes conversions up to 90 days after the
-    // click. A 30-day window meant late-attributed conversions never made it
-    // into the upsert because the row had already aged out of the query.
-    const monthAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-
-    // metrics.conversions = Primary conversion actions only
-    // metrics.all_conversions = every conversion action (incl. Secondary).
-    // The Google Ads UI's "All conv." column uses all_conversions, so when
-    // a new conversion action is created and left as Secondary, it appears
-    // in the UI but is invisible to a metrics.conversions query. We fetch
-    // both and prefer all_conversions (matches what the user sees in the UI).
-    const query = `
-      SELECT
-        campaign.id,
-        campaign.name,
-        campaign.status,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.cost_micros,
-        metrics.ctr,
-        metrics.average_cpc,
-        metrics.conversions,
-        metrics.conversions_value,
-        metrics.all_conversions,
-        metrics.all_conversions_value,
-        segments.date
-      FROM campaign
-      WHERE segments.date BETWEEN '${monthAgo}' AND '${today}'
-        AND campaign.status != 'REMOVED'
-      ORDER BY metrics.cost_micros DESC
-      LIMIT 200
-    `
-
-    const url = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:search`
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'developer-token': devToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    })
-
-    const rawText = await res.text()
-    let data
-    try {
-      data = JSON.parse(rawText)
-    } catch {
-      throw new Error(`API returned non-JSON (${res.status}): ${rawText.substring(0, 200)}`)
+    const customerId = Deno.env.get('GOOGLE_CUSTOMER_ID')!.replace(/-/g, '')
+    const apiUrl = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:search`
+    const apiHeaders = {
+      'Authorization':    `Bearer ${accessToken}`,
+      'developer-token':  devToken,
+      'Content-Type':     'application/json',
     }
 
-    if (data.error) throw new Error(JSON.stringify(data.error))
+    const today    = toIsoDate(new Date())
+    const since14  = daysAgo(14)
+    const since90  = daysAgo(90)
 
-    for (const row of data.results || []) {
-      const cost = (row.metrics.costMicros || 0) / 1_000_000
-      // Prefer all_conversions (matches Google Ads UI "All conv." column).
-      // Fall back to primary conversions if all_conversions isn't returned.
-      const allConv     = Number(row.metrics.allConversions      ?? 0)
-      const primaryConv = Number(row.metrics.conversions         ?? 0)
-      const allValue    = Number(row.metrics.allConversionsValue ?? 0)
-      const primaryVal  = Number(row.metrics.conversionsValue    ?? 0)
-      const conversions = allConv     > 0 ? allConv    : primaryConv
-      const convValue   = allValue    > 0 ? allValue   : primaryVal
-      const roas = cost > 0 ? convValue / cost : 0
+    // ════════════════════════════════════════════════════════════════════════
+    // SETTINGS BLOCKS — rare updates
+    // ════════════════════════════════════════════════════════════════════════
 
-      const { error: upErr } = await supabase.from('google_campaigns').upsert({
-        campaign_id: String(row.campaign.id),
-        date: row.segments.date,
-        name: row.campaign.name,
-        status: row.campaign.status,
-        impressions: row.metrics.impressions || 0,
-        clicks: row.metrics.clicks || 0,
-        cost,
-        ctr: row.metrics.ctr || 0,
-        cpc: (row.metrics.averageCpc || 0) / 1_000_000,
-        conversions,
-        conversion_value: convValue,
-        roas,
-        synced_at: new Date().toISOString(),
-      }, { onConflict: 'campaign_id,date' })
-
-      if (upErr) {
-        console.error('[google-sync] campaign upsert failed:', row.campaign.id, row.segments.date, upErr.message)
-      } else {
-        records++
-      }
-    }
-
-    // ── Fetch RSA ad creatives ─────────────────────────────────────────────
-    const adQuery = `
-      SELECT
-        ad_group_ad.ad.id,
-        ad_group_ad.ad.responsive_search_ad.headlines,
-        ad_group_ad.ad.responsive_search_ad.descriptions,
-        ad_group_ad.ad.final_urls,
-        ad_group_ad.ad_strength,
-        ad_group_ad.status,
-        ad_group.id,
-        ad_group.name,
-        campaign.id,
-        campaign.name,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.cost_micros,
-        metrics.ctr,
-        metrics.conversions
-      FROM ad_group_ad
-      WHERE ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
-        AND ad_group_ad.status != 'REMOVED'
-        AND campaign.status != 'REMOVED'
-        AND segments.date BETWEEN '${monthAgo}' AND '${today}'
-    `
-
-    const adRes = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'developer-token': devToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: adQuery }),
-    })
-
-    const adRawText = await adRes.text()
-    let adData
-    try { adData = JSON.parse(adRawText) } catch {
-      console.error('Ad creative API non-JSON:', adRawText.substring(0, 200))
-      adData = { results: [] }
-    }
-
-    let adRecords = 0
-    for (const row of adData.results || []) {
-      const rsa = row.adGroupAd?.ad?.responsiveSearchAd ?? {}
-      const headlines    = (rsa.headlines    ?? []).map((h: { text: string }) => h.text).filter(Boolean)
-      const descriptions = (rsa.descriptions ?? []).map((d: { text: string }) => d.text).filter(Boolean)
-      const finalUrls    = row.adGroupAd?.ad?.finalUrls ?? []
-      const adStrengthRaw = row.adGroupAd?.adStrength ?? ''
-
-      const adStrengthMap: Record<string, string> = {
-        EXCELLENT: 'מצוין', GOOD: 'טוב', AVERAGE: 'ממוצע',
-        POOR: 'חלש', PENDING: 'בבדיקה',
-      }
-
-      await supabase.from('google_ads').upsert({
-        ad_id:        String(row.adGroupAd?.ad?.id ?? ''),
-        ad_group_id:  String(row.adGroup?.id ?? ''),
-        ad_group_name: row.adGroup?.name ?? '',
-        campaign_id:  String(row.campaign?.id ?? ''),
-        campaign_name: row.campaign?.name ?? '',
-        status:       row.adGroupAd?.status ?? '',
-        ad_strength:  adStrengthMap[adStrengthRaw] ?? adStrengthRaw,
-        headlines,
-        descriptions,
-        final_urls:   finalUrls,
-        impressions:  row.metrics?.impressions ?? 0,
-        clicks:       row.metrics?.clicks ?? 0,
-        cost:         (row.metrics?.costMicros ?? 0) / 1_000_000,
-        ctr:          row.metrics?.ctr ?? 0,
-        conversions:  row.metrics?.conversions ?? 0,
-        synced_at:    new Date().toISOString(),
-      }, { onConflict: 'ad_id' })
-
-      adRecords++
-    }
-
-    console.log(`[google-sync] Ad creatives synced: ${adRecords}`)
-
-    // ── Keyword-level performance (keyword_view GAQL) ─────────────────────────
-    // Note: Google Ads Keyword Planner has no REST API — gRPC only.
-    // Instead we query keyword_view for real performance data from Minuto's own campaigns.
-    let keywordRecords = 0
-    try {
-      const kwQuery = `
-        SELECT
-          ad_group_criterion.keyword.text,
-          ad_group_criterion.keyword.match_type,
-          ad_group_criterion.status,
-          campaign.name,
-          metrics.impressions,
-          metrics.clicks,
-          metrics.cost_micros,
-          metrics.ctr,
-          metrics.average_cpc,
-          metrics.conversions,
-          metrics.search_impression_share,
-          metrics.search_top_impression_share
-        FROM keyword_view
-        WHERE campaign.status != 'REMOVED'
-          AND ad_group_criterion.type = 'KEYWORD'
-          AND ad_group_criterion.status != 'REMOVED'
-          AND segments.date BETWEEN '${monthAgo}' AND '${today}'
-        ORDER BY metrics.impressions DESC
-        LIMIT 150
-      `
-
-      // Note: use same headers as campaign queries (no login-customer-id) — that's what works
-      const kwRes = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'developer-token': devToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: kwQuery }),
-      })
-
-      const kwRawText = await kwRes.text()
-      let kwData: any
-      try { kwData = JSON.parse(kwRawText) } catch {
-        console.error('[google-sync] keyword_view non-JSON:', kwRawText.substring(0, 200))
-        kwData = { results: [] }
-      }
-
-      if (kwData.error) {
-        console.warn('[google-sync] keyword_view error:', JSON.stringify(kwData.error).substring(0, 300))
-      } else {
-        const kwResults = kwData.results ?? []
-        console.log(`[google-sync] keyword_view results: ${kwResults.length}`)
-        for (const row of kwData.results ?? []) {
-          const kw     = row.adGroupCriterion?.keyword?.text ?? ''
-          const match  = row.adGroupCriterion?.keyword?.matchType ?? 'UNSPECIFIED'
-          const impr   = row.metrics?.impressions ?? 0
-          const clicks = row.metrics?.clicks ?? 0
-          const cost   = (row.metrics?.costMicros ?? 0) / 1_000_000
-          const cpc    = (row.metrics?.averageCpc ?? 0) / 1_000_000
-          const impShare = row.metrics?.searchImpressionShare ?? 0
-          const topShare = row.metrics?.searchTopImpressionShare ?? 0
-
-          if (!kw) continue
-
-          await supabase.from('keyword_ideas').upsert({
-            keyword:               kw,
-            avg_monthly_searches:  impr,   // reuse field: lifetime impressions from our campaigns
-            competition:           match,  // reuse field: match type
-            competition_index:     parseFloat((impShare * 100).toFixed(1)),   // impression share %
-            low_top_bid_micros:    Math.round(cpc * 1_000_000),               // actual CPC in micros
-            high_top_bid_micros:   Math.round((cost > 0 ? cost / Math.max(clicks, 1) : cpc) * 1_000_000 * 1.2),
-            synced_at:             new Date().toISOString(),
-          }, { onConflict: 'keyword' })
-          keywordRecords++
+    // Account-level settings. customer resource — one row.
+    if (runSettings) {
+      try {
+        const q = `
+          SELECT
+            customer.id,
+            customer.descriptive_name,
+            customer.currency_code,
+            customer.time_zone,
+            customer.auto_tagging_enabled,
+            customer.conversion_tracking_setting.conversion_tracking_status,
+            customer.conversion_tracking_setting.enhanced_conversions_for_leads_enabled,
+            customer.test_account,
+            customer.manager
+          FROM customer
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'customer')
+        for (const r of rows) {
+          const c = r.customer ?? {}
+          const ct = c.conversionTrackingSetting ?? {}
+          await supabase.from('google_account_settings').upsert({
+            customer_id:                String(c.id ?? customerId),
+            descriptive_name:           c.descriptiveName ?? null,
+            currency_code:              c.currencyCode ?? null,
+            time_zone:                  c.timeZone ?? null,
+            auto_tagging_enabled:       c.autoTaggingEnabled ?? null,
+            conversion_tracking_status: ct.conversionTrackingStatus ?? null,
+            has_enhanced_conversions:   ct.enhancedConversionsForLeadsEnabled ?? null,
+            test_account:               c.testAccount ?? null,
+            manager:                    c.manager ?? null,
+            synced_at:                  new Date().toISOString(),
+          }, { onConflict: 'customer_id' })
+          stats.account_settings_rows++
         }
+      } catch (e: any) {
+        console.error('[google-sync] account_settings:', e.message)
+        stats.errors.push(`account_settings: ${e.message}`)
       }
-    } catch (kwErr: any) {
-      console.warn('[google-sync] keyword_view fetch failed:', kwErr.message)
-    }
 
-    console.log(`[google-sync] Keyword ideas synced: ${keywordRecords}`)
-
-    // ── Campaign settings snapshot (for Campaign Doctor) ──────────────────────
-    // Bidding strategy, network expansion, budget — the stuff that decides
-    // where your money goes BEFORE any creative is involved. Without this
-    // the doctor can't flag classic traps like "tCPA strategy with no
-    // conversion history" or "Search Partners on + wasting 20% of budget".
-    let settingsRecords = 0
-    try {
-      const settingsQuery = `
-        SELECT
-          campaign.id,
-          campaign.name,
-          campaign.status,
-          campaign.advertising_channel_type,
-          campaign.bidding_strategy_type,
-          campaign.target_cpa.target_cpa_micros,
-          campaign.maximize_conversion_value.target_roas,
-          campaign.network_settings.target_google_search,
-          campaign.network_settings.target_search_network,
-          campaign.network_settings.target_content_network,
-          campaign.network_settings.target_partner_search_network,
-          campaign_budget.amount_micros,
-          campaign_budget.delivery_method
-        FROM campaign
-        WHERE campaign.status = 'ENABLED'
-      `
-      const settingsRes = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'developer-token': devToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: settingsQuery }),
-      })
-      const settingsData = await settingsRes.json()
-      if (settingsData.error) {
-        console.warn('[google-sync] campaign_settings error:', JSON.stringify(settingsData.error).substring(0, 300))
-      } else {
-        for (const row of settingsData.results ?? []) {
-          const c = row.campaign ?? {}
+      // Campaign settings (expanded from what we used to store)
+      try {
+        const q = `
+          SELECT
+            campaign.id,
+            campaign.name,
+            campaign.status,
+            campaign.advertising_channel_type,
+            campaign.bidding_strategy_type,
+            campaign.target_cpa.target_cpa_micros,
+            campaign.maximize_conversion_value.target_roas,
+            campaign.network_settings.target_google_search,
+            campaign.network_settings.target_search_network,
+            campaign.network_settings.target_content_network,
+            campaign.network_settings.target_partner_search_network,
+            campaign.final_url_suffix,
+            campaign.tracking_url_template,
+            campaign.start_date,
+            campaign.end_date,
+            campaign_budget.amount_micros,
+            campaign_budget.delivery_method
+          FROM campaign
+          WHERE campaign.status != 'REMOVED'
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'campaign_settings')
+        for (const r of rows) {
+          const c = r.campaign ?? {}
           const ns = c.networkSettings ?? {}
-          const b  = row.campaignBudget ?? {}
+          const b = r.campaignBudget ?? {}
           await supabase.from('google_campaign_settings').upsert({
             campaign_id:              String(c.id ?? ''),
             name:                     c.name ?? null,
@@ -360,57 +213,117 @@ serve(async (req) => {
             target_partner_search:    ns.targetPartnerSearchNetwork ?? null,
             daily_budget_micros:      b.amountMicros ? String(b.amountMicros) : null,
             budget_delivery_method:   b.deliveryMethod ?? null,
+            final_url_suffix:         c.finalUrlSuffix ?? null,
+            tracking_template:        c.trackingUrlTemplate ?? null,
+            start_date:               c.startDate ?? null,
+            end_date:                 c.endDate && c.endDate !== '2037-12-30' ? c.endDate : null,
             synced_at:                new Date().toISOString(),
           }, { onConflict: 'campaign_id' })
-          settingsRecords++
+          stats.campaign_settings_rows++
         }
+      } catch (e: any) {
+        console.error('[google-sync] campaign_settings:', e.message)
+        stats.errors.push(`campaign_settings: ${e.message}`)
       }
-      console.log(`[google-sync] Campaign settings synced: ${settingsRecords}`)
-    } catch (sErr: any) {
-      console.warn('[google-sync] campaign_settings fetch failed:', sErr.message)
-    }
 
-    // ── Conversion action roles (authoritative soft-conv detector) ────────────
-    // The doctor currently uses a heuristic to flag "Add to cart set as Primary"
-    // (based on inflation ratio between Google-reported conversions and Woo
-    // orders). This pulls the actual config so the fix instructions can name
-    // the exact actions that need to move from Primary → Secondary.
-    let convActionRecords = 0
-    try {
-      const caQuery = `
-        SELECT
-          conversion_action.id,
-          conversion_action.name,
-          conversion_action.category,
-          conversion_action.type,
-          conversion_action.status,
-          conversion_action.primary_for_goal,
-          conversion_action.include_in_conversions_metric,
-          conversion_action.counting_type,
-          conversion_action.attribution_model_settings.attribution_model,
-          conversion_action.value_settings.default_value,
-          conversion_action.value_settings.always_use_default_value
-        FROM conversion_action
-        WHERE conversion_action.status = 'ENABLED'
-      `
-      const caRes = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'developer-token': devToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: caQuery }),
-      })
-      const caData = await caRes.json()
-      if (caData.error) {
-        console.warn('[google-sync] conversion_action error:', JSON.stringify(caData.error).substring(0, 300))
-      } else {
-        for (const row of caData.results ?? []) {
-          const ca = row.conversionAction ?? {}
+      // Ad group settings
+      try {
+        const q = `
+          SELECT
+            ad_group.id,
+            ad_group.name,
+            ad_group.status,
+            ad_group.type,
+            ad_group.cpc_bid_micros,
+            ad_group.target_cpa_micros,
+            ad_group.target_roas,
+            campaign.id
+          FROM ad_group
+          WHERE ad_group.status != 'REMOVED'
+            AND campaign.status != 'REMOVED'
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_group_settings')
+        for (const r of rows) {
+          const ag = r.adGroup ?? {}
+          await supabase.from('google_ad_group_settings').upsert({
+            ad_group_id:        String(ag.id ?? ''),
+            campaign_id:        String(r.campaign?.id ?? ''),
+            name:               ag.name ?? null,
+            status:             ag.status ?? null,
+            type:               ag.type ?? null,
+            cpc_bid_micros:     ag.cpcBidMicros ? String(ag.cpcBidMicros) : null,
+            target_cpa_micros:  ag.targetCpaMicros ? String(ag.targetCpaMicros) : null,
+            target_roas:        ag.targetRoas ?? null,
+            synced_at:          new Date().toISOString(),
+          }, { onConflict: 'ad_group_id' })
+          stats.ad_group_settings_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] ad_group_settings:', e.message)
+        stats.errors.push(`ad_group_settings: ${e.message}`)
+      }
+
+      // Audiences / user lists. Only customer-match (CRM) and remarketing
+      // lists usable on Search network. Filter closed/stale lists.
+      try {
+        const q = `
+          SELECT
+            user_list.id,
+            user_list.name,
+            user_list.description,
+            user_list.type,
+            user_list.size_for_search,
+            user_list.size_for_display,
+            user_list.membership_status,
+            user_list.membership_life_span
+          FROM user_list
+          WHERE user_list.membership_status = 'OPEN'
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'user_list')
+        for (const r of rows) {
+          const u = r.userList ?? {}
+          await supabase.from('google_audiences').upsert({
+            audience_id:               String(u.id ?? ''),
+            name:                      u.name ?? null,
+            type:                      u.type ?? null,
+            description:               u.description ?? null,
+            size_for_search:           u.sizeForSearch ?? null,
+            size_for_display:          u.sizeForDisplay ?? null,
+            membership_status:         u.membershipStatus ?? null,
+            membership_life_span_days: u.membershipLifeSpan ?? null,
+            synced_at:                 new Date().toISOString(),
+          }, { onConflict: 'audience_id' })
+          stats.audience_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] user_list:', e.message)
+        stats.errors.push(`user_list: ${e.message}`)
+      }
+
+      // Conversion actions — which are Primary vs Secondary. Doctor needs
+      // this to make authoritative statements (no more heuristic guessing).
+      try {
+        const q = `
+          SELECT
+            conversion_action.id,
+            conversion_action.name,
+            conversion_action.category,
+            conversion_action.type,
+            conversion_action.status,
+            conversion_action.primary_for_goal,
+            conversion_action.include_in_conversions_metric,
+            conversion_action.counting_type,
+            conversion_action.attribution_model_settings.attribution_model,
+            conversion_action.value_settings.default_value,
+            conversion_action.value_settings.always_use_default_value
+          FROM conversion_action
+          WHERE conversion_action.status = 'ENABLED'
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'conversion_action')
+        for (const r of rows) {
+          const ca = r.conversionAction ?? {}
           const vs = ca.valueSettings ?? {}
           const ams = ca.attributionModelSettings ?? {}
-          // Derive the value_type for the migration schema
           const valueType = vs.defaultValue != null && vs.alwaysUseDefaultValue
             ? 'DEFAULT'
             : (vs.defaultValue != null ? 'DIFFERENT_VALUES' : 'NO_VALUE')
@@ -427,46 +340,369 @@ serve(async (req) => {
             value_type:             valueType,
             synced_at:              new Date().toISOString(),
           }, { onConflict: 'action_id' })
-          convActionRecords++
+          stats.conversion_action_rows++
         }
+      } catch (e: any) {
+        console.error('[google-sync] conversion_action:', e.message)
+        stats.errors.push(`conversion_action: ${e.message}`)
       }
-      console.log(`[google-sync] Conversion actions synced: ${convActionRecords}`)
-    } catch (caErr: any) {
-      console.warn('[google-sync] conversion_action fetch failed:', caErr.message)
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // PERFORMANCE BLOCKS — fresh every doctor run
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Campaign daily insights WITH impression-share metrics. The IS fields
+    // are the budget-cap signal — same single API call, just more columns.
+    if (runPerformance) {
+      try {
+        const q = `
+          SELECT
+            campaign.id, campaign.name, campaign.status,
+            metrics.impressions, metrics.clicks, metrics.cost_micros,
+            metrics.ctr, metrics.average_cpc,
+            metrics.conversions, metrics.conversions_value,
+            metrics.all_conversions, metrics.all_conversions_value,
+            metrics.search_impression_share,
+            metrics.search_budget_lost_impression_share,
+            metrics.search_rank_lost_impression_share,
+            metrics.search_top_impression_share,
+            segments.date
+          FROM campaign
+          WHERE segments.date BETWEEN '${since90}' AND '${today}'
+            AND campaign.status != 'REMOVED'
+          ORDER BY metrics.cost_micros DESC
+          LIMIT 500
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'campaign_daily')
+        for (const r of rows) {
+          const cost = (r.metrics.costMicros || 0) / 1_000_000
+          const allConv = Number(r.metrics.allConversions ?? 0)
+          const primaryConv = Number(r.metrics.conversions ?? 0)
+          const allVal = Number(r.metrics.allConversionsValue ?? 0)
+          const primaryVal = Number(r.metrics.conversionsValue ?? 0)
+          const conversions = allConv > 0 ? allConv : primaryConv
+          const convValue = allVal > 0 ? allVal : primaryVal
+          const roas = cost > 0 ? convValue / cost : 0
+          const { error } = await supabase.from('google_campaigns').upsert({
+            campaign_id: String(r.campaign.id),
+            date: r.segments.date,
+            name: r.campaign.name,
+            status: r.campaign.status,
+            impressions: r.metrics.impressions || 0,
+            clicks: r.metrics.clicks || 0,
+            cost,
+            ctr: r.metrics.ctr || 0,
+            cpc: (r.metrics.averageCpc || 0) / 1_000_000,
+            conversions,
+            conversion_value: convValue,
+            roas,
+            search_impression_share:             r.metrics.searchImpressionShare ?? null,
+            search_budget_lost_impression_share: r.metrics.searchBudgetLostImpressionShare ?? null,
+            search_rank_lost_impression_share:   r.metrics.searchRankLostImpressionShare ?? null,
+            search_top_impression_share:         r.metrics.searchTopImpressionShare ?? null,
+            synced_at: new Date().toISOString(),
+          }, { onConflict: 'campaign_id,date' })
+          if (!error) stats.campaign_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] campaign_daily:', e.message)
+        stats.errors.push(`campaign_daily: ${e.message}`)
+      }
+
+      // Ad creatives + daily performance (existing behavior — keep)
+      try {
+        const q = `
+          SELECT
+            ad_group_ad.ad.id,
+            ad_group_ad.ad.responsive_search_ad.headlines,
+            ad_group_ad.ad.responsive_search_ad.descriptions,
+            ad_group_ad.ad.final_urls,
+            ad_group_ad.ad_strength,
+            ad_group_ad.status,
+            ad_group.id, ad_group.name,
+            campaign.id, campaign.name,
+            metrics.impressions, metrics.clicks, metrics.cost_micros,
+            metrics.ctr, metrics.conversions
+          FROM ad_group_ad
+          WHERE ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+            AND ad_group_ad.status != 'REMOVED'
+            AND campaign.status != 'REMOVED'
+            AND segments.date BETWEEN '${since14}' AND '${today}'
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_creatives')
+        const adStrengthMap: Record<string, string> = {
+          EXCELLENT: 'מצוין', GOOD: 'טוב', AVERAGE: 'ממוצע',
+          POOR: 'חלש', PENDING: 'בבדיקה',
+        }
+        for (const r of rows) {
+          const rsa = r.adGroupAd?.ad?.responsiveSearchAd ?? {}
+          const headlines    = (rsa.headlines ?? []).map((h: any) => h.text).filter(Boolean)
+          const descriptions = (rsa.descriptions ?? []).map((d: any) => d.text).filter(Boolean)
+          await supabase.from('google_ads').upsert({
+            ad_id:        String(r.adGroupAd?.ad?.id ?? ''),
+            ad_group_id:  String(r.adGroup?.id ?? ''),
+            ad_group_name: r.adGroup?.name ?? '',
+            campaign_id:  String(r.campaign?.id ?? ''),
+            campaign_name: r.campaign?.name ?? '',
+            status:       r.adGroupAd?.status ?? '',
+            ad_strength:  adStrengthMap[r.adGroupAd?.adStrength ?? ''] ?? r.adGroupAd?.adStrength ?? '',
+            headlines, descriptions,
+            final_urls:  r.adGroupAd?.ad?.finalUrls ?? [],
+            impressions: r.metrics?.impressions ?? 0,
+            clicks:      r.metrics?.clicks ?? 0,
+            cost:        (r.metrics?.costMicros ?? 0) / 1_000_000,
+            ctr:         r.metrics?.ctr ?? 0,
+            conversions: r.metrics?.conversions ?? 0,
+            synced_at:   new Date().toISOString(),
+          }, { onConflict: 'ad_id' })
+          stats.ad_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] ad_creatives:', e.message)
+        stats.errors.push(`ad_creatives: ${e.message}`)
+      }
+
+      // Keyword daily + top-100 keyword_ideas (backward compat)
+      try {
+        const q = `
+          SELECT
+            ad_group_criterion.keyword.text,
+            ad_group_criterion.keyword.match_type,
+            ad_group.id, ad_group.name,
+            campaign.id, campaign.name,
+            metrics.impressions, metrics.clicks, metrics.cost_micros,
+            metrics.ctr, metrics.average_cpc,
+            metrics.conversions, metrics.conversions_value,
+            metrics.search_impression_share,
+            segments.date
+          FROM keyword_view
+          WHERE campaign.status != 'REMOVED'
+            AND ad_group_criterion.type = 'KEYWORD'
+            AND ad_group_criterion.status != 'REMOVED'
+            AND segments.date BETWEEN '${since14}' AND '${today}'
+          ORDER BY metrics.cost_micros DESC
+          LIMIT 2000
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'keywords_daily')
+        // Aggregate per-keyword for the legacy keyword_ideas table (top-100).
+        const kwAgg: Map<string, any> = new Map()
+        for (const r of rows) {
+          const kw = r.adGroupCriterion?.keyword?.text ?? ''
+          const match = r.adGroupCriterion?.keyword?.matchType ?? 'UNSPECIFIED'
+          if (!kw) continue
+          // Per-day row to google_keywords_daily
+          await supabase.from('google_keywords_daily').upsert({
+            campaign_id: String(r.campaign?.id ?? ''),
+            ad_group_id: String(r.adGroup?.id ?? ''),
+            keyword_text: kw,
+            match_type: match,
+            date: r.segments.date,
+            impressions: r.metrics?.impressions ?? 0,
+            clicks: r.metrics?.clicks ?? 0,
+            cost_micros: r.metrics?.costMicros ?? 0,
+            conversions: r.metrics?.conversions ?? 0,
+            conversion_value: r.metrics?.conversionsValue ?? 0,
+            ctr: r.metrics?.ctr ?? 0,
+            avg_cpc_micros: r.metrics?.averageCpc ?? 0,
+            search_impression_share: r.metrics?.searchImpressionShare ?? null,
+            synced_at: new Date().toISOString(),
+          }, { onConflict: 'campaign_id,ad_group_id,keyword_text,match_type,date' })
+          stats.keyword_rows++
+
+          // Aggregate for legacy keyword_ideas
+          const key = kw
+          if (!kwAgg.has(key)) {
+            kwAgg.set(key, { impressions: 0, clicks: 0, cost: 0, matchType: match, impShare: 0, impShareN: 0 })
+          }
+          const a = kwAgg.get(key)!
+          a.impressions += r.metrics?.impressions ?? 0
+          a.clicks += r.metrics?.clicks ?? 0
+          a.cost += (r.metrics?.costMicros ?? 0) / 1_000_000
+          if (r.metrics?.searchImpressionShare) {
+            a.impShare += r.metrics.searchImpressionShare
+            a.impShareN += 1
+          }
+        }
+        // Populate legacy keyword_ideas (backward compat for existing doctor code)
+        const topKeywords = [...kwAgg.entries()]
+          .sort((a, b) => b[1].impressions - a[1].impressions)
+          .slice(0, 150)
+        for (const [kw, a] of topKeywords) {
+          const avgCpc = a.clicks > 0 ? a.cost / a.clicks : 0
+          const avgIS = a.impShareN > 0 ? (a.impShare / a.impShareN) * 100 : 0
+          await supabase.from('keyword_ideas').upsert({
+            keyword: kw,
+            avg_monthly_searches: a.impressions,
+            competition: a.matchType,
+            competition_index: parseFloat(avgIS.toFixed(1)),
+            low_top_bid_micros: Math.round(avgCpc * 1_000_000),
+            high_top_bid_micros: Math.round(avgCpc * 1_000_000 * 1.2),
+            synced_at: new Date().toISOString(),
+          }, { onConflict: 'keyword' })
+        }
+      } catch (e: any) {
+        console.error('[google-sync] keywords_daily:', e.message)
+        stats.errors.push(`keywords_daily: ${e.message}`)
+      }
+
+      // Search terms report — what users actually typed
+      try {
+        const q = `
+          SELECT
+            search_term_view.search_term,
+            search_term_view.status,
+            segments.keyword.info.text,
+            segments.keyword.info.match_type,
+            ad_group.id, campaign.id,
+            metrics.impressions, metrics.clicks, metrics.cost_micros,
+            metrics.conversions, metrics.conversions_value,
+            segments.date
+          FROM search_term_view
+          WHERE campaign.status != 'REMOVED'
+            AND segments.date BETWEEN '${since14}' AND '${today}'
+            AND metrics.cost_micros > 0
+          ORDER BY metrics.cost_micros DESC
+          LIMIT 2000
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'search_terms')
+        for (const r of rows) {
+          const term = r.searchTermView?.searchTerm ?? ''
+          if (!term) continue
+          await supabase.from('google_search_terms').upsert({
+            campaign_id: String(r.campaign?.id ?? ''),
+            ad_group_id: String(r.adGroup?.id ?? ''),
+            search_term: term,
+            triggering_keyword: r.segments?.keyword?.info?.text ?? null,
+            match_type: r.segments?.keyword?.info?.matchType ?? null,
+            date: r.segments.date,
+            impressions: r.metrics?.impressions ?? 0,
+            clicks: r.metrics?.clicks ?? 0,
+            cost_micros: r.metrics?.costMicros ?? 0,
+            conversions: r.metrics?.conversions ?? 0,
+            conversion_value: r.metrics?.conversionsValue ?? 0,
+            status: r.searchTermView?.status ?? null,
+            synced_at: new Date().toISOString(),
+          }, { onConflict: 'campaign_id,ad_group_id,search_term,date' })
+          stats.search_term_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] search_terms:', e.message)
+        stats.errors.push(`search_terms: ${e.message}`)
+      }
+
+      // Ad-group daily performance
+      try {
+        const q = `
+          SELECT
+            ad_group.id, ad_group.name,
+            campaign.id,
+            metrics.impressions, metrics.clicks, metrics.cost_micros,
+            metrics.ctr, metrics.conversions, metrics.conversions_value,
+            metrics.search_impression_share,
+            segments.date
+          FROM ad_group
+          WHERE ad_group.status != 'REMOVED'
+            AND campaign.status != 'REMOVED'
+            AND segments.date BETWEEN '${since14}' AND '${today}'
+          ORDER BY metrics.cost_micros DESC
+        `
+        const rows = await gaqlSearch(apiUrl, apiHeaders, q, 'ad_group_daily')
+        for (const r of rows) {
+          await supabase.from('google_ad_group_daily').upsert({
+            ad_group_id: String(r.adGroup?.id ?? ''),
+            campaign_id: String(r.campaign?.id ?? ''),
+            ad_group_name: r.adGroup?.name ?? null,
+            date: r.segments.date,
+            impressions: r.metrics?.impressions ?? 0,
+            clicks: r.metrics?.clicks ?? 0,
+            cost_micros: r.metrics?.costMicros ?? 0,
+            conversions: r.metrics?.conversions ?? 0,
+            conversion_value: r.metrics?.conversionsValue ?? 0,
+            ctr: r.metrics?.ctr ?? 0,
+            search_impression_share: r.metrics?.searchImpressionShare ?? null,
+            synced_at: new Date().toISOString(),
+          }, { onConflict: 'ad_group_id,date' })
+          stats.ad_group_daily_rows++
+        }
+      } catch (e: any) {
+        console.error('[google-sync] ad_group_daily:', e.message)
+        stats.errors.push(`ad_group_daily: ${e.message}`)
+      }
+
+      // Click view → gclid → campaign_id mapping. THE fix for PMax attribution.
+      // click_view requires single-day segments — loop last 14 days.
+      try {
+        let clickLoopCount = 0
+        for (let d = 0; d < 14; d++) {
+          const targetDate = daysAgo(d)
+          const q = `
+            SELECT
+              click_view.gclid,
+              campaign.id, ad_group.id,
+              segments.ad_network_type,
+              segments.device,
+              segments.date
+            FROM click_view
+            WHERE segments.date = '${targetDate}'
+          `
+          try {
+            const rows = await gaqlSearch(apiUrl, apiHeaders, q, `click_view_${targetDate}`)
+            for (const r of rows) {
+              const gclid = r.clickView?.gclid
+              if (!gclid) continue
+              await supabase.from('google_click_mapping').upsert({
+                gclid,
+                campaign_id: String(r.campaign?.id ?? ''),
+                ad_group_id: String(r.adGroup?.id ?? ''),
+                click_date: r.segments.date,
+                device: r.segments?.device ?? null,
+                synced_at: new Date().toISOString(),
+              }, { onConflict: 'gclid' })
+              stats.click_mapping_rows++
+              clickLoopCount++
+            }
+          } catch (dayErr: any) {
+            // Some days may have no clicks; don't abort the whole sync
+            if (!dayErr.message.includes('no results')) {
+              console.warn(`[google-sync] click_view ${targetDate}:`, dayErr.message)
+            }
+          }
+        }
+        console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across 14 days`)
+      } catch (e: any) {
+        console.error('[google-sync] click_view:', e.message)
+        stats.errors.push(`click_view: ${e.message}`)
+      }
+    }
+
+    // ── Log & respond ──────────────────────────────────────────────────────
+    const totalRecords = stats.campaign_rows + stats.ad_rows + stats.keyword_rows
+      + stats.search_term_rows + stats.ad_group_daily_rows + stats.click_mapping_rows
+      + stats.account_settings_rows + stats.campaign_settings_rows
+      + stats.ad_group_settings_rows + stats.audience_rows + stats.conversion_action_rows
+
     await supabase.from('sync_log').insert({
       platform: 'google',
-      status: 'success',
-      records: records + adRecords + keywordRecords + settingsRecords + convActionRecords,
+      status:   stats.errors.length ? 'partial' : 'success',
+      records:  totalRecords,
+      error_msg: stats.errors.length ? stats.errors.join(' | ').slice(0, 500) : null,
       started_at: startedAt,
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({
-      success: true,
-      campaign_records:         records,
-      ad_records:               adRecords,
-      keyword_records:          keywordRecords,
-      settings_records:         settingsRecords,
-      conversion_action_records: convActionRecords,
-    }), {
+    return new Response(JSON.stringify({ success: true, ...stats }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
-  } catch (err) {
-    console.error('Google sync error:', err.message)
+  } catch (err: any) {
+    console.error('[google-sync] fatal:', err.message)
     await supabase.from('sync_log').insert({
-      platform: 'google',
-      status: 'error',
-      error_msg: err.message,
-      started_at: startedAt,
-      finished_at: new Date().toISOString(),
+      platform: 'google', status: 'error', error_msg: err.message,
+      started_at: startedAt, finished_at: new Date().toISOString(),
     })
-
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({ error: err.message, stats }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })

@@ -6206,13 +6206,23 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         { data: keywordsRaw },
         { data: googleSettingsRaw },
         { data: googleConvActionsRaw },
+        { data: googleAccountSettingsRaw },
+        { data: googleAdGroupSettingsRaw },
+        { data: googleAdGroupDailyRaw },
+        { data: googleSearchTermsRaw },
+        { data: googleClickMappingRaw },
+        { data: googleAudiencesRaw },
         { data: metaTrendRaw },
         { data: metaAdsetsRaw },
         { data: metaAdsRaw },
+        { data: metaAdsetDailyRaw },
+        { data: metaPlacementDailyRaw },
+        { data: metaAdDailyRaw },
         { data: wooOrdersRaw },
+        { data: wooItemsEnrichedRaw },
       ] = await Promise.all([
         supabase.from("google_campaigns")
-          .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,ctr,cpc,roas")
+          .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,ctr,cpc,roas,search_impression_share,search_budget_lost_impression_share,search_rank_lost_impression_share,search_top_impression_share")
           .eq("status", "ENABLED")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
@@ -6223,32 +6233,66 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           .select("keyword,competition,competition_index,avg_monthly_searches,low_top_bid_micros,high_top_bid_micros")
           .order("avg_monthly_searches", { ascending: false })
           .limit(100),
-        // Campaign-level settings: bidding strategy, network expansion, budget.
         supabase.from("google_campaign_settings")
-          .select("campaign_id,name,advertising_channel_type,bidding_strategy_type,target_cpa_micros,target_roas,target_search_network,target_content_network,target_partner_search,daily_budget_micros,budget_delivery_method"),
-        // Conversion action roles — authoritative soft-conv-primary check.
+          .select("campaign_id,name,advertising_channel_type,bidding_strategy_type,target_cpa_micros,target_roas,target_search_network,target_content_network,target_partner_search,daily_budget_micros,budget_delivery_method,final_url_suffix,tracking_template"),
         supabase.from("google_conversion_actions")
           .select("name,category,type,primary_for_goal,include_in_conversions,counting_type,attribution_model,value_type")
           .eq("status", "ENABLED"),
+        // NEW: Account-wide Google Ads config (auto-tagging affects attribution!)
+        supabase.from("google_account_settings")
+          .select("customer_id,descriptive_name,currency_code,time_zone,auto_tagging_enabled,conversion_tracking_status,has_enhanced_conversions,linked_ga4_property_id"),
+        // NEW: Per-ad-group settings (bids, targets)
+        supabase.from("google_ad_group_settings")
+          .select("ad_group_id,campaign_id,name,status,type,cpc_bid_micros,target_cpa_micros,target_roas")
+          .eq("status", "ENABLED"),
+        // NEW: Ad-group daily performance (which ad group inside a campaign is burning money)
+        supabase.from("google_ad_group_daily")
+          .select("ad_group_id,campaign_id,ad_group_name,date,impressions,clicks,cost_micros,conversions,conversion_value,search_impression_share")
+          .gte("date", fourteenDaysAgo),
+        // NEW: Search terms report (what users ACTUALLY typed — source of wasteful spend)
+        supabase.from("google_search_terms")
+          .select("campaign_id,ad_group_id,search_term,triggering_keyword,match_type,date,impressions,clicks,cost_micros,conversions,conversion_value,status")
+          .gte("date", fourteenDaysAgo),
+        // NEW: gclid → campaign mapping (fixes the PMax attribution bug)
+        supabase.from("google_click_mapping")
+          .select("gclid,campaign_id,ad_group_id,click_date")
+          .gte("click_date", fourteenDaysAgo),
+        // NEW: Audiences available in the account (for "you could be using LAL of past purchasers" advice)
+        supabase.from("google_audiences")
+          .select("audience_id,name,type,description,size_for_search,membership_life_span_days")
+          .eq("membership_status", "OPEN"),
         supabase.from("meta_ad_campaigns")
           .select("campaign_id,name,status,objective,date,spend,impressions,clicks,conversions")
           .eq("status", "ACTIVE")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
-        // Meta ad-set snapshots — where targeting/audience lives.
         supabase.from("meta_ad_adsets")
           .select("adset_id,campaign_id,name,effective_status,optimization_goal,billing_event,bid_strategy,daily_budget,lifetime_budget,budget_remaining,targeting,promoted_object,destination_type,learning_stage_info")
           .eq("effective_status", "ACTIVE"),
-        // Meta ads — creative-level snapshots.
         supabase.from("meta_ads")
           .select("ad_id,adset_id,campaign_id,name,effective_status,creative_type,title,body,call_to_action,image_url,video_id")
           .eq("effective_status", "ACTIVE"),
-        // WooCommerce orders = ground truth. Platforms inflate "conversions"
-        // by counting soft events; we compute real CPA/ROAS from these rows.
+        // NEW: Meta adset daily performance
+        supabase.from("meta_adset_daily")
+          .select("adset_id,campaign_id,date,impressions,clicks,spend,conversions,cpm,cpc,ctr,frequency,reach")
+          .gte("date", fourteenDaysAgo),
+        // NEW: Meta placement performance (FB Feed vs IG Reels vs Stories)
+        supabase.from("meta_placement_daily")
+          .select("adset_id,campaign_id,publisher_platform,platform_position,date,impressions,clicks,spend,conversions")
+          .gte("date", fourteenDaysAgo),
+        // NEW: Meta per-ad daily performance (which creatives convert)
+        supabase.from("meta_ad_daily")
+          .select("ad_id,adset_id,campaign_id,date,impressions,clicks,spend,conversions,ctr")
+          .gte("date", fourteenDaysAgo),
+        // WooCommerce orders — now with gclid for accurate PMax attribution
         supabase.from("woo_orders")
-          .select("order_date,total,utm_source,utm_medium,utm_campaign")
+          .select("woo_order_id,order_date,total,utm_source,utm_medium,utm_campaign,gclid")
           .gte("order_date", fourteenDaysAgo)
           .in("status", ["completed", "processing"]),
+        // NEW: Line items with product category → coffee/machine/grinder/accessory revenue per campaign
+        supabase.from("woo_order_items_enriched")
+          .select("order_id,product_name,product_category,quantity,line_total,order_date,utm_source,utm_campaign,gclid")
+          .gte("order_date", fourteenDaysAgo),
       ]);
 
       // Group google trend by campaign, compute totals + tracking-gap flag
@@ -6305,38 +6349,154 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       const lowISCount = kwSample.filter(k => (Number(k.competition_index) || 0) <= 15).length;
       const budgetCapSignal = lowISCount >= 5 && kwSample.length >= 8;
 
-      // Soft-conversion-primary detector — Google/Meta both inflate
-      // "conversions" by counting Page views + Add to cart + Begin checkout
-      // alongside actual purchases. Ground truth is WooCommerce orders
-      // matched by utm_source. The per-campaign match uses utm_campaign too.
+      // ─────────────────────────────────────────────────────────────────────
+      // Attribution v2 — gclid-first, then utm_campaign, then spend share.
+      //
+      // The v1 logic matched only by utm_campaign. PMax campaigns and
+      // auto-tagged Search campaigns send gclid but no utm_campaign, so
+      // their orders fell through to spend_share_estimate which rounded
+      // tiny numbers to zero (the La Marzocco bug: 2 real orders showed as 0).
+      //
+      // Priority: (1) gclid → click_mapping → campaign_id = HIGH confidence
+      //           (2) utm_campaign normalized match                = MEDIUM
+      //           (3) spend-share estimate                         = LOW
+      //
+      // Each Woo order is attributed to at most one campaign. Coffee/machine
+      // split per campaign is computed from woo_order_items_enriched.
+      // ─────────────────────────────────────────────────────────────────────
       const wooRows = (wooOrdersRaw ?? []) as any[];
-      const isGoogleOrder = (o: any) => (o.utm_source ?? "").toLowerCase().includes("google");
-      const isMetaOrder   = (o: any) => /facebook|\bfb\b|instagram|\big\b|meta/.test((o.utm_source ?? "").toLowerCase());
+      const wooItemsByOrderId = new Map<number, any[]>();
+      for (const it of ((wooItemsEnrichedRaw ?? []) as any[])) {
+        const oid = it.order_id;
+        if (!wooItemsByOrderId.has(oid)) wooItemsByOrderId.set(oid, []);
+        wooItemsByOrderId.get(oid)!.push(it);
+      }
+
+      // gclid → { campaign_id } lookup
+      const gclidToCampaign = new Map<string, string>();
+      for (const m of ((googleClickMappingRaw ?? []) as any[])) {
+        if (m.gclid && m.campaign_id) gclidToCampaign.set(m.gclid, String(m.campaign_id));
+      }
+
+      // Normalizer for utm_campaign → campaign_name matching
+      const normName = (s: string) => (s ?? "").toLowerCase().replace(/[_\s|\-]+/g, " ").trim();
+
+      const isGoogleOrder = (o: any) =>
+        (o.utm_source ?? "").toLowerCase().includes("google") || !!o.gclid;
+      const isMetaOrder = (o: any) =>
+        /facebook|\bfb\b|instagram|\big\b|meta/.test((o.utm_source ?? "").toLowerCase());
+
+      // Pre-build: per-campaign real orders keyed by campaign_id (Google) or
+      // campaign_name (Meta, until we add a gclid-equivalent for Meta).
+      const wooByGoogleCampaignId = new Map<string, any[]>();
+      const wooByMetaCampaignName = new Map<string, any[]>();
+      // Orders we couldn't confidently place under any specific campaign.
+      // The doctor still sees them in platform aggregates but without
+      // per-campaign detail; we surface the count so it's auditable.
+      const unattributedGoogle: any[] = [];
+      const unattributedMeta: any[] = [];
+
+      for (const o of wooRows) {
+        // Platform routing first
+        const isGoogle = isGoogleOrder(o);
+        const isMeta   = isMetaOrder(o);
+
+        if (isGoogle) {
+          // (1) gclid match — most accurate
+          let cid: string | null = null;
+          if (o.gclid && gclidToCampaign.has(o.gclid)) {
+            cid = gclidToCampaign.get(o.gclid)!;
+            o._attribution = "gclid";
+          }
+          // (2) utm_campaign match
+          if (!cid && o.utm_campaign) {
+            const targetName = normName(o.utm_campaign);
+            for (const [campaignId, trendRow] of Array.from(googleByCampaign?.entries ? googleByCampaign.entries() : [])) {
+              if (normName((trendRow as any).name) === targetName) { cid = campaignId as string; break; }
+            }
+            if (cid) o._attribution = "utm_campaign";
+          }
+          if (cid) {
+            if (!wooByGoogleCampaignId.has(cid)) wooByGoogleCampaignId.set(cid, []);
+            wooByGoogleCampaignId.get(cid)!.push(o);
+          } else {
+            o._attribution = "unattributed";
+            unattributedGoogle.push(o);
+          }
+        } else if (isMeta) {
+          if (o.utm_campaign) {
+            const targetName = normName(o.utm_campaign);
+            wooByMetaCampaignName.set(targetName, (wooByMetaCampaignName.get(targetName) ?? []).concat(o));
+            o._attribution = "utm_campaign";
+          } else {
+            o._attribution = "unattributed";
+            unattributedMeta.push(o);
+          }
+        }
+      }
+
       const wooGoogleOrders = wooRows.filter(isGoogleOrder).length;
       const wooMetaOrders   = wooRows.filter(isMetaOrder).length;
       const wooGoogleRevenue = wooRows.filter(isGoogleOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
       const wooMetaRevenue   = wooRows.filter(isMetaOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
 
-      // Per-campaign real orders (when utm_campaign matches) + fallback to
-      // platform-share-by-spend when UTM template is broken.
-      const normName = (s: string) => (s ?? "").toLowerCase().replace(/[_\s|\-]+/g, " ").trim();
-      function realOrdersForCampaign(campaignName: string, platform: "google" | "meta", campaignSpend: number, platformTotalSpend: number) {
-        const nk = normName(campaignName);
-        const platformFilter = platform === "google" ? isGoogleOrder : isMetaOrder;
-        const perCampaignOrders = wooRows.filter(o => platformFilter(o) && normName(o.utm_campaign ?? "") === nk);
-        if (perCampaignOrders.length > 0) {
-          const revenue = perCampaignOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
-          return { orders: perCampaignOrders.length, revenue, attribution: "direct_utm" };
+      // Attribution function — gclid/utm first, then spend-share fallback.
+      // Returns { orders, revenue, attribution, coffee_revenue, machine_revenue,
+      //          grinder_revenue, accessory_revenue, other_revenue }.
+      function attributeCampaign(
+        campaignId: string, campaignName: string,
+        platform: "google" | "meta",
+        campaignSpend: number, platformTotalSpend: number,
+      ) {
+        const orders = platform === "google"
+          ? (wooByGoogleCampaignId.get(campaignId) ?? [])
+          : (wooByMetaCampaignName.get(normName(campaignName)) ?? []);
+
+        if (orders.length > 0) {
+          const revenue = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+          // Product category breakdown from line items
+          const catRev: Record<string, number> = {
+            coffee: 0, machine: 0, grinder: 0, accessory: 0, other: 0,
+          };
+          for (const o of orders) {
+            const items = wooItemsByOrderId.get(o.woo_order_id) ?? [];
+            for (const it of items) {
+              const cat = it.product_category ?? 'other';
+              catRev[cat] = (catRev[cat] ?? 0) + (Number(it.line_total) || 0);
+            }
+          }
+          const hasGclid = orders.some(o => o._attribution === "gclid");
+          return {
+            orders: orders.length,
+            revenue: Math.round(revenue * 100) / 100,
+            attribution: hasGclid ? "gclid" : "utm_campaign",
+            confidence: hasGclid ? "high" : "medium",
+            coffee_revenue:    Math.round(catRev.coffee    * 100) / 100,
+            machine_revenue:   Math.round(catRev.machine   * 100) / 100,
+            grinder_revenue:   Math.round(catRev.grinder   * 100) / 100,
+            accessory_revenue: Math.round(catRev.accessory * 100) / 100,
+            other_revenue:     Math.round(catRev.other     * 100) / 100,
+          };
         }
         // Fallback: share of platform orders weighted by spend share
         const platformOrders = platform === "google" ? wooGoogleOrders : wooMetaOrders;
         const platformRevenue = platform === "google" ? wooGoogleRevenue : wooMetaRevenue;
         const share = platformTotalSpend > 0 ? campaignSpend / platformTotalSpend : 0;
         return {
-          orders: Math.round(platformOrders * share * 10) / 10,
+          orders: Math.round(platformOrders * share * 100) / 100,
           revenue: Math.round(platformRevenue * share * 100) / 100,
           attribution: "spend_share_estimate",
+          confidence: "low",
+          coffee_revenue: 0, machine_revenue: 0, grinder_revenue: 0,
+          accessory_revenue: 0, other_revenue: 0,
         };
+      }
+      // Compatibility wrapper for v1 callers below
+      function realOrdersForCampaign(campaignName: string, platform: "google" | "meta", campaignSpend: number, platformTotalSpend: number) {
+        // For Meta, we still only have utm_campaign-based matching; Google is
+        // keyed by campaign_id elsewhere. This legacy function is kept for Meta.
+        const res = attributeCampaign("", campaignName, platform, campaignSpend, platformTotalSpend);
+        return { orders: res.orders, revenue: res.revenue, attribution: res.attribution };
       }
       const totalGoogleConversions = Array.from(googleByCampaign.values())
         .reduce((s, g) => s + (g.totalConvs || 0), 0);
@@ -6392,7 +6552,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
       const campaignsForPrompt: any[] = [];
 
-      for (const [, g] of googleByCampaign) {
+      for (const [cid, g] of googleByCampaign) {
         const ads = adsByCampaign.get(g.name) ?? [];
         const cpa = g.totalConvs > 0 ? g.totalSpend / g.totalConvs : null;
         const cvr = g.totalClicks > 0 ? (g.totalConvs / g.totalClicks) * 100 : 0;
@@ -6416,10 +6576,29 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const last5Conv = last5.reduce((s, d) => s + d.conv, 0);
         const cpa5 = last5Conv > 0 ? Math.round((last5Cost / last5Conv) * 100) / 100 : null;
 
-        // GROUND TRUTH: real orders from WooCommerce joined by UTM
-        const real = realOrdersForCampaign(g.name, "google", g.totalSpend, googleTotalSpend);
+        // NEW: impression-share aggregates (budget-cap signal).
+        // Average IS across days (weighted by impressions to avoid inflating
+        // from low-volume days). budget_lost_IS directly tells us if more
+        // budget would win more impressions.
+        const isSamples = sortedDays
+          .map((d: any) => Number(d.search_impression_share))
+          .filter(v => !isNaN(v) && v > 0);
+        const budgetLostSamples = sortedDays
+          .map((d: any) => Number(d.search_budget_lost_impression_share))
+          .filter(v => !isNaN(v) && v >= 0);
+        const rankLostSamples = sortedDays
+          .map((d: any) => Number(d.search_rank_lost_impression_share))
+          .filter(v => !isNaN(v) && v >= 0);
+        const avgIS = isSamples.length > 0 ? isSamples.reduce((s, v) => s + v, 0) / isSamples.length : null;
+        const avgBudgetLostIS = budgetLostSamples.length > 0 ? budgetLostSamples.reduce((s, v) => s + v, 0) / budgetLostSamples.length : null;
+        const avgRankLostIS = rankLostSamples.length > 0 ? rankLostSamples.reduce((s, v) => s + v, 0) / rankLostSamples.length : null;
+
+        // GROUND TRUTH: gclid-aware attribution + product category split.
+        const real = attributeCampaign(String(cid), g.name, "google", g.totalSpend, googleTotalSpend);
         const realCpa  = real.orders > 0 ? Math.round((g.totalSpend / real.orders) * 100) / 100 : null;
         const realRoas = g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
+        const coffeePct = real.revenue > 0 ? Math.round((real.coffee_revenue / real.revenue) * 100) : 0;
+        const machinePct = real.revenue > 0 ? Math.round((real.machine_revenue / real.revenue) * 100) : 0;
 
         // Campaign-level settings (bid strategy, network expansion, budget)
         const settings = googleSettingsByCampaignId.get(String(g.campaign_id));
@@ -6435,10 +6614,36 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           google_search_on:         settings.target_google_search === true,
         } : null;
 
+        // ── Scale signal — deterministic rule-based decision ───────────────
+        // This is what the v1 doctor got wrong on La Marzocco. Now decided in
+        // code using accurate gclid-attributed data + impression-share metrics:
+        //   SCALE_NOW      → winner, budget-capped. Raise spend immediately.
+        //   SCALE_CAUTIOUS → profitable but not clearly budget-capped.
+        //   OBSERVE        → uncertain (low attribution confidence, or insufficient data).
+        //   CUT            → meaningful spend with weak/no returns. Trim or refocus.
+        //   PAUSE          → confidently broken: >₪200 spend, 0 real orders, high confidence.
+        let scaleSignal = "OBSERVE";
+        if (realRoas !== null && realRoas >= 3 && (avgBudgetLostIS ?? 0) >= 0.2) {
+          scaleSignal = "SCALE_NOW";
+        } else if (realRoas !== null && realRoas >= 2 && (avgIS ?? 1) < 0.5) {
+          scaleSignal = "SCALE_CAUTIOUS";
+        } else if (realRoas !== null && realRoas < 1 && real.orders >= 3 && g.totalSpend > 200) {
+          scaleSignal = "CUT";
+        } else if (real.orders === 0 && g.totalSpend > 200 && real.confidence === "high") {
+          scaleSignal = "PAUSE";
+        }
+
         campaignsForPrompt.push({
           channel: "google",
+          campaign_id: String(cid),
           name: g.name,
           settings: gSettings,
+          scale_signal: scaleSignal,                       // NEW — deterministic decision
+          impression_share: {                              // NEW — budget-cap signal
+            avg_is:          avgIS != null ? Math.round(avgIS * 10000) / 100 : null, // to %
+            avg_budget_lost: avgBudgetLostIS != null ? Math.round(avgBudgetLostIS * 10000) / 100 : null,
+            avg_rank_lost:   avgRankLostIS != null ? Math.round(avgRankLostIS * 10000) / 100 : null,
+          },
           totals_14d: {
             spend: Math.round(g.totalSpend * 100) / 100,
             // GROUND TRUTH numbers — use these for decisions
@@ -6447,6 +6652,16 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             real_cpa_ils: realCpa,
             real_roas: realRoas,
             attribution_source: real.attribution,
+            attribution_confidence: real.confidence,        // NEW: "high" | "medium" | "low"
+            // NEW: product revenue breakdown — tells the doctor which campaign
+            // actually sells coffee vs machines (crucial for Minuto's strategic
+            // goal of shifting from 45% machine revenue toward more coffee).
+            revenue_coffee_ils:    real.coffee_revenue,
+            revenue_machine_ils:   real.machine_revenue,
+            revenue_grinder_ils:   real.grinder_revenue,
+            revenue_accessory_ils: real.accessory_revenue,
+            coffee_pct:  coffeePct,
+            machine_pct: machinePct,
             // Platform-reported — inflated, for comparison only
             platform_reported_conversions: Math.round(g.totalConvs * 10) / 10,
             platform_reported_cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
@@ -6497,10 +6712,19 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const metaLast5Conv  = metaLast5.reduce((s, d) => s + d.conv, 0);
         const metaCpa5 = metaLast5Conv > 0 ? Math.round((metaLast5Spend / metaLast5Conv) * 100) / 100 : null;
 
-        // GROUND TRUTH for Meta too
-        const realM = realOrdersForCampaign(m.name, "meta", m.totalSpend, metaTotalSpend);
+        // GROUND TRUTH for Meta (same attribution path + product category split)
+        const realM = attributeCampaign(String(m.campaign_id), m.name, "meta", m.totalSpend, metaTotalSpend);
         const realMCpa  = realM.orders > 0 ? Math.round((m.totalSpend / realM.orders) * 100) / 100 : null;
         const realMRoas = m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
+        const mCoffeePct = realM.revenue > 0 ? Math.round((realM.coffee_revenue / realM.revenue) * 100) : 0;
+        const mMachinePct = realM.revenue > 0 ? Math.round((realM.machine_revenue / realM.revenue) * 100) : 0;
+
+        // Scale signal for Meta (same rules — no IS metrics but attribution confidence + ROAS still work)
+        let mScaleSignal = "OBSERVE";
+        if (realMRoas !== null && realMRoas >= 3)                                          mScaleSignal = "SCALE_NOW";
+        else if (realMRoas !== null && realMRoas >= 2)                                     mScaleSignal = "SCALE_CAUTIOUS";
+        else if (realMRoas !== null && realMRoas < 1 && realM.orders >= 3 && m.totalSpend > 200) mScaleSignal = "CUT";
+        else if (realM.orders === 0 && m.totalSpend > 200 && realM.confidence === "high")  mScaleSignal = "PAUSE";
 
         // Ad-sets for this campaign (with targeting/audience) + their ads.
         // We summarize targeting into a compact shape the prompt can reason
@@ -6551,9 +6775,11 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
         campaignsForPrompt.push({
           channel: "meta",
+          campaign_id: String(m.campaign_id),
           name: m.name,
           objective: m.objective,
           adsets: metaAdsets,
+          scale_signal: mScaleSignal,                       // NEW
           totals_14d: {
             spend: Math.round(m.totalSpend * 100) / 100,
             real_orders: realM.orders,
@@ -6561,6 +6787,13 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             real_cpa_ils: realMCpa,
             real_roas: realMRoas,
             attribution_source: realM.attribution,
+            attribution_confidence: realM.confidence,
+            revenue_coffee_ils:    realM.coffee_revenue,
+            revenue_machine_ils:   realM.machine_revenue,
+            revenue_grinder_ils:   realM.grinder_revenue,
+            revenue_accessory_ils: realM.accessory_revenue,
+            coffee_pct:  mCoffeePct,
+            machine_pct: mMachinePct,
             platform_reported_conversions: m.totalConvs,
             platform_reported_cpa: cpa != null ? Math.round(cpa * 100) / 100 : null,
             cpa_last_5_days: metaCpa5,
@@ -6581,6 +6814,105 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         cpc_low:  k.low_top_bid_micros  ? Math.round((k.low_top_bid_micros  / 1e6) * 100) / 100 : null,
         cpc_high: k.high_top_bid_micros ? Math.round((k.high_top_bid_micros / 1e6) * 100) / 100 : null,
       }));
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // DOCTOR V2 — Portfolio pre-computation (deterministic, code-driven)
+      //
+      // The biggest upgrade over v1: we stop letting Claude "reason about each
+      // campaign in isolation" and instead give it a decision-ready portfolio
+      // view. The math is deterministic — ranked ROAS, scale signals per rules
+      // above — so Claude only has to EXPLAIN and REFINE, not invent the
+      // ranking from scratch each time.
+      // ═══════════════════════════════════════════════════════════════════════
+
+      // 1. Portfolio ranking — sort all campaigns (both channels) by real_roas
+      const portfolioRanking = [...campaignsForPrompt]
+        .map(c => ({
+          name:          c.name,
+          channel:       c.channel,
+          scale_signal:  c.scale_signal,
+          spend_14d:     c.totals_14d.spend,
+          real_orders:   c.totals_14d.real_orders,
+          real_revenue:  c.totals_14d.real_revenue_ils,
+          real_roas:     c.totals_14d.real_roas,
+          real_cpa:      c.totals_14d.real_cpa_ils,
+          coffee_pct:    c.totals_14d.coffee_pct  ?? 0,
+          machine_pct:   c.totals_14d.machine_pct ?? 0,
+          attribution_confidence: c.totals_14d.attribution_confidence,
+          avg_is:        c.impression_share?.avg_is ?? null,
+          avg_budget_lost: c.impression_share?.avg_budget_lost ?? null,
+        }))
+        .sort((a, b) => (b.real_roas ?? 0) - (a.real_roas ?? 0));
+
+      // 2. Budget reallocation plan — move money from CUT/PAUSE → SCALE_NOW
+      const scalers = portfolioRanking.filter(c => c.scale_signal === "SCALE_NOW");
+      const cutters = portfolioRanking.filter(c => c.scale_signal === "CUT" || c.scale_signal === "PAUSE");
+      const scalerTotalSpend = scalers.reduce((s, c) => s + (c.spend_14d || 0), 0);
+      const cutterDailyWaste = cutters.reduce((s, c) => s + (c.spend_14d || 0), 0) / 14;
+      const reallocationPlan: any[] = [];
+      if (scalerTotalSpend > 0 && cutterDailyWaste > 0) {
+        for (const c of cutters) {
+          const dailySpend = (c.spend_14d || 0) / 14;
+          if (dailySpend < 2) continue;
+          reallocationPlan.push({
+            from: c.name,
+            from_daily_ils: Math.round(dailySpend * 100) / 100,
+            action: c.scale_signal === "PAUSE" ? "pause" : "reduce_budget_50pct",
+          });
+        }
+        for (const c of scalers) {
+          const dailySpend = (c.spend_14d || 0) / 14;
+          reallocationPlan.push({
+            to: c.name,
+            current_daily_ils: Math.round(dailySpend * 100) / 100,
+            suggested_daily_ils: Math.round(dailySpend * 1.5 * 100) / 100,
+            reason: `ROAS ${c.real_roas?.toFixed(1) ?? '—'}x, budget lost IS ${c.avg_budget_lost ?? 0}%`,
+          });
+        }
+      }
+
+      // 3. Wasteful search terms — high spend, 0 conversions, from last 14 days
+      const wastefulSearchTerms = ((googleSearchTermsRaw ?? []) as any[])
+        .map(t => ({
+          ...t,
+          cost_ils: Number(t.cost_micros || 0) / 1e6,
+        }))
+        .filter(t => t.cost_ils >= 15 && Number(t.conversions) === 0)
+        .sort((a, b) => b.cost_ils - a.cost_ils)
+        .slice(0, 25)
+        .map(t => ({
+          search_term: t.search_term,
+          campaign_id: t.campaign_id,
+          cost_ils:    Math.round(t.cost_ils * 100) / 100,
+          clicks:      t.clicks,
+          impressions: t.impressions,
+          triggered_by: t.triggering_keyword,
+          match_type:  t.match_type,
+          suggested_negative: t.match_type === "EXACT" ? "exact" : "phrase",
+        }));
+
+      // 4. Attribution health — what % of revenue we can confidently attribute
+      const allOrders = (wooOrdersRaw ?? []) as any[];
+      const attrStats = {
+        total_orders:   allOrders.length,
+        gclid_matched:  allOrders.filter(o => o._attribution === "gclid").length,
+        utm_matched:    allOrders.filter(o => o._attribution === "utm_campaign").length,
+        unattributed_google: unattributedGoogle.length,
+        unattributed_meta:   unattributedMeta.length,
+        auto_tagging_enabled: ((googleAccountSettingsRaw ?? [])[0] as any)?.auto_tagging_enabled ?? null,
+      };
+
+      // 5. Product revenue by platform (for strategic coffee-vs-machine view)
+      const productRevenueByChannel = { google: { coffee: 0, machine: 0, grinder: 0, accessory: 0, other: 0 },
+                                         meta:   { coffee: 0, machine: 0, grinder: 0, accessory: 0, other: 0 } };
+      for (const c of campaignsForPrompt) {
+        const channel = c.channel as "google" | "meta";
+        const t = c.totals_14d;
+        productRevenueByChannel[channel].coffee    += t.revenue_coffee_ils    ?? 0;
+        productRevenueByChannel[channel].machine   += t.revenue_machine_ils   ?? 0;
+        productRevenueByChannel[channel].grinder   += t.revenue_grinder_ils   ?? 0;
+        productRevenueByChannel[channel].accessory += t.revenue_accessory_ils ?? 0;
+      }
 
       const sysPrompt = `אתה דוקטור הקמפיינים של מינוטו קפה — מומחה Google Ads + Meta Ads שתפקידו לאבחן כל קמפיין פעיל ולהפיק תכנית תיקון מוכנה להעתקה ישירות לפלטפורמה.
 ${PLAYBOOK_2026}
@@ -6753,8 +7085,71 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
 
       function buildUserMsg(channel: 'google' | 'meta', payload: any[]): string {
         if (!payload.length) return '';
-        const roster = payload.map(c => c.name).join('\n  • ');
-        return `ערוץ: ${channel}. חובה: החזר ערך אחד ב-campaigns[] לכל אחד מ-${payload.length} הקמפיינים הבאים:\n  • ${roster}\n\n=== קמפיינים פעילים (14 ימים אחרונים, כולל adsets + targeting + settings) ===\n${JSON.stringify(payload, null, 2).slice(0, 16000)}\n\n=== מילות מפתח בחשבון (Google only, עם IS + match type) ===\n${channel === 'google' ? JSON.stringify(keywordDataset, null, 2).slice(0, 2000) : '(לא רלוונטי לערוץ Meta)'}\n\n=== Conversion Actions (Google) — מקור אמת, לא heuristic ===\n${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1200)}\n\nהחזר JSON בפורמט:\n{\n  "campaigns": [\n    {\n      "name": "שם מדויק מהרשימה",\n      "channel": "${channel}",\n      "priority": "critical|high|medium",\n      "diagnosis": ["..."],\n      "audience_diagnosis": ["..."],\n      "creative_diagnosis": ["..."],\n      "bid_strategy_diagnosis": ["..."],\n      "new_headlines": ["..."],\n      "new_descriptions": ["..."],\n      "keyword_plan": { "exact": [], "phrase": [], "broad": [], "negatives": [] },\n      "budget_action": { "type": "...", "from_ils": 0, "to_ils": 0, "reason": "..." },\n      "landing_action": { "type": "...", "new_url": "...", "reason": "..." },\n      "tracking_fixes": ["..."],\n      "expected_improvement": "..."\n    }\n  ]\n}`;
+        const roster = payload.map(c => `${c.name} (scale_signal: ${c.scale_signal})`).join('\n  • ');
+
+        // The portfolio ranking shows Claude how this channel's campaigns
+        // compare — critical context for recommending budget shifts between
+        // winners and losers, and for not making the La Marzocco mistake
+        // (recommending pause on the top-ROAS campaign).
+        const portfolioBlock = JSON.stringify(
+          portfolioRanking.filter(p => p.channel === channel), null, 2
+        ).slice(0, 2500);
+
+        const wasteBlock = channel === 'google'
+          ? JSON.stringify(wastefulSearchTerms.slice(0, 15), null, 2).slice(0, 2000)
+          : '(לא רלוונטי לערוץ Meta)';
+
+        return `ערוץ: ${channel}.
+
+🎯 **SCALE SIGNALS שנקבעו אוטומטית (חובה לכבד)** — הוספנו שדה scale_signal לכל קמפיין על בסיס הנתונים האמיתיים:
+  • SCALE_NOW      = ROAS ≥ 3 ו-budget-lost IS ≥ 20% → הגדל תקציב, אל תמליץ pause או cut
+  • SCALE_CAUTIOUS = ROAS ≥ 2 ו-IS < 50% → הגדל תקציב בזהירות (50%)
+  • OBSERVE        = נתונים לא מספיקים או confidence נמוך → המתן, שפר attribution
+  • CUT            = ROAS < 1 עם 3+ הזמנות ו-₪200+ הוצאה → צמצם
+  • PAUSE          = 0 הזמנות על ₪200+ ב-attribution confidence גבוה → עצור
+**אם scale_signal הוא SCALE_NOW או SCALE_CAUTIOUS, budget_action.type חייב להיות raise_budget.**
+**אם scale_signal הוא OBSERVE, אל תמליץ pause — הסבר למה צריך לאסוף עוד נתונים.**
+
+📊 **דירוג portfolio (${channel}) ממוין לפי ROAS אמיתי**:
+${portfolioBlock}
+
+חובה: החזר ערך אחד ב-campaigns[] לכל אחד מ-${payload.length} הקמפיינים הבאים:
+  • ${roster}
+
+=== קמפיינים פעילים — נתונים מלאים כולל adsets, targeting, settings, IS, product-revenue split ===
+${JSON.stringify(payload, null, 2).slice(0, 14000)}
+
+=== מילות חיפוש בזבזניות (high cost, 0 conversions — Google only) ===
+${wasteBlock}
+
+=== מילות מפתח בחשבון (Google only, IS + match type) ===
+${channel === 'google' ? JSON.stringify(keywordDataset, null, 2).slice(0, 1800) : '(לא רלוונטי לערוץ Meta)'}
+
+=== Conversion Actions (Google) — מקור אמת, לא heuristic ===
+${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
+
+החזר JSON בפורמט:
+{
+  "campaigns": [
+    {
+      "name": "שם מדויק מהרשימה",
+      "channel": "${channel}",
+      "priority": "critical|high|medium",
+      "scale_signal_acknowledgment": "הסבר איך ההמלצה שלי מתאימה לsignal שנקבע",
+      "diagnosis": ["..."],
+      "audience_diagnosis": ["..."],
+      "creative_diagnosis": ["..."],
+      "bid_strategy_diagnosis": ["..."],
+      "new_headlines": ["..."],
+      "new_descriptions": ["..."],
+      "keyword_plan": { "exact": [], "phrase": [], "broad": [], "negatives": [] },
+      "budget_action": { "type": "raise_budget|lower_budget|pause|keep|switch_bid_strategy", "from_ils": 0, "to_ils": 0, "reason": "..." },
+      "landing_action": { "type": "...", "new_url": "...", "reason": "..." },
+      "tracking_fixes": ["..."],
+      "expected_improvement": "..."
+    }
+  ]
+}`;
       }
 
       // Sonnet-4 (not 4.5) — 4.5 was consistently blowing the 150s gateway
@@ -6817,6 +7212,13 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
         success: true,
         analyzed_at: new Date().toISOString(),
         campaigns_analyzed: filtered.length,
+        // NEW: portfolio-level view (code-computed, authoritative)
+        portfolio_ranking: portfolioRanking,
+        budget_reallocation_plan: reallocationPlan,
+        wasteful_search_terms: wastefulSearchTerms,
+        product_revenue_by_channel: productRevenueByChannel,
+        attribution_health: attrStats,
+        // Claude's per-campaign analysis (refinement + creative/audience advice)
         campaigns: filtered,
         signals: {
           google_active: googleByCampaign.size,

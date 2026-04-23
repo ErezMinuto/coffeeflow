@@ -15,37 +15,50 @@ serve(async (req) => {
   let records = 0
 
   // ── Scope control ──────────────────────────────────────────
-  // Supabase functions have a 150s gateway timeout. Doing campaigns +
-  // adsets + ads + IG organic + IG insights in one invocation blows past
-  // that. Callers can scope the work with ?parts=campaigns,adsets,ads,ig
-  // (comma-separated). Default is "campaigns,ig" to preserve the old
-  // behavior for anything still calling without params. The adsets/ads
-  // parts should be invoked on their own schedule.
-  const url      = new URL(req.url)
-  const partsRaw = url.searchParams.get('parts') ?? 'campaigns,ig'
-  const parts    = new Set(partsRaw.split(',').map(s => s.trim()).filter(Boolean))
-  const run      = (name: string) => parts.has(name) || parts.has('all')
+  // Supabase functions have a 150s gateway timeout. Doing everything in one
+  // invocation blows past that. Callers control scope two ways:
+  //
+  //   ?mode=settings     → account_settings + adsets + ads (rarely changed)
+  //   ?mode=performance  → campaigns daily + adset_daily + placement_daily
+  //                         + ad_daily + ig (fresh every doctor run)
+  //   ?mode=all          → everything (legacy behavior for the cron)
+  //
+  // Granular override via ?parts= still works for debugging — if `parts` is
+  // present it takes priority over `mode`.
+  const url       = new URL(req.url)
+  const mode      = (url.searchParams.get('mode') ?? '').toLowerCase()
+  const partsRaw  = url.searchParams.get('parts')
+    ?? (mode === 'settings'    ? 'account_settings,adsets,ads'
+     :  mode === 'performance' ? 'campaigns,adset_daily,placement_daily,ad_daily,ig'
+     :  mode === 'all'         ? 'all'
+     :  'campaigns,ig')       // default for back-compat
+  const parts     = new Set(partsRaw.split(',').map(s => s.trim()).filter(Boolean))
+  const run       = (name: string) => parts.has(name) || parts.has('all')
   // Per-stage diagnostic counters returned in the response so we don't have
   // to dig through function logs to figure out where a 0-records sync died.
   const stats = {
-    campaigns_found:   0,
-    campaign_rows:     0,
-    campaign_errors:   0,
-    adsets_found:      0,
-    adset_rows:        0,
-    adset_errors:      0,
-    ads_found:         0,
-    ad_rows:           0,
-    ad_errors:         0,
-    pages_found:       0,
-    ig_account_id:     null as string | null,
-    ig_posts_found:    0,
-    ig_post_rows:      0,
-    ig_post_errors:    0,
-    follower_count:    0,
-    last_meta_error:   null as string | null,
-    token_granted:     [] as string[],
-    token_declined:    [] as string[],
+    campaigns_found:      0,
+    campaign_rows:        0,
+    campaign_errors:      0,
+    adsets_found:         0,
+    adset_rows:           0,
+    adset_errors:         0,
+    ads_found:            0,
+    ad_rows:              0,
+    ad_errors:            0,
+    account_settings_rows:0,
+    adset_daily_rows:     0,
+    placement_daily_rows: 0,
+    ad_daily_rows:        0,
+    pages_found:          0,
+    ig_account_id:        null as string | null,
+    ig_posts_found:       0,
+    ig_post_rows:         0,
+    ig_post_errors:       0,
+    follower_count:       0,
+    last_meta_error:      null as string | null,
+    token_granted:        [] as string[],
+    token_declined:       [] as string[],
   }
 
   try {
@@ -324,6 +337,148 @@ serve(async (req) => {
     } catch (e: any) {
       console.error('[meta-sync] ads sync threw', e?.message)
       stats.last_meta_error = `ads: ${e?.message}`
+    }
+
+    // ── Account-level settings ────────────────────────────────
+    // Minuto-wide Meta Ads config: currency, time zone, pixel, spend caps.
+    // One row, overwritten on each settings sync. Tells the doctor what
+    // pixel to expect events from and whether the account has spend
+    // caps that would bottleneck scaling.
+    if (run('account_settings')) try {
+      const accUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}?fields=name,currency,timezone_name,business,amount_spent,spend_cap,account_status,funding_source_details&access_token=${token}`
+      const res = await fetch(accUrl)
+      const data = await res.json()
+      if (data.error) {
+        stats.last_meta_error = `account_settings: ${data.error.message}`
+      } else {
+        const { error: upErr } = await supabase.from('meta_account_settings').upsert({
+          ad_account_id:  AD_ACCOUNT_ID,
+          name:           data.name ?? null,
+          currency:       data.currency ?? null,
+          time_zone:      data.timezone_name ?? null,
+          business_id:    data.business?.id ?? null,
+          amount_spent:   data.amount_spent ? parseFloat(data.amount_spent) / 100 : null,
+          spend_cap:      data.spend_cap ? parseFloat(data.spend_cap) / 100 : null,
+          account_status: data.account_status ?? null,
+          funding_source: data.funding_source_details?.display_string ?? null,
+          synced_at:      new Date().toISOString(),
+        }, { onConflict: 'ad_account_id' })
+        if (!upErr) stats.account_settings_rows = 1
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] account_settings threw', e?.message)
+      stats.last_meta_error = `account_settings: ${e?.message}`
+    }
+
+    // ── Ad-set daily insights ─────────────────────────────────
+    // Daily-breakdown performance per adset. Answers "which audience segment
+    // inside this campaign actually converts". Active adsets only to respect
+    // the 150s gateway; last 14 days.
+    if (run('adset_daily')) try {
+      const effFilter = encodeURIComponent('["ACTIVE"]')
+      const fields = 'adset_id,campaign_id,impressions,clicks,spend,cpm,cpc,ctr,frequency,reach,actions,date_start'
+      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+        + `?level=adset&fields=${fields}`
+        + `&date_preset=last_14d&time_increment=1`
+        + `&filtering=[{"field":"adset.effective_status","operator":"IN","value":["ACTIVE"]}]`
+        + `&effective_status=${effFilter}&limit=500&access_token=${token}`
+      const rows = await fetchAll<any>(insightsUrl, 'adset_daily')
+      for (const r of rows) {
+        let conversions = 0
+        for (const a of (r.actions || [])) {
+          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
+        }
+        const { error: upErr } = await supabase.from('meta_adset_daily').upsert({
+          adset_id:     String(r.adset_id ?? ''),
+          campaign_id:  r.campaign_id ? String(r.campaign_id) : null,
+          date:         r.date_start,
+          impressions:  parseInt(r.impressions || '0'),
+          clicks:       parseInt(r.clicks || '0'),
+          spend:        parseFloat(r.spend || '0'),
+          conversions,
+          cpm:          parseFloat(r.cpm || '0'),
+          cpc:          parseFloat(r.cpc || '0'),
+          ctr:          parseFloat(r.ctr || '0'),
+          frequency:    parseFloat(r.frequency || '0'),
+          reach:        parseInt(r.reach || '0'),
+          synced_at:    new Date().toISOString(),
+        }, { onConflict: 'adset_id,date' })
+        if (!upErr) stats.adset_daily_rows++
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] adset_daily threw', e?.message)
+      stats.last_meta_error = `adset_daily: ${e?.message}`
+    }
+
+    // ── Placement-level daily performance ─────────────────────
+    // Breakdown by publisher_platform + platform_position. Reveals if
+    // Instagram Reels is converting while Facebook Feed is burning money,
+    // etc. Critical for per-placement bid adjustments.
+    if (run('placement_daily')) try {
+      const fields = 'adset_id,campaign_id,impressions,clicks,spend,actions,date_start'
+      const breakdown = 'publisher_platform,platform_position'
+      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+        + `?level=adset&fields=${fields}&breakdowns=${breakdown}`
+        + `&date_preset=last_14d&time_increment=1`
+        + `&filtering=[{"field":"adset.effective_status","operator":"IN","value":["ACTIVE"]}]`
+        + `&limit=500&access_token=${token}`
+      const rows = await fetchAll<any>(insightsUrl, 'placement_daily')
+      for (const r of rows) {
+        let conversions = 0
+        for (const a of (r.actions || [])) {
+          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
+        }
+        const { error: upErr } = await supabase.from('meta_placement_daily').upsert({
+          adset_id:           String(r.adset_id ?? ''),
+          campaign_id:        r.campaign_id ? String(r.campaign_id) : null,
+          publisher_platform: r.publisher_platform ?? 'unknown',
+          platform_position:  r.platform_position ?? 'unknown',
+          date:               r.date_start,
+          impressions:        parseInt(r.impressions || '0'),
+          clicks:             parseInt(r.clicks || '0'),
+          spend:              parseFloat(r.spend || '0'),
+          conversions,
+          synced_at:          new Date().toISOString(),
+        }, { onConflict: 'adset_id,publisher_platform,platform_position,date' })
+        if (!upErr) stats.placement_daily_rows++
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] placement_daily threw', e?.message)
+      stats.last_meta_error = `placement_daily: ${e?.message}`
+    }
+
+    // ── Ad-level daily performance ────────────────────────────
+    // Which specific ads are converting vs. just getting impressions.
+    if (run('ad_daily')) try {
+      const fields = 'ad_id,adset_id,campaign_id,impressions,clicks,spend,ctr,actions,date_start'
+      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+        + `?level=ad&fields=${fields}`
+        + `&date_preset=last_14d&time_increment=1`
+        + `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]`
+        + `&limit=500&access_token=${token}`
+      const rows = await fetchAll<any>(insightsUrl, 'ad_daily')
+      for (const r of rows) {
+        let conversions = 0
+        for (const a of (r.actions || [])) {
+          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
+        }
+        const { error: upErr } = await supabase.from('meta_ad_daily').upsert({
+          ad_id:       String(r.ad_id ?? ''),
+          adset_id:    r.adset_id ? String(r.adset_id) : null,
+          campaign_id: r.campaign_id ? String(r.campaign_id) : null,
+          date:        r.date_start,
+          impressions: parseInt(r.impressions || '0'),
+          clicks:      parseInt(r.clicks || '0'),
+          spend:       parseFloat(r.spend || '0'),
+          conversions,
+          ctr:         parseFloat(r.ctr || '0'),
+          synced_at:   new Date().toISOString(),
+        }, { onConflict: 'ad_id,date' })
+        if (!upErr) stats.ad_daily_rows++
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] ad_daily threw', e?.message)
+      stats.last_meta_error = `ad_daily: ${e?.message}`
     }
 
     // ── Instagram organic sync ────────────────────────────────
