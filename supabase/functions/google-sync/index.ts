@@ -305,15 +305,152 @@ serve(async (req) => {
 
     console.log(`[google-sync] Keyword ideas synced: ${keywordRecords}`)
 
+    // ── Campaign settings snapshot (for Campaign Doctor) ──────────────────────
+    // Bidding strategy, network expansion, budget — the stuff that decides
+    // where your money goes BEFORE any creative is involved. Without this
+    // the doctor can't flag classic traps like "tCPA strategy with no
+    // conversion history" or "Search Partners on + wasting 20% of budget".
+    let settingsRecords = 0
+    try {
+      const settingsQuery = `
+        SELECT
+          campaign.id,
+          campaign.name,
+          campaign.status,
+          campaign.advertising_channel_type,
+          campaign.bidding_strategy_type,
+          campaign.target_cpa.target_cpa_micros,
+          campaign.maximize_conversion_value.target_roas,
+          campaign.network_settings.target_google_search,
+          campaign.network_settings.target_search_network,
+          campaign.network_settings.target_content_network,
+          campaign.network_settings.target_partner_search_network,
+          campaign_budget.amount_micros,
+          campaign_budget.delivery_method
+        FROM campaign
+        WHERE campaign.status = 'ENABLED'
+      `
+      const settingsRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'developer-token': devToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: settingsQuery }),
+      })
+      const settingsData = await settingsRes.json()
+      if (settingsData.error) {
+        console.warn('[google-sync] campaign_settings error:', JSON.stringify(settingsData.error).substring(0, 300))
+      } else {
+        for (const row of settingsData.results ?? []) {
+          const c = row.campaign ?? {}
+          const ns = c.networkSettings ?? {}
+          const b  = row.campaignBudget ?? {}
+          await supabase.from('google_campaign_settings').upsert({
+            campaign_id:              String(c.id ?? ''),
+            name:                     c.name ?? null,
+            status:                   c.status ?? null,
+            advertising_channel_type: c.advertisingChannelType ?? null,
+            bidding_strategy_type:    c.biddingStrategyType ?? null,
+            target_cpa_micros:        c.targetCpa?.targetCpaMicros ? String(c.targetCpa.targetCpaMicros) : null,
+            target_roas:              c.maximizeConversionValue?.targetRoas ?? null,
+            target_search_network:    ns.targetSearchNetwork ?? null,
+            target_content_network:   ns.targetContentNetwork ?? null,
+            target_partner_search:    ns.targetPartnerSearchNetwork ?? null,
+            daily_budget_micros:      b.amountMicros ? String(b.amountMicros) : null,
+            budget_delivery_method:   b.deliveryMethod ?? null,
+            synced_at:                new Date().toISOString(),
+          }, { onConflict: 'campaign_id' })
+          settingsRecords++
+        }
+      }
+      console.log(`[google-sync] Campaign settings synced: ${settingsRecords}`)
+    } catch (sErr: any) {
+      console.warn('[google-sync] campaign_settings fetch failed:', sErr.message)
+    }
+
+    // ── Conversion action roles (authoritative soft-conv detector) ────────────
+    // The doctor currently uses a heuristic to flag "Add to cart set as Primary"
+    // (based on inflation ratio between Google-reported conversions and Woo
+    // orders). This pulls the actual config so the fix instructions can name
+    // the exact actions that need to move from Primary → Secondary.
+    let convActionRecords = 0
+    try {
+      const caQuery = `
+        SELECT
+          conversion_action.id,
+          conversion_action.name,
+          conversion_action.category,
+          conversion_action.type,
+          conversion_action.status,
+          conversion_action.primary_for_goal,
+          conversion_action.include_in_conversions_metric,
+          conversion_action.counting_type,
+          conversion_action.attribution_model_settings.attribution_model,
+          conversion_action.value_settings.default_value,
+          conversion_action.value_settings.always_use_default_value
+        FROM conversion_action
+        WHERE conversion_action.status = 'ENABLED'
+      `
+      const caRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'developer-token': devToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: caQuery }),
+      })
+      const caData = await caRes.json()
+      if (caData.error) {
+        console.warn('[google-sync] conversion_action error:', JSON.stringify(caData.error).substring(0, 300))
+      } else {
+        for (const row of caData.results ?? []) {
+          const ca = row.conversionAction ?? {}
+          const vs = ca.valueSettings ?? {}
+          const ams = ca.attributionModelSettings ?? {}
+          // Derive the value_type for the migration schema
+          const valueType = vs.defaultValue != null && vs.alwaysUseDefaultValue
+            ? 'DEFAULT'
+            : (vs.defaultValue != null ? 'DIFFERENT_VALUES' : 'NO_VALUE')
+          await supabase.from('google_conversion_actions').upsert({
+            action_id:              String(ca.id ?? ''),
+            name:                   ca.name ?? null,
+            category:               ca.category ?? null,
+            type:                   ca.type ?? null,
+            status:                 ca.status ?? null,
+            primary_for_goal:       ca.primaryForGoal ?? null,
+            include_in_conversions: ca.includeInConversionsMetric ?? null,
+            counting_type:          ca.countingType ?? null,
+            attribution_model:      ams.attributionModel ?? null,
+            value_type:             valueType,
+            synced_at:              new Date().toISOString(),
+          }, { onConflict: 'action_id' })
+          convActionRecords++
+        }
+      }
+      console.log(`[google-sync] Conversion actions synced: ${convActionRecords}`)
+    } catch (caErr: any) {
+      console.warn('[google-sync] conversion_action fetch failed:', caErr.message)
+    }
+
     await supabase.from('sync_log').insert({
       platform: 'google',
       status: 'success',
-      records: records + adRecords + keywordRecords,
+      records: records + adRecords + keywordRecords + settingsRecords + convActionRecords,
       started_at: startedAt,
       finished_at: new Date().toISOString(),
     })
 
-    return new Response(JSON.stringify({ success: true, campaign_records: records, ad_records: adRecords, keyword_records: keywordRecords }), {
+    return new Response(JSON.stringify({
+      success: true,
+      campaign_records:         records,
+      ad_records:               adRecords,
+      keyword_records:          keywordRecords,
+      settings_records:         settingsRecords,
+      conversion_action_records: convActionRecords,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
