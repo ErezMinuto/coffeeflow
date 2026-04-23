@@ -15,6 +15,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -638,34 +639,166 @@ interface CalendarEvent {
   marketingNote: string;
 }
 
-const CALENDAR_EVENTS: CalendarEvent[] = [
-  // ── 5785 / 2025 ──
-  { name: 'ראש השנה', date: '2025-09-22', endDate: '2025-09-24', type: 'major_holiday', marketingNote: 'עונת מתנות גדולה — סלסלות, קפה כמתנה, ארוחות משפחתיות. לקוחות קונים מראש.' },
-  { name: 'יום כיפור', date: '2025-10-01', endDate: '2025-10-02', type: 'national', marketingNote: 'יום צום — עצור פרסום ביום עצמו ויום לפניו. אחריו: חזרה לשגרה ולקפה.' },
-  { name: 'סוכות', date: '2025-10-06', endDate: '2025-10-12', type: 'major_holiday', marketingNote: 'שבוע חופש — אנשים פנויים, בילויים, קניות. הזדמנות לתוכן חגיגי.' },
-  { name: 'שמחת תורה', date: '2025-10-14', type: 'major_holiday', marketingNote: 'סיום חגי תשרי — אחרי כן חזרה לשגרה מלאה.' },
-  { name: 'חנוכה', date: '2025-12-14', endDate: '2025-12-22', type: 'major_holiday', marketingNote: 'עונת מתנות — חנוכה = קניות, מתנות, כינוסים משפחתיים. קפה כמתנה מעולה.' },
-  // ── 5786 / 2026 ──
-  { name: 'ט"ו בשבט', date: '2026-02-12', type: 'national', marketingNote: 'חיבור לטבע וקיימות — מתאים לתוכן על קפה מגידול אתי, טרייסביליטי, השפעה סביבתית.' },
-  { name: 'פורים', date: '2026-03-03', type: 'major_holiday', marketingNote: 'חג שמח ומשוחרר — תוכן מהנה, משנה תחפושות, מתנות. אנשים במצב רוח קנייה.' },
-  { name: 'פסח', date: '2026-04-01', endDate: '2026-04-08', type: 'major_holiday', marketingNote: 'שבוע חופש — אנשים בבית, סדרים משפחתיים. קפה חינם מחמץ = מותר. הזמנות מראש לחג.' },
-  { name: 'יום השואה', date: '2026-04-16', type: 'national', marketingNote: 'יום זיכרון — אין פרסום שמח, אין קמפיינים ביום עצמו.' },
-  { name: 'יום הזיכרון', date: '2026-04-28', type: 'national', marketingNote: 'יום זיכרון חללים — אין פרסום שמח ביום עצמו.' },
-  { name: 'יום העצמאות', date: '2026-04-29', type: 'major_holiday', marketingNote: 'יום חגיגות — BBQ, אירועים בחוץ, ביקורי משפחה. הזדמנות לקפה כמתנה (חבר מארח), חבילות מנגל מורחבות עם קפה איכותי, ותוכן פטריוטי. התחל קמפיין 2-3 שבועות לפני.' },
-  { name: 'שבועות', date: '2026-05-21', endDate: '2026-05-22', type: 'major_holiday', marketingNote: 'חג חלבי — לילות לבנים, ארוחות חלביות. קפה מתאים לאווירה.' },
-  { name: 'ראש השנה', date: '2026-09-11', endDate: '2026-09-13', type: 'major_holiday', marketingNote: 'עונת מתנות גדולה — כנ"ל ראש השנה 2025.' },
-  { name: 'יום כיפור', date: '2026-09-20', type: 'national', marketingNote: 'יום צום — עצור פרסום ביום ויום לפניו.' },
-  { name: 'סוכות', date: '2026-09-25', endDate: '2026-10-01', type: 'major_holiday', marketingNote: 'שבוע חופש — תוכן חגיגי, אנשים פנויים.' },
-  { name: 'חנוכה', date: '2026-12-13', endDate: '2026-12-21', type: 'major_holiday', marketingNote: 'עונת מתנות — קפה כמתנה מושלמת לחנוכה.' },
-  // ── 5787 / 2027 ──
-  { name: 'פורים', date: '2027-03-03', type: 'major_holiday', marketingNote: 'חג שמח — תוכן מהנה ומתנות.' },
-  { name: 'פסח', date: '2027-03-22', endDate: '2027-03-30', type: 'major_holiday', marketingNote: 'שבוע חופש ומשפחות.' },
-  // ── Commercial / International ──
-  { name: 'ולנטיין', date: '2026-02-14', type: 'commercial', marketingNote: 'מתנות זוגיות — חוויית קפה כמתנה, מארזים לזוגות.' },
-  { name: "יום האישה הבינ'ל", date: '2026-03-08', type: 'commercial', marketingNote: 'הזדמנות לתוכן שמציין נשים בשרשרת הקפה (מגדלות, קולות).' },
-  { name: 'יום הקפה הבינ"ל', date: '2026-10-01', type: 'commercial', marketingNote: 'יום חגיגה לענף — תוכן, מבצע, סיפורי מקור. גדול בקהילת ספשיאלטי.' },
-  { name: 'בלאק פריידי', date: '2026-11-27', type: 'commercial', marketingNote: 'עונת מכירות — ישראלים קונים בלאק פריידי. מבצעים, הנחות, מארזים.' },
+// ── Hebrew-calendar holiday metadata ─────────────────────────────────────────
+// Keyed by the English description hebcal's getDesc() returns for the FIRST
+// day of each holiday. durationDays is the inclusive window we expose to the
+// advisor (≥ actual holy days — we include erev/chol hamoed for marketing).
+interface HolidayMeta {
+  type:          CalendarEvent['type'];
+  durationDays:  number;
+  displayName:   string;       // Hebrew label shown in the prompt
+  marketingNote: string;
+}
+
+const HOLIDAY_META: Record<string, HolidayMeta> = {
+  'Rosh Hashana': {
+    type: 'major_holiday', durationDays: 2, displayName: 'ראש השנה',
+    marketingNote: 'עונת מתנות גדולה — סלסלות, קפה כמתנה, ארוחות משפחתיות. לקוחות קונים מראש.',
+  },
+  'Yom Kippur': {
+    type: 'national', durationDays: 1, displayName: 'יום כיפור',
+    marketingNote: 'יום צום — עצור פרסום ביום עצמו ויום לפניו. אחריו: חזרה לשגרה ולקפה.',
+  },
+  'Sukkot I': {
+    type: 'major_holiday', durationDays: 7, displayName: 'סוכות',
+    marketingNote: 'שבוע חופש — אנשים פנויים, בילויים, קניות. הזדמנות לתוכן חגיגי.',
+  },
+  'Shmini Atzeret': {
+    type: 'major_holiday', durationDays: 1, displayName: 'שמחת תורה',
+    marketingNote: 'סיום חגי תשרי — אחרי כן חזרה לשגרה מלאה.',
+  },
+  'Chanukah: 1 Candle': {
+    type: 'major_holiday', durationDays: 8, displayName: 'חנוכה',
+    marketingNote: 'עונת מתנות — חנוכה = קניות, מתנות, כינוסים משפחתיים. קפה כמתנה מעולה.',
+  },
+  'Tu BiShvat': {
+    type: 'national', durationDays: 1, displayName: 'ט"ו בשבט',
+    marketingNote: 'חיבור לטבע וקיימות — מתאים לתוכן על קפה מגידול אתי, טרייסביליטי, השפעה סביבתית.',
+  },
+  'Purim': {
+    type: 'major_holiday', durationDays: 1, displayName: 'פורים',
+    marketingNote: 'חג שמח ומשוחרר — תוכן מהנה, משנה תחפושות, מתנות. אנשים במצב רוח קנייה.',
+  },
+  'Pesach I': {
+    type: 'major_holiday', durationDays: 7, displayName: 'פסח',
+    marketingNote: 'שבוע חופש — אנשים בבית, סדרים משפחתיים. קפה חינם מחמץ = מותר. הזמנות מראש לחג.',
+  },
+  'Yom HaShoah': {
+    type: 'national', durationDays: 1, displayName: 'יום השואה',
+    marketingNote: 'יום זיכרון — אין פרסום שמח, אין קמפיינים ביום עצמו.',
+  },
+  'Yom HaZikaron': {
+    type: 'national', durationDays: 1, displayName: 'יום הזיכרון',
+    marketingNote: 'יום זיכרון חללים — אין פרסום שמח ביום עצמו.',
+  },
+  "Yom HaAtzma'ut": {
+    type: 'major_holiday', durationDays: 1, displayName: 'יום העצמאות',
+    marketingNote: 'יום חגיגות — BBQ, אירועים בחוץ, ביקורי משפחה. הזדמנות לקפה כמתנה (חבר מארח), חבילות מנגל מורחבות עם קפה איכותי, ותוכן פטריוטי. התחל קמפיין 2-3 שבועות לפני.',
+  },
+  'Shavuot': {
+    type: 'major_holiday', durationDays: 1, displayName: 'שבועות',
+    marketingNote: 'חג חלבי — לילות לבנים, ארוחות חלביות. קפה מתאים לאווירה.',
+  },
+};
+
+// Gregorian-fixed commercial events — expanded per year in the window.
+const COMMERCIAL_TEMPLATES: Array<{
+  month: number; day: number; name: string; marketingNote: string;
+}> = [
+  { month: 2,  day: 14, name: 'ולנטיין',
+    marketingNote: 'מתנות זוגיות — חוויית קפה כמתנה, מארזים לזוגות.' },
+  { month: 3,  day: 8,  name: "יום האישה הבינ'ל",
+    marketingNote: 'הזדמנות לתוכן שמציין נשים בשרשרת הקפה (מגדלות, קולות).' },
+  { month: 10, day: 1,  name: 'יום הקפה הבינ"ל',
+    marketingNote: 'יום חגיגה לענף — תוכן, מבצע, סיפורי מקור. גדול בקהילת ספשיאלטי.' },
 ];
+
+// Black Friday = day after US Thanksgiving (4th Thursday of November).
+function blackFridayDate(year: number): Date {
+  const novFirst  = new Date(Date.UTC(year, 10, 1));
+  const firstDow  = novFirst.getUTCDay();                // 0=Sun … 4=Thu
+  const firstThu  = 1 + ((4 - firstDow + 7) % 7);        // day-of-month
+  const fourthThu = firstThu + 21;
+  return new Date(Date.UTC(year, 10, fourthThu + 1));    // Fri after
+}
+
+function toISODate(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+function addDaysUTC(d: Date, days: number): Date {
+  return new Date(d.getTime() + days * 86400000);
+}
+
+/**
+ * Compute the marketing calendar for a [from, to] window.
+ *
+ * Jewish holidays come from @hebcal/core (Israel mode) so the dates are
+ * correct every year — no more manual table that drifts. Gregorian-fixed
+ * commercial events are expanded per calendar year in the window.
+ */
+function computeCalendarEvents(from: Date, to: Date): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
+  const fromY = from.getUTCFullYear();
+  const toY   = to.getUTCFullYear();
+
+  for (let y = fromY; y <= toY; y++) {
+    // Jewish / Israeli holidays
+    const hcEvents = HebrewCalendar.calendar({
+      year: y,
+      isHebrewYear: false,
+      il: true,             // Israel mode — 7-day Pesach, combined Shmini Atzeret/Simchat Torah
+      noMinorFast: true,
+      noRoshChodesh: true,
+      noSpecialShabbat: true,
+      // noModern omitted — we WANT Yom HaShoah/Zikaron/Atzma'ut
+    });
+
+    for (const ev of hcEvents) {
+      const desc = ev.getDesc();
+      // Hebcal emits "Rosh Hashana 5787" (year suffix) for day 1 of each
+      // civil year — normalize to the plain key before lookup.
+      const key  = /^Rosh Hashana \d{4}$/.test(desc) ? 'Rosh Hashana' : desc;
+      const meta = HOLIDAY_META[key];
+      if (!meta) continue;
+
+      const g = ev.getDate().greg();
+      const startUTC = new Date(Date.UTC(g.getFullYear(), g.getMonth(), g.getDate()));
+      const endUTC   = meta.durationDays > 1 ? addDaysUTC(startUTC, meta.durationDays - 1) : null;
+
+      // Keep events that overlap the window
+      const effectiveEnd = endUTC ?? startUTC;
+      if (effectiveEnd < from || startUTC > to) continue;
+
+      events.push({
+        name:          meta.displayName,
+        date:          toISODate(startUTC),
+        endDate:       endUTC ? toISODate(endUTC) : undefined,
+        type:          meta.type,
+        marketingNote: meta.marketingNote,
+      });
+    }
+
+    // Gregorian-fixed commercial events
+    for (const tpl of COMMERCIAL_TEMPLATES) {
+      const d = new Date(Date.UTC(y, tpl.month - 1, tpl.day));
+      if (d >= from && d <= to) {
+        events.push({ name: tpl.name, date: toISODate(d), type: 'commercial', marketingNote: tpl.marketingNote });
+      }
+    }
+
+    const bf = blackFridayDate(y);
+    if (bf >= from && bf <= to) {
+      events.push({
+        name: 'בלאק פריידי', date: toISODate(bf), type: 'commercial',
+        marketingNote: 'עונת מכירות — ישראלים קונים בלאק פריידי. מבצעים, הנחות, מארזים.',
+      });
+    }
+  }
+
+  events.sort((a, b) => a.date.localeCompare(b.date));
+  return events;
+}
 
 function getSeasonalContext(weekStart: string): string {
   const date   = new Date(weekStart);
@@ -702,7 +835,15 @@ function getSeasonalContext(weekStart: string): string {
     commercial:    60,
   };
 
-  const relevant = CALENDAR_EVENTS.filter(ev => {
+  // Compute through the longest lookahead window (+ small buffer for
+  // multi-day events whose start falls outside the window but whose end is
+  // still in range). Events are computed, not hardcoded, so dates stay
+  // correct every year.
+  const maxLookahead = Math.max(...Object.values(lookahead));
+  const windowCutoff = new Date(today.getTime() + (maxLookahead + 14) * dayMs);
+  const candidates   = computeCalendarEvents(today, windowCutoff);
+
+  const relevant = candidates.filter(ev => {
     const end = ev.endDate ? new Date(ev.endDate) : new Date(ev.date);
     end.setHours(23, 59, 59, 0);
     if (end < today) return false; // already ended
@@ -6063,7 +6204,11 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         { data: googleTrendRaw },
         { data: googleAdsRaw },
         { data: keywordsRaw },
+        { data: googleSettingsRaw },
+        { data: googleConvActionsRaw },
         { data: metaTrendRaw },
+        { data: metaAdsetsRaw },
+        { data: metaAdsRaw },
         { data: wooOrdersRaw },
       ] = await Promise.all([
         supabase.from("google_campaigns")
@@ -6078,11 +6223,26 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           .select("keyword,competition,competition_index,avg_monthly_searches,low_top_bid_micros,high_top_bid_micros")
           .order("avg_monthly_searches", { ascending: false })
           .limit(100),
+        // Campaign-level settings: bidding strategy, network expansion, budget.
+        supabase.from("google_campaign_settings")
+          .select("campaign_id,name,advertising_channel_type,bidding_strategy_type,target_cpa_micros,target_roas,target_search_network,target_content_network,target_partner_search,daily_budget_micros,budget_delivery_method"),
+        // Conversion action roles — authoritative soft-conv-primary check.
+        supabase.from("google_conversion_actions")
+          .select("name,category,type,primary_for_goal,include_in_conversions,counting_type,attribution_model,value_type")
+          .eq("status", "ENABLED"),
         supabase.from("meta_ad_campaigns")
           .select("campaign_id,name,status,objective,date,spend,impressions,clicks,conversions")
           .eq("status", "ACTIVE")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
+        // Meta ad-set snapshots — where targeting/audience lives.
+        supabase.from("meta_ad_adsets")
+          .select("adset_id,campaign_id,name,effective_status,optimization_goal,billing_event,bid_strategy,daily_budget,lifetime_budget,budget_remaining,targeting,promoted_object,destination_type,learning_stage_info")
+          .eq("effective_status", "ACTIVE"),
+        // Meta ads — creative-level snapshots.
+        supabase.from("meta_ads")
+          .select("ad_id,adset_id,campaign_id,name,effective_status,creative_type,title,body,call_to_action,image_url,video_id")
+          .eq("effective_status", "ACTIVE"),
         // WooCommerce orders = ground truth. Platforms inflate "conversions"
         // by counting soft events; we compute real CPA/ROAS from these rows.
         supabase.from("woo_orders")
@@ -6191,6 +6351,45 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       const googleTotalSpend = Array.from(googleByCampaign.values()).reduce((s, g) => s + g.totalSpend, 0);
       const metaTotalSpend   = Array.from(metaByCampaign.values()).reduce((s, m) => s + m.totalSpend, 0);
 
+      // ── Index the new ad-stack tables by campaign so each prompt entry
+      // can carry its targeting / creative / settings without a second query.
+      const googleSettingsByCampaignId = new Map<string, any>();
+      for (const s of (googleSettingsRaw ?? []) as any[]) {
+        if (s.campaign_id) googleSettingsByCampaignId.set(String(s.campaign_id), s);
+      }
+
+      const metaAdsetsByCampaignId = new Map<string, any[]>();
+      for (const a of (metaAdsetsRaw ?? []) as any[]) {
+        const cid = a.campaign_id ? String(a.campaign_id) : null;
+        if (!cid) continue;
+        if (!metaAdsetsByCampaignId.has(cid)) metaAdsetsByCampaignId.set(cid, []);
+        metaAdsetsByCampaignId.get(cid)!.push(a);
+      }
+
+      const metaAdsByAdsetId = new Map<string, any[]>();
+      for (const ad of (metaAdsRaw ?? []) as any[]) {
+        const aid = ad.adset_id ? String(ad.adset_id) : null;
+        if (!aid) continue;
+        if (!metaAdsByAdsetId.has(aid)) metaAdsByAdsetId.set(aid, []);
+        metaAdsByAdsetId.get(aid)!.push(ad);
+      }
+
+      // Conversion actions — authoritative answer to the soft-conv-primary
+      // problem. Any action with primary_for_goal=true counts in Google's
+      // "Conversions" column; if a non-purchase action is primary, it's
+      // inflating CPA signals and misleading bid optimization.
+      const conversionActionsSummary = ((googleConvActionsRaw ?? []) as any[]).map(a => ({
+        name:             a.name,
+        category:         a.category,
+        primary_for_goal: a.primary_for_goal,
+        value_type:       a.value_type,
+      }));
+      const nonPurchasePrimaryActions = conversionActionsSummary
+        .filter(a => a.primary_for_goal && a.category !== 'PURCHASE')
+        .map(a => `${a.name} (${a.category})`);
+      const purchasePrimaryExists = conversionActionsSummary
+        .some(a => a.primary_for_goal && a.category === 'PURCHASE');
+
       const campaignsForPrompt: any[] = [];
 
       for (const [, g] of googleByCampaign) {
@@ -6222,9 +6421,24 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const realCpa  = real.orders > 0 ? Math.round((g.totalSpend / real.orders) * 100) / 100 : null;
         const realRoas = g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
 
+        // Campaign-level settings (bid strategy, network expansion, budget)
+        const settings = googleSettingsByCampaignId.get(String(g.campaign_id));
+        const gSettings = settings ? {
+          advertising_channel_type: settings.advertising_channel_type,
+          bidding_strategy_type:    settings.bidding_strategy_type,
+          target_cpa_ils:           settings.target_cpa_micros ? Number(settings.target_cpa_micros) / 1e6 : null,
+          target_roas:              settings.target_roas ?? null,
+          daily_budget_ils:         settings.daily_budget_micros ? Number(settings.daily_budget_micros) / 1e6 : null,
+          budget_delivery_method:   settings.budget_delivery_method,
+          search_partners_on:       settings.target_search_network === true,  // silent budget drain flag
+          display_expansion_on:     settings.target_content_network === true,
+          google_search_on:         settings.target_google_search === true,
+        } : null;
+
         campaignsForPrompt.push({
           channel: "google",
           name: g.name,
+          settings: gSettings,
           totals_14d: {
             spend: Math.round(g.totalSpend * 100) / 100,
             // GROUND TRUTH numbers — use these for decisions
@@ -6265,14 +6479,8 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             clicks:       a.clicks,
             conversions:  a.conversions,
           })),
-          daily_trend: g.days.slice(0, 14).map((d: any) => ({
-            date: d.date,
-            impressions: d.impressions,
-            clicks: d.clicks,
-            cost: Number(d.cost).toFixed(2),
-            conversions: d.conversions,
-            conversion_value: d.conversion_value,
-          })),
+          // daily_trend dropped — redundant with totals_14d + daily_cpa
+          // and was eating enough prompt budget to push Meta campaigns out.
         });
       }
 
@@ -6294,10 +6502,58 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const realMCpa  = realM.orders > 0 ? Math.round((m.totalSpend / realM.orders) * 100) / 100 : null;
         const realMRoas = m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
 
+        // Ad-sets for this campaign (with targeting/audience) + their ads.
+        // We summarize targeting into a compact shape the prompt can reason
+        // over — raw `targeting` JSON is huge and mostly noise.
+        const campaignAdsets = metaAdsetsByCampaignId.get(String(m.campaign_id)) ?? [];
+        const metaAdsets = campaignAdsets.map((a: any) => {
+          const t = a.targeting ?? {};
+          const adsUnderAdset = (metaAdsByAdsetId.get(String(a.adset_id)) ?? []).map((ad: any) => ({
+            name:        ad.name,
+            type:        ad.creative_type,
+            title:       ad.title,
+            body:        ad.body,
+            cta:         ad.call_to_action,
+          }));
+          return {
+            adset_id:            a.adset_id,
+            name:                a.name,
+            optimization_goal:   a.optimization_goal,
+            billing_event:       a.billing_event,
+            bid_strategy:        a.bid_strategy,
+            daily_budget_ils:    a.daily_budget,
+            lifetime_budget_ils: a.lifetime_budget,
+            learning_stage:      a.learning_stage_info?.status ?? null,
+            // Compact targeting summary — just the bits the prompt needs
+            targeting: {
+              age_min:              t.age_min ?? null,
+              age_max:              t.age_max ?? null,
+              genders:              t.genders ?? null,
+              geo_countries:        t.geo_locations?.countries ?? null,
+              geo_cities:           (t.geo_locations?.cities ?? []).map((c: any) => c.name).slice(0, 10),
+              interests:            (t.flexible_spec?.[0]?.interests ?? t.interests ?? []).map((i: any) => i.name).slice(0, 20),
+              behaviors:            (t.flexible_spec?.[0]?.behaviors ?? t.behaviors ?? []).map((b: any) => b.name).slice(0, 10),
+              custom_audiences:     (t.custom_audiences ?? []).map((c: any) => c.name),
+              excluded_custom_audiences: (t.excluded_custom_audiences ?? []).map((c: any) => c.name),
+              publisher_platforms:  t.publisher_platforms ?? null,
+              facebook_positions:   t.facebook_positions ?? null,
+              instagram_positions:  t.instagram_positions ?? null,
+              device_platforms:     t.device_platforms ?? null,
+              targeting_optimization: t.targeting_optimization ?? null, // "expansion_all" = Advantage+ audience
+              locales:              t.locales ?? null,
+            },
+            promoted_object:     a.promoted_object ?? null,
+            destination_type:    a.destination_type ?? null,
+            ads_count:           adsUnderAdset.length,
+            ads:                 adsUnderAdset.slice(0, 5), // cap to keep prompt size manageable
+          };
+        });
+
         campaignsForPrompt.push({
           channel: "meta",
           name: m.name,
           objective: m.objective,
+          adsets: metaAdsets,
           totals_14d: {
             spend: Math.round(m.totalSpend * 100) / 100,
             real_orders: realM.orders,
@@ -6313,13 +6569,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             daily_avg_spend: Math.round((m.totalSpend / Math.max(m.days.length, 1)) * 100) / 100,
           },
           daily_cpa: metaDailyCpa.map(d => ({ date: d.date, cpa: d.cpa })),
-          daily_trend: m.days.slice(0, 14).map((d: any) => ({
-            date: d.date,
-            impressions: d.impressions,
-            clicks: d.clicks,
-            spend: Number(d.spend).toFixed(2),
-            conversions: d.conversions,
-          })),
+          // daily_trend dropped — same reason as Google side above.
         });
       }
 
@@ -6380,6 +6630,56 @@ ${PLAYBOOK_2026}
 • המכירה דרך minuto.co.il + WooCommerce. AOV ~₪150. Target CPA ₪20-40. Target ROAS 2-3x.
 • אסור trademark של מתחרים בכותרות (נספרסו, סטרבקס, עלית, לוואצה, ג'ייקובס) — אלא אם הקמפיין הוא קפסולות תואמות (capsules/compatible).
 
+=== 🎚️ בדיקות הגדרות קמפיין (Google) ===
+
+כל קמפיין Google עכשיו מגיע עם שדה settings. השתמש בו:
+
+• **search_partners_on = true** ⚠️ — Search Partners הוא ניקוז שקט של 15-30% מהתקציב. סגור אותו אלא אם יש הוכחה ברורה שהוא מביא ROAS. ברירת מחדל: OFF.
+• **display_expansion_on = true** ⚠️ — Display Network על קמפיין Search = מכריח להופיע במודעות באנר זולות בבלוגים. תמיד סגור.
+• **bidding_strategy_type = MAXIMIZE_CONVERSIONS ללא target_cpa** — מבזבז תקציב עד שהמערכת מוצאת "כל" המרה. אם real_orders < 30 ב-14 ימים, המערכת עוד לא במידה הנכונה. המלץ לעבור ל-TARGET_CPA עם ₪30 target, או לחזור ל-MANUAL_CPC.
+• **bidding_strategy_type = TARGET_CPA אבל target_cpa_ils > AOV/2** — target_cpa מעל ₪75 על AOV של ₪150 = שורף רווח. הורד ל-₪30-40.
+• **daily_budget_ils < ₪40** — קמפיין עם תקציב מתחת ל-₪40 ליום לא יוצא מ-learning phase. או הגדל ל-₪50+ או הפסק.
+• **advertising_channel_type = PERFORMANCE_MAX** — תמיד דורש אודיינס סיגנלים (in-market, remarketing) כדי לא להפוך לקמפיין Display. בדוק אם קיים.
+
+=== 🎚️ בדיקות Conversion Actions (Google) ===
+
+${purchasePrimaryExists
+  ? `✅ Purchase מוגדר כ-Primary — תקין.`
+  : `❌ Purchase אינו Primary — bug קריטי. ללא זה, Google מבטל בידים סביב הזמנות אמיתיות.`}
+
+${nonPurchasePrimaryActions.length > 0
+  ? `❌ פעולות שאינן Purchase שמוגדרות כ-Primary (חובה להוריד ל-Secondary):
+${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
+חובה: בהמלצת tracking_fixes, ציין בשם את הפעולות האלה ותן הנחיה מדויקת להעביר ל-Secondary.`
+  : `✅ אין פעולות non-Purchase ב-Primary — תקין.`}
+
+=== 🎯 בדיקות Audience + Creative (Meta) ===
+
+לכל קמפיין Meta שיש לו שדה adsets (רשימת ad-sets פעילים עם targeting), בצע את הבדיקות הבאות לכל ad-set:
+
+**בדיקות Targeting (קהל):**
+1. **targeting_optimization = "expansion_all"** (= Advantage+ Audience) + custom_audiences.length > 0 — Meta מרחיב מעבר לקהל המותאם. אם הקהל המותאם קטן (<10k), הרחבה הגיונית; אם גדול (>100k), ההרחבה מדללת. המלץ לסגור ב-Advantage+ ל-Custom Only.
+2. **interests.length > 20** — טירגוט רחב מדי. Meta האלגוריתם לא מצליח לזהות סיגנלים משמעותיים. חדד ל-5-10 interests ממוקדים.
+3. **interests.length = 0 AND custom_audiences.length = 0 AND targeting_optimization != "expansion_all"** — אין קהל מוגדר בכלל = broad run. אם real_cpa > ₪40, הסיבה ברורה.
+4. **age_min/max range > 35 years** (למשל 22-60) — רחב מדי. קהל קפה ספשלטי הוא 28-50. חדד.
+5. **custom_audiences בעברית "Past Purchasers" או דומה חסר** — קמפיין Conversion ללא retargeting = מפספס את ה-lookalike source. בדוק שיש Custom Audience על רוכשים ב-180 יום + Lookalike 1%.
+6. **geo_cities עם פחות מ-5 ערים גדולות** בישראל — לא סופג באופן מספיק. שקול להרחיב לכל ישראל.
+7. **excluded_custom_audiences ריק** — לא מחריגים רוכשים אחרונים ב-7 יום. קמפיין Conversion מפרסם לאנשים שזה עתה קנו = בזבוז.
+
+**בדיקות Creative:**
+8. **ads_count = 1** ב-adset — אין variety. הוסף 3-5 וריאציות.
+9. **כל ה-ads באותו creative_type** (כולם IMAGE, או כולם VIDEO) — העדפת המיקום של Meta נחסמת. הוסף mix של IMAGE + VIDEO + CAROUSEL.
+10. **כל ה-ads באותו CTA** (כולם SHOP_NOW) — נסה Learn_More לטופ-פאנל, Shop_Now לריטרגטינג.
+11. **body ריק ברוב ה-ads** — primary text הוא השדה שמקבל הכי הרבה משקל. ללא זה = no storytelling.
+
+**בדיקות Optimization Goal + Bid:**
+12. **optimization_goal = LINK_CLICKS** על קמפיין עם objective = OUTCOME_SALES — לא נכון. שנה ל-OFFSITE_CONVERSIONS.
+13. **optimization_goal = OFFSITE_CONVERSIONS אבל promoted_object חסר pixel_id** — ב-meta_ad_adsets אין custom_event_type מוגדר = האירוע מה-pixel לא נבחר.
+14. **learning_stage.status = "LEARNING_LIMITED"** — adset לא מקבל מספיק אירועים (target < 50 המרות/שבוע). או הגדל תקציב, או שנה optimization goal לשלב קודם בפאנל.
+15. **bid_strategy = LOWEST_COST_WITH_BID_CAP** עם bid_cap נמוך מדי — לא יוצא מ-learning. הסר cap או הגדל.
+
+**חובה**: בכל קמפיין Meta, audience_diagnosis ו-creative_diagnosis חייבים להיות רלוונטיים לנתונים האמיתיים ב-adsets. אם כל הבדיקות עוברות, כתוב "תקין — targeting ו-creative ברמה טובה".
+
 לכל קמפיין פעיל הפק JSON מלא:
 
 1. **diagnosis** — 2-5 נקודות מה הבעיה האמיתית. דוגמאות:
@@ -6416,51 +6716,102 @@ ${PLAYBOOK_2026}
    • Count = Every, Attribution = Data-driven
    • Tag Assistant: ודא שפעולת purchase מעבירה value מספרי. אם לא — GTM/GA4/WooCommerce plugin.
 
-9. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
+9. **audience_diagnosis** (רק Meta, אופציונלי ל-Google) — 1-4 נקודות על targeting. דוגמאות:
+   • "Advantage+ Audience דולק + custom audience של 45k — הרחבה מדללת. כבה expansion, השאר custom בלבד."
+   • "13 interests כוללים 'Espresso', 'Nespresso', 'Coffee brewing' — חופף ולא ממוקד. חדד ל-5 interests."
+   • "אין Lookalike. צור LAL 1% מתוך Custom Audience 'Past Purchasers 180d'."
+   • "תקין — audience ממוקד וכולל retargeting."
+
+10. **creative_diagnosis** — 1-3 נקודות על creative mix. דוגמאות:
+   • "5 ads ב-adset אבל כולם IMAGE עם CTA זהה (Shop Now). הוסף 2 VIDEO וגוון CTA."
+   • "body ריק ב-3 מתוך 4 ads — הפסד ענק. הוסף primary text של 2-3 משפטים לכל ad."
+
+11. **bid_strategy_diagnosis** — 1-2 נקודות על bid/network settings. דוגמאות (Google):
+   • "Search Partners דולק — נטרף 20% מהתקציב בלי ROAS. סגור ב-Campaign Settings → Networks."
+   • "MAXIMIZE_CONVERSIONS בלי target CPA, real_orders = 4 ב-14 ימים — המערכת לא בlearn. עבור ל-TARGET_CPA ₪35."
+   דוגמאות (Meta):
+   • "optimization_goal = LINK_CLICKS אבל objective = OUTCOME_SALES. שנה ל-OFFSITE_CONVERSIONS עם pixel event Purchase."
+   • "learning_stage = LEARNING_LIMITED — פחות מ-50 המרות/שבוע. הגדל תקציב ל-₪100/יום או שנה goal ל-Add to Cart."
+
+12. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
 
 כללים:
+• **חובה: החזר ערך אחד ב-campaigns[] לכל קמפיין ברשימת הקמפיינים הפעילים — גם Google וגם Meta.** אסור להשמיט קמפיין. אם אין מספיק נתונים להמלצה מפורטת, החזר diagnosis קצר עם "נדרש עוד זמן/נתונים" אבל עדיין כלול את הקמפיין.
 • אסור להמציא מספרים שלא ראית בנתונים. אם אין — אמור "לא ידוע עד בדיקה ידנית".
 • אסור להמליץ על מילות מפתח שכבר רצות BROAD בדאטה-סט (הן כבר בחשבון).
 • כותרות: עברית שיווקית חדה, בלי קלישאות שחוקות.
+• שמור את השמות של הקמפיינים בדיוק כפי שהם מופיעים בנתונים (כולל תווים מיוחדים, רווחים, |).
 • החזר JSON בלבד — בלי טקסט מסביב, בלי markdown fences.`;
 
-      const userMsg2 = `=== קמפיינים פעילים (14 ימים אחרונים) ===\n${JSON.stringify(campaignsForPrompt, null, 2).slice(0, 18000)}\n\n=== מילות מפתח בחשבון (עם IS + match type) ===\n${JSON.stringify(keywordDataset, null, 2).slice(0, 3000)}\n\nהחזר JSON בפורמט:\n{\n  "campaigns": [\n    {\n      "name": "שם מדויק מהרשימה",\n      "channel": "google|meta",\n      "priority": "critical|high|medium",\n      "diagnosis": ["..."],\n      "new_headlines": ["..."],\n      "new_descriptions": ["..."],\n      "keyword_plan": { "exact": [], "phrase": [], "broad": [], "negatives": [] },\n      "budget_action": { "type": "...", "from_ils": 0, "to_ils": 0, "reason": "..." },\n      "landing_action": { "type": "...", "new_url": "...", "reason": "..." },\n      "tracking_fixes": ["..."],\n      "expected_improvement": "..."\n    }\n  ]\n}`;
+      // Split Google + Meta into two parallel Claude calls. A single call
+      // that covers both was hitting the 130s internal timeout because the
+      // output (headlines + descriptions + 3 diagnoses per campaign) scales
+      // with the number of campaigns. Two calls = half the output per call
+      // = both finish comfortably inside the window.
+      const googleCampaignPayload = campaignsForPrompt.filter(c => c.channel === 'google');
+      const metaCampaignPayload   = campaignsForPrompt.filter(c => c.channel === 'meta');
 
-      // Sonnet-4 (not 4.5) — the 4.5 model consistently blows the 150s
-      // Supabase gateway timeout on ~20k-char input prompts. Sonnet-4 is
-      // 2-3x faster for this workload with equivalent output quality.
-      // Prompt asks for 12 headlines + 3 descriptions per campaign (reduced
-      // from 20/4) to fit in the timeout; max_tokens 7500 gives enough room
-      // for ~5 campaigns of Hebrew output without truncation.
-      const { text } = await callClaude(
-        "claude-sonnet-4-20250514",
-        sysPrompt,
-        userMsg2,
-        { maxTokens: 7500, timeoutMs: 135_000 },
-      );
-
-      let parsed: any = null;
-      try {
-        const cleaned = text.replace(/```json\n?|```\n?/g, "").trim();
-        parsed = JSON.parse(cleaned);
-      } catch (_e) {
-        return new Response(JSON.stringify({
-          success: false, error: "claude response not valid json", raw: text.slice(0, 600),
-        }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+      function buildUserMsg(channel: 'google' | 'meta', payload: any[]): string {
+        if (!payload.length) return '';
+        const roster = payload.map(c => c.name).join('\n  • ');
+        return `ערוץ: ${channel}. חובה: החזר ערך אחד ב-campaigns[] לכל אחד מ-${payload.length} הקמפיינים הבאים:\n  • ${roster}\n\n=== קמפיינים פעילים (14 ימים אחרונים, כולל adsets + targeting + settings) ===\n${JSON.stringify(payload, null, 2).slice(0, 16000)}\n\n=== מילות מפתח בחשבון (Google only, עם IS + match type) ===\n${channel === 'google' ? JSON.stringify(keywordDataset, null, 2).slice(0, 2000) : '(לא רלוונטי לערוץ Meta)'}\n\n=== Conversion Actions (Google) — מקור אמת, לא heuristic ===\n${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1200)}\n\nהחזר JSON בפורמט:\n{\n  "campaigns": [\n    {\n      "name": "שם מדויק מהרשימה",\n      "channel": "${channel}",\n      "priority": "critical|high|medium",\n      "diagnosis": ["..."],\n      "audience_diagnosis": ["..."],\n      "creative_diagnosis": ["..."],\n      "bid_strategy_diagnosis": ["..."],\n      "new_headlines": ["..."],\n      "new_descriptions": ["..."],\n      "keyword_plan": { "exact": [], "phrase": [], "broad": [], "negatives": [] },\n      "budget_action": { "type": "...", "from_ils": 0, "to_ils": 0, "reason": "..." },\n      "landing_action": { "type": "...", "new_url": "...", "reason": "..." },\n      "tracking_fixes": ["..."],\n      "expected_improvement": "..."\n    }\n  ]\n}`;
       }
 
-      // Whitelist — drop hallucinated campaign names
+      // Sonnet-4 (not 4.5) — 4.5 was consistently blowing the 150s gateway
+      // on this prompt shape. Sonnet-4 is ~2x faster with equivalent quality.
+      // max_tokens 5500 per call gives headroom for ~3 campaigns of full
+      // Hebrew output including the new audience/creative/bid diagnoses.
+      async function runDoctorCall(payload: any[], channel: 'google' | 'meta') {
+        if (!payload.length) return { campaigns: [] };
+        try {
+          const { text } = await callClaude(
+            "claude-sonnet-4-20250514",
+            sysPrompt,
+            buildUserMsg(channel, payload),
+            { maxTokens: 5500, timeoutMs: 115_000 },
+          );
+          const cleaned = text.replace(/```json\n?|```\n?/g, "").trim();
+          return JSON.parse(cleaned);
+        } catch (err: any) {
+          console.error(`[campaign_doctor] ${channel} call failed:`, err?.message);
+          return { campaigns: [], error: err?.message ?? 'unknown' };
+        }
+      }
+
+      const [googleResult, metaResult] = await Promise.all([
+        runDoctorCall(googleCampaignPayload, 'google'),
+        runDoctorCall(metaCampaignPayload,   'meta'),
+      ]);
+
+      const parsed = {
+        campaigns: [
+          ...(googleResult.campaigns ?? []),
+          ...(metaResult.campaigns   ?? []),
+        ],
+      };
+      const callErrors: string[] = [];
+      if (googleResult.error) callErrors.push(`google: ${googleResult.error}`);
+      if (metaResult.error)   callErrors.push(`meta: ${metaResult.error}`);
+
+      // Whitelist — drop hallucinated campaign names. We surface the dropped
+      // names + any missing campaigns in the response so the UI can show
+      // diagnostic warnings instead of us silently losing campaigns.
       const realNames = new Set<string>([
         ...Array.from(googleByCampaign.values()).map(c => c.name),
         ...Array.from(metaByCampaign.values()).map(c => c.name),
       ]);
+      const droppedUnknown: string[] = [];
+      const returnedNames = new Set<string>();
       const filtered = ((parsed?.campaigns ?? []) as any[]).filter((c: any) => {
         if (!c?.name || !realNames.has(c.name)) {
           console.warn(`[campaign_doctor] dropping unknown campaign: ${c?.name}`);
+          droppedUnknown.push(c?.name ?? '(missing name)');
           return false;
         }
+        returnedNames.add(c.name);
         return true;
       });
+      const missingFromOutput = [...realNames].filter(n => !returnedNames.has(n));
 
       return new Response(JSON.stringify({
         success: true,
@@ -6474,6 +6825,12 @@ ${PLAYBOOK_2026}
           soft_conversion_primary_suspected: softConversionPrimarySuspected,
           google_reported_conversions_14d: Math.round(totalGoogleConversions * 10) / 10,
           woo_google_orders_14d: wooGoogleOrders,
+        },
+        diagnostics: {
+          expected_campaigns: realNames.size,
+          dropped_unknown_names: droppedUnknown,
+          missing_from_output:  missingFromOutput,
+          call_errors:          callErrors,
         },
       }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {

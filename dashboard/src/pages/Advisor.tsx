@@ -2797,7 +2797,7 @@ export default function AdvisorPage() {
               )}
             </p>
             <p className="text-xs text-emerald-700 mt-0.5">
-              לכל קמפיין פעיל: אבחון מלא + 20 כותרות חדשות + 4 תיאורים + מבנה מילות מפתח EXACT/PHRASE/BROAD + negatives + פעולת תקציב + תיקוני מעקב. מוכן להדבקה ב-Google Ads.
+              לכל קמפיין פעיל (Google + Meta): אבחון מלא + ניתוח קהל/targeting + mix קריאייטיב + הצעות מחיר והגדרות רשת + 12 כותרות + 3 תיאורים + מבנה מילות מפתח + negatives + תיקוני מעקב. מוכן להדבקה ב-Google Ads / Meta Ads Manager.
             </p>
           </div>
           <div className="flex gap-2">
@@ -2823,6 +2823,37 @@ export default function AdvisorPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700" dir="rtl">
             ❌ {doctorError}
           </div>
+        )}
+
+        {/* Diagnostics banner — shown only when the doctor had trouble returning
+            all campaigns (e.g., one of the parallel Google/Meta calls errored,
+            Claude dropped a campaign, or emitted a name that didn't match). */}
+        {doctorResult?.diagnostics && (
+          (doctorResult.diagnostics.missing_from_output?.length > 0 ||
+           doctorResult.diagnostics.dropped_unknown_names?.length > 0 ||
+           doctorResult.diagnostics.call_errors?.length > 0) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800" dir="rtl">
+              <p className="font-semibold mb-1">⚠️ התרעות דוקטור (חלק מהקמפיינים לא חזרו):</p>
+              {doctorResult.diagnostics.missing_from_output?.length > 0 && (
+                <p>
+                  <strong>חסרים מהתוצאה:</strong>{' '}
+                  {doctorResult.diagnostics.missing_from_output.join(', ')}
+                </p>
+              )}
+              {doctorResult.diagnostics.dropped_unknown_names?.length > 0 && (
+                <p>
+                  <strong>שמות לא מוכרים שנפלו:</strong>{' '}
+                  {doctorResult.diagnostics.dropped_unknown_names.join(', ')}
+                </p>
+              )}
+              {doctorResult.diagnostics.call_errors?.length > 0 && (
+                <p>
+                  <strong>שגיאות בקריאת Claude:</strong>{' '}
+                  {doctorResult.diagnostics.call_errors.join('; ')}
+                </p>
+              )}
+            </div>
+          )
         )}
 
         {doctorResult && doctorOpen && (
@@ -2903,6 +2934,43 @@ export default function AdvisorPage() {
                       ))}
                     </ul>
                   </div>
+
+                  {/* New: Audience / Creative / Bid diagnoses — only shown when populated.
+                      These come from the extended Campaign Doctor that now reads adset
+                      targeting, ad creatives, and campaign settings (bid strategy,
+                      network, conversion action roles). */}
+                  {c.audience_diagnosis?.length > 0 && (
+                    <div className="mb-2 bg-violet-50 border border-violet-200 rounded px-2 py-1.5">
+                      <p className="text-xs font-semibold text-violet-900 mb-1">🎯 קהל / Targeting:</p>
+                      <ul className="text-xs space-y-0.5 list-disc pr-5 text-violet-900">
+                        {c.audience_diagnosis.map((d: string, j: number) => (
+                          <li key={j}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {c.creative_diagnosis?.length > 0 && (
+                    <div className="mb-2 bg-rose-50 border border-rose-200 rounded px-2 py-1.5">
+                      <p className="text-xs font-semibold text-rose-900 mb-1">🎨 קריאייטיב:</p>
+                      <ul className="text-xs space-y-0.5 list-disc pr-5 text-rose-900">
+                        {c.creative_diagnosis.map((d: string, j: number) => (
+                          <li key={j}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {c.bid_strategy_diagnosis?.length > 0 && (
+                    <div className="mb-2 bg-sky-50 border border-sky-200 rounded px-2 py-1.5">
+                      <p className="text-xs font-semibold text-sky-900 mb-1">🎚️ הצעות מחיר והגדרות:</p>
+                      <ul className="text-xs space-y-0.5 list-disc pr-5 text-sky-900">
+                        {c.bid_strategy_diagnosis.map((d: string, j: number) => (
+                          <li key={j}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Quick actions — always visible */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
