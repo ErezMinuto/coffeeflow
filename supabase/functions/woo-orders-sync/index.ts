@@ -39,14 +39,15 @@ interface WooMeta {
 }
 
 interface WooOrder {
-  id:            number;
-  date_created:  string;
-  status:        string;
-  total:         string;
-  currency:      string;
-  line_items:    WooLineItem[];
-  billing:       { email?: string };
-  meta_data:     WooMeta[];
+  id:             number;
+  date_created:   string;
+  status:         string;
+  total:          string;
+  currency:       string;
+  line_items:     WooLineItem[];
+  billing:        { email?: string };
+  meta_data:      WooMeta[];
+  customer_note?: string;     // checkout note — gold for VoC mining ("הזמנתי בשביל אבא...")
 }
 
 // Orders created by mflow (B2B invoicing) have source_type = "Advanced Purchase Tracking (APT)"
@@ -180,7 +181,7 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
     status: "completed,processing",
     orderby: "date",
     order: "asc",
-    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data",
+    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note",
   });
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params}`;
   const res  = await fetch(url, { headers: { Authorization: `Basic ${wooAuth}` } });
@@ -328,6 +329,7 @@ serve(async (req) => {
           utm_content:    utm.utm_content,
           utm_term:       utm.utm_term,
           gclid,
+          customer_note:  o.customer_note && o.customer_note.trim() !== '' ? o.customer_note : null,
           items: (o.line_items ?? []).map((li: WooLineItem) => ({
             product_name: li.name,
             sku:          li.sku,

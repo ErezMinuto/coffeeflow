@@ -471,6 +471,178 @@ const PLAYBOOK_2026 = `
   - שבועות: חלב + אספרסו, מתנות מורות/רב
 === סוף הספר ===`;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Customer Psychology Frameworks ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Three modules injected into every content/ad-writing agent:
+//
+//   CUSTOMER_JOURNEY      — Schwartz's 5 awareness stages mapped to specialty
+//                           coffee; tells agents to identify WHICH stage a
+//                           given piece of content targets before writing.
+//
+//   BUYING_MOTIVATIONS    — the 6 reasons someone actually buys premium coffee
+//                           (ritual, identity, escape, craft, gifting, health),
+//                           with Hebrew linguistic triggers + anti-patterns
+//                           for each. Derived from JTBD + Cialdini.
+//
+//   HEBREW_COPY_RULES     — Israeli-specific copy conventions. Hebrew has
+//                           allergies to certain phrasings that translate
+//                           fine from English. This module codifies what
+//                           actually converts vs what gets dismissed as
+//                           "translationese."
+//
+// These complement BUSINESS_BRIEF + PLAYBOOK_2026 (what to sell, how to
+// measure) with WHY and HOW (who's buying, what moves them, how to talk
+// to them). Agents that previously produced generic marketing Hebrew
+// should now produce stage-aware, motivation-driven, idiomatic copy.
+
+const CUSTOMER_JOURNEY = `
+=== מסע הלקוח של קפה ספשלטי — 5 שלבים ===
+
+עיקרון: לפני שכותבים תוכן, זיהה באיזה שלב הקהל. שלב שגוי = פוסט שלא ממיר.
+
+**שלב 1 — הסף (The Gateway)**
+• טריגר: מכונה חדשה, חוויה גרועה עם פול מהסופר, חבר המליץ, זיכרון מחו"ל
+• מצב נפשי: מבולבל, "מה בכלל קונים?", קצת מאוים
+• שפה שלהם: "קפה טוב", "איכותי", "משהו שיעבוד במכונה"
+• הטון שלנו: סבלני, שואלים קודם מה הם אוהבים. לא מונחי SCA/מוצא/קלייה — עוד מוקדם.
+• מה מציעים: תשובה ברורה ("בשביל מכונה X תנסה Y"), הבטחה פשוטה (טרי, נשלח מהר)
+• התנגדויות דומיננטיות: "יקר?", "איך אדע שיתאים לי?"
+• ANTI-PATTERN: לא להעמיס על טרמינולוגיה, לא "ציון SCA 85+ על natural processing"
+
+**שלב 2 — הגילוי (Discovery)**
+• טריגר: עברו שלב 1, עכשיו בודקים בפרטי פרטים מה לקנות
+• מצב נפשי: סקרנים, רוצים להרגיש שהם לומדים משהו, משווים אופציות
+• שפה שלהם: משתמשים במונחים מראשוני ("חד-זני", "ציון", "מקור"), עדיין לא בטוחים
+• הטון שלנו: מחנכים בלי להשוויץ. סיפורים על החווה, על הקלייה, על הטעם.
+• מה מציעים: השוואות ברורות ("ברזיל vs אתיופיה — מה ההבדל"), הדגמות מעשיות
+• התנגדויות: "איך אבחר מבין 13 אפשרויות?", "אני לא רוצה להתחרט"
+• ANTI-PATTERN: לא להשפיל ("אם אתה שותה נס-קפה…"), לא גאווה יתר
+
+**שלב 3 — המחויבות (Commitment)**
+• טריגר: עושים הזמנה ראשונה של ספשלטי
+• מצב נפשי: גאים אבל חרדים ("הוצאתי יותר, מקווה שזה שווה"), רוצים תיקוף
+• שפה שלהם: שימוש בטוח יותר במושגים, שואלים שאלות טכניות ("כמה זמן לפני שהפולים יורדים באיכות?")
+• הטון שלנו: מאשרים את הבחירה, מסבירים איך להכין נכון, "אתה עכשיו חלק מהדבר"
+• מה מציעים: מדריכי הכנה, טיפים, תמיכה, הבטחת "אם לא אהבת — נחליף"
+• התנגדויות: "בזבזתי כסף אם הכנתי לא נכון", "הקפה שלי לא טועם כמו בבית קפה"
+• ANTI-PATTERN: לא למכור עוד מיד ("נסה גם את X!") — הם עוד מעכלים את הקנייה
+
+**שלב 4 — ההשתלטות (Mastery)**
+• טריגר: כבר קונים ספשלטי רגיל, מתחילים להעז (מקורות חדשים, שיטות חליטה)
+• מצב נפשי: בטוחים, שולטים בטרמינולוגיה, מחפשים חוויות חדשות
+• שפה שלהם: שפה מקצועית — "פרופיל קלייה", "אקסטרקציה", "גרייה במטחנה"
+• הטון שלנו: ניירד איתם, תוכן מתקדם, השוואות עדינות, סקירות פרמנטציה
+• מה מציעים: מיקרו-לוטים, מוצאים נדירים, אירועים/טעימות, השוואות מעמיקות
+• התנגדויות: "כבר ניסיתי את זה, מה חדש?", "האם הפרמיה שווה?"
+• ANTI-PATTERN: לא לתוכן בסיסי — הם כבר יודעים
+
+**שלב 5 — הזהות (Identity)**
+• טריגר: קפה הפך לחלק מהזהות העצמית, מעבירים הלאה לחברים/משפחה
+• מצב נפשי: מזדהים עם המותג, קונים מתנות קפה, מזמינים חברים לטעימה
+• שפה שלהם: מותג = "המקליה שלי", "הם מכירים אותי"
+• הטון שלנו: "אתם חלק מהקהילה", אמון עם פרטים פנימיים, הזמנות לאירועים
+• מה מציעים: מוצאים חדשים לפני שכולם, אירועי ברא/קלייה, מארזי מתנה מותאמים אישית
+• התנגדויות: כמעט אין — הם כבר לקוחות חוזרים. הסיכון היחיד: להיות lost in the crowd
+• ANTI-PATTERN: לא לרמוז שהם "רק לקוחות" — הם הקהילה של המותג
+
+**כלל גדול**: כל פוסט / מודעה / עמוד נחיתה חייב למקד שלב אחד בבירור. פוסט שמנסה לדבר עם שלב 1 ו-4 בו-זמנית = נופל בין הכיסאות.
+`;
+
+const BUYING_MOTIVATIONS = `
+=== 6 מוטיבציות קנייה של קפה ספשלטי בישראל ===
+
+עיקרון: איש לא קונה "קפה". הוא קונה אחד מ-6 אלה. זיהה את המוטיבציה ואז בחר שפה.
+
+**1. התעלות היומיום (Ritual Elevation)** — הרוב הדומיננטי
+• מה זה: הבוקר של 5:30 כ-"me-time" קדוש. הקפה הוא טקס.
+• טריגרים בעברית שמפעילים: "הבוקר שלך", "10 דקות ששייכות רק לך", "לפני שכולם קמים"
+• המלצות מוצר: single origins, קלייה בהירה-בינונית, הכנה איטית (V60, Chemex)
+• JTBD: "אני שוכר את הקפה כדי לסמן את תחילת היום בתור 'המקום של עצמי'"
+• ANTI-PATTERN: שפה של מהירות/יעילות — נוגדת את הטקס
+
+**2. זהות ומעמד (Identity & Status)**
+• מה זה: "אני אדם שמבין בקפה" — ההבדלה מקוני קפה סטנדרטיים
+• טריגרים: "שתית פעם קפה באמת?", "הבוקר של אנשים שמבינים", "כמו שבריסטות מכינים"
+• המלצות מוצר: מיקרו-לוטים, מוצאים נדירים, ציון SCA גבוה, פרופיל טעם מיוחד
+• JTBD: "אני שוכר את הקפה כדי להוכיח לעצמי ולאחרים שיש לי טעם"
+• ANTI-PATTERN: "קפה טוב לכולם" — סותר את הבידול
+
+**3. בריחה מהמדיוקרי (Escape the Mediocre)**
+• מה זה: התנערות מקפה סופר/נס. "לא עוד"
+• טריגרים: "לוואצה? נמליץ על משהו טוב יותר", "הסתגלת לקפה מר? יש אלטרנטיבה", "די לקפה שטוף"
+• המלצות מוצר: פולים טריים (נקלה השבוע), ברנדים עם אופי, דגש על ההבדל "מה שאתה שותה היום"
+• JTBD: "אני שוכר את הקפה כדי להפסיק לשתות דברים שלא באמת אוהב"
+• ANTI-PATTERN: התנשאות ("אם אתה עדיין שותה לוואצה…") — מרגיז לא מחנך
+
+**4. הערכת מלאכה (Craft Appreciation)**
+• מה זה: הצד של "איך זה נעשה" — קלייה, אקסטרקציה, variables
+• טריגרים: "ראה איך נקלה", "כל שקית מתוחזקת", "24 שעות בין קלייה למשלוח"
+• המלצות מוצר: single origins עם סיפור חוואים, blends שטויעים כ"הרכבה", מוצאים בעלי טכניקת עיבוד ייחודית
+• JTBD: "אני שוכר את הקפה כדי להרגיש קרוב למלאכה, לא רק לצרוך"
+• ANTI-PATTERN: סלוגנים ריקים — הקהל הזה רוצה פרטים אמיתיים
+
+**5. מתנה מחושבת (Thoughtful Gifting)**
+• מה זה: מישהו אחר מקבל את הקפה. הרבה מסביב ראש השנה/חנוכה/עצמאות/חתונות
+• טריגרים: "מתנה ששם שם לב למה שהוא אוהב", "במקום בקבוק יין — תן משהו שישתמש בו כל בוקר", "מותאם אישית"
+• המלצות מוצר: מארזים, bundles עם accessories, שוברי מתנה, "תגיד לי מה הטעם שלו"
+• JTBD: "אני שוכר את הקפה כדי להראות למישהו שחשבתי עליו"
+• ANTI-PATTERN: מוצרים זולים/"מבצע" — מתנה זולה לא נחשבת מתנה טובה
+
+**6. בריאות מודעת (Health-Conscious)**
+• מה זה: עניין בחומרים טבעיים, פחות כימיקלים, איכות המקור
+• טריגרים: "organic/natural processed", "ללא כימיקלים", "מקור אתי", "פחות מקוטלוג בחינם"
+• המלצות מוצר: organic, natural processed, decaf טבעי (Swiss Water), פולים מחווה ישירה
+• JTBD: "אני שוכר את הקפה שלא יהיה חלק מהבעיה של בריאות/סביבה"
+• ANTI-PATTERN: סלנג שיווקי. הקהל הזה רגיש ל-greenwashing.
+
+**כלל**: כל פוסט/מודעה מכוון למוטיבציה אחת דומיננטית. Max 2 משניות. פוסט של 4 מוטיבציות = אף אחת.
+`;
+
+const HEBREW_COPY_RULES = `
+=== כללי עברית שיווקית שעובדים לקפה ספשלטי ===
+
+עיקרון: עברית ישירה, ספציפית, קונקרטית. ישראלים מבחינים מיד ב"translationese" ומפסיקים להקשיב.
+
+**✓ עובד (מעתיק):**
+• ישיר וקונקרטי: "נקלה היום, נשלח מחר" > "שירות משלוחים זריז"
+• מספרים ספציפיים: "ציון SCA 85" > "איכות גבוהה"
+• ניגוד קונקרטי: "פול שנקלה היום vs פול שנקלה לפני 4 חודשים" > "טריות"
+• הזמנה לפעולה קטנה: "תטעם ותחליט" > "תאמינו לנו"
+• שימוש בשם "אתה/את" (גוף שני יחיד) — אישי, לא "לצרכן היקר"
+• פסיקים ומשפטים קצרים. עברית שיווקית טובה = כמו דיבור.
+• הומור עצמי עדין: "כן, גם אנחנו הכנו פעם אספרסו מוזר — למדנו."
+
+**✗ לא עובד (פוסל):**
+• תרגום מילולי מאנגלית: "חוויה מרגשת", "מסע בטעמים", "נוסעים לעולם טעים"
+• סופרלטיבים ללא הוכחה: "הטעם הטוב בעולם", "המוביל בתחומו" (בלי מספרים)
+• שפה פלוקית: "מתחייבים לאיכות ללא פשרות", "מעצבים חוויות"
+• מניפולציה של דחיפות: "מבצע לשעתיים בלבד!", "מלאי אחרון!"
+• בטון היררכי: "לצרכן המבקש", "אנו מתכבדים להציג"
+• מילים שחוקות: "מדהים", "חוויה", "מסע", "פרימיום" (בלי הסבר)
+
+**ניואנסים ישראליים:**
+• אמון > רומנטיקה. "10 שנות ניסיון ברחובות" > "בבית הקלייה הבוטיק שלנו"
+• טכני > אמוציונלי לשלב 2-4. אמוציונלי > טכני לשלב 1 ו-5.
+• רחובות = תכונה: "במעבר הקטן שלידי", "מתחת לרדאר של תל אביב" — שם טוב לברנד
+• הומור שחור/עצמי עובד, אל תשתמש בהפחדה (ישראלים לא נופלים בזה ל-2026)
+• פיסוק ישראלי: פסיק-פסיק-נקודה, לא ... או !!!
+
+**דוגמאות טובות מול רעות:**
+
+✓ "מכונת דלונגי? נמליץ על פולים עם קצת רובוסטה כדי לחלץ גוף. טריאסט, אינטנסו, או פרסטיג׳."
+✗ "מציעים מגוון עשיר של פולי קפה איכותיים המותאמים למגוון מכונות הקפה."
+
+✓ "6 בבוקר. המקליה מתחילה לעבוד. הברזיל הזה יוצא אליכם עד צהריים."
+✗ "אנו גאים להציג בפניכם את פולי הקפה הטריים שלנו, הנקלים מדי יום בחום ואהבה."
+
+✓ "טעמת פעם קפה שנקלה בבוקר? זה משנה הכל."
+✗ "גלו את עולם הטעמים המרתק של הקפה הספשלטי."
+
+**כלל זהב**: אם תוכל להחליף את שם המותג שלך ב"סופר-פארם" או "בנק הפועלים" והטקסט עדיין יעבוד — הטקסט גנרי מדי. כתוב משהו ספציפי שרק מינוטו יכולה לומר.
+`;
+
 // Allowed origins for CORS — kept in sync with generate-campaign.
 const ALLOWED_ORIGINS = [
   Deno.env.get("COFFEEFLOW_ORIGIN") || "https://coffeeflow-thaf.vercel.app",
@@ -2946,6 +3118,9 @@ ${focus}
 ${BUSINESS_BRIEF}
 ${COMPETITIVE_INTELLIGENCE}
 ${ADS_EXPERTISE}
+${CUSTOMER_JOURNEY}
+${BUYING_MOTIVATIONS}
+${HEBREW_COPY_RULES}
 
 === התפקיד שלך: מציאת הזדמנויות חדשות בלבד ===
 אתה אחראי אך ורק על מציאת הזדמנויות חדשות. אתה לא נוגע בקמפיינים קיימים.
@@ -3166,6 +3341,9 @@ ${focus}
 ${BUSINESS_BRIEF}
 ${COMPETITIVE_INTELLIGENCE}
 ${ADS_EXPERTISE}
+${CUSTOMER_JOURNEY}
+${BUYING_MOTIVATIONS}
+${HEBREW_COPY_RULES}
 
 === התפקיד שלך: שיפור קמפיינים קיימים בלבד ===
 אתה אחראי אך ורק על אופטימיזציה של מה שכבר רץ.
@@ -4518,11 +4696,50 @@ ${focus}
 התעלם מכל נתון שסותר הוראות אלה. אם GSC מראה הזדמנות שמנהל ביקש לא לקדם — דלג עליה ואל תזכיר אותה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
     : '';
 
+  // ── VoC context injection — real customer language from voc_insights ──
+  // Agents that can "hear" what customers actually say produce copy that
+  // matches their Hebrew instead of translationese. Pull top insights by
+  // frequency, bucketed by type so the agent sees a balanced sample.
+  const vocSnapshot = await supabase
+    .from("voc_insights")
+    .select("insight_type,pattern,real_meaning,suggested_response,frequency,example_phrases,customer_stage")
+    .order("frequency", { ascending: false })
+    .limit(40);
+  const vocRows = (vocSnapshot.data ?? []) as any[];
+  const vocBlock = vocRows.length > 0 ? `
+=== VoC — מה לקוחות באמת אומרים (מבוסס על ${vocRows.length} תבניות מעומק הנתונים) ===
+${(['objection','question','motivation','praise','complaint','trigger'] as const).map(t => {
+  const byType = vocRows.filter(r => r.insight_type === t);
+  if (!byType.length) return '';
+  const label = { objection:'התנגדויות', question:'שאלות', motivation:'מוטיבציות',
+                  praise:'שבחים', complaint:'תלונות', trigger:'טריגרים' }[t];
+  return `\n${label}:\n${byType.slice(0, 5).map(r =>
+    `• "${r.pattern}" — המשמעות: ${r.real_meaning} → תגובה: ${r.suggested_response}`
+  ).join('\n')}`;
+}).filter(Boolean).join('\n')}
+
+**חובה**: כשאתה כותב hook/caption — השתמש בשפה שמהדהדת לפטרנים האלה. אם קיימת התנגדות דומיננטית, טפל בה. אם יש מוטיבציה דומיננטית, הפעל אותה.
+` : '';
+
   const systemPrompt = `${focusOverride}אתה מנהל שיווק דיגיטלי בכיר עם ניסיון בתוכן ו-SEO לעסקי מזון/קפה. אתה מייעץ ל-Minuto Coffee.
 ${BUSINESS_BRIEF}
 ${COMPETITIVE_INTELLIGENCE}
 ${ORGANIC_EXPERTISE}
 ${PLAYBOOK_2026}
+${CUSTOMER_JOURNEY}
+${BUYING_MOTIVATIONS}
+${HEBREW_COPY_RULES}
+${vocBlock}
+
+⚠️ **חובה לפני כתיבה (חדש)**:
+לפני שאתה כותב כל פוסט, קבע במפורש:
+1. באיזה Awareness Stage אני מכוון? (gateway/discovery/commitment/mastery/identity)
+2. איזו מוטיבציית קנייה אני מפעיל? (ritual/identity/escape/craft/gift/health)
+3. איזו התנגדות/שאלה דומיננטית אני מטפל בה? (מתוך VoC למעלה, אם קיים)
+
+הוסף את ההחלטות האלה כ-meta בתוך ה-JSON (targeting_stage, activating_motivation, addressing_objection).
+זה לא formality — זה המנוע של כל הקופי שלך. אם לא ידעת לענות על 3 השאלות, אתה כותב גנרי.
+
 
 ⚠️ כלל קריטי: אנחנו מוכרים פולי קפה בלבד.
 אם GSC מראה הזדמנות על "מטחנת קפה" או "מכונת קפה" — דלג עליה לגמרי ואל תזכיר אותה, גם אם המיקום מצוין.
@@ -6916,6 +7133,9 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
       const sysPrompt = `אתה דוקטור הקמפיינים של מינוטו קפה — מומחה Google Ads + Meta Ads שתפקידו לאבחן כל קמפיין פעיל ולהפיק תכנית תיקון מוכנה להעתקה ישירות לפלטפורמה.
 ${PLAYBOOK_2026}
+${CUSTOMER_JOURNEY}
+${BUYING_MOTIVATIONS}
+${HEBREW_COPY_RULES}
 
 ⚠️ **חוק זהב — מקור האמת** ⚠️
 לכל קמפיין יש שתי קבוצות נתונים:
@@ -7240,6 +7460,310 @@ ${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
       return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
         { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
     }
+  }
+
+  // ── voc_mine — Voice of Customer distillation ────────────────────────────
+  //
+  // Reads raw customer language from public sources (IG + FB comments, product
+  // reviews, Google Business reviews, Woo order notes) and uses Claude to
+  // distill it into structured VoC insights — objections, motivations,
+  // questions, triggers, praise, complaints. Results upserted to voc_insights
+  // which content + ad agents reference in their prompts.
+  //
+  // Mining strategy:
+  //   1. Fetch raw sources in one Promise.all. Filter obvious junk (empty
+  //      strings, single-char reactions like "!" or ❤️, Minuto's own replies).
+  //   2. Bucket raw quotes by rough sentiment / type heuristic in code.
+  //   3. Send to Claude as one batch; ask for structured insights JSON.
+  //   4. Merge into voc_insights — if pattern matches existing, increment
+  //      frequency; else insert new.
+  //   5. Record run in voc_mining_runs.
+  //
+  // Conservative design: one batch per mine call, up to ~150 quotes in prompt.
+  // Re-runs cheap (idempotent on pattern merge). Can schedule weekly via cron.
+  if (body.agent === "voc_mine") {
+    const runStartedAt = new Date().toISOString();
+
+    // Kick off the audit row first so even if we fail mid-run it's logged
+    const { data: runRow } = await supabase.from("voc_mining_runs").insert({
+      started_at: runStartedAt, status: "running",
+    }).select("id").single();
+    const runId = (runRow as any)?.id;
+
+    try {
+      // Parallel-load every raw source. Keep each query cheap: latest N rows,
+      // non-empty text only. We filter out Minuto's own posts in CODE (not in
+      // the SQL filter) because PostgREST's NOT IN + nullable columns yields
+      // counter-intuitive 3-valued-logic results that swallow the whole set.
+      const MINUTO_USERNAMES = new Set(["minuto.cafe", "minutocafe", "minuto_cafe", "minuto", "מינוטו"]);
+      const [
+        { data: igComments },
+        { data: fbComments },
+        { data: igDms },
+        { data: reviews },
+        { data: googleReviews },
+        { data: orderNotes },
+      ] = await Promise.all([
+        supabase.from("instagram_comments")
+          .select("text,username,created_time,post_id")
+          .not("text", "is", null)
+          .order("created_time", { ascending: false })
+          .limit(300),
+        supabase.from("facebook_comments")
+          .select("message,from_name,created_time,post_id")
+          .not("message", "is", null)
+          .order("created_time", { ascending: false })
+          .limit(200),
+        // Only customer messages (not Minuto's replies). is_from_minuto flag
+        // is authoritative — we set it at sync time based on sender_id vs the
+        // IG business account id.
+        supabase.from("instagram_dms")
+          .select("message_id,message,sender_username,created_time,conversation_id,is_from_minuto")
+          .eq("is_from_minuto", false)
+          .eq("purged", false)
+          .not("message", "is", null)
+          .order("created_time", { ascending: false })
+          .limit(300),
+        supabase.from("product_reviews")
+          .select("title,body,rating,product_name,product_category,created_date")
+          .not("body", "is", null)
+          .order("created_date", { ascending: false })
+          .limit(150),
+        supabase.from("google_business_reviews")
+          .select("text,rating,created_time,author_name")
+          .not("text", "is", null)
+          .order("created_time", { ascending: false })
+          .limit(100),
+        supabase.from("woo_orders")
+          .select("woo_order_id,order_date,customer_note")
+          .not("customer_note", "is", null)
+          .order("order_date", { ascending: false })
+          .limit(150),
+      ]);
+
+      // Normalize into a common shape for the prompt
+      const isJunk = (s: string | null) => !s || s.trim().length < 5
+        || /^[\p{Emoji}\s!?.,❤️👍👏🔥💯]+$/u.test(s.trim());
+
+      const quotes: Array<{ source: string; text: string; context?: string }> = [];
+      // IG comments — filter out Minuto's own replies here in code
+      for (const r of ((igComments ?? []) as any[])) {
+        const uname = (r.username ?? '').toLowerCase();
+        if (uname && [...MINUTO_USERNAMES].some(m => uname.includes(m))) continue;
+        if (!isJunk(r.text)) quotes.push({ source: "ig_comment", text: r.text });
+      }
+      for (const r of ((fbComments ?? []) as any[])) {
+        if (!isJunk(r.message)) quotes.push({ source: "fb_comment", text: r.message });
+      }
+      // IG DMs — customer side only (already filtered by query), but strip
+      // the sender_username before including so PII never reaches Claude.
+      for (const r of ((igDms ?? []) as any[])) {
+        if (!isJunk(r.message)) quotes.push({ source: "ig_dm", text: r.message });
+      }
+      for (const r of ((reviews ?? []) as any[])) {
+        const t = [r.title, r.body].filter(Boolean).join(" — ");
+        if (!isJunk(t)) quotes.push({
+          source: "product_review",
+          text: t,
+          context: `${r.product_name ?? ''} (${r.rating}⭐, ${r.product_category ?? '?'})`,
+        });
+      }
+      for (const r of ((googleReviews ?? []) as any[])) {
+        if (!isJunk(r.text)) quotes.push({
+          source: "google_review", text: r.text, context: `${r.rating}⭐`,
+        });
+      }
+      for (const r of ((orderNotes ?? []) as any[])) {
+        if (!isJunk(r.customer_note)) quotes.push({
+          source: "order_note", text: r.customer_note,
+        });
+      }
+
+      if (quotes.length === 0) {
+        if (runId) await supabase.from("voc_mining_runs").update({
+          finished_at: new Date().toISOString(), status: "success",
+          sources_processed: {}, insights_created: 0, insights_updated: 0,
+          error_msg: "no quotes to mine",
+        }).eq("id", runId);
+        return new Response(JSON.stringify({
+          success: true, quotes_found: 0, message: "No raw VoC data yet. Run sync first.",
+        }), { headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+
+      // Cap prompt size — Claude gets at most 150 quotes per mine call. If
+      // we have more, pick a diverse sample (latest 100 + random 50 from older).
+      const capped = quotes.length <= 150
+        ? quotes
+        : [...quotes.slice(0, 100), ...quotes.slice(100).sort(() => Math.random() - 0.5).slice(0, 50)];
+
+      const mineSysPrompt = `אתה חוקר VoC (Voice of Customer) למותג קפה ספשלטי ישראלי (מינוטו קפה, רחובות).
+התפקיד שלך: לקרוא ציטוטים אמיתיים של לקוחות ולהפיק מהם "ספריית פטרנים" — תבניות חוזרות של אובייקשנים, מוטיבציות, שאלות, טריגרים, שבחים, ותלונות.
+
+עיקרון: פטרן אמיתי = 2+ ציטוטים שונים שמביעים את אותה מחשבה בסיסית, גם אם במילים שונות.
+
+לכל פטרן, הפק:
+- insight_type: "objection" | "motivation" | "question" | "trigger" | "praise" | "complaint"
+- pattern: ניסוח קנוני של התבנית בעברית (1 משפט)
+- real_meaning: מה הלקוח באמת אומר מאחורי המילים (תובנה פסיכולוגית)
+- suggested_response: איך צריך לטפל בזה בקופי — 1 משפט
+- frequency: כמה ציטוטים שונים תומכים בפטרן (מספר)
+- example_phrases: מערך של עד 3 ציטוטים מדויקים (hebrew verbatim, לא תרגום)
+- customer_stage: "gateway" | "discovery" | "commitment" | "mastery" | "identity" | null
+- product_context: "coffee" | "machine" | "grinder" | "accessory" | "general"
+- confidence: "high" (4+ ציטוטים) | "medium" (2-3) | "low" (1)
+
+פילטרים:
+- התעלם מספאם, אמוג'י ריקים, ברכות כלליות ("תודה!", "❤️")
+- אל תמציא פטרנים. אם יש רק ציטוט אחד חזק — החזר אותו עם confidence=low, אל תנפח.
+- צטט verbatim. אל "תתרגם" עברית — הקהל ידבר איתך בעברית שלו.
+
+החזר JSON בדיוק בפורמט:
+{
+  "insights": [
+    {
+      "insight_type": "objection",
+      "pattern": "...",
+      "real_meaning": "...",
+      "suggested_response": "...",
+      "frequency": 3,
+      "example_phrases": ["...", "..."],
+      "customer_stage": "gateway",
+      "product_context": "coffee",
+      "confidence": "medium"
+    }
+  ]
+}
+
+אסור טקסט מעבר ל-JSON. אסור markdown fences.`;
+
+      const mineUserMsg = `=== ${capped.length} ציטוטים אמיתיים ===
+
+${capped.map((q, i) =>
+  `[${i+1}] ${q.source}${q.context ? ` · ${q.context}` : ''}: "${q.text.trim()}"`
+).join('\n\n')}
+
+הפק ספריית פטרנים מכל הציטוטים האלה. צפוי 15-40 פטרנים תלוי בגיוון.`;
+
+      const { text: mineText } = await callClaude(
+        MODEL_STRATEGIST,
+        mineSysPrompt,
+        mineUserMsg,
+        { maxTokens: 6500, timeoutMs: 125_000 },
+      );
+
+      let parsedInsights: any = null;
+      try {
+        const cleaned = mineText.replace(/```json\n?|```\n?/g, "").trim();
+        parsedInsights = JSON.parse(cleaned);
+      } catch (_e) {
+        if (runId) await supabase.from("voc_mining_runs").update({
+          finished_at: new Date().toISOString(), status: "error",
+          error_msg: `claude non-json: ${mineText.slice(0, 300)}`,
+        }).eq("id", runId);
+        return new Response(JSON.stringify({
+          success: false, error: "claude response not valid json",
+          raw: mineText.slice(0, 500),
+        }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+
+      const insights = (parsedInsights.insights ?? []) as any[];
+      let created = 0, updated = 0;
+
+      // Merge logic: if an existing insight has the same (insight_type, pattern)
+      // and close enough meaning, bump its frequency + add new example_phrases.
+      // Otherwise insert new row. Kept simple — exact type+pattern match only.
+      for (const ins of insights) {
+        const { data: existing } = await supabase
+          .from("voc_insights")
+          .select("id,frequency,example_phrases,source_breakdown")
+          .eq("insight_type", ins.insight_type)
+          .eq("pattern", ins.pattern)
+          .maybeSingle();
+
+        const newPhrases = Array.isArray(ins.example_phrases) ? ins.example_phrases.slice(0, 5) : [];
+
+        if (existing) {
+          const merged = Array.from(new Set([...(existing.example_phrases ?? []), ...newPhrases])).slice(0, 10);
+          await supabase.from("voc_insights").update({
+            frequency: (existing.frequency ?? 0) + Math.max(1, Number(ins.frequency) || 1),
+            example_phrases: merged,
+            last_mined_at: new Date().toISOString(),
+            real_meaning: ins.real_meaning ?? null,
+            suggested_response: ins.suggested_response ?? null,
+            customer_stage: ins.customer_stage ?? null,
+            product_context: ins.product_context ?? null,
+            confidence: ins.confidence ?? 'medium',
+          }).eq("id", existing.id);
+          updated++;
+        } else {
+          await supabase.from("voc_insights").insert({
+            insight_type:       ins.insight_type,
+            pattern:            ins.pattern,
+            real_meaning:       ins.real_meaning ?? null,
+            suggested_response: ins.suggested_response ?? null,
+            frequency:          Math.max(1, Number(ins.frequency) || 1),
+            example_phrases:    newPhrases,
+            customer_stage:     ins.customer_stage ?? null,
+            product_context:    ins.product_context ?? null,
+            confidence:         ins.confidence ?? 'medium',
+          });
+          created++;
+        }
+      }
+
+      const sourcesProcessed = {
+        ig_comments: (igComments ?? []).length,
+        fb_comments: (fbComments ?? []).length,
+        ig_dms: (igDms ?? []).length,
+        product_reviews: (reviews ?? []).length,
+        google_reviews: (googleReviews ?? []).length,
+        order_notes: (orderNotes ?? []).length,
+      };
+
+      if (runId) await supabase.from("voc_mining_runs").update({
+        finished_at: new Date().toISOString(),
+        status: "success",
+        sources_processed: sourcesProcessed,
+        insights_created: created,
+        insights_updated: updated,
+      }).eq("id", runId);
+
+      return new Response(JSON.stringify({
+        success: true,
+        quotes_mined: capped.length,
+        insights_created: created,
+        insights_updated: updated,
+        sources_processed: sourcesProcessed,
+      }), { headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[voc_mine] error:", err?.message);
+      if (runId) await supabase.from("voc_mining_runs").update({
+        finished_at: new Date().toISOString(),
+        status: "error",
+        error_msg: err?.message ?? "unknown",
+      }).eq("id", runId);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
+  // Dump the current VoC library — quick inspection endpoint so we can
+  // see what patterns have been mined without logging into Supabase.
+  if (body.agent === "dump_voc_insights") {
+    const { data } = await supabase
+      .from("voc_insights")
+      .select("insight_type,pattern,real_meaning,suggested_response,frequency,example_phrases,customer_stage,product_context,confidence")
+      .order("frequency", { ascending: false })
+      .limit(60);
+    const grouped: Record<string, any[]> = {};
+    for (const r of (data ?? []) as any[]) {
+      (grouped[r.insight_type] = grouped[r.insight_type] ?? []).push(r);
+    }
+    return new Response(JSON.stringify({
+      total_insights: (data ?? []).length,
+      by_type: Object.fromEntries(Object.entries(grouped).map(([k, v]) => [k, v.length])),
+      insights: grouped,
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
   // Dump the latest organic report's posts_to_publish — lets us verify

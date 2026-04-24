@@ -30,6 +30,7 @@ serve(async (req) => {
   const partsRaw  = url.searchParams.get('parts')
     ?? (mode === 'settings'    ? 'account_settings,adsets,ads'
      :  mode === 'performance' ? 'campaigns,adset_daily,placement_daily,ad_daily,ig'
+     :  mode === 'voc'         ? 'ig_comments,fb_comments,ig_dms'
      :  mode === 'all'         ? 'all'
      :  'campaigns,ig')       // default for back-compat
   const parts     = new Set(partsRaw.split(',').map(s => s.trim()).filter(Boolean))
@@ -55,6 +56,11 @@ serve(async (req) => {
     ig_posts_found:       0,
     ig_post_rows:         0,
     ig_post_errors:       0,
+    ig_comment_rows:      0,
+    fb_comment_rows:      0,
+    ig_dm_thread_rows:    0,
+    ig_dm_message_rows:   0,
+    comment_errors:       0,
     follower_count:       0,
     last_meta_error:      null as string | null,
     token_granted:        [] as string[],
@@ -606,6 +612,247 @@ serve(async (req) => {
       }
     } catch (igErr) {
       console.log('Instagram sync error:', igErr.message)
+    }
+
+    // ── Instagram + Facebook comments ─────────────────────────
+    // Voice-of-Customer raw source. Comments are where real Hebrew
+    // buying language surfaces — questions ("מתאים לדלונגי?"), objections
+    // ("מחיר יקר"), reactions ("וואו הריח"). Uses existing
+    // instagram_basic + pages_read_engagement permissions (no re-auth).
+    //
+    // Strategy: fetch comments for posts with engagement — skip posts
+    // with 0 comments (no signal), cap at 30 most recent posts to keep
+    // timing inside the 150s gateway.
+    if (run('ig_comments')) try {
+      // Re-derive pages + IG account (same flow as organic sync, but only
+      // runs when ig_comments is explicitly requested to avoid duplicate work
+      // when both ig and ig_comments parts are active).
+      const pagesRes2 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesJ = await pagesRes2.json()
+      const page = pagesJ.data?.[0]
+      if (page) {
+        const pageToken = page.access_token
+        const igRes = await fetch(
+          `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
+        )
+        const igJ = await igRes.json()
+        const igId = igJ.instagram_business_account?.id
+        if (igId) {
+          // Fetch recent IG media ids + comment counts (light call, no insights).
+          const mediaRes = await fetch(
+            `https://graph.facebook.com/v18.0/${igId}/media?fields=id,comments_count,timestamp&limit=30&access_token=${pageToken}`
+          )
+          const mediaJ = await mediaRes.json()
+          const mediaList = (mediaJ.data ?? []).filter((m: any) => (m.comments_count ?? 0) > 0)
+
+          for (const media of mediaList) {
+            try {
+              // Fetch first page of comments per media. Pagination via
+              // paging.next if needed, capped at 100 comments per post.
+              let commentsUrl = `https://graph.facebook.com/v18.0/${media.id}/comments?fields=id,text,username,timestamp,like_count,replies{id,text,username,timestamp,like_count}&limit=50&access_token=${pageToken}`
+              let fetched = 0
+              while (commentsUrl && fetched < 100) {
+                const cRes = await fetch(commentsUrl)
+                const cJ = await cRes.json()
+                if (cJ.error) {
+                  console.error('[meta-sync] ig_comments error for', media.id, cJ.error.message)
+                  stats.comment_errors++
+                  break
+                }
+                for (const c of (cJ.data ?? [])) {
+                  // Top-level comment
+                  await supabase.from('instagram_comments').upsert({
+                    comment_id:    c.id,
+                    post_id:       media.id,
+                    text:          c.text ?? null,
+                    username:      c.username ?? null,
+                    like_count:    c.like_count ?? 0,
+                    replies_count: (c.replies?.data ?? []).length,
+                    created_time:  c.timestamp ?? null,
+                    parent_comment_id: null,
+                    synced_at:     new Date().toISOString(),
+                  }, { onConflict: 'comment_id' })
+                  stats.ig_comment_rows++
+                  fetched++
+                  // Threaded replies
+                  for (const r of (c.replies?.data ?? [])) {
+                    await supabase.from('instagram_comments').upsert({
+                      comment_id:    r.id,
+                      post_id:       media.id,
+                      text:          r.text ?? null,
+                      username:      r.username ?? null,
+                      like_count:    r.like_count ?? 0,
+                      replies_count: 0,
+                      created_time:  r.timestamp ?? null,
+                      parent_comment_id: c.id,
+                      synced_at:     new Date().toISOString(),
+                    }, { onConflict: 'comment_id' })
+                    stats.ig_comment_rows++
+                    fetched++
+                  }
+                }
+                commentsUrl = cJ.paging?.next ?? ''
+              }
+            } catch (e: any) {
+              console.error('[meta-sync] ig_comments per-post error', media.id, e?.message)
+              stats.comment_errors++
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] ig_comments threw', e?.message)
+      stats.last_meta_error = `ig_comments: ${e?.message}`
+    }
+
+    // Facebook page post comments — same pattern but Graph uses slightly
+    // different field names (`message` instead of `text`, `from` object).
+    if (run('fb_comments')) try {
+      const pagesRes3 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesJ = await pagesRes3.json()
+      const page = pagesJ.data?.[0]
+      if (page) {
+        const pageToken = page.access_token
+        // Get recent page posts
+        const postsRes = await fetch(
+          `https://graph.facebook.com/v18.0/${page.id}/posts?fields=id,comments.summary(true){id,message,from{id,name},created_time,like_count,comment_count,comments{id,message,from{id,name},created_time,like_count}}&limit=30&access_token=${pageToken}`
+        )
+        const postsJ = await postsRes.json()
+        if (postsJ.error) {
+          console.error('[meta-sync] fb_posts error', postsJ.error.message)
+          stats.last_meta_error = `fb_posts: ${postsJ.error.message}`
+        } else {
+          for (const p of (postsJ.data ?? [])) {
+            for (const c of (p.comments?.data ?? [])) {
+              await supabase.from('facebook_comments').upsert({
+                comment_id:    c.id,
+                post_id:       p.id,
+                message:       c.message ?? null,
+                from_name:     c.from?.name ?? null,
+                from_id:       c.from?.id ?? null,
+                like_count:    c.like_count ?? 0,
+                comment_count: (c.comments?.data ?? []).length,
+                created_time:  c.created_time ?? null,
+                parent_comment_id: null,
+                synced_at:     new Date().toISOString(),
+              }, { onConflict: 'comment_id' })
+              stats.fb_comment_rows++
+              for (const r of (c.comments?.data ?? [])) {
+                await supabase.from('facebook_comments').upsert({
+                  comment_id:    r.id,
+                  post_id:       p.id,
+                  message:       r.message ?? null,
+                  from_name:     r.from?.name ?? null,
+                  from_id:       r.from?.id ?? null,
+                  like_count:    r.like_count ?? 0,
+                  comment_count: 0,
+                  created_time:  r.created_time ?? null,
+                  parent_comment_id: c.id,
+                  synced_at:     new Date().toISOString(),
+                }, { onConflict: 'comment_id' })
+                stats.fb_comment_rows++
+              }
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] fb_comments threw', e?.message)
+      stats.last_meta_error = `fb_comments: ${e?.message}`
+    }
+
+    // ── Instagram Direct Messages ───────────────────────────
+    //
+    // Requires `instagram_business_manage_messages` permission (Meta App
+    // Review + Business Verification required). If the current token
+    // doesn't include it, the API returns a specific permission error —
+    // we catch it gracefully and surface in stats.last_meta_error so the
+    // user knows to re-auth.
+    //
+    // Privacy handling (Meta App Review compliance):
+    //   - Usernames stored in instagram_dms but stripped before voc-mine
+    //   - Raw messages auto-purged after 30 days (scheduled cleanup, see
+    //     follow-up task). We flag `purged=false` on insert so the purge
+    //     job can find unpurged rows.
+    //   - Only aggregated patterns (voc_insights) retained indefinitely.
+    if (run('ig_dms')) try {
+      // Get IG business account id (same flow as organic sync).
+      const pagesRes4 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesJ = await pagesRes4.json()
+      const page = pagesJ.data?.[0]
+      if (!page) {
+        stats.last_meta_error = `ig_dms: no page found`
+      } else {
+        const pageToken = page.access_token
+        const igLookup = await fetch(
+          `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
+        )
+        const igLookupJ = await igLookup.json()
+        const igId = igLookupJ.instagram_business_account?.id
+        if (!igId) {
+          stats.last_meta_error = `ig_dms: no IG business account linked to page`
+        } else {
+          // List conversations (DM threads). Platform=instagram filters to
+          // IG-only (the endpoint can also return Messenger threads).
+          const convUrl = `https://graph.facebook.com/v18.0/${igId}/conversations?platform=instagram&fields=id,participants,message_count,unread_count,updated_time&limit=100&access_token=${pageToken}`
+          const conversations = await fetchAll<any>(convUrl, 'ig_dms_conversations')
+
+          for (const conv of conversations) {
+            // Determine the customer participant (not Minuto's own IG id)
+            const participants = conv.participants?.data ?? []
+            const customer = participants.find((p: any) => String(p.id) !== String(igId)) ?? null
+
+            await supabase.from('instagram_dm_threads').upsert({
+              conversation_id:      String(conv.id),
+              participant_id:       customer?.id ? String(customer.id) : null,
+              participant_username: customer?.username ?? null,
+              message_count:        conv.message_count ?? null,
+              unread_count:         conv.unread_count ?? null,
+              last_message_time:    conv.updated_time ?? null,
+              last_synced_at:       new Date().toISOString(),
+            }, { onConflict: 'conversation_id' })
+            stats.ig_dm_thread_rows++
+
+            // Fetch messages in this conversation. We only need the last
+            // 30 messages per thread — enough for VoC patterns, and keeps
+            // the 30-day retention window honest.
+            try {
+              const msgsUrl = `https://graph.facebook.com/v18.0/${conv.id}?fields=messages.limit(30){id,from,message,created_time,attachments}&access_token=${pageToken}`
+              const msgsRes = await fetch(msgsUrl)
+              const msgsJ = await msgsRes.json()
+              if (msgsJ.error) {
+                console.error('[meta-sync] ig_dms msgs error for', conv.id, msgsJ.error.message)
+                stats.comment_errors++
+                continue
+              }
+              const messages = msgsJ.messages?.data ?? []
+              for (const m of messages) {
+                const fromId = m.from?.id ? String(m.from.id) : null
+                const isFromMinuto = fromId === String(igId)
+                await supabase.from('instagram_dms').upsert({
+                  message_id:      String(m.id),
+                  conversation_id: String(conv.id),
+                  sender_id:       fromId,
+                  sender_username: m.from?.username ?? null,
+                  is_from_minuto:  isFromMinuto,
+                  message:         m.message ?? null,
+                  attachments:     m.attachments ?? null,
+                  created_time:    m.created_time ?? null,
+                  synced_at:       new Date().toISOString(),
+                  purged:          false,
+                }, { onConflict: 'message_id' })
+                stats.ig_dm_message_rows++
+              }
+            } catch (msgsErr: any) {
+              console.error('[meta-sync] ig_dms per-thread error', conv.id, msgsErr?.message)
+              stats.comment_errors++
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('[meta-sync] ig_dms threw', e?.message)
+      stats.last_meta_error = `ig_dms: ${e?.message}`
     }
 
     await supabase.from('sync_log').insert({
