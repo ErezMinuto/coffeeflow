@@ -794,30 +794,43 @@ serve(async (req) => {
         } else {
           // List conversations (DM threads). Platform=instagram filters to
           // IG-only (the endpoint can also return Messenger threads).
-          const convUrl = `https://graph.facebook.com/v18.0/${igId}/conversations?platform=instagram&fields=id,participants,message_count,unread_count,updated_time&limit=100&access_token=${pageToken}`
-          const conversations = await fetchAll<any>(convUrl, 'ig_dms_conversations')
+          // Meta routes IG messaging through the Facebook Page infrastructure,
+          // not the IG account directly. The /conversations endpoint expects
+          // the PAGE id with ?platform=instagram, not the IG user id. Calling
+          // it with igId returns error code 3 ("capability not available")
+          // which looks like a permission issue but is actually a wrong-endpoint
+          // issue. Took a while to figure out.
+          // Two-step fetch to avoid Meta backend timeouts:
+          //   Step 1: list conversation IDs (lightweight query, just id +
+          //           updated_time). Meta times out if we also ask for
+          //           participants/message_count expanded for each.
+          //   Step 2: per conversation, fetch messages — participant info
+          //           comes along for free inside each message's `from`.
+          //
+          // limit=25 is Meta's hard cap on this endpoint. fetchAll follows
+          // paging.next automatically — we cap outer loop at 50 pages
+          // (= 1250 conversations) which is more than enough for VoC.
+          // Even with fields=id only, Meta rejects >10 per page if the
+          // account has heavy message history. Start small and only fetch
+          // the first page — don't paginate. 10 most-recent conversations
+          // is a solid VoC sample (most-recent are most-relevant anyway).
+          const convUrl = `https://graph.facebook.com/v18.0/${page.id}/conversations?platform=instagram&fields=id&limit=10&access_token=${pageToken}`
+          const convRes = await fetch(convUrl)
+          const convJ = await convRes.json()
+          if (convJ.error) {
+            console.error('[meta-sync] ig_dms_conversations error', convJ.error.message)
+            stats.last_meta_error = `ig_dms_conversations: ${convJ.error.message} (code=${convJ.error.code})`
+            throw new Error('abort ig_dms')
+          }
+          const conversations = convJ.data ?? []
+          const recentConvs = conversations
 
-          for (const conv of conversations) {
-            // Determine the customer participant (not Minuto's own IG id)
-            const participants = conv.participants?.data ?? []
-            const customer = participants.find((p: any) => String(p.id) !== String(igId)) ?? null
-
-            await supabase.from('instagram_dm_threads').upsert({
-              conversation_id:      String(conv.id),
-              participant_id:       customer?.id ? String(customer.id) : null,
-              participant_username: customer?.username ?? null,
-              message_count:        conv.message_count ?? null,
-              unread_count:         conv.unread_count ?? null,
-              last_message_time:    conv.updated_time ?? null,
-              last_synced_at:       new Date().toISOString(),
-            }, { onConflict: 'conversation_id' })
-            stats.ig_dm_thread_rows++
-
-            // Fetch messages in this conversation. We only need the last
-            // 30 messages per thread — enough for VoC patterns, and keeps
-            // the 30-day retention window honest.
+          for (const conv of recentConvs) {
+            // Fetch messages (includes participant id in `from`). Message
+            // limit 20 per thread — enough for VoC patterns without pushing
+            // sync past the gateway timeout.
             try {
-              const msgsUrl = `https://graph.facebook.com/v18.0/${conv.id}?fields=messages.limit(30){id,from,message,created_time,attachments}&access_token=${pageToken}`
+              const msgsUrl = `https://graph.facebook.com/v18.0/${conv.id}?fields=messages.limit(20){id,from,message,created_time,attachments}&access_token=${pageToken}`
               const msgsRes = await fetch(msgsUrl)
               const msgsJ = await msgsRes.json()
               if (msgsJ.error) {
@@ -826,6 +839,29 @@ serve(async (req) => {
                 continue
               }
               const messages = msgsJ.messages?.data ?? []
+
+              // Identify the customer from the first non-Minuto sender
+              let customerId: string | null = null
+              let customerUsername: string | null = null
+              for (const m of messages) {
+                const fromId = m.from?.id ? String(m.from.id) : null
+                if (fromId && fromId !== String(igId)) {
+                  customerId = fromId
+                  customerUsername = m.from?.username ?? null
+                  break
+                }
+              }
+
+              await supabase.from('instagram_dm_threads').upsert({
+                conversation_id:      String(conv.id),
+                participant_id:       customerId,
+                participant_username: customerUsername,
+                message_count:        messages.length,
+                last_message_time:    conv.updated_time ?? null,
+                last_synced_at:       new Date().toISOString(),
+              }, { onConflict: 'conversation_id' })
+              stats.ig_dm_thread_rows++
+
               for (const m of messages) {
                 const fromId = m.from?.id ? String(m.from.id) : null
                 const isFromMinuto = fromId === String(igId)
