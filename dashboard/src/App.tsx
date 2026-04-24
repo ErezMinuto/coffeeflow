@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
+import { SignIn, useUser } from '@clerk/clerk-react'
 import { Sidebar } from './components/shared/Sidebar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import OverviewPage from './pages/Overview'
@@ -77,27 +78,59 @@ function Page({ name, children }: { name: string; children: React.ReactNode }) {
   )
 }
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useUser()
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" dir="rtl">
+        <div className="text-surface-500">טוען...</div>
+      </div>
+    )
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen gap-8 p-6"
+        style={{ background: 'linear-gradient(160deg, #3D4A2E 0%, #556B3A 50%, #6A7D45 100%)' }}
+        dir="rtl"
+      >
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md text-center">
+          <h1 className="font-display text-2xl font-semibold text-surface-900 mb-2">Minuto</h1>
+          <p className="text-sm text-brand-600 font-medium mb-6">Marketing Dashboard</p>
+          <SignIn appearance={{ elements: { rootBox: { direction: 'rtl' }, card: { direction: 'rtl', boxShadow: 'none' } } }} />
+        </div>
+      </div>
+    )
+  }
+
+  return <>{children}</>
+}
+
 export default function App() {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* OAuth callbacks — no sidebar, no boundary (trivial pages) */}
-          <Route path="/auth/meta/callback" element={<MetaCallback />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+    <AuthGate>
+      <AppProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* OAuth callbacks — no sidebar, no boundary (trivial pages) */}
+            <Route path="/auth/meta/callback" element={<MetaCallback />} />
+            <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
-          {/* Main app — each route isolated by its own ErrorBoundary */}
-          <Route path="/"                element={<Page name="סקירה כללית"><OverviewPage /></Page>} />
-          <Route path="/meta"            element={<Page name="Meta אורגני"><MetaOrganicPage /></Page>} />
-          <Route path="/ads"             element={<Page name="Meta Ads"><MetaAdsPage /></Page>} />
-          <Route path="/google"          element={<Page name="Google Ads"><GoogleAdsPage /></Page>} />
-          <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
-          <Route path="/advisor"         element={<Page name="יועץ שיווק"><AdvisorPage /></Page>} />
-          <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
-          <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
-          <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+            {/* Main app — each route isolated by its own ErrorBoundary */}
+            <Route path="/"                element={<Page name="סקירה כללית"><OverviewPage /></Page>} />
+            <Route path="/meta"            element={<Page name="Meta אורגני"><MetaOrganicPage /></Page>} />
+            <Route path="/ads"             element={<Page name="Meta Ads"><MetaAdsPage /></Page>} />
+            <Route path="/google"          element={<Page name="Google Ads"><GoogleAdsPage /></Page>} />
+            <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
+            <Route path="/advisor"         element={<Page name="יועץ שיווק"><AdvisorPage /></Page>} />
+            <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
+            <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
+            <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />
+          </Routes>
+        </BrowserRouter>
+      </AppProvider>
+    </AuthGate>
   )
 }
