@@ -39,14 +39,15 @@ interface WooMeta {
 }
 
 interface WooOrder {
-  id:            number;
-  date_created:  string;
-  status:        string;
-  total:         string;
-  currency:      string;
-  line_items:    WooLineItem[];
-  billing:       { email?: string };
-  meta_data:     WooMeta[];
+  id:             number;
+  date_created:   string;
+  status:         string;
+  total:          string;
+  currency:       string;
+  line_items:     WooLineItem[];
+  billing:        { email?: string };
+  meta_data:      WooMeta[];
+  customer_note?: string;     // checkout note — gold for VoC mining ("הזמנתי בשביל אבא...")
 }
 
 // Orders created by mflow (B2B invoicing) have source_type = "Advanced Purchase Tracking (APT)"
@@ -84,6 +85,91 @@ function extractUtm(meta: WooMeta[]): Record<string, string | null> {
   };
 }
 
+// Extract gclid (Google Click Identifier) from order meta. PMax and
+// auto-tagged Search campaigns append gclid=... to the landing URL; without
+// capturing it, the doctor's attribution logic misses these orders entirely
+// (the La Marzocco bug). We check three places in priority order:
+//   1. A dedicated _gclid meta key (PixelYourSite and some other plugins)
+//   2. Query string of _wc_order_attribution_session_entry_url
+//      (the WooCommerce "Order Attribution" feature's landing URL)
+//   3. Query string of the checkout referer if present
+function extractGclid(meta: WooMeta[]): string | null {
+  // 1. Direct meta key
+  const direct = meta.find(m => ['_gclid', 'gclid', '_ga_gclid'].includes(m.key))?.value;
+  if (direct) return String(direct);
+
+  // 2. Parse from session entry URL
+  const entryUrl = meta.find(m => m.key === '_wc_order_attribution_session_entry_url')?.value;
+  if (entryUrl) {
+    try {
+      const u = new URL(String(entryUrl));
+      const g = u.searchParams.get('gclid');
+      if (g) return g;
+    } catch { /* bad URL, ignore */ }
+  }
+
+  // 3. Attribution source URL (same feature, different key)
+  const refUrl = meta.find(m => m.key === '_wc_order_attribution_referrer')?.value;
+  if (refUrl) {
+    try {
+      const u = new URL(String(refUrl));
+      const g = u.searchParams.get('gclid');
+      if (g) return g;
+    } catch { /* ignore */ }
+  }
+
+  return null;
+}
+
+// Classify a product name into a category Minuto cares about. Used to enrich
+// order line items so the doctor can say "this campaign drives 80% machines,
+// 20% coffee" — critical for the strategic goal of shifting from 45% machine
+// revenue toward more coffee. Rules are pattern-based and tuned to the
+// current catalog. Order matters: check most-specific patterns first.
+function categorizeProduct(name: string, sku: string): string {
+  const n = (name ?? '').toLowerCase();
+  const s = (sku ?? '').toLowerCase();
+  const text = `${n} ${s}`;
+
+  // Grinders first — "ECM" appears in both grinders and machines, so we need
+  // to match the specific grinder models before the generic "machine" brands
+  const grinderPatterns = [
+    /mahlk[oö]nig/i, /mazzer/i, /eureka/i, /fiorenzato/i, /\bbaratza\b/i,
+    /comandante/i, /1zpresso/i, /timemore/i, /\bwilfa\b/i,
+    /מטחנ/, /\bgrinder\b/i,
+  ];
+  if (grinderPatterns.some(p => p.test(text))) return 'grinder';
+
+  // Espresso machines (boutique Italian brands + generic "מכונה" Hebrew)
+  const machinePatterns = [
+    /la\s*marzocco/i, /\becm\b/i, /profitec/i, /\brocket\b/i, /\blelit\b/i,
+    /gaggia/i, /rancilio/i, /nuova\s*simonelli/i, /slayer/i, /linea/i,
+    /מכונת אספרסו/, /מכונת קפה/, /\bespresso\s*machine\b/i,
+  ];
+  if (machinePatterns.some(p => p.test(text))) return 'machine';
+
+  // Coffee beans — the broadest class. Match origin names, blend/single-
+  // origin terminology, and Hebrew terms for coffee beans.
+  const coffeePatterns = [
+    /\bbeans?\b/i, /\bblend\b/i, /\bsingle\s*origin\b/i, /\bespresso\b/i,
+    /yirgacheffe|sidamo|guji|ethiopia|kenya|colombia|brazil|costa\s*rica|panama|guatemala/i,
+    /פול(?!\w)/, /בלנד/, /ספשלטי/, /אתיופיה|קולומביה|ברזיל|קניה|גואטמלה/,
+    /קפה טרי|פולי קפה/,
+  ];
+  if (coffeePatterns.some(p => p.test(text))) return 'coffee';
+
+  // Accessories — brewing gear, cleaning, scales, etc.
+  const accessoryPatterns = [
+    /\bfilter\b/i, /\bcleaner\b/i, /\bscale\b/i, /\btamper\b/i, /\bportafilter\b/i,
+    /\bkettle\b/i, /\bv60\b/i, /\bchemex\b/i, /\baeropress\b/i,
+    /\bmoka\s*pot\b/i, /\bfrench\s*press\b/i,
+    /פילטר|מאזניים|טמפר|דוכס|קומקום|מסננת/,
+  ];
+  if (accessoryPatterns.some(p => p.test(text))) return 'accessory';
+
+  return 'other';
+}
+
 async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
   // Owner's preference: only sync paid orders — processing (paid, awaiting
   // shipment) and completed (paid + shipped). Pending/on-hold/failed are
@@ -95,7 +181,7 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
     status: "completed,processing",
     orderby: "date",
     order: "asc",
-    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data",
+    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note",
   });
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params}`;
   const res  = await fetch(url, { headers: { Authorization: `Basic ${wooAuth}` } });
@@ -228,6 +314,7 @@ serve(async (req) => {
       .map((o: WooOrder) => {
         const meta = o.meta_data ?? [];
         const utm  = extractUtm(meta);
+        const gclid = extractGclid(meta);
         return {
           woo_order_id:   o.id,
           order_date:     o.date_created.slice(0, 10),
@@ -241,6 +328,8 @@ serve(async (req) => {
           utm_campaign:   utm.utm_campaign,
           utm_content:    utm.utm_content,
           utm_term:       utm.utm_term,
+          gclid,
+          customer_note:  o.customer_note && o.customer_note.trim() !== '' ? o.customer_note : null,
           items: (o.line_items ?? []).map((li: WooLineItem) => ({
             product_name: li.name,
             sku:          li.sku,
@@ -261,6 +350,38 @@ serve(async (req) => {
         JSON.stringify({ success: false, error: error.message }),
         { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
       );
+    }
+
+    // Populate woo_order_items_enriched — flatten line_items into individual
+    // rows with product_category so the doctor can answer "how much coffee
+    // vs machine revenue per campaign?". Keyed on (order_id, line_index) so
+    // re-running is idempotent. We also denormalize utm + gclid onto each
+    // line so aggregation queries don't need to join back.
+    const itemRows: any[] = [];
+    for (const row of rows as any[]) {
+      const orderItems = orders.find(o => o.id === row.woo_order_id)?.line_items ?? [];
+      orderItems.forEach((li: WooLineItem, idx: number) => {
+        itemRows.push({
+          order_id:         row.woo_order_id,
+          line_index:       idx,
+          product_name:     li.name,
+          sku:              li.sku,
+          product_category: categorizeProduct(li.name, li.sku),
+          quantity:         li.quantity,
+          line_total:       parseFloat(li.subtotal) || 0,
+          order_date:       row.order_date,
+          utm_source:       row.utm_source,
+          utm_campaign:     row.utm_campaign,
+          gclid:            row.gclid,
+          synced_at:        new Date().toISOString(),
+        });
+      });
+    }
+    if (itemRows.length > 0) {
+      const { error: itemsErr } = await supabase
+        .from("woo_order_items_enriched")
+        .upsert(itemRows, { onConflict: "order_id,line_index" });
+      if (itemsErr) console.error(`[woo-orders-sync] items upsert error:`, itemsErr.message);
     }
 
     // Split the rows into "new" (id > lastSyncedId) vs "refreshed" (already

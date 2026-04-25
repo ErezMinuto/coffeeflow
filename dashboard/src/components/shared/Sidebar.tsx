@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, Instagram, Megaphone, Search, Globe, Bot, Mail, Settings, TrendingUp, X } from 'lucide-react'
+import { UserButton } from '@clerk/clerk-react'
 
 const NAV = [
   { to: '/',               icon: LayoutDashboard, label: 'סקירה כללית' },
@@ -94,8 +95,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         </nav>
 
         {/* Bottom */}
-        <div className="px-5 pt-4 border-t border-surface-100">
+        <div className="px-5 pt-4 border-t border-surface-100 flex items-center justify-between">
           <p className="text-xs text-surface-300 font-mono">v0.1.0</p>
+          <UserButton afterSignOutUrl="/" />
         </div>
       </aside>
     </>
