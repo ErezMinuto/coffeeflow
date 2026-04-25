@@ -52,6 +52,31 @@ export default function SettingsPage() {
     await loadConnections()
   }
 
+  // Poll sync_log row by id until status flips off 'running'. Used by the
+  // async sync pattern where the function returns 202 + sync_id immediately
+  // and continues working in the background. Without this the manual sync
+  // button would just succeed instantly with no real result and leave the
+  // user wondering whether anything actually happened.
+  async function pollSyncLog(syncId: string, platform: string, timeoutMs = 180_000): Promise<any> {
+    const startedAt = Date.now()
+    while (Date.now() - startedAt < timeoutMs) {
+      await new Promise(r => setTimeout(r, 3000))
+      const { data: row } = await supabase
+        .from('sync_log')
+        .select('status, records, error_msg, stats')
+        .eq('id', syncId)
+        .single()
+      if (!row) continue
+      if ((row as any).status !== 'running') return row
+      // While running, refresh the toast with current phase if available
+      const phase = (row as any).stats?.phase
+      if (phase) {
+        setSyncResult({ platform: platform as any, message: `⏳ סנכרון ${phase}…`, success: true })
+      }
+    }
+    throw new Error(`Sync timed out after ${timeoutMs / 1000}s — check sync_log row ${syncId}`)
+  }
+
   async function sync(platform: 'meta' | 'google' | 'google_search' | 'woo_orders') {
     setSyncing(platform)
     setSyncResult(null)
@@ -63,6 +88,27 @@ export default function SettingsPage() {
                                        'google-sync'
       const { data, error } = await supabase.functions.invoke(functionName)
       if (error) throw error
+
+      // Async response shape: { sync_id, status: 'running' }. Means the
+      // function returned 202 immediately and is still working in the
+      // background — poll sync_log to know when it's done. The other
+      // platforms still respond synchronously for now.
+      const asyncResponse = data as { sync_id?: string; status?: string }
+      if (asyncResponse?.sync_id && asyncResponse?.status === 'running') {
+        setSyncResult({ platform, message: '⏳ סנכרון רץ ברקע…', success: true })
+        const finalRow = await pollSyncLog(asyncResponse.sync_id, platform)
+        const finalStatus = finalRow.status as 'success' | 'partial' | 'error'
+        const records = finalRow.records ?? 0
+        const errMsg = finalRow.error_msg
+        const message =
+          finalStatus === 'success' ? `✅ סנכרון הסתיים בהצלחה (${records} רשומות)` :
+          finalStatus === 'partial' ? `⚠️ סנכרון חלקי — ${records} רשומות, שגיאות: ${errMsg ?? '—'}` :
+                                       `❌ סנכרון נכשל: ${errMsg ?? 'unknown'}`
+        setSyncResult({ platform, message, success: finalStatus !== 'error' })
+        await loadConnections()
+        return
+      }
+
       if (platform === 'woo_orders') {
         // The function returns `new_orders` (orders with id > lastSyncedId)
         // and `refreshed_orders` (already-synced orders re-fetched in the

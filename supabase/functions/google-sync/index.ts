@@ -102,7 +102,37 @@ serve(async (req) => {
     errors: [] as string[],
   }
 
-  try {
+  // ── Async pattern: insert a "running" sync_log row up front, return 202 to
+  // the client immediately, and continue the work in the background via
+  // EdgeRuntime.waitUntil. Without this, every full sync hit the Supabase
+  // wall-clock limit (~75s observed) and returned HTTP 546 to the client
+  // with no error in logs (the timeout kills the worker before any catch
+  // block can run). Frontend now polls sync_log by id to know when done.
+  const { data: syncLogRow, error: syncInsertErr } = await supabase
+    .from('sync_log')
+    .insert({
+      platform: 'google',
+      status: 'running',
+      started_at: startedAt,
+      stats: { mode, phase: 'starting' },
+    })
+    .select('id')
+    .single()
+
+  if (syncInsertErr || !syncLogRow) {
+    return new Response(
+      JSON.stringify({ error: `Failed to start sync log: ${syncInsertErr?.message}` }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const syncId = (syncLogRow as any).id as string
+
+  // Background work — wrapped in a try/catch so we ALWAYS update the row
+  // (otherwise the frontend would poll forever on a crashed sync).
+  // @ts-ignore — EdgeRuntime is provided by Supabase Deno runtime
+  EdgeRuntime.waitUntil((async () => {
+    try {
     const devToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN')
     if (!devToken) throw new Error('GOOGLE_DEVELOPER_TOKEN not set')
 
@@ -631,10 +661,16 @@ serve(async (req) => {
       }
 
       // Click view → gclid → campaign_id mapping. THE fix for PMax attribution.
-      // click_view requires single-day segments — loop last 14 days.
+      // click_view requires single-day segments — must query 14 days separately.
+      //
+      // BEFORE: serial for-loop over 14 days, ~3-5s per day = 40-70s total.
+      //         This was the single biggest contributor to the wall-clock
+      //         timeout that killed the function with HTTP 546.
+      // AFTER:  Promise.allSettled over 14 days fires concurrent requests;
+      //         total time ~= max(any one day) ≈ 5s. Order-independent
+      //         since each day upserts on the unique gclid key.
       try {
-        let clickLoopCount = 0
-        for (let d = 0; d < 14; d++) {
+        const dayPromises = Array.from({ length: 14 }, async (_, d) => {
           const targetDate = daysAgo(d)
           const q = `
             SELECT
@@ -646,6 +682,7 @@ serve(async (req) => {
             FROM click_view
             WHERE segments.date = '${targetDate}'
           `
+          let dayCount = 0
           try {
             const rows = await gaqlSearch(apiUrl, apiHeaders, q, `click_view_${targetDate}`)
             for (const r of rows) {
@@ -659,8 +696,7 @@ serve(async (req) => {
                 device: r.segments?.device ?? null,
                 synced_at: new Date().toISOString(),
               }, { onConflict: 'gclid' })
-              stats.click_mapping_rows++
-              clickLoopCount++
+              dayCount++
             }
           } catch (dayErr: any) {
             // Some days may have no clicks; don't abort the whole sync
@@ -668,41 +704,56 @@ serve(async (req) => {
               console.warn(`[google-sync] click_view ${targetDate}:`, dayErr.message)
             }
           }
-        }
-        console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across 14 days`)
+          return dayCount
+        })
+        const results = await Promise.allSettled(dayPromises)
+        const clickLoopCount = results
+          .filter(r => r.status === 'fulfilled')
+          .reduce((sum, r: any) => sum + r.value, 0)
+        stats.click_mapping_rows += clickLoopCount
+        console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across 14 days (parallel)`)
       } catch (e: any) {
         console.error('[google-sync] click_view:', e.message)
         stats.errors.push(`click_view: ${e.message}`)
       }
     }
 
-    // ── Log & respond ──────────────────────────────────────────────────────
-    const totalRecords = stats.campaign_rows + stats.ad_rows + stats.keyword_rows
-      + stats.search_term_rows + stats.ad_group_daily_rows + stats.click_mapping_rows
-      + stats.account_settings_rows + stats.campaign_settings_rows
-      + stats.ad_group_settings_rows + stats.audience_rows + stats.conversion_action_rows
+      // ── Log final result ────────────────────────────────────────────────
+      // UPDATE the row we inserted at the start of the request, instead of
+      // INSERT-ing a new one. The 'running' row's id was returned to the
+      // client so it can poll for completion.
+      const totalRecords = stats.campaign_rows + stats.ad_rows + stats.keyword_rows
+        + stats.search_term_rows + stats.ad_group_daily_rows + stats.click_mapping_rows
+        + stats.account_settings_rows + stats.campaign_settings_rows
+        + stats.ad_group_settings_rows + stats.audience_rows + stats.conversion_action_rows
 
-    await supabase.from('sync_log').insert({
-      platform: 'google',
-      status:   stats.errors.length ? 'partial' : 'success',
-      records:  totalRecords,
-      error_msg: stats.errors.length ? stats.errors.join(' | ').slice(0, 500) : null,
-      started_at: startedAt,
-      finished_at: new Date().toISOString(),
-    })
+      await supabase.from('sync_log').update({
+        status:    stats.errors.length ? 'partial' : 'success',
+        records:   totalRecords,
+        error_msg: stats.errors.length ? stats.errors.join(' | ').slice(0, 500) : null,
+        finished_at: new Date().toISOString(),
+        stats,
+      }).eq('id', syncId)
 
-    return new Response(JSON.stringify({ success: true, ...stats }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    } catch (err: any) {
+      console.error('[google-sync] fatal:', err.message)
+      await supabase.from('sync_log').update({
+        status: 'error',
+        error_msg: err.message,
+        finished_at: new Date().toISOString(),
+        stats,
+      }).eq('id', syncId)
+    }
+  })())
 
-  } catch (err: any) {
-    console.error('[google-sync] fatal:', err.message)
-    await supabase.from('sync_log').insert({
-      platform: 'google', status: 'error', error_msg: err.message,
-      started_at: startedAt, finished_at: new Date().toISOString(),
-    })
-    return new Response(JSON.stringify({ error: err.message, stats }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  }
+  // Return 202 Accepted immediately. Client polls sync_log row by id.
+  return new Response(
+    JSON.stringify({
+      success: true,
+      status: 'running',
+      sync_id: syncId,
+      message: 'Sync started in background. Poll /rest/v1/sync_log?id=eq.<sync_id> for status.',
+    }),
+    { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 })
