@@ -64,9 +64,21 @@ export default function SettingsPage() {
       const { data, error } = await supabase.functions.invoke(functionName)
       if (error) throw error
       if (platform === 'woo_orders') {
-        const d = data as { fetched?: number; upserted?: number }
-        setSyncResult({ platform, message: `סונכרנו ${d?.upserted ?? 0} הזמנות מ-WooCommerce`, success: true })
-        setWooOrderCount(prev => (prev ?? 0) + (d?.upserted ?? 0))
+        // The function returns `new_orders` (orders with id > lastSyncedId)
+        // and `refreshed_orders` (already-synced orders re-fetched in the
+        // 3-day safety buffer). Show both — "0 new, 14 refreshed" is way
+        // more informative than "0 synced" which made it look like a bug
+        // when the sync was actually doing its job.
+        const d = data as { new_orders?: number; refreshed_orders?: number; fetched?: number }
+        const newCount = d?.new_orders ?? 0
+        const refreshedCount = d?.refreshed_orders ?? 0
+        const message = newCount > 0
+          ? `✅ ${newCount} הזמנות חדשות סונכרנו${refreshedCount > 0 ? ` (+${refreshedCount} עודכנו)` : ''}`
+          : refreshedCount > 0
+            ? `✅ אין הזמנות חדשות. ${refreshedCount} הזמנות קיימות עודכנו`
+            : `✅ אין הזמנות חדשות לסנכרון`
+        setSyncResult({ platform, message, success: true })
+        setWooOrderCount(prev => (prev ?? 0) + newCount)
       } else {
         setSyncResult({ platform, message: `סנכרון הצליח! ${JSON.stringify(data)}`, success: true })
       }
