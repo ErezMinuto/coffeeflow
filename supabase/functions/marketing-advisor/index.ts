@@ -5117,20 +5117,79 @@ Products (products_to_feature):
         return true;
       });
 
-      const candidateRecs = usable.slice(0, 15).map(n => ({
-        keyword:              n.keyword,
-        suggested_title:      n.keyword,
-        content_type:         "blog_post",
-        current_position:     0,
-        estimated_difficulty: "קל",
-        why_now:              `שאילתה עם ${n.shopping_count} מפרסמי שופינג ב-Serper — ביקוש מסחרי אמיתי שמינוטו לא מכסה עדיין. long-tail, תחרות נמוכה.`,
-        key_points: [
-          `תן תשובה ישירה וברורה לשאלה "${n.keyword}" במשפט הראשון`,
-          "הבא חוויה אישית מבית הקלייה — לא רק מידע מילוני",
-          "קישור פנימי לפולי קפה רלוונטיים שעונים על הצורך",
-        ],
-        search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
-      }));
+      // Take top candidates BEFORE constructing recs — we'll send these
+      // to Claude to reformulate as proper article titles. Without this
+      // step the raw Serper query was being stuffed directly into
+      // suggested_title (e.g. "קפה מטחון נראה חום מדי זה בסדר" — a
+      // search query, not a headline) and every rec got identical
+      // boilerplate key_points. Owner caught all 3 fallback recs with
+      // raw queries on a single run after PR #50; that fix never fired
+      // because Claude wasn't being called at all on the fallback path.
+      const topCandidates = usable.slice(0, 5);
+
+      // Reformulate via a focused Claude call: raw query → article
+      // title + 3 custom key_points per query. Small/cheap call,
+      // typically 1-2k tokens total. If it fails, fall back to the
+      // raw-keyword-as-title behavior so the agent never returns empty.
+      let reformulated: Record<string, { title: string; key_points: string[] }> = {};
+      try {
+        const refinePrompt = `אתה עורך תוכן של בית קלייה ספשלטי בישראל. קיבלת רשימה של שאילתות חיפוש גולמיות מ-Serper. עבור כל שאילתה — נסח אותה מחדש ככותרת מאמר טובה (לא כשאלה גולמית!) וכתוב 3 נקודות מפתח ספציפיות לתוכן.
+
+כללים לכותרת:
+✓ מנוסחת כהבטחה לקורא, לא כשאלה גולמית
+✓ ספציפית, מכילה מספר/רשימה כשרלוונטי
+✓ מוסיפה ערך מומחה שלא קיים בשאילתה הגולמית
+
+דוגמאות:
+שאילתה: "האם פולים ישנים בטוחים לשתייה או מסוכנים"
+כותרת: "פולים בני 6 חודשים — לזרוק או לשמור? המדריך המלא לטריות קפה"
+
+שאילתה: "קפה מטחון נראה חום מדי זה בסדר"
+כותרת: "מדוע קפה טחון נראה כהה מדי? מדריך לזיהוי קלייה איכותית VS שרופה"
+
+שאילתות לעיבוד:
+${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
+
+החזר JSON בדיוק במבנה הזה (ללא טקסט נוסף):
+{
+  "items": [
+    {
+      "original_query": "השאילתה הגולמית",
+      "title": "כותרת מאמר ראויה",
+      "key_points": ["נקודה ספציפית 1", "נקודה ספציפית 2", "נקודה ספציפית 3"]
+    }
+  ]
+}`;
+        const { text: refineText } = await callClaude(MODEL_ORGANIC, "אתה עורך תוכן מקצועי. החזר JSON תקף בלבד.", refinePrompt);
+        const refineParsed = JSON.parse(refineText.replace(/^```(json)?|```$/gm, "").trim());
+        for (const item of (refineParsed.items ?? [])) {
+          reformulated[item.original_query] = {
+            title: item.title,
+            key_points: item.key_points,
+          };
+        }
+        console.log(`[organic] Reformulated ${Object.keys(reformulated).length}/${topCandidates.length} fallback queries via Claude`);
+      } catch (e) {
+        console.warn(`[organic] Reformulation call failed, using raw queries:`, (e as Error).message);
+      }
+
+      const candidateRecs = topCandidates.map(n => {
+        const refined = reformulated[n.keyword];
+        return {
+          keyword:              n.keyword,
+          suggested_title:      refined?.title ?? n.keyword,
+          content_type:         "blog_post",
+          current_position:     0,
+          estimated_difficulty: "קל",
+          why_now:              `שאילתה עם ${n.shopping_count} מפרסמי שופינג ב-Serper — ביקוש מסחרי אמיתי שמינוטו לא מכסה עדיין. long-tail, תחרות נמוכה.`,
+          key_points: refined?.key_points ?? [
+            `תן תשובה ישירה וברורה לשאלה "${n.keyword}" במשפט הראשון`,
+            "הבא חוויה אישית מבית הקלייה — לא רק מידע מילוני",
+            "קישור פנימי לפולי קפה רלוונטיים שעונים על הצורך",
+          ],
+          search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
+        };
+      });
       // Apply the dup filter to the fallback (belt and suspenders against blog posts)
       const cleanFallback = filterDuplicateRecommendations(candidateRecs, existingBlogPosts).slice(0, 3);
       parsed.google_organic_recommendations = cleanFallback;
