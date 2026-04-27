@@ -294,19 +294,46 @@ async function processAutomation(
   template: AutomationTemplate,
   candidate: FirstOrderCandidate,
 ): Promise<{ status: string; error?: string; coupon?: string; resend_id?: string }> {
-  // Insert pending row first — UNIQUE constraint catches duplicates.
-  const { data: existing } = await supabase
+  // INSERT-as-lock pattern. Previously we did "check if row exists, then
+  // do work, then insert" which has a race window: two concurrent runs
+  // both pass the check, both send, only one wins the insert. Owner
+  // explicitly asked to be sure customers can't get the email twice.
+  //
+  // Fix: insert a 'pending' row UP FRONT. The UNIQUE(trigger_type,
+  // customer_email) constraint physically refuses the second concurrent
+  // insert, so the loser gets a 23505 error and we bail before doing any
+  // expensive (and externally-visible) work — coupon creation, email send.
+  // Postgres's unique constraint is the lock; no application-level race.
+  const insertPayload = {
+    trigger_type: template.trigger_type,
+    customer_email: candidate.customer_email,
+    customer_name: candidate.customer_name,
+    woo_order_id: candidate.woo_order_id,
+    status: 'pending',
+    scheduled_for: new Date().toISOString(),
+  }
+  const { data: insertedRow, error: insertErr } = await supabase
     .from('email_automations')
-    .select('id, status')
-    .eq('trigger_type', template.trigger_type)
-    .eq('customer_email', candidate.customer_email)
-    .maybeSingle()
+    .insert(insertPayload)
+    .select('id')
+    .single()
 
-  if (existing) {
-    return { status: 'skipped', error: `already processed (status=${existing.status})` }
+  if (insertErr) {
+    // 23505 = unique_violation. That's the expected/safe outcome when a
+    // row already exists for this customer — silently skip, this is the
+    // duplicate-prevention working as intended.
+    if (insertErr.code === '23505' || /duplicate key|unique constraint/i.test(insertErr.message ?? '')) {
+      return { status: 'skipped', error: 'already processed (unique constraint)' }
+    }
+    // Any other DB error is unexpected — surface it.
+    return { status: 'failed', error: `lock insert: ${insertErr.message}` }
   }
 
-  // Generate coupon. If it fails, mark failed and don't send a broken email.
+  const lockId = insertedRow.id
+
+  // From here on, we own the lock. Do the work and update the same row.
+
+  // Generate coupon. If it fails, mark the row 'failed' and bail.
   let couponCode: string
   try {
     couponCode = await createCoupon(
@@ -315,15 +342,10 @@ async function processAutomation(
       template.coupon_expiry_days,
     )
   } catch (e: any) {
-    await supabase.from('email_automations').insert({
-      trigger_type: template.trigger_type,
-      customer_email: candidate.customer_email,
-      customer_name: candidate.customer_name,
-      woo_order_id: candidate.woo_order_id,
+    await supabase.from('email_automations').update({
       status: 'failed',
-      scheduled_for: new Date().toISOString(),
       error_msg: `coupon: ${e.message}`,
-    })
+    }).eq('id', lockId)
     return { status: 'failed', error: `coupon: ${e.message}` }
   }
 
@@ -345,30 +367,22 @@ async function processAutomation(
   const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl)
 
   if (!sendResult.ok) {
-    await supabase.from('email_automations').insert({
-      trigger_type: template.trigger_type,
-      customer_email: candidate.customer_email,
-      customer_name: candidate.customer_name,
-      woo_order_id: candidate.woo_order_id,
+    await supabase.from('email_automations').update({
       coupon_code: couponCode,
       status: 'failed',
-      scheduled_for: new Date().toISOString(),
       error_msg: `resend: ${sendResult.error}`,
-    })
+    }).eq('id', lockId)
     return { status: 'failed', error: `resend: ${sendResult.error}`, coupon: couponCode }
   }
 
-  await supabase.from('email_automations').insert({
-    trigger_type: template.trigger_type,
-    customer_email: candidate.customer_email,
-    customer_name: candidate.customer_name,
-    woo_order_id: candidate.woo_order_id,
+  // Success path — UPDATE the same row from 'pending' to 'sent'.
+  await supabase.from('email_automations').update({
     coupon_code: couponCode,
     status: 'sent',
-    scheduled_for: new Date().toISOString(),
     sent_at: new Date().toISOString(),
     resend_email_id: sendResult.id,
-  })
+  }).eq('id', lockId)
+
   return { status: 'sent', coupon: couponCode, resend_id: sendResult.id }
 }
 
