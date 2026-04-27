@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../lib/context';
 import { callCampaignFunction } from '../lib/brevo';
 import { ProgressBar, useAnimatedProgress } from '../components/shared/ProgressBar';
@@ -1423,13 +1423,16 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 // ── Automations Tab ─────────────────────────────────────────────────────────
 
 function AutomationsTab({ data, user, showToast }) {
-  const AUTOMATIONS = [
+  // The "coming soon" placeholders — kept around so the UI shows the
+  // roadmap. Real automations live in email_automation_templates and are
+  // pulled from the DB by FirstPurchaseAutomation below.
+  const PLACEHOLDER_AUTOMATIONS = [
     {
-      type: 'welcome',
+      type: 'welcome_signup',
       icon: '👋',
-      title: 'מייל ברוכים הבאים',
-      description: 'נשלח אוטומטית ללקוח חדש שנרשם באתר',
-      trigger: 'הרשמה חדשה באתר',
+      title: 'מייל ברוכים הבאים (הרשמה לרשימה)',
+      description: 'נשלח אוטומטית למי שנרשם לרשימת התפוצה (לא הזמנה)',
+      trigger: 'הרשמה לרשימה',
       delay: 'מיידי',
     },
     {
@@ -1439,14 +1442,6 @@ function AutomationsTab({ data, user, showToast }) {
       description: 'נשלח כשלקוח מוסיף לעגלה אבל לא משלים רכישה',
       trigger: 'עגלה נטושה',
       delay: 'שעה אחרי',
-    },
-    {
-      type: 'post_purchase_tips',
-      icon: '☕',
-      title: 'טיפים אחרי רכישה',
-      description: 'טיפים להכנת הקפה שנרכש',
-      trigger: 'הזמנה הושלמה',
-      delay: '3 ימים אחרי',
     },
     {
       type: 'post_purchase_reorder',
@@ -1462,12 +1457,16 @@ function AutomationsTab({ data, user, showToast }) {
     <div className="section">
       <h2>⚡ אוטומציות מייל</h2>
       <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-        מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך.
+        מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך — באמצעות מערכת CoffeeFlow (לא Flashy).
       </p>
 
+      {/* The active automation — wired to email-automation-scheduler */}
+      <FirstPurchaseAutomation showToast={showToast} userEmail={user?.primaryEmailAddress?.emailAddress ?? null} />
+
+      <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem', color: '#3D4A2E', fontSize: '1.05rem' }}>בקרוב</h3>
       <div style={{ display: 'grid', gap: '12px' }}>
-        {AUTOMATIONS.map(auto => (
-          <div key={auto.type} className="form-card" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+        {PLACEHOLDER_AUTOMATIONS.map(auto => (
+          <div key={auto.type} className="form-card" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', opacity: 0.65 }}>
             <div style={{ fontSize: '2rem', lineHeight: 1 }}>{auto.icon}</div>
             <div style={{ flex: 1 }}>
               <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{auto.title}</h3>
@@ -1501,14 +1500,245 @@ function AutomationsTab({ data, user, showToast }) {
       }}>
         <strong>💡 איך זה עובד?</strong>
         <br />
-        1. ה-AI כותב את התוכן בעברית (פעם אחת)
+        1. WooCommerce מסנכרן הזמנות ל-CoffeeFlow כל שעה
         <br />
-        2. ה-WooCommerce Plugin שלך שולח אירועים (הזמנה חדשה, עגלה נטושה, לקוח חדש)
+        2. ה-scheduler מזהה לקוחות שעברו את התנאי של האוטומציה (לדוגמה — קונה ראשונה, 3 ימים אחרי הזמנה)
         <br />
-        3. המערכת שולחת את המייל המתאים אוטומטית דרך Resend
+        3. נוצר קופון ייחודי לאותו לקוח ב-WooCommerce, ונשלח מייל דרך Resend
         <br />
-        4. אתה לא עושה כלום — זה פשוט עובד 🎉
+        4. כל המייל נשמר ב-CoffeeFlow — אפשר לראות מה נשלח ולמי, וזה לא תלוי ב-Flashy
       </div>
+    </div>
+  );
+}
+
+// ── First Purchase Automation Card ─────────────────────────────────────────
+//
+// The only fully-wired automation in Phase 1. Reads/writes
+// email_automation_templates + email_automations, calls the
+// email-automation-scheduler edge function for test sends and dry runs.
+//
+// Three controls:
+//   - Enable toggle (flip 'enabled' in email_automation_templates)
+//   - Test-send button (sends the email to the logged-in user with a real coupon)
+//   - View sent history (shows last 10 from email_automations)
+//
+// Stats (sent/failed counts) are pulled from email_automations on mount.
+
+function FirstPurchaseAutomation({ showToast, userEmail }) {
+  const [template, setTemplate] = useState(null);
+  const [stats, setStats] = useState({ sent: 0, failed: 0, pending: 0 });
+  const [recent, setRecent] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [{ data: tmpl }, { data: rows }] = await Promise.all([
+        supabase.from('email_automation_templates')
+          .select('*').eq('trigger_type', 'first_purchase').maybeSingle(),
+        supabase.from('email_automations')
+          .select('id, customer_email, customer_name, coupon_code, status, sent_at, error_msg, created_at')
+          .eq('trigger_type', 'first_purchase')
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ]);
+      setTemplate(tmpl);
+      const all = rows ?? [];
+      setStats({
+        sent: all.filter(r => r.status === 'sent').length,
+        failed: all.filter(r => r.status === 'failed').length,
+        pending: all.filter(r => r.status === 'pending').length,
+      });
+      setRecent(all.slice(0, 10));
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const toggleEnabled = async () => {
+    if (!template) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from('email_automation_templates')
+      .update({ enabled: !template.enabled, updated_at: new Date().toISOString() })
+      .eq('trigger_type', 'first_purchase');
+    setBusy(false);
+    if (error) {
+      showToast(`❌ שגיאה: ${error.message}`, 'error');
+      return;
+    }
+    showToast(template.enabled ? '⏸️ האוטומציה הושבתה' : '✅ האוטומציה הופעלה');
+    loadAll();
+  };
+
+  const testSend = async () => {
+    if (!userEmail) {
+      showToast('❌ לא נמצאה כתובת מייל למשתמש המחובר', 'error');
+      return;
+    }
+    if (!confirm(`לשלוח מייל בדיקה ל-${userEmail}? (יוצר קופון אמיתי ב-WooCommerce)`)) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('email-automation-scheduler', {
+        body: { test_send: userEmail },
+      });
+      if (error) throw error;
+      if (data?.ok || data?.id) {
+        showToast(`✅ נשלח ל-${userEmail} · קופון: ${data.coupon}`);
+      } else {
+        showToast(`❌ שליחה נכשלה: ${data?.error ?? 'unknown'}`, 'error');
+      }
+    } catch (e) {
+      showToast(`❌ שגיאה: ${e.message}`, 'error');
+    } finally { setBusy(false); }
+  };
+
+  const dryRun = async () => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('email-automation-scheduler', {
+        body: { dry_run: true },
+      });
+      if (error) throw error;
+      const run = (data?.runs ?? []).find(r => r.trigger === 'first_purchase');
+      if (!run) {
+        showToast('⚠️ האוטומציה לא מופעלת — אין מה לבדוק', 'warning');
+      } else {
+        showToast(`🔍 ${run.candidates_count} לקוחות יקבלו מייל בריצה הבאה`);
+        console.log('[automation dry run]', run);
+      }
+    } catch (e) {
+      showToast(`❌ שגיאה: ${e.message}`, 'error');
+    } finally { setBusy(false); }
+  };
+
+  if (loading) {
+    return <div style={{ padding: 24, color: '#666' }}>טוען נתוני אוטומציה…</div>;
+  }
+  if (!template) {
+    return (
+      <div className="form-card" style={{ background: '#FEF3C7', borderColor: '#FCD34D' }}>
+        <strong style={{ color: '#92400E' }}>⚠️ migration לא הוחלה</strong>
+        <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#92400E' }}>
+          טרם הוחלה ה-migration <code>20260427_email_automations.sql</code>. הריצי אותה ב-Supabase SQL editor (dev ואז prod) כדי להפעיל את האוטומציה.
+        </p>
+      </div>
+    );
+  }
+
+  const enabled = template.enabled;
+  return (
+    <div className="form-card" style={{
+      borderColor: enabled ? '#10B981' : '#E5E7EB',
+      background: enabled ? '#ECFDF5' : 'white',
+      borderWidth: 2,
+    }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ fontSize: '2rem', lineHeight: 1 }}>☕</div>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{template.display_name}</h3>
+          <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem' }}>
+            נשלח {template.delay_days} ימים אחרי ההזמנה הראשונה — רק ללקוחות שהזמנתם הראשונה הייתה ב-{template.max_lookback_days} הימים האחרונים. כולל קופון ייחודי {template.coupon_percent}% הנחה תקף ל-{template.coupon_expiry_days} ימים.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: 12 }}>
+            <span style={{ background: '#D1FAE5', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#065F46' }}>
+              ✓ נשלח: {stats.sent}
+            </span>
+            {stats.failed > 0 && (
+              <span style={{ background: '#FEE2E2', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#991B1B' }}>
+                ✗ נכשל: {stats.failed}
+              </span>
+            )}
+            <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#5B21B6' }}>
+              קופון: {template.coupon_percent}% · {template.coupon_expiry_days} ימים
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={toggleEnabled}
+              disabled={busy}
+              className={enabled ? 'btn-small' : 'btn-primary'}
+              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+            >
+              {enabled ? '⏸️ השבת' : '✅ הפעל אוטומציה'}
+            </button>
+            <button
+              onClick={testSend}
+              disabled={busy}
+              className="btn-small"
+              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+            >
+              ✉️ שלח מייל בדיקה אליי
+            </button>
+            <button
+              onClick={dryRun}
+              disabled={busy}
+              className="btn-small"
+              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+            >
+              🔍 בדוק כמה ישלחו בריצה הבאה
+            </button>
+            {recent.length > 0 && (
+              <button
+                onClick={() => setShowHistory(s => !s)}
+                className="btn-small"
+                style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+              >
+                {showHistory ? 'סגור היסטוריה' : `📜 היסטוריה (${recent.length})`}
+              </button>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{
+            display: 'inline-block', padding: '4px 12px', borderRadius: 12,
+            fontSize: '0.8rem', fontWeight: 600,
+            background: enabled ? '#10B981' : '#9CA3AF', color: 'white',
+          }}>
+            {enabled ? '● פעיל' : '○ כבוי'}
+          </span>
+        </div>
+      </div>
+
+      {showHistory && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E7EB' }}>
+          <table style={{ width: '100%', fontSize: '0.85rem', direction: 'rtl' }}>
+            <thead>
+              <tr style={{ textAlign: 'right', color: '#6B7280' }}>
+                <th style={{ padding: '4px 8px' }}>תאריך</th>
+                <th style={{ padding: '4px 8px' }}>לקוח</th>
+                <th style={{ padding: '4px 8px' }}>קופון</th>
+                <th style={{ padding: '4px 8px' }}>סטטוס</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map(r => (
+                <tr key={r.id} style={{ borderTop: '1px solid #F3F4F6' }}>
+                  <td style={{ padding: '6px 8px', color: '#6B7280', fontSize: '0.8rem' }}>
+                    {(r.sent_at ?? r.created_at).slice(0, 10)}
+                  </td>
+                  <td style={{ padding: '6px 8px' }}>{r.customer_email}</td>
+                  <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    {r.coupon_code ?? '—'}
+                  </td>
+                  <td style={{ padding: '6px 8px' }}>
+                    <span style={{
+                      padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem',
+                      background: r.status === 'sent' ? '#D1FAE5' : r.status === 'failed' ? '#FEE2E2' : '#FEF3C7',
+                      color:      r.status === 'sent' ? '#065F46' : r.status === 'failed' ? '#991B1B' : '#92400E',
+                    }} title={r.error_msg ?? ''}>
+                      {r.status === 'sent' ? '✓ נשלח' : r.status === 'failed' ? '✗ נכשל' : 'ממתין'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
