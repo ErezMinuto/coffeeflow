@@ -39,6 +39,14 @@ const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'info@minuto.co.il'
 const WOO_URL = Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il'
 const WOO_KEY = Deno.env.get('WOO_KEY') ?? ''
 const WOO_SECRET = Deno.env.get('WOO_SECRET') ?? ''
+// Reuses the unsubscribe handler that generate-campaign already implements.
+// Same URL pattern means /generate-campaign?action=unsubscribe&email=...&token=...
+// works regardless of which function sent the original email.
+const UNSUBSCRIBE_BASE = Deno.env.get('UNSUBSCRIBE_BASE_URL') ?? `${SUPA_URL}/functions/v1/generate-campaign`
+// Logo URL is a template variable so the owner can swap it without
+// touching code. Default to a known-existing URL on the storefront if
+// none is configured; owner can update via Supabase Table Editor.
+const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.co.il/wp-content/uploads/2024/01/minuto-logo.png'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -72,6 +80,17 @@ function renderTemplate(template: string, vars: Record<string, string | number>)
     const v = vars[key]
     return v === undefined || v === null ? '' : String(v)
   })
+}
+
+/**
+ * Same shape as generate-campaign's unsubscribe URL — base64-encoded
+ * `email:timestamp` token. Lets the existing /generate-campaign
+ * ?action=unsubscribe handler process opt-outs from automation emails
+ * without us needing to duplicate the unsubscribe flow here.
+ */
+function generateUnsubscribeUrl(email: string): string {
+  const token = btoa(`${email}:${Date.now()}`)
+  return `${UNSUBSCRIBE_BASE}?action=unsubscribe&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
 }
 
 /**
@@ -143,9 +162,14 @@ async function createCoupon(
  * Send via Resend. Mirrors the format used by generate-campaign
  * (Minuto <SENDER_EMAIL>) so DKIM/SPF reputation accumulates on one
  * sender identity instead of being split across functions.
+ *
+ * The List-Unsubscribe header surfaces a native unsubscribe button
+ * in Gmail / Outlook / Apple Mail. Recommended even for transactional
+ * emails — recipients who hit it instead of marking spam protects
+ * sender reputation.
  */
 async function sendEmail(
-  to: string, subject: string, html: string
+  to: string, subject: string, html: string, unsubscribeUrl: string
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!RESEND_KEY) return { ok: false, error: 'RESEND_API_KEY not configured' }
 
@@ -160,6 +184,10 @@ async function sendEmail(
       to: [to],
       subject,
       html,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     }),
   })
 
@@ -302,16 +330,19 @@ async function processAutomation(
   // Render subject + body. customer_name might be null — fall back to
   // a friendly default so the greeting still reads well.
   const firstName = (candidate.customer_name ?? 'חבר/ה').trim()
+  const unsubscribeUrl = generateUnsubscribeUrl(candidate.customer_email)
   const vars = {
     first_name: firstName,
     coupon_code: couponCode,
     coupon_expiry_days: template.coupon_expiry_days,
     order_id: candidate.woo_order_id,
+    unsubscribe_url: unsubscribeUrl,
+    logo_url: DEFAULT_LOGO_URL,
   }
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
 
-  const sendResult = await sendEmail(candidate.customer_email, subject, html)
+  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl)
 
   if (!sendResult.ok) {
     await supabase.from('email_automations').insert({
@@ -370,10 +401,18 @@ serve(async (req) => {
     }
     try {
       const couponCode = await createCoupon(testTo, tmpl.coupon_percent ?? 10, tmpl.coupon_expiry_days)
-      const vars = { first_name: 'בוחן', coupon_code: couponCode, coupon_expiry_days: tmpl.coupon_expiry_days, order_id: 0 }
+      const unsubscribeUrl = generateUnsubscribeUrl(testTo)
+      const vars = {
+        first_name: 'בוחן',
+        coupon_code: couponCode,
+        coupon_expiry_days: tmpl.coupon_expiry_days,
+        order_id: 0,
+        unsubscribe_url: unsubscribeUrl,
+        logo_url: DEFAULT_LOGO_URL,
+      }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
-      const r = await sendEmail(testTo, subject, html)
+      const r = await sendEmail(testTo, subject, html, unsubscribeUrl)
       return new Response(JSON.stringify({ test_send: testTo, coupon: couponCode, ...r }),
         { headers: { ...CORS, 'Content-Type': 'application/json' } })
     } catch (e: any) {
