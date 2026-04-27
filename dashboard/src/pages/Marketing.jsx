@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useApp } from '../lib/context';
 import { callCampaignFunction } from '../lib/brevo';
 import { ProgressBar, useAnimatedProgress } from '../components/shared/ProgressBar';
@@ -1460,8 +1461,11 @@ function AutomationsTab({ data, user, showToast }) {
         מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך — באמצעות מערכת CoffeeFlow (לא Flashy).
       </p>
 
-      {/* The active automation — wired to email-automation-scheduler */}
-      <FirstPurchaseAutomation showToast={showToast} userEmail={user?.primaryEmailAddress?.emailAddress ?? null} />
+      {/* The active automation — wired to email-automation-scheduler.
+          Reads the logged-in user's email from Clerk directly inside the
+          component (not from useApp().user, which is a hardcoded stub
+          pinned to the legacy marketing_contacts user_id). */}
+      <FirstPurchaseAutomation showToast={showToast} />
 
       <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem', color: '#3D4A2E', fontSize: '1.05rem' }}>בקרוב</h3>
       <div style={{ display: 'grid', gap: '12px' }}>
@@ -1525,13 +1529,23 @@ function AutomationsTab({ data, user, showToast }) {
 //
 // Stats (sent/failed counts) are pulled from email_automations on mount.
 
-function FirstPurchaseAutomation({ showToast, userEmail }) {
+function FirstPurchaseAutomation({ showToast }) {
+  // Real Clerk user (not the useApp stub). primaryEmailAddress is the
+  // canonical field; emailAddresses[0] is the fallback for users with
+  // multiple emails where primary isn't set (rare, but worth handling).
+  const { user: clerkUser } = useUser();
+  const userEmail =
+    clerkUser?.primaryEmailAddress?.emailAddress ??
+    clerkUser?.emailAddresses?.[0]?.emailAddress ??
+    null;
+
   const [template, setTemplate] = useState(null);
   const [stats, setStats] = useState({ sent: 0, failed: 0, pending: 0 });
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [customTestEmail, setCustomTestEmail] = useState('');
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -1574,20 +1588,29 @@ function FirstPurchaseAutomation({ showToast, userEmail }) {
     loadAll();
   };
 
-  const testSend = async () => {
-    if (!userEmail) {
-      showToast('❌ לא נמצאה כתובת מייל למשתמש המחובר', 'error');
+  const testSend = async (emailOverride) => {
+    // Prefer explicit override (custom input), then fall back to the
+    // Clerk-logged-in user's email. The custom-input path exists because
+    // testing the email content for non-employees often requires sending
+    // to a personal address that isn't the dashboard login email.
+    const targetEmail = (emailOverride ?? userEmail ?? '').trim();
+    if (!targetEmail) {
+      showToast('❌ הקלד כתובת מייל לבדיקה', 'error');
       return;
     }
-    if (!confirm(`לשלוח מייל בדיקה ל-${userEmail}? (יוצר קופון אמיתי ב-WooCommerce)`)) return;
+    if (!targetEmail.includes('@')) {
+      showToast('❌ כתובת מייל לא תקינה', 'error');
+      return;
+    }
+    if (!confirm(`לשלוח מייל בדיקה ל-${targetEmail}? (יוצר קופון אמיתי ב-WooCommerce)`)) return;
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('email-automation-scheduler', {
-        body: { test_send: userEmail },
+        body: { test_send: targetEmail },
       });
       if (error) throw error;
       if (data?.ok || data?.id) {
-        showToast(`✅ נשלח ל-${userEmail} · קופון: ${data.coupon}`);
+        showToast(`✅ נשלח ל-${targetEmail} · קופון: ${data.coupon}`);
       } else {
         showToast(`❌ שליחה נכשלה: ${data?.error ?? 'unknown'}`, 'error');
       }
@@ -1666,12 +1689,32 @@ function FirstPurchaseAutomation({ showToast, userEmail }) {
               {enabled ? '⏸️ השבת' : '✅ הפעל אוטומציה'}
             </button>
             <button
-              onClick={testSend}
-              disabled={busy}
+              onClick={() => testSend()}
+              disabled={busy || !userEmail}
+              className="btn-small"
+              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+              title={userEmail ? `שלח אל ${userEmail}` : 'לא נמצאה כתובת — השתמש בשדה למטה'}
+            >
+              ✉️ שלח אליי {userEmail ? `(${userEmail.split('@')[0]})` : ''}
+            </button>
+            <input
+              type="email"
+              placeholder="או הקלד כתובת מייל אחרת"
+              value={customTestEmail}
+              onChange={e => setCustomTestEmail(e.target.value)}
+              dir="ltr"
+              style={{
+                fontSize: '0.85rem', padding: '6px 10px', borderRadius: 8,
+                border: '1px solid #D1D5DB', minWidth: 200,
+              }}
+            />
+            <button
+              onClick={() => testSend(customTestEmail)}
+              disabled={busy || !customTestEmail}
               className="btn-small"
               style={{ fontSize: '0.85rem', padding: '6px 14px' }}
             >
-              ✉️ שלח מייל בדיקה אליי
+              שלח לכתובת הזו
             </button>
             <button
               onClick={dryRun}
