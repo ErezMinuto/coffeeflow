@@ -132,3 +132,22 @@ CREATE INDEX IF NOT EXISTS idx_email_automations_pending
 -- Index for "show me sent history per trigger" in the dashboard
 CREATE INDEX IF NOT EXISTS idx_email_automations_trigger_sent
   ON email_automations (trigger_type, sent_at DESC NULLS LAST);
+
+-- ────────────────────────────────────────────────────────────────────────
+-- 3. RLS — permissive policies matching other internal tables
+-- ────────────────────────────────────────────────────────────────────────
+-- Per CLAUDE.md, this is an internal admin app behind Clerk auth — data
+-- is org-wide, not user-scoped, so "allow all" mirrors what user_roles
+-- already does. Without these policies the dashboard's anon-key client
+-- can't read the seeded template row and the UI shows the "migration
+-- not applied" warning even though the tables exist.
+
+ALTER TABLE email_automation_templates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow all" ON email_automation_templates;
+CREATE POLICY "allow all" ON email_automation_templates
+  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+ALTER TABLE email_automations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow all" ON email_automations;
+CREATE POLICY "allow all" ON email_automations
+  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
