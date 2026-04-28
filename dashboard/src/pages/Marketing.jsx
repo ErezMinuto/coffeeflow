@@ -1546,6 +1546,13 @@ function FirstPurchaseAutomation({ showToast }) {
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [customTestEmail, setCustomTestEmail] = useState('');
+  // Template editor state — populated when the user opens the editor;
+  // only saved on click, so the user can cancel without affecting the
+  // template that's actually used by the scheduler.
+  const [editing, setEditing] = useState(false);
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -1636,6 +1643,69 @@ function FirstPurchaseAutomation({ showToast }) {
     } catch (e) {
       showToast(`❌ שגיאה: ${e.message}`, 'error');
     } finally { setBusy(false); }
+  };
+
+  // Open the editor — copy current template values into local state so
+  // the textarea is editable without mutating the loaded template until
+  // the user clicks save.
+  const openEditor = () => {
+    if (!template) return;
+    setEditSubject(template.subject_template ?? '');
+    setEditBody(template.body_html_template ?? '');
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditSubject('');
+    setEditBody('');
+  };
+
+  const saveEdit = async () => {
+    if (!editSubject.trim() || !editBody.trim()) {
+      showToast('❌ נושא וגוף לא יכולים להיות ריקים', 'error');
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase
+      .from('email_automation_templates')
+      .update({
+        subject_template: editSubject,
+        body_html_template: editBody,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('trigger_type', 'first_purchase');
+    setBusy(false);
+    if (error) {
+      showToast(`❌ שגיאה בשמירה: ${error.message}`, 'error');
+      return;
+    }
+    showToast('✅ התבנית נשמרה');
+    setEditing(false);
+    loadAll();
+  };
+
+  // Render the body in a sandboxed new window so the user can see the
+  // result with sample variables substituted before saving. Doesn't go
+  // through Resend — purely a visual preview of the HTML.
+  const openPreview = () => {
+    const sampleVars = {
+      first_name: 'ארז',
+      coupon_code: 'MINUTO-PREVIEW',
+      coupon_expiry_days: template?.coupon_expiry_days ?? 60,
+      order_id: 80000,
+      unsubscribe_url: '#preview',
+      logo_url: 'https://www.minuto.co.il/content/uploads/2025/03/Frame-14.png',
+    };
+    const rendered = (editBody || template?.body_html_template || '')
+      .replace(/\{\{\s*([\w_]+)\s*\}\}/g, (_, k) => String(sampleVars[k] ?? ''));
+    const win = window.open('', '_blank', 'width=640,height=900');
+    if (win) {
+      win.document.write(rendered);
+      win.document.close();
+    } else {
+      showToast('❌ דפדפן חסם את חלון התצוגה המקדימה', 'error');
+    }
   };
 
   if (loading) {
@@ -1733,6 +1803,14 @@ function FirstPurchaseAutomation({ showToast }) {
                 {showHistory ? 'סגור היסטוריה' : `📜 היסטוריה (${recent.length})`}
               </button>
             )}
+            <button
+              onClick={openEditor}
+              disabled={busy || editing}
+              className="btn-small"
+              style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+            >
+              ✏️ ערוך מייל
+            </button>
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
@@ -1780,6 +1858,75 @@ function FirstPurchaseAutomation({ showToast }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {editing && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E7EB' }}>
+          <h4 style={{ margin: '0 0 12px', color: '#3D4A2E', fontSize: '1rem' }}>✏️ עריכת תבנית</h4>
+
+          <label style={{ display: 'block', marginBottom: 12 }}>
+            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4, color: '#374151' }}>נושא המייל</span>
+            <input
+              type="text"
+              value={editSubject}
+              onChange={e => setEditSubject(e.target.value)}
+              dir="rtl"
+              style={{
+                width: '100%', fontSize: '0.9rem', padding: '8px 12px',
+                borderRadius: 8, border: '1px solid #D1D5DB',
+              }}
+            />
+          </label>
+
+          <label style={{ display: 'block', marginBottom: 12 }}>
+            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4, color: '#374151' }}>
+              גוף המייל (HTML) — משתנים זמינים: {'{{ first_name }}'}, {'{{ coupon_code }}'}, {'{{ coupon_expiry_days }}'}, {'{{ logo_url }}'}, {'{{ unsubscribe_url }}'}
+            </span>
+            <textarea
+              value={editBody}
+              onChange={e => setEditBody(e.target.value)}
+              rows={20}
+              dir="ltr"
+              spellCheck={false}
+              style={{
+                width: '100%', fontSize: '0.8rem', padding: '8px 12px',
+                borderRadius: 8, border: '1px solid #D1D5DB',
+                fontFamily: 'monospace', lineHeight: 1.5,
+              }}
+            />
+          </label>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={saveEdit}
+              disabled={busy}
+              className="btn-primary"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              💾 שמור
+            </button>
+            <button
+              onClick={openPreview}
+              disabled={busy}
+              className="btn-small"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              👁️ תצוגה מקדימה
+            </button>
+            <button
+              onClick={cancelEdit}
+              disabled={busy}
+              className="btn-small"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              ביטול
+            </button>
+          </div>
+
+          <p style={{ marginTop: 12, fontSize: '0.8rem', color: '#6B7280' }}>
+            💡 השינויים נשמרים מיידית במסד הנתונים. שלח מייל בדיקה אחרי השמירה כדי לוודא שהתוצאה כפי שציפית.
+          </p>
         </div>
       )}
     </div>
