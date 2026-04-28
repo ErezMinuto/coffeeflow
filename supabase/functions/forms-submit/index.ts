@@ -147,7 +147,7 @@ function renderWelcomeEmail(firstName: string, logoUrl: string): { subject: stri
         <p style="margin: 0 0 16px;">${greeting}</p>
         <p style="margin: 0 0 16px;">תודה שהצטרפת לרשימת התפוצה שלנו. כל כמה שבועות נשלח עדכונים על פולים חדשים מבית הקלייה, מאמרים על קפה ספשלטי, וטיפים להכנת קפה ביתי.</p>
         <p style="margin: 0 0 16px;">בלי ספאם, רק תוכן שיעניין אותך.</p>
-        <p style="margin: 24px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>ארז אלבז<br>מינוטו קפה</p>
+        <p style="margin: 24px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>מינוטו קפה</p>
       </td>
     </tr>
     <tr>
@@ -196,7 +196,7 @@ function renderAckEmail(firstName: string, message: string, isCallback: boolean,
           <strong style="color: #3D4A2E; display: block; margin-bottom: 8px;">ההודעה שקיבלנו:</strong>
           <div style="white-space: pre-wrap;">${escapeHtml(message)}</div>
         </div>
-        <p style="margin: 16px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>ארז אלבז<br>מינוטו קפה</p>
+        <p style="margin: 16px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>מינוטו קפה</p>
       </td>
     </tr>
     <tr>
@@ -272,9 +272,14 @@ async function sendEmail(
 async function addToMarketingContacts(
   supabase: any, email: string, name: string | undefined, phone: string | undefined, source: string
 ): Promise<void> {
-  // upsert on (user_id, email) — the unique constraint inherited from the
-  // legacy Brevo era. If the email is already in the list, we just update
-  // opted_in/source/name. Don't blow away an existing name with null.
+  // Verified by query: the actual unique constraint on marketing_contacts
+  // is just `UNIQUE (email)`, not `(user_id, email)`. The dashboard's
+  // context.tsx has a comment claiming the latter — that comment is
+  // stale. Using onConflict:'email' to match the real constraint.
+  //
+  // user_id is still set to the legacy Clerk pin so existing tooling
+  // (generate-campaign etc) that may filter by user_id continues to
+  // see these rows.
   const payload: Record<string, any> = {
     user_id: COFFEEFLOW_USER_ID,
     email,
@@ -286,7 +291,7 @@ async function addToMarketingContacts(
   if (phone) payload.phone = phone
   const { error } = await supabase
     .from('marketing_contacts')
-    .upsert(payload, { onConflict: 'user_id,email' })
+    .upsert(payload, { onConflict: 'email' })
   if (error) {
     console.warn(`[forms-submit] marketing_contacts upsert failed for ${email}: ${error.message}`)
     throw error
