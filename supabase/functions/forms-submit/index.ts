@@ -40,6 +40,12 @@ const RESEND_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') ?? 'info@minuto.co.il'
 const INBOX_EMAIL = Deno.env.get('FORMS_INBOX_EMAIL') ?? 'info@minuto.co.il'
 const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.co.il/content/uploads/2025/03/Frame-14.png'
+// Resend Audience id used by generate-campaign for bulk sends. New form
+// signups need to land here too, otherwise they'd be in marketing_contacts
+// (Supabase) but invisible to the bulk-send pipeline that reads from the
+// Resend Audience until someone runs sync-resend-contacts. Hardcoded
+// fallback matches the one in generate-campaign/index.ts.
+const RESEND_AUDIENCE_ID = Deno.env.get('RESEND_AUDIENCE_ID') ?? '24bb0a2b-eaf8-4a2e-ae57-749bbbc3a2f9'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',  // public form endpoint, intentionally open
@@ -269,6 +275,45 @@ async function sendEmail(
 
 // ── Per-type processors ─────────────────────────────────────────────────────
 
+/**
+ * Push a contact to the Resend Audience used by generate-campaign for
+ * bulk sends. Mirrors the logic in handlePublicSubscribe — POST to
+ * /audiences/{id}/contacts with first/last name split. Resend treats
+ * existing emails as idempotent (no error on duplicate).
+ *
+ * Failure is non-fatal: the contact is already in marketing_contacts
+ * (Supabase source-of-truth), so the next manual sync-resend-contacts
+ * run will reconcile. We log + continue rather than fail the whole
+ * form submission.
+ */
+async function pushToResendAudience(
+  email: string, name: string | undefined
+): Promise<{ ok: boolean; error?: string }> {
+  if (!RESEND_KEY) return { ok: false, error: 'RESEND_API_KEY not configured' }
+  const nameParts = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  const res = await fetch(`https://api.resend.com/audiences/${RESEND_AUDIENCE_ID}/contacts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      first_name: nameParts[0] ?? '',
+      last_name: nameParts.slice(1).join(' '),
+      unsubscribed: false,
+    }),
+  })
+  if (res.ok) return { ok: true }
+  const text = await res.text()
+  // Resend returns 422 for duplicates on the audience contacts endpoint
+  // — treat as success, the contact is already there.
+  if (res.status === 422 && /already.*exist|duplicate/i.test(text)) {
+    return { ok: true }
+  }
+  return { ok: false, error: `Resend audience POST ${res.status}: ${text.slice(0, 200)}` }
+}
+
 async function addToMarketingContacts(
   supabase: any, email: string, name: string | undefined, phone: string | undefined, source: string
 ): Promise<void> {
@@ -394,6 +439,15 @@ serve(async (req) => {
     }
 
     // 3. Add to marketing list (newsletter + callback)
+    //    Two writes, both idempotent on email:
+    //      a) Supabase marketing_contacts — our source of truth, used
+    //         for owner-facing dashboards and audience filtering.
+    //      b) Resend Audience — what generate-campaign actually sends to
+    //         when running bulk campaigns. Without this step, new
+    //         subscribers would sit in our DB but be invisible to the
+    //         bulk-send pipeline until a manual reconcile.
+    //    Both writes are best-effort independent; one failing doesn't
+    //    block the other.
     if (payload.type === 'newsletter' || payload.type === 'callback') {
       try {
         await addToMarketingContacts(
@@ -407,6 +461,8 @@ serve(async (req) => {
       } catch (e: any) {
         console.warn(`[forms-submit] add-to-list failed: ${e.message}`)
       }
+      const r = await pushToResendAudience(payload.email, payload.name)
+      if (!r.ok) console.warn(`[forms-submit] Resend audience push failed: ${r.error}`)
     }
 
     // 4. Welcome email (newsletter + callback)
