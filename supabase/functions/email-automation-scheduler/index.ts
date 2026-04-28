@@ -63,6 +63,13 @@ interface AutomationTemplate {
   body_html_template: string
   coupon_percent: number | null
   coupon_expiry_days: number
+  // Slugs are the human-readable source-of-truth. IDs are the cached
+  // resolution from the WC API. Both are kept on the row because:
+  //   - admin reads/edits the slugs (they appear in URLs)
+  //   - the system uses the IDs (stable across slug renames)
+  // Cache miss (empty IDs array) triggers re-resolution from slugs.
+  coupon_product_category_slugs: string[]
+  coupon_product_category_ids: number[]
 }
 
 interface FirstOrderCandidate {
@@ -110,12 +117,90 @@ async function buildCouponCode(email: string): Promise<string> {
 }
 
 /**
+ * Resolve WooCommerce product category slugs to numeric category IDs.
+ * Pure resolution, no caching — caller owns persistence.
+ */
+async function resolveCategoryIdsFromSlugs(slugs: string[]): Promise<number[]> {
+  if (slugs.length === 0) return []
+  const auth = btoa(`${WOO_KEY}:${WOO_SECRET}`)
+  const ids: number[] = []
+  for (const slug of slugs) {
+    const url = `${WOO_URL}/wp-json/wc/v3/products/categories?slug=${encodeURIComponent(slug)}`
+    const res = await fetch(url, { headers: { Authorization: `Basic ${auth}` } })
+    if (!res.ok) {
+      console.warn(`[email-automation] category lookup failed (${slug}): ${res.status}`)
+      continue
+    }
+    const arr = await res.json()
+    if (Array.isArray(arr) && arr.length > 0 && typeof arr[0].id === 'number') {
+      ids.push(arr[0].id)
+    } else {
+      console.warn(`[email-automation] no category found for slug "${slug}"`)
+    }
+  }
+  return ids
+}
+
+/**
+ * Cache-aware resolution. Reads IDs from the template row first; only
+ * hits the WC API and writes back to the row when the cache is empty.
+ *
+ * Why this design (vs always resolving from slugs):
+ *   - WC category IDs are stable across slug renames. The owner can
+ *     rename "פולי-קפה-טרי-מינוטו-specialty-coffee" → anything else
+ *     in WC admin and our cached ID still points to the same category.
+ *   - Avoids hitting the WC API on every coupon creation.
+ *
+ * Cache invalidation: the owner clears `coupon_product_category_ids`
+ * on the template row (UPDATE ... SET coupon_product_category_ids =
+ * ARRAY[]::INT[]) when they restructure categories — typically rare.
+ *
+ * Failure mode: if the cache is empty AND slug resolution returns
+ * zero IDs from a non-empty slug list, we throw. Creating a coupon
+ * with no category restriction would silently leak the discount onto
+ * grinders/machines, which is the exact behavior we're protecting
+ * against. Better to fail loudly.
+ */
+async function resolveCategoryIdsCached(
+  supabase: any,
+  template: AutomationTemplate,
+): Promise<number[]> {
+  const slugs = template.coupon_product_category_slugs ?? []
+  const cached = template.coupon_product_category_ids ?? []
+  if (slugs.length === 0) return []                         // no restriction by design
+  if (cached.length > 0) return cached                      // cache hit, trust it
+
+  // Cache miss → resolve and write back.
+  const resolved = await resolveCategoryIdsFromSlugs(slugs)
+  if (resolved.length === 0) {
+    throw new Error(`Could not resolve any category IDs from slugs ${JSON.stringify(slugs)}. Verify slugs match WooCommerce category slugs (Products → Categories in WP admin). Refusing to create an unrestricted coupon — this would let the discount apply to grinders/machines.`)
+  }
+
+  const { error } = await supabase
+    .from('email_automation_templates')
+    .update({ coupon_product_category_ids: resolved, updated_at: new Date().toISOString() })
+    .eq('trigger_type', template.trigger_type)
+  if (error) {
+    // Cache write failure is non-fatal — we still got the IDs, future
+    // runs will just re-resolve. Log and continue.
+    console.warn(`[email-automation] failed to cache category IDs: ${error.message}`)
+  } else {
+    console.log(`[email-automation] cached category IDs for ${template.trigger_type}: ${JSON.stringify(resolved)}`)
+  }
+  return resolved
+}
+
+/**
  * Create a unique single-use 10% off coupon in WooCommerce, restricted
- * to the customer's email. Returns the coupon code on success, throws
- * with a descriptive message on failure (caller logs and skips send).
+ * to the customer's email AND (optionally) to a list of product
+ * categories. Returns the coupon code on success, throws with a
+ * descriptive message on failure (caller logs and skips send).
  */
 async function createCoupon(
-  email: string, percent: number, expiryDays: number
+  email: string,
+  percent: number,
+  expiryDays: number,
+  productCategoryIds: number[],
 ): Promise<string> {
   if (!WOO_KEY || !WOO_SECRET) {
     throw new Error('WOO_KEY/WOO_SECRET not configured')
@@ -125,7 +210,7 @@ async function createCoupon(
     .toISOString().split('T')[0] // YYYY-MM-DD
 
   const auth = btoa(`${WOO_KEY}:${WOO_SECRET}`)
-  const body = {
+  const body: Record<string, any> = {
     code,
     discount_type: 'percent',
     amount: String(percent),
@@ -135,6 +220,12 @@ async function createCoupon(
     email_restrictions: [email.toLowerCase().trim()],
     date_expires: expires,
     description: `Welcome coupon for ${email} — auto-generated by CoffeeFlow email-automation-scheduler`,
+  }
+  // Allowlist: when set, the discount only applies to line items in
+  // these categories. Coffee-only welcome coupons set this to the
+  // specialty-coffee category id. Empty array = no restriction.
+  if (productCategoryIds.length > 0) {
+    body.product_categories = productCategoryIds
   }
 
   const res = await fetch(`${WOO_URL}/wp-json/wc/v3/coupons`, {
@@ -336,10 +427,12 @@ async function processAutomation(
   // Generate coupon. If it fails, mark the row 'failed' and bail.
   let couponCode: string
   try {
+    const categoryIds = await resolveCategoryIdsCached(supabase, template)
     couponCode = await createCoupon(
       candidate.customer_email,
       template.coupon_percent ?? 10,
       template.coupon_expiry_days,
+      categoryIds,
     )
   } catch (e: any) {
     await supabase.from('email_automations').update({
@@ -414,7 +507,13 @@ serve(async (req) => {
         { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
     try {
-      const couponCode = await createCoupon(testTo, tmpl.coupon_percent ?? 10, tmpl.coupon_expiry_days)
+      const categoryIds = await resolveCategoryIdsCached(supabase, tmpl)
+      const couponCode = await createCoupon(
+        testTo,
+        tmpl.coupon_percent ?? 10,
+        tmpl.coupon_expiry_days,
+        categoryIds,
+      )
       const unsubscribeUrl = generateUnsubscribeUrl(testTo)
       const vars = {
         first_name: 'בוחן',
