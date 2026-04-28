@@ -228,25 +228,57 @@ async function createCoupon(
     body.product_categories = productCategoryIds
   }
 
-  const res = await fetch(`${WOO_URL}/wp-json/wc/v3/coupons`, {
+  // POST to /wp-json/wc/v3/coupons with two important details:
+  // 1. Auth via query string (?consumer_key=K&consumer_secret=S) instead
+  //    of the Authorization header. Some WAF/CDN setups (Cloudflare,
+  //    Wordfence) strip or alter Authorization headers on POSTs to
+  //    /wp-json paths, leading to silent downgrade-to-GET behavior.
+  //    Query-string auth bypasses that path.
+  // 2. `redirect: 'manual'` so we DON'T silently follow a 301 that
+  //    converts POST→GET. If WC is redirecting our POST, we want to
+  //    SEE the redirect and fail loudly instead of getting a "list of
+  //    coupons" GET response back and thinking everything's fine.
+  const couponUrl = `${WOO_URL}/wp-json/wc/v3/coupons?consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+  const res = await fetch(couponUrl, {
     method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    redirect: 'manual',
   })
 
-  if (res.ok) return code
+  const responseText = await res.text()
+  console.log(`[email-automation] WC coupon POST → ${res.status} for ${code} (body ${responseText.length} chars): ${responseText.slice(0, 300)}`)
 
-  const text = await res.text()
-  // 400 with code "woocommerce_rest_coupon_code_already_exists" is fine —
-  // it means the coupon is already created (idempotent retry case).
-  if (res.status === 400 && text.includes('coupon_code_already_exists')) {
+  // Caught a redirect — surface it so we know if WC is downgrading our
+  // POST. Owner can fix at the WP/Cloudflare level once we see this.
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get('location') || '(no location header)'
+    throw new Error(`WC coupon POST redirected (${res.status}) to ${location}. This converts our POST to GET on the redirect target. Fix at the WP/Cloudflare level (likely trailing-slash or HTTP→HTTPS redirect rule).`)
+  }
+
+  // Parse JSON FIRST so the inner throw isn't swallowed by an outer catch.
+  let parsed: any = null
+  try { parsed = JSON.parse(responseText) } catch { /* parsed stays null */ }
+
+  // Real success: a 2xx with an object that has both id and code.
+  if (res.ok && parsed?.id && parsed?.code) {
+    console.log(`[email-automation] coupon created: id=${parsed.id} code=${parsed.code}`)
+    return code
+  }
+
+  // 400 with "already exists" is the idempotent-retry case.
+  if (res.status === 400 && responseText.includes('coupon_code_already_exists')) {
     console.log(`[email-automation] coupon ${code} already exists, reusing`)
     return code
   }
-  throw new Error(`Woo coupon API ${res.status}: ${text.slice(0, 300)}`)
+
+  // 200 with an array body = our POST was treated as a GET (list coupons)
+  // somewhere along the path. This is THE bug we found in the field.
+  if (res.ok && Array.isArray(parsed)) {
+    throw new Error(`WC returned a coupon LIST (${parsed.length} items) in response to our POST. Something between us and WC is converting POST→GET (likely Cloudflare or a WordPress redirect rule). The coupon was NOT created. First items: ${responseText.slice(0, 200)}`)
+  }
+
+  throw new Error(`Woo coupon API ${res.status} (parsed=${parsed ? 'object' : 'unparseable'}): ${responseText.slice(0, 300)}`)
 }
 
 /**
