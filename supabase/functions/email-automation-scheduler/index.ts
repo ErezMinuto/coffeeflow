@@ -409,6 +409,127 @@ async function findFirstPurchaseCandidates(
 }
 
 /**
+ * Find customers due for a refill reminder.
+ *
+ * Cadence model:
+ *   • 1 coffee order  → cadence = template.delay_days (default 21)
+ *   • 2+ coffee orders → cadence = avg interval between coffee orders
+ *
+ * Eligibility window: days_since_last_coffee_order between cadence and
+ * (cadence + max_lookback_days - delay_days), giving up to ~14 days of
+ * grace if cron skips a day.
+ *
+ * Sanity bounds: skip cadence < 7 days (probably wholesale or test
+ * orders) or > 90 days (probably abandoned, win-back territory).
+ *
+ * Coffee filter: only orders with at least one woo_order_items_enriched
+ * row whose product_category = 'coffee' count. Equipment-only orders
+ * don't trigger refill.
+ *
+ * Per-cycle dedup: handled by the unique index in the DB —
+ * uniq_automation_per_customer_per_order on
+ * (trigger_type, customer_email, woo_order_id). Same customer can get
+ * multiple reminders over their lifetime, one per coffee order.
+ */
+async function findRefillCandidates(
+  supabase: any, delayDays: number, maxLookbackDays: number
+): Promise<FirstOrderCandidate[]> {
+  // Pull all paid orders for customers with at least one coffee item.
+  // Joining woo_orders → woo_order_items_enriched in code rather than
+  // SQL because supabase-js doesn't expose joins through the REST
+  // endpoint cleanly. Two queries → in-memory join.
+
+  const { data: coffeeItemRows, error: itemsErr } = await supabase
+    .from('woo_order_items_enriched')
+    .select('order_id')
+    .eq('product_category', 'coffee')
+  if (itemsErr) throw new Error(`coffee items query: ${itemsErr.message}`)
+
+  const coffeeOrderIds = new Set<number>()
+  for (const r of (coffeeItemRows ?? [])) coffeeOrderIds.add(r.order_id)
+
+  if (coffeeOrderIds.size === 0) return []
+
+  const { data: ordersRaw, error: ordersErr } = await supabase
+    .from('woo_orders')
+    .select('woo_order_id, customer_email, customer_name, order_date, status')
+    .in('status', ['completed', 'processing'])
+    .not('customer_email', 'is', null)
+    .order('order_date', { ascending: true })
+  if (ordersErr) throw new Error(`woo_orders query: ${ordersErr.message}`)
+
+  // Group by email; keep only orders that contain coffee.
+  const byEmail = new Map<string, Array<{ id: number; date: string; name: string | null }>>()
+  for (const o of (ordersRaw ?? [])) {
+    if (!coffeeOrderIds.has(o.woo_order_id)) continue
+    const email = (o.customer_email ?? '').toLowerCase().trim()
+    if (!email) continue
+    if (!byEmail.has(email)) byEmail.set(email, [])
+    byEmail.get(email)!.push({
+      id: o.woo_order_id,
+      date: o.order_date,
+      // billing_first_name isn't on woo_orders; the column doesn't exist
+      // on the table per the schema. Customer name will be NULL until a
+      // future sync brings it in. Greeting falls back to "חבר/ה".
+      name: null,
+    })
+  }
+
+  // Pre-fetch all refill_reminder rows so we can filter (trigger, email,
+  // order_id) tuples without per-candidate roundtrips. Cheap because the
+  // table is small.
+  const { data: existingRefills } = await supabase
+    .from('email_automations')
+    .select('customer_email, woo_order_id')
+    .eq('trigger_type', 'refill_reminder')
+  const alreadyReminded = new Set<string>()
+  for (const r of (existingRefills ?? [])) {
+    alreadyReminded.add(`${r.customer_email}::${r.woo_order_id}`)
+  }
+
+  const today = Date.now()
+  const candidates: FirstOrderCandidate[] = []
+
+  for (const [email, orders] of byEmail.entries()) {
+    if (orders.length === 0) continue
+
+    // Compute cadence in days.
+    let cadenceDays: number
+    if (orders.length === 1) {
+      cadenceDays = delayDays  // first-time customer default (e.g. 21)
+    } else {
+      const earliest = new Date(orders[0].date).getTime()
+      const latest = new Date(orders[orders.length - 1].date).getTime()
+      cadenceDays = ((latest - earliest) / 86400_000) / (orders.length - 1)
+    }
+
+    // Sanity bounds.
+    if (cadenceDays < 7 || cadenceDays > 90) continue
+
+    const lastOrder = orders[orders.length - 1]
+    const daysSince = (today - new Date(lastOrder.date).getTime()) / 86400_000
+
+    // Eligibility window: cadence ≤ daysSince ≤ cadence + grace.
+    // Using maxLookbackDays - delayDays as grace gives 14 by default
+    // (35 - 21 = 14). Floor of cadence is the lower bound.
+    const lower = Math.floor(cadenceDays)
+    const upper = lower + Math.max(maxLookbackDays - delayDays, 7)
+    if (daysSince < lower || daysSince > upper) continue
+
+    // Already reminded for this specific last order? Skip.
+    if (alreadyReminded.has(`${email}::${lastOrder.id}`)) continue
+
+    candidates.push({
+      customer_email: email,
+      customer_name: null,
+      woo_order_id: lastOrder.id,
+      order_date: lastOrder.date,
+    })
+  }
+  return candidates
+}
+
+/**
  * Process a single automation: check it's not already done, generate
  * coupon, render email, send via Resend, log result.
  */
@@ -456,31 +577,39 @@ async function processAutomation(
 
   // From here on, we own the lock. Do the work and update the same row.
 
-  // Generate coupon. If it fails, mark the row 'failed' and bail.
-  let couponCode: string
-  try {
-    const categoryIds = await resolveCategoryIdsCached(supabase, template)
-    couponCode = await createCoupon(
-      candidate.customer_email,
-      template.coupon_percent ?? 10,
-      template.coupon_expiry_days,
-      categoryIds,
-    )
-  } catch (e: any) {
-    await supabase.from('email_automations').update({
-      status: 'failed',
-      error_msg: `coupon: ${e.message}`,
-    }).eq('id', lockId)
-    return { status: 'failed', error: `coupon: ${e.message}` }
+  // Coupon is optional — if template.coupon_percent is NULL, skip the
+  // coupon creation entirely. Refill reminders default to no-coupon
+  // because returning buyers are already coming back; a discount is
+  // pure leakage. Owner can opt into a coupon by setting coupon_percent
+  // on the template via the dashboard editor.
+  let couponCode: string | null = null
+  if (template.coupon_percent !== null && template.coupon_percent !== undefined && template.coupon_percent > 0) {
+    try {
+      const categoryIds = await resolveCategoryIdsCached(supabase, template)
+      couponCode = await createCoupon(
+        candidate.customer_email,
+        template.coupon_percent,
+        template.coupon_expiry_days,
+        categoryIds,
+      )
+    } catch (e: any) {
+      await supabase.from('email_automations').update({
+        status: 'failed',
+        error_msg: `coupon: ${e.message}`,
+      }).eq('id', lockId)
+      return { status: 'failed', error: `coupon: ${e.message}` }
+    }
   }
 
   // Render subject + body. customer_name might be null — fall back to
-  // a friendly default so the greeting still reads well.
+  // a friendly default so the greeting still reads well. coupon_code
+  // is empty string when no coupon was created (template should not
+  // reference it in that case; if it does, renders as empty).
   const firstName = (candidate.customer_name ?? 'חבר/ה').trim()
   const unsubscribeUrl = generateUnsubscribeUrl(candidate.customer_email)
   const vars = {
     first_name: firstName,
-    coupon_code: couponCode,
+    coupon_code: couponCode ?? '',
     coupon_expiry_days: template.coupon_expiry_days,
     order_id: candidate.woo_order_id,
     unsubscribe_url: unsubscribeUrl,
@@ -523,33 +652,41 @@ serve(async (req) => {
 
   const dryRun  = body.dry_run === true
   const testTo  = typeof body.test_send === 'string' ? body.test_send : null
+  // Owner can pass {trigger_type: 'refill_reminder'} alongside test_send
+  // to QA a different template. Defaults to first_purchase to keep the
+  // existing UI button working without changes.
+  const testTrigger = typeof body.trigger_type === 'string' ? body.trigger_type : 'first_purchase'
 
   // ── Test-send path ─────────────────────────────────────────────────
-  // Sends the first_purchase email to a specific address. Real coupon,
-  // real send. Useful for QA and content review without waiting for a
-  // real first-time customer to come in.
+  // Sends the chosen template's email to a specific address. Real
+  // coupon (if the template has one), real send. Useful for QA and
+  // content review without waiting for a real candidate to come in.
   if (testTo) {
     const { data: tmpl, error } = await supabase
       .from('email_automation_templates')
       .select('*')
-      .eq('trigger_type', 'first_purchase')
+      .eq('trigger_type', testTrigger)
       .maybeSingle()
     if (error || !tmpl) {
-      return new Response(JSON.stringify({ error: 'first_purchase template not found' }),
+      return new Response(JSON.stringify({ error: `template not found: ${testTrigger}` }),
         { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
     try {
-      const categoryIds = await resolveCategoryIdsCached(supabase, tmpl)
-      const couponCode = await createCoupon(
-        testTo,
-        tmpl.coupon_percent ?? 10,
-        tmpl.coupon_expiry_days,
-        categoryIds,
-      )
+      // Coupon is optional — same logic as the production send path.
+      let couponCode: string | null = null
+      if (tmpl.coupon_percent !== null && tmpl.coupon_percent !== undefined && tmpl.coupon_percent > 0) {
+        const categoryIds = await resolveCategoryIdsCached(supabase, tmpl)
+        couponCode = await createCoupon(
+          testTo,
+          tmpl.coupon_percent,
+          tmpl.coupon_expiry_days,
+          categoryIds,
+        )
+      }
       const unsubscribeUrl = generateUnsubscribeUrl(testTo)
       const vars = {
         first_name: 'בוחן',
-        coupon_code: couponCode,
+        coupon_code: couponCode ?? '',
         coupon_expiry_days: tmpl.coupon_expiry_days,
         order_id: 0,
         unsubscribe_url: unsubscribeUrl,
@@ -558,7 +695,7 @@ serve(async (req) => {
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
       const r = await sendEmail(testTo, subject, html, unsubscribeUrl)
-      return new Response(JSON.stringify({ test_send: testTo, coupon: couponCode, ...r }),
+      return new Response(JSON.stringify({ test_send: testTo, trigger: testTrigger, coupon: couponCode, ...r }),
         { headers: { ...CORS, 'Content-Type': 'application/json' } })
     } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }),
@@ -571,10 +708,13 @@ serve(async (req) => {
   // this loop is the extension point — adding 'refill_reminder' or
   // 'review_request' later means writing a new findCandidates fn and
   // adding a case below; the rest is reused.
-  const { data: templates, error: tErr } = await supabase
-    .from('email_automation_templates')
-    .select('*')
-    .eq('enabled', true)
+  // dry_run includes disabled templates (so the owner can preview what
+  // a not-yet-enabled trigger would catch). Real runs only iterate the
+  // enabled ones so we never accidentally send for a disabled trigger.
+  const tmplQuery = supabase.from('email_automation_templates').select('*')
+  const { data: templates, error: tErr } = dryRun
+    ? await tmplQuery
+    : await tmplQuery.eq('enabled', true)
 
   if (tErr) {
     return new Response(JSON.stringify({ error: `templates query: ${tErr.message}` }),
@@ -587,6 +727,8 @@ serve(async (req) => {
     let candidates: FirstOrderCandidate[] = []
     if (tmpl.trigger_type === 'first_purchase') {
       candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+    } else if (tmpl.trigger_type === 'refill_reminder') {
+      candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else {
       summary.runs.push({ trigger: tmpl.trigger_type, error: 'no handler implemented' })
       continue
@@ -595,6 +737,7 @@ serve(async (req) => {
     if (dryRun) {
       summary.runs.push({
         trigger: tmpl.trigger_type,
+        enabled: tmpl.enabled,  // surface so owner can tell which triggers would actually fire vs preview-only
         candidates_count: candidates.length,
         candidates_sample: candidates.slice(0, 5).map(c => c.customer_email),
       })
