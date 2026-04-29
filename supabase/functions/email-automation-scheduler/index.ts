@@ -333,6 +333,36 @@ async function sendEmail(
  * sync was paused and then catches up, which would cause delayed
  * triggers to fire all at once on the same day.
  */
+/**
+ * Returns the set of normalized email addresses that have explicitly
+ * opted into marketing communications (newsletter signup, callback
+ * form with marketing-consent box, manual import flagged opted_in).
+ *
+ * Owner's explicit decision (2026-04-29): all marketing-style
+ * automations (welcome, refill, future review/win-back) target ONLY
+ * opted-in customers. Privacy policy promises this; sending to
+ * non-opted-in buyers would violate it. Customers who buy without
+ * subscribing get a transactional purchase confirmation from
+ * WooCommerce but no marketing follow-up.
+ *
+ * Side benefit: makes the welcome coupon a newsletter-signup
+ * incentive ("subscribe and get 10% off your first order"),
+ * driving list growth.
+ */
+async function fetchOptedInEmails(supabase: any): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('marketing_contacts')
+    .select('email')
+    .eq('opted_in', true)
+  if (error) throw new Error(`opted-in query: ${error.message}`)
+  const set = new Set<string>()
+  for (const r of (data ?? [])) {
+    const e = (r.email ?? '').toLowerCase().trim()
+    if (e) set.add(e)
+  }
+  return set
+}
+
 async function findFirstPurchaseCandidates(
   supabase: any, delayDays: number, maxLookbackDays: number
 ): Promise<FirstOrderCandidate[]> {
@@ -399,11 +429,16 @@ async function findFirstPurchaseCandidates(
     orderCount.set(email, (orderCount.get(email) ?? 0) + 1)
   }
 
+  // Marketing-consent gate: only customers who explicitly opted into
+  // our list qualify. Past buyers who never subscribed get nothing —
+  // that's the privacy-compliant default. See fetchOptedInEmails docs.
+  const optedIn = await fetchOptedInEmails(supabase)
+
   const candidates: FirstOrderCandidate[] = []
   for (const [email, orders] of byEmail.entries()) {
-    if ((orderCount.get(email) ?? 0) === 1) {
-      candidates.push(orders[0])
-    }
+    if ((orderCount.get(email) ?? 0) !== 1) continue
+    if (!optedIn.has(email)) continue
+    candidates.push(orders[0])
   }
   return candidates
 }
@@ -450,9 +485,12 @@ async function findRefillCandidates(
 
   if (coffeeOrderIds.size === 0) return []
 
+  // woo_orders has no customer_name column (verified — billing.first_name
+  // isn't synced from WC, only billing.email). Greeting falls back to
+  // "חבר/ה" via the standard fallback in processAutomation.
   const { data: ordersRaw, error: ordersErr } = await supabase
     .from('woo_orders')
-    .select('woo_order_id, customer_email, customer_name, order_date, status')
+    .select('woo_order_id, customer_email, order_date, status')
     .in('status', ['completed', 'processing'])
     .not('customer_email', 'is', null)
     .order('order_date', { ascending: true })
@@ -487,11 +525,16 @@ async function findRefillCandidates(
     alreadyReminded.add(`${r.customer_email}::${r.woo_order_id}`)
   }
 
+  // Marketing-consent gate: only customers who explicitly opted into
+  // our list qualify. Same rule as first_purchase. See fetchOptedInEmails.
+  const optedIn = await fetchOptedInEmails(supabase)
+
   const today = Date.now()
   const candidates: FirstOrderCandidate[] = []
 
   for (const [email, orders] of byEmail.entries()) {
     if (orders.length === 0) continue
+    if (!optedIn.has(email)) continue
 
     // Compute cadence in days.
     let cadenceDays: number
