@@ -444,6 +444,84 @@ async function findFirstPurchaseCandidates(
 }
 
 /**
+ * Inverse of findFirstPurchaseCandidates: same date-window logic,
+ * INVERSE opt-in filter. Targets first-time buyers who did NOT
+ * subscribe to the marketing list.
+ *
+ * Sends a single post-purchase invitation to subscribe — legally
+ * defensible under Israeli soft opt-in (existing customer + similar
+ * products + clear unsubscribe + privacy policy disclosure of this
+ * exact practice in section 2א).
+ *
+ * One invitation per customer ever — guaranteed by the
+ * UNIQUE(trigger_type, customer_email, woo_order_id) index. After the
+ * customer subscribes (or ignores), no further marketing email
+ * unless they opt in via the newsletter form.
+ */
+async function findFirstPurchaseInviteCandidates(
+  supabase: any, delayDays: number, maxLookbackDays: number
+): Promise<FirstOrderCandidate[]> {
+  // Reuse all the date-window + first-order-only logic by getting the
+  // pre-opt-in-filter set. Cleanest path: factor out the shared work,
+  // but in the interest of keeping this PR small and readable, copy
+  // the candidate construction here and just flip the opt-in check.
+  const upperCutoff = new Date(Date.now() - delayDays * 86400_000)
+    .toISOString().split('T')[0]
+  const lowerCutoff = new Date(Date.now() - maxLookbackDays * 86400_000)
+    .toISOString().split('T')[0]
+  if (maxLookbackDays < delayDays) {
+    console.warn(`[email-automation] invite: max_lookback_days < delay_days; bailing`)
+    return []
+  }
+
+  const { data: orders, error } = await supabase
+    .from('woo_orders')
+    .select('woo_order_id, customer_email, order_date, status')
+    .in('status', ['completed', 'processing'])
+    .gte('order_date', lowerCutoff)
+    .lte('order_date', upperCutoff)
+    .not('customer_email', 'is', null)
+    .order('order_date', { ascending: true })
+  if (error) throw new Error(`woo_orders query: ${error.message}`)
+
+  const byEmail = new Map<string, FirstOrderCandidate[]>()
+  for (const o of (orders ?? [])) {
+    const email = (o.customer_email ?? '').toLowerCase().trim()
+    if (!email) continue
+    if (!byEmail.has(email)) byEmail.set(email, [])
+    byEmail.get(email)!.push({
+      customer_email: email,
+      customer_name: null,
+      woo_order_id: o.woo_order_id,
+      order_date: o.order_date,
+    })
+  }
+
+  const { data: allOrders } = await supabase
+    .from('woo_orders')
+    .select('customer_email')
+    .in('status', ['completed', 'processing'])
+    .not('customer_email', 'is', null)
+  const orderCount = new Map<string, number>()
+  for (const o of (allOrders ?? [])) {
+    const email = (o.customer_email ?? '').toLowerCase().trim()
+    if (!email) continue
+    orderCount.set(email, (orderCount.get(email) ?? 0) + 1)
+  }
+
+  // INVERSE opt-in: only customers NOT in marketing_contacts.opted_in=true.
+  const optedIn = await fetchOptedInEmails(supabase)
+
+  const candidates: FirstOrderCandidate[] = []
+  for (const [email, orders] of byEmail.entries()) {
+    if ((orderCount.get(email) ?? 0) !== 1) continue
+    if (optedIn.has(email)) continue  // already opted in → first_purchase handles them
+    candidates.push(orders[0])
+  }
+  return candidates
+}
+
+/**
  * Find customers due for a refill reminder.
  *
  * Cadence model:
@@ -657,6 +735,11 @@ async function processAutomation(
     order_id: candidate.woo_order_id,
     unsubscribe_url: unsubscribeUrl,
     logo_url: DEFAULT_LOGO_URL,
+    // Used by the first_purchase_invite CTA — pre-fills the
+    // newsletter signup form with the customer's email so they
+    // don't have to retype it.
+    email: candidate.customer_email,
+    email_encoded: encodeURIComponent(candidate.customer_email),
   }
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
@@ -734,6 +817,11 @@ serve(async (req) => {
         order_id: 0,
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
+        // email/email_encoded are only used by first_purchase_invite's
+        // CTA link to the subscribe-with-prefilled-email URL. Harmless
+        // for other templates since their rendering ignores them.
+        email: testTo,
+        email_encoded: encodeURIComponent(testTo),
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
@@ -770,6 +858,8 @@ serve(async (req) => {
     let candidates: FirstOrderCandidate[] = []
     if (tmpl.trigger_type === 'first_purchase') {
       candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+    } else if (tmpl.trigger_type === 'first_purchase_invite') {
+      candidates = await findFirstPurchaseInviteCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else if (tmpl.trigger_type === 'refill_reminder') {
       candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else {
