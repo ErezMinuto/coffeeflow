@@ -73,6 +73,14 @@ interface SubmitPayload {
   phone?: string
   message?: string
   consent: boolean
+  // Optional source attribution — passed by the calling page when it
+  // wants to override the default `${type}_form` source string. Used
+  // for campaign attribution: e.g. /subscribe.html?src=invite_email
+  // tags those signups distinctly from organic newsletter_form ones,
+  // so we can measure conversion of the first_purchase_invite trigger.
+  // Whitelisted to a tight regex to prevent injection (this string
+  // ends up in marketing_contacts.source).
+  source?: string
   // Honeypot — must be empty/absent. Bots auto-fill all input fields.
   website?: string
 }
@@ -112,6 +120,15 @@ function validatePayload(p: any): { ok: true; payload: SubmitPayload } | { ok: f
     // phone is encouraged but not required (some forms make it optional)
   }
 
+  // Source attribution — optional. Whitelist to lowercase letters,
+  // digits, underscore, hyphen, max 40 chars. Anything that doesn't
+  // match falls through to undefined and the call site uses the
+  // default `${type}_form` string.
+  let source: string | undefined
+  if (typeof p.source === 'string' && /^[a-z0-9_-]{1,40}$/.test(p.source.trim())) {
+    source = p.source.trim()
+  }
+
   return {
     ok: true,
     payload: {
@@ -121,6 +138,7 @@ function validatePayload(p: any): { ok: true; payload: SubmitPayload } | { ok: f
       phone: p.phone ? String(p.phone).trim() : undefined,
       message: p.message ? String(p.message).trim() : undefined,
       consent: true,
+      source,
     }
   }
 }
@@ -256,7 +274,7 @@ function renderWelcomeEmail(firstName: string, logoUrl: string, couponCode: stri
     <tr>
       <td style="padding: 32px; color: #2a2a2a; line-height: 1.7;">
         <p style="margin: 0 0 16px;">${greeting}</p>
-        <p style="margin: 0 0 16px;">תודה שהצטרפת לרשימת התפוצה שלנו. כל כמה שבועות נשלח עדכונים על פולים חדשים מבית הקלייה, מאמרים על קפה ספשלטי, וטיפים להכנת קפה ביתי.</p>
+        <p style="margin: 0 0 16px;">תודה שהצטרפת לרשימת הדיוור שלנו. כל כמה שבועות נשלח עדכונים על פולים חדשים מבית הקלייה, מאמרים על קפה ספשלטי, וטיפים להכנת קפה ביתי.</p>
         <p style="margin: 0 0 16px;">בלי ספאם, רק תוכן שיעניין אותך.</p>
 ${couponIntro}${couponBlock}
         <p style="margin: 24px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>מינוטו קפה</p>
@@ -556,12 +574,17 @@ serve(async (req) => {
     //    block the other.
     if (payload.type === 'newsletter' || payload.type === 'callback') {
       try {
+        // payload.source overrides the default when the calling page
+        // tagged the signup with attribution (e.g. ?src=invite_email
+        // from the first_purchase_invite landing page). Otherwise
+        // default to `${type}_form` for backward compat.
+        const sourceTag = payload.source ?? `${payload.type}_form`
         await addToMarketingContacts(
           supabase,
           payload.email,
           payload.name,
           payload.phone,
-          `${payload.type}_form`,
+          sourceTag,
         )
         result.added_to_list = true
       } catch (e: any) {

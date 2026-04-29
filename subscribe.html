@@ -24,7 +24,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
-  <title>הצטרפות לרשימת התפוצה | מינוטו</title>
+  <title>הצטרפות לרשימת הדיוור | מינוטו</title>
   <link rel="icon" href="https://www.minuto.co.il/content/uploads/2025/03/Frame-14.png" type="image/png">
   <style>
     * { box-sizing: border-box; }
@@ -183,7 +183,7 @@
 <div class="wrap">
   <div class="header">
     <img src="https://www.minuto.co.il/content/uploads/2025/03/Frame-14.png" alt="Minuto Cafe">
-    <h1>הצטרפות לרשימת התפוצה ☕</h1>
+    <h1>הצטרפות לרשימת הדיוור ☕</h1>
     <p>בית קלייה ספשלטי, רחובות</p>
   </div>
 
@@ -237,10 +237,19 @@
   // from the invitation email with their address already in the URL,
   // so make the form one-click on the happy path. Field stays editable
   // in case they want to use a different address.
+  //
+  // ?src=... is the attribution tag — same page can be linked from
+  // multiple campaigns (invite email, homepage CTA, instagram bio,
+  // QR code at the cafe). The src value gets forwarded to the API
+  // and ends up in marketing_contacts.source, so we can measure
+  // conversion per channel. Whitelist matches the API's regex.
+  var srcParam = '';
   try {
     var params = new URLSearchParams(window.location.search);
     var prefill = params.get('email');
     if (prefill) emailEl.value = prefill.trim();
+    var rawSrc = (params.get('src') || '').trim();
+    if (/^[a-z0-9_-]{1,40}$/.test(rawSrc)) srcParam = rawSrc;
   } catch (e) { /* old browser, no biggie */ }
 
   function showError(msg) {
@@ -283,6 +292,7 @@
       website: honeypot
     };
     if (name) payload.name = name;
+    if (srcParam) payload.source = srcParam;
 
     try {
       var res = await fetch(ENDPOINT, {
