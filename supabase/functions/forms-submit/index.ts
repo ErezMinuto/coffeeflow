@@ -43,9 +43,13 @@ const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.
 // Resend Audience id used by generate-campaign for bulk sends. New form
 // signups need to land here too, otherwise they'd be in marketing_contacts
 // (Supabase) but invisible to the bulk-send pipeline that reads from the
-// Resend Audience until someone runs sync-resend-contacts. Hardcoded
-// fallback matches the one in generate-campaign/index.ts.
-const RESEND_AUDIENCE_ID = Deno.env.get('RESEND_AUDIENCE_ID') ?? '24bb0a2b-eaf8-4a2e-ae57-749bbbc3a2f9'
+// Resend Audience until someone runs sync-resend-contacts.
+//
+// No hardcoded fallback — fail loudly if the secret is missing instead of
+// silently writing to whatever audience id was previously baked in. Easier
+// to spot misconfigurations and prevents fork/prod cross-contamination.
+const RESEND_AUDIENCE_ID = Deno.env.get('RESEND_AUDIENCE_ID')
+if (!RESEND_AUDIENCE_ID) throw new Error('RESEND_AUDIENCE_ID secret is required')
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',  // public form endpoint, intentionally open
@@ -53,7 +57,12 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const COFFEEFLOW_USER_ID = 'user_3A4KMEUku7p11snyPMiFv6VsL1Q'  // legacy pin — see context.tsx comment
+// Legacy Clerk user_id pinned to ownership of marketing_contacts rows.
+// Already a Supabase secret (verified via secrets list); previously this
+// file hardcoded it as a copy. Now reads from the same source as every
+// other function so a single edit propagates everywhere.
+const COFFEEFLOW_USER_ID = Deno.env.get('COFFEEFLOW_USER_ID')
+if (!COFFEEFLOW_USER_ID) throw new Error('COFFEEFLOW_USER_ID secret is required')
 
 type FormType = 'newsletter' | 'contact' | 'callback'
 

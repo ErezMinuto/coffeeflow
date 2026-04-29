@@ -26,7 +26,8 @@ const SUPA_URL       = Deno.env.get("SUPABASE_URL")             ?? "";
 const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SENDER_EMAIL   = Deno.env.get("SENDER_EMAIL")              ?? "info@minuto.co.il";
 const UNSUBSCRIBE_BASE = Deno.env.get("UNSUBSCRIBE_BASE_URL")   ?? `${SUPA_URL}/functions/v1/generate-campaign`;
-const RESEND_AUDIENCE_ID = Deno.env.get("RESEND_AUDIENCE_ID") ?? "24bb0a2b-eaf8-4a2e-ae57-749bbbc3a2f9";
+const RESEND_AUDIENCE_ID = Deno.env.get("RESEND_AUDIENCE_ID");
+if (!RESEND_AUDIENCE_ID) throw new Error("RESEND_AUDIENCE_ID secret is required");
 const LOGO_URL       = "https://minuto.co.il/content/uploads/2025/03/Frame-14.png";
 const SITE_URL       = "https://minuto.co.il";
 

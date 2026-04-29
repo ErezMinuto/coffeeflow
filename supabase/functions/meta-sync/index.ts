@@ -1,7 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const AD_ACCOUNT_ID = 'act_10154225724732620'
+// Per-environment Meta IDs come from Supabase secrets, not hardcoded.
+// If the secret isn't set the function fails fast at startup with a
+// clear message — better than silently sending requests to whatever
+// the previous hardcoded value was, which makes accidents (e.g. running
+// a fork against the wrong ad account) much harder to spot.
+const AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID')
+if (!AD_ACCOUNT_ID) throw new Error('META_AD_ACCOUNT_ID secret is required')
 
 serve(async (req) => {
   const corsHeaders = {

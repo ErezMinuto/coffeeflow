@@ -130,13 +130,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       contactGroups:       contactGroupsDb.data,
       contactGroupMembers: contactGroupMembersDb.data,
     },
-    // Pinned to the original Clerk user_id that owns the marketing_contacts
-    // rows in production. The marketing tables predate the dashboard's own
-    // auth flow, and using a different user_id here causes the unique
-    // constraint on (user_id, email) to miss, which inserts duplicates on
-    // every sync. See PR #12 for the cleanup. Once the constraint is changed
-    // to (email) only this can become any string.
-    user: { id: 'user_3A4KMEUku7p11snyPMiFv6VsL1Q' },
+    // Stub user object pinned to the legacy Clerk user_id that owns the
+    // marketing_contacts rows in prod. The marketing tables predate the
+    // dashboard's own auth flow. Verified separately: the actual
+    // marketing_contacts unique constraint is UNIQUE(email), not
+    // (user_id, email) as a previous comment claimed — but other code
+    // paths still filter by user_id, so we keep it pinned.
+    //
+    // Read from VITE_LEGACY_USER_ID so the value isn't hardcoded across
+    // forks/environments. Falls back to the prod value to keep dev
+    // environments working when the env var isn't set yet.
+    user: { id: import.meta.env.VITE_LEGACY_USER_ID ?? 'user_3A4KMEUku7p11snyPMiFv6VsL1Q' },
     marketingContactsDb,
     campaignsDb,
     contactGroupsDb,
