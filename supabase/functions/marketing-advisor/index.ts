@@ -4958,6 +4958,22 @@ Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
   • לקשר תיאור פולים לשיטת חליטה ("נהדר ל-V60", "אופטימלי לאספרסו")
 
+🚫 **כלל קשיח — אסור לזלזל בקפה אחר / מתחרים / ציוד של הלקוח** 🚫
+זה חל על כל שדה שמייצר תוכן ללקוחות: content_recommendations.topic, posts_to_publish, products_to_feature.content_angle, וגם google_organic_recommendations.suggested_title.
+
+✗ אסור לחלוטין:
+  • "מכונת אספרסו ביתית + פולים ישנים = כסף מבוזבז" (מעליב לקוחות שכבר קנו)
+  • "פולים מהסופר זה לא קפה אמיתי"
+  • "המכונה היקרה שלך לא שווה כלום בלי X"
+  • כל ניסוח שכולל "= בזבוז", "לא שווה", "כסף מבוזבז" כלפי קפה/ציוד אחר
+
+✓ במקום, נסח חיובי:
+  • "המכונה שלך תזרח רק עם פולים שנקלו השבוע"
+  • "פולים טריים — מה שמוציא את המקסימום מכל שיטת חליטה"
+  • "ההבדל שתרגיש בין שקית שנפתחה אתמול לשקית שפתוחה חודש"
+
+הסיבה: מינוטו פרימיום, ולקוחות פרימיום לא מגיבים טוב למסרים שמעליבים אותם או את הקפה שהם שותים. גם זה לא מותג שמרוויח מ-attack ads.
+
 החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {
   "summary": "2 משפטים בלבד",
@@ -5090,11 +5106,24 @@ Products (products_to_feature):
     ...doneSignatures,
   ];
 
+  // Diagnostic dump — surfaces exactly what the filter matches against.
+  // If a recommendation that should have been filtered slips through, logs
+  // tell us whether the signature was missing entirely or just failed the
+  // fuzzy threshold.
+  console.log(`[organic-dedup] ${dedupeSignatures.length} signatures (${(existingBlogPosts ?? []).length} blog + ${doneSignatures.length} done). Sample titles:`);
+  for (const s of dedupeSignatures.slice(0, 20)) {
+    console.log(`[organic-dedup]   • ${s.title}`);
+  }
+
   // The in-prompt self-check is too soft — agent's "nearly-identical" threshold
   // differs from ours. Deterministic filter: for each recommendation, if its
   // suggested_title / keyword / topic overlaps heavily with any signature, drop.
   if (parsed && Array.isArray(parsed.google_organic_recommendations)) {
     const original = parsed.google_organic_recommendations;
+    console.log(`[organic-dedup] incoming google_organic_recommendations (${original.length}):`);
+    for (const r of original) {
+      console.log(`[organic-dedup]   → keyword="${r.keyword}" suggested_title="${r.suggested_title}"`);
+    }
     const filtered = filterDuplicateRecommendations(original, dedupeSignatures);
     if (filtered.length < original.length) {
       console.log(`[organic] Filtered ${original.length - filtered.length} dup recs (vs ${existingBlogPosts?.length ?? 0} blog + ${doneSignatures.length} done)`);
@@ -5414,8 +5443,13 @@ function filterDuplicateRecommendations(
     //   • topic                     — content_recommendations
     const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""} ${rec.topic ?? ""}`;
     const recWords = distinctiveWords(recText);
-    if (recWords.size === 0) return true;  // nothing to match on, keep it
+    const recId = rec.keyword ?? rec.topic ?? rec.suggested_title ?? "(unknown)";
+    if (recWords.size === 0) {
+      console.log(`[organic-dedup] keep "${recId}" — empty recWords (no distinctive content)`);
+      return true;  // nothing to match on, keep it
+    }
 
+    let bestNearMiss = { sig: "", shared: 0, overlap: 0 };
     for (const sig of existingSignatures) {
       if (sig.words.size === 0) continue;
       // Count shared distinctive words
@@ -5426,9 +5460,17 @@ function filterDuplicateRecommendations(
       // Drop if ≥2 shared distinctive words AND ≥40% of recommendation overlaps
       const overlapPct = shared / recWords.size;
       if (shared >= 2 && overlapPct >= 0.4) {
-        console.log(`[organic] Dropping dup rec "${rec.keyword}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%)`);
+        console.log(`[organic-dedup] DROP "${recId}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%) — recWords=[${[...recWords].join(",")}] sigWords=[${[...sig.words].join(",")}]`);
         return false;
       }
+      if (shared > bestNearMiss.shared) {
+        bestNearMiss = { sig: sig.title, shared, overlap: overlapPct };
+      }
+    }
+    if (bestNearMiss.shared >= 1) {
+      console.log(`[organic-dedup] KEEP "${recId}" — best near-miss: ${bestNearMiss.shared} words / ${Math.round(bestNearMiss.overlap * 100)}% with "${bestNearMiss.sig}" (threshold: ≥2 words AND ≥40%)`);
+    } else {
+      console.log(`[organic-dedup] KEEP "${recId}" — no signature shared any distinctive words`);
     }
     return true;
   });
@@ -7964,6 +8006,73 @@ ${capped.map((q, i) =>
         hook: p.hook,
         why_this_intent: p.why_this_intent,
       })),
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
+  // Read-only diagnostic — dumps the exact state the organic dedup filter
+  // sees: cached blog posts, marked-done actions, and the recommendations
+  // in the latest organic_content report. Lets us figure out why a
+  // particular topic keeps appearing despite being published/marked done.
+  if (body.agent === "diag_organic_dedup") {
+    const { data: blogPosts } = await supabase
+      .from("minuto_blog_posts")
+      .select("title, url, published_at, last_seen")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(50);
+
+    const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
+    const { data: doneActions } = await supabase
+      .from("advisor_completed_actions")
+      .select("week_start, action_id, action_label, state, created_at")
+      .gte("week_start", eightWeeksAgo)
+      .order("created_at", { ascending: false });
+
+    const { data: latestReport } = await supabase
+      .from("advisor_reports")
+      .select("week_start, updated_at, status, report")
+      .eq("agent_type", "organic_content")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const reportRow = (latestReport ?? [])[0] as any;
+    const recs = reportRow?.report?.google_organic_recommendations ?? [];
+    const contentRecs = reportRow?.report?.content_recommendations ?? [];
+
+    return new Response(JSON.stringify({
+      cutoff_used_in_dedup: "2026-04-01T00:00:00Z",
+      blog_posts: {
+        total_in_table: (blogPosts ?? []).length,
+        passes_cutoff: (blogPosts ?? []).filter((p: any) => p.published_at && p.published_at >= "2026-04-01T00:00:00Z").length,
+        items: (blogPosts ?? []).map((p: any) => ({
+          title: p.title,
+          published_at: p.published_at,
+          last_seen: p.last_seen,
+          passes_cutoff: !!(p.published_at && p.published_at >= "2026-04-01T00:00:00Z"),
+        })),
+      },
+      done_actions: {
+        total: (doneActions ?? []).length,
+        done_state: (doneActions ?? []).filter((a: any) => a.state === "done").length,
+        items: (doneActions ?? []).map((a: any) => ({
+          week_start: a.week_start,
+          state: a.state,
+          action_id: a.action_id,
+          action_label: a.action_label,
+          extracted_keyword: ((a.action_label || "").match(/"([^"]+)"/) ?? [])[1] ?? null,
+        })),
+      },
+      latest_report: {
+        week_start: reportRow?.week_start,
+        updated_at: reportRow?.updated_at,
+        status: reportRow?.status,
+        google_organic_recommendations: recs.map((r: any) => ({
+          keyword: r.keyword,
+          suggested_title: r.suggested_title,
+        })),
+        content_recommendations: contentRecs.map((r: any) => ({
+          topic: r.topic,
+          content_type: r.content_type,
+        })),
+      },
     }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 

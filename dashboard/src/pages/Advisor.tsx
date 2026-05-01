@@ -298,11 +298,16 @@ function buildTriageQueue(
   // ── Organic google_organic_recommendations (score 45)
   if (org?.google_organic_recommendations) {
     for (const rec of org.google_organic_recommendations) {
+      // Prefer the agent's reformulated suggested_title for the headline.
+      // keyword is often a raw Serper search query — fine for matching/dedup
+      // but unreadable as a UI label. id stays keyed on keyword so action
+      // state survives re-runs.
+      const display = (rec.suggested_title && rec.suggested_title.trim()) || rec.keyword
       out.push({
         id:          `org::seo::${rec.keyword}`,
         agent:       'organic_content',
         priority:    rec.estimated_difficulty === 'קל' ? 55 : 45,
-        headline:    `כתוב תוכן ל-"${rec.keyword}"`,
+        headline:    `כתוב תוכן ל-"${display}"`,
         context:     rec.why_now,
         sourceLabel: rec.current_position > 0 ? `מיקום ${rec.current_position}` : undefined,
       })
