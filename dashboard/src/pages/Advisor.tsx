@@ -3073,6 +3073,19 @@ export default function AdvisorPage() {
                     </div>
                   )}
 
+                  {/* Blocked-on banner — when tracking is broken, all other
+                      recommendations are advisory until tracking is fixed. */}
+                  {c.blocked_on === 'tracking_fixes' && (
+                    <div className="mb-2 bg-red-50 border-2 border-red-300 rounded px-2 py-1.5">
+                      <p className="text-xs font-bold text-red-900">
+                        🚧 חסום על תיקוני מעקב
+                      </p>
+                      <p className="text-[11px] text-red-800 mt-0.5">
+                        ה-tracking שבור — ROAS/CPA מנופחים. כל ההמלצות מטה הן advisory בלבד עד שתתקן את ה-conversion actions למטה.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Diagnosis — always visible */}
                   <div className="mb-2">
                     <p className="text-xs font-semibold text-surface-700 mb-1">🔍 אבחון:</p>

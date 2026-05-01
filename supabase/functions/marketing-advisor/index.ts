@@ -621,6 +621,7 @@ const HEBREW_COPY_RULES = `
 • מניפולציה של דחיפות: "מבצע לשעתיים בלבד!", "מלאי אחרון!"
 • בטון היררכי: "לצרכן המבקש", "אנו מתכבדים להציג"
 • מילים שחוקות: "מדהים", "חוויה", "מסע", "פרימיום" (בלי הסבר)
+• זלזול במתחרים, בקפה סופר, או בציוד שהלקוח כבר קנה — "פולים מהסופר = זבל", "המכונה היקרה שלך מבוזבזת". זה פוגע במותג, מעליב לקוחות שכבר קנו, ונשמע מתגונן. תמיד לנסח חיובי: מה מינוטו מוסיף, לא מה לאחרים חסר.
 
 **ניואנסים ישראליים:**
 • אמון > רומנטיקה. "10 שנות ניסיון ברחובות" > "בבית הקלייה הבוטיק שלנו"
@@ -639,6 +640,9 @@ const HEBREW_COPY_RULES = `
 
 ✓ "טעמת פעם קפה שנקלה בבוקר? זה משנה הכל."
 ✗ "גלו את עולם הטעמים המרתק של הקפה הספשלטי."
+
+✓ "המכונה שלך תזרח רק עם פולים שנקלו השבוע."
+✗ "מכונת אספרסו ב-3000 ש״ח עם פולים מהסופר = מכונה ב-500 ש״ח עם פולים טריים." (משווה תפוחים לתפוזים, מעליב לקוחות שהשקיעו במכונה, נשמע מתגונן)
 
 **כלל זהב**: אם תוכל להחליף את שם המותג שלך ב"סופר-פארם" או "בנק הפועלים" והטקסט עדיין יעבוד — הטקסט גנרי מדי. כתוב משהו ספציפי שרק מינוטו יכולה לומר.
 `;
@@ -4586,6 +4590,18 @@ async function runOrganicAgent(
   ]);
   const completedActions = await getCompletedActions(supabase);
 
+  // Refresh the RSS cache before reading — catches "I just published it"
+  // cases where the user runs the advisor right after publishing. Previously
+  // this only happened on the research cron, so a freshly-published post
+  // would be missed and re-recommended. Failure is non-fatal — fall through
+  // to whatever's already cached.
+  try {
+    const stats = await refreshMinutoBlogCache(supabase);
+    console.log(`[organic] Blog cache refreshed pre-run: ${stats.total} posts, ${stats.new_since_yesterday} new`);
+  } catch (e: any) {
+    console.warn(`[organic] Pre-run blog refresh failed (using stale cache): ${e?.message}`);
+  }
+
   // Minuto blog posts already published — agent must NOT re-recommend these.
   // Cutoff: only posts from 2026-04-01 onwards count as "recently covered".
   // Older posts can be revisited with fresh angles without the agent blocking.
@@ -5048,14 +5064,40 @@ Products (products_to_feature):
   }
 
   // ── Post-process: filter out recommendations too similar to existing posts ──
+  // Build a unified dedup-signature list from BOTH existing blog posts AND
+  // user-marked-done actions. The same fuzzy distinctive-words filter runs
+  // against both, so a recommendation gets dropped if it overlaps with
+  // either an already-published post OR something the user already marked
+  // done in the dashboard. Previously these were two separate checks — blog
+  // got fuzzy matching, done-actions got brittle substring matching, and
+  // content_recommendations got nothing at all.
+  const doneRowsForDedup = await fetchCompletedActionRows(supabase);
+  const doneSignatures: Array<{ title: string; url: string }> = doneRowsForDedup
+    .filter(r => r.state === 'done')
+    .map(r => {
+      // action_label format: 'כתוב תוכן ל-"<keyword>"' — keyword is in quotes.
+      // action_id format: "org::seo::<keyword>" — keyword is the trailing segment.
+      const labelMatch = (r.action_label || "").match(/"([^"]+)"/);
+      const labelKeyword = labelMatch ? labelMatch[1] : "";
+      const idTail = (r.action_id || "").split("::").pop() ?? "";
+      const title = labelKeyword || idTail || (r.action_label || "");
+      return { title, url: "" };
+    })
+    .filter(s => s.title.length >= 5);
+
+  const dedupeSignatures = [
+    ...((existingBlogPosts ?? []) as Array<{ title: string; url: string }>),
+    ...doneSignatures,
+  ];
+
   // The in-prompt self-check is too soft — agent's "nearly-identical" threshold
   // differs from ours. Deterministic filter: for each recommendation, if its
-  // suggested_title OR keyword overlaps heavily with any existing post, drop it.
-  if (parsed && Array.isArray(parsed.google_organic_recommendations) && existingBlogPosts) {
+  // suggested_title / keyword / topic overlaps heavily with any signature, drop.
+  if (parsed && Array.isArray(parsed.google_organic_recommendations)) {
     const original = parsed.google_organic_recommendations;
-    const filtered = filterDuplicateRecommendations(original, existingBlogPosts);
+    const filtered = filterDuplicateRecommendations(original, dedupeSignatures);
     if (filtered.length < original.length) {
-      console.log(`[organic] Filtered ${original.length - filtered.length} duplicate recs`);
+      console.log(`[organic] Filtered ${original.length - filtered.length} dup recs (vs ${existingBlogPosts?.length ?? 0} blog + ${doneSignatures.length} done)`);
     }
 
     // If the filter killed everything (or agent had nothing to begin with),
@@ -5072,15 +5114,10 @@ Products (products_to_feature):
         .limit(1)
         .maybeSingle();
 
-      // Pull done/skipped actions so we don't re-suggest things the owner
-      // already acted on. The prompt-level check doesn't catch this because
-      // the fallback is a deterministic post-processor that bypasses Claude.
-      const doneRows = await fetchCompletedActionRows(supabase);
-      const doneKeywordFragments = doneRows
+      // Reuse the lifted doneRowsForDedup for the novel-keyword pre-filter.
+      const doneKeywordFragments = doneRowsForDedup
         .map(r => {
-          // action_id format: "org::seo::<keyword>" or similar
           const idKeyword = (r.action_id || "").split("::").pop() ?? "";
-          // action_label format: 'כתוב תוכן ל-"<keyword>"' or the headline
           const labelMatch = (r.action_label || "").match(/"([^"]+)"/);
           const labelKeyword = labelMatch ? labelMatch[1] : "";
           return [idKeyword, labelKeyword, r.action_label || ""].filter(Boolean);
@@ -5190,25 +5227,29 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
           search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
         };
       });
-      // Apply the dup filter to the fallback (belt and suspenders against blog posts)
-      const cleanFallback = filterDuplicateRecommendations(candidateRecs, existingBlogPosts).slice(0, 3);
+      // Apply the unified dup filter to the fallback (belt-and-suspenders
+      // against blog posts AND done actions).
+      const cleanFallback = filterDuplicateRecommendations(candidateRecs, dedupeSignatures).slice(0, 3);
       parsed.google_organic_recommendations = cleanFallback;
       parsed._fallback_source = "novel_keywords";
       console.log(`[organic] Fallback added ${cleanFallback.length} novel-keyword recs (${novelList.length - usable.length} dropped for prior completion)`);
     } else {
-      // Even when GSC recs survive, cross-check against done actions
-      const doneRows = await fetchCompletedActionRows(supabase);
-      const doneText = doneRows.map(r => `${r.action_id} ${r.action_label || ""}`).join(" ").toLowerCase();
-      const stillFresh = filtered.filter((rec: any) => {
-        const kw = (rec.keyword || "").trim().toLowerCase();
-        if (kw && doneText.includes(kw)) {
-          console.log(`[organic] dropping GSC rec already completed: "${rec.keyword}"`);
-          return false;
-        }
-        return true;
-      });
-      parsed.google_organic_recommendations = stillFresh;
+      // GSC recs survived the unified dup filter — done-action dedup already
+      // happened above via dedupeSignatures, so just commit the result.
+      parsed.google_organic_recommendations = filtered;
     }
+  }
+
+  // Same dedup applied to content_recommendations (Instagram/social topics).
+  // Previously this array was never filtered, so the agent could re-recommend
+  // the same topic week after week even after the user marked it done.
+  if (parsed && Array.isArray(parsed.content_recommendations)) {
+    const original = parsed.content_recommendations;
+    const filtered = filterDuplicateRecommendations(original, dedupeSignatures);
+    if (filtered.length < original.length) {
+      console.log(`[organic] Filtered ${original.length - filtered.length} dup content_recommendations`);
+    }
+    parsed.content_recommendations = filtered;
   }
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
@@ -5368,7 +5409,10 @@ function filterDuplicateRecommendations(
   }));
 
   return recs.filter((rec: any) => {
-    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""}`;
+    // Match against any of the fields a recommendation might use:
+    //   • keyword / suggested_title — google_organic_recommendations
+    //   • topic                     — content_recommendations
+    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""} ${rec.topic ?? ""}`;
     const recWords = distinctiveWords(recText);
     if (recWords.size === 0) return true;  // nothing to match on, keep it
 
@@ -7309,8 +7353,9 @@ ${HEBREW_COPY_RULES}
 
 • **search_partners_on = true** ⚠️ — Search Partners הוא ניקוז שקט של 15-30% מהתקציב. סגור אותו אלא אם יש הוכחה ברורה שהוא מביא ROAS. ברירת מחדל: OFF.
 • **display_expansion_on = true** ⚠️ — Display Network על קמפיין Search = מכריח להופיע במודעות באנר זולות בבלוגים. תמיד סגור.
-• **bidding_strategy_type = MAXIMIZE_CONVERSIONS ללא target_cpa** — מבזבז תקציב עד שהמערכת מוצאת "כל" המרה. אם real_orders < 30 ב-14 ימים, המערכת עוד לא במידה הנכונה. המלץ לעבור ל-TARGET_CPA עם ₪30 target, או לחזור ל-MANUAL_CPC.
-• **bidding_strategy_type = TARGET_CPA אבל target_cpa_ils > AOV/2** — target_cpa מעל ₪75 על AOV של ₪150 = שורף רווח. הורד ל-₪30-40.
+• **bidding_strategy_type = MAXIMIZE_CONVERSIONS ללא target_cpa** — מבזבז תקציב עד שהמערכת מוצאת "כל" המרה. אם real_orders < 30 ב-14 ימים, המערכת לא בlearn. ההמלצה: **MANUAL_CPC קודם** (כדי לאסוף נתונים אמיתיים בלי להישרף). רק אחרי שמצטברות 15+ הזמנות אמיתיות לחודש — לעבור ל-TARGET_CPA, עם target ≈ current_real_cpa (לא מספר מקובע).
+• **TARGET_CPA reality check** — כל המלצה ל-TARGET_CPA חייבת לעמוד ב: target ≥ 0.7 × current_real_cpa. דוגמה: real_cpa ₪126 → target מינימלי ₪88, לא ₪40. target נמוך מ-70% מה-CPA הנוכחי קורס את ה-delivery במקום למקסם רווח. אסור להציע target שרירותי שמנותק מה-CPA האמיתי.
+• **bidding_strategy_type = TARGET_CPA אבל target_cpa_ils > AOV × margin** — target_cpa מעל הרווח הגולמי = שורף כסף. ב-AOV ₪150 ו-margin ~35%, target מקסימלי ~₪52. הורד.
 • **daily_budget_ils < ₪40** — קמפיין עם תקציב מתחת ל-₪40 ליום לא יוצא מ-learning phase. או הגדל ל-₪50+ או הפסק.
 • **advertising_channel_type = PERFORMANCE_MAX** — תמיד דורש אודיינס סיגנלים (in-market, remarketing) כדי לא להפוך לקמפיין Display. בדוק אם קיים.
 
@@ -7375,6 +7420,12 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
 
 6. **budget_action** — פעולה אחת: { type: raise_budget|lower_budget|pause|keep|raise_bid|switch_bid_strategy, from_ils?, to_ils?, reason }
 
+   **חוקים מחייבים על budget_action — אסור לשבור**:
+   • אם flag.soft_conversion_primary_suspected=true → **אסור raise_budget**. type חייב להיות keep, pause, או switch_bid_strategy. סיבה: real_roas לא אמין עד תיקון tracking; הוספת תקציב על נתונים מנופחים = שריפת כסף.
+   • אם real_roas < 1.5× → **אסור raise_budget**. הקמפיין מפסיד כסף; תקציב נוסף מגדיל הפסד. במקום, type=switch_bid_strategy או lower_budget.
+   • reason חייב לצטט real_* metrics (real_roas, real_cpa, real_orders) — לעולם לא platform_reported. אם תכתוב "ROAS 2.94 מצדיק הגדלה" בלי לבדוק שזה real_roas, זו טעות חמורה.
+   • impression_share נמוך **לבדו** אינו מצדיק raise_budget. רק אם real_roas ≥ 1.5× ו-tracking תקין.
+
 7. **landing_action** — { type: keep|change_to|test_ab, new_url?, reason }
 
 8. **tracking_fixes** — בחר פרופיל אחד לפי הflags (אסור להחזיר את שני הפרופילים):
@@ -7407,6 +7458,10 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
    • "learning_stage = LEARNING_LIMITED — פחות מ-50 המרות/שבוע. הגדל תקציב ל-₪100/יום או שנה goal ל-Add to Cart."
 
 12. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
+
+13. **blocked_on** — שדה חובה. שני ערכים אפשריים:
+    • "tracking_fixes" — אם flag.soft_conversion_primary_suspected=true או אם conversion_value_tracking_gap=true. במקרה זה priority חייב להיות "critical", budget_action.type חייב להיות keep|pause|switch_bid_strategy, ו-tracking_fixes חייב להיות מאוכלס. כל שאר ההמלצות (audience/creative/keyword/landing) הן advisory בלבד עד תיקון ה-tracking.
+    • null — אם אין חסימה. כל ההמלצות אקטיביות.
 
 כללים:
 • **חובה: החזר ערך אחד ב-campaigns[] לכל קמפיין ברשימת הקמפיינים הפעילים — גם Google וגם Meta.** אסור להשמיט קמפיין. אם אין מספיק נתונים להמלצה מפורטת, החזר diagnosis קצר עם "נדרש עוד זמן/נתונים" אבל עדיין כלול את הקמפיין.
@@ -7487,6 +7542,7 @@ ${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
       "budget_action": { "type": "raise_budget|lower_budget|pause|keep|switch_bid_strategy", "from_ils": 0, "to_ils": 0, "reason": "..." },
       "landing_action": { "type": "...", "new_url": "...", "reason": "..." },
       "tracking_fixes": ["..."],
+      "blocked_on": "tracking_fixes|null",
       "expected_improvement": "..."
     }
   ]
