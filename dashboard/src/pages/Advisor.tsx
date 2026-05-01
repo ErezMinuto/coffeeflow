@@ -298,11 +298,16 @@ function buildTriageQueue(
   // ── Organic google_organic_recommendations (score 45)
   if (org?.google_organic_recommendations) {
     for (const rec of org.google_organic_recommendations) {
+      // Prefer the agent's reformulated suggested_title for the headline.
+      // keyword is often a raw Serper search query — fine for matching/dedup
+      // but unreadable as a UI label. id stays keyed on keyword so action
+      // state survives re-runs.
+      const display = (rec.suggested_title && rec.suggested_title.trim()) || rec.keyword
       out.push({
         id:          `org::seo::${rec.keyword}`,
         agent:       'organic_content',
         priority:    rec.estimated_difficulty === 'קל' ? 55 : 45,
-        headline:    `כתוב תוכן ל-"${rec.keyword}"`,
+        headline:    `כתוב תוכן ל-"${display}"`,
         context:     rec.why_now,
         sourceLabel: rec.current_position > 0 ? `מיקום ${rec.current_position}` : undefined,
       })
@@ -3070,6 +3075,19 @@ export default function AdvisorPage() {
                           ₪{(c.totals_14d.spend ?? 0).toLocaleString()}
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Blocked-on banner — when tracking is broken, all other
+                      recommendations are advisory until tracking is fixed. */}
+                  {c.blocked_on === 'tracking_fixes' && (
+                    <div className="mb-2 bg-red-50 border-2 border-red-300 rounded px-2 py-1.5">
+                      <p className="text-xs font-bold text-red-900">
+                        🚧 חסום על תיקוני מעקב
+                      </p>
+                      <p className="text-[11px] text-red-800 mt-0.5">
+                        ה-tracking שבור — ROAS/CPA מנופחים. כל ההמלצות מטה הן advisory בלבד עד שתתקן את ה-conversion actions למטה.
+                      </p>
                     </div>
                   )}
 

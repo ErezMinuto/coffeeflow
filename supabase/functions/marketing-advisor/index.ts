@@ -621,6 +621,7 @@ const HEBREW_COPY_RULES = `
 • מניפולציה של דחיפות: "מבצע לשעתיים בלבד!", "מלאי אחרון!"
 • בטון היררכי: "לצרכן המבקש", "אנו מתכבדים להציג"
 • מילים שחוקות: "מדהים", "חוויה", "מסע", "פרימיום" (בלי הסבר)
+• זלזול במתחרים, בקפה סופר, או בציוד שהלקוח כבר קנה — "פולים מהסופר = זבל", "המכונה היקרה שלך מבוזבזת". זה פוגע במותג, מעליב לקוחות שכבר קנו, ונשמע מתגונן. תמיד לנסח חיובי: מה מינוטו מוסיף, לא מה לאחרים חסר.
 
 **ניואנסים ישראליים:**
 • אמון > רומנטיקה. "10 שנות ניסיון ברחובות" > "בבית הקלייה הבוטיק שלנו"
@@ -639,6 +640,9 @@ const HEBREW_COPY_RULES = `
 
 ✓ "טעמת פעם קפה שנקלה בבוקר? זה משנה הכל."
 ✗ "גלו את עולם הטעמים המרתק של הקפה הספשלטי."
+
+✓ "המכונה שלך תזרח רק עם פולים שנקלו השבוע."
+✗ "מכונת אספרסו ב-3000 ש״ח עם פולים מהסופר = מכונה ב-500 ש״ח עם פולים טריים." (משווה תפוחים לתפוזים, מעליב לקוחות שהשקיעו במכונה, נשמע מתגונן)
 
 **כלל זהב**: אם תוכל להחליף את שם המותג שלך ב"סופר-פארם" או "בנק הפועלים" והטקסט עדיין יעבוד — הטקסט גנרי מדי. כתוב משהו ספציפי שרק מינוטו יכולה לומר.
 `;
@@ -4586,6 +4590,18 @@ async function runOrganicAgent(
   ]);
   const completedActions = await getCompletedActions(supabase);
 
+  // Refresh the RSS cache before reading — catches "I just published it"
+  // cases where the user runs the advisor right after publishing. Previously
+  // this only happened on the research cron, so a freshly-published post
+  // would be missed and re-recommended. Failure is non-fatal — fall through
+  // to whatever's already cached.
+  try {
+    const stats = await refreshMinutoBlogCache(supabase);
+    console.log(`[organic] Blog cache refreshed pre-run: ${stats.total} posts, ${stats.new_since_yesterday} new`);
+  } catch (e: any) {
+    console.warn(`[organic] Pre-run blog refresh failed (using stale cache): ${e?.message}`);
+  }
+
   // Minuto blog posts already published — agent must NOT re-recommend these.
   // Cutoff: only posts from 2026-04-01 onwards count as "recently covered".
   // Older posts can be revisited with fresh angles without the agent blocking.
@@ -4917,30 +4933,56 @@ ${(existingBlogPosts ?? []).length > 0
 
 **כשנושא ציוד עולה אורגנית** (במילת מפתח GSC, בשאלה ב-DM, בעניין של עוקבים, בטרנד עונתי), **חובה** לכלול אותו. הזווית לא מכירתית — היא **הגנת ההשקעה** או **פתיחת הפוטנציאל**:
 
-  ✓ "המכונה לא תפצה על פולים גרועים" (הגנת ההשקעה)
-  ✓ "מטחנה איכותית פלוס פולים סטיילים = מה שהמכונה יכלה תמיד לעשות" (פתיחת פוטנציאל)
-  ✓ "פילטר V60 חושף איכות של פולים שאספרסו מסתיר" (חיבור שיטה-פולים)
+  ✓ "מטחנה איכותית פותחת את הפוטנציאל של הפולים" (פתיחת פוטנציאל בלי השוואה)
+  ✓ "פילטר V60 חושף איכות פולים שאספרסו מסתיר" (חיבור שיטה-פולים)
+  ✓ "טריות הפולים משלימה את המכונה" (השלמה, לא השוואה)
   ✗ לא: "קנה את הפולים שלנו!" (מכירה ישירה)
+  ✗ לא: ניסוח השוואתי "מכונה X + פולים Y / מכונה A + פולים B" (גם אם נשמע "מאזן")
+  ✗ לא: סימן "=" בין מכונה לפולים — זה תמיד מוביל למשוואת השוואה
   ✗ לא: תוכן ציוד בלי שום אזכור של פולים (LTV מבוזבז)
 
-חלוקה: 70-80% מענה לשאלה הציודית של הגולש + 20-30% חוט שמסביר למה פולים ספשלטי הם החצי השני של המשוואה. סיום עם CTA לקטלוג הפולים שלנו.
+⚠️ **כותרות בלוג — אסור לבנדל שני נושאים בכותרת אחת**:
+✗ "מדריך מכונת אספרסו: מה לקנות + למה פולים טריים הם X% מההצלחה" (בנדל מזמין השוואה)
+✗ "המכונה הטובה ביותר + הפולים שיהפכו אותה למושלמת" (אותו דבר)
+✓ "מדריך מכונת אספרסו ביתית: מה לקנות בכל קטגוריית מחיר" (נושא יחיד — ציוד)
+✓ "למה פולים טריים משנים את הקפה שלך" (נושא יחיד — פולים)
+כותרת = נושא אחד. הגשר לפולים נכנס בפסקה אחרונה כ-CTA קצר, לא כתוכן עיקרי.
+
+חלוקה במאמר ציוד: 85-90% מענה לשאלה הציודית של הגולש + 10-15% פסקת סיום קצרה (2-3 שורות) שמזכירה שטריות הפולים משלימה את הציוד, עם CTA לקטלוג. אסור 50/50 או 70/30 — זה גורר השוואות.
 
 **דוגמאות מסוגי תוכן שונים — לפחות אחד מהם בכל ריצה:**
 
-Blog (google_organic_recommendations):
-  • "מדריך מכונת אספרסו ביתית: מה לקנות + איך להוציא ממנה את המקסימום"
-  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?"
-  • "V60 VS אירופרס VS צרפתי + איזה פולים לכל שיטה"
+Blog (google_organic_recommendations) — נושא יחיד, בלי בנדל:
+  • "מדריך מכונת אספרסו ביתית 2026 — מה לקנות בכל קטגוריית מחיר" (ציוד בלבד; CTA קצר לפולים בסוף)
+  • "מטחנת קפה ידנית או חשמלית — מה מתאים לך" (ציוד בלבד)
+  • "מדריך V60 — חליטה צעד אחר צעד" (שיטה בלבד; אזכור שפולים טריים משדרגים את התוצאה בפסקה אחרונה)
+  • "למה פולים טריים משנים את הקפה" (פולים בלבד; אזכור שזה משלים כל מכונה)
 
 Instagram (content_recommendations / posts_to_publish):
-  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" (#1 פולים ישנים)
-  • Post: "המכונה ב-₪3000 שלך עם פולים מהסופר = מכונה ב-₪500" (השוואה ויזואלית)
-  • Story: דוגמה ויזואלית של אותה מכונה עם פולים טריים VS פולים שעמדו 6 חודשים
-  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים"
+  • Reel: "5 טעויות שמורידות איכות אספרסו" (פולים ישנים, טחינה גסה, מים קרים, וכו')
+  • Post: "כך נראית קרמה מפולים שנקלו השבוע" (תיאור חיובי של היתרון)
+  • Story: ביום הקלייה — תהליך מה רואים, מריחים, ואיך זה מגיע לכוס שלכם
+  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים" (תצפית, לא השוואה ערכית)
 
 Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
   • לקשר תיאור פולים לשיטת חליטה ("נהדר ל-V60", "אופטימלי לאספרסו")
+
+🚫 **כלל קשיח — אסור לזלזל בקפה אחר / מתחרים / ציוד של הלקוח** 🚫
+זה חל על כל שדה שמייצר תוכן ללקוחות: content_recommendations.topic, posts_to_publish, products_to_feature.content_angle, וגם google_organic_recommendations.suggested_title.
+
+✗ אסור לחלוטין:
+  • "מכונת אספרסו ביתית + פולים ישנים = כסף מבוזבז" (מעליב לקוחות שכבר קנו)
+  • "פולים מהסופר זה לא קפה אמיתי"
+  • "המכונה היקרה שלך לא שווה כלום בלי X"
+  • כל ניסוח שכולל "= בזבוז", "לא שווה", "כסף מבוזבז" כלפי קפה/ציוד אחר
+
+✓ במקום, נסח חיובי:
+  • "המכונה שלך תזרח רק עם פולים שנקלו השבוע"
+  • "פולים טריים — מה שמוציא את המקסימום מכל שיטת חליטה"
+  • "ההבדל שתרגיש בין שקית שנפתחה אתמול לשקית שפתוחה חודש"
+
+הסיבה: מינוטו פרימיום, ולקוחות פרימיום לא מגיבים טוב למסרים שמעליבים אותם או את הקפה שהם שותים. גם זה לא מותג שמרוויח מ-attack ads.
 
 החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {
@@ -5048,14 +5090,53 @@ Products (products_to_feature):
   }
 
   // ── Post-process: filter out recommendations too similar to existing posts ──
+  // Build a unified dedup-signature list from BOTH existing blog posts AND
+  // user-marked-done actions. The same fuzzy distinctive-words filter runs
+  // against both, so a recommendation gets dropped if it overlaps with
+  // either an already-published post OR something the user already marked
+  // done in the dashboard. Previously these were two separate checks — blog
+  // got fuzzy matching, done-actions got brittle substring matching, and
+  // content_recommendations got nothing at all.
+  const doneRowsForDedup = await fetchCompletedActionRows(supabase);
+  const doneSignatures: Array<{ title: string; url: string }> = doneRowsForDedup
+    .filter(r => r.state === 'done')
+    .map(r => {
+      // action_label format: 'כתוב תוכן ל-"<keyword>"' — keyword is in quotes.
+      // action_id format: "org::seo::<keyword>" — keyword is the trailing segment.
+      const labelMatch = (r.action_label || "").match(/"([^"]+)"/);
+      const labelKeyword = labelMatch ? labelMatch[1] : "";
+      const idTail = (r.action_id || "").split("::").pop() ?? "";
+      const title = labelKeyword || idTail || (r.action_label || "");
+      return { title, url: "" };
+    })
+    .filter(s => s.title.length >= 5);
+
+  const dedupeSignatures = [
+    ...((existingBlogPosts ?? []) as Array<{ title: string; url: string }>),
+    ...doneSignatures,
+  ];
+
+  // Diagnostic dump — surfaces exactly what the filter matches against.
+  // If a recommendation that should have been filtered slips through, logs
+  // tell us whether the signature was missing entirely or just failed the
+  // fuzzy threshold.
+  console.log(`[organic-dedup] ${dedupeSignatures.length} signatures (${(existingBlogPosts ?? []).length} blog + ${doneSignatures.length} done). Sample titles:`);
+  for (const s of dedupeSignatures.slice(0, 20)) {
+    console.log(`[organic-dedup]   • ${s.title}`);
+  }
+
   // The in-prompt self-check is too soft — agent's "nearly-identical" threshold
   // differs from ours. Deterministic filter: for each recommendation, if its
-  // suggested_title OR keyword overlaps heavily with any existing post, drop it.
-  if (parsed && Array.isArray(parsed.google_organic_recommendations) && existingBlogPosts) {
+  // suggested_title / keyword / topic overlaps heavily with any signature, drop.
+  if (parsed && Array.isArray(parsed.google_organic_recommendations)) {
     const original = parsed.google_organic_recommendations;
-    const filtered = filterDuplicateRecommendations(original, existingBlogPosts);
+    console.log(`[organic-dedup] incoming google_organic_recommendations (${original.length}):`);
+    for (const r of original) {
+      console.log(`[organic-dedup]   → keyword="${r.keyword}" suggested_title="${r.suggested_title}"`);
+    }
+    const filtered = filterDuplicateRecommendations(original, dedupeSignatures);
     if (filtered.length < original.length) {
-      console.log(`[organic] Filtered ${original.length - filtered.length} duplicate recs`);
+      console.log(`[organic] Filtered ${original.length - filtered.length} dup recs (vs ${existingBlogPosts?.length ?? 0} blog + ${doneSignatures.length} done)`);
     }
 
     // If the filter killed everything (or agent had nothing to begin with),
@@ -5072,15 +5153,10 @@ Products (products_to_feature):
         .limit(1)
         .maybeSingle();
 
-      // Pull done/skipped actions so we don't re-suggest things the owner
-      // already acted on. The prompt-level check doesn't catch this because
-      // the fallback is a deterministic post-processor that bypasses Claude.
-      const doneRows = await fetchCompletedActionRows(supabase);
-      const doneKeywordFragments = doneRows
+      // Reuse the lifted doneRowsForDedup for the novel-keyword pre-filter.
+      const doneKeywordFragments = doneRowsForDedup
         .map(r => {
-          // action_id format: "org::seo::<keyword>" or similar
           const idKeyword = (r.action_id || "").split("::").pop() ?? "";
-          // action_label format: 'כתוב תוכן ל-"<keyword>"' or the headline
           const labelMatch = (r.action_label || "").match(/"([^"]+)"/);
           const labelKeyword = labelMatch ? labelMatch[1] : "";
           return [idKeyword, labelKeyword, r.action_label || ""].filter(Boolean);
@@ -5190,25 +5266,29 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
           search_volume_signal: `${n.shopping_count} מפרסמי שופינג פעילים`,
         };
       });
-      // Apply the dup filter to the fallback (belt and suspenders against blog posts)
-      const cleanFallback = filterDuplicateRecommendations(candidateRecs, existingBlogPosts).slice(0, 3);
+      // Apply the unified dup filter to the fallback (belt-and-suspenders
+      // against blog posts AND done actions).
+      const cleanFallback = filterDuplicateRecommendations(candidateRecs, dedupeSignatures).slice(0, 3);
       parsed.google_organic_recommendations = cleanFallback;
       parsed._fallback_source = "novel_keywords";
       console.log(`[organic] Fallback added ${cleanFallback.length} novel-keyword recs (${novelList.length - usable.length} dropped for prior completion)`);
     } else {
-      // Even when GSC recs survive, cross-check against done actions
-      const doneRows = await fetchCompletedActionRows(supabase);
-      const doneText = doneRows.map(r => `${r.action_id} ${r.action_label || ""}`).join(" ").toLowerCase();
-      const stillFresh = filtered.filter((rec: any) => {
-        const kw = (rec.keyword || "").trim().toLowerCase();
-        if (kw && doneText.includes(kw)) {
-          console.log(`[organic] dropping GSC rec already completed: "${rec.keyword}"`);
-          return false;
-        }
-        return true;
-      });
-      parsed.google_organic_recommendations = stillFresh;
+      // GSC recs survived the unified dup filter — done-action dedup already
+      // happened above via dedupeSignatures, so just commit the result.
+      parsed.google_organic_recommendations = filtered;
     }
+  }
+
+  // Same dedup applied to content_recommendations (Instagram/social topics).
+  // Previously this array was never filtered, so the agent could re-recommend
+  // the same topic week after week even after the user marked it done.
+  if (parsed && Array.isArray(parsed.content_recommendations)) {
+    const original = parsed.content_recommendations;
+    const filtered = filterDuplicateRecommendations(original, dedupeSignatures);
+    if (filtered.length < original.length) {
+      console.log(`[organic] Filtered ${original.length - filtered.length} dup content_recommendations`);
+    }
+    parsed.content_recommendations = filtered;
   }
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
@@ -5368,10 +5448,18 @@ function filterDuplicateRecommendations(
   }));
 
   return recs.filter((rec: any) => {
-    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""}`;
+    // Match against any of the fields a recommendation might use:
+    //   • keyword / suggested_title — google_organic_recommendations
+    //   • topic                     — content_recommendations
+    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""} ${rec.topic ?? ""}`;
     const recWords = distinctiveWords(recText);
-    if (recWords.size === 0) return true;  // nothing to match on, keep it
+    const recId = rec.keyword ?? rec.topic ?? rec.suggested_title ?? "(unknown)";
+    if (recWords.size === 0) {
+      console.log(`[organic-dedup] keep "${recId}" — empty recWords (no distinctive content)`);
+      return true;  // nothing to match on, keep it
+    }
 
+    let bestNearMiss = { sig: "", shared: 0, overlap: 0 };
     for (const sig of existingSignatures) {
       if (sig.words.size === 0) continue;
       // Count shared distinctive words
@@ -5382,9 +5470,17 @@ function filterDuplicateRecommendations(
       // Drop if ≥2 shared distinctive words AND ≥40% of recommendation overlaps
       const overlapPct = shared / recWords.size;
       if (shared >= 2 && overlapPct >= 0.4) {
-        console.log(`[organic] Dropping dup rec "${rec.keyword}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%)`);
+        console.log(`[organic-dedup] DROP "${recId}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%) — recWords=[${[...recWords].join(",")}] sigWords=[${[...sig.words].join(",")}]`);
         return false;
       }
+      if (shared > bestNearMiss.shared) {
+        bestNearMiss = { sig: sig.title, shared, overlap: overlapPct };
+      }
+    }
+    if (bestNearMiss.shared >= 1) {
+      console.log(`[organic-dedup] KEEP "${recId}" — best near-miss: ${bestNearMiss.shared} words / ${Math.round(bestNearMiss.overlap * 100)}% with "${bestNearMiss.sig}" (threshold: ≥2 words AND ≥40%)`);
+    } else {
+      console.log(`[organic-dedup] KEEP "${recId}" — no signature shared any distinctive words`);
     }
     return true;
   });
@@ -5812,7 +5908,7 @@ async function runBlogWriterAgent(params: {
   position?: number;
   search_volume_signal?: string;
   products_to_mention?: string[];
-}): Promise<{ title: string; meta_description: string; slug: string; body: string }> {
+}): Promise<{ title: string; meta_description: string; slug: string; body: string; brand_violations: string[] }> {
   const { keyword, title, key_points, position, search_volume_signal, products_to_mention } = params;
 
   // Look up product permalinks from DB so the blog body can contain real
@@ -5842,9 +5938,46 @@ async function runBlogWriterAgent(params: {
   const systemPrompt = `אתה כותב תוכן לבלוג של Minuto Coffee, בית קלייה ספשלטי ברחובות.
 ${BUSINESS_BRIEF}
 ${ORGANIC_EXPERTISE}
+${HEBREW_COPY_RULES}
 
 כתוב פוסט בלוג בעברית ישראלית מדוברת. לא תרגום מאנגלית. לא שפה פורמלית.
-חובה: כתוב בלשון רבים (אתם/לכם) ולא בלשון יחיד זכר (אתה/לך). אנחנו פונים לכל הלקוחות — גברים, נשים, כולם.
+
+**שפת פנייה**: בבלוג, לשון רבים (אתם/לכם) היא ברירת המחדל ועובדת היטב — היא טבעית, מכלילה מגדרית, וזורמת. לשון יחיד עם סלאש (אתה/את, תקנה/י) גם תקינה אם הסגנון דורש זאת. אסור לשון יחיד זכר בלבד (תקנה, תרגיש) — מחריגה את הקהל הנשי.
+
+🚫 **כללי מותג קשיחים — חמורים** 🚫
+
+1. **אסור לציין שמות מתחרים בכלל** (Lavazza, Illy, Mauro, Bristot, Kimbo, Segafredo, Nespresso, Dolce Gusto, נחת, ארומה, לנדוור, עלית, ג'ייקובס, סטרבקס). גם כשנותנים דוגמאות. גם כשמבקרים. אם צריך להתייחס ל"קפה מהסופר" — אמור "פולים מסחריים" או "פולים שיושבים על המדף 3-6 חודשים", בלי שמות.
+
+2. **אסור להשוות שתי מכונות זו לזו לפי איכות פולים — בכל ניסוח שהוא**. זו הצורה האסורה ביותר. היא מעליבה את מי שכבר השקיע במכונה. אסור גם:
+   ✗ "מכונה של 5,000 שקל ... מכונה של 2,000 שקל ..." (השוואה במחיר)
+   ✗ "מכונה יקרה ... מכונה בינונית ..." (השוואה בתואר)
+   ✗ "מכונה טובה ... מכונה זולה ..." (השוואה באיכות)
+   ✗ כל מבנה שבו אותו משפט מציג שתי מכונות + שני סוגי פולים + תוצאה מנוגדת.
+   במקום: דבר על המכונה אחת, והפולים אחד. "המכונה שלך, עם פולים טריים, נותנת קפה מעולה." זה מספיק. אין צורך לערוך השוואה.
+
+3. **אסור ניסוחי זלזול** — לא ישיר, לא עקיף, לא בקריצה. דוגמאות אסורות:
+   ✗ "טעים כמו קרטון", "כסף מבוזבז", "קפה גרוע", "לא שווה כלום"
+   ✗ "זה לא קפה, זה משקה" (זלזול בקפה אחר)
+   ✗ "חצי מהדרך לפחי זבל" (קריקטורה של פולים ישנים)
+   ✗ "גם לא אם יש להם לוגו איטלקי" (קריצה למתחרים בלי לנקוב בשם — אסור באותה מידה כמו לנקוב בשם)
+   ✗ "מסתפקים ב-X" / "אנשים חושבים ש-Y, אבל באמת..." (גישה מתנשאת)
+   מותג פרימיום לא מקטין מותגים אחרים, גם לא ברמיזה. תאר מה Minuto נותן, לא מה לאחרים חסר.
+
+4. **דוגמה מלאה למה שאסור לכתוב**:
+   ✗ "מכונה של 5,000 שקל עם פולים שנקלו לפני 4 חודשים תיתן לך קפה גרוע. מכונה של 2,000 שקל עם פולים שנקלו אתמול תיתן לך קפה מדהים."
+   ✗ "פולים מהסופר. Lavazza, Illy, Mauro. הקפה שיוצא מהם טעים כמו קרטון."
+   ✗ "המכונה היא חצי מהסיפור. החצי השני הוא הפולים." (אסור — מסגור 50/50 מזמין השוואה)
+   ✓ "פולים טריים נותנים ארומה עזה, פרופיל מורכב, וקרמה עבה." (תיאור חיובי בלי השוואה)
+   ✓ "המכונה שלך תוציא את המקסימום מפולים שנקלו השבוע." (השלמה, לא השוואה)
+
+5. **כלל "נושא יחיד" — לכותרת אחת, נושא אחד**:
+   אם הכותרת על ציוד (מכונת אספרסו, מטחנה, V60), 85-90% מהמאמר חייב להיות על הציוד. אזכור פולים מותר רק בפסקת סיום קצרה (2-3 שורות), כמו CTA, בלי להפוך את הפולים לנושא משני שווה משקל. אם הכותרת על פולים, אל תהפוך את המאמר לסקירת ציוד באמצע.
+   ✗ אסור: לכתוב מאמר על מכונה שמקדיש 30%+ מהמילים לחשיבות הפולים.
+   ✗ אסור: לכתוב מאמר על פולים שכולל מדריך מפורט לבחירת מכונה באמצע.
+   ✓ הצמד לנושא הכותרת. הגשר לתחום השני נכנס בסוף, קצר, וכ-CTA.
+
+חוקי דיוק טכני:
+אסור לסווג מוצרים שקריים. אם אתה מזכיר מכונה ספציפית בשם, ודא שהסיווג נכון (manual / semi-automatic / super-automatic). אל תכתוב מספרי לחץ/טמפרטורה כעובדה אם אינך בטוח. אם אינך בטוח — נסח כעיקרון כללי בלי לקבע מספר ספציפי.
 
 חוקי SEO:
 מילת המפתח חייבת להופיע בכותרת H1, בפסקה הראשונה, ב-2-3 כותרות H2, וטבעי לאורך הטקסט.
@@ -5882,14 +6015,67 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
 
 כתוב את המאמר המלא. התחל ישירות עם # ${title} כ-H1 ראשון.`;
 
+  // Deterministic brand-voice scan — structural patterns that catch the
+  // rejected comparison regardless of word order. Soft prompt rules can be
+  // evaded by paraphrase; these checks operate on the structure itself.
+  function scanBrandViolations(text: string): string[] {
+    const violations: string[] = [];
+
+    const competitorMatches = text.match(COMPETITOR_BRANDS_PATTERN);
+    if (competitorMatches) {
+      violations.push(`Competitor brand mention: ${[...new Set(competitorMatches)].join(", ")}`);
+    }
+
+    // Structural detector for the "machine A + beans state X / machine B +
+    // beans state Y" comparison. Walks the text in 2-sentence windows; if a
+    // window contains TWO+ price mentions OR TWO+ machine adjectives, AND
+    // any freshness keyword, that's the rejected comparison structure.
+    const FRESHNESS = /(ישנים|לפני\s+\d+\s*חודש|חודשים|חצי\s+שנה|אתמול|השבוע|נקלו|שעבר\s+את\s+הזמן|טריים\s+יותר)/;
+    const PRICE = /[\d,]+\s*(שקל|₪)/g;
+    const MACHINE_ADJ = /(מכונה\s+(יקרה|זולה|טובה|בינונית|פשוטה|מקצועית|חזקה|חלשה|בסיסית|גרועה|מצוינת|מעולה|איכותית|רגילה|פרימיום))/g;
+    const sentences = text.split(/[.!?]\s+/);
+    let foundComparison = false;
+    for (let i = 0; i < sentences.length - 1 && !foundComparison; i++) {
+      const win = sentences[i] + ". " + sentences[i + 1] + ".";
+      const priceCount = (win.match(PRICE) || []).length;
+      const adjCount = (win.match(MACHINE_ADJ) || []).length;
+      if ((priceCount >= 2 || adjCount >= 2) && FRESHNESS.test(win)) {
+        foundComparison = true;
+        violations.push(`Machine-vs-machine comparison structure (${priceCount} prices, ${adjCount} adjs, freshness keyword present)`);
+      }
+    }
+
+    // Direct + soft disparaging phrases. Model workarounds for the direct
+    // bans (לוגו איטלקי, פחי זבל, etc.) are equally banned. Includes
+    // "weak coffee" as the conclusion of the comparison structure.
+    const disparage = /(כסף\s+מבוזבז|בזבוז\s+כסף|לא\s+שווה\s+כלום|טעים\s+כמו\s+קרטון|קפה\s+גרוע|קפה\s+חלש\s+מ|זה\s+לא\s+קפה,?\s+זה\s+משקה|פחי\s+זבל|חצי\s+מהדרך\s+ל|לוגו\s+איטלקי|מסתפקים\s+ב|בנזין\s+מזוהם)/;
+    if (disparage.test(text)) {
+      violations.push("Disparaging phrase about other coffee/equipment");
+    }
+
+    return violations;
+  }
+
+  // Single attempt with full timeout — two attempts can't fit the 150s edge
+  // gateway budget. If violations are detected, surface them in the response
+  // so the dashboard can show a warning and let the user click regenerate
+  // (which makes a fresh call with its own full timeout).
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-5", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
+  // Switched from sonnet-4-5 → sonnet-4 after the prompt grew to include
+  // strong brand-voice + disparage-pattern rules; 4-5 was timing out at 135s
+  // on this prompt shape. Sonnet 4 is ~2x faster with equivalent quality
+  // for Hebrew long-form content (same rationale as the campaign doctor).
+  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-20250514", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}. Body length: ${text.length}`);
 
-  // Body is the raw Markdown — strip any em-dashes Claude snuck in despite instructions
   const body = text.trim()
-    .replace(/\u2014/g, ',')   // em-dash → comma
-    .replace(/\u2013/g, '-');  // en-dash → regular hyphen
+    .replace(/\u2014/g, ',')
+    .replace(/\u2013/g, '-');
+
+  const brand_violations = scanBrandViolations(body);
+  if (brand_violations.length > 0) {
+    console.warn(`[blog_writer] Brand-voice violations: ${brand_violations.join(" | ")}`);
+  }
 
   // Build slug from keyword: lowercase, strip diacritics, replace spaces with hyphens
   const slug = keyword
@@ -5909,7 +6095,7 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
     .replace(/\*+/g, '')
     .slice(0, 155);
 
-  return { title, meta_description, slug, body };
+  return { title, meta_description, slug, body, brand_violations };
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -7309,8 +7495,9 @@ ${HEBREW_COPY_RULES}
 
 • **search_partners_on = true** ⚠️ — Search Partners הוא ניקוז שקט של 15-30% מהתקציב. סגור אותו אלא אם יש הוכחה ברורה שהוא מביא ROAS. ברירת מחדל: OFF.
 • **display_expansion_on = true** ⚠️ — Display Network על קמפיין Search = מכריח להופיע במודעות באנר זולות בבלוגים. תמיד סגור.
-• **bidding_strategy_type = MAXIMIZE_CONVERSIONS ללא target_cpa** — מבזבז תקציב עד שהמערכת מוצאת "כל" המרה. אם real_orders < 30 ב-14 ימים, המערכת עוד לא במידה הנכונה. המלץ לעבור ל-TARGET_CPA עם ₪30 target, או לחזור ל-MANUAL_CPC.
-• **bidding_strategy_type = TARGET_CPA אבל target_cpa_ils > AOV/2** — target_cpa מעל ₪75 על AOV של ₪150 = שורף רווח. הורד ל-₪30-40.
+• **bidding_strategy_type = MAXIMIZE_CONVERSIONS ללא target_cpa** — מבזבז תקציב עד שהמערכת מוצאת "כל" המרה. אם real_orders < 30 ב-14 ימים, המערכת לא בlearn. ההמלצה: **MANUAL_CPC קודם** (כדי לאסוף נתונים אמיתיים בלי להישרף). רק אחרי שמצטברות 15+ הזמנות אמיתיות לחודש — לעבור ל-TARGET_CPA, עם target ≈ current_real_cpa (לא מספר מקובע).
+• **TARGET_CPA reality check** — כל המלצה ל-TARGET_CPA חייבת לעמוד ב: target ≥ 0.7 × current_real_cpa. דוגמה: real_cpa ₪126 → target מינימלי ₪88, לא ₪40. target נמוך מ-70% מה-CPA הנוכחי קורס את ה-delivery במקום למקסם רווח. אסור להציע target שרירותי שמנותק מה-CPA האמיתי.
+• **bidding_strategy_type = TARGET_CPA אבל target_cpa_ils > AOV × margin** — target_cpa מעל הרווח הגולמי = שורף כסף. ב-AOV ₪150 ו-margin ~35%, target מקסימלי ~₪52. הורד.
 • **daily_budget_ils < ₪40** — קמפיין עם תקציב מתחת ל-₪40 ליום לא יוצא מ-learning phase. או הגדל ל-₪50+ או הפסק.
 • **advertising_channel_type = PERFORMANCE_MAX** — תמיד דורש אודיינס סיגנלים (in-market, remarketing) כדי לא להפוך לקמפיין Display. בדוק אם קיים.
 
@@ -7375,6 +7562,12 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
 
 6. **budget_action** — פעולה אחת: { type: raise_budget|lower_budget|pause|keep|raise_bid|switch_bid_strategy, from_ils?, to_ils?, reason }
 
+   **חוקים מחייבים על budget_action — אסור לשבור**:
+   • אם flag.soft_conversion_primary_suspected=true → **אסור raise_budget**. type חייב להיות keep, pause, או switch_bid_strategy. סיבה: real_roas לא אמין עד תיקון tracking; הוספת תקציב על נתונים מנופחים = שריפת כסף.
+   • אם real_roas < 1.5× → **אסור raise_budget**. הקמפיין מפסיד כסף; תקציב נוסף מגדיל הפסד. במקום, type=switch_bid_strategy או lower_budget.
+   • reason חייב לצטט real_* metrics (real_roas, real_cpa, real_orders) — לעולם לא platform_reported. אם תכתוב "ROAS 2.94 מצדיק הגדלה" בלי לבדוק שזה real_roas, זו טעות חמורה.
+   • impression_share נמוך **לבדו** אינו מצדיק raise_budget. רק אם real_roas ≥ 1.5× ו-tracking תקין.
+
 7. **landing_action** — { type: keep|change_to|test_ab, new_url?, reason }
 
 8. **tracking_fixes** — בחר פרופיל אחד לפי הflags (אסור להחזיר את שני הפרופילים):
@@ -7407,6 +7600,10 @@ ${nonPurchasePrimaryActions.map((n: string) => `   • ${n}`).join('\n')}
    • "learning_stage = LEARNING_LIMITED — פחות מ-50 המרות/שבוע. הגדל תקציב ל-₪100/יום או שנה goal ל-Add to Cart."
 
 12. **expected_improvement** — משפט אחד עם מספרים צפויים אחרי יישום.
+
+13. **blocked_on** — שדה חובה. שני ערכים אפשריים:
+    • "tracking_fixes" — אם flag.soft_conversion_primary_suspected=true או אם conversion_value_tracking_gap=true. במקרה זה priority חייב להיות "critical", budget_action.type חייב להיות keep|pause|switch_bid_strategy, ו-tracking_fixes חייב להיות מאוכלס. כל שאר ההמלצות (audience/creative/keyword/landing) הן advisory בלבד עד תיקון ה-tracking.
+    • null — אם אין חסימה. כל ההמלצות אקטיביות.
 
 כללים:
 • **חובה: החזר ערך אחד ב-campaigns[] לכל קמפיין ברשימת הקמפיינים הפעילים — גם Google וגם Meta.** אסור להשמיט קמפיין. אם אין מספיק נתונים להמלצה מפורטת, החזר diagnosis קצר עם "נדרש עוד זמן/נתונים" אבל עדיין כלול את הקמפיין.
@@ -7487,6 +7684,7 @@ ${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
       "budget_action": { "type": "raise_budget|lower_budget|pause|keep|switch_bid_strategy", "from_ils": 0, "to_ils": 0, "reason": "..." },
       "landing_action": { "type": "...", "new_url": "...", "reason": "..." },
       "tracking_fixes": ["..."],
+      "blocked_on": "tracking_fixes|null",
       "expected_improvement": "..."
     }
   ]
@@ -7908,6 +8106,73 @@ ${capped.map((q, i) =>
         hook: p.hook,
         why_this_intent: p.why_this_intent,
       })),
+    }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
+  // Read-only diagnostic — dumps the exact state the organic dedup filter
+  // sees: cached blog posts, marked-done actions, and the recommendations
+  // in the latest organic_content report. Lets us figure out why a
+  // particular topic keeps appearing despite being published/marked done.
+  if (body.agent === "diag_organic_dedup") {
+    const { data: blogPosts } = await supabase
+      .from("minuto_blog_posts")
+      .select("title, url, published_at, last_seen")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(50);
+
+    const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
+    const { data: doneActions } = await supabase
+      .from("advisor_completed_actions")
+      .select("week_start, action_id, action_label, state, created_at")
+      .gte("week_start", eightWeeksAgo)
+      .order("created_at", { ascending: false });
+
+    const { data: latestReport } = await supabase
+      .from("advisor_reports")
+      .select("week_start, updated_at, status, report")
+      .eq("agent_type", "organic_content")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const reportRow = (latestReport ?? [])[0] as any;
+    const recs = reportRow?.report?.google_organic_recommendations ?? [];
+    const contentRecs = reportRow?.report?.content_recommendations ?? [];
+
+    return new Response(JSON.stringify({
+      cutoff_used_in_dedup: "2026-04-01T00:00:00Z",
+      blog_posts: {
+        total_in_table: (blogPosts ?? []).length,
+        passes_cutoff: (blogPosts ?? []).filter((p: any) => p.published_at && p.published_at >= "2026-04-01T00:00:00Z").length,
+        items: (blogPosts ?? []).map((p: any) => ({
+          title: p.title,
+          published_at: p.published_at,
+          last_seen: p.last_seen,
+          passes_cutoff: !!(p.published_at && p.published_at >= "2026-04-01T00:00:00Z"),
+        })),
+      },
+      done_actions: {
+        total: (doneActions ?? []).length,
+        done_state: (doneActions ?? []).filter((a: any) => a.state === "done").length,
+        items: (doneActions ?? []).map((a: any) => ({
+          week_start: a.week_start,
+          state: a.state,
+          action_id: a.action_id,
+          action_label: a.action_label,
+          extracted_keyword: ((a.action_label || "").match(/"([^"]+)"/) ?? [])[1] ?? null,
+        })),
+      },
+      latest_report: {
+        week_start: reportRow?.week_start,
+        updated_at: reportRow?.updated_at,
+        status: reportRow?.status,
+        google_organic_recommendations: recs.map((r: any) => ({
+          keyword: r.keyword,
+          suggested_title: r.suggested_title,
+        })),
+        content_recommendations: contentRecs.map((r: any) => ({
+          topic: r.topic,
+          content_type: r.content_type,
+        })),
+      },
     }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
