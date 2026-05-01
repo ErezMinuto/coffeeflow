@@ -4933,26 +4933,36 @@ ${(existingBlogPosts ?? []).length > 0
 
 **כשנושא ציוד עולה אורגנית** (במילת מפתח GSC, בשאלה ב-DM, בעניין של עוקבים, בטרנד עונתי), **חובה** לכלול אותו. הזווית לא מכירתית — היא **הגנת ההשקעה** או **פתיחת הפוטנציאל**:
 
-  ✓ "המכונה לא תפצה על פולים גרועים" (הגנת ההשקעה)
-  ✓ "מטחנה איכותית פלוס פולים סטיילים = מה שהמכונה יכלה תמיד לעשות" (פתיחת פוטנציאל)
-  ✓ "פילטר V60 חושף איכות של פולים שאספרסו מסתיר" (חיבור שיטה-פולים)
+  ✓ "מטחנה איכותית פותחת את הפוטנציאל של הפולים" (פתיחת פוטנציאל בלי השוואה)
+  ✓ "פילטר V60 חושף איכות פולים שאספרסו מסתיר" (חיבור שיטה-פולים)
+  ✓ "טריות הפולים משלימה את המכונה" (השלמה, לא השוואה)
   ✗ לא: "קנה את הפולים שלנו!" (מכירה ישירה)
+  ✗ לא: ניסוח השוואתי "מכונה X + פולים Y / מכונה A + פולים B" (גם אם נשמע "מאזן")
+  ✗ לא: סימן "=" בין מכונה לפולים — זה תמיד מוביל למשוואת השוואה
   ✗ לא: תוכן ציוד בלי שום אזכור של פולים (LTV מבוזבז)
 
-חלוקה: 70-80% מענה לשאלה הציודית של הגולש + 20-30% חוט שמסביר למה פולים ספשלטי הם החצי השני של המשוואה. סיום עם CTA לקטלוג הפולים שלנו.
+⚠️ **כותרות בלוג — אסור לבנדל שני נושאים בכותרת אחת**:
+✗ "מדריך מכונת אספרסו: מה לקנות + למה פולים טריים הם X% מההצלחה" (בנדל מזמין השוואה)
+✗ "המכונה הטובה ביותר + הפולים שיהפכו אותה למושלמת" (אותו דבר)
+✓ "מדריך מכונת אספרסו ביתית: מה לקנות בכל קטגוריית מחיר" (נושא יחיד — ציוד)
+✓ "למה פולים טריים משנים את הקפה שלך" (נושא יחיד — פולים)
+כותרת = נושא אחד. הגשר לפולים נכנס בפסקה אחרונה כ-CTA קצר, לא כתוכן עיקרי.
+
+חלוקה במאמר ציוד: 85-90% מענה לשאלה הציודית של הגולש + 10-15% פסקת סיום קצרה (2-3 שורות) שמזכירה שטריות הפולים משלימה את הציוד, עם CTA לקטלוג. אסור 50/50 או 70/30 — זה גורר השוואות.
 
 **דוגמאות מסוגי תוכן שונים — לפחות אחד מהם בכל ריצה:**
 
-Blog (google_organic_recommendations):
-  • "מדריך מכונת אספרסו ביתית: מה לקנות + איך להוציא ממנה את המקסימום"
-  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?"
-  • "V60 VS אירופרס VS צרפתי + איזה פולים לכל שיטה"
+Blog (google_organic_recommendations) — נושא יחיד, בלי בנדל:
+  • "מדריך מכונת אספרסו ביתית 2026 — מה לקנות בכל קטגוריית מחיר" (ציוד בלבד; CTA קצר לפולים בסוף)
+  • "מטחנת קפה ידנית או חשמלית — מה מתאים לך" (ציוד בלבד)
+  • "מדריך V60 — חליטה צעד אחר צעד" (שיטה בלבד; אזכור שפולים טריים משדרגים את התוצאה בפסקה אחרונה)
+  • "למה פולים טריים משנים את הקפה" (פולים בלבד; אזכור שזה משלים כל מכונה)
 
 Instagram (content_recommendations / posts_to_publish):
-  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" (#1 פולים ישנים)
-  • Post: "המכונה ב-₪3000 שלך עם פולים מהסופר = מכונה ב-₪500" (השוואה ויזואלית)
-  • Story: דוגמה ויזואלית של אותה מכונה עם פולים טריים VS פולים שעמדו 6 חודשים
-  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים"
+  • Reel: "5 טעויות שמורידות איכות אספרסו" (פולים ישנים, טחינה גסה, מים קרים, וכו')
+  • Post: "כך נראית קרמה מפולים שנקלו השבוע" (תיאור חיובי של היתרון)
+  • Story: ביום הקלייה — תהליך מה רואים, מריחים, ואיך זה מגיע לכוס שלכם
+  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים" (תצפית, לא השוואה ערכית)
 
 Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
@@ -5898,7 +5908,7 @@ async function runBlogWriterAgent(params: {
   position?: number;
   search_volume_signal?: string;
   products_to_mention?: string[];
-}): Promise<{ title: string; meta_description: string; slug: string; body: string }> {
+}): Promise<{ title: string; meta_description: string; slug: string; body: string; brand_violations: string[] }> {
   const { keyword, title, key_points, position, search_volume_signal, products_to_mention } = params;
 
   // Look up product permalinks from DB so the blog body can contain real
@@ -5928,9 +5938,46 @@ async function runBlogWriterAgent(params: {
   const systemPrompt = `אתה כותב תוכן לבלוג של Minuto Coffee, בית קלייה ספשלטי ברחובות.
 ${BUSINESS_BRIEF}
 ${ORGANIC_EXPERTISE}
+${HEBREW_COPY_RULES}
 
 כתוב פוסט בלוג בעברית ישראלית מדוברת. לא תרגום מאנגלית. לא שפה פורמלית.
-חובה: כתוב בלשון רבים (אתם/לכם) ולא בלשון יחיד זכר (אתה/לך). אנחנו פונים לכל הלקוחות — גברים, נשים, כולם.
+
+**שפת פנייה**: בבלוג, לשון רבים (אתם/לכם) היא ברירת המחדל ועובדת היטב — היא טבעית, מכלילה מגדרית, וזורמת. לשון יחיד עם סלאש (אתה/את, תקנה/י) גם תקינה אם הסגנון דורש זאת. אסור לשון יחיד זכר בלבד (תקנה, תרגיש) — מחריגה את הקהל הנשי.
+
+🚫 **כללי מותג קשיחים — חמורים** 🚫
+
+1. **אסור לציין שמות מתחרים בכלל** (Lavazza, Illy, Mauro, Bristot, Kimbo, Segafredo, Nespresso, Dolce Gusto, נחת, ארומה, לנדוור, עלית, ג'ייקובס, סטרבקס). גם כשנותנים דוגמאות. גם כשמבקרים. אם צריך להתייחס ל"קפה מהסופר" — אמור "פולים מסחריים" או "פולים שיושבים על המדף 3-6 חודשים", בלי שמות.
+
+2. **אסור להשוות שתי מכונות זו לזו לפי איכות פולים — בכל ניסוח שהוא**. זו הצורה האסורה ביותר. היא מעליבה את מי שכבר השקיע במכונה. אסור גם:
+   ✗ "מכונה של 5,000 שקל ... מכונה של 2,000 שקל ..." (השוואה במחיר)
+   ✗ "מכונה יקרה ... מכונה בינונית ..." (השוואה בתואר)
+   ✗ "מכונה טובה ... מכונה זולה ..." (השוואה באיכות)
+   ✗ כל מבנה שבו אותו משפט מציג שתי מכונות + שני סוגי פולים + תוצאה מנוגדת.
+   במקום: דבר על המכונה אחת, והפולים אחד. "המכונה שלך, עם פולים טריים, נותנת קפה מעולה." זה מספיק. אין צורך לערוך השוואה.
+
+3. **אסור ניסוחי זלזול** — לא ישיר, לא עקיף, לא בקריצה. דוגמאות אסורות:
+   ✗ "טעים כמו קרטון", "כסף מבוזבז", "קפה גרוע", "לא שווה כלום"
+   ✗ "זה לא קפה, זה משקה" (זלזול בקפה אחר)
+   ✗ "חצי מהדרך לפחי זבל" (קריקטורה של פולים ישנים)
+   ✗ "גם לא אם יש להם לוגו איטלקי" (קריצה למתחרים בלי לנקוב בשם — אסור באותה מידה כמו לנקוב בשם)
+   ✗ "מסתפקים ב-X" / "אנשים חושבים ש-Y, אבל באמת..." (גישה מתנשאת)
+   מותג פרימיום לא מקטין מותגים אחרים, גם לא ברמיזה. תאר מה Minuto נותן, לא מה לאחרים חסר.
+
+4. **דוגמה מלאה למה שאסור לכתוב**:
+   ✗ "מכונה של 5,000 שקל עם פולים שנקלו לפני 4 חודשים תיתן לך קפה גרוע. מכונה של 2,000 שקל עם פולים שנקלו אתמול תיתן לך קפה מדהים."
+   ✗ "פולים מהסופר. Lavazza, Illy, Mauro. הקפה שיוצא מהם טעים כמו קרטון."
+   ✗ "המכונה היא חצי מהסיפור. החצי השני הוא הפולים." (אסור — מסגור 50/50 מזמין השוואה)
+   ✓ "פולים טריים נותנים ארומה עזה, פרופיל מורכב, וקרמה עבה." (תיאור חיובי בלי השוואה)
+   ✓ "המכונה שלך תוציא את המקסימום מפולים שנקלו השבוע." (השלמה, לא השוואה)
+
+5. **כלל "נושא יחיד" — לכותרת אחת, נושא אחד**:
+   אם הכותרת על ציוד (מכונת אספרסו, מטחנה, V60), 85-90% מהמאמר חייב להיות על הציוד. אזכור פולים מותר רק בפסקת סיום קצרה (2-3 שורות), כמו CTA, בלי להפוך את הפולים לנושא משני שווה משקל. אם הכותרת על פולים, אל תהפוך את המאמר לסקירת ציוד באמצע.
+   ✗ אסור: לכתוב מאמר על מכונה שמקדיש 30%+ מהמילים לחשיבות הפולים.
+   ✗ אסור: לכתוב מאמר על פולים שכולל מדריך מפורט לבחירת מכונה באמצע.
+   ✓ הצמד לנושא הכותרת. הגשר לתחום השני נכנס בסוף, קצר, וכ-CTA.
+
+חוקי דיוק טכני:
+אסור לסווג מוצרים שקריים. אם אתה מזכיר מכונה ספציפית בשם, ודא שהסיווג נכון (manual / semi-automatic / super-automatic). אל תכתוב מספרי לחץ/טמפרטורה כעובדה אם אינך בטוח. אם אינך בטוח — נסח כעיקרון כללי בלי לקבע מספר ספציפי.
 
 חוקי SEO:
 מילת המפתח חייבת להופיע בכותרת H1, בפסקה הראשונה, ב-2-3 כותרות H2, וטבעי לאורך הטקסט.
@@ -5968,14 +6015,67 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
 
 כתוב את המאמר המלא. התחל ישירות עם # ${title} כ-H1 ראשון.`;
 
+  // Deterministic brand-voice scan — structural patterns that catch the
+  // rejected comparison regardless of word order. Soft prompt rules can be
+  // evaded by paraphrase; these checks operate on the structure itself.
+  function scanBrandViolations(text: string): string[] {
+    const violations: string[] = [];
+
+    const competitorMatches = text.match(COMPETITOR_BRANDS_PATTERN);
+    if (competitorMatches) {
+      violations.push(`Competitor brand mention: ${[...new Set(competitorMatches)].join(", ")}`);
+    }
+
+    // Structural detector for the "machine A + beans state X / machine B +
+    // beans state Y" comparison. Walks the text in 2-sentence windows; if a
+    // window contains TWO+ price mentions OR TWO+ machine adjectives, AND
+    // any freshness keyword, that's the rejected comparison structure.
+    const FRESHNESS = /(ישנים|לפני\s+\d+\s*חודש|חודשים|חצי\s+שנה|אתמול|השבוע|נקלו|שעבר\s+את\s+הזמן|טריים\s+יותר)/;
+    const PRICE = /[\d,]+\s*(שקל|₪)/g;
+    const MACHINE_ADJ = /(מכונה\s+(יקרה|זולה|טובה|בינונית|פשוטה|מקצועית|חזקה|חלשה|בסיסית|גרועה|מצוינת|מעולה|איכותית|רגילה|פרימיום))/g;
+    const sentences = text.split(/[.!?]\s+/);
+    let foundComparison = false;
+    for (let i = 0; i < sentences.length - 1 && !foundComparison; i++) {
+      const win = sentences[i] + ". " + sentences[i + 1] + ".";
+      const priceCount = (win.match(PRICE) || []).length;
+      const adjCount = (win.match(MACHINE_ADJ) || []).length;
+      if ((priceCount >= 2 || adjCount >= 2) && FRESHNESS.test(win)) {
+        foundComparison = true;
+        violations.push(`Machine-vs-machine comparison structure (${priceCount} prices, ${adjCount} adjs, freshness keyword present)`);
+      }
+    }
+
+    // Direct + soft disparaging phrases. Model workarounds for the direct
+    // bans (לוגו איטלקי, פחי זבל, etc.) are equally banned. Includes
+    // "weak coffee" as the conclusion of the comparison structure.
+    const disparage = /(כסף\s+מבוזבז|בזבוז\s+כסף|לא\s+שווה\s+כלום|טעים\s+כמו\s+קרטון|קפה\s+גרוע|קפה\s+חלש\s+מ|זה\s+לא\s+קפה,?\s+זה\s+משקה|פחי\s+זבל|חצי\s+מהדרך\s+ל|לוגו\s+איטלקי|מסתפקים\s+ב|בנזין\s+מזוהם)/;
+    if (disparage.test(text)) {
+      violations.push("Disparaging phrase about other coffee/equipment");
+    }
+
+    return violations;
+  }
+
+  // Single attempt with full timeout — two attempts can't fit the 150s edge
+  // gateway budget. If violations are detected, surface them in the response
+  // so the dashboard can show a warning and let the user click regenerate
+  // (which makes a fresh call with its own full timeout).
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-5", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
+  // Switched from sonnet-4-5 → sonnet-4 after the prompt grew to include
+  // strong brand-voice + disparage-pattern rules; 4-5 was timing out at 135s
+  // on this prompt shape. Sonnet 4 is ~2x faster with equivalent quality
+  // for Hebrew long-form content (same rationale as the campaign doctor).
+  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-20250514", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}. Body length: ${text.length}`);
 
-  // Body is the raw Markdown — strip any em-dashes Claude snuck in despite instructions
   const body = text.trim()
-    .replace(/\u2014/g, ',')   // em-dash → comma
-    .replace(/\u2013/g, '-');  // en-dash → regular hyphen
+    .replace(/\u2014/g, ',')
+    .replace(/\u2013/g, '-');
+
+  const brand_violations = scanBrandViolations(body);
+  if (brand_violations.length > 0) {
+    console.warn(`[blog_writer] Brand-voice violations: ${brand_violations.join(" | ")}`);
+  }
 
   // Build slug from keyword: lowercase, strip diacritics, replace spaces with hyphens
   const slug = keyword
@@ -5995,7 +6095,7 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
     .replace(/\*+/g, '')
     .slice(0, 155);
 
-  return { title, meta_description, slug, body };
+  return { title, meta_description, slug, body, brand_violations };
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
