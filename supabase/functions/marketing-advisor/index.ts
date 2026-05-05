@@ -5735,36 +5735,44 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     });
   }
 
-  // Google retired gemini-2.0-flash-preview-image-generation and
-  // gemini-2.0-flash-exp; the current image generation/editing model is
-  // gemini-2.5-flash-image-preview (a.k.a. "Nano Banana"). It accepts a
-  // reference image as inlineData and edits it per the text prompt.
-  attempts.push(
-    {
-      name: "Gemini 2.5 Flash Image Preview",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
-      headers: { "Content-Type": "application/json" },
-      body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
-      parse: (json: any) => {
-        for (const part of json.candidates?.[0]?.content?.parts || []) {
-          if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
-        }
-        return null;
-      },
+  // Google retired gemini-2.0-flash-preview-image-generation,
+  // gemini-2.0-flash-exp, and gemini-2.5-flash-image-preview. The currently
+  // working image-edit model on the Generative Language API is
+  // gemini-2.5-flash-image — it accepts a reference image as inlineData and
+  // edits it per the text prompt.
+  attempts.push({
+    name: "Gemini 2.5 Flash Image",
+    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+    headers: { "Content-Type": "application/json" },
+    body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+    parse: (json: any) => {
+      for (const part of json.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
+      }
+      return null;
     },
-    {
-      name: "Gemini 2.5 Flash Image",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
-      headers: { "Content-Type": "application/json" },
-      body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
-      parse: (json: any) => {
-        for (const part of json.candidates?.[0]?.content?.parts || []) {
-          if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
-        }
-        return null;
+  });
+
+  // Final fallback when a reference is set: Imagen 4 with a no-bag prompt.
+  // Imagen's predict endpoint doesn't accept input images, so we strip the
+  // BRAND BAG REFERENCE clause and let it produce a generic Minuto-style
+  // coffee scene. Better than returning null when Gemini fails or the
+  // vision check rejects every Gemini attempt.
+  if (referenceB64) {
+    attempts.push({
+      name: "Imagen 4 (no-reference fallback)",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
+      headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
+      body: {
+        instances: [{ prompt: imagePrompt.replace(brandClause, "") }],
+        parameters: { sampleCount: 1, aspectRatio: "16:9" },
       },
-    },
-  );
+      parse: (json: any) => {
+        const pred = json.predictions?.[0];
+        return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
+      },
+    });
+  }
 
   // Claude vision check — after each attempt, verify the image actually
   // looks like coffee-product photography (not a person, not totally
@@ -6009,6 +6017,7 @@ serve(withCors(async (req) => {
     keyword?: string; title?: string; key_points?: string[];
     position?: number; search_volume_signal?: string;
     products_to_mention?: string[];
+    reference_product?: string | null;
     week?: "current" | "previous";
     week_start?: string;
   } = {};
@@ -6054,20 +6063,25 @@ serve(withCors(async (req) => {
         { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
     }
     try {
-      // If the post mentions products, use the first product's image as a
-      // visual reference for Gemini's image-edit mode. This makes generated
-      // banners feature the actual Minuto bag instead of a generic-looking
-      // coffee bag the model would otherwise invent.
+      // The user explicitly picks which product's image is used as the
+      // visual reference for Gemini's image-edit mode (one bag per banner —
+      // passing multiple references at once tends to make the model
+      // composite them awkwardly). null/empty = no reference, falls back to
+      // the text-only Imagen+Gemini chain.
       let referenceImageUrl: string | undefined;
-      if (body.products_to_mention && body.products_to_mention.length > 0) {
+      const refProduct = body.reference_product;
+      if (refProduct) {
         const { data: rows } = await supabase
           .from("woo_products")
           .select("name, image_url")
-          .in("name", body.products_to_mention);
-        const firstWithImage = (rows ?? []).find((r: any) => r.image_url);
-        if (firstWithImage) {
-          referenceImageUrl = firstWithImage.image_url as string;
-          console.log(`[blog_banner] Using reference image from product "${firstWithImage.name}": ${referenceImageUrl}`);
+          .eq("name", refProduct)
+          .limit(1);
+        const match = (rows ?? [])[0];
+        if (match?.image_url) {
+          referenceImageUrl = match.image_url as string;
+          console.log(`[blog_banner] Using reference image from product "${match.name}": ${referenceImageUrl}`);
+        } else {
+          console.warn(`[blog_banner] Product "${refProduct}" not found or has no image_url; falling back to no-reference mode`);
         }
       }
       console.log(`[blog_banner] Generating banner for: "${body.title}"`);

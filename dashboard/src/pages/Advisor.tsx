@@ -1073,8 +1073,8 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
 
 function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBanner, allProducts, onRun, running }: {
   row: AdvisorReport | null
-  blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; bannerLoading?: boolean }>
-  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerLoading?: boolean }>>>
+  blogState: Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; bannerReferenceProduct?: string; bannerLoading?: boolean }>
+  setBlogState: React.Dispatch<React.SetStateAction<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerReferenceProduct?: string; bannerLoading?: boolean }>>>
   writeBlogPost: (rec: GoogleOrganicRec, selectedProducts: string[]) => void
   generateBanner: (keyword: string, title: string) => void
   allProducts: string[]
@@ -1303,6 +1303,28 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
                                     🔄 באנר חדש
                                   </button>
                                 </div>
+                                {bs?.selectedProducts && bs.selectedProducts.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-[10px] text-surface-500 font-semibold whitespace-nowrap">
+                                      רפרנס לבאנר:
+                                    </label>
+                                    <select
+                                      value={bs.bannerReferenceProduct ?? bs.selectedProducts[0]}
+                                      onChange={(e) =>
+                                        setBlogState(s => ({
+                                          ...s,
+                                          [rec.keyword]: { ...s[rec.keyword], bannerReferenceProduct: e.target.value || undefined },
+                                        }))
+                                      }
+                                      className="text-[10px] flex-1 px-2 py-1 rounded border border-surface-300 bg-white"
+                                    >
+                                      {bs.selectedProducts.map(p => (
+                                        <option key={p} value={p}>{p}</option>
+                                      ))}
+                                      <option value="">ללא רפרנס</option>
+                                    </select>
+                                  </div>
+                                )}
                                 <a href={bs.post.banner_url} target="_blank" rel="noopener noreferrer">
                                   <img
                                     src={bs.post.banner_url}
@@ -1318,12 +1340,36 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
                                 <span className="text-xs text-indigo-600">מייצר באנר... (~10-15 שניות)</span>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => generateBanner(rec.keyword, bs.post!.title)}
-                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors"
-                              >
-                                🖼️ צור באנר לפוסט
-                              </button>
+                              <>
+                                {bs?.selectedProducts && bs.selectedProducts.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-[10px] text-surface-500 font-semibold whitespace-nowrap">
+                                      רפרנס לבאנר:
+                                    </label>
+                                    <select
+                                      value={bs.bannerReferenceProduct ?? bs.selectedProducts[0]}
+                                      onChange={(e) =>
+                                        setBlogState(s => ({
+                                          ...s,
+                                          [rec.keyword]: { ...s[rec.keyword], bannerReferenceProduct: e.target.value || undefined },
+                                        }))
+                                      }
+                                      className="text-[10px] flex-1 px-2 py-1 rounded border border-surface-300 bg-white"
+                                    >
+                                      {bs.selectedProducts.map(p => (
+                                        <option key={p} value={p}>{p}</option>
+                                      ))}
+                                      <option value="">ללא רפרנס</option>
+                                    </select>
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => generateBanner(rec.keyword, bs.post!.title)}
+                                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors"
+                                >
+                                  🖼️ צור באנר לפוסט
+                                </button>
+                              </>
                             )}
                           </div>
                           <div className="px-3 pb-1 space-y-1.5">
@@ -1586,7 +1632,7 @@ export default function AdvisorPage() {
   const [loading, setLoading]               = useState(true)
   const [running, setRunning]               = useState(false)
   const [focus, setFocus]                   = useState<string>(() => localStorage.getItem('advisor_focus') ?? '')
-  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerLoading?: boolean }>>({})
+  const [blogState, setBlogState]           = useState<Record<string, { loading: boolean; post: BlogPost | null; error?: string; selectedProducts?: string[]; customProductText?: string; bannerReferenceProduct?: string; bannerLoading?: boolean }>>({})
   const [allProducts, setAllProducts]       = useState<string[]>([])
   // Meta campaign build-on-demand: keyed by idea_id. Each entry tracks
   // loading state + the returned spec so we can render it inline below the
@@ -1914,7 +1960,14 @@ export default function AdvisorPage() {
   }
 
   async function generateBanner(keyword: string, title: string) {
-    const selectedProducts = blogState[keyword]?.selectedProducts ?? []
+    const cur = blogState[keyword]
+    const selectedProducts = cur?.selectedProducts ?? []
+    // The user explicitly picks which product's image is used as the banner
+    // reference (default: first selected). Empty string ("ללא רפרנס") means
+    // "no reference" — falls back to the text-only Imagen+Gemini chain.
+    const referenceProduct = cur?.bannerReferenceProduct !== undefined
+      ? cur.bannerReferenceProduct
+      : selectedProducts[0]
     setBlogState(s => {
       const cur = s[keyword]
       if (!cur?.post) return s
@@ -1922,7 +1975,7 @@ export default function AdvisorPage() {
     })
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
-        body: { agent: 'blog_banner', keyword, title, products_to_mention: selectedProducts },
+        body: { agent: 'blog_banner', keyword, title, reference_product: referenceProduct || null },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
