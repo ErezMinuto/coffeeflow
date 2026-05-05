@@ -1914,6 +1914,7 @@ export default function AdvisorPage() {
   }
 
   async function generateBanner(keyword: string, title: string) {
+    const selectedProducts = blogState[keyword]?.selectedProducts ?? []
     setBlogState(s => {
       const cur = s[keyword]
       if (!cur?.post) return s
@@ -1921,7 +1922,7 @@ export default function AdvisorPage() {
     })
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
-        body: { agent: 'blog_banner', keyword, title },
+        body: { agent: 'blog_banner', keyword, title, products_to_mention: selectedProducts },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
