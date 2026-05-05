@@ -5604,10 +5604,38 @@ Write the photo brief.`;
   }
 }
 
-async function generateBlogBanner(title: string, keyword: string, supabase: ReturnType<typeof createClient>): Promise<string | null> {
+async function generateBlogBanner(title: string, keyword: string, supabase: ReturnType<typeof createClient>, referenceImageUrl?: string): Promise<string | null> {
   if (!GEMINI_KEY) {
     console.log("[blog_writer] No GEMINI_API_KEY, skipping banner");
     return null;
+  }
+
+  // If a product image was provided, fetch it and base64-encode it so we
+  // can pass it to Gemini's image-edit mode as a visual reference. The
+  // model uses it to render the actual Minuto bag in the banner instead
+  // of inventing a generic coffee bag. If the fetch fails, we fall back
+  // to text-only mode.
+  let referenceB64: string | null = null;
+  let referenceMime = "image/png";
+  if (referenceImageUrl) {
+    try {
+      const refRes = await fetch(referenceImageUrl);
+      if (refRes.ok) {
+        referenceMime = refRes.headers.get("content-type")?.split(";")[0]?.trim() || "image/png";
+        const buf = new Uint8Array(await refRes.arrayBuffer());
+        // chunk-encode to avoid call-stack overflow on big files
+        let bin = "";
+        for (let i = 0; i < buf.length; i += 0x8000) {
+          bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        }
+        referenceB64 = btoa(bin);
+        console.log(`[blog_writer] Loaded reference image: ${buf.length} bytes, ${referenceMime}`);
+      } else {
+        console.warn(`[blog_writer] Reference image fetch failed: ${refRes.status}`);
+      }
+    } catch (e: any) {
+      console.warn(`[blog_writer] Reference image fetch error: ${e?.message}`);
+    }
   }
 
   const banned = /\b(motorcycle|motorbike|bike|bicycle|car|truck|vehicle|road|highway|mountain|mountains|forest|journey|travel|ride|landscape|sunset|sunrise|sky|cloud|nature|scenic|adventure)\b/gi;
@@ -5650,15 +5678,28 @@ async function generateBlogBanner(title: string, keyword: string, supabase: Retu
     }
   }
 
+  // When a brand reference image is loaded, instruct the model to use it
+  // as the actual Minuto bag (and relax the blanket "no text/logos" rule
+  // that otherwise forbids the bag's wordmark from rendering).
+  const brandClause = referenceB64
+    ? `
+
+BRAND BAG REFERENCE: A reference image of the actual Minuto coffee bag is included with this prompt. Whenever the scene calls for a coffee bag — or wherever a bag could naturally fit in the composition — render the Minuto bag from the reference. Match its shape (stand-up pouch with zip top), its white pouch color, the stag-head emblem, the "MINUTO Café Roastery" wordmark at the top, and the colored center label. Treat this as the brand's signature packaging. Do NOT invent a generic-looking coffee bag.`
+    : "";
+
+  const forbiddenTextRule = referenceB64
+    ? "- Text, letters, words, numbers, watermarks, captions — EXCEPT the branding that appears on the Minuto bag in the reference image (that bag's logo and label are allowed and required when a bag is shown)"
+    : "- Text, letters, words, numbers, logos, watermarks, captions";
+
   const imagePrompt = `PRODUCT PHOTOGRAPHY ONLY. The subject of this photo is coffee equipment or coffee itself — NEVER a person. This is a still-life / product shot for a specialty coffee brand's blog. 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
 
-SUBJECT MATTER: ${sceneDescription}
+SUBJECT MATTER: ${sceneDescription}${brandClause}
 
 Format: 16:9 wide landscape. Photorealistic food/product photography. High resolution. Natural warm color grading.
 
 ABSOLUTELY FORBIDDEN (image will be rejected if it contains any of these):
 - People, humans, faces, heads, bodies, hands, fingers, portraits
-- Text, letters, words, numbers, logos, watermarks, captions
+${forbiddenTextRule}
 - AI illustration style, graphic design, stock-photo look
 - Vehicles, outdoor scenery, sky, landscape, animals
 
@@ -5667,8 +5708,22 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
   let base64: string | null = null;
   let mime = "image/png";
 
-  const attempts = [
-    {
+  // Build the parts array for Gemini's image-edit mode: when a reference is
+  // available, it goes in BEFORE the text prompt so the model uses it as
+  // the visual anchor. Imagen 4's predict endpoint cannot accept input
+  // images, so we drop it from the chain entirely when a reference is set
+  // (otherwise the bag instruction would be ignored).
+  const geminiParts = referenceB64
+    ? [
+        { inlineData: { mimeType: referenceMime, data: referenceB64 } },
+        { text: `Generate an image: ${imagePrompt}` },
+      ]
+    : [{ text: `Generate an image: ${imagePrompt}` }];
+
+  const attempts: Array<{ name: string; url: string; headers: Record<string,string>; body: any; parse: (json: any) => { data: string; mime: string } | null }> = [];
+
+  if (!referenceB64) {
+    attempts.push({
       name: "Imagen 4",
       url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
       headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
@@ -5677,12 +5732,15 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
         const pred = json.predictions?.[0];
         return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
       },
-    },
+    });
+  }
+
+  attempts.push(
     {
       name: "Gemini 2.0 Flash Preview Image",
       url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`,
       headers: { "Content-Type": "application/json" },
-      body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+      body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
       parse: (json: any) => {
         for (const part of json.candidates?.[0]?.content?.parts || []) {
           if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
@@ -5694,7 +5752,7 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
       name: "Gemini 2.0 Flash Exp",
       url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
       headers: { "Content-Type": "application/json" },
-      body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
+      body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
       parse: (json: any) => {
         for (const part of json.candidates?.[0]?.content?.parts || []) {
           if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
@@ -5702,7 +5760,7 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
         return null;
       },
     },
-  ];
+  );
 
   // Claude vision check — after each attempt, verify the image actually
   // looks like coffee-product photography (not a person, not totally
@@ -5992,8 +6050,24 @@ serve(withCors(async (req) => {
         { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
     }
     try {
+      // If the post mentions products, use the first product's image as a
+      // visual reference for Gemini's image-edit mode. This makes generated
+      // banners feature the actual Minuto bag instead of a generic-looking
+      // coffee bag the model would otherwise invent.
+      let referenceImageUrl: string | undefined;
+      if (body.products_to_mention && body.products_to_mention.length > 0) {
+        const { data: rows } = await supabase
+          .from("woo_products")
+          .select("name, image_url")
+          .in("name", body.products_to_mention);
+        const firstWithImage = (rows ?? []).find((r: any) => r.image_url);
+        if (firstWithImage) {
+          referenceImageUrl = firstWithImage.image_url as string;
+          console.log(`[blog_banner] Using reference image from product "${firstWithImage.name}": ${referenceImageUrl}`);
+        }
+      }
       console.log(`[blog_banner] Generating banner for: "${body.title}"`);
-      const bannerUrl = await generateBlogBanner(body.title, body.keyword, supabase);
+      const bannerUrl = await generateBlogBanner(body.title, body.keyword, supabase, referenceImageUrl);
       return new Response(JSON.stringify({ banner_url: bannerUrl }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (e: unknown) {
