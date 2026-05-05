@@ -5735,10 +5735,14 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     });
   }
 
+  // Google retired gemini-2.0-flash-preview-image-generation and
+  // gemini-2.0-flash-exp; the current image generation/editing model is
+  // gemini-2.5-flash-image-preview (a.k.a. "Nano Banana"). It accepts a
+  // reference image as inlineData and edits it per the text prompt.
   attempts.push(
     {
-      name: "Gemini 2.0 Flash Preview Image",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`,
+      name: "Gemini 2.5 Flash Image Preview",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
       headers: { "Content-Type": "application/json" },
       body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
       parse: (json: any) => {
@@ -5749,8 +5753,8 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
       },
     },
     {
-      name: "Gemini 2.0 Flash Exp",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
+      name: "Gemini 2.5 Flash Image",
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
       headers: { "Content-Type": "application/json" },
       body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
       parse: (json: any) => {
