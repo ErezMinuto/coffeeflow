@@ -80,11 +80,18 @@ serve(async (req) => {
     const brandClause = referenceB64 ? `
 
 BRAND BAG REFERENCE: A reference image of the actual Minuto coffee bag is
-included with this prompt. Whenever the scene calls for a coffee bag, render
-the Minuto bag from the reference. Match its shape (stand-up pouch with zip
-top), white pouch color, the stag-head emblem, the "MINUTO Café Roastery"
-wordmark at the top, and the colored center label. Treat this as the brand's
-signature packaging. Do NOT invent a generic-looking coffee bag.
+included with this prompt. THE MINUTO BAG MUST APPEAR PROMINENTLY in the
+final image — this is non-negotiable when a reference image is provided.
+If the scene description doesn't explicitly mention the bag, place it in
+the composition anyway: lower-right or upper-right third of the frame, in
+focus, recognizable. The bag's whole purpose in this image is to identify
+which Minuto product the post is about; an image without the bag wastes
+the per-post product matching the upstream agent already did.
+
+Match the reference exactly: stand-up pouch with zip top, white pouch
+color, stag-head emblem, "MINUTO Café Roastery" wordmark at the top, and
+the colored center label with the origin/blend name. Do NOT invent a
+generic-looking coffee bag.
 
 CRITICAL: Do NOT add any printed dates, roast-date stamps, batch numbers,
 expiry stickers, or numerical labels to the bag. The reference image may or
