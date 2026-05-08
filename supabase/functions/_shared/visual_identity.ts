@@ -64,7 +64,13 @@ ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
 - Saturated colors outside the bag's small label
 - Softbox lighting, glossy reflections, studio lighting
 - White walls, white seamless paper, marble, glossy surfaces
-- Text, letters, words, numbers, watermarks (EXCEPT Minuto bag branding)
+- Text, letters, words, numbers, watermarks (EXCEPT the Minuto wordmark, the
+  stag-head emblem, and the origin/blend name printed on the bag's center
+  label — those are the ONLY allowed text elements)
+- ANY printed dates, batch numbers, lot numbers, "best before" stamps,
+  expiry dates, "roasted on" labels, or numerical strings on the coffee
+  bag. The bag must not display any date or number anywhere. If the model
+  is tempted to render a date sticker, omit it entirely.
 - Multiple competing products (more than one bag-sized hero element)
 - Stock-photo lifestyle clichés: smiling barista, latte-art heart, cozy
   Sunday morning steam-rising-over-magazine, branded coffee cups in hands

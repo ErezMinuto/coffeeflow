@@ -5241,6 +5241,50 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
   if (parsed && Array.isArray(parsed.posts_to_publish) && parsed.posts_to_publish.length > 0) {
     try {
       const enriched = await enrichPostsForPublishing(parsed.posts_to_publish, seasonalContext, callClaude);
+
+      // Per-post product reference: when Haiku identified a specific Minuto
+      // product in the post (e.g. "Dark Chocolate"), look it up in
+      // woo_products and stamp the bag image URL so visual-test renders the
+      // RIGHT bag instead of always falling back to the default reference.
+      // Same pattern blog-banner uses (PR #77).
+      //
+      // Compound product references like "Velvet Star + Fazenda Sertão" are
+      // split into individual candidates — we try each and use the first
+      // match. Picking the first is a deliberate choice over picking nothing;
+      // the user can manually override later via a per-post bag picker if
+      // they want a different product highlighted.
+      for (const ep of enriched) {
+        if (!ep.product_reference || ep.rejected) continue;
+        const candidates = ep.product_reference
+          .split(/[+,&]|\s+ו(?=\s)|\s+and\s+/gi)
+          .map(s => s.trim())
+          .filter(s => s.length >= 3);
+        let matched: { name: string; image_url: string } | null = null;
+        for (const candidate of candidates) {
+          try {
+            const { data: rows } = await supabase
+              .from("woo_products")
+              .select("name, image_url")
+              .ilike("name", `%${candidate}%`)
+              .not("image_url", "is", null)
+              .limit(1);
+            const m = (rows ?? [])[0];
+            if (m?.image_url) {
+              matched = { name: m.name as string, image_url: m.image_url as string };
+              break;
+            }
+          } catch (e: any) {
+            console.warn(`[organic] product lookup failed for "${candidate}":`, e?.message);
+          }
+        }
+        if (matched) {
+          ep.reference_image_url = matched.image_url;
+          console.log(`[organic] post ${ep.post_index} → matched "${ep.product_reference}" → ${matched.name}`);
+        } else {
+          console.log(`[organic] post ${ep.post_index} → no woo_products match for "${ep.product_reference}" (tried: ${candidates.join(' | ')})`);
+        }
+      }
+
       parsed.enriched_posts = enriched;
       console.log(`[organic] enriched ${enriched.length}/${parsed.posts_to_publish.length} posts for publishing`);
     } catch (e: any) {

@@ -76,6 +76,13 @@ export interface EnrichedPost {
   // URL into the `marketing` Storage bucket. Null on rejection or generation
   // failure (the dashboard then shows the brief without an image).
   image_url:       string | null
+  // The specific Minuto product the post is about, if any. Haiku extracts the
+  // name from caption/topic/hook (e.g. "Dark Chocolate", "Yirgacheffe").
+  // Marketing-advisor's runner looks this up in woo_products and stamps the
+  // matched image URL onto reference_image_url so visual-test renders the
+  // right bag — not always the default Yirgacheffe.
+  product_reference?:    string | null
+  reference_image_url?:  string | null
   // Brand-voice rejection: when the upstream post violates the anti-disparagement
   // rule, we surface it here instead of silently dropping it. The dashboard
   // shows these as "needs regeneration" rather than rendering a scene_brief.
@@ -233,7 +240,8 @@ SUCCESS:
   "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup",
   "calendar_hook": "1 short phrase (Hebrew or English ok)",
   "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing.",
-  "overlay_text": null | "short Hebrew headline ≤ 40 chars — use null UNLESS the post REALLY needs text (e.g. announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing."
+  "overlay_text": null | "short Hebrew headline ≤ 40 chars — use null UNLESS the post REALLY needs text (e.g. announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing.",
+  "product_reference": null | "the SPECIFIC Minuto product name as it appears in the post (e.g. 'Dark Chocolate', 'Yirgacheffe', 'Guatemala Antigua', 'Fazenda Sertão'). Use null when the post is generic about coffee/roasting and not about one named product. The downstream pipeline uses this to look up the right bag image as a Gemini reference, so the rendered bag matches the post's product."
 }
 
 REJECTION:
@@ -257,7 +265,7 @@ Now return the strict JSON enrichment.`
 }
 
 type ParsedEnrichment =
-  | { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null }
+  | { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null }
   | { kind: 'rejected'; rejection_reason: string }
 
 function parseEnrichmentJson(text: string): ParsedEnrichment | null {
@@ -284,10 +292,11 @@ function parseEnrichmentJson(text: string): ParsedEnrichment | null {
   if (typeof obj.post_type !== 'string' || typeof obj.scene_brief !== 'string') return null
   return {
     kind: 'success',
-    post_type:     obj.post_type,
-    calendar_hook: typeof obj.calendar_hook === 'string' ? obj.calendar_hook : '',
-    scene_brief:   obj.scene_brief,
-    overlay_text:  typeof obj.overlay_text === 'string' && obj.overlay_text.trim() ? obj.overlay_text.trim() : null,
+    post_type:         obj.post_type,
+    calendar_hook:     typeof obj.calendar_hook === 'string' ? obj.calendar_hook : '',
+    scene_brief:       obj.scene_brief,
+    overlay_text:      typeof obj.overlay_text === 'string' && obj.overlay_text.trim() ? obj.overlay_text.trim() : null,
+    product_reference: typeof obj.product_reference === 'string' && obj.product_reference.trim() ? obj.product_reference.trim() : null,
   }
 }
 
@@ -335,10 +344,12 @@ export async function enrichPostsForPublishing(
       }
       return {
         ...base,
-        post_type:     parsed.post_type,
-        calendar_hook: parsed.calendar_hook,
-        scene_brief:   parsed.scene_brief,
-        overlay_text:  parsed.overlay_text,
+        post_type:           parsed.post_type,
+        calendar_hook:       parsed.calendar_hook,
+        scene_brief:         parsed.scene_brief,
+        overlay_text:        parsed.overlay_text,
+        product_reference:   parsed.product_reference,
+        reference_image_url: null,   // populated by the runner via woo_products lookup
       } as EnrichedPost
     }),
   )

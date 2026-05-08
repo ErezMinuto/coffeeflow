@@ -29,6 +29,7 @@ interface VisualTestRequest {
   preset?: keyof typeof SCENE_PRESETS        // shortcut: pick a SCENE_PRESETS key
   aspect?: Aspect                            // default 'feed_square'
   use_reference?: boolean                    // default true; pass false to skip the bag
+  reference_image_url?: string               // override the default Yirgacheffe bag with a specific product image
 }
 
 serve(async (req) => {
@@ -52,11 +53,15 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
 
-    // 1. Optionally load the Minuto bag reference image.
+    // 1. Optionally load the Minuto bag reference image. If the caller passed
+    //    a per-post reference_image_url (e.g. the actual Dark Chocolate bag
+    //    when the post is about Dark Chocolate), use that instead of the
+    //    default Yirgacheffe shot. Falls back to default if missing/broken.
     let referenceB64: string | null = null
     let referenceMime = 'image/png'
+    const referenceUrl = body.reference_image_url || MINUTO_BAG_REFERENCE_URL
     if (useReference) {
-      const refRes = await fetch(MINUTO_BAG_REFERENCE_URL)
+      const refRes = await fetch(referenceUrl)
       if (refRes.ok) {
         referenceMime = refRes.headers.get('content-type')?.split(';')[0]?.trim() ?? 'image/png'
         const buf = new Uint8Array(await refRes.arrayBuffer())
@@ -79,7 +84,13 @@ included with this prompt. Whenever the scene calls for a coffee bag, render
 the Minuto bag from the reference. Match its shape (stand-up pouch with zip
 top), white pouch color, the stag-head emblem, the "MINUTO Café Roastery"
 wordmark at the top, and the colored center label. Treat this as the brand's
-signature packaging. Do NOT invent a generic-looking coffee bag.` : ''
+signature packaging. Do NOT invent a generic-looking coffee bag.
+
+CRITICAL: Do NOT add any printed dates, roast-date stamps, batch numbers,
+expiry stickers, or numerical labels to the bag. The reference image may or
+may not have such markings — IGNORE them and render a clean bag without any
+dates or numbers. Only the brand wordmark, stag emblem, and origin/blend
+name on the center label are allowed.` : ''
 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 

@@ -122,20 +122,22 @@ interface BlogPost {
 // posts_to_publish gets a matching entry by post_index. The IG-publishing
 // pipeline (visual-test → meta-publish) reads from this shape.
 interface EnrichedPost {
-  post_index:        number
-  intent:            string
-  post_type:         string
-  aspect:            'feed_square' | 'reel_cover'
-  upstream_type:     string
-  calendar_hook:     string
-  scene_brief:       string
-  overlay_text:      string | null
-  scheduled_for:     string
-  caption:           string
-  hashtags:          string[]
-  image_url:         string | null
-  rejected?:         boolean
-  rejection_reason?: string
+  post_index:           number
+  intent:               string
+  post_type:            string
+  aspect:               'feed_square' | 'reel_cover'
+  upstream_type:        string
+  calendar_hook:        string
+  scene_brief:          string
+  overlay_text:         string | null
+  scheduled_for:        string
+  caption:              string
+  hashtags:             string[]
+  image_url:            string | null
+  product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
+  reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
+  rejected?:            boolean
+  rejection_reason?:    string
 }
 
 interface OrganicReport {
@@ -1117,7 +1119,15 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     setGenerating(true); setGenError(null); setImageUrl(null)
     try {
       const { data, error } = await supabase.functions.invoke('visual-test', {
-        body: { scene_brief: ep.scene_brief, aspect: ep.aspect },
+        body: {
+          scene_brief: ep.scene_brief,
+          aspect: ep.aspect,
+          // Per-post bag reference — when the post is about a specific product
+          // (e.g. Dark Chocolate), the agent matched it to a woo_products row
+          // and we feed THAT bag image to Gemini instead of the default. Falls
+          // back to the locked Yirgacheffe bag if not set.
+          reference_image_url: ep.reference_image_url || undefined,
+        },
       })
       if (error) throw error
       if (!data?.url) throw new Error('no url returned')
@@ -1172,6 +1182,12 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
         <div><span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}</div>
         {ep.overlay_text && (
           <div className="text-amber-700"><span className="font-semibold">טקסט על התמונה:</span> {ep.overlay_text}</div>
+        )}
+        {ep.product_reference && (
+          <div className={ep.reference_image_url ? 'text-emerald-700' : 'text-surface-500'}>
+            <span className="font-semibold">מוצר רפרנס:</span> {ep.product_reference}{' '}
+            {ep.reference_image_url ? '✓ נמצאה תמונה' : '⚠ לא נמצאה במלאי, ייווצר מהשקית הדיפולטית'}
+          </div>
         )}
       </div>
       <details className="text-[11px]">
