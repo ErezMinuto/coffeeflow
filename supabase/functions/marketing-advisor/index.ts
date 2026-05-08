@@ -16,6 +16,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
+import { enrichPostsForPublishing } from "./enrichment.ts";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -4773,6 +4774,25 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 • "cold brew" / "קפה קר" / "קפה קרח" — נפח חיפוש נמוך מאוד בישראל, אל תמליץ.
 • המלצות SEO על ביטויים שלא מופיעים ב-GSC — השתמש רק בביטויים מהנתונים.
 
+🚫 קוד התנהגות מותגי — חל על כל השדות (posts_to_publish, content_recommendations, products_to_feature, blog/SEO):
+
+חוק הזהב: לעולם לא ללעוג, לבזות או לזלזל בקפה אחר, במתחרים, במוצרים שהלקוח כבר משתמש בהם, או בבחירות הצריכה שלו. רק מסגור חיובי.
+
+אסור בהחלט:
+• שמות מתחרים בכל הקשר (Lavazza, Illy, Hausbrandt, Nespresso, Starbucks, Costa, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, Origem, Kilimanjaro, Nahat) — לא בכותרת, לא בקאפשן, לא ב-hook, לא ב-visual_direction. גם לא ניטרלית, גם לא חיובית.
+• "הפולים של [מותג] נקלו לפני..." או כל טענה שמשווה איכות/טריות מול מתחרה ספציפי, גם אם נכונה — זו השמצה.
+• ויז'ואל השוואתי שמראה שתי שקיות זו לצד זו (מינוטו vs אחרת/גנרית) — גם בלי שם מותג, הפריים הוא לעג ויזואלי.
+• ללעוג על "פולים מהסופר" / "קפה מסחרי" כאילו הצרכן טיפש שקנה אותו. לא לכתוב "אתה לא יודע מתי הפולים שלך נקלו, נכון?" באירוניה.
+• ללעוג על מכונת הקפה של הצרכן ("הדלונגי הזולה שלך") — נכון שמותר להזכיר דגם מכונה כדי לחבר פולים, לא ללעוג עליו.
+
+מותר ועובד טוב:
+• "תאריך קלייה" כערך עומד בפני עצמו — בלי השוואה ("הפולים האלה נקלו השבוע, ב-Minuto זה הסטנדרט").
+• להפנות את הלקוח להסתכל בעצמו על מה שיש לו ("תבדוק בשקית שלך אם יש תאריך קלייה" — בלי לקרוא לזה רע, בלי לרמוז שהשקית שלו פגומה).
+• להציג את היתרון של מינוטו כעובדה חיובית, לא כביקורת על אחרים ("נקלה הבוקר. אצלך מחר.").
+• הזכרת קטגוריה ("קפה מסחרי") רק אם זה לא ככינוי גנאי — למשל בהקשר של תוכן חינוכי על תהליכי קלייה ויעדים שונים.
+
+אם הרעיון שעולה לך לא יכול להישאר תקף בלי לנקוב בשם מתחרה או בלי השוואה ויזואלית — הוא לא רעיון לפי קוד המותג. החלף אותו.
+
 הגבלות פלט קפדניות — חרוג מהן = שגיאה:
 • google_organic_recommendations — פריט אחד בלבד
 • content_recommendations — עד 2 פריטים
@@ -5208,6 +5228,26 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
         return true;
       });
       parsed.google_organic_recommendations = stillFresh;
+    }
+  }
+
+  // ── Enrich posts_to_publish with publish-pipeline fields ────────────────
+  // Adds `enriched_posts[3]` to the report, where each entry has the
+  // photographer-brief, calendar_hook, post_type (SCENE_PRESET key),
+  // optional Hebrew overlay_text, and ISO scheduled_for. This is what the
+  // IG generation pipeline (visual-test → meta-publish prepare/publish)
+  // actually consumes — the existing posts_to_publish[] shape stays
+  // untouched so the dashboard renderer is unaffected.
+  if (parsed && Array.isArray(parsed.posts_to_publish) && parsed.posts_to_publish.length > 0) {
+    try {
+      const enriched = await enrichPostsForPublishing(parsed.posts_to_publish, seasonalContext, callClaude);
+      parsed.enriched_posts = enriched;
+      console.log(`[organic] enriched ${enriched.length}/${parsed.posts_to_publish.length} posts for publishing`);
+    } catch (e: any) {
+      // Non-fatal — the rest of the report still renders, we just lose the
+      // publish-ready fields for this run. Log and move on.
+      console.error("[organic] enrichment failed:", e?.message);
+      parsed.enriched_posts = [];
     }
   }
 

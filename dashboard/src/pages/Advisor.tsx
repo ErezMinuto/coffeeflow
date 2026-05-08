@@ -118,6 +118,26 @@ interface BlogPost {
   banner_url?: string | null
 }
 
+// Enrichment output from marketing-advisor/enrichment.ts. Each post in
+// posts_to_publish gets a matching entry by post_index. The IG-publishing
+// pipeline (visual-test → meta-publish) reads from this shape.
+interface EnrichedPost {
+  post_index:        number
+  intent:            string
+  post_type:         string
+  aspect:            'feed_square' | 'reel_cover'
+  upstream_type:     string
+  calendar_hook:     string
+  scene_brief:       string
+  overlay_text:      string | null
+  scheduled_for:     string
+  caption:           string
+  hashtags:          string[]
+  image_url:         string | null
+  rejected?:         boolean
+  rejection_reason?: string
+}
+
 interface OrganicReport {
   summary: string
   account_health: { avg_reach_30d: number; follower_count: number; best_post_type: string; engagement_rate_pct: number }
@@ -125,6 +145,7 @@ interface OrganicReport {
   content_recommendations: { priority: number; content_type: string; topic: string; reason: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
   posts_to_publish: PostToPublish[]
+  enriched_posts?: EnrichedPost[]
   key_insights: string[]
 }
 
@@ -1069,6 +1090,149 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
   )
 }
 
+// ── Per-post IG publishing controls ──────────────────────────────────────────
+// Shows the photographer's brief from enrichment, lets the user generate a
+// visual on demand, and (if the visual looks right) ship it to @minuto_cafe
+// via the meta-publish prepare → publish flow.
+//
+// All state is local. Refresh = lose the generated image and regenerate.
+// That's intentional in v1 — keeps us off another DB table for now.
+function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
+  const [imageUrl,    setImageUrl]    = useState<string | null>(ep.image_url)
+  const [generating,  setGenerating]  = useState(false)
+  const [genError,    setGenError]    = useState<string | null>(null)
+  const [publishing,  setPublishing]  = useState(false)
+  const [publishedTo, setPublishedTo] = useState<string | null>(null)
+  const [pubError,    setPubError]    = useState<string | null>(null)
+
+  if (ep.rejected) {
+    return (
+      <div className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-xs text-red-800">
+        🚫 נדחה ע"י קוד המותג: {ep.rejection_reason}
+      </div>
+    )
+  }
+
+  async function generateVisual() {
+    setGenerating(true); setGenError(null); setImageUrl(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('visual-test', {
+        body: { scene_brief: ep.scene_brief, aspect: ep.aspect },
+      })
+      if (error) throw error
+      if (!data?.url) throw new Error('no url returned')
+      setImageUrl(data.url)
+    } catch (e: any) {
+      setGenError(e?.message ?? String(e))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function publishToInstagram() {
+    if (!imageUrl) return
+    setPublishing(true); setPubError(null); setPublishedTo(null)
+    try {
+      // Two-call IG flow: prepare a Meta media container, then publish it.
+      // Both wrapped behind meta-publish so we don't have to know the page
+      // token, IG account id, or two-step container plumbing here.
+      const prep = await supabase.functions.invoke('meta-publish', {
+        body: {
+          action:    'prepare',
+          type:      'feed',                // v1: cover frame goes out as a feed post even for Reels
+          image_url: imageUrl,
+          caption:   `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim(),
+        },
+      })
+      if (prep.error) throw prep.error
+      const creationId: string | undefined = prep.data?.creation_id
+      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
+
+      const pub = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'publish', creation_id: creationId },
+      })
+      if (pub.error) throw pub.error
+      const link = pub.data?.permalink
+      if (!link) throw new Error(`publish returned no permalink: ${JSON.stringify(pub.data).slice(0, 200)}`)
+      setPublishedTo(link)
+    } catch (e: any) {
+      setPubError(e?.message ?? String(e))
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  return (
+    <div className="mt-2 border-t border-surface-200 pt-2 space-y-2">
+      <div className="text-[10px] uppercase tracking-wide text-surface-500 font-semibold">
+        🎨 פוסט מועשר ({ep.aspect === 'reel_cover' ? 'תמונת כריכה לריל' : 'פוסט פיד'})
+      </div>
+      <div className="text-[11px] text-surface-600 space-y-1">
+        <div><span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook}</div>
+        <div><span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}</div>
+        {ep.overlay_text && (
+          <div className="text-amber-700"><span className="font-semibold">טקסט על התמונה:</span> {ep.overlay_text}</div>
+        )}
+      </div>
+      <details className="text-[11px]">
+        <summary className="cursor-pointer text-surface-500 hover:text-surface-700">📷 תקציר הצלם (English)</summary>
+        <p className="mt-1 p-2 bg-surface-50 rounded text-surface-700 leading-relaxed">{ep.scene_brief}</p>
+      </details>
+
+      {imageUrl ? (
+        <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+          <img
+            src={imageUrl}
+            alt="Generated IG visual"
+            className="w-full rounded-lg border border-surface-200 mt-1"
+            style={{ aspectRatio: ep.aspect === 'reel_cover' ? '9/16' : '1/1', objectFit: 'cover' }}
+          />
+        </a>
+      ) : null}
+
+      {genError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה ביצירת תמונה: {genError}
+        </div>
+      )}
+      {pubError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה בפרסום: {pubError}
+        </div>
+      )}
+      {publishedTo && (
+        <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded p-2">
+          ✅ פורסם בהצלחה!{' '}
+          <a href={publishedTo} target="_blank" rel="noopener noreferrer" className="underline">
+            פתח באינסטגרם
+          </a>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={generateVisual}
+          disabled={generating || publishing}
+          className="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {generating
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מייצר תמונה...</>)
+            : (imageUrl ? '🔄 צור מחדש' : '🎨 צור תמונה')}
+        </button>
+        <button
+          onClick={publishToInstagram}
+          disabled={!imageUrl || publishing || generating || !!publishedTo}
+          className="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {publishing
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מפרסם...</>)
+            : '📤 פרסם לאינסטגרם'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
 function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBanner, allProducts, onRun, running }: {
@@ -1488,6 +1652,10 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
                   {p.visual_direction && (
                     <p className="text-xs text-surface-500">📷 {p.visual_direction}</p>
                   )}
+                  {(() => {
+                    const ep = r.enriched_posts?.find(e => e.post_index === i)
+                    return ep ? <PostPublishingControls ep={ep} /> : null
+                  })()}
                 </div>
               )
             })}
