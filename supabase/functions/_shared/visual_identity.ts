@@ -110,6 +110,15 @@ pour or pour-stream is welcome. NO faces.
 
 ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
 - Human faces, heads, full bodies, portraits
+- ⛔ ANY SPOON, SCOOP, OR UTENSIL — brass scoops, wooden spoons, espresso
+  spoons, measuring scoops, dosing scoops, latte-art etching tools, stir
+  sticks. ZERO utensils anywhere in the frame. If the brief or preset
+  mentions one, ignore that part of the brief and omit the utensil. This
+  is a HARD rule. Loose beans live directly on the surface or in a small
+  ceramic dish, never in a scoop. The ONLY exception is a brass gooseneck
+  kettle when it appears partially cropped from a frame edge in a brewing
+  scene — full kettles are still forbidden, only a corner-glimpse kettle
+  is allowed.
 - Centered hero-shot composition (subject in middle of frame)
 - Saturated colors outside the bag's small label
 - Softbox lighting, glossy reflections, studio lighting
