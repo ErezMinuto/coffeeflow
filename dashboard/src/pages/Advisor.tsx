@@ -1137,7 +1137,8 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
   async function generateSlide(i: number) {
     setGen(i, true); setErr(i, null); setUrl(i, null)
     try {
-      const { data, error } = await supabase.functions.invoke('visual-test', {
+      // 1. Generate the photographic background via visual-test.
+      const gen = await supabase.functions.invoke('visual-test', {
         body: {
           scene_brief:         slides[i].scene_brief,
           aspect:              ep.aspect,
@@ -1146,9 +1147,33 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
           reference_image_url: ep.reference_image_url || undefined,
         },
       })
-      if (error) throw error
-      if (!data?.url) throw new Error('no url returned')
-      setUrl(i, data.url)
+      if (gen.error) throw gen.error
+      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      let finalUrl: string = gen.data.url
+
+      // 2. If this slide has an overlay_text, composite it via visual-overlay.
+      //    Falls back to the bare image if the overlay step fails — better
+      //    to publish a no-text version than nothing.
+      const overlayText = slides[i].overlay_text
+      if (overlayText && overlayText.trim()) {
+        try {
+          const ov = await supabase.functions.invoke('visual-overlay', {
+            body: {
+              image_url:    finalUrl,
+              overlay_text: overlayText,
+              position:     'bottom',
+              direction:    'rtl',
+              aspect:       ep.aspect,
+            },
+          })
+          if (ov.error) throw ov.error
+          if (ov.data?.url) finalUrl = ov.data.url
+        } catch (oe: any) {
+          console.warn(`[carousel] overlay failed for slide ${i}, using bare image:`, oe?.message)
+        }
+      }
+
+      setUrl(i, finalUrl)
     } catch (e: any) {
       setErr(i, e?.message ?? String(e))
     } finally {
@@ -1375,7 +1400,8 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     setGenerating(true); setGenError(null); setImageUrl(null)
     setVideoUrl(null); setReelOperation(null); setReelError(null)
     try {
-      const { data, error } = await supabase.functions.invoke('visual-test', {
+      // 1. Generate the photographic background via visual-test.
+      const gen = await supabase.functions.invoke('visual-test', {
         body: {
           scene_brief: ep.scene_brief,
           aspect: ep.aspect,
@@ -1386,9 +1412,31 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
           reference_image_url: ep.reference_image_url || undefined,
         },
       })
-      if (error) throw error
-      if (!data?.url) throw new Error('no url returned')
-      setImageUrl(data.url)
+      if (gen.error) throw gen.error
+      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      let finalUrl: string = gen.data.url
+
+      // 2. If the post has overlay_text, composite it via visual-overlay.
+      //    Falls back to bare image on failure — better to ship something.
+      if (ep.overlay_text && ep.overlay_text.trim()) {
+        try {
+          const ov = await supabase.functions.invoke('visual-overlay', {
+            body: {
+              image_url:    finalUrl,
+              overlay_text: ep.overlay_text,
+              position:     'bottom',
+              direction:    'rtl',
+              aspect:       ep.aspect,
+            },
+          })
+          if (ov.error) throw ov.error
+          if (ov.data?.url) finalUrl = ov.data.url
+        } catch (oe: any) {
+          console.warn('[single-image] overlay failed, using bare image:', oe?.message)
+        }
+      }
+
+      setImageUrl(finalUrl)
     } catch (e: any) {
       setGenError(e?.message ?? String(e))
     } finally {
