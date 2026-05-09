@@ -59,14 +59,23 @@ const TYPE_TO_ASPECT: Record<string, EnrichedAspect> = {
   story:    'reel_cover',
 }
 
+// One additional slide in a multi-slide carousel post. Slide 1 (the cover)
+// is always the EnrichedPost.scene_brief itself — additional_slides only
+// covers slides 2..N. Phase 3.
+export interface AdditionalSlide {
+  scene_brief:  string             // English brief for this slide; same Minuto identity, different subject focus
+  overlay_text: string | null      // optional Hebrew headline for THIS slide
+  image_url:    string | null      // populated on-demand by the dashboard, like the cover
+}
+
 export interface EnrichedPost {
   post_index:      number                              // matches posts_to_publish[i]
   intent:          string                              // copy of the canonical intent
   post_type:       keyof typeof SCENE_PRESETS | string // SCENE_PRESETS key or fallback
   aspect:          EnrichedAspect                      // feed_square | reel_cover (drives visual-test)
   calendar_hook:   string                              // 1-phrase moment this post connects to
-  scene_brief:     string                              // 4–6 sentence English brief for Gemini
-  overlay_text:    string | null                       // optional Hebrew text for compositing
+  scene_brief:     string                              // 4–6 sentence English brief for Gemini (slide 1 = cover for carousels)
+  overlay_text:    string | null                       // optional Hebrew text for compositing (slide 1 for carousels)
   scheduled_for:   string                              // ISO datetime in IL time
   // Echo of upstream fields so consumers don't need both shapes:
   upstream_type:   string                              // raw 'post'|'reel'|'carousel'|'story' from the agent
@@ -76,6 +85,10 @@ export interface EnrichedPost {
   // URL into the `marketing` Storage bucket. Null on rejection or generation
   // failure (the dashboard then shows the brief without an image).
   image_url:       string | null
+  // Carousel-only: slides 2..N. Empty/undefined for non-carousel posts.
+  // Slide 1 (the cover) is always EnrichedPost.scene_brief above.
+  // Total slides in the carousel = 1 + additional_slides.length.
+  additional_slides?: AdditionalSlide[]
   // The specific Minuto product the post is about, if any. Haiku extracts the
   // name from caption/topic/hook (e.g. "Dark Chocolate", "Yirgacheffe").
   // Marketing-advisor's runner looks this up in woo_products and stamps the
@@ -145,9 +158,12 @@ function buildEnrichmentPrompt(post: PostToPublish, aspect: EnrichedAspect, cale
   const presetList = Object.entries(SCENE_PRESET_SUMMARIES)
     .map(([k, v]) => `  - "${k}": ${v}`).join('\n')
 
+  const isCarousel = String(post.type ?? '').toLowerCase() === 'carousel'
   const aspectGuidance = aspect === 'reel_cover'
     ? 'The upstream agent picked a Reel or Story (9:16 vertical). Write the brief for the COVER FRAME — the single still that opens the Reel and shows in the grid. The cover frame must obey the Minuto identity exactly the same as a feed post, just composed vertically. Phase 2 will animate this; for now we generate the still cover.'
-    : 'The upstream agent picked a feed post or carousel. Write the brief for the hero frame in 1:1 (or the cover slide for carousels).'
+    : isCarousel
+      ? `The upstream agent picked a CAROUSEL (multi-slide post). Write briefs for ALL FIVE SLIDES — the cover (slide 1) goes in scene_brief; slides 2-5 go in additional_slides. Each slide is a separate still photograph, but together they form ONE coherent visual story with strict continuity: same surface material, same light direction, same earth palette, same time of day, same camera distance/style. The viewer scrolls through them as one composition spread across 5 frames. NEVER write text-overlay descriptions, NEVER write infographic/diagram/icon descriptions — every slide is a clean photographic still. The story progresses through the post's narrative: slide 1 sets the mood (hero), slides 2-4 are supporting moments, slide 5 lands the takeaway (often the bag in a final composed beauty shot). MANDATORY: at least one slide (usually the last) prominently shows the Minuto bag.`
+      : 'The upstream agent picked a feed post. Write the brief for the hero frame in 1:1.'
 
   const system = `You are the photography art director for Minuto, an Israeli specialty
 coffee roastery, writing scene briefs for AI-generated Instagram content.
@@ -300,9 +316,21 @@ SUCCESS:
 {
   "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup",
   "calendar_hook": "1 short phrase (Hebrew or English ok)",
-  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. MANDATORY: if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'.",
+  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. MANDATORY: if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'. For carousels: this is the COVER slide (slide 1).",
   "overlay_text": null | "short Hebrew headline ≤ 40 chars — use null UNLESS the post REALLY needs text (e.g. announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing.",
-  "product_reference": null | "the SPECIFIC Minuto product name as it appears in the post (e.g. 'Dark Chocolate', 'Yirgacheffe', 'Guatemala Antigua', 'Fazenda Sertão'). Use null when the post is generic about coffee/roasting and not about one named product. The downstream pipeline uses this to look up the right bag image as a Gemini reference, so the rendered bag matches the post's product."
+  "product_reference": null | "the SPECIFIC Minuto product name as it appears in the post (e.g. 'Dark Chocolate', 'Yirgacheffe', 'Guatemala Antigua', 'Fazenda Sertão'). Use null when the post is generic about coffee/roasting and not about one named product. The downstream pipeline uses this to look up the right bag image as a Gemini reference, so the rendered bag matches the post's product.",
+  "additional_slides": null | [
+    /* CAROUSELS ONLY: include ALL FOUR slides 2..5 here. NULL or omitted for non-carousel posts. */
+    /* Same Minuto identity for every slide. STRICT continuity: same surface, same light direction, same earth palette, same camera style. */
+    /* Each entry is for ONE slide. NO text/icon/infographic descriptions — clean photographic stills only. */
+    {
+      "scene_brief": "4–6 sentence ENGLISH brief for SLIDE 2. Continuation of the cover's mood — same surface, same light. Different subject focus that progresses the post's narrative.",
+      "overlay_text": null | "short Hebrew headline ≤ 40 chars — usually null; only set when this specific slide needs a labeled callout"
+    },
+    { "scene_brief": "SLIDE 3 brief …", "overlay_text": null },
+    { "scene_brief": "SLIDE 4 brief …", "overlay_text": null },
+    { "scene_brief": "SLIDE 5 brief — usually the closing beauty shot featuring the Minuto bag prominently as the takeaway", "overlay_text": null }
+  ]
 }
 
 REJECTION:
@@ -326,7 +354,7 @@ Now return the strict JSON enrichment.`
 }
 
 type ParsedEnrichment =
-  | { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null }
+  | { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null; additional_slides: AdditionalSlide[] | null }
   | { kind: 'rejected'; rejection_reason: string }
 
 function parseEnrichmentJson(text: string): ParsedEnrichment | null {
@@ -351,6 +379,19 @@ function parseEnrichmentJson(text: string): ParsedEnrichment | null {
     }
   }
   if (typeof obj.post_type !== 'string' || typeof obj.scene_brief !== 'string') return null
+  // Parse the additional_slides array for carousels — be defensive: only
+  // accept entries that have a non-empty scene_brief, drop the rest.
+  let additional_slides: AdditionalSlide[] | null = null
+  if (Array.isArray(obj.additional_slides) && obj.additional_slides.length > 0) {
+    additional_slides = obj.additional_slides
+      .filter((s: any) => s && typeof s.scene_brief === 'string' && s.scene_brief.trim().length > 0)
+      .map((s: any): AdditionalSlide => ({
+        scene_brief:  s.scene_brief.trim(),
+        overlay_text: typeof s.overlay_text === 'string' && s.overlay_text.trim() ? s.overlay_text.trim() : null,
+        image_url:    null,
+      }))
+    if (additional_slides.length === 0) additional_slides = null
+  }
   return {
     kind: 'success',
     post_type:         obj.post_type,
@@ -358,6 +399,7 @@ function parseEnrichmentJson(text: string): ParsedEnrichment | null {
     scene_brief:       obj.scene_brief,
     overlay_text:      typeof obj.overlay_text === 'string' && obj.overlay_text.trim() ? obj.overlay_text.trim() : null,
     product_reference: typeof obj.product_reference === 'string' && obj.product_reference.trim() ? obj.product_reference.trim() : null,
+    additional_slides,
   }
 }
 
@@ -403,6 +445,14 @@ export async function enrichPostsForPublishing(
           rejection_reason: parsed.rejection_reason,
         } as EnrichedPost
       }
+      // Carousel-only: emit additional_slides 2..N. For non-carousel posts,
+      // Haiku may return additional_slides anyway (the prompt asks for null
+      // outside carousels) — defensively strip them based on upstream_type
+      // so non-carousels never carry slide arrays.
+      const carouselSlides =
+        upstreamType === 'carousel' && parsed.additional_slides && parsed.additional_slides.length > 0
+          ? parsed.additional_slides
+          : undefined
       return {
         ...base,
         post_type:           parsed.post_type,
@@ -411,6 +461,7 @@ export async function enrichPostsForPublishing(
         overlay_text:        parsed.overlay_text,
         product_reference:   parsed.product_reference,
         reference_image_url: null,   // populated by the runner via woo_products lookup
+        additional_slides:   carouselSlides,
       } as EnrichedPost
     }),
   )

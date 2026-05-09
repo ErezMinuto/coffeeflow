@@ -121,6 +121,12 @@ interface BlogPost {
 // Enrichment output from marketing-advisor/enrichment.ts. Each post in
 // posts_to_publish gets a matching entry by post_index. The IG-publishing
 // pipeline (visual-test → meta-publish) reads from this shape.
+interface AdditionalSlide {
+  scene_brief:  string
+  overlay_text: string | null
+  image_url:    string | null
+}
+
 interface EnrichedPost {
   post_index:           number
   intent:               string
@@ -134,6 +140,9 @@ interface EnrichedPost {
   caption:              string
   hashtags:             string[]
   image_url:            string | null
+  // Carousel-only: slides 2..N. Slide 1 (the cover) is the scene_brief
+  // above. Total slides in the carousel = 1 + additional_slides.length.
+  additional_slides?:   AdditionalSlide[]
   product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
   reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
   rejected?:            boolean
@@ -1092,6 +1101,198 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
   )
 }
 
+// ── Carousel-mode publishing controls ────────────────────────────────────────
+// When the upstream post is a 5-slide carousel, the enriched post has
+// scene_brief = slide 1 (cover) plus additional_slides[] for slides 2..N.
+// This component renders one card per slide with its own brief, image
+// state, and per-slide regenerate button. A single "Publish Carousel"
+// button at the bottom requires ALL slides to have images and ships the
+// whole bundle via meta-publish action=prepare type=carousel.
+//
+// State is array-based: imageUrls[i] is the generated URL for slide i,
+// generating[i] flags an in-flight Gemini call for slide i, etc.
+function CarouselControls({ ep }: { ep: EnrichedPost }) {
+  // Build the unified slides array. Slide 0 is the cover (= ep.scene_brief).
+  const slides = [
+    { scene_brief: ep.scene_brief, overlay_text: ep.overlay_text },
+    ...(ep.additional_slides ?? []).map(s => ({ scene_brief: s.scene_brief, overlay_text: s.overlay_text })),
+  ]
+  const N = slides.length
+
+  const [imageUrls,   setImageUrls]   = useState<(string | null)[]>(new Array(N).fill(null))
+  const [generating,  setGenerating]  = useState<boolean[]>(new Array(N).fill(false))
+  const [genErrors,   setGenErrors]   = useState<(string | null)[]>(new Array(N).fill(null))
+  const [publishing,  setPublishing]  = useState(false)
+  const [publishedTo, setPublishedTo] = useState<string | null>(null)
+  const [pubError,    setPubError]    = useState<string | null>(null)
+
+  // Set a single index in an array-state in an immutable way.
+  const setAt = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>) => (i: number, v: T) =>
+    setter(prev => { const next = [...prev]; next[i] = v; return next })
+
+  const setUrl  = setAt(setImageUrls)
+  const setGen  = setAt(setGenerating)
+  const setErr  = setAt(setGenErrors)
+
+  async function generateSlide(i: number) {
+    setGen(i, true); setErr(i, null); setUrl(i, null)
+    try {
+      const { data, error } = await supabase.functions.invoke('visual-test', {
+        body: {
+          scene_brief:         slides[i].scene_brief,
+          aspect:              ep.aspect,
+          // Same product reference for every slide so the bag (when shown)
+          // is always the matched product across the whole carousel.
+          reference_image_url: ep.reference_image_url || undefined,
+        },
+      })
+      if (error) throw error
+      if (!data?.url) throw new Error('no url returned')
+      setUrl(i, data.url)
+    } catch (e: any) {
+      setErr(i, e?.message ?? String(e))
+    } finally {
+      setGen(i, false)
+    }
+  }
+
+  async function generateAll() {
+    // Trigger all in parallel; useState batching keeps this clean.
+    await Promise.all(slides.map((_, i) => generateSlide(i)))
+  }
+
+  const allReady = imageUrls.every(u => !!u)
+
+  async function publishCarousel() {
+    if (!allReady) return
+    setPublishing(true); setPubError(null); setPublishedTo(null)
+    try {
+      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
+      // meta-publish carousel branch already builds child containers + parent
+      // container per the IG Graph API two-step flow. We just give it the URLs.
+      const prep = await supabase.functions.invoke('meta-publish', {
+        body: {
+          action:   'prepare',
+          type:     'carousel',
+          children: imageUrls.map(u => ({ image_url: u! })),
+          caption,
+        },
+      })
+      if (prep.error) throw prep.error
+      const creationId: string | undefined = prep.data?.creation_id
+      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
+      const pub = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'publish', creation_id: creationId },
+      })
+      if (pub.error) throw pub.error
+      const link = pub.data?.permalink
+      if (!link) throw new Error(`publish returned no permalink: ${JSON.stringify(pub.data).slice(0, 200)}`)
+      setPublishedTo(link)
+    } catch (e: any) {
+      setPubError(e?.message ?? String(e))
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  const anyGenerating = generating.some(g => g)
+
+  return (
+    <div className="mt-2 border-t border-surface-200 pt-2 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="text-[10px] uppercase tracking-wide text-surface-500 font-semibold">
+          🎨 קרוסל — {N} שקפים
+        </div>
+        <div className="text-[11px] text-surface-600">
+          <span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook} · <span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}
+        </div>
+      </div>
+      {ep.product_reference && (
+        <div className={`text-[11px] ${ep.reference_image_url ? 'text-emerald-700' : 'text-surface-500'}`}>
+          <span className="font-semibold">מוצר רפרנס:</span> {ep.product_reference}{' '}
+          {ep.reference_image_url ? '✓ נמצאה תמונה' : '⚠ לא נמצאה במלאי, ייווצר מהשקית הדיפולטית'}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {slides.map((s, i) => (
+          <div key={i} className="bg-surface-50 border border-surface-200 rounded-lg p-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-surface-700">
+                {i === 0 ? 'שקף 1 — כריכה' : `שקף ${i + 1}`}
+              </div>
+              <button
+                onClick={() => generateSlide(i)}
+                disabled={generating[i] || publishing}
+                className="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed"
+              >
+                {generating[i] ? '...' : (imageUrls[i] ? '🔄' : '🎨')}
+              </button>
+            </div>
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-surface-500 hover:text-surface-700">📷 תקציר</summary>
+              <p className="mt-1 p-1.5 bg-white rounded text-surface-700 leading-relaxed">{s.scene_brief}</p>
+            </details>
+            {s.overlay_text && (
+              <div className="text-[10px] text-amber-700"><span className="font-semibold">טקסט-על:</span> {s.overlay_text}</div>
+            )}
+            {imageUrls[i] && (
+              <a href={imageUrls[i]!} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={imageUrls[i]!}
+                  alt={`Slide ${i + 1}`}
+                  className="w-full rounded border border-surface-200"
+                  style={{ aspectRatio: ep.aspect === 'reel_cover' ? '9/16' : '1/1', objectFit: 'cover' }}
+                />
+              </a>
+            )}
+            {genErrors[i] && (
+              <div className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded p-1">
+                {genErrors[i]}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {pubError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה בפרסום: {pubError}
+        </div>
+      )}
+      {publishedTo && (
+        <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded p-2">
+          ✅ פורסם בהצלחה!{' '}
+          <a href={publishedTo} target="_blank" rel="noopener noreferrer" className="underline">
+            פתח באינסטגרם
+          </a>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={generateAll}
+          disabled={anyGenerating || publishing}
+          className="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {anyGenerating
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מייצר את כל השקפים...</>)
+            : '🎨 צור את כל השקפים'}
+        </button>
+        <button
+          onClick={publishCarousel}
+          disabled={!allReady || publishing || anyGenerating || !!publishedTo}
+          className="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {publishing
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מפרסם קרוסל...</>)
+            : '📤 פרסם כקרוסל'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Per-post IG publishing controls ──────────────────────────────────────────
 // Shows the photographer's brief from enrichment, lets the user generate a
 // visual on demand, and (if the visual looks right) ship it to @minuto_cafe
@@ -1100,6 +1301,14 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
 // All state is local. Refresh = lose the generated image and regenerate.
 // That's intentional in v1 — keeps us off another DB table for now.
 function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
+  // Multi-slide carousels have their own component (separate state + UI).
+  // Detect early before any hooks so we don't violate rules-of-hooks if we
+  // ever conditionally bail out.
+  const isCarousel = (ep.additional_slides ?? []).length > 0
+  if (isCarousel) {
+    return <CarouselControls ep={ep} />
+  }
+
   const [imageUrl,    setImageUrl]    = useState<string | null>(ep.image_url)
   const [generating,  setGenerating]  = useState(false)
   const [genError,    setGenError]    = useState<string | null>(null)
