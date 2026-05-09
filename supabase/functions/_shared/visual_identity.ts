@@ -7,8 +7,30 @@
 // Synthesized from reference posts (La Cabra "Rituals" Reel + Blue Bottle
 // Valentine still-life). See conversation context for the full derivation.
 
+// Default fallback when no specific product is matched. Kept as the
+// Yirgacheffe bag for backwards compat, but in practice visual-test now
+// rotates through MINUTO_BAG_REFERENCE_POOL when no per-post reference is
+// supplied — otherwise EVERY post that didn't match a product would render
+// the Yirgacheffe bag and the feed would look monochromatic.
 export const MINUTO_BAG_REFERENCE_URL =
   'https://www.minuto.co.il/content/uploads/2025/08/yirgachffe.png'
+
+// Five real Minuto bags with distinct colored center labels. visual-test
+// picks one at random when no per-post reference_image_url is set, so
+// generic posts get visual variety across the feed instead of always
+// the same bag. Order doesn't matter; rotation is uniform-random per
+// generation call.
+export const MINUTO_BAG_REFERENCE_POOL: ReadonlyArray<string> = [
+  'https://www.minuto.co.il/content/uploads/2025/08/yirgachffe.png',
+  'https://www.minuto.co.il/content/uploads/2025/03/Minuto_Antigua.png',
+  'https://www.minuto.co.il/content/uploads/2025/03/STAR_VELVET.png',
+  'https://www.minuto.co.il/content/uploads/2026/05/SWEET_LEONA_.png',
+  'https://www.minuto.co.il/content/uploads/2025/03/Kenya_AA.png',
+]
+
+export function pickFallbackBagUrl(): string {
+  return MINUTO_BAG_REFERENCE_POOL[Math.floor(Math.random() * MINUTO_BAG_REFERENCE_POOL.length)]
+}
 
 export const MINUTO_VISUAL_IDENTITY = `
 PHOTOGRAPHED, NOT RENDERED. This is editorial-grade lifestyle/product
@@ -50,8 +72,15 @@ SUBJECT VOCABULARY: Coffee bags (sized as an element, not the hero), small
 unglazed ceramic cups with raw edges, glass coffee servers (Hario range
 server: tall straight-sided cylindrical glass with a flat handle, NOT a
 milk pitcher), porcelain pour-over drippers, brass coffee scoops, raw
-green beans, dark roasted beans, steam, amber liquid, dark wood serving
-boards, brown craft-paper boxes, hand-thrown earthenware bowls.
+green beans, LIGHT-TO-MEDIUM ROASTED BEANS ONLY (light brown to medium
+brown, matte not oily), steam, amber liquid, dark wood serving boards,
+brown craft-paper boxes, hand-thrown earthenware bowls.
+
+ROAST LEVEL — STRICTLY ENFORCED: Minuto only roasts light to medium. Any
+roasted beans rendered must be light brown to medium brown. NEVER dark,
+NEVER oily/glossy, NEVER french-roast black. Dark-roasted beans are a
+brand-fact violation — the rendered image is wrong even if it looks
+moody/atmospheric.
 
 ALLOWED HANDS: Hands appear ONLY when interacting with coffee — pouring
 from a server, holding a cup mid-sip motion, weighing beans on a scale.

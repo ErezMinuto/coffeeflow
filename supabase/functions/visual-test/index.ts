@@ -3,9 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   ASPECT_TO_RATIO,
   Aspect,
-  MINUTO_BAG_REFERENCE_URL,
   MINUTO_VISUAL_IDENTITY,
   SCENE_PRESETS,
+  pickFallbackBagUrl,
 } from '../_shared/visual_identity.ts'
 
 // Test endpoint for the Minuto IG visual identity.
@@ -53,13 +53,15 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
 
-    // 1. Optionally load the Minuto bag reference image. If the caller passed
-    //    a per-post reference_image_url (e.g. the actual Dark Chocolate bag
-    //    when the post is about Dark Chocolate), use that instead of the
-    //    default Yirgacheffe shot. Falls back to default if missing/broken.
+    // 1. Optionally load the Minuto bag reference image. Priority:
+    //    a) explicit per-post reference_image_url (e.g. the actual Antigua
+    //       bag when the post is about Antigua) — passed by enrichment.
+    //    b) random pick from MINUTO_BAG_REFERENCE_POOL — so generic posts
+    //       that didn't match a specific product get visual variety across
+    //       the feed instead of always rendering Yirgacheffe.
     let referenceB64: string | null = null
     let referenceMime = 'image/png'
-    const referenceUrl = body.reference_image_url || MINUTO_BAG_REFERENCE_URL
+    const referenceUrl = body.reference_image_url || pickFallbackBagUrl()
     if (useReference) {
       const refRes = await fetch(referenceUrl)
       if (refRes.ok) {
