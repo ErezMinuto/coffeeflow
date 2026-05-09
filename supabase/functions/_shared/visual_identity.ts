@@ -68,19 +68,40 @@ imperfections, weathered dark walnut or oak, unglazed ceramic with kiln
 marks, raw lime plaster, hand-thrown earthenware. NEVER glossy white
 modern, NEVER marble, NEVER seamless paper backdrops, NEVER white walls.
 
-SUBJECT VOCABULARY: Coffee bags (sized as an element, not the hero), small
-unglazed ceramic cups with raw edges, glass coffee servers (Hario range
-server: tall straight-sided cylindrical glass with a flat handle, NOT a
-milk pitcher), porcelain pour-over drippers, brass coffee scoops, raw
-green beans, LIGHT-TO-MEDIUM ROASTED BEANS ONLY (light brown to medium
-brown, matte not oily), steam, amber liquid, dark wood serving boards,
-brown craft-paper boxes, hand-thrown earthenware bowls.
+SUBJECT VOCABULARY: Coffee bags (sized as an element, not the hero),
+small unglazed ceramic cups with raw edges (for espresso/cappuccino),
+thin clear-glass cups or carafes (for filter/pour-over coffee), glass
+coffee servers (Hario range server: tall straight-sided cylindrical glass
+with a flat horizontal handle, NOT a milk pitcher), porcelain pour-over
+drippers, raw green beans, LIGHT-TO-MEDIUM ROASTED BEANS ONLY (see ROAST
+LEVEL clause below), steam, amber liquid, dark wood serving boards,
+brown craft-paper boxes, hand-thrown earthenware bowls and dishes.
 
-ROAST LEVEL — STRICTLY ENFORCED: Minuto only roasts light to medium. Any
-roasted beans rendered must be light brown to medium brown. NEVER dark,
-NEVER oily/glossy, NEVER french-roast black. Dark-roasted beans are a
-brand-fact violation — the rendered image is wrong even if it looks
-moody/atmospheric.
+NO SPOONS, NO SCOOPS, NO UTENSILS: brass scoops, wooden spoons, espresso
+spoons, measuring scoops — all forbidden. Gemini renders them with
+weirdly small bowls or distorted proportions, and they break the frame.
+If beans need to be displayed loose, scatter them directly on the surface
+or pile them in a small unglazed ceramic dish.
+
+CUP-BY-BREWING-METHOD RULE: The vessel must match the drink it implies.
+  - Espresso shot, cappuccino, macchiato → small unglazed ceramic
+    demitasse (60-90ml), raw kiln edges, no handle or short handle.
+  - Filter coffee (V60, Chemex, Aeropress, drip) → thin CLEAR GLASS
+    cup or carafe, straight or slightly tapered. Lets the amber color
+    show through. Never a ceramic cup for filter.
+  - Latte / flat white → small clear glass tumbler or thin-walled
+    ceramic latte cup.
+  When the scene is ambiguous (just "coffee", no method named), default
+  to the small unglazed ceramic cup.
+
+ROAST LEVEL — STRICTLY ENFORCED: Minuto only roasts LIGHT to MEDIUM.
+Roasted beans rendered must be the color of toasted hazelnuts or light
+caramel — golden-brown, light cinnamon-brown, never darker than a peanut
+shell. The bean surface is MATTE and DRY, never wet-looking, never oily,
+never glossy. NEVER dark chocolate brown, NEVER black, NEVER oily-shiny,
+NEVER french-roast. If you find yourself reaching for "rich dark beans"
+or "deep brown", you are wrong — pull the color back lighter. Dark beans
+are a brand-fact violation regardless of how moody the lighting is.
 
 ALLOWED HANDS: Hands appear ONLY when interacting with coffee — pouring
 from a server, holding a cup mid-sip motion, weighing beans on a scale.
@@ -139,11 +160,12 @@ export const SCENE_PRESETS: Record<string, string> = {
     'third of the frame, standing upright on a raw lime plaster surface. The ' +
     'bag is side-lit hard from the right, casting a long sharp shadow that ' +
     'extends fully across to the left edge of the frame — the shadow is part ' +
-    'of the composition, not an accident. In the lower-left third: a brass ' +
-    'antique coffee scoop holding a careful small pile of green coffee beans, ' +
-    'with a few loose beans scattered on the plaster around it. A small empty ' +
-    'unglazed ceramic cup, half in shadow, sits between them, smaller than the ' +
-    'bag, soft focus. The bag occupies maybe 25% of the frame area, not 50%. ' +
+    'of the composition, not an accident. In the lower-left third: a small ' +
+    'pile of LIGHT-TO-MEDIUM-ROASTED beans (light cinnamon brown, matte) ' +
+    'scattered directly on the raw plaster, with a few loose beans nearby. ' +
+    'A small empty unglazed ceramic cup, half in shadow, sits between the ' +
+    'beans and the bag, smaller than the bag, soft focus. NO SPOONS, NO ' +
+    'SCOOPS. The bag occupies maybe 25% of the frame area, not 50%. ' +
     'Almost monochromatic earth palette. Kodak Portra grain.',
 
   brewing_setup:
@@ -152,9 +174,12 @@ export const SCENE_PRESETS: Record<string, string> = {
     'of a TALL CYLINDRICAL HARIO GLASS SERVER (straight walls, flat handle), ' +
     'fresh coffee blooming at the start of the bloom — visible bubbles. A ' +
     'brass gooseneck kettle is partially cropped out of the upper-left frame ' +
-    'edge, only its spout and a glint of brass visible. In the lower-right ' +
-    'third: a small pile of medium-roasted beans on a hand-thrown earthenware ' +
-    'dish. The Minuto coffee bag is SMALL in the deep-shadowed background, ' +
+    'edge, only its spout and a glint of brass visible (the kettle is the ' +
+    'ONE allowed brass element — not a spoon or scoop). In the lower-right ' +
+    'third: a small pile of LIGHT-TO-MEDIUM-ROASTED beans (light cinnamon ' +
+    'brown, matte) on a hand-thrown earthenware dish. NO SPOONS, NO SCOOPS. ' +
+    'A thin clear-glass cup sits beside the dripper since this is filter ' +
+    'brewing. The Minuto coffee bag is SMALL in the deep-shadowed background, ' +
     'occupying less than 15% of the frame area. Single warm window light from ' +
     'upper-right. Generous shadow across the right side of the frame.',
 }
