@@ -105,7 +105,29 @@ name on the center label are allowed.` : ''
 
 SCENE: ${sceneBrief}${brandClause}
 
-FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.`
+FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
+
+⛔ FINAL OVERRIDE — read this LAST and let it overrule the SCENE
+description above wherever they conflict:
+
+If the SCENE description mentions a scoop, brass scoop, wooden spoon,
+espresso spoon, measuring scoop, or any other utensil, IGNORE that
+portion of the description and omit the utensil entirely. Loose beans
+go directly on the surface or in a small ceramic dish — never in a
+scoop. The only exception is a brass gooseneck kettle when partially
+cropped from a frame edge.
+
+If the SCENE description mentions dark roasted, dark beans,
+dark-roasted, glossy beans, oily beans, or rich-brown beans, IGNORE
+that portion. Render beans the color of dry rolled oats or blanched
+almonds — pale tan, matte, dry. Specialty light roast.
+
+If the SCENE description specifies a ceramic cup but the brewing method
+implied is filter / V60 / Chemex / pour-over, render a thin clear-glass
+cup instead. Espresso/cappuccino keeps the small unglazed ceramic cup.
+
+These rules WIN over anything in the SCENE description. The prior
+text is inspiration; these are mandatory.`
 
     // 3. Call Gemini 2.5 Flash Image (proven model for reference-conditioned
     //    image edits in this project — same one the blog banner uses).
