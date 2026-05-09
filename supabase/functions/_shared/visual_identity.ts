@@ -15,6 +15,14 @@
 export const MINUTO_BAG_REFERENCE_URL =
   'https://www.minuto.co.il/content/uploads/2025/08/yirgachffe.png'
 
+// Color anchor for actual Minuto roasted beans — uploaded by the user
+// 2026-05-09 after multiple iterations of text-only color prompts kept
+// missing the target. Passed to Gemini as a SECOND reference image
+// (alongside the bag) so the model has a visual anchor for the medium-
+// chestnut color rather than guessing from text descriptions alone.
+export const MINUTO_BEANS_REFERENCE_URL =
+  'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/IMG_5117.jpg'
+
 // Five real Minuto bags with distinct colored center labels. visual-test
 // picks one at random when no per-post reference_image_url is set, so
 // generic posts get visual variety across the feed instead of always
