@@ -73,9 +73,10 @@ small unglazed ceramic cups with raw edges (for espresso/cappuccino),
 thin clear-glass cups or carafes (for filter/pour-over coffee), glass
 coffee servers (Hario range server: tall straight-sided cylindrical glass
 with a flat horizontal handle, NOT a milk pitcher), porcelain pour-over
-drippers, raw green beans, LIGHT-TO-MEDIUM ROASTED BEANS ONLY (see ROAST
-LEVEL clause below), steam, amber liquid, dark wood serving boards,
-brown craft-paper boxes, hand-thrown earthenware bowls and dishes.
+drippers, LIGHT-TO-MEDIUM ROASTED BEANS (warm light-brown / cinnamon /
+caramel — see ROAST LEVEL clause below; NEVER raw or green), steam,
+amber liquid, dark wood serving boards, brown craft-paper boxes,
+hand-thrown earthenware bowls and dishes.
 
 NO SPOONS, NO SCOOPS, NO UTENSILS: brass scoops, wooden spoons, espresso
 spoons, measuring scoops — all forbidden. Gemini renders them with
@@ -94,35 +95,41 @@ CUP-BY-BREWING-METHOD RULE: The vessel must match the drink it implies.
   When the scene is ambiguous (just "coffee", no method named), default
   to the small unglazed ceramic cup.
 
-ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts LIGHT, occasionally
-medium-light. NEVER medium-dark, NEVER dark.
+ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts LIGHT to MEDIUM-LIGHT.
+Beans are ROASTED — NEVER green, NEVER unroasted, NEVER raw. They have
+clearly been through fire and have developed a warm brown color, just a
+LIGHT brown rather than a dark one.
 
-CONCRETE COLOR ANCHORS — render beans the color of:
-  ✓ Dry rolled oats
-  ✓ Blanched almonds, raw cashews
-  ✓ Wheat berries / hulled barley
-  ✓ Pancake batter when it first hits the griddle
-  ✓ Sourdough crust before it deepens
-  ✓ Wet sand on a beach at golden hour
+CONCRETE COLOR ANCHORS — render roasted beans the color of:
+  ✓ Light cinnamon brown (the spice itself)
+  ✓ Cardboard / kraft brown paper
+  ✓ Caramel just before it deepens
+  ✓ Pancake/waffle that's golden but not yet dark
+  ✓ Light maple syrup
+  ✓ Camel-colored leather
+  ✓ Buttery shortbread
 
 NOT the color of:
-  ✗ Walnut wood, chestnut, mahogany
-  ✗ Dark chocolate, milk chocolate
-  ✗ Espresso shot, coffee liquid
-  ✗ Roasted almonds (too dark)
-  ✗ Toasted hazelnuts (too dark — borderline, avoid)
+  ✗ GREEN, sage, olive, khaki, pistachio — these are UNROASTED beans
+    which Minuto does NOT sell as a finished product. Forbidden.
+  ✗ Walnut wood, chestnut, mahogany — too dark
+  ✗ Dark chocolate, milk chocolate — too dark
+  ✗ Espresso shot, coffee liquid — way too dark
+  ✗ Roasted almonds — too dark
+  ✗ Anything glossy, oily, or wet-looking
   ✗ Anything you'd see on a typical commercial-coffee bag photo
 
 BEAN SURFACE FINISH:
-  - Matte, dry, slightly papery — like uncooked grains
-  - Never glossy, never oily, never wet-looking
-  - Visible bean center crease should look pale and dry, not dark
+  - Matte, dry — never glossy, never oily, never wet-looking
+  - Bean center crease is visible and slightly darker than the surface,
+    but the bean itself reads as a warm light brown not a green grain
+  - Looks unmistakably like ROASTED coffee, not raw green coffee
 
-ANTI-PATTERN CHECK before you generate: if your rendered beans look like
-something a Starbucks photo would show, you are WRONG. Pull the color
-back much lighter. If they look almost too pale to be coffee, you are
-probably right. Specialty light roast genuinely surprises people with
-how light it is — that's the brand fact you're rendering.
+ANTI-PATTERN CHECK: if your beans look green/sage/olive — STOP, you've
+gone too light. Roasted coffee is brown, just lightly brown. Imagine
+brown shortbread or a kraft-paper bag, then make the beans that color.
+If your beans look like dark chocolate or espresso liquid — STOP, you've
+gone too dark. The right answer is a warm CARAMEL/CINNAMON brown.
 
 ALLOWED HANDS: Hands appear ONLY when interacting with coffee — pouring
 from a server, holding a cup mid-sip motion, weighing beans on a scale.
