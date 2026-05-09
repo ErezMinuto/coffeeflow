@@ -73,10 +73,23 @@ small unglazed ceramic cups with raw edges (for espresso/cappuccino),
 thin clear-glass cups or carafes (for filter/pour-over coffee), glass
 coffee servers (Hario range server: tall straight-sided cylindrical glass
 with a flat horizontal handle, NOT a milk pitcher), porcelain pour-over
-drippers, LIGHT-TO-MEDIUM ROASTED BEANS (warm light-brown / cinnamon /
-caramel — see ROAST LEVEL clause below; NEVER raw or green), steam,
-amber liquid, dark wood serving boards, brown craft-paper boxes,
-hand-thrown earthenware bowls and dishes.
+drippers, MEDIUM ROASTED BEANS (pecan / chestnut / lighter milk
+chocolate — see ROAST LEVEL clause below; NEVER raw/green, NEVER
+dark/oily), steam, amber liquid, dark wood serving boards, brown
+craft-paper boxes, hand-thrown earthenware bowls and dishes.
+
+THE MINUTO COFFEE ROASTER (when a scene calls for the roastery /
+roasting machine / "the roaster"): a Coffee-Tech Engineering drum
+roaster with a FULLY MATTE BLACK BODY — black panels, black hopper,
+black chimney, black afterburner column. The only non-black elements
+are the round stainless steel cooling tray with rotating arms (silver),
+small chrome details on the front (a round pressure gauge, the bean
+sight glass with a chrome rim), and a small red emergency-stop button.
+NEVER render a vintage Probat copper roaster, NEVER an antique brass
+roaster, NEVER a white/cream-colored roaster, NEVER a yellow or wood-
+trim roaster. Modern, all-black, industrial. If the scene mentions a
+brass kettle that's allowed (separate object); the roaster itself is
+black.
 
 NO SPOONS, NO SCOOPS, NO UTENSILS: brass scoops, wooden spoons, espresso
 spoons, measuring scoops — all forbidden. Gemini renders them with
@@ -95,41 +108,44 @@ CUP-BY-BREWING-METHOD RULE: The vessel must match the drink it implies.
   When the scene is ambiguous (just "coffee", no method named), default
   to the small unglazed ceramic cup.
 
-ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts LIGHT to MEDIUM-LIGHT.
-Beans are ROASTED — NEVER green, NEVER unroasted, NEVER raw. They have
-clearly been through fire and have developed a warm brown color, just a
-LIGHT brown rather than a dark one.
+ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts to MEDIUM, occasionally
+medium-light. NEVER medium-dark, NEVER dark, NEVER green/unroasted.
 
 CONCRETE COLOR ANCHORS — render roasted beans the color of:
-  ✓ Light cinnamon brown (the spice itself)
-  ✓ Cardboard / kraft brown paper
-  ✓ Caramel just before it deepens
-  ✓ Pancake/waffle that's golden but not yet dark
-  ✓ Light maple syrup
-  ✓ Camel-colored leather
-  ✓ Buttery shortbread
+  ✓ Pecan shells / roasted pecan brown
+  ✓ Milk chocolate (the lighter end — Cadbury, not 70% dark)
+  ✓ Roasted hazelnut shell
+  ✓ Medium walnut wood (the freshly cut warm-brown walnut, not aged dark)
+  ✓ Chestnut just out of the roaster
+  ✓ Real-world appearance: medium chestnut brown with subtle red-amber
+    undertones, the bean centre crease slightly paler than the surface
 
 NOT the color of:
-  ✗ GREEN, sage, olive, khaki, pistachio — these are UNROASTED beans
-    which Minuto does NOT sell as a finished product. Forbidden.
-  ✗ Walnut wood, chestnut, mahogany — too dark
-  ✗ Dark chocolate, milk chocolate — too dark
-  ✗ Espresso shot, coffee liquid — way too dark
-  ✗ Roasted almonds — too dark
-  ✗ Anything glossy, oily, or wet-looking
-  ✗ Anything you'd see on a typical commercial-coffee bag photo
+  ✗ GREEN, sage, olive, khaki — UNROASTED. Forbidden.
+  ✗ Cardboard, kraft paper, oats, blanched almonds, camel leather, raw
+    cashews — TOO LIGHT. These overshoot to underroasted; coffee is
+    distinctly brown, not pale tan.
+  ✗ Dark chocolate, espresso shot, coffee liquid, ebony, near-black —
+    TOO DARK. Forbidden (medium-dark/french violation).
+  ✗ Anything glossy, oily, or wet-looking — Minuto beans are matte
+    even immediately after roasting.
 
 BEAN SURFACE FINISH:
-  - Matte, dry — never glossy, never oily, never wet-looking
-  - Bean center crease is visible and slightly darker than the surface,
-    but the bean itself reads as a warm light brown not a green grain
-  - Looks unmistakably like ROASTED coffee, not raw green coffee
+  - Matte, dry, slight visible chaff/silverskin texture is fine.
+  - Bean center crease visible and slightly paler than the surface
+    (the line where it cracked open during roast).
+  - Subtle warm undertones — auburn / amber, not pure cool brown.
+  - NEVER glossy or oily even though they're roasted.
 
-ANTI-PATTERN CHECK: if your beans look green/sage/olive — STOP, you've
-gone too light. Roasted coffee is brown, just lightly brown. Imagine
-brown shortbread or a kraft-paper bag, then make the beans that color.
-If your beans look like dark chocolate or espresso liquid — STOP, you've
-gone too dark. The right answer is a warm CARAMEL/CINNAMON brown.
+ANTI-PATTERN CHECKS — both sides:
+  • If your beans look pale tan / cardboard / wheat / oat → TOO LIGHT.
+    Push toward the medium-chestnut/pecan range.
+  • If your beans look dark chocolate / espresso / glossy black → TOO
+    DARK. Pull back toward medium-chestnut/pecan.
+  • If your beans look green/sage → not roasted at all. Wrong scene.
+  • Goldilocks zone: clearly recognizable as ROASTED coffee at a
+    medium roast level. Pecan-brown / hazelnut-shell / lighter
+    milk-chocolate. That's the target.
 
 ALLOWED HANDS: Hands appear ONLY when interacting with coffee — pouring
 from a server, holding a cup mid-sip motion, weighing beans on a scale.

@@ -118,12 +118,14 @@ scoop. The only exception is a brass gooseneck kettle when partially
 cropped from a frame edge.
 
 If the SCENE description mentions dark roasted, dark beans,
-dark-roasted, glossy beans, oily beans, rich-brown beans, OR raw
-green beans / unroasted beans, IGNORE that portion. Render beans as
-LIGHTLY ROASTED — warm light brown, the color of light cinnamon /
-camel leather / kraft paper / caramel. Matte, dry. Beans are clearly
-roasted (not green), but lightly. Avoid anything that looks unroasted
-(green/sage/olive) AND anything that looks dark (walnut/chocolate).
+dark-roasted, glossy beans, oily beans, OR raw green beans / unroasted
+beans / pale tan beans / cardboard-colored beans, IGNORE that portion.
+Render beans as MEDIUM ROAST — pecan brown / roasted hazelnut shell /
+medium walnut / lighter milk chocolate. Matte, dry, never glossy.
+Goldilocks: NOT pale-tan/cardboard/wheat (too light, looks underroasted),
+NOT dark chocolate/espresso/black (too dark, looks french-roast),
+NOT green/sage (not roasted at all). The target is clearly medium-roasted
+coffee — chestnut brown with subtle warm undertones.
 
 If the SCENE description specifies a ceramic cup but the brewing method
 implied is filter / V60 / Chemex / pour-over, render a thin clear-glass
