@@ -94,14 +94,35 @@ CUP-BY-BREWING-METHOD RULE: The vessel must match the drink it implies.
   When the scene is ambiguous (just "coffee", no method named), default
   to the small unglazed ceramic cup.
 
-ROAST LEVEL — STRICTLY ENFORCED: Minuto only roasts LIGHT to MEDIUM.
-Roasted beans rendered must be the color of toasted hazelnuts or light
-caramel — golden-brown, light cinnamon-brown, never darker than a peanut
-shell. The bean surface is MATTE and DRY, never wet-looking, never oily,
-never glossy. NEVER dark chocolate brown, NEVER black, NEVER oily-shiny,
-NEVER french-roast. If you find yourself reaching for "rich dark beans"
-or "deep brown", you are wrong — pull the color back lighter. Dark beans
-are a brand-fact violation regardless of how moody the lighting is.
+ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts LIGHT, occasionally
+medium-light. NEVER medium-dark, NEVER dark.
+
+CONCRETE COLOR ANCHORS — render beans the color of:
+  ✓ Dry rolled oats
+  ✓ Blanched almonds, raw cashews
+  ✓ Wheat berries / hulled barley
+  ✓ Pancake batter when it first hits the griddle
+  ✓ Sourdough crust before it deepens
+  ✓ Wet sand on a beach at golden hour
+
+NOT the color of:
+  ✗ Walnut wood, chestnut, mahogany
+  ✗ Dark chocolate, milk chocolate
+  ✗ Espresso shot, coffee liquid
+  ✗ Roasted almonds (too dark)
+  ✗ Toasted hazelnuts (too dark — borderline, avoid)
+  ✗ Anything you'd see on a typical commercial-coffee bag photo
+
+BEAN SURFACE FINISH:
+  - Matte, dry, slightly papery — like uncooked grains
+  - Never glossy, never oily, never wet-looking
+  - Visible bean center crease should look pale and dry, not dark
+
+ANTI-PATTERN CHECK before you generate: if your rendered beans look like
+something a Starbucks photo would show, you are WRONG. Pull the color
+back much lighter. If they look almost too pale to be coffee, you are
+probably right. Specialty light roast genuinely surprises people with
+how light it is — that's the brand fact you're rendering.
 
 ALLOWED HANDS: Hands appear ONLY when interacting with coffee — pouring
 from a server, holding a cup mid-sip motion, weighing beans on a scale.
