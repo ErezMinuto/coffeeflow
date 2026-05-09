@@ -1106,6 +1106,53 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
   const [publishing,  setPublishing]  = useState(false)
   const [publishedTo, setPublishedTo] = useState<string | null>(null)
   const [pubError,    setPubError]    = useState<string | null>(null)
+  // Reel state — Veo image-to-video, polled async (1–3 min typical)
+  const [videoUrl,        setVideoUrl]        = useState<string | null>(null)
+  const [reelOperation,   setReelOperation]   = useState<string | null>(null)
+  const [reelGenerating,  setReelGenerating]  = useState(false)
+  const [reelError,       setReelError]       = useState<string | null>(null)
+  // The post is Reel-shaped if its aspect is 9:16. Only those get the
+  // Generate Reel button — feed posts (1:1) skip the video pipeline.
+  const isReelType = ep.aspect === 'reel_cover'
+
+  // Poll Veo every 5s while a job is running. Stops when the status function
+  // returns done/error or the component unmounts. Cancels via a ref so a new
+  // job started before the old finishes doesn't keep two pollers running.
+  useEffect(() => {
+    if (!reelOperation) return
+    let cancelled = false
+    let timer: number | undefined
+    const poll = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('meta-reel-status', {
+          body: { operation: reelOperation },
+        })
+        if (cancelled) return
+        if (error) throw error
+        if (data?.status === 'done' && data.video_url) {
+          setVideoUrl(data.video_url)
+          setReelOperation(null)
+          setReelGenerating(false)
+          return
+        }
+        if (data?.status === 'error') {
+          setReelError(data.error ?? 'unknown error')
+          setReelOperation(null)
+          setReelGenerating(false)
+          return
+        }
+        // pending → poll again
+        timer = setTimeout(poll, 5000) as unknown as number
+      } catch (e: any) {
+        if (cancelled) return
+        setReelError(e?.message ?? String(e))
+        setReelOperation(null)
+        setReelGenerating(false)
+      }
+    }
+    poll()
+    return () => { cancelled = true; if (timer) clearTimeout(timer) }
+  }, [reelOperation])
 
   if (ep.rejected) {
     return (
@@ -1117,6 +1164,7 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
 
   async function generateVisual() {
     setGenerating(true); setGenError(null); setImageUrl(null)
+    setVideoUrl(null); setReelOperation(null); setReelError(null)
     try {
       const { data, error } = await supabase.functions.invoke('visual-test', {
         body: {
@@ -1139,20 +1187,48 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     }
   }
 
-  async function publishToInstagram() {
+  async function generateReel() {
     if (!imageUrl) return
+    setReelGenerating(true); setReelError(null); setVideoUrl(null)
+    try {
+      // Pull a Veo-friendly motion description from the scene_brief — it's
+      // already photographic/cinematic prose, ideal as the motion prompt.
+      // Veo 2 silently outputs ~5s of subtle motion driven by this text.
+      const motionPrompt =
+        `Slow gentle cinematic motion: ${ep.scene_brief.slice(0, 600)}. ` +
+        `Subtle, premium, no people, no text, no animation of the bag itself. ` +
+        `Faint atmosphere — steam wisps, soft light shift, light breeze. 5 seconds.`
+      const { data, error } = await supabase.functions.invoke('meta-reel-generate', {
+        body: {
+          image_url:     imageUrl,
+          motion_prompt: motionPrompt,
+          aspect:        'reel_9_16',
+          duration_sec:  5,
+        },
+      })
+      if (error) throw error
+      const op = data?.operation
+      if (!op) throw new Error(`no operation id returned: ${JSON.stringify(data).slice(0, 200)}`)
+      setReelOperation(op)   // useEffect kicks in and starts polling every 5s
+    } catch (e: any) {
+      setReelError(e?.message ?? String(e))
+      setReelGenerating(false)
+    }
+  }
+
+  async function publishToInstagram() {
+    if (!imageUrl && !videoUrl) return
     setPublishing(true); setPubError(null); setPublishedTo(null)
     try {
-      // Two-call IG flow: prepare a Meta media container, then publish it.
-      // Both wrapped behind meta-publish so we don't have to know the page
-      // token, IG account id, or two-step container plumbing here.
+      // Mode is decided by what we have: if a Veo video was generated, ship as
+      // a Reel (the cover frame becomes the in-grid thumbnail Meta picks from
+      // the video). Otherwise ship as a feed post with the still.
+      const mode = videoUrl ? 'reel' : 'feed'
+      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
       const prep = await supabase.functions.invoke('meta-publish', {
-        body: {
-          action:    'prepare',
-          type:      'feed',                // v1: cover frame goes out as a feed post even for Reels
-          image_url: imageUrl,
-          caption:   `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim(),
-        },
+        body: mode === 'reel'
+          ? { action: 'prepare', type: 'reel', video_url: videoUrl, caption }
+          : { action: 'prepare', type: 'feed', image_url: imageUrl, caption },
       })
       if (prep.error) throw prep.error
       const creationId: string | undefined = prep.data?.creation_id
@@ -1195,7 +1271,14 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
         <p className="mt-1 p-2 bg-surface-50 rounded text-surface-700 leading-relaxed">{ep.scene_brief}</p>
       </details>
 
-      {imageUrl ? (
+      {videoUrl ? (
+        <video
+          src={videoUrl}
+          controls
+          className="w-full rounded-lg border border-surface-200 mt-1"
+          style={{ aspectRatio: '9/16', objectFit: 'cover', maxHeight: 480 }}
+        />
+      ) : imageUrl ? (
         <a href={imageUrl} target="_blank" rel="noopener noreferrer">
           <img
             src={imageUrl}
@@ -1211,9 +1294,20 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
           שגיאה ביצירת תמונה: {genError}
         </div>
       )}
+      {reelError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה ביצירת ריל: {reelError}
+        </div>
+      )}
       {pubError && (
         <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
           שגיאה בפרסום: {pubError}
+        </div>
+      )}
+      {reelOperation && reelGenerating && (
+        <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded p-2 flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Veo מייצר ריל (1-3 דקות)... מעדכן אוטומטית כשמסתיים.
         </div>
       )}
       {publishedTo && (
@@ -1225,24 +1319,36 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <button
           onClick={generateVisual}
-          disabled={generating || publishing}
+          disabled={generating || publishing || reelGenerating}
           className="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
         >
           {generating
             ? (<><Loader2 className="w-3 h-3 animate-spin" /> מייצר תמונה...</>)
-            : (imageUrl ? '🔄 צור מחדש' : '🎨 צור תמונה')}
+            : (imageUrl ? '🔄 צור תמונה מחדש' : '🎨 צור תמונה')}
         </button>
+        {isReelType && (
+          <button
+            onClick={generateReel}
+            disabled={!imageUrl || reelGenerating || generating || publishing}
+            title={!imageUrl ? 'צור קודם תמונת כריכה' : 'הפוך את התמונה לריל של 5 שניות (Veo, 1-3 דקות)'}
+            className="text-xs px-3 py-1.5 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            {reelGenerating
+              ? (<><Loader2 className="w-3 h-3 animate-spin" /> Veo רץ...</>)
+              : (videoUrl ? '🔄 צור ריל מחדש' : '🎬 הפוך לריל')}
+          </button>
+        )}
         <button
           onClick={publishToInstagram}
-          disabled={!imageUrl || publishing || generating || !!publishedTo}
+          disabled={(!imageUrl && !videoUrl) || publishing || generating || reelGenerating || !!publishedTo}
           className="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
         >
           {publishing
             ? (<><Loader2 className="w-3 h-3 animate-spin" /> מפרסם...</>)
-            : '📤 פרסם לאינסטגרם'}
+            : (videoUrl ? '📤 פרסם כריל' : '📤 פרסם פוסט פיד')}
         </button>
       </div>
     </div>
