@@ -266,6 +266,54 @@ async function handleWebhook(req: Request) {
     return new Response("ok");
   }
 
+  // ── Attendance check-in / check-out (private DM only) ──────────────────
+  // Free-text "נכנסתי" or "יצאתי". startsWith so "נכנסתי!" / "יצאתי לעבודה" still match.
+  if (isPrivate) {
+    const isCheckIn  = /^נכנסתי\b/.test(text);
+    const isCheckOut = /^יצאתי\b/.test(text);
+    if (isCheckIn || isCheckOut) {
+      const eventType = isCheckIn ? "in" : "out";
+      const { data: empRows } = await supabase
+        .from("employees")
+        .select("id, name")
+        .eq("telegram_id", telegramId)
+        .eq("active", true)
+        .limit(1);
+      const emp = empRows?.[0];
+      if (!emp) {
+        await send(chatId,
+          `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`
+        );
+        return new Response("ok");
+      }
+
+      const now = new Date();
+      const { error: insertErr } = await supabase
+        .from("attendance_events")
+        .insert({
+          employee_id: emp.id,
+          event_type:  eventType,
+          event_at:    now.toISOString(),
+          source:      "telegram",
+        });
+      if (insertErr) {
+        console.error(`attendance: insert error for ${emp.name}:`, insertErr);
+        await send(chatId, `❌ שגיאה ברישום הנוכחות. נסה שוב.`);
+        return new Response("ok");
+      }
+
+      const timeStr = new Intl.DateTimeFormat("he-IL", {
+        timeZone: "Asia/Jerusalem",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(now);
+      const verb = isCheckIn ? "נכנסת" : "יצאת";
+      await send(chatId, `✅ ${verb} ב-${timeStr}`);
+      console.log(`attendance: ${emp.name} (${emp.id}) ${eventType} @ ${now.toISOString()}`);
+      return new Response("ok");
+    }
+  }
+
   // If message contains a phone number pattern, treat as name registration
   const phonePattern = /05\d[\d\-]{7,8}/;
   const hasPhone = phonePattern.test(text);

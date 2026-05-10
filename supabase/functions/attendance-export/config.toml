@@ -1,0 +1,2 @@
+[functions.attendance-export]
+verify_jwt = false
