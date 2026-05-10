@@ -16,9 +16,10 @@ const allNavItems = [
   },
   {
     label: 'Operations', icon: '🏪', adminOnly: true, children: [
-      { path: '/tasks',     icon: '📋', label: 'Tasks'     },
-      { path: '/schedule',  icon: '📅', label: 'Schedule'  },
-      { path: '/purchases', icon: '🛒', label: 'Purchases' },
+      { path: '/tasks',      icon: '📋', label: 'Tasks'      },
+      { path: '/schedule',   icon: '📅', label: 'Schedule'   },
+      { path: '/attendance', icon: '⏱️', label: 'Attendance' },
+      { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
