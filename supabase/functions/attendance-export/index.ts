@@ -225,39 +225,29 @@ async function buildAndSend(yearMonth: string) {
   // Range.
   const { startUTC, endUTC, days } = monthRange(yearMonth);
 
-  // Employees with at least one event in range — plus all currently active
-  // employees so an employee who took the whole month off still appears
-  // (zero hours).
-  const { data: activeEmps } = await supabase
-    .from("employees")
-    .select("id, name")
-    .eq("active", true)
-    .order("name");
-
+  // Only export employees who actually have events this month — empty
+  // sheets are noise for the accountant. Active employees with zero events
+  // are intentionally skipped here.
   const { data: events } = await supabase
     .from("attendance_events")
     .select("employee_id, event_type, event_at")
     .gte("event_at", startUTC.toISOString())
     .lt("event_at", endUTC.toISOString());
 
-  const empIds = new Set<string>((activeEmps ?? []).map(e => e.id));
+  const empIds = new Set<string>();
   for (const ev of events ?? []) empIds.add(ev.employee_id);
 
   if (empIds.size === 0) {
     return { ok: false, error: "אין נתוני נוכחות לחודש זה" };
   }
 
-  // Build empId → name (for inactive employees who appeared in events).
+  // Look up names for every employee_id that appeared in events.
+  const { data: empRows } = await supabase
+    .from("employees")
+    .select("id, name")
+    .in("id", [...empIds]);
   const nameById = new Map<string, string>();
-  for (const e of activeEmps ?? []) nameById.set(e.id, e.name);
-  const missingIds = [...empIds].filter(id => !nameById.has(id));
-  if (missingIds.length > 0) {
-    const { data: extra } = await supabase
-      .from("employees")
-      .select("id, name")
-      .in("id", missingIds);
-    for (const e of extra ?? []) nameById.set(e.id, e.name);
-  }
+  for (const e of empRows ?? []) nameById.set(e.id, e.name);
 
   // Group events by (empId, israel-date).
   const eventsByEmp = new Map<string, Map<string, any[]>>();
@@ -284,12 +274,10 @@ async function buildAndSend(yearMonth: string) {
     XLSX.utils.book_append_sheet(wb, ws, safeSheetName(empName, usedNames));
   }
 
-  const xlsxBuffer = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as Uint8Array;
-
-  // Resend attachment expects base64 string.
-  let binary = "";
-  for (let i = 0; i < xlsxBuffer.length; i++) binary += String.fromCharCode(xlsxBuffer[i]);
-  const base64 = btoa(binary);
+  // SheetJS produces a base64 string directly when asked. Avoids the
+  // Uint8Array → binary-string → btoa dance which was producing an empty
+  // "content" field that Resend rejected with "invalid_attachment".
+  const base64 = XLSX.write(wb, { type: "base64", bookType: "xlsx" }) as string;
 
   const filename = `attendance_${yearMonth}.xlsx`;
   const subject  = `דו״ח נוכחות — ${yearMonth}`;
