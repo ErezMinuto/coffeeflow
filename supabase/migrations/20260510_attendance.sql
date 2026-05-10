@@ -11,7 +11,7 @@
 -- Each event = one check-in or check-out.
 CREATE TABLE IF NOT EXISTS attendance_events (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  employee_id BIGINT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
   event_type  TEXT NOT NULL CHECK (event_type IN ('in', 'out')),
   event_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   source      TEXT NOT NULL DEFAULT 'telegram' CHECK (source IN ('telegram', 'manual')),
@@ -41,7 +41,7 @@ INSERT INTO attendance_settings (id) VALUES (1) ON CONFLICT DO NOTHING;
 -- has been sent — prevents the cron from spamming the same employee every
 -- 15 minutes.
 CREATE TABLE IF NOT EXISTS attendance_reminders_sent (
-  employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  employee_id BIGINT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
   shift_date  DATE NOT NULL,
   position    TEXT NOT NULL,
   sent_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
