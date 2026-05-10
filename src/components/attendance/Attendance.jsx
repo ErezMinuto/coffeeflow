@@ -423,7 +423,25 @@ function HolidaysCard({ onChange }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function Attendance() {
-  const { data, user, showToast } = useApp();
+  const { data, user, showToast, employeesDb } = useApp();
+
+  const offBoard = useCallback(async (emp) => {
+    const ok = window.confirm(
+      `לסמן את ${emp.name} כעוזב/ת?\n\n` +
+      `העובד/ת יוסר/תוסר מרשימת הפעילים והקישור לבוט יתבטל. ניתן להחזיר ידנית בעמוד Schedule.`,
+    );
+    if (!ok) return;
+    const { error } = await supabase
+      .from('employees')
+      .update({ active: false, telegram_id: null })
+      .eq('id', emp.id);
+    if (error) {
+      showToast(`שגיאה: ${error.message}`, 'error');
+      return;
+    }
+    showToast(`${emp.name} סומן/ה כעוזב/ת`, 'success');
+    employeesDb.refresh();
+  }, [showToast, employeesDb]);
   const employees = useMemo(
     () => (data.employees || []).filter(e => e.active && e.user_id !== 'pending'),
     [data.employees],
@@ -601,7 +619,22 @@ export default function Attendance() {
                 <tr key={emp.id}>
                   <td style={{ ...cellTd, position: 'sticky', right: 0, background: 'white',
                                 fontWeight: 600 }}>
-                    {emp.name}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                      <span>{emp.name}</span>
+                      <button
+                        onClick={() => offBoard(emp)}
+                        title="סיום העסקה"
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#9ca3af', fontSize: '0.85rem', padding: '2px 6px',
+                          borderRadius: 4,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.background = '#fef2f2'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'none'; }}
+                      >
+                        🚪
+                      </button>
+                    </div>
                   </td>
                   {days.map(d => {
                     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
