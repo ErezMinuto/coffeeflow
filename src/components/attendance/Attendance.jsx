@@ -267,13 +267,15 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
 // ── Settings section ─────────────────────────────────────────────────────────
 
 function SettingsCard({ settings, onSave }) {
-  const [email, setEmail] = useState(settings?.accountant_email ?? '');
-  const [grace, setGrace] = useState(settings?.reminder_grace_minutes ?? 5);
+  const [email, setEmail]               = useState(settings?.accountant_email ?? '');
+  const [checkinGrace, setCheckinGrace]   = useState(settings?.checkin_grace_minutes ?? 10);
+  const [checkoutGrace, setCheckoutGrace] = useState(settings?.checkout_grace_minutes ?? 30);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setEmail(settings?.accountant_email ?? '');
-    setGrace(settings?.reminder_grace_minutes ?? 5);
+    setCheckinGrace(settings?.checkin_grace_minutes ?? 10);
+    setCheckoutGrace(settings?.checkout_grace_minutes ?? 30);
   }, [settings]);
 
   const save = async () => {
@@ -281,9 +283,10 @@ function SettingsCard({ settings, onSave }) {
     const { error } = await supabase
       .from('attendance_settings')
       .update({
-        accountant_email: email.trim() || null,
-        reminder_grace_minutes: Math.max(0, parseInt(grace) || 0),
-        updated_at: new Date().toISOString(),
+        accountant_email:         email.trim() || null,
+        checkin_grace_minutes:    Math.max(0, parseInt(checkinGrace)  || 0),
+        checkout_grace_minutes:   Math.max(0, parseInt(checkoutGrace) || 0),
+        updated_at:               new Date().toISOString(),
       })
       .eq('id', 1);
     setBusy(false);
@@ -305,9 +308,16 @@ function SettingsCard({ settings, onSave }) {
                  style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: 6 }} />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>תזכורת (דקות אחרי תחילת משמרת)</span>
-          <input type="number" min="0" value={grace}
-                 onChange={e => setGrace(e.target.value)}
+          <span style={{ fontSize: '0.85rem', color: '#666' }}>תזכורת כניסה (דקות אחרי תחילת משמרת)</span>
+          <input type="number" min="0" value={checkinGrace}
+                 onChange={e => setCheckinGrace(e.target.value)}
+                 style={{ padding: '0.5rem', border: '1px solid #ddd',
+                          borderRadius: 6, width: 80 }} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: '0.85rem', color: '#666' }}>תזכורת יציאה (דקות אחרי סיום משמרת)</span>
+          <input type="number" min="0" value={checkoutGrace}
+                 onChange={e => setCheckoutGrace(e.target.value)}
                  style={{ padding: '0.5rem', border: '1px solid #ddd',
                           borderRadius: 6, width: 80 }} />
         </label>
@@ -318,6 +328,94 @@ function SettingsCard({ settings, onSave }) {
           {busy ? 'שומר…' : 'שמור'}
         </button>
       </div>
+    </div>
+  );
+}
+
+function HolidaysCard({ onChange }) {
+  const [list, setList] = useState([]);
+  const [newDate, setNewDate] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const reload = async () => {
+    const { data } = await supabase
+      .from('attendance_holidays')
+      .select('*')
+      .order('holiday_date', { ascending: true });
+    setList(data || []);
+    onChange?.();
+  };
+
+  useEffect(() => { reload(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const add = async () => {
+    if (!newDate) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from('attendance_holidays')
+      .insert({ holiday_date: newDate, label: newLabel.trim() || null });
+    setBusy(false);
+    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    setNewDate(''); setNewLabel('');
+    await reload();
+  };
+
+  const remove = async (date) => {
+    if (!window.confirm(`למחוק את ${date}?`)) return;
+    const { error } = await supabase
+      .from('attendance_holidays')
+      .delete()
+      .eq('holiday_date', date);
+    if (error) { alert(`שגיאה: ${error.message}`); return; }
+    await reload();
+  };
+
+  return (
+    <div style={{
+      background: 'white', padding: '1rem', borderRadius: 10,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '1rem',
+    }}>
+      <h3 style={{ margin: 0, marginBottom: 4 }}>חגים</h3>
+      <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 12 }}>
+        בתאריכים אלו תחול חוקת יום שישי (סיום ב-15:00).
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+        <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
+               style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: 6 }} />
+        <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)}
+               placeholder="שם החג (אופציונלי)"
+               style={{ padding: '0.4rem', border: '1px solid #ddd',
+                        borderRadius: 6, flex: '1 1 200px' }} />
+        <button onClick={add} disabled={busy || !newDate}
+                style={{ padding: '0.45rem 1rem', background: '#3D4A2E',
+                         color: 'white', border: 'none', borderRadius: 6,
+                         cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+          הוסף
+        </button>
+      </div>
+
+      {list.length === 0 ? (
+        <div style={{ color: '#999', fontSize: '0.9rem' }}>אין חגים מוגדרים.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {list.map(h => (
+            <div key={h.holiday_date}
+                 style={{ display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '0.4rem 0.6rem',
+                          background: '#f9fafb', borderRadius: 6 }}>
+              <span style={{ fontWeight: 600, minWidth: 100 }}>{h.holiday_date}</span>
+              <span style={{ color: '#444', flex: 1 }}>{h.label || ''}</span>
+              <button onClick={() => remove(h.holiday_date)}
+                      style={{ background: 'none', border: 'none',
+                               color: '#dc2626', cursor: 'pointer' }}>
+                מחק
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -466,6 +564,7 @@ export default function Attendance() {
       </div>
 
       <SettingsCard settings={settings} onSave={reload} />
+      <HolidaysCard />
 
       <div style={{ overflowX: 'auto', background: 'white', borderRadius: 10,
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
