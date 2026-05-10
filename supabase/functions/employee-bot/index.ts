@@ -314,6 +314,114 @@ async function handleWebhook(req: Request) {
     }
   }
 
+  // ── Monthly hours report (private DM only) ─────────────────────────────
+  // Triggers: "דוח", "השעות שלי", "כמה שעות".
+  if (isPrivate) {
+    const wantsReport =
+      /^\s*דוח\b/.test(text) ||
+      /השעות\s+שלי/.test(text) ||
+      /כמה\s+שעות/.test(text);
+    if (wantsReport) {
+      const { data: empRows } = await supabase
+        .from("employees")
+        .select("id, name")
+        .eq("telegram_id", telegramId)
+        .eq("active", true)
+        .limit(1);
+      const emp = empRows?.[0];
+      if (!emp) {
+        await send(chatId,
+          `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`,
+        );
+        return new Response("ok");
+      }
+
+      // Current Israel-local month boundaries.
+      const israelDateFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jerusalem",
+        year: "numeric", month: "2-digit", day: "2-digit",
+      });
+      const todayStr = israelDateFmt.format(new Date());
+      const [yearStr, monthStr] = todayStr.split("-");
+      const year  = parseInt(yearStr);
+      const month = parseInt(monthStr);
+
+      const offsetFor = (ymd: string): number => {
+        const probe = new Date(`${ymd}T12:00:00Z`);
+        const tz = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Jerusalem",
+          timeZoneName: "shortOffset",
+        }).formatToParts(probe).find(p => p.type === "timeZoneName")?.value ?? "GMT+3";
+        return parseInt(tz.replace("GMT", "").replace("+", "")) || 3;
+      };
+      const monthStartIL = `${yearStr}-${monthStr}-01`;
+      const nextMonth    = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const startUTC = new Date(`${monthStartIL}T00:00:00Z`);
+      startUTC.setUTCHours(startUTC.getUTCHours() - offsetFor(monthStartIL));
+      const endUTC = new Date(`${nextMonth}T00:00:00Z`);
+      endUTC.setUTCHours(endUTC.getUTCHours() - offsetFor(nextMonth));
+
+      const { data: events } = await supabase
+        .from("attendance_events")
+        .select("event_type, event_at")
+        .eq("employee_id", emp.id)
+        .gte("event_at", startUTC.toISOString())
+        .lt("event_at", endUTC.toISOString())
+        .order("event_at", { ascending: true });
+
+      // Group by Israel-local date, pair in/out per day.
+      const byDate = new Map<string, { in: Date; out: Date | null }[]>();
+      const pendingIn = new Map<string, Date>();
+      let openShifts = 0;
+      for (const ev of events ?? []) {
+        const date = israelDateFmt.format(new Date(ev.event_at));
+        if (!byDate.has(date)) byDate.set(date, []);
+        if (ev.event_type === "in") {
+          pendingIn.set(date, new Date(ev.event_at));
+        } else {
+          const inAt = pendingIn.get(date);
+          if (inAt) {
+            byDate.get(date)!.push({ in: inAt, out: new Date(ev.event_at) });
+            pendingIn.delete(date);
+          }
+        }
+      }
+      // Anything still pending = open shift (in without out).
+      for (const [date, inAt] of pendingIn.entries()) {
+        byDate.get(date)!.push({ in: inAt, out: null });
+        openShifts++;
+      }
+
+      let totalHours = 0;
+      let workedDays = 0;
+      for (const pairs of byDate.values()) {
+        let dayHours = 0;
+        for (const p of pairs) {
+          if (p.out) dayHours += (p.out.getTime() - p.in.getTime()) / 3_600_000;
+        }
+        if (dayHours > 0) {
+          totalHours += dayHours;
+          workedDays++;
+        }
+      }
+
+      const monthLabelHe = [
+        "ינואר","פברואר","מרץ","אפריל","מאי","יוני",
+        "יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר",
+      ][month - 1];
+
+      let reply = `📊 <b>דוח החודש (${monthLabelHe} ${year})</b>\n\n` +
+                  `ימי עבודה: <b>${workedDays}</b>\n` +
+                  `סה"כ שעות: <b>${totalHours.toFixed(1)}</b>`;
+      if (openShifts > 0) {
+        reply += `\n\n⚠️ ${openShifts} משמרות ללא החתמת יציאה. שלחו <b>יצאתי</b> או פנו למנהל.`;
+      }
+      await send(chatId, reply);
+      console.log(`report: ${emp.name} (${emp.id}) hours=${totalHours.toFixed(1)} days=${workedDays} open=${openShifts}`);
+      return new Response("ok");
+    }
+  }
+
   // If message contains a phone number pattern, treat as name registration
   const phonePattern = /05\d[\d\-]{7,8}/;
   const hasPhone = phonePattern.test(text);
@@ -340,7 +448,7 @@ async function handleWebhook(req: Request) {
       .limit(1);
 
     if (existing?.[0]) {
-      await send(GROUP_ID, `👋 <b>${existing[0].name}</b> — אתה כבר רשום במערכת!`);
+      await send(chatId, `👋 <b>${existing[0].name}</b>, כבר רשום/ה במערכת!`);
       return new Response("ok");
     }
 
@@ -375,7 +483,7 @@ async function handleWebhook(req: Request) {
       await supabase.from("employees")
         .update({ telegram_id: telegramId, ...(result.phone ? { phone: result.phone } : {}) })
         .eq("id", existingRecord.id);
-      await send(GROUP_ID, `✅ <b>${existingRecord.name}</b> — נרשמת בהצלחה! 🎉`);
+      await send(chatId, `✅ <b>${existingRecord.name}</b>, נרשמת בהצלחה! 🎉`);
     } else {
       // Create new employee record
       await supabase.from("employees").insert({
@@ -387,8 +495,8 @@ async function handleWebhook(req: Request) {
         max_days:    5,
         active:      false,
       });
-      await send(GROUP_ID,
-        `✅ <b>${result.name}</b> — נוספת לרשימה! 🎉\n` +
+      await send(chatId,
+        `✅ <b>${result.name}</b>, נוספת לרשימה! 🎉\n` +
         `המנהל יגדיר את התפקיד שלך בקרוב.`
       );
     }
