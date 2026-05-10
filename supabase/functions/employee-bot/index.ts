@@ -103,19 +103,49 @@ const POSITION_LABEL_HE: Record<string, string> = {
 async function send(
   chatId: number | string,
   text: string,
-  opts: { keyboard?: typeof ATTENDANCE_KEYBOARD | { remove_keyboard: true } } = {},
+  opts: {
+    keyboard?: typeof ATTENDANCE_KEYBOARD | { remove_keyboard: true };
+    inline?: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> };
+  } = {},
 ) {
   const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
     parse_mode: "HTML",
   };
-  if (opts.keyboard) body.reply_markup = opts.keyboard;
+  if (opts.inline)   body.reply_markup = opts.inline;
+  else if (opts.keyboard) body.reply_markup = opts.keyboard;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+async function editMessage(chatId: number | string, messageId: number, text: string) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId, message_id: messageId,
+      text, parse_mode: "HTML",
+    }),
+  });
+}
+
+async function answerCallback(callbackId: string, text?: string) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackId, text: text ?? "" }),
+  });
+}
+
+function israelTimeOf(d: Date): string {
+  return new Intl.DateTimeFormat("he-IL", {
+    timeZone: "Asia/Jerusalem",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
 }
 
 const DAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri"];
@@ -270,8 +300,88 @@ async function handlePublish(req: Request) {
   return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
+async function handleCallback(cq: any): Promise<Response> {
+  const callbackId = cq.id;
+  const data       = cq.data ?? "";
+  const chatId     = cq.message?.chat?.id;
+  const messageId  = cq.message?.message_id;
+  const fromId     = cq.from?.id;
+
+  if (!chatId || !messageId || !fromId) {
+    await answerCallback(callbackId);
+    return new Response("ok");
+  }
+
+  // Cancel button.
+  if (data === "att:cancel") {
+    await answerCallback(callbackId, "בוטל");
+    await editMessage(chatId, messageId, "❌ בוטל");
+    return new Response("ok");
+  }
+
+  // Confirm: "att:in:<ms>" or "att:out:<ms>".
+  const m = data.match(/^att:(in|out):(\d+)$/);
+  if (m) {
+    const eventType = m[1] as "in" | "out";
+    const tsMs      = parseInt(m[2]);
+
+    // Reject stale prompts (>5 min old) — recorded time would no longer
+    // reflect when the employee actually tapped the button.
+    if (Date.now() - tsMs > 5 * 60 * 1000) {
+      await answerCallback(callbackId, "פג תוקף");
+      await editMessage(chatId, messageId,
+        "⏱️ פג תוקף הבקשה. שלחו שוב את ההודעה.");
+      return new Response("ok");
+    }
+
+    const { data: empRows } = await supabase
+      .from("employees")
+      .select("id, name")
+      .eq("telegram_id", fromId)
+      .eq("active", true)
+      .limit(1);
+    const emp = empRows?.[0];
+    if (!emp) {
+      await answerCallback(callbackId);
+      await editMessage(chatId, messageId,
+        "❌ לא רשום/ה במערכת. פנו למנהל.");
+      return new Response("ok");
+    }
+
+    const eventAt = new Date(tsMs);
+    const { error } = await supabase.from("attendance_events").insert({
+      employee_id: emp.id,
+      event_type:  eventType,
+      event_at:    eventAt.toISOString(),
+      source:      "telegram",
+    });
+    if (error) {
+      console.error(`attendance callback insert error for ${emp.name}:`, error);
+      await answerCallback(callbackId, "שגיאה");
+      await editMessage(chatId, messageId, "❌ שגיאה ברישום. נסו שוב.");
+      return new Response("ok");
+    }
+
+    const verb = eventType === "in" ? "נכנסת" : "יצאת";
+    await answerCallback(callbackId, "נשמר");
+    await editMessage(chatId, messageId,
+      `✅ ${verb} ב-${israelTimeOf(eventAt)}`);
+    console.log(`attendance: ${emp.name} (${emp.id}) ${eventType} @ ${eventAt.toISOString()} (confirmed)`);
+    return new Response("ok");
+  }
+
+  await answerCallback(callbackId);
+  return new Response("ok");
+}
+
 async function handleWebhook(req: Request) {
-  const body    = await req.json();
+  const body = await req.json();
+
+  // Inline-keyboard button press (confirmation flow).
+  if (body.callback_query) {
+    return await handleCallback(body.callback_query);
+  }
+
   const message = body.message;
   if (!message?.text) return new Response("ok");
 
@@ -331,8 +441,8 @@ async function handleWebhook(req: Request) {
   // ── Group redirect: נכנסתי / יצאתי in the group falls through silently
   // otherwise. Send a one-liner pointing the employee at the private DM
   // so they know where to go next time.
-  if (!isPrivate && /^(נכנסתי|יצאתי)\b/.test(matchText)) {
-    const word = /^נכנסתי\b/.test(matchText) ? "נכנסתי" : "יצאתי";
+  if (!isPrivate && /^(?:נכנסתי|יצאתי)(?![֐-׿])/.test(matchText)) {
+    const word = /^נכנסתי(?![֐-׿])/.test(matchText) ? "נכנסתי" : "יצאתי";
     await send(chatId,
       `${firstName || "היי"}, שלחו <b>${word}</b> בצ'אט הפרטי איתי, ` +
       `לא בקבוצה: <a href="https://t.me/minuto_team_bot">@minuto_team_bot</a>`,
@@ -341,10 +451,12 @@ async function handleWebhook(req: Request) {
   }
 
   // ── Attendance check-in / check-out (private DM only) ──────────────────
-  // Free-text "נכנסתי" or "יצאתי". startsWith so "נכנסתי!" / "יצאתי לעבודה" still match.
+  // Free-text "נכנסתי" or "יצאתי" → ask the employee to confirm via inline
+  // buttons before recording. Confirmation embeds the original timestamp so
+  // the recorded time is when they tapped the button, not when they confirmed.
   if (isPrivate) {
-    const isCheckIn  = /^נכנסתי\b/.test(matchText);
-    const isCheckOut = /^יצאתי\b/.test(matchText);
+    const isCheckIn  = /^נכנסתי(?![֐-׿])/.test(matchText);
+    const isCheckOut = /^יצאתי(?![֐-׿])/.test(matchText);
     if (isCheckIn || isCheckOut) {
       const eventType = isCheckIn ? "in" : "out";
       const { data: empRows } = await supabase
@@ -356,34 +468,27 @@ async function handleWebhook(req: Request) {
       const emp = empRows?.[0];
       if (!emp) {
         await send(chatId,
-          `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`
+          `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`,
         );
         return new Response("ok");
       }
 
-      const now = new Date();
-      const { error: insertErr } = await supabase
-        .from("attendance_events")
-        .insert({
-          employee_id: emp.id,
-          event_type:  eventType,
-          event_at:    now.toISOString(),
-          source:      "telegram",
-        });
-      if (insertErr) {
-        console.error(`attendance: insert error for ${emp.name}:`, insertErr);
-        await send(chatId, `❌ שגיאה ברישום הנוכחות. נסה שוב.`);
-        return new Response("ok");
-      }
+      const now    = new Date();
+      const verb   = isCheckIn ? "כניסה" : "יציאה";
+      const timeStr = israelTimeOf(now);
+      const data   = `att:${eventType}:${now.getTime()}`;
 
-      const timeStr = new Intl.DateTimeFormat("he-IL", {
-        timeZone: "Asia/Jerusalem",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(now);
-      const verb = isCheckIn ? "נכנסת" : "יצאת";
-      await send(chatId, `✅ ${verb} ב-${timeStr}`, { keyboard: ATTENDANCE_KEYBOARD });
-      console.log(`attendance: ${emp.name} (${emp.id}) ${eventType} @ ${now.toISOString()}`);
+      await send(chatId,
+        `🕒 להחתים <b>${verb}</b> ב-${timeStr}?`,
+        {
+          inline: {
+            inline_keyboard: [[
+              { text: "✅ כן",     callback_data: data },
+              { text: "❌ ביטול", callback_data: "att:cancel" },
+            ]],
+          },
+        },
+      );
       return new Response("ok");
     }
   }
@@ -392,7 +497,7 @@ async function handleWebhook(req: Request) {
   // Triggers: "דוח", "השעות שלי", "כמה שעות".
   if (isPrivate) {
     const wantsReport =
-      /^דוח\b/.test(matchText) ||
+      /^דוח(?![֐-׿])/.test(matchText) ||
       /השעות\s+שלי/.test(matchText) ||
       /כמה\s+שעות/.test(matchText);
     if (wantsReport) {
@@ -500,7 +605,7 @@ async function handleWebhook(req: Request) {
   // Trigger words: "סידור", "המשמרות שלי", "מתי אני עובד".
   if (isPrivate) {
     const wantsSchedule =
-      /^סידור\b/.test(matchText) ||
+      /^סידור(?![֐-׿])/.test(matchText) ||
       /המשמרות\s+שלי/.test(matchText) ||
       /מתי\s+אני\s+עובד/.test(matchText);
     if (wantsSchedule) {
@@ -603,7 +708,7 @@ async function handleWebhook(req: Request) {
   // and the user's free-text reply gets handled by the existing classifier.
   if (isPrivate) {
     const wantsAvailability =
-      /^זמינות\b/.test(matchText) ||
+      /^זמינות(?![֐-׿])/.test(matchText) ||
       /הזמינות\s+שלי/.test(matchText);
     if (wantsAvailability) {
       const week = nextSunday();
