@@ -137,12 +137,30 @@ milk pitcher with probe, measuring vessel), keep the bag MINOR — soft
 background presence, edge of frame, or omit. The bag should never
 dominate an instructional carousel slide whose job is to show a measurement
 or technique.`}
-When the bag does appear, match the reference exactly: stand-up pouch
-with zip top, white pouch color, stag-head emblem, "MINUTO Café Roastery"
-wordmark, and the colored center label with the origin/blend name.
-Do NOT invent a generic bag. Do NOT add any printed dates, roast-date
-stamps, batch numbers, expiry stickers, or numerical labels to the bag.
-Only the brand wordmark, stag emblem, and origin/blend name are allowed.
+When the bag does appear, match the reference image EXACTLY. The bag
+is a FAITHFUL COPY of the reference image — same WHITE pouch colour
+(never black, never grey, never coloured), same zip-top stand-up pouch
+shape, same stag-head emblem in the same position, same "MINUTO Café
+Roastery" wordmark, same colored center-label artwork (the exact
+illustration from the reference — green starry pattern for Velvet Star,
+green mountain panel for Guatemala Antigua, etc.).
+
+🚫 ABSOLUTELY DO NOT INVENT BAG ARTWORK. Specifically forbidden:
+  • Tropical / animal illustrations (parrots, toucans, leaves, fruit)
+  • Holographic, iridescent, gradient, or rainbow-foil label finishes
+  • Replacement of the white bag colour with black, dark grey, or any
+    other coloured pouch
+  • Multi-panel labels split into different artwork sections
+  • Generic "specialty coffee" badges, certifications, or trust marks
+  • Decorative elements not visible in the reference image
+
+If the reference image's label artwork is hard to read at small size,
+keep it simple — just the stag + wordmark + a soft impression of the
+colored panel. NEVER fill in invented detail.
+
+Do NOT add any printed dates, roast-date stamps, batch numbers, expiry
+stickers, or numerical labels to the bag. Only the brand wordmark, stag
+emblem, and origin/blend name are allowed.
 
 SECOND reference image (the BEANS): real photo of Minuto's actual
 roasted beans showing their true color. Use this image AS A COLOR
@@ -235,14 +253,35 @@ Real-world physics, not arbitrary attachment:
     cropped at frame edge with enough chrome/panel showing to anchor
     the equipment). Detached floating espresso parts read as wrong.
 
-  • ${machineRef ? `STRADA X MACHINE-REF LOCK: a third reference image of Minuto's
-    actual La Marzocco Strada X is included with this prompt. The
-    rendered machine MUST match it — slate / gunmetal MATTE body, the
-    pale-blue translucent glass teardrop side wing, naked portafilter
-    with the small red accent ring, cool-touch articulated steam wands
-    curving outward from the sides. Do NOT render a generic chrome
-    Linea silhouette — that is the wrong machine. The third reference
-    image is the source of truth for what this machine looks like.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
+  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a third reference image of
+    Minuto's actual La Marzocco Strada X is included. Use it as a
+    COLOR + DETAIL anchor, NOT as a full-silhouette template. Gemini
+    cannot reliably reproduce the Strada X's full chassis shape from
+    a single product photo, so the rendered scene MUST show only
+    PARTIAL elements of the machine, never the full silhouette:
+
+      ✓ Steam wand curving out from a sliver of slate side panel,
+        with the pale-blue glass wing visible on that panel.
+      ✓ Naked portafilter docked into one chrome group head, plus
+        a fragment of the front panel and "La Marzocco" wordmark.
+      ✓ Tight crop on the brushed-steel cup tray with one ceramic cup,
+        a glimpse of group head behind.
+      ✓ Side-on close-up of the pale-blue translucent glass teardrop
+        wing alone, with the slate body fading into shadow.
+
+    ✗ Forbidden: full front-on view of the entire 2-group chassis.
+    ✗ Forbidden: pale blue painted across the WHOLE machine body —
+      blue belongs ONLY on the translucent side glass, never on the
+      front panel or the main chassis.
+    ✗ Forbidden: generic Linea silhouette (chrome curved body, single
+      group, narrow profile) — Strada X is angular and modern, but
+      because we can't reliably render it whole, we crop instead.
+
+    Use the reference image's COLORS (slate-grey matte body, pale-blue
+    translucent glass, black portafilter handles, RED accent ring at
+    the spout base, chrome group caps, "La Marzocco" wordmark on the
+    drip-tray plate) — not its overall shape. The shape is hard;
+    cropping is reliable.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
 
 If the SCENE description mentions a scoop, brass scoop, wooden spoon,
 espresso spoon, measuring scoop, or any other utensil, IGNORE that

@@ -17,6 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
 import { enrichPostsForPublishing } from "./enrichment.ts";
+import { pickFallbackBagUrl } from "../_shared/visual_identity.ts";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -5344,6 +5345,23 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
           console.log(`[organic] post ${ep.post_index} → matched "${ep.product_reference}" → ${matched.name}`);
         } else {
           console.log(`[organic] post ${ep.post_index} → no woo_products match for "${ep.product_reference}" (tried: ${candidates.join(' | ')})`);
+        }
+      }
+
+      // Carousel bag-locking: when a carousel post has no matched product
+      // reference (e.g. a generic brewing-methods guide), each slide call
+      // would otherwise pick a random fallback bag — resulting in 5
+      // different bags across one carousel. Stamp ONE fallback URL here
+      // so all slides share the same bag, giving the carousel visual
+      // continuity. Non-carousels don't suffer from this since they only
+      // make one visual-test call.
+      for (const ep of enriched) {
+        const isCarousel = ep.upstream_type === 'carousel'
+          && Array.isArray(ep.additional_slides)
+          && ep.additional_slides.length > 0;
+        if (isCarousel && !ep.reference_image_url) {
+          ep.reference_image_url = pickFallbackBagUrl();
+          console.log(`[organic] post ${ep.post_index} (carousel, no product match) → fallback bag locked: ${ep.reference_image_url}`);
         }
       }
 

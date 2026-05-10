@@ -155,7 +155,21 @@ function buildEnrichmentPrompt(post: PostToPublish, aspect: EnrichedAspect, cale
   const aspectGuidance = aspect === 'reel_cover'
     ? 'The upstream agent picked a Reel or Story (9:16 vertical). Write the brief for the COVER FRAME — the single still that opens the Reel and shows in the grid. The cover frame must obey the Minuto identity exactly the same as a feed post, just composed vertically. Phase 2 will animate this; for now we generate the still cover.'
     : isCarousel
-      ? `The upstream agent picked a CAROUSEL (multi-slide post). Write briefs for ALL FIVE SLIDES — the cover (slide 1) goes in scene_brief; slides 2-5 go in additional_slides. Each slide is a separate still photograph, but together they form ONE coherent visual story with strict continuity: same surface material, same light direction, same earth palette, same time of day, same camera distance/style. The viewer scrolls through them as one composition spread across 5 frames. NEVER write text-overlay descriptions, NEVER write infographic/diagram/icon descriptions — every slide is a clean photographic still. The story progresses through the post's narrative: slide 1 sets the mood (hero), slides 2-4 are supporting moments, slide 5 lands the takeaway (often the bag in a final composed beauty shot). MANDATORY: at least one slide (usually the last) prominently shows the Minuto bag.`
+      ? `The upstream agent picked a CAROUSEL (multi-slide post). Write briefs for ALL FIVE SLIDES — the cover (slide 1) goes in scene_brief; slides 2-5 go in additional_slides. Each slide is a separate still photograph, but together they form ONE coherent visual story.
+
+🔒 CAROUSEL CONTINUITY — STRICTLY ENFORCED:
+The cover (slide 1) establishes the SURFACE, the LIGHT DIRECTION, and the PALETTE. Slides 2-5 MUST then COPY those three elements VERBATIM in their briefs — not "a similar surface", but the EXACT SAME surface description as a 5-12 word phrase repeated across all slides. Same for light direction. Same for palette.
+
+Example — if the cover brief says "raw imperfect concrete with visible texture and a single dark stain, hard diagonal sunlight from upper-right, deep walnut shadow tones with cream highlights":
+  ✓ Slide 2 brief includes: "raw imperfect concrete with visible texture and a single dark stain, hard diagonal sunlight from upper-right, deep walnut shadow tones with cream highlights — different subject focus this slide: [X]"
+  ✓ Slide 3 brief includes the same surface/light/palette phrase verbatim, then a different subject focus
+  ✗ Forbidden: slide 2 uses "weathered walnut counter", slide 3 uses "tan plaster" — that breaks continuity. EVERY slide uses the SAME surface phrase.
+
+The viewer scrolls through them as one composition spread across 5 frames; if the surface or light changes between slides, the carousel reads as 5 unrelated photos instead of one coherent story.
+
+NEVER write text-overlay descriptions, NEVER write infographic/diagram/icon descriptions — every slide is a clean photographic still. The story progresses through the post's narrative: slide 1 sets the mood (hero), slides 2-4 are supporting moments, slide 5 lands the takeaway (often the bag in a final composed beauty shot). MANDATORY: at least one slide (usually the last) prominently shows the Minuto bag.
+
+CAROUSEL SIZE — ALWAYS EXACTLY 5 SLIDES (1 cover + 4 follow-ups). If the upstream brief lists fewer content items than 4 (e.g. "3 brewing methods", "4 mistakes"), DO NOT make slide 1 redundant with slide 2. The cover is the HOOK/INTRO slide — it sets context but doesn't show the first content item. The N content items spread across slides 2..(N+1); remaining follow-up slots show the takeaway or product beauty shot.`
       : 'The upstream agent picked a feed post. Write the brief for the hero frame in 1:1.'
 
   const system = `You are the photography art director for Minuto, an Israeli specialty
@@ -320,7 +334,14 @@ SUCCESS:
        Examples — correct: '60 מ"ל אספרסו + 150 מ"ל חלב', 'חלב 60-65 מעלות', 'מינון 18 ג׳ ב-30 שניות', 'יחס 1:2'.
        Examples — wrong (do NOT emit): '150ml milk', '60-65°C', '18g/30sec', or null on a measurement slide.
        Instructional / measurement / equipment-reading slides are exactly the case overlay_text exists for — DO NOT leave them null.
-       For purely atmospheric or beauty-shot slides with no numbers in the brief, null is still the right default. */
+       For purely atmospheric or beauty-shot slides with no numbers in the brief, null is still the right default.
+
+       ⛔ HEBREW BIDI FORMAT RULES — CRITICAL for legibility under RTL rendering:
+         1. Number+unit are ONE atom — never split with a separator. Wrong: 'V60: 2:30-3:00 | דקות | טחינה X'. Right: 'V60: 2:30-3:00 דקות | טחינה X'.
+         2. Maximum ONE pipe (|) per overlay. The pipe separates two attributes; do not use two pipes for three attributes.
+         3. Prefer a comma (,) to a pipe when joining two short Hebrew chunks. Right: 'V60: 2:30-3:00 דקות, טחינה בינונית-עדינה'. (Pipe is OK but commas often render cleaner in Hebrew RTL.)
+         4. Place the Latin/numeric chunk at the START of the line (RTL renders it correctly when followed by Hebrew). Wrong: 'דקות 4 דרכים' (the 4 ends up at end). Right: '4 דרכים — מדריך'.
+         5. Keep the whole overlay ≤ 40 chars including spaces and punctuation. */
     {
       "scene_brief": "4–6 sentence ENGLISH brief for SLIDE 2. Continuation of the cover's mood — same surface, same light. Different subject focus that progresses the post's narrative.",
       "overlay_text": null | "short Hebrew headline ≤ 40 chars — REQUIRED if this slide's brief contains explicit numerical measurements (see OVERLAY_TEXT RULE above); otherwise null"
