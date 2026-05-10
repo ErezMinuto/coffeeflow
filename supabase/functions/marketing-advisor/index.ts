@@ -645,6 +645,12 @@ const HEBREW_COPY_RULES = `
 `;
 
 // Allowed origins for CORS — kept in sync with generate-campaign.
+// Explicit list for production / known custom domains. Any *.vercel.app
+// origin is also accepted via the regex below — this covers every Vercel
+// preview deployment (URLs change per branch / per deploy) without
+// requiring an env-var update on each redeploy. Actual data access is
+// still gated by the `apikey` header, so this only widens the browser-
+// side CORS gate, not the auth boundary.
 const ALLOWED_ORIGINS = [
   Deno.env.get("COFFEEFLOW_ORIGIN") || "https://coffeeflow-thaf.vercel.app",
   "https://coffeeflow-neon.vercel.app",
@@ -652,9 +658,17 @@ const ALLOWED_ORIGINS = [
   "https://www.minuto.co.il",
 ];
 
+const VERCEL_ORIGIN_RE = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/;
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  return VERCEL_ORIGIN_RE.test(origin);
+}
+
 function getCorsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get("origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin":  allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -4949,14 +4963,22 @@ ${(existingBlogPosts ?? []).length > 0
 
 Blog (google_organic_recommendations):
   • "מדריך מכונת אספרסו ביתית: מה לקנות + איך להוציא ממנה את המקסימום"
-  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?"
+  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?" (השוואה בין סוגי ציוד = OK; השוואה למתחרה / לסופרמרקט = אסור)
   • "V60 VS אירופרס VS צרפתי + איזה פולים לכל שיטה"
 
 Instagram (content_recommendations / posts_to_publish):
-  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" (#1 פולים ישנים)
-  • Post: "המכונה ב-₪3000 שלך עם פולים מהסופר = מכונה ב-₪500" (השוואה ויזואלית)
-  • Story: דוגמה ויזואלית של אותה מכונה עם פולים טריים VS פולים שעמדו 6 חודשים
-  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים"
+  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" — נסח כל טעות כעצה חיובית, לא כביקורת. למשל: "טעות 1 — חלב רותח: בעצם מספיק 60-65 מעלות". לא: "1. חלב מהסופר זה הבעיה".
+  • Post: "ככה נראה אספרסו עם פולים שנקלו השבוע" — תכל'ס חיובי, ללא השוואה.
+  • Story: זום אקסטרים על תאריך הקלייה של מינוטו, פולים מבריקים בצד. ללא לפני/אחרי, ללא "השקית הקודמת שלכם".
+  • BTS: "ככה נראים פולים ביום הקלייה" — ללא ההשוואה ל"אחרי חודש פתוחים".
+
+⛔ אסור מוחלט (משתי סיבות: brand voice + Haiku מסרב):
+  ✗ "המכונה שלך + פולים מהסופר = …" — השוואה לסופר, גם בלי שם מתחרה
+  ✗ "השקית שלכם vs השקית שלנו" — מציב את הקונה במקום לא נעים
+  ✗ "טעות #1: אתם משתמשים ב-X מהסופר" — מאשים את הצרכן
+  ✗ "מכונה מלוכלכת" כמסר ראשי — נשמע כביקורת על תחזוקה של הקונה
+  ✗ Lavazza / Illy / Nespresso / Starbucks / נחת / Jera / אגרו / Origem בכותרת או בויז'ואל
+  ✓ במקום: empowerment ("ככה נראה הדבר האמיתי", "נהדר ל-V60", "מה שהמכונה שלך יודעת לעשות עם פולים טריים")
 
 Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
@@ -5231,6 +5253,46 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
     }
   }
 
+  // ── Brand-voice preflight (deterministic regex, no LLM) ────────────────
+  // The strategist sometimes emits posts that violate brand-voice rules
+  // (competitor disparagement, supermarket comparison, customer mockery)
+  // despite the prompt forbidding them. We catch those here, BEFORE the
+  // expensive enrichment + visual-test pipeline runs on doomed content.
+  // Single source of truth — Haiku no longer rejects (see enrichment.ts);
+  // any rule that needs to be enforced lives here as a regex.
+  if (parsed && Array.isArray(parsed.posts_to_publish) && parsed.posts_to_publish.length > 0) {
+    const COMPETITOR_BRANDS = /\b(lavazza|illy|hausbrandt|nespresso|starbucks|costa coffee|mauro|bristot|kimbo|segafredo|jera|origem|kilimanjaro|nahat|נחת|ג'רה|אגרו|אוריג'ם)\b/i;
+    const COMPARISON_KEYWORDS = /(\bvs\b|\blעומת\b|נגד|במקום|better than|לעומת|טוב מ|חזק מ)/i;
+    const SUPERMARKET_DISPARAGE = /(שקית מהסופר|פולים מהסופר|קפה מהסופר|מהמדף של|בסופר[\-\s]?פארם|רמי\s*לוי|שופרסל|טיב\s*טעם|המקור הזול|השקית הקודמת)/i;
+    const CUSTOMER_MOCKERY = /(אתם לא יודעים|אתם לא בטוחים|הבעיה (?:היא )?(?:אצלכם|שלכם)|אתם משתמשים ב|השקית שלכם.*?לא|המכונה שלכם.*?לא|אתם טועים)/i;
+    const filteredPosts: any[] = [];
+    const droppedPosts: Array<{ topic: string; reason: string }> = [];
+    for (const p of parsed.posts_to_publish) {
+      const blob = `${p.topic ?? ''} ${p.hook ?? ''} ${p.caption ?? ''} ${p.visual_direction ?? ''} ${p.why_this_intent ?? ''}`.toLowerCase();
+      let dropReason: string | null = null;
+      if (COMPETITOR_BRANDS.test(blob) && COMPARISON_KEYWORDS.test(blob)) {
+        dropReason = 'competitor brand + comparison keyword';
+      } else if (SUPERMARKET_DISPARAGE.test(blob)) {
+        dropReason = 'supermarket disparagement framing';
+      } else if (CUSTOMER_MOCKERY.test(blob)) {
+        dropReason = 'customer mockery pattern';
+      }
+      if (dropReason) {
+        console.warn(`[organic preflight] dropped "${p.topic ?? '(untitled)'}" — ${dropReason}`);
+        droppedPosts.push({ topic: String(p.topic ?? ''), reason: dropReason });
+      } else {
+        filteredPosts.push(p);
+      }
+    }
+    if (droppedPosts.length > 0) {
+      console.log(`[organic preflight] ${droppedPosts.length}/${parsed.posts_to_publish.length} posts dropped for brand-voice violations`);
+      // Stamp on the report so we have a record without surfacing the bad
+      // posts to the user. The dashboard ignores this field; it's for debug.
+      (parsed as any).preflight_dropped = droppedPosts;
+    }
+    parsed.posts_to_publish = filteredPosts;
+  }
+
   // ── Enrich posts_to_publish with publish-pipeline fields ────────────────
   // Adds `enriched_posts[3]` to the report, where each entry has the
   // photographer-brief, calendar_hook, post_type (SCENE_PRESET key),
@@ -5254,7 +5316,7 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
       // the user can manually override later via a per-post bag picker if
       // they want a different product highlighted.
       for (const ep of enriched) {
-        if (!ep.product_reference || ep.rejected) continue;
+        if (!ep.product_reference) continue;
         const candidates = ep.product_reference
           .split(/[+,&]|\s+ו(?=\s)|\s+and\s+/gi)
           .map(s => s.trim())

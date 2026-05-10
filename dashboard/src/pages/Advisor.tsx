@@ -145,8 +145,6 @@ interface EnrichedPost {
   additional_slides?:   AdditionalSlide[]
   product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
   reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
-  rejected?:            boolean
-  rejection_reason?:    string
 }
 
 interface OrganicReport {
@@ -1387,14 +1385,6 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     poll()
     return () => { cancelled = true; if (timer) clearTimeout(timer) }
   }, [reelOperation])
-
-  if (ep.rejected) {
-    return (
-      <div className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-xs text-red-800">
-        🚫 נדחה ע"י קוד המותג: {ep.rejection_reason}
-      </div>
-    )
-  }
 
   async function generateVisual() {
     setGenerating(true); setGenError(null); setImageUrl(null)

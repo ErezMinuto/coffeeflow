@@ -23,6 +23,17 @@ export const MINUTO_BAG_REFERENCE_URL =
 export const MINUTO_BEANS_REFERENCE_URL =
   'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/IMG_5117.jpg'
 
+// Shape + colour anchor for Minuto's actual bar machine — a 2-group
+// La Marzocco Strada X. Uploaded by the user 2026-05-10 after text-only
+// description rendered a generic chrome Linea silhouette instead of the
+// distinctive slate body + pale-blue glass side wing. Passed to Gemini
+// as a THIRD reference image, but ONLY when the scene brief involves
+// espresso brewing or milk steaming (detected by visual-test). For
+// pour-over / beans-only / lifestyle shots we don't include it — the
+// machine has no business in those scenes.
+export const MINUTO_ESPRESSO_MACHINE_REFERENCE_URL =
+  'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/FullSizeRender_6cabba01-90d6-4413-9e50-1f5a16e64acb.jpg.jpeg'
+
 // Five real Minuto bags with distinct colored center labels. visual-test
 // picks one at random when no per-post reference_image_url is set, so
 // generic posts get visual variety across the feed instead of always
@@ -98,6 +109,42 @@ roaster, NEVER a white/cream-colored roaster, NEVER a yellow or wood-
 trim roaster. Modern, all-black, industrial. If the scene mentions a
 brass kettle that's allowed (separate object); the roaster itself is
 black.
+
+THE MINUTO ESPRESSO MACHINE (when a scene calls for an espresso
+machine, group head, portafilter docked, steam wand, or any espresso
+brewing / milk steaming): a LA MARZOCCO STRADA X, two-group, with
+these specific distinguishing features (do NOT render a generic Linea
+or Linea Mini silhouette — that's wrong machine):
+  • BODY COLOR: slate / dark gunmetal grey, matte (not glossy, not
+    chrome, not white). The main body panels are a flat charcoal-grey.
+  • SIGNATURE SIDE PANEL: a curved, teardrop-shaped translucent
+    PALE-BLUE GLASS side wing on each side of the machine, set into
+    the grey body — this is the Strada X's most recognizable element
+    and must appear if the side of the machine is in frame. It's
+    sky-blue / powder-blue translucent glass, not opaque, not dark.
+  • TWO SATURATED BREW GROUPS: cylindrical chrome group heads
+    protruding forward from the front panel, with rounded chrome top
+    caps. Two of them, side by side. Naked / bottomless portafilters
+    locked into them, with BLACK handles and a small RED accent ring
+    at the base where the spouts emerge.
+  • TWO COOL-TOUCH STEAM WANDS: thin chrome articulated wands curving
+    OUTWARD from the SIDES of the machine body (one per side),
+    flanking the group heads — NOT coming out of the front, NOT out of
+    the group heads. They have small chrome knob controls on top.
+  • TOP CUP TRAY: a raised stainless-steel wire-grate cup warmer/tray
+    sits on top of the body, supported by thin chrome rails — it's
+    open mesh, you can see through it.
+  • DRIP TRAY: stainless steel wire-mesh tray across the bottom front,
+    with a "La Marzocco" wordmark plate on the front lip (chrome
+    lettering on dark background).
+  • FRONT PANEL: dark grey, with a small round chrome pressure gauge
+    on the lower-left and a single small toggle switch nearby.
+NEVER render a chrome / mirror-polished body, NEVER a white espresso
+machine, NEVER a Linea Mini silhouette (that's a small home machine
+with a curved chrome body — wrong). NEVER render the Strada X without
+the pale-blue glass side panel if the side is in frame. The eagle wing
+La Marzocco logo is small and lives on the drip-tray front plate, not
+splashed across the body.
 
 NO SPOONS, NO SCOOPS, NO UTENSILS: brass scoops, wooden spoons, espresso
 spoons, measuring scoops — all forbidden. Gemini renders them with

@@ -96,13 +96,6 @@ export interface EnrichedPost {
   // right bag — not always the default Yirgacheffe.
   product_reference?:    string | null
   reference_image_url?:  string | null
-  // Brand-voice rejection: when the upstream post violates the anti-disparagement
-  // rule, we surface it here instead of silently dropping it. The dashboard
-  // shows these as "needs regeneration" rather than rendering a scene_brief.
-  // Format mismatches (Reels in v1) are NOT rejections — those still get a
-  // hero-frame scene_brief with the appropriate aspect.
-  rejected?:       boolean
-  rejection_reason?: string
 }
 
 const HEBREW_DAY_INDEX: Record<string, number> = {
@@ -198,65 +191,44 @@ the post's mood/subject — NOT to capture every educational point or every
 slide of the carousel. The caption, not the image, carries the textual
 information.
 
-CRITICAL: Format mismatches are NEVER a rejection reason. EVER. If the
-post wants a video, an infographic, a 5-slide carousel, a comparison
-chart, a table, a labeled diagram, or anything else that isn't a
-photograph — you ADAPT, not reject. The phrase "cannot be adapted into a
-single still-life" is not a valid output from you; everything can be
-adapted into a hero frame because the hero frame doesn't need to carry
-all the post's information.
+CRITICAL — YOU ARE A TRANSLATOR, NOT A JUDGE.
 
-Adaptation examples — these MUST come back as scene_briefs, not rejections:
-  - Post = "5-slide carousel: signs your beans are stale" → ONE still-life
-    of a single Minuto bag with a freshness valve and zip-top visible,
-    catching warm side-light, beside a small pile of glossy fresh beans on
-    raw concrete. The 5 educational points live in the caption.
-  - Post = "video: green beans → roasting → cooling → packing" → ONE
+The strategist agent upstream is the brand-voice gatekeeper. By the time a
+post reaches you, it has already passed brand-voice checks. Your ONLY job
+is to translate the post into scene briefs (cover + 4 follow-up slides
+for carousels, single hero frame for everything else). You do NOT reject.
+
+There is NO rejection path. NO "rejected: true" output. Every post gets
+SUCCESS-shape JSON with scene_brief(s) filled in. If the format feels
+challenging — 5-slide educational carousel, video sequence, comparison
+spread, infographic, labeled diagram, before/after with measurements —
+you ADAPT. The hero frame doesn't have to carry every educational point;
+the caption and the additional_slides do.
+
+Adaptation examples — these all return SUCCESS-shape JSON, never anything else:
+  - Post = "5-slide carousel: 5 mistakes ruining your latte" → enrichment
+    returns a cover + 4 additional_slides, each a clean photographic still
+    of one mistake (thermometer at 80°C, milk pitcher with foam too dry,
+    etc.). Educational points live in the briefs and overlay_text.
+  - Post = "5-slide carousel: signs your beans are stale" → cover still of
+    a single Minuto bag with freshness valve visible, plus 4 follow-up
+    slides showing roast-date callouts and bean texture. The 5 educational
+    points live in the briefs and the caption.
+  - Post = "video: green beans → roasting → cooling → packing" → cover
     still of dark-roasted beans on a raw cooling tray with the matched
     Minuto bag in the upper-right third. The process narrative lives in
     the caption.
-  - Post = "infographic: machine model → which beans" → ONE still of one
+  - Post = "infographic: machine model → which beans" → cover still of one
     Minuto bag beside one espresso machine, hard side light, lower-right.
-    The matching table lives in the caption or future carousel slides.
-  - Post = "before/after with date stamp" → ONE still of a single bag
+    The matching table lives in the caption.
+  - Post = "before/after with date stamp" → cover still of a single bag
     next to a freshly cracked bean pile, NO date sticker rendered.
 
-🚫 HARD REJECTIONS — ONLY these two patterns. Nothing else.
-
-  1. Post names a COMPETITOR COFFEE BRAND (Lavazza, Illy, Hausbrandt,
-     Nespresso, Starbucks, Costa, Mauro, Bristot, Kimbo, Segafredo, נחת,
-     Jera, אגרו, Origem, Kilimanjaro, Nahat) AND the post topic is
-     fundamentally built around comparing/disparaging that brand —
-     can't be salvaged by dropping the name.
-     Note 1: machine brands (Delonghi, Breville, Gaggia, Rancilio, Sage)
-     are FINE — those are NOT coffee brands.
-     Note 2: if the brand is mentioned only as setup but the post's
-     positive message stands on its own, ADAPT (drop the brand mention
-     in the brief).
-
-  2. Post mocks the customer in a way no rewrite can fix ("you don't even
-     know when your beans were roasted, do you?", "the cheap Delonghi you
-     bought is the problem"). Note: "you have a Delonghi but the coffee
-     isn't tasty? the problem isn't the machine" is empowerment, ACCEPT.
-
-That's it. Two patterns. If you find yourself about to reject for any
-other reason — including "format doesn't fit", "too many points to
-capture", "would need text overlays", "would need motion", "would need
-multiple slides" — stop and write the adaptation instead.
-
-When you reject, return:
-{
-  "rejected": true,
-  "rejection_reason": "1 short sentence explaining the HARD rule that triggered. Format/visual mismatches are NEVER a rejection reason — those get adapted."
-}
-
-Allowed positive framings (these are FINE, not rejections):
-  - "Roast date" as a standalone Minuto value, no comparison ("roasted this
-    morning, that's the Minuto standard").
-  - Inviting the customer to look at their own current bag without judgment
-    ("check your bag for a roast date").
-  - Educational content about commercial vs specialty roasting as a category,
-    without naming brands or implying the customer is foolish.
+If you find yourself about to reject for ANY reason — "format doesn't fit",
+"too many points to capture", "would need motion", "would need multiple
+slides", "post compares X to Y", "mentions a competitor" — STOP. Write
+the adaptation instead. The strategist already cleared the brand-voice
+side of the equation. Trust that and translate.
   - Mentioning the customer's espresso machine model (Delonghi, Breville,
     Gaggia, Rancilio, etc.) to recommend matching beans, NOT to mock the
     machine. Machine brand names are FINE in this context — the prohibition
@@ -309,34 +281,54 @@ If no upcoming event maps cleanly, use one of:
 "weekend morning", "fresh batch", "rainy day", "midweek ritual",
 "new origin arrival", "Friday slow brew", "deep work morning".
 
-OUTPUT — strict JSON, no other text, no markdown fences. Either the
-SUCCESS shape or the REJECTION shape, depending on the guardrail check:
+OUTPUT — strict JSON, no other text, no markdown fences. Always the
+SUCCESS shape — there is no rejection path:
 
 SUCCESS:
 {
   "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup",
   "calendar_hook": "1 short phrase (Hebrew or English ok)",
-  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. MANDATORY: if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'. For carousels: this is the COVER slide (slide 1).",
-  "overlay_text": null | "short Hebrew headline ≤ 40 chars — use null UNLESS the post REALLY needs text (e.g. announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing. ⛔ HEBREW UNITS ONLY: when the overlay includes measurements, use Hebrew abbreviations — מ\"ל not 'ml', ס\"מ not 'cm', ג'/גרם not 'g', ק\"ג not 'kg', מעלות not '°C'. Latin/symbol units get bidi-reversed inside Hebrew RTL text and read backwards. Example correct: '60 מ\"ל אספרסו + 150 מ\"ל חלב'. Example wrong: '60ml espresso + 150ml milk' or '60ml אספרסו'.",
+  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. MANDATORY: if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'. For carousels: this is the COVER slide (slide 1) — and because the cover will carry a Hebrew title overlay band along the bottom, the brief MUST leave the BOTTOM 1/4 of the frame as low-detail negative space (deep shadow, unbroken raw concrete, or simple ceramic plate edge — no critical subject detail there). The main subject lives in the upper 3/4. Example phrasing to include: '...the lower quarter of the frame is shadowed concrete, kept intentionally empty as breathing space for a Hebrew title.'",
+  "overlay_text": null | "Hebrew headline ≤ 40 chars. ⛔ MANDATORY for CAROUSEL COVERS — when additional_slides is non-null, this is the cover-slide title and you MUST set it. Use the post's Hebrew hook (passed in the user message) as the source — refine/shorten to ≤40 chars but keep the core promise intact. Examples: hook 'קפה חלבי לשבועות — איך לעשות קצף שלא נופל תוך 2 דקות' → 'קצף חלב שלא נופל — מדריך לשבועות' (35 chars). DO NOT leave null on a carousel cover — the cover is the hook slide. For NON-carousel posts: null is fine UNLESS the post REALLY needs text (announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing. ⛔ HEBREW UNITS ONLY: when the overlay includes measurements, use Hebrew abbreviations — מ\"ל not 'ml', ס\"מ not 'cm', ג'/גרם not 'g', ק\"ג not 'kg', מעלות not '°C'. Latin/symbol units get bidi-reversed inside Hebrew RTL text and read backwards. Example correct: '60 מ\"ל אספרסו + 150 מ\"ל חלב'. Example wrong: '60ml espresso + 150ml milk' or '60ml אספרסו'.",
   "product_reference": null | "the SPECIFIC Minuto product name as it appears in the post (e.g. 'Dark Chocolate', 'Yirgacheffe', 'Guatemala Antigua', 'Fazenda Sertão'). Use null when the post is generic about coffee/roasting and not about one named product. The downstream pipeline uses this to look up the right bag image as a Gemini reference, so the rendered bag matches the post's product.",
   "additional_slides": null | [
     /* CAROUSELS ONLY: include ALL FOUR slides 2..5 here. NULL or omitted for non-carousel posts. */
     /* Same Minuto identity for every slide. STRICT continuity: same surface, same light direction, same earth palette, same camera style. */
     /* Each entry is for ONE slide. NO text/icon/infographic descriptions — clean photographic stills only. */
+    /* SCENE_BRIEF RULES for every slide 2..N — MANDATORY:
+       (a) MEASUREMENT-INSTRUMENT VISIBILITY — when the slide depicts a thermometer, digital scale, kitchen
+           timer, pressure gauge, or any other measurement instrument, the brief MUST specify that the
+           instrument's READING IS VISIBLE TO CAMERA, with the actual value in the brief itself. Examples:
+           "a digital probe thermometer clipped to the rim of the milk pitcher displays '62°C' in clear
+           white LCD digits, angled toward camera"; "the kitchen scale's display reads '150' in bold
+           digital numerals"; "a stopwatch on the counter shows '0:28'". A measurement instrument WITHOUT
+           a visible reading teaches nothing — Gemini will render a generic rod-shaped probe and the
+           viewer can't tell what they're meant to learn. Always include the angle ("angled toward
+           camera" / "tilted so the display faces the lens") so the reading isn't hidden by perspective.
+       (b) CTA / CLOSER PAIRING FIDELITY — when the post's slide-5 / closer / CTA copy mentions a product
+           in PAIRING with something (e.g. "Guatemala Antigua מתאים מושלם לחלב" → milk pairing,
+           "this bean shines in a French press" → press pairing, "vibrant in pour-over" → V60 pairing,
+           "perfect cold-brew" → ice/tall-glass pairing), the slide-5 scene_brief MUST visibly INCLUDE
+           that pairing element. Milk pairing → a finished cappuccino or flat white WITH visible foam
+           microfoam or latte art alongside the bag. Press pairing → a French press with brewed coffee
+           visible. Cold-brew → ice cubes + tall clear glass. A bag-and-empty-cup CTA shot loses the
+           ENTIRE point of the closer — the viewer needs to see the *result* the CTA is selling. */
+    /* OVERLAY_TEXT RULE for every slide 2..N — same Hebrew-units rule as the cover, plus this MANDATORY trigger:
+       if the slide's scene_brief contains explicit numerical measurements (e.g. "150 ml", "60-65°C", "18 g", "1:2 ratio", "30 seconds", "20 cm"),
+       you MUST set overlay_text to a short Hebrew callout that surfaces those measurements with Hebrew units —
+       מ"ל / ס"מ / ג' / גרם / ק"ג / מעלות / שניות / ש' — NOT Latin units (ml/cm/g/kg/°C/sec).
+       Examples — correct: '60 מ"ל אספרסו + 150 מ"ל חלב', 'חלב 60-65 מעלות', 'מינון 18 ג׳ ב-30 שניות', 'יחס 1:2'.
+       Examples — wrong (do NOT emit): '150ml milk', '60-65°C', '18g/30sec', or null on a measurement slide.
+       Instructional / measurement / equipment-reading slides are exactly the case overlay_text exists for — DO NOT leave them null.
+       For purely atmospheric or beauty-shot slides with no numbers in the brief, null is still the right default. */
     {
       "scene_brief": "4–6 sentence ENGLISH brief for SLIDE 2. Continuation of the cover's mood — same surface, same light. Different subject focus that progresses the post's narrative.",
-      "overlay_text": null | "short Hebrew headline ≤ 40 chars — usually null; only set when this specific slide needs a labeled callout"
+      "overlay_text": null | "short Hebrew headline ≤ 40 chars — REQUIRED if this slide's brief contains explicit numerical measurements (see OVERLAY_TEXT RULE above); otherwise null"
     },
-    { "scene_brief": "SLIDE 3 brief …", "overlay_text": null },
-    { "scene_brief": "SLIDE 4 brief …", "overlay_text": null },
-    { "scene_brief": "SLIDE 5 brief — usually the closing beauty shot featuring the Minuto bag prominently as the takeaway", "overlay_text": null }
+    { "scene_brief": "SLIDE 3 brief …", "overlay_text": "same rule — required when brief has measurements, else null" },
+    { "scene_brief": "SLIDE 4 brief …", "overlay_text": "same rule — required when brief has measurements, else null" },
+    { "scene_brief": "SLIDE 5 brief — the closing beauty shot featuring the Minuto bag prominently as the takeaway. If the post's CTA mentions a product PAIRING (see SCENE_BRIEF RULES above), this slide MUST visibly include that pairing element — finished latte/cappuccino for milk pairing, V60 for pour-over pairing, French press for press pairing, etc. A bag-and-empty-cup shot is INSUFFICIENT when the CTA promises a pairing.", "overlay_text": "same rule — usually null on the closing beauty shot, but required if it carries final numbers (e.g. ratio recap)" }
   ]
-}
-
-REJECTION:
-{
-  "rejected": true,
-  "rejection_reason": "1 short English sentence naming the pattern that triggered"
 }`
 
   const user = `POST BRIEF:
@@ -354,8 +346,7 @@ Now return the strict JSON enrichment.`
 }
 
 type ParsedEnrichment =
-  | { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null; additional_slides: AdditionalSlide[] | null }
-  | { kind: 'rejected'; rejection_reason: string }
+  { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null; additional_slides: AdditionalSlide[] | null }
 
 function parseEnrichmentJson(text: string): ParsedEnrichment | null {
   // Tolerate ```json ... ``` fencing or stray prose.
@@ -370,14 +361,10 @@ function parseEnrichmentJson(text: string): ParsedEnrichment | null {
   } catch {
     return null
   }
-  if (obj?.rejected === true) {
-    return {
-      kind: 'rejected',
-      rejection_reason: typeof obj.rejection_reason === 'string' && obj.rejection_reason.trim()
-        ? obj.rejection_reason.trim()
-        : 'brand voice violation (no reason provided)',
-    }
-  }
+  // Defence-in-depth: if Haiku tries to slip a rejection through despite
+  // the prompt forbidding it, we ignore the rejection field. Either Haiku
+  // ALSO returned valid scene_brief / post_type alongside (use them) or
+  // we return null and the caller will fall back / log.
   if (typeof obj.post_type !== 'string' || typeof obj.scene_brief !== 'string') return null
   // Parse the additional_slides array for carousels — be defensive: only
   // accept entries that have a non-empty scene_brief, drop the rest.
@@ -429,21 +416,6 @@ export async function enrichPostsForPublishing(
         caption:       String(post.caption ?? ''),
         hashtags:      Array.isArray(post.hashtags) ? post.hashtags : [],
         image_url:     null as string | null,   // populated on-demand via the dashboard's "Generate Visual" button
-      }
-      if (parsed.kind === 'rejected') {
-        // Brand-voice violation. Surface the post in the output WITHOUT a
-        // scene_brief so the dashboard can show "needs regeneration" rather
-        // than silently dropping it.
-        console.warn(`[enrichment] post ${i} REJECTED: ${parsed.rejection_reason}`)
-        return {
-          ...base,
-          post_type:        '',
-          calendar_hook:    '',
-          scene_brief:      '',
-          overlay_text:     null,
-          rejected:         true,
-          rejection_reason: parsed.rejection_reason,
-        } as EnrichedPost
       }
       // Carousel-only: emit additional_slides 2..N. For non-carousel posts,
       // Haiku may return additional_slides anyway (the prompt asks for null

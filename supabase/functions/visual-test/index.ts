@@ -4,6 +4,7 @@ import {
   ASPECT_TO_RATIO,
   Aspect,
   MINUTO_BEANS_REFERENCE_URL,
+  MINUTO_ESPRESSO_MACHINE_REFERENCE_URL,
   MINUTO_VISUAL_IDENTITY,
   SCENE_PRESETS,
   pickFallbackBagUrl,
@@ -83,37 +84,65 @@ serve(async (req) => {
       }
     }
 
-    let bagRef:   { data: string; mime: string } | null = null
-    let beansRef: { data: string; mime: string } | null = null
+    // Detect whether the scene calls for the Strada X (espresso brewing /
+    // milk steaming). Only then do we fetch + pass the machine reference —
+    // for pour-over, beans-only stills, lifestyle gift shots etc., the
+    // machine has no business in the frame.
+    const sceneLowerForMachine = sceneBrief.toLowerCase()
+    const espressoSceneRegex = /\b(espresso machine|steam wand|portafilter|group head|grouphead|naked portafilter|bottomless portafilter|la marzocco|strada|milk steaming|steaming milk|microfoam|milk frothing|frothing milk|latte art|cappuccino|flat white|latte\b|espresso shot|pulling (?:a |the |an )?shot|brew group)\b/.test(sceneLowerForMachine)
+
+    let bagRef:     { data: string; mime: string } | null = null
+    let beansRef:   { data: string; mime: string } | null = null
+    let machineRef: { data: string; mime: string } | null = null
     if (useReference) {
       const bagUrl = body.reference_image_url || pickFallbackBagUrl()
-      // Fetch both refs in parallel — independent network calls.
-      const [b1, b2] = await Promise.all([
+      // Fetch refs in parallel — independent network calls. Machine ref
+      // is conditional on the espresso/milk-steam scene detection above.
+      const [b1, b2, b3] = await Promise.all([
         fetchAsB64(bagUrl),
         fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
+        espressoSceneRegex ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
       ])
-      bagRef   = b1
-      beansRef = b2
-      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}`)
+      bagRef     = b1
+      beansRef   = b2
+      machineRef = b3
+      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (espressoSceneRegex ? 'MISS' : 'N/A')}`)
     }
     const referenceB64 = bagRef?.data ?? null  // kept for downstream brandClause check
 
     // 2. Build the prompt.
+    // Detect briefs that explicitly downplay the bag — instructional /
+    // measurement / equipment-focused slides where forcing a prominent bag
+    // hijacks the frame and steals attention from the actual subject
+    // (steam wand, scale, thermometer, portafilter, etc.).
+    const sceneLower = sceneBrief.toLowerCase()
+    const bagDownplayed = /\b(no bag|without (?:the |a )?bag|bag (?:is |should be )?(?:softly )?blurred|bag (?:in (?:the )?)?background|bag (?:is )?out of focus|bag barely cropped|bag minor|no minuto bag)\b/.test(sceneLower)
     const brandClause = referenceB64 ? `
 
 REFERENCE IMAGES (TWO included with this prompt — read carefully which is which):
 
 FIRST reference image (the BAG): the actual Minuto coffee bag.
-THE MINUTO BAG MUST APPEAR PROMINENTLY in the final image — non-negotiable
-when a reference image is provided. If the scene description doesn't
-mention the bag, place it in the composition anyway: lower-right or
-upper-right third of the frame, in focus, recognizable. Match the
-reference exactly: stand-up pouch with zip top, white pouch color,
-stag-head emblem, "MINUTO Café Roastery" wordmark, and the colored
-center label with the origin/blend name. Do NOT invent a generic bag.
-Do NOT add any printed dates, roast-date stamps, batch numbers, expiry
-stickers, or numerical labels to the bag. Only the brand wordmark, stag
-emblem, and origin/blend name are allowed.
+${bagDownplayed
+  ? `The SCENE brief above explicitly downplays the bag (e.g. "no bag",
+"softly blurred", "in the background", "out of focus", "barely cropped").
+RESPECT THAT. Keep the bag minor or omit it entirely if the brief asks.
+The instructional/measurement subject of the scene MUST dominate the
+frame — do NOT let the bag steal focus from steam wands, scales,
+thermometers, portafilters, or other named equipment.`
+  : `Feature the bag prominently when the SCENE brief calls for it or
+when the scene is a generic product/lifestyle shot without a more
+specific instructional subject. If the scene's primary subject is a
+piece of equipment (steam wand, digital scale, thermometer, portafilter,
+milk pitcher with probe, measuring vessel), keep the bag MINOR — soft
+background presence, edge of frame, or omit. The bag should never
+dominate an instructional carousel slide whose job is to show a measurement
+or technique.`}
+When the bag does appear, match the reference exactly: stand-up pouch
+with zip top, white pouch color, stag-head emblem, "MINUTO Café Roastery"
+wordmark, and the colored center label with the origin/blend name.
+Do NOT invent a generic bag. Do NOT add any printed dates, roast-date
+stamps, batch numbers, expiry stickers, or numerical labels to the bag.
+Only the brand wordmark, stag emblem, and origin/blend name are allowed.
 
 SECOND reference image (the BEANS): real photo of Minuto's actual
 roasted beans showing their true color. Use this image AS A COLOR
@@ -123,7 +152,29 @@ output, MATCH THE COLOR of the beans in this second reference: medium
 chestnut brown with subtle warm/auburn undertones, matte finish, visible
 center crease. NOT the composition, ONLY the color. This second image
 is "what color should the beans be" — it overrides any color description
-elsewhere in the prompt.` : ''
+elsewhere in the prompt.${machineRef ? `
+
+THIRD reference image (the MACHINE): real photo of Minuto's actual bar
+espresso machine — a 2-group La Marzocco Strada X. This image is
+included ONLY for scenes involving espresso brewing or milk steaming.
+Use it AS A SHAPE-AND-COLOR ANCHOR for the machine — match these
+distinctive features exactly when any part of the machine appears:
+  • Body color: SLATE / dark gunmetal grey, MATTE finish (NOT chrome,
+    NOT mirror-polished, NOT white).
+  • The signature PALE-BLUE TRANSLUCENT GLASS teardrop side panel set
+    into the grey body — must appear if the side of the machine is in
+    frame. Sky-blue / powder-blue, not opaque, not dark.
+  • Two saturated brew groups protruding forward with rounded chrome
+    top caps; naked / bottomless portafilters with BLACK handles and a
+    small RED accent ring at the spout base.
+  • Cool-touch articulated chrome steam wands curving outward from the
+    SIDES of the machine body (one per side), NOT from the front.
+  • Raised stainless wire-grate cup tray on top, supported by thin
+    chrome rails.
+  • "La Marzocco" wordmark on the drip-tray front plate.
+Do NOT copy the reference image's white-background product-shot
+composition — only the machine's appearance. Do NOT render a generic
+chrome Linea silhouette; the Strada X is visually distinct.` : ''}` : ''
 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
@@ -134,12 +185,74 @@ FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 ⛔ FINAL OVERRIDE — read this LAST and let it overrule the SCENE
 description above wherever they conflict:
 
+🔒 SUBJECT-LOCK: when the SCENE brief names specific equipment — steam
+wand, portafilter, espresso machine group head, thermometer, milk
+pitcher (with or without thermometer probe), digital scale, measuring
+vessel/jug, V60, Chemex, AeroPress, French press, gooseneck kettle,
+tamper, knock box — that piece of equipment IS THE SUBJECT of the
+frame. Render it clearly, in focus, dominant. Do NOT substitute it
+with generic Minuto bag-and-cup product photography. Do NOT swap one
+piece of equipment for another (e.g. NEVER render a brass gooseneck
+kettle when the brief calls for a steam wand — those are different
+brewing contexts). If the brief says "steam wand frothing milk in a
+pitcher", show exactly that. If the brief says "digital scale reading
+150ml", show exactly that. The named subject MUST be the rendered
+subject — every time.
+
+🔧 EQUIPMENT ANATOMY — espresso parts must connect correctly.
+Real-world physics, not arbitrary attachment:
+
+  • A STEAM WAND is a thin chrome tube tipped with a small steam tip.
+    It attaches to the SIDE of an espresso machine's body, angled
+    downward into a milk pitcher. A steam wand NEVER comes out of a
+    portafilter, NEVER comes out of a group head, NEVER floats in the
+    air, NEVER grows from a milk pitcher's body. If a steam wand is
+    in frame, the espresso machine's chrome body or side panel MUST
+    also be in frame (at minimum: the side of the machine where the
+    wand attaches, even if cropped). The wand enters the milk pitcher
+    from above, not from below — its tip is submerged just below the
+    milk surface to create microfoam.
+
+  • A PORTAFILTER is a metal basket holder with a horizontal handle
+    (usually black or wood). The basket end either: (a) locks UPWARD
+    into the underside of an espresso machine's group head — chrome
+    cylindrical fixture protruding from the front of the machine — OR
+    (b) sits on a counter/tamping mat with the handle extending
+    horizontally and a hand gripping it, OR (c) is held mid-air by a
+    hand entering from frame edge. A portafilter NEVER has a steam
+    wand attached, NEVER floats, NEVER points downward without
+    support. Espresso, when shown pouring, comes from TWO SPOUTS at
+    the bottom of the portafilter basket as twin amber streams into a
+    cup placed below.
+
+  • A GROUP HEAD is the chrome cylindrical fixture protruding
+    horizontally from the front of an espresso machine, at chest
+    height. The portafilter locks into it from below. Steam wands do
+    not come out of group heads — they come out of the machine's side.
+
+  • If the brief implies espresso brewing or milk steaming, the
+    espresso machine body should be visible in frame (or at least
+    cropped at frame edge with enough chrome/panel showing to anchor
+    the equipment). Detached floating espresso parts read as wrong.
+
+  • ${machineRef ? `STRADA X MACHINE-REF LOCK: a third reference image of Minuto's
+    actual La Marzocco Strada X is included with this prompt. The
+    rendered machine MUST match it — slate / gunmetal MATTE body, the
+    pale-blue translucent glass teardrop side wing, naked portafilter
+    with the small red accent ring, cool-touch articulated steam wands
+    curving outward from the sides. Do NOT render a generic chrome
+    Linea silhouette — that is the wrong machine. The third reference
+    image is the source of truth for what this machine looks like.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
+
 If the SCENE description mentions a scoop, brass scoop, wooden spoon,
 espresso spoon, measuring scoop, or any other utensil, IGNORE that
 portion of the description and omit the utensil entirely. Loose beans
 go directly on the surface or in a small ceramic dish — never in a
-scoop. The only exception is a brass gooseneck kettle when partially
-cropped from a frame edge.
+scoop. EXCEPTION: a brass gooseneck kettle is allowed ONLY when the
+SCENE brief is about pour-over / V60 / Chemex / drip / filter brewing.
+For any other context — espresso, milk frothing, latte/cappuccino,
+grinding, packaging, beans-only stills — do NOT introduce a brass
+gooseneck kettle.
 
 If the SCENE description mentions dark roasted, dark beans,
 dark-roasted, glossy beans, oily beans, OR raw green beans / unroasted
@@ -163,8 +276,9 @@ text is inspiration; these are mandatory.`
     //    Pass references in the order the brandClause describes them:
     //    BAG first, BEANS second.
     const parts: any[] = []
-    if (bagRef)   parts.push({ inlineData: { mimeType: bagRef.mime,   data: bagRef.data } })
-    if (beansRef) parts.push({ inlineData: { mimeType: beansRef.mime, data: beansRef.data } })
+    if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
+    if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
+    if (machineRef) parts.push({ inlineData: { mimeType: machineRef.mime, data: machineRef.data } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
     const genRes = await fetch(
