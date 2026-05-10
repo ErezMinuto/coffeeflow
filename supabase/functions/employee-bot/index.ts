@@ -73,11 +73,38 @@ function looksLikeInjection(text: string): boolean {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function send(chatId: number | string, text: string) {
+async function sha256(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Persistent reply keyboard for active employees in private DM. Tapping a
+// button sends the button text as a normal message, which the existing
+// regex handlers pick up.
+const ATTENDANCE_KEYBOARD = {
+  keyboard: [
+    [{ text: "🟢 נכנסתי" }, { text: "🔴 יצאתי" }],
+    [{ text: "📊 דוח" }],
+  ],
+  resize_keyboard:  true,
+  is_persistent:    true,
+};
+
+async function send(
+  chatId: number | string,
+  text: string,
+  opts: { keyboard?: typeof ATTENDANCE_KEYBOARD | { remove_keyboard: true } } = {},
+) {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+  };
+  if (opts.keyboard) body.reply_markup = opts.keyboard;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    body: JSON.stringify(body),
   });
 }
 
@@ -240,10 +267,17 @@ async function handleWebhook(req: Request) {
 
   const chatId     = String(message.chat.id);
   const chatType   = message.chat.type;
-  const text       = message.text.trim();
+  // Strip zero-width chars and directional marks (U+200B–U+200F, U+202A–U+202E, U+FEFF)
+  // that mobile keyboards sometimes prepend to RTL Hebrew text. Without this,
+  // /^נכנסתי/ silently fails to match on phones.
+  const rawText    = message.text;
+  const text       = rawText.replace(/[​-‏‪-‮﻿]/g, "").trim();
   const telegramId = message.from?.id;
   const firstName  = message.from?.first_name ?? "";
 
+  if (rawText !== text) {
+    console.log(`webhook: stripped invisible chars from text. raw_len=${rawText.length} clean_len=${text.length}`);
+  }
   console.log(`webhook: chatType=${chatType} chatId=${chatId} telegramId=${telegramId} text="${text}"`);
 
   // Allow private chats for availability, only allow our group for registration
@@ -252,7 +286,25 @@ async function handleWebhook(req: Request) {
     console.log(`webhook: ignored — not private and not group (GROUP_ID=${GROUP_ID})`);
     return new Response("ok");
   }
+
+  // /start in private DM → welcome + persistent keyboard.
+  if (isPrivate && (text === "/start" || text.startsWith("/start "))) {
+    const greet = firstName ? `שלום ${firstName}! 👋` : "שלום! 👋";
+    await send(chatId,
+      `${greet}\n\nברוכים הבאים לבוט הנוכחות של מינוטו.\n\n` +
+      `לחצו על כפתור למטה כדי להחתים כניסה / יציאה או לראות את שעות החודש. ⌨️\n\n` +
+      `אם עוד לא נרשמתם, שלחו את השם המלא ומספר טלפון בהודעה אחת:\n` +
+      `<code>ישראל ישראלי 0501234567</code>`,
+      { keyboard: ATTENDANCE_KEYBOARD },
+    );
+    return new Response("ok");
+  }
+
   if (text.startsWith("/")) return new Response("ok");
+
+  // Strip leading non-Hebrew chars (emojis, spaces, punctuation) so tapping
+  // a "🟢 נכנסתי" button matches the same regex as plain typed text.
+  const matchText = text.replace(/^[^א-ת]+/, "");
 
   // ── Rate limit ─────────────────────────────────────────────────────────
   if (!(await checkRateLimit(telegramId))) {
@@ -266,11 +318,23 @@ async function handleWebhook(req: Request) {
     return new Response("ok");
   }
 
+  // ── Group redirect: נכנסתי / יצאתי in the group falls through silently
+  // otherwise. Send a one-liner pointing the employee at the private DM
+  // so they know where to go next time.
+  if (!isPrivate && /^(נכנסתי|יצאתי)\b/.test(matchText)) {
+    const word = /^נכנסתי\b/.test(matchText) ? "נכנסתי" : "יצאתי";
+    await send(chatId,
+      `${firstName || "היי"}, שלחו <b>${word}</b> בצ'אט הפרטי איתי, ` +
+      `לא בקבוצה: <a href="https://t.me/minuto_team_bot">@minuto_team_bot</a>`,
+    );
+    return new Response("ok");
+  }
+
   // ── Attendance check-in / check-out (private DM only) ──────────────────
   // Free-text "נכנסתי" or "יצאתי". startsWith so "נכנסתי!" / "יצאתי לעבודה" still match.
   if (isPrivate) {
-    const isCheckIn  = /^נכנסתי\b/.test(text);
-    const isCheckOut = /^יצאתי\b/.test(text);
+    const isCheckIn  = /^נכנסתי\b/.test(matchText);
+    const isCheckOut = /^יצאתי\b/.test(matchText);
     if (isCheckIn || isCheckOut) {
       const eventType = isCheckIn ? "in" : "out";
       const { data: empRows } = await supabase
@@ -308,7 +372,7 @@ async function handleWebhook(req: Request) {
         minute: "2-digit",
       }).format(now);
       const verb = isCheckIn ? "נכנסת" : "יצאת";
-      await send(chatId, `✅ ${verb} ב-${timeStr}`);
+      await send(chatId, `✅ ${verb} ב-${timeStr}`, { keyboard: ATTENDANCE_KEYBOARD });
       console.log(`attendance: ${emp.name} (${emp.id}) ${eventType} @ ${now.toISOString()}`);
       return new Response("ok");
     }
@@ -318,9 +382,9 @@ async function handleWebhook(req: Request) {
   // Triggers: "דוח", "השעות שלי", "כמה שעות".
   if (isPrivate) {
     const wantsReport =
-      /^\s*דוח\b/.test(text) ||
-      /השעות\s+שלי/.test(text) ||
-      /כמה\s+שעות/.test(text);
+      /^דוח\b/.test(matchText) ||
+      /השעות\s+שלי/.test(matchText) ||
+      /כמה\s+שעות/.test(matchText);
     if (wantsReport) {
       const { data: empRows } = await supabase
         .from("employees")
@@ -416,7 +480,7 @@ async function handleWebhook(req: Request) {
       if (openShifts > 0) {
         reply += `\n\n⚠️ ${openShifts} משמרות ללא החתמת יציאה. שלחו <b>יצאתי</b> או פנו למנהל.`;
       }
-      await send(chatId, reply);
+      await send(chatId, reply, { keyboard: ATTENDANCE_KEYBOARD });
       console.log(`report: ${emp.name} (${emp.id}) hours=${totalHours.toFixed(1)} days=${workedDays} open=${openShifts}`);
       return new Response("ok");
     }
@@ -448,7 +512,8 @@ async function handleWebhook(req: Request) {
       .limit(1);
 
     if (existing?.[0]) {
-      await send(chatId, `👋 <b>${existing[0].name}</b>, כבר רשום/ה במערכת!`);
+      await send(chatId, `👋 <b>${existing[0].name}</b>, כבר רשום/ה במערכת!`,
+        { keyboard: ATTENDANCE_KEYBOARD });
       return new Response("ok");
     }
 
@@ -483,7 +548,8 @@ async function handleWebhook(req: Request) {
       await supabase.from("employees")
         .update({ telegram_id: telegramId, ...(result.phone ? { phone: result.phone } : {}) })
         .eq("id", existingRecord.id);
-      await send(chatId, `✅ <b>${existingRecord.name}</b>, נרשמת בהצלחה! 🎉`);
+      await send(chatId, `✅ <b>${existingRecord.name}</b>, נרשמת בהצלחה! 🎉`,
+        { keyboard: ATTENDANCE_KEYBOARD });
     } else {
       // Create new employee record
       await supabase.from("employees").insert({
@@ -497,7 +563,8 @@ async function handleWebhook(req: Request) {
       });
       await send(chatId,
         `✅ <b>${result.name}</b>, נוספת לרשימה! 🎉\n` +
-        `המנהל יגדיר את התפקיד שלך בקרוב.`
+        `המנהל יגדיר את התפקיד שלך בקרוב. ` +
+        `אחרי שתאושרו, שלחו <code>/start</code> כדי לקבל את כפתורי הנוכחות.`,
       );
     }
     return new Response("ok");
@@ -567,6 +634,17 @@ async function handleWebhook(req: Request) {
     return new Response("ok");
   }
 
+  // ── Private-DM fallback ────────────────────────────────────────────────
+  // Anything that lands here in private was a real DM that didn't match
+  // any handler. Reply with a hint so employees never see total silence.
+  if (isPrivate) {
+    await send(chatId,
+      `🤔 לא הבנתי.\n\n` +
+      `🟢 שלחו <b>נכנסתי</b> בכניסה למשמרת\n` +
+      `🔴 שלחו <b>יצאתי</b> בסיום\n` +
+      `📊 שלחו <b>דוח</b> כדי לראות שעות החודש`,
+    );
+  }
   return new Response("ok");
 }
 
@@ -585,6 +663,27 @@ serve(async (req) => {
       if (action === "onboard") return await handleOnboard();
       if (action === "remind")  return await handleRemind();
       if (action === "publish") return await handlePublish(req);
+      if (action === "diagnose") {
+        // One-shot diagnostic: ask Telegram what webhook is set, plus a
+        // hash-only echo of our local secret so we can spot a mismatch
+        // without exposing the secret.
+        const wh = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`);
+        const me = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
+        const whJson = await wh.json();
+        const meJson = await me.json();
+        const localSecretHash = WEBHOOK_SECRET
+          ? await sha256(WEBHOOK_SECRET).then(s => s.slice(0, 12))
+          : null;
+        return new Response(JSON.stringify({
+          bot:               meJson?.result ?? null,
+          webhook:           whJson?.result ?? null,
+          local_secret_set:  !!WEBHOOK_SECRET,
+          local_secret_hash: localSecretHash,
+          group_id_set:      !!GROUP_ID,
+        }, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Telegram webhook — verify X-Telegram-Bot-Api-Secret-Token header
