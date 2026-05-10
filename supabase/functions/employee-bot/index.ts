@@ -84,10 +84,20 @@ async function sha256(s: string): Promise<string> {
 const ATTENDANCE_KEYBOARD = {
   keyboard: [
     [{ text: "🟢 נכנסתי" }, { text: "🔴 יצאתי" }],
-    [{ text: "📊 דוח" }],
+    [{ text: "📊 דוח" }, { text: "🗓️ סידור" }, { text: "📅 זמינות" }],
   ],
   resize_keyboard:  true,
   is_persistent:    true,
+};
+
+const POSITION_LABEL_HE: Record<string, string> = {
+  opening:  "פתיחת קפה",
+  cafe:     "בית קפה",
+  roasting: "קלייה",
+  store1:   "חנות",
+  store2:   "חנות",
+  store3:   "חנות",
+  store4:   "חנות",
 };
 
 async function send(
@@ -482,6 +492,137 @@ async function handleWebhook(req: Request) {
       }
       await send(chatId, reply, { keyboard: ATTENDANCE_KEYBOARD });
       console.log(`report: ${emp.name} (${emp.id}) hours=${totalHours.toFixed(1)} days=${workedDays} open=${openShifts}`);
+      return new Response("ok");
+    }
+  }
+
+  // ── Schedule view (private DM only) ────────────────────────────────────
+  // Trigger words: "סידור", "המשמרות שלי", "מתי אני עובד".
+  if (isPrivate) {
+    const wantsSchedule =
+      /^סידור\b/.test(matchText) ||
+      /המשמרות\s+שלי/.test(matchText) ||
+      /מתי\s+אני\s+עובד/.test(matchText);
+    if (wantsSchedule) {
+      const { data: empRows } = await supabase
+        .from("employees")
+        .select("id, name")
+        .eq("telegram_id", telegramId)
+        .eq("active", true)
+        .limit(1);
+      const emp = empRows?.[0];
+      if (!emp) {
+        await send(chatId,
+          `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`,
+        );
+        return new Response("ok");
+      }
+
+      // Most recent schedule covering today or upcoming.
+      const today = new Date();
+      const todayStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jerusalem",
+        year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(today);
+      // Look at this week's schedule (Sunday on or before today) plus future.
+      const probeDate = new Date(`${todayStr}T12:00:00Z`);
+      const wd = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jerusalem", weekday: "short",
+      }).format(probeDate).toLowerCase();
+      const dowIdx = ["sun","mon","tue","wed","thu","fri","sat"]
+        .findIndex(c => wd.startsWith(c));
+      const sundayDate = new Date(probeDate);
+      sundayDate.setUTCDate(sundayDate.getUTCDate() - (dowIdx === -1 ? 0 : dowIdx));
+      const sundayStr = sundayDate.toISOString().slice(0, 10);
+
+      const { data: schedules } = await supabase
+        .from("schedules")
+        .select("id, week_start")
+        .gte("week_start", sundayStr)
+        .order("week_start", { ascending: true })
+        .limit(2);
+
+      if (!schedules?.length) {
+        await send(chatId, `📅 עוד לא פורסם סידור לשבוע הקרוב.`,
+          { keyboard: ATTENDANCE_KEYBOARD });
+        return new Response("ok");
+      }
+
+      // Find this employee in each week's assignments.
+      const sectionLines: string[] = [];
+      for (const sched of schedules) {
+        const { data: assigns } = await supabase
+          .from("schedule_assignments")
+          .select("day, position, employee_name")
+          .eq("schedule_id", sched.id)
+          .ilike("employee_name", emp.name);
+
+        if (!assigns?.length) continue;
+
+        // Header for this week.
+        const weekStartDate = new Date(`${sched.week_start}T12:00:00Z`);
+        const weekEndDate   = new Date(weekStartDate);
+        weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 5);
+        const fmtShort = (d: Date) =>
+          `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        sectionLines.push(`📅 <b>שבוע ${fmtShort(weekStartDate)} — ${fmtShort(weekEndDate)}</b>`);
+
+        // Order assignments by day.
+        const dayOrder = ["sun","mon","tue","wed","thu","fri"];
+        const sorted = [...assigns].sort(
+          (a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day),
+        );
+        for (const a of sorted) {
+          const dayIdx = dayOrder.indexOf(a.day);
+          const date = new Date(weekStartDate);
+          date.setUTCDate(date.getUTCDate() + dayIdx);
+          const label = POSITION_LABEL_HE[a.position] ?? a.position;
+          sectionLines.push(
+            `• ${DAY_HE[a.day]} ${fmtShort(date)} — ${label}`,
+          );
+        }
+        sectionLines.push("");
+      }
+
+      if (sectionLines.length === 0) {
+        await send(chatId,
+          `📅 לא משובצ/ת לאף משמרת בשבועות הקרובים.`,
+          { keyboard: ATTENDANCE_KEYBOARD });
+        return new Response("ok");
+      }
+
+      await send(chatId, sectionLines.join("\n").trim(),
+        { keyboard: ATTENDANCE_KEYBOARD });
+      console.log(`schedule: ${emp.name} (${emp.id}) sent ${schedules.length} weeks`);
+      return new Response("ok");
+    }
+  }
+
+  // ── Availability prompt (private DM only) ──────────────────────────────
+  // User taps "📅 זמינות" → bot replies with the same prompt the cron sends,
+  // and the user's free-text reply gets handled by the existing classifier.
+  if (isPrivate) {
+    const wantsAvailability =
+      /^זמינות\b/.test(matchText) ||
+      /הזמינות\s+שלי/.test(matchText);
+    if (wantsAvailability) {
+      const week = nextSunday();
+      // DD/MM Israel-local of the upcoming week.
+      const friday = new Date(`${week}T12:00:00Z`);
+      friday.setUTCDate(friday.getUTCDate() + 5);
+      const fmtShort = (d: Date) =>
+        `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      const sundayDt = new Date(`${week}T12:00:00Z`);
+
+      await send(chatId,
+        `📅 <b>זמינות לשבוע ${fmtShort(sundayDt)} — ${fmtShort(friday)}</b>\n\n` +
+        `שלחו את הימים שאתם פנויים השבוע 👇\n\n` +
+        `דוגמאות:\n` +
+        `<code>ראשון, שני, שישי</code>\n` +
+        `<code>שני, חמישי עד 14:00, שישי</code>\n` +
+        `<code>כל הימים</code>  |  <code>לא יכול השבוע</code>`,
+        { keyboard: ATTENDANCE_KEYBOARD },
+      );
       return new Response("ok");
     }
   }
