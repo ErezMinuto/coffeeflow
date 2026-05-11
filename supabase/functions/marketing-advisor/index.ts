@@ -8264,6 +8264,297 @@ ${capped.map((q, i) =>
     }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
+  // ── Meta Ads Strategist ─────────────────────────────────────────────────────
+  // Persistent persona that lives in the Advisor page chat. Same system prompt
+  // the owner pasted ("elite Performance Marketer for Specialty Coffee"). Has
+  // one tool: draft_meta_campaign — calls meta-ads-draft to create a PAUSED
+  // campaign in Ads Manager (owner reviews + activates manually). Tool is
+  // gated by the system prompt to only fire after explicit owner approval.
+  if (body.agent === "meta_ads_strategist") {
+    const question = (body as any).question as string | undefined;
+    const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: any }>;
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return new Response(JSON.stringify({ error: "question is required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+
+    try {
+      // ── Live context the strategist needs ──────────────────────────────
+      // Last 30d Meta performance, top SKUs, past drafts. Pixel event volumes
+      // would also be useful but require a Graph API call — deferred to V2.
+      const weekEnd2 = addDays(weekStart, 6);
+      const [metaData, topProducts, pastDrafts] = await Promise.all([
+        fetchMetaAdData(supabase, weekStart, weekEnd2),
+        supabase.from("woo_products")
+          .select("name, regular_price, total_sales, stock_status")
+          .order("total_sales", { ascending: false })
+          .limit(8),
+        supabase.from("meta_ad_drafts")
+          .select("idea_id, campaign_name, objective, daily_budget_ils, status, created_at, warnings")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
+      const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
+
+      const productsBlock = (topProducts.data ?? [])
+        .map((p: any) => `  • ${p.name} — ₪${p.regular_price} — ${p.total_sales ?? 0} מכירות — ${p.stock_status}`)
+        .join("\n") || "  (no product data yet)";
+
+      const draftsBlock = (pastDrafts.data ?? [])
+        .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.objective} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
+        .join("\n") || "  (no campaigns drafted yet — you've never built one through this system)";
+
+      // System prompt — combines the owner's verbatim persona prompt with the
+      // operational guardrails (compliance, brand voice) and the live data.
+      const sysPromptStrategist = `# Role
+You are an elite Performance Marketer and Brand Strategist specializing in the Specialty Coffee industry. You are responsible for the marketing strategy of "Minuto Coffee" on Meta (Facebook & Instagram).
+
+The Product: Premium specialty coffee beans (high SCA score, traceable origins, fresh roasting). This is a high-end product for coffee enthusiasts who value flavor profiles, roast dates, and brewing craft.
+
+# Core Mission
+To research, plan, and draft high-converting ad campaigns that find the perfect "Home Barista" and "Coffee Lover" audiences.
+
+# Mandatory Operational Workflow (Hard Rules)
+
+**Research First** — Never recommend a creative or a budget without first conducting (or simulating) market and audience research, OR explicitly stating which data point is unknown.
+
+**Approval Authority** — You are an advisor, NOT an executor. You are strictly forbidden from finalizing a campaign without the owner's explicit written approval for every step. The owner uses words like "approved", "yes go ahead", "build it", "אישרתי", "תבנה". Anything less than that = keep planning, don't draft.
+
+**Budgetary Constraints** — You recommend a daily budget for every campaign WITH justification. You do NOT decide the final number. The owner approves, changes, or rejects.
+
+**Language** — Strategy, research, and analysis: **English**. Ad copy (Hooks, Body, Headlines): **high-quality Hebrew** that fits the Israeli specialty coffee scene.
+
+# Campaign Development Process — every new campaign you propose must include:
+1. **Market/Competitor Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade", "upgrade from supermarket espresso")
+2. **Audience Targeting** — specific interest-based segments (Third Wave Coffee, Espresso Machines, Burr Grinders, De'Longhi, Sage, Breville owners). Always name the targeting layer (Custom → LAL → Advantage+ → Detailed).
+3. **Creative Brief** — visual concept + full Hebrew copy (3 hook variants for A/B test)
+4. **Budget Proposal** — daily spend recommendation with justification + expected results
+
+# Brand Voice & Identity
+- **Tone**: Professional, passionate, "geeky" about coffee but accessible to people leveling up their home brewing.
+- **Focus**: Freshness (roast date matters), flavor notes (fruity / nutty / chocolatey / honey), the quality of the beans, the craft of roasting.
+- **Never**: discount language, "% off", "free shipping" as a hook, disparaging competitors by name.
+
+# Compliance — ABSOLUTE (legal + brand)
+🚫 **Never name a competitor** in ad copy or visual brief: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, Dolce Gusto, נחת, Jera, אגרו, נגרו, Negro, עלית, לנדוור, ארומה, Aldo, AM:PM, רמי לוי.
+🚫 Never say "blurred logo of X" or "neutral bag that looks like X" — still a violation.
+🚫 Never make specific factual claims about a named competitor.
+✓ Attack the *category*: "supermarket beans", "the bag currently in your kitchen", "commercial coffee".
+✓ Make the viewer self-reflect: "Does your current bag have a roast date?" — not "Brand X's bag doesn't."
+
+🚫 **Hebrew gender-inclusive**: avoid masculine-only 2nd-person verbs (תחזור / תענה / תיהנה / בחרת / ראית / תשתה / אתה). Restructure to plural (ראיתם / בחרתם / שלכם) or impersonal ("הקפה שמגיע אליכם", "מי שמחפש"). The brand's customers are mixed gender.
+🚫 No em-dashes in Hebrew — use commas.
+🚫 Don't lead with mechanism ("טמפרטורת קלייה אופטימלית"); lead with what the customer cares about ("האספרסו שלכם").
+
+🔍 **SELF-CHECK before sending any creative**: scan your Hebrew copy for: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, נגרו, עלית, לנדוור, ארומה, "לוגו מטושטש", "שקית דמוית". If any are present, rewrite before responding.
+
+# Tool Use
+You have ONE tool: \`draft_meta_campaign\`. It creates a PAUSED ad campaign in the owner's Meta Ads Manager (campaign + ad set + creative + ad, all status=PAUSED). The owner reviews in Meta's UI and clicks Activate manually.
+
+**When to use it**: ONLY after the owner has given explicit written approval for ALL of: campaign name, objective, audience definition, Hebrew creative copy, daily budget, AND image URL. If ANY of those is still pending approval, do not call the tool — keep the conversation going to nail down the missing piece.
+
+**When NOT to use it**: Speculatively. "Let me show you what this would look like" is not approval. Asking "should I build this?" is not approval. The owner must say something like "yes build it" / "approved, draft it" / "אישרתי, תבנה" before you fire the tool.
+
+# What You Already Know About Minuto (do NOT re-ask)
+- **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts to order. Sells online + cafe storefront.
+- **Top revenue SKUs**: **Aristo** and **Dark Chocolate** (both espresso blends, similar margins). These are the anchors for paid acquisition.
+- **Two audiences** (per owner's brief):
+  - Audience 1 — Specialty enthusiasts (small, high LTV) — already buy from נחת/Jera/agro/import. Have grinder + machine. Search "ethiopia yirgacheffe", "single origin". Pitch: freshness + roastery expertise.
+  - Audience 2 — Commercial bean buyers (large, growth) — currently buy Lavazza/Illy/Mauro at supermarkets. Have espresso machine. Search "פולי קפה", "קפה טרי". Pitch: upgrade vs. supermarket beans.
+- **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with pale-blue glass side wings. Use as creative anchor sparingly.
+- **Premium positioning** — never compete on price. No discounts. No "% off".
+- **Current Meta spend**: ~₪3,000 / 30 days.
+- **Pixel**: ID 240929400634266 — installed via PixelYourSite, browser-side firing. Last 28d: 28.2K PageView / 6.4K ViewContent / 625 AddToCart / 304 InitiateCheckout / **46 Purchase**. CAPI is OFF — recovery deferred.
+- **Pixel known issue**: Diagnostic flagged unverified domain "google.com" (likely Google Translate traffic) — to be ignored.
+- **AOV / margins**: not yet confirmed by owner. If you need them for a recommendation, ASK.
+
+# Pre-existing Campaign #1 Recommendation (status: PENDING owner approval)
+- Type: **Retargeting**
+- Audience: 180-day AddToCart visitors, excluding 180-day Purchasers (~3,500 people)
+- Geo: IL, age 25-65, Hebrew + English
+- Optimization: Purchase
+- Anchor SKUs: Aristo + Dark Chocolate
+- 3 Hebrew hook variants drafted (Reminder / Freshness contrast / Quiet confidence)
+- Proposed budget: ₪30/day for 7 days = ₪210 total test
+- Kill threshold: CPA > ₪70 OR <2 purchases by day 7
+- Scale threshold: CPA ≤ ₪40 AND ≥4 purchases → +30% budget
+
+Owner has not yet approved the image URL or final budget. **Do not call draft_meta_campaign for this yet.**
+
+# Live Data Snapshot (refreshed each turn)
+
+## Meta — Last week (${weekStart} → ${weekEnd2})
+${metaBlock.metaTotalSpend ? `Total spend: ₪${metaBlock.metaTotalSpend} | Clicks: ${metaBlock.metaTotalClicks} | Conversions: ${metaBlock.metaTotalConversions} | CPA: ${metaBlock.metaOverallCpa != null ? `₪${metaBlock.metaOverallCpa}` : 'n/a'}` : 'No Meta campaign data synced for this week yet.'}
+
+Active campaigns:
+${metaBlock.metaCampaignBlock || '  (none reporting)'}
+
+## Top Products by Sales (from WooCommerce)
+${productsBlock}
+
+## Past Drafts (created via this strategist — for continuity)
+${draftsBlock}
+
+# Conversational Style
+- Reply in **English** for strategy and analysis. Ad copy stays in **Hebrew**.
+- Be terse. The owner is busy and not an expert — short focused answers beat walls of text.
+- Show specific numbers in ₪, not percentages, when proposing budget changes.
+- If asked something you don't have data for, say "I don't have that number — can you check X?" instead of inventing.
+`;
+
+      // ── Tool definition ───────────────────────────────────────────────
+      const tools = [{
+        name: "draft_meta_campaign",
+        description: "Create a PAUSED ad campaign in the owner's Meta Ads Manager (campaign + ad set + creative + ad — all status=PAUSED). The owner must have given explicit written approval for ALL fields below before you call this. Returns an Ads Manager edit URL the owner opens to review and activate.",
+        input_schema: {
+          type: "object",
+          properties: {
+            idea_id: { type: "string", description: "Unique slug for this campaign, e.g. 'retargeting_180d_atc_aristo_v1'. Used for deduplication — re-calling with same idea_id returns the existing draft." },
+            campaign_name: { type: "string", description: "Human-readable campaign name as it will appear in Ads Manager. Hebrew or English." },
+            objective: { type: "string", enum: ["Sales", "Traffic", "Engagement", "Awareness", "Leads"], description: "Meta campaign objective." },
+            daily_budget_ils: { type: "number", description: "Daily budget in ILS — must match the owner's approved number." },
+            duration_days: { type: "number", description: "Planned duration in days (informational; campaign runs until paused)." },
+            audience: {
+              type: "object",
+              properties: {
+                type: { type: "string", description: "retargeting | lookalike | interest | custom" },
+                age_range: { type: "string", description: "e.g. '25-65'" },
+                geo: { type: "string", description: "Default 'ישראל'" },
+                languages: { type: "array", items: { type: "string" } },
+                interests_or_behaviors: { type: "array", items: { type: "string" }, description: "Interest names — Meta resolves them to Targeting IDs server-side. Use specific names: 'Specialty coffee', 'De Longhi', 'Espresso machines'." },
+                why_this_audience: { type: "string" },
+              },
+              required: ["age_range"],
+            },
+            creative: {
+              type: "object",
+              properties: {
+                primary_text: { type: "string", description: "Hebrew body text, ≤125 chars before truncation." },
+                headline: { type: "string", description: "Hebrew headline, ≤27 chars." },
+                description: { type: "string", description: "Hebrew link description, ≤27 chars." },
+                cta_button: { type: "string", description: "Shop Now | Order Now | Learn More | Sign Up | Buy Now" },
+              },
+              required: ["primary_text", "cta_button"],
+            },
+            landing_page_url: { type: "string", description: "Full URL on minuto.co.il the ad sends traffic to." },
+            tracking: {
+              type: "object",
+              properties: {
+                utm_source: { type: "string" },
+                utm_medium: { type: "string" },
+                utm_campaign: { type: "string" },
+                utm_content: { type: "string" },
+              },
+            },
+            image_url: { type: "string", description: "PUBLIC URL of an image Meta will fetch and upload. Owner must have provided this URL." },
+          },
+          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url", "image_url"],
+        },
+      }];
+
+      // ── Tool-use loop ─────────────────────────────────────────────────
+      // Claude may call draft_meta_campaign, we execute it, return result,
+      // Claude produces the final natural-language reply. Cap iterations.
+      const messages: any[] = [
+        ...history.slice(-16),  // 8 user/assistant pairs
+        { role: "user", content: question },
+      ];
+
+      let toolCallsExecuted: Array<{ name: string; input: any; result: any }> = [];
+      let finalAnswer = "";
+      let totalTokens = 0;
+
+      for (let iter = 0; iter < 5; iter++) {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5",
+            max_tokens: 4000,
+            system: sysPromptStrategist,
+            tools,
+            messages,
+          }),
+          signal: AbortSignal.timeout(90_000),
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error.message ?? "Claude error");
+        totalTokens += (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+
+        // Aggregate any text blocks emitted this iteration (might come alongside tool_use).
+        const textBlocks = (json.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
+        if (textBlocks) finalAnswer = textBlocks;
+
+        if (json.stop_reason !== "tool_use") {
+          // Done — Claude returned text-only.
+          break;
+        }
+
+        const toolUseBlocks = (json.content ?? []).filter((b: any) => b.type === "tool_use");
+        if (toolUseBlocks.length === 0) break;
+
+        // Execute every tool call this turn produced.
+        const toolResults = [];
+        for (const tu of toolUseBlocks) {
+          let resultText: string;
+          let resultData: any = null;
+          if (tu.name === "draft_meta_campaign") {
+            try {
+              const draftRes = await fetch(`${SUPA_URL}/functions/v1/meta-ads-draft`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({
+                  action: "create",
+                  idea_id: tu.input.idea_id,
+                  spec: tu.input,
+                  image_url: tu.input.image_url,
+                }),
+              });
+              resultData = await draftRes.json();
+              if (resultData.ok) {
+                resultText = `Draft created. Campaign ID: ${resultData.campaign_id}. Ads Manager URL: ${resultData.edit_url}. Warnings: ${(resultData.warnings ?? []).join("; ") || "none"}.${resultData.existed ? " (Returned existing draft — already created previously.)" : ""}`;
+              } else {
+                resultText = `Draft FAILED: ${resultData.error ?? "unknown error"}. Tell the owner what went wrong and propose a fix.`;
+              }
+            } catch (e: any) {
+              resultText = `Draft FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else {
+            resultText = `Unknown tool: ${tu.name}`;
+          }
+          toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: resultText });
+        }
+
+        // Append assistant's tool_use turn + our tool_result turn, loop again.
+        messages.push({ role: "assistant", content: json.content });
+        messages.push({ role: "user", content: toolResults });
+      }
+
+      // Compliance sweep on the final answer (catches competitor names that
+      // slipped past the self-check loop in the system prompt).
+      const violations = detectCreativeViolations(finalAnswer);
+      const compliance = violations.hasViolation
+        ? { compliance_flagged: true, compliance_issues: violations.issues }
+        : {};
+      if (violations.hasViolation) {
+        console.warn("[meta_ads_strategist] creative violations:", violations.issues.join(" | "));
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        answer: finalAnswer,
+        tool_calls: toolCallsExecuted,
+        tokens_used: totalTokens,
+        ...compliance,
+      }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[meta_ads_strategist] error:", err?.message, err?.stack);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
   if (body.agent === "advisor_chat") {
     const question = (body as any).question as string | undefined;
     const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: string }>;
