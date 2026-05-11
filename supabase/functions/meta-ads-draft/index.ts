@@ -89,13 +89,20 @@ serve(async (req) => {
     const warnings: string[] = []
 
     // ── 1. Campaign ────────────────────────────────────────────────────────
+    // CBO (Campaign Budget Optimization) — budget + bid_strategy live on the
+    // campaign, not the ad set. Meta's modern default and required for several
+    // objectives. Putting budget on the ad set triggers errors about
+    // is_adset_budget_sharing_enabled / SOURCE / budget_remaining / etc.
     const objective = mapObjective(spec.objective)
+    const dailyBudgetAgorot = String(Math.round(Number(spec.daily_budget_ils ?? 60) * 100))
     const campaign  = await graphPost(`${GRAPH}/${ctx.adAccountId}/campaigns`, ctx.userToken, {
       name:                   String(spec.campaign_name ?? 'Untitled').slice(0, 400),
       objective,
       status:                 'PAUSED',
       special_ad_categories:  JSON.stringify([]),
       buying_type:            'AUCTION',
+      daily_budget:           dailyBudgetAgorot,
+      bid_strategy:           'LOWEST_COST_WITHOUT_CAP',
     })
     const campaignId = campaign.id
 
@@ -133,14 +140,13 @@ serve(async (req) => {
       warnings.push('no Meta Pixel found on ad account — falling back to LINK_CLICKS optimization')
     }
 
+    // Ad set has NO budget/bid_strategy under CBO — those live on the campaign.
     const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()  // +24h
     const adsetParams: Record<string, string> = {
       name:               truncate(`${spec.campaign_name} — Ad Set`, 400),
       campaign_id:        campaignId,
-      daily_budget:       String(Math.round(Number(spec.daily_budget_ils ?? 60) * 100)),  // agorot
       billing_event:      'IMPRESSIONS',
       optimization_goal:  optimizationGoal,
-      bid_strategy:       'LOWEST_COST_WITHOUT_CAP',
       targeting:          JSON.stringify(targeting),
       status:             'PAUSED',
       start_time:         startTime,
