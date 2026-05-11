@@ -118,6 +118,35 @@ interface BlogPost {
   banner_url?: string | null
 }
 
+// Enrichment output from marketing-advisor/enrichment.ts. Each post in
+// posts_to_publish gets a matching entry by post_index. The IG-publishing
+// pipeline (visual-test → meta-publish) reads from this shape.
+interface AdditionalSlide {
+  scene_brief:  string
+  overlay_text: string | null
+  image_url:    string | null
+}
+
+interface EnrichedPost {
+  post_index:           number
+  intent:               string
+  post_type:            string
+  aspect:               'feed_square' | 'reel_cover'
+  upstream_type:        string
+  calendar_hook:        string
+  scene_brief:          string
+  overlay_text:         string | null
+  scheduled_for:        string
+  caption:              string
+  hashtags:             string[]
+  image_url:            string | null
+  // Carousel-only: slides 2..N. Slide 1 (the cover) is the scene_brief
+  // above. Total slides in the carousel = 1 + additional_slides.length.
+  additional_slides?:   AdditionalSlide[]
+  product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
+  reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
+}
+
 interface OrganicReport {
   summary: string
   account_health: { avg_reach_30d: number; follower_count: number; best_post_type: string; engagement_rate_pct: number }
@@ -125,6 +154,7 @@ interface OrganicReport {
   content_recommendations: { priority: number; content_type: string; topic: string; reason: string; best_day: string; best_time: string }[]
   products_to_feature: { product: string; reason: string; content_angle: string }[]
   posts_to_publish: PostToPublish[]
+  enriched_posts?: EnrichedPost[]
   key_insights: string[]
 }
 
@@ -1069,6 +1099,509 @@ function EfficiencyPanel({ row, onRun, running }: { row: AdvisorReport | null; o
   )
 }
 
+// ── Carousel-mode publishing controls ────────────────────────────────────────
+// When the upstream post is a 5-slide carousel, the enriched post has
+// scene_brief = slide 1 (cover) plus additional_slides[] for slides 2..N.
+// This component renders one card per slide with its own brief, image
+// state, and per-slide regenerate button. A single "Publish Carousel"
+// button at the bottom requires ALL slides to have images and ships the
+// whole bundle via meta-publish action=prepare type=carousel.
+//
+// State is array-based: imageUrls[i] is the generated URL for slide i,
+// generating[i] flags an in-flight Gemini call for slide i, etc.
+function CarouselControls({ ep }: { ep: EnrichedPost }) {
+  // Build the unified slides array. Slide 0 is the cover (= ep.scene_brief).
+  const slides = [
+    { scene_brief: ep.scene_brief, overlay_text: ep.overlay_text },
+    ...(ep.additional_slides ?? []).map(s => ({ scene_brief: s.scene_brief, overlay_text: s.overlay_text })),
+  ]
+  const N = slides.length
+
+  const [imageUrls,   setImageUrls]   = useState<(string | null)[]>(new Array(N).fill(null))
+  const [generating,  setGenerating]  = useState<boolean[]>(new Array(N).fill(false))
+  const [genErrors,   setGenErrors]   = useState<(string | null)[]>(new Array(N).fill(null))
+  const [publishing,  setPublishing]  = useState(false)
+  const [publishedTo, setPublishedTo] = useState<string | null>(null)
+  const [pubError,    setPubError]    = useState<string | null>(null)
+
+  // Set a single index in an array-state in an immutable way.
+  const setAt = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>) => (i: number, v: T) =>
+    setter(prev => { const next = [...prev]; next[i] = v; return next })
+
+  const setUrl  = setAt(setImageUrls)
+  const setGen  = setAt(setGenerating)
+  const setErr  = setAt(setGenErrors)
+
+  async function generateSlide(i: number) {
+    setGen(i, true); setErr(i, null); setUrl(i, null)
+    try {
+      // 1. Generate the photographic background via visual-test.
+      const gen = await supabase.functions.invoke('visual-test', {
+        body: {
+          scene_brief:         slides[i].scene_brief,
+          aspect:              ep.aspect,
+          // Same product reference for every slide so the bag (when shown)
+          // is always the matched product across the whole carousel.
+          reference_image_url: ep.reference_image_url || undefined,
+        },
+      })
+      if (gen.error) throw gen.error
+      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      let finalUrl: string = gen.data.url
+
+      // 2. If this slide has an overlay_text, composite it via visual-overlay.
+      //    Falls back to the bare image if the overlay step fails — better
+      //    to publish a no-text version than nothing.
+      const overlayText = slides[i].overlay_text
+      if (overlayText && overlayText.trim()) {
+        try {
+          const ov = await supabase.functions.invoke('visual-overlay', {
+            body: {
+              image_url:    finalUrl,
+              overlay_text: overlayText,
+              position:     'bottom',
+              direction:    'rtl',
+              aspect:       ep.aspect,
+            },
+          })
+          if (ov.error) throw ov.error
+          if (ov.data?.url) finalUrl = ov.data.url
+        } catch (oe: any) {
+          console.warn(`[carousel] overlay failed for slide ${i}, using bare image:`, oe?.message)
+        }
+      }
+
+      setUrl(i, finalUrl)
+    } catch (e: any) {
+      setErr(i, e?.message ?? String(e))
+    } finally {
+      setGen(i, false)
+    }
+  }
+
+  async function generateAll() {
+    // Trigger all in parallel; useState batching keeps this clean.
+    await Promise.all(slides.map((_, i) => generateSlide(i)))
+  }
+
+  const allReady = imageUrls.every(u => !!u)
+
+  async function publishCarousel() {
+    if (!allReady) return
+    setPublishing(true); setPubError(null); setPublishedTo(null)
+    try {
+      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
+      // meta-publish carousel branch already builds child containers + parent
+      // container per the IG Graph API two-step flow. We just give it the URLs.
+      const prep = await supabase.functions.invoke('meta-publish', {
+        body: {
+          action:   'prepare',
+          type:     'carousel',
+          children: imageUrls.map(u => ({ image_url: u! })),
+          caption,
+        },
+      })
+      if (prep.error) throw prep.error
+      const creationId: string | undefined = prep.data?.creation_id
+      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
+      const pub = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'publish', creation_id: creationId },
+      })
+      if (pub.error) throw pub.error
+      const link = pub.data?.permalink
+      if (!link) throw new Error(`publish returned no permalink: ${JSON.stringify(pub.data).slice(0, 200)}`)
+      setPublishedTo(link)
+    } catch (e: any) {
+      setPubError(e?.message ?? String(e))
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  const anyGenerating = generating.some(g => g)
+
+  return (
+    <div className="mt-2 border-t border-surface-200 pt-2 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="text-[10px] uppercase tracking-wide text-surface-500 font-semibold">
+          🎨 קרוסל — {N} שקפים
+        </div>
+        <div className="text-[11px] text-surface-600">
+          <span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook} · <span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}
+        </div>
+      </div>
+      {ep.product_reference && (
+        <div className={`text-[11px] ${ep.reference_image_url ? 'text-emerald-700' : 'text-surface-500'}`}>
+          <span className="font-semibold">מוצר רפרנס:</span> {ep.product_reference}{' '}
+          {ep.reference_image_url ? '✓ נמצאה תמונה' : '⚠ לא נמצאה במלאי, ייווצר מהשקית הדיפולטית'}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {slides.map((s, i) => (
+          <div key={i} className="bg-surface-50 border border-surface-200 rounded-lg p-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-surface-700">
+                {i === 0 ? 'שקף 1 — כריכה' : `שקף ${i + 1}`}
+              </div>
+              <button
+                onClick={() => generateSlide(i)}
+                disabled={generating[i] || publishing}
+                className="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed"
+              >
+                {generating[i] ? '...' : (imageUrls[i] ? '🔄' : '🎨')}
+              </button>
+            </div>
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-surface-500 hover:text-surface-700">📷 תקציר</summary>
+              <p className="mt-1 p-1.5 bg-white rounded text-surface-700 leading-relaxed">{s.scene_brief}</p>
+            </details>
+            {s.overlay_text && (
+              <div className="text-[10px] text-amber-700"><span className="font-semibold">טקסט-על:</span> {s.overlay_text}</div>
+            )}
+            {imageUrls[i] && (
+              <a href={imageUrls[i]!} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={imageUrls[i]!}
+                  alt={`Slide ${i + 1}`}
+                  className="w-full rounded border border-surface-200"
+                  style={{ aspectRatio: ep.aspect === 'reel_cover' ? '9/16' : '1/1', objectFit: 'cover' }}
+                />
+              </a>
+            )}
+            {genErrors[i] && (
+              <div className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded p-1">
+                {genErrors[i]}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {pubError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה בפרסום: {pubError}
+        </div>
+      )}
+      {publishedTo && (
+        <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded p-2">
+          ✅ פורסם בהצלחה!{' '}
+          <a href={publishedTo} target="_blank" rel="noopener noreferrer" className="underline">
+            פתח באינסטגרם
+          </a>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={generateAll}
+          disabled={anyGenerating || publishing}
+          className="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {anyGenerating
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מייצר את כל השקפים...</>)
+            : '🎨 צור את כל השקפים'}
+        </button>
+        <button
+          onClick={publishCarousel}
+          disabled={!allReady || publishing || anyGenerating || !!publishedTo}
+          className="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {publishing
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מפרסם קרוסל...</>)
+            : '📤 פרסם כקרוסל'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Per-post IG publishing controls ──────────────────────────────────────────
+// Shows the photographer's brief from enrichment, lets the user generate a
+// visual on demand, and (if the visual looks right) ship it to @minuto_cafe
+// via the meta-publish prepare → publish flow.
+//
+// All state is local. Refresh = lose the generated image and regenerate.
+// That's intentional in v1 — keeps us off another DB table for now.
+function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
+  // Multi-slide carousels have their own component (separate state + UI).
+  // Detect early before any hooks so we don't violate rules-of-hooks if we
+  // ever conditionally bail out.
+  const isCarousel = (ep.additional_slides ?? []).length > 0
+  if (isCarousel) {
+    return <CarouselControls ep={ep} />
+  }
+
+  const [imageUrl,    setImageUrl]    = useState<string | null>(ep.image_url)
+  const [generating,  setGenerating]  = useState(false)
+  const [genError,    setGenError]    = useState<string | null>(null)
+  const [publishing,  setPublishing]  = useState(false)
+  const [publishedTo, setPublishedTo] = useState<string | null>(null)
+  const [pubError,    setPubError]    = useState<string | null>(null)
+  // Reel state — Veo image-to-video, polled async (1–3 min typical)
+  const [videoUrl,        setVideoUrl]        = useState<string | null>(null)
+  const [reelOperation,   setReelOperation]   = useState<string | null>(null)
+  const [reelGenerating,  setReelGenerating]  = useState(false)
+  const [reelError,       setReelError]       = useState<string | null>(null)
+  // The post is Reel-shaped if its aspect is 9:16. Only those get the
+  // Generate Reel button — feed posts (1:1) skip the video pipeline.
+  const isReelType = ep.aspect === 'reel_cover'
+
+  // Poll Veo every 5s while a job is running. Stops when the status function
+  // returns done/error or the component unmounts. Cancels via a ref so a new
+  // job started before the old finishes doesn't keep two pollers running.
+  useEffect(() => {
+    if (!reelOperation) return
+    let cancelled = false
+    let timer: number | undefined
+    const poll = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('meta-reel-status', {
+          body: { operation: reelOperation },
+        })
+        if (cancelled) return
+        if (error) throw error
+        if (data?.status === 'done' && data.video_url) {
+          setVideoUrl(data.video_url)
+          setReelOperation(null)
+          setReelGenerating(false)
+          return
+        }
+        if (data?.status === 'error') {
+          setReelError(data.error ?? 'unknown error')
+          setReelOperation(null)
+          setReelGenerating(false)
+          return
+        }
+        // pending → poll again
+        timer = setTimeout(poll, 5000) as unknown as number
+      } catch (e: any) {
+        if (cancelled) return
+        setReelError(e?.message ?? String(e))
+        setReelOperation(null)
+        setReelGenerating(false)
+      }
+    }
+    poll()
+    return () => { cancelled = true; if (timer) clearTimeout(timer) }
+  }, [reelOperation])
+
+  async function generateVisual() {
+    setGenerating(true); setGenError(null); setImageUrl(null)
+    setVideoUrl(null); setReelOperation(null); setReelError(null)
+    try {
+      // 1. Generate the photographic background via visual-test.
+      const gen = await supabase.functions.invoke('visual-test', {
+        body: {
+          scene_brief: ep.scene_brief,
+          aspect: ep.aspect,
+          // Per-post bag reference — when the post is about a specific product
+          // (e.g. Dark Chocolate), the agent matched it to a woo_products row
+          // and we feed THAT bag image to Gemini instead of the default. Falls
+          // back to the locked Yirgacheffe bag if not set.
+          reference_image_url: ep.reference_image_url || undefined,
+        },
+      })
+      if (gen.error) throw gen.error
+      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      let finalUrl: string = gen.data.url
+
+      // 2. If the post has overlay_text, composite it via visual-overlay.
+      //    Falls back to bare image on failure — better to ship something.
+      if (ep.overlay_text && ep.overlay_text.trim()) {
+        try {
+          const ov = await supabase.functions.invoke('visual-overlay', {
+            body: {
+              image_url:    finalUrl,
+              overlay_text: ep.overlay_text,
+              position:     'bottom',
+              direction:    'rtl',
+              aspect:       ep.aspect,
+            },
+          })
+          if (ov.error) throw ov.error
+          if (ov.data?.url) finalUrl = ov.data.url
+        } catch (oe: any) {
+          console.warn('[single-image] overlay failed, using bare image:', oe?.message)
+        }
+      }
+
+      setImageUrl(finalUrl)
+    } catch (e: any) {
+      setGenError(e?.message ?? String(e))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function generateReel() {
+    if (!imageUrl) return
+    setReelGenerating(true); setReelError(null); setVideoUrl(null)
+    try {
+      // Pull a Veo-friendly motion description from the scene_brief — it's
+      // already photographic/cinematic prose, ideal as the motion prompt.
+      // Veo 2 silently outputs ~5s of subtle motion driven by this text.
+      const motionPrompt =
+        `Slow gentle cinematic motion: ${ep.scene_brief.slice(0, 600)}. ` +
+        `Subtle, premium, no people, no text, no animation of the bag itself. ` +
+        `Faint atmosphere — steam wisps, soft light shift, light breeze. 5 seconds.`
+      const { data, error } = await supabase.functions.invoke('meta-reel-generate', {
+        body: {
+          image_url:     imageUrl,
+          motion_prompt: motionPrompt,
+          aspect:        'reel_9_16',
+          duration_sec:  5,
+        },
+      })
+      if (error) throw error
+      const op = data?.operation
+      if (!op) throw new Error(`no operation id returned: ${JSON.stringify(data).slice(0, 200)}`)
+      setReelOperation(op)   // useEffect kicks in and starts polling every 5s
+    } catch (e: any) {
+      setReelError(e?.message ?? String(e))
+      setReelGenerating(false)
+    }
+  }
+
+  async function publishToInstagram() {
+    if (!imageUrl && !videoUrl) return
+    setPublishing(true); setPubError(null); setPublishedTo(null)
+    try {
+      // Mode is decided by what we have: if a Veo video was generated, ship as
+      // a Reel (the cover frame becomes the in-grid thumbnail Meta picks from
+      // the video). Otherwise ship as a feed post with the still.
+      const mode = videoUrl ? 'reel' : 'feed'
+      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
+      const prep = await supabase.functions.invoke('meta-publish', {
+        body: mode === 'reel'
+          ? { action: 'prepare', type: 'reel', video_url: videoUrl, caption }
+          : { action: 'prepare', type: 'feed', image_url: imageUrl, caption },
+      })
+      if (prep.error) throw prep.error
+      const creationId: string | undefined = prep.data?.creation_id
+      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
+
+      const pub = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'publish', creation_id: creationId },
+      })
+      if (pub.error) throw pub.error
+      const link = pub.data?.permalink
+      if (!link) throw new Error(`publish returned no permalink: ${JSON.stringify(pub.data).slice(0, 200)}`)
+      setPublishedTo(link)
+    } catch (e: any) {
+      setPubError(e?.message ?? String(e))
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  return (
+    <div className="mt-2 border-t border-surface-200 pt-2 space-y-2">
+      <div className="text-[10px] uppercase tracking-wide text-surface-500 font-semibold">
+        🎨 פוסט מועשר ({ep.aspect === 'reel_cover' ? 'תמונת כריכה לריל' : 'פוסט פיד'})
+      </div>
+      <div className="text-[11px] text-surface-600 space-y-1">
+        <div><span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook}</div>
+        <div><span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}</div>
+        {ep.overlay_text && (
+          <div className="text-amber-700"><span className="font-semibold">טקסט על התמונה:</span> {ep.overlay_text}</div>
+        )}
+        {ep.product_reference && (
+          <div className={ep.reference_image_url ? 'text-emerald-700' : 'text-surface-500'}>
+            <span className="font-semibold">מוצר רפרנס:</span> {ep.product_reference}{' '}
+            {ep.reference_image_url ? '✓ נמצאה תמונה' : '⚠ לא נמצאה במלאי, ייווצר מהשקית הדיפולטית'}
+          </div>
+        )}
+      </div>
+      <details className="text-[11px]">
+        <summary className="cursor-pointer text-surface-500 hover:text-surface-700">📷 תקציר הצלם (English)</summary>
+        <p className="mt-1 p-2 bg-surface-50 rounded text-surface-700 leading-relaxed">{ep.scene_brief}</p>
+      </details>
+
+      {videoUrl ? (
+        <video
+          src={videoUrl}
+          controls
+          className="w-full rounded-lg border border-surface-200 mt-1"
+          style={{ aspectRatio: '9/16', objectFit: 'cover', maxHeight: 480 }}
+        />
+      ) : imageUrl ? (
+        <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+          <img
+            src={imageUrl}
+            alt="Generated IG visual"
+            className="w-full rounded-lg border border-surface-200 mt-1"
+            style={{ aspectRatio: ep.aspect === 'reel_cover' ? '9/16' : '1/1', objectFit: 'cover' }}
+          />
+        </a>
+      ) : null}
+
+      {genError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה ביצירת תמונה: {genError}
+        </div>
+      )}
+      {reelError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה ביצירת ריל: {reelError}
+        </div>
+      )}
+      {pubError && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+          שגיאה בפרסום: {pubError}
+        </div>
+      )}
+      {reelOperation && reelGenerating && (
+        <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded p-2 flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Veo מייצר ריל (1-3 דקות)... מעדכן אוטומטית כשמסתיים.
+        </div>
+      )}
+      {publishedTo && (
+        <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded p-2">
+          ✅ פורסם בהצלחה!{' '}
+          <a href={publishedTo} target="_blank" rel="noopener noreferrer" className="underline">
+            פתח באינסטגרם
+          </a>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <button
+          onClick={generateVisual}
+          disabled={generating || publishing || reelGenerating}
+          className="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {generating
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מייצר תמונה...</>)
+            : (imageUrl ? '🔄 צור תמונה מחדש' : '🎨 צור תמונה')}
+        </button>
+        {isReelType && (
+          <button
+            onClick={generateReel}
+            disabled={!imageUrl || reelGenerating || generating || publishing}
+            title={!imageUrl ? 'צור קודם תמונת כריכה' : 'הפוך את התמונה לריל של 5 שניות (Veo, 1-3 דקות)'}
+            className="text-xs px-3 py-1.5 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            {reelGenerating
+              ? (<><Loader2 className="w-3 h-3 animate-spin" /> Veo רץ...</>)
+              : (videoUrl ? '🔄 צור ריל מחדש' : '🎬 הפוך לריל')}
+          </button>
+        )}
+        <button
+          onClick={publishToInstagram}
+          disabled={(!imageUrl && !videoUrl) || publishing || generating || reelGenerating || !!publishedTo}
+          className="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:bg-surface-300 disabled:cursor-not-allowed flex items-center gap-1"
+        >
+          {publishing
+            ? (<><Loader2 className="w-3 h-3 animate-spin" /> מפרסם...</>)
+            : (videoUrl ? '📤 פרסם כריל' : '📤 פרסם פוסט פיד')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Organic Panel ─────────────────────────────────────────────────────────────
 
 function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBanner, allProducts, onRun, running }: {
@@ -1488,6 +2021,10 @@ function OrganicPanel({ row, blogState, setBlogState, writeBlogPost, generateBan
                   {p.visual_direction && (
                     <p className="text-xs text-surface-500">📷 {p.visual_direction}</p>
                   )}
+                  {(() => {
+                    const ep = r.enriched_posts?.find(e => e.post_index === i)
+                    return ep ? <PostPublishingControls ep={ep} /> : null
+                  })()}
                 </div>
               )
             })}

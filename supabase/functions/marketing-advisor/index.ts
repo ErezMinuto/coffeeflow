@@ -16,6 +16,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
+import { enrichPostsForPublishing } from "./enrichment.ts";
+import { pickFallbackBagUrl } from "../_shared/visual_identity.ts";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -644,6 +646,12 @@ const HEBREW_COPY_RULES = `
 `;
 
 // Allowed origins for CORS — kept in sync with generate-campaign.
+// Explicit list for production / known custom domains. Any *.vercel.app
+// origin is also accepted via the regex below — this covers every Vercel
+// preview deployment (URLs change per branch / per deploy) without
+// requiring an env-var update on each redeploy. Actual data access is
+// still gated by the `apikey` header, so this only widens the browser-
+// side CORS gate, not the auth boundary.
 const ALLOWED_ORIGINS = [
   Deno.env.get("COFFEEFLOW_ORIGIN") || "https://coffeeflow-thaf.vercel.app",
   "https://coffeeflow-neon.vercel.app",
@@ -651,9 +659,17 @@ const ALLOWED_ORIGINS = [
   "https://www.minuto.co.il",
 ];
 
+const VERCEL_ORIGIN_RE = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/;
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  return VERCEL_ORIGIN_RE.test(origin);
+}
+
 function getCorsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get("origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin":  allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -4773,6 +4789,25 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 • "cold brew" / "קפה קר" / "קפה קרח" — נפח חיפוש נמוך מאוד בישראל, אל תמליץ.
 • המלצות SEO על ביטויים שלא מופיעים ב-GSC — השתמש רק בביטויים מהנתונים.
 
+🚫 קוד התנהגות מותגי — חל על כל השדות (posts_to_publish, content_recommendations, products_to_feature, blog/SEO):
+
+חוק הזהב: לעולם לא ללעוג, לבזות או לזלזל בקפה אחר, במתחרים, במוצרים שהלקוח כבר משתמש בהם, או בבחירות הצריכה שלו. רק מסגור חיובי.
+
+אסור בהחלט:
+• שמות מתחרים בכל הקשר (Lavazza, Illy, Hausbrandt, Nespresso, Starbucks, Costa, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, Origem, Kilimanjaro, Nahat) — לא בכותרת, לא בקאפשן, לא ב-hook, לא ב-visual_direction. גם לא ניטרלית, גם לא חיובית.
+• "הפולים של [מותג] נקלו לפני..." או כל טענה שמשווה איכות/טריות מול מתחרה ספציפי, גם אם נכונה — זו השמצה.
+• ויז'ואל השוואתי שמראה שתי שקיות זו לצד זו (מינוטו vs אחרת/גנרית) — גם בלי שם מותג, הפריים הוא לעג ויזואלי.
+• ללעוג על "פולים מהסופר" / "קפה מסחרי" כאילו הצרכן טיפש שקנה אותו. לא לכתוב "אתה לא יודע מתי הפולים שלך נקלו, נכון?" באירוניה.
+• ללעוג על מכונת הקפה של הצרכן ("הדלונגי הזולה שלך") — נכון שמותר להזכיר דגם מכונה כדי לחבר פולים, לא ללעוג עליו.
+
+מותר ועובד טוב:
+• "תאריך קלייה" כערך עומד בפני עצמו — בלי השוואה ("הפולים האלה נקלו השבוע, ב-Minuto זה הסטנדרט").
+• להפנות את הלקוח להסתכל בעצמו על מה שיש לו ("תבדוק בשקית שלך אם יש תאריך קלייה" — בלי לקרוא לזה רע, בלי לרמוז שהשקית שלו פגומה).
+• להציג את היתרון של מינוטו כעובדה חיובית, לא כביקורת על אחרים ("נקלה הבוקר. אצלך מחר.").
+• הזכרת קטגוריה ("קפה מסחרי") רק אם זה לא ככינוי גנאי — למשל בהקשר של תוכן חינוכי על תהליכי קלייה ויעדים שונים.
+
+אם הרעיון שעולה לך לא יכול להישאר תקף בלי לנקוב בשם מתחרה או בלי השוואה ויזואלית — הוא לא רעיון לפי קוד המותג. החלף אותו.
+
 הגבלות פלט קפדניות — חרוג מהן = שגיאה:
 • google_organic_recommendations — פריט אחד בלבד
 • content_recommendations — עד 2 פריטים
@@ -4929,14 +4964,22 @@ ${(existingBlogPosts ?? []).length > 0
 
 Blog (google_organic_recommendations):
   • "מדריך מכונת אספרסו ביתית: מה לקנות + איך להוציא ממנה את המקסימום"
-  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?"
+  • "מטחנת קפה ידנית VS חשמלית — מה באמת משנה?" (השוואה בין סוגי ציוד = OK; השוואה למתחרה / לסופרמרקט = אסור)
   • "V60 VS אירופרס VS צרפתי + איזה פולים לכל שיטה"
 
 Instagram (content_recommendations / posts_to_publish):
-  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" (#1 פולים ישנים)
-  • Post: "המכונה ב-₪3000 שלך עם פולים מהסופר = מכונה ב-₪500" (השוואה ויזואלית)
-  • Story: דוגמה ויזואלית של אותה מכונה עם פולים טריים VS פולים שעמדו 6 חודשים
-  • BTS: "ככה נראים פולים ביום הקלייה לעומת אחרי חודש פתוחים"
+  • Reel: "5 טעויות שמורידות את איכות האספרסו שלך" — נסח כל טעות כעצה חיובית, לא כביקורת. למשל: "טעות 1 — חלב רותח: בעצם מספיק 60-65 מעלות". לא: "1. חלב מהסופר זה הבעיה".
+  • Post: "ככה נראה אספרסו עם פולים שנקלו השבוע" — תכל'ס חיובי, ללא השוואה.
+  • Story: זום אקסטרים על תאריך הקלייה של מינוטו, פולים מבריקים בצד. ללא לפני/אחרי, ללא "השקית הקודמת שלכם".
+  • BTS: "ככה נראים פולים ביום הקלייה" — ללא ההשוואה ל"אחרי חודש פתוחים".
+
+⛔ אסור מוחלט (משתי סיבות: brand voice + Haiku מסרב):
+  ✗ "המכונה שלך + פולים מהסופר = …" — השוואה לסופר, גם בלי שם מתחרה
+  ✗ "השקית שלכם vs השקית שלנו" — מציב את הקונה במקום לא נעים
+  ✗ "טעות #1: אתם משתמשים ב-X מהסופר" — מאשים את הצרכן
+  ✗ "מכונה מלוכלכת" כמסר ראשי — נשמע כביקורת על תחזוקה של הקונה
+  ✗ Lavazza / Illy / Nespresso / Starbucks / נחת / Jera / אגרו / Origem בכותרת או בויז'ואל
+  ✓ במקום: empowerment ("ככה נראה הדבר האמיתי", "נהדר ל-V60", "מה שהמכונה שלך יודעת לעשות עם פולים טריים")
 
 Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
@@ -4982,7 +5025,7 @@ Products (products_to_feature):
   ],
   "posts_to_publish": [
     {
-      "type": "reel|post|story|carousel",
+      "type": "post",
       "intent": "save|share|behind_the_scenes",
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
@@ -4990,10 +5033,19 @@ Products (products_to_feature):
       "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
       "hashtags": ["#קפה", "#מינוטו"],
       "hook": "משפט פתיחה קצר",
-      "visual_direction": "הנחיה קצרה למצלם",
+      "visual_direction": "הנחיה קצרה למצלם (single hero frame; NO multi-slide carousels, NO reels, NO stories)",
       "why_this_intent": "למה זה save/share/BTS — משפט אחד"
     }
   ],
+  /* TEMPORARY: type is LOCKED to "post" for every post in posts_to_publish.
+     Carousels and reels are temporarily disabled pending visual-pipeline
+     quality work (bag compositing in progress, machine rendering needs
+     more iteration). Until further notice, every entry in posts_to_publish
+     MUST be a single-image feed post (type:"post"). Do NOT emit
+     type:"carousel", type:"reel", or type:"story" here — those will be
+     filtered out downstream and the run will be short on content.
+     content_recommendations may still suggest reels/stories as ideas,
+     but posts_to_publish is single-image only for now. */
   "key_insights": ["תובנה 1", "תובנה 2"]
 }`;
 
@@ -5045,6 +5097,18 @@ Products (products_to_feature):
       seen.add(p.intent);
       return true;
     });
+    // TEMPORARY: lock posts_to_publish to single-image feed posts only.
+    // Carousels and reels are disabled pending visual-pipeline quality
+    // work (bag compositing under iteration). Defense-in-depth — if the
+    // strategist's prompt change doesn't fully hold and a carousel/reel
+    // slips through, coerce it to a single-image post here. Caption +
+    // visual_direction stay; downstream enrichment writes one scene_brief.
+    for (const p of parsed.posts_to_publish) {
+      if (p.type && p.type !== 'post') {
+        console.log(`[organic] forcing type "${p.type}" → "post" (carousels/reels temporarily disabled)`);
+        p.type = 'post';
+      }
+    }
   }
 
   // ── Post-process: filter out recommendations too similar to existing posts ──
@@ -5208,6 +5272,127 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
         return true;
       });
       parsed.google_organic_recommendations = stillFresh;
+    }
+  }
+
+  // ── Brand-voice preflight (deterministic regex, no LLM) ────────────────
+  // The strategist sometimes emits posts that violate brand-voice rules
+  // (competitor disparagement, supermarket comparison, customer mockery)
+  // despite the prompt forbidding them. We catch those here, BEFORE the
+  // expensive enrichment + visual-test pipeline runs on doomed content.
+  // Single source of truth — Haiku no longer rejects (see enrichment.ts);
+  // any rule that needs to be enforced lives here as a regex.
+  if (parsed && Array.isArray(parsed.posts_to_publish) && parsed.posts_to_publish.length > 0) {
+    const COMPETITOR_BRANDS = /\b(lavazza|illy|hausbrandt|nespresso|starbucks|costa coffee|mauro|bristot|kimbo|segafredo|jera|origem|kilimanjaro|nahat|נחת|ג'רה|אגרו|אוריג'ם)\b/i;
+    const COMPARISON_KEYWORDS = /(\bvs\b|\blעומת\b|נגד|במקום|better than|לעומת|טוב מ|חזק מ)/i;
+    const SUPERMARKET_DISPARAGE = /(שקית מהסופר|פולים מהסופר|קפה מהסופר|מהמדף של|בסופר[\-\s]?פארם|רמי\s*לוי|שופרסל|טיב\s*טעם|המקור הזול|השקית הקודמת)/i;
+    const CUSTOMER_MOCKERY = /(אתם לא יודעים|אתם לא בטוחים|הבעיה (?:היא )?(?:אצלכם|שלכם)|אתם משתמשים ב|השקית שלכם.*?לא|המכונה שלכם.*?לא|אתם טועים)/i;
+    const filteredPosts: any[] = [];
+    const droppedPosts: Array<{ topic: string; reason: string }> = [];
+    for (const p of parsed.posts_to_publish) {
+      const blob = `${p.topic ?? ''} ${p.hook ?? ''} ${p.caption ?? ''} ${p.visual_direction ?? ''} ${p.why_this_intent ?? ''}`.toLowerCase();
+      let dropReason: string | null = null;
+      if (COMPETITOR_BRANDS.test(blob) && COMPARISON_KEYWORDS.test(blob)) {
+        dropReason = 'competitor brand + comparison keyword';
+      } else if (SUPERMARKET_DISPARAGE.test(blob)) {
+        dropReason = 'supermarket disparagement framing';
+      } else if (CUSTOMER_MOCKERY.test(blob)) {
+        dropReason = 'customer mockery pattern';
+      }
+      if (dropReason) {
+        console.warn(`[organic preflight] dropped "${p.topic ?? '(untitled)'}" — ${dropReason}`);
+        droppedPosts.push({ topic: String(p.topic ?? ''), reason: dropReason });
+      } else {
+        filteredPosts.push(p);
+      }
+    }
+    if (droppedPosts.length > 0) {
+      console.log(`[organic preflight] ${droppedPosts.length}/${parsed.posts_to_publish.length} posts dropped for brand-voice violations`);
+      // Stamp on the report so we have a record without surfacing the bad
+      // posts to the user. The dashboard ignores this field; it's for debug.
+      (parsed as any).preflight_dropped = droppedPosts;
+    }
+    parsed.posts_to_publish = filteredPosts;
+  }
+
+  // ── Enrich posts_to_publish with publish-pipeline fields ────────────────
+  // Adds `enriched_posts[3]` to the report, where each entry has the
+  // photographer-brief, calendar_hook, post_type (SCENE_PRESET key),
+  // optional Hebrew overlay_text, and ISO scheduled_for. This is what the
+  // IG generation pipeline (visual-test → meta-publish prepare/publish)
+  // actually consumes — the existing posts_to_publish[] shape stays
+  // untouched so the dashboard renderer is unaffected.
+  if (parsed && Array.isArray(parsed.posts_to_publish) && parsed.posts_to_publish.length > 0) {
+    try {
+      const enriched = await enrichPostsForPublishing(parsed.posts_to_publish, seasonalContext, callClaude);
+
+      // Per-post product reference: when Haiku identified a specific Minuto
+      // product in the post (e.g. "Dark Chocolate"), look it up in
+      // woo_products and stamp the bag image URL so visual-test renders the
+      // RIGHT bag instead of always falling back to the default reference.
+      // Same pattern blog-banner uses (PR #77).
+      //
+      // Compound product references like "Velvet Star + Fazenda Sertão" are
+      // split into individual candidates — we try each and use the first
+      // match. Picking the first is a deliberate choice over picking nothing;
+      // the user can manually override later via a per-post bag picker if
+      // they want a different product highlighted.
+      for (const ep of enriched) {
+        if (!ep.product_reference) continue;
+        const candidates = ep.product_reference
+          .split(/[+,&]|\s+ו(?=\s)|\s+and\s+/gi)
+          .map(s => s.trim())
+          .filter(s => s.length >= 3);
+        let matched: { name: string; image_url: string } | null = null;
+        for (const candidate of candidates) {
+          try {
+            const { data: rows } = await supabase
+              .from("woo_products")
+              .select("name, image_url")
+              .ilike("name", `%${candidate}%`)
+              .not("image_url", "is", null)
+              .limit(1);
+            const m = (rows ?? [])[0];
+            if (m?.image_url) {
+              matched = { name: m.name as string, image_url: m.image_url as string };
+              break;
+            }
+          } catch (e: any) {
+            console.warn(`[organic] product lookup failed for "${candidate}":`, e?.message);
+          }
+        }
+        if (matched) {
+          ep.reference_image_url = matched.image_url;
+          console.log(`[organic] post ${ep.post_index} → matched "${ep.product_reference}" → ${matched.name}`);
+        } else {
+          console.log(`[organic] post ${ep.post_index} → no woo_products match for "${ep.product_reference}" (tried: ${candidates.join(' | ')})`);
+        }
+      }
+
+      // Carousel bag-locking: when a carousel post has no matched product
+      // reference (e.g. a generic brewing-methods guide), each slide call
+      // would otherwise pick a random fallback bag — resulting in 5
+      // different bags across one carousel. Stamp ONE fallback URL here
+      // so all slides share the same bag, giving the carousel visual
+      // continuity. Non-carousels don't suffer from this since they only
+      // make one visual-test call.
+      for (const ep of enriched) {
+        const isCarousel = ep.upstream_type === 'carousel'
+          && Array.isArray(ep.additional_slides)
+          && ep.additional_slides.length > 0;
+        if (isCarousel && !ep.reference_image_url) {
+          ep.reference_image_url = pickFallbackBagUrl();
+          console.log(`[organic] post ${ep.post_index} (carousel, no product match) → fallback bag locked: ${ep.reference_image_url}`);
+        }
+      }
+
+      parsed.enriched_posts = enriched;
+      console.log(`[organic] enriched ${enriched.length}/${parsed.posts_to_publish.length} posts for publishing`);
+    } catch (e: any) {
+      // Non-fatal — the rest of the report still renders, we just lose the
+      // publish-ready fields for this run. Log and move on.
+      console.error("[organic] enrichment failed:", e?.message);
+      parsed.enriched_posts = [];
     }
   }
 
