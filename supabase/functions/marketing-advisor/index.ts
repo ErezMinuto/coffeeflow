@@ -5025,7 +5025,7 @@ Products (products_to_feature):
   ],
   "posts_to_publish": [
     {
-      "type": "reel|post|story|carousel",
+      "type": "post",
       "intent": "save|share|behind_the_scenes",
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
@@ -5033,10 +5033,19 @@ Products (products_to_feature):
       "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
       "hashtags": ["#קפה", "#מינוטו"],
       "hook": "משפט פתיחה קצר",
-      "visual_direction": "הנחיה קצרה למצלם",
+      "visual_direction": "הנחיה קצרה למצלם (single hero frame; NO multi-slide carousels, NO reels, NO stories)",
       "why_this_intent": "למה זה save/share/BTS — משפט אחד"
     }
   ],
+  /* TEMPORARY: type is LOCKED to "post" for every post in posts_to_publish.
+     Carousels and reels are temporarily disabled pending visual-pipeline
+     quality work (bag compositing in progress, machine rendering needs
+     more iteration). Until further notice, every entry in posts_to_publish
+     MUST be a single-image feed post (type:"post"). Do NOT emit
+     type:"carousel", type:"reel", or type:"story" here — those will be
+     filtered out downstream and the run will be short on content.
+     content_recommendations may still suggest reels/stories as ideas,
+     but posts_to_publish is single-image only for now. */
   "key_insights": ["תובנה 1", "תובנה 2"]
 }`;
 
@@ -5088,6 +5097,18 @@ Products (products_to_feature):
       seen.add(p.intent);
       return true;
     });
+    // TEMPORARY: lock posts_to_publish to single-image feed posts only.
+    // Carousels and reels are disabled pending visual-pipeline quality
+    // work (bag compositing under iteration). Defense-in-depth — if the
+    // strategist's prompt change doesn't fully hold and a carousel/reel
+    // slips through, coerce it to a single-image post here. Caption +
+    // visual_direction stay; downstream enrichment writes one scene_brief.
+    for (const p of parsed.posts_to_publish) {
+      if (p.type && p.type !== 'post') {
+        console.log(`[organic] forcing type "${p.type}" → "post" (carousels/reels temporarily disabled)`);
+        p.type = 'post';
+      }
+    }
   }
 
   // ── Post-process: filter out recommendations too similar to existing posts ──

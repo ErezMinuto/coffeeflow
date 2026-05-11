@@ -163,6 +163,44 @@ CUP-BY-BREWING-METHOD RULE: The vessel must match the drink it implies.
   When the scene is ambiguous (just "coffee", no method named), default
   to the small unglazed ceramic cup.
 
+EQUIPMENT-BY-BREWING-METHOD RULE — STRICTLY ENFORCED:
+The brewing EQUIPMENT must match the drink that's claimed. The single
+most common mistake is rendering a moka pot when the brief says
+"espresso". That is WRONG. Moka pot makes moka coffee (stovetop, ~2 bar
+pressure, no crema, completely different drink). Espresso REQUIRES an
+ESPRESSO MACHINE with a portafilter and 9 bar pressure.
+
+  • Espresso (any brief mentioning "espresso", "espresso shot",
+    "espresso at home", "real espresso", אספרסו) → an ESPRESSO MACHINE
+    with a chrome portafilter docked into a group head. NEVER a moka
+    pot. NEVER a stovetop espresso maker. NEVER a Bialetti. NEVER an
+    AeroPress. NEVER a pour-over for espresso.
+       ‣ HOME-FOCUSED espresso content ("at home", "home barista",
+         "kitchen", בבית, במטבח, בדירה, "home espresso") →
+         render a HOME ESPRESSO MACHINE: chrome or matte-black body,
+         SINGLE group head with a chrome portafilter, water tank at the
+         back, sits on a kitchen counter. Exemplars: Delonghi Dedica,
+         Breville Bambino, Gaggia Classic Pro, Sage Barista, Rancilio
+         Silvia, La Pavoni lever. Smaller scale than a commercial bar
+         machine.
+       ‣ CAFE / BAR / ROASTERY espresso content (Minuto's own brand
+         storytelling, "in the cafe", "at the bar", "Minuto roastery")
+         → the La Marzocco Strada X (see THE MINUTO ESPRESSO MACHINE
+         block). NEVER use the Strada X for "at home" content — that
+         machine is a 2-group commercial unit, would not exist on a
+         customer's kitchen counter.
+       ‣ When ambiguous (just "espresso" without home/cafe context) →
+         default to a HOME espresso machine. Minuto's audience is
+         customers brewing at home; that's the default.
+  • Filter / V60 / Chemex / pour-over / drip → glass dripper + Hario
+    server + brass gooseneck kettle. No espresso machine, no moka pot.
+  • AeroPress → the actual AeroPress chamber, plastic translucent
+    cylinder pressed down by hand.
+  • French press → glass-and-chrome plunger pot.
+  • Moka pot → ONLY when the brief explicitly says "moka", "מוקה",
+    "stovetop", "Bialetti", or "stovetop espresso maker". Never for
+    plain "espresso".
+
 ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts to MEDIUM, occasionally
 medium-light. NEVER medium-dark, NEVER dark, NEVER green/unroasted.
 
@@ -208,6 +246,12 @@ Hands enter from frame edge, never as a subject. Slight motion blur on a
 pour or pour-stream is welcome. NO faces.
 
 ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
+- ⛔ MOKA POT / Bialetti / stovetop espresso maker / any aluminum
+  octagonal stovetop brewer when the brief mentions ESPRESSO — they
+  make moka coffee, not espresso. Render an espresso machine instead
+  (home or commercial per EQUIPMENT-BY-BREWING-METHOD rule). Moka pot
+  is allowed ONLY when the brief explicitly says moka / מוקה /
+  stovetop / Bialetti.
 - Human faces, heads, full bodies, portraits
 - ⛔ ANY SPOON, SCOOP, OR UTENSIL — brass scoops, wooden spoons, espresso
   spoons, measuring scoops, dosing scoops, latte-art etching tools, stir

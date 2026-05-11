@@ -9,6 +9,34 @@ import {
   SCENE_PRESETS,
   pickFallbackBagUrl,
 } from '../_shared/visual_identity.ts'
+// Compositor kept in repo for selective re-enablement, but not imported
+// in the default render path. The architecture pivoted to "Gemini renders
+// from bag + style-ref references + bullet-structured prompt" because
+// composited PNGs read as 2D-pasted in 3D scenes.
+
+// Pick a random asset URL from a subfolder of upload_images/. The folder
+// must already be populated with photos shot on white/uniform backgrounds
+// (the flood-fill background-removal pass relies on that). Returns null
+// if the folder is empty or unreachable — caller falls back to its
+// default behaviour (typically: skip compositing for that object).
+async function pickRandomAssetUrl(
+  supabase: ReturnType<typeof createClient>,
+  category: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('marketing')
+    .list(`upload_images/${category}`, { limit: 100, sortBy: { column: 'name', order: 'asc' } })
+  if (error || !data || data.length === 0) {
+    console.warn(`[visual-test] asset pick "${category}" empty or errored: ${error?.message ?? 'no files'}`)
+    return null
+  }
+  // Filter out folder placeholders (`.emptyFolderPlaceholder`) and any
+  // non-image entries that might sneak in.
+  const files = data.filter(f => f.name && !f.name.startsWith('.') && /\.(jpg|jpeg|png|webp)$/i.test(f.name))
+  if (files.length === 0) return null
+  const pick = files[Math.floor(Math.random() * files.length)]
+  return `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${category}/${pick.name}`
+}
 
 // Test endpoint for the Minuto IG visual identity.
 //
@@ -22,6 +50,33 @@ import {
 // marketing-advisor enrichment step writes scene briefs against the SAME
 // anchor that this endpoint generates against — no drift.
 
+// Surface rotation — varies the rendered scene's surface so the feed
+// doesn't look mono-textured. Gemini was defaulting to concrete on
+// every render despite the visual identity listing multiple surfaces.
+// This module picks one explicitly per-render and the prompt injects
+// it as an authoritative override. Weights bias toward Minuto-authentic
+// surfaces (concrete, dark walnut) but mix in oak and stainless steel
+// for variety per the user's request.
+const SURFACES: Array<{ name: string; description: string; weight: number }> = [
+  { name: 'raw concrete',            description: 'raw imperfect concrete with subtle texture and minor stains, grey-tan tones, slightly worn',         weight: 22 },
+  { name: 'weathered dark walnut',   description: 'weathered dark walnut wood with rich visible grain, deep brown chocolate tones, slightly rustic',    weight: 20 },
+  { name: 'light grained oak',       description: 'premium light-grained oak wood, warm honey-amber tones, clear visible wood grain, slight matte sheen', weight: 20 },
+  { name: 'brushed stainless steel', description: 'brushed stainless steel surface, cool silver-grey tones, subtle reflective sheen, cafe-bar feel',    weight: 14 },
+  { name: 'raw lime plaster',        description: 'raw lime plaster surface with subtle texture, off-white to cream tones, soft matte finish',          weight: 12 },
+  { name: 'hand-thrown earthenware', description: 'large hand-thrown earthenware platter as surface, deep brown-grey with visible kiln marks',           weight:  7 },
+  { name: 'aged copper',             description: 'aged patina copper surface, warm orange-brown with subtle greenish oxidation, vintage feel',         weight:  5 },
+]
+
+function pickSurface(): { name: string; description: string } {
+  const total = SURFACES.reduce((s, x) => s + x.weight, 0)
+  let r = Math.random() * total
+  for (const s of SURFACES) {
+    if (r < s.weight) return s
+    r -= s.weight
+  }
+  return SURFACES[0]
+}
+
 const GEMINI_KEY    = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -30,8 +85,10 @@ interface VisualTestRequest {
   scene_brief?: string                       // free-form scene description
   preset?: keyof typeof SCENE_PRESETS        // shortcut: pick a SCENE_PRESETS key
   aspect?: Aspect                            // default 'feed_square'
-  use_reference?: boolean                    // default true; pass false to skip the bag
-  reference_image_url?: string               // override the default Yirgacheffe bag with a specific product image
+  use_reference?: boolean                    // default true; pass false to skip the bag entirely
+  reference_image_url?: string               // override the default fallback bag with a specific product image
+  composite_bag?: boolean                    // default true when reference is enabled — composite a real bag PNG instead of asking Gemini to render the bag (Gemini hallucinates bag color/structure even with a reference image; pasting the real photo is the only reliable way to get a faithful Minuto bag)
+  composite_cup?: boolean                    // default true when the scene mentions a cup/espresso/cappuccino/etc. — picks a random cup from upload_images/cups/ and composites it (same fidelity argument as the bag)
 }
 
 serve(async (req) => {
@@ -52,6 +109,18 @@ serve(async (req) => {
     const aspect    = body.aspect ?? 'feed_square'
     const ratio     = ASPECT_TO_RATIO[aspect]
     const useReference = body.use_reference !== false
+    // Compositing DISABLED — pivoted to a "Gemini renders bag from reference
+    // image + style reference images + bullet-structured prompt" architecture
+    // (Erez's test proved Gemini renders the bag faithfully when given a
+    // clear single-subject directive, style refs, and structured scene
+    // elements; compositing produced a "pasted-on" 2D look the user rejected).
+    // Body flags kept for backward compatibility but are no-ops.
+    const compositeBag = false
+
+    // Pick a surface for this render. Authoritative override over anything
+    // in the brief — keeps feed visually varied across posts.
+    const surface = pickSurface()
+    console.log(`[visual-test] surface pick: ${surface.name}`)
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
 
@@ -84,31 +153,82 @@ serve(async (req) => {
       }
     }
 
-    // Detect whether the scene calls for the Strada X (espresso brewing /
-    // milk steaming). Only then do we fetch + pass the machine reference —
-    // for pour-over, beans-only stills, lifestyle gift shots etc., the
-    // machine has no business in the frame.
+    // Detect whether the scene calls for an espresso machine (espresso
+    // brewing / milk steaming). The Strada X reference is ONLY for
+    // commercial/cafe content — for "espresso at home" / kitchen-counter
+    // scenes, we render a home machine instead (Delonghi/Breville/Gaggia)
+    // and we want Gemini to do that WITHOUT a Strada X anchor competing
+    // for attention. So we fetch the Strada X ref only when the scene is
+    // explicitly cafe/bar/roastery context.
     const sceneLowerForMachine = sceneBrief.toLowerCase()
     const espressoSceneRegex = /\b(espresso machine|steam wand|portafilter|group head|grouphead|naked portafilter|bottomless portafilter|la marzocco|strada|milk steaming|steaming milk|microfoam|milk frothing|frothing milk|latte art|cappuccino|flat white|latte\b|espresso shot|pulling (?:a |the |an )?shot|brew group)\b/.test(sceneLowerForMachine)
+    const homeContextRegex = /\b(at home|home espresso|home setup|home barista|home brewing|home machine|kitchen counter|kitchen|on the counter|בבית|במטבח|בדירה|בית|מטבח)\b/.test(sceneLowerForMachine)
+    const cafeContextRegex = /\b(cafe|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
+    // Use Strada X only for commercial scenes. For home or ambiguous
+    // espresso scenes we let Gemini render a generic home machine guided
+    // by the EQUIPMENT-BY-BREWING-METHOD rule in visual_identity.
+    const useStradaXReference = espressoSceneRegex && cafeContextRegex && !homeContextRegex
 
     let bagRef:     { data: string; mime: string } | null = null
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { data: string; mime: string } | null = null
+    let bagUrl:     string | null = null
     if (useReference) {
-      const bagUrl = body.reference_image_url || pickFallbackBagUrl()
-      // Fetch refs in parallel — independent network calls. Machine ref
-      // is conditional on the espresso/milk-steam scene detection above.
+      bagUrl = body.reference_image_url || pickFallbackBagUrl()
+      // All references pass as Gemini inlineData. Bag is always-on
+      // (primary subject), beans always-on (color anchor), machine
+      // conditional on a commercial-context espresso scene.
       const [b1, b2, b3] = await Promise.all([
         fetchAsB64(bagUrl),
         fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
-        espressoSceneRegex ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
+        useStradaXReference ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
       ])
       bagRef     = b1
       beansRef   = b2
       machineRef = b3
-      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (espressoSceneRegex ? 'MISS' : 'N/A')}`)
+      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}`)
     }
-    const referenceB64 = bagRef?.data ?? null  // kept for downstream brandClause check
+    // Tracks whether the brandClause should describe the bag. True both
+    // when Gemini will render the bag (legacy) AND when we're compositing
+    // (so Gemini knows to LEAVE the region empty for the paste).
+    const bagInScene = useReference && !!bagUrl
+
+    // Cup compositing also DISABLED (see compositeBag note above). Cup is
+    // now optionally passed as a STYLE REFERENCE for Gemini to use as an
+    // aesthetic anchor, not as a pasted-on object.
+    const compositeCup = false
+    const cupInScene = false
+
+    // Pick 1 style reference from the user's photo library based on the
+    // scene content. The reference is passed to Gemini alongside the bag
+    // so Gemini matches the actual surface, lighting, props, and atmosphere
+    // of Minuto's real photos instead of inventing them. This is what
+    // Erez did manually in his successful test (image_0.png, image_1.png).
+    // Returns null if the relevant subfolder is empty; the function then
+    // proceeds without a style reference (still works, slightly less
+    // anchored).
+    async function pickStyleReferenceUrl(brief: string): Promise<string | null> {
+      const b = brief.toLowerCase()
+      let category = 'cups'
+      if (/\b(espresso shot|pulling.*shot|tamping|portafilter)\b/.test(b))    category = 'hands'
+      else if (/\b(latte art|cappuccino|microfoam|frothing|steaming|milk pitcher)\b/.test(b)) category = 'hands'
+      else if (/\b(pour.over|v60|chemex|drip|filter coffee|aeropress|french press)\b/.test(b)) category = 'brewing'
+      else if (/\b(beans|roasted|cooling tray|green beans|cupping)\b/.test(b)) category = 'beans'
+      else if (/\b(roaster|roastery|behind.the.scenes|drum roaster)\b/.test(b)) category = 'roaster'
+      else if (/\b(barista|behind the bar|in the cafe|in the shop|at the cafe)\b/.test(b)) category = 'hands'
+      else if (/\b(milk|pitcher)\b/.test(b)) category = 'pitchers'
+      else if (/\b(espresso|cappuccino|latte|macchiato|flat white|cortado|americano|cup|demitasse)\b/.test(b)) category = 'cups'
+      const url = await pickRandomAssetUrl(supabase, category)
+      if (url) console.log(`[visual-test] style ref pick: ${category} → ${url}`)
+      else     console.log(`[visual-test] style ref pick: ${category} → empty, no style ref used`)
+      return url
+    }
+
+    const styleRefUrl = useReference ? await pickStyleReferenceUrl(sceneBrief) : null
+    let styleRef: { data: string; mime: string } | null = null
+    if (styleRefUrl) {
+      styleRef = await fetchAsB64(styleRefUrl)
+    }
 
     // 2. Build the prompt.
     // Detect briefs that explicitly downplay the bag — instructional /
@@ -117,86 +237,63 @@ serve(async (req) => {
     // (steam wand, scale, thermometer, portafilter, etc.).
     const sceneLower = sceneBrief.toLowerCase()
     const bagDownplayed = /\b(no bag|without (?:the |a )?bag|bag (?:is |should be )?(?:softly )?blurred|bag (?:in (?:the )?)?background|bag (?:is )?out of focus|bag barely cropped|bag minor|no minuto bag)\b/.test(sceneLower)
-    const brandClause = referenceB64 ? `
 
-REFERENCE IMAGES (TWO included with this prompt — read carefully which is which):
-
-FIRST reference image (the BAG): the actual Minuto coffee bag.
+    // Build reference-image descriptions in the order they're passed to
+    // Gemini. The bag is ALWAYS FIRST and gets the strongest retention
+    // language — it's the brand-critical element. Style ref (from the
+    // user's photo library) comes next when present so Gemini matches
+    // the actual Minuto aesthetic. Beans and machine come after as
+    // color/detail anchors when relevant.
+    const refDescriptions: string[] = []
+    if (bagRef) {
+      refDescriptions.push(`reference image — the MINUTO BAG. Retain ALL text, branding, and design features EXACTLY as shown:
+   ✓ White stand-up pouch shape and proportions
+   ✓ Stag-head emblem at the top, in the same position
+   ✓ "MINUTO Café Roastery" wordmark below the emblem
+   ✓ Colored center-label artwork (the exact illustration shown in the reference — e.g. green starry pattern for Velvet Star, green mountain panel for Guatemala Antigua, etc.)
+   ✓ All text, fonts, and design features at the SAME proportions
 ${bagDownplayed
-  ? `The SCENE brief above explicitly downplays the bag (e.g. "no bag",
-"softly blurred", "in the background", "out of focus", "barely cropped").
-RESPECT THAT. Keep the bag minor or omit it entirely if the brief asks.
-The instructional/measurement subject of the scene MUST dominate the
-frame — do NOT let the bag steal focus from steam wands, scales,
-thermometers, portafilters, or other named equipment.`
-  : `Feature the bag prominently when the SCENE brief calls for it or
-when the scene is a generic product/lifestyle shot without a more
-specific instructional subject. If the scene's primary subject is a
-piece of equipment (steam wand, digital scale, thermometer, portafilter,
-milk pitcher with probe, measuring vessel), keep the bag MINOR — soft
-background presence, edge of frame, or omit. The bag should never
-dominate an instructional carousel slide whose job is to show a measurement
-or technique.`}
-When the bag does appear, match the reference image EXACTLY. The bag
-is a FAITHFUL COPY of the reference image — same WHITE pouch colour
-(never black, never grey, never coloured), same zip-top stand-up pouch
-shape, same stag-head emblem in the same position, same "MINUTO Café
-Roastery" wordmark, same colored center-label artwork (the exact
-illustration from the reference — green starry pattern for Velvet Star,
-green mountain panel for Guatemala Antigua, etc.).
+  ? '\nThe SCENE brief explicitly downplays the bag (no bag / blurred / out of focus / background). Respect that — keep the bag minor or omit it entirely.'
+  : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene, in which case the bag is supporting.'}
+NEVER invent label artwork. NEVER change the bag color from white. NEVER render dates, batch numbers, expiry stickers, or any numerical labels on the bag.`)
+    }
+    if (styleRef) {
+      refDescriptions.push(`reference image — STYLE ANCHOR. Real photo from Minuto's library showing the actual surface, lighting, prop styling, and atmosphere we want to match. Use this image as a visual reference for:
+   ✓ Surface texture and material (the wood/concrete/metal in this image is what the scene should sit on)
+   ✓ Light direction, color temperature, and shadow quality
+   ✓ Cup shape, prop styling, and arrangement language
+   ✓ Overall photographic mood
+DO NOT copy this image's composition — only the visual language. The bag from the FIRST reference image is still the main subject; this STYLE ANCHOR informs the supporting elements.`)
+    }
+    if (beansRef) {
+      refDescriptions.push(`reference image — BEAN COLOR ANCHOR. Real photo of Minuto's roasted beans showing their true color. Use this AS A COLOR ANCHOR ONLY (do not copy the composition). When you render any roasted coffee beans in the output, MATCH THE COLOR: medium chestnut brown with subtle warm/auburn undertones, matte finish.`)
+    }
+    if (machineRef) {
+      refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's 2-group La Marzocco Strada X. Use it as a COLOR + DETAIL anchor, NOT a full-silhouette template. When any part of the machine appears, match: slate/gunmetal MATTE body, pale-blue TRANSLUCENT GLASS teardrop side panel (only on the side glass — never on the front panel), naked portafilters with BLACK handles and small RED accent rings, chrome cool-touch steam wands curving outward from the SIDES of the body, raised stainless wire-grate cup tray on top, "La Marzocco" wordmark on the drip-tray front plate. Render PARTIAL crops only (wand + sliver of side panel, portafilter + group head fragment, cup-tray close-up) — never the full chassis. Forbidden: generic chrome Linea silhouette.`)
+    }
 
-🚫 ABSOLUTELY DO NOT INVENT BAG ARTWORK. Specifically forbidden:
-  • Tropical / animal illustrations (parrots, toucans, leaves, fruit)
-  • Holographic, iridescent, gradient, or rainbow-foil label finishes
-  • Replacement of the white bag colour with black, dark grey, or any
-    other coloured pouch
-  • Multi-panel labels split into different artwork sections
-  • Generic "specialty coffee" badges, certifications, or trust marks
-  • Decorative elements not visible in the reference image
-
-If the reference image's label artwork is hard to read at small size,
-keep it simple — just the stag + wordmark + a soft impression of the
-colored panel. NEVER fill in invented detail.
-
-Do NOT add any printed dates, roast-date stamps, batch numbers, expiry
-stickers, or numerical labels to the bag. Only the brand wordmark, stag
-emblem, and origin/blend name are allowed.
-
-SECOND reference image (the BEANS): real photo of Minuto's actual
-roasted beans showing their true color. Use this image AS A COLOR
-ANCHOR ONLY — do NOT copy the composition (which is a top-down close-up
-filling the frame). When you render any roasted coffee beans in the
-output, MATCH THE COLOR of the beans in this second reference: medium
-chestnut brown with subtle warm/auburn undertones, matte finish, visible
-center crease. NOT the composition, ONLY the color. This second image
-is "what color should the beans be" — it overrides any color description
-elsewhere in the prompt.${machineRef ? `
-
-THIRD reference image (the MACHINE): real photo of Minuto's actual bar
-espresso machine — a 2-group La Marzocco Strada X. This image is
-included ONLY for scenes involving espresso brewing or milk steaming.
-Use it AS A SHAPE-AND-COLOR ANCHOR for the machine — match these
-distinctive features exactly when any part of the machine appears:
-  • Body color: SLATE / dark gunmetal grey, MATTE finish (NOT chrome,
-    NOT mirror-polished, NOT white).
-  • The signature PALE-BLUE TRANSLUCENT GLASS teardrop side panel set
-    into the grey body — must appear if the side of the machine is in
-    frame. Sky-blue / powder-blue, not opaque, not dark.
-  • Two saturated brew groups protruding forward with rounded chrome
-    top caps; naked / bottomless portafilters with BLACK handles and a
-    small RED accent ring at the spout base.
-  • Cool-touch articulated chrome steam wands curving outward from the
-    SIDES of the machine body (one per side), NOT from the front.
-  • Raised stainless wire-grate cup tray on top, supported by thin
-    chrome rails.
-  • "La Marzocco" wordmark on the drip-tray front plate.
-Do NOT copy the reference image's white-background product-shot
-composition — only the machine's appearance. Do NOT render a generic
-chrome Linea silhouette; the Strada X is visually distinct.` : ''}` : ''
+    const ordinal = (i: number) => ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'][i] ?? `#${i + 1}`
+    const referencesBlock = refDescriptions.length > 0
+      ? `\n\nREFERENCE IMAGES (${refDescriptions.length} attached, read each carefully):\n\n${refDescriptions.map((d, i) => `${ordinal(i)} ${d}`).join('\n\n')}`
+      : ''
 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
-SCENE: ${sceneBrief}${brandClause}
+🎯 PRIMARY DIRECTIVE
+Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. Retain ALL text, branding, and design features of the bag exactly as shown in the reference image — the bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
+
+SCENE BRIEF — interpret this as the structured elements below:
+${sceneBrief}
+
+INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
+
+• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered).
+• SUPPORTING PROPS — cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.
+• LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
+• SURFACE — **${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.
+• ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
+• FOCUS — the Minuto bag is dominant; supporting props secondary; background softly out of focus.
+• COMPOSITION — asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 
@@ -310,12 +407,12 @@ cup instead. Espresso/cappuccino keeps the small unglazed ceramic cup.
 These rules WIN over anything in the SCENE description. The prior
 text is inspiration; these are mandatory.`
 
-    // 3. Call Gemini 2.5 Flash Image (proven model for reference-conditioned
-    //    image edits in this project — same one the blog banner uses).
-    //    Pass references in the order the brandClause describes them:
-    //    BAG first, BEANS second.
+    // 3. Call Gemini 2.5 Flash Image. Pass references in the order the
+    //    brandClause describes them — BAG, STYLE, BEANS, MACHINE — so
+    //    Gemini matches the ordinal labels to the right images.
     const parts: any[] = []
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
+    if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
     if (machineRef) parts.push({ inlineData: { mimeType: machineRef.mime, data: machineRef.data } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
@@ -350,6 +447,16 @@ text is inspiration; these are mandatory.`
       throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
     }
 
+    // 3.5 Post-processing — compositing is DISABLED. The Gemini output is
+    //     the final image; we trust the reference images + bullet-structured
+    //     prompt to produce a properly-integrated scene. If quality issues
+    //     resurface, the compositor module + flags remain in the codebase
+    //     for selective re-enablement, but the default is "Gemini renders
+    //     everything from references."
+    const bagComposited = false
+    const cupComposited = false
+    const composited    = false
+
     // 4. Upload to Supabase Storage `marketing` bucket under a dated path so
     //    multiple test runs don't overwrite each other.
     const ext      = imageMime.includes('jpeg') ? 'jpg' : 'png'
@@ -369,7 +476,12 @@ text is inspiration; these are mandatory.`
       aspect,
       ratio,
       bytes: fileBytes.length,
-      used_reference: !!referenceB64,
+      used_reference: bagInScene,
+      composited_bag: bagComposited,
+      composited_cup: cupComposited,
+      composited: composited,
+      surface: surface.name,
+      style_ref: styleRefUrl,
       scene_brief: sceneBrief,
     }, 200, corsHeaders)
 
