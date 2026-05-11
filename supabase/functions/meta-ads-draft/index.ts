@@ -263,13 +263,17 @@ async function loadAdsContext(supabase: ReturnType<typeof createClient>): Promis
   const pageId   = page.id as string
   const igUserId = page.instagram_business_account?.id as string
 
-  // Auto-discover Pixel ID — fall back to LINK_CLICKS optimization if none.
-  let pixelId: string | null = null
-  try {
-    const pxRes = await fetch(`${GRAPH}/${adAccountId}/adspixels?fields=id,name&access_token=${userToken}`)
-    const pxJson = await pxRes.json()
-    if (!pxJson.error) pixelId = pxJson.data?.[0]?.id ?? null
-  } catch { /* non-fatal */ }
+  // Pixel ID — prefer the explicit secret over auto-discovery. Auto-discovery
+  // picks the first pixel in /adspixels, which can be a stale third-party one
+  // (e.g. AdScale) rather than the canonical Minuto pixel.
+  let pixelId: string | null = Deno.env.get('META_PIXEL_ID') ?? null
+  if (!pixelId) {
+    try {
+      const pxRes = await fetch(`${GRAPH}/${adAccountId}/adspixels?fields=id,name&access_token=${userToken}`)
+      const pxJson = await pxRes.json()
+      if (!pxJson.error) pixelId = pxJson.data?.[0]?.id ?? null
+    } catch { /* non-fatal */ }
+  }
 
   return { userToken, adAccountId, pageId, igUserId, pixelId, scopes }
 }
