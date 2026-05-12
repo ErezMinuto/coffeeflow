@@ -246,10 +246,19 @@ async function loadAdsContext(supabase: ReturnType<typeof createClient>): Promis
   const adAccountId = Deno.env.get('META_AD_ACCOUNT_ID')
   if (!adAccountId) throw new Error('META_AD_ACCOUNT_ID secret is required')
 
-  const { data: tokenRow, error } = await supabase
-    .from('oauth_tokens').select('access_token').eq('platform', 'meta').single()
-  if (error || !tokenRow) throw new Error('Meta not connected — re-auth via Settings')
-  const userToken = tokenRow.access_token as string
+  // Prefer the System User token (permanent, business-owned, bypasses
+  // App Review restrictions). Fall back to the OAuth user token from
+  // oauth_tokens only when no system user token is configured.
+  const systemUserToken = Deno.env.get('META_SYSTEM_USER_TOKEN')
+  let userToken: string
+  if (systemUserToken) {
+    userToken = systemUserToken
+  } else {
+    const { data: tokenRow, error } = await supabase
+      .from('oauth_tokens').select('access_token').eq('platform', 'meta').single()
+    if (error || !tokenRow) throw new Error('Meta not connected — re-auth via Settings')
+    userToken = tokenRow.access_token as string
+  }
 
   // Permissions — tells us if ads_management is granted after the recent
   // FLB-config update. We surface the actual list so dry_run can show it.
