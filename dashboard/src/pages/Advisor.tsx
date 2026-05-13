@@ -2594,9 +2594,13 @@ export default function AdvisorPage() {
   async function generateBanner(keyword: string, title: string) {
     const cur = blogState[keyword]
     const selectedProducts = cur?.selectedProducts ?? []
-    // The user explicitly picks which product's image is used as the banner
-    // reference (default: first selected). Empty string ("ללא רפרנס") means
-    // "no reference" — falls back to the text-only Imagen+Gemini chain.
+    // Pass ALL products mentioned in the post — the new banner generator
+    // looks each up in woo_products and feeds every matched image to
+    // Gemini as a reference. Compose-multi-product is the architecture
+    // that produced faithful banners; the old "one bag at a time" forced
+    // Gemini to hallucinate any other product mentioned in the post.
+    // The legacy `reference_product` field is still passed for back-compat
+    // with the singular UI picker, but it gets merged into the same set.
     const referenceProduct = cur?.bannerReferenceProduct !== undefined
       ? cur.bannerReferenceProduct
       : selectedProducts[0]
@@ -2607,7 +2611,13 @@ export default function AdvisorPage() {
     })
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
-        body: { agent: 'blog_banner', keyword, title, reference_product: referenceProduct || null },
+        body: {
+          agent: 'blog_banner',
+          keyword,
+          title,
+          reference_product: referenceProduct || null,
+          products_to_mention: selectedProducts,
+        },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
