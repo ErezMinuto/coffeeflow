@@ -5789,125 +5789,168 @@ Write the photo brief.`;
   }
 }
 
-async function generateBlogBanner(title: string, keyword: string, supabase: ReturnType<typeof createClient>, referenceImageUrl?: string): Promise<string | null> {
+// Surface rotation — same SURFACES list as visual-test. Pick one per
+// render so banner backgrounds vary across blog posts instead of every
+// banner defaulting to "rustic wooden cafe table".
+const BANNER_SURFACES: Array<{ name: string; description: string; weight: number }> = [
+  { name: 'raw concrete',            description: 'raw imperfect concrete with subtle texture and minor stains, grey-tan tones, slightly worn',         weight: 22 },
+  { name: 'weathered dark walnut',   description: 'weathered dark walnut wood with rich visible grain, deep brown chocolate tones, slightly rustic',    weight: 20 },
+  { name: 'light grained oak',       description: 'premium light-grained oak wood, warm honey-amber tones, clear visible wood grain, slight matte sheen', weight: 20 },
+  { name: 'brushed stainless steel', description: 'brushed stainless steel surface, cool silver-grey tones, subtle reflective sheen, cafe-bar feel',    weight: 14 },
+  { name: 'raw lime plaster',        description: 'raw lime plaster surface with subtle texture, off-white to cream tones, soft matte finish',          weight: 12 },
+  { name: 'hand-thrown earthenware', description: 'large hand-thrown earthenware platter as surface, deep brown-grey with visible kiln marks',           weight:  7 },
+  { name: 'aged copper',             description: 'aged patina copper surface, warm orange-brown with subtle greenish oxidation, vintage feel',         weight:  5 },
+]
+
+function pickBannerSurface(): { name: string; description: string } {
+  const total = BANNER_SURFACES.reduce((s, x) => s + x.weight, 0)
+  let r = Math.random() * total
+  for (const s of BANNER_SURFACES) {
+    if (r < s.weight) return s
+    r -= s.weight
+  }
+  return BANNER_SURFACES[0]
+}
+
+// Style reference picker — finds a real Minuto photo from the user's
+// library matching the scene's subject. Gives Gemini the actual Minuto
+// surface/light/props vocabulary instead of relying on text descriptions
+// alone. Returns null if the matched folder is empty.
+// (Removed pickBannerStyleRefUrl — style references from upload_images/
+//  competed with product references for Gemini's attention. The new
+//  blog banner architecture passes ALL relevant product photos from
+//  woo_products as Gemini references — no need for additional style
+//  anchors from the user's library.)
+
+// Blog banner generator — rewritten from scratch after the bullet-form
+// + style-ref + heavy-prompt approach kept hallucinating bag artwork.
+// The new architecture is simple and direct:
+//   1. Look up each product mentioned in the post in woo_products.
+//   2. Fetch the actual product photo for each (these are the references
+//      Minuto provided on minuto.co.il — bag designs, grinder photos, etc.)
+//   3. Pass ALL product images to Gemini as inlineData references in a
+//      single call, with a brief prompt that names each one ("FIRST
+//      reference: the Antigua bag — render this exact product") and tells
+//      Gemini to compose them together on a chosen surface.
+//   4. If the post mentions no products we have images for, fall back
+//      to a generic Imagen 4 scene matched to the topic keyword.
+async function generateBlogBanner(
+  title: string,
+  keyword: string,
+  supabase: ReturnType<typeof createClient>,
+  productNames: string[] = []
+): Promise<string | null> {
   if (!GEMINI_KEY) {
-    console.log("[blog_writer] No GEMINI_API_KEY, skipping banner");
+    console.log("[banner] No GEMINI_API_KEY, skipping");
     return null;
   }
 
-  // If a product image was provided, fetch it and base64-encode it so we
-  // can pass it to Gemini's image-edit mode as a visual reference. The
-  // model uses it to render the actual Minuto bag in the banner instead
-  // of inventing a generic coffee bag. If the fetch fails, we fall back
-  // to text-only mode.
-  let referenceB64: string | null = null;
-  let referenceMime = "image/png";
-  if (referenceImageUrl) {
+  // 1. Resolve product names → woo_products image URLs. Fuzzy match
+  //    per name (ilike with wildcards), because the strategist might pass
+  //    shortened names like "Allground" while woo_products has the full
+  //    Hebrew title "מטחנת קפה FIORENZATO AllGround". Exact `.in()` would
+  //    fail on the mismatch. Per-name lookup + limit:1 keeps each input
+  //    mapping to at most one image.
+  const productRefs: Array<{ name: string; url: string }> = [];
+  const seen = new Set<string>();
+  for (const rawName of productNames) {
+    const n = rawName.trim();
+    if (!n) continue;
     try {
-      const refRes = await fetch(referenceImageUrl);
-      if (refRes.ok) {
-        referenceMime = refRes.headers.get("content-type")?.split(";")[0]?.trim() || "image/png";
-        const buf = new Uint8Array(await refRes.arrayBuffer());
-        // chunk-encode to avoid call-stack overflow on big files
-        let bin = "";
-        for (let i = 0; i < buf.length; i += 0x8000) {
-          bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-        }
-        referenceB64 = btoa(bin);
-        console.log(`[blog_writer] Loaded reference image: ${buf.length} bytes, ${referenceMime}`);
-      } else {
-        console.warn(`[blog_writer] Reference image fetch failed: ${refRes.status}`);
+      const { data } = await supabase
+        .from("woo_products")
+        .select("name, image_url")
+        .ilike("name", `%${n}%`)
+        .not("image_url", "is", null)
+        .limit(1);
+      const match = (data ?? [])[0];
+      if (match?.image_url && !seen.has(match.name as string)) {
+        productRefs.push({ name: match.name as string, url: match.image_url as string });
+        seen.add(match.name as string);
+        console.log(`[banner] "${n}" → matched "${match.name}"`);
+      } else if (!match?.image_url) {
+        console.log(`[banner] "${n}" → no woo_products match`);
       }
     } catch (e: any) {
-      console.warn(`[blog_writer] Reference image fetch error: ${e?.message}`);
+      console.warn(`[banner] product lookup failed for "${n}": ${e?.message}`);
+    }
+  }
+  console.log(`[banner] Resolved ${productRefs.length}/${productNames.length} product refs: ${productRefs.map(p => p.name).join(', ') || '(none)'}`);
+
+  // 2. Fetch each product image as base64. Cap at 3 — Gemini gets
+  //    confused with too many concurrent references.
+  const refs: Array<{ name: string; b64: string; mime: string }> = [];
+  for (const p of productRefs.slice(0, 3)) {
+    try {
+      const r = await fetch(p.url);
+      if (!r.ok) { console.warn(`[banner] fetch ${r.status}: ${p.url}`); continue; }
+      const mime = r.headers.get("content-type")?.split(";")[0]?.trim() || "image/png";
+      const buf = new Uint8Array(await r.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      refs.push({ name: p.name, b64: btoa(bin), mime });
+      console.log(`[banner] Fetched ref: ${p.name}`);
+    } catch (e: any) {
+      console.warn(`[banner] Fetch failed for ${p.name}: ${e?.message}`);
     }
   }
 
-  const banned = /\b(motorcycle|motorbike|bike|bicycle|car|truck|vehicle|road|highway|mountain|mountains|forest|journey|travel|ride|landscape|sunset|sunrise|sky|cloud|nature|scenic|adventure)\b/gi;
-  const safeTitle = (title || "").replace(banned, "").replace(/\s+/g, " ").trim();
-  const safeKeyword = (keyword || "").replace(banned, "").replace(/\s+/g, " ").trim();
+  // 3. Pick a surface so banners vary across posts (not always wooden cafe table).
+  const surface = pickBannerSurface();
+  console.log(`[banner] surface: ${surface.name}`);
 
-  // Build the prompt like a photographer's brief for a specific shot.
-  // Every image should look like it was taken at Minuto Cafe by a pro
-  // photographer with a 50mm lens — not a stock photo, not a graphic.
-  //
-  // The key: describe ONE specific scene in detail, don't give options.
-  // Bad: "show coffee beans or a cup or brewing equipment"
-  // Good: "close-up of freshly roasted dark beans on a worn wooden board,
-  //        warm side light catching the oily sheen, shallow depth of field"
+  // 4. Build the prompt — simple, direct, multi-product. No bullet form,
+  //    no buried clauses. Just: "here are the products, here's the scene."
+  const ordinal = ['FIRST', 'SECOND', 'THIRD'];
+  const productLines = refs.map((r, i) =>
+    `${ordinal[i]} attached reference image: **${r.name}**. Render this EXACT product in the scene — match its packaging, branding, colors, text, label artwork, and visual features precisely as shown in the reference. Do NOT substitute it with a generic-looking alternative, and do NOT invent new label artwork or text.`
+  ).join('\n\n');
 
-  // Dynamic scene description — a quick Haiku call interprets the post title
-  // and produces a SPECIFIC photographer's brief. This replaces the hardcoded
-  // if/else ladder that forced every post to one of 7 scenes (and because
-  // almost every title contained "פולי" or "קפה", 95% landed on the same
-  // "beans on wooden board" look). Now each post gets a unique visual brief.
-  //
-  // Fallback to hardcoded defaults if Haiku is unavailable — never silently
-  // break banner generation.
-  let sceneDescription = await generateSceneDescription(safeTitle, safeKeyword);
-  if (!sceneDescription) {
-    // Old hardcoded ladder as safety net
-    const titleLower = (safeTitle + " " + safeKeyword).toLowerCase();
-    if (titleLower.includes("מקיאטו") || titleLower.includes("macchiato") || titleLower.includes("כתם חלב")) {
-      sceneDescription = "A traditional Italian Caffè Macchiato served in a small clear glass espresso cup on a white saucer with a small spoon. The drink is a rich, dark espresso shot with thick hazelnut-colored crema, topped with ONLY a small dollop of white velvety milk foam in the center. NO latte art. The cup sits on a rustic wooden cafe table. Soft blurred background, warm lighting.";
-    } else if (titleLower.includes("אספרסו") || titleLower.includes("espresso")) {
-      sceneDescription = "A freshly pulled espresso shot in a small white ceramic demitasse cup. Thick tiger-striped crema — deep amber with darker streaks. Thin wisp of steam. The cup sits on a worn wooden cafe counter. Chrome espresso machine group head glistening out of focus behind. Warm side lighting from a cafe window.";
-    } else if (titleLower.includes("קרמה") || titleLower.includes("crema")) {
-      sceneDescription = "Macro shot of espresso crema — swirling tiger-stripe pattern in golden amber with darker streaks, captured just as it forms on a freshly-pulled shot in a clear glass cup. Condensation on glass, soft cafe bokeh behind. Intimate lifestyle feel, 100mm macro aesthetic.";
-    } else if (titleLower.includes("דלונגי") || titleLower.includes("delonghi") || titleLower.includes("מכונת קפה") || titleLower.includes("espresso machine")) {
-      sceneDescription = "A modern home espresso machine on a kitchen counter — chrome portafilter with fresh coffee grounds tamped evenly, steam wand releasing a fine jet, morning light from a window hitting the machine's chrome edge. Wooden counter, ceramic cup waiting underneath. No hands. Clean Scandinavian kitchen aesthetic.";
-    } else if (titleLower.includes("פילטר") || titleLower.includes("filter") || titleLower.includes("chemex") || titleLower.includes("v60") || titleLower.includes("aeropress")) {
-      sceneDescription = "A pour-over setup on a wooden counter — glass V60 dripper with fresh coffee blooming, thin golden stream pouring. A small pile of medium-roasted beans beside it. Morning window light creating warm shadows. Minimal artisanal atmosphere.";
-    } else {
-      sceneDescription = "A close-up of freshly roasted specialty coffee beans on a rustic wooden cafe table. Dark glossy beans with visible oils. Warm side lighting creates depth. A ceramic espresso cup with thick crema sits slightly behind, out of focus. Shallow depth of field.";
-    }
-  }
+  const imagePrompt = refs.length > 0
+    ? `Create a high-resolution, photorealistic 16:9 horizontal landscape product photograph for a specialty coffee blog post titled: "${title}".
 
-  // When a brand reference image is loaded, instruct the model to use it
-  // as the actual Minuto bag (and relax the blanket "no text/logos" rule
-  // that otherwise forbids the bag's wordmark from rendering).
-  const brandClause = referenceB64
-    ? `
+The image MUST feature these specific Minuto products as the focal elements of the scene:
 
-BRAND BAG REFERENCE: A reference image of the actual Minuto coffee bag is included with this prompt. Whenever the scene calls for a coffee bag — or wherever a bag could naturally fit in the composition — render the Minuto bag from the reference. Match its shape (stand-up pouch with zip top), its white pouch color, the stag-head emblem, the "MINUTO Café Roastery" wordmark at the top, and the colored center label. Treat this as the brand's signature packaging. Do NOT invent a generic-looking coffee bag.`
-    : "";
+${productLines}
 
-  const forbiddenTextRule = referenceB64
-    ? "- Text, letters, words, numbers, watermarks, captions — EXCEPT the branding that appears on the Minuto bag in the reference image (that bag's logo and label are allowed and required when a bag is shown)"
-    : "- Text, letters, words, numbers, logos, watermarks, captions";
+Compose these products together in a clean, photorealistic still-life on ${surface.description}. Natural side-lighting from a window (upper-right of frame), soft shadows falling toward lower-left, shallow depth of field at 50mm f/2.8, warm natural color grading.
 
-  const imagePrompt = `PRODUCT PHOTOGRAPHY ONLY. The subject of this photo is coffee equipment or coffee itself — NEVER a person. This is a still-life / product shot for a specialty coffee brand's blog. 50mm lens at f/2.8 — shallow depth of field, natural lighting, photorealistic.
+ABSOLUTELY FORBIDDEN:
+- People, faces, hands, body parts, anything human
+- Generic / substitute products — each product MUST match its reference image exactly (no random "coffee bag", no random "grinder" — use the references)
+- Hallucinated text, labels, or branding (use only what's on the reference images)
+- More than 2-3 supporting props beyond the referenced products (keep the scene clean — let the products be the heroes)
+- Stock-photo or AI-illustration look
+- Vehicles, landscapes, sky, animals, plants beyond a small single sprig
 
-SUBJECT MATTER: ${sceneDescription}${brandClause}
+Format: 16:9 wide landscape, photorealistic product photography, high resolution.`
+    : `Create a high-resolution, photorealistic 16:9 horizontal landscape product photograph for a specialty coffee blog post titled: "${title}".
 
-Format: 16:9 wide landscape. Photorealistic food/product photography. High resolution. Natural warm color grading.
+Show a clean still-life scene related to "${keyword}" — coffee equipment, beans, or brewing context as the topic implies. On ${surface.description}. Natural warm side-lighting from upper-right, shallow depth of field, photorealistic product photography.
 
-ABSOLUTELY FORBIDDEN (image will be rejected if it contains any of these):
-- People, humans, faces, heads, bodies, hands, fingers, portraits
-${forbiddenTextRule}
-- AI illustration style, graphic design, stock-photo look
-- Vehicles, outdoor scenery, sky, landscape, animals
+ABSOLUTELY FORBIDDEN:
+- People, faces, hands, body parts
+- Text, letters, words, numbers, logos (no readable text in the image)
+- AI-illustration / graphic-design / stock-photo look
+- Vehicles, landscapes, animals
 
-The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafilters, moka pots, grinders, wooden surfaces, steam, machines, bags, etc. NO living beings of any kind.`;
+Format: 16:9 wide landscape, photorealistic.`;
 
-  let base64: string | null = null;
-  let mime = "image/png";
+  // 5. Build Gemini parts: all product references first, then text prompt.
+  const geminiParts: any[] = refs.map(r => ({ inlineData: { mimeType: r.mime, data: r.b64 } }));
+  geminiParts.push({ text: `Generate an image: ${imagePrompt}` });
 
-  // Build the parts array for Gemini's image-edit mode: when a reference is
-  // available, it goes in BEFORE the text prompt so the model uses it as
-  // the visual anchor. Imagen 4's predict endpoint cannot accept input
-  // images, so we drop it from the chain entirely when a reference is set
-  // (otherwise the bag instruction would be ignored).
-  const geminiParts = referenceB64
-    ? [
-        { inlineData: { mimeType: referenceMime, data: referenceB64 } },
-        { text: `Generate an image: ${imagePrompt}` },
-      ]
-    : [{ text: `Generate an image: ${imagePrompt}` }];
+  // 6. Attempts: Imagen 4 first when no refs (Imagen can't accept input
+  //    images); Gemini 2.5 Flash Image whenever refs exist.
+  const attempts: Array<{
+    name: string;
+    url: string;
+    headers: Record<string, string>;
+    body: any;
+    parse: (json: any) => { data: string; mime: string } | null;
+  }> = [];
 
-  const attempts: Array<{ name: string; url: string; headers: Record<string,string>; body: any; parse: (json: any) => { data: string; mime: string } | null }> = [];
-
-  if (!referenceB64) {
+  if (refs.length === 0) {
     attempts.push({
       name: "Imagen 4",
       url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
@@ -5920,11 +5963,6 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     });
   }
 
-  // Google retired gemini-2.0-flash-preview-image-generation,
-  // gemini-2.0-flash-exp, and gemini-2.5-flash-image-preview. The currently
-  // working image-edit model on the Generative Language API is
-  // gemini-2.5-flash-image — it accepts a reference image as inlineData and
-  // edits it per the text prompt.
   attempts.push({
     name: "Gemini 2.5 Flash Image",
     url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
@@ -5938,18 +5976,15 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     },
   });
 
-  // Final fallback when a reference is set: Imagen 4 with a no-bag prompt.
-  // Imagen's predict endpoint doesn't accept input images, so we strip the
-  // BRAND BAG REFERENCE clause and let it produce a generic Minuto-style
-  // coffee scene. Better than returning null when Gemini fails or the
-  // vision check rejects every Gemini attempt.
-  if (referenceB64) {
+  // Imagen 4 fallback when Gemini fails despite refs — strips reference
+  // language since Imagen can't use input images.
+  if (refs.length > 0) {
     attempts.push({
       name: "Imagen 4 (no-reference fallback)",
       url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
       headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
       body: {
-        instances: [{ prompt: imagePrompt.replace(brandClause, "") }],
+        instances: [{ prompt: `Create a high-resolution, photorealistic 16:9 horizontal landscape product photograph for a specialty coffee blog post titled "${title}". Show coffee equipment, beans, or brewing context related to "${keyword}". On ${surface.description}. Natural warm side-lighting, photorealistic. NO people, NO text, NO graphic design look.` }],
         parameters: { sampleCount: 1, aspectRatio: "16:9" },
       },
       parse: (json: any) => {
@@ -5959,13 +5994,10 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     });
   }
 
-  // Claude vision check — after each attempt, verify the image actually
-  // looks like coffee-product photography (not a person, not totally
-  // off-topic). Image models sometimes ignore the "NO people" instruction
-  // (we saw a bearded man on a "crema" post before this check was added).
-  // If rejected, we retry with the next attempt provider.
+  // 7. Vision check — Claude verifies the image is coffee-related and
+  //    has no people. Some image models still ignore "no people" rules.
   async function imageIsValidCoffeeBanner(b64: string, mimeType: string): Promise<boolean> {
-    if (!ANTHROPIC_KEY) return true; // can't check — assume good
+    if (!ANTHROPIC_KEY) return true;
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -5993,70 +6025,64 @@ The frame must contain ONLY objects: coffee beans, ground coffee, cups, portafil
     }
   }
 
+  // 8. Try each attempt in order. Stop on first vision-verified success.
+  let base64: string | null = null;
+  let mime = "image/png";
   for (const attempt of attempts) {
     if (base64) break;
     try {
-      console.log(`[blog_writer] Trying ${attempt.name}...`);
-      const res = await fetch(attempt.url, {
-        method: "POST",
-        headers: attempt.headers,
-        body: JSON.stringify(attempt.body),
-      });
+      console.log(`[banner] Trying ${attempt.name}...`);
+      const res = await fetch(attempt.url, { method: "POST", headers: attempt.headers, body: JSON.stringify(attempt.body) });
       if (res.ok) {
         const json = await res.json();
         const result = attempt.parse(json);
         if (result) {
-          // Vision check before accepting the image
           const valid = await imageIsValidCoffeeBanner(result.data, result.mime || "image/png");
           if (valid) {
             base64 = result.data;
             mime = result.mime;
-            console.log(`[blog_writer] Banner generated via ${attempt.name} (vision-verified)`);
+            console.log(`[banner] Generated via ${attempt.name} (vision-verified)`);
           } else {
-            console.log(`[blog_writer] ${attempt.name}: vision rejected (contains person or off-topic), trying next provider`);
+            console.log(`[banner] ${attempt.name}: vision rejected, trying next`);
           }
         } else {
-          console.log(`[blog_writer] ${attempt.name}: no image in response`);
+          console.log(`[banner] ${attempt.name}: no image in response`);
         }
       } else {
         const errText = await res.text().catch(() => "");
-        console.log(`[blog_writer] ${attempt.name} failed: ${res.status} ${errText.slice(0, 200)}`);
+        console.log(`[banner] ${attempt.name} failed: ${res.status} ${errText.slice(0, 200)}`);
       }
     } catch (e: any) {
-      console.log(`[blog_writer] ${attempt.name} error: ${e.message}`);
+      console.log(`[banner] ${attempt.name} error: ${e.message}`);
     }
   }
 
   if (!base64) {
-    console.log("[blog_writer] All image generation attempts failed");
+    console.log("[banner] All attempts failed");
     return null;
   }
 
+  // 9. Upload to Supabase Storage and return the public URL.
   try {
     const filename = `banners/blog_${Date.now()}.${mime.includes("png") ? "png" : "jpg"}`;
     const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    console.log(`[blog_writer] Uploading banner: ${filename} (${fileBytes.length} bytes)`);
-
+    console.log(`[banner] Uploading: ${filename} (${fileBytes.length} bytes)`);
     const { error: uploadErr } = await supabase.storage
       .from("marketing")
       .upload(filename, fileBytes, { contentType: mime, upsert: true });
-
     if (uploadErr) {
-      console.error("[blog_writer] Upload error:", JSON.stringify(uploadErr));
+      console.error("[banner] Upload error:", JSON.stringify(uploadErr));
       return null;
     }
-
-    const { data: publicUrl } = supabase.storage
-      .from("marketing")
-      .getPublicUrl(filename);
-
-    console.log("[blog_writer] Banner URL:", publicUrl?.publicUrl);
+    const { data: publicUrl } = supabase.storage.from("marketing").getPublicUrl(filename);
+    console.log("[banner] URL:", publicUrl?.publicUrl);
     return publicUrl?.publicUrl || null;
   } catch (e: any) {
-    console.error("[blog_writer] Banner upload error:", e.message);
+    console.error("[banner] Upload error:", e.message);
     return null;
   }
 }
+
 
 // ── Blog Writer Agent ─────────────────────────────────────────────────────────
 
@@ -6248,29 +6274,26 @@ serve(withCors(async (req) => {
         { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
     }
     try {
-      // The user explicitly picks which product's image is used as the
-      // visual reference for Gemini's image-edit mode (one bag per banner —
-      // passing multiple references at once tends to make the model
-      // composite them awkwardly). null/empty = no reference, falls back to
-      // the text-only Imagen+Gemini chain.
-      let referenceImageUrl: string | undefined;
-      const refProduct = body.reference_product;
-      if (refProduct) {
-        const { data: rows } = await supabase
-          .from("woo_products")
-          .select("name, image_url")
-          .eq("name", refProduct)
-          .limit(1);
-        const match = (rows ?? [])[0];
-        if (match?.image_url) {
-          referenceImageUrl = match.image_url as string;
-          console.log(`[blog_banner] Using reference image from product "${match.name}": ${referenceImageUrl}`);
-        } else {
-          console.warn(`[blog_banner] Product "${refProduct}" not found or has no image_url; falling back to no-reference mode`);
+      // Build the product names list — combine all sources the caller
+      // might provide. Caller can pass:
+      //   - products_to_mention: string[]  (preferred — pulled from the
+      //     post brief; all products discussed in the post)
+      //   - reference_product: string      (legacy single — kept for
+      //     backward compat with the old dashboard call shape)
+      // The new generateBlogBanner takes the names and resolves each to
+      // a woo_products image internally.
+      const names = new Set<string>();
+      if (Array.isArray((body as any).products_to_mention)) {
+        for (const n of (body as any).products_to_mention) {
+          if (typeof n === 'string' && n.trim()) names.add(n.trim());
         }
       }
-      console.log(`[blog_banner] Generating banner for: "${body.title}"`);
-      const bannerUrl = await generateBlogBanner(body.title, body.keyword, supabase, referenceImageUrl);
+      if (body.reference_product && typeof body.reference_product === 'string') {
+        names.add(body.reference_product.trim());
+      }
+      const productNames = Array.from(names);
+      console.log(`[blog_banner] Generating banner for: "${body.title}" with products: ${productNames.join(', ') || '(none)'}`);
+      const bannerUrl = await generateBlogBanner(body.title, body.keyword, supabase, productNames);
       return new Response(JSON.stringify({ banner_url: bannerUrl }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (e: unknown) {
@@ -8262,6 +8285,297 @@ ${capped.map((q, i) =>
         utm_source: r.utm_source,
       })),
     }, null, 2), { headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
+  // ── Meta Ads Strategist ─────────────────────────────────────────────────────
+  // Persistent persona that lives in the Advisor page chat. Same system prompt
+  // the owner pasted ("elite Performance Marketer for Specialty Coffee"). Has
+  // one tool: draft_meta_campaign — calls meta-ads-draft to create a PAUSED
+  // campaign in Ads Manager (owner reviews + activates manually). Tool is
+  // gated by the system prompt to only fire after explicit owner approval.
+  if (body.agent === "meta_ads_strategist") {
+    const question = (body as any).question as string | undefined;
+    const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: any }>;
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return new Response(JSON.stringify({ error: "question is required" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+
+    try {
+      // ── Live context the strategist needs ──────────────────────────────
+      // Last 30d Meta performance, top SKUs, past drafts. Pixel event volumes
+      // would also be useful but require a Graph API call — deferred to V2.
+      const weekEnd2 = addDays(weekStart, 6);
+      const [metaData, topProducts, pastDrafts] = await Promise.all([
+        fetchMetaAdData(supabase, weekStart, weekEnd2),
+        supabase.from("woo_products")
+          .select("name, regular_price, total_sales, stock_status")
+          .order("total_sales", { ascending: false })
+          .limit(8),
+        supabase.from("meta_ad_drafts")
+          .select("idea_id, campaign_name, objective, daily_budget_ils, status, created_at, warnings")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
+      const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
+
+      const productsBlock = (topProducts.data ?? [])
+        .map((p: any) => `  • ${p.name} — ₪${p.regular_price} — ${p.total_sales ?? 0} מכירות — ${p.stock_status}`)
+        .join("\n") || "  (no product data yet)";
+
+      const draftsBlock = (pastDrafts.data ?? [])
+        .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.objective} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
+        .join("\n") || "  (no campaigns drafted yet — you've never built one through this system)";
+
+      // System prompt — combines the owner's verbatim persona prompt with the
+      // operational guardrails (compliance, brand voice) and the live data.
+      const sysPromptStrategist = `# Role
+You are an elite Performance Marketer and Brand Strategist specializing in the Specialty Coffee industry. You are responsible for the marketing strategy of "Minuto Coffee" on Meta (Facebook & Instagram).
+
+The Product: Premium specialty coffee beans (high SCA score, traceable origins, fresh roasting). This is a high-end product for coffee enthusiasts who value flavor profiles, roast dates, and brewing craft.
+
+# Core Mission
+To research, plan, and draft high-converting ad campaigns that find the perfect "Home Barista" and "Coffee Lover" audiences.
+
+# Mandatory Operational Workflow (Hard Rules)
+
+**Research First** — Never recommend a creative or a budget without first conducting (or simulating) market and audience research, OR explicitly stating which data point is unknown.
+
+**Approval Authority** — You are an advisor, NOT an executor. You are strictly forbidden from finalizing a campaign without the owner's explicit written approval for every step. The owner uses words like "approved", "yes go ahead", "build it", "אישרתי", "תבנה". Anything less than that = keep planning, don't draft.
+
+**Budgetary Constraints** — You recommend a daily budget for every campaign WITH justification. You do NOT decide the final number. The owner approves, changes, or rejects.
+
+**Language** — Strategy, research, and analysis: **English**. Ad copy (Hooks, Body, Headlines): **high-quality Hebrew** that fits the Israeli specialty coffee scene.
+
+# Campaign Development Process — every new campaign you propose must include:
+1. **Market/Competitor Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade", "upgrade from supermarket espresso")
+2. **Audience Targeting** — specific interest-based segments (Third Wave Coffee, Espresso Machines, Burr Grinders, De'Longhi, Sage, Breville owners). Always name the targeting layer (Custom → LAL → Advantage+ → Detailed).
+3. **Creative Brief** — visual concept + full Hebrew copy (3 hook variants for A/B test)
+4. **Budget Proposal** — daily spend recommendation with justification + expected results
+
+# Brand Voice & Identity
+- **Tone**: Professional, passionate, "geeky" about coffee but accessible to people leveling up their home brewing.
+- **Focus**: Freshness (roast date matters), flavor notes (fruity / nutty / chocolatey / honey), the quality of the beans, the craft of roasting.
+- **Never**: discount language, "% off", "free shipping" as a hook, disparaging competitors by name.
+
+# Compliance — ABSOLUTE (legal + brand)
+🚫 **Never name a competitor** in ad copy or visual brief: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, Dolce Gusto, נחת, Jera, אגרו, נגרו, Negro, עלית, לנדוור, ארומה, Aldo, AM:PM, רמי לוי.
+🚫 Never say "blurred logo of X" or "neutral bag that looks like X" — still a violation.
+🚫 Never make specific factual claims about a named competitor.
+✓ Attack the *category*: "supermarket beans", "the bag currently in your kitchen", "commercial coffee".
+✓ Make the viewer self-reflect: "Does your current bag have a roast date?" — not "Brand X's bag doesn't."
+
+🚫 **Hebrew gender-inclusive**: avoid masculine-only 2nd-person verbs (תחזור / תענה / תיהנה / בחרת / ראית / תשתה / אתה). Restructure to plural (ראיתם / בחרתם / שלכם) or impersonal ("הקפה שמגיע אליכם", "מי שמחפש"). The brand's customers are mixed gender.
+🚫 No em-dashes in Hebrew — use commas.
+🚫 Don't lead with mechanism ("טמפרטורת קלייה אופטימלית"); lead with what the customer cares about ("האספרסו שלכם").
+
+🔍 **SELF-CHECK before sending any creative**: scan your Hebrew copy for: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, נגרו, עלית, לנדוור, ארומה, "לוגו מטושטש", "שקית דמוית". If any are present, rewrite before responding.
+
+# Tool Use
+You have ONE tool: \`draft_meta_campaign\`. It creates a PAUSED ad campaign in the owner's Meta Ads Manager (campaign + ad set + creative + ad, all status=PAUSED). The owner reviews in Meta's UI and clicks Activate manually.
+
+**When to use it**: ONLY after the owner has given explicit written approval for ALL of: campaign name, objective, audience definition, Hebrew creative copy, daily budget, AND image URL. If ANY of those is still pending approval, do not call the tool — keep the conversation going to nail down the missing piece.
+
+**When NOT to use it**: Speculatively. "Let me show you what this would look like" is not approval. Asking "should I build this?" is not approval. The owner must say something like "yes build it" / "approved, draft it" / "אישרתי, תבנה" before you fire the tool.
+
+# What You Already Know About Minuto (do NOT re-ask)
+- **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts to order. Sells online + cafe storefront.
+- **Top revenue SKUs**: **Aristo** and **Dark Chocolate** (both espresso blends, similar margins). These are the anchors for paid acquisition.
+- **Two audiences** (per owner's brief):
+  - Audience 1 — Specialty enthusiasts (small, high LTV) — already buy from נחת/Jera/agro/import. Have grinder + machine. Search "ethiopia yirgacheffe", "single origin". Pitch: freshness + roastery expertise.
+  - Audience 2 — Commercial bean buyers (large, growth) — currently buy Lavazza/Illy/Mauro at supermarkets. Have espresso machine. Search "פולי קפה", "קפה טרי". Pitch: upgrade vs. supermarket beans.
+- **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with pale-blue glass side wings. Use as creative anchor sparingly.
+- **Premium positioning** — never compete on price. No discounts. No "% off".
+- **Current Meta spend**: ~₪3,000 / 30 days.
+- **Pixel**: ID 240929400634266 — installed via PixelYourSite, browser-side firing. Last 28d: 28.2K PageView / 6.4K ViewContent / 625 AddToCart / 304 InitiateCheckout / **46 Purchase**. CAPI is OFF — recovery deferred.
+- **Pixel known issue**: Diagnostic flagged unverified domain "google.com" (likely Google Translate traffic) — to be ignored.
+- **AOV / margins**: not yet confirmed by owner. If you need them for a recommendation, ASK.
+
+# Pre-existing Campaign #1 Recommendation (status: PENDING owner approval)
+- Type: **Retargeting**
+- Audience: 180-day AddToCart visitors, excluding 180-day Purchasers (~3,500 people)
+- Geo: IL, age 25-65, Hebrew + English
+- Optimization: Purchase
+- Anchor SKUs: Aristo + Dark Chocolate
+- 3 Hebrew hook variants drafted (Reminder / Freshness contrast / Quiet confidence)
+- Proposed budget: ₪30/day for 7 days = ₪210 total test
+- Kill threshold: CPA > ₪70 OR <2 purchases by day 7
+- Scale threshold: CPA ≤ ₪40 AND ≥4 purchases → +30% budget
+
+Owner has not yet approved the image URL or final budget. **Do not call draft_meta_campaign for this yet.**
+
+# Live Data Snapshot (refreshed each turn)
+
+## Meta — Last week (${weekStart} → ${weekEnd2})
+${metaBlock.metaTotalSpend ? `Total spend: ₪${metaBlock.metaTotalSpend} | Clicks: ${metaBlock.metaTotalClicks} | Conversions: ${metaBlock.metaTotalConversions} | CPA: ${metaBlock.metaOverallCpa != null ? `₪${metaBlock.metaOverallCpa}` : 'n/a'}` : 'No Meta campaign data synced for this week yet.'}
+
+Active campaigns:
+${metaBlock.metaCampaignBlock || '  (none reporting)'}
+
+## Top Products by Sales (from WooCommerce)
+${productsBlock}
+
+## Past Drafts (created via this strategist — for continuity)
+${draftsBlock}
+
+# Conversational Style
+- Reply in **English** for strategy and analysis. Ad copy stays in **Hebrew**.
+- Be terse. The owner is busy and not an expert — short focused answers beat walls of text.
+- Show specific numbers in ₪, not percentages, when proposing budget changes.
+- If asked something you don't have data for, say "I don't have that number — can you check X?" instead of inventing.
+`;
+
+      // ── Tool definition ───────────────────────────────────────────────
+      const tools = [{
+        name: "draft_meta_campaign",
+        description: "Create a PAUSED ad campaign in the owner's Meta Ads Manager (campaign + ad set + creative + ad — all status=PAUSED). The owner must have given explicit written approval for ALL fields below before you call this. Returns an Ads Manager edit URL the owner opens to review and activate.",
+        input_schema: {
+          type: "object",
+          properties: {
+            idea_id: { type: "string", description: "Unique slug for this campaign, e.g. 'retargeting_180d_atc_aristo_v1'. Used for deduplication — re-calling with same idea_id returns the existing draft." },
+            campaign_name: { type: "string", description: "Human-readable campaign name as it will appear in Ads Manager. Hebrew or English." },
+            objective: { type: "string", enum: ["Sales", "Traffic", "Engagement", "Awareness", "Leads"], description: "Meta campaign objective." },
+            daily_budget_ils: { type: "number", description: "Daily budget in ILS — must match the owner's approved number." },
+            duration_days: { type: "number", description: "Planned duration in days (informational; campaign runs until paused)." },
+            audience: {
+              type: "object",
+              properties: {
+                type: { type: "string", description: "retargeting | lookalike | interest | custom" },
+                age_range: { type: "string", description: "e.g. '25-65'" },
+                geo: { type: "string", description: "Default 'ישראל'" },
+                languages: { type: "array", items: { type: "string" } },
+                interests_or_behaviors: { type: "array", items: { type: "string" }, description: "Interest names — Meta resolves them to Targeting IDs server-side. Use specific names: 'Specialty coffee', 'De Longhi', 'Espresso machines'." },
+                why_this_audience: { type: "string" },
+              },
+              required: ["age_range"],
+            },
+            creative: {
+              type: "object",
+              properties: {
+                primary_text: { type: "string", description: "Hebrew body text, ≤125 chars before truncation." },
+                headline: { type: "string", description: "Hebrew headline, ≤27 chars." },
+                description: { type: "string", description: "Hebrew link description, ≤27 chars." },
+                cta_button: { type: "string", description: "Shop Now | Order Now | Learn More | Sign Up | Buy Now" },
+              },
+              required: ["primary_text", "cta_button"],
+            },
+            landing_page_url: { type: "string", description: "Full URL on minuto.co.il the ad sends traffic to." },
+            tracking: {
+              type: "object",
+              properties: {
+                utm_source: { type: "string" },
+                utm_medium: { type: "string" },
+                utm_campaign: { type: "string" },
+                utm_content: { type: "string" },
+              },
+            },
+            image_url: { type: "string", description: "PUBLIC URL of an image Meta will fetch and upload. Owner must have provided this URL." },
+          },
+          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url", "image_url"],
+        },
+      }];
+
+      // ── Tool-use loop ─────────────────────────────────────────────────
+      // Claude may call draft_meta_campaign, we execute it, return result,
+      // Claude produces the final natural-language reply. Cap iterations.
+      const messages: any[] = [
+        ...history.slice(-16),  // 8 user/assistant pairs
+        { role: "user", content: question },
+      ];
+
+      let toolCallsExecuted: Array<{ name: string; input: any; result: any }> = [];
+      let finalAnswer = "";
+      let totalTokens = 0;
+
+      for (let iter = 0; iter < 5; iter++) {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5",
+            max_tokens: 4000,
+            system: sysPromptStrategist,
+            tools,
+            messages,
+          }),
+          signal: AbortSignal.timeout(90_000),
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error.message ?? "Claude error");
+        totalTokens += (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+
+        // Aggregate any text blocks emitted this iteration (might come alongside tool_use).
+        const textBlocks = (json.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
+        if (textBlocks) finalAnswer = textBlocks;
+
+        if (json.stop_reason !== "tool_use") {
+          // Done — Claude returned text-only.
+          break;
+        }
+
+        const toolUseBlocks = (json.content ?? []).filter((b: any) => b.type === "tool_use");
+        if (toolUseBlocks.length === 0) break;
+
+        // Execute every tool call this turn produced.
+        const toolResults = [];
+        for (const tu of toolUseBlocks) {
+          let resultText: string;
+          let resultData: any = null;
+          if (tu.name === "draft_meta_campaign") {
+            try {
+              const draftRes = await fetch(`${SUPA_URL}/functions/v1/meta-ads-draft`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({
+                  action: "create",
+                  idea_id: tu.input.idea_id,
+                  spec: tu.input,
+                  image_url: tu.input.image_url,
+                }),
+              });
+              resultData = await draftRes.json();
+              if (resultData.ok) {
+                resultText = `Draft created. Campaign ID: ${resultData.campaign_id}. Ads Manager URL: ${resultData.edit_url}. Warnings: ${(resultData.warnings ?? []).join("; ") || "none"}.${resultData.existed ? " (Returned existing draft — already created previously.)" : ""}`;
+              } else {
+                resultText = `Draft FAILED: ${resultData.error ?? "unknown error"}. Tell the owner what went wrong and propose a fix.`;
+              }
+            } catch (e: any) {
+              resultText = `Draft FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else {
+            resultText = `Unknown tool: ${tu.name}`;
+          }
+          toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: resultText });
+        }
+
+        // Append assistant's tool_use turn + our tool_result turn, loop again.
+        messages.push({ role: "assistant", content: json.content });
+        messages.push({ role: "user", content: toolResults });
+      }
+
+      // Compliance sweep on the final answer (catches competitor names that
+      // slipped past the self-check loop in the system prompt).
+      const violations = detectCreativeViolations(finalAnswer);
+      const compliance = violations.hasViolation
+        ? { compliance_flagged: true, compliance_issues: violations.issues }
+        : {};
+      if (violations.hasViolation) {
+        console.warn("[meta_ads_strategist] creative violations:", violations.issues.join(" | "));
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        answer: finalAnswer,
+        tool_calls: toolCallsExecuted,
+        tokens_used: totalTokens,
+        ...compliance,
+      }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[meta_ads_strategist] error:", err?.message, err?.stack);
+      return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+        { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
   }
 
   if (body.agent === "advisor_chat") {

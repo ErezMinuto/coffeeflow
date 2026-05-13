@@ -2175,6 +2175,32 @@ export default function AdvisorPage() {
   // loading state + the returned spec so we can render it inline below the
   // idea card the owner clicked to build.
   const [metaBuild, setMetaBuild]           = useState<Record<string, { loading: boolean; spec: any | null; error?: string }>>({})
+  // Meta paid-ads draft state — keyed by idea_id. imageUrl is the public URL
+  // the function uploads to Meta (visual-test output, CDN, etc.). result holds
+  // the campaign_id + edit_url returned by meta-ads-draft.
+  const [metaDraft, setMetaDraft] = useState<Record<string, {
+    imageUrl: string
+    loading: boolean
+    result: { campaign_id: string; edit_url: string; warnings: string[]; existed?: boolean } | null
+    error?: string
+  }>>({})
+
+  // ── Meta Ads Strategist chat ────────────────────────────────────────────
+  // Persistent strategist persona. Survives reloads via localStorage. Each
+  // assistant message may carry tool_calls describing what the agent did
+  // (e.g., drafted a campaign in Ads Manager) — we render those inline.
+  type StrategistMessage = {
+    role: 'user' | 'assistant'
+    content: string
+    toolCalls?: Array<{ name: string; input: any; result: any }>
+  }
+  const STRATEGIST_STORAGE_KEY = 'meta_ads_strategist_thread_v1'
+  const [strategistMessages, setStrategistMessages] = useState<StrategistMessage[]>(() => {
+    try { return JSON.parse(localStorage.getItem(STRATEGIST_STORAGE_KEY) ?? '[]') } catch { return [] }
+  })
+  const [strategistInput, setStrategistInput]     = useState('')
+  const [strategistLoading, setStrategistLoading] = useState(false)
+  const [strategistOpen, setStrategistOpen]       = useState(true)
 
   // Ad-hoc Q&A with the advisor_chat endpoint. History is per-week —
   // switching weeks loads a different thread because the grounding data
@@ -2469,6 +2495,75 @@ export default function AdvisorPage() {
     }
   }
 
+  // Creates a PAUSED draft campaign in Meta Ads Manager from a built spec.
+  // Owner reviews + activates manually. Re-clicking returns the existing draft
+  // (server-side dedupe via meta_ad_drafts.idea_id).
+  async function createMetaDraft(ideaId: string, spec: any) {
+    const cur = metaDraft[ideaId]
+    const imageUrl = cur?.imageUrl?.trim()
+    if (!imageUrl) {
+      setMetaDraft(s => ({ ...s, [ideaId]: { ...(s[ideaId] ?? { imageUrl: '' }), error: 'נדרש URL תמונה ציבורי' } }))
+      return
+    }
+    setMetaDraft(s => ({ ...s, [ideaId]: { ...(s[ideaId] ?? { imageUrl: '' }), imageUrl, loading: true, result: null, error: undefined } }))
+    try {
+      const { data, error } = await supabase.functions.invoke('meta-ads-draft', {
+        body: { action: 'create', idea_id: ideaId, spec, image_url: imageUrl },
+      })
+      if (error) throw error
+      if (!data?.ok) throw new Error(data?.error ?? 'שגיאה לא ידועה')
+      setMetaDraft(s => ({ ...s, [ideaId]: { imageUrl, loading: false, result: {
+        campaign_id: data.campaign_id, edit_url: data.edit_url, warnings: data.warnings ?? [], existed: data.existed,
+      } } }))
+    } catch (e: any) {
+      setMetaDraft(s => ({ ...s, [ideaId]: { imageUrl, loading: false, result: null, error: e?.message ?? 'שגיאה' } }))
+    }
+  }
+
+  // Sends a message to the Meta Ads Strategist agent. The backend may call
+  // its draft_meta_campaign tool — when that happens, the response carries a
+  // tool_calls array we attach to the assistant message for inline display.
+  async function sendStrategistMessage(q?: string) {
+    const question = (q ?? strategistInput).trim()
+    if (!question || strategistLoading) return
+    const nextHistory: StrategistMessage[] = [...strategistMessages, { role: 'user', content: question }]
+    setStrategistMessages(nextHistory)
+    setStrategistInput('')
+    setStrategistLoading(true)
+    localStorage.setItem(STRATEGIST_STORAGE_KEY, JSON.stringify(nextHistory))
+    try {
+      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
+        body: {
+          agent: 'meta_ads_strategist',
+          question,
+          // Send conversation minus the just-added question — backend re-adds it.
+          history: strategistMessages.map(m => ({ role: m.role, content: m.content })),
+        },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Strategist failed')
+      const withAnswer: StrategistMessage[] = [...nextHistory, {
+        role: 'assistant',
+        content: data.answer ?? '',
+        toolCalls: Array.isArray(data.tool_calls) && data.tool_calls.length > 0 ? data.tool_calls : undefined,
+      }]
+      setStrategistMessages(withAnswer)
+      localStorage.setItem(STRATEGIST_STORAGE_KEY, JSON.stringify(withAnswer))
+    } catch (e: any) {
+      const withError: StrategistMessage[] = [...nextHistory, { role: 'assistant', content: `❌ ${e?.message ?? 'Unknown error'}` }]
+      setStrategistMessages(withError)
+      localStorage.setItem(STRATEGIST_STORAGE_KEY, JSON.stringify(withError))
+    } finally {
+      setStrategistLoading(false)
+    }
+  }
+
+  function clearStrategistThread() {
+    if (!confirm('לאפס את כל השיחה עם היועץ? לא ניתן לשחזר.')) return
+    setStrategistMessages([])
+    localStorage.removeItem(STRATEGIST_STORAGE_KEY)
+  }
+
   async function writeBlogPost(rec: GoogleOrganicRec, selectedProducts: string[]) {
     const key = rec.keyword
     setBlogState(s => ({ ...s, [key]: { loading: true, post: null, error: undefined, selectedProducts } }))
@@ -2499,9 +2594,13 @@ export default function AdvisorPage() {
   async function generateBanner(keyword: string, title: string) {
     const cur = blogState[keyword]
     const selectedProducts = cur?.selectedProducts ?? []
-    // The user explicitly picks which product's image is used as the banner
-    // reference (default: first selected). Empty string ("ללא רפרנס") means
-    // "no reference" — falls back to the text-only Imagen+Gemini chain.
+    // Pass ALL products mentioned in the post — the new banner generator
+    // looks each up in woo_products and feeds every matched image to
+    // Gemini as a reference. Compose-multi-product is the architecture
+    // that produced faithful banners; the old "one bag at a time" forced
+    // Gemini to hallucinate any other product mentioned in the post.
+    // The legacy `reference_product` field is still passed for back-compat
+    // with the singular UI picker, but it gets merged into the same set.
     const referenceProduct = cur?.bannerReferenceProduct !== undefined
       ? cur.bannerReferenceProduct
       : selectedProducts[0]
@@ -2512,7 +2611,13 @@ export default function AdvisorPage() {
     })
     try {
       const { data, error } = await supabase.functions.invoke('marketing-advisor', {
-        body: { agent: 'blog_banner', keyword, title, reference_product: referenceProduct || null },
+        body: {
+          agent: 'blog_banner',
+          keyword,
+          title,
+          reference_product: referenceProduct || null,
+          products_to_mention: selectedProducts,
+        },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
@@ -2959,6 +3064,50 @@ export default function AdvisorPage() {
                     )}
 
                     {build?.spec && <MetaSpecView spec={build.spec} />}
+
+                    {build?.spec && (() => {
+                      const draft = metaDraft[ideaId]
+                      return (
+                        <div className="mt-2 bg-white border border-indigo-300 rounded-lg p-3 space-y-2">
+                          <p className="text-xs font-semibold text-indigo-900">📤 בנה טיוטת קמפיין ב-Meta Ads Manager</p>
+                          <p className="text-[11px] text-surface-600">המודעה תיווצר במצב PAUSED. תפתח ב-Ads Manager, תבדוק, ותפעיל ידנית.</p>
+                          <input
+                            type="text"
+                            dir="ltr"
+                            placeholder="https://... (URL ציבורי לתמונת המודעה)"
+                            value={draft?.imageUrl ?? ''}
+                            onChange={(e) => setMetaDraft(s => ({ ...s, [ideaId]: { ...(s[ideaId] ?? { loading: false, result: null }), imageUrl: e.target.value } }))}
+                            className="w-full text-xs border border-surface-300 rounded px-2 py-1 font-mono"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => createMetaDraft(ideaId, build.spec)}
+                              disabled={draft?.loading || !!draft?.result}
+                              className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {draft?.loading ? '⏳ יוצר טיוטה...' : draft?.result ? '✅ טיוטה נוצרה' : '🚀 צור טיוטה'}
+                            </button>
+                            {draft?.result && (
+                              <a href={draft.result.edit_url} target="_blank" rel="noopener noreferrer"
+                                 className="text-xs text-indigo-700 hover:underline font-medium">
+                                {draft.result.existed ? 'פתח טיוטה קיימת ב-Ads Manager →' : 'פתח ב-Ads Manager →'}
+                              </a>
+                            )}
+                          </div>
+                          {draft?.error && (
+                            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">❌ {draft.error}</p>
+                          )}
+                          {draft?.result && draft.result.warnings.length > 0 && (
+                            <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                              <p className="font-semibold mb-0.5">⚠️ אזהרות מ-Meta:</p>
+                              <ul className="list-disc list-inside space-y-0.5">
+                                {draft.result.warnings.map((w, j) => <li key={j}>{w}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })}
@@ -3844,6 +3993,139 @@ export default function AdvisorPage() {
               )
             })}
           </div>
+        )}
+      </div>
+
+      {/* ── Meta Ads Strategist — persistent persona, distinct from general advisor chat ── */}
+      <div className="card p-4 space-y-3 border-2 border-emerald-300 bg-gradient-to-br from-emerald-50/60 to-white">
+        <button
+          onClick={() => setStrategistOpen(o => !o)}
+          className="w-full flex items-center justify-between focus:outline-none"
+        >
+          <span className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
+            🧠 Meta Ads Strategist
+            {strategistMessages.length > 0 && (
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{strategistMessages.length} msgs</span>
+            )}
+          </span>
+          <span className="text-xs text-emerald-600">{strategistOpen ? 'collapse' : 'expand'}</span>
+        </button>
+
+        {strategistOpen && (
+          <>
+            <p className="text-[11px] text-emerald-700">
+              Persistent advisor for Meta ad campaigns. Strategy in English, ad copy in Hebrew.
+              On final written approval it drafts the campaign as <strong>PAUSED</strong> in Ads Manager — you review and activate.
+            </p>
+
+            {strategistMessages.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-emerald-700">Start with one of these, or ask anything:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Where do we stand? Summarize what you know about Minuto.',
+                    "Let's launch Campaign #1 (retargeting Aristo + Dark Chocolate).",
+                    'What is the cheapest first win we can run this week?',
+                    'Propose a cold-prospecting campaign for the commercial-buyer audience.',
+                    'Review my current active Meta campaigns. Any I should pause?',
+                    'How do I get an image URL for Meta ads?',
+                  ].map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendStrategistMessage(q)}
+                      disabled={strategistLoading}
+                      className="text-xs bg-white border border-emerald-300 text-emerald-800 px-2.5 py-1 rounded-full hover:bg-emerald-50 disabled:opacity-50"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {strategistMessages.length > 0 && (
+              <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1">
+                {strategistMessages.map((m, i) => (
+                  <div key={i}>
+                    <div
+                      className={`rounded-lg p-2.5 text-sm whitespace-pre-wrap ${
+                        m.role === 'user'
+                          ? 'bg-emerald-100 text-emerald-900 ml-8'
+                          : 'bg-white border border-emerald-200 text-surface-800 mr-8'
+                      }`}
+                    >
+                      <p className="text-[10px] font-semibold opacity-60 mb-1">{m.role === 'user' ? '🧑 you' : '🧠 strategist'}</p>
+                      <p className="leading-relaxed">{m.content}</p>
+                    </div>
+                    {/* Tool-call surfaces — campaign-drafted notification with the Ads Manager link */}
+                    {m.toolCalls && m.toolCalls.map((tc, j) => {
+                      const ok = tc.result?.ok
+                      return (
+                        <div key={j} className={`mt-1 mr-8 rounded-lg p-2.5 text-xs ${ok ? 'bg-emerald-50 border border-emerald-300' : 'bg-red-50 border border-red-300'}`}>
+                          <p className="font-semibold mb-1">
+                            {ok ? '✅ Campaign drafted as PAUSED in Ads Manager' : '❌ Draft failed'}
+                          </p>
+                          {ok && tc.result?.edit_url && (
+                            <a href={tc.result.edit_url} target="_blank" rel="noopener noreferrer"
+                               className="text-emerald-700 hover:underline font-medium block mb-1">
+                              {tc.result.existed ? 'Open existing draft in Ads Manager →' : 'Open draft in Ads Manager →'}
+                            </a>
+                          )}
+                          {ok && Array.isArray(tc.result?.warnings) && tc.result.warnings.length > 0 && (
+                            <div className="mt-1 text-amber-800">
+                              <p className="font-semibold">Warnings:</p>
+                              <ul className="list-disc list-inside">
+                                {tc.result.warnings.map((w: string, k: number) => <li key={k}>{w}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                          {!ok && tc.result?.error && <p className="text-red-700">{tc.result.error}</p>}
+                          <details className="mt-1 text-surface-500">
+                            <summary className="cursor-pointer">spec</summary>
+                            <pre className="mt-1 text-[10px] overflow-x-auto whitespace-pre-wrap" dir="ltr">{JSON.stringify(tc.input, null, 2)}</pre>
+                          </details>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+                {strategistLoading && (
+                  <div className="bg-white border border-emerald-200 rounded-lg p-2.5 mr-8 text-sm text-surface-500">
+                    <p className="text-[10px] font-semibold opacity-60 mb-1">🧠 strategist</p>
+                    <p>thinking...</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={strategistInput}
+                onChange={e => setStrategistInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendStrategistMessage(); } }}
+                placeholder="Talk to your strategist — e.g. 'Propose Campaign #2'"
+                disabled={strategistLoading}
+                className="flex-1 text-sm border border-emerald-300 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+              />
+              <button
+                onClick={() => sendStrategistMessage()}
+                disabled={strategistLoading || !strategistInput.trim()}
+                className="text-sm bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {strategistLoading ? '...' : 'send'}
+              </button>
+              {strategistMessages.length > 0 && (
+                <button
+                  onClick={clearStrategistThread}
+                  className="text-xs text-surface-500 hover:text-red-600 px-2"
+                  title="Reset thread"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
 
