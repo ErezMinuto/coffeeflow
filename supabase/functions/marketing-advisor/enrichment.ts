@@ -96,6 +96,14 @@ export interface EnrichedPost {
   // right bag — not always the default Yirgacheffe.
   product_reference?:    string | null
   reference_image_url?:  string | null
+  // How the visual should be rendered. 'bag_hero' = the Minuto bag is the
+  // composited hero (default; current pipeline). 'no_bag' = a bag-free
+  // editorial scene where coffee itself (cup/pour/beans/brewing/roastery)
+  // is the hero. Haiku decides this from post intent. The dashboard
+  // auto-routes 'no_bag' to vertex-imagen-edit (only that fn supports it);
+  // carousels are forced to 'bag_hero' by the runner (their slide rules
+  // assume a closing bag shot).
+  render_mode:           'bag_hero' | 'no_bag'
 }
 
 const HEBREW_DAY_INDEX: Record<string, number> = {
@@ -301,8 +309,31 @@ SUCCESS shape — there is no rejection path:
 SUCCESS:
 {
   "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup",
+  "render_mode": "bag_hero" | "no_bag",
+  /* HOW the visual is rendered — decide from the post's INTENT:
+     • "bag_hero" — the Minuto product bag is the styled hero of the shot.
+       Choose this for: a product launch / new origin / new roast, a
+       gift or seasonal-release post, any post that names & sells a
+       specific product, or any post where seeing the actual bag is the
+       point (brand recognition, "this is the one to buy"). This is the
+       SAFE DEFAULT — when unsure, pick bag_hero.
+     • "no_bag" — a bag-free editorial scene where COFFEE ITSELF is the
+       hero (a cup with crema, a slow pour, beans in a ceramic dish,
+       brewing gear, a roastery corner). Choose this ONLY for pure
+       ritual / mood / lifestyle / craft-education posts that are NOT
+       about buying one named product — e.g. "the slow weekend pour",
+       "why we roast light", "the morning ritual", atmospheric brand
+       posts. A bag would feel forced and salesy in these.
+     • CAROUSELS: ALWAYS "bag_hero". A carousel narrative closes on the
+       product; no_bag is single-post only. (The runner enforces this.) */
   "calendar_hook": "1 short phrase (Hebrew or English ok)",
-  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. MANDATORY: if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'. For carousels: this is the COVER slide (slide 1) — and because the cover will carry a Hebrew title overlay band along the bottom, the brief MUST leave the BOTTOM 1/4 of the frame as low-detail negative space (deep shadow, unbroken raw concrete, or simple ceramic plate edge — no critical subject detail there). The main subject lives in the upper 3/4. Example phrasing to include: '...the lower quarter of the frame is shadowed concrete, kept intentionally empty as breathing space for a Hebrew title.'",
+  "scene_brief": "4–6 sentence ENGLISH photographer's brief, written in the locked Minuto identity. Specific objects, specific composition (lower-right third etc.), specific light direction. NO references to brand voice or copywriting — just the shot. NO competitor brands, NO side-by-side comparison framing. ⛔ NEVER include scoops, spoons, or utensils of any kind in the brief — Minuto's brand identity forbids them; loose beans go directly on the surface or in a small ceramic dish. ⛔ NEVER specify dark/oily/glossy roasted beans — Minuto only roasts light-to-medium, so beans must be light cinnamon brown / matte. BAG RULE — depends on render_mode you chose: ▸ If render_mode is \"bag_hero\": if product_reference is non-null, the brief MUST place the Minuto [product] bag prominently in the composition (e.g. 'a Minuto Guatemala Antigua bag stands in the upper-right third'). Don't write a scene without the bag when we know which product the post is about — that defeats the visual identification. The only exception is a pure pour/in-cup shot where the bag would feel forced; even then, mention 'a Minuto [product] bag visible in soft background'. ▸ If render_mode is \"no_bag\": the brief MUST NOT contain a coffee bag, pouch, sack, or any packaging anywhere — not even in soft background. Make a coffee element the hero instead: a cup with crema, a slow pour, light-cinnamon beans in a small ceramic dish, or brewing gear. Same locked composition/light/palette rules still apply.
+
+⛔ **EXACTLY-ONE-BAG RULE — non-carousel posts (post / reel)**: the bag_hero scene_brief MUST describe **exactly ONE single Minuto bag**, never two, never three, never an arrangement of bags. The downstream render pipeline composites the real catalog PNG byte-perfect — but only **one** bag, placed at the locked BAG_REGION. If your brief asks for multiple bags, the renderer falls back to Gemini which hallucinates the text on every bag (e.g. 'Yirgachoffe' instead of 'Yirgacheffe', 'Doye Benos' instead of 'Daye Bensa', 'Fasenda BertSo' instead of 'Fazenda Sertão') — a real incident, do not repeat.
+  ✗ NEVER write: "three Minuto bags arranged in a diagonal line", "two bags side by side", "the Dark Chocolate and Daye Bensa bags rest on the surface", or any phrasing that puts more than one bag in the frame.
+  ✓ ALWAYS write: "a single Minuto [product] bag" / "one Minuto [product] bag" / "the Minuto [product] bag rests at a slight angle…".
+  ▸ If the post's intent genuinely needs to show MULTIPLE products (e.g. "three origins to try this week", a comparison, a bundle), the upstream agent should make it a CAROUSEL — each slide is one bag, each composited byte-perfect. A non-carousel bag_hero is ALWAYS one bag. No exceptions.
+  ▸ This rule applies to non-carousel posts only. For carousel slides, the slide-by-slide rules still allow context like "the closing bag beauty shot" (slide 5), where exactly one bag per slide is also the norm. For carousels: this is the COVER slide (slide 1) — and because the cover will carry a Hebrew title overlay band along the bottom, the brief MUST leave the BOTTOM 1/4 of the frame as low-detail negative space (deep shadow, unbroken raw concrete, or simple ceramic plate edge — no critical subject detail there). The main subject lives in the upper 3/4. Example phrasing to include: '...the lower quarter of the frame is shadowed concrete, kept intentionally empty as breathing space for a Hebrew title.'",
   "overlay_text": null | "Hebrew headline ≤ 40 chars. ⛔ MANDATORY for CAROUSEL COVERS — when additional_slides is non-null, this is the cover-slide title and you MUST set it. Use the post's Hebrew hook (passed in the user message) as the source — refine/shorten to ≤40 chars but keep the core promise intact. Examples: hook 'קפה חלבי לשבועות — איך לעשות קצף שלא נופל תוך 2 דקות' → 'קצף חלב שלא נופל — מדריך לשבועות' (35 chars). DO NOT leave null on a carousel cover — the cover is the hook slide. For NON-carousel posts: null is fine UNLESS the post REALLY needs text (announcing a new origin name, a price/promo, or a recipe ratio). NO disparaging text, NO 'competitor doesn't do X' framing. ⛔ HEBREW UNITS ONLY: when the overlay includes measurements, use Hebrew abbreviations — מ\"ל not 'ml', ס\"מ not 'cm', ג'/גרם not 'g', ק\"ג not 'kg', מעלות not '°C'. Latin/symbol units get bidi-reversed inside Hebrew RTL text and read backwards. Example correct: '60 מ\"ל אספרסו + 150 מ\"ל חלב'. Example wrong: '60ml espresso + 150ml milk' or '60ml אספרסו'.",
   "product_reference": null | "the SPECIFIC Minuto product name as it appears in the post (e.g. 'Dark Chocolate', 'Yirgacheffe', 'Guatemala Antigua', 'Fazenda Sertão'). Use null when the post is generic about coffee/roasting and not about one named product. The downstream pipeline uses this to look up the right bag image as a Gemini reference, so the rendered bag matches the post's product.",
   "additional_slides": null | [
@@ -367,7 +398,7 @@ Now return the strict JSON enrichment.`
 }
 
 type ParsedEnrichment =
-  { kind: 'success'; post_type: string; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null; additional_slides: AdditionalSlide[] | null }
+  { kind: 'success'; post_type: string; render_mode: 'bag_hero' | 'no_bag'; calendar_hook: string; scene_brief: string; overlay_text: string | null; product_reference: string | null; additional_slides: AdditionalSlide[] | null }
 
 function parseEnrichmentJson(text: string): ParsedEnrichment | null {
   // Tolerate ```json ... ``` fencing or stray prose.
@@ -403,6 +434,9 @@ function parseEnrichmentJson(text: string): ParsedEnrichment | null {
   return {
     kind: 'success',
     post_type:         obj.post_type,
+    // Default to bag_hero on anything unexpected — it's the safe,
+    // current-behavior path. Only an explicit "no_bag" opts out.
+    render_mode:       obj.render_mode === 'no_bag' ? 'no_bag' : 'bag_hero',
     calendar_hook:     typeof obj.calendar_hook === 'string' ? obj.calendar_hook : '',
     scene_brief:       obj.scene_brief,
     overlay_text:      typeof obj.overlay_text === 'string' && obj.overlay_text.trim() ? obj.overlay_text.trim() : null,
@@ -449,6 +483,11 @@ export async function enrichPostsForPublishing(
       return {
         ...base,
         post_type:           parsed.post_type,
+        // Carousels are always bag_hero — their slide rules close on the
+        // product bag. no_bag is single-post only; enforce here so a
+        // mis-tagged carousel can't slip through (defense-in-depth, same
+        // pattern as the carousel additional_slides handling above).
+        render_mode:         upstreamType === 'carousel' ? 'bag_hero' : parsed.render_mode,
         calendar_hook:       parsed.calendar_hook,
         scene_brief:         parsed.scene_brief,
         overlay_text:        parsed.overlay_text,

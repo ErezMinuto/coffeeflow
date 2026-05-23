@@ -1,6 +1,32 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50:  #fdf6ee;
+  --color-brand-100: #f9e8cf;
+  --color-brand-200: #f2cc96;
+  --color-brand-300: #eaaa57;
+  --color-brand-400: #e48f30;
+  --color-brand-500: #d97318;
+  --color-brand-600: #c05a13;
+  --color-brand-700: #9f4213;
+  --color-brand-800: #813416;
+  --color-brand-900: #6a2c15;
+
+  --color-surface-50:  #f9f7f4;
+  --color-surface-100: #f0ebe3;
+  --color-surface-200: #e3d9cc;
+  --color-surface-300: #d1c2ad;
+  --color-surface-400: #bba48e;
+  --color-surface-500: #a68a73;
+  --color-surface-600: #927561;
+  --color-surface-700: #796151;
+  --color-surface-800: #645146;
+  --color-surface-900: #54453d;
+
+  --font-sans:    "DM Sans", sans-serif;
+  --font-display: "Fraunces", serif;
+  --font-mono:    "JetBrains Mono", monospace;
+}
 
 @layer base {
   :root {
@@ -53,11 +79,11 @@
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
   }
 
-  .badge-success { @apply badge bg-green-100 text-green-700; }
-  .badge-warning { @apply badge bg-amber-100 text-amber-700; }
-  .badge-danger  { @apply badge bg-red-100 text-red-700; }
-  .badge-meta    { @apply badge bg-blue-100 text-blue-700; }
-  .badge-google  { @apply badge bg-red-50 text-red-600; }
+  .badge-success { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700; }
+  .badge-warning { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700; }
+  .badge-danger  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700; }
+  .badge-meta    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700; }
+  .badge-google  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600; }
 
   .stat-up   { @apply text-green-600 text-xs font-medium; }
   .stat-down { @apply text-red-500 text-xs font-medium; }

@@ -1066,7 +1066,7 @@ ${p.customInstructions
       "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-sonnet-4-5-20250929",
+      model:      "claude-sonnet-4-6",
       max_tokens: 1500,
       system:     systemPrompt,
       messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],

@@ -21,7 +21,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Quota: only step 4 (publish) counts against IG's 50 publishes / rolling 24h
 // limit.  Container creation is free.
 
-const GRAPH = 'https://graph.facebook.com/v19.0'
+const GRAPH = 'https://graph.facebook.com/v23.0'
 const REEL_POLL_INTERVAL_MS = 3000
 const REEL_POLL_TIMEOUT_MS  = 90_000
 const IG_QUOTA_LIMIT        = 50
