@@ -130,7 +130,7 @@ Start your response with { and end with }`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5",
+        model: "claude-opus-4-7",
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),

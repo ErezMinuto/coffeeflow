@@ -6,6 +6,13 @@
       "runtimeExecutable": "/usr/local/bin/node",
       "runtimeArgs": ["node_modules/.bin/react-scripts", "start"],
       "port": 3000
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5173"],
+      "port": 5173,
+      "cwd": "dashboard"
     }
   ]
 }

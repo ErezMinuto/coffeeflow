@@ -19,7 +19,7 @@ serve(async (req) => {
     console.log(`Exchanging code with app_id=${appId} redirect_uri=${redirect_uri}`)
 
     const params = new URLSearchParams({ client_id: appId, client_secret: appSecret, redirect_uri, code })
-    const res = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?${params}`)
+    const res = await fetch(`https://graph.facebook.com/v23.0/oauth/access_token?${params}`)
     const data = await res.json()
 
     console.log('FB token response:', JSON.stringify(data))
@@ -35,7 +35,7 @@ serve(async (req) => {
       client_secret: appSecret,
       fb_exchange_token: data.access_token,
     })
-    const longRes = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?${longParams}`)
+    const longRes = await fetch(`https://graph.facebook.com/v23.0/oauth/access_token?${longParams}`)
     const longData = await longRes.json()
 
     console.log('Long-lived token response:', JSON.stringify(longData))
@@ -49,7 +49,7 @@ serve(async (req) => {
       ? new Date(Date.now() + longData.expires_in * 1000).toISOString()
       : null
 
-    const meRes = await fetch(`https://graph.facebook.com/v18.0/me?fields=name&access_token=${accessToken}`)
+    const meRes = await fetch(`https://graph.facebook.com/v23.0/me?fields=name&access_token=${accessToken}`)
     const me = await meRes.json()
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)

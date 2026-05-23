@@ -131,6 +131,12 @@ or Linea Mini silhouette — that's wrong machine):
     OUTWARD from the SIDES of the machine body (one per side),
     flanking the group heads — NOT coming out of the front, NOT out of
     the group heads. They have small chrome knob controls on top.
+    A STEAM WAND PRODUCES STEAM ONLY. It is NEVER a pour spout. Milk,
+    coffee, or any liquid stream emerging FROM the tip of a steam wand
+    into a cup is physically wrong and forbidden — the wand tip either
+    sits idle (no stream), emits faint white steam vapor, or is
+    submerged inside a separate stainless steel milk pitcher being
+    held under it. Liquid never falls from the wand into a cup.
   • TOP CUP TRAY: a raised stainless-steel wire-grate cup warmer/tray
     sits on top of the body, supported by thin chrome rails — it's
     open mesh, you can see through it.
@@ -201,6 +207,30 @@ ESPRESSO MACHINE with a portafilter and 9 bar pressure.
     "stovetop", "Bialetti", or "stovetop espresso maker". Never for
     plain "espresso".
 
+MILK HANDLING RULE — STRICTLY ENFORCED: Milk and coffee live in
+different vessels and move along different paths. Get this wrong and
+the image instantly reads as fake to anyone who's ever been near an
+espresso bar.
+  • Milk is textured (steamed/frothed) INSIDE a stainless steel milk
+    pitcher / jug with a pointed pour spout. The steam wand is
+    submerged in that pitcher from above. Steam wands NEVER pour milk
+    directly into a cup. Liquid does NOT fall from the tip of a steam
+    wand. A steam wand only emits faint white steam vapor or sits
+    idle.
+  • Milk reaches the cup by being POURED FROM A STAINLESS STEEL
+    PITCHER held by a hand. The pitcher tilts; a smooth white stream
+    crosses from the pitcher spout into the cup. If milk is going into
+    a cup in the frame, the source MUST be a pitcher, not a wand, not
+    a carton, not a bottle, not thin air.
+  • If a cappuccino / latte / flat white is the finished drink in the
+    cup, the milk is already inside it (with latte art on top); any
+    "active pour" must come from a stainless pitcher, not from the
+    espresso machine.
+  • The espresso shot reaches the cup ONLY through the portafilter
+    spouts of the espresso machine (or, for moka briefs, from the moka
+    pot's central spout). Espresso never pours from a steam wand
+    either.
+
 ROAST LEVEL — STRICTLY ENFORCED: Minuto roasts to MEDIUM, occasionally
 medium-light. NEVER medium-dark, NEVER dark, NEVER green/unroasted.
 
@@ -246,6 +276,13 @@ Hands enter from frame edge, never as a subject. Slight motion blur on a
 pour or pour-stream is welcome. NO faces.
 
 ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
+- ⛔ MILK (or any liquid) POURING FROM A STEAM WAND into a cup. Steam
+  wands produce STEAM only. If milk is reaching a cup in the frame,
+  the source must be a stainless steel milk pitcher held by a hand —
+  never the wand. The wand tip, if visible, is either idle or
+  submerged inside a separate pitcher. A white stream falling from a
+  chrome wand tip directly into a cup is the single most telling
+  "AI doesn't understand coffee" artifact and is an immediate fail.
 - ⛔ MOKA POT / Bialetti / stovetop espresso maker / any aluminum
   octagonal stovetop brewer when the brief mentions ESPRESSO — they
   make moka coffee, not espresso. Render an espresso machine instead
@@ -280,44 +317,50 @@ ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
 - Vehicles, sky, landscapes, animals, plants beyond a single sprig
 `.trim()
 
+// Editorial presets — written for the Vertex SUBJECT-customization path
+// where the model generates the bag natively into a 3/4 perspective with
+// creative freedom on tilt, lean, scale, and placement. "Single bag"
+// constraint is kept (multi-bag is a separate fidelity issue), but
+// otherwise the bag is free to rest at slight angles on plates, sit small
+// in deep-shadowed backgrounds, etc. Same presets also used by the
+// Gemini path (visual-test) where they read naturally too.
 export const SCENE_PRESETS: Record<string, string> = {
   still_life_gift:
     'A SCENE arranged as a quiet gift moment. Frame composed in landscape ' +
     'orientation. The arrangement sits in the lower-right third of the frame: ' +
-    'two Minuto coffee bags resting at slight angles on a hand-thrown unglazed ' +
-    'ceramic plate with raw kiln-marked edges. A small brown craft-paper box, ' +
-    'partially shadowed, sits to the upper-left of the plate, its Minuto stag ' +
-    'emblem just catching the light. Surface: raw imperfect concrete with ' +
-    'visible texture and a single dark stain. Hard diagonal sunlight enters ' +
-    'from upper-right, casting long sharp shadows toward the lower-left. The ' +
-    'upper-left third of the frame is mostly empty shadowed concrete — ' +
-    'breathing space. Kodak Portra 400 grain. NEVER place the plate in the ' +
-    'center of the frame.',
+    'a single Minuto coffee bag resting at a slight angle on a hand-thrown ' +
+    'unglazed ceramic plate with raw kiln-marked edges. A small brown ' +
+    'craft-paper box, partially shadowed, sits to the upper-left of the ' +
+    'plate, its Minuto stag emblem just catching the light. Surface: raw ' +
+    'imperfect concrete with visible texture and a single dark stain. Hard ' +
+    'diagonal sunlight enters from upper-right, casting long sharp shadows ' +
+    'toward the lower-left. The upper-left third of the frame is mostly ' +
+    'empty shadowed concrete — breathing space. Kodak Portra 400 grain. ' +
+    'NEVER place the plate in the center of the frame.',
 
   pour_shot:
-    'A SCENE of the pour ritual, frame oriented with the action diagonal. The ' +
-    'main pour happens in the LEFT half of the frame: a hand emerges from the ' +
-    'upper-left edge holding a TALL CYLINDRICAL HARIO RANGE SERVER (straight ' +
-    'glass walls, flat horizontal handle, much larger than a milk pitcher), ' +
-    'tilted forward, pouring a thin amber stream into a small unglazed ceramic ' +
-    'cup with raw edges sitting on a dark weathered walnut table. Visible ' +
-    'soft steam curls upward. The right half of the frame is mostly negative ' +
-    'space — deep shadow, with a Minuto coffee bag SMALL in the lower-right ' +
-    'corner, soft and slightly out of focus, NOT a hero element. Single hard ' +
-    'warm light from upper-right. Slight motion blur on the pour stream. No ' +
-    'face visible.',
+    'A SCENE of the pour ritual, frame oriented with the action diagonal. ' +
+    'The main pour happens in the LEFT half of the frame: a hand emerges ' +
+    'from the upper-left edge holding a TALL CYLINDRICAL HARIO RANGE SERVER ' +
+    '(straight glass walls, flat horizontal handle, much larger than a milk ' +
+    'pitcher), tilted forward, pouring a thin amber stream into a small ' +
+    'unglazed ceramic cup with raw edges sitting on a dark weathered walnut ' +
+    'table. Visible soft steam curls upward. The right half of the frame is ' +
+    'mostly negative space — deep shadow, with a single Minuto coffee bag ' +
+    'in the lower-right third, soft and slightly out of focus. Single hard ' +
+    'warm light from upper-right. Slight motion blur on the pour stream. ' +
+    'No face visible.',
 
   origin_still:
     'A SCENE around a single Minuto coffee bag positioned in the upper-right ' +
-    'third of the frame, standing upright on a raw lime plaster surface. The ' +
-    'bag is side-lit hard from the right, casting a long sharp shadow that ' +
-    'extends fully across to the left edge of the frame — the shadow is part ' +
-    'of the composition, not an accident. In the lower-left third: a small ' +
-    'pile of LIGHT-TO-MEDIUM-ROASTED beans (light cinnamon brown, matte) ' +
-    'scattered directly on the raw plaster, with a few loose beans nearby. ' +
-    'A small empty unglazed ceramic cup, half in shadow, sits between the ' +
-    'beans and the bag, smaller than the bag, soft focus. NO SPOONS, NO ' +
-    'SCOOPS. The bag occupies maybe 25% of the frame area, not 50%. ' +
+    'third of the frame, standing on a raw lime plaster surface. The bag is ' +
+    'side-lit hard from the right, casting a long sharp shadow that extends ' +
+    'fully across to the left edge of the frame — the shadow is part of the ' +
+    'composition, not an accident. In the lower-left third: a small pile of ' +
+    'light-to-medium-roasted beans (light cinnamon brown, matte) scattered ' +
+    'directly on the raw plaster, with a few loose beans nearby. A small ' +
+    'empty unglazed ceramic cup, half in shadow, sits between the beans and ' +
+    'the bag, smaller than the bag, soft focus. NO SPOONS, NO SCOOPS. ' +
     'Almost monochromatic earth palette. Kodak Portra grain.',
 
   brewing_setup:
@@ -328,12 +371,12 @@ export const SCENE_PRESETS: Record<string, string> = {
     'brass gooseneck kettle is partially cropped out of the upper-left frame ' +
     'edge, only its spout and a glint of brass visible (the kettle is the ' +
     'ONE allowed brass element — not a spoon or scoop). In the lower-right ' +
-    'third: a small pile of LIGHT-TO-MEDIUM-ROASTED beans (light cinnamon ' +
+    'third: a small pile of light-to-medium-roasted beans (light cinnamon ' +
     'brown, matte) on a hand-thrown earthenware dish. NO SPOONS, NO SCOOPS. ' +
     'A thin clear-glass cup sits beside the dripper since this is filter ' +
-    'brewing. The Minuto coffee bag is SMALL in the deep-shadowed background, ' +
-    'occupying less than 15% of the frame area. Single warm window light from ' +
-    'upper-right. Generous shadow across the right side of the frame.',
+    'brewing. A single Minuto coffee bag in the deep-shadowed background. ' +
+    'Single warm window light from upper-right. Generous shadow across the ' +
+    'right side of the frame.',
 }
 
 export const ASPECT_TO_RATIO = {
@@ -346,8 +389,8 @@ export type Aspect = keyof typeof ASPECT_TO_RATIO
 // Compact summary fed into the agent's enrichment prompt — Claude picks one
 // of these keys as `post_type` and uses it as the seed for the scene_brief.
 export const SCENE_PRESET_SUMMARIES = {
-  still_life_gift: 'two bags + craft box on ceramic plate; gift / batch announcement / seasonal release',
-  pour_shot:       'hand pouring from Hario server into ceramic cup; ritual / brewing / freshness',
-  origin_still:    'single bag with brass scoop of green beans; origin story / single-origin focus',
-  brewing_setup:   'pour-over rig blooming with brass kettle suggested; method / equipment / education',
+  still_life_gift: 'single bag resting at a slight angle on a ceramic plate with a craft box beside; gift / batch announcement / seasonal release',
+  pour_shot:       'hand pouring from a Hario server into a ceramic cup, with a single bag soft in the background; ritual / brewing / freshness',
+  origin_still:    'single bag on a lime plaster surface with scattered medium-roast beans and a ceramic cup beside; origin story / single-origin focus',
+  brewing_setup:   'pour-over rig blooming with a brass kettle cropped from the edge and the single bag soft in the background; method / equipment / education',
 } as const

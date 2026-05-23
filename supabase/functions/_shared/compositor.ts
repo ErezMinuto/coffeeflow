@@ -40,10 +40,18 @@ export interface CompositeRegion {
   centerYPct:  number
 }
 
+// LARGE HERO geometry (2026-05-17): the bag is the subject, not a small
+// element tucked in a corner. At 2K Stage-1 output (2048px) a 0.52 width
+// ≈ 1065px — close to the catalog PNG's native resolution, so the
+// compositor barely downscales it and the bag's text stays byte-perfect
+// sharp. Near-centered with slight left bias for editorial asymmetry.
+// This is how premium coffee brands (La Cabra / Blue Bottle) actually
+// shoot hero bag photos — the "editorial" quality is in the light and
+// the surface, not in shrinking the bag into a busy scene.
 export const BAG_REGION: CompositeRegion = {
-  widthPct:   0.46,   // bag occupies 46% of frame width — sized to dominate as the hero element (a coffee bag is much larger than a bean pile or cup in real life; previous 34% read as undersized next to Gemini's beans)
-  centerXPct: 0.74,   // lower-right (74% from left, slightly inset to leave breathing room from edge)
-  centerYPct: 0.70,   // anchored toward bottom
+  widthPct:   0.52,   // hero size — bag dominates the frame, minimal downscale at 2K → sharp text
+  centerXPct: 0.52,   // near-centered, slight right-of-true-center for asymmetric negative space on the left
+  centerYPct: 0.54,   // vertically near-center; with ~1.45 aspect the base sits low in the frame (standing on the surface)
 }
 
 export const CUP_REGION: CompositeRegion = {
@@ -56,7 +64,13 @@ export const CUP_REGION: CompositeRegion = {
 // describes the position language Gemini should respect when leaving the
 // region empty for compositing. Geometry numbers MUST stay in sync with
 // the CompositeRegion constants above.
-export const BAG_REGION_PROMPT = `the LOWER-RIGHT area of the frame, occupying roughly 46% of the frame's width, centered around 74% from the left and 70% from the top`
+// Number-free, product-free spatial language. NEVER put literal
+// percentages here — Imagen renders "52%" etc. as visible text in the
+// scene. NEVER mention "product"/"bag"/"placement" — that reads as
+// design-mockup instruction and Imagen draws a spec board. This string
+// only describes WHERE the empty hero space is, in plain photographic
+// terms. Compositor geometry uses the numeric BAG_REGION, not this.
+export const BAG_REGION_PROMPT = `the central upper area of the frame`
 export const CUP_REGION_PROMPT = `the CENTER-LEFT area of the frame, occupying roughly 28% of the frame's width, centered around 35% from the left and 60% from the top`
 
 /**
@@ -138,21 +152,41 @@ export async function compositeProductIntoScene(
   const targetHeight = Math.round(targetWidth / aspect)
   const resized = bilinearResize(product, targetWidth, targetHeight)
 
-  // Background removal via 4-corner flood-fill. The previous approach —
-  // simple threshold-based color-keying — treated the bag's WHITE
-  // INTERIOR (the pouch material, which is also near-white) the same as
-  // the white background, making the bag partially see-through. Flood-
-  // fill from the corners marks only pixels that are *connected* to the
-  // edges via near-white chains. The bag's enclosed white interior is
-  // not connected to the corners, so it stays fully opaque. Bag-shaped
-  // alpha mask, exactly what we need.
+  // Background removal via 4-corner flood-fill. Auto-detects whether the
+  // source bag was shot on a WHITE or BLACK backdrop (Minuto catalog
+  // photos on minuto.co.il are a mix — Yirgacheffe etc. are on light bg,
+  // Kenya AA+ is on near-black bg). Original code hardcoded "is background
+  // if min(r,g,b) >= 200" which only works for white backdrops; black-bg
+  // bags came through with their rectangular black border intact.
+  //
+  // Detection: sample average brightness of the 4 corner pixels. If the
+  // average is bright, use the "white" predicate (min channel >= 200). If
+  // dark, use the "black" predicate (max channel <= 55). Mid-grey corners
+  // fall through to the white predicate as a default.
   const w = resized.width
   const h = resized.height
   const isBg = new Uint8Array(w * h)
-  // Threshold: pixel is "background-like" if its darkest channel ≥ this.
-  // 200 captures the soft anti-aliased edge of the white backdrop without
-  // eating into the bag's actual border.
-  const BG_THRESHOLD = 200
+  function sampleCorner(px: number, py: number): { r: number; g: number; b: number } {
+    const pixel = resized.getPixelAt(px + 1, py + 1)
+    return {
+      r: (pixel >>> 24) & 0xff,
+      g: (pixel >>> 16) & 0xff,
+      b: (pixel >>>  8) & 0xff,
+    }
+  }
+  const corners = [
+    sampleCorner(0,     0),
+    sampleCorner(w - 1, 0),
+    sampleCorner(0,     h - 1),
+    sampleCorner(w - 1, h - 1),
+  ]
+  const avgCornerLuma =
+    corners.reduce((sum, c) => sum + (c.r + c.g + c.b) / 3, 0) / corners.length
+  type BgMode = 'white' | 'black'
+  const bgMode: BgMode = avgCornerLuma < 80 ? 'black' : 'white'
+  const WHITE_BG_THRESHOLD = 200 // min channel must be ≥ this to count as white-bg
+  const BLACK_BG_THRESHOLD =  55 // max channel must be ≤ this to count as black-bg
+  console.log(`[compositor] bg-mode=${bgMode} (avgCornerLuma=${avgCornerLuma.toFixed(1)})`)
   const stack: number[] = []
   const pushIfBg = (px: number, py: number) => {
     if (px < 0 || px >= w || py < 0 || py >= h) return
@@ -162,7 +196,10 @@ export async function compositeProductIntoScene(
     const r = (pixel >>> 24) & 0xff
     const g = (pixel >>> 16) & 0xff
     const b = (pixel >>> 8)  & 0xff
-    if (Math.min(r, g, b) >= BG_THRESHOLD) {
+    const isBgPixel = bgMode === 'white'
+      ? Math.min(r, g, b) >= WHITE_BG_THRESHOLD
+      : Math.max(r, g, b) <= BLACK_BG_THRESHOLD
+    if (isBgPixel) {
       isBg[idx] = 1
       stack.push(idx)
     }
@@ -184,9 +221,10 @@ export async function compositeProductIntoScene(
 
   // Apply the mask: background → fully transparent. Bag interior → keep
   // as-is. Edge pixels (bag pixels adjacent to background) get partial
-  // alpha based on their brightness for clean anti-aliasing — the lighter
-  // the pixel, the more transparent (treats the resize-blurred edge as a
-  // natural soft cutout).
+  // alpha for clean anti-aliasing — the closer a pixel is to the
+  // background colour, the more transparent it becomes. Mode-aware:
+  //   - white bg: lighter pixels (high min channel) → more transparent
+  //   - black bg: darker pixels (low max channel) → more transparent
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const idx = y * w + x
@@ -206,10 +244,18 @@ export async function compositeProductIntoScene(
       const g = (pixel >>> 16) & 0xff
       const b = (pixel >>> 8)  & 0xff
       const a = pixel & 0xff
-      const minRGB = Math.min(r, g, b)
-      // Soft edge: minRGB=255 → alpha=0 (effectively background-coloured),
-      // minRGB=200 → alpha=255 (fully opaque). Linear in between.
-      const t = Math.max(0, Math.min(1, (255 - minRGB) / 55))
+      let t: number
+      if (bgMode === 'white') {
+        // minRGB=255 → t=0 (matches white bg, fully transparent)
+        // minRGB=200 → t=1 (already past the soft-edge band, fully opaque)
+        const minRGB = Math.min(r, g, b)
+        t = Math.max(0, Math.min(1, (255 - minRGB) / 55))
+      } else {
+        // maxRGB=0 → t=0 (matches black bg, fully transparent)
+        // maxRGB=55 → t=1 (past the soft-edge band, fully opaque)
+        const maxRGB = Math.max(r, g, b)
+        t = Math.max(0, Math.min(1, maxRGB / 55))
+      }
       const newAlpha = Math.round(a * t)
       resized.setPixelAt(x + 1, y + 1, (pixel & 0xffffff00) | newAlpha)
     }

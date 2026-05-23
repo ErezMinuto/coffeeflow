@@ -20,7 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 //
 // Returns: { campaign_id, edit_url, warnings: string[] }
 
-const GRAPH = 'https://graph.facebook.com/v19.0'
+const GRAPH = 'https://graph.facebook.com/v23.0'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',

@@ -7,8 +7,11 @@ import {
   MINUTO_ESPRESSO_MACHINE_REFERENCE_URL,
   MINUTO_VISUAL_IDENTITY,
   SCENE_PRESETS,
-  pickFallbackBagUrl,
 } from '../_shared/visual_identity.ts'
+// pickFallbackBagUrl intentionally NOT imported — caller must specify
+// which bag to use via reference_image_url / product_id / product_name.
+// Random pool selection was removed 2026-05-16 so the rendered bag
+// always matches the product being promoted in the post.
 // Compositor kept in repo for selective re-enablement, but not imported
 // in the default render path. The architecture pivoted to "Gemini renders
 // from bag + style-ref references + bullet-structured prompt" because
@@ -86,9 +89,13 @@ interface VisualTestRequest {
   preset?: keyof typeof SCENE_PRESETS        // shortcut: pick a SCENE_PRESETS key
   aspect?: Aspect                            // default 'feed_square'
   use_reference?: boolean                    // default true; pass false to skip the bag entirely
-  reference_image_url?: string               // override the default fallback bag with a specific product image
-  composite_bag?: boolean                    // default true when reference is enabled — composite a real bag PNG instead of asking Gemini to render the bag (Gemini hallucinates bag color/structure even with a reference image; pasting the real photo is the only reliable way to get a faithful Minuto bag)
-  composite_cup?: boolean                    // default true when the scene mentions a cup/espresso/cappuccino/etc. — picks a random cup from upload_images/cups/ and composites it (same fidelity argument as the bag)
+  // When use_reference is true (the default), one of the following is
+  // REQUIRED. Random pool fallback was removed 2026-05-16.
+  reference_image_url?: string               // direct URL to a bag photo
+  product_id?: number                        // woo_id (numeric WooCommerce product ID); resolved against woo_products.image_url
+  product_name?: string                      // text — fuzzy-matched via ILIKE against woo_products.name (same pattern as marketing-advisor enrichment)
+  composite_bag?: boolean                    // no-op (kept for backward compat) — compositing was abandoned in favour of bag-as-Gemini-reference rendering
+  composite_cup?: boolean                    // no-op (kept for backward compat)
 }
 
 serve(async (req) => {
@@ -173,8 +180,55 @@ serve(async (req) => {
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { data: string; mime: string } | null = null
     let bagUrl:     string | null = null
+    let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
     if (useReference) {
-      bagUrl = body.reference_image_url || pickFallbackBagUrl()
+      // Resolve which specific bag image to use. Random pool fallback was
+      // removed 2026-05-16 — caller MUST pass one of reference_image_url,
+      // product_id, or product_name so the rendered bag matches the
+      // product being promoted in the post.
+      if (body.reference_image_url) {
+        bagUrl = body.reference_image_url
+        bagSource = 'reference_image_url'
+      } else if (typeof body.product_id === 'number' && Number.isFinite(body.product_id)) {
+        const { data, error } = await supabase
+          .from('woo_products')
+          .select('name, image_url')
+          .eq('woo_id', body.product_id)
+          .not('image_url', 'is', null)
+          .limit(1)
+          .maybeSingle()
+        if (error) {
+          return jsonResponse({ error: `woo_products lookup failed for product_id=${body.product_id}: ${error.message}` }, 500, corsHeaders)
+        }
+        if (!data?.image_url) {
+          return jsonResponse({ error: `no woo_products row with woo_id=${body.product_id}, or that row has no image_url` }, 400, corsHeaders)
+        }
+        bagUrl = data.image_url as string
+        bagSource = 'product_id'
+        console.log(`[visual-test] resolved product_id=${body.product_id} → "${data.name}" → ${bagUrl}`)
+      } else if (body.product_name && body.product_name.trim().length >= 2) {
+        const needle = body.product_name.trim()
+        const { data, error } = await supabase
+          .from('woo_products')
+          .select('name, image_url')
+          .ilike('name', `%${needle}%`)
+          .not('image_url', 'is', null)
+          .limit(1)
+          .maybeSingle()
+        if (error) {
+          return jsonResponse({ error: `woo_products lookup failed for product_name="${needle}": ${error.message}` }, 500, corsHeaders)
+        }
+        if (!data?.image_url) {
+          return jsonResponse({ error: `no woo_products name match for "${needle}" with a non-null image_url` }, 400, corsHeaders)
+        }
+        bagUrl = data.image_url as string
+        bagSource = 'product_name'
+        console.log(`[visual-test] resolved product_name="${needle}" → "${data.name}" → ${bagUrl}`)
+      } else {
+        return jsonResponse({
+          error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
+        }, 400, corsHeaders)
+      }
       // All references pass as Gemini inlineData. Bag is always-on
       // (primary subject), beans always-on (color anchor), machine
       // conditional on a commercial-context espresso scene.
@@ -246,16 +300,11 @@ serve(async (req) => {
     // color/detail anchors when relevant.
     const refDescriptions: string[] = []
     if (bagRef) {
-      refDescriptions.push(`reference image — the MINUTO BAG. Retain ALL text, branding, and design features EXACTLY as shown:
-   ✓ White stand-up pouch shape and proportions
-   ✓ Stag-head emblem at the top, in the same position
-   ✓ "MINUTO Café Roastery" wordmark below the emblem
-   ✓ Colored center-label artwork (the exact illustration shown in the reference — e.g. green starry pattern for Velvet Star, green mountain panel for Guatemala Antigua, etc.)
-   ✓ All text, fonts, and design features at the SAME proportions
+      refDescriptions.push(`reference image — the MINUTO BAG. The bag in this attached image IS the bag to render. Treat it as the source of truth: look at the image and copy it faithfully — do NOT redesign, recolor, restyle, or re-imagine it based on prompt text. The reference is the authority, the prompt is just context.
 ${bagDownplayed
-  ? '\nThe SCENE brief explicitly downplays the bag (no bag / blurred / out of focus / background). Respect that — keep the bag minor or omit it entirely.'
-  : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene, in which case the bag is supporting.'}
-NEVER invent label artwork. NEVER change the bag color from white. NEVER render dates, batch numbers, expiry stickers, or any numerical labels on the bag.`)
+  ? '\nThe SCENE brief downplays the bag — keep it minor or omit it entirely.'
+  : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene.'}
+Hard constraints (just in case the model is tempted to deviate): no invented label artwork, no added date stamps or batch numbers on the bag, no color changes.`)
     }
     if (styleRef) {
       refDescriptions.push(`reference image — STYLE ANCHOR. Real photo from Minuto's library showing the actual surface, lighting, prop styling, and atmosphere we want to match. Use this image as a visual reference for:
@@ -327,6 +376,32 @@ Real-world physics, not arbitrary attachment:
     wand attaches, even if cropped). The wand enters the milk pitcher
     from above, not from below — its tip is submerged just below the
     milk surface to create microfoam.
+
+  • ⛔⛔⛔ A STEAM WAND DOES NOT POUR LIQUID. A steam wand outputs
+    INVISIBLE PRESSURIZED STEAM — not milk, not coffee, not water, not
+    any visible falling stream. NO white stream falls from the wand
+    tip. NO liquid arc connects the wand tip to a cup. NO milk drops
+    from a wand. If you find yourself rendering a chrome wand with a
+    white stream falling from its tip into a cup BELOW it — STOP, that
+    is wrong, redraw. The wand tip in a steaming-milk scene is
+    SUBMERGED INSIDE a stainless steel pitcher (you see the wand
+    disappear into the pitcher from above); if the wand tip is exposed
+    in frame it is IDLE, dry, with at most a faint wisp of pale vapor.
+    This is the single most common AI-coffee failure mode and an
+    automatic image reject — explicitly do not generate it.
+
+  • ⛔⛔⛔ MILK SOURCE LOCK — if milk appears in a cup in the frame,
+    or a stream of milk is mid-air entering a cup, the SOURCE of that
+    milk MUST be a STAINLESS STEEL MILK PITCHER held by a HAND. The
+    pitcher is a small metal jug with a pointed pour spout and a
+    handle, gripped by fingers entering from a frame edge. The milk
+    stream flows from the pitcher's pointed spout to the cup. The
+    source is NEVER a steam wand, NEVER a milk carton, NEVER a bottle,
+    NEVER a faucet, NEVER an unspecified void. If a cappuccino, latte,
+    flat white, or macchiato is the finished drink in the cup, the
+    milk is already integrated with latte art on top — there is no
+    active pour at all. Active milk pours come from a hand-held
+    stainless pitcher, period.
 
   • A PORTAFILTER is a metal basket holder with a horizontal handle
     (usually black or wood). The basket end either: (a) locks UPWARD
@@ -418,7 +493,7 @@ text is inspiration; these are mandatory.`
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
     const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -483,6 +558,8 @@ text is inspiration; these are mandatory.`
       surface: surface.name,
       style_ref: styleRefUrl,
       scene_brief: sceneBrief,
+      bag_url: bagUrl,
+      bag_source: bagSource,
     }, 200, corsHeaders)
 
   } catch (err: any) {

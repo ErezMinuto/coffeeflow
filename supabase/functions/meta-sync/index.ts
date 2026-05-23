@@ -85,7 +85,7 @@ serve(async (req) => {
     // the user skipped a consent step or the permission needs App Review for
     // Advanced Access and the app is still in Development mode.
     try {
-      const permsRes = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${token}`)
+      const permsRes = await fetch(`https://graph.facebook.com/v23.0/me/permissions?access_token=${token}`)
       const perms = await permsRes.json()
       if (perms.error) {
         stats.last_meta_error = perms.error.message
@@ -156,7 +156,7 @@ serve(async (req) => {
     // window still contribute historical rows to meta_ad_campaigns).
     const campaignEffFilter = encodeURIComponent('["ACTIVE"]')
     const campaigns = run('campaigns') ? await fetchAll<any>(
-      `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/campaigns?fields=name,status,objective&effective_status=${campaignEffFilter}&limit=50&access_token=${token}`,
+      `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/campaigns?fields=name,status,objective&effective_status=${campaignEffFilter}&limit=50&access_token=${token}`,
       'campaigns'
     ) : []
     stats.campaigns_found = campaigns.length
@@ -165,7 +165,7 @@ serve(async (req) => {
     for (const campaign of campaigns) {
       // time_increment=1 → one insights row per day, each with date_start.
       const insightsUrl =
-        `https://graph.facebook.com/v18.0/${campaign.id}/insights` +
+        `https://graph.facebook.com/v23.0/${campaign.id}/insights` +
         `?fields=spend,impressions,clicks,cpm,cpc,ctr,actions` +
         `&date_preset=last_90d&time_increment=1&access_token=${token}`
       const dailyRows = await fetchAll<any>(insightsUrl)
@@ -228,7 +228,7 @@ serve(async (req) => {
       // about adsets that are live or recently paused.
       const effStatusFilter = encodeURIComponent('["ACTIVE"]')
       const adsets = await fetchAll<any>(
-        `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/adsets?fields=${adsetFields}&effective_status=${effStatusFilter}&limit=100&access_token=${token}`,
+        `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/adsets?fields=${adsetFields}&effective_status=${effStatusFilter}&limit=100&access_token=${token}`,
         'adsets'
       )
       stats.adsets_found = adsets.length
@@ -293,7 +293,7 @@ serve(async (req) => {
       // Meta's `effective_status` filter is a URL-encoded JSON array.
       const effStatusFilter = encodeURIComponent('["ACTIVE"]')
       const ads = await fetchAll<any>(
-        `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/ads?fields=${adFields}&effective_status=${effStatusFilter}&limit=100&access_token=${token}`,
+        `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/ads?fields=${adFields}&effective_status=${effStatusFilter}&limit=100&access_token=${token}`,
         'ads'
       )
       stats.ads_found = ads.length
@@ -357,7 +357,7 @@ serve(async (req) => {
     // pixel to expect events from and whether the account has spend
     // caps that would bottleneck scaling.
     if (run('account_settings')) try {
-      const accUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}?fields=name,currency,timezone_name,business,amount_spent,spend_cap,account_status,funding_source_details&access_token=${token}`
+      const accUrl = `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}?fields=name,currency,timezone_name,business,amount_spent,spend_cap,account_status,funding_source_details&access_token=${token}`
       const res = await fetch(accUrl)
       const data = await res.json()
       if (data.error) {
@@ -389,7 +389,7 @@ serve(async (req) => {
     if (run('adset_daily')) try {
       const effFilter = encodeURIComponent('["ACTIVE"]')
       const fields = 'adset_id,campaign_id,impressions,clicks,spend,cpm,cpc,ctr,frequency,reach,actions,date_start'
-      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+      const insightsUrl = `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/insights`
         + `?level=adset&fields=${fields}`
         + `&date_preset=last_14d&time_increment=1`
         + `&filtering=[{"field":"adset.effective_status","operator":"IN","value":["ACTIVE"]}]`
@@ -429,7 +429,7 @@ serve(async (req) => {
     if (run('placement_daily')) try {
       const fields = 'adset_id,campaign_id,impressions,clicks,spend,actions,date_start'
       const breakdown = 'publisher_platform,platform_position'
-      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+      const insightsUrl = `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/insights`
         + `?level=adset&fields=${fields}&breakdowns=${breakdown}`
         + `&date_preset=last_14d&time_increment=1`
         + `&filtering=[{"field":"adset.effective_status","operator":"IN","value":["ACTIVE"]}]`
@@ -463,7 +463,7 @@ serve(async (req) => {
     // Which specific ads are converting vs. just getting impressions.
     if (run('ad_daily')) try {
       const fields = 'ad_id,adset_id,campaign_id,impressions,clicks,spend,ctr,actions,date_start'
-      const insightsUrl = `https://graph.facebook.com/v18.0/${AD_ACCOUNT_ID}/insights`
+      const insightsUrl = `https://graph.facebook.com/v23.0/${AD_ACCOUNT_ID}/insights`
         + `?level=ad&fields=${fields}`
         + `&date_preset=last_14d&time_increment=1`
         + `&filtering=[{"field":"ad.effective_status","operator":"IN","value":["ACTIVE"]}]`
@@ -495,7 +495,7 @@ serve(async (req) => {
 
     // ── Instagram organic sync ────────────────────────────────
     if (run('ig')) try {
-      const pagesRes = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesRes = await fetch(`https://graph.facebook.com/v23.0/me/accounts?access_token=${token}`)
       const pages = await pagesRes.json()
       console.log('Pages:', JSON.stringify(pages).slice(0, 300))
 
@@ -509,7 +509,7 @@ serve(async (req) => {
         const pageId = pages.data[0].id
 
         const igRes = await fetch(
-          `https://graph.facebook.com/v18.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
+          `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
         )
         const igData = await igRes.json()
         const igId = igData.instagram_business_account?.id
@@ -524,7 +524,7 @@ serve(async (req) => {
           // Fetch account follower count and store in meta_daily_insights
           try {
             const igAccountRes = await fetch(
-              `https://graph.facebook.com/v18.0/${igId}?fields=followers_count,media_count&access_token=${pageToken}`
+              `https://graph.facebook.com/v23.0/${igId}?fields=followers_count,media_count&access_token=${pageToken}`
             )
             const igAccount = await igAccountRes.json()
             const followerCount = igAccount.followers_count ?? 0
@@ -546,7 +546,7 @@ serve(async (req) => {
 
           // Fetch media with thumbnail
           const postsRes = await fetch(
-            `https://graph.facebook.com/v18.0/${igId}/media?fields=id,media_type,caption,timestamp,like_count,comments_count,thumbnail_url,media_url&limit=50&access_token=${pageToken}`
+            `https://graph.facebook.com/v23.0/${igId}/media?fields=id,media_type,caption,timestamp,like_count,comments_count,thumbnail_url,media_url&limit=50&access_token=${pageToken}`
           )
           const postsData = await postsRes.json()
           stats.ig_posts_found = postsData.data?.length ?? 0
@@ -575,7 +575,7 @@ serve(async (req) => {
               let reach = 0, impressions = 0, saves = 0, shares = 0
               try {
                 const insRes = await fetch(
-                  `https://graph.facebook.com/v18.0/${post.id}/insights?metric=${metricList}&access_token=${pageToken}`
+                  `https://graph.facebook.com/v23.0/${post.id}/insights?metric=${metricList}&access_token=${pageToken}`
                 )
                 const insData = await insRes.json()
                 if (insData.error) {
@@ -633,20 +633,20 @@ serve(async (req) => {
       // Re-derive pages + IG account (same flow as organic sync, but only
       // runs when ig_comments is explicitly requested to avoid duplicate work
       // when both ig and ig_comments parts are active).
-      const pagesRes2 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesRes2 = await fetch(`https://graph.facebook.com/v23.0/me/accounts?access_token=${token}`)
       const pagesJ = await pagesRes2.json()
       const page = pagesJ.data?.[0]
       if (page) {
         const pageToken = page.access_token
         const igRes = await fetch(
-          `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
+          `https://graph.facebook.com/v23.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
         )
         const igJ = await igRes.json()
         const igId = igJ.instagram_business_account?.id
         if (igId) {
           // Fetch recent IG media ids + comment counts (light call, no insights).
           const mediaRes = await fetch(
-            `https://graph.facebook.com/v18.0/${igId}/media?fields=id,comments_count,timestamp&limit=30&access_token=${pageToken}`
+            `https://graph.facebook.com/v23.0/${igId}/media?fields=id,comments_count,timestamp&limit=30&access_token=${pageToken}`
           )
           const mediaJ = await mediaRes.json()
           const mediaList = (mediaJ.data ?? []).filter((m: any) => (m.comments_count ?? 0) > 0)
@@ -655,7 +655,7 @@ serve(async (req) => {
             try {
               // Fetch first page of comments per media. Pagination via
               // paging.next if needed, capped at 100 comments per post.
-              let commentsUrl = `https://graph.facebook.com/v18.0/${media.id}/comments?fields=id,text,username,timestamp,like_count,replies{id,text,username,timestamp,like_count}&limit=50&access_token=${pageToken}`
+              let commentsUrl = `https://graph.facebook.com/v23.0/${media.id}/comments?fields=id,text,username,timestamp,like_count,replies{id,text,username,timestamp,like_count}&limit=50&access_token=${pageToken}`
               let fetched = 0
               while (commentsUrl && fetched < 100) {
                 const cRes = await fetch(commentsUrl)
@@ -714,14 +714,14 @@ serve(async (req) => {
     // Facebook page post comments — same pattern but Graph uses slightly
     // different field names (`message` instead of `text`, `from` object).
     if (run('fb_comments')) try {
-      const pagesRes3 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesRes3 = await fetch(`https://graph.facebook.com/v23.0/me/accounts?access_token=${token}`)
       const pagesJ = await pagesRes3.json()
       const page = pagesJ.data?.[0]
       if (page) {
         const pageToken = page.access_token
         // Get recent page posts
         const postsRes = await fetch(
-          `https://graph.facebook.com/v18.0/${page.id}/posts?fields=id,comments.summary(true){id,message,from{id,name},created_time,like_count,comment_count,comments{id,message,from{id,name},created_time,like_count}}&limit=30&access_token=${pageToken}`
+          `https://graph.facebook.com/v23.0/${page.id}/posts?fields=id,comments.summary(true){id,message,from{id,name},created_time,like_count,comment_count,comments{id,message,from{id,name},created_time,like_count}}&limit=30&access_token=${pageToken}`
         )
         const postsJ = await postsRes.json()
         if (postsJ.error) {
@@ -783,7 +783,7 @@ serve(async (req) => {
     //   - Only aggregated patterns (voc_insights) retained indefinitely.
     if (run('ig_dms')) try {
       // Get IG business account id (same flow as organic sync).
-      const pagesRes4 = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${token}`)
+      const pagesRes4 = await fetch(`https://graph.facebook.com/v23.0/me/accounts?access_token=${token}`)
       const pagesJ = await pagesRes4.json()
       const page = pagesJ.data?.[0]
       if (!page) {
@@ -791,7 +791,7 @@ serve(async (req) => {
       } else {
         const pageToken = page.access_token
         const igLookup = await fetch(
-          `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
+          `https://graph.facebook.com/v23.0/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
         )
         const igLookupJ = await igLookup.json()
         const igId = igLookupJ.instagram_business_account?.id
@@ -820,7 +820,7 @@ serve(async (req) => {
           // account has heavy message history. Start small and only fetch
           // the first page — don't paginate. 10 most-recent conversations
           // is a solid VoC sample (most-recent are most-relevant anyway).
-          const convUrl = `https://graph.facebook.com/v18.0/${page.id}/conversations?platform=instagram&fields=id&limit=10&access_token=${pageToken}`
+          const convUrl = `https://graph.facebook.com/v23.0/${page.id}/conversations?platform=instagram&fields=id&limit=10&access_token=${pageToken}`
           const convRes = await fetch(convUrl)
           const convJ = await convRes.json()
           if (convJ.error) {
@@ -836,7 +836,7 @@ serve(async (req) => {
             // limit 20 per thread — enough for VoC patterns without pushing
             // sync past the gateway timeout.
             try {
-              const msgsUrl = `https://graph.facebook.com/v18.0/${conv.id}?fields=messages.limit(20){id,from,message,created_time,attachments}&access_token=${pageToken}`
+              const msgsUrl = `https://graph.facebook.com/v23.0/${conv.id}?fields=messages.limit(20){id,from,message,created_time,attachments}&access_token=${pageToken}`
               const msgsRes = await fetch(msgsUrl)
               const msgsJ = await msgsRes.json()
               if (msgsJ.error) {

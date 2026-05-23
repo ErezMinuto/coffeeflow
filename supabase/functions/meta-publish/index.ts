@@ -21,14 +21,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Quota: only step 4 (publish) counts against IG's 50 publishes / rolling 24h
 // limit.  Container creation is free.
 
-const GRAPH = 'https://graph.facebook.com/v19.0'
+const GRAPH = 'https://graph.facebook.com/v23.0'
 const REEL_POLL_INTERVAL_MS = 3000
 const REEL_POLL_TIMEOUT_MS  = 90_000
 const IG_QUOTA_LIMIT        = 50
 const IG_CAPTION_MAX        = 2200
 
 type PostType = 'feed' | 'reel' | 'carousel'
-type Action   = 'prepare' | 'publish' | 'dry_run'
+// 'publish_now' = prepare+publish in a single invocation. Necessary because
+// Meta's /me/accounts returns a fresh, container-scoped page token on each
+// call, so splitting prepare and publish across two function invocations made
+// the publish-side token unable to read the prepare-side container (Graph
+// error code 100 / subcode 33 "Authorization Error"). Keeping the split
+// actions for backwards compat and the documented preview-card flow, but no
+// active caller should rely on them.
+type Action   = 'prepare' | 'publish' | 'publish_now' | 'dry_run'
 
 interface ContentFields {
   type: PostType
@@ -72,7 +79,9 @@ serve(async (req) => {
 
     if (body.action === 'prepare') {
       validateContent(body as ContentFields)
+      console.log(`[meta-publish] prepare type=${body.type} image_url=${body.image_url ?? '-'} video_url=${body.video_url ?? '-'} caption_len=${body.caption?.length ?? 0}`)
       const creationId = await createContainer(ig.igUserId, ig.pageToken, body as ContentFields)
+      console.log(`[meta-publish] prepare created container=${creationId}`)
       const quota = await getQuotaUsage(ig.igUserId, ig.pageToken)
       return jsonResponse({
         prepared: true,
@@ -107,6 +116,28 @@ serve(async (req) => {
         success: true,
         media_id: mediaId,
         permalink,
+        ig: { id: ig.igUserId, username: ig.igUsername },
+        quota_before: quotaBefore,
+        quota_after:  quotaAfter,
+      }, 200, corsHeaders)
+    }
+
+    if (body.action === 'publish_now') {
+      validateContent(body as ContentFields)
+      const quotaBefore = await getQuotaUsage(ig.igUserId, ig.pageToken)
+      if (quotaBefore.used >= quotaBefore.limit) {
+        throw new Error(`IG publish quota exhausted: ${quotaBefore.used}/${quotaBefore.limit} used in last 24h`)
+      }
+      const creationId = await createContainer(ig.igUserId, ig.pageToken, body as ContentFields)
+      await waitForContainerReady(creationId, ig.pageToken)
+      const mediaId = await publishContainer(ig.igUserId, ig.pageToken, creationId)
+      const quotaAfter = await getQuotaUsage(ig.igUserId, ig.pageToken)
+      const permalink = await fetchPermalink(mediaId, ig.pageToken)
+      return jsonResponse({
+        success: true,
+        media_id: mediaId,
+        permalink,
+        creation_id: creationId,
         ig: { id: ig.igUserId, username: ig.igUsername },
         quota_before: quotaBefore,
         quota_after:  quotaAfter,
@@ -158,10 +189,13 @@ async function loadIgContext() {
   const accountsRes = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${tokenRow.access_token}`)
   const accounts = await accountsRes.json()
   if (accounts.error) throw new Error(`me/accounts: ${accounts.error.message}`)
+  const pageCount = accounts.data?.length ?? 0
   const page = accounts.data?.[0]
   if (!page) throw new Error('user does not manage any FB pages')
   const igRef = page.instagram_business_account
   if (!igRef) throw new Error(`page "${page.name}" has no linked IG business account`)
+  const tokenFp = (page.access_token as string).slice(-8)
+  console.log(`[meta-publish] loadIgContext: ${pageCount} page(s); selected page="${page.name}" id=${page.id} ig=${igRef.id} page_token_fp=...${tokenFp}`)
 
   let igUsername = ''
   try {
@@ -201,6 +235,7 @@ async function createFeedContainer(igUserId: string, pageToken: string, b: Conte
   })
   const res = await fetch(`${GRAPH}/${igUserId}/media`, { method: 'POST', body: params })
   const data = await res.json()
+  console.log(`[meta-publish] createFeedContainer response: ${JSON.stringify(data)}`)
   if (data.error) throw new Error(`create feed container: ${data.error.message}`)
   return data.id as string
 }
@@ -252,7 +287,10 @@ async function waitForContainerReady(containerId: string, pageToken: string) {
   while (Date.now() - start < REEL_POLL_TIMEOUT_MS) {
     const res = await fetch(`${GRAPH}/${containerId}?fields=status_code,status&access_token=${pageToken}`)
     const data = await res.json()
-    if (data.error) throw new Error(`status poll: ${data.error.message}`)
+    if (data.error) {
+      console.log(`[meta-publish] status poll failed for container=${containerId}: ${JSON.stringify(data.error)}`)
+      throw new Error(`status poll: ${data.error.message}`)
+    }
     if (data.status_code === 'FINISHED') return
     if (data.status_code === 'ERROR' || data.status_code === 'EXPIRED') {
       throw new Error(`container ${containerId} failed processing: ${data.status ?? data.status_code}`)

@@ -17,7 +17,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
 import { enrichPostsForPublishing } from "./enrichment.ts";
-import { pickFallbackBagUrl } from "../_shared/visual_identity.ts";
+import { MINUTO_BAG_REFERENCE_URL } from "../_shared/visual_identity.ts";
+// pickFallbackBagUrl removed 2026-05-16 — random pool selection is no
+// longer permitted. When a post lacks an explicit product reference, we
+// fall back to the flagship MINUTO_BAG_REFERENCE_URL (Yirgacheffe by
+// default). Update that constant in _shared/visual_identity.ts if a
+// different bag should be the flagship.
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -26,8 +31,8 @@ const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY") ?? "";
 const SERPER_KEY    = Deno.env.get("SERPER_API_KEY") ?? "";
 
 // Haiku: fast enough (15-25s), same model used by generate-campaign
-const MODEL_ADS     = "claude-sonnet-4-5";
-const MODEL_ORGANIC = "claude-sonnet-4-5";
+const MODEL_ADS     = "claude-sonnet-4-6";
+const MODEL_ORGANIC = "claude-sonnet-4-6";
 // Strategist agents need to respond within the 150s edge function gateway
 // timeout. Sonnet 4.5 is too slow with the large prompt. Sonnet 4 is
 // fast enough and still excellent for Hebrew marketing strategy.
@@ -37,9 +42,9 @@ const MODEL_ORGANIC = "claude-sonnet-4-5";
 //
 // ⚠️ TODO before May 14, 2026 (Sonnet 4 degradation starts):
 // Split the strategist into two smaller Claude calls OR trim the research
-// block before handing to Sonnet 4.5. Leaving on `claude-sonnet-4-20250514`
+// block before handing to Sonnet 4.5. Leaving on `claude-sonnet-4-6`
 // is a temporary measure until then.
-const MODEL_STRATEGIST = "claude-sonnet-4-20250514";
+const MODEL_STRATEGIST = "claude-sonnet-4-6";
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
@@ -1313,7 +1318,7 @@ async function rewriteToCompliantCreative(
       method: "POST",
       headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        model: "claude-sonnet-4-6",
         max_tokens: 3000,
         system: sysPrompt,
         messages: [{ role: "user", content: userMsg }],
@@ -1359,7 +1364,7 @@ async function resolveFbPageId(token: string, vanity: string): Promise<{ id: str
   //       "pageID":"..." in inline JSON). No auth needed, no App Review.
   // Try (1) first; fall back to (2) on the common permission error.
   try {
-    const gUrl = `https://graph.facebook.com/v19.0/${encodeURIComponent(vanity)}?fields=id,name&access_token=${token}`;
+    const gUrl = `https://graph.facebook.com/v23.0/${encodeURIComponent(vanity)}?fields=id,name&access_token=${token}`;
     const gRes = await fetch(gUrl);
     const gData = await gRes.json();
     if (!gData.error && gData.id) {
@@ -1411,7 +1416,7 @@ async function searchMetaAdLibraryByPage(
     "ad_delivery_stop_time",
     "publisher_platforms",
   ].join(",");
-  const url = `https://graph.facebook.com/v19.0/ads_archive?` + new URLSearchParams({
+  const url = `https://graph.facebook.com/v23.0/ads_archive?` + new URLSearchParams({
     search_page_ids:       `[${pageId}]`,
     ad_reached_countries:  `['${country}']`,
     ad_active_status:      "ACTIVE",
@@ -1480,7 +1485,7 @@ async function fetchIgBusinessDiscovery(
   targetUsername: string,
 ): Promise<{ data: any | null; error: string | null }> {
   const subFields = "id,username,name,biography,followers_count,follows_count,media_count,media.limit(15){id,caption,media_type,media_product_type,timestamp,like_count,comments_count,permalink,thumbnail_url,media_url}";
-  const url = `https://graph.facebook.com/v19.0/${ourIgUserId}?` + new URLSearchParams({
+  const url = `https://graph.facebook.com/v23.0/${ourIgUserId}?` + new URLSearchParams({
     fields:       `business_discovery.username(${targetUsername}){${subFields}}`,
     access_token: token,
   });
@@ -4571,7 +4576,7 @@ async function runOrganicAgent(
   const thirtyDaysAgo = subtractDays(weekStart, 30);
   console.log(`[organic] Fetching data from ${thirtyDaysAgo}`);
 
-  const [postsRes, insightsRes, productsRes, originsRes, gscRes, wooSalesOrganic, pastReportsOrganic] = await Promise.all([
+  const [postsRes, insightsRes, productsRes, originsRes, gscRes, wooSalesOrganic, pastReportsOrganic, wooEquipmentRes] = await Promise.all([
     supabase
       .from("meta_organic_posts")
       .select("post_id,post_type,message,created_at,reach,impressions,likes,comments,shares,saves")
@@ -4599,6 +4604,17 @@ async function runOrganicAgent(
       .limit(20),
     fetchWooSales(supabase, weekStart, weekEnd),
     fetchPastReports(supabase, "organic_content", weekStart),
+    // Equipment catalog from WooCommerce — grinders, machines, brewing
+    // tools, accessories. Without this, the organic agent recommends
+    // global brands (Baratza/Wilfa/Fellow) that aren't sold in Israel.
+    // Forcing it to recommend from Minuto's actual catalog keeps the
+    // examples relevant to Israeli buyers AND drives sales to products
+    // we sell, not to competitors.
+    supabase
+      .from("woo_products")
+      .select("name,price")
+      .not("image_url", "is", null)
+      .order("name"),
   ]);
   const completedActions = await getCompletedActions(supabase);
 
@@ -4617,6 +4633,44 @@ async function runOrganicAgent(
   const products = productsRes.data ?? [];
   const origins  = originsRes.data  ?? [];
   const gscRows  = gscRes.data      ?? [];
+  const wooEq    = (wooEquipmentRes.data ?? []) as Array<{ name: string; price: number | null }>;
+
+  // Bucket the WooCommerce catalog by equipment category via name pattern
+  // matching (no category column on woo_products). The agent uses these
+  // to suggest concrete examples instead of pulling global brand names
+  // from training data (Baratza/Wilfa/Fellow — not sold in Israel).
+  const wooGrinders    = wooEq.filter(p => /(\bמטחנת\b|\bgrinder\b|allground|olympus|fiorenzato|mahlkonig|mahlk[öo]nig|eureka|anfim|wilfa|baratza|comandante|kingrinder|1zpresso|timemore)/i.test(p.name));
+  const wooMachines    = wooEq.filter(p => /(\bמכונת אספרסו\b|\bמכונת קפה\b|\bespresso machine\b|\bstrada\b|\blinea\b|\bgs3\b|\bdelonghi\b|\bsage\b|\bbreville\b|\bgaggia\b|\brancilio\b|\bla pavoni\b|lelit|profitec|bezzera|rocket espresso)/i.test(p.name));
+  const wooBrewing     = wooEq.filter(p => /(\bv60\b|\bchemex\b|\baeropress\b|\bfrench press\b|\bפילטר\b|\bhario\b|\bkalita\b|\bmoka\b|\bקלברי\b|\bdripper\b|\bpour[\-\s]?over\b)/i.test(p.name));
+  const wooAccessories = wooEq.filter(p => /(\bscale\b|\bמשקל\b|\btamper\b|\bטמפר\b|\bkettle\b|\bקומקום\b|\bknock\b|\bwdt\b|\bתרמומטר\b|\bthermometer\b|\bdistribut(?:or|ion)\b|\bmilk pitcher\b|\bפיצ'ר\b)/i.test(p.name));
+
+  function listProducts(items: Array<{ name: string; price: number | null }>, max = 8): string {
+    return items.slice(0, max).map(p => `  • ${p.name}${p.price ? ` (₪${p.price})` : ''}`).join('\n');
+  }
+
+  const equipmentCatalogBlock = wooEq.length > 0 ? `
+
+=== קטלוג הציוד של Minuto (המוצרים שאנחנו מוכרים בפועל ב-minuto.co.il) ===
+
+${wooGrinders.length > 0 ? `**מטחנות (${wooGrinders.length}):**\n${listProducts(wooGrinders)}\n` : '**מטחנות:** אין מטחנות בקטלוג כרגע. אל תמליץ על נושאי מטחנות עד שיהיו.\n'}
+${wooMachines.length > 0 ? `**מכונות אספרסו (${wooMachines.length}):**\n${listProducts(wooMachines)}\n` : ''}
+${wooBrewing.length > 0 ? `**ציוד חליטה ידני (V60/Chemex/Aeropress/Moka וכו') (${wooBrewing.length}):**\n${listProducts(wooBrewing)}\n` : ''}
+${wooAccessories.length > 0 ? `**אביזרים (משקלים, טמפרים, קומקומים, תרמומטרים) (${wooAccessories.length}):**\n${listProducts(wooAccessories)}\n` : ''}
+
+⛔ **כלל קשיח — דוגמאות ציוד חייבות לבוא מהקטלוג הזה בלבד:**
+
+כשאתה ממליץ על נושא תוכן שכולל דוגמת ציוד (מטחנה, מכונה, אביזר), **חובה** להשתמש בשמות מוצרים מהקטלוג למעלה. **אסור מוחלט** להמליץ על:
+  ✗ Baratza Encore / Virtuoso / Sette / Forte
+  ✗ Wilfa Svart / Uniform / Aroma
+  ✗ Fellow Ode / Opus / Atmos / Stagg
+  ✗ Comandante C40
+  ✗ 1Zpresso / Kingrinder / Timemore (אלא אם הם בקטלוג למעלה)
+  ✗ כל מותג שלא מופיע בקטלוג למעלה — הקונה הישראלי לא יכול לקנות אותם דרך Minuto, ואסור לשלוח אותו למתחרים.
+
+אם נושא ההמלצה דורש דוגמת ציוד מקטגוריה שאין לנו בקטלוג, **דלג על הנושא הזה** ובחר תוכן אחר. עדיף פוסט פולים נוסף מאשר פוסט ציוד שמפרסם מתחרים בטעות.
+
+הזווית האסטרטגית: כשאנחנו ממליצים על FIORENZATO Allground (משלנו) במקום על Wilfa (לא משלנו), אנחנו (א) משאירים את ה-LTV אצלנו, (ב) מציבים את עצמנו כסמכות בציוד מקצועי לבית הקפה הישראלי.
+` : '';
 
   // ── Fetch live Instagram follower count ──────────────────────────────────
   let liveFollowerCount = 0;
@@ -4625,20 +4679,20 @@ async function runOrganicAgent(
       .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
     if (tokenRow?.access_token) {
       const pagesRes = await fetch(
-        `https://graph.facebook.com/v18.0/me/accounts?access_token=${tokenRow.access_token}`
+        `https://graph.facebook.com/v23.0/me/accounts?access_token=${tokenRow.access_token}`
       );
       const pages = await pagesRes.json();
       if (pages.data?.length) {
         const pageToken = pages.data[0].access_token;
         const pageId    = pages.data[0].id;
         const igRes = await fetch(
-          `https://graph.facebook.com/v18.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
+          `https://graph.facebook.com/v23.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
         );
         const igData = await igRes.json();
         const igId   = igData.instagram_business_account?.id;
         if (igId) {
           const acctRes = await fetch(
-            `https://graph.facebook.com/v18.0/${igId}?fields=followers_count&access_token=${pageToken}`
+            `https://graph.facebook.com/v23.0/${igId}?fields=followers_count&access_token=${pageToken}`
           );
           const acct = await acctRes.json();
           liveFollowerCount = acct.followers_count ?? 0;
@@ -4746,6 +4800,7 @@ ${CUSTOMER_JOURNEY}
 ${BUYING_MOTIVATIONS}
 ${HEBREW_COPY_RULES}
 ${vocBlock}
+${equipmentCatalogBlock}
 
 ⚠️ **חובה לפני כתיבה (חדש)**:
 לפני שאתה כותב כל פוסט, קבע במפורש:
@@ -4850,7 +4905,85 @@ GSC מראה לך מה הם מחפשים בגוגל — מחויב להמיר א
 ✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
 ✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
 ✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
-✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
+✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.
+
+=== כללי כתיבת CAPTION ב-posts_to_publish (חובה — חרוג מהם = שגיאה) ===
+
+🎯 **חוק ה"הבטחה-משלוח"** — אם ה-hook או ה-topic מבטיחים תוכן ספציפי ("3 סיבות", "5 טעויות", "סוד אחד", "מדריך מהיר", "תגלית מפתיעה", "ההבדל בין X ל-Y"), הקאפשן **חייב לספק את ההבטחה במלואה**. אסור לסיים את הקאפשן בלי לפרט את כל הסיבות/הטעויות/הצעדים. הקורא שעצר על הפוסט בגלל הכותרת — צריך לצאת עם הערך שהובטח לו, ולא רק עם השאלה שחזרה על עצמה.
+
+  ✗ אסור (תקלה אמיתית מהשטח): hook "3 סיבות שלא ידעת" + caption "🤔 למה הקפוצ'ינו שלך לא דומה לזה בבית קפה? 3 סיבות שלא ידעת" — חוזר על השאלה, **לא עונה**. הקורא יוצא מתוסכל.
+  ✓ מותר: hook "3 סיבות" + caption:
+        "לא המכונה. לא החלב. זה משהו אחר.
+
+         1. טריות הפולים — אחרי 30 יום מהקלייה הפול מאבד 50% מהארומה. בבית קפה הפול נטחן 30 שניות לפני השוט.
+         2. יחס חלב-קפה — בבית קפה זה 1:2 (אספרסו לחלב), בבית רוב האנשים שמים יותר חלב.
+         3. טמפרטורת החלב — 60–65°C ולא 75°C. חלב חם מדי שורף את הטעם.
+
+         פולים שנקלו השבוע: minuto.co.il"
+
+📏 **אורך הקאפשן**: 300–800 תווים. קצר מ-300 = לא מספק ערך (קופי "טיזר" שמתעלם מההבטחה). ארוך מ-800 = נחתך ב-IG ב-"...more". יוצא דופן יחיד: behind_the_scenes רגוע יכול לרדת ל-150–300 תווים כי לא מבטיח רשימה — מספר סיפור אווירה. save ו-share חייבים את האורך.
+
+מבנה מומלץ של caption טוב (לא מחייב אבל עובד):
+  שורה 1 — hook קצר שחוטף את הקורא (גרסה ויראלית של הכותרת)
+  [שורה ריקה]
+  גוף — התשובה/הרשימה/ההסבר במלואו (זה ה"משלוח" של ההבטחה)
+  [שורה ריקה]
+  CTA — קישור או הזמנה ספציפית (למשל: "פולים טריים מהשבוע: minuto.co.il/shop")
+
+🚫 **קוד הקאפשן — האשטגים הם שדה נפרד, לא חלק מהטקסט**:
+  המערכת מרכיבה את הפוסט הסופי כך: **caption** + שורה ריקה + **hashtags.join(' ')**.
+  לכן **אסור** לשתול האשטגים בתוך מחרוזת ה-caption — זה גורם להאשטגים להופיע **פעמיים** בפוסט הסופי (פעם בתוך הטקסט, פעם אחרי). נראה ספאמי וחאפרי.
+
+  ✗ אסור: caption: "🤔 למה הקפוצ'ינו שלך לא דומה לזה... #קפה #מינוטו #קפוצינו" (האשטגים שתולים בקאפשן)
+  ✓ מותר: caption: "🤔 למה הקפוצ'ינו שלך לא דומה לזה בבית קפה? ..." (בלי האשטגים) | hashtags: ["#קפה", "#מינוטו", "#קפוצינו", "#קפהביתי", "#אספרסו", "#specialtycoffee"]
+
+ה-caption צריך לעמוד לבדו כטקסט עברי שוטף, **בלי שום סולמית בתוכו**. כל ההאשטגים — רק במערך hashtags.
+
+📋 **כמות האשטגים**: 6–10 בערבוב של רחבים (#קפה #ספשלטי), נישתיים (#קפהבבית #פולי_קפה), ומותגיים (#מינוטו). לא פחות מ-5, לא יותר מ-12.
+
+⛔⛔⛔ **כללי עברית קשיחים ל-caption** (גוברים על כל דבר אחר; חרוג = הקאפשן נדחה) ⛔⛔⛔
+
+1. **אפס מקפים כתחליף לפסיק**. אסור em-dash (—), אסור en-dash (–), אסור " - " (רווח-מקף-רווח). זה הסימן הכי בולט של תרגום AI לעברית — קוראים ישראלים מזהים אותו בשנייה. במקום, השתמש בפסיק, נקודה, או מילת קישור ("כי", "זאת אומרת", "כלומר", "בקיצור"). מקפים מותרים רק בתחיליות עבריות (ב-, ל-, מ-, ה-, ש-) ובמילים מורכבות צמודות (בלי רווחים סביבן).
+   ✗ אסור: "האמת פשוטה יותר — ומרגיזה קצת"
+   ✓ מותר: "האמת פשוטה יותר, ומרגיזה קצת" או "האמת פשוטה יותר. ומרגיזה קצת."
+
+2. **גוף שני — תמיד רבים מכלילים (אתם/לכם/שתיתם/חזרתם/זכרתם)**, או נטרל לגמרי (מבנה ללא פנייה ישירה). אסור גוף שני יחיד-זכר (אתה / לך / שתית / חזרת / זכרת / נשבר). אנחנו פונים לכל הקהל — גברים, נשים, כולם.
+   ✗ אסור: "שתית קפה בנאפולי וחזרת הביתה נשבר?"
+   ✓ מותר: "שתיתם קפה בנאפולי וחזרתם הביתה אכזבה?" או נייטרלי: "מי שטס לנאפולי וחזר מאוכזב מהקפה בבית, מכיר את התחושה."
+   ✗ אסור: "הקפה שזכרת"
+   ✓ מותר: "הקפה שזכרתם" או "הקפה שנשאר בזיכרון"
+
+3. **"כל מי ש..." → "כל אלו ש..."** (או נסח מחדש). הביטוי "מי ש..." הוא תבנית AI מובהקת בעברית; אלו ש... זורם טבעי.
+   ✗ אסור: "כל מי שחזר מטיול עם 'הקפה שם היה אחר'"
+   ✓ מותר: "כל אלו שחזרו מטיול עם 'הקפה שם היה אחר'"
+
+4. **התאמת מין בין שם-עצם לתואר-שלו**. כל תואר חייב להתאים במין ובמספר לשם העצם שלו. אם אתה לא בטוח — בדוק לפני שאתה שולח.
+   ✗ אסור: "הקפה שלך טעם אחרת" (טעם זכר, אחרת נקבה — שגיאת התאמה)
+   ✓ מותר: "הקפה שלכם טעמו אחר" (טעם זכר → אחר זכר) או אדוורבי: "הקפה שלכם טועם אחרת" (כאן אחרת = adv., not adj.)
+   ✗ אסור: "סיום נקייה ורעננה" (סיום זכר, נקייה/רעננה נקבה)
+   ✓ מותר: "סיומת נקייה ורעננה" (סיומת נקבה → נקייה/רעננה נקבה) — "סיומת" היא המילה הנכונה לאפטר-טייסט.
+   ✗ אסור: "ממתקת בפה" ("ממתקת" זה פועל, לא תכונה)
+   ✓ מותר: "מתיקות עדינה בפה"
+
+5. **בלי clichés של AI עברי**: "ללא ספק", "חשוב לציין", "כמובן", "בסופו של דבר", "ניתן לומר", "מעניין לציין", "יש לציין", "בהחלט", "בואו נדבר על", "לסיכום", "כדאי לדעת", "חשוב להבין". אם אתה מרגיש דחף לכתוב אחת מאלה — חתוך והתחל את המשפט ישירות.
+
+6. **מובילים את מה שהקורא מרגיש, לא את המנגנון שמאחור**. הוובר טמפרטורה / יחס / קלייה הם הסבר; הקפה הטעים / השוט שזכרתם / הסיומת שנמשכת הם החוויה. תפתח עם החוויה.
+
+7. **בלי ביוש הקונה (CUSTOMER-SHAMING)** — אסור להפנות את הקורא לבדוק את השקית שלו עכשיו, את התאריך שלו, את הציוד שלו. גם אם המטרה חינוכית, זה גורם לקורא להרגיש שטעה בקנייה הקודמת. במקום: דבר על מינוטו בחיוב, לא על הקיים בשלילה.
+   ✗ אסור: "בדקו את השקית שנמצאת אצלכם עכשיו, יש עליה תאריך?"
+   ✗ אסור: "תסתכלו על הקפה שאתם שותים היום"
+   ✓ מותר: "בשקיות של מינוטו תמצאו תאריך קלייה בולט. פולים שנקלו השבוע מריחים אחרת."
+
+8. **בלי לעג להבטחות של שקיות אחרות**. גם בלי שם מותג ספציפי, לעג ל-"100% ערביקה", "איכות פרימיום", "קלייה איטלקית" מבייש קונים שקנו שקיות כאלה ושולח אותם להגן על הבחירה במקום להקשיב.
+   ✗ אסור: "'100% ערביקה' נהדר, גם פול שנקלה לפני שנה הוא ערביקה"
+   ✗ אסור: "'איכות פרימיום' לא אומר כלום"
+   ✓ מותר: ספר ישירות מה כן חשוב ("מה חשוב באמת בשקית קפה: תאריך קלייה.") בלי לפסול את ההבטחות של אחרים.
+
+9. **כתוב בעברית, לא Hebrew-English mix**. אם מילה אנגלית התגנבה ("ה-ingredient", "ה-flavor", "ה-process"), החלף לעברית ("המרכיב", "הטעם", "התהליך"). יוצאים מן הכלל: שמות מותג Minuto, מילות מפתח SEO ספציפיות שמופיעות כפי שהן בעולם (V60, Airscape, latte art). תפקיד ה-caption הוא לזרום כעברית.
+   ✗ אסור: "תאריך קלייה הוא ה-ingredient הכי חשוב"
+   ✓ מותר: "תאריך קלייה הוא המרכיב הכי חשוב"
+
+⛔ לפני שאתה מחזיר caption, בצע סריקה עצמית של 5 שניות: יש לי em-dash או " - " איפשהו? יש לי אתה/שתית/חזרת? יש לי "כל מי ש..."? יש לי התאמת מין שבורה? יש לי "בדקו את השקית שלכם"? יש לי לעג להבטחות של מתחרים? יש לי מילה אנגלית אמצע משפט עברי? אם כן, חזור ותקן.`;
 
   const gscBlock = topKeywords.length > 0
     ? topKeywords.map(k =>
@@ -5030,9 +5163,9 @@ Products (products_to_feature):
       "topic": "נושא הפוסט",
       "best_day": "ראשון",
       "best_time": "09:00",
-      "caption": "כיתוב עד 120 תווים כולל אמוג'ים",
-      "hashtags": ["#קפה", "#מינוטו"],
-      "hook": "משפט פתיחה קצר",
+      "caption": "כיתוב מלא 300–800 תווים (BTS יכול 150–300). חייב לקיים את הבטחת ה-hook/topic — אם נאמר '3 סיבות', פרט את 3 הסיבות. ⛔ ללא האשטגים בתוך הטקסט (שדה hashtags נפרד מאוחה אוטומטית). ראה כללי כתיבת CAPTION למעלה.",
+      "hashtags": ["#קפה", "#מינוטו", "#ספשלטי", "#קפה_טרי", "#פולי_קפה", "#קפהבבית"],
+      "hook": "משפט פתיחה קצר — רעיון פנימי לכותרת/וויז'ואל, לא יפורסם",
       "visual_direction": "הנחיה קצרה למצלם (single hero frame; NO multi-slide carousels, NO reels, NO stories)",
       "why_this_intent": "למה זה save/share/BTS — משפט אחד"
     }
@@ -5107,6 +5240,31 @@ Products (products_to_feature):
       if (p.type && p.type !== 'post') {
         console.log(`[organic] forcing type "${p.type}" → "post" (carousels/reels temporarily disabled)`);
         p.type = 'post';
+      }
+    }
+
+    // Hebrew caption sanitizer — deterministic regex strip. The prompt
+    // rule against em-dashes / " - " keeps failing in the wild (model
+    // emits them anyway, especially after parentheticals), so we belt-
+    // and-suspenders here exactly like runBlogWriterAgent does for the
+    // blog body. Caption ships to IG; bad dashes are unrecoverable post-
+    // publish. Same character class as the blog writer (kept in sync).
+    // PRESERVED: Hebrew prefix hyphens (ב-/ל-/מ-) and standalone "- "
+    // bullets (no leading space).
+    for (const p of parsed.posts_to_publish) {
+      if (typeof p.caption !== 'string' || p.caption.length === 0) continue;
+      const before = p.caption;
+      p.caption = before
+        .replace(/—/g, ',')   // em-dash
+        .replace(/–/g, ',')   // en-dash
+        .replace(/‒/g, ',')   // figure dash
+        .replace(/―/g, ',')   // horizontal bar
+        .replace(/‐/g, '-')   // unicode hyphen → ASCII hyphen
+        .replace(/‑/g, '-')   // non-breaking hyphen → ASCII hyphen
+        .replace(/ -- /g, ', ')    // " -- "
+        .replace(/ - /g, ', ');    // " - " (the big AI tell)
+      if (p.caption !== before) {
+        console.log(`[organic] caption dash-cleanup applied (intent=${p.intent})`);
       }
     }
   }
@@ -5369,20 +5527,21 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
         }
       }
 
-      // Carousel bag-locking: when a carousel post has no matched product
-      // reference (e.g. a generic brewing-methods guide), each slide call
-      // would otherwise pick a random fallback bag — resulting in 5
-      // different bags across one carousel. Stamp ONE fallback URL here
-      // so all slides share the same bag, giving the carousel visual
-      // continuity. Non-carousels don't suffer from this since they only
-      // make one visual-test call.
+      // Flagship-bag fallback for bag_hero posts (carousels + single posts).
+      // Any bag_hero post needs SOME bag — both visual-test (Gemini) and
+      // vertex-imagen-edit (bag_hero mode) 400 without a reference. The LLM
+      // can emit bag_hero with product_reference=null (a generic brand/
+      // "fresh batch" post — no specific SKU but still wants a bag in
+      // shot). Stamp the deterministic flagship URL so those posts render
+      // instead of erroring. no_bag posts naturally skip this (no bag
+      // wanted; dashboard drops the ref anyway).
+      // Was originally carousel-only — extended 2026-05-23 after live
+      // organic runs produced bag_hero singles with no product match.
       for (const ep of enriched) {
-        const isCarousel = ep.upstream_type === 'carousel'
-          && Array.isArray(ep.additional_slides)
-          && ep.additional_slides.length > 0;
-        if (isCarousel && !ep.reference_image_url) {
-          ep.reference_image_url = pickFallbackBagUrl();
-          console.log(`[organic] post ${ep.post_index} (carousel, no product match) → fallback bag locked: ${ep.reference_image_url}`);
+        if (ep.render_mode === 'no_bag') continue;
+        if (!ep.reference_image_url) {
+          ep.reference_image_url = MINUTO_BAG_REFERENCE_URL;
+          console.log(`[organic] post ${ep.post_index} (${ep.upstream_type}, bag_hero, no product match) → flagship bag default: ${ep.reference_image_url}`);
         }
       }
 
@@ -5395,6 +5554,13 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
       parsed.enriched_posts = [];
     }
   }
+
+  // NOTE: blog auto-draft + WP push lives in a SEPARATE edge function
+  // (`blog-auto-publish`). It reads this report row, calls blog_writer +
+  // blog_banner + blog-publish, and PATCHes report.blog_drafted back.
+  // Split because the full chain exceeds the 150s edge-runtime cap on a
+  // single invocation (research + 3 enrichments + Sonnet blog draft +
+  // banner + WP POST). Scheduled by pg_cron ~90min after organic runs.
 
   return { report: parsed, tokensUsed: inputTokens + outputTokens };
 }
@@ -5877,6 +6043,21 @@ async function generateBlogBanner(
   }
   console.log(`[banner] Resolved ${productRefs.length}/${productNames.length} product refs: ${productRefs.map(p => p.name).join(', ') || '(none)'}`);
 
+  // 1.5 Bag fallback — if NONE of the resolved products is a coffee bag
+  //     (everything matched is equipment: grinder, machine, scale, etc.),
+  //     PREPEND a real Minuto bag from the pool. Otherwise the scene
+  //     would still naturally include a coffee bag (most product photos
+  //     do) but Gemini would invent a generic one. By forcing a real
+  //     Minuto bag into the reference set, we get a faithful brand bag
+  //     in any banner that depicts coffee context.
+  const EQUIPMENT_KEYWORDS = /\b(מטחנת|מכונת|תרמומטר|משקל|טמפר|grinder|machine|scale|tamper|portafilter|pitcher|kettle|dripper|chemex|aeropress|v60|brewer|olympus|fiorenzato|allground|mahlkonig|eureka|anfim|sense|roest)\b/i;
+  const hasBag = productRefs.some(p => !EQUIPMENT_KEYWORDS.test(p.name));
+  if (!hasBag) {
+    // Deterministic flagship default, replacing previous random pool pick.
+    productRefs.unshift({ name: 'Minuto coffee bag', url: MINUTO_BAG_REFERENCE_URL });
+    console.log(`[banner] No bag in product refs — prepending flagship Minuto bag: ${MINUTO_BAG_REFERENCE_URL}`);
+  }
+
   // 2. Fetch each product image as base64. Cap at 3 — Gemini gets
   //    confused with too many concurrent references.
   const refs: Array<{ name: string; b64: string; mime: string }> = [];
@@ -5903,7 +6084,7 @@ async function generateBlogBanner(
   //    no buried clauses. Just: "here are the products, here's the scene."
   const ordinal = ['FIRST', 'SECOND', 'THIRD'];
   const productLines = refs.map((r, i) =>
-    `${ordinal[i]} attached reference image: **${r.name}**. Render this EXACT product in the scene — match its packaging, branding, colors, text, label artwork, and visual features precisely as shown in the reference. Do NOT substitute it with a generic-looking alternative, and do NOT invent new label artwork or text.`
+    `${ordinal[i]} attached reference image: **${r.name}**. The product in this image IS the product to render in the scene. Look at the image and copy it faithfully — do NOT redesign, recolor, restyle, or substitute it with a generic look-alike. The image is the source of truth; the prompt is just context.`
   ).join('\n\n');
 
   const imagePrompt = refs.length > 0
@@ -5918,7 +6099,9 @@ Compose these products together in a clean, photorealistic still-life on ${surfa
 ABSOLUTELY FORBIDDEN:
 - People, faces, hands, body parts, anything human
 - Generic / substitute products — each product MUST match its reference image exactly (no random "coffee bag", no random "grinder" — use the references)
-- Hallucinated text, labels, or branding (use only what's on the reference images)
+- Hallucinated text, labels, or branding (use only what is shown in the reference images)
+- ⛔ NO date stamps, batch numbers, "ROASTED ON" labels, expiry dates, or any numerical/dated stickers on the Minuto bag. The bag in the reference image has NO date label, so the rendered bag must NOT have one either. The only allowed text on the bag is the wordmark, the stag emblem, and the colored center-label name (Antigua / Velvet Star / Jungle Java / etc.) — exactly as shown in the reference.
+- ⛔ NO branded equipment (grinders, machines) that is not in Minuto'''s catalog. Specifically FORBIDDEN brand names visible on rendered equipment: Mahlkönig, Mahlkonig, Baratza, Wilfa, Fellow, Comandante, 1Zpresso, Kingrinder, Timemore, Sage, Breville, Gaggia, DeLonghi, Rancilio, La Pavoni — Minuto does not sell these and showing them in a Minuto banner sends customers to competitors. If a grinder/machine is needed in the scene, render the actual product from the attached reference image. If no equipment reference is attached, render generic UNBRANDED equipment (no logo, no brand text visible) instead of inventing a brand.
 - More than 2-3 supporting props beyond the referenced products (keep the scene clean — let the products be the heroes)
 - Stock-photo or AI-illustration look
 - Vehicles, landscapes, sky, animals, plants beyond a small single sprig
@@ -5965,7 +6148,7 @@ Format: 16:9 wide landscape, photorealistic.`;
 
   attempts.push({
     name: "Gemini 2.5 Flash Image",
-    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
     headers: { "Content-Type": "application/json" },
     body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
     parse: (json: any) => {
@@ -6097,32 +6280,58 @@ async function runBlogWriterAgent(params: {
   const { keyword, title, key_points, position, search_volume_signal, products_to_mention } = params;
 
   // Look up product permalinks from DB so the blog body can contain real
-  // UTM-tagged links to the Minuto store. The frontend only passes product
-  // names — we resolve them server-side to avoid leaking the full product
-  // catalog to the client and to keep the permalink as the single source
-  // of truth (if the slug changes in WooCommerce, the DB reflects it).
+  // UTM-tagged links to the Minuto store. Also pull the full equipment
+  // catalog (grinders / machines / brewing tools / accessories) so the
+  // blog body uses Minuto's actual products as examples — not generic
+  // global brands (Baratza/Wilfa/Fellow) pulled from the model's
+  // English-biased training data.
   let productLinks: Array<{ name: string; url: string }> = [];
-  if (products_to_mention && products_to_mention.length > 0) {
+  let wooEq: Array<{ name: string; price: number | null }> = [];
+  {
     const supabase = createClient(SUPA_URL, SUPA_KEY);
-    const { data: rows } = await supabase
-      .from('woo_products')
-      .select('name, permalink')
-      .in('name', products_to_mention);
-    if (rows) {
-      productLinks = rows
+    const [linksRes, eqRes] = await Promise.all([
+      products_to_mention && products_to_mention.length > 0
+        ? supabase.from('woo_products').select('name, permalink').in('name', products_to_mention)
+        : Promise.resolve({ data: [] as any[] }),
+      supabase.from('woo_products').select('name, price').not('image_url', 'is', null).order('name'),
+    ]);
+    if (linksRes.data) {
+      productLinks = linksRes.data
         .filter((r: any) => r.permalink)
         .map((r: any) => ({
           name: r.name,
           url: `${r.permalink}?utm_source=blog&utm_medium=article&utm_campaign=${encodeURIComponent(keyword)}`,
         }));
     }
+    wooEq = (eqRes.data ?? []) as any;
   }
+
+  // Bucket equipment by category via name pattern matching — same logic as
+  // runOrganicAgent so both prompts get the same catalog view.
+  const wooGrinders    = wooEq.filter(p => /(\bמטחנת\b|\bgrinder\b|allground|olympus|fiorenzato|mahlk[öo]nig|eureka|anfim|wilfa|baratza|comandante|kingrinder|1zpresso|timemore)/i.test(p.name));
+  const wooMachines    = wooEq.filter(p => /(\bמכונת אספרסו\b|\bמכונת קפה\b|\bespresso machine\b|\bstrada\b|\blinea\b|\bgs3\b|\bdelonghi\b|\bsage\b|\bbreville\b|\bgaggia\b|\brancilio\b|\bla pavoni\b|lelit|profitec|bezzera|rocket espresso)/i.test(p.name));
+  const wooBrewing     = wooEq.filter(p => /(\bv60\b|\bchemex\b|\baeropress\b|\bfrench press\b|\bפילטר\b|\bhario\b|\bkalita\b|\bmoka\b|\bקלברי\b|\bdripper\b|\bpour[\-\s]?over\b)/i.test(p.name));
+  const wooAccessories = wooEq.filter(p => /(\bscale\b|\bמשקל\b|\btamper\b|\bטמפר\b|\bkettle\b|\bקומקום\b|\bknock\b|\bwdt\b|\bתרמומטר\b|\bthermometer\b|\bdistribut(?:or|ion)\b|\bmilk pitcher\b|\bפיצ'ר\b)/i.test(p.name));
+  function listP(items: Array<{ name: string; price: number | null }>, max = 8): string {
+    return items.slice(0, max).map(p => `  • ${p.name}${p.price ? ` (₪${p.price})` : ''}`).join('\n');
+  }
+  const equipmentCatalogBlock = wooEq.length > 0 ? `
+=== קטלוג הציוד של Minuto (המוצרים שאנחנו מוכרים בפועל) ===
+
+${wooGrinders.length > 0 ? `**מטחנות:**\n${listP(wooGrinders)}\n` : '**מטחנות:** אין מטחנות בקטלוג כרגע.\n'}
+${wooMachines.length > 0 ? `**מכונות אספרסו:**\n${listP(wooMachines)}\n` : ''}
+${wooBrewing.length > 0 ? `**ציוד חליטה ידני:**\n${listP(wooBrewing)}\n` : ''}
+${wooAccessories.length > 0 ? `**אביזרים:**\n${listP(wooAccessories)}\n` : ''}
+
+⛔ **כשאתה צריך לתת דוגמת מוצר בתוך גוף המאמר** (מטחנה / מכונה / אביזר), חובה להשתמש בשמות מהקטלוג למעלה בלבד. **אסור** להזכיר Baratza / Wilfa / Fellow / Comandante / Sage / Breville / Gaggia / DeLonghi או כל מותג שלא מופיע בקטלוג שלנו — הקורא הישראלי לא יכול לקנות אותם דרכנו, ואסור לשלוח אותו למתחרים.
+` : '';
 
   // Ask Claude ONLY for the blog body in plain Markdown — no JSON, no XML, no formatting wrappers.
   // The server constructs title, slug, and meta_description itself to avoid any parsing errors.
   const systemPrompt = `אתה כותב תוכן לבלוג של Minuto Coffee, בית קלייה ספשלטי ברחובות.
 ${BUSINESS_BRIEF}
 ${ORGANIC_EXPERTISE}
+${equipmentCatalogBlock}
 
 כתוב פוסט בלוג בעברית ישראלית מדוברת. לא תרגום מאנגלית. לא שפה פורמלית.
 חובה: כתוב בלשון רבים (אתם/לכם) ולא בלשון יחיד זכר (אתה/לך). אנחנו פונים לכל הלקוחות — גברים, נשים, כולם.
@@ -6136,11 +6345,31 @@ ${ORGANIC_EXPERTISE}
 חוקי סגנון (חשוב מאוד):
 כתוב כמו אדם שמסביר לחבר, לא כמו רובוט.
 משפטים קצרים. ישירים. בלי הקדמות מיותרות.
-אסור להשתמש בתו הזה: \u2014 (הוא נראה כך: —). במקומו תשתמש בפסיק, בנקודה, או ב"כי".
+אסור להשתמש בכל סוג של מקף כתחליף לפסיק: לא em-dash (—), לא en-dash (–), ולא " - " (רווח, מקף רגיל, רווח). הדפוס " - " הזה הוא הסימן הכי בולט של תרגום AI לעברית, וקוראים ישראלים מזהים אותו מיד. במקומו תשתמש בפסיק רגיל, בנקודה, או ב"כי"/"זאת אומרת"/"כלומר". מקפים מותרים רק בתחיליות עבריות (ב-, ל-, מ-, ה-, ש-) ובמילים מורכבות צמודות (בלי רווחים סביב).
 אסור לכתוב: "ללא ספק", "חשוב לציין", "כמובן", "בסופו של דבר", "ניתן לומר", "מעניין לציין", "יש לציין", "בהחלט", "בואו נדבר על", "לסיכום".
 אל תפתח משפטים עם "כך" או "לכן" יותר מפעם אחת.
 אל תשתמש בסימן ":" אחרי כל משפט כדי להציג רשימה. כתוב בפסקות רצופות.
 המאמר צריך להישמע כאילו כתב אותו בן אדם אמיתי שמבין קפה לעומק.
+
+⛔ ⛔ ⛔ כללי מותג קשיחים — קוראים אחרונים, גוברים על כל דבר אחר ב-prompt ⛔ ⛔ ⛔
+
+ה-BUSINESS_BRIEF למעלה מזכיר Lavazza / Illy / Mauro / Bristot / Hausbrandt / Kimbo / Segafredo / Nespresso / Starbucks / נחת / Jera / אגרו וכו'. אלה שמות ל**הקשר אסטרטגי פנימי בלבד** — אסור לכתוב אותם בגוף הפוסט. הקורא הישראלי לא יראה את ה-prompt הזה; הוא יראה רק את המאמר. אם המאמר מזכיר מתחרה בשם, אתה (א) משמיץ אותו, (ב) שולח את הקורא לחפש אותו בגוגל ולקנות ממנו, (ג) מפר את brand voice של Minuto.
+
+אסור מוחלט בגוף המאמר:
+  ✗ שמות מתחרים: Lavazza / Illy / Mauro / Bristot / Hausbrandt / Kimbo / Segafredo / Nespresso / Starbucks / Costa / נחת / Jera / אגרו / Origem / Nahat / עלית / Landwer / Aldo / AM:PM / רמי לוי / שופרסל / טיב טעם. אל תזכיר אותם בשמם. בכלל.
+  ✗ "פולים מהסופר שנקלו לפני X חודשים" — מעליב את הקונה ושולח אותו לבדוק תאריך על השקית הקיימת שלו (מבייש).
+  ✗ "השקית הקיימת שלכם" / "הקפה שאתם שותים היום הוא…" — מציב את הקונה במקום לא נעים.
+  ✗ "בזבוז ההשקעה" / "השקעתם בחינם" / "אתם מבזבזים" — מאשים את הקונה.
+  ✗ "מכונה מלוכלכת" / "אתם משתמשים ב-X לא נכון" / "טעות שאתם עושים" — מבייש את הקונה.
+  ✗ השוואה מסוג "X משלנו vs Y שאתם משתמשים בו".
+  ✗ דוגמת מטחנה/מכונה/אביזר ממותג שלא בקטלוג Minuto (Baratza / Wilfa / Fellow / Comandante / Sage / Breville / Gaggia / DeLonghi וכו') — ראה קטלוג הציוד למעלה; אם אין דוגמה מתאימה בקטלוג, דלג על הזכרת מותג ספציפי.
+
+חובה (החלפה חיובית):
+  ✓ "פולים שנקלו השבוע" — חיובי, לא משווה.
+  ✓ "כשהפולים טריים, הטעם פשוט אחר" — empowerment, לא ביקורת.
+  ✓ "ככה האספרסו צריך להיראות עם פולים שנקלו היום" — הזמנה, לא תוכחה.
+  ✓ "FIORENZATO Allground" (או כל מוצר מהקטלוג שלנו) — דוגמה ספציפית מהקטלוג של Minuto.
+  ✓ אם רוצים לדבר על איכות vs פחות-איכותי, מסגרת את זה כ"קפה ספשלטי" vs "קפה מסחרי" — כקטגוריה, לא כברנד ספציפי.
 
 החזר את המאמר בפורמט Markdown בלבד. התחל ישירות עם כותרת H1. אין JSON, אין XML, אין הסברים.`;
 
@@ -6164,13 +6393,25 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
 כתוב את המאמר המלא. התחל ישירות עם # ${title} כ-H1 ראשון.`;
 
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-5", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
+  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-6", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}. Body length: ${text.length}`);
 
-  // Body is the raw Markdown — strip any em-dashes Claude snuck in despite instructions
+  // Body is the raw Markdown. Aggressively strip dash AI-tells. The
+  // " - " (space-hyphen-space) pattern is the biggest one — Claude
+  // uses it as an em-dash substitute, and Hebrew readers immediately
+  // clock it as AI-translated. Replace with comma-space.
+  // PRESERVED: Hebrew prefix hyphens (ב-, ל-, מ-) and markdown
+  // bullets (line-starting "- ") because they have no leading space —
+  // the " - " regex requires both sides to be spaces.
   const body = text.trim()
-    .replace(/\u2014/g, ',')   // em-dash → comma
-    .replace(/\u2013/g, '-');  // en-dash → regular hyphen
+    .replace(/\u2014/g, ',')           // em-dash → comma
+    .replace(/\u2013/g, ',')           // en-dash → comma
+    .replace(/\u2012/g, ',')           // figure dash → comma
+    .replace(/\u2015/g, ',')           // horizontal bar → comma
+    .replace(/\u2010/g, '-')           // unicode hyphen → regular hyphen
+    .replace(/\u2011/g, '-')           // non-breaking hyphen → regular hyphen
+    .replace(/ -- /g, ', ')          // space-double-hyphen-space → comma
+    .replace(/ - /g, ', ');          // space-hyphen-space → comma (the big AI tell)
 
   // Build slug from keyword: lowercase, strip diacritics, replace spaces with hyphens
   const slug = keyword
@@ -6402,7 +6643,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
       // Sonnet 4 (not 4.5) + 2500 tokens → keeps worker CPU + wall time under
       // Supabase's WORKER_RESOURCE_LIMIT (546). 4.5 + 4000 tokens was hitting
       // it on larger prompts with full META_ADS_EXPERTISE injected.
-      const { text: out } = await callClaude("claude-sonnet-4-20250514", sysPrompt, userMsg, { maxTokens: 3500, timeoutMs: 120_000 });
+      const { text: out } = await callClaude("claude-sonnet-4-6", sysPrompt, userMsg, { maxTokens: 3500, timeoutMs: 120_000 });
       const spec = parseClaudeJson(out);
 
       // Compliance sweep — flag violations so the frontend can show a warning,
@@ -6741,7 +6982,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           method: "POST",
           headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: "claude-sonnet-4-6",
             max_tokens: 2000,
             system: claudeSys,
             messages: [{ role: "user", content: `נתוני הקמפיינים:\n${flatData}` }],
@@ -7801,7 +8042,7 @@ ${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
         if (!payload.length) return { campaigns: [] };
         try {
           const { text } = await callClaude(
-            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-6",
             sysPrompt,
             buildUserMsg(channel, payload),
             { maxTokens: 5500, timeoutMs: 115_000 },
@@ -8492,7 +8733,7 @@ ${draftsBlock}
           method: "POST",
           headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "claude-sonnet-4-5",
+            model: "claude-sonnet-4-6",
             max_tokens: 4000,
             system: sysPromptStrategist,
             tools,
@@ -8676,7 +8917,7 @@ ${researchBlock.slice(0, 3500)}
         method: "POST",
         headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-6",
           max_tokens: 2000,
           system: sysPromptChat,
           messages,

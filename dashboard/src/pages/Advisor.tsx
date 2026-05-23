@@ -3,6 +3,54 @@ import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/context'
 import { TrendingUp, Shield, Leaf, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle, Zap } from 'lucide-react'
 
+// ── Render pipeline A/B toggle ────────────────────────────────────────────────
+// Lets the user pick which edge function renders the photographic background:
+//   'gemini' → visual-test (Gemini generateContent path; current default)
+//   'vertex' → vertex-imagen-edit (Vertex Imagen capability with Canny control)
+// Persisted in localStorage and synced across components in the same tab via
+// a custom event so flipping the pill in one panel updates the other.
+type RenderPipeline = 'gemini' | 'vertex'
+const RENDER_FN: Record<RenderPipeline, string> = {
+  gemini: 'visual-test',
+  vertex: 'vertex-imagen-edit',
+}
+function setRenderPipelineGlobal(p: RenderPipeline) {
+  localStorage.setItem('renderPipeline', p)
+  window.dispatchEvent(new CustomEvent('renderPipelineChanged', { detail: p }))
+}
+function useRenderPipeline(): [RenderPipeline, (p: RenderPipeline) => void] {
+  const [pipeline, setPipelineState] = useState<RenderPipeline>(() => {
+    const stored = localStorage.getItem('renderPipeline')
+    return stored === 'vertex' ? 'vertex' : 'gemini'
+  })
+  useEffect(() => {
+    const onChange = (e: Event) => setPipelineState((e as CustomEvent<RenderPipeline>).detail)
+    window.addEventListener('renderPipelineChanged', onChange)
+    return () => window.removeEventListener('renderPipelineChanged', onChange)
+  }, [])
+  return [pipeline, setRenderPipelineGlobal]
+}
+
+function RenderPipelineToggle({ pipeline, onChange }: { pipeline: RenderPipeline; onChange: (p: RenderPipeline) => void }) {
+  return (
+    <div className="inline-flex items-center gap-1 text-[11px]">
+      <span className="text-surface-500">מנוע:</span>
+      <div className="inline-flex bg-surface-100 rounded p-0.5">
+        <button
+          onClick={() => onChange('gemini')}
+          className={`px-2 py-0.5 rounded transition-colors ${pipeline === 'gemini' ? 'bg-white text-surface-900 shadow-sm font-semibold' : 'text-surface-600 hover:text-surface-900'}`}
+          title="Gemini generateContent (default)"
+        >Gemini</button>
+        <button
+          onClick={() => onChange('vertex')}
+          className={`px-2 py-0.5 rounded transition-colors ${pipeline === 'vertex' ? 'bg-white text-surface-900 shadow-sm font-semibold' : 'text-surface-600 hover:text-surface-900'}`}
+          title="Vertex Imagen capability with Canny control"
+        >Vertex</button>
+      </div>
+    </div>
+  )
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface AdvisorReport {
@@ -145,6 +193,11 @@ interface EnrichedPost {
   additional_slides?:   AdditionalSlide[]
   product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
   reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
+  // Render strategy chosen by the enrichment agent. 'no_bag' → bag-free
+  // editorial scene; auto-routed to vertex-imagen-edit regardless of the
+  // pipeline toggle (only that fn supports no_bag). Missing/'bag_hero' →
+  // existing behavior (gemini/vertex toggle, bag composited).
+  render_mode?:         'bag_hero' | 'no_bag'
 }
 
 interface OrganicReport {
@@ -1123,6 +1176,11 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
   const [publishing,  setPublishing]  = useState(false)
   const [publishedTo, setPublishedTo] = useState<string | null>(null)
   const [pubError,    setPubError]    = useState<string | null>(null)
+  const [renderPipeline, setRenderPipeline] = useRenderPipeline()
+  // Editable caption — seeded from the agent's caption; user can refine
+  // before publishing. Local-only (refresh discards). Hashtags stay
+  // read-only and are appended automatically at publish time.
+  const [caption, setCaption] = useState<string>(ep.caption)
 
   // Set a single index in an array-state in an immutable way.
   const setAt = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>) => (i: number, v: T) =>
@@ -1135,18 +1193,32 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
   async function generateSlide(i: number) {
     setGen(i, true); setErr(i, null); setUrl(i, null)
     try {
-      // 1. Generate the photographic background via visual-test.
-      const gen = await supabase.functions.invoke('visual-test', {
-        body: {
-          scene_brief:         slides[i].scene_brief,
-          aspect:              ep.aspect,
-          // Same product reference for every slide so the bag (when shown)
-          // is always the matched product across the whole carousel.
-          reference_image_url: ep.reference_image_url || undefined,
-        },
+      // 1. Generate the photographic background. ALL EnrichedPost renders
+      //    go through vertex-imagen-edit — it's the byte-perfect bag
+      //    pipeline (composites the real catalog PNG, never regenerates
+      //    bag text). Gemini hallucinates bag text every time and was the
+      //    source of the "Yirgachoffe / Doye Benos / Fasenda BertSo"
+      //    incident (multi-bag brief, 2026-05-23). RenderPipelineToggle is
+      //    now informational only — bag_hero + no_bag both route to Vertex.
+      const noBag    = ep.render_mode === 'no_bag'
+      const renderFn = 'vertex-imagen-edit'
+      const gen = await supabase.functions.invoke(renderFn, {
+        body: noBag
+          ? {
+              scene_brief: slides[i].scene_brief,
+              aspect:      ep.aspect,
+              render_mode: 'no_bag',
+            }
+          : {
+              scene_brief:         slides[i].scene_brief,
+              aspect:              ep.aspect,
+              // Same product reference for every slide so the bag (when shown)
+              // is always the matched product across the whole carousel.
+              reference_image_url: ep.reference_image_url || undefined,
+            },
       })
       if (gen.error) throw gen.error
-      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      if (!gen.data?.url) throw new Error(`${renderFn} returned no url`)
       let finalUrl: string = gen.data.url
 
       // 2. If this slide has an overlay_text, composite it via visual-overlay.
@@ -1190,22 +1262,21 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
     if (!allReady) return
     setPublishing(true); setPubError(null); setPublishedTo(null)
     try {
-      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
-      // meta-publish carousel branch already builds child containers + parent
-      // container per the IG Graph API two-step flow. We just give it the URLs.
-      const prep = await supabase.functions.invoke('meta-publish', {
+      // The bare body comes from local state (`caption`) so any edits the
+      // user made in the textarea above are honored. Hashtags are still
+      // appended from the agent's read-only list.
+      const fullCaption = `${caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
+      // meta-publish carousel branch builds child + parent containers per the
+      // IG Graph API two-step flow. Single-shot via publish_now so the page
+      // token from /me/accounts is reused end-to-end (see publishToInstagram
+      // comment for the Meta 100/33 trap if you split prepare/publish).
+      const pub = await supabase.functions.invoke('meta-publish', {
         body: {
-          action:   'prepare',
+          action:   'publish_now',
           type:     'carousel',
           children: imageUrls.map(u => ({ image_url: u! })),
-          caption,
+          caption: fullCaption,
         },
-      })
-      if (prep.error) throw prep.error
-      const creationId: string | undefined = prep.data?.creation_id
-      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
-      const pub = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish', creation_id: creationId },
       })
       if (pub.error) throw pub.error
       const link = pub.data?.permalink
@@ -1227,7 +1298,11 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
           🎨 קרוסל — {N} שקפים
         </div>
         <div className="text-[11px] text-surface-600">
-          <span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook} · <span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}
+          <span className="font-semibold">סוג סצנה:</span> {ep.post_type}
+          {ep.render_mode === 'no_bag' && (
+            <span className="mr-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">ללא שקית</span>
+          )}
+          {' '}· <span className="font-semibold">רגע:</span> {ep.calendar_hook} · <span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}
         </div>
       </div>
       {ep.product_reference && (
@@ -1278,6 +1353,32 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
         ))}
       </div>
 
+      <div className="space-y-1" dir="rtl">
+        <label className="text-[11px] text-surface-600 font-semibold flex items-center justify-between">
+          <span>גוף הפוסט (ניתן לעריכה לפני פרסום)</span>
+          {caption !== ep.caption && (
+            <button
+              type="button"
+              onClick={() => setCaption(ep.caption)}
+              className="text-[10px] text-indigo-600 hover:text-indigo-800 font-normal"
+            >
+              ↺ החזר למקור
+            </button>
+          )}
+        </label>
+        <textarea
+          value={caption}
+          onChange={e => setCaption(e.target.value)}
+          dir="rtl"
+          rows={8}
+          className="w-full text-[12px] leading-relaxed border border-surface-300 rounded p-2 font-sans focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+        />
+        <div className="text-[10px] text-surface-500 flex justify-between">
+          <span>{caption.length} תווים</span>
+          <span>האשטגים נוספים אוטומטית: {(ep.hashtags ?? []).length}</span>
+        </div>
+      </div>
+
       {pubError && (
         <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
           שגיאה בפרסום: {pubError}
@@ -1292,7 +1393,8 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
+        <RenderPipelineToggle pipeline={renderPipeline} onChange={setRenderPipeline} />
         <button
           onClick={generateAll}
           disabled={anyGenerating || publishing}
@@ -1338,11 +1440,16 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
   const [publishing,  setPublishing]  = useState(false)
   const [publishedTo, setPublishedTo] = useState<string | null>(null)
   const [pubError,    setPubError]    = useState<string | null>(null)
+  const [renderPipeline, setRenderPipeline] = useRenderPipeline()
   // Reel state — Veo image-to-video, polled async (1–3 min typical)
   const [videoUrl,        setVideoUrl]        = useState<string | null>(null)
   const [reelOperation,   setReelOperation]   = useState<string | null>(null)
   const [reelGenerating,  setReelGenerating]  = useState(false)
   const [reelError,       setReelError]       = useState<string | null>(null)
+  // Editable caption — seeded from the agent's caption; user can refine
+  // before publishing. Local-only (refresh discards). Hashtags stay
+  // read-only and are appended automatically at publish time.
+  const [caption,         setCaption]         = useState<string>(ep.caption)
   // The post is Reel-shaped if its aspect is 9:16. Only those get the
   // Generate Reel button — feed posts (1:1) skip the video pipeline.
   const isReelType = ep.aspect === 'reel_cover'
@@ -1390,20 +1497,31 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     setGenerating(true); setGenError(null); setImageUrl(null)
     setVideoUrl(null); setReelOperation(null); setReelError(null)
     try {
-      // 1. Generate the photographic background via visual-test.
-      const gen = await supabase.functions.invoke('visual-test', {
-        body: {
-          scene_brief: ep.scene_brief,
-          aspect: ep.aspect,
-          // Per-post bag reference — when the post is about a specific product
-          // (e.g. Dark Chocolate), the agent matched it to a woo_products row
-          // and we feed THAT bag image to Gemini instead of the default. Falls
-          // back to the locked Yirgacheffe bag if not set.
-          reference_image_url: ep.reference_image_url || undefined,
-        },
+      // 1. Generate the photographic background. The pipeline is selectable
+      //    via the RenderPipelineToggle (Gemini default / Vertex) — UNLESS
+      //    the recommendation is no_bag, which only vertex-imagen-edit
+      //    supports, so it's auto-routed there and the bag ref is dropped.
+      const noBag    = ep.render_mode === 'no_bag'
+      const renderFn = noBag ? 'vertex-imagen-edit' : RENDER_FN[renderPipeline]
+      const gen = await supabase.functions.invoke(renderFn, {
+        body: noBag
+          ? {
+              scene_brief: ep.scene_brief,
+              aspect:      ep.aspect,
+              render_mode: 'no_bag',
+            }
+          : {
+              scene_brief: ep.scene_brief,
+              aspect: ep.aspect,
+              // Per-post bag reference — when the post is about a specific product
+              // (e.g. Dark Chocolate), the agent matched it to a woo_products row
+              // and we feed THAT bag image to Gemini instead of the default. Falls
+              // back to the locked Yirgacheffe bag if not set.
+              reference_image_url: ep.reference_image_url || undefined,
+            },
       })
       if (gen.error) throw gen.error
-      if (!gen.data?.url) throw new Error('visual-test returned no url')
+      if (!gen.data?.url) throw new Error(`${renderFn} returned no url`)
       let finalUrl: string = gen.data.url
 
       // 2. If the post has overlay_text, composite it via visual-overlay.
@@ -1471,18 +1589,19 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
       // a Reel (the cover frame becomes the in-grid thumbnail Meta picks from
       // the video). Otherwise ship as a feed post with the still.
       const mode = videoUrl ? 'reel' : 'feed'
-      const caption = `${ep.caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
-      const prep = await supabase.functions.invoke('meta-publish', {
-        body: mode === 'reel'
-          ? { action: 'prepare', type: 'reel', video_url: videoUrl, caption }
-          : { action: 'prepare', type: 'feed', image_url: imageUrl, caption },
-      })
-      if (prep.error) throw prep.error
-      const creationId: string | undefined = prep.data?.creation_id
-      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
-
+      // The bare body comes from local state (`caption`) so any edits the
+      // user made in the textarea above are honored. Hashtags are still
+      // appended from the agent's read-only list.
+      const fullCaption = `${caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
+      // Single-shot publish: prepare+publish in one edge-function invocation so
+      // the page token from /me/accounts is reused end-to-end. Splitting them
+      // across two invocations triggered Meta error 100/33 because /me/accounts
+      // mints a fresh page token per call and containers are bound to the token
+      // that created them.
       const pub = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish', creation_id: creationId },
+        body: mode === 'reel'
+          ? { action: 'publish_now', type: 'reel', video_url: videoUrl, caption: fullCaption }
+          : { action: 'publish_now', type: 'feed', image_url: imageUrl, caption: fullCaption },
       })
       if (pub.error) throw pub.error
       const link = pub.data?.permalink
@@ -1501,7 +1620,13 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
         🎨 פוסט מועשר ({ep.aspect === 'reel_cover' ? 'תמונת כריכה לריל' : 'פוסט פיד'})
       </div>
       <div className="text-[11px] text-surface-600 space-y-1">
-        <div><span className="font-semibold">סוג סצנה:</span> {ep.post_type} · <span className="font-semibold">רגע:</span> {ep.calendar_hook}</div>
+        <div>
+          <span className="font-semibold">סוג סצנה:</span> {ep.post_type}
+          {ep.render_mode === 'no_bag' && (
+            <span className="mr-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">ללא שקית</span>
+          )}
+          {' '}· <span className="font-semibold">רגע:</span> {ep.calendar_hook}
+        </div>
         <div><span className="font-semibold">מתוזמן:</span> {ep.scheduled_for}</div>
         {ep.overlay_text && (
           <div className="text-amber-700"><span className="font-semibold">טקסט על התמונה:</span> {ep.overlay_text}</div>
@@ -1566,7 +1691,34 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
         </div>
       )}
 
+      <div className="space-y-1" dir="rtl">
+        <label className="text-[11px] text-surface-600 font-semibold flex items-center justify-between">
+          <span>גוף הפוסט (ניתן לעריכה לפני פרסום)</span>
+          {caption !== ep.caption && (
+            <button
+              type="button"
+              onClick={() => setCaption(ep.caption)}
+              className="text-[10px] text-indigo-600 hover:text-indigo-800 font-normal"
+            >
+              ↺ החזר למקור
+            </button>
+          )}
+        </label>
+        <textarea
+          value={caption}
+          onChange={e => setCaption(e.target.value)}
+          dir="rtl"
+          rows={8}
+          className="w-full text-[12px] leading-relaxed border border-surface-300 rounded p-2 font-sans focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+        />
+        <div className="text-[10px] text-surface-500 flex justify-between">
+          <span>{caption.length} תווים</span>
+          <span>האשטגים נוספים אוטומטית: {(ep.hashtags ?? []).length}</span>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-2 items-center">
+        <RenderPipelineToggle pipeline={renderPipeline} onChange={setRenderPipeline} />
         <button
           onClick={generateVisual}
           disabled={generating || publishing || reelGenerating}

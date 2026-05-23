@@ -573,6 +573,167 @@ async function findRefillCandidates(
 }
 
 /**
+ * Find customers who abandoned a checkout — placed a WooCommerce order but
+ * never completed payment (status='pending'). Used by both abandoned_cart_1
+ * (day-1 reminder) and abandoned_cart_2 (day-4 follow-up). Pass
+ * prerequisiteTrigger = null for cart_1, or 'abandoned_cart_1' for cart_2 —
+ * cart_2 only fires for orders that actually received cart_1.
+ *
+ * Data source — why we query WC live instead of woo_orders:
+ *   woo-orders-sync only fetches completed+processing orders (the owner's
+ *   "only real revenue" invariant; see woo-orders-sync line 181). Pending
+ *   orders never land in our DB. Adding them to the sync would pollute
+ *   RFM, the marketing-advisor, and the dashboard's order counts — all of
+ *   which assume woo_orders = paid orders. Going direct to the WC REST
+ *   API keeps that invariant intact and contains the abandoned-cart
+ *   logic to this function.
+ *
+ * Recovery exclusion (applied to both cart_1 and cart_2):
+ *   If the same customer has a completed/processing order in woo_orders
+ *   dated on or after their pending order, they already came back on
+ *   their own — skip. Cheaper to over-skip than to spam.
+ *
+ * Prerequisite check (cart_2 only):
+ *   Only include orders that already have a 'sent' row with the
+ *   prerequisite trigger and matching woo_order_id. Prevents cart_2 from
+ *   firing alone when cart_1 was disabled/failed — sending "still thinking?"
+ *   without a prior "did you forget?" reads as rude.
+ *
+ * Two-email cap is enforced by the per-order unique index:
+ *   uniq_automation_per_customer_per_order on
+ *   (trigger_type, customer_email, woo_order_id). Each cart can receive
+ *   at most one row per trigger type, so cart_1 + cart_2 = two emails max.
+ *
+ * Consent gate:
+ *   NO opted-in filter. Owner's explicit choice — the customer handed
+ *   us their email to complete a purchase, so recovery is the industry-
+ *   standard exception to the marketing-consent rule used by
+ *   first_purchase / refill_reminder.
+ *
+ * Operator caveat baked into reality: WooCommerce auto-cancels pending
+ * orders after `hold_stock_minutes` (default 60 min). If that's set
+ * low, orders flip 'pending' → 'cancelled' before delay_days passes
+ * and this finder returns zero candidates. Diagnose via:
+ *   POST /email-automation-scheduler {"dry_run": true}
+ * which logs the WC fetch count.
+ */
+async function findAbandonedCartCandidates(
+  supabase: any,
+  delayDays: number,
+  maxLookbackDays: number,
+  prerequisiteTrigger: string | null,
+): Promise<FirstOrderCandidate[]> {
+  if (maxLookbackDays < delayDays) {
+    console.warn(`[email-automation] abandoned_cart: max_lookback_days (${maxLookbackDays}) < delay_days (${delayDays}) — no orders can ever qualify. Fix the template.`)
+    return []
+  }
+  if (!WOO_KEY || !WOO_SECRET) {
+    throw new Error('abandoned_cart: WOO_KEY/WOO_SECRET not configured')
+  }
+
+  // Window: order placed between (now - maxLookback) and (now - delay).
+  // ISO timestamps because the WC `after` / `before` filters take ISO 8601.
+  const upper = new Date(Date.now() - delayDays * 86400_000).toISOString()
+  const lower = new Date(Date.now() - maxLookbackDays * 86400_000).toISOString()
+
+  // Auth via query string for the same reason createCoupon does — some
+  // WAF/CDN setups strip the Authorization header on /wp-json requests.
+  // Read-only GET so no POST-to-GET 301 risk here, but consistency is
+  // useful for future debugging.
+  const params = new URLSearchParams({
+    status: 'pending',
+    after: lower,
+    before: upper,
+    per_page: '100',
+    orderby: 'date',
+    order: 'asc',
+    _fields: 'id,date_created,status,billing',
+  })
+  const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+  const res = await fetch(url)
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`abandoned_cart: WC orders fetch ${res.status}: ${t.slice(0, 300)}`)
+  }
+  const orders = await res.json()
+  if (!Array.isArray(orders)) {
+    throw new Error(`abandoned_cart: WC returned non-array (likely auth/redirect failure): ${JSON.stringify(orders).slice(0, 200)}`)
+  }
+  console.log(`[email-automation] abandoned_cart: WC returned ${orders.length} pending orders in window [${lower}, ${upper}]`)
+
+  // Normalize to internal candidate shape. Drop rows without an email
+  // (some pending orders, e.g. created via admin, won't have one).
+  type PendingOrder = { woo_order_id: number; email: string; first_name: string | null; order_date: string }
+  const pending: PendingOrder[] = []
+  for (const o of orders) {
+    const email = ((o?.billing?.email ?? '') as string).toLowerCase().trim()
+    if (!email) continue
+    pending.push({
+      woo_order_id: o.id,
+      email,
+      first_name: (o?.billing?.first_name ?? null) || null,
+      order_date: String(o.date_created ?? '').split('T')[0],
+    })
+  }
+  if (pending.length === 0) return []
+
+  // Recovery check: any paid (completed/processing) order from the same
+  // email on/after the pending order's date → they came back on their
+  // own. woo_orders only stores paid orders, so a match here is recovery.
+  const emails = Array.from(new Set(pending.map(p => p.email)))
+  const { data: paidRows, error: paidErr } = await supabase
+    .from('woo_orders')
+    .select('customer_email, order_date')
+    .in('status', ['completed', 'processing'])
+    .in('customer_email', emails)
+  if (paidErr) throw new Error(`abandoned_cart paid-orders query: ${paidErr.message}`)
+
+  // Track each email's latest paid-order date (YYYY-MM-DD is
+  // lexicographically sortable so string compare is safe).
+  const latestPaid = new Map<string, string>()
+  for (const r of (paidRows ?? [])) {
+    const e = (r.customer_email ?? '').toLowerCase().trim()
+    if (!e || !r.order_date) continue
+    const prev = latestPaid.get(e)
+    if (!prev || r.order_date > prev) latestPaid.set(e, r.order_date)
+  }
+
+  // Prerequisite check (cart_2 only): require a prior 'sent' row with the
+  // prerequisite trigger and matching woo_order_id. Pre-fetch all matching
+  // rows once instead of querying per candidate.
+  let prereqOrderIds: Set<number> | null = null
+  if (prerequisiteTrigger) {
+    const pendingIds = pending.map(p => p.woo_order_id)
+    const { data: prereqRows, error: prereqErr } = await supabase
+      .from('email_automations')
+      .select('woo_order_id')
+      .eq('trigger_type', prerequisiteTrigger)
+      .eq('status', 'sent')
+      .in('woo_order_id', pendingIds)
+    if (prereqErr) throw new Error(`abandoned_cart prerequisite query: ${prereqErr.message}`)
+    prereqOrderIds = new Set<number>()
+    for (const r of (prereqRows ?? [])) {
+      if (typeof r.woo_order_id === 'number') prereqOrderIds.add(r.woo_order_id)
+    }
+    console.log(`[email-automation] abandoned_cart: ${prereqOrderIds.size}/${pending.length} pending orders satisfy prerequisite '${prerequisiteTrigger}'`)
+  }
+
+  const candidates: FirstOrderCandidate[] = []
+  for (const p of pending) {
+    const lp = latestPaid.get(p.email)
+    if (lp && lp >= p.order_date) continue   // already recovered — skip
+    if (prereqOrderIds && !prereqOrderIds.has(p.woo_order_id)) continue  // cart_1 not sent yet
+    candidates.push({
+      customer_email: p.email,
+      customer_name: p.first_name,
+      woo_order_id: p.woo_order_id,
+      order_date: p.order_date,
+    })
+  }
+  return candidates
+}
+
+/**
  * Process a single automation: check it's not already done, generate
  * coupon, render email, send via Resend, log result.
  */
@@ -772,6 +933,10 @@ serve(async (req) => {
       candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else if (tmpl.trigger_type === 'refill_reminder') {
       candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+    } else if (tmpl.trigger_type === 'abandoned_cart_1') {
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null)
+    } else if (tmpl.trigger_type === 'abandoned_cart_2') {
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1')
     } else {
       summary.runs.push({ trigger: tmpl.trigger_type, error: 'no handler implemented' })
       continue
