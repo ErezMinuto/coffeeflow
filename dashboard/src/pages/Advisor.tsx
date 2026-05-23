@@ -1266,21 +1266,17 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
       // user made in the textarea above are honored. Hashtags are still
       // appended from the agent's read-only list.
       const fullCaption = `${caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
-      // meta-publish carousel branch already builds child containers + parent
-      // container per the IG Graph API two-step flow. We just give it the URLs.
-      const prep = await supabase.functions.invoke('meta-publish', {
+      // meta-publish carousel branch builds child + parent containers per the
+      // IG Graph API two-step flow. Single-shot via publish_now so the page
+      // token from /me/accounts is reused end-to-end (see publishToInstagram
+      // comment for the Meta 100/33 trap if you split prepare/publish).
+      const pub = await supabase.functions.invoke('meta-publish', {
         body: {
-          action:   'prepare',
+          action:   'publish_now',
           type:     'carousel',
           children: imageUrls.map(u => ({ image_url: u! })),
           caption: fullCaption,
         },
-      })
-      if (prep.error) throw prep.error
-      const creationId: string | undefined = prep.data?.creation_id
-      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
-      const pub = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish', creation_id: creationId },
       })
       if (pub.error) throw pub.error
       const link = pub.data?.permalink
@@ -1597,17 +1593,15 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
       // user made in the textarea above are honored. Hashtags are still
       // appended from the agent's read-only list.
       const fullCaption = `${caption}\n\n${(ep.hashtags ?? []).join(' ')}`.trim()
-      const prep = await supabase.functions.invoke('meta-publish', {
-        body: mode === 'reel'
-          ? { action: 'prepare', type: 'reel', video_url: videoUrl, caption: fullCaption }
-          : { action: 'prepare', type: 'feed', image_url: imageUrl, caption: fullCaption },
-      })
-      if (prep.error) throw prep.error
-      const creationId: string | undefined = prep.data?.creation_id
-      if (!creationId) throw new Error(`prepare returned no creation_id: ${JSON.stringify(prep.data).slice(0, 200)}`)
-
+      // Single-shot publish: prepare+publish in one edge-function invocation so
+      // the page token from /me/accounts is reused end-to-end. Splitting them
+      // across two invocations triggered Meta error 100/33 because /me/accounts
+      // mints a fresh page token per call and containers are bound to the token
+      // that created them.
       const pub = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish', creation_id: creationId },
+        body: mode === 'reel'
+          ? { action: 'publish_now', type: 'reel', video_url: videoUrl, caption: fullCaption }
+          : { action: 'publish_now', type: 'feed', image_url: imageUrl, caption: fullCaption },
       })
       if (pub.error) throw pub.error
       const link = pub.data?.permalink
