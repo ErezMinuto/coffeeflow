@@ -377,6 +377,43 @@ export const SCENE_PRESETS: Record<string, string> = {
     'brewing. A single Minuto coffee bag in the deep-shadowed background. ' +
     'Single warm window light from upper-right. Generous shadow across the ' +
     'right side of the frame.',
+
+  roaster_bts:
+    'A SCENE inside the Minuto roastery in the early morning, documentary ' +
+    'style. The Coffee-Tech Engineering drum roaster occupies the LEFT half ' +
+    'of the frame — FULLY MATTE BLACK BODY, black panels, black hopper, ' +
+    'black drum face, only the small round glass viewport on the drum face ' +
+    'glowing warm amber from the flame inside. In the lower-right third: a ' +
+    'shallow round COOLING TRAY of fresh light-to-medium-roasted beans ' +
+    '(pecan-shell brown, matte, NEVER dark, NEVER glossy) spread across the ' +
+    'perforated metal floor, the cooling-tray arm visible mid-rotation. ' +
+    'Soft warm steam rises off the bean pile — thin, low, not aggressive. ' +
+    'The bean color is the hero — visible, in focus. NO BAG anywhere in ' +
+    'frame. Surface around the roaster: raw concrete floor with subtle ' +
+    'stains. Single warm tungsten work-light from the upper-right roastery ' +
+    'ceiling, creating long shadows toward the lower-left and leaving the ' +
+    'background in deep shadow. No people, no faces. Kodak Portra 400 grain, ' +
+    'editorial documentary feel. NEVER render a vintage Probat copper ' +
+    'roaster, NEVER an antique brass roaster, NEVER a white or cream ' +
+    'roaster, NEVER wood-trim — modern matte-black only.',
+
+  cafe_bts:
+    'A SCENE behind the bar at the Minuto cafe, documentary style. The ' +
+    'LA MARZOCCO STRADA X 2-group espresso machine occupies the LEFT half ' +
+    'of the frame in profile — slate-gray body, distinctive pale-blue ' +
+    'glass side wing catching the light. A single portafilter is locked ' +
+    'into the left group head, an espresso pour mid-stream into a small ' +
+    'thick-walled ceramic cup below — the amber-mahogany stream is thin ' +
+    'and steady, a small puddle of crema forming. Hands and barista body ' +
+    'are partially cropped at the upper-left edge (no face visible, just ' +
+    'the working hand on the portafilter handle). In the lower-right ' +
+    'third: a clean bar surface (dark stained walnut or polished concrete) ' +
+    'with a small pile of light-to-medium-roasted whole beans (light ' +
+    'cinnamon brown, matte) scattered on a hand-thrown ceramic dish. NO ' +
+    'BAG in frame. Single warm tungsten bar light from the upper-right, ' +
+    'creating soft highlights on the machine and long shadows. Deep ' +
+    'shadow in the background. Kodak Portra 400 grain, editorial ' +
+    'documentary feel.',
 }
 
 export const ASPECT_TO_RATIO = {
@@ -393,4 +430,6 @@ export const SCENE_PRESET_SUMMARIES = {
   pour_shot:       'hand pouring from a Hario server into a ceramic cup, with a single bag soft in the background; ritual / brewing / freshness',
   origin_still:    'single bag on a lime plaster surface with scattered medium-roast beans and a ceramic cup beside; origin story / single-origin focus',
   brewing_setup:   'pour-over rig blooming with a brass kettle cropped from the edge and the single bag soft in the background; method / equipment / education',
+  roaster_bts:     'matte-black Coffee-Tech drum roaster left, fresh-roasted beans on cooling tray with light steam right; NO bag; roastery BTS / roast-day / craft moments',
+  cafe_bts:        'La Marzocco Strada X bar machine left, espresso pouring into ceramic cup with barista hands cropped, whole beans on bar right; NO bag; cafe BTS / espresso ritual / bar craft',
 } as const
