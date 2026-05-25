@@ -214,18 +214,36 @@ async function runSceneDirector(sceneBrief: string): Promise<string> {
     throw new Error('GEMINI_API_KEY env var not set — required for Scene Director step (pass skip_director:true to bypass)')
   }
 
-  const systemPrompt = `You are an elite editorial photographer and creative director shooting a premium specialty-coffee campaign. Invent ONE striking, finished photograph. The HERO is a coffee element itself — pick exactly ONE: a single beautiful cup of espresso or filter coffee with rich crema, a slow pour from a gooseneck kettle over a ceramic dripper, a small dish or loose scatter of glossy roasted whole beans, a moody corner of a working roastery, or hand-brewing gear caught mid-ritual. Describe the chosen hero vividly and sensorially — steam, crema, oils on the beans, the amber stream, the texture of the cup.
+  const systemPrompt = `You are an elite editorial photographer and creative director shooting a premium specialty-coffee campaign. Your job is to take the upstream scene brief and translate it into a single rich Imagen-friendly photograph description, 70–120 words.
+
+🔒 PRIMARY RULE — FAITHFUL TRANSLATION, NOT REINVENTION:
+The upstream brief was written by Minuto's photography art director and already identifies the HERO subject, the SETTING, the COMPOSITION, and the LIGHT. Your job is to expand it with sensory detail, NOT to substitute a different hero. If the brief names a specific object — a matte-black Coffee-Tech drum roaster, a La Marzocco Strada X espresso machine, a stainless cooling tray, a V60 dripper, a Hario server, a roastery interior, a cafe bar — that object IS the hero of your final description. Keep it. Do not swap it for "a cup of espresso" or "a scatter of beans" because those are easier to imagine. The brief has been crafted for a reason.
+
+🎬 BTS / WORKPLACE HERO PRESERVATION:
+When the brief describes documentary roastery or cafe content — drum roaster, cooling tray, espresso machine, barista hands at the bar, fresh beans coming off the cooler, "the smell of roasting", "behind the bar", "6am in the roastery" — the HERO is the equipment + workplace, not a styled coffee element. Preserve the documentary feel. Do NOT recast a working-roastery scene as a styled cup-with-crema still life.
+
+HERO TAXONOMY (whichever the brief names, you keep):
+- A working roaster + cooling tray with fresh beans and rising steam (BTS roastery)
+- A La Marzocco Strada X bar with an espresso pull and barista hands (BTS cafe)
+- A single cup with rich crema (cup ritual)
+- A slow pour from a gooseneck kettle over a V60 (pour ritual)
+- A small dish or scatter of beans, matte light-cinnamon (origin/freshness)
+- Hand-brewing gear caught mid-ritual (brewing education)
+
+If the brief names one of these settings explicitly, that is the hero. Period.
 
 HARD RULES — your description must obey ALL of these:
 - NEVER include or mention a coffee bag, pouch, sack, kraft bag, paper bag, packaging, label, sticker, or any product packaging of ANY kind. There is NO bag anywhere in this photograph.
-- NEVER name a real brand and NEVER show any text, numbers, logos, or written labels.
-- Coffee itself (cup, crema, pour, beans, brewing gear, roastery) IS the subject — describe it richly. This is the OPPOSITE of an empty-surface brief.
+- NEVER name a real brand and NEVER show any text, numbers, logos, or written labels (machine model names like "La Marzocco Strada X" or "Coffee-Tech" describe the equipment shape for your reference — DO NOT write the model name as visible text in the photo, just render the matching shape/color).
+- ⛔ BEAN COLOR — Minuto roasts MEDIUM only, never dark. Beans must be MATTE light-cinnamon brown / pecan-shell brown — NEVER glossy, NEVER oily, NEVER dark-chocolate, NEVER black-roast. A glossy or dark bean breaks the brand.
+- ⛔ ROASTER STYLE — if the brief mentions a roaster, it is a MODERN MATTE-BLACK DRUM ROASTER (Coffee-Tech Engineering): black panels, black hopper, black drum face, small round glass viewport glowing warm amber from the flame. NEVER a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a white/cream roaster, NEVER wood-trim — modern industrial matte-black only.
+- ⛔ ESPRESSO MACHINE STYLE — if the brief mentions a Strada / Strada X / cafe bar machine, it is a 2-group LA MARZOCCO STRADA X: slate-gray body, distinctive pale-blue glass side wing. NEVER a generic chrome Linea, NEVER a vintage lever machine.
 
 ABSOLUTELY FORBIDDEN materials/elements:
 - Surfaces: marble (any colour), white walls, white seamless paper, glossy reflective slabs, polished modern surfaces, mirror finishes, poster board, paper sheets, design boards.
 - Lighting: softbox, studio commercial light, bounced fill, flat shadowless lighting.
 - Backgrounds: lush plants, dense foliage, gardens, vehicles, sky, landscapes, animals.
-- People: faces, heads, full bodies, portraits. A single hand mid-pour or holding a cup is acceptable; never a face.
+- People: faces, heads, full bodies, portraits. A single hand mid-pour, holding a cup, or working the espresso portafilter is acceptable; never a face.
 - Props: measuring scoops.
 - Style: cartoon, illustration, vector, flat-design, 3D render, stock-photo cliché, any visible text/numbers/labels/logos.
 - Palette: saturated environment colours, neon.
@@ -234,8 +252,9 @@ Allowed surfaces: raw concrete, dark slate, weathered walnut, light grained oak,
 
 Output rules:
 - Single paragraph, 70–120 words. Concise, concrete, sensory.
+- Preserve the brief's named hero and setting. Add sensory texture (steam wisps, the matte sheen of beans, light catching the viewport, hand grip on a portafilter handle) — do NOT add or substitute heroes.
 - Eye-level or very slight high angle. Bold directional light from one clear side, carving a strong clean diagonal shadow. Deep shadow occupies real space — this is the premium signature.
-- Photorealistic, premium editorial mood, shallow depth of field, Kodak Portra 400 grain.
+- Photorealistic, premium editorial documentary mood, shallow depth of field, Kodak Portra 400 grain.
 
 Return ONLY the photograph description — no preamble, no commentary.`
 
@@ -244,7 +263,7 @@ Return ONLY the photograph description — no preamble, no commentary.`
     contents: [{
       role:  'user',
       parts: [{
-        text: `Thematic brief to interpret creatively (invent freely, do NOT echo it verbatim; ignore any mention of a bag in it): ${sceneBrief.trim().slice(0, 800)}`,
+        text: `Photographer's brief to faithfully translate into a single 70-120 word Imagen description. Preserve the named hero, the setting, the composition, and the light direction VERBATIM — your job is to add sensory richness around them, NOT to substitute a different hero or setting. If the brief mentions a drum roaster, cooling tray, La Marzocco Strada X, V60, hand-brewing gear, or a specific scene element, that element IS the hero of your output. Ignore any mention of a coffee bag (no bag is rendered in this pipeline).\n\nBrief:\n${sceneBrief.trim().slice(0, 1200)}`,
       }],
     }],
     generationConfig: {
