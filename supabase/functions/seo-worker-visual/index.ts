@@ -407,7 +407,7 @@ async function releaseForParentNotReady(
       .update({
         status:       'pending',
         attempts:     restoredAttempts,
-        locked_by:    null,
+        worker_id:    null,
         locked_until: null,
         error_msg:    `[deferred] ${reason}`,
       })
