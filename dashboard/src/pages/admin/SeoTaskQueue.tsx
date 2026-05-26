@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2 } from 'lucide-react'
+import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 // Left-panel: live pending-task queue.
@@ -131,13 +131,28 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
             {tasks.map(t => {
               const style = STATUS_STYLES[t.status] ?? STATUS_STYLES.pending
               const StatusIcon = style.icon
+              // HITL flag set by seo-worker-visual when the QA loop caps
+              // without passing. The image is attached best-effort but
+              // a human should review and decide whether to re-queue.
+              const reviewRequired = t.result_data?.review_required === true
               return (
-                <li key={t.id} className="p-3 text-xs hover:bg-surface-50 transition-colors">
+                <li
+                  key={t.id}
+                  className={`p-3 text-xs hover:bg-surface-50 transition-colors ${reviewRequired ? 'bg-amber-50/40 border-l-2 border-l-amber-400' : ''}`}
+                >
                   <div className="flex items-start gap-2">
                     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${style.bg} ${style.text} font-medium shrink-0`}>
                       <StatusIcon size={11} className={t.status === 'processing' ? 'animate-spin' : ''} />
                       {t.status}
                     </span>
+                    {reviewRequired && (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-medium shrink-0"
+                        title="QA loop didn't pass after 3 attempts — review the rendered image"
+                      >
+                        <Flag size={11} /> review
+                      </span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-surface-900 truncate">
                         {t.task_type}{t.task_subtype ? `:${t.task_subtype}` : ''}
@@ -214,13 +229,79 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
 {JSON.stringify(viewing.brief_data, null, 2)}
                 </pre>
               </div>
-              {viewing.result_data && (
+              {viewing.result_data && Array.isArray((viewing.result_data as any).qa_attempts) && (viewing.result_data as any).qa_attempts.length > 0 && (
                 <div>
-                  <div className="font-semibold text-surface-700 mb-1">Result</div>
-                  <pre className="bg-surface-50 p-3 rounded text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
+                  <div className="font-semibold text-surface-700 mb-2 flex items-center gap-2">
+                    QA attempts ({(viewing.result_data as any).qa_attempts.length})
+                    {(viewing.result_data as any).review_required && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium">
+                        <Flag size={10} /> needs human review
+                      </span>
+                    )}
+                    {(viewing.result_data as any).qa_passed && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-900 text-[10px] font-medium">
+                        <CheckCircle2 size={10} /> passed
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    {((viewing.result_data as any).qa_attempts as Array<{
+                      attempt: number
+                      image_url: string
+                      critique: { passes: boolean; missing: string[]; issues: string[]; suggested_adjustment: string }
+                    }>).map(a => (
+                      <div key={a.attempt} className="border border-surface-200 rounded overflow-hidden">
+                        <div className="flex">
+                          <a href={a.image_url} target="_blank" rel="noreferrer" className="shrink-0">
+                            <img
+                              src={a.image_url}
+                              alt={`QA attempt ${a.attempt}`}
+                              className="w-32 h-32 object-cover bg-surface-100"
+                              loading="lazy"
+                            />
+                          </a>
+                          <div className="flex-1 p-2 text-[11px] min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-surface-700">Attempt {a.attempt}</span>
+                              {a.critique.passes ? (
+                                <span className="text-green-700 inline-flex items-center gap-0.5">
+                                  <CheckCircle2 size={11} /> passed
+                                </span>
+                              ) : (
+                                <span className="text-red-700 inline-flex items-center gap-0.5">
+                                  <AlertCircle size={11} /> failed
+                                </span>
+                              )}
+                            </div>
+                            {a.critique.missing?.length > 0 && (
+                              <div className="text-red-800 mb-1">
+                                <span className="font-medium">Missing:</span> {a.critique.missing.join(', ')}
+                              </div>
+                            )}
+                            {a.critique.issues?.length > 0 && (
+                              <div className="text-amber-800 mb-1">
+                                <span className="font-medium">Issues:</span> {a.critique.issues.join(' · ')}
+                              </div>
+                            )}
+                            {a.critique.suggested_adjustment && (
+                              <div className="text-surface-600 italic">
+                                Next: {a.critique.suggested_adjustment}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {viewing.result_data && (
+                <details>
+                  <summary className="cursor-pointer text-[11px] text-surface-500 hover:text-surface-700">Raw result_data</summary>
+                  <pre className="bg-surface-50 p-3 rounded text-[11px] overflow-x-auto whitespace-pre-wrap break-all mt-1">
 {JSON.stringify(viewing.result_data, null, 2)}
                   </pre>
-                </div>
+                </details>
               )}
             </div>
           </div>
