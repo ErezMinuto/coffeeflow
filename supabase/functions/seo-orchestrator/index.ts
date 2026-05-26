@@ -192,16 +192,22 @@ serve(async (req: Request): Promise<Response> => {
     // that have parent_task_index / depends_on_index references.
     let insertedRows: SeoTaskRow[] = []
     if (emittedTasks.length > 0) {
-      const newTasks: NewSeoTask[] = emittedTasks.map(et => ({
-        task_type:           et.task_type,
-        task_subtype:        et.task_subtype ?? null,
-        brief_data:          et.brief_data,
-        rationale:           et.rationale ?? '',
-        orchestrator_run_id: runId,
-        scheduled_for: et.scheduled_offset_hours
-          ? new Date(Date.now() + et.scheduled_offset_hours * 3600 * 1000).toISOString()
-          : undefined,
-      }))
+      const newTasks: NewSeoTask[] = emittedTasks.map(et => {
+        const base: NewSeoTask = {
+          task_type:           et.task_type,
+          task_subtype:        et.task_subtype ?? null,
+          brief_data:          et.brief_data,
+          rationale:           et.rationale ?? '',
+          orchestrator_run_id: runId,
+        }
+        // Omit scheduled_for entirely (don't set undefined — Supabase
+        // serializes undefined as null and the column is NOT NULL) so
+        // the column's DEFAULT NOW() fires when no offset is set.
+        if (et.scheduled_offset_hours) {
+          base.scheduled_for = new Date(Date.now() + et.scheduled_offset_hours * 3600 * 1000).toISOString()
+        }
+        return base
+      })
       insertedRows = await insertTasks(supabase, newTasks)
       console.log(`[seo-orchestrator] first-pass insert: ${insertedRows.length} rows`)
 
@@ -273,7 +279,7 @@ function buildStrategistUserMessage(args: {
   snapshot:        MetricsSnapshot
   recentTasks:     SeoTaskRow[]
   blogPosts:       Array<{ title: string; url: string; published_at: string | null }>
-  catalog:         Array<{ name: string; price: number | null; permalink: string | null; packed_stock: number | null }>
+  catalog:         Array<{ name: string; price: number | null; permalink: string | null; stock_status: string | null }>
   inventoryAlerts: Array<{ name: string; packed_stock: number; state: string }>
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts } = args
@@ -337,7 +343,7 @@ function buildStrategistUserMessage(args: {
   const catalogBlock = catalog.length === 0
     ? '  (catalog empty)'
     : catalog.slice(0, 50).map(p => {
-        const stock = p.packed_stock != null ? ` stock:${p.packed_stock}` : ''
+        const stock = p.stock_status ? ` ${p.stock_status}` : ''
         const price = p.price ? ` ₪${p.price}` : ''
         return `  • ${p.name}${price}${stock}`
       }).join('\n')

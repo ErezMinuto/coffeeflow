@@ -41,13 +41,16 @@ export interface WooProduct {
   price: number | null
   permalink: string | null
   image_url: string | null
-  packed_stock: number | null
+  // woo_products tracks WooCommerce status as text ('instock' | 'outofstock' |
+  // 'onbackorder'), NOT a numeric count. For numeric stock levels, see
+  // fetchInventoryAlerts which reads the internal `products` table.
+  stock_status: string | null
 }
 
 export async function fetchActiveCatalog(supabase: SupabaseClient): Promise<WooProduct[]> {
   const { data, error } = await supabase
     .from('woo_products')
-    .select('name, price, permalink, image_url, packed_stock')
+    .select('name, price, permalink, image_url, stock_status')
     .not('image_url', 'is', null)
     .order('name')
   if (error) throw new Error(`fetchActiveCatalog failed: ${error.message}`)
