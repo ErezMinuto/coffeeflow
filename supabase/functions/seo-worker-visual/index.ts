@@ -37,6 +37,52 @@
 //
 // 4. ON FAILURE: linear retry via markTaskFailed (same semantics as
 //    Session A's writer worker). attempts>=max_attempts flips to 'failed'.
+//
+// ─────────────────────────────────────────────────────────────────────────
+// TODO (future upgrade — two-step composite pipeline for "machine + Minuto
+// bag in one frame")
+// ─────────────────────────────────────────────────────────────────────────
+// Current state (2026-05-26): the autonomous escalation ladder produces
+// the BEST AVAILABLE outcome for a multi-subject scene brief, but cannot
+// satisfy "render a Cafelat Robot machine AND a byte-perfect Minuto bag
+// together in the same frame". Each route has a structural limitation:
+//
+//   • bag_hero (Vertex Imagen SUBJECT customization): centers on the
+//     supplied product reference, drops every co-subject. Renders the
+//     real Minuto bag with sharp label artwork but no other elements.
+//   • no_bag (Gemini Image): renders any scene cleanly but cannot use
+//     the real Minuto bag — at best it hallucinates a generic non-Minuto
+//     bag (caught by QA + stripped on attempt 3), at worst it draws
+//     other coffee imagery that violates render_mode.
+//
+// FIX: a two-step composite pipeline:
+//   Step 1: render the scene via no_bag (Gemini), describing the bag's
+//           position/orientation but NOT its branding ("a coffee bag
+//           stands on the right side of the countertop, label facing
+//           camera, partially in shadow").
+//   Step 2: programmatic composite of the real Minuto bag PNG (from
+//           `woo_products` lookup, same as bag_hero today) onto the
+//           rendered scene at the position Gemini drew the generic bag.
+//           The existing `supabase/functions/_shared/compositor.ts`
+//           (compositeProductIntoScene) already does this — it's used
+//           inside vertex-imagen-edit's handleHybridComposite but not
+//           imported standalone. Lift it into a new `render_mode:
+//           'scene_with_bag'` route here, OR call vertex-imagen-edit
+//           with a new flag that does scene-then-composite without the
+//           SUBJECT customization step.
+//
+// COMPLEXITY: needs bag-region detection in the Gemini output (probably
+// a Claude vision call to find bounding box) OR a deterministic region
+// the strategist agrees to use in scene_briefs. The existing compositor
+// uses a fixed BAG_REGION which is hero-sized — not appropriate for a
+// scene where the bag is one of several subjects. New region sizing
+// logic required.
+//
+// PRIORITY: low until the strategist starts emitting briefs that
+// specifically need this (product-recommendation articles where the
+// bag MUST be in-frame alongside other subjects). The QA loop's HITL
+// surface catches these today — admin reviews and decides whether to
+// re-queue with a hand-crafted brief or ship the machine-only render.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import {
