@@ -14,6 +14,7 @@ import AIAnalystPage from './pages/AIAnalyst'
 import MarketingPage from './pages/Marketing'
 import AdvisorPage from './pages/Advisor'
 import GoogleOrganicPage from './pages/GoogleOrganic'
+import SeoAgentPage from './pages/admin/SeoAgent'
 import { AppProvider } from './lib/context'
 
 // Layout wraps every page. Responsive behavior:
@@ -117,6 +118,12 @@ export default function App() {
             {/* OAuth callbacks — no sidebar, no boundary (trivial pages) */}
             <Route path="/auth/meta/callback" element={<MetaCallback />} />
             <Route path="/auth/google/callback" element={<GoogleCallback />} />
+
+            {/* Admin SEO Agent — isolated layout, no global nav. AuthGate
+                above still applies, but the dashboard Layout/Sidebar is
+                intentionally skipped so this page can move to a separate
+                subapp later without ripping out shared chrome. */}
+            <Route path="/admin/seo-agent" element={<SeoAgentPage />} />
 
             {/* Main app — each route isolated by its own ErrorBoundary */}
             <Route path="/"                element={<Page name="סקירה כללית"><OverviewPage /></Page>} />

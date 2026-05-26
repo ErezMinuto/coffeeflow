@@ -1,0 +1,248 @@
+// Minuto SEO Agent — Supabase DB helpers.
+//
+// All reads + writes against seo_tasks / seo_metrics / chat_messages
+// funnel through here. Keeps SQL out of the orchestrator / worker /
+// chat function bodies and centralizes column-name knowledge.
+
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type {
+  NewSeoTask,
+  SeoTaskRow,
+  MetricsSnapshot,
+  TaskType,
+  TaskStatus,
+} from './types.ts'
+
+const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
+const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+export function createSupabase(): SupabaseClient {
+  return createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+// ── seo_tasks ────────────────────────────────────────────────────────────
+
+export async function insertTasks(
+  supabase: SupabaseClient,
+  tasks: NewSeoTask[],
+): Promise<SeoTaskRow[]> {
+  if (tasks.length === 0) return []
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .insert(tasks)
+    .select()
+  if (error) throw new Error(`insertTasks failed: ${error.message}`)
+  return (data ?? []) as SeoTaskRow[]
+}
+
+// Worker pickup: SELECT FOR UPDATE SKIP LOCKED equivalent via an RPC
+// would be cleanest, but we can do it client-side by relying on the
+// locked_until contract. The worker UPDATEs a single pending row to
+// 'processing' + sets locked_until, returning the row. Concurrent
+// workers either get a different row or hit a unique-pickup race that
+// the optimistic check resolves.
+export async function claimNextTask(
+  supabase: SupabaseClient,
+  taskType: TaskType,
+  workerId: string,
+  lockMinutes = 10,
+): Promise<SeoTaskRow | null> {
+  // Find the oldest eligible pending task of this type.
+  const { data: candidates, error: selErr } = await supabase
+    .from('seo_tasks')
+    .select('*')
+    .eq('task_type', taskType)
+    .eq('status', 'pending')
+    .lte('scheduled_for', new Date().toISOString())
+    .order('scheduled_for', { ascending: true })
+    .limit(5)  // small batch — try a few in case of races
+
+  if (selErr) throw new Error(`claimNextTask select failed: ${selErr.message}`)
+  if (!candidates || candidates.length === 0) return null
+
+  // Try to atomically claim one. We update with a WHERE on the current
+  // status so two workers can't both grab the same row.
+  for (const candidate of candidates as SeoTaskRow[]) {
+    // Skip if dependencies are not all complete.
+    if (candidate.depends_on && candidate.depends_on.length > 0) {
+      const { data: deps, error: depErr } = await supabase
+        .from('seo_tasks')
+        .select('id, status')
+        .in('id', candidate.depends_on)
+      if (depErr) continue
+      const incomplete = (deps ?? []).filter(d => d.status !== 'completed')
+      if (incomplete.length > 0) continue
+    }
+
+    const lockedUntil = new Date(Date.now() + lockMinutes * 60_000).toISOString()
+    const { data: updated, error: updErr } = await supabase
+      .from('seo_tasks')
+      .update({
+        status:        'processing',
+        attempts:      candidate.attempts + 1,
+        locked_until:  lockedUntil,
+        worker_id:     workerId,
+        started_at:    new Date().toISOString(),
+      })
+      .eq('id', candidate.id)
+      .eq('status', 'pending')      // ← optimistic: only succeed if still pending
+      .select()
+      .maybeSingle()
+    if (updErr) continue
+    if (updated) return updated as SeoTaskRow
+    // Lost the race — try the next candidate.
+  }
+  return null
+}
+
+export async function markTaskCompleted(
+  supabase: SupabaseClient,
+  taskId: string,
+  resultData: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('seo_tasks')
+    .update({
+      status:       'completed',
+      result_data:  resultData,
+      completed_at: new Date().toISOString(),
+      locked_until: null,
+      error_msg:    null,
+    })
+    .eq('id', taskId)
+  if (error) throw new Error(`markTaskCompleted failed: ${error.message}`)
+}
+
+export async function markTaskFailed(
+  supabase: SupabaseClient,
+  taskId: string,
+  errorMsg: string,
+  permanentlyFailed: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from('seo_tasks')
+    .update({
+      status:       permanentlyFailed ? 'failed' : 'pending',
+      error_msg:    errorMsg.slice(0, 2000),
+      locked_until: null,
+    })
+    .eq('id', taskId)
+  if (error) throw new Error(`markTaskFailed failed: ${error.message}`)
+}
+
+// Sweeper: reset rows whose locked_until is in the past back to pending.
+// Run from a separate cron every 5 min.
+export async function sweepStuckTasks(supabase: SupabaseClient): Promise<number> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .update({ status: 'pending', locked_until: null })
+    .eq('status', 'processing')
+    .lt('locked_until', new Date().toISOString())
+    .select('id')
+  if (error) throw new Error(`sweepStuckTasks failed: ${error.message}`)
+  return (data ?? []).length
+}
+
+// For the orchestrator's self-reflection input — last N tasks of any
+// status, newest first.
+export async function getRecentTasks(
+  supabase: SupabaseClient,
+  sinceIsoDate: string,
+  limit = 100,
+): Promise<SeoTaskRow[]> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('*')
+    .gte('created_at', sinceIsoDate)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`getRecentTasks failed: ${error.message}`)
+  return (data ?? []) as SeoTaskRow[]
+}
+
+// ── seo_metrics ──────────────────────────────────────────────────────────
+
+export async function insertMetrics(
+  supabase: SupabaseClient,
+  source: string,
+  payload: MetricsSnapshot | Record<string, unknown>,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('seo_metrics')
+    .insert({ source, metrics_payload: payload })
+    .select('id')
+    .single()
+  if (error) throw new Error(`insertMetrics failed: ${error.message}`)
+  return (data as { id: string }).id
+}
+
+export async function getRecentMetricsSnapshots(
+  supabase: SupabaseClient,
+  source: string,
+  limit = 5,
+): Promise<Array<{ logged_at: string; metrics_payload: Record<string, unknown> }>> {
+  const { data, error } = await supabase
+    .from('seo_metrics')
+    .select('logged_at, metrics_payload')
+    .eq('source', source)
+    .order('logged_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`getRecentMetricsSnapshots failed: ${error.message}`)
+  return (data ?? []) as Array<{ logged_at: string; metrics_payload: Record<string, unknown> }>
+}
+
+// ── chat_messages ───────────────────────────────────────────────────────
+
+export async function appendChatMessage(
+  supabase: SupabaseClient,
+  args: {
+    session_id: string
+    role: 'user' | 'assistant' | 'tool' | 'system'
+    content: string
+    tool_calls?: unknown
+    tool_call_id?: string
+    metadata?: Record<string, unknown>
+  },
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert({
+      session_id:   args.session_id,
+      role:         args.role,
+      content:      args.content,
+      tool_calls:   args.tool_calls ?? null,
+      tool_call_id: args.tool_call_id ?? null,
+      metadata:     args.metadata ?? null,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(`appendChatMessage failed: ${error.message}`)
+  return (data as { id: string }).id
+}
+
+export async function getChatHistory(
+  supabase: SupabaseClient,
+  sessionId: string,
+  limit = 50,
+): Promise<Array<{
+  role:         'user' | 'assistant' | 'tool' | 'system'
+  content:      string
+  tool_calls:   unknown
+  tool_call_id: string | null
+}>> {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('role, content, tool_calls, tool_call_id')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true })
+    .limit(limit)
+  if (error) throw new Error(`getChatHistory failed: ${error.message}`)
+  return (data ?? []) as Array<{
+    role:         'user' | 'assistant' | 'tool' | 'system'
+    content:      string
+    tool_calls:   unknown
+    tool_call_id: string | null
+  }>
+}
