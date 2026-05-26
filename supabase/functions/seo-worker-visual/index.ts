@@ -175,46 +175,96 @@ serve(async (req) => {
     console.warn(`[seo-worker-visual] ${workerId} blog_banner task has no parent_task_id; will render but cannot attach`)
   }
 
-  // ── 4. Render + self-QA loop ─────────────────────────────────────────
-  // Each iteration: render image, ask Claude (with vision) whether the
-  // image satisfies the brief, break on pass or final attempt. On a fail,
-  // augment the scene_brief with the critique's suggested adjustment and
-  // re-render in the same mode. On all-attempts-failed, we still attach
-  // the best-effort render and flag result_data.review_required=true so
-  // the admin UI surfaces it for HITL review.
+  // ── 4. Render + self-QA loop with mode escalation ────────────────────
+  // Each attempt: render → Claude-vision eval → break on pass.
+  // On fail, escalate the strategy rather than repeating the same losing
+  // approach (the original same-mode-only retries kept producing the same
+  // failure when the underlying render mode was structurally incapable
+  // of the brief — e.g. Vertex bag_hero is single-subject by nature):
+  //
+  //   Attempt 1: original render_mode + original scene_brief
+  //   Attempt 2: SWITCH render_mode (bag_hero ↔ no_bag), keep brief
+  //   Attempt 3: stay in attempt-2 mode but STRIP conflicting terms from
+  //              the brief based on QA critique (e.g. drop bag mentions
+  //              if no_bag mode keeps hallucinating generic bags)
+  //
+  // On all-attempts-failed, we set result_data.review_required=true AND
+  // SKIP the WP attach entirely — bad images never go live on the post.
+  // The admin UI surfaces the task for HITL: a human reviews qa_attempts
+  // and either approves an attempt for attach or re-queues with a
+  // hand-crafted brief.
   //
   // Cost / latency envelope per task (worst case = 3 attempts):
-  //   3 × render (~30-60s each) + 3 × eval (~10-15s each) ≈ 120-225s.
-  //   The cron timeout (240s in 20260527_seo_worker_visual_cron.sql) fits.
-  const renderFunction = renderMode === 'no_bag' ? 'visual-test' : 'vertex-imagen-edit'
+  //   3 × render (~30-60s) + 3 × eval (~10-15s) ≈ 120-225s. Fits the
+  //   240s cron timeout in 20260527_seo_worker_visual_cron.sql.
   const MAX_QA_ATTEMPTS = 3
   let imageUrl = ''
   let renderResponse: Record<string, unknown> = {}
   let workingSceneBrief = brief.scene_brief
-  const qaAttempts: Array<{ attempt: number; image_url: string; critique: VisualCritique }> = []
+  let workingRenderMode: 'no_bag' | 'bag_hero' = renderMode
+  const qaAttempts: Array<{
+    attempt: number
+    image_url: string
+    render_mode: 'no_bag' | 'bag_hero'
+    scene_brief: string
+    critique: VisualCritique
+  }> = []
   let qaPassed = false
   let lastCritique: VisualCritique | null = null
 
   for (let qaAttempt = 1; qaAttempt <= MAX_QA_ATTEMPTS; qaAttempt++) {
-    // 4a. Render
+    // 4a. Decide this attempt's render_mode + scene_brief based on prior
+    // critiques. First attempt = caller's choices. Subsequent attempts
+    // apply the escalation ladder.
+    if (qaAttempt === 2 && qaAttempts.length > 0) {
+      // ESCALATION STEP 1: switch render_mode. If the original mode
+      // can't produce what the brief asks for, the alternative mode
+      // gets a fresh shot. We keep the original scene_brief here so the
+      // escalation tests *just* the mode change.
+      workingRenderMode = renderMode === 'bag_hero' ? 'no_bag' : 'bag_hero'
+      // If switching INTO bag_hero and we don't have a product_name,
+      // we can't actually switch — bag_hero requires it. In that case
+      // stick with the same mode but use the augmented brief.
+      if (workingRenderMode === 'bag_hero' && !brief.product_name?.trim()) {
+        console.warn(`[seo-worker-visual] ${workerId} can't escalate to bag_hero (no product_name); retrying same mode with augmented brief`)
+        workingRenderMode = renderMode
+        workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
+      } else {
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: switching mode ${renderMode} → ${workingRenderMode}`)
+        // Keep brief verbatim on the mode-switch attempt — clean A/B.
+        workingSceneBrief = brief.scene_brief
+      }
+    } else if (qaAttempt === 3 && qaAttempts.length > 0) {
+      // ESCALATION STEP 2: stay in attempt-2's mode but strip the brief
+      // of terms that the prior critique blamed for repeated failures.
+      // For no_bag mode, the common failure mode is Gemini hallucinating
+      // a generic bag because the brief mentions one — strip bag terms.
+      // For bag_hero mode, the failure is co-subjects getting dropped —
+      // strip everything except the primary product to give Vertex a
+      // single-subject brief it can actually handle.
+      workingSceneBrief = stripConflictingTerms(brief.scene_brief, workingRenderMode)
+      console.log(`[seo-worker-visual] ${workerId} escalation step 2: stripped brief for ${workingRenderMode} mode`)
+    }
+
+    // 4b. Render with this attempt's settings.
     let rendered: { url: string; raw: Record<string, unknown> }
     try {
       rendered = await renderOnce({
-        renderMode,
-        sceneBrief: workingSceneBrief,
+        renderMode:  workingRenderMode,
+        sceneBrief:  workingSceneBrief,
         aspect,
         productName: brief.product_name,
       })
       imageUrl       = rendered.url
       renderResponse = rendered.raw
-      console.log(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt}/${MAX_QA_ATTEMPTS} rendered: ${imageUrl}`)
+      console.log(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt}/${MAX_QA_ATTEMPTS} (mode=${workingRenderMode}) rendered: ${imageUrl}`)
     } catch (e: any) {
       // Render-side errors (HTTP failures, missing API keys, etc.) are
       // transient infrastructure problems — bail out of the loop and let
       // markTaskFailed handle retry semantics. Don't burn QA attempts on
       // an infra failure; the render side never produced an image to
       // evaluate.
-      const msg = `render (${renderFunction}) failed on QA attempt ${qaAttempt}: ${e?.message ?? e}`
+      const msg = `render (${workingRenderMode}) failed on QA attempt ${qaAttempt}: ${e?.message ?? e}`
       const permanently = task.attempts >= task.max_attempts
       await safeMarkFailed(supabase, task, msg, permanently)
       return jsonResponse({
@@ -227,7 +277,7 @@ serve(async (req) => {
       }, 500)
     }
 
-    // 4b. Evaluate the rendered image with Claude vision. If the eval
+    // 4c. Evaluate the rendered image with Claude vision. If the eval
     // itself fails (rare — Anthropic outage, etc.), treat as 'passes'
     // so we don't burn the task on observability issues. The image is
     // already rendered; better to attach it than to fail.
@@ -235,8 +285,8 @@ serve(async (req) => {
     try {
       critique = await evaluateVisual({
         imageUrl,
-        sceneBrief: workingSceneBrief,
-        renderMode,
+        sceneBrief:  workingSceneBrief,
+        renderMode:  workingRenderMode,
         productName: brief.product_name,
       })
     } catch (e: any) {
@@ -249,39 +299,50 @@ serve(async (req) => {
         _eval_error: e?.message ?? String(e),
       } as VisualCritique
     }
-    qaAttempts.push({ attempt: qaAttempt, image_url: imageUrl, critique })
+    qaAttempts.push({
+      attempt:     qaAttempt,
+      image_url:   imageUrl,
+      render_mode: workingRenderMode,
+      scene_brief: workingSceneBrief,
+      critique,
+    })
     lastCritique = critique
 
     if (critique.passes) {
       qaPassed = true
-      console.log(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} PASSED`)
+      console.log(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} (mode=${workingRenderMode}) PASSED`)
       break
     }
 
-    console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} FAILED — missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`)
-
-    // 4c. Augment scene_brief for the next attempt. The augmentation is
-    // appended (not replacing) so the original creative intent stays
-    // intact while emphasising the missed requirements at the END of
-    // the prompt — generative models weight the tail more heavily.
-    if (qaAttempt < MAX_QA_ATTEMPTS) {
-      workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
-    }
+    console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} (mode=${workingRenderMode}) FAILED — missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`)
   }
 
   const reviewRequired = !qaPassed
+  // If the QA loop ended on an escalated mode (different from the brief's
+  // original), that's worth surfacing in result_data so the admin can see
+  // which strategy produced the best-effort attempt.
+  const finalRenderMode = workingRenderMode
 
-  // ── 5. Attach to WP draft (blog_banner only, when parent has wp_post_id)
-  // Two-step WP REST flow — same auth + headers blog-publish uses for
-  // the create-with-featured-image case. Step (a) uploads the image
-  // bytes to /wp/v2/media, step (b) PUTs the new media_id onto the
-  // existing post. We don't reuse blog-publish here because it only
-  // supports POSTing a NEW post; for an existing post we need the
-  // /wp/v2/posts/{id} update endpoint.
+  // ── 5. Attach to WP draft — GATED by QA pass ─────────────────────────
+  // When the QA loop capped without passing (reviewRequired=true), we
+  // explicitly SKIP the WP attach. Bad images never go live on the post.
+  // The image still lives in Supabase Storage and is fully logged in
+  // qa_attempts so the admin UI can show it for HITL review and offer
+  // an "approve & attach" action.
+  //
+  // When QA passed, the standard two-step WP REST attach runs:
+  //   (a) POST /wp/v2/media — upload image bytes, get media_id
+  //   (b) POST /wp/v2/posts/{id} — set featured_media = media_id
+  // Auth + filename-sanitization pattern identical to blog-publish/uploadMedia.
   let attachedMediaId:  number | null = null
   let attachError:      string | null = null
+  let attachSkippedReason: string | null = null
+
   if (destination === 'blog_banner' && parentWpPostId) {
-    if (!WP_USERNAME || !WP_APP_PASSWORD) {
+    if (reviewRequired) {
+      attachSkippedReason = `QA loop capped after ${qaAttempts.length} attempts without passing — image awaiting HITL review, not auto-attached`
+      console.warn(`[seo-worker-visual] ${workerId} ${attachSkippedReason}`)
+    } else if (!WP_USERNAME || !WP_APP_PASSWORD) {
       attachError = 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured'
       console.warn(`[seo-worker-visual] ${workerId} ${attachError}`)
     } else {
@@ -309,22 +370,26 @@ serve(async (req) => {
   // can render thumbnails + critiques. Future agents can also re-queue
   // a fresh task with a modified brief if review concludes the image
   // is unusable.
+  const finalRenderFunction = finalRenderMode === 'no_bag' ? 'visual-test' : 'vertex-imagen-edit'
   try {
     await markTaskCompleted(supabase, task.id, {
-      image_url:        imageUrl,
-      render_function:  renderFunction,
-      render_mode:      renderMode,
+      image_url:           imageUrl,
+      render_function:     finalRenderFunction,
+      render_mode:         finalRenderMode,
+      original_render_mode: renderMode,
+      mode_escalated:      finalRenderMode !== renderMode,
       destination,
       aspect,
-      wp_post_id:       parentWpPostId,
-      wp_edit_url:      parentEditUrl,
-      attached_media_id: attachedMediaId,
-      attach_error:     attachError,
-      render_response:  pickRenderSummary(renderResponse),
-      qa_passed:        qaPassed,
-      review_required:  reviewRequired,
-      qa_attempts:      qaAttempts,
-      qa_last_critique: lastCritique,
+      wp_post_id:          parentWpPostId,
+      wp_edit_url:         parentEditUrl,
+      attached_media_id:   attachedMediaId,
+      attach_error:        attachError,
+      attach_skipped_reason: attachSkippedReason,
+      render_response:     pickRenderSummary(renderResponse),
+      qa_passed:           qaPassed,
+      review_required:     reviewRequired,
+      qa_attempts:         qaAttempts,
+      qa_last_critique:    lastCritique,
     })
   } catch (e: any) {
     console.error(`[seo-worker-visual] ${workerId} markTaskCompleted failed: ${e?.message ?? e}`)
@@ -338,20 +403,23 @@ serve(async (req) => {
   }
 
   return jsonResponse({
-    processed:        1,
-    worker_id:        workerId,
-    task_id:          task.id,
-    ok:               true,
-    image_url:        imageUrl,
-    render_function:  renderFunction,
-    render_mode:      renderMode,
+    processed:           1,
+    worker_id:           workerId,
+    task_id:             task.id,
+    ok:                  true,
+    image_url:           imageUrl,
+    render_function:     finalRenderFunction,
+    render_mode:         finalRenderMode,
+    original_render_mode: renderMode,
+    mode_escalated:      finalRenderMode !== renderMode,
     destination,
-    wp_post_id:       parentWpPostId,
-    attached_media_id: attachedMediaId,
-    attach_error:     attachError,
-    qa_passed:        qaPassed,
-    review_required:  reviewRequired,
-    qa_attempt_count: qaAttempts.length,
+    wp_post_id:          parentWpPostId,
+    attached_media_id:   attachedMediaId,
+    attach_error:        attachError,
+    attach_skipped_reason: attachSkippedReason,
+    qa_passed:           qaPassed,
+    review_required:     reviewRequired,
+    qa_attempt_count:    qaAttempts.length,
   })
 })
 
@@ -627,4 +695,61 @@ function buildAugmentedSceneBrief(
 
 CRITICAL REQUIREMENTS (QA attempt ${attemptsSoFar.length + 1}/3 — earlier attempts failed quality review):
 ${directives.map(d => `- ${d}`).join('\n')}`
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Final-attempt brief surgery: strip terms that have been demonstrated
+// to fight the chosen render_mode. Called on QA attempt 3 after mode
+// escalation has already happened — at this point we're trading
+// completeness for a clean render of the most-important elements.
+//
+//   no_bag mode: scene_brief commonly mentions "bag of beans" /
+//     "packaging" / "pouch", and Gemini happily draws a generic
+//     non-Minuto bag. Strip bag terms so the bag stops appearing.
+//   bag_hero mode: Vertex SUBJECT customization centers on the bag
+//     and drops co-subjects. Strip co-subject mentions so the brief
+//     becomes a clean single-subject hero shot Vertex can do well.
+//
+// This is line-by-line scrubbing — leaves the rest of the brief intact
+// so the photographer's intent (lighting, palette, mood) survives.
+// ─────────────────────────────────────────────────────────────────────────
+function stripConflictingTerms(brief: string, mode: 'no_bag' | 'bag_hero'): string {
+  if (mode === 'no_bag') {
+    // Two-part fix for Gemini's bag-bias:
+    //   1. Strip POSITIVE mentions of bag/packaging/pouch from the brief
+    //   2. APPEND explicit NEGATIVE directives at the END — Gemini has
+    //      a strong training prior toward "coffee scene → bag of beans
+    //      somewhere in frame"; just removing the bag mention isn't
+    //      enough, it'll hallucinate one anyway. Negative directives
+    //      at the tail of the prompt have the highest weight.
+    const stripped = brief
+      .split(/(?<=[.!?])\s+/)
+      .filter(sentence => !/\b(bag|bags|pouch|pouches|packaging|sachet|package of (?:beans|coffee))\b/i.test(sentence))
+      .join(' ')
+      .trim() || brief
+    return `${stripped}
+
+DO NOT INCLUDE ANY OF THESE — they are forbidden in this render:
+- No coffee bag, no packaging, no pouch, no sachet, no bean container of any kind
+- No loose coffee beans scattered on the surface
+- No human hands or arms in frame
+- No coffee-product branding text anywhere
+The image must show ONLY the espresso machine and the pull (cup + crema), nothing else.`
+  }
+  // bag_hero: Vertex needs single-subject focus. Keep sentences that
+  // mention the bag/coffee, drop sentences naming co-subjects (machines,
+  // cups, scales, etc.). The bag is the hero; let Vertex render it
+  // cleanly without trying to compose around it.
+  const stripped = brief
+    .split(/(?<=[.!?])\s+/)
+    .filter(sentence => {
+      const hasBagOrCoffee = /\b(bag|coffee|beans|label|pouch)\b/i.test(sentence)
+      const hasCoSubject   = /\b(machine|espresso machine|portafilter|lever|grinder|cup|saucer|carafe|chemex|v60|aeropress|kettle|scale|tamper)\b/i.test(sentence)
+      // Keep sentences that are about the bag/coffee, OR sentences that
+      // are pure mood/setting (no co-subjects at all).
+      return hasBagOrCoffee || !hasCoSubject
+    })
+    .join(' ')
+    .trim() || brief
+  return stripped
 }
