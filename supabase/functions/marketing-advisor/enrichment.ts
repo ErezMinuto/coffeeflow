@@ -306,9 +306,16 @@ If no upcoming event maps cleanly, use one of:
 OUTPUT — strict JSON, no other text, no markdown fences. Always the
 SUCCESS shape — there is no rejection path:
 
+🎬 **BTS / behind-the-scenes routing — MANDATORY**:
+When the post brief describes the roastery, the roaster machine, fresh-roasted beans coming off the cooler, "the smell of roasting", "6am at the roastery", roast-day moments, batches, or any documentary roastery scene → post_type MUST be "roaster_bts" + render_mode "no_bag". The roaster_bts preset is the ONLY home for these — DO NOT shoehorn into still_life_gift / origin_still etc., that produced ceramic-cup mush in the past. Cues in Hebrew: "קלייה", "מקלה", "פולים יוצאים מהקירור", "ריח הקלייה", "בית הקלייה", "בוקר במקלה".
+
+When the post brief describes the cafe / bar / Strada machine / espresso pull / barista hands / behind-the-counter moments → post_type MUST be "cafe_bts" + render_mode "no_bag". Cues: "ברחובות בבר", "ה-Strada", "משיכת אספרסו", "הברמן", "הברמנית", "מאחורי הבר", "cafe", "bar".
+
+These two presets exist specifically because intent=behind_the_scenes content has nowhere else to land — the other 4 presets all hard-code ceramic-plate / pour-over / origin staging that is wrong for BTS. Pick one of the BTS presets whenever the brief is documentary roastery or cafe content, even if the upstream intent string didn't literally say "behind_the_scenes".
+
 SUCCESS:
 {
-  "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup",
+  "post_type": "still_life_gift" | "pour_shot" | "origin_still" | "brewing_setup" | "roaster_bts" | "cafe_bts",
   "render_mode": "bag_hero" | "no_bag",
   /* HOW the visual is rendered — decide from the post's INTENT:
      • "bag_hero" — the Minuto product bag is the styled hero of the shot.

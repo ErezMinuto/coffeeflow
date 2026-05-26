@@ -5,6 +5,7 @@ import {
   Aspect,
   MINUTO_BEANS_REFERENCE_URL,
   MINUTO_ESPRESSO_MACHINE_REFERENCE_URL,
+  MINUTO_ROASTER_REFERENCE_URL,
   MINUTO_VISUAL_IDENTITY,
   SCENE_PRESETS,
 } from '../_shared/visual_identity.ts'
@@ -175,10 +176,17 @@ serve(async (req) => {
     // espresso scenes we let Gemini render a generic home machine guided
     // by the EQUIPMENT-BY-BREWING-METHOD rule in visual_identity.
     const useStradaXReference = espressoSceneRegex && cafeContextRegex && !homeContextRegex
+    // Roaster reference — attach Minuto's actual Coffee-Tech machine photo
+    // when the brief mentions the roaster, the roastery, the cooling tray,
+    // roast-day moments, or fresh beans coming off the cooler. Without
+    // this, Gemini hallucinates generic vintage Probat-style copper
+    // roasters with "COFFEE-TECH" text rendered as visible labels.
+    const roasterSceneRegex = /\b(roaster|roastery|drum roaster|coffee-tech|cooling tray|cooler tray|roast day|roasting|מקלה|בית קלייה|בית הקלייה|מכונת קלייה|תוף קלייה|פולים יוצאים|קירור|מקרר פולים)\b/.test(sceneLowerForMachine)
 
     let bagRef:     { data: string; mime: string } | null = null
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { data: string; mime: string } | null = null
+    let roasterRef: { data: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
     if (useReference) {
@@ -232,15 +240,17 @@ serve(async (req) => {
       // All references pass as Gemini inlineData. Bag is always-on
       // (primary subject), beans always-on (color anchor), machine
       // conditional on a commercial-context espresso scene.
-      const [b1, b2, b3] = await Promise.all([
+      const [b1, b2, b3, b4] = await Promise.all([
         fetchAsB64(bagUrl),
         fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
-        useStradaXReference ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
+        useStradaXReference  ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
+        roasterSceneRegex    ? fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
       ])
       bagRef     = b1
       beansRef   = b2
       machineRef = b3
-      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}`)
+      roasterRef = b4
+      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
     }
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
@@ -319,6 +329,9 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     }
     if (machineRef) {
       refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's 2-group La Marzocco Strada X. Use it as a COLOR + DETAIL anchor, NOT a full-silhouette template. When any part of the machine appears, match: slate/gunmetal MATTE body, pale-blue TRANSLUCENT GLASS teardrop side panel (only on the side glass — never on the front panel), naked portafilters with BLACK handles and small RED accent rings, chrome cool-touch steam wands curving outward from the SIDES of the body, raised stainless wire-grate cup tray on top, "La Marzocco" wordmark on the drip-tray front plate. Render PARTIAL crops only (wand + sliver of side panel, portafilter + group head fragment, cup-tray close-up) — never the full chassis. Forbidden: generic chrome Linea silhouette.`)
+    }
+    if (roasterRef) {
+      refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering compact drum roaster. Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
     }
 
     const ordinal = (i: number) => ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'][i] ?? `#${i + 1}`
@@ -490,6 +503,7 @@ text is inspiration; these are mandatory.`
     if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
     if (machineRef) parts.push({ inlineData: { mimeType: machineRef.mime, data: machineRef.data } })
+    if (roasterRef) parts.push({ inlineData: { mimeType: roasterRef.mime, data: roasterRef.data } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
     const genRes = await fetch(

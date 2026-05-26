@@ -17,12 +17,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
 import { enrichPostsForPublishing } from "./enrichment.ts";
-import { MINUTO_BAG_REFERENCE_URL } from "../_shared/visual_identity.ts";
-// pickFallbackBagUrl removed 2026-05-16 — random pool selection is no
-// longer permitted. When a post lacks an explicit product reference, we
-// fall back to the flagship MINUTO_BAG_REFERENCE_URL (Yirgacheffe by
-// default). Update that constant in _shared/visual_identity.ts if a
-// different bag should be the flagship.
+import { MINUTO_BAG_REFERENCE_URL, MINUTO_BAG_REFERENCE_POOL } from "../_shared/visual_identity.ts";
+// Bag-reference fallback policy (revised 2026-05-24):
+//   • blog-banner still uses MINUTO_BAG_REFERENCE_URL (flagship default) —
+//     once products_to_mention is populated, the LLM picks the topic bag
+//     and this fallback rarely fires.
+//   • IG bag_hero posts rotate through MINUTO_BAG_REFERENCE_POOL — most
+//     organic posts have product_reference=null, so the previous static
+//     flagship default produced a Yirgacheffe-only feed.
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -5118,6 +5120,21 @@ Products (products_to_feature):
   • כשמרגישים שעוקבים מתחילים לדבר על ציוד — להבליט מארז שמתאים למכונת אספרסו ספציפית
   • לקשר תיאור פולים לשיטת חליטה ("נהדר ל-V60", "אופטימלי לאספרסו")
 
+🔗 **products_to_mention — חובה לכל המלצת בלוג, מינימום 2 פריטים**:
+
+לכל פריט ב-google_organic_recommendations חובה לבחור **לפחות 2 (ועד 4)** מוצרים מהקטלוג של Minuto. ה-pipeline משתמש בשמות האלה לשני דברים:
+  1. כתב הבלוג שולף את ה-permalink מ-woo_products ויוצר לינקים markdown לחנות
+  2. יוצר הבאנר טוען את תמונת המוצר → הבאנר מציג את הציוד/השקית הרלוונטיים, לא דיפולט גנרי
+
+⛔ **רשימה ריקה אסורה. אין תוכן בלוג בלי לינקים למוצרים.** גם נושאים כלליים ("חנות קפה", "טריות", "ספשלטי") חייבים להזכיר מוצרים — כל בלוג בלי לינקים = בלוג מבוזבז.
+
+**כללים קשיחים**:
+  ✓ השמות חייבים להיות מילה במילה כפי שמופיעים בקטלוג Minuto למעלה (מלאי + קטלוג ציוד) — אחרת השאילתה WHERE name IN (...) תחזיר ריק והלינק יושמט
+  ✓ נושא ציוד עם חוט פולים: כלול **גם** את שם הציוד **וגם** 2-3 שמות פולים
+  ✓ נושא פולים בלבד: 2-4 שמות פולים מהמלאי. עדיפות למלאי נמוך (push לפני שאוזל) ולפולים שמתאימים לזווית הפוסט (V60 → איכויות עדינות; אספרסו → גוף עשיר)
+  ✓ נושא כללי (חנות, טריות, איכות, יבוא, ספשלטי) — בחר 2-3 פולים בולטים מהמלאי כדוגמאות קונקרטיות לתמוך בטיעון של המאמר
+  ✗ אל תמציא שמות שלא בקטלוג. אם שם לא מופיע מילה-במילה ברשימת המלאי או בקטלוג הציוד למעלה — אל תכתוב אותו
+
 החזר JSON בדיוק מבנה זה (ללא שדות נוספים):
 {
   "summary": "2 משפטים בלבד",
@@ -5136,7 +5153,8 @@ Products (products_to_feature):
       "suggested_title": "כותרת H1 מוצעת",
       "key_points": ["נקודה 1", "נקודה 2"],
       "why_now": "למה לכתוב את זה עכשיו — משפט אחד",
-      "estimated_difficulty": "קל|בינוני|קשה"
+      "estimated_difficulty": "קל|בינוני|קשה",
+      "products_to_mention": ["שם מוצר מילה-במילה מהקטלוג", "..."]
     }
   ],
   "content_recommendations": [
@@ -5527,21 +5545,31 @@ ${topCandidates.map((c, i) => `${i + 1}. ${c.keyword}`).join("\n")}
         }
       }
 
-      // Flagship-bag fallback for bag_hero posts (carousels + single posts).
+      // Bag rotation fallback for bag_hero posts (carousels + single posts).
       // Any bag_hero post needs SOME bag — both visual-test (Gemini) and
       // vertex-imagen-edit (bag_hero mode) 400 without a reference. The LLM
       // can emit bag_hero with product_reference=null (a generic brand/
       // "fresh batch" post — no specific SKU but still wants a bag in
-      // shot). Stamp the deterministic flagship URL so those posts render
-      // instead of erroring. no_bag posts naturally skip this (no bag
-      // wanted; dashboard drops the ref anyway).
-      // Was originally carousel-only — extended 2026-05-23 after live
-      // organic runs produced bag_hero singles with no product match.
+      // shot). no_bag posts naturally skip this (no bag wanted; dashboard
+      // drops the ref anyway).
+      //
+      // History: was originally carousel-only; extended 2026-05-23 to
+      // bag_hero singles; static flagship default re-replaced with pool
+      // rotation 2026-05-24 because the static default produced a feed of
+      // 90%+ Yirgacheffe (most LLM-emitted bag_hero posts lack a product
+      // match). Rotation seed = sum of weekStart char codes so the same
+      // week reproduces; in-run counter advances per fallback so each
+      // post in one report gets a distinct bag.
+      let bagSeed = 0;
+      for (let i = 0; i < weekStart.length; i++) bagSeed += weekStart.charCodeAt(i);
+      let bagFallbackIdx = bagSeed;
       for (const ep of enriched) {
         if (ep.render_mode === 'no_bag') continue;
         if (!ep.reference_image_url) {
-          ep.reference_image_url = MINUTO_BAG_REFERENCE_URL;
-          console.log(`[organic] post ${ep.post_index} (${ep.upstream_type}, bag_hero, no product match) → flagship bag default: ${ep.reference_image_url}`);
+          const bagUrl = MINUTO_BAG_REFERENCE_POOL[bagFallbackIdx % MINUTO_BAG_REFERENCE_POOL.length];
+          bagFallbackIdx++;
+          ep.reference_image_url = bagUrl;
+          console.log(`[organic] post ${ep.post_index} (${ep.upstream_type}, bag_hero, no product match) → bag rotation: ${bagUrl}`);
         }
       }
 
