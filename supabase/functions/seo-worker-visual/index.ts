@@ -135,18 +135,17 @@ serve(async (req) => {
     }
     if (destination === 'blog_banner') {
       if (!parent || parent.status !== 'completed') {
-        // Writer task hasn't finished. Re-queue (status='pending',
-        // attempts decremented? — markTaskFailed-transient does NOT
-        // decrement, so attempts keeps climbing. With max_attempts=3
-        // and a 2-min cron, that's a 6-min window for the writer to
-        // finish before this row permanently fails. Most writer runs
-        // finish in <60s, so this is comfortable. If it becomes a
-        // problem, bump max_attempts on visual tasks specifically.)
-        await safeMarkFailed(
+        // Writer task hasn't finished. Release the row back to 'pending'
+        // WITHOUT counting this as an attempt — the visual itself never
+        // ran, so it would be wrong to burn a retry slot on the writer's
+        // schedule. We undo the attempts++ that claimNextTask did when it
+        // locked the row, clear the lock, and let the next cron tick
+        // re-evaluate. Attempts are reserved for genuine render or attach
+        // failures (see the catch around step 4).
+        await releaseForParentNotReady(
           supabase,
           task,
           `parent text task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
-          false,
         )
         return jsonResponse({
           processed: 1,
@@ -387,6 +386,35 @@ async function safeMarkFailed(
     await markTaskFailed(supabase, task.id, msg, permanent)
   } catch (e: any) {
     console.error(`[seo-worker-visual] markTaskFailed write failed: ${e?.message ?? e}`)
+  }
+}
+
+// Release a claimed row back to 'pending' without consuming an attempt.
+// Used when we discover post-claim that we shouldn't have claimed yet
+// (parent text task not ready). claimNextTask already did attempts++ as
+// part of the lock, so we explicitly decrement it back. error_msg gets
+// the diagnostic so the admin UI shows why the row keeps cycling, but
+// status stays 'pending' so the next cron tick re-evaluates.
+async function releaseForParentNotReady(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  reason: string,
+): Promise<void> {
+  const restoredAttempts = Math.max(0, (task.attempts ?? 1) - 1)
+  try {
+    const { error } = await supabase
+      .from('seo_tasks')
+      .update({
+        status:       'pending',
+        attempts:     restoredAttempts,
+        locked_by:    null,
+        locked_until: null,
+        error_msg:    `[deferred] ${reason}`,
+      })
+      .eq('id', task.id)
+    if (error) throw error
+  } catch (e: any) {
+    console.error(`[seo-worker-visual] release-without-attempt failed: ${e?.message ?? e}`)
   }
 }
 
