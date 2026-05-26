@@ -107,9 +107,12 @@ export default function SeoChatThread({ sessionId }: Props) {
     // `flex-1` div to actually shrink — otherwise its natural content
     // height pushes the column taller than h-full and the footer (input)
     // ends up below the viewport. Same gotcha applies to the scroll div
-    // itself (also gets min-h-0). This is the standard "flex children
-    // don't respect parent overflow without min-h-0" trap.
-    <section className="h-full flex flex-col bg-surface-50 min-h-0">
+    // itself (also gets min-h-0). `overflow-hidden` on the section is a
+    // belt-and-suspenders guarantee that nothing inside can paint past
+    // the section's bounds — combined with `shrink-0` on the footer,
+    // this makes the textarea PERMANENTLY visible regardless of message
+    // count, viewport height, or upstream sizing weirdness.
+    <section className="h-full max-h-full flex flex-col bg-surface-50 min-h-0 overflow-hidden">
       <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-white shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Chat</h2>
         <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
