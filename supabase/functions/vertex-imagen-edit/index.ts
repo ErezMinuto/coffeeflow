@@ -5,6 +5,8 @@ import {
   ASPECT_TO_RATIO,
   Aspect,
   SCENE_PRESETS,
+  MINUTO_ROASTER_REFERENCE_URL,
+  MINUTO_ESPRESSO_MACHINE_REFERENCE_URL,
 } from '../_shared/visual_identity.ts'
 import {
   BAG_REGION,
@@ -209,7 +211,10 @@ Return ONLY the empty-surface photograph description — no preamble, no comment
 // in this mode, so a hallucinated generic bag would just be noise) plus
 // the full brand-forbidden surface/lighting/style list.
 // ─────────────────────────────────────────────────────────────────────────
-async function runSceneDirector(sceneBrief: string): Promise<string> {
+async function runSceneDirector(
+  sceneBrief: string,
+  referenceImages: Array<{ b64: string; mime: string; label: string }> = [],
+): Promise<string> {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY env var not set — required for Scene Director step (pass skip_director:true to bypass)')
   }
@@ -258,13 +263,24 @@ Output rules:
 
 Return ONLY the photograph description — no preamble, no commentary.`
 
+  // Build user-message parts: any reference images first (the model sees
+  // them as visual anchors), then the brief text. Imagen text-to-image
+  // downstream doesn't accept images, so we pass them HERE so the Director's
+  // text output describes the actual Minuto equipment faithfully.
+  const userParts: Array<Record<string, unknown>> = []
+  for (const ref of referenceImages) {
+    userParts.push({ inlineData: { mimeType: ref.mime, data: ref.b64 } })
+    userParts.push({ text: `↑ Reference image — ${ref.label}. The hardware you describe in your output MUST match what you see in this image (silhouette, two-tone finish, hopper shape, cooling-tray placement, etc.), not a generic version pulled from training data.` })
+  }
+  userParts.push({
+    text: `Photographer's brief to faithfully translate into a single 70-120 word Imagen description. Preserve the named hero, the setting, the composition, and the light direction VERBATIM — your job is to add sensory richness around them, NOT to substitute a different hero or setting. If the brief mentions a drum roaster, cooling tray, La Marzocco Strada X, V60, hand-brewing gear, or a specific scene element, that element IS the hero of your output. When reference images are attached above, the hardware in your output description MUST visually match them — describe what is actually shown, not a generic version. Ignore any mention of a coffee bag (no bag is rendered in this pipeline).\n\nBrief:\n${sceneBrief.trim().slice(0, 1200)}`,
+  })
+
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{
       role:  'user',
-      parts: [{
-        text: `Photographer's brief to faithfully translate into a single 70-120 word Imagen description. Preserve the named hero, the setting, the composition, and the light direction VERBATIM — your job is to add sensory richness around them, NOT to substitute a different hero or setting. If the brief mentions a drum roaster, cooling tray, La Marzocco Strada X, V60, hand-brewing gear, or a specific scene element, that element IS the hero of your output. Ignore any mention of a coffee bag (no bag is rendered in this pipeline).\n\nBrief:\n${sceneBrief.trim().slice(0, 1200)}`,
-      }],
+      parts: userParts,
     }],
     generationConfig: {
       maxOutputTokens: 800,
@@ -525,7 +541,47 @@ async function handleNoBag(
 
   console.log(`[vertex-imagen-edit] NO_BAG aspect=${aspect} skip_director=${!!body.skip_director}`)
 
-  // ── Scene Director (text-only) ───────────────────────────────────────
+  // ── Equipment-reference detection ────────────────────────────────────
+  // Imagen 4 text-to-image doesn't accept reference images; we attach the
+  // equipment reference photos to the Scene Director (Gemini, multimodal)
+  // so its text output describes Minuto's ACTUAL hardware faithfully,
+  // then Imagen renders from that better text. Without this, Imagen pulls
+  // generic Probat-style roasters / Linea-style espresso machines from
+  // its training data.
+  const sceneLower = sceneBrief.toLowerCase()
+  const roasterSceneRegex = /\b(roaster|roastery|drum roaster|coffee-tech|cooling tray|cooler tray|roast day|roasting|מקלה|בית קלייה|בית הקלייה|מכונת קלייה|תוף קלייה|פולים יוצאים|קירור|מקרר פולים)\b/.test(sceneLower)
+  const cafeMachineSceneRegex = /\b(espresso machine|portafilter|group head|grouphead|steam wand|la marzocco|strada|barista|behind the bar|on the bar|cafe bar|מאחורי הבר|ה-?strada|הברמן|הברמנית|מכונת אספרסו)\b/.test(sceneLower)
+  console.log(`[vertex-imagen-edit] no_bag refs — roaster=${roasterSceneRegex} cafeMachine=${cafeMachineSceneRegex}`)
+
+  async function fetchRefAsB64(url: string): Promise<{ b64: string; mime: string } | null> {
+    try {
+      const r = await fetch(url)
+      if (!r.ok) {
+        console.warn(`[vertex-imagen-edit] reference fetch ${r.status}: ${url}`)
+        return null
+      }
+      const mime = r.headers.get('content-type')?.split(';')[0]?.trim() ?? 'image/png'
+      const buf = new Uint8Array(await r.arrayBuffer())
+      let bin = ''
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000))
+      return { b64: btoa(bin), mime }
+    } catch (e: any) {
+      console.warn(`[vertex-imagen-edit] reference fetch error: ${e?.message}`)
+      return null
+    }
+  }
+
+  const directorRefs: Array<{ b64: string; mime: string; label: string }> = []
+  if (roasterSceneRegex || cafeMachineSceneRegex) {
+    const [roasterRef, machineRef] = await Promise.all([
+      roasterSceneRegex     ? fetchRefAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
+      cafeMachineSceneRegex ? fetchRefAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
+    ])
+    if (roasterRef) directorRefs.push({ ...roasterRef, label: 'Minuto\'s actual Coffee-Tech compact drum roaster — two-tone matte-black lower body + brushed-stainless upper drum cover, tall stainless conical hopper, large stainless exhaust chimney rising from the upper-left, separate round shallow stainless cooling tray attached at mid-height on the right (NOT the same diameter as the drum), vertical compact silhouette. NO visible manufacturer text or badge in any output description.' })
+    if (machineRef) directorRefs.push({ ...machineRef, label: 'Minuto\'s actual 2-group La Marzocco Strada X — slate-gray body with the distinctive pale-blue glass side wing. NOT a generic chrome Linea.' })
+  }
+
+  // ── Scene Director (text-only, optionally vision-grounded) ───────────
   let directorOutput: string | null = null
   let directorError: string | null = null
   let envPrompt: string
@@ -534,7 +590,7 @@ async function handleNoBag(
     envPrompt = sceneBrief
   } else {
     try {
-      directorOutput = await runSceneDirector(sceneBrief)
+      directorOutput = await runSceneDirector(sceneBrief, directorRefs)
       envPrompt = directorOutput
     } catch (e: any) {
       directorError = e?.message ?? String(e)
