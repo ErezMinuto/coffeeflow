@@ -40,10 +40,21 @@ export interface MessageContentToolResult {
   content: string
   is_error?: boolean
 }
+// Vision input. Anthropic accepts source.type='url' (added 2024) for any
+// publicly-fetchable image URL, or source.type='base64' for inline bytes.
+// We use URL source — rendered visuals already live in the public
+// Supabase Storage bucket.
+export interface MessageContentImage {
+  type: 'image'
+  source:
+    | { type: 'url'; url: string }
+    | { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; data: string }
+}
 export type MessageContentBlock =
   | MessageContentText
   | MessageContentToolUse
   | MessageContentToolResult
+  | MessageContentImage
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
