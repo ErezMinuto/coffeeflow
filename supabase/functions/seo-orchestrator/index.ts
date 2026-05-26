@@ -29,12 +29,24 @@ import {
   getRecentMetricsSnapshots,
   getRecentLearnings,
 } from '../seo-agent/db.ts'
-import { fetchTopKeywords, computePositionDeltas } from '../seo-agent/services/googleApi.ts'
+import {
+  fetchTopKeywords,
+  computePositionDeltas,
+  fetchTopConvertingPaidKeywords,
+  fetchTopConvertingSearchTerms,
+} from '../seo-agent/services/googleApi.ts'
 import {
   fetchRecentBlogPosts,
   fetchActiveCatalog,
   fetchInventoryAlerts,
+  fetchVocInsights,
+  fetchKeywordOpportunities,
+  fetchRecentMarketResearch,
 } from '../seo-agent/services/cmsApi.ts'
+import {
+  fetchTopOrganicPosts,
+  fetchTopConvertingAds,
+} from '../seo-agent/services/metaApi.ts'
 import type {
   MetricsSnapshot,
   NewSeoTask,
@@ -84,6 +96,14 @@ serve(async (req: Request): Promise<Response> => {
       recentTasks,
       priorSnapshots,
       learnings,
+      // New data sources — already-synced tables previously unused by strategist
+      paidKeywords,
+      searchTerms,
+      organicPosts,
+      paidAds,
+      vocInsights,
+      keywordOpportunities,
+      marketResearch,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -98,13 +118,28 @@ serve(async (req: Request): Promise<Response> => {
         scopes: ['visual_style', 'render_strategy', 'content_topic', 'other'],
         limit: 30,
       }),
+      // Google Ads — which paid keywords convert; seed organic content for them
+      fetchTopConvertingPaidKeywords(supabase, 30, 15),
+      fetchTopConvertingSearchTerms(supabase, 30, 15),
+      // Meta — which organic posts resonate; which ads convert
+      fetchTopOrganicPosts(supabase, 30, 10),
+      fetchTopConvertingAds(supabase, 30, 10),
+      // Customer research — VoC mined from real customer interactions, untapped
+      // keyword opportunities, competitor scans
+      fetchVocInsights(supabase, 15),
+      fetchKeywordOpportunities(supabase, 15),
+      fetchRecentMarketResearch(supabase, 30, 5),
     ])
 
     console.log(
       `[seo-orchestrator] sources — gsc:${gscKeywords.length} ` +
       `blog:${blogPosts.length} catalog:${catalog.length} ` +
       `inv:${inventoryAlerts.length} recentTasks:${recentTasks.length} ` +
-      `priorSnapshots:${priorSnapshots.length} learnings:${learnings.length}`,
+      `priorSnapshots:${priorSnapshots.length} learnings:${learnings.length} ` +
+      `paidKw:${paidKeywords.length} searchTerms:${searchTerms.length} ` +
+      `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
+      `voc:${vocInsights.length} kwOps:${keywordOpportunities.length} ` +
+      `research:${marketResearch.length}`,
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
@@ -153,6 +188,13 @@ serve(async (req: Request): Promise<Response> => {
       catalog,
       inventoryAlerts,
       learnings,
+      paidKeywords,
+      searchTerms,
+      organicPosts,
+      paidAds,
+      vocInsights,
+      keywordOpportunities,
+      marketResearch,
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
@@ -292,8 +334,16 @@ function buildStrategistUserMessage(args: {
   catalog:         Array<{ name: string; price: number | null; permalink: string | null; stock_status: string | null }>
   inventoryAlerts: Array<{ name: string; packed_stock: number; state: string }>
   learnings:       Array<{ id: string; scope: string; insight: string; created_at: string }>
+  paidKeywords:    Array<{ keyword: string; match_type: string | null; impressions: number; clicks: number; cost_ils: number; conversions: number; conv_value: number; ctr: number; cost_per_conv: number | null }>
+  searchTerms:     Array<{ search_term: string; triggering_keyword: string | null; impressions: number; clicks: number; conversions: number; cost_ils: number }>
+  organicPosts:    Array<{ post_id: string; post_type: string | null; message: string | null; created_at: string; impressions: number; engagement_rate: number; likes: number; comments: number; shares: number; saves: number }>
+  paidAds:         Array<{ ad_id: string; campaign_id: string | null; impressions: number; clicks: number; spend_ils: number; conversions: number; cost_per_conv: number | null }>
+  vocInsights:     Array<{ pattern: string; real_meaning: string | null; customer_stage: string | null; product_context: string | null; frequency: number; example_phrases: unknown }>
+  keywordOpportunities: Array<{ keyword: string; avg_monthly_searches: number | null; competition: string | null; competition_index: number | null }>
+  marketResearch:  Array<{ research_date: string; source: string; summary: string | null }>
 }): string {
-  const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings } = args
+  const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
+          paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -418,6 +468,53 @@ ${catalogBlock}
 These are durable rules surfaced by the admin via chat (or written by earlier strategist runs). Treat them as constraints on your plan: every brief you emit should respect them, and your self_reflection should explicitly note when a learning shaped your choices.
 
 ${learningsBlock}
+
+=== GOOGLE ADS — PAID-INTENT SIGNALS (last 30d) ===
+
+Where Minuto is paying for clicks AND seeing conversions. These are validated commercial intents — write organic content that ranks for these queries so you stop paying for clicks you could earn for free.
+
+Top converting paid keywords (sorted by conversions):
+${paidKeywords.length === 0 ? '  (no paid keyword data)' : paidKeywords.map(k =>
+  `  "${k.keyword}" [${k.match_type ?? '-'}] — conv:${k.conversions.toFixed(1)} clicks:${k.clicks} cost:₪${k.cost_ils.toFixed(0)} ${k.cost_per_conv ? `cpa:₪${k.cost_per_conv.toFixed(0)}` : ''}`,
+).join('\n')}
+
+Actual search terms users typed (what's reaching ads):
+${searchTerms.length === 0 ? '  (no search term data)' : searchTerms.map(t =>
+  `  "${t.search_term}" → triggered by "${t.triggering_keyword ?? '-'}" — conv:${t.conversions.toFixed(1)} clicks:${t.clicks}`,
+).join('\n')}
+
+=== META ORGANIC + ADS — SOCIAL SIGNALS (last 30d) ===
+
+Top organic posts by engagement rate (engagements per impression — small posts with high engagement matter more than viral low-engagement ones):
+${organicPosts.length === 0 ? '  (no organic post data)' : organicPosts.map(p => {
+  const msg = (p.message ?? '').replace(/\s+/g, ' ').slice(0, 100)
+  return `  ${p.post_type ?? 'post'}/${p.post_id.slice(-6)} — er:${(p.engagement_rate * 100).toFixed(2)}% imp:${p.impressions} ❤${p.likes} 💬${p.comments} 🔁${p.shares} 🔖${p.saves} | "${msg}${(p.message?.length ?? 0) > 100 ? '…' : ''}"`
+}).join('\n')}
+
+Top converting paid ads (last 30d):
+${paidAds.length === 0 ? '  (no paid ad data)' : paidAds.map(a =>
+  `  ad/${a.ad_id.slice(-6)} (campaign ${a.campaign_id?.slice(-6) ?? '-'}) — conv:${a.conversions.toFixed(1)} clicks:${a.clicks} spend:₪${a.spend_ils.toFixed(0)} ${a.cost_per_conv ? `cpa:₪${a.cost_per_conv.toFixed(0)}` : ''}`,
+).join('\n')}
+
+=== CUSTOMER RESEARCH — VoC + UNTAPPED KEYWORDS + COMPETITOR SCANS ===
+
+VoC insights (real customer patterns from IG DMs / support / interactions — mined by marketing-advisor):
+${vocInsights.length === 0 ? '  (no VoC insights yet)' : vocInsights.map(v => {
+  const examples = Array.isArray(v.example_phrases)
+    ? (v.example_phrases as unknown[]).slice(0, 2).map(String).join(' / ')
+    : ''
+  return `  • [${v.customer_stage ?? '?'}/${v.product_context ?? '?'}] ${v.pattern} (freq:${v.frequency})${v.real_meaning ? ` — meaning: ${v.real_meaning}` : ''}${examples ? ` — e.g. "${examples}"` : ''}`
+}).join('\n')}
+
+Untapped keyword opportunities (decent volume + low competition):
+${keywordOpportunities.length === 0 ? '  (no keyword opportunities)' : keywordOpportunities.map(k =>
+  `  "${k.keyword}" — searches:${k.avg_monthly_searches}/mo competition:${k.competition ?? '?'} (idx:${k.competition_index?.toFixed(2) ?? '?'})`,
+).join('\n')}
+
+Recent competitor / market research (summaries from market_research):
+${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r =>
+  `  [${r.research_date} / ${r.source}] ${(r.summary ?? '').slice(0, 300)}${(r.summary?.length ?? 0) > 300 ? '…' : ''}`,
+).join('\n\n')}
 ${focusBlock}
 Now perform your self-reflection and emit a plan per the system prompt's format. Return strict JSON only.`
 }
