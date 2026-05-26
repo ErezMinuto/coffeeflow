@@ -39,10 +39,16 @@ export default function SeoAgent() {
 
   return (
     <SeoAgentLayout>
-      <div className="h-full grid grid-cols-[280px_1fr_300px] gap-0">
+      {/* `grid-rows-1` is load-bearing — without it, the implicit grid row
+          defaults to `auto` (content-sized), `h-full` on children resolves
+          to "natural content height" instead of the parent main's height,
+          and the chat panel's footer (textarea + send) gets pushed below
+          the viewport. `grid-rows-1` in Tailwind is `minmax(0, 1fr)`
+          which makes the row both fillable and shrinkable. */}
+      <div className="h-full grid grid-cols-[280px_1fr_300px] grid-rows-1 gap-0 min-h-0">
         <SeoTaskQueue />
         <SeoChatThread sessionId={sessionId} />
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
           <SeoMetricsPanel />
           <div className="border-t border-surface-200 bg-white px-3 py-2 shrink-0">
             <button

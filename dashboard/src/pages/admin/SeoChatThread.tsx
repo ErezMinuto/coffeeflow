@@ -103,13 +103,19 @@ export default function SeoChatThread({ sessionId }: Props) {
   }
 
   return (
-    <section className="h-full flex flex-col bg-surface-50">
+    // `min-h-0` on the flex column is required for the inner scrollable
+    // `flex-1` div to actually shrink — otherwise its natural content
+    // height pushes the column taller than h-full and the footer (input)
+    // ends up below the viewport. Same gotcha applies to the scroll div
+    // itself (also gets min-h-0). This is the standard "flex children
+    // don't respect parent overflow without min-h-0" trap.
+    <section className="h-full flex flex-col bg-surface-50 min-h-0">
       <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-white shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Chat</h2>
         <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {loading ? (
           <div className="text-xs text-surface-500">Loading…</div>
         ) : messages.length === 0 ? (
