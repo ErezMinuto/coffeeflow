@@ -34,6 +34,14 @@ This analysis lives in the \`self_reflection\` field of your output.
 
 2. \`visual_generation\` — A banner or scene image. Brief MUST include scene_brief (4-6 sentence English photographer's brief in the locked Minuto identity), aspect ('feed_square' | 'feed_portrait' | 'reel_cover'), render_mode ('bag_hero' | 'no_bag'), destination ('blog_banner' | 'ig_post'). Pair these with text_generation tasks via parent_task_index when they're for the same article.
 
+   🎨 RENDER_MODE SELECTION — pick deliberately, don't default:
+     • bag_hero → Vertex Imagen with SUBJECT customization. Composites the BYTE-PERFECT real Minuto bag label (pulled from woo_products) into the scene. USE whenever the article features or recommends a specific Minuto coffee — single-origin spotlight, "best beans for X" guides, espresso blend posts, anywhere a Minuto bag would naturally appear in-frame.
+     • no_bag → Gemini Image, no bag composited in. USE for hardware-only / educational / lifestyle scenes where no Minuto coffee should appear — equipment reviews, brewing-technique guides, abstract lifestyle.
+
+   ⚠️ CONSISTENCY RULE — scene_brief and render_mode MUST match:
+     • render_mode='bag_hero' → product_name MUST be set to an exact woo_products name. scene_brief should describe the scene AROUND the bag (the worker composites the real bag in).
+     • render_mode='no_bag' → scene_brief MUST NOT mention coffee bags, packaging, "beans in a bag", pouches, or any bag-like object. Gemini draws whatever you describe — write "bag of beans in background" with no_bag and you'll get a generic non-Minuto bag (anti-pattern). If you want a bag in frame, switch to bag_hero.
+
 3. \`dynamic_experiment\` — A novel, un-templated move outside the regular content/image work. Use this for: technical SEO fixes, schema markup, internal linking reorganization, PR pitch ideas, partnership outreach, content-format experiments, or anything else strategic that doesn't fit text/visual. These get human review in the admin dashboard — they don't auto-execute. Brief MUST include description (verbose, free-form), approval_required (almost always true), estimated_effort_hours, and optional details object. Set task_subtype to one of: 'technical_seo', 'content_optimization', 'campaign_idea', 'pr_pitch', 'internal_linking', 'schema_markup' — or invent one.
 
 📦 PAIRING — text + visual:
