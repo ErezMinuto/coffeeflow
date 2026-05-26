@@ -115,13 +115,17 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   }
 
   return (
-    <aside className="h-full flex flex-col bg-white border-r border-surface-200">
-      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50">
+    // `min-h-0` on the flex column + the scroll div is the standard
+    // flex-overflow trap fix: without it, children's natural content
+    // height pushes the column past h-full and `overflow-y-auto` never
+    // kicks in (because there's nothing to overflow against).
+    <aside className="h-full flex flex-col bg-white border-r border-surface-200 min-h-0">
+      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Task queue</h2>
         <span className="text-xs text-surface-500">{tasks.length} rows</span>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {loading ? (
           <div className="p-4 text-xs text-surface-500">Loading…</div>
         ) : tasks.length === 0 ? (

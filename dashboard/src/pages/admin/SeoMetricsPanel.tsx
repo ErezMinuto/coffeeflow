@@ -67,13 +67,14 @@ export default function SeoMetricsPanel() {
   }, [])
 
   return (
-    <aside className="h-full flex flex-col bg-white border-l border-surface-200">
-      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50">
+    // Same min-h-0 flex-overflow fix as SeoTaskQueue / SeoChatThread.
+    <aside className="h-full flex flex-col bg-white border-l border-surface-200 min-h-0">
+      <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Metrics</h2>
         <span className="text-xs text-surface-500">last 5</span>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
         {loading ? (
           <div className="text-xs text-surface-500">Loading…</div>
         ) : rows.length === 0 ? (
