@@ -209,6 +209,48 @@ export type ChatToolName =
   | 'get_task_details'
   | 'get_recent_metrics'
   | 'list_pending_tasks'
+  | 'record_learning'
+  | 'list_learnings'
+  | 'supersede_learning'
+
+// ── Learnings (cross-session memory) ─────────────────────────────────────
+// Persistent insights surfaced via admin chat (or written by the
+// orchestrator). Injected as a "STANDING INSIGHTS" context block in the
+// next chat session and into the strategist's planning prompt. The LLM
+// doesn't have memory; the pipeline does — this is the table that holds it.
+
+// Loose taxonomy — additional scopes can emerge organically (column is
+// TEXT, not an enum). These match the canonical scopes documented in
+// the 20260527_seo_learnings_table.sql migration.
+export type LearningScope =
+  | 'visual_style'      // image preferences (no hands, no scattered beans, etc.)
+  | 'brand_voice'       // tone / copy rules surfaced via chat
+  | 'render_strategy'   // when bag_hero vs no_bag works/doesn't
+  | 'content_topic'     // which topics resonate, which don't
+  | 'qa_pattern'        // recurring QA fail modes worth pre-empting
+  | 'other'
+  | (string & {})       // accept novel scopes; lints checked at write time
+
+export type LearningSource = 'chat_agent' | 'orchestrator' | 'admin_manual' | (string & {})
+
+export interface LearningRow {
+  id:                string
+  scope:             LearningScope
+  insight:           string
+  evidence_task_ids: string[]
+  created_by:        LearningSource
+  superseded_at:     string | null
+  superseded_reason: string | null
+  superseded_by:     string | null
+  created_at:        string
+}
+
+export interface NewLearning {
+  scope:              LearningScope
+  insight:            string
+  evidence_task_ids?: string[]
+  created_by:         LearningSource
+}
 
 export interface ChatToolCall {
   id: string

@@ -35,11 +35,16 @@ import {
   getChatHistory,
   getRecentTasks,
   getRecentMetricsSnapshots,
+  getRecentLearnings,
   insertTasks,
   markTaskFailed,
+  recordLearning,
+  supersedeLearning,
 } from '../seo-agent/db.ts'
 import type {
   ChatToolName,
+  LearningRow,
+  LearningScope,
   NewSeoTask,
   SeoTaskRow,
 } from '../seo-agent/types.ts'
@@ -131,6 +136,42 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         task_type: { type: 'string', description: 'Optional filter (e.g. dynamic_experiment).' },
       },
+    },
+  },
+  {
+    name: 'record_learning',
+    description: 'Persist an insight from this conversation into seo_learnings so it survives across chat sessions AND shapes future orchestrator runs. Use when the admin teaches you something durable ("no hands in images", "Yirgacheffe articles work better"). Do NOT use for one-off corrections — only for rules/preferences that should apply going forward. Always confirm the wording with the admin first, in one sentence, before calling.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        scope:   { type: 'string', description: "Taxonomy bucket: 'visual_style' | 'brand_voice' | 'render_strategy' | 'content_topic' | 'qa_pattern' | 'other'." },
+        insight: { type: 'string', description: 'One- to three-sentence rule in plain English, phrased prescriptively ("Always avoid X" / "Prefer Y when Z").' },
+        evidence_task_ids: { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs of seo_tasks rows that triggered this learning, so admins can trace why it was recorded.' },
+      },
+      required: ['scope', 'insight'],
+    },
+  },
+  {
+    name: 'list_learnings',
+    description: 'Fetch active (non-superseded) learnings from seo_learnings. Use to recall what was previously taught before acting on something the admin says.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        scope: { type: 'string', description: 'Optional scope filter.' },
+        limit: { type: 'number', description: 'Default 20.' },
+      },
+    },
+  },
+  {
+    name: 'supersede_learning',
+    description: 'Mark a learning as superseded when the admin retracts or refines a prior rule. The row stays for audit; it just stops appearing in future context.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        learning_id: { type: 'string', description: 'UUID of the seo_learnings row.' },
+        reason:      { type: 'string', description: 'Why it is being retracted/refined.' },
+      },
+      required: ['learning_id', 'reason'],
     },
   },
 ]
@@ -232,6 +273,44 @@ async function executeTool(
         return { ok: true, payload: { rows: data ?? [] } }
       }
 
+      case 'record_learning': {
+        const scope   = String(input.scope ?? '').trim() as LearningScope
+        const insight = String(input.insight ?? '').trim()
+        if (!scope || !insight) {
+          return { ok: false, payload: { error: 'record_learning requires scope and insight.' } }
+        }
+        const evidence = Array.isArray(input.evidence_task_ids)
+          ? input.evidence_task_ids.map(String).filter(Boolean)
+          : []
+        const row = await recordLearning(supabase, {
+          scope,
+          insight,
+          evidence_task_ids: evidence,
+          created_by:        'chat_agent',
+        })
+        return { ok: true, payload: { learning_id: row.id, scope: row.scope, created_at: row.created_at } }
+      }
+
+      case 'list_learnings': {
+        const scope = typeof input.scope === 'string' ? input.scope : undefined
+        const limit = typeof input.limit === 'number' ? Math.max(1, Math.min(50, input.limit)) : 20
+        const rows = await getRecentLearnings(supabase, {
+          scopes: scope ? [scope] : undefined,
+          limit,
+        })
+        return { ok: true, payload: { learnings: rows } }
+      }
+
+      case 'supersede_learning': {
+        const learning_id = String(input.learning_id ?? '').trim()
+        const reason      = String(input.reason ?? '').trim()
+        if (!learning_id || !reason) {
+          return { ok: false, payload: { error: 'supersede_learning requires learning_id and reason.' } }
+        }
+        await supersedeLearning(supabase, learning_id, reason)
+        return { ok: true, payload: { learning_id, status: 'superseded' } }
+      }
+
       default:
         return { ok: false, payload: { error: `unknown tool: ${name}` } }
     }
@@ -320,10 +399,13 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
 // ── Build the system prompt with live context block ────────────────────
 
 async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
-  // Most-recent orchestrator snapshot + 10 most-recent tasks.
-  const [snapshots, recentTasks] = await Promise.all([
+  // Most-recent orchestrator snapshot + 10 most-recent tasks + 20 most-
+  // recent active learnings (cross-session memory). All three are read
+  // fresh on every chat turn so the agent always sees the latest state.
+  const [snapshots, recentTasks, learnings] = await Promise.all([
     getRecentMetricsSnapshots(supabase, 'orchestrator_run', 1),
     getRecentTasks(supabase, new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(), 10),
+    getRecentLearnings(supabase, { limit: 20 }),
   ])
 
   const snapBlock = snapshots[0]
@@ -337,7 +419,19 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
         return `  [${t.status.toUpperCase()}] ${t.id} — ${t.task_type}${t.task_subtype ? ':' + t.task_subtype : ''} — ${t.rationale ?? ''} | brief: ${brief}`
       }).join('\n')
 
+  // Standing insights — the closest thing to "memory" the LLM gets. Each
+  // row was either recorded via record_learning during a prior chat OR
+  // written by the orchestrator from its self_reflection. Grouped by
+  // scope so the agent can scan them quickly.
+  const learningsBlock = learnings.length === 0
+    ? '(no learnings recorded yet — use record_learning to teach me durable rules)'
+    : groupLearningsForPrompt(learnings)
+
   return `${CHAT_SYSTEM_PROMPT}
+
+=== STANDING INSIGHTS (cross-session memory — apply unless explicitly overridden) ===
+
+${learningsBlock}
 
 === LIVE CONTEXT (refreshed on each chat turn) ===
 
@@ -345,6 +439,21 @@ ${snapBlock}
 
 10 most-recent seo_tasks (newest first):
 ${tasksBlock}`
+}
+
+// Render the learnings list in a scope-grouped, compact form. Keeping
+// each line short — the agent doesn't need full evidence_task_ids in
+// prompt context; it can call list_learnings() if it wants details.
+function groupLearningsForPrompt(rows: LearningRow[]): string {
+  const grouped: Record<string, string[]> = {}
+  for (const r of rows) {
+    const scope = r.scope || 'other'
+    if (!grouped[scope]) grouped[scope] = []
+    grouped[scope].push(`  • [${r.id.slice(0, 8)}] ${r.insight}`)
+  }
+  return Object.entries(grouped)
+    .map(([scope, lines]) => `${scope}:\n${lines.join('\n')}`)
+    .join('\n\n')
 }
 
 // ── HTTP entry point ───────────────────────────────────────────────────

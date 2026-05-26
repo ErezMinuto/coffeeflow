@@ -27,6 +27,7 @@ import {
   insertMetrics,
   getRecentTasks,
   getRecentMetricsSnapshots,
+  getRecentLearnings,
 } from '../seo-agent/db.ts'
 import { fetchTopKeywords, computePositionDeltas } from '../seo-agent/services/googleApi.ts'
 import {
@@ -82,6 +83,7 @@ serve(async (req: Request): Promise<Response> => {
       inventoryAlerts,
       recentTasks,
       priorSnapshots,
+      learnings,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -89,13 +91,20 @@ serve(async (req: Request): Promise<Response> => {
       fetchInventoryAlerts(supabase),
       getRecentTasks(supabase, fourteenDaysAgo, 100),
       getRecentMetricsSnapshots(supabase, 'orchestrator_run', 2),
+      // Cross-session learnings — scopes most relevant to strategist planning.
+      // Excludes brand_voice (the writer worker enforces those via its own
+      // prompt) and qa_pattern (the visual worker handles those internally).
+      getRecentLearnings(supabase, {
+        scopes: ['visual_style', 'render_strategy', 'content_topic', 'other'],
+        limit: 30,
+      }),
     ])
 
     console.log(
       `[seo-orchestrator] sources — gsc:${gscKeywords.length} ` +
       `blog:${blogPosts.length} catalog:${catalog.length} ` +
       `inv:${inventoryAlerts.length} recentTasks:${recentTasks.length} ` +
-      `priorSnapshots:${priorSnapshots.length}`,
+      `priorSnapshots:${priorSnapshots.length} learnings:${learnings.length}`,
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
@@ -143,6 +152,7 @@ serve(async (req: Request): Promise<Response> => {
       blogPosts,
       catalog,
       inventoryAlerts,
+      learnings,
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
@@ -281,8 +291,9 @@ function buildStrategistUserMessage(args: {
   blogPosts:       Array<{ title: string; url: string; published_at: string | null }>
   catalog:         Array<{ name: string; price: number | null; permalink: string | null; stock_status: string | null }>
   inventoryAlerts: Array<{ name: string; packed_stock: number; state: string }>
+  learnings:       Array<{ id: string; scope: string; insight: string; created_at: string }>
 }): string {
-  const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts } = args
+  const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -356,6 +367,23 @@ function buildStrategistUserMessage(args: {
         .map(i => `  ${i.state === 'critical' ? '⛔' : '⚠️'} ${i.name} — ${i.packed_stock} bags`)
         .join('\n') || '  (all inventory healthy)'
 
+  // Standing learnings — cross-session memory recorded via the chat
+  // agent or future orchestrator self-writes. These are PRESCRIPTIVE
+  // rules the strategist must honor when planning. Grouped by scope.
+  const learningsBlock = learnings.length === 0
+    ? '  (no standing learnings yet)'
+    : (() => {
+        const grouped: Record<string, string[]> = {}
+        for (const l of learnings) {
+          const k = l.scope || 'other'
+          if (!grouped[k]) grouped[k] = []
+          grouped[k].push(`  • ${l.insight}`)
+        }
+        return Object.entries(grouped)
+          .map(([scope, lines]) => `${scope}:\n${lines.join('\n')}`)
+          .join('\n\n')
+      })()
+
   return `=== CURRENT CYCLE METRICS ===
 
 GSC top keywords (last 30d, ranked by impressions):
@@ -384,6 +412,12 @@ ${blogBlock}
 === PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
 
 ${catalogBlock}
+
+=== STANDING LEARNINGS (cross-session memory — apply unless explicitly contradicted by this cycle's data) ===
+
+These are durable rules surfaced by the admin via chat (or written by earlier strategist runs). Treat them as constraints on your plan: every brief you emit should respect them, and your self_reflection should explicitly note when a learning shaped your choices.
+
+${learningsBlock}
 ${focusBlock}
 Now perform your self-reflection and emit a plan per the system prompt's format. Return strict JSON only.`
 }

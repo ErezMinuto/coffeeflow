@@ -246,3 +246,68 @@ export async function getChatHistory(
     tool_call_id: string | null
   }>
 }
+
+// ── Learnings (cross-session memory) ─────────────────────────────────────
+// Insights from admin chat persist here so the next session — and the
+// next orchestrator run — can apply them. Soft-supersede pattern: rows
+// are never deleted, just marked superseded with a reason.
+
+import type { LearningRow, NewLearning } from './types.ts'
+
+export async function recordLearning(
+  supabase: SupabaseClient,
+  learning: NewLearning,
+): Promise<LearningRow> {
+  const { data, error } = await supabase
+    .from('seo_learnings')
+    .insert({
+      scope:             learning.scope,
+      insight:           learning.insight,
+      evidence_task_ids: learning.evidence_task_ids ?? [],
+      created_by:        learning.created_by,
+    })
+    .select('*')
+    .single()
+  if (error) throw new Error(`recordLearning failed: ${error.message}`)
+  return data as LearningRow
+}
+
+// Default read path for both chat prompt + strategist prompt: active
+// (non-superseded) learnings, newest first. `scopes` filter is optional
+// — the chat agent loads everything, the orchestrator can narrow to
+// just the scopes relevant to planning.
+export async function getRecentLearnings(
+  supabase: SupabaseClient,
+  opts: { scopes?: string[]; limit?: number } = {},
+): Promise<LearningRow[]> {
+  let q = supabase
+    .from('seo_learnings')
+    .select('*')
+    .is('superseded_at', null)
+    .order('created_at', { ascending: false })
+    .limit(opts.limit ?? 20)
+  if (opts.scopes && opts.scopes.length > 0) {
+    q = q.in('scope', opts.scopes)
+  }
+  const { data, error } = await q
+  if (error) throw new Error(`getRecentLearnings failed: ${error.message}`)
+  return (data ?? []) as LearningRow[]
+}
+
+export async function supersedeLearning(
+  supabase: SupabaseClient,
+  id: string,
+  reason: string,
+  supersededBy?: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('seo_learnings')
+    .update({
+      superseded_at:     new Date().toISOString(),
+      superseded_reason: reason,
+      superseded_by:     supersededBy ?? null,
+    })
+    .eq('id', id)
+    .is('superseded_at', null)  // don't re-supersede an already-superseded row
+  if (error) throw new Error(`supersedeLearning failed: ${error.message}`)
+}
