@@ -194,9 +194,11 @@ interface EnrichedPost {
   product_reference?:   string | null   // product name Haiku detected, e.g. "Dark Chocolate"
   reference_image_url?: string | null   // matched woo_products bag image, drives visual-test
   // Render strategy chosen by the enrichment agent. 'no_bag' → bag-free
-  // editorial scene; auto-routed to vertex-imagen-edit regardless of the
-  // pipeline toggle (only that fn supports no_bag). Missing/'bag_hero' →
-  // existing behavior (gemini/vertex toggle, bag composited).
+  // editorial scene; routed to visual-test (Gemini Image) with
+  // use_reference:false — Gemini natively accepts the equipment
+  // reference photos (roaster, Strada) so rendered hardware matches
+  // Minuto's actual gear. Missing/'bag_hero' → existing behavior
+  // (gemini/vertex toggle, bag composited byte-perfect via Vertex).
   render_mode?:         'bag_hero' | 'no_bag'
 }
 
@@ -1193,21 +1195,26 @@ function CarouselControls({ ep }: { ep: EnrichedPost }) {
   async function generateSlide(i: number) {
     setGen(i, true); setErr(i, null); setUrl(i, null)
     try {
-      // 1. Generate the photographic background. ALL EnrichedPost renders
-      //    go through vertex-imagen-edit — it's the byte-perfect bag
-      //    pipeline (composites the real catalog PNG, never regenerates
-      //    bag text). Gemini hallucinates bag text every time and was the
-      //    source of the "Yirgachoffe / Doye Benos / Fasenda BertSo"
-      //    incident (multi-bag brief, 2026-05-23). RenderPipelineToggle is
-      //    now informational only — bag_hero + no_bag both route to Vertex.
+      // 1. Generate the photographic background.
+      //    bag_hero slides → vertex-imagen-edit (byte-perfect bag composite;
+      //      Gemini hallucinates bag text — was the source of the
+      //      "Yirgachoffe / Doye Benos / Fasenda BertSo" incident,
+      //      2026-05-23).
+      //    no_bag slides   → visual-test with use_reference:false. Same
+      //      logic as the single-image generateVisual: Gemini Image
+      //      natively accepts the roaster / Strada reference photos, so
+      //      the rendered equipment matches Minuto's actual gear instead
+      //      of Imagen 4's text-only guesses. Carousels are currently
+      //      disabled upstream but keeping the routing consistent for
+      //      when they're re-enabled.
       const noBag    = ep.render_mode === 'no_bag'
-      const renderFn = 'vertex-imagen-edit'
+      const renderFn = noBag ? 'visual-test' : 'vertex-imagen-edit'
       const gen = await supabase.functions.invoke(renderFn, {
         body: noBag
           ? {
-              scene_brief: slides[i].scene_brief,
-              aspect:      ep.aspect,
-              render_mode: 'no_bag',
+              scene_brief:   slides[i].scene_brief,
+              aspect:        ep.aspect,
+              use_reference: false,
             }
           : {
               scene_brief:         slides[i].scene_brief,
@@ -1497,18 +1504,31 @@ function PostPublishingControls({ ep }: { ep: EnrichedPost }) {
     setGenerating(true); setGenError(null); setImageUrl(null)
     setVideoUrl(null); setReelOperation(null); setReelError(null)
     try {
-      // 1. Generate the photographic background. The pipeline is selectable
-      //    via the RenderPipelineToggle (Gemini default / Vertex) — UNLESS
-      //    the recommendation is no_bag, which only vertex-imagen-edit
-      //    supports, so it's auto-routed there and the bag ref is dropped.
+      // 1. Generate the photographic background.
+      //    bag_hero → goes through RenderPipelineToggle (Gemini visual-test
+      //      default / Vertex composite for byte-perfect bag text).
+      //    no_bag  → routed to visual-test with use_reference:false. Gemini
+      //      Image natively accepts the equipment reference photos
+      //      (MINUTO_ROASTER_REFERENCE_URL, MINUTO_ESPRESSO_MACHINE_REFERENCE_URL),
+      //      so the rendered roaster / Strada match Minuto's actual gear.
+      //      Previously this routed to vertex-imagen-edit (Imagen 4
+      //      text-to-image), which was structurally blind to those
+      //      references — Imagen rendered generic Probat-style copper
+      //      roasters from text alone. Switched 2026-05-26 after the
+      //      empirical comparison showed Gemini-image is the only path
+      //      that can lock the equipment shape.
       const noBag    = ep.render_mode === 'no_bag'
-      const renderFn = noBag ? 'vertex-imagen-edit' : RENDER_FN[renderPipeline]
+      const renderFn = noBag ? 'visual-test' : RENDER_FN[renderPipeline]
       const gen = await supabase.functions.invoke(renderFn, {
         body: noBag
           ? {
-              scene_brief: ep.scene_brief,
-              aspect:      ep.aspect,
-              render_mode: 'no_bag',
+              scene_brief:   ep.scene_brief,
+              aspect:        ep.aspect,
+              // Skip the bag entirely — visual-test gets the equipment refs
+              // it needs from MINUTO_ROASTER_REFERENCE_URL /
+              // MINUTO_ESPRESSO_MACHINE_REFERENCE_URL inside the function
+              // (attached based on regex match against the scene_brief).
+              use_reference: false,
             }
           : {
               scene_brief: ep.scene_brief,
