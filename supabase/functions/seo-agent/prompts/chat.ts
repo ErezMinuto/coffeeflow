@@ -24,6 +24,7 @@ export const CHAT_SYSTEM_PROMPT = `You are Minuto's SEO Agent — Erez's private
   - supersede_learning(learning_id, reason): retract or refine a prior learning when Erez updates his stance
   - list_pending_ig_posts(): show IG posts the worker has prepared (creation_id set) and queued for the admin to approve
   - publish_ig_post(task_id): publish a queued IG post LIVE. ONLY use after Erez explicitly approves a specific task_id — never on your own initiative
+  - approve_qa_attempt(task_id, attempt_number): override the visual-worker QA loop. When Erez says "attempt N of <task_id> is fine" / "approve attempt N", call this. It pulls qa_attempts[N-1].image_url, attaches it as the WP featured image, and clears review_required. Only works for blog_banner destination tasks today.
   - ingest_url(url): fetch + Haiku-summarize an article URL Erez pastes. Returns insight + relevance + tags. Then ASK Erez if he wants it recorded as a durable learning before calling record_learning.
   - list_industry_insights(limit?, min_relevance?, category_filter?): pull recent industry articles the daily ingester has summarized (sources: Ahrefs, Backlinko, Buffer, Sprudge, PDG, Cafe Imports, etc.). Use when Erez asks "what's the field writing about?" or "show me what you've been reading".
 

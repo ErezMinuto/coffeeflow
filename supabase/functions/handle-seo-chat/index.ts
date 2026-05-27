@@ -30,6 +30,7 @@ import {
   type MessageContentBlock,
   type ToolDefinition,
 } from '../seo-agent/claude.ts'
+import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
 import {
   createSupabase,
   appendChatMessage,
@@ -68,6 +69,11 @@ function jsonResponse(body: unknown, status = 200): Response {
 // Supabase URL with the function-invoke anon key.
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+// WP credentials for the approve_qa_attempt tool. Same env vars
+// seo-worker-visual + blog-publish use — single source of truth.
+const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
+const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''
+const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 
 // Cap on tool-use loop iterations so a misbehaving model can't pin the
 // edge function until the 150s wall clock kills it. 8 is more than
@@ -217,6 +223,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         min_relevance:   { type: 'number', description: 'Default 0.5. Set to 0 to see everything.' },
         category_filter: { type: 'string', description: "Optional: 'seo' | 'marketing' | 'social' | 'coffee'." },
       },
+    },
+  },
+  {
+    name: 'approve_qa_attempt',
+    description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        task_id:        { type: 'string', description: 'UUID of the visual_generation seo_tasks row.' },
+        attempt_number: { type: 'number', description: '1-based index into qa_attempts[]. The admin tells you which attempt is acceptable.' },
+      },
+      required: ['task_id', 'attempt_number'],
     },
   },
 ]
@@ -527,6 +545,86 @@ async function executeTool(
           }
         } catch (e: any) {
           return { ok: false, payload: { error: `ingest failed: ${e?.message ?? e}` } }
+        }
+      }
+
+      case 'approve_qa_attempt': {
+        const task_id = String(input.task_id ?? '').trim()
+        const attemptN = typeof input.attempt_number === 'number' ? Math.floor(input.attempt_number) : 0
+        if (!task_id) return { ok: false, payload: { error: 'task_id required.' } }
+        if (attemptN < 1) return { ok: false, payload: { error: 'attempt_number must be 1-based positive integer.' } }
+        if (!WP_USERNAME || !WP_APP_PASSWORD) {
+          return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured — cannot attach.' } }
+        }
+        // Load + validate the task.
+        const { data: task, error: tErr } = await supabase
+          .from('seo_tasks')
+          .select('id, task_type, parent_task_id, result_data')
+          .eq('id', task_id)
+          .maybeSingle()
+        if (tErr) return { ok: false, payload: { error: tErr.message } }
+        if (!task) return { ok: false, payload: { error: `task ${task_id} not found.` } }
+        if (task.task_type !== 'visual_generation') {
+          return { ok: false, payload: { error: `task is task_type=${task.task_type}, not visual_generation.` } }
+        }
+        const rd = (task.result_data ?? {}) as {
+          destination?: string
+          qa_attempts?: Array<{ attempt: number; image_url: string }>
+          wp_post_id?: number
+          approved_attempt?: number
+        }
+        if (rd.destination !== 'blog_banner') {
+          return { ok: false, payload: { error: `task destination is '${rd.destination}', not 'blog_banner'. IG-destination QA approval not yet supported via this tool.` } }
+        }
+        if (rd.approved_attempt) {
+          return { ok: false, payload: { error: `task already has approved_attempt=${rd.approved_attempt}. Refusing double-approval.` } }
+        }
+        const attempts = Array.isArray(rd.qa_attempts) ? rd.qa_attempts : []
+        const target = attempts.find(a => a.attempt === attemptN)
+        if (!target) {
+          return { ok: false, payload: { error: `attempt ${attemptN} not found in qa_attempts (have ${attempts.length} attempts).` } }
+        }
+        if (!target.image_url) {
+          return { ok: false, payload: { error: `qa_attempts[${attemptN}] has no image_url.` } }
+        }
+        if (!rd.wp_post_id) {
+          return { ok: false, payload: { error: 'task has no wp_post_id — cannot attach without a target post.' } }
+        }
+        // Attach via the shared helper (same code path the worker uses on QA pass).
+        let mediaId: number
+        try {
+          mediaId = await attachFeaturedImage({
+            wpUrl:       WP_URL,
+            username:    WP_USERNAME,
+            appPassword: WP_APP_PASSWORD,
+            postId:      rd.wp_post_id,
+            imageUrl:    target.image_url,
+            titleHint:   `seo-banner-attempt-${attemptN}-task-${task_id.slice(0, 8)}`,
+          })
+        } catch (e: any) {
+          return { ok: false, payload: { error: `WP attach failed: ${e?.message ?? e}` } }
+        }
+        // Patch result_data — clear review_required, record approval audit trail.
+        const patch = {
+          ...rd,
+          attached_media_id:      mediaId,
+          review_required:        false,
+          approved_attempt:       attemptN,
+          approved_via_chat_at:   new Date().toISOString(),
+          attach_skipped_reason:  null,
+        }
+        const { error: updErr } = await supabase.from('seo_tasks').update({ result_data: patch }).eq('id', task_id)
+        if (updErr) return { ok: false, payload: { error: `attach succeeded (media_id=${mediaId}) but result_data write failed: ${updErr.message}` } }
+        return {
+          ok: true,
+          payload: {
+            task_id,
+            attempt_approved:  attemptN,
+            attached_media_id: mediaId,
+            wp_post_id:        rd.wp_post_id,
+            image_url:         target.image_url,
+            note:              `Featured image set on WP post ${rd.wp_post_id}. Task marked approved; review_required cleared.`,
+          },
         }
       }
 
