@@ -49,6 +49,8 @@ import {
   fetchRecentMarketResearch,
   fetchIndustryInsights,
   fetchAiVisibilitySummary,
+  fetchCustomerSegmentSummary,
+  fetchCompetitorIntelligence,
 } from '../seo-agent/services/cmsApi.ts'
 import {
   fetchTopOrganicPosts,
@@ -160,6 +162,8 @@ serve(async (req: Request): Promise<Response> => {
       ga4LandingPages,
       industryInsights,
       aiVisibility,
+      customerSegments,
+      competitorIntel,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -196,11 +200,14 @@ serve(async (req: Request): Promise<Response> => {
       fetchIndustryInsights(supabase, { minRelevance: 0.5, lookbackDays: 14, limit: 12 }),
       // AI shopping-agent visibility — per-query Minuto mention rate
       // across LLM probes (Claude / Perplexity / GPT-4o etc). Populated
-      // weekly by ai-visibility-probe. Strategist proposes
-      // dynamic_experiment tasks (e.g. 'add llms.txt', 'publish
-      // authoritative comparison piece') to improve discoverability
-      // inside AI shopping assistants.
+      // weekly by ai-visibility-probe.
       fetchAiVisibilitySummary(supabase, 30),
+      // Customer segment structure from RFM table — strategist sees
+      // audience composition, not individual customers.
+      fetchCustomerSegmentSummary(supabase),
+      // Competitor intelligence — aggregated from existing tables (LLM
+      // probe co-mentions + market_research scans). No new scrapers.
+      fetchCompetitorIntelligence(supabase, 30),
     ])
 
     console.log(
@@ -270,6 +277,8 @@ serve(async (req: Request): Promise<Response> => {
       ga4LandingPages,
       industryInsights,
       aiVisibility,
+      customerSegments,
+      competitorIntel,
       postFollowback,
     })
 
@@ -458,11 +467,13 @@ function buildStrategistUserMessage(args: {
   ga4LandingPages: Array<{ page_path: string; sessions: number; active_users: number; engaged_sessions: number; conversions: number; conversion_value: number; avg_bounce_rate: number | null; avg_session_duration: number | null }>
   industryInsights: Array<{ source_name: string; source_category: string; title: string; url: string; insight: string; relevance: number; tags: string[]; published_at: string | null }>
   aiVisibility:    Array<{ query: string; category: string; language: string; probes_total: number; mentions_total: number; mention_rate: number; avg_mention_position: number | null; top_competitors: Array<{ name: string; count: number }>; last_run: string }>
+  customerSegments: { total_customers: number; by_segment: Array<{ segment: string; count: number; avg_total_spent_ils: number; avg_order_count: number; avg_days_since_last: number }>; new_in_last_30d: number; at_risk_count: number }
+  competitorIntel:  { llm_co_mentions: Array<{ name: string; mention_count_30d: number; queries_appearing_in: number }>; recent_research: Array<{ source: string; research_date: string; summary_excerpt: string }> }
   postFollowback:  PostFollowback[]
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages, industryInsights, aiVisibility, postFollowback } = args
+          ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -651,6 +662,31 @@ ${industryInsights.length === 0 ? '  (no industry articles ingested yet — chec
   const tagStr = a.tags.length > 0 ? ` [${a.tags.join(', ')}]` : ''
   return `  • [${a.source_name} / rel ${a.relevance.toFixed(2)}]${tagStr}\n    "${a.title}"\n    → ${a.insight}\n    ${a.url}`
 }).join('\n\n')}
+
+=== CUSTOMER SEGMENTS (RFM rollup) ===
+
+Audience structure from customer_rfm. Aggregated rows only — no individual customer records.
+
+  total_customers: ${customerSegments.total_customers}
+  new_in_last_30d: ${customerSegments.new_in_last_30d}
+  at_risk (>90d since last + repeat customer): ${customerSegments.at_risk_count}
+
+  By segment:
+${customerSegments.by_segment.length === 0 ? '  (no segments)' : customerSegments.by_segment.map(s =>
+  `    [${s.segment}] count=${s.count}  avg_spent=₪${s.avg_total_spent_ils}  avg_orders=${s.avg_order_count}  avg_days_since=${s.avg_days_since_last}`,
+).join('\n')}
+
+=== COMPETITOR INTELLIGENCE (aggregated from existing signals) ===
+
+LLM co-mentions over last 30d — competitors who keep showing up alongside Minuto (or instead of Minuto) in shopping-query probes:
+${competitorIntel.llm_co_mentions.length === 0 ? '  (none — no LLM probes have surfaced competitors yet)' : competitorIntel.llm_co_mentions.map(c =>
+  `  ${c.name} — mentioned ${c.mention_count_30d}× across ${c.queries_appearing_in} different queries`,
+).join('\n')}
+
+Recent market-research scans:
+${competitorIntel.recent_research.length === 0 ? '  (none in last 30d)' : competitorIntel.recent_research.map(r =>
+  `  [${r.research_date}] ${r.source} — ${r.summary_excerpt}…`,
+).join('\n\n')}
 
 === POST-BY-POST FOLLOW-BACK (your own emissions, last 14d) ===
 
