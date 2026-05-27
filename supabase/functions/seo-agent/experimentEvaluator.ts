@@ -36,6 +36,7 @@ import {
   getExperimentVariations,
   updateExperimentStatus,
   recordLearning,
+  getRecentLearnings,
 } from './db.ts'
 import { callClaude, MODEL_ORCHESTRATOR, parseClaudeJson } from './claude.ts'
 import type {
@@ -189,6 +190,24 @@ async function evaluateOne(
     evidence_task_ids:  [winner.task_id],
     created_by:         'orchestrator',
   })
+
+  // ── Learning self-evaluation: confirm/contradict existing rules ──────
+  // The new rule may CONFIRM or CONTRADICT existing learnings. Ask Claude
+  // to map relationships, then increment/decrement evidence_score per
+  // learning. Auto-supersede (only for orchestrator-written learnings)
+  // when score drops below threshold.
+  try {
+    await updateEvidenceScores(supabase, {
+      newLearningInsight: heuristic.rule,
+      newLearningId:      learning.id,
+      experimentId:       exp.id,
+      winnerLabel:        winner.variation_label as string,
+    })
+  } catch (e: any) {
+    // Don't fail the evaluation if confirm/contradict scoring breaks —
+    // the primary learning is already recorded. Just log + continue.
+    console.warn(`[evaluator] evidence-score update threw — primary learning still recorded: ${e?.message ?? e}`)
+  }
 
   await updateExperimentStatus(supabase, exp.id, {
     status:               'evaluated',
@@ -415,5 +434,136 @@ Write the single prescriptive rule per the system prompt. Output strict JSON onl
   return {
     rule:      typeof parsed.rule === 'string' ? parsed.rule : `(empty rule from synthesizer for experiment "${args.hypothesis}")`,
     reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : '',
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Learning self-evaluation. When a new winner-rule is recorded, check
+// it against existing active learnings and update evidence_score:
+//   • +1 if Claude says new rule CONFIRMS the existing one
+//   • -1 if new rule CONTRADICTS the existing one
+//   •  0 if uncorrelated (default — most pairs)
+// Auto-supersede learnings whose score drops below AUTO_SUPERSEDE_THRESHOLD,
+// but ONLY for created_by='orchestrator' learnings. Admin-recorded
+// learnings (chat_agent / admin_manual) are never auto-superseded.
+// ─────────────────────────────────────────────────────────────────────────
+
+const AUTO_SUPERSEDE_THRESHOLD = -2   // tunable: 2 contradictions auto-retires an orchestrator rule
+
+const EVIDENCE_SCORE_SYSTEM_PROMPT = `You are auditing the consistency of Minuto's organic-marketing rule corpus. Given ONE new prescriptive rule (just written by an experiment evaluator) and a list of EXISTING rules, classify each existing rule's relationship to the new one:
+
+  "confirm"     — new rule reinforces / restates / strengthens existing rule
+  "contradict"  — new rule directly opposes / refutes existing rule (e.g. existing says 'X beats Y', new says 'Y beats X' on the same axis)
+  "unrelated"   — new and existing concern different scopes / topics / channels
+
+BE CONSERVATIVE. Most pairs are unrelated. Only mark "confirm" or "contradict" when the relationship is clear and on the SAME axis (same channel, same content type, same variable). A V60 hook-style learning is UNRELATED to a Yirgacheffe positioning learning — even if both are about blog content.
+
+OUTPUT (strict JSON, no markdown fences):
+{
+  "relations": [
+    { "learning_id": "uuid-prefix", "relation": "confirm" | "contradict" | "unrelated", "reasoning": "one sentence" }
+  ]
+}
+
+Only include rules where relation != "unrelated" — return an empty array if everything is unrelated.`
+
+async function updateEvidenceScores(
+  supabase: SupabaseClient,
+  args: {
+    newLearningInsight: string
+    newLearningId:      string
+    experimentId:       string
+    winnerLabel:        string
+  },
+): Promise<void> {
+  // Load active orchestrator-written learnings — those are the only ones
+  // eligible for auto-supersede. Admin-recorded learnings are also passed
+  // to Claude (so it can flag if the new rule contradicts something the
+  // admin taught), but they don't get auto-superseded.
+  const existing = await getRecentLearnings(supabase, { limit: 50 })
+  const candidates = existing.filter(l => l.id !== args.newLearningId)
+  if (candidates.length === 0) return  // no other learnings to check against
+
+  const existingBlock = candidates.map(l =>
+    `  [${l.id.slice(0, 8)}] (scope=${l.scope}, by=${l.created_by}) ${l.insight}`
+  ).join('\n')
+
+  const userMessage = `NEW RULE (just recorded by experiment ${args.experimentId.slice(0, 8)}, winner=${args.winnerLabel}):
+  ${args.newLearningInsight}
+
+EXISTING RULES (active, last 50):
+${existingBlock}
+
+Classify each existing rule's relation to the new one. Output strict JSON only. Empty relations array if all unrelated.`
+
+  const res = await callClaude({
+    model:       MODEL_ORCHESTRATOR,
+    system:      EVIDENCE_SCORE_SYSTEM_PROMPT,
+    messages:    [{ role: 'user', content: userMessage }],
+    maxTokens:   800,
+    temperature: 0.1,
+    timeoutMs:   45_000,
+  })
+
+  let parsed: { relations?: Array<{ learning_id?: string; relation?: string; reasoning?: string }> }
+  try { parsed = parseClaudeJson(res.text) } catch { return }
+  const relations = parsed.relations ?? []
+  if (relations.length === 0) {
+    console.log(`[evaluator] no confirm/contradict relations found for new learning ${args.newLearningId.slice(0, 8)}`)
+    return
+  }
+
+  // Apply updates. Match Claude's id-prefix back to the full row.
+  const idByPrefix = new Map(candidates.map(l => [l.id.slice(0, 8), l]))
+  for (const rel of relations) {
+    const prefix = (rel.learning_id ?? '').slice(0, 8)
+    const target = idByPrefix.get(prefix)
+    if (!target) {
+      console.warn(`[evaluator] evidence-score: id-prefix '${prefix}' not in candidates`)
+      continue
+    }
+    const delta = rel.relation === 'confirm' ? 1 : rel.relation === 'contradict' ? -1 : 0
+    if (delta === 0) continue
+    const currentScore = Number((target as any).evidence_score ?? 0)
+    const newScore     = currentScore + delta
+    const currentLog   = Array.isArray((target as any).evidence_log) ? (target as any).evidence_log : []
+    const newLog       = [...currentLog, {
+      experiment_id:   args.experimentId,
+      winner_label:    args.winnerLabel,
+      from_learning:   args.newLearningId,
+      relation:        rel.relation,
+      reasoning:       rel.reasoning ?? '',
+      delta,
+      recorded_at:     new Date().toISOString(),
+    }]
+
+    const { error: updErr } = await supabase
+      .from('seo_learnings')
+      .update({ evidence_score: newScore, evidence_log: newLog })
+      .eq('id', target.id)
+    if (updErr) {
+      console.warn(`[evaluator] evidence-score update failed for ${target.id.slice(0, 8)}: ${updErr.message}`)
+      continue
+    }
+    console.log(`[evaluator] evidence-score: ${target.id.slice(0, 8)} (${target.created_by}) ${delta > 0 ? '+' : ''}${delta} → ${newScore}`)
+
+    // Auto-supersede check — ONLY orchestrator-written learnings.
+    if (newScore <= AUTO_SUPERSEDE_THRESHOLD && target.created_by === 'orchestrator') {
+      const supersedeReason = `auto-superseded: evidence_score=${newScore} after ${newLog.length} experiment(s) — last contradiction from experiment ${args.experimentId.slice(0, 8)}`
+      const { error: supErr } = await supabase
+        .from('seo_learnings')
+        .update({
+          superseded_at:     new Date().toISOString(),
+          superseded_reason: supersedeReason,
+          superseded_by:     args.newLearningId,
+        })
+        .eq('id', target.id)
+        .is('superseded_at', null)
+      if (supErr) {
+        console.warn(`[evaluator] auto-supersede write failed for ${target.id.slice(0, 8)}: ${supErr.message}`)
+      } else {
+        console.log(`[evaluator] AUTO-SUPERSEDED orchestrator learning ${target.id.slice(0, 8)}: ${supersedeReason}`)
+      }
+    }
   }
 }

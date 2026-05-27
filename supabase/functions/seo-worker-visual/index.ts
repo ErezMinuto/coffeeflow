@@ -90,10 +90,21 @@ import {
   claimNextTask,
   markTaskCompleted,
   markTaskFailed,
+  insertTasks,
 } from '../seo-agent/db.ts'
 import { callClaude, MODEL_ORCHESTRATOR, parseClaudeJson } from '../seo-agent/claude.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
-import type { SeoTaskRow, VisualGenerationBrief } from '../seo-agent/types.ts'
+import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
+
+// Brief regeneration: when the QA loop caps without passing, the worker
+// asks Claude to rewrite the scene_brief based on the qa_attempts history,
+// then queues a fresh task with the new brief. Hard cap on regen depth
+// (some scene briefs are genuinely physics-bounded — e.g. multi-subject
+// with byte-perfect bag fidelity — and no amount of rewriting will fix
+// physics). MAX_BRIEF_REGENS=2 means up to 3 brief versions total per
+// strategist-emitted task: original + 2 regens = 9 image-generation
+// attempts max before genuine HITL.
+const MAX_BRIEF_REGENS = 2
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -385,9 +396,55 @@ serve(async (req) => {
   let attachError:      string | null = null
   let attachSkippedReason: string | null = null
 
+  // ── 4b. BRIEF-REGENERATION ESCALATION ─────────────────────────────────
+  // Before falling back to HITL, give the brief itself one rewrite chance.
+  // The QA loop's intra-task escalation (mode switch + term stripping)
+  // tries variants of the SAME scene_brief. This escalation calls Claude
+  // to write a DIFFERENT scene_brief based on what failed, then queues
+  // a fresh visual_generation task with the new brief. New task inherits
+  // brief_regen_count + 1; recursion caps at MAX_BRIEF_REGENS.
+  const currentRegenCount = ((task.brief_data as VisualGenerationBrief & { _brief_regen_count?: number })._brief_regen_count) ?? 0
+  let regenQueuedTaskId: string | null = null
+  if (reviewRequired && currentRegenCount < MAX_BRIEF_REGENS) {
+    try {
+      const rewrittenBrief = await regenerateVisualBrief({
+        originalBrief: brief,
+        qaAttempts,
+        renderMode:    renderMode,
+      })
+      const newTask: NewSeoTask = {
+        task_type:           'visual_generation',
+        brief_data: {
+          ...brief,
+          scene_brief:        rewrittenBrief.scene_brief,
+          // Per the rewrite (worker may also have flipped render_mode)
+          render_mode:        rewrittenBrief.render_mode ?? renderMode,
+          _brief_regen_count: currentRegenCount + 1,
+          _regenerated_from:  task.id,
+          _regen_rationale:   rewrittenBrief.rationale,
+        } as unknown as VisualGenerationBrief,
+        parent_task_id:      task.parent_task_id,
+        rationale:           `[brief-regen ${currentRegenCount + 1}/${MAX_BRIEF_REGENS}] from task ${task.id.slice(0, 8)} — ${rewrittenBrief.rationale.slice(0, 100)}`,
+        orchestrator_run_id: task.orchestrator_run_id ?? crypto.randomUUID(),
+        experiment_id:       null,   // regen tasks are out-of-experiment by design (no longer same brief)
+        variation_label:     null,
+      }
+      const inserted = await insertTasks(supabase, [newTask])
+      regenQueuedTaskId = inserted[0]?.id ?? null
+      console.log(`[seo-worker-visual] ${workerId} BRIEF REGEN ${currentRegenCount + 1}/${MAX_BRIEF_REGENS} queued: new task ${regenQueuedTaskId}, rationale: ${rewrittenBrief.rationale.slice(0, 120)}`)
+    } catch (e: any) {
+      // Regen failed (Claude error etc.) — fall through to HITL as before.
+      console.warn(`[seo-worker-visual] ${workerId} brief regen threw — falling back to HITL: ${e?.message ?? e}`)
+    }
+  } else if (reviewRequired && currentRegenCount >= MAX_BRIEF_REGENS) {
+    console.warn(`[seo-worker-visual] ${workerId} brief-regen cap reached (${currentRegenCount}/${MAX_BRIEF_REGENS}) — HITL is the path forward`)
+  }
+
   if (destination === 'blog_banner' && parentWpPostId) {
     if (reviewRequired) {
-      attachSkippedReason = `QA loop capped after ${qaAttempts.length} attempts without passing — image awaiting HITL review, not auto-attached`
+      attachSkippedReason = regenQueuedTaskId
+        ? `QA capped after ${qaAttempts.length} attempts; brief regenerated as task ${regenQueuedTaskId} (regen ${currentRegenCount + 1}/${MAX_BRIEF_REGENS}) — current task not attached, retry awaiting worker`
+        : `QA capped after ${qaAttempts.length} attempts, brief-regen ${currentRegenCount >= MAX_BRIEF_REGENS ? 'cap reached' : 'failed'} — HITL required`
       console.warn(`[seo-worker-visual] ${workerId} ${attachSkippedReason}`)
     } else if (!WP_USERNAME || !WP_APP_PASSWORD) {
       attachError = 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured'
@@ -437,6 +494,12 @@ serve(async (req) => {
       review_required:     reviewRequired,
       qa_attempts:         qaAttempts,
       qa_last_critique:    lastCritique,
+      // Brief regen lineage — visible in admin UI + queryable. If
+      // regen_queued_task_id is set, admin sees "this task didn't pass
+      // QA but the worker queued a rewritten brief as task X".
+      brief_regen_count:    currentRegenCount,
+      brief_regen_queued:   regenQueuedTaskId,
+      brief_regen_at_cap:   reviewRequired && currentRegenCount >= MAX_BRIEF_REGENS,
     })
   } catch (e: any) {
     console.error(`[seo-worker-visual] ${workerId} markTaskCompleted failed: ${e?.message ?? e}`)
@@ -736,4 +799,86 @@ The image must show ONLY the espresso machine and the pull (cup + crema), nothin
     .join(' ')
     .trim() || brief
   return stripped
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Brief regeneration — called when the 3-attempt QA loop has capped and
+// the worker is about to mark review_required=true. Instead of stopping
+// here, give Claude a chance to rewrite the brief based on what we
+// learned from the failed attempts. The rewritten brief is queued as a
+// NEW visual_generation task (so the worker's QA loop resets to 3 fresh
+// attempts on a structurally different prompt).
+//
+// Output the rewriter MUST consider:
+//   - critique history: missing subjects + issues across all 3 attempts
+//   - the modes that were tried (and the final mode the QA loop landed on)
+//   - constraint: render_mode must still be 'bag_hero' OR 'no_bag'
+//   - constraint: if the original brief required multi-subject (e.g.
+//     machine + Minuto bag) and we never produced both, the rewrite
+//     should choose between (a) drop the bag and write machine-only,
+//     (b) make the bag the hero and drop everything else, or
+//     (c) restructure entirely. Don't keep banging on the multi-subject
+//     impossibility (Vertex SUBJECT customization is single-subject).
+// ─────────────────────────────────────────────────────────────────────────
+const BRIEF_REGEN_SYSTEM_PROMPT = `You are the brief rewriter for Minuto's visual generation pipeline. The 3-attempt QA loop just failed for a scene_brief; your job is to write a STRUCTURALLY DIFFERENT brief that addresses what kept going wrong.
+
+CRITICAL — the QA loop already tried:
+  • Original brief in the original render_mode
+  • Original brief in the OPPOSITE render_mode (bag_hero ↔ no_bag)
+  • Mode-switched brief with conflicting terms surgically stripped + negative directives appended
+
+If all 3 failed on the same kind of issue (subject missing, scene wrong, wrong aesthetic), banging on the same brief won't help. You need a STRUCTURAL change:
+
+Common rewrite patterns that work:
+  • Multi-subject failures (machine + bag both required, only bag rendered): rewrite as single-subject. Choose ONE subject the brief is really about. Drop the other.
+  • Render-mode confusion (bag_hero asked but no_bag rendered cleanly in one attempt): switch the rewritten brief's render_mode to that working mode.
+  • Persistent hallucination of forbidden objects: rewrite the scene around a structurally simpler subject the model handles well.
+  • Anything else: ask yourself "what is the simplest version of this brief that gets at the user's actual intent?" and write that.
+
+You output one rewritten brief + a 1-sentence rationale explaining the structural change you made.
+
+STRICT JSON (no markdown fences):
+{
+  "scene_brief": "the new 4-6 sentence photographer's brief in the locked Minuto identity",
+  "render_mode": "bag_hero" | "no_bag",
+  "rationale":   "one sentence — what structural change vs the original you made and why"
+}`
+
+async function regenerateVisualBrief(args: {
+  originalBrief:  VisualGenerationBrief
+  qaAttempts:     Array<{ attempt: number; image_url: string; render_mode: 'no_bag' | 'bag_hero'; scene_brief: string; critique: VisualCritique }>
+  renderMode:     'no_bag' | 'bag_hero'
+}): Promise<{ scene_brief: string; render_mode: 'no_bag' | 'bag_hero'; rationale: string }> {
+  const attemptsLog = args.qaAttempts.map(a => {
+    const missing = a.critique.missing.length > 0 ? `missing=${JSON.stringify(a.critique.missing)}` : 'no-missing'
+    const issues  = a.critique.issues.length  > 0 ? `issues=${JSON.stringify(a.critique.issues).slice(0, 300)}` : 'no-issues'
+    return `  Attempt ${a.attempt} (mode=${a.render_mode}): ${missing} | ${issues}\n  Brief used: "${a.scene_brief.slice(0, 300)}…"`
+  }).join('\n\n')
+
+  const userMessage = `ORIGINAL BRIEF (caller's input):
+  scene_brief: ${args.originalBrief.scene_brief}
+  render_mode: ${args.renderMode}
+  product_name: ${args.originalBrief.product_name ?? '(none)'}
+  aspect: ${args.originalBrief.aspect ?? 'feed_square'}
+  destination: ${args.originalBrief.destination ?? '?'}
+
+QA ATTEMPTS THAT FAILED:
+${attemptsLog}
+
+Rewrite the brief per the system prompt. Output strict JSON only.`
+
+  const res = await callClaude({
+    model:       MODEL_ORCHESTRATOR,
+    system:      BRIEF_REGEN_SYSTEM_PROMPT,
+    messages:    [{ role: 'user', content: userMessage }],
+    maxTokens:   700,
+    temperature: 0.4,
+    timeoutMs:   45_000,
+  })
+  const parsed = parseClaudeJson<{ scene_brief?: unknown; render_mode?: unknown; rationale?: unknown }>(res.text)
+  return {
+    scene_brief: typeof parsed.scene_brief === 'string' && parsed.scene_brief.length > 50 ? parsed.scene_brief : args.originalBrief.scene_brief,
+    render_mode: (parsed.render_mode === 'bag_hero' || parsed.render_mode === 'no_bag') ? parsed.render_mode : args.renderMode,
+    rationale:   typeof parsed.rationale === 'string' ? parsed.rationale : 'no rationale supplied',
+  }
 }
