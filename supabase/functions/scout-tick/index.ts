@@ -26,6 +26,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
+import { getSystemConfig } from '../seo-agent/db.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -42,12 +43,14 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-// Thresholds chosen for "high signal, low noise". Tunable as we observe
-// false-positive rate over the first month of operation.
-const META_SPIKE_MULTIPLIER     = 2.0   // post engagement_rate must be ≥ 2× 7d median to count
+// Fallback thresholds — overridable via system_config table at runtime.
+// See migration 20260528_system_config.sql. Functions read overrides on
+// each invocation so admin updates take effect on the next scout run.
+const FALLBACK_META_SPIKE_MULTIPLIER  = 2.0
+const FALLBACK_INDUSTRY_MIN_RELEVANCE = 0.85
+// These remain hardcoded — not user-tunable (defensive lower bounds).
 const META_SPIKE_MIN_IMPRESSIONS = 100  // skip tiny-sample posts where the rate is noisy
 const META_LOOKBACK_DAYS         = 7
-const INDUSTRY_MIN_RELEVANCE     = 0.85
 const INDUSTRY_LOOKBACK_HOURS    = 24
 // Hard upper bound on scout output per tick — even if 5 things spiked,
 // only the top N get tasks. Admin would otherwise get spammed.
@@ -66,10 +69,17 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
 
+  // Fetch runtime thresholds — overridable via system_config.
+  const [metaMultiplier, industryMinRel] = await Promise.all([
+    getSystemConfig<number>(supabase, 'scout.meta_spike_multiplier',  FALLBACK_META_SPIKE_MULTIPLIER),
+    getSystemConfig<number>(supabase, 'scout.industry_min_relevance', FALLBACK_INDUSTRY_MIN_RELEVANCE),
+  ])
+  console.log(`[scout-tick] thresholds — meta_spike_multiplier=${metaMultiplier} industry_min_relevance=${industryMinRel}`)
+
   // 1. Detect signals (parallel — independent queries).
   const [metaSignals, industrySignals] = await Promise.all([
-    detectMetaEngagementSpikes(supabase),
-    detectFreshHighRelevanceArticles(supabase),
+    detectMetaEngagementSpikes(supabase, metaMultiplier),
+    detectFreshHighRelevanceArticles(supabase, industryMinRel),
   ])
   const allSignals = [...metaSignals, ...industrySignals]
     .sort((a, b) => b.priority_score - a.priority_score)
@@ -139,6 +149,7 @@ serve(async (req) => {
 // ─────────────────────────────────────────────────────────────────────────
 async function detectMetaEngagementSpikes(
   supabase: ReturnType<typeof createClient>,
+  spikeMultiplier: number,
 ): Promise<UrgentSignal[]> {
   const since = new Date(Date.now() - META_LOOKBACK_DAYS * 24 * 3600 * 1000).toISOString()
   const { data, error } = await supabase
@@ -179,7 +190,7 @@ async function detectMetaEngagementSpikes(
   if (median === 0) return []
 
   const spikes = enriched
-    .filter(r => r.eng_rate >= median * META_SPIKE_MULTIPLIER)
+    .filter(r => r.eng_rate >= median * spikeMultiplier)
     .sort((a, b) => b.eng_rate - a.eng_rate)
     .slice(0, 5)   // pre-cap before MAX_TASKS_PER_TICK applies globally
 
@@ -209,13 +220,14 @@ async function detectMetaEngagementSpikes(
 // ─────────────────────────────────────────────────────────────────────────
 async function detectFreshHighRelevanceArticles(
   supabase: ReturnType<typeof createClient>,
+  minRelevance: number,
 ): Promise<UrgentSignal[]> {
   const since = new Date(Date.now() - INDUSTRY_LOOKBACK_HOURS * 3600 * 1000).toISOString()
   const { data, error } = await supabase
     .from('industry_articles')
     .select('id, source_name, title, url, insight, relevance, tags, summarized_at')
     .gte('summarized_at', since)
-    .gte('relevance', INDUSTRY_MIN_RELEVANCE)
+    .gte('relevance', minRelevance)
     .order('relevance', { ascending: false })
     .limit(5)
   if (error) {
