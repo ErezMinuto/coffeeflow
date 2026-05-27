@@ -79,13 +79,13 @@ serve(async (req: Request): Promise<Response> => {
   const trigger = body.trigger ?? 'manual'
   const focus   = body.focus   ?? ''
   const runId   = crypto.randomUUID()
-  console.log(`[seo-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
+  console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
 
   try {
     const supabase = createSupabase()
 
     // ── 1. Fetch source data ──────────────────────────────────────────
-    console.log('[seo-orchestrator] fetching source data…')
+    console.log('[organic-orchestrator] fetching source data…')
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
     const sixtyDaysAgo    = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
 
@@ -138,7 +138,7 @@ serve(async (req: Request): Promise<Response> => {
     ])
 
     console.log(
-      `[seo-orchestrator] sources — gsc:${gscKeywords.length} ` +
+      `[organic-orchestrator] sources — gsc:${gscKeywords.length} ` +
       `blog:${blogPosts.length} catalog:${catalog.length} ` +
       `inv:${inventoryAlerts.length} recentTasks:${recentTasks.length} ` +
       `priorSnapshots:${priorSnapshots.length} learnings:${learnings.length} ` +
@@ -183,7 +183,7 @@ serve(async (req: Request): Promise<Response> => {
       },
     }
     const snapshotId = await insertMetrics(supabase, 'orchestrator_run', snapshot)
-    console.log(`[seo-orchestrator] snapshot inserted id=${snapshotId}`)
+    console.log(`[organic-orchestrator] snapshot inserted id=${snapshotId}`)
 
     // ── 3. Build user message for the strategist ─────────────────────
     const userMessage = buildStrategistUserMessage({
@@ -205,7 +205,7 @@ serve(async (req: Request): Promise<Response> => {
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
-    console.log(`[seo-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
+    console.log(`[organic-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
     const claudeRes = await callClaude({
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
@@ -214,7 +214,7 @@ serve(async (req: Request): Promise<Response> => {
       temperature: 0.7,  // balanced — needs creativity but also structure
     })
     console.log(
-      `[seo-orchestrator] strategist done — tokens: ` +
+      `[organic-orchestrator] strategist done — tokens: ` +
       `in=${claudeRes.inputTokens} out=${claudeRes.outputTokens} ` +
       `cache_read=${claudeRes.cacheReadTokens}`,
     )
@@ -228,8 +228,8 @@ serve(async (req: Request): Promise<Response> => {
     try {
       plan = parseClaudeJson(claudeRes.text)
     } catch (e: any) {
-      console.error('[seo-orchestrator] failed to parse strategist output:', e?.message)
-      console.error('[seo-orchestrator] raw text:', claudeRes.text.slice(0, 1000))
+      console.error('[organic-orchestrator] failed to parse strategist output:', e?.message)
+      console.error('[organic-orchestrator] raw text:', claudeRes.text.slice(0, 1000))
       return jsonResponse({
         error:             'strategist returned unparseable JSON',
         run_id:            runId,
@@ -239,7 +239,7 @@ serve(async (req: Request): Promise<Response> => {
     }
     const emittedTasks = Array.isArray(plan.tasks) ? plan.tasks : []
     console.log(
-      `[seo-orchestrator] plan parsed — ` +
+      `[organic-orchestrator] plan parsed — ` +
       `summary="${(plan.summary ?? '').slice(0, 80)}" ` +
       `reflections=${plan.self_reflection?.length ?? 0} ` +
       `tasks=${emittedTasks.length}`,
@@ -268,7 +268,7 @@ serve(async (req: Request): Promise<Response> => {
         return base
       })
       insertedRows = await insertTasks(supabase, newTasks)
-      console.log(`[seo-orchestrator] first-pass insert: ${insertedRows.length} rows`)
+      console.log(`[organic-orchestrator] first-pass insert: ${insertedRows.length} rows`)
 
       // Wire parent_task_id + depends_on from indexes → UUIDs.
       // Each emittedTask[i] corresponds to insertedRows[i].
@@ -298,9 +298,9 @@ serve(async (req: Request): Promise<Response> => {
           .from('seo_tasks')
           .update(u.patch)
           .eq('id', u.id)
-        if (error) console.warn(`[seo-orchestrator] wire-up update failed for ${u.id}: ${error.message}`)
+        if (error) console.warn(`[organic-orchestrator] wire-up update failed for ${u.id}: ${error.message}`)
       }
-      console.log(`[seo-orchestrator] wire-up updates: ${updates.length}`)
+      console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
     }
 
     // ── 7. Return summary ────────────────────────────────────────────
@@ -319,7 +319,7 @@ serve(async (req: Request): Promise<Response> => {
       },
     })
   } catch (e: any) {
-    console.error('[seo-orchestrator] failed:', e?.message ?? e)
+    console.error('[organic-orchestrator] failed:', e?.message ?? e)
     console.error(e?.stack ?? '')
     return jsonResponse({
       error:  e?.message ?? String(e),
