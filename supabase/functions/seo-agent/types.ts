@@ -172,6 +172,12 @@ export interface SeoTaskRow {
   completed_at: string | null
   orchestrator_run_id: string | null
   rationale: string | null
+  // Experiment scaffolding — when set, the orchestrator considers this
+  // task part of an autonomous A/B test. variation_label distinguishes
+  // siblings within the same experiment (e.g. 'technical_hook' vs
+  // 'emotional_hook'). Both nullable for non-experimental tasks.
+  experiment_id: string | null
+  variation_label: string | null
   created_at: string
   updated_at: string
 }
@@ -187,6 +193,8 @@ export interface NewSeoTask {
   orchestrator_run_id: string
   scheduled_for?: string
   max_attempts?: number
+  experiment_id?: string | null
+  variation_label?: string | null
 }
 
 // What the orchestrator emits BEFORE we resolve indexes to UUIDs.
@@ -202,6 +210,25 @@ export interface OrchestratorEmittedTask {
   depends_on_index?: number
   parent_task_index?: number
   scheduled_offset_hours?: number
+  // Experiment tagging. experiment_group is a short slug the strategist
+  // picks (e.g. "exp_v60_hook_2026w22"); the orchestrator maps it to a
+  // real seo_experiments.id at insert time. variation_label names what
+  // this specific task varies (e.g. "technical_hook" vs "emotional_hook").
+  experiment_group?: string
+  variation_label?:  string
+}
+
+// Top-level experiments[] in the strategist's JSON output. Each entry
+// becomes one seo_experiments row. Tasks reference these via the shared
+// experiment_group string.
+export interface OrchestratorEmittedExperiment {
+  experiment_group:       string
+  hypothesis:             string
+  task_type:              CanonicalTaskType
+  primary_metric:         ExperimentMetric
+  min_lookback_days?:     number
+  min_sample_size?:       number
+  win_margin_multiplier?: number
 }
 
 // ── Metrics snapshot shape ───────────────────────────────────────────────
@@ -261,13 +288,14 @@ export type ChatToolName =
 // TEXT, not an enum). These match the canonical scopes documented in
 // the 20260527_seo_learnings_table.sql migration.
 export type LearningScope =
-  | 'visual_style'      // image preferences (no hands, no scattered beans, etc.)
-  | 'brand_voice'       // tone / copy rules surfaced via chat
-  | 'render_strategy'   // when bag_hero vs no_bag works/doesn't
-  | 'content_topic'     // which topics resonate, which don't
-  | 'qa_pattern'        // recurring QA fail modes worth pre-empting
+  | 'visual_style'         // image preferences (no hands, no scattered beans, etc.)
+  | 'brand_voice'          // tone / copy rules surfaced via chat
+  | 'render_strategy'      // when bag_hero vs no_bag works/doesn't
+  | 'content_topic'        // which topics resonate, which don't
+  | 'qa_pattern'           // recurring QA fail modes worth pre-empting
+  | 'experiment_winner'    // orchestrator-written: synthesized rule from a winning A/B variation
   | 'other'
-  | (string & {})       // accept novel scopes; lints checked at write time
+  | (string & {})          // accept novel scopes; lints checked at write time
 
 export type LearningSource = 'chat_agent' | 'orchestrator' | 'admin_manual' | (string & {})
 
@@ -288,6 +316,56 @@ export interface NewLearning {
   insight:            string
   evidence_task_ids?: string[]
   created_by:         LearningSource
+}
+
+// ── Experiments (autonomous A/B testing + self-rewriting rules) ─────────
+// The orchestrator queues N variations of a content task with a shared
+// experiment_id. After min_lookback_days, it scores variations against
+// the primary_metric, declares a winner if the win-margin threshold is
+// met AND min_sample_size is reached, and writes a prescriptive learning
+// into seo_learnings (created_by='orchestrator', scope='experiment_winner').
+// That learning then shapes future strategist planning automatically.
+
+export type ExperimentStatus =
+  | 'collecting'     // variations queued; awaiting min_lookback_days
+  | 'evaluating'     // orchestrator picked it up this cycle to score
+  | 'evaluated'      // winner declared, learning recorded
+  | 'inconclusive'   // no clear winner met thresholds; no rule written
+  | 'cancelled'
+
+export type ExperimentMetric =
+  | 'ga4_conversions'        // best for text_generation
+  | 'ga4_conversion_value'   // when revenue per page is meaningful
+  | 'meta_engagement_rate'   // best for instagram_post
+  | 'meta_reach'             // IG awareness experiments
+  | (string & {})            // accept novel metrics; lints checked at eval time
+
+export interface SeoExperimentRow {
+  id:                     string
+  hypothesis:             string
+  task_type:              CanonicalTaskType
+  primary_metric:         ExperimentMetric
+  min_lookback_days:      number
+  min_sample_size:        number
+  win_margin_multiplier:  number
+  status:                 ExperimentStatus
+  winner_task_id:         string | null
+  evaluation_summary:     Record<string, unknown> | null
+  recorded_learning_id:   string | null
+  parent_experiment_id:   string | null
+  orchestrator_run_id:    string | null
+  created_at:             string
+  evaluated_at:           string | null
+}
+
+export interface NewExperiment {
+  hypothesis:             string
+  task_type:              CanonicalTaskType
+  primary_metric:         ExperimentMetric
+  min_lookback_days?:     number
+  min_sample_size?:       number
+  win_margin_multiplier?: number
+  orchestrator_run_id?:   string
 }
 
 export interface ChatToolCall {
