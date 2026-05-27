@@ -130,7 +130,24 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
       const { data, error: invokeErr } = await supabase.functions.invoke('handle-seo-chat', {
         body: { session_id: sessionId, user_message: text },
       })
-      if (invokeErr) throw invokeErr
+      if (invokeErr) {
+        // The Supabase functions SDK collapses non-2xx into a generic
+        // "Edge Function returned a non-2xx status code" string. The
+        // underlying Response sits on .context — read its body to surface
+        // the actual server-side error message in the UI + console.
+        let serverDetail: string | null = null
+        try {
+          const ctx = (invokeErr as any).context
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json()
+            serverDetail = body?.error ?? body?.message ?? JSON.stringify(body)
+          } else if (ctx && typeof ctx.text === 'function') {
+            serverDetail = await ctx.text()
+          }
+        } catch { /* fall through to generic message */ }
+        console.error('[SeoChatThread] send failed:', invokeErr, '\n  server-side:', serverDetail)
+        throw new Error(serverDetail ?? invokeErr.message ?? 'Send failed')
+      }
       if (data?.history) setMessages(data.history as ChatRow[])
     } catch (e: any) {
       console.error('[SeoChatThread] send failed:', e)

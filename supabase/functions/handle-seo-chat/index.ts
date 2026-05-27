@@ -756,11 +756,40 @@ interface StoredMsg {
 function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
   const out: ApiChatMessage[] = []
   let pendingToolResults: MessageContentBlock[] = []
+  // Track tool_use IDs emitted in the most-recent assistant turn so we
+  // can detect orphans — i.e. an assistant tool_use whose matching
+  // tool_result row never got persisted (typically because the prior
+  // server invocation crashed inside executeTool before writeBack).
+  // Without this, every subsequent chat send 400s at Anthropic with
+  // "tool_use_id X has no tool_result", surfaced to the UI as a 500.
+  // We patch in synthetic is_error tool_result blocks for any missing
+  // IDs at the next non-tool boundary.
+  let lastAssistantToolUseIds: string[] = []
 
   function flushPendingToolResults() {
     if (pendingToolResults.length === 0) return
     out.push({ role: 'user', content: pendingToolResults })
     pendingToolResults = []
+  }
+
+  function patchOrphansAndFlush() {
+    if (lastAssistantToolUseIds.length === 0) return
+    const seen = new Set(
+      pendingToolResults
+        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_result' }> => b.type === 'tool_result')
+        .map(b => b.tool_use_id),
+    )
+    for (const id of lastAssistantToolUseIds) {
+      if (seen.has(id)) continue
+      pendingToolResults.push({
+        type:        'tool_result',
+        tool_use_id: id,
+        content:     JSON.stringify({ error: 'tool execution was interrupted; no result was persisted' }),
+        is_error:    true,
+      })
+    }
+    lastAssistantToolUseIds = []
+    flushPendingToolResults()
   }
 
   for (const m of stored) {
@@ -775,8 +804,10 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
       continue
     }
 
-    // Non-tool row → flush any accumulated tool results first.
-    flushPendingToolResults()
+    // Non-tool row → close out the previous assistant turn's tool cycle.
+    // If the prior assistant emitted tool_use blocks, every one of them
+    // needs a tool_result before we move on; patch orphans first.
+    patchOrphansAndFlush()
 
     if (m.role === 'user') {
       out.push({ role: 'user', content: m.content })
@@ -795,6 +826,11 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
       // If nothing accumulated, the assistant turn was empty — skip
       // rather than send a zero-block message (Anthropic rejects it).
       if (blocks.length === 0) continue
+      // Track new tool_use IDs so we can detect orphans at the next
+      // non-tool boundary.
+      lastAssistantToolUseIds = blocks
+        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
+        .map(b => b.id)
       // If only a single text block, simplify to string content.
       if (blocks.length === 1 && blocks[0].type === 'text') {
         out.push({ role: 'assistant', content: blocks[0].text })
@@ -805,7 +841,10 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
     }
   }
 
-  flushPendingToolResults()
+  // Trailing patch — if history ENDS on an assistant tool_use turn (no
+  // following tool/user row to trigger patchOrphansAndFlush), still emit
+  // synthetic tool_results so the next API call has a valid sequence.
+  patchOrphansAndFlush()
   return out
 }
 
@@ -980,27 +1019,51 @@ serve(async (req: Request): Promise<Response> => {
 
       // 4c. Execute each tool call, persist results, push them as a
       // tool_result content-block batch on the next user message.
+      // CRITICAL: every assistant tool_use we persisted in 4a MUST be
+      // matched by a persisted tool_result row, otherwise the next
+      // request to this session replays an orphan tool_use and 400s at
+      // Anthropic. Wrap each call so even a throw inside executeTool or
+      // appendChatMessage(tool) still yields a synthetic error result
+      // row — no orphan tool_use ever stays in the DB.
       const toolResultBlocks: MessageContentBlock[] = []
       for (const call of toolUses) {
         console.log(`[handle-seo-chat] tool=${call.name} input=${JSON.stringify(call.input).slice(0, 200)}`)
-        const result = await executeTool(
-          supabase,
-          call.name as ChatToolName,
-          call.input ?? {},
-        )
-        const contentStr = JSON.stringify(result.payload)
-        await appendChatMessage(supabase, {
-          session_id:   sessionId,
-          role:         'tool',
-          content:      contentStr,
-          tool_call_id: call.id,
-          metadata:     { tool_name: call.name, ok: result.ok },
-        })
+        let contentStr = ''
+        let isError = false
+        try {
+          const result = await executeTool(
+            supabase,
+            call.name as ChatToolName,
+            call.input ?? {},
+          )
+          contentStr = JSON.stringify(result.payload)
+          isError = !result.ok
+        } catch (toolErr: any) {
+          console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
+          contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+          isError = true
+        }
+        // Persist tool_result row — failure here gets logged but doesn't
+        // skip the in-memory toolResultBlocks push (Anthropic still needs
+        // the matching block for this turn to succeed). Worst case the
+        // DB row is missing; next session load will patch with a
+        // synthetic orphan-tool_result via storedToApiMessages.
+        try {
+          await appendChatMessage(supabase, {
+            session_id:   sessionId,
+            role:         'tool',
+            content:      contentStr,
+            tool_call_id: call.id,
+            metadata:     { tool_name: call.name, ok: !isError },
+          })
+        } catch (persistErr: any) {
+          console.error(`[handle-seo-chat] appendChatMessage(tool) failed for ${call.id}:`, persistErr?.message ?? persistErr)
+        }
         toolResultBlocks.push({
           type:        'tool_result',
           tool_use_id: call.id,
           content:     contentStr,
-          is_error:    !result.ok,
+          is_error:    isError,
         })
       }
       apiMessages.push({ role: 'user', content: toolResultBlocks })
