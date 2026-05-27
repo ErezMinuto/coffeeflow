@@ -46,6 +46,7 @@ import {
   setSystemConfig,
 } from '../seo-agent/db.ts'
 import type {
+  AnyBrief,
   ChatToolName,
   LearningRow,
   LearningScope,
@@ -87,15 +88,29 @@ const MAX_TOOL_LOOPS = 8
 const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'queue_task',
-    description: 'Insert a new task into seo_tasks as pending. Use for text_generation, visual_generation, or dynamic_experiment. brief_data shape depends on task_type — see types.ts.',
+    description: 'Insert a new task into seo_tasks as pending. Use for text_generation, visual_generation, instagram_post, or dynamic_experiment. brief_data shape depends on task_type — see types.ts. CRITICAL: for instagram_post tasks you MUST also pass parent_task_id pointing at the completed visual_generation task that produced the image — the IG worker rejects any instagram_post with no parent_task_id.',
     input_schema: {
       type: 'object',
       properties: {
-        task_type:  { type: 'string', description: 'Canonical: text_generation | visual_generation | dynamic_experiment. Novel subtypes like seo_experiment:internal_linking_audit are also allowed.' },
-        brief_data: { type: 'object', description: 'Brief payload matching the task_type schema in types.ts.' },
-        rationale:  { type: 'string', description: 'One-line justification surfaced in the admin UI.' },
+        task_type:      { type: 'string', description: 'Canonical: text_generation | visual_generation | instagram_post | dynamic_experiment. Novel subtypes like seo_experiment:internal_linking_audit are also allowed.' },
+        brief_data:     { type: 'object', description: 'Brief payload matching the task_type schema in types.ts.' },
+        rationale:      { type: 'string', description: 'One-line justification surfaced in the admin UI.' },
+        parent_task_id: { type: 'string', description: 'Optional UUID. REQUIRED for instagram_post (points at the visual_generation task that produces the image). Also used by visual_generation when it should attach to a specific text post.' },
+        depends_on:     { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs the worker should wait on before claiming this task.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
+    },
+  },
+  {
+    name: 'repoint_ig_to_visual',
+    description: 'Take an instagram_post task that failed because its parent visual_generation task failed QA, repoint it at a different (successful) visual_generation task, and reset it to pending so the IG worker picks it up on the next tick. Use this when a visual regen has succeeded and the admin wants to publish the IG post using the new image. Only works when (a) the IG task currently has status=failed or status=pending, (b) the new visual task is status=completed AND result_data.review_required is not true AND result_data.image_url is set.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ig_task_id:     { type: 'string', description: 'UUID of the instagram_post task to repoint.' },
+        visual_task_id: { type: 'string', description: 'UUID of the visual_generation task whose image should be used instead.' },
+      },
+      required: ['ig_task_id', 'visual_task_id'],
     },
   },
   {
@@ -289,17 +304,93 @@ async function executeTool(
         if (!task_type || !brief_data || !rationale) {
           return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
         }
+        const parent_task_id = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+          ? input.parent_task_id.trim()
+          : null
+        const depends_on = Array.isArray(input.depends_on)
+          ? (input.depends_on as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0)
+          : []
+        // Guardrail: instagram_post WITHOUT parent_task_id will fail at
+        // the worker with a confusing error. Catch it here so the agent
+        // gets a clear message it can act on.
+        if (task_type === 'instagram_post' && !parent_task_id) {
+          return { ok: false, payload: { error: 'instagram_post requires parent_task_id (the visual_generation task whose image will be posted). Pass parent_task_id when calling queue_task.' } }
+        }
         const newTask: NewSeoTask = {
           task_type,
-          brief_data,
+          brief_data: brief_data as AnyBrief,
           rationale,
+          parent_task_id,
+          depends_on,
           // No orchestrator_run_id for chat-queued tasks — use a synthetic
           // marker so we can audit which tasks came from the chat surface.
           orchestrator_run_id: crypto.randomUUID(),
         }
         const inserted = await insertTasks(supabase, [newTask])
         const row = inserted[0]
-        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending' } }
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on } }
+      }
+
+      case 'repoint_ig_to_visual': {
+        const ig_task_id     = String(input.ig_task_id ?? '').trim()
+        const visual_task_id = String(input.visual_task_id ?? '').trim()
+        if (!ig_task_id || !visual_task_id) {
+          return { ok: false, payload: { error: 'repoint_ig_to_visual requires ig_task_id and visual_task_id.' } }
+        }
+        // Load + validate both rows.
+        const [{ data: ig, error: igErr }, { data: vis, error: visErr }] = await Promise.all([
+          supabase.from('seo_tasks').select('id, task_type, status, parent_task_id, error_msg, attempts').eq('id', ig_task_id).maybeSingle(),
+          supabase.from('seo_tasks').select('id, task_type, status, result_data').eq('id', visual_task_id).maybeSingle(),
+        ])
+        if (igErr)  return { ok: false, payload: { error: `ig task lookup failed: ${igErr.message}` } }
+        if (visErr) return { ok: false, payload: { error: `visual task lookup failed: ${visErr.message}` } }
+        if (!ig)  return { ok: false, payload: { error: `ig task ${ig_task_id} not found.` } }
+        if (!vis) return { ok: false, payload: { error: `visual task ${visual_task_id} not found.` } }
+        if (ig.task_type !== 'instagram_post') {
+          return { ok: false, payload: { error: `ig_task_id is task_type=${ig.task_type}, expected instagram_post.` } }
+        }
+        if (vis.task_type !== 'visual_generation') {
+          return { ok: false, payload: { error: `visual_task_id is task_type=${vis.task_type}, expected visual_generation.` } }
+        }
+        if (vis.status !== 'completed') {
+          return { ok: false, payload: { error: `visual task is status=${vis.status}, must be completed before repointing.` } }
+        }
+        const vr = (vis.result_data ?? {}) as { image_url?: string; review_required?: boolean }
+        if (vr.review_required === true) {
+          return { ok: false, payload: { error: `visual task ${visual_task_id} did NOT pass QA (review_required=true). Refusing to repoint to a failed visual.` } }
+        }
+        if (!vr.image_url) {
+          return { ok: false, payload: { error: `visual task ${visual_task_id} has no image_url in result_data. Cannot repoint.` } }
+        }
+        // Repoint + reset to pending so the IG worker picks it up next tick.
+        // Also reset attempts so the worker gets a fresh budget — the
+        // prior failures were on a different parent and shouldn't count.
+        const { error: updateErr } = await supabase
+          .from('seo_tasks')
+          .update({
+            parent_task_id: visual_task_id,
+            status:         'pending',
+            attempts:       0,
+            error_msg:      null,
+            locked_until:   null,
+            worker_id:      null,
+            started_at:     null,
+            completed_at:   null,
+          })
+          .eq('id', ig_task_id)
+        if (updateErr) return { ok: false, payload: { error: `repoint update failed: ${updateErr.message}` } }
+        return {
+          ok: true,
+          payload: {
+            ig_task_id,
+            old_parent_task_id: ig.parent_task_id,
+            new_parent_task_id: visual_task_id,
+            status:             'pending',
+            previous_error_msg: ig.error_msg,
+            previous_attempts:  ig.attempts,
+            cron_cadence:       'IG worker drains every ~3 min',
+          },
+        }
       }
 
       case 'approve_dynamic_experiment': {
