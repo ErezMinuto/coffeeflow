@@ -175,3 +175,41 @@ export async function fetchRecentMarketResearch(
   if (error) throw new Error(`fetchRecentMarketResearch failed: ${error.message}`)
   return (data ?? []) as MarketResearchSummary[]
 }
+
+// ── Industry intelligence — daily-ingested marketing + coffee articles ──
+// Populated by industry-intelligence-sync. Filtered to articles with a
+// useful Haiku-synthesized insight + a min relevance bar so the
+// strategist's context block doesn't get noisy.
+
+export interface IndustryArticleInsight {
+  source_name:     string
+  source_category: string  // 'seo' | 'marketing' | 'social' | 'coffee'
+  title:           string
+  url:             string
+  insight:         string
+  relevance:       number
+  tags:            string[]
+  published_at:    string | null
+  summarized_at:   string
+}
+
+export async function fetchIndustryInsights(
+  supabase: SupabaseClient,
+  opts: { minRelevance?: number; lookbackDays?: number; limit?: number } = {},
+): Promise<IndustryArticleInsight[]> {
+  const minRel        = opts.minRelevance ?? 0.5
+  const lookbackDays  = opts.lookbackDays ?? 14
+  const limit         = opts.limit ?? 12
+  const since         = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000).toISOString()
+  const { data, error } = await supabase
+    .from('industry_articles')
+    .select('source_name, source_category, title, url, insight, relevance, tags, published_at, summarized_at')
+    .not('summarized_at', 'is', null)
+    .gte('summarized_at', since)
+    .gte('relevance', minRel)
+    .order('relevance', { ascending: false })
+    .order('summarized_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`fetchIndustryInsights failed: ${error.message}`)
+  return (data ?? []) as IndustryArticleInsight[]
+}

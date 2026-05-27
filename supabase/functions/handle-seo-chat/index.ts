@@ -24,6 +24,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
 import {
   callClaude,
+  parseClaudeJson,
   MODEL_CHAT,
   type ChatMessage as ApiChatMessage,
   type MessageContentBlock,
@@ -193,6 +194,29 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         task_id: { type: 'string', description: 'UUID of the seo_tasks row whose IG draft to publish.' },
       },
       required: ['task_id'],
+    },
+  },
+  {
+    name: 'ingest_url',
+    description: 'Fetch a URL the admin pasted (article, blog post, case study, etc.), summarize it for relevance to the Minuto organic stack, and OPTIONALLY record the insight as a durable best-practice learning. Use this when the admin says something like "read this and remember it" or "what do you think of this article?". Always confirm with the admin BEFORE calling record_learning — return the synthesized insight first, ask if it should be persisted.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'The full URL to fetch.' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'list_industry_insights',
+    description: 'Show recent industry_articles insights (marketing/SEO/social/coffee) that the daily ingester has summarized. Use when the admin asks "what is the field saying about X?" or "show me what you have been reading". Returns the top N by relevance score.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit:           { type: 'number', description: 'Default 8. Max 30.' },
+        min_relevance:   { type: 'number', description: 'Default 0.5. Set to 0 to see everything.' },
+        category_filter: { type: 'string', description: "Optional: 'seo' | 'marketing' | 'social' | 'coffee'." },
+      },
     },
   },
 ]
@@ -458,6 +482,70 @@ async function executeTool(
             ig_permalink: json.permalink ?? null,
           },
         }
+      }
+
+      case 'ingest_url': {
+        const url = String(input.url ?? '').trim()
+        if (!url || !/^https?:\/\//.test(url)) {
+          return { ok: false, payload: { error: 'ingest_url requires a full http(s) URL.' } }
+        }
+        try {
+          const res = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MinutoOrganicAgent/1.0)' },
+          })
+          if (!res.ok) return { ok: false, payload: { error: `fetch HTTP ${res.status}` } }
+          const html = await res.text()
+          // Cheap text extraction (same as industry-intelligence-sync).
+          const body = html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 6000)
+          if (body.length < 200) return { ok: false, payload: { error: 'page body too short after HTML strip (paywall, JS-heavy SPA, or PDF?). Try a different URL.' } }
+          // Synthesize via Haiku — same prompt as the industry ingester.
+          const synth = await callClaude({
+            model:  'claude-haiku-4-5',
+            system: `You are Minuto's organic-marketing research analyst. Given a URL pasted by the admin, summarize it as an actionable insight for Minuto's organic stack (Hebrew SEO blog + Instagram + dynamic experiments). Output strict JSON only:\n{"insight":"2-4 sentences explaining WHAT the source argues + HOW Minuto could apply it","relevance":0.0-1.0,"tags":["tag1","tag2"]}`,
+            messages: [{ role: 'user', content: `URL: ${url}\n\nBODY:\n${body}` }],
+            maxTokens: 600,
+            temperature: 0.3,
+            timeoutMs: 30_000,
+          })
+          let parsed: { insight?: unknown; relevance?: unknown; tags?: unknown } = {}
+          try { parsed = parseClaudeJson(synth.text) } catch { parsed = { insight: synth.text } }
+          return {
+            ok: true,
+            payload: {
+              url,
+              insight:    typeof parsed.insight === 'string' ? parsed.insight : '(synth failed)',
+              relevance:  typeof parsed.relevance === 'number' ? parsed.relevance : null,
+              tags:       Array.isArray(parsed.tags) ? parsed.tags.map(String) : [],
+              note:       'NOT yet recorded as a learning. If you want this remembered durably, call record_learning next with scope=industry_best_practice (or similar) + this insight verbatim.',
+            },
+          }
+        } catch (e: any) {
+          return { ok: false, payload: { error: `ingest failed: ${e?.message ?? e}` } }
+        }
+      }
+
+      case 'list_industry_insights': {
+        const limit = typeof input.limit === 'number' ? Math.max(1, Math.min(30, input.limit)) : 8
+        const minRel = typeof input.min_relevance === 'number' ? input.min_relevance : 0.5
+        const cat = typeof input.category_filter === 'string' ? input.category_filter : null
+        let q = supabase
+          .from('industry_articles')
+          .select('source_name, source_category, title, url, insight, relevance, tags, summarized_at')
+          .not('summarized_at', 'is', null)
+          .gte('relevance', minRel)
+          .order('relevance', { ascending: false })
+          .order('summarized_at', { ascending: false })
+          .limit(limit)
+        if (cat) q = q.eq('source_category', cat)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { count: (data ?? []).length, insights: data ?? [] } }
       }
 
       default:
