@@ -17,6 +17,7 @@ export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed'
 export type CanonicalTaskType =
   | 'text_generation'
   | 'visual_generation'
+  | 'instagram_post'      // Drained by organic-worker-instagram → meta-publish
   | 'dynamic_experiment'
 
 // task_type is stored as TEXT in the DB so the orchestrator can emit
@@ -107,9 +108,46 @@ export interface DynamicExperimentBrief {
   details?: Record<string, unknown>
 }
 
+export interface InstagramPostBrief {
+  // Hebrew caption — primary copy. The orchestrator writes it directly
+  // (not deferred to a worker) so the strategist owns the brand-voice
+  // execution end-to-end. Worker just publishes verbatim.
+  // Constraints: ≤ 2200 chars (IG cap), gender-inclusive 2nd person,
+  // no em-dashes, no "מי ש...", no competitor names — same brand-voice
+  // rules as blog body. NO product disparagement, ever.
+  caption_he: string
+  // Optional English caption — used when audience is mixed-language
+  // or for cross-posting. If absent, Hebrew-only post.
+  caption_en?: string
+  // 5-12 hashtags. Strategist picks based on topic + tag-research.
+  // No spaces inside individual tags.
+  hashtags: string[]
+  // What's in the image. The orchestrator typically pairs this brief
+  // with a `visual_generation` task via parent_task_id; the visual
+  // worker renders the image, then the IG worker pulls the image_url
+  // from the parent's result_data. If no parent is set, the IG worker
+  // will fail with `image_required` — single-image posts only for v1.
+  media_type: 'feed_image' | 'feed_carousel' | 'reel' | 'story'
+  // Reference to an existing Minuto product, if the post is product-
+  // centric. Used for tagging + landing-page link in caption (UTM-tagged).
+  product_reference?: {
+    name:      string         // exact woo_products.name
+    permalink: string         // full URL, orchestrator inserts UTM params
+  }
+  // Publishing strategy:
+  //   'auto'             — worker publishes immediately on QA pass
+  //   'queue_for_review' — worker uploads to IG as DRAFT (not live) and
+  //                        surfaces to admin for approval. Default until
+  //                        the orchestrator earns trust.
+  publish_strategy: 'auto' | 'queue_for_review'
+  // Optional CTA — surfaces in caption as a final line.
+  cta?: string
+}
+
 export type AnyBrief =
   | TextGenerationBrief
   | VisualGenerationBrief
+  | InstagramPostBrief
   | DynamicExperimentBrief
   | Record<string, unknown>  // for novel orchestrator-invented task_types
 
