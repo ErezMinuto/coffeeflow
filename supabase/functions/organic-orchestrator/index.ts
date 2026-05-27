@@ -590,9 +590,7 @@ ${learningsBlock}
 
 === GOOGLE ADS — PAID-INTENT SIGNALS (last 30d) ===
 
-Where Minuto is paying for clicks AND seeing conversions. These are validated commercial intents — write organic content that ranks for these queries so you stop paying for clicks you could earn for free.
-
-Top converting paid keywords (sorted by conversions):
+Per-keyword + per-search-term Google Ads totals, last 30d. Paid keywords + actual search-term reports with conversion counts and cost-per-conversion. Top converting paid keywords (by conversions):
 ${paidKeywords.length === 0 ? '  (no paid keyword data)' : paidKeywords.map(k =>
   `  "${k.keyword}" [${k.match_type ?? '-'}] — conv:${k.conversions.toFixed(1)} clicks:${k.clicks} cost:₪${k.cost_ils.toFixed(0)} ${k.cost_per_conv ? `cpa:₪${k.cost_per_conv.toFixed(0)}` : ''}`,
 ).join('\n')}
@@ -637,7 +635,7 @@ ${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r 
 
 === AI-AGENT VISIBILITY — are LLMs recommending Minuto? (last 30d, per query) ===
 
-Probe results from asking Claude / Perplexity / GPT-4 shopping questions where Minuto could plausibly be a recommendation. mention_rate = (probes mentioning Minuto) / (total probes for this query). top_competitors = brands LLMs cite instead of (or alongside) us. NEW exploration territory — no established playbook. When you spot a low mention rate on a high-intent query, propose a dynamic_experiment to improve it (e.g. 'add llms.txt', 'add Product schema with explicit attributes', 'publish authoritative comparison content that LLMs will cite'). Reference the metric in the experiment's hypothesis so future probe runs can score it.
+Per-query Minuto mention rate from LLM shopping probes. mention_rate = (probes mentioning Minuto) / (total probes). top_competitors = brands LLMs cited in the same response. Each weekly probe re-runs every active query; old probes age out of the 30d window.
 
 ${aiVisibility.length === 0 ? '  (no probes yet — ai-visibility-probe will populate this weekly)' : aiVisibility.map(v => {
   const rate = (v.mention_rate * 100).toFixed(0)
@@ -647,7 +645,7 @@ ${aiVisibility.length === 0 ? '  (no probes yet — ai-visibility-probe will pop
 
 === INDUSTRY INTELLIGENCE — what the field is writing about (last 14d, relevance≥0.5) ===
 
-Daily-ingested marketing/SEO/social + coffee-vertical articles, Haiku-summarized with a per-article relevance score for Minuto's organic stack. Use this to update your understanding of best practices independent of Minuto's own data. When an insight here meaningfully shapes a brief you emit (e.g. you adopt a hook style described in an Ahrefs post), reference it in self_reflection so the trail is auditable. If a high-relevance insight reads as a durable rule (not just one-cycle inspiration), mention to the admin via self_reflection so they can record it via the chat record_learning tool.
+Daily-ingested marketing/SEO/social + coffee-vertical articles, Haiku-summarized with a per-article relevance score for Minuto's organic stack. Read what the field is publishing. If an insight shapes a brief you emit, cite it in self_reflection so the audit trail is intact.
 
 ${industryInsights.length === 0 ? '  (no industry articles ingested yet — check industry-intelligence-sync cron)' : industryInsights.map(a => {
   const tagStr = a.tags.length > 0 ? ` [${a.tags.join(', ')}]` : ''
@@ -656,10 +654,7 @@ ${industryInsights.length === 0 ? '  (no industry articles ingested yet — chec
 
 === POST-BY-POST FOLLOW-BACK (your own emissions, last 14d) ===
 
-For each task you emitted in the last 14 days, here is its current status + performance. This is your retrospection layer — distinct from the aggregate top-performers blocks below. Use it to:
-  • Notice which of YOUR drafts are sitting unpublished (the admin is the bottleneck — adjust briefs to be more publish-ready)
-  • Spot tasks that completed but never produced metrics (broken pipeline, surface in self_reflection)
-  • Compare prior-cycle predictions to actual outcomes (the strategic-reflection feedback you keep asking for)
+Current status + performance for each task you emitted in the last 14 days. Distinct from the aggregate top-performers blocks (those show site-wide winners; this shows your own emissions).
 
 ${postFollowback.length === 0 ? '  (no tasks in the last 14 days)' : postFollowback.map(p => {
   const parts: string[] = [`  [${p.task_type}${p.variation_label ? ':' + p.variation_label : ''}] ${p.task_id.slice(0,8)} ${p.brief_summary}`]
@@ -680,12 +675,7 @@ ${postFollowback.length === 0 ? '  (no tasks in the last 14 days)' : postFollowb
 
 === GA4 — ORGANIC LANDING-PAGE PERFORMANCE (last 30d) ===
 
-REAL conversion data per landing page (organic search traffic only). This closes the loop on "did past articles drive sales?" — GSC tells you impressions/position; GA4 tells you what happened after the click. Use this to:
-  • Double down on topic clusters where existing pages convert well (write follow-up articles).
-  • Identify high-traffic LOW-conversion pages (the page ranks but doesn't sell — content or CTA needs work, queue a rewrite).
-  • Spot category-level patterns ("our /v60 pages all convert at 5%+, /espresso-machine pages at <1% — V60 is our sweet spot").
-
-Top organic landing pages by conversions (sorted by conversions DESC):
+Per-page sessions + conversions + value for organic search traffic, last 30d. Top pages by conversions:
 ${ga4LandingPages.length === 0 ? '  (no GA4 data — ga4-sync may not have run yet)' : ga4LandingPages.map(p => {
   const cvr = p.sessions > 0 ? (p.conversions / p.sessions * 100).toFixed(1) : '0.0'
   const bounce = p.avg_bounce_rate != null ? `bounce:${(p.avg_bounce_rate * 100).toFixed(0)}%` : ''
