@@ -86,7 +86,18 @@ serve(async (req) => {
   const caption_he = (brief?.caption_he ?? '').trim()
   const hashtags = Array.isArray(brief?.hashtags) ? brief.hashtags : []
   const mediaType = brief?.media_type ?? 'feed_image'
-  const publishStrategy = brief?.publish_strategy ?? 'queue_for_review'
+  // HARD GATE: the worker ALWAYS uses 'queue_for_review', regardless of
+  // what the strategist requested in the brief. The user explicitly asked
+  // 'as for posts, website or instagram, i dont want it to post without
+  // my permission' — defense in depth means: strategist prompt forbids
+  // 'auto' (see prompts/strategist.ts) AND the worker refuses it here.
+  // If the brief asks for 'auto', we still send 'prepare' to meta-publish
+  // and log the override so the admin can see what the strategist tried.
+  const requestedStrategy = brief?.publish_strategy ?? 'queue_for_review'
+  if (requestedStrategy === 'auto') {
+    console.warn(`[organic-worker-instagram] ${workerId} brief requested 'auto' publish — overriding to 'queue_for_review' (no-auto-publish gate)`)
+  }
+  const publishStrategy: 'queue_for_review' = 'queue_for_review'
 
   if (!caption_he) {
     await safeMarkFailed(supabase, task, 'caption_he is required (non-empty)', true)
@@ -223,7 +234,9 @@ serve(async (req) => {
       caption_length:  finalCaption.length,
       hashtags,
       media_type:      mediaType,
-      publish_strategy: publishStrategy,
+      publish_strategy:  publishStrategy,
+      requested_strategy: requestedStrategy,   // surfaced for admin audit
+      auto_publish_overridden: requestedStrategy === 'auto',
       meta_action:     action,
       meta_response:   metaResult,
       review_required: reviewRequired,

@@ -63,6 +63,11 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
+// Env for the publish_ig_post tool — calls meta-publish via the local
+// Supabase URL with the function-invoke anon key.
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+
 // Cap on tool-use loop iterations so a misbehaving model can't pin the
 // edge function until the 150s wall clock kills it. 8 is more than
 // enough — most turns are 1-2 tool calls deep.
@@ -172,6 +177,22 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         reason:      { type: 'string', description: 'Why it is being retracted/refined.' },
       },
       required: ['learning_id', 'reason'],
+    },
+  },
+  {
+    name: 'list_pending_ig_posts',
+    description: 'List Instagram posts that the IG worker prepared as DRAFTS on Meta (action=prepare → creation_id) and are now awaiting the admin to approve + publish. Auto-publish is hard-blocked at the worker; everything sits here until the admin says go. Returns the queued tasks with their captions and IG creation_ids.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'publish_ig_post',
+    description: 'Take a queued IG post (status=completed, result_data.ig_creation_id set, not yet published) and tell Meta to publish it live now. Burns one slot of the 50-posts/24h IG quota. Use only when the admin explicitly approves a specific task_id — never on your own initiative, never for tasks the admin has not seen.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'UUID of the seo_tasks row whose IG draft to publish.' },
+      },
+      required: ['task_id'],
     },
   },
 ]
@@ -309,6 +330,90 @@ async function executeTool(
         }
         await supersedeLearning(supabase, learning_id, reason)
         return { ok: true, payload: { learning_id, status: 'superseded' } }
+      }
+
+      case 'list_pending_ig_posts': {
+        // IG tasks that the worker prepared (creation_id set) but the admin
+        // hasn't yet approved for publish. Surfaced for explicit approval.
+        const { data, error } = await supabase
+          .from('seo_tasks')
+          .select('id, task_type, brief_data, result_data, created_at')
+          .eq('task_type', 'instagram_post')
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(50)
+        if (error) return { ok: false, payload: { error: error.message } }
+        const queued = (data ?? []).filter((t: any) => {
+          const r = (t.result_data ?? {}) as { ig_creation_id?: string; ig_media_id?: string }
+          // Has a creation_id but no media_id = prepared, not yet published.
+          return !!r.ig_creation_id && !r.ig_media_id
+        })
+        return {
+          ok: true,
+          payload: {
+            count: queued.length,
+            posts: queued.map((t: any) => ({
+              task_id:        t.id,
+              created_at:     t.created_at,
+              ig_creation_id: t.result_data?.ig_creation_id,
+              caption_preview: String(t.result_data?.caption ?? '').slice(0, 200),
+              image_url:      t.result_data?.image_url,
+              auto_publish_overridden: t.result_data?.auto_publish_overridden === true,
+            })),
+          },
+        }
+      }
+
+      case 'publish_ig_post': {
+        const task_id = String(input.task_id ?? '').trim()
+        if (!task_id) return { ok: false, payload: { error: 'task_id required.' } }
+        // Load the task + verify it's in a publishable state.
+        const { data: task, error: loadErr } = await supabase
+          .from('seo_tasks')
+          .select('id, task_type, status, result_data')
+          .eq('id', task_id)
+          .maybeSingle()
+        if (loadErr) return { ok: false, payload: { error: loadErr.message } }
+        if (!task)   return { ok: false, payload: { error: `task ${task_id} not found.` } }
+        if (task.task_type !== 'instagram_post') {
+          return { ok: false, payload: { error: `task is task_type=${task.task_type}, not instagram_post.` } }
+        }
+        const r = (task.result_data ?? {}) as { ig_creation_id?: string; ig_media_id?: string }
+        if (!r.ig_creation_id) {
+          return { ok: false, payload: { error: 'task has no ig_creation_id — IG worker probably failed before preparing. Re-queue the task or inspect result_data.' } }
+        }
+        if (r.ig_media_id) {
+          return { ok: false, payload: { error: `task already published (ig_media_id=${r.ig_media_id}). No-op.` } }
+        }
+        // Tell meta-publish to flip the prepared container live.
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-publish`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+          body:    JSON.stringify({ action: 'publish', creation_id: r.ig_creation_id }),
+        })
+        const json = await res.json().catch(() => ({})) as Record<string, unknown>
+        if (!res.ok) {
+          return { ok: false, payload: { error: `meta-publish ${res.status}: ${(json.error as string) ?? JSON.stringify(json).slice(0, 300)}` } }
+        }
+        // Patch the task's result_data with the new media_id + permalink so
+        // future list_pending_ig_posts calls don't re-surface it.
+        const patch = {
+          ...(task.result_data as Record<string, unknown> ?? {}),
+          ig_media_id:    json.media_id ?? json.id ?? null,
+          ig_permalink:   json.permalink ?? null,
+          published_at:   new Date().toISOString(),
+          published_via:  'chat_agent_approval',
+        }
+        await supabase.from('seo_tasks').update({ result_data: patch }).eq('id', task_id)
+        return {
+          ok: true,
+          payload: {
+            task_id,
+            status:       'published',
+            ig_media_id:  json.media_id ?? json.id ?? null,
+            ig_permalink: json.permalink ?? null,
+          },
+        }
       }
 
       default:
