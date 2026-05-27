@@ -930,8 +930,11 @@ serve(async (req: Request): Promise<Response> => {
 
   console.log(`[handle-seo-chat] session=${sessionId} msg="${userMessage.slice(0, 80)}"`)
 
+  // Declared at outer scope so the catch block can use it to surface
+  // errors as a system chat_messages row visible to the admin.
+  const supabase = createSupabase()
+
   try {
-    const supabase = createSupabase()
 
     // 1. Persist the user message first so it's durable even if Claude fails.
     await appendChatMessage(supabase, {
@@ -1089,8 +1092,27 @@ serve(async (req: Request): Promise<Response> => {
       history:     newHistory,
     })
   } catch (e: any) {
-    console.error('[handle-seo-chat] failed:', e?.message ?? e)
+    const msg = e?.message ?? String(e)
+    console.error('[handle-seo-chat] failed:', msg)
     console.error(e?.stack ?? '')
-    return jsonResponse({ error: e?.message ?? String(e) }, 500)
+    // Surface the actual server-side error directly into the chat thread
+    // as a system message. The frontend's realtime subscription on
+    // chat_messages INSERT picks it up immediately so the admin sees
+    // WHAT broke instead of an opaque "non-2xx" — even if the Supabase
+    // SDK swallows the response body. Best-effort; failure to write is
+    // logged but doesn't change the user-visible behavior.
+    if (sessionId) {
+      try {
+        await appendChatMessage(supabase, {
+          session_id: sessionId,
+          role:       'system',
+          content:    `⚠️ Chat handler errored: ${msg.slice(0, 1500)}`,
+          metadata:   { type: 'handler_error', stack: (e?.stack ?? '').slice(0, 2000) },
+        })
+      } catch (writeErr: any) {
+        console.error('[handle-seo-chat] failed to write error to chat:', writeErr?.message ?? writeErr)
+      }
+    }
+    return jsonResponse({ error: msg }, 500)
   }
 })
