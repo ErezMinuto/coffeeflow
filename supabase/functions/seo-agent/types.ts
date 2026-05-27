@@ -277,6 +277,8 @@ export type ChatToolName =
   | 'record_learning'
   | 'list_learnings'
   | 'supersede_learning'
+  | 'list_pending_ig_posts'
+  | 'publish_ig_post'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the
