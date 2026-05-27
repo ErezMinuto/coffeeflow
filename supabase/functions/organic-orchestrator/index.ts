@@ -33,6 +33,7 @@ import {
 import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
+import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
 import {
   fetchTopKeywords,
   computePositionDeltas,
@@ -415,6 +416,24 @@ serve(async (req: Request): Promise<Response> => {
         if (error) console.warn(`[organic-orchestrator] wire-up update failed for ${u.id}: ${error.message}`)
       }
       console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
+    }
+
+    // ── 6c. Write proactive briefing for admin ───────────────────────
+    // Captures what happened this cycle into a chat_messages row the
+    // admin will see when they open the dashboard. Best-effort; doesn't
+    // fail the cycle if briefing write errors.
+    try {
+      await writeBriefing(supabase, buildOrchestratorCycleBriefing({
+        runId,
+        summary:              plan.summary ?? '',
+        selfReflection:       plan.self_reflection ?? [],
+        experimentsEmitted:   experimentIdByGroup.size,
+        experimentsEvaluated: experimentEvalSummary,
+        tasksEmitted:         insertedRows.length,
+        taskIds:              insertedRows.map(r => r.id),
+      }))
+    } catch (e: any) {
+      console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
     }
 
     // ── 7. Return summary ────────────────────────────────────────────

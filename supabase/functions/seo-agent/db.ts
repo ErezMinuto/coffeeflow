@@ -375,7 +375,7 @@ export async function supersedeLearning(
 // experiment_id, waits for performance data, then auto-scores and writes
 // a learning. These helpers are the read/write surface for that loop.
 
-import type { NewExperiment, SeoExperimentRow, SeoTaskRow } from './types.ts'
+import type { NewExperiment, SeoExperimentRow } from './types.ts'
 
 export async function insertExperiment(
   supabase: SupabaseClient,

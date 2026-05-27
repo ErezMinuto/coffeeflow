@@ -27,6 +27,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
 import { getSystemConfig } from '../seo-agent/db.ts'
+import { writeBriefing } from '../seo-agent/briefingWriter.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -132,6 +133,21 @@ serve(async (req) => {
       created.push(data.id as string)
     } catch (e: any) {
       console.warn(`[scout-tick] synth/insert threw for "${signal.signal_summary}": ${e?.message ?? e}`)
+    }
+  }
+
+  // Briefing for admin — only when something happened (scout findings).
+  if (created.length > 0) {
+    try {
+      const bullets = allSignals.map(s => `- ${s.signal_summary}`).join('\n')
+      await writeBriefing(supabase, {
+        subtype: 'scout_alert',
+        title:   `Scout flagged ${created.length} urgency signal${created.length === 1 ? '' : 's'}`,
+        body:    `Found ${allSignals.length} signal(s) above threshold; queued ${created.length} dynamic_experiment task(s) for your review.\n\n${bullets}`,
+        context: { scout_run_id: runId, task_ids: created },
+      })
+    } catch (e: any) {
+      console.warn(`[scout-tick] briefing write failed (non-fatal): ${e?.message ?? e}`)
     }
   }
 

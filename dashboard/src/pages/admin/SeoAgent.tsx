@@ -47,7 +47,7 @@ export default function SeoAgent() {
           which makes the row both fillable and shrinkable. */}
       <div className="h-full grid grid-cols-[280px_1fr_300px] grid-rows-1 gap-0 min-h-0">
         <SeoTaskQueue />
-        <SeoChatThread sessionId={sessionId} />
+        <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} />
         <div className="flex flex-col h-full min-h-0">
           <SeoMetricsPanel />
           <div className="border-t border-surface-200 bg-white px-3 py-2 shrink-0">

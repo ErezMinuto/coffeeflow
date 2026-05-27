@@ -246,6 +246,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'queue_deep_research',
+    description: 'Queue a deep_research task for the research worker. Use when the admin asks an open-ended strategic question that needs web research + multiple reasoning steps (e.g. "how do LLMs perceive Minuto?", "profile competitor X end-to-end", "is there demand for cold-brew content in IL?"). Worker uses Anthropic web_search + URL fetch + Minuto data queries, runs ~5 turns, writes a structured report into result_data.final_text. DO NOT use for one-line factual questions you can answer from your own context — only for multi-step investigations.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        question: { type: 'string', description: 'The full research question, phrased as the admin would brief a strategist. One paragraph, no bullets.' },
+        scope:    { type: 'string', description: "One of: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'other'." },
+        expected_output: { type: 'string', description: "One of: 'recommendations' (prioritized list) | 'analysis' (narrative w/ citations) | 'action_plan' (concrete tasks to queue next cycle)." },
+        max_research_turns: { type: 'number', description: 'Optional cap on Claude reasoning turns. Default 5, max 8.' },
+      },
+      required: ['question', 'scope', 'expected_output'],
+    },
+  },
+  {
     name: 'approve_qa_attempt',
     description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
     input_schema: {
@@ -581,6 +595,35 @@ async function executeTool(
         }
         await setSystemConfig(supabase, key, input.new_value, 'chat_agent', reasoning)
         return { ok: true, payload: { key, new_value: input.new_value, updated_at: new Date().toISOString(), audit: 'updated_by=chat_agent' } }
+      }
+
+      case 'queue_deep_research': {
+        const question = String(input.question ?? '').trim()
+        const scope    = String(input.scope ?? '').trim()
+        const expected = String(input.expected_output ?? '').trim()
+        if (!question || !scope || !expected) {
+          return { ok: false, payload: { error: 'queue_deep_research requires question, scope, expected_output.' } }
+        }
+        const allowedScopes = ['geo_llmo', 'competitor_deep_dive', 'content_topic', 'audience_segment', 'other']
+        if (!allowedScopes.includes(scope)) {
+          return { ok: false, payload: { error: `scope must be one of ${allowedScopes.join(' | ')}.` } }
+        }
+        const allowedOutput = ['recommendations', 'analysis', 'action_plan']
+        if (!allowedOutput.includes(expected)) {
+          return { ok: false, payload: { error: `expected_output must be one of ${allowedOutput.join(' | ')}.` } }
+        }
+        const maxTurns = typeof input.max_research_turns === 'number'
+          ? Math.max(1, Math.min(8, Math.floor(input.max_research_turns)))
+          : 5
+        const newTask: NewSeoTask = {
+          task_type:           'deep_research',
+          brief_data:          { question, scope, expected_output: expected, max_research_turns: maxTurns },
+          rationale:           `[chat] deep_research scope=${scope} output=${expected}`,
+          orchestrator_run_id: crypto.randomUUID(),
+        }
+        const inserted = await insertTasks(supabase, [newTask])
+        const row = inserted[0]
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', cron_cadence: 'every 3 min' } }
       }
 
       case 'approve_qa_attempt': {

@@ -1,0 +1,382 @@
+// Minuto Organic Marketing — deep-research worker.
+//
+// Drains 'deep_research' tasks via the same claim-lock pattern other
+// workers use. Each task gets a multi-turn Claude reasoning loop with
+// Anthropic's native web_search tool + the worker's own URL-fetch +
+// query-our-data tools. Output: structured research report stored in
+// result_data.
+//
+// Use cases this enables (per user, 2026-05-27):
+//   • GEO/LLMO research — "how do LLMs describe Minuto when asked about
+//     Israeli specialty coffee? what authority signals would make them
+//     cite us more?"
+//   • Competitor deep dives — "profile Aroma's full content+SEO strategy"
+//   • Content-topic research — "is there organic demand for cold-brew
+//     content in IL Hebrew search? what angle would win?"
+//   • Audience-segment research — "what do at-risk customers (>90d
+//     since last) care about that we're not addressing?"
+//
+// Tools available to the research loop:
+//   1. web_search       — Anthropic's native, returns web results inline
+//   2. fetch_url        — read a specific URL the model wants to deep-read
+//   3. query_minuto     — execute one of a small allowlist of safe SQL
+//                          queries against our own tables (ai_visibility_probes,
+//                          ga4_pages_daily, industry_articles, customer_rfm)
+//
+// The loop is capped at brief.max_research_turns (default 5).
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import {
+  createSupabase,
+  claimNextTask,
+  markTaskCompleted,
+  markTaskFailed,
+} from '../seo-agent/db.ts'
+import {
+  callClaude,
+  MODEL_ORCHESTRATOR,
+  type MessageContentBlock,
+  type ToolDefinition,
+  type ChatMessage as ApiChatMessage,
+} from '../seo-agent/claude.ts'
+import type { SeoTaskRow, DeepResearchBrief } from '../seo-agent/types.ts'
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  })
+}
+
+const DEFAULT_MAX_TURNS = 5
+
+// ─────────────────────────────────────────────────────────────────────────
+// Tool catalogue — what the research model can do.
+//
+// web_search is Anthropic's native tool — they execute the search server-
+// side, return results as part of the same response stream. Cannot fail
+// transport-side; the model sees the results immediately.
+//
+// fetch_url + query_minuto are worker-side tools — we get a tool_use
+// block from Claude, execute server-side, and feed the result back as
+// a tool_result content block on the next user message.
+// ─────────────────────────────────────────────────────────────────────────
+
+const TOOL_DEFINITIONS: ToolDefinition[] = [
+  {
+    name: 'fetch_url',
+    description: 'Fetch the readable text of a specific URL. Returns the first ~6KB of body text (HTML stripped). Use when web_search surfaces a result that needs deeper reading. Do NOT use for paywalled / JS-heavy SPAs.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'Full http(s) URL.' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'query_minuto',
+    description: 'Run one of a small allowlist of safe pre-defined queries against Minuto\'s own data. Use to ground research in our actual performance / customer / competitor state.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query_name: {
+          type: 'string',
+          description: 'One of: "top_landing_pages_by_conversions", "ai_visibility_summary", "competitor_co_mentions", "recent_industry_insights", "customer_rfm_segments", "active_learnings".',
+        },
+        days: { type: 'number', description: 'Optional lookback window in days. Default 30.' },
+      },
+      required: ['query_name'],
+    },
+  },
+]
+
+// ─────────────────────────────────────────────────────────────────────────
+// HTTP entry point — claim one task, run loop, write result.
+// ─────────────────────────────────────────────────────────────────────────
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
+
+  const workerId = `research-${crypto.randomUUID().slice(0, 8)}`
+  const supabase = createSupabase()
+
+  let task: SeoTaskRow | null
+  try {
+    task = await claimNextTask(supabase, 'deep_research', workerId)
+  } catch (e: any) {
+    console.error(`[seo-worker-research] ${workerId} claim failed: ${e?.message ?? e}`)
+    return jsonResponse({ processed: 0, worker_id: workerId, error: e?.message ?? String(e) }, 500)
+  }
+  if (!task) return jsonResponse({ processed: 0, worker_id: workerId })
+  console.log(`[seo-worker-research] ${workerId} claimed task ${task.id}`)
+
+  const brief = task.brief_data as DeepResearchBrief
+  const question = (brief?.question ?? '').trim()
+  if (!question) {
+    await safeMarkFailed(supabase, task, 'brief.question is required (non-empty)', true)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'question missing' })
+  }
+  const scope         = brief.scope ?? 'other'
+  const expectedOut   = brief.expected_output ?? 'analysis'
+  const maxTurns      = brief.max_research_turns ?? DEFAULT_MAX_TURNS
+
+  console.log(`[seo-worker-research] ${workerId} scope=${scope} expected=${expectedOut} max_turns=${maxTurns}`)
+
+  // Build the system prompt — calibrated to the expected_output shape.
+  const systemPrompt = buildResearchSystemPrompt({ scope, expected_output: expectedOut })
+
+  // Multi-turn tool-use loop.
+  const messages: ApiChatMessage[] = [{ role: 'user', content: question }]
+  const researchLog: Array<{ turn: number; tool_calls: string[]; text_snippet: string }> = []
+  let turn = 0
+  let finalText = ''
+  let totalInputTokens = 0
+  let totalOutputTokens = 0
+
+  // Track tools to enable Anthropic web_search via the per-call config —
+  // it's not in our generic ToolDefinition type since it's a built-in.
+  // We pass it as an extra in the body via the `tools` array; Anthropic
+  // recognizes `{type: 'web_search_20250305', name: 'web_search'}`.
+  const fullTools: any[] = [
+    { type: 'web_search_20250305', name: 'web_search', max_uses: maxTurns * 3 },
+    ...TOOL_DEFINITIONS,
+  ]
+
+  while (turn < maxTurns) {
+    turn++
+    const res = await callClaude({
+      model:       MODEL_ORCHESTRATOR,
+      system:      systemPrompt,
+      messages,
+      tools:       fullTools as any,
+      maxTokens:   4096,
+      temperature: 0.3,
+      timeoutMs:   120_000,
+    })
+    totalInputTokens  += res.inputTokens
+    totalOutputTokens += res.outputTokens
+
+    const toolUses = res.content.filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
+    const assistantText = res.text
+    researchLog.push({
+      turn,
+      tool_calls:   toolUses.map(t => `${t.name}(${JSON.stringify(t.input).slice(0, 100)})`),
+      text_snippet: assistantText.slice(0, 200),
+    })
+    console.log(`[seo-worker-research] ${workerId} turn ${turn}: ${toolUses.length} tool_use, ${assistantText.length} text chars`)
+
+    // Echo this assistant turn back into messages.
+    const echoBlocks: MessageContentBlock[] = []
+    if (assistantText.length > 0) echoBlocks.push({ type: 'text', text: assistantText })
+    for (const t of toolUses) echoBlocks.push(t)
+    if (echoBlocks.length > 0) {
+      messages.push({ role: 'assistant', content: echoBlocks.length === 1 && echoBlocks[0].type === 'text' ? echoBlocks[0].text : echoBlocks })
+    }
+
+    // Stop if no more tool calls or model declared end_turn.
+    if (toolUses.length === 0 || res.stop_reason === 'end_turn') {
+      finalText = assistantText
+      break
+    }
+
+    // Execute each worker-side tool. web_search is server-executed by
+    // Anthropic; we never see those as tool_use blocks needing local
+    // execution (the results come inline in the response).
+    const toolResults: MessageContentBlock[] = []
+    for (const call of toolUses) {
+      const result = await executeTool(supabase, call.name, (call.input ?? {}) as Record<string, unknown>)
+      toolResults.push({
+        type:        'tool_result',
+        tool_use_id: call.id,
+        content:     JSON.stringify(result.payload).slice(0, 8000),
+        is_error:    !result.ok,
+      })
+    }
+    if (toolResults.length > 0) messages.push({ role: 'user', content: toolResults })
+  }
+
+  // ── Persist result ─────────────────────────────────────────────────
+  try {
+    await markTaskCompleted(supabase, task.id, {
+      question,
+      scope,
+      expected_output:        expectedOut,
+      final_text:             finalText,
+      research_log:           researchLog,
+      turns_used:             turn,
+      max_turns:              maxTurns,
+      hit_turn_cap:           turn >= maxTurns && finalText === '',
+      tokens: { input: totalInputTokens, output: totalOutputTokens },
+    })
+  } catch (e: any) {
+    console.error(`[seo-worker-research] ${workerId} markTaskCompleted failed: ${e?.message ?? e}`)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: e?.message ?? String(e) }, 500)
+  }
+
+  return jsonResponse({
+    processed:    1,
+    worker_id:    workerId,
+    task_id:      task.id,
+    ok:           true,
+    turns_used:   turn,
+    text_length:  finalText.length,
+    tokens:       { input: totalInputTokens, output: totalOutputTokens },
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────
+// System prompt — calibrated per scope + output shape.
+// ─────────────────────────────────────────────────────────────────────────
+function buildResearchSystemPrompt(args: {
+  scope:           DeepResearchBrief['scope']
+  expected_output: DeepResearchBrief['expected_output']
+}): string {
+  const scopeGuidance: Record<DeepResearchBrief['scope'], string> = {
+    geo_llmo:             'You are researching GEO/LLMO (Generative Engine Optimization) — how LLMs perceive, cite, and recommend brands. Use web_search to find recent articles on the field, fetch_url to deep-read the most-relevant pieces, query_minuto to ground findings in Minuto\'s actual AI-visibility data.',
+    competitor_deep_dive: 'You are profiling a specific competitor. Use web_search to find their website + recent coverage + reviews. fetch_url for their about-page, product-page, blog. query_minuto for competitor_co_mentions to see how often they show up alongside Minuto.',
+    content_topic:        'You are evaluating whether a specific content topic is worth Minuto pursuing. Use web_search to gauge demand + existing coverage. query_minuto for ai_visibility_summary and recent_industry_insights. Output should help the strategist decide go/no-go + angle if go.',
+    audience_segment:     'You are profiling a specific customer audience (typically from RFM segmentation). Use query_minuto for customer_rfm_segments. Cross-reference with industry articles on segment psychology. Output should tell the strategist what content this segment would respond to.',
+    other:                'Open-ended research. Use whichever tools fit the question.',
+  }
+
+  const outputGuidance: Record<DeepResearchBrief['expected_output'], string> = {
+    recommendations: 'Output a prioritized list of 3-7 specific recommendations. Each: one sentence what to do + one sentence why (evidence) + estimated impact (high/med/low). No fluff, no preamble.',
+    analysis:        'Output a 400-800 word narrative analysis with explicit citations to your sources (URLs, query results). Sections: KEY FINDINGS, EVIDENCE, IMPLICATIONS FOR MINUTO. Markdown OK.',
+    action_plan:     'Output a concrete action plan: list of 3-5 specific tasks the strategist should queue next cycle. For each: brief_data shape (text_generation / instagram_post / dynamic_experiment / etc.), one-line rationale, expected metric impact.',
+  }
+
+  return `You are Minuto's deep-research module. Twice-weekly the orchestrator may queue you a hard strategic question that doesn\'t fit in a single LLM turn. Your job: use the available tools to investigate thoroughly and return a structured answer matching the expected_output shape.
+
+${scopeGuidance[args.scope]}
+
+OUTPUT SHAPE — ${args.expected_output.toUpperCase()}:
+${outputGuidance[args.expected_output]}
+
+OPERATING PRINCIPLES:
+- Tool-use loop is bounded (typically 5 turns). Spend turns wisely — front-load web_search + query_minuto for evidence-gathering, then use the last turn(s) to synthesize.
+- CITE YOUR SOURCES. Every claim should reference a URL or a query_minuto result. Unsourced claims are noise.
+- BE CONSERVATIVE about extrapolation. Coffee market in Israel is small; what works for US specialty roasters may not transfer.
+- If a question is genuinely unanswerable with available tools (no public data, paywalled sources), say so explicitly — don't fabricate.
+- Your final turn should be PURE TEXT (no tool calls). That's how the worker knows you're done.`
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Tool execution dispatch.
+// ─────────────────────────────────────────────────────────────────────────
+async function executeTool(
+  supabase: ReturnType<typeof createSupabase>,
+  name: string,
+  input: Record<string, unknown>,
+): Promise<{ ok: boolean; payload: unknown }> {
+  try {
+    if (name === 'fetch_url') {
+      const url = String(input.url ?? '').trim()
+      if (!url || !/^https?:\/\//.test(url)) return { ok: false, payload: { error: 'fetch_url requires http(s) URL' } }
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MinutoResearchAgent/1.0)' } })
+      if (!res.ok) return { ok: false, payload: { error: `HTTP ${res.status}` } }
+      const html = await res.text()
+      const body = html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 6000)
+      return { ok: true, payload: { url, body_text: body, length: body.length } }
+    }
+
+    if (name === 'query_minuto') {
+      const queryName = String(input.query_name ?? '').trim()
+      const days      = typeof input.days === 'number' ? Math.max(1, Math.min(180, input.days)) : 30
+      const since     = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString()
+
+      switch (queryName) {
+        case 'top_landing_pages_by_conversions': {
+          const { data } = await supabase
+            .from('ga4_pages_daily').select('page_path, sessions, conversions, conversion_value')
+            .eq('channel_group', 'Organic Search').gte('date', since.split('T')[0]).limit(500)
+          return { ok: true, payload: { source: 'ga4_pages_daily', rows: aggregateByPage(data ?? []) } }
+        }
+        case 'ai_visibility_summary': {
+          const { data } = await supabase
+            .from('ai_visibility_probes').select('query_text, minuto_mentioned, competitors_mentioned')
+            .gte('ran_at', since).is('error', null).limit(500)
+          return { ok: true, payload: { source: 'ai_visibility_probes', rows: data ?? [] } }
+        }
+        case 'competitor_co_mentions': {
+          const { data } = await supabase
+            .from('ai_visibility_probes').select('competitors_mentioned')
+            .gte('ran_at', since).is('error', null).limit(500)
+          const counter: Record<string, number> = {}
+          for (const r of (data ?? []) as Array<{ competitors_mentioned: string[] | null }>) {
+            for (const c of (r.competitors_mentioned ?? [])) counter[c] = (counter[c] ?? 0) + 1
+          }
+          return { ok: true, payload: { competitors: Object.entries(counter).sort((a, b) => b[1] - a[1]).slice(0, 20) } }
+        }
+        case 'recent_industry_insights': {
+          const { data } = await supabase
+            .from('industry_articles').select('source_name, title, url, insight, relevance, tags')
+            .gte('summarized_at', since).not('summarized_at', 'is', null)
+            .order('relevance', { ascending: false }).limit(20)
+          return { ok: true, payload: { source: 'industry_articles', rows: data ?? [] } }
+        }
+        case 'customer_rfm_segments': {
+          const { data } = await supabase
+            .from('customer_rfm').select('segment, total_spent_ils, order_count, days_since_last').limit(2000)
+          const bySeg = new Map<string, { count: number; totSpent: number; totOrders: number; totDays: number }>()
+          for (const r of (data ?? []) as Array<any>) {
+            const seg = r.segment ?? 'unknown'
+            const agg = bySeg.get(seg) ?? { count: 0, totSpent: 0, totOrders: 0, totDays: 0 }
+            agg.count++; agg.totSpent += Number(r.total_spent_ils ?? 0); agg.totOrders += Number(r.order_count ?? 0); agg.totDays += Number(r.days_since_last ?? 0)
+            bySeg.set(seg, agg)
+          }
+          return { ok: true, payload: { segments: Array.from(bySeg.entries()).map(([seg, a]) => ({ segment: seg, count: a.count, avg_total_spent_ils: Math.round(a.totSpent / Math.max(1, a.count)), avg_order_count: a.totOrders / Math.max(1, a.count), avg_days_since_last: a.totDays / Math.max(1, a.count) })) } }
+        }
+        case 'active_learnings': {
+          const { data } = await supabase
+            .from('seo_learnings').select('scope, insight, created_by, evidence_score, created_at')
+            .is('superseded_at', null).order('created_at', { ascending: false }).limit(50)
+          return { ok: true, payload: { rows: data ?? [] } }
+        }
+        default:
+          return { ok: false, payload: { error: `unknown query_name "${queryName}". Allowed: top_landing_pages_by_conversions | ai_visibility_summary | competitor_co_mentions | recent_industry_insights | customer_rfm_segments | active_learnings` } }
+      }
+    }
+
+    return { ok: false, payload: { error: `unknown tool "${name}"` } }
+  } catch (e: any) {
+    return { ok: false, payload: { error: e?.message ?? String(e) } }
+  }
+}
+
+function aggregateByPage(rows: Array<{ page_path: string; sessions: number | null; conversions: number | null; conversion_value: number | null }>): Array<{ page_path: string; sessions: number; conversions: number; conversion_value: number }> {
+  const byPage = new Map<string, { sessions: number; conversions: number; conversion_value: number }>()
+  for (const r of rows) {
+    const cur = byPage.get(r.page_path) ?? { sessions: 0, conversions: 0, conversion_value: 0 }
+    cur.sessions       += r.sessions ?? 0
+    cur.conversions    += Number(r.conversions ?? 0)
+    cur.conversion_value += Number(r.conversion_value ?? 0)
+    byPage.set(r.page_path, cur)
+  }
+  return Array.from(byPage.entries()).map(([page_path, v]) => ({ page_path, ...v }))
+    .sort((a, b) => b.conversions - a.conversions).slice(0, 25)
+}
+
+async function safeMarkFailed(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  msg: string,
+  permanent: boolean,
+): Promise<void> {
+  try {
+    await markTaskFailed(supabase, task.id, msg, permanent)
+  } catch (e: any) {
+    console.error(`[seo-worker-research] markTaskFailed write failed: ${e?.message ?? e}`)
+  }
+}

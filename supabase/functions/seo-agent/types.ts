@@ -18,6 +18,7 @@ export type CanonicalTaskType =
   | 'text_generation'
   | 'visual_generation'
   | 'instagram_post'      // Drained by organic-worker-instagram → meta-publish
+  | 'deep_research'       // Drained by seo-worker-research → multi-step Claude + web_search
   | 'dynamic_experiment'
 
 // task_type is stored as TEXT in the DB so the orchestrator can emit
@@ -91,6 +92,31 @@ export interface VisualGenerationBrief {
   destination: 'blog_banner' | 'ig_post'
 }
 
+export interface DeepResearchBrief {
+  // The strategic question the worker should answer. Specific is better.
+  // Bad: "tell me about coffee SEO". Good: "Which 5 Israeli-coffee
+  // long-tail keywords would yield the highest organic-conversion ROI
+  // for Minuto in Q3 2026, accounting for current competitor positions?"
+  question: string
+  // The lens — guides which tools + how deep to go.
+  //   'geo_llmo'             — how do LLMs talk about us? what makes them cite us?
+  //   'competitor_deep_dive' — multi-source profile of a specific competitor
+  //   'content_topic'        — should we write about X? what angle wins?
+  //   'audience_segment'     — what does a specific RFM segment care about?
+  //   'other'                — anything else strategic
+  scope: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'other'
+  // The shape of the output the strategist wants. Shapes the system prompt.
+  //   'recommendations'      — list of prioritized actions
+  //   'analysis'             — narrative reasoning + supporting data
+  //   'action_plan'          — concrete tasks to queue (the worker can
+  //                            queue them itself via insertTasks)
+  expected_output: 'recommendations' | 'analysis' | 'action_plan'
+  // Max self-directed multi-turn loops before the worker must finalize.
+  // 5 is a good sweet spot: enough to gather + cross-reference but
+  // bounded for cost + time. Increase for very complex questions.
+  max_research_turns?: number
+}
+
 export interface DynamicExperimentBrief {
   // Free-form description of the experiment the orchestrator wants to
   // run. Surfaced verbatim in the admin UI for human review.
@@ -148,6 +174,7 @@ export type AnyBrief =
   | TextGenerationBrief
   | VisualGenerationBrief
   | InstagramPostBrief
+  | DeepResearchBrief
   | DynamicExperimentBrief
   | Record<string, unknown>  // for novel orchestrator-invented task_types
 
@@ -284,6 +311,7 @@ export type ChatToolName =
   | 'approve_qa_attempt'
   | 'list_system_thresholds'
   | 'update_system_threshold'
+  | 'queue_deep_research'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the
