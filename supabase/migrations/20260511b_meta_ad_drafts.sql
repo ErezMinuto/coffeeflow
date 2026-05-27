@@ -29,5 +29,7 @@ create table if not exists meta_ad_drafts (
 
 create index if not exists idx_meta_ad_drafts_created on meta_ad_drafts(created_at desc);
 
-grant select, insert, update on meta_ad_drafts to anon, authenticated;
-grant usage, select on sequence meta_ad_drafts_id_seq to anon, authenticated;
+-- Service-role-only: all reads/writes go through edge functions using the
+-- service_role key, which bypasses RLS. No legitimate anon access path.
+-- (20260528b followup migration cleaned up a missing-RLS lint warning here.)
+alter table meta_ad_drafts enable row level security;

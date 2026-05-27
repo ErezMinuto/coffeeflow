@@ -74,9 +74,10 @@ CREATE INDEX IF NOT EXISTS seo_learnings_scope_active_idx
   ON seo_learnings (scope, created_at DESC)
   WHERE superseded_at IS NULL;
 
--- RLS off — same pattern as seo_tasks/seo_metrics. Service-role-only
--- writes via edge functions; no anon access.
-ALTER TABLE seo_learnings DISABLE ROW LEVEL SECURITY;
+-- Service-role-only: writes via edge functions using the service_role
+-- key, which bypasses RLS. No anon access path. RLS on with no policy
+-- = service role keeps full access, anon fully denied.
+ALTER TABLE seo_learnings ENABLE ROW LEVEL SECURITY;
 
 -- Sanity verification (run manually post-apply):
 --   SELECT COUNT(*) FROM seo_learnings;  -- expect 0

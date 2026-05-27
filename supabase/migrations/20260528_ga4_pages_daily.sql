@@ -47,8 +47,9 @@ CREATE INDEX IF NOT EXISTS ga4_pages_daily_channel_date_idx
 CREATE INDEX IF NOT EXISTS ga4_pages_daily_page_date_idx
   ON ga4_pages_daily (page_path, date DESC);
 
--- RLS off — same pattern as other seo_/google_ tables. Service-role only.
-ALTER TABLE ga4_pages_daily DISABLE ROW LEVEL SECURITY;
+-- Service-role-only: ga4-sync writes via service_role which bypasses RLS.
+-- RLS on with no policy = service role keeps full access, anon denied.
+ALTER TABLE ga4_pages_daily ENABLE ROW LEVEL SECURITY;
 
 -- Verify post-apply:
 --   SELECT COUNT(*) FROM ga4_pages_daily;  -- expect 0
