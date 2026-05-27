@@ -279,6 +279,8 @@ export type ChatToolName =
   | 'supersede_learning'
   | 'list_pending_ig_posts'
   | 'publish_ig_post'
+  | 'ingest_url'
+  | 'list_industry_insights'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the

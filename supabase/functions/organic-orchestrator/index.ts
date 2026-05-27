@@ -47,6 +47,7 @@ import {
   fetchVocInsights,
   fetchKeywordOpportunities,
   fetchRecentMarketResearch,
+  fetchIndustryInsights,
 } from '../seo-agent/services/cmsApi.ts'
 import {
   fetchTopOrganicPosts,
@@ -156,6 +157,7 @@ serve(async (req: Request): Promise<Response> => {
       keywordOpportunities,
       marketResearch,
       ga4LandingPages,
+      industryInsights,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -185,6 +187,11 @@ serve(async (req: Request): Promise<Response> => {
       // conversions per page). Closes the loop on "did past articles
       // actually drive sales?" rather than just impressions.
       fetchTopOrganicLandingPages(supabase, 30, 20),
+      // Industry intelligence — relevance-filtered insights from
+      // marketing/SEO/social/coffee feeds. Daily-ingested via
+      // industry-intelligence-sync. Strategist reads to update its
+      // understanding of best practices independent of Minuto's own data.
+      fetchIndustryInsights(supabase, { minRelevance: 0.5, lookbackDays: 14, limit: 12 }),
     ])
 
     console.log(
@@ -252,6 +259,7 @@ serve(async (req: Request): Promise<Response> => {
       keywordOpportunities,
       marketResearch,
       ga4LandingPages,
+      industryInsights,
       postFollowback,
     })
 
@@ -438,11 +446,12 @@ function buildStrategistUserMessage(args: {
   keywordOpportunities: Array<{ keyword: string; avg_monthly_searches: number | null; competition: string | null; competition_index: number | null }>
   marketResearch:  Array<{ research_date: string; source: string; summary: string | null }>
   ga4LandingPages: Array<{ page_path: string; sessions: number; active_users: number; engaged_sessions: number; conversions: number; conversion_value: number; avg_bounce_rate: number | null; avg_session_duration: number | null }>
+  industryInsights: Array<{ source_name: string; source_category: string; title: string; url: string; insight: string; relevance: number; tags: string[]; published_at: string | null }>
   postFollowback:  PostFollowback[]
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages, postFollowback } = args
+          ga4LandingPages, industryInsights, postFollowback } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -614,6 +623,15 @@ Recent competitor / market research (summaries from market_research):
 ${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r =>
   `  [${r.research_date} / ${r.source}] ${(r.summary ?? '').slice(0, 300)}${(r.summary?.length ?? 0) > 300 ? '…' : ''}`,
 ).join('\n\n')}
+
+=== INDUSTRY INTELLIGENCE — what the field is writing about (last 14d, relevance≥0.5) ===
+
+Daily-ingested marketing/SEO/social + coffee-vertical articles, Haiku-summarized with a per-article relevance score for Minuto's organic stack. Use this to update your understanding of best practices independent of Minuto's own data. When an insight here meaningfully shapes a brief you emit (e.g. you adopt a hook style described in an Ahrefs post), reference it in self_reflection so the trail is auditable. If a high-relevance insight reads as a durable rule (not just one-cycle inspiration), mention to the admin via self_reflection so they can record it via the chat record_learning tool.
+
+${industryInsights.length === 0 ? '  (no industry articles ingested yet — check industry-intelligence-sync cron)' : industryInsights.map(a => {
+  const tagStr = a.tags.length > 0 ? ` [${a.tags.join(', ')}]` : ''
+  return `  • [${a.source_name} / rel ${a.relevance.toFixed(2)}]${tagStr}\n    "${a.title}"\n    → ${a.insight}\n    ${a.url}`
+}).join('\n\n')}
 
 === POST-BY-POST FOLLOW-BACK (your own emissions, last 14d) ===
 
