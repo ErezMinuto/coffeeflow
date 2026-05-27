@@ -281,6 +281,7 @@ export type ChatToolName =
   | 'publish_ig_post'
   | 'ingest_url'
   | 'list_industry_insights'
+  | 'approve_qa_attempt'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the
