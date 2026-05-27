@@ -193,6 +193,85 @@ export interface IndustryArticleInsight {
   summarized_at:   string
 }
 
+// ── AI-agent visibility ─────────────────────────────────────────────────
+// Per-query aggregated mention rate across recent probes. The orchestrator
+// uses this to know whether Minuto is showing up in shopping-LLM
+// responses, and which competitors are routinely co-mentioned.
+
+export interface AiVisibilityRow {
+  query:                 string
+  category:              string
+  language:              string
+  probes_total:          number
+  mentions_total:        number
+  mention_rate:          number          // 0..1
+  avg_mention_position:  number | null   // chars from start; lower = mentioned earlier
+  top_competitors:       Array<{ name: string; count: number }>
+  last_run:              string
+}
+
+export async function fetchAiVisibilitySummary(
+  supabase: SupabaseClient,
+  lookbackDays = 30,
+): Promise<AiVisibilityRow[]> {
+  const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000).toISOString()
+  // Cheap to do client-side aggregation since each probe row is tiny + the
+  // total volume is bounded (~13 queries × 1-3 providers × weekly = small).
+  const { data, error } = await supabase
+    .from('ai_visibility_probes')
+    .select('query_text, minuto_mentioned, minuto_position_chars, competitors_mentioned, ran_at')
+    .gte('ran_at', since)
+    .is('error', null)
+    .limit(2000)
+  if (error) throw new Error(`fetchAiVisibilitySummary failed: ${error.message}`)
+
+  // Also pull query metadata for category/language.
+  const { data: queries, error: qErr } = await supabase
+    .from('ai_visibility_queries')
+    .select('query, category, language')
+  if (qErr) throw new Error(`fetchAiVisibilitySummary queries failed: ${qErr.message}`)
+  const meta = new Map((queries ?? []).map((q: any) => [q.query as string, { category: q.category as string, language: q.language as string }]))
+
+  // Aggregate per query_text.
+  const byQuery = new Map<string, {
+    total: number
+    mentions: number
+    posSum: number
+    posCnt: number
+    competitors: Map<string, number>
+    lastRun: string
+  }>()
+  for (const r of (data ?? []) as Array<any>) {
+    const k = r.query_text as string
+    const agg = byQuery.get(k) ?? { total: 0, mentions: 0, posSum: 0, posCnt: 0, competitors: new Map<string, number>(), lastRun: r.ran_at }
+    agg.total++
+    if (r.minuto_mentioned) {
+      agg.mentions++
+      if (r.minuto_position_chars != null) { agg.posSum += r.minuto_position_chars; agg.posCnt++ }
+    }
+    for (const c of (r.competitors_mentioned ?? []) as string[]) {
+      agg.competitors.set(c, (agg.competitors.get(c) ?? 0) + 1)
+    }
+    if (r.ran_at > agg.lastRun) agg.lastRun = r.ran_at
+    byQuery.set(k, agg)
+  }
+
+  return Array.from(byQuery.entries()).map(([query, agg]) => ({
+    query,
+    category:             meta.get(query)?.category ?? '?',
+    language:             meta.get(query)?.language ?? '?',
+    probes_total:         agg.total,
+    mentions_total:       agg.mentions,
+    mention_rate:         agg.total > 0 ? agg.mentions / agg.total : 0,
+    avg_mention_position: agg.posCnt > 0 ? agg.posSum / agg.posCnt : null,
+    top_competitors:      Array.from(agg.competitors.entries())
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 5)
+                                .map(([name, count]) => ({ name, count })),
+    last_run:             agg.lastRun,
+  })).sort((a, b) => b.mention_rate - a.mention_rate)
+}
+
 export async function fetchIndustryInsights(
   supabase: SupabaseClient,
   opts: { minRelevance?: number; lookbackDays?: number; limit?: number } = {},

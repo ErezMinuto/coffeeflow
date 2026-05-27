@@ -48,6 +48,7 @@ import {
   fetchKeywordOpportunities,
   fetchRecentMarketResearch,
   fetchIndustryInsights,
+  fetchAiVisibilitySummary,
 } from '../seo-agent/services/cmsApi.ts'
 import {
   fetchTopOrganicPosts,
@@ -158,6 +159,7 @@ serve(async (req: Request): Promise<Response> => {
       marketResearch,
       ga4LandingPages,
       industryInsights,
+      aiVisibility,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -192,6 +194,13 @@ serve(async (req: Request): Promise<Response> => {
       // industry-intelligence-sync. Strategist reads to update its
       // understanding of best practices independent of Minuto's own data.
       fetchIndustryInsights(supabase, { minRelevance: 0.5, lookbackDays: 14, limit: 12 }),
+      // AI shopping-agent visibility — per-query Minuto mention rate
+      // across LLM probes (Claude / Perplexity / GPT-4o etc). Populated
+      // weekly by ai-visibility-probe. Strategist proposes
+      // dynamic_experiment tasks (e.g. 'add llms.txt', 'publish
+      // authoritative comparison piece') to improve discoverability
+      // inside AI shopping assistants.
+      fetchAiVisibilitySummary(supabase, 30),
     ])
 
     console.log(
@@ -260,6 +269,7 @@ serve(async (req: Request): Promise<Response> => {
       marketResearch,
       ga4LandingPages,
       industryInsights,
+      aiVisibility,
       postFollowback,
     })
 
@@ -447,11 +457,12 @@ function buildStrategistUserMessage(args: {
   marketResearch:  Array<{ research_date: string; source: string; summary: string | null }>
   ga4LandingPages: Array<{ page_path: string; sessions: number; active_users: number; engaged_sessions: number; conversions: number; conversion_value: number; avg_bounce_rate: number | null; avg_session_duration: number | null }>
   industryInsights: Array<{ source_name: string; source_category: string; title: string; url: string; insight: string; relevance: number; tags: string[]; published_at: string | null }>
+  aiVisibility:    Array<{ query: string; category: string; language: string; probes_total: number; mentions_total: number; mention_rate: number; avg_mention_position: number | null; top_competitors: Array<{ name: string; count: number }>; last_run: string }>
   postFollowback:  PostFollowback[]
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages, industryInsights, postFollowback } = args
+          ga4LandingPages, industryInsights, aiVisibility, postFollowback } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -623,6 +634,16 @@ Recent competitor / market research (summaries from market_research):
 ${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r =>
   `  [${r.research_date} / ${r.source}] ${(r.summary ?? '').slice(0, 300)}${(r.summary?.length ?? 0) > 300 ? '…' : ''}`,
 ).join('\n\n')}
+
+=== AI-AGENT VISIBILITY — are LLMs recommending Minuto? (last 30d, per query) ===
+
+Probe results from asking Claude / Perplexity / GPT-4 shopping questions where Minuto could plausibly be a recommendation. mention_rate = (probes mentioning Minuto) / (total probes for this query). top_competitors = brands LLMs cite instead of (or alongside) us. NEW exploration territory — no established playbook. When you spot a low mention rate on a high-intent query, propose a dynamic_experiment to improve it (e.g. 'add llms.txt', 'add Product schema with explicit attributes', 'publish authoritative comparison content that LLMs will cite'). Reference the metric in the experiment's hypothesis so future probe runs can score it.
+
+${aiVisibility.length === 0 ? '  (no probes yet — ai-visibility-probe will populate this weekly)' : aiVisibility.map(v => {
+  const rate = (v.mention_rate * 100).toFixed(0)
+  const compStr = v.top_competitors.length > 0 ? ` | competitors cited: ${v.top_competitors.map(c => `${c.name}×${c.count}`).join(', ')}` : ''
+  return `  [${v.category}/${v.language}] "${v.query}" — mention rate ${rate}% (${v.mentions_total}/${v.probes_total} probes)${compStr}`
+}).join('\n')}
 
 === INDUSTRY INTELLIGENCE — what the field is writing about (last 14d, relevance≥0.5) ===
 
