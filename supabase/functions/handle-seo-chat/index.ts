@@ -198,7 +198,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'ingest_url',
-    description: 'Fetch a URL the admin pasted (article, blog post, case study, etc.), summarize it for relevance to Minuto\\'s organic stack, and OPTIONALLY record the insight as a durable best-practice learning. Use this when the admin says something like "read this and remember it" or "what do you think of this article?". Always confirm with the admin BEFORE calling record_learning — return the synthesized insight first, ask if it should be persisted.',
+    description: 'Fetch a URL the admin pasted (article, blog post, case study, etc.), summarize it for relevance to the Minuto organic stack, and OPTIONALLY record the insight as a durable best-practice learning. Use this when the admin says something like "read this and remember it" or "what do you think of this article?". Always confirm with the admin BEFORE calling record_learning — return the synthesized insight first, ask if it should be persisted.',
     input_schema: {
       type: 'object',
       properties: {
