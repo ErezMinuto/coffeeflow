@@ -158,6 +158,121 @@ export interface MarketResearchSummary {
   summary:       string | null
 }
 
+// ── Customer-segment awareness (RFM) ────────────────────────────────────
+// Aggregates customer_rfm into segment-level rollups so the strategist
+// sees the audience structure, not individual customer records (which
+// it shouldn't process for privacy + signal-to-noise reasons).
+
+export interface CustomerSegmentSummary {
+  total_customers:         number
+  by_segment: Array<{
+    segment:               string
+    count:                 number
+    avg_total_spent_ils:   number
+    avg_order_count:       number
+    avg_days_since_last:   number
+  }>
+  new_in_last_30d:         number   // first_order_date within 30d
+  at_risk_count:           number   // days_since_last > 90, was previously active
+}
+
+export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Promise<CustomerSegmentSummary> {
+  const { data, error } = await supabase
+    .from('customer_rfm')
+    .select('segment, total_spent_ils, order_count, days_since_last, first_order_date')
+    .limit(5000)
+  if (error) throw new Error(`fetchCustomerSegmentSummary failed: ${error.message}`)
+  const rows = (data ?? []) as Array<{
+    segment: string | null
+    total_spent_ils: number | null
+    order_count: number | null
+    days_since_last: number | null
+    first_order_date: string | null
+  }>
+  if (rows.length === 0) {
+    return { total_customers: 0, by_segment: [], new_in_last_30d: 0, at_risk_count: 0 }
+  }
+  const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000
+  let newCount = 0
+  let atRiskCount = 0
+  const bySeg = new Map<string, { count: number; totSpent: number; totOrders: number; totDaysSince: number }>()
+  for (const r of rows) {
+    const seg = r.segment ?? 'unknown'
+    const agg = bySeg.get(seg) ?? { count: 0, totSpent: 0, totOrders: 0, totDaysSince: 0 }
+    agg.count++
+    agg.totSpent      += Number(r.total_spent_ils ?? 0)
+    agg.totOrders     += Number(r.order_count ?? 0)
+    agg.totDaysSince  += Number(r.days_since_last ?? 0)
+    bySeg.set(seg, agg)
+    if (r.first_order_date && new Date(r.first_order_date).getTime() > thirtyDaysAgoMs) newCount++
+    if ((r.days_since_last ?? 0) > 90 && (r.order_count ?? 0) > 1) atRiskCount++
+  }
+  const by_segment = Array.from(bySeg.entries())
+    .map(([segment, a]) => ({
+      segment,
+      count: a.count,
+      avg_total_spent_ils: a.count > 0 ? Math.round(a.totSpent / a.count) : 0,
+      avg_order_count:     a.count > 0 ? Math.round((a.totOrders / a.count) * 10) / 10 : 0,
+      avg_days_since_last: a.count > 0 ? Math.round(a.totDaysSince / a.count) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+  return { total_customers: rows.length, by_segment, new_in_last_30d: newCount, at_risk_count: atRiskCount }
+}
+
+// ── Competitor intelligence — aggregated from existing tables ───────────
+// No new scraping or RSS-polling. Just rolls up what's already in:
+//   • ai_visibility_probes.competitors_mentioned (who LLMs cite in our space)
+//   • market_research (Meta Ad Library scans, when applicable)
+// Strategist sees a unified competitive landscape without us building a
+// fragile per-competitor crawler (most Israeli specialty coffee brands
+// don't have RSS-discoverable content anyway).
+
+export interface CompetitorIntelligenceSummary {
+  llm_co_mentions: Array<{ name: string; mention_count_30d: number; queries_appearing_in: number }>
+  recent_research:  Array<{ source: string; research_date: string; summary_excerpt: string }>
+}
+
+export async function fetchCompetitorIntelligence(
+  supabase: SupabaseClient,
+  lookbackDays = 30,
+): Promise<CompetitorIntelligenceSummary> {
+  const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000).toISOString()
+
+  // 1. LLM co-mention frequency (from ai_visibility_probes).
+  const { data: probes } = await supabase
+    .from('ai_visibility_probes')
+    .select('query_text, competitors_mentioned')
+    .gte('ran_at', since)
+    .is('error', null)
+    .limit(500)
+  const byCompetitor = new Map<string, { totalMentions: number; queries: Set<string> }>()
+  for (const p of (probes ?? []) as Array<{ query_text: string; competitors_mentioned: string[] | null }>) {
+    for (const c of (p.competitors_mentioned ?? [])) {
+      const agg = byCompetitor.get(c) ?? { totalMentions: 0, queries: new Set<string>() }
+      agg.totalMentions++
+      agg.queries.add(p.query_text)
+      byCompetitor.set(c, agg)
+    }
+  }
+  const llm_co_mentions = Array.from(byCompetitor.entries())
+    .map(([name, agg]) => ({ name, mention_count_30d: agg.totalMentions, queries_appearing_in: agg.queries.size }))
+    .sort((a, b) => b.mention_count_30d - a.mention_count_30d)
+    .slice(0, 10)
+
+  // 2. Recent market research summaries (already-available competitor scans).
+  const { data: research } = await supabase
+    .from('market_research')
+    .select('source, research_date, summary')
+    .gte('research_date', since.split('T')[0])
+    .not('summary', 'is', null)
+    .order('research_date', { ascending: false })
+    .limit(5)
+  const recent_research = ((research ?? []) as Array<{ source: string; research_date: string; summary: string }>)
+    .map(r => ({ source: r.source, research_date: r.research_date, summary_excerpt: (r.summary ?? '').slice(0, 200) }))
+
+  return { llm_co_mentions, recent_research }
+}
+
 export async function fetchRecentMarketResearch(
   supabase: SupabaseClient,
   lookbackDays = 30,
