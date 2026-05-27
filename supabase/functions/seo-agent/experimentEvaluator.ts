@@ -37,6 +37,7 @@ import {
   updateExperimentStatus,
   recordLearning,
   getRecentLearnings,
+  getSystemConfig,
 } from './db.ts'
 import { callClaude, MODEL_ORCHESTRATOR, parseClaudeJson } from './claude.ts'
 import type {
@@ -147,6 +148,7 @@ async function evaluateOne(
       performance,
     }
     await updateExperimentStatus(supabase, exp.id, { status: 'inconclusive', evaluation_summary: summary })
+    await recordInconclusiveLesson(supabase, exp, performance, 'undersized', summary.reason)
     return { outcome: 'inconclusive', skipReason: 'undersized' }
   }
 
@@ -170,6 +172,7 @@ async function evaluateOne(
       win_ratio: winRatio,
     }
     await updateExperimentStatus(supabase, exp.id, { status: 'inconclusive', evaluation_summary: summary })
+    await recordInconclusiveLesson(supabase, exp, performance, 'win-margin-too-thin', summary.reason)
     return { outcome: 'inconclusive', skipReason: 'win-margin-too-thin' }
   }
 
@@ -448,7 +451,7 @@ Write the single prescriptive rule per the system prompt. Output strict JSON onl
 // learnings (chat_agent / admin_manual) are never auto-superseded.
 // ─────────────────────────────────────────────────────────────────────────
 
-const AUTO_SUPERSEDE_THRESHOLD = -2   // tunable: 2 contradictions auto-retires an orchestrator rule
+const FALLBACK_AUTO_SUPERSEDE_THRESHOLD = -2   // overridable via system_config 'evaluator.auto_supersede_threshold'
 
 const EVIDENCE_SCORE_SYSTEM_PROMPT = `You are auditing the consistency of Minuto's organic-marketing rule corpus. Given ONE new prescriptive rule (just written by an experiment evaluator) and a list of EXISTING rules, classify each existing rule's relationship to the new one:
 
@@ -548,7 +551,8 @@ Classify each existing rule's relation to the new one. Output strict JSON only. 
     console.log(`[evaluator] evidence-score: ${target.id.slice(0, 8)} (${target.created_by}) ${delta > 0 ? '+' : ''}${delta} → ${newScore}`)
 
     // Auto-supersede check — ONLY orchestrator-written learnings.
-    if (newScore <= AUTO_SUPERSEDE_THRESHOLD && target.created_by === 'orchestrator') {
+    const supersedeThreshold = await getSystemConfig<number>(supabase, 'evaluator.auto_supersede_threshold', FALLBACK_AUTO_SUPERSEDE_THRESHOLD)
+    if (newScore <= supersedeThreshold && target.created_by === 'orchestrator') {
       const supersedeReason = `auto-superseded: evidence_score=${newScore} after ${newLog.length} experiment(s) — last contradiction from experiment ${args.experimentId.slice(0, 8)}`
       const { error: supErr } = await supabase
         .from('seo_learnings')
@@ -566,4 +570,54 @@ Classify each existing rule's relation to the new one. Output strict JSON only. 
       }
     }
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Inconclusive-experiment lesson recorder. When an experiment fails to
+// produce a winner (sample too small, win margin too thin, etc.), the
+// agent should LEARN from the methodology failure — not just the empty
+// outcome. Writes a learning with scope='experiment_methodology' so the
+// strategist sees "I designed an experiment in this way and it didn't
+// produce signal because X" on the next cycle.
+//
+// These are NOT eligible for auto-supersede (they accumulate as
+// procedural knowledge about experiment design, not as content rules).
+// ─────────────────────────────────────────────────────────────────────────
+async function recordInconclusiveLesson(
+  supabase: SupabaseClient,
+  exp: SeoExperimentRow,
+  performance: VariationPerformance[],
+  failMode: 'undersized' | 'win-margin-too-thin',
+  rawReason: string,
+): Promise<void> {
+  try {
+    // Cheap structured insight — no need for Claude. The failure mode tells
+    // us everything; we just frame it as a prescriptive methodology rule.
+    let insight = ''
+    if (failMode === 'undersized') {
+      const minSize = exp.min_sample_size
+      const sampleSizeField = sampleSizeFieldFor(exp.primary_metric)
+      const samples = performance.map(p => `${p.variation_label}:${(p[sampleSizeField] ?? 0)}`).join(', ')
+      insight = `Methodology lesson (experiment ${exp.id.slice(0, 8)}): "${exp.hypothesis.slice(0, 100)}" was inconclusive because variations didn't reach min_sample_size=${minSize} on ${sampleSizeField} within ${exp.min_lookback_days}d. Samples: ${samples}. Future experiments on this task_type=${exp.task_type} either need a longer lookback, higher-traffic topics, or fewer variations to concentrate sample size.`
+    } else {
+      const sorted = [...performance].sort((a, b) => Number(b[exp.primary_metric] ?? 0) - Number(a[exp.primary_metric] ?? 0))
+      const winner = sorted[0]
+      const runnerUp = sorted[1]
+      const ratio = Number(runnerUp?.[exp.primary_metric] ?? 0) > 0
+        ? Number(winner[exp.primary_metric] ?? 0) / Number(runnerUp[exp.primary_metric] ?? 0)
+        : 1
+      insight = `Methodology lesson (experiment ${exp.id.slice(0, 8)}): "${exp.hypothesis.slice(0, 100)}" had a winner but win margin was only ${ratio.toFixed(2)}× (below threshold ${exp.win_margin_multiplier}×). On this axis the variations performed too similarly to call. Either the axis being varied doesn't meaningfully differentiate outcomes, or the variations weren't different enough to test it. Reconsider what's being varied.`
+    }
+    await recordLearning(supabase, {
+      scope:             'experiment_methodology',
+      insight,
+      evidence_task_ids: performance.map(p => p.task_id),
+      created_by:        'orchestrator',
+    })
+    console.log(`[evaluator] recorded inconclusive lesson for experiment ${exp.id.slice(0, 8)} (${failMode})`)
+  } catch (e: any) {
+    console.warn(`[evaluator] recordInconclusiveLesson threw — non-fatal: ${e?.message ?? e}`)
+  }
+  // Reference rawReason to avoid unused-param lint
+  void rawReason
 }

@@ -42,6 +42,8 @@ import {
   markTaskFailed,
   recordLearning,
   supersedeLearning,
+  listSystemConfig,
+  setSystemConfig,
 } from '../seo-agent/db.ts'
 import type {
   ChatToolName,
@@ -223,6 +225,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         min_relevance:   { type: 'number', description: 'Default 0.5. Set to 0 to see everything.' },
         category_filter: { type: 'string', description: "Optional: 'seo' | 'marketing' | 'social' | 'coffee'." },
       },
+    },
+  },
+  {
+    name: 'list_system_thresholds',
+    description: 'Show all rows in system_config — runtime tunables (scout spike multiplier, evaluator win-margin, auto-supersede threshold, max brief regens, etc.) with their current value + when last updated + reasoning. Use when the admin asks "what are the current thresholds?" or before recommending a change.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'update_system_threshold',
+    description: 'Change one system_config row to a new value. Use ONLY when the admin explicitly approves a specific (key, new_value, reasoning) tuple. Never on your own initiative — admin must say "yes change X to Y because Z". Will write updated_by=chat_agent in the audit trail.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        key:       { type: 'string', description: 'Exact key from list_system_thresholds.' },
+        new_value: { description: 'New value (number / string / object). The admin specifies this.' },
+        reasoning: { type: 'string', description: 'Why this change — for audit trail.' },
+      },
+      required: ['key', 'new_value', 'reasoning'],
     },
   },
   {
@@ -546,6 +566,21 @@ async function executeTool(
         } catch (e: any) {
           return { ok: false, payload: { error: `ingest failed: ${e?.message ?? e}` } }
         }
+      }
+
+      case 'list_system_thresholds': {
+        const rows = await listSystemConfig(supabase)
+        return { ok: true, payload: { count: rows.length, thresholds: rows } }
+      }
+
+      case 'update_system_threshold': {
+        const key = String(input.key ?? '').trim()
+        const reasoning = String(input.reasoning ?? '').trim()
+        if (!key || !reasoning || input.new_value === undefined) {
+          return { ok: false, payload: { error: 'update_system_threshold requires key, new_value, reasoning.' } }
+        }
+        await setSystemConfig(supabase, key, input.new_value, 'chat_agent', reasoning)
+        return { ok: true, payload: { key, new_value: input.new_value, updated_at: new Date().toISOString(), audit: 'updated_by=chat_agent' } }
       }
 
       case 'approve_qa_attempt': {

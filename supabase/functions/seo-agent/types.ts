@@ -282,6 +282,8 @@ export type ChatToolName =
   | 'ingest_url'
   | 'list_industry_insights'
   | 'approve_qa_attempt'
+  | 'list_system_thresholds'
+  | 'update_system_threshold'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the

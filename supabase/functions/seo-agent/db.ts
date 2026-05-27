@@ -294,6 +294,64 @@ export async function getRecentLearnings(
   return (data ?? []) as LearningRow[]
 }
 
+// ── System config — tunable runtime thresholds ─────────────────────────
+// Single key-value store readable from any worker / evaluator. Functions
+// fetch overrides + fall back to their hardcoded defaults if no row.
+
+export async function getSystemConfig<T = unknown>(
+  supabase: SupabaseClient,
+  key: string,
+  fallback: T,
+): Promise<T> {
+  const { data, error } = await supabase
+    .from('system_config')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle()
+  if (error) {
+    console.warn(`[db] getSystemConfig('${key}') failed; using fallback: ${error.message}`)
+    return fallback
+  }
+  if (!data) return fallback
+  // value is JSONB — could be number / string / object. Cast and trust caller.
+  return data.value as T
+}
+
+export async function listSystemConfig(supabase: SupabaseClient): Promise<Array<{
+  key: string
+  value: unknown
+  description: string | null
+  updated_at: string
+  updated_by: string | null
+  reasoning: string | null
+}>> {
+  const { data, error } = await supabase
+    .from('system_config')
+    .select('*')
+    .order('key', { ascending: true })
+  if (error) throw new Error(`listSystemConfig failed: ${error.message}`)
+  return (data ?? []) as any
+}
+
+export async function setSystemConfig(
+  supabase: SupabaseClient,
+  key: string,
+  value: unknown,
+  updatedBy: string,
+  reasoning: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('system_config')
+    .upsert({
+      key,
+      value: value as any,
+      updated_by: updatedBy,
+      reasoning,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' })
+  if (error) throw new Error(`setSystemConfig('${key}') failed: ${error.message}`)
+}
+
 export async function supersedeLearning(
   supabase: SupabaseClient,
   id: string,
