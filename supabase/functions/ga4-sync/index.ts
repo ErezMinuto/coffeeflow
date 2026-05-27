@@ -20,7 +20,13 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getVertexAccessToken } from '../_shared/vertex_auth.ts'
+import { getGoogleAccessToken } from '../_shared/vertex_auth.ts'
+
+// GA4 Data API requires this narrow scope — cloud-platform alone returns
+// 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT. The shared auth helper caches
+// tokens per-scope so this doesn't conflict with Vertex's cloud-platform
+// token.
+const GA4_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly'
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -95,7 +101,7 @@ serve(async (req) => {
 
   let token: string
   try {
-    token = await getVertexAccessToken()
+    token = await getGoogleAccessToken(GA4_SCOPE)
   } catch (e: any) {
     return jsonResponse({ error: `auth failed: ${e?.message ?? e}` }, 500)
   }

@@ -222,6 +222,95 @@ export async function fetchTopConvertingSearchTerms(
     .slice(0, limit)
 }
 
+// ── GA4 — organic landing-page performance (post-2024 attribution) ──────
+// Reads from ga4_pages_daily (populated by ga4-sync daily). Aggregates
+// across the lookback window per page_path, ranked by conversions —
+// gives the strategist real-conversion data per landing page so it can
+// see "the article I wrote in March drove N sessions and K conversions"
+// rather than just GSC impressions.
+
+export interface Ga4LandingPageSignal {
+  page_path:           string
+  sessions:            number
+  active_users:        number
+  engaged_sessions:    number
+  conversions:         number
+  conversion_value:    number
+  avg_bounce_rate:     number | null  // weighted by sessions
+  avg_session_duration: number | null
+}
+
+export async function fetchTopOrganicLandingPages(
+  supabase: SupabaseClient,
+  lookbackDays = 30,
+  limit = 20,
+  channelGroup = 'Organic Search',
+): Promise<Ga4LandingPageSignal[]> {
+  const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000)
+    .toISOString().split('T')[0]
+  const { data, error } = await supabase
+    .from('ga4_pages_daily')
+    .select('page_path, sessions, active_users, engaged_sessions, conversions, conversion_value, bounce_rate, avg_session_duration')
+    .eq('channel_group', channelGroup)
+    .gte('date', since)
+    .limit(10000)
+  if (error) throw new Error(`fetchTopOrganicLandingPages failed: ${error.message}`)
+
+  const agg = new Map<string, Ga4LandingPageSignal & {
+    _sessionSum: number
+    _bounceSum:  number
+    _durSum:     number
+  }>()
+  for (const r of (data ?? []) as Array<{
+    page_path: string
+    sessions: number | null
+    active_users: number | null
+    engaged_sessions: number | null
+    conversions: number | null
+    conversion_value: number | null
+    bounce_rate: number | null
+    avg_session_duration: number | null
+  }>) {
+    const k = r.page_path
+    const sess = r.sessions ?? 0
+    const prev = agg.get(k)
+    if (!prev) {
+      agg.set(k, {
+        page_path:            k,
+        sessions:             sess,
+        active_users:         r.active_users ?? 0,
+        engaged_sessions:     r.engaged_sessions ?? 0,
+        conversions:          Number(r.conversions ?? 0),
+        conversion_value:     Number(r.conversion_value ?? 0),
+        avg_bounce_rate:      r.bounce_rate,
+        avg_session_duration: r.avg_session_duration,
+        _sessionSum:          sess,
+        _bounceSum:           (r.bounce_rate ?? 0) * sess,
+        _durSum:              (r.avg_session_duration ?? 0) * sess,
+      })
+    } else {
+      prev.sessions          += sess
+      prev.active_users      += r.active_users ?? 0
+      prev.engaged_sessions  += r.engaged_sessions ?? 0
+      prev.conversions       += Number(r.conversions ?? 0)
+      prev.conversion_value  += Number(r.conversion_value ?? 0)
+      prev._sessionSum       += sess
+      prev._bounceSum        += (r.bounce_rate ?? 0) * sess
+      prev._durSum           += (r.avg_session_duration ?? 0) * sess
+      prev.avg_bounce_rate    = prev._sessionSum > 0 ? prev._bounceSum / prev._sessionSum : null
+      prev.avg_session_duration = prev._sessionSum > 0 ? prev._durSum / prev._sessionSum : null
+    }
+  }
+
+  // Rank by conversions DESC, tie-break by sessions DESC. Drop the
+  // internal _sessionSum/_bounceSum/_durSum aggregator fields before
+  // returning.
+  return Array.from(agg.values())
+    .sort((a, b) => (b.conversions - a.conversions) || (b.sessions - a.sessions))
+    .slice(0, limit)
+    .map(({ _sessionSum, _bounceSum, _durSum, ...rest }) => rest)
+}
+
 // Position deltas vs a prior snapshot. Used by the orchestrator to spot
 // "kapsulot moved from #15 to #8" trends.
 export function computePositionDeltas(

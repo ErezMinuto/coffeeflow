@@ -34,6 +34,7 @@ import {
   computePositionDeltas,
   fetchTopConvertingPaidKeywords,
   fetchTopConvertingSearchTerms,
+  fetchTopOrganicLandingPages,
 } from '../seo-agent/services/googleApi.ts'
 import {
   fetchRecentBlogPosts,
@@ -104,6 +105,7 @@ serve(async (req: Request): Promise<Response> => {
       vocInsights,
       keywordOpportunities,
       marketResearch,
+      ga4LandingPages,
     ] = await Promise.all([
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
@@ -129,6 +131,10 @@ serve(async (req: Request): Promise<Response> => {
       fetchVocInsights(supabase, 15),
       fetchKeywordOpportunities(supabase, 15),
       fetchRecentMarketResearch(supabase, 30, 5),
+      // GA4 — real organic-traffic landing-page performance (sessions +
+      // conversions per page). Closes the loop on "did past articles
+      // actually drive sales?" rather than just impressions.
+      fetchTopOrganicLandingPages(supabase, 30, 20),
     ])
 
     console.log(
@@ -139,7 +145,7 @@ serve(async (req: Request): Promise<Response> => {
       `paidKw:${paidKeywords.length} searchTerms:${searchTerms.length} ` +
       `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
       `voc:${vocInsights.length} kwOps:${keywordOpportunities.length} ` +
-      `research:${marketResearch.length}`,
+      `research:${marketResearch.length} ga4Pages:${ga4LandingPages.length}`,
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
@@ -195,6 +201,7 @@ serve(async (req: Request): Promise<Response> => {
       vocInsights,
       keywordOpportunities,
       marketResearch,
+      ga4LandingPages,
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
@@ -341,9 +348,11 @@ function buildStrategistUserMessage(args: {
   vocInsights:     Array<{ pattern: string; real_meaning: string | null; customer_stage: string | null; product_context: string | null; frequency: number; example_phrases: unknown }>
   keywordOpportunities: Array<{ keyword: string; avg_monthly_searches: number | null; competition: string | null; competition_index: number | null }>
   marketResearch:  Array<{ research_date: string; source: string; summary: string | null }>
+  ga4LandingPages: Array<{ page_path: string; sessions: number; active_users: number; engaged_sessions: number; conversions: number; conversion_value: number; avg_bounce_rate: number | null; avg_session_duration: number | null }>
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
-          paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch } = args
+          paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
+          ga4LandingPages } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -515,6 +524,21 @@ Recent competitor / market research (summaries from market_research):
 ${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r =>
   `  [${r.research_date} / ${r.source}] ${(r.summary ?? '').slice(0, 300)}${(r.summary?.length ?? 0) > 300 ? '…' : ''}`,
 ).join('\n\n')}
+
+=== GA4 — ORGANIC LANDING-PAGE PERFORMANCE (last 30d) ===
+
+REAL conversion data per landing page (organic search traffic only). This closes the loop on "did past articles drive sales?" — GSC tells you impressions/position; GA4 tells you what happened after the click. Use this to:
+  • Double down on topic clusters where existing pages convert well (write follow-up articles).
+  • Identify high-traffic LOW-conversion pages (the page ranks but doesn't sell — content or CTA needs work, queue a rewrite).
+  • Spot category-level patterns ("our /v60 pages all convert at 5%+, /espresso-machine pages at <1% — V60 is our sweet spot").
+
+Top organic landing pages by conversions (sorted by conversions DESC):
+${ga4LandingPages.length === 0 ? '  (no GA4 data — ga4-sync may not have run yet)' : ga4LandingPages.map(p => {
+  const cvr = p.sessions > 0 ? (p.conversions / p.sessions * 100).toFixed(1) : '0.0'
+  const bounce = p.avg_bounce_rate != null ? `bounce:${(p.avg_bounce_rate * 100).toFixed(0)}%` : ''
+  const dur = p.avg_session_duration != null ? `dur:${p.avg_session_duration.toFixed(0)}s` : ''
+  return `  ${p.page_path} — sess:${p.sessions} users:${p.active_users} conv:${p.conversions.toFixed(1)} (cvr ${cvr}%) value:₪${p.conversion_value.toFixed(0)} ${bounce} ${dur}`
+}).join('\n')}
 ${focusBlock}
 Now perform your self-reflection and emit a plan per the system prompt's format. Return strict JSON only.`
 }

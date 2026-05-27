@@ -20,7 +20,16 @@ interface CachedToken {
   expiresAt: number // ms since epoch
 }
 
-let cachedToken: CachedToken | null = null
+// Per-scope cache. The original implementation cached ONE token globally
+// assuming cloud-platform scope was enough for all callers. GA4 Data API
+// requires the narrower analytics.readonly scope (cloud-platform alone
+// returns 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT). Keying by scope means
+// each caller gets a correctly-scoped token without trampling another's
+// cache.
+const cachedTokens: Map<string, CachedToken> = new Map()
+
+// Default scope kept for backwards compat — existing Vertex callers use this.
+const DEFAULT_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 
 function readCreds(): ServiceAccountCreds {
   const raw = Deno.env.get('GCP_SERVICE_ACCOUNT_JSON')
@@ -77,12 +86,12 @@ async function importRsaPrivateKey(pem: string): Promise<CryptoKey> {
   )
 }
 
-async function signJwt(creds: ServiceAccountCreds): Promise<string> {
+async function signJwt(creds: ServiceAccountCreds, scope: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   const header = { alg: 'RS256', typ: 'JWT' }
   const claims = {
     iss:   creds.client_email,
-    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    scope,
     aud:   'https://oauth2.googleapis.com/token',
     exp:   now + 3600,
     iat:   now,
@@ -95,9 +104,9 @@ async function signJwt(creds: ServiceAccountCreds): Promise<string> {
   return `${unsigned}.${base64UrlEncodeBytes(sig)}`
 }
 
-async function fetchAccessToken(): Promise<CachedToken> {
+async function fetchAccessToken(scope: string): Promise<CachedToken> {
   const creds = readCreds()
-  const jwt = await signJwt(creds)
+  const jwt = await signJwt(creds, scope)
   const body = new URLSearchParams({
     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
     assertion: jwt,
@@ -109,7 +118,7 @@ async function fetchAccessToken(): Promise<CachedToken> {
   })
   if (!res.ok) {
     const errText = await res.text().catch(() => '')
-    throw new Error(`OAuth token exchange ${res.status}: ${errText.slice(0, 400)}`)
+    throw new Error(`OAuth token exchange (scope=${scope}) ${res.status}: ${errText.slice(0, 400)}`)
   }
   const json = await res.json() as { access_token: string; expires_in: number; token_type: string }
   if (!json.access_token) {
@@ -121,10 +130,23 @@ async function fetchAccessToken(): Promise<CachedToken> {
   return { value: json.access_token, expiresAt }
 }
 
-export async function getVertexAccessToken(): Promise<string> {
-  if (cachedToken && cachedToken.expiresAt > Date.now()) {
-    return cachedToken.value
+// Generic scoped-token fetcher. Pass any Google OAuth scope URL; tokens
+// are cached per scope so different callers don't trample each other.
+// Example scopes:
+//   https://www.googleapis.com/auth/cloud-platform        (Vertex, BigQuery, broad GCP)
+//   https://www.googleapis.com/auth/analytics.readonly    (GA4 Data API)
+//   https://www.googleapis.com/auth/webmasters.readonly   (Search Console — future)
+export async function getGoogleAccessToken(scope: string): Promise<string> {
+  const cached = cachedTokens.get(scope)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value
   }
-  cachedToken = await fetchAccessToken()
-  return cachedToken.value
+  const fresh = await fetchAccessToken(scope)
+  cachedTokens.set(scope, fresh)
+  return fresh.value
+}
+
+// Backwards-compat shim — existing Vertex callers use this.
+export async function getVertexAccessToken(): Promise<string> {
+  return getGoogleAccessToken(DEFAULT_SCOPE)
 }
