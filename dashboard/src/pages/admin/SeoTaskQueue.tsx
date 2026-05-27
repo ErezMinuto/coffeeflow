@@ -39,14 +39,18 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   const [viewing, setViewing] = useState<SeoTaskRow | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
-  // Initial load + realtime subscription. Filter to non-completed (active
-  // queue feel) but include the last few completed/failed for context.
+  // Initial load + realtime subscription. Scope to the last 7 days so the
+  // panel stays focused on what's actually actionable — older tasks live
+  // forever in seo_tasks for audit, but the queue view is for "what's
+  // happening this week". Order: newest first.
   useEffect(() => {
     let cancelled = false
     async function load() {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
       const { data } = await supabase
         .from('seo_tasks')
         .select('*')
+        .gte('created_at', sevenDaysAgo)
         .order('created_at', { ascending: false })
         .limit(50)
       if (!cancelled) {
@@ -122,7 +126,7 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     <aside className="h-full flex flex-col bg-white border-r border-surface-200 min-h-0">
       <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Task queue</h2>
-        <span className="text-xs text-surface-500">{tasks.length} rows</span>
+        <span className="text-xs text-surface-500" title="Showing tasks from the last 7 days, newest first">{tasks.length} · last 7d</span>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
