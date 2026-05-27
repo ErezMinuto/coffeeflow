@@ -83,6 +83,58 @@ const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 // enough — most turns are 1-2 tool calls deep.
 const MAX_TOOL_LOOPS = 8
 
+// ── Worker registry — what the agent can nudge ─────────────────────────
+// Maps a friendly name to the deployed function path. Used by the
+// auto-nudge after queue_task / repoint_ig_to_visual and by the
+// explicit trigger_worker chat tool. Keep this in sync as new workers
+// land in the org.
+const WORKER_REGISTRY: Record<string, { task_type: string; url_path: string }> = {
+  ig:       { task_type: 'instagram_post',    url_path: 'organic-worker-instagram' },
+  visual:   { task_type: 'visual_generation', url_path: 'seo-worker-visual'       },
+  writer:   { task_type: 'text_generation',   url_path: 'seo-worker-writer'       },
+  research: { task_type: 'deep_research',     url_path: 'seo-worker-research'     },
+}
+
+// task_type → worker key (for auto-nudge after queue_task).
+const TASK_TYPE_TO_WORKER: Record<string, keyof typeof WORKER_REGISTRY> = {
+  instagram_post:    'ig',
+  visual_generation: 'visual',
+  text_generation:   'writer',
+  deep_research:     'research',
+}
+
+// Fire-and-forget POST to a worker. We wait a short time so the agent
+// gets a confirmation that the request landed (and any immediate error),
+// but never block the chat response on the worker actually finishing —
+// most workers take 30s–5min to complete a task and the chat handler
+// itself has a 150s wall clock.
+async function nudgeWorker(workerKey: keyof typeof WORKER_REGISTRY, opts?: { awaitMs?: number }): Promise<{ ok: boolean; status?: number; body?: unknown; error?: string }> {
+  const reg = WORKER_REGISTRY[workerKey]
+  if (!reg) return { ok: false, error: `unknown worker key '${workerKey}'` }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), opts?.awaitMs ?? 8000)
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${reg.url_path}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      body:    '{}',
+      signal:  ctrl.signal,
+    })
+    clearTimeout(timer)
+    const body = await res.json().catch(() => ({}))
+    return { ok: res.ok, status: res.status, body }
+  } catch (e: any) {
+    clearTimeout(timer)
+    if (e?.name === 'AbortError') {
+      // Worker is still running — that's fine, it'll finish on its own.
+      // The fetch was aborted on our side but the function invocation
+      // continues server-side until its own work completes.
+      return { ok: true, error: 'worker_running_in_background' }
+    }
+    return { ok: false, error: e?.message ?? String(e) }
+  }
+}
+
 // ── Tool catalogue (Anthropic input_schema format) ─────────────────────
 
 const TOOL_DEFINITIONS: ToolDefinition[] = [
@@ -99,6 +151,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         depends_on:     { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs the worker should wait on before claiming this task.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
+    },
+  },
+  {
+    name: 'trigger_worker',
+    description: 'POST directly to a worker function so it drains the next pending task in its queue immediately, without waiting for the cron tick. Use this after queue_task / repoint_ig_to_visual / queue_deep_research if the admin wants the result now instead of in 2-5 minutes. Also useful when the admin reports a task is "stuck pending". Returns the worker\'s response (typically `{processed: 0|1, task_id, ok}` or `worker_running_in_background` if it\'s still working when our short timeout fires). worker ∈ {ig | visual | writer | research}.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        worker: { type: 'string', description: "One of: 'ig' (instagram_post queue), 'visual' (visual_generation queue), 'writer' (text_generation queue), 'research' (deep_research queue)." },
+      },
+      required: ['worker'],
     },
   },
   {
@@ -328,7 +391,16 @@ async function executeTool(
         }
         const inserted = await insertTasks(supabase, [newTask])
         const row = inserted[0]
-        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on } }
+        // Auto-nudge the relevant worker so the task starts processing
+        // immediately rather than waiting for the next cron tick. If the
+        // task has dependencies, skip the nudge — the worker would just
+        // release it back to pending until its parents complete.
+        let nudge: { ok: boolean; status?: number; body?: unknown; error?: string } | null = null
+        if (row?.id && depends_on.length === 0) {
+          const workerKey = TASK_TYPE_TO_WORKER[task_type]
+          if (workerKey) nudge = await nudgeWorker(workerKey)
+        }
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on, worker_nudged: nudge } }
       }
 
       case 'repoint_ig_to_visual': {
@@ -379,6 +451,9 @@ async function executeTool(
           })
           .eq('id', ig_task_id)
         if (updateErr) return { ok: false, payload: { error: `repoint update failed: ${updateErr.message}` } }
+        // Nudge the IG worker so the repointed task starts processing
+        // immediately rather than waiting for the next cron tick.
+        const nudge = await nudgeWorker('ig')
         return {
           ok: true,
           payload: {
@@ -388,7 +463,24 @@ async function executeTool(
             status:             'pending',
             previous_error_msg: ig.error_msg,
             previous_attempts:  ig.attempts,
-            cron_cadence:       'IG worker drains every ~3 min',
+            worker_nudged:      nudge,
+          },
+        }
+      }
+
+      case 'trigger_worker': {
+        const workerArg = String(input.worker ?? '').trim().toLowerCase()
+        if (!(workerArg in WORKER_REGISTRY)) {
+          return { ok: false, payload: { error: `worker must be one of: ${Object.keys(WORKER_REGISTRY).join(' | ')}.` } }
+        }
+        const nudge = await nudgeWorker(workerArg as keyof typeof WORKER_REGISTRY)
+        return {
+          ok: nudge.ok,
+          payload: {
+            worker:    workerArg,
+            task_type: WORKER_REGISTRY[workerArg].task_type,
+            url_path:  WORKER_REGISTRY[workerArg].url_path,
+            result:    nudge,
           },
         }
       }
@@ -714,7 +806,8 @@ async function executeTool(
         }
         const inserted = await insertTasks(supabase, [newTask])
         const row = inserted[0]
-        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', cron_cadence: 'every 3 min' } }
+        const nudge = row?.id ? await nudgeWorker('research') : null
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', worker_nudged: nudge } }
       }
 
       case 'approve_qa_attempt': {

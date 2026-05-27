@@ -313,6 +313,7 @@ export type ChatToolName =
   | 'update_system_threshold'
   | 'queue_deep_research'
   | 'repoint_ig_to_visual'
+  | 'trigger_worker'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the
