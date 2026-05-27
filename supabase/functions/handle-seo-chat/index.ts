@@ -405,6 +405,50 @@ async function executeTool(
           published_via:  'chat_agent_approval',
         }
         await supabase.from('seo_tasks').update({ result_data: patch }).eq('id', task_id)
+
+        // ── PUBLISH-AS-VOTE LEARNING SIGNAL ──────────────────────────
+        // If this task was part of an A/B experiment, the admin's choice
+        // to publish THIS variation (and implicitly NOT publish the
+        // sibling) is itself a learning signal — a taste vote. Record it
+        // as a learning so future cycles bias toward the chosen
+        // variation's style. NOT real engagement data; that comes later
+        // when meta-sync ingests the live post's metrics + the experiment
+        // evaluator scores it. This is the human-preference layer that
+        // shapes captions before any real-world data exists.
+        try {
+          const { data: taskFull } = await supabase
+            .from('seo_tasks')
+            .select('experiment_id, variation_label')
+            .eq('id', task_id)
+            .maybeSingle()
+          if (taskFull?.experiment_id && taskFull.variation_label) {
+            // Look up the experiment + other variations to find the loser(s).
+            const { data: siblings } = await supabase
+              .from('seo_tasks')
+              .select('id, variation_label')
+              .eq('experiment_id', taskFull.experiment_id)
+              .neq('id', task_id)
+            const losers = (siblings ?? []).map((s: any) => s.variation_label).filter(Boolean)
+            const { data: exp } = await supabase
+              .from('seo_experiments')
+              .select('hypothesis, task_type')
+              .eq('id', taskFull.experiment_id)
+              .maybeSingle()
+            if (losers.length > 0 && exp) {
+              await recordLearning(supabase, {
+                scope:             'experiment_winner',
+                insight:           `Admin-preference signal (NOT real engagement): for the ${exp.task_type} experiment "${(exp.hypothesis ?? '').slice(0, 100)}", the admin chose to publish variation '${taskFull.variation_label}' over alternatives [${losers.join(', ')}]. Provisional rule until real-world metrics from meta-sync land in the experiment evaluator.`,
+                evidence_task_ids: [task_id],
+                created_by:        'chat_agent',
+              })
+              console.log(`[handle-seo-chat] recorded publish-as-vote learning: ${taskFull.variation_label} > ${losers.join(', ')}`)
+            }
+          }
+        } catch (e: any) {
+          // Don't fail the publish if the learning-write fails — log + continue.
+          console.warn(`[handle-seo-chat] publish-as-vote learning failed (publish still succeeded): ${e?.message ?? e}`)
+        }
+
         return {
           ok: true,
           payload: {

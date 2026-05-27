@@ -31,6 +31,8 @@ import {
   insertExperiment,
 } from '../seo-agent/db.ts'
 import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
+import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
+import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import {
   fetchTopKeywords,
   computePositionDeltas,
@@ -86,7 +88,22 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabase = createSupabase()
 
-    // ── 0. SELF-LEARNING TICK ────────────────────────────────────────
+    // ── 0a. WP PUBLISH DETECTOR — settle wp_published flags ────────────
+    // Writer worker creates drafts; admin manually publishes via WP admin.
+    // Without polling, the orchestrator can't tell which drafts went live.
+    // This call queries WP REST for tasks where wp_published is still
+    // null and patches result_data accordingly.
+    console.log('[organic-orchestrator] polling WP draft→publish transitions…')
+    let wpDetectorSummary: Awaited<ReturnType<typeof detectWpPublishTransitions>>
+    try {
+      wpDetectorSummary = await detectWpPublishTransitions(supabase, 60)
+    } catch (e: any) {
+      console.error(`[organic-orchestrator] WP publish detector threw — continuing: ${e?.message ?? e}`)
+      wpDetectorSummary = { checked: 0, newly_live: 0, still_draft: 0, errors: [{ task_id: '-', error: e?.message ?? String(e) }] }
+    }
+    console.log(`[organic-orchestrator] WP detector — checked:${wpDetectorSummary.checked} newly_live:${wpDetectorSummary.newly_live} still_draft:${wpDetectorSummary.still_draft}`)
+
+    // ── 0b. SELF-LEARNING TICK ────────────────────────────────────────
     // Before planning anything new, score any past experiments whose
     // data has settled. Winners get written into seo_learnings with
     // scope='experiment_winner' + created_by='orchestrator'. The
@@ -101,6 +118,21 @@ serve(async (req: Request): Promise<Response> => {
       experimentEvalSummary = { evaluated: 0, inconclusive: 0, winners: [], skipped: [{ experiment_id: 'eval-pass', reason: e?.message ?? String(e) }] }
     }
     console.log(`[organic-orchestrator] experiment eval — evaluated:${experimentEvalSummary.evaluated} inconclusive:${experimentEvalSummary.inconclusive} skipped:${experimentEvalSummary.skipped.length}`)
+
+    // ── 0c. PER-POST FOLLOW-BACK ───────────────────────────────────────
+    // Gather per-task performance for the last 14 days so the strategist
+    // can see "the tasks I queued in prior cycles — here is each one's
+    // current status + performance". Different from the aggregate
+    // top-performers blocks (those show site-wide winners; this shows
+    // the agent's own recent emissions).
+    console.log('[organic-orchestrator] collecting per-post follow-back…')
+    let postFollowback: PostFollowback[] = []
+    try {
+      postFollowback = await collectPostFollowback(supabase, 14)
+    } catch (e: any) {
+      console.error(`[organic-orchestrator] follow-back collection threw — continuing: ${e?.message ?? e}`)
+    }
+    console.log(`[organic-orchestrator] follow-back — ${postFollowback.length} task(s) reported`)
 
     // ── 1. Fetch source data ──────────────────────────────────────────
     console.log('[organic-orchestrator] fetching source data…')
@@ -220,6 +252,7 @@ serve(async (req: Request): Promise<Response> => {
       keywordOpportunities,
       marketResearch,
       ga4LandingPages,
+      postFollowback,
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
@@ -405,10 +438,11 @@ function buildStrategistUserMessage(args: {
   keywordOpportunities: Array<{ keyword: string; avg_monthly_searches: number | null; competition: string | null; competition_index: number | null }>
   marketResearch:  Array<{ research_date: string; source: string; summary: string | null }>
   ga4LandingPages: Array<{ page_path: string; sessions: number; active_users: number; engaged_sessions: number; conversions: number; conversion_value: number; avg_bounce_rate: number | null; avg_session_duration: number | null }>
+  postFollowback:  PostFollowback[]
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages } = args
+          ga4LandingPages, postFollowback } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -580,6 +614,30 @@ Recent competitor / market research (summaries from market_research):
 ${marketResearch.length === 0 ? '  (no recent research)' : marketResearch.map(r =>
   `  [${r.research_date} / ${r.source}] ${(r.summary ?? '').slice(0, 300)}${(r.summary?.length ?? 0) > 300 ? '…' : ''}`,
 ).join('\n\n')}
+
+=== POST-BY-POST FOLLOW-BACK (your own emissions, last 14d) ===
+
+For each task you emitted in the last 14 days, here is its current status + performance. This is your retrospection layer — distinct from the aggregate top-performers blocks below. Use it to:
+  • Notice which of YOUR drafts are sitting unpublished (the admin is the bottleneck — adjust briefs to be more publish-ready)
+  • Spot tasks that completed but never produced metrics (broken pipeline, surface in self_reflection)
+  • Compare prior-cycle predictions to actual outcomes (the strategic-reflection feedback you keep asking for)
+
+${postFollowback.length === 0 ? '  (no tasks in the last 14 days)' : postFollowback.map(p => {
+  const parts: string[] = [`  [${p.task_type}${p.variation_label ? ':' + p.variation_label : ''}] ${p.task_id.slice(0,8)} ${p.brief_summary}`]
+  if (p.task_type === 'text_generation') {
+    if (p.wp_published === true)              parts.push(`    → LIVE on WP (post ${p.wp_post_id}); sessions:${p.ga4_sessions ?? 0} conversions:${p.ga4_conversions ?? 0}`)
+    else if (p.wp_published === false)        parts.push(`    → drafted on WP (post ${p.wp_post_id}), NOT YET PUBLISHED by admin`)
+    else if (p.wp_post_id)                    parts.push(`    → drafted on WP (post ${p.wp_post_id}), publish-status unknown`)
+  } else if (p.task_type === 'instagram_post') {
+    if (p.ig_published)                       parts.push(`    → LIVE on IG (${p.ig_permalink ?? p.ig_media_id}); impressions:${p.meta_impressions ?? '?'} engagements:${p.meta_engagement ?? '?'}`)
+    else if (p.ig_creation_id)                parts.push(`    → PREPARED on Meta (creation_id ${p.ig_creation_id.slice(-8)}), AWAITING admin approval`)
+    else                                       parts.push(`    → no IG container prepared`)
+  } else if (p.task_type === 'dynamic_experiment') {
+    parts.push(`    → ${p.status_note ?? '(no status)'}`)
+  }
+  if (p.status_note && !parts[parts.length - 1].includes(p.status_note)) parts.push(`    ⚠ ${p.status_note}`)
+  return parts.join('\n')
+}).join('\n')}
 
 === GA4 — ORGANIC LANDING-PAGE PERFORMANCE (last 30d) ===
 
