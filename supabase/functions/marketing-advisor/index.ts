@@ -9072,9 +9072,34 @@ ${researchBlock.slice(0, 3500)}
       // Backward compat — old agent type routes to precise strategist
       result = await runPreciseStrategist(supabase, weekStart, focus);
       model  = MODEL_ADS;
+    } else if (agentArg === "organic_content") {
+      // RETIRED 2026-05-27. The old organic-content agent is superseded by
+      // the unified organic-orchestrator (supabase/functions/organic-orchestrator).
+      // We KEEP the runOrganicAgent code in this file (for now) as a reference
+      // / rollback option, but it MUST NOT execute under any circumstance —
+      // cron is gone, dashboard panel is hidden, this is the last gate.
+      // Stamping a 'failed' status on the row so the admin sees a clear
+      // signal if anything still calls this endpoint.
+      const retiredMsg = "organic_content agent is RETIRED. Use organic-orchestrator (sidebar: סוכן אורגני, route: /admin/seo-agent) instead.";
+      console.warn(`[organic_content] BLOCKED — ${retiredMsg}`);
+      await upsertReport(supabase, agentArg, weekStart, {
+        status: "failed", error_msg: retiredMsg, report: null, model: MODEL_ORGANIC, tokens_used: 0,
+      });
+      return new Response(
+        JSON.stringify({ error: retiredMsg, retired: true, replacement: "organic-orchestrator" }),
+        { status: 410, headers: { "Content-Type": "application/json" } },
+      );
     } else {
-      result = await runOrganicAgent(supabase, weekStart, focus);
-      model  = MODEL_ORGANIC;
+      // Unknown agent type → 400, NOT a silent fall-through to organic
+      // (that's how the OLD code worked — it ran organic for any
+      // unrecognized string, which is exactly the "agents take stupid
+      // decisions" problem we just refactored away).
+      const unknownMsg = `Unknown agent type: '${agentArg}'. Valid: strategist_aggressive | strategist_precise | google_ads_growth | google_ads_efficiency.`;
+      console.error(`[marketing-advisor] ${unknownMsg}`);
+      return new Response(
+        JSON.stringify({ error: unknownMsg }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
     }
 
     await upsertReport(supabase, agentArg, weekStart, {
