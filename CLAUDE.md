@@ -140,6 +140,19 @@ Functions that MUST always be deployed with `--no-verify-jwt`:
 
 ---
 
+## New Tables — Data API Exposure (Supabase Oct 30, 2026 cutover)
+
+Supabase is removing the default `public` → Data API auto-grant on **Oct 30, 2026** for existing projects (already gone for new projects as of May 30, 2026). Every new table needs an explicit decision.
+
+Use `scripts/migration-template.sql` as the starting point. Two patterns:
+
+- **Pattern A — service-role-only (default).** Edge functions only; dashboard never reads it via supabase-js. `ALTER TABLE … ENABLE ROW LEVEL SECURITY;` and **no GRANT**. Service role bypasses RLS; anon is denied. Examples: `ga4_pages_daily`, `seo_learnings`, `seo_tasks`, `meta_ad_drafts`.
+- **Pattern B — dashboard-exposed.** Dashboard calls `.from('<table>')`. RLS on, explicit `GRANT SELECT, INSERT, UPDATE, DELETE … TO anon, authenticated;` (plus the sequence grant if `BIGSERIAL`), plus an RLS policy scoping rows. Examples: `pending_orders`, `contact_groups`, `attendance_settings`.
+
+Audit current exposure with `scripts/audit-public-grants.sql` (paste into Supabase SQL Editor). Anything tagged `anon_exposed_no_rls` or `anon_grant_no_rls` needs review before Oct 30.
+
+---
+
 ## Known Issues & Decisions
 
 - **`sb_secret_*` key format**: Breaks PostgREST role assignment → UPDATE/INSERT fail. Always use `eyJ...` JWT format.
