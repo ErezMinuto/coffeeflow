@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, RefreshCw } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 // Left-panel: live pending-task queue.
@@ -38,42 +38,59 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   const [loading, setLoading] = useState(true)
   const [viewing, setViewing] = useState<SeoTaskRow | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  const cancelledRef = useRef(false)
 
-  // Initial load + realtime subscription. Scope to the last 7 days so the
-  // panel stays focused on what's actually actionable — older tasks live
-  // forever in seo_tasks for audit, but the queue view is for "what's
-  // happening this week". Order: newest first.
+  // Stable loader the realtime sub, polling interval, manual button, and
+  // mount-time effect can all share. Wrapped in useCallback so the
+  // realtime cleanup doesn't have to depend on a fresh function ref.
+  const load = useCallback(async () => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+    const { data } = await supabase
+      .from('seo_tasks')
+      .select('*')
+      .gte('created_at', sevenDaysAgo)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (cancelledRef.current) return
+    setTasks((data ?? []) as SeoTaskRow[])
+    setLoading(false)
+    setLastRefreshedAt(new Date())
+  }, [])
+
+  // Initial load + realtime subscription + 20s polling fallback. The
+  // realtime channel ONLY fires if seo_tasks is in the supabase_realtime
+  // publication (migration 20260528_seo_tasks_realtime_publication.sql);
+  // even with that in place, polling is a cheap belt-and-suspenders that
+  // catches the case where the channel drops or the user's network blips.
+  // 20s feels live without flooding PostgREST.
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
-      const { data } = await supabase
-        .from('seo_tasks')
-        .select('*')
-        .gte('created_at', sevenDaysAgo)
-        .order('created_at', { ascending: false })
-        .limit(50)
-      if (!cancelled) {
-        setTasks((data ?? []) as SeoTaskRow[])
-        setLoading(false)
-      }
-    }
+    cancelledRef.current = false
     load()
 
     const channel = supabase
       .channel('seo_tasks_queue')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'seo_tasks' }, () => {
-        // Cheap and correct: re-fetch. The table is small and updates
-        // are sparse (a few rows per orchestrator run).
         load()
       })
       .subscribe()
 
+    const pollInterval = setInterval(() => {
+      load()
+    }, 20_000)
+
     return () => {
-      cancelled = true
+      cancelledRef.current = true
+      clearInterval(pollInterval)
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [load])
+
+  async function handleManualRefresh() {
+    setRefreshing(true)
+    try { await load() } finally { setRefreshing(false) }
+  }
 
   async function handleCancel(t: SeoTaskRow) {
     const reason = window.prompt(`Cancel task "${t.task_type}"?\n\nReason:`, 'No longer needed')
@@ -126,7 +143,22 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     <aside className="h-full flex flex-col bg-white border-r border-surface-200 min-h-0">
       <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-surface-50 shrink-0">
         <h2 className="text-sm font-semibold text-surface-800">Task queue</h2>
-        <span className="text-xs text-surface-500" title="Showing tasks from the last 7 days, newest first">{tasks.length} · last 7d</span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-xs text-surface-500"
+            title={lastRefreshedAt ? `Last refreshed ${lastRefreshedAt.toLocaleTimeString()}. Auto-refresh every 20s + realtime.` : 'Showing tasks from the last 7 days, newest first'}
+          >
+            {tasks.length} · last 7d
+          </span>
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className="text-surface-500 hover:text-surface-900 disabled:opacity-50"
+            title="Refresh now"
+          >
+            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
