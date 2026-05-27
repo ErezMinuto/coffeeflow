@@ -311,3 +311,87 @@ export async function supersedeLearning(
     .is('superseded_at', null)  // don't re-supersede an already-superseded row
   if (error) throw new Error(`supersedeLearning failed: ${error.message}`)
 }
+
+// ── Experiments (autonomous A/B testing) ─────────────────────────────────
+// The orchestrator queues N variations of a content task under one
+// experiment_id, waits for performance data, then auto-scores and writes
+// a learning. These helpers are the read/write surface for that loop.
+
+import type { NewExperiment, SeoExperimentRow, SeoTaskRow } from './types.ts'
+
+export async function insertExperiment(
+  supabase: SupabaseClient,
+  experiment: NewExperiment,
+): Promise<SeoExperimentRow> {
+  const { data, error } = await supabase
+    .from('seo_experiments')
+    .insert(experiment)
+    .select('*')
+    .single()
+  if (error) throw new Error(`insertExperiment failed: ${error.message}`)
+  return data as SeoExperimentRow
+}
+
+// Find experiments due for evaluation: still in 'collecting' status AND
+// past their per-experiment min_lookback_days threshold. Each row tells
+// the evaluator how to score (primary_metric, min_sample_size, etc.).
+export async function getExperimentsDueForEvaluation(
+  supabase: SupabaseClient,
+  limit = 10,
+): Promise<SeoExperimentRow[]> {
+  // Postgres can compute the cutoff per-row via the column itself.
+  // Using a raw filter: created_at + min_lookback_days * 1day <= now
+  const { data, error } = await supabase
+    .from('seo_experiments')
+    .select('*')
+    .eq('status', 'collecting')
+    .order('created_at', { ascending: true })
+    .limit(limit * 5)  // pull extra; we filter in JS for the date math
+  if (error) throw new Error(`getExperimentsDueForEvaluation failed: ${error.message}`)
+  const now = Date.now()
+  return ((data ?? []) as SeoExperimentRow[])
+    .filter(e => {
+      const eligible = new Date(e.created_at).getTime() + e.min_lookback_days * 24 * 3600 * 1000
+      return eligible <= now
+    })
+    .slice(0, limit)
+}
+
+export async function getExperimentVariations(
+  supabase: SupabaseClient,
+  experimentId: string,
+): Promise<SeoTaskRow[]> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('*')
+    .eq('experiment_id', experimentId)
+    .order('created_at', { ascending: true })
+  if (error) throw new Error(`getExperimentVariations failed: ${error.message}`)
+  return (data ?? []) as SeoTaskRow[]
+}
+
+export async function updateExperimentStatus(
+  supabase: SupabaseClient,
+  id: string,
+  patch: {
+    status:                ExperimentStatusUpdate
+    winner_task_id?:       string | null
+    evaluation_summary?:   Record<string, unknown> | null
+    recorded_learning_id?: string | null
+  },
+): Promise<void> {
+  const update: Record<string, unknown> = {
+    status:       patch.status,
+    evaluated_at: new Date().toISOString(),
+  }
+  if (patch.winner_task_id !== undefined)       update.winner_task_id = patch.winner_task_id
+  if (patch.evaluation_summary !== undefined)   update.evaluation_summary = patch.evaluation_summary
+  if (patch.recorded_learning_id !== undefined) update.recorded_learning_id = patch.recorded_learning_id
+  const { error } = await supabase
+    .from('seo_experiments')
+    .update(update)
+    .eq('id', id)
+  if (error) throw new Error(`updateExperimentStatus failed: ${error.message}`)
+}
+
+type ExperimentStatusUpdate = 'evaluating' | 'evaluated' | 'inconclusive' | 'cancelled'

@@ -28,7 +28,9 @@ import {
   getRecentTasks,
   getRecentMetricsSnapshots,
   getRecentLearnings,
+  insertExperiment,
 } from '../seo-agent/db.ts'
+import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
 import {
   fetchTopKeywords,
   computePositionDeltas,
@@ -83,6 +85,22 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const supabase = createSupabase()
+
+    // ── 0. SELF-LEARNING TICK ────────────────────────────────────────
+    // Before planning anything new, score any past experiments whose
+    // data has settled. Winners get written into seo_learnings with
+    // scope='experiment_winner' + created_by='orchestrator'. The
+    // STANDING LEARNINGS fetch below then pulls them and the strategist
+    // applies them to the new plan. The loop closes here.
+    console.log('[organic-orchestrator] evaluating due experiments…')
+    let experimentEvalSummary: Awaited<ReturnType<typeof evaluateDueExperiments>>
+    try {
+      experimentEvalSummary = await evaluateDueExperiments(supabase)
+    } catch (e: any) {
+      console.error(`[organic-orchestrator] experiment evaluation threw — continuing planning: ${e?.message ?? e}`)
+      experimentEvalSummary = { evaluated: 0, inconclusive: 0, winners: [], skipped: [{ experiment_id: 'eval-pass', reason: e?.message ?? String(e) }] }
+    }
+    console.log(`[organic-orchestrator] experiment eval — evaluated:${experimentEvalSummary.evaluated} inconclusive:${experimentEvalSummary.inconclusive} skipped:${experimentEvalSummary.skipped.length}`)
 
     // ── 1. Fetch source data ──────────────────────────────────────────
     console.log('[organic-orchestrator] fetching source data…')
@@ -237,15 +255,43 @@ serve(async (req: Request): Promise<Response> => {
         raw:               claudeRes.text.slice(0, 2000),
       }, 502)
     }
-    const emittedTasks = Array.isArray(plan.tasks) ? plan.tasks : []
+    const emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
+    const emittedExperiments = Array.isArray(plan.experiments) ? plan.experiments : []
     console.log(
       `[organic-orchestrator] plan parsed — ` +
       `summary="${(plan.summary ?? '').slice(0, 80)}" ` +
       `reflections=${plan.self_reflection?.length ?? 0} ` +
+      `experiments=${emittedExperiments.length} ` +
       `tasks=${emittedTasks.length}`,
     )
 
-    // ── 6. Insert tasks with parent/dependency wiring ────────────────
+    // ── 6a. Materialize experiments. Each experiment_group string from
+    // the strategist becomes one seo_experiments row; the row's UUID is
+    // then stamped onto every task that referenced the same group.
+    const experimentIdByGroup = new Map<string, string>()
+    for (const exp of emittedExperiments) {
+      if (!exp.experiment_group || !exp.hypothesis || !exp.task_type || !exp.primary_metric) {
+        console.warn(`[organic-orchestrator] skipping malformed experiment: ${JSON.stringify(exp).slice(0, 200)}`)
+        continue
+      }
+      try {
+        const row = await insertExperiment(supabase, {
+          hypothesis:            exp.hypothesis,
+          task_type:             exp.task_type,
+          primary_metric:        exp.primary_metric,
+          min_lookback_days:     exp.min_lookback_days     ?? 7,
+          min_sample_size:       exp.min_sample_size       ?? 50,
+          win_margin_multiplier: exp.win_margin_multiplier ?? 1.5,
+          orchestrator_run_id:   runId,
+        })
+        experimentIdByGroup.set(exp.experiment_group, row.id)
+      } catch (e: any) {
+        console.warn(`[organic-orchestrator] insertExperiment failed for "${exp.experiment_group}": ${e?.message ?? e}`)
+      }
+    }
+    console.log(`[organic-orchestrator] experiments materialized: ${experimentIdByGroup.size}/${emittedExperiments.length}`)
+
+    // ── 6b. Insert tasks with parent/dependency wiring ────────────────
     // Two-pass: first pass inserts tasks WITHOUT parent_task_id /
     // depends_on so we get UUIDs back. Second pass updates the rows
     // that have parent_task_index / depends_on_index references.
@@ -258,6 +304,14 @@ serve(async (req: Request): Promise<Response> => {
           brief_data:          et.brief_data,
           rationale:           et.rationale ?? '',
           orchestrator_run_id: runId,
+        }
+        // Stamp the experiment_id onto the task at insert time. If the
+        // strategist named an experiment_group but we failed to insert it
+        // above, the task ships WITHOUT experiment tagging (graceful
+        // degradation — better one good task than zero).
+        if (et.experiment_group && experimentIdByGroup.has(et.experiment_group)) {
+          base.experiment_id   = experimentIdByGroup.get(et.experiment_group)!
+          base.variation_label = et.variation_label ?? null
         }
         // Omit scheduled_for entirely (don't set undefined — Supabase
         // serializes undefined as null and the column is NOT NULL) so
@@ -310,6 +364,8 @@ serve(async (req: Request): Promise<Response> => {
       snapshot_id:    snapshotId,
       summary:        plan.summary ?? '',
       self_reflection: plan.self_reflection ?? [],
+      experiments_evaluated: experimentEvalSummary,    // Step 0 reinforcement-loop output
+      experiments_emitted:   experimentIdByGroup.size,
       tasks_emitted:  insertedRows.length,
       task_ids:       insertedRows.map(r => r.id),
       tokens: {
