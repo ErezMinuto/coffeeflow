@@ -365,34 +365,12 @@ function buildTriageQueue(
     }
   }
 
-  // ── Organic posts_to_publish (score 65) — ready content, just needs posting
-  const org = organic?.status === 'done' ? (organic.report as OrganicReport | null) : null
-  if (org?.posts_to_publish) {
-    for (const p of org.posts_to_publish) {
-      out.push({
-        id:          `org::post::${p.topic}`,
-        agent:       'organic_content',
-        priority:    65,
-        headline:    `פרסם: ${p.topic}`,
-        context:     p.best_day ? `${p.best_day} ${p.best_time}` : undefined,
-        sourceLabel: p.type ? `${contentTypeIcon(p.type)} ${p.type}` : undefined,
-      })
-    }
-  }
-
-  // ── Organic google_organic_recommendations (score 45)
-  if (org?.google_organic_recommendations) {
-    for (const rec of org.google_organic_recommendations) {
-      out.push({
-        id:          `org::seo::${rec.keyword}`,
-        agent:       'organic_content',
-        priority:    rec.estimated_difficulty === 'קל' ? 55 : 45,
-        headline:    `כתוב תוכן ל-"${rec.keyword}"`,
-        context:     rec.why_now,
-        sourceLabel: rec.current_position > 0 ? `מיקום ${rec.current_position}` : undefined,
-      })
-    }
-  }
+  // Organic posts_to_publish + google_organic_recommendations injection is
+  // intentionally DISABLED — the unified organic orchestrator owns the
+  // organic surface now. See /admin/seo-agent for the queue. The `organic`
+  // arg is still accepted by buildTriageQueue (positional arg, can't drop
+  // without ripple) but we no longer read from it.
+  void organic
 
   // Sort by priority desc, cap at 6 — any more becomes a wall of information
   // again, which is the problem we're trying to solve.
@@ -4437,35 +4415,14 @@ export default function AdvisorPage() {
         ))}
       </div>
 
-      {/* Organic content — full width below the strategists */}
-      <div className="card flex flex-col">
-        <div className={`flex items-start justify-between mb-4 pb-3 border-b ${organicPanel.headerColor}`}>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              {organicPanel.icon}
-              <h3 className="font-display font-semibold text-surface-900 text-sm">{organicPanel.label}</h3>
-            </div>
-            <p className="text-xs text-surface-400 mt-0.5 mr-6">{organicPanel.sublabel}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {rows[organicPanel.key] && <StatusBadge status={rows[organicPanel.key]!.status} />}
-            <button
-              onClick={() => runAdvisor(organicPanel.key)}
-              disabled={rows[organicPanel.key]?.status === 'running' || running}
-              title="הרץ רק את הסוכן הזה"
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-surface-900 disabled:opacity-30 transition-colors"
-            >
-              <RefreshCw size={11} />
-              הרץ
-            </button>
-          </div>
-        </div>
-        <div className="flex-1">
-          {loading
-            ? <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-10 bg-surface-100 rounded animate-pulse" />)}</div>
-            : <OrganicPanel row={rows[organicPanel.key]} blogState={blogState} setBlogState={setBlogState} writeBlogPost={writeBlogPost} generateBanner={generateBanner} allProducts={allProducts} onRun={() => runAdvisor(organicPanel.key)} running={isRunning} />}
-        </div>
-      </div>
+      {/* Organic content panel intentionally HIDDEN — the unified organic
+          orchestrator now owns this surface. Manage IG / blog / experiments
+          from the dedicated /admin/seo-agent route (sidebar: "סוכן אורגני").
+          Underlying code (OrganicPanel, PostPublishingControls, CarouselControls,
+          organic_content data plumbing) is intentionally kept compiling but
+          unrendered, so this Advisor page still works for Google Ads + the
+          two strategist agents. A follow-up cleanup PR can rip the dead
+          code after we've validated nothing else depends on it. */}
 
       {/* Full empty state */}
       {!loading && availableWeeks.length === 0 && (
