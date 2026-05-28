@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Send, Wrench, Loader2 } from 'lucide-react'
+import { Send, Wrench, Loader2, Bell } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+
+// Hardcoded mirror of seo-agent/briefingWriter.ts BRIEFING_SESSION_ID.
+// Kept in sync manually — both client + server need to know this.
+const BRIEFING_SESSION_ID = 'briefings-system'
+const LAST_SEEN_KEY       = 'coffeeflow:seo-agent:briefings_last_seen_at'
 
 interface ChatRow {
   id:           string
@@ -15,15 +20,57 @@ interface ChatRow {
 
 interface Props {
   sessionId: string
+  onSwitchSession?: (sessionId: string) => void
 }
 
-export default function SeoChatThread({ sessionId }: Props) {
+export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
   const [messages, setMessages] = useState<ChatRow[]>([])
   const [loading, setLoading]   = useState(true)
   const [draft, setDraft]       = useState('')
   const [sending, setSending]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
+  const [unreadBriefings, setUnreadBriefings] = useState<number>(0)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+
+  // Poll for unread briefings whenever we're NOT already on the briefings
+  // session. Counts assistant messages in 'briefings-system' created after
+  // localStorage[LAST_SEEN_KEY]. Refresh every 60s + via realtime
+  // subscription on the briefings session.
+  useEffect(() => {
+    if (sessionId === BRIEFING_SESSION_ID) {
+      setUnreadBriefings(0)
+      try { localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString()) } catch { /* noop */ }
+      return
+    }
+    let cancelled = false
+    async function countUnread() {
+      const lastSeen = (() => {
+        try { return localStorage.getItem(LAST_SEEN_KEY) ?? new Date(0).toISOString() } catch { return new Date(0).toISOString() }
+      })()
+      const { count } = await supabase
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('session_id', BRIEFING_SESSION_ID)
+        .eq('role', 'assistant')
+        .gt('created_at', lastSeen)
+      if (!cancelled) setUnreadBriefings(count ?? 0)
+    }
+    countUnread()
+    const interval = setInterval(countUnread, 60_000)
+    const channel = supabase
+      .channel(`briefings_unread_${sessionId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${BRIEFING_SESSION_ID}` },
+        countUnread,
+      )
+      .subscribe()
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
+  }, [sessionId])
 
   useEffect(() => {
     let cancelled = false
@@ -83,7 +130,24 @@ export default function SeoChatThread({ sessionId }: Props) {
       const { data, error: invokeErr } = await supabase.functions.invoke('handle-seo-chat', {
         body: { session_id: sessionId, user_message: text },
       })
-      if (invokeErr) throw invokeErr
+      if (invokeErr) {
+        // The Supabase functions SDK collapses non-2xx into a generic
+        // "Edge Function returned a non-2xx status code" string. The
+        // underlying Response sits on .context — read its body to surface
+        // the actual server-side error message in the UI + console.
+        let serverDetail: string | null = null
+        try {
+          const ctx = (invokeErr as any).context
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json()
+            serverDetail = body?.error ?? body?.message ?? JSON.stringify(body)
+          } else if (ctx && typeof ctx.text === 'function') {
+            serverDetail = await ctx.text()
+          }
+        } catch { /* fall through to generic message */ }
+        console.error('[SeoChatThread] send failed:', invokeErr, '\n  server-side:', serverDetail)
+        throw new Error(serverDetail ?? invokeErr.message ?? 'Send failed')
+      }
       if (data?.history) setMessages(data.history as ChatRow[])
     } catch (e: any) {
       console.error('[SeoChatThread] send failed:', e)
@@ -114,9 +178,54 @@ export default function SeoChatThread({ sessionId }: Props) {
     // count, viewport height, or upstream sizing weirdness.
     <section className="h-full max-h-full flex flex-col bg-surface-50 min-h-0 overflow-hidden">
       <header className="h-10 px-3 flex items-center justify-between border-b border-surface-200 bg-white shrink-0">
-        <h2 className="text-sm font-semibold text-surface-800">Chat</h2>
-        <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-surface-800">Chat</h2>
+          {sessionId === BRIEFING_SESSION_ID && (
+            <span className="text-[10px] uppercase tracking-wide font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">briefings</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {sessionId !== BRIEFING_SESSION_ID && onSwitchSession && (
+            <button
+              onClick={() => onSwitchSession(BRIEFING_SESSION_ID)}
+              className={`text-[10px] inline-flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                unreadBriefings > 0
+                  ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium animate-pulse'
+                  : 'text-surface-500 hover:bg-surface-100'
+              }`}
+              title={unreadBriefings > 0 ? `${unreadBriefings} new briefing(s) from the agent` : 'View agent briefings'}
+            >
+              <Bell size={11} />
+              {unreadBriefings > 0 ? `${unreadBriefings} new` : 'briefings'}
+            </button>
+          )}
+          {sessionId === BRIEFING_SESSION_ID && onSwitchSession && (
+            <button
+              onClick={() => {
+                try { localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString()) } catch { /* noop */ }
+                const stored = (() => { try { return localStorage.getItem('seo_agent_session_id') ?? '' } catch { return '' } })()
+                if (stored && stored !== BRIEFING_SESSION_ID) onSwitchSession(stored)
+              }}
+              className="text-[10px] text-surface-500 hover:text-surface-900 underline"
+            >back to chat</button>
+          )}
+          <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
+        </div>
       </header>
+
+      {sessionId !== BRIEFING_SESSION_ID && unreadBriefings > 0 && (
+        <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 shrink-0 flex items-center justify-between">
+          <span>
+            <strong>While you were away,</strong> the agent left {unreadBriefings} briefing{unreadBriefings === 1 ? '' : 's'} for you.
+          </span>
+          {onSwitchSession && (
+            <button
+              onClick={() => onSwitchSession(BRIEFING_SESSION_ID)}
+              className="font-medium underline hover:text-amber-700"
+            >View briefings →</button>
+          )}
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {loading ? (

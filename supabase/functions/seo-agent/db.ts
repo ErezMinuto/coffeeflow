@@ -232,19 +232,32 @@ export async function getChatHistory(
   tool_calls:   unknown
   tool_call_id: string | null
 }>> {
+  // CRITICAL: must fetch the MOST-RECENT `limit` messages, not the
+  // oldest. Earlier this used `.order(..., ascending:true).limit(50)`
+  // which silently truncated the newest messages once a session
+  // exceeded 50 rows — including the user message we just persisted —
+  // causing the messages array sent to Anthropic to end on an
+  // assistant turn, and 400 with "conversation must end with user
+  // message".
+  // Fetch newest-first, then reverse client-side so the caller still
+  // sees chronological order (oldest → newest, latest user message last).
   const { data, error } = await supabase
     .from('chat_messages')
-    .select('role, content, tool_calls, tool_call_id')
+    .select('role, content, tool_calls, tool_call_id, created_at')
     .eq('session_id', sessionId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw new Error(`getChatHistory failed: ${error.message}`)
-  return (data ?? []) as Array<{
+  const rows = (data ?? []) as Array<{
     role:         'user' | 'assistant' | 'tool' | 'system'
     content:      string
     tool_calls:   unknown
     tool_call_id: string | null
+    created_at:   string
   }>
+  // Reverse to chronological order; strip created_at since callers
+  // expect the original shape.
+  return rows.reverse().map(({ created_at: _ts, ...rest }) => rest)
 }
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
@@ -375,7 +388,7 @@ export async function supersedeLearning(
 // experiment_id, waits for performance data, then auto-scores and writes
 // a learning. These helpers are the read/write surface for that loop.
 
-import type { NewExperiment, SeoExperimentRow, SeoTaskRow } from './types.ts'
+import type { NewExperiment, SeoExperimentRow } from './types.ts'
 
 export async function insertExperiment(
   supabase: SupabaseClient,

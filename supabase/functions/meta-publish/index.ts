@@ -27,7 +27,7 @@ const REEL_POLL_TIMEOUT_MS  = 90_000
 const IG_QUOTA_LIMIT        = 50
 const IG_CAPTION_MAX        = 2200
 
-type PostType = 'feed' | 'reel' | 'carousel'
+type PostType = 'feed' | 'reel' | 'carousel' | 'story'
 // 'publish_now' = prepare+publish in a single invocation. Necessary because
 // Meta's /me/accounts returns a fresh, container-scoped page token on each
 // call, so splitting prepare and publish across two function invocations made
@@ -162,9 +162,10 @@ function jsonResponse(body: unknown, status: number, cors: Record<string,string>
 }
 
 function validateContent(b: ContentFields) {
-  if (!b.type) throw new Error('type is required (feed|reel|carousel)')
-  if (b.type === 'feed' && !b.image_url) throw new Error('feed requires image_url')
-  if (b.type === 'reel' && !b.video_url) throw new Error('reel requires video_url')
+  if (!b.type) throw new Error('type is required (feed|reel|carousel|story)')
+  if (b.type === 'feed'  && !b.image_url) throw new Error('feed requires image_url')
+  if (b.type === 'reel'  && !b.video_url) throw new Error('reel requires video_url')
+  if (b.type === 'story' && !b.image_url && !b.video_url) throw new Error('story requires image_url or video_url')
   if (b.type === 'carousel') {
     const n = b.children?.length ?? 0
     if (n < 2 || n > 10) throw new Error('carousel requires 2–10 children')
@@ -221,10 +222,35 @@ async function getQuotaUsage(igUserId: string, pageToken: string) {
 }
 
 async function createContainer(igUserId: string, pageToken: string, b: ContentFields) {
-  if (b.type === 'feed')   return createFeedContainer(igUserId, pageToken, b)
-  if (b.type === 'reel')   return createReelContainer(igUserId, pageToken, b)
+  if (b.type === 'feed')     return createFeedContainer(igUserId, pageToken, b)
+  if (b.type === 'reel')     return createReelContainer(igUserId, pageToken, b)
   if (b.type === 'carousel') return createCarouselContainer(igUserId, pageToken, b)
+  if (b.type === 'story')    return createStoryContainer(igUserId, pageToken, b)
   throw new Error(`unknown type: ${b.type}`)
+}
+
+// IG Stories — uses media_type=STORIES + either image_url or video_url.
+// 9:16 aspect ratio recommended (~1080×1920). Caption is ignored by IG
+// for stories (no text overlay rendered from caption), but we still
+// echo it through so the prepared container metadata stays consistent
+// with feed/reel records and the admin can see what was intended.
+// Stories don't accept hashtags as visible text — caller should
+// strip hashtags from caption before sending if they care about that.
+async function createStoryContainer(igUserId: string, pageToken: string, b: ContentFields) {
+  const params = new URLSearchParams({
+    media_type:   'STORIES',
+    access_token: pageToken,
+  })
+  if (b.image_url) params.set('image_url', b.image_url)
+  if (b.video_url) params.set('video_url', b.video_url)
+  // Story API ignores caption but include it in the request for parity;
+  // Meta tolerates the field.
+  if (b.caption) params.set('caption', b.caption)
+  const res = await fetch(`${GRAPH}/${igUserId}/media`, { method: 'POST', body: params })
+  const data = await res.json()
+  console.log(`[meta-publish] createStoryContainer response: ${JSON.stringify(data)}`)
+  if (data.error) throw new Error(`create story container: ${data.error.message}`)
+  return data.id as string
 }
 
 async function createFeedContainer(igUserId: string, pageToken: string, b: ContentFields) {

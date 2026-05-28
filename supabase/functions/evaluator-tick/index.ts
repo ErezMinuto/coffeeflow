@@ -19,6 +19,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
+import { writeBriefing } from '../seo-agent/briefingWriter.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -45,6 +46,22 @@ serve(async (req) => {
   try {
     const summary = await evaluateDueExperiments(supabase)
     console.log(`[evaluator-tick] evaluated:${summary.evaluated} inconclusive:${summary.inconclusive} skipped:${summary.skipped.length}`)
+    // Briefing for admin — only on winners (the meaningful event).
+    if (summary.winners.length > 0) {
+      try {
+        const lines = summary.winners.map(w =>
+          `- experiment \`${w.experiment_id.slice(0, 8)}\` → winner '${w.winner_label}' → wrote learning \`${w.learning_id.slice(0, 8)}\``,
+        ).join('\n')
+        await writeBriefing(supabase, {
+          subtype: 'experiment_winner',
+          title:   `${summary.winners.length} experiment winner${summary.winners.length === 1 ? '' : 's'} declared`,
+          body:    `Real-world data settled on ${summary.winners.length} variation${summary.winners.length === 1 ? '' : 's'}. Each became a standing learning that shapes future planning.\n\n${lines}`,
+          context: { winners: summary.winners },
+        })
+      } catch (e: any) {
+        console.warn(`[evaluator-tick] briefing write failed (non-fatal): ${e?.message ?? e}`)
+      }
+    }
     return jsonResponse({ ok: true, started_at: startedAt, finished_at: new Date().toISOString(), summary })
   } catch (e: any) {
     console.error(`[evaluator-tick] threw: ${e?.message ?? e}`)

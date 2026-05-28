@@ -103,10 +103,18 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, 'caption_he is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption_he missing' })
   }
-  if (mediaType !== 'feed_image') {
-    // v1 only handles feed_image. Other types get flagged for HITL
-    // (admin still sees the brief in the queue, can publish manually).
-    await safeMarkFailed(supabase, task, `media_type '${mediaType}' not yet supported by automated worker (v1 = feed_image only) — admin must publish manually via meta-publish`, true)
+  // Worker handles single-image flows: feed_image (regular post) and
+  // story (9:16 ephemeral). reel + feed_carousel still need HITL —
+  // reel because we don't have a video pipeline yet, carousel because
+  // it needs multi-image briefs the strategist doesn't emit today.
+  // Map our internal media_type → meta-publish's `type` parameter.
+  let metaPublishType: 'feed' | 'story'
+  if (mediaType === 'feed_image') {
+    metaPublishType = 'feed'
+  } else if (mediaType === 'story') {
+    metaPublishType = 'story'
+  } else {
+    await safeMarkFailed(supabase, task, `media_type '${mediaType}' not yet supported by automated worker (v1 supports feed_image + story; reel/carousel require manual publish)`, true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'media_type unsupported in v1' })
   }
 
@@ -188,8 +196,15 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
       body: JSON.stringify({
         action,
-        type:      'feed',
-        caption:   finalCaption,
+        type:      metaPublishType,
+        // IG Stories ignore caption text (no text overlay rendered from
+        // the caption field), so strip hashtag tail to avoid confusing
+        // admin in the prepared-container preview. Keep CTA + product
+        // link because those are informational metadata even if not
+        // visible on the story itself.
+        caption:   metaPublishType === 'story'
+          ? finalCaption.replace(/\n#[^\n]+$/, '').trim()
+          : finalCaption,
         image_url: imageUrl,
       }),
     })

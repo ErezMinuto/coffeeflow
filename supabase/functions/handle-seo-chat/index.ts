@@ -46,6 +46,7 @@ import {
   setSystemConfig,
 } from '../seo-agent/db.ts'
 import type {
+  AnyBrief,
   ChatToolName,
   LearningRow,
   LearningScope,
@@ -82,20 +83,97 @@ const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 // enough — most turns are 1-2 tool calls deep.
 const MAX_TOOL_LOOPS = 8
 
+// ── Worker registry — what the agent can nudge ─────────────────────────
+// Maps a friendly name to the deployed function path. Used by the
+// auto-nudge after queue_task / repoint_ig_to_visual and by the
+// explicit trigger_worker chat tool. Keep this in sync as new workers
+// land in the org.
+const WORKER_REGISTRY: Record<string, { task_type: string; url_path: string }> = {
+  ig:       { task_type: 'instagram_post',    url_path: 'organic-worker-instagram' },
+  visual:   { task_type: 'visual_generation', url_path: 'seo-worker-visual'       },
+  writer:   { task_type: 'text_generation',   url_path: 'seo-worker-writer'       },
+  research: { task_type: 'deep_research',     url_path: 'seo-worker-research'     },
+}
+
+// task_type → worker key (for auto-nudge after queue_task).
+const TASK_TYPE_TO_WORKER: Record<string, keyof typeof WORKER_REGISTRY> = {
+  instagram_post:    'ig',
+  visual_generation: 'visual',
+  text_generation:   'writer',
+  deep_research:     'research',
+}
+
+// Fire-and-forget POST to a worker. We wait a short time so the agent
+// gets a confirmation that the request landed (and any immediate error),
+// but never block the chat response on the worker actually finishing —
+// most workers take 30s–5min to complete a task and the chat handler
+// itself has a 150s wall clock.
+async function nudgeWorker(workerKey: keyof typeof WORKER_REGISTRY, opts?: { awaitMs?: number }): Promise<{ ok: boolean; status?: number; body?: unknown; error?: string }> {
+  const reg = WORKER_REGISTRY[workerKey]
+  if (!reg) return { ok: false, error: `unknown worker key '${workerKey}'` }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), opts?.awaitMs ?? 8000)
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${reg.url_path}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      body:    '{}',
+      signal:  ctrl.signal,
+    })
+    clearTimeout(timer)
+    const body = await res.json().catch(() => ({}))
+    return { ok: res.ok, status: res.status, body }
+  } catch (e: any) {
+    clearTimeout(timer)
+    if (e?.name === 'AbortError') {
+      // Worker is still running — that's fine, it'll finish on its own.
+      // The fetch was aborted on our side but the function invocation
+      // continues server-side until its own work completes.
+      return { ok: true, error: 'worker_running_in_background' }
+    }
+    return { ok: false, error: e?.message ?? String(e) }
+  }
+}
+
 // ── Tool catalogue (Anthropic input_schema format) ─────────────────────
 
 const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'queue_task',
-    description: 'Insert a new task into seo_tasks as pending. Use for text_generation, visual_generation, or dynamic_experiment. brief_data shape depends on task_type — see types.ts.',
+    description: 'Insert a new task into seo_tasks as pending. Use for text_generation, visual_generation, instagram_post, or dynamic_experiment. brief_data shape depends on task_type — see types.ts. CRITICAL: for instagram_post tasks you MUST also pass parent_task_id pointing at the completed visual_generation task that produced the image — the IG worker rejects any instagram_post with no parent_task_id.',
     input_schema: {
       type: 'object',
       properties: {
-        task_type:  { type: 'string', description: 'Canonical: text_generation | visual_generation | dynamic_experiment. Novel subtypes like seo_experiment:internal_linking_audit are also allowed.' },
-        brief_data: { type: 'object', description: 'Brief payload matching the task_type schema in types.ts.' },
-        rationale:  { type: 'string', description: 'One-line justification surfaced in the admin UI.' },
+        task_type:      { type: 'string', description: 'Canonical: text_generation | visual_generation | instagram_post | dynamic_experiment. Novel subtypes like seo_experiment:internal_linking_audit are also allowed.' },
+        brief_data:     { type: 'object', description: 'Brief payload matching the task_type schema in types.ts.' },
+        rationale:      { type: 'string', description: 'One-line justification surfaced in the admin UI.' },
+        parent_task_id: { type: 'string', description: 'Optional UUID. REQUIRED for instagram_post (points at the visual_generation task that produces the image). Also used by visual_generation when it should attach to a specific text post.' },
+        depends_on:     { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs the worker should wait on before claiming this task.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
+    },
+  },
+  {
+    name: 'trigger_worker',
+    description: 'POST directly to a worker function so it drains the next pending task in its queue immediately, without waiting for the cron tick. Use this after queue_task / repoint_ig_to_visual / queue_deep_research if the admin wants the result now instead of in 2-5 minutes. Also useful when the admin reports a task is "stuck pending". Returns the worker\'s response (typically `{processed: 0|1, task_id, ok}` or `worker_running_in_background` if it\'s still working when our short timeout fires). worker ∈ {ig | visual | writer | research}.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        worker: { type: 'string', description: "One of: 'ig' (instagram_post queue), 'visual' (visual_generation queue), 'writer' (text_generation queue), 'research' (deep_research queue)." },
+      },
+      required: ['worker'],
+    },
+  },
+  {
+    name: 'repoint_ig_to_visual',
+    description: 'Take an instagram_post task that failed because its parent visual_generation task failed QA, repoint it at a different (successful) visual_generation task, and reset it to pending so the IG worker picks it up on the next tick. Use this when a visual regen has succeeded and the admin wants to publish the IG post using the new image. Only works when (a) the IG task currently has status=failed or status=pending, (b) the new visual task is status=completed AND result_data.review_required is not true AND result_data.image_url is set.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ig_task_id:     { type: 'string', description: 'UUID of the instagram_post task to repoint.' },
+        visual_task_id: { type: 'string', description: 'UUID of the visual_generation task whose image should be used instead.' },
+      },
+      required: ['ig_task_id', 'visual_task_id'],
     },
   },
   {
@@ -246,6 +324,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'queue_deep_research',
+    description: 'Queue a deep_research task for the research worker. Use when the admin asks an open-ended strategic question that needs web research + multiple reasoning steps (e.g. "how do LLMs perceive Minuto?", "profile competitor X end-to-end", "is there demand for cold-brew content in IL?"). Worker uses Anthropic web_search + URL fetch + Minuto data queries, runs ~5 turns, writes a structured report into result_data.final_text. DO NOT use for one-line factual questions you can answer from your own context — only for multi-step investigations.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        question: { type: 'string', description: 'The full research question, phrased as the admin would brief a strategist. One paragraph, no bullets.' },
+        scope:    { type: 'string', description: "One of: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'other'." },
+        expected_output: { type: 'string', description: "One of: 'recommendations' (prioritized list) | 'analysis' (narrative w/ citations) | 'action_plan' (concrete tasks to queue next cycle)." },
+        max_research_turns: { type: 'number', description: 'Optional cap on Claude reasoning turns. Default 5, max 8.' },
+      },
+      required: ['question', 'scope', 'expected_output'],
+    },
+  },
+  {
     name: 'approve_qa_attempt',
     description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
     input_schema: {
@@ -275,17 +367,122 @@ async function executeTool(
         if (!task_type || !brief_data || !rationale) {
           return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
         }
+        const parent_task_id = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+          ? input.parent_task_id.trim()
+          : null
+        const depends_on = Array.isArray(input.depends_on)
+          ? (input.depends_on as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0)
+          : []
+        // Guardrail: instagram_post WITHOUT parent_task_id will fail at
+        // the worker with a confusing error. Catch it here so the agent
+        // gets a clear message it can act on.
+        if (task_type === 'instagram_post' && !parent_task_id) {
+          return { ok: false, payload: { error: 'instagram_post requires parent_task_id (the visual_generation task whose image will be posted). Pass parent_task_id when calling queue_task.' } }
+        }
         const newTask: NewSeoTask = {
           task_type,
-          brief_data,
+          brief_data: brief_data as AnyBrief,
           rationale,
+          parent_task_id,
+          depends_on,
           // No orchestrator_run_id for chat-queued tasks — use a synthetic
           // marker so we can audit which tasks came from the chat surface.
           orchestrator_run_id: crypto.randomUUID(),
         }
         const inserted = await insertTasks(supabase, [newTask])
         const row = inserted[0]
-        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending' } }
+        // Auto-nudge the relevant worker so the task starts processing
+        // immediately rather than waiting for the next cron tick. If the
+        // task has dependencies, skip the nudge — the worker would just
+        // release it back to pending until its parents complete.
+        let nudge: { ok: boolean; status?: number; body?: unknown; error?: string } | null = null
+        if (row?.id && depends_on.length === 0) {
+          const workerKey = TASK_TYPE_TO_WORKER[task_type]
+          if (workerKey) nudge = await nudgeWorker(workerKey)
+        }
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on, worker_nudged: nudge } }
+      }
+
+      case 'repoint_ig_to_visual': {
+        const ig_task_id     = String(input.ig_task_id ?? '').trim()
+        const visual_task_id = String(input.visual_task_id ?? '').trim()
+        if (!ig_task_id || !visual_task_id) {
+          return { ok: false, payload: { error: 'repoint_ig_to_visual requires ig_task_id and visual_task_id.' } }
+        }
+        // Load + validate both rows.
+        const [{ data: ig, error: igErr }, { data: vis, error: visErr }] = await Promise.all([
+          supabase.from('seo_tasks').select('id, task_type, status, parent_task_id, error_msg, attempts').eq('id', ig_task_id).maybeSingle(),
+          supabase.from('seo_tasks').select('id, task_type, status, result_data').eq('id', visual_task_id).maybeSingle(),
+        ])
+        if (igErr)  return { ok: false, payload: { error: `ig task lookup failed: ${igErr.message}` } }
+        if (visErr) return { ok: false, payload: { error: `visual task lookup failed: ${visErr.message}` } }
+        if (!ig)  return { ok: false, payload: { error: `ig task ${ig_task_id} not found.` } }
+        if (!vis) return { ok: false, payload: { error: `visual task ${visual_task_id} not found.` } }
+        if (ig.task_type !== 'instagram_post') {
+          return { ok: false, payload: { error: `ig_task_id is task_type=${ig.task_type}, expected instagram_post.` } }
+        }
+        if (vis.task_type !== 'visual_generation') {
+          return { ok: false, payload: { error: `visual_task_id is task_type=${vis.task_type}, expected visual_generation.` } }
+        }
+        if (vis.status !== 'completed') {
+          return { ok: false, payload: { error: `visual task is status=${vis.status}, must be completed before repointing.` } }
+        }
+        const vr = (vis.result_data ?? {}) as { image_url?: string; review_required?: boolean }
+        if (vr.review_required === true) {
+          return { ok: false, payload: { error: `visual task ${visual_task_id} did NOT pass QA (review_required=true). Refusing to repoint to a failed visual.` } }
+        }
+        if (!vr.image_url) {
+          return { ok: false, payload: { error: `visual task ${visual_task_id} has no image_url in result_data. Cannot repoint.` } }
+        }
+        // Repoint + reset to pending so the IG worker picks it up next tick.
+        // Also reset attempts so the worker gets a fresh budget — the
+        // prior failures were on a different parent and shouldn't count.
+        const { error: updateErr } = await supabase
+          .from('seo_tasks')
+          .update({
+            parent_task_id: visual_task_id,
+            status:         'pending',
+            attempts:       0,
+            error_msg:      null,
+            locked_until:   null,
+            worker_id:      null,
+            started_at:     null,
+            completed_at:   null,
+          })
+          .eq('id', ig_task_id)
+        if (updateErr) return { ok: false, payload: { error: `repoint update failed: ${updateErr.message}` } }
+        // Nudge the IG worker so the repointed task starts processing
+        // immediately rather than waiting for the next cron tick.
+        const nudge = await nudgeWorker('ig')
+        return {
+          ok: true,
+          payload: {
+            ig_task_id,
+            old_parent_task_id: ig.parent_task_id,
+            new_parent_task_id: visual_task_id,
+            status:             'pending',
+            previous_error_msg: ig.error_msg,
+            previous_attempts:  ig.attempts,
+            worker_nudged:      nudge,
+          },
+        }
+      }
+
+      case 'trigger_worker': {
+        const workerArg = String(input.worker ?? '').trim().toLowerCase()
+        if (!(workerArg in WORKER_REGISTRY)) {
+          return { ok: false, payload: { error: `worker must be one of: ${Object.keys(WORKER_REGISTRY).join(' | ')}.` } }
+        }
+        const nudge = await nudgeWorker(workerArg as keyof typeof WORKER_REGISTRY)
+        return {
+          ok: nudge.ok,
+          payload: {
+            worker:    workerArg,
+            task_type: WORKER_REGISTRY[workerArg].task_type,
+            url_path:  WORKER_REGISTRY[workerArg].url_path,
+            result:    nudge,
+          },
+        }
       }
 
       case 'approve_dynamic_experiment': {
@@ -583,6 +780,36 @@ async function executeTool(
         return { ok: true, payload: { key, new_value: input.new_value, updated_at: new Date().toISOString(), audit: 'updated_by=chat_agent' } }
       }
 
+      case 'queue_deep_research': {
+        const question = String(input.question ?? '').trim()
+        const scope    = String(input.scope ?? '').trim()
+        const expected = String(input.expected_output ?? '').trim()
+        if (!question || !scope || !expected) {
+          return { ok: false, payload: { error: 'queue_deep_research requires question, scope, expected_output.' } }
+        }
+        const allowedScopes = ['geo_llmo', 'competitor_deep_dive', 'content_topic', 'audience_segment', 'other']
+        if (!allowedScopes.includes(scope)) {
+          return { ok: false, payload: { error: `scope must be one of ${allowedScopes.join(' | ')}.` } }
+        }
+        const allowedOutput = ['recommendations', 'analysis', 'action_plan']
+        if (!allowedOutput.includes(expected)) {
+          return { ok: false, payload: { error: `expected_output must be one of ${allowedOutput.join(' | ')}.` } }
+        }
+        const maxTurns = typeof input.max_research_turns === 'number'
+          ? Math.max(1, Math.min(8, Math.floor(input.max_research_turns)))
+          : 5
+        const newTask: NewSeoTask = {
+          task_type:           'deep_research',
+          brief_data:          { question, scope, expected_output: expected, max_research_turns: maxTurns },
+          rationale:           `[chat] deep_research scope=${scope} output=${expected}`,
+          orchestrator_run_id: crypto.randomUUID(),
+        }
+        const inserted = await insertTasks(supabase, [newTask])
+        const row = inserted[0]
+        const nudge = row?.id ? await nudgeWorker('research') : null
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', worker_nudged: nudge } }
+      }
+
       case 'approve_qa_attempt': {
         const task_id = String(input.task_id ?? '').trim()
         const attemptN = typeof input.attempt_number === 'number' ? Math.floor(input.attempt_number) : 0
@@ -713,11 +940,40 @@ interface StoredMsg {
 function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
   const out: ApiChatMessage[] = []
   let pendingToolResults: MessageContentBlock[] = []
+  // Track tool_use IDs emitted in the most-recent assistant turn so we
+  // can detect orphans — i.e. an assistant tool_use whose matching
+  // tool_result row never got persisted (typically because the prior
+  // server invocation crashed inside executeTool before writeBack).
+  // Without this, every subsequent chat send 400s at Anthropic with
+  // "tool_use_id X has no tool_result", surfaced to the UI as a 500.
+  // We patch in synthetic is_error tool_result blocks for any missing
+  // IDs at the next non-tool boundary.
+  let lastAssistantToolUseIds: string[] = []
 
   function flushPendingToolResults() {
     if (pendingToolResults.length === 0) return
     out.push({ role: 'user', content: pendingToolResults })
     pendingToolResults = []
+  }
+
+  function patchOrphansAndFlush() {
+    if (lastAssistantToolUseIds.length === 0) return
+    const seen = new Set(
+      pendingToolResults
+        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_result' }> => b.type === 'tool_result')
+        .map(b => b.tool_use_id),
+    )
+    for (const id of lastAssistantToolUseIds) {
+      if (seen.has(id)) continue
+      pendingToolResults.push({
+        type:        'tool_result',
+        tool_use_id: id,
+        content:     JSON.stringify({ error: 'tool execution was interrupted; no result was persisted' }),
+        is_error:    true,
+      })
+    }
+    lastAssistantToolUseIds = []
+    flushPendingToolResults()
   }
 
   for (const m of stored) {
@@ -732,8 +988,10 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
       continue
     }
 
-    // Non-tool row → flush any accumulated tool results first.
-    flushPendingToolResults()
+    // Non-tool row → close out the previous assistant turn's tool cycle.
+    // If the prior assistant emitted tool_use blocks, every one of them
+    // needs a tool_result before we move on; patch orphans first.
+    patchOrphansAndFlush()
 
     if (m.role === 'user') {
       out.push({ role: 'user', content: m.content })
@@ -752,6 +1010,11 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
       // If nothing accumulated, the assistant turn was empty — skip
       // rather than send a zero-block message (Anthropic rejects it).
       if (blocks.length === 0) continue
+      // Track new tool_use IDs so we can detect orphans at the next
+      // non-tool boundary.
+      lastAssistantToolUseIds = blocks
+        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
+        .map(b => b.id)
       // If only a single text block, simplify to string content.
       if (blocks.length === 1 && blocks[0].type === 'text') {
         out.push({ role: 'assistant', content: blocks[0].text })
@@ -762,7 +1025,10 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
     }
   }
 
-  flushPendingToolResults()
+  // Trailing patch — if history ENDS on an assistant tool_use turn (no
+  // following tool/user row to trigger patchOrphansAndFlush), still emit
+  // synthetic tool_results so the next API call has a valid sequence.
+  patchOrphansAndFlush()
   return out
 }
 
@@ -848,8 +1114,11 @@ serve(async (req: Request): Promise<Response> => {
 
   console.log(`[handle-seo-chat] session=${sessionId} msg="${userMessage.slice(0, 80)}"`)
 
+  // Declared at outer scope so the catch block can use it to surface
+  // errors as a system chat_messages row visible to the admin.
+  const supabase = createSupabase()
+
   try {
-    const supabase = createSupabase()
 
     // 1. Persist the user message first so it's durable even if Claude fails.
     await appendChatMessage(supabase, {
@@ -937,27 +1206,51 @@ serve(async (req: Request): Promise<Response> => {
 
       // 4c. Execute each tool call, persist results, push them as a
       // tool_result content-block batch on the next user message.
+      // CRITICAL: every assistant tool_use we persisted in 4a MUST be
+      // matched by a persisted tool_result row, otherwise the next
+      // request to this session replays an orphan tool_use and 400s at
+      // Anthropic. Wrap each call so even a throw inside executeTool or
+      // appendChatMessage(tool) still yields a synthetic error result
+      // row — no orphan tool_use ever stays in the DB.
       const toolResultBlocks: MessageContentBlock[] = []
       for (const call of toolUses) {
         console.log(`[handle-seo-chat] tool=${call.name} input=${JSON.stringify(call.input).slice(0, 200)}`)
-        const result = await executeTool(
-          supabase,
-          call.name as ChatToolName,
-          call.input ?? {},
-        )
-        const contentStr = JSON.stringify(result.payload)
-        await appendChatMessage(supabase, {
-          session_id:   sessionId,
-          role:         'tool',
-          content:      contentStr,
-          tool_call_id: call.id,
-          metadata:     { tool_name: call.name, ok: result.ok },
-        })
+        let contentStr = ''
+        let isError = false
+        try {
+          const result = await executeTool(
+            supabase,
+            call.name as ChatToolName,
+            call.input ?? {},
+          )
+          contentStr = JSON.stringify(result.payload)
+          isError = !result.ok
+        } catch (toolErr: any) {
+          console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
+          contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+          isError = true
+        }
+        // Persist tool_result row — failure here gets logged but doesn't
+        // skip the in-memory toolResultBlocks push (Anthropic still needs
+        // the matching block for this turn to succeed). Worst case the
+        // DB row is missing; next session load will patch with a
+        // synthetic orphan-tool_result via storedToApiMessages.
+        try {
+          await appendChatMessage(supabase, {
+            session_id:   sessionId,
+            role:         'tool',
+            content:      contentStr,
+            tool_call_id: call.id,
+            metadata:     { tool_name: call.name, ok: !isError },
+          })
+        } catch (persistErr: any) {
+          console.error(`[handle-seo-chat] appendChatMessage(tool) failed for ${call.id}:`, persistErr?.message ?? persistErr)
+        }
         toolResultBlocks.push({
           type:        'tool_result',
           tool_use_id: call.id,
           content:     contentStr,
-          is_error:    !result.ok,
+          is_error:    isError,
         })
       }
       apiMessages.push({ role: 'user', content: toolResultBlocks })
@@ -983,8 +1276,27 @@ serve(async (req: Request): Promise<Response> => {
       history:     newHistory,
     })
   } catch (e: any) {
-    console.error('[handle-seo-chat] failed:', e?.message ?? e)
+    const msg = e?.message ?? String(e)
+    console.error('[handle-seo-chat] failed:', msg)
     console.error(e?.stack ?? '')
-    return jsonResponse({ error: e?.message ?? String(e) }, 500)
+    // Surface the actual server-side error directly into the chat thread
+    // as a system message. The frontend's realtime subscription on
+    // chat_messages INSERT picks it up immediately so the admin sees
+    // WHAT broke instead of an opaque "non-2xx" — even if the Supabase
+    // SDK swallows the response body. Best-effort; failure to write is
+    // logged but doesn't change the user-visible behavior.
+    if (sessionId) {
+      try {
+        await appendChatMessage(supabase, {
+          session_id: sessionId,
+          role:       'system',
+          content:    `⚠️ Chat handler errored: ${msg.slice(0, 1500)}`,
+          metadata:   { type: 'handler_error', stack: (e?.stack ?? '').slice(0, 2000) },
+        })
+      } catch (writeErr: any) {
+        console.error('[handle-seo-chat] failed to write error to chat:', writeErr?.message ?? writeErr)
+      }
+    }
+    return jsonResponse({ error: msg }, 500)
   }
 })
