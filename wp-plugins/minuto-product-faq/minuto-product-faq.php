@@ -286,18 +286,38 @@ function minuto_faq_build_html( $faq ) {
  * DOM-move landed the wrapper aside.
  */
 function minuto_faq_emit_styles() {
-	// Fire on any FAQ-eligible single page (product OR post).
-	if ( ! minuto_faq_resolve_faq_post_id() ) {
+	// Scope carefully to avoid touching pages we don't own:
+	//   • Products  → emit the FULL block (incl. the html,body overflow-x
+	//     fix) on EVERY product page, exactly as v0.2.x did. The overflow
+	//     band-aid must stay on all product pages regardless of FAQ
+	//     presence (see memory: wp_overflow_x_iphone.md) — don't regress it.
+	//   • Posts     → emit ONLY the .minuto-faq component styles, and ONLY
+	//     when the post actually has FAQ content. We deliberately do NOT
+	//     ship the global html,body rule on posts — that was a product-page
+	//     fix and shouldn't alter blog-wide layout. FAQ-less posts emit
+	//     nothing, so existing articles are completely unaffected.
+	$is_product_page = ( function_exists( 'is_product' ) && is_product() );
+
+	$is_post_with_faq = false;
+	if ( ! $is_product_page && is_singular( 'post' ) ) {
+		$pid = (int) get_queried_object_id();
+		$is_post_with_faq = ( $pid && ! empty( minuto_faq_get_published( $pid ) ) );
+	}
+
+	if ( ! $is_product_page && ! $is_post_with_faq ) {
 		return;
 	}
 	?>
 	<style id="minuto-faq-styles">
+		<?php if ( $is_product_page ) : ?>
 		/* v0.2.6 — `overflow-x: clip !important`. `!important` only fights the
 		 * cascade; `clip` (unlike `hidden`) is sticky-safe regardless. Older
 		 * iOS WebKit (Safari < 16) ignores `clip` entirely → scroll persists
 		 * there. Theme-level fix on the actual offending widgets is the only
-		 * cross-browser path. See memory: wp_overflow_x_iphone.md. */
+		 * cross-browser path. See memory: wp_overflow_x_iphone.md.
+		 * PRODUCT PAGES ONLY — not emitted on posts (would alter blog layout). */
 		html, body { overflow-x: clip !important; }
+		<?php endif; ?>
 		.minuto-faq-fallback,
 		.minuto-faq {
 			display: block;
