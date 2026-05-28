@@ -90,7 +90,15 @@ serve(async (req: Request): Promise<Response> => {
   const runId   = crypto.randomUUID()
   console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
 
-  try {
+  // The full cycle (10 data sources + a ~2min strategist call + experiment
+  // eval + followback + FAQ scan + briefing) exceeds the edge gateway's
+  // 150s request-idle timeout. So we run it as a tracked BACKGROUND task
+  // via EdgeRuntime.waitUntil and return 202 immediately. The cron
+  // (pg_net) fires-and-forgets; results land in seo_tasks + seo_metrics +
+  // the briefings chat session, which is where callers should look — not
+  // the HTTP response body.
+  const runCycle = async (): Promise<void> => {
+   try {
     const supabase = createSupabase()
 
     // ── 0a. WP PUBLISH DETECTOR — settle wp_published flags ────────────
@@ -314,14 +322,11 @@ serve(async (req: Request): Promise<Response> => {
     try {
       plan = parseClaudeJson(claudeRes.text)
     } catch (e: any) {
-      console.error('[organic-orchestrator] failed to parse strategist output:', e?.message)
+      console.error(`[organic-orchestrator] run=${runId} failed to parse strategist output:`, e?.message)
       console.error('[organic-orchestrator] raw text:', claudeRes.text.slice(0, 1000))
-      return jsonResponse({
-        error:             'strategist returned unparseable JSON',
-        run_id:            runId,
-        snapshot_id:       snapshotId,
-        raw:               claudeRes.text.slice(0, 2000),
-      }, 502)
+      // Background task — can't return an HTTP error (we already 202'd).
+      // Abort the cycle; the missing tasks/briefing are the visible signal.
+      return
     }
     const emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
     const emittedExperiments = Array.isArray(plan.experiments) ? plan.experiments : []
@@ -503,32 +508,43 @@ serve(async (req: Request): Promise<Response> => {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
     }
 
-    // ── 7. Return summary ────────────────────────────────────────────
-    return jsonResponse({
-      success:        true,
-      run_id:         runId,
-      snapshot_id:    snapshotId,
-      summary:        plan.summary ?? '',
-      self_reflection: plan.self_reflection ?? [],
-      experiments_evaluated: experimentEvalSummary,    // Step 0 reinforcement-loop output
+    // ── 7. Done — log the summary (no HTTP return; we already 202'd). ─
+    console.log('[organic-orchestrator] cycle complete: ' + JSON.stringify({
+      run_id:                runId,
+      snapshot_id:           snapshotId,
+      summary:               (plan.summary ?? '').slice(0, 300),
+      experiments_evaluated: experimentEvalSummary,
       experiments_emitted:   experimentIdByGroup.size,
-      tasks_emitted:  insertedRows.length,
-      task_ids:       insertedRows.map(r => r.id),
+      tasks_emitted:         insertedRows.length,
       faq_candidates_queued: faqCandidatesQueued,
       tokens: {
         input:  claudeRes.inputTokens,
         output: claudeRes.outputTokens,
         cache_read: claudeRes.cacheReadTokens,
       },
-    })
-  } catch (e: any) {
-    console.error('[organic-orchestrator] failed:', e?.message ?? e)
+    }))
+   } catch (e: any) {
+    console.error(`[organic-orchestrator] run=${runId} failed:`, e?.message ?? e)
     console.error(e?.stack ?? '')
-    return jsonResponse({
-      error:  e?.message ?? String(e),
-      run_id: runId,
-    }, 500)
+   }
+  }   // ── end runCycle ──
+
+  // Kick off the cycle in the background and return immediately so the
+  // edge gateway's 150s idle timeout never fires. waitUntil keeps the
+  // isolate alive until runCycle settles.
+  // @ts-ignore — EdgeRuntime is injected by the Supabase edge runtime.
+  if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(runCycle())
+  } else {
+    runCycle()  // local/dev fallback (no EdgeRuntime)
   }
+  return jsonResponse({
+    accepted: true,
+    run_id:   runId,
+    trigger,
+    note:     'orchestrator running in background; results land in seo_tasks + seo_metrics + the briefings chat session',
+  }, 202)
 })
 
 // ── User-message construction ──────────────────────────────────────────
