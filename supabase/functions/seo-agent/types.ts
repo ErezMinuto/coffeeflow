@@ -314,6 +314,7 @@ export type ChatToolName =
   | 'queue_deep_research'
   | 'repoint_ig_to_visual'
   | 'trigger_worker'
+  | 'set_post_faq'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Minuto Product FAQ
  * Description:       Per-product AND per-post FAQ rendering + FAQPage JSON-LD for AI/SEO discoverability.
- * Version:           0.3.0
+ * Version:           0.4.0
  * Author:            Minuto Cafe
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -165,6 +165,20 @@
  *     or written programmatically via post_meta (the set-post-faq function).
  *   - Product render paths (WooCommerce hooks + footer DOM-move fallback) are
  *     untouched — they stay product-only via minuto_faq_resolve_product_id().
+ *
+ * v0.4.0 changes vs 0.3.0: PROGRAMMATIC WRITE API. Adds an authenticated
+ * REST route so the SEO agent (via the set-post-faq edge function) can write
+ * FAQ to a post or product by ID — the `_minuto_faq_published` key is
+ * protected meta that the vanilla /wp/v2 REST API refuses to set, and the
+ * WC products API only covers products. This route closes that gap for posts
+ * AND unifies the write path for both types.
+ *   - POST /wp-json/minuto-faq/v1/set/<id>  body: { "faq": [{q,a}, ...] }
+ *   - Auth: standard WP cookie/app-password; permission_callback requires
+ *     current_user_can('edit_posts') AND current_user_can('edit_post', id).
+ *   - Validation mirrors the meta-box save exactly (same sanitizer); empty/
+ *     invalid faq clears the meta (explicit removal path).
+ *   - Reuses minuto_faq_supported_post_types() so only product/post are
+ *     writable; any other type → 422.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -530,6 +544,97 @@ function minuto_faq_emit_jsonld() {
 		. '</script>' . "\n";
 }
 add_action( 'wp_head', 'minuto_faq_emit_jsonld', 30 );
+
+// ---------------------------------------------------------------------------
+// REST API — programmatic FAQ write (used by the set-post-faq edge function)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sanitize a raw FAQ array into a clean {q,a}[] list. Mirrors the validation
+ * in minuto_faq_save_meta_box so the REST + meta-box paths agree exactly.
+ */
+function minuto_faq_sanitize_pairs( $input ) {
+	if ( ! is_array( $input ) ) {
+		return array();
+	}
+	$valid = array();
+	foreach ( $input as $item ) {
+		if ( ! is_array( $item ) ) {
+			continue;
+		}
+		$q = isset( $item['q'] ) ? trim( (string) $item['q'] ) : '';
+		$a = isset( $item['a'] ) ? trim( (string) $item['a'] ) : '';
+		if ( $q === '' || $a === '' ) {
+			continue;
+		}
+		$valid[] = array( 'q' => $q, 'a' => $a );
+	}
+	return $valid;
+}
+
+function minuto_faq_register_rest_routes() {
+	register_rest_route(
+		'minuto-faq/v1',
+		'/set/(?P<id>\d+)',
+		array(
+			'methods'             => 'POST',
+			'permission_callback' => function () {
+				// Base capability gate; per-post check happens in the callback
+				// once we know the id (WP app-password / cookie auth populates
+				// the current user).
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'id' => array(
+					'validate_callback' => function ( $param ) {
+						return is_numeric( $param );
+					},
+				),
+			),
+			'callback'            => 'minuto_faq_rest_set',
+		)
+	);
+}
+add_action( 'rest_api_init', 'minuto_faq_register_rest_routes' );
+
+function minuto_faq_rest_set( WP_REST_Request $request ) {
+	$post_id = (int) $request['id'];
+	$post    = get_post( $post_id );
+	if ( ! $post ) {
+		return new WP_Error( 'minuto_faq_not_found', 'Post not found', array( 'status' => 404 ) );
+	}
+	if ( ! in_array( get_post_type( $post_id ), minuto_faq_supported_post_types(), true ) ) {
+		return new WP_Error( 'minuto_faq_unsupported_type', 'Post type is not FAQ-eligible (product/post only)', array( 'status' => 422 ) );
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		return new WP_Error( 'minuto_faq_forbidden', 'Insufficient permission to edit this post', array( 'status' => 403 ) );
+	}
+
+	$faq = minuto_faq_sanitize_pairs( $request->get_param( 'faq' ) );
+
+	if ( empty( $faq ) ) {
+		// Empty / all-invalid → explicit clear path.
+		delete_post_meta( $post_id, MINUTO_FAQ_META_KEY );
+		return rest_ensure_response( array(
+			'success'   => true,
+			'post_id'   => $post_id,
+			'post_type' => get_post_type( $post_id ),
+			'faq_count' => 0,
+			'cleared'   => true,
+		) );
+	}
+
+	$json = wp_json_encode( $faq, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	update_post_meta( $post_id, MINUTO_FAQ_META_KEY, wp_slash( $json ) );
+
+	return rest_ensure_response( array(
+		'success'    => true,
+		'post_id'    => $post_id,
+		'post_type'  => get_post_type( $post_id ),
+		'post_title' => get_the_title( $post_id ),
+		'faq_count'  => count( $faq ),
+	) );
+}
 
 // ---------------------------------------------------------------------------
 // Admin meta box on product edit screen

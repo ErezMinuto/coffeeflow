@@ -154,6 +154,30 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'set_post_faq',
+    description: "Write a FAQ (questions + answers) onto a blog post or product so it renders an accordion AND emits FAQPage JSON-LD (rich-result-eligible structured data) — the minuto-product-faq plugin reads it. Use when Erez asks to add/refresh an FAQ on an article (e.g. the grinder posts) for technical SEO. You author the Q&A yourself in Hebrew following brand voice (gender-inclusive, no em-dashes, no disparaging other gear/brands, 'אלו ש...' not 'מי ש...'). ALWAYS show Erez the exact Q&A you intend to write and get a one-line confirmation BEFORE calling — this writes to the LIVE page immediately (no draft state). Pass post_url (Erez usually pastes a link) or post_id. Passing an empty faq array CLEARS the FAQ.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        post_url: { type: 'string', description: 'Full URL of the post/product (the function resolves it to an id). Provide this OR post_id.' },
+        post_id:  { type: 'number', description: 'Numeric WP post/product id. Provide this OR post_url.' },
+        faq: {
+          type: 'array',
+          description: 'Array of {q, a} objects. q = question (Hebrew), a = answer (Hebrew). 3-6 pairs is typical. Empty array clears the FAQ.',
+          items: {
+            type: 'object',
+            properties: {
+              q: { type: 'string', description: 'Question text.' },
+              a: { type: 'string', description: 'Answer text.' },
+            },
+            required: ['q', 'a'],
+          },
+        },
+      },
+      required: ['faq'],
+    },
+  },
+  {
     name: 'trigger_worker',
     description: 'POST directly to a worker function so it drains the next pending task in its queue immediately, without waiting for the cron tick. Use this after queue_task / repoint_ig_to_visual / queue_deep_research if the admin wants the result now instead of in 2-5 minutes. Also useful when the admin reports a task is "stuck pending". Returns the worker\'s response (typically `{processed: 0|1, task_id, ok}` or `worker_running_in_background` if it\'s still working when our short timeout fires). worker ∈ {ig | visual | writer | research}.',
     input_schema: {
@@ -464,6 +488,38 @@ async function executeTool(
             previous_error_msg: ig.error_msg,
             previous_attempts:  ig.attempts,
             worker_nudged:      nudge,
+          },
+        }
+      }
+
+      case 'set_post_faq': {
+        const faqInput = Array.isArray(input.faq) ? input.faq : null
+        if (!faqInput) {
+          return { ok: false, payload: { error: 'set_post_faq requires faq (array of {q,a}). Empty array clears the FAQ.' } }
+        }
+        const post_url = typeof input.post_url === 'string' ? input.post_url.trim() : ''
+        const post_id  = typeof input.post_id === 'number' ? input.post_id : undefined
+        if (!post_url && !post_id) {
+          return { ok: false, payload: { error: 'set_post_faq requires post_url or post_id.' } }
+        }
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/set-post-faq`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+          body:    JSON.stringify({ post_url: post_url || undefined, post_id, faq: faqInput }),
+        })
+        const json = await res.json().catch(() => ({})) as Record<string, unknown>
+        if (!res.ok || json.success !== true) {
+          return { ok: false, payload: { error: `set-post-faq failed (${res.status}): ${(json.error as string) ?? JSON.stringify(json).slice(0, 300)}` } }
+        }
+        return {
+          ok: true,
+          payload: {
+            post_id:    json.post_id,
+            post_type:  json.post_type,
+            post_title: json.post_title,
+            faq_count:  json.faq_count,
+            cleared:    json.cleared === true,
+            note:       'FAQ written to the LIVE page. FAQPage JSON-LD + accordion now render. If WP Rocket caches the page, purge cache to see it immediately.',
           },
         }
       }
