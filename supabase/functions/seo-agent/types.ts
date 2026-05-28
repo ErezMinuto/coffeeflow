@@ -19,6 +19,7 @@ export type CanonicalTaskType =
   | 'visual_generation'
   | 'instagram_post'      // Drained by organic-worker-instagram → meta-publish
   | 'deep_research'       // Drained by seo-worker-research → multi-step Claude + web_search
+  | 'technical_seo'       // Drained by seo-worker-techseo → authors FAQ proposal (HITL-gated write)
   | 'dynamic_experiment'
 
 // task_type is stored as TEXT in the DB so the orchestrator can emit
@@ -117,6 +118,25 @@ export interface DeepResearchBrief {
   max_research_turns?: number
 }
 
+export interface TechnicalSeoBrief {
+  // What technical-SEO action this task represents. Today the only
+  // automated subtype is faq_injection (author + propose an FAQ for a
+  // ranking article). Others (schema, internal-linking) can join later.
+  subtype: 'faq_injection'
+  // Target page. Provide at least one; the worker resolves a URL to an id.
+  target_post_id?:  number
+  target_post_url?: string
+  // Optional context the identifier knew (saves the worker a lookup, and
+  // surfaces in the admin review). Not load-bearing.
+  article_title?:   string
+  // The ranking signal that made this article a candidate (e.g. GA4
+  // organic sessions, GSC impressions/position). Informational — shown
+  // in the proposal so the admin understands WHY this article.
+  rationale_signal?: Record<string, unknown>
+  // How many Q&A pairs to author. Default 5, clamp 3-6.
+  target_faq_count?: number
+}
+
 export interface DynamicExperimentBrief {
   // Free-form description of the experiment the orchestrator wants to
   // run. Surfaced verbatim in the admin UI for human review.
@@ -175,6 +195,7 @@ export type AnyBrief =
   | VisualGenerationBrief
   | InstagramPostBrief
   | DeepResearchBrief
+  | TechnicalSeoBrief
   | DynamicExperimentBrief
   | Record<string, unknown>  // for novel orchestrator-invented task_types
 
@@ -315,6 +336,7 @@ export type ChatToolName =
   | 'repoint_ig_to_visual'
   | 'trigger_worker'
   | 'set_post_faq'
+  | 'approve_post_faq'
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the

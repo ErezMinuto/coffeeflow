@@ -418,6 +418,66 @@ serve(async (req: Request): Promise<Response> => {
       console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
     }
 
+    // ── 6b-FAQ. Identify ranking blog articles missing FAQ → queue proposals ─
+    // Deterministic technical-SEO scan (NOT routed through the strategist
+    // LLM — pure data). Top organic blog landing pages from GA4 that don't
+    // already have a recent technical_seo task get a faq_injection task.
+    // seo-worker-techseo authors a Hebrew FAQ proposal (and itself skips
+    // articles that already carry FAQ schema); the admin approves each via
+    // approve_post_faq before anything writes live. Best-effort.
+    let faqCandidatesQueued = 0
+    try {
+      const WP_URL = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
+      const sinceDate = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().split('T')[0]
+      const { data: ga4Rows } = await supabase
+        .from('ga4_pages_daily')
+        .select('page_path, sessions')
+        .eq('channel_group', 'Organic Search')
+        .gte('date', sinceDate)
+        .like('page_path', '/blog/%')
+        .limit(2000)
+      const sessionsByPath = new Map<string, number>()
+      for (const r of (ga4Rows ?? []) as Array<{ page_path: string; sessions: number | null }>) {
+        sessionsByPath.set(r.page_path, (sessionsByPath.get(r.page_path) ?? 0) + (r.sessions ?? 0))
+      }
+      const topPaths = Array.from(sessionsByPath.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+      // Avoid re-queuing: collect technical_seo targets from the last 30d.
+      const { data: existingFaqTasks } = await supabase
+        .from('seo_tasks')
+        .select('brief_data')
+        .eq('task_type', 'technical_seo')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString())
+        .limit(500)
+      const norm = (u: string) => u.replace(/\/+$/, '')
+      const existingTargets = new Set(
+        (existingFaqTasks ?? []).map((t: any) => norm(String(t.brief_data?.target_post_url ?? ''))),
+      )
+
+      const faqTasks: NewSeoTask[] = []
+      for (const [path, sessions] of topPaths) {
+        const url = norm(`${WP_URL}${path}`)
+        if (!url || existingTargets.has(url)) continue
+        faqTasks.push({
+          task_type:           'technical_seo',
+          brief_data:          {
+            subtype:          'faq_injection',
+            target_post_url:  url + '/',
+            rationale_signal: { ga4_organic_sessions_30d: sessions },
+          },
+          rationale:           `[faq-gap-scan] top organic blog page (${sessions} sessions/30d) — propose FAQ schema`,
+          orchestrator_run_id: runId,
+        })
+      }
+      if (faqTasks.length > 0) {
+        const insertedFaq = await insertTasks(supabase, faqTasks)
+        faqCandidatesQueued = insertedFaq.length
+      }
+      console.log(`[organic-orchestrator] faq-gap-scan queued ${faqCandidatesQueued} technical_seo task(s)`)
+    } catch (e: any) {
+      console.warn(`[organic-orchestrator] faq-gap-scan failed (non-fatal): ${e?.message ?? e}`)
+    }
+
     // ── 6c. Write proactive briefing for admin ───────────────────────
     // Captures what happened this cycle into a chat_messages row the
     // admin will see when they open the dashboard. Best-effort; doesn't
@@ -447,6 +507,7 @@ serve(async (req: Request): Promise<Response> => {
       experiments_emitted:   experimentIdByGroup.size,
       tasks_emitted:  insertedRows.length,
       task_ids:       insertedRows.map(r => r.id),
+      faq_candidates_queued: faqCandidatesQueued,
       tokens: {
         input:  claudeRes.inputTokens,
         output: claudeRes.outputTokens,
