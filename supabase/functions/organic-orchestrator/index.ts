@@ -291,6 +291,13 @@ serve(async (req: Request): Promise<Response> => {
       messages: [{ role: 'user', content: userMessage }],
       maxTokens:  8192,
       temperature: 0.7,  // balanced — needs creativity but also structure
+      // The strategist prompt has grown (10 data sources + competitor
+      // intel + RFM + AI-visibility + standing learnings + post-followback),
+      // so a fresh, uncached call generating up to 8192 tokens routinely
+      // exceeds claude.ts's 110s default and the AbortController kills it
+      // ("The signal has been aborted"). The cron invokes us with a 240s
+      // pg_net budget, so give the single most-important call a 200s leash.
+      timeoutMs: 200_000,
     })
     console.log(
       `[organic-orchestrator] strategist done — tokens: ` +
