@@ -395,7 +395,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       type: 'object',
       properties: {
         question: { type: 'string', description: 'The full research question, phrased as the admin would brief a strategist. One paragraph, no bullets.' },
-        scope:    { type: 'string', description: "One of: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'other'." },
+        scope:    { type: 'string', description: "One of: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'channel_discovery' | 'other'. Use 'channel_discovery' when Erez wants fresh ideas for NEW ways to grow beyond blog+IG (new platforms, communities, partnerships, tactics)." },
         expected_output: { type: 'string', description: "One of: 'recommendations' (prioritized list) | 'analysis' (narrative w/ citations) | 'action_plan' (concrete tasks to queue next cycle)." },
         max_research_turns: { type: 'number', description: 'Optional cap on Claude reasoning turns. Default 5, max 8.' },
       },
@@ -983,7 +983,7 @@ async function executeTool(
         if (!question || !scope || !expected) {
           return { ok: false, payload: { error: 'queue_deep_research requires question, scope, expected_output.' } }
         }
-        const allowedScopes = ['geo_llmo', 'competitor_deep_dive', 'content_topic', 'audience_segment', 'other']
+        const allowedScopes = ['geo_llmo', 'competitor_deep_dive', 'content_topic', 'audience_segment', 'channel_discovery', 'other']
         if (!allowedScopes.includes(scope)) {
           return { ok: false, payload: { error: `scope must be one of ${allowedScopes.join(' | ')}.` } }
         }

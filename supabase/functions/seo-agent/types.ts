@@ -105,7 +105,7 @@ export interface DeepResearchBrief {
   //   'content_topic'        — should we write about X? what angle wins?
   //   'audience_segment'     — what does a specific RFM segment care about?
   //   'other'                — anything else strategic
-  scope: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'other'
+  scope: 'geo_llmo' | 'competitor_deep_dive' | 'content_topic' | 'audience_segment' | 'channel_discovery' | 'other'
   // The shape of the output the strategist wants. Shapes the system prompt.
   //   'recommendations'      — list of prioritized actions
   //   'analysis'             — narrative reasoning + supporting data

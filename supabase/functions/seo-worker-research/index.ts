@@ -40,6 +40,7 @@ import {
   type ChatMessage as ApiChatMessage,
 } from '../seo-agent/claude.ts'
 import type { SeoTaskRow, DeepResearchBrief } from '../seo-agent/types.ts'
+import { writeBriefing } from '../seo-agent/briefingWriter.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -219,6 +220,25 @@ serve(async (req) => {
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: e?.message ?? String(e) }, 500)
   }
 
+  // ── Surface channel_discovery findings as a briefing ────────────────
+  // The "channel & tactic explorer" runs weekly to hunt for new ways to
+  // grow OUTSIDE the current blog+IG playbook. Its whole point is to put
+  // fresh ideas in front of the admin — so when one completes, drop the
+  // report into the briefings thread (the "while you were away" surface).
+  // Best-effort; never fails the task.
+  if (scope === 'channel_discovery' && finalText.trim().length > 0) {
+    try {
+      await writeBriefing(supabase, {
+        subtype: 'scout_alert',
+        title:   'New growth ideas — channel & tactic explorer',
+        body:    `I went looking for ways to grow Minuto OUTSIDE the current blog + Instagram playbook. Findings below — these are PROPOSALS for you to greenlight, nothing is acted on automatically.\n\n${finalText.slice(0, 3500)}`,
+        context: { task_id: task.id, scope: 'channel_discovery', source: 'channel_explorer' },
+      })
+    } catch (e: any) {
+      console.warn(`[seo-worker-research] ${workerId} channel-discovery briefing failed (non-fatal): ${e?.message ?? e}`)
+    }
+  }
+
   return jsonResponse({
     processed:    1,
     worker_id:    workerId,
@@ -242,6 +262,7 @@ function buildResearchSystemPrompt(args: {
     competitor_deep_dive: 'You are profiling a specific competitor. Use web_search to find their website + recent coverage + reviews. fetch_url for their about-page, product-page, blog. query_minuto for competitor_co_mentions to see how often they show up alongside Minuto.',
     content_topic:        'You are evaluating whether a specific content topic is worth Minuto pursuing. Use web_search to gauge demand + existing coverage. query_minuto for ai_visibility_summary and recent_industry_insights. Output should help the strategist decide go/no-go + angle if go.',
     audience_segment:     'You are profiling a specific customer audience (typically from RFM segmentation). Use query_minuto for customer_rfm_segments. Cross-reference with industry articles on segment psychology. Output should tell the strategist what content this segment would respond to.',
+    channel_discovery:    'You are HUNTING FOR NEW WAYS TO GROW that Minuto is not currently using. Minuto today does WP blog SEO + Instagram only. Your job: find channels, content formats, communities, and tactics OUTSIDE that current playbook that could realistically reach an Israeli specialty-coffee audience. Use web_search aggressively — how do specialty roasters + premium-gear brands (in Israel AND abroad) acquire customers beyond blog+IG? Consider: emerging platforms (e.g. video-first, audio, niche social), community plays (forums, WhatsApp/Telegram groups, local events, subscriptions/clubs), earned media + PR, creator/affiliate partnerships, GEO/LLM visibility, UGC, referral mechanics, marketplace presence. query_minuto for active_learnings + competitor_co_mentions + ai_visibility_summary to ground in our actual position. PRIORITIZE ideas that (a) fit a boutique Israeli roaster\'s budget/scale, (b) are NOT just "post more on IG", (c) could be tested cheaply. Be bold but realistic — flag which ideas are quick experiments vs bigger bets.',
     other:                'Open-ended research. Use whichever tools fit the question.',
   }
 
