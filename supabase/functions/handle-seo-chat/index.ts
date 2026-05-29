@@ -83,6 +83,18 @@ const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 // enough — most turns are 1-2 tool calls deep.
 const MAX_TOOL_LOOPS = 8
 
+// Wall-clock budget for the whole tool-use loop. The Supabase edge gateway
+// closes any request idle >150s with no response → the client sees a
+// transport-level FunctionsFetchError (no body to surface). A heavy turn
+// (e.g. "draft + publish FAQs for both articles" = read ×2, author, write
+// ×2, confirm — multiple Claude calls back to back) can blow past that.
+// We cap the loop at 130s (leaving ~20s headroom for the final history
+// fetch + response), and size each Claude call's timeout to the remaining
+// budget so a single call can't overrun. If we run out, we return a
+// graceful partial response inviting the admin to say "continue".
+const CHAT_LOOP_BUDGET_MS = 130_000
+const MIN_CALL_BUDGET_MS  = 20_000  // don't start another Claude call with less than this left
+
 // ── Worker registry — what the agent can nudge ─────────────────────────
 // Maps a friendly name to the deployed function path. Used by the
 // auto-nudge after queue_task / repoint_ig_to_visual and by the
@@ -1335,8 +1347,18 @@ serve(async (req: Request): Promise<Response> => {
     let loops = 0
     let finalText = ''
     let lastUsage = { input: 0, output: 0, cache_read: 0 }
+    const loopStartedAt = Date.now()
+    let ranOutOfTime = false
 
     while (loops < MAX_TOOL_LOOPS) {
+      // Wall-clock guard: never start a Claude call that could push us past
+      // the gateway's 150s ceiling (which would manifest as a FunctionsFetch
+      // Error with no body). Stop gracefully and let the admin continue.
+      const remainingMs = CHAT_LOOP_BUDGET_MS - (Date.now() - loopStartedAt)
+      if (remainingMs < MIN_CALL_BUDGET_MS) {
+        ranOutOfTime = true
+        break
+      }
       loops++
       const res = await callClaude({
         model:    MODEL_CHAT,
@@ -1345,6 +1367,9 @@ serve(async (req: Request): Promise<Response> => {
         tools:    TOOL_DEFINITIONS,
         maxTokens:   4096,
         temperature: 0.3,
+        // Size the call to the remaining budget (cap 90s) so one slow call
+        // can't overrun the loop budget.
+        timeoutMs: Math.min(90_000, remainingMs - 5_000),
       })
       lastUsage = {
         input:      res.inputTokens,
@@ -1450,7 +1475,17 @@ serve(async (req: Request): Promise<Response> => {
       apiMessages.push({ role: 'user', content: toolResultBlocks })
     }
 
-    if (loops >= MAX_TOOL_LOOPS && !finalText) {
+    if (ranOutOfTime && !finalText) {
+      // Hit the wall-clock budget mid-task. Whatever tool calls already ran
+      // are persisted (and committed live, e.g. an FAQ write), so this is a
+      // safe stopping point — the admin just continues.
+      finalText = `(I ran out of time for this turn after completing the steps above — anything still pending wasn't started. Say "continue" and I'll pick up where I left off.)`
+      await appendChatMessage(supabase, {
+        session_id: sessionId,
+        role:       'system',
+        content:    finalText,
+      })
+    } else if (loops >= MAX_TOOL_LOOPS && !finalText) {
       finalText = `(stopped after ${MAX_TOOL_LOOPS} tool-use loops — please rephrase your request.)`
       await appendChatMessage(supabase, {
         session_id: sessionId,
