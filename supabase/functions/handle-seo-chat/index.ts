@@ -156,6 +156,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'get_post_faq',
+    description: "Read the FAQ currently LIVE on a blog post or product. Fetches the rendered page and extracts the FAQPage JSON-LD the minuto-product-faq plugin emits (data-source=\"minuto-product-faq\"), returning the exact Q&A pairs. Use whenever Erez asks 'what's the FAQ on <page>?' / 'check the FAQ' / before overwriting an existing FAQ so you can show him what's there first. Returns { present, faq_count, faq:[{q,a}] }. Note: reads the LIVE (possibly WP-Rocket-cached) page, so a just-written FAQ may lag until cache purge.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        post_url: { type: 'string', description: 'Full URL of the post/product. Provide this OR post_id.' },
+        post_id:  { type: 'number', description: 'Numeric WP post/product id (resolved to its URL). Provide this OR post_url.' },
+      },
+    },
+  },
+  {
     name: 'set_post_faq',
     description: "Write a FAQ (questions + answers) onto a blog post or product so it renders an accordion AND emits FAQPage JSON-LD (rich-result-eligible structured data) — the minuto-product-faq plugin reads it. Use when Erez asks to add/refresh an FAQ on an article (e.g. the grinder posts) for technical SEO. You author the Q&A yourself in Hebrew following brand voice (gender-inclusive, no em-dashes, no disparaging other gear/brands, 'אלו ש...' not 'מי ש...'). ALWAYS show Erez the exact Q&A you intend to write and get a one-line confirmation BEFORE calling — this writes to the LIVE page immediately (no draft state). Pass post_url (Erez usually pastes a link) or post_id. Passing an empty faq array CLEARS the FAQ.",
     input_schema: {
@@ -507,6 +518,42 @@ async function executeTool(
             previous_attempts:  ig.attempts,
             worker_nudged:      nudge,
           },
+        }
+      }
+
+      case 'get_post_faq': {
+        let url = typeof input.post_url === 'string' ? input.post_url.trim() : ''
+        const pid = typeof input.post_id === 'number' ? input.post_id : undefined
+        if (!url && !pid) {
+          return { ok: false, payload: { error: 'get_post_faq requires post_url or post_id.' } }
+        }
+        // Resolve id → URL via the public WP REST API if no URL given.
+        if (!url && pid) {
+          try {
+            const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${pid}?_fields=link`)
+            if (r.ok) { const j = await r.json(); url = typeof j?.link === 'string' ? j.link : '' }
+          } catch { /* fall through */ }
+          if (!url) return { ok: false, payload: { error: `could not resolve post_id ${pid} to a URL.` } }
+        }
+        // Fetch the live page + extract the minuto FAQ JSON-LD block.
+        let html = ''
+        try {
+          const r = await fetch(url, { headers: { 'User-Agent': 'MinutoFaqReader/1.0' } })
+          if (!r.ok) return { ok: false, payload: { error: `page fetch HTTP ${r.status} for ${url}` } }
+          html = await r.text()
+        } catch (e: any) {
+          return { ok: false, payload: { error: `page fetch failed: ${e?.message ?? e}` } }
+        }
+        const m = html.match(/<script type="application\/ld\+json" data-source="minuto-product-faq">([\s\S]*?)<\/script>/)
+        if (!m) {
+          return { ok: true, payload: { present: false, faq_count: 0, faq: [], url, note: 'No minuto-product-faq JSON-LD on the live page (no FAQ set, or WP Rocket is serving a cached pre-FAQ version).' } }
+        }
+        try {
+          const data = JSON.parse(m[1]) as { mainEntity?: Array<{ name?: string; acceptedAnswer?: { text?: string } }> }
+          const faq = (data.mainEntity ?? []).map(q => ({ q: q.name ?? '', a: q.acceptedAnswer?.text ?? '' })).filter(p => p.q && p.a)
+          return { ok: true, payload: { present: true, faq_count: faq.length, faq, url, source: 'live_page_jsonld' } }
+        } catch (e: any) {
+          return { ok: false, payload: { error: `found FAQ JSON-LD but failed to parse it: ${e?.message ?? e}` } }
         }
       }
 
