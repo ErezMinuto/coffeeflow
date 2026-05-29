@@ -164,10 +164,17 @@ serve(async (req) => {
   // We pass it as an extra in the body via the `tools` array; Anthropic
   // recognizes `{type: 'web_search_20250305', name: 'web_search'}`.
   const fullTools: any[] = [
-    { type: 'web_search_20250305', name: 'web_search', max_uses: maxTurns * 3 },
+    // Cap total searches at 12 (not maxTurns*3, which was 24 for an 8-turn
+    // task). Within the 110s budget only ~2-4 turns actually run, and 24
+    // permitted searches let a single turn front-load many slow web_search
+    // calls → an overlong turn that times out. 12 is ample for a budget-
+    // bounded run and keeps each turn fast.
+    { type: 'web_search_20250305', name: 'web_search', max_uses: Math.min(12, maxTurns * 3) },
     ...TOOL_DEFINITIONS,
   ]
 
+  let loopError: string | null = null
+  try {
   while (turn < maxTurns) {
     // Stop before we risk a hard kill; finalize with what we have.
     const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
@@ -227,13 +234,27 @@ serve(async (req) => {
     }
     if (toolResults.length > 0) messages.push({ role: 'user', content: toolResults })
   }
+  } catch (e: any) {
+    // A turn threw (Claude timeout, web_search error, transient API fault).
+    // DON'T let it crash the worker — that leaves the row stuck in
+    // 'processing' until a reclaim, only to crash again and burn every
+    // attempt with NULL output (the exact failure reported in 19bf5740).
+    // Capture it, stop the loop, and finalize with whatever we have so the
+    // task COMPLETES with a partial report instead of dying.
+    loopError = e?.message ?? String(e)
+    console.error(`[seo-worker-research] ${workerId} loop threw at turn ${turn} (saving partial, not crashing): ${loopError}`)
+  }
 
-  // If we stopped on the time budget (or the turn cap) before the model
-  // produced a clean final synthesis, fall back to the last substantive
-  // assistant text so the task still yields a usable partial report
-  // rather than an empty result.
+  // Fall back to the last substantive assistant text so a budget-stop OR a
+  // mid-loop error still yields a usable partial report rather than empty.
   if (!finalText.trim() && lastAssistantText.trim()) {
     finalText = lastAssistantText
+  }
+  // Flag the report as partial so the reader (and the agent) treats it as
+  // preliminary, not a complete answer.
+  if ((hitTimeBudget || loopError) && finalText.trim()) {
+    const why = loopError ? 'an error mid-run' : 'the time budget'
+    finalText = `⚠️ PARTIAL RESULT — research was cut short after ${turn} turn(s) by ${why}; treat as preliminary.\n\n${finalText}`
   }
 
   // ── Persist result ─────────────────────────────────────────────────
@@ -247,7 +268,8 @@ serve(async (req) => {
       turns_used:             turn,
       max_turns:              maxTurns,
       hit_time_budget:        hitTimeBudget,
-      hit_turn_cap:           turn >= maxTurns && finalText === '',
+      loop_error:             loopError,
+      partial:                Boolean(hitTimeBudget || loopError),
       tokens: { input: totalInputTokens, output: totalOutputTokens },
     })
   } catch (e: any) {
