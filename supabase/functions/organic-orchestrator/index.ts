@@ -292,14 +292,13 @@ serve(async (req: Request): Promise<Response> => {
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      // maxTokens 6000 (was 8192): generation time is ∝ output tokens, and
-      // the edge isolate has a HARD wall-clock cap (~180-200s, observed via
-      // silent mid-call kills). Trimming the cap shortens worst-case
-      // generation so the call fits the budget. The strategist plan (a few
-      // tasks + experiments + reflection as terse specs) fits well under
-      // 6000; if it ever truncates, the parse-failure briefing makes it
-      // visible rather than silent.
-      maxTokens:  6000,
+      // maxTokens 7000: the strategist prompt now caps the plan at ~3500
+      // output tokens (OUTPUT BUDGET section), so 7000 is 2× headroom — a
+      // compact plan completes WITHOUT truncating, and ~3500-4500 tokens
+      // generates in ~80-110s, comfortably under the 150s wall-clock. (A
+      // bare 6000 cap truncated a too-large plan in run 7c94f062; the real
+      // fix was bounding the plan size in the prompt, not the cap.)
+      maxTokens:  7000,
       temperature: 0.7,  // balanced — needs creativity but also structure
       // CRITICAL: keep this BELOW the platform's hard wall-clock cap. At
       // 200s the isolate was being killed mid-call before this
