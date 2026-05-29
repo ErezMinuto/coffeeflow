@@ -503,6 +503,48 @@ serve(async (req: Request): Promise<Response> => {
       console.warn(`[organic-orchestrator] faq-gap-scan failed (non-fatal): ${e?.message ?? e}`)
     }
 
+    // ── 6d. CHANNEL & TACTIC EXPLORER (weekly) ────────────────────────
+    // Once a week, queue a deep_research task whose whole job is to hunt
+    // for NEW ways to grow OUTSIDE the current blog+IG playbook — emerging
+    // platforms, communities, earned media, partnerships, GEO plays, etc.
+    // The research worker (already cron-drained) investigates via web
+    // search and drops a briefing of fresh, testable ideas for the admin
+    // to greenlight. The agent generates the ideas; acting on them stays
+    // gated. Gated to Sunday (orchestrator runs Sun+Wed → this fires once
+    // a week), with a 6-day dedup guard as belt-and-suspenders. Best-effort.
+    let channelExplorerQueued = false
+    try {
+      if (new Date().getUTCDay() === 0) {  // Sunday
+        const sixDaysAgo = new Date(Date.now() - 6 * 24 * 3600 * 1000).toISOString()
+        const { data: recentExplorer } = await supabase
+          .from('seo_tasks')
+          .select('id, brief_data')
+          .eq('task_type', 'deep_research')
+          .gte('created_at', sixDaysAgo)
+          .limit(50)
+        const alreadyQueued = (recentExplorer ?? []).some(
+          (t: any) => (t.brief_data?.scope) === 'channel_discovery',
+        )
+        if (!alreadyQueued) {
+          await insertTasks(supabase, [{
+            task_type:           'deep_research',
+            brief_data:          {
+              question:        'What are the highest-potential ways for Minuto — a boutique Israeli specialty-coffee roaster currently doing ONLY WP blog SEO + Instagram — to grow that we are NOT using yet? Surface concrete, testable channel / format / community / tactic ideas beyond blog+IG, sized for a boutique budget.',
+              scope:           'channel_discovery',
+              expected_output: 'recommendations',
+              max_research_turns: 5,
+            },
+            rationale:           '[channel-explorer] weekly hunt for new growth channels/tactics beyond blog+IG',
+            orchestrator_run_id: runId,
+          }])
+          channelExplorerQueued = true
+        }
+      }
+      console.log(`[organic-orchestrator] channel-explorer queued: ${channelExplorerQueued}`)
+    } catch (e: any) {
+      console.warn(`[organic-orchestrator] channel-explorer queue failed (non-fatal): ${e?.message ?? e}`)
+    }
+
     // ── 6c. Write proactive briefing for admin ───────────────────────
     // Captures what happened this cycle into a chat_messages row the
     // admin will see when they open the dashboard. Best-effort; doesn't
