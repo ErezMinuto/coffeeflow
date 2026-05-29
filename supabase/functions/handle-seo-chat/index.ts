@@ -1134,30 +1134,40 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
   // IDs at the next non-tool boundary.
   let lastAssistantToolUseIds: string[] = []
 
-  function flushPendingToolResults() {
-    if (pendingToolResults.length === 0) return
-    out.push({ role: 'user', content: pendingToolResults })
-    pendingToolResults = []
-  }
-
+  // Reconcile the accumulated tool_result blocks against the
+  // immediately-preceding assistant turn's tool_use ids, then flush them
+  // as one user message. Enforces BIDIRECTIONAL integrity — both failure
+  // modes 400 at Anthropic, and both are caused by the newest-50 window
+  // slicing through a tool_use↔tool_result pair:
+  //   1. tool_use with NO tool_result  → synthesize an is_error result
+  //      (its result row was never persisted, or fell after the window).
+  //   2. tool_result with NO matching tool_use  → DROP it (its tool_use
+  //      turn fell BEFORE the window, or the row is corrupt). Without this
+  //      the orphan gets carried forward and flushed alongside a later
+  //      turn's valid results → "unexpected tool_use_id in tool_result".
+  // ALWAYS clears state (no early return) so orphans never carry forward.
   function patchOrphansAndFlush() {
-    if (lastAssistantToolUseIds.length === 0) return
-    const seen = new Set(
-      pendingToolResults
-        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_result' }> => b.type === 'tool_result')
-        .map(b => b.tool_use_id),
+    const validIds = new Set(lastAssistantToolUseIds)
+    // Keep only tool_results that correspond to the preceding assistant's
+    // tool_use ids; drop orphans.
+    const kept = pendingToolResults.filter(
+      (b): b is Extract<MessageContentBlock, { type: 'tool_result' }> =>
+        b.type === 'tool_result' && validIds.has(b.tool_use_id),
     )
+    // Synthesize is_error results for any tool_use that never got a row.
+    const seen = new Set(kept.map(b => b.tool_use_id))
     for (const id of lastAssistantToolUseIds) {
       if (seen.has(id)) continue
-      pendingToolResults.push({
+      kept.push({
         type:        'tool_result',
         tool_use_id: id,
         content:     JSON.stringify({ error: 'tool execution was interrupted; no result was persisted' }),
         is_error:    true,
       })
     }
+    pendingToolResults     = []
     lastAssistantToolUseIds = []
-    flushPendingToolResults()
+    if (kept.length > 0) out.push({ role: 'user', content: kept })
   }
 
   for (const m of stored) {
