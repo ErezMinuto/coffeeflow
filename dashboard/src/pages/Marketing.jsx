@@ -1426,7 +1426,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
 function AutomationsTab({ data, user, showToast }) {
   // The "coming soon" placeholders — kept around so the UI shows the
   // roadmap. Real automations live in email_automation_templates and are
-  // pulled from the DB by FirstPurchaseAutomation below.
+  // pulled from the DB by the EmailAutomationCard cards below.
   const PLACEHOLDER_AUTOMATIONS = [
     {
       type: 'welcome_signup',
@@ -1436,23 +1436,12 @@ function AutomationsTab({ data, user, showToast }) {
       trigger: 'הרשמה לרשימה',
       delay: 'מיידי',
     },
-    {
-      type: 'cart_abandon',
-      icon: '🛒',
-      title: 'עגלה נטושה',
-      description: 'נשלח כשלקוח מוסיף לעגלה אבל לא משלים רכישה',
-      trigger: 'עגלה נטושה',
-      delay: 'שעה אחרי',
-    },
-    {
-      type: 'post_purchase_reorder',
-      icon: '🔄',
-      title: 'תזכורת להזמנה חוזרת',
-      description: '"נגמר הקפה? הגיע הזמן להזמין שוב"',
-      trigger: 'הזמנה הושלמה',
-      delay: '25 ימים אחרי',
-    },
   ];
+
+  // Live triggers backed by email_automation_templates rows. Each renders
+  // its own self-contained EmailAutomationCard (toggle / test-send / dry-run
+  // / history / editor), keyed by trigger_type.
+  const LIVE_TRIGGERS = ['first_purchase', 'refill_reminder', 'abandoned_cart_1', 'abandoned_cart_2'];
 
   return (
     <div className="section">
@@ -1461,11 +1450,15 @@ function AutomationsTab({ data, user, showToast }) {
         מיילים אוטומטיים שנכתבים פעם אחת ורצים לבד. מופעלים ע"י אירועים מה-WooCommerce שלך — באמצעות מערכת CoffeeFlow (לא Flashy).
       </p>
 
-      {/* The active automation — wired to email-automation-scheduler.
+      {/* The active automations — each wired to email-automation-scheduler.
           Reads the logged-in user's email from Clerk directly inside the
           component (not from useApp().user, which is a hardcoded stub
           pinned to the legacy marketing_contacts user_id). */}
-      <FirstPurchaseAutomation showToast={showToast} />
+      <div style={{ display: 'grid', gap: '12px' }}>
+        {LIVE_TRIGGERS.map(tt => (
+          <EmailAutomationCard key={tt} trigger={tt} showToast={showToast} />
+        ))}
+      </div>
 
       <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem', color: '#3D4A2E', fontSize: '1.05rem' }}>בקרוב</h3>
       <div style={{ display: 'grid', gap: '12px' }}>
@@ -1516,20 +1509,44 @@ function AutomationsTab({ data, user, showToast }) {
   );
 }
 
-// ── First Purchase Automation Card ─────────────────────────────────────────
+// ── Email Automation Card ──────────────────────────────────────────────────
 //
-// The only fully-wired automation in Phase 1. Reads/writes
-// email_automation_templates + email_automations, calls the
+// Reusable card for one email_automation_templates trigger. Reads/writes
+// the template + its email_automations rows, calls the
 // email-automation-scheduler edge function for test sends and dry runs.
 //
-// Three controls:
+// Controls (all keyed off the `trigger` prop):
 //   - Enable toggle (flip 'enabled' in email_automation_templates)
-//   - Test-send button (sends the email to the logged-in user with a real coupon)
+//   - Test-send button (sends this trigger's email; real coupon if the
+//     template has one)
+//   - Dry-run (how many candidates this trigger would catch next run)
 //   - View sent history (shows last 10 from email_automations)
+//   - Inline subject/body editor with preview
 //
 // Stats (sent/failed counts) are pulled from email_automations on mount.
 
-function FirstPurchaseAutomation({ showToast }) {
+// Per-trigger presentation: icon + a human description built from the
+// template's own delay/lookback fields, so copy stays in sync with config.
+const AUTOMATION_META = {
+  first_purchase: {
+    icon: '☕',
+    blurb: (t) => `נשלח ${t.delay_days} ימים אחרי ההזמנה הראשונה — רק ללקוחות שהזמנתם הראשונה הייתה ב-${t.max_lookback_days} הימים האחרונים.`,
+  },
+  refill_reminder: {
+    icon: '🔄',
+    blurb: (t) => `תזכורת חידוש — נשלח ${t.delay_days} ימים אחרי הזמנת קפה. קונים חוזרים מקבלים לפי קצב הצריכה האישי שלהם.`,
+  },
+  abandoned_cart_1: {
+    icon: '🛒',
+    blurb: (t) => `תזכורת ראשונה — נשלח ${t.delay_days} יום אחרי שהתחילה הזמנה ולא הושלמה (חלון איסוף ${t.max_lookback_days} ימים).`,
+  },
+  abandoned_cart_2: {
+    icon: '🛒',
+    blurb: (t) => `תזכורת שנייה — נשלח ${t.delay_days} ימים אחרי הזמנה שלא הושלמה, ורק אם מייל 1 כבר נשלח ללקוח.`,
+  },
+};
+
+function EmailAutomationCard({ trigger, showToast }) {
   // Real Clerk user (not the useApp stub). primaryEmailAddress is the
   // canonical field; emailAddresses[0] is the fallback for users with
   // multiple emails where primary isn't set (rare, but worth handling).
@@ -1559,10 +1576,10 @@ function FirstPurchaseAutomation({ showToast }) {
     try {
       const [{ data: tmpl }, { data: rows }] = await Promise.all([
         supabase.from('email_automation_templates')
-          .select('*').eq('trigger_type', 'first_purchase').maybeSingle(),
+          .select('*').eq('trigger_type', trigger).maybeSingle(),
         supabase.from('email_automations')
           .select('id, customer_email, customer_name, coupon_code, status, sent_at, error_msg, created_at')
-          .eq('trigger_type', 'first_purchase')
+          .eq('trigger_type', trigger)
           .order('created_at', { ascending: false })
           .limit(50),
       ]);
@@ -1575,7 +1592,7 @@ function FirstPurchaseAutomation({ showToast }) {
       });
       setRecent(all.slice(0, 10));
     } finally { setLoading(false); }
-  }, []);
+  }, [trigger]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -1585,7 +1602,7 @@ function FirstPurchaseAutomation({ showToast }) {
     const { error } = await supabase
       .from('email_automation_templates')
       .update({ enabled: !template.enabled, updated_at: new Date().toISOString() })
-      .eq('trigger_type', 'first_purchase');
+      .eq('trigger_type', trigger);
     setBusy(false);
     if (error) {
       showToast(`❌ שגיאה: ${error.message}`, 'error');
@@ -1613,11 +1630,11 @@ function FirstPurchaseAutomation({ showToast }) {
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('email-automation-scheduler', {
-        body: { test_send: targetEmail },
+        body: { test_send: targetEmail, trigger_type: trigger },
       });
       if (error) throw error;
       if (data?.ok || data?.id) {
-        showToast(`✅ נשלח ל-${targetEmail} · קופון: ${data.coupon}`);
+        showToast(`✅ נשלח ל-${targetEmail}${data.coupon ? ` · קופון: ${data.coupon}` : ''}`);
       } else {
         showToast(`❌ שליחה נכשלה: ${data?.error ?? 'unknown'}`, 'error');
       }
@@ -1633,7 +1650,7 @@ function FirstPurchaseAutomation({ showToast }) {
         body: { dry_run: true },
       });
       if (error) throw error;
-      const run = (data?.runs ?? []).find(r => r.trigger === 'first_purchase');
+      const run = (data?.runs ?? []).find(r => r.trigger === trigger);
       if (!run) {
         showToast('⚠️ האוטומציה לא מופעלת — אין מה לבדוק', 'warning');
       } else {
@@ -1674,7 +1691,7 @@ function FirstPurchaseAutomation({ showToast }) {
         body_html_template: editBody,
         updated_at: new Date().toISOString(),
       })
-      .eq('trigger_type', 'first_purchase');
+      .eq('trigger_type', trigger);
     setBusy(false);
     if (error) {
       showToast(`❌ שגיאה בשמירה: ${error.message}`, 'error');
@@ -1714,14 +1731,18 @@ function FirstPurchaseAutomation({ showToast }) {
   if (!template) {
     return (
       <div className="form-card" style={{ background: '#FEF3C7', borderColor: '#FCD34D' }}>
-        <strong style={{ color: '#92400E' }}>⚠️ migration לא הוחלה</strong>
+        <strong style={{ color: '#92400E' }}>⚠️ התבנית לא נמצאה</strong>
         <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#92400E' }}>
-          טרם הוחלה ה-migration <code>20260427_email_automations.sql</code>. הריצי אותה ב-Supabase SQL editor (dev ואז prod) כדי להפעיל את האוטומציה.
+          לא נמצאה תבנית עבור הטריגר <code>{trigger}</code>. ודאי שה-migration המתאים רץ ב-Supabase (dev ואז prod).
         </p>
       </div>
     );
   }
 
+  const meta = AUTOMATION_META[trigger] ?? { icon: '✉️', blurb: () => template.display_name };
+  const hasCoupon = (template.coupon_percent ?? 0) > 0;
+  const description = meta.blurb(template) +
+    (hasCoupon ? ` כולל קופון ייחודי ${template.coupon_percent}% הנחה תקף ל-${template.coupon_expiry_days} ימים.` : '');
   const enabled = template.enabled;
   return (
     <div className="form-card" style={{
@@ -1730,11 +1751,11 @@ function FirstPurchaseAutomation({ showToast }) {
       borderWidth: 2,
     }}>
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <div style={{ fontSize: '2rem', lineHeight: 1 }}>☕</div>
+        <div style={{ fontSize: '2rem', lineHeight: 1 }}>{meta.icon}</div>
         <div style={{ flex: 1 }}>
           <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>{template.display_name}</h3>
           <p style={{ margin: '0 0 8px', color: '#666', fontSize: '0.9rem' }}>
-            נשלח {template.delay_days} ימים אחרי ההזמנה הראשונה — רק ללקוחות שהזמנתם הראשונה הייתה ב-{template.max_lookback_days} הימים האחרונים. כולל קופון ייחודי {template.coupon_percent}% הנחה תקף ל-{template.coupon_expiry_days} ימים.
+            {description}
           </p>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: 12 }}>
             <span style={{ background: '#D1FAE5', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#065F46' }}>
@@ -1745,9 +1766,11 @@ function FirstPurchaseAutomation({ showToast }) {
                 ✗ נכשל: {stats.failed}
               </span>
             )}
-            <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#5B21B6' }}>
-              קופון: {template.coupon_percent}% · {template.coupon_expiry_days} ימים
-            </span>
+            {hasCoupon && (
+              <span style={{ background: '#EDE9FE', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', color: '#5B21B6' }}>
+                קופון: {template.coupon_percent}% · {template.coupon_expiry_days} ימים
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
