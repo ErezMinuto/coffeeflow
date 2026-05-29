@@ -338,6 +338,36 @@ export type ChatToolName =
   | 'get_post_faq'
   | 'set_post_faq'
   | 'approve_post_faq'
+  | 'start_mission'
+  | 'list_missions'
+  | 'cancel_mission'
+
+// ── Persistent missions ──────────────────────────────────────────────────
+// An open-ended objective the agent pursues autonomously across cron ticks
+// (see 20260529_agent_missions.sql). The mission-worker drives these; chat
+// starts/lists/cancels them.
+export interface MissionState {
+  progress_notes?:   string[]
+  observations?:     string[]
+  queued_task_ids?:  string[]
+  next_action_hint?: string
+}
+export interface MissionRow {
+  id:               string
+  objective:        string
+  status:           'active' | 'done' | 'failed' | 'paused' | 'cancelled'
+  state:            MissionState
+  steps_taken:      number
+  max_steps:        number
+  locked_until:     string | null
+  worker_id:        string | null
+  created_by:       string
+  last_step_at:     string | null
+  last_briefing_at: string | null
+  result_summary:   string | null
+  created_at:       string
+  updated_at:       string
+}
 
 // ── Learnings (cross-session memory) ─────────────────────────────────────
 // Persistent insights surfaced via admin chat (or written by the

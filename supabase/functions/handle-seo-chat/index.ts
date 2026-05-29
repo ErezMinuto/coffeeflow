@@ -106,6 +106,7 @@ const WORKER_REGISTRY: Record<string, { task_type: string; url_path: string }> =
   writer:   { task_type: 'text_generation',   url_path: 'seo-worker-writer'       },
   research: { task_type: 'deep_research',     url_path: 'seo-worker-research'     },
   techseo:  { task_type: 'technical_seo',     url_path: 'seo-worker-techseo'      },
+  mission:  { task_type: 'mission',           url_path: 'mission-worker'          },
 }
 
 // task_type → worker key (for auto-nudge after queue_task).
@@ -403,6 +404,32 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'start_mission',
+    description: "Start a PERSISTENT MISSION — an open-ended objective the agent pursues AUTONOMOUSLY in the background across many cron ticks, for hours or days, even after Erez closes the browser. A server-side worker wakes ~every 10 min, reviews progress + sub-task results, and queues the next gated work toward the goal (everything still stops at the publish gates — nothing goes live without Erez). Use for goals that need ongoing reasoning over time, NOT one-shot tasks (for a single article/research, use queue_task / queue_deep_research instead). Confirm the objective wording with Erez in one sentence before starting. Examples: 'grow our Hebrew YouTube presence', 'get us ranking top-3 for מטחנת קפה', 'build topical authority around cold brew'.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        objective: { type: 'string', description: 'The mission goal, phrased as a clear outcome. One or two sentences.' },
+        max_steps: { type: 'number', description: 'Optional safety cap on autonomous steps (default 30, max 60). Each step ≈ one 10-min tick of reasoning + queuing.' },
+      },
+      required: ['objective'],
+    },
+  },
+  {
+    name: 'list_missions',
+    description: 'List active + recent missions with their status, step count, and latest progress notes. Use when Erez asks "what are you working on?" / "how are the missions going?".',
+    input_schema: { type: 'object', properties: { include_finished: { type: 'boolean', description: 'Also show done/failed/cancelled missions. Default false (active only).' } } },
+  },
+  {
+    name: 'cancel_mission',
+    description: "Stop a mission (sets status=cancelled). Already-queued sub-tasks keep their own lifecycle (cancel those separately if needed). Use when Erez says 'stop working on X'.",
+    input_schema: {
+      type: 'object',
+      properties: { mission_id: { type: 'string', description: 'UUID of the agent_missions row.' } },
+      required: ['mission_id'],
+    },
+  },
+  {
     name: 'approve_qa_attempt',
     description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
     input_schema: {
@@ -662,6 +689,73 @@ async function executeTool(
             note: 'FAQ written LIVE. If WP Rocket caches the page, purge to see it immediately.',
           },
         }
+      }
+
+      case 'start_mission': {
+        const objective = String(input.objective ?? '').trim()
+        if (!objective) return { ok: false, payload: { error: 'start_mission requires an objective.' } }
+        const maxSteps = typeof input.max_steps === 'number'
+          ? Math.max(3, Math.min(60, Math.floor(input.max_steps)))
+          : 30
+        const { data: row, error } = await supabase
+          .from('agent_missions')
+          .insert({ objective, max_steps: maxSteps, status: 'active', created_by: 'chat_agent' })
+          .select()
+          .maybeSingle()
+        if (error) return { ok: false, payload: { error: `start_mission failed: ${error.message}` } }
+        // Nudge the mission worker so it takes the first step immediately.
+        const nudge = await nudgeWorker('mission')
+        return {
+          ok: true,
+          payload: {
+            mission_id: row?.id ?? null,
+            status:     'active',
+            max_steps:  maxSteps,
+            worker_nudged: nudge,
+            note: 'Mission running in the background — it continues even if you close the browser. Progress lands in the briefings thread; nothing publishes without your approval.',
+          },
+        }
+      }
+
+      case 'list_missions': {
+        const includeFinished = input.include_finished === true
+        let q = supabase
+          .from('agent_missions')
+          .select('id, objective, status, steps_taken, max_steps, state, result_summary, created_at, last_step_at')
+          .order('created_at', { ascending: false })
+          .limit(20)
+        if (!includeFinished) q = q.eq('status', 'active')
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return {
+          ok: true,
+          payload: {
+            missions: (data ?? []).map((m: any) => ({
+              mission_id:   m.id,
+              objective:    m.objective,
+              status:       m.status,
+              steps:        `${m.steps_taken}/${m.max_steps}`,
+              queued_tasks: (m.state?.queued_task_ids ?? []).length,
+              latest_notes: (m.state?.progress_notes ?? []).slice(-3),
+              result:       m.result_summary,
+              last_step_at: m.last_step_at,
+            })),
+          },
+        }
+      }
+
+      case 'cancel_mission': {
+        const mission_id = String(input.mission_id ?? '').trim()
+        if (!mission_id) return { ok: false, payload: { error: 'cancel_mission requires mission_id.' } }
+        const { data, error } = await supabase
+          .from('agent_missions')
+          .update({ status: 'cancelled', locked_until: null, worker_id: null, updated_at: new Date().toISOString() })
+          .eq('id', mission_id)
+          .select('id, status')
+          .maybeSingle()
+        if (error) return { ok: false, payload: { error: error.message } }
+        if (!data)  return { ok: false, payload: { error: `mission ${mission_id} not found.` } }
+        return { ok: true, payload: { mission_id, status: 'cancelled' } }
       }
 
       case 'trigger_worker': {
