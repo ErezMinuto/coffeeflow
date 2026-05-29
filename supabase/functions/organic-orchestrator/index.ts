@@ -292,15 +292,22 @@ serve(async (req: Request): Promise<Response> => {
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      maxTokens:  8192,
+      // maxTokens 6000 (was 8192): generation time is ∝ output tokens, and
+      // the edge isolate has a HARD wall-clock cap (~180-200s, observed via
+      // silent mid-call kills). Trimming the cap shortens worst-case
+      // generation so the call fits the budget. The strategist plan (a few
+      // tasks + experiments + reflection as terse specs) fits well under
+      // 6000; if it ever truncates, the parse-failure briefing makes it
+      // visible rather than silent.
+      maxTokens:  6000,
       temperature: 0.7,  // balanced — needs creativity but also structure
-      // The strategist prompt has grown (10 data sources + competitor
-      // intel + RFM + AI-visibility + standing learnings + post-followback),
-      // so a fresh, uncached call generating up to 8192 tokens routinely
-      // exceeds claude.ts's 110s default and the AbortController kills it
-      // ("The signal has been aborted"). The cron invokes us with a 240s
-      // pg_net budget, so give the single most-important call a 200s leash.
-      timeoutMs: 200_000,
+      // CRITICAL: keep this BELOW the platform's hard wall-clock cap. At
+      // 200s the isolate was being killed mid-call before this
+      // AbortController could fire, so NO catch ran and failures were
+      // invisible (no tasks, no briefing). 150s lets the call abort
+      // GRACEFULLY (→ crash briefing names phase='strategist_claude') and,
+      // with gather now ~1s, leaves room to actually finish.
+      timeoutMs: 150_000,
     })
     console.log(
       `[organic-orchestrator] strategist done — tokens: ` +
