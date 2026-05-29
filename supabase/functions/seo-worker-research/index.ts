@@ -137,8 +137,27 @@ serve(async (req) => {
   const researchLog: Array<{ turn: number; tool_calls: string[]; text_snippet: string }> = []
   let turn = 0
   let finalText = ''
+  let lastAssistantText = ''
   let totalInputTokens = 0
   let totalOutputTokens = 0
+  let hitTimeBudget = false
+
+  // WALL-CLOCK BUDGET. maxTurns × the old 120s per-turn timeout could reach
+  // ~600s — far past the edge isolate's hard ~150-200s wall-clock cap, so
+  // the worker got HARD-KILLED mid-run and left its task stuck in
+  // 'processing' with an expired lock (claimNextTask now self-heals those,
+  // but the real fix is to never crash). Bound the whole loop to ~135s and
+  // size each turn's timeout to the remaining budget so we always finalize
+  // gracefully (mark the task complete with a partial report) instead of
+  // dying.
+  // 110s loop budget (not 135s): leaves ~40s headroom for claim +
+  // finalize + the channel_discovery briefing write + response
+  // serialization, so even a SYNCHRONOUS caller gets a clean response
+  // inside the 150s gateway window (the cron drainer is fire-and-forget
+  // and doesn't care, but manual/chat triggers do).
+  const RESEARCH_BUDGET_MS = 110_000
+  const MIN_TURN_MS        = 20_000
+  const loopStartedAt      = Date.now()
 
   // Track tools to enable Anthropic web_search via the per-call config —
   // it's not in our generic ToolDefinition type since it's a built-in.
@@ -150,6 +169,12 @@ serve(async (req) => {
   ]
 
   while (turn < maxTurns) {
+    // Stop before we risk a hard kill; finalize with what we have.
+    const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
+    if (remainingMs < MIN_TURN_MS) {
+      hitTimeBudget = true
+      break
+    }
     turn++
     const res = await callClaude({
       model:       MODEL_ORCHESTRATOR,
@@ -158,13 +183,14 @@ serve(async (req) => {
       tools:       fullTools as any,
       maxTokens:   4096,
       temperature: 0.3,
-      timeoutMs:   120_000,
+      timeoutMs:   Math.min(120_000, remainingMs - 5_000),
     })
     totalInputTokens  += res.inputTokens
     totalOutputTokens += res.outputTokens
 
     const toolUses = res.content.filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
     const assistantText = res.text
+    if (assistantText.trim().length > 0) lastAssistantText = assistantText
     researchLog.push({
       turn,
       tool_calls:   toolUses.map(t => `${t.name}(${JSON.stringify(t.input).slice(0, 100)})`),
@@ -202,6 +228,14 @@ serve(async (req) => {
     if (toolResults.length > 0) messages.push({ role: 'user', content: toolResults })
   }
 
+  // If we stopped on the time budget (or the turn cap) before the model
+  // produced a clean final synthesis, fall back to the last substantive
+  // assistant text so the task still yields a usable partial report
+  // rather than an empty result.
+  if (!finalText.trim() && lastAssistantText.trim()) {
+    finalText = lastAssistantText
+  }
+
   // ── Persist result ─────────────────────────────────────────────────
   try {
     await markTaskCompleted(supabase, task.id, {
@@ -212,6 +246,7 @@ serve(async (req) => {
       research_log:           researchLog,
       turns_used:             turn,
       max_turns:              maxTurns,
+      hit_time_budget:        hitTimeBudget,
       hit_turn_cap:           turn >= maxTurns && finalText === '',
       tokens: { input: totalInputTokens, output: totalOutputTokens },
     })

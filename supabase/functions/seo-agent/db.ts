@@ -49,13 +49,21 @@ export async function claimNextTask(
   workerId: string,
   lockMinutes = 10,
 ): Promise<SeoTaskRow | null> {
-  // Find the oldest eligible pending task of this type.
+  // Find eligible tasks of this type. Two kinds are claimable:
+  //   1. status='pending' (normal queue)
+  //   2. status='processing' with an EXPIRED locked_until — a STALE LOCK:
+  //      the previous worker was hard-killed (e.g. edge wall-clock limit)
+  //      mid-run and never released the lock or flipped status. Without
+  //      reclaiming these, a crashed task is stuck in 'processing' forever
+  //      and the worker no-ops (processed:0). Self-healing > a separate
+  //      sweeper cron.
+  const nowIso = new Date().toISOString()
   const { data: candidates, error: selErr } = await supabase
     .from('seo_tasks')
     .select('*')
     .eq('task_type', taskType)
-    .eq('status', 'pending')
-    .lte('scheduled_for', new Date().toISOString())
+    .lte('scheduled_for', nowIso)
+    .or(`status.eq.pending,and(status.eq.processing,locked_until.lt.${nowIso})`)
     .order('scheduled_for', { ascending: true })
     .limit(5)  // small batch — try a few in case of races
 
@@ -76,8 +84,27 @@ export async function claimNextTask(
       if (incomplete.length > 0) continue
     }
 
+    const isStaleReclaim = candidate.status === 'processing'
+
+    // A stale-locked row that has already burned its attempts is a
+    // crash-looper (it keeps dying before it can mark itself failed).
+    // Give up: mark it failed permanently instead of reclaiming forever.
+    if (isStaleReclaim && candidate.attempts >= candidate.max_attempts) {
+      await supabase
+        .from('seo_tasks')
+        .update({
+          status:       'failed',
+          error_msg:    `stale lock + attempts exhausted (${candidate.attempts}/${candidate.max_attempts}) — worker repeatedly died mid-run before completing`,
+          locked_until: null,
+        })
+        .eq('id', candidate.id)
+        .eq('status', 'processing')
+        .lt('locked_until', nowIso)
+      continue
+    }
+
     const lockedUntil = new Date(Date.now() + lockMinutes * 60_000).toISOString()
-    const { data: updated, error: updErr } = await supabase
+    let upd = supabase
       .from('seo_tasks')
       .update({
         status:        'processing',
@@ -87,9 +114,15 @@ export async function claimNextTask(
         started_at:    new Date().toISOString(),
       })
       .eq('id', candidate.id)
-      .eq('status', 'pending')      // ← optimistic: only succeed if still pending
-      .select()
-      .maybeSingle()
+    // Optimistic concurrency guard, scoped to what we're claiming:
+    //   - pending row: only succeed if STILL pending
+    //   - stale lock: only succeed if STILL processing AND STILL expired
+    //     (so two workers can't both reclaim, and we don't steal a row a
+    //     fresh worker just re-locked).
+    upd = isStaleReclaim
+      ? upd.eq('status', 'processing').lt('locked_until', nowIso)
+      : upd.eq('status', 'pending')
+    const { data: updated, error: updErr } = await upd.select().maybeSingle()
     if (updErr) continue
     if (updated) return updated as SeoTaskRow
     // Lost the race — try the next candidate.
