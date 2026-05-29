@@ -83,6 +83,18 @@ const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 // enough — most turns are 1-2 tool calls deep.
 const MAX_TOOL_LOOPS = 8
 
+// Wall-clock budget for the whole tool-use loop. The Supabase edge gateway
+// closes any request idle >150s with no response → the client sees a
+// transport-level FunctionsFetchError (no body to surface). A heavy turn
+// (e.g. "draft + publish FAQs for both articles" = read ×2, author, write
+// ×2, confirm — multiple Claude calls back to back) can blow past that.
+// We cap the loop at 130s (leaving ~20s headroom for the final history
+// fetch + response), and size each Claude call's timeout to the remaining
+// budget so a single call can't overrun. If we run out, we return a
+// graceful partial response inviting the admin to say "continue".
+const CHAT_LOOP_BUDGET_MS = 130_000
+const MIN_CALL_BUDGET_MS  = 20_000  // don't start another Claude call with less than this left
+
 // ── Worker registry — what the agent can nudge ─────────────────────────
 // Maps a friendly name to the deployed function path. Used by the
 // auto-nudge after queue_task / repoint_ig_to_visual and by the
@@ -153,6 +165,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         depends_on:     { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs the worker should wait on before claiming this task.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
+    },
+  },
+  {
+    name: 'get_post_faq',
+    description: "Read the FAQ currently LIVE on a blog post or product. Fetches the rendered page and extracts the FAQPage JSON-LD the minuto-product-faq plugin emits (data-source=\"minuto-product-faq\"), returning the exact Q&A pairs. Use whenever Erez asks 'what's the FAQ on <page>?' / 'check the FAQ' / before overwriting an existing FAQ so you can show him what's there first. Returns { present, faq_count, faq:[{q,a}] }. Note: reads the LIVE (possibly WP-Rocket-cached) page, so a just-written FAQ may lag until cache purge.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        post_url: { type: 'string', description: 'Full URL of the post/product. Provide this OR post_id.' },
+        post_id:  { type: 'number', description: 'Numeric WP post/product id (resolved to its URL). Provide this OR post_url.' },
+      },
     },
   },
   {
@@ -507,6 +530,42 @@ async function executeTool(
             previous_attempts:  ig.attempts,
             worker_nudged:      nudge,
           },
+        }
+      }
+
+      case 'get_post_faq': {
+        let url = typeof input.post_url === 'string' ? input.post_url.trim() : ''
+        const pid = typeof input.post_id === 'number' ? input.post_id : undefined
+        if (!url && !pid) {
+          return { ok: false, payload: { error: 'get_post_faq requires post_url or post_id.' } }
+        }
+        // Resolve id → URL via the public WP REST API if no URL given.
+        if (!url && pid) {
+          try {
+            const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${pid}?_fields=link`)
+            if (r.ok) { const j = await r.json(); url = typeof j?.link === 'string' ? j.link : '' }
+          } catch { /* fall through */ }
+          if (!url) return { ok: false, payload: { error: `could not resolve post_id ${pid} to a URL.` } }
+        }
+        // Fetch the live page + extract the minuto FAQ JSON-LD block.
+        let html = ''
+        try {
+          const r = await fetch(url, { headers: { 'User-Agent': 'MinutoFaqReader/1.0' } })
+          if (!r.ok) return { ok: false, payload: { error: `page fetch HTTP ${r.status} for ${url}` } }
+          html = await r.text()
+        } catch (e: any) {
+          return { ok: false, payload: { error: `page fetch failed: ${e?.message ?? e}` } }
+        }
+        const m = html.match(/<script type="application\/ld\+json" data-source="minuto-product-faq">([\s\S]*?)<\/script>/)
+        if (!m) {
+          return { ok: true, payload: { present: false, faq_count: 0, faq: [], url, note: 'No minuto-product-faq JSON-LD on the live page (no FAQ set, or WP Rocket is serving a cached pre-FAQ version).' } }
+        }
+        try {
+          const data = JSON.parse(m[1]) as { mainEntity?: Array<{ name?: string; acceptedAnswer?: { text?: string } }> }
+          const faq = (data.mainEntity ?? []).map(q => ({ q: q.name ?? '', a: q.acceptedAnswer?.text ?? '' })).filter(p => p.q && p.a)
+          return { ok: true, payload: { present: true, faq_count: faq.length, faq, url, source: 'live_page_jsonld' } }
+        } catch (e: any) {
+          return { ok: false, payload: { error: `found FAQ JSON-LD but failed to parse it: ${e?.message ?? e}` } }
         }
       }
 
@@ -1087,30 +1146,40 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
   // IDs at the next non-tool boundary.
   let lastAssistantToolUseIds: string[] = []
 
-  function flushPendingToolResults() {
-    if (pendingToolResults.length === 0) return
-    out.push({ role: 'user', content: pendingToolResults })
-    pendingToolResults = []
-  }
-
+  // Reconcile the accumulated tool_result blocks against the
+  // immediately-preceding assistant turn's tool_use ids, then flush them
+  // as one user message. Enforces BIDIRECTIONAL integrity — both failure
+  // modes 400 at Anthropic, and both are caused by the newest-50 window
+  // slicing through a tool_use↔tool_result pair:
+  //   1. tool_use with NO tool_result  → synthesize an is_error result
+  //      (its result row was never persisted, or fell after the window).
+  //   2. tool_result with NO matching tool_use  → DROP it (its tool_use
+  //      turn fell BEFORE the window, or the row is corrupt). Without this
+  //      the orphan gets carried forward and flushed alongside a later
+  //      turn's valid results → "unexpected tool_use_id in tool_result".
+  // ALWAYS clears state (no early return) so orphans never carry forward.
   function patchOrphansAndFlush() {
-    if (lastAssistantToolUseIds.length === 0) return
-    const seen = new Set(
-      pendingToolResults
-        .filter((b): b is Extract<MessageContentBlock, { type: 'tool_result' }> => b.type === 'tool_result')
-        .map(b => b.tool_use_id),
+    const validIds = new Set(lastAssistantToolUseIds)
+    // Keep only tool_results that correspond to the preceding assistant's
+    // tool_use ids; drop orphans.
+    const kept = pendingToolResults.filter(
+      (b): b is Extract<MessageContentBlock, { type: 'tool_result' }> =>
+        b.type === 'tool_result' && validIds.has(b.tool_use_id),
     )
+    // Synthesize is_error results for any tool_use that never got a row.
+    const seen = new Set(kept.map(b => b.tool_use_id))
     for (const id of lastAssistantToolUseIds) {
       if (seen.has(id)) continue
-      pendingToolResults.push({
+      kept.push({
         type:        'tool_result',
         tool_use_id: id,
         content:     JSON.stringify({ error: 'tool execution was interrupted; no result was persisted' }),
         is_error:    true,
       })
     }
+    pendingToolResults     = []
     lastAssistantToolUseIds = []
-    flushPendingToolResults()
+    if (kept.length > 0) out.push({ role: 'user', content: kept })
   }
 
   for (const m of stored) {
@@ -1278,8 +1347,18 @@ serve(async (req: Request): Promise<Response> => {
     let loops = 0
     let finalText = ''
     let lastUsage = { input: 0, output: 0, cache_read: 0 }
+    const loopStartedAt = Date.now()
+    let ranOutOfTime = false
 
     while (loops < MAX_TOOL_LOOPS) {
+      // Wall-clock guard: never start a Claude call that could push us past
+      // the gateway's 150s ceiling (which would manifest as a FunctionsFetch
+      // Error with no body). Stop gracefully and let the admin continue.
+      const remainingMs = CHAT_LOOP_BUDGET_MS - (Date.now() - loopStartedAt)
+      if (remainingMs < MIN_CALL_BUDGET_MS) {
+        ranOutOfTime = true
+        break
+      }
       loops++
       const res = await callClaude({
         model:    MODEL_CHAT,
@@ -1288,6 +1367,9 @@ serve(async (req: Request): Promise<Response> => {
         tools:    TOOL_DEFINITIONS,
         maxTokens:   4096,
         temperature: 0.3,
+        // Size the call to the remaining budget (cap 90s) so one slow call
+        // can't overrun the loop budget.
+        timeoutMs: Math.min(90_000, remainingMs - 5_000),
       })
       lastUsage = {
         input:      res.inputTokens,
@@ -1393,7 +1475,17 @@ serve(async (req: Request): Promise<Response> => {
       apiMessages.push({ role: 'user', content: toolResultBlocks })
     }
 
-    if (loops >= MAX_TOOL_LOOPS && !finalText) {
+    if (ranOutOfTime && !finalText) {
+      // Hit the wall-clock budget mid-task. Whatever tool calls already ran
+      // are persisted (and committed live, e.g. an FAQ write), so this is a
+      // safe stopping point — the admin just continues.
+      finalText = `(I ran out of time for this turn after completing the steps above — anything still pending wasn't started. Say "continue" and I'll pick up where I left off.)`
+      await appendChatMessage(supabase, {
+        session_id: sessionId,
+        role:       'system',
+        content:    finalText,
+      })
+    } else if (loops >= MAX_TOOL_LOOPS && !finalText) {
       finalText = `(stopped after ${MAX_TOOL_LOOPS} tool-use loops — please rephrase your request.)`
       await appendChatMessage(supabase, {
         session_id: sessionId,

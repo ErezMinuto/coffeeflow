@@ -335,6 +335,7 @@ export type ChatToolName =
   | 'queue_deep_research'
   | 'repoint_ig_to_visual'
   | 'trigger_worker'
+  | 'get_post_faq'
   | 'set_post_faq'
   | 'approve_post_faq'
 

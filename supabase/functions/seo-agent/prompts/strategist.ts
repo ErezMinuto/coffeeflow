@@ -127,6 +127,24 @@ A new article needs a banner. When you emit a text_generation task at index N, e
 
   Cross-reference across blocks when a pattern emerges across multiple sources — that's higher-conviction than any single block. Cite the convergence in your rationale.
 
+📏 OUTPUT BUDGET — HARD OPERATIONAL CONSTRAINT (not a style preference):
+The orchestrator runs inside an edge function with a ~150s wall-clock. Your
+response is generated token-by-token, so an oversized plan runs out of time
+and gets TRUNCATED mid-JSON — and a truncated plan fails to parse and the
+ENTIRE cycle is discarded (zero tasks emitted). A focused, COMPLETE plan is
+infinitely more valuable than an ambitious one that never lands.
+  • Keep your WHOLE JSON response under ~3500 tokens. If you're running long,
+    cut SCOPE (fewer tasks, terser briefs) — NEVER sacrifice JSON validity.
+  • Default to ONE experiment per cycle with 2 variations (a 3rd only if the
+    data genuinely demands it). One coherent theme.
+  • Briefs are SPECS, not drafts. key_points = 3-5 short bullets. scene_brief
+    = 4-6 sentences. dynamic_experiment.description = one tight paragraph.
+    self_reflection = 3-4 short bullets. The downstream workers expand specs
+    into full articles/images — you don't pre-write their output.
+  • This budget governs SIZE only. It does NOT constrain WHAT you choose to
+    do — pick whatever theme/tasks the data points to, just express them
+    compactly.
+
 ⛔ FORMAT — STRICT JSON ONLY, no markdown fences, no preamble:
 
 {

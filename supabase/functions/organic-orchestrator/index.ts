@@ -30,7 +30,6 @@ import {
   getRecentLearnings,
   insertExperiment,
 } from '../seo-agent/db.ts'
-import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
@@ -61,6 +60,7 @@ import type {
   MetricsSnapshot,
   NewSeoTask,
   OrchestratorEmittedTask,
+  OrchestratorEmittedExperiment,
   SeoTaskRow,
 } from '../seo-agent/types.ts'
 
@@ -90,61 +90,51 @@ serve(async (req: Request): Promise<Response> => {
   const runId   = crypto.randomUUID()
   console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
 
-  try {
+  // The full cycle (10 data sources + a ~2min strategist call + experiment
+  // eval + followback + FAQ scan + briefing) exceeds the edge gateway's
+  // 150s request-idle timeout. So we run it as a tracked BACKGROUND task
+  // via EdgeRuntime.waitUntil and return 202 immediately. The cron
+  // (pg_net) fires-and-forgets; results land in seo_tasks + seo_metrics +
+  // the briefings chat session, which is where callers should look — not
+  // the HTTP response body.
+  const runCycle = async (): Promise<void> => {
+   let phase = 'init'
+   try {
     const supabase = createSupabase()
 
-    // ── 0a. WP PUBLISH DETECTOR — settle wp_published flags ────────────
-    // Writer worker creates drafts; admin manually publishes via WP admin.
-    // Without polling, the orchestrator can't tell which drafts went live.
-    // This call queries WP REST for tasks where wp_published is still
-    // null and patches result_data accordingly.
-    console.log('[organic-orchestrator] polling WP draft→publish transitions…')
-    let wpDetectorSummary: Awaited<ReturnType<typeof detectWpPublishTransitions>>
-    try {
-      wpDetectorSummary = await detectWpPublishTransitions(supabase, 60)
-    } catch (e: any) {
-      console.error(`[organic-orchestrator] WP publish detector threw — continuing: ${e?.message ?? e}`)
-      wpDetectorSummary = { checked: 0, newly_live: 0, still_draft: 0, errors: [{ task_id: '-', error: e?.message ?? String(e) }] }
+    // ── 0. Experiment evaluation moved OUT of the orchestrator's critical
+    // path. The daily evaluator-tick cron (06:30 UTC) owns experiment
+    // scoring — it reuses the same experimentEvaluator module and writes
+    // winners into seo_learnings (created_by='orchestrator'). Running it
+    // HERE too made a SECOND Claude call inside the cycle (winner synthesis)
+    // and added tens of seconds racing the edge wall-clock — a prime reason
+    // full cycles weren't completing. The strategist still inherits recent
+    // winners via the STANDING LEARNINGS fetch below (daily ticks keep it
+    // current). Zeroed summary preserves the briefing/log shape.
+    const experimentEvalSummary = {
+      evaluated: 0,
+      inconclusive: 0,
+      winners: [] as Array<{ experiment_id: string; winner_label: string; learning_id: string }>,
+      skipped: [] as Array<{ experiment_id: string; reason: string }>,
     }
-    console.log(`[organic-orchestrator] WP detector — checked:${wpDetectorSummary.checked} newly_live:${wpDetectorSummary.newly_live} still_draft:${wpDetectorSummary.still_draft}`)
 
-    // ── 0b. SELF-LEARNING TICK ────────────────────────────────────────
-    // Before planning anything new, score any past experiments whose
-    // data has settled. Winners get written into seo_learnings with
-    // scope='experiment_winner' + created_by='orchestrator'. The
-    // STANDING LEARNINGS fetch below then pulls them and the strategist
-    // applies them to the new plan. The loop closes here.
-    console.log('[organic-orchestrator] evaluating due experiments…')
-    let experimentEvalSummary: Awaited<ReturnType<typeof evaluateDueExperiments>>
-    try {
-      experimentEvalSummary = await evaluateDueExperiments(supabase)
-    } catch (e: any) {
-      console.error(`[organic-orchestrator] experiment evaluation threw — continuing planning: ${e?.message ?? e}`)
-      experimentEvalSummary = { evaluated: 0, inconclusive: 0, winners: [], skipped: [{ experiment_id: 'eval-pass', reason: e?.message ?? String(e) }] }
-    }
-    console.log(`[organic-orchestrator] experiment eval — evaluated:${experimentEvalSummary.evaluated} inconclusive:${experimentEvalSummary.inconclusive} skipped:${experimentEvalSummary.skipped.length}`)
-
-    // ── 0c. PER-POST FOLLOW-BACK ───────────────────────────────────────
-    // Gather per-task performance for the last 14 days so the strategist
-    // can see "the tasks I queued in prior cycles — here is each one's
-    // current status + performance". Different from the aggregate
-    // top-performers blocks (those show site-wide winners; this shows
-    // the agent's own recent emissions).
-    console.log('[organic-orchestrator] collecting per-post follow-back…')
-    let postFollowback: PostFollowback[] = []
-    try {
-      postFollowback = await collectPostFollowback(supabase, 14)
-    } catch (e: any) {
-      console.error(`[organic-orchestrator] follow-back collection threw — continuing: ${e?.message ?? e}`)
-    }
-    console.log(`[organic-orchestrator] follow-back — ${postFollowback.length} task(s) reported`)
-
-    // ── 1. Fetch source data ──────────────────────────────────────────
-    console.log('[organic-orchestrator] fetching source data…')
+    // ── 1. Gather EVERYTHING in one parallel batch ────────────────────
+    // Previously WP-publish detection (0a) + per-post follow-back (0c) ran
+    // SEQUENTIALLY before the data fetch — ~3 min of pre-Claude work that
+    // raced the edge wall-clock. Neither feeds the data fetch, so they now
+    // run concurrently with the 18 data sources: total pre-Claude time
+    // collapses to the slowest single operation. The two external-API calls
+    // are .catch-guarded so one failure can't reject the whole batch. WP
+    // detector scope tightened 60→25 (its only job is the wp_published
+    // side-effect; bounding it caps worst-case latency).
+    console.log('[organic-orchestrator] gathering all sources + housekeeping in parallel…')
+    phase = 'gather'
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
     const sixtyDaysAgo    = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
 
     const [
+      wpDetectorSummary,
+      postFollowback,
       gscKeywords,
       blogPosts,
       catalog,
@@ -166,6 +156,16 @@ serve(async (req: Request): Promise<Response> => {
       customerSegments,
       competitorIntel,
     ] = await Promise.all([
+      // Housekeeping (side-effecting / strategist-input) — guarded so a
+      // single failure degrades gracefully instead of killing the cycle.
+      detectWpPublishTransitions(supabase, 25).catch((e: any) => {
+        console.error(`[organic-orchestrator] WP detector failed (non-fatal): ${e?.message ?? e}`)
+        return { checked: 0, newly_live: 0, still_draft: 0, errors: [{ task_id: '-', error: e?.message ?? String(e) }] }
+      }),
+      collectPostFollowback(supabase, 14).catch((e: any) => {
+        console.error(`[organic-orchestrator] follow-back failed (non-fatal): ${e?.message ?? e}`)
+        return [] as PostFollowback[]
+      }),
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
       fetchActiveCatalog(supabase),
@@ -219,10 +219,12 @@ serve(async (req: Request): Promise<Response> => {
       `paidKw:${paidKeywords.length} searchTerms:${searchTerms.length} ` +
       `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
       `voc:${vocInsights.length} kwOps:${keywordOpportunities.length} ` +
-      `research:${marketResearch.length} ga4Pages:${ga4LandingPages.length}`,
+      `research:${marketResearch.length} ga4Pages:${ga4LandingPages.length} ` +
+      `wpDetector(newly_live:${wpDetectorSummary.newly_live}) followback:${postFollowback.length}`,
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
+    phase = 'snapshot'
     // Prior snapshot[0] is the LAST orchestrator run's snapshot (if any).
     const priorPayload = (priorSnapshots[0]?.metrics_payload ?? null) as unknown as MetricsSnapshot | null
     const priorKeywords = priorPayload?.gsc_top_keywords ?? null
@@ -285,12 +287,26 @@ serve(async (req: Request): Promise<Response> => {
 
     // ── 4. Call Claude ───────────────────────────────────────────────
     console.log(`[organic-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
+    phase = 'strategist_claude'
     const claudeRes = await callClaude({
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      maxTokens:  8192,
+      // maxTokens 7000: the strategist prompt now caps the plan at ~3500
+      // output tokens (OUTPUT BUDGET section), so 7000 is 2× headroom — a
+      // compact plan completes WITHOUT truncating, and ~3500-4500 tokens
+      // generates in ~80-110s, comfortably under the 150s wall-clock. (A
+      // bare 6000 cap truncated a too-large plan in run 7c94f062; the real
+      // fix was bounding the plan size in the prompt, not the cap.)
+      maxTokens:  7000,
       temperature: 0.7,  // balanced — needs creativity but also structure
+      // CRITICAL: keep this BELOW the platform's hard wall-clock cap. At
+      // 200s the isolate was being killed mid-call before this
+      // AbortController could fire, so NO catch ran and failures were
+      // invisible (no tasks, no briefing). 150s lets the call abort
+      // GRACEFULLY (→ crash briefing names phase='strategist_claude') and,
+      // with gather now ~1s, leaves room to actually finish.
+      timeoutMs: 150_000,
     })
     console.log(
       `[organic-orchestrator] strategist done — tokens: ` +
@@ -303,18 +319,26 @@ serve(async (req: Request): Promise<Response> => {
       summary?:         string
       self_reflection?: string[]
       tasks?:           OrchestratorEmittedTask[]
+      experiments?:     OrchestratorEmittedExperiment[]
     }
+    phase = 'parse_plan'
     try {
       plan = parseClaudeJson(claudeRes.text)
     } catch (e: any) {
-      console.error('[organic-orchestrator] failed to parse strategist output:', e?.message)
+      console.error(`[organic-orchestrator] run=${runId} failed to parse strategist output:`, e?.message)
       console.error('[organic-orchestrator] raw text:', claudeRes.text.slice(0, 1000))
-      return jsonResponse({
-        error:             'strategist returned unparseable JSON',
-        run_id:            runId,
-        snapshot_id:       snapshotId,
-        raw:               claudeRes.text.slice(0, 2000),
-      }, 502)
+      // Background task — can't return an HTTP error (we already 202'd).
+      // Surface it to the briefings thread so the failure is VISIBLE
+      // (not just a console log we can't read), then abort the cycle.
+      try {
+        await writeBriefing(supabase, {
+          subtype: 'health_alert',
+          title:   `Orchestrator run ${runId.slice(0, 8)} failed: unparseable strategist output`,
+          body:    `The strategist returned ${claudeRes.outputTokens} output tokens but the JSON did not parse (likely truncated at maxTokens or wrapped in prose).\n\nParse error: ${e?.message ?? e}\n\nFirst 600 chars of raw output:\n${claudeRes.text.slice(0, 600)}`,
+          context: { orchestrator_run_id: runId, phase: 'parse_plan', output_tokens: claudeRes.outputTokens },
+        })
+      } catch { /* best-effort */ }
+      return
     }
     const emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
     const emittedExperiments = Array.isArray(plan.experiments) ? plan.experiments : []
@@ -329,6 +353,7 @@ serve(async (req: Request): Promise<Response> => {
     // ── 6a. Materialize experiments. Each experiment_group string from
     // the strategist becomes one seo_experiments row; the row's UUID is
     // then stamped onto every task that referenced the same group.
+    phase = 'emit_tasks'
     const experimentIdByGroup = new Map<string, string>()
     for (const exp of emittedExperiments) {
       if (!exp.experiment_group || !exp.hypothesis || !exp.task_type || !exp.primary_metric) {
@@ -496,32 +521,57 @@ serve(async (req: Request): Promise<Response> => {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
     }
 
-    // ── 7. Return summary ────────────────────────────────────────────
-    return jsonResponse({
-      success:        true,
-      run_id:         runId,
-      snapshot_id:    snapshotId,
-      summary:        plan.summary ?? '',
-      self_reflection: plan.self_reflection ?? [],
-      experiments_evaluated: experimentEvalSummary,    // Step 0 reinforcement-loop output
+    // ── 7. Done — log the summary (no HTTP return; we already 202'd). ─
+    console.log('[organic-orchestrator] cycle complete: ' + JSON.stringify({
+      run_id:                runId,
+      snapshot_id:           snapshotId,
+      summary:               (plan.summary ?? '').slice(0, 300),
+      experiments_evaluated: experimentEvalSummary,
       experiments_emitted:   experimentIdByGroup.size,
-      tasks_emitted:  insertedRows.length,
-      task_ids:       insertedRows.map(r => r.id),
+      tasks_emitted:         insertedRows.length,
       faq_candidates_queued: faqCandidatesQueued,
       tokens: {
         input:  claudeRes.inputTokens,
         output: claudeRes.outputTokens,
         cache_read: claudeRes.cacheReadTokens,
       },
-    })
-  } catch (e: any) {
-    console.error('[organic-orchestrator] failed:', e?.message ?? e)
+    }))
+   } catch (e: any) {
+    console.error(`[organic-orchestrator] run=${runId} failed at phase=${phase}:`, e?.message ?? e)
     console.error(e?.stack ?? '')
-    return jsonResponse({
-      error:  e?.message ?? String(e),
-      run_id: runId,
-    }, 500)
+    // Surface the failure (with the phase it died in) to the briefings
+    // thread — the catch can't see `supabase` (declared in the try), so
+    // make a fresh client. Best-effort; never throws out of the catch.
+    try {
+      const sb = createSupabase()
+      await writeBriefing(sb, {
+        subtype: 'health_alert',
+        title:   `Orchestrator run ${runId.slice(0, 8)} crashed in phase '${phase}'`,
+        body:    `The cycle threw before completing.\n\nPhase: ${phase}\nError: ${e?.message ?? String(e)}\n\nStack (truncated):\n${(e?.stack ?? '').slice(0, 800)}`,
+        context: { orchestrator_run_id: runId, phase, error: e?.message ?? String(e) },
+      })
+    } catch (be: any) {
+      console.error(`[organic-orchestrator] failed to write crash briefing: ${be?.message ?? be}`)
+    }
+   }
+  }   // ── end runCycle ──
+
+  // Kick off the cycle in the background and return immediately so the
+  // edge gateway's 150s idle timeout never fires. waitUntil keeps the
+  // isolate alive until runCycle settles.
+  // @ts-ignore — EdgeRuntime is injected by the Supabase edge runtime.
+  if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(runCycle())
+  } else {
+    runCycle()  // local/dev fallback (no EdgeRuntime)
   }
+  return jsonResponse({
+    accepted: true,
+    run_id:   runId,
+    trigger,
+    note:     'orchestrator running in background; results land in seo_tasks + seo_metrics + the briefings chat session',
+  }, 202)
 })
 
 // ── User-message construction ──────────────────────────────────────────
