@@ -415,6 +415,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'read_post',
+    description: "Fetch a blog post LIVE from WordPress (raw content, title, status, link). Use BEFORE edit_post so you can see what's currently in the post (you can't intelligently edit what you haven't read). Returns {id, title, content_html, content_text (stripped), status, link, modified}. Works for any status (draft / publish / pending).",
+    input_schema: {
+      type: 'object',
+      properties: { post_id: { type: 'number', description: 'WP post id (e.g. 80740).' } },
+      required: ['post_id'],
+    },
+  },
+  {
+    name: 'edit_post',
+    description: "Update an EXISTING blog post (the post stays in whatever status it's in — drafts stay drafts; published stays published). Use to add a products section to a draft that forgot to include products, fix a typo, append a CTA, etc. PROVIDE the full new content (HTML) — the tool replaces it wholesale, so read_post first, modify in place, then write back. NEVER changes publish status — this tool will REFUSE any status field; promotion to publish is the admin's call. For PUBLISHED posts (live content edit), confirm with Erez in one sentence first; for DRAFTS no confirmation needed (admin still gates publishing). Returns {id, link, status, modified, content_length}.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        post_id: { type: 'number', description: 'WP post id.' },
+        content: { type: 'string', description: 'Full new HTML body. Will replace the existing content. Use read_post first to fetch + modify.' },
+        title:   { type: 'string', description: 'Optional new title.' },
+      },
+      required: ['post_id'],
+    },
+  },
+  {
     name: 'read_product',
     description: "Fetch the FULL product detail LIVE from WooCommerce — long description (origin story, full tasting notes, processing detail, brew tips), short description, attributes, categories, price, stock status. Use whenever you need depth on a SPECIFIC product (writing an article, recommending it, learning about it). Pass `slug` (preferred — e.g. 'sweet-leona'), or `url` (the agent extracts the slug), or `woo_id`. Live fetch every call — no caching, no pre-staging — so newly-added products and edits are seen immediately.",
     input_schema: {
@@ -743,6 +765,76 @@ async function executeTool(
           categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
         }))
         return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows, hint: 'For full description / origin story / attributes on a specific product, call read_product with its slug.' } }
+      }
+
+      case 'read_post': {
+        const post_id = typeof input.post_id === 'number' ? Math.floor(input.post_id) : 0
+        if (!post_id) return { ok: false, payload: { error: 'read_post requires post_id (number).' } }
+        if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
+        const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
+        // context=edit returns the raw HTML body (otherwise WP runs filters
+        // that mangle it for display). Also surfaces drafts (anon GET can't).
+        const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${post_id}?context=edit`, { headers: { Authorization: auth } })
+        if (!r.ok) return { ok: false, payload: { error: `WP GET HTTP ${r.status}` } }
+        const p = await r.json() as any
+        const contentHtml = p?.content?.raw ?? p?.content?.rendered ?? ''
+        const contentText = String(contentHtml)
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+        return {
+          ok: true,
+          payload: {
+            id:           p?.id,
+            title:        p?.title?.raw ?? p?.title?.rendered ?? '',
+            content_html: contentHtml,
+            content_text: contentText.slice(0, 8000),
+            content_length: contentHtml.length,
+            status:       p?.status,
+            link:         p?.link,
+            modified:     p?.modified,
+          },
+        }
+      }
+
+      case 'edit_post': {
+        const post_id = typeof input.post_id === 'number' ? Math.floor(input.post_id) : 0
+        if (!post_id) return { ok: false, payload: { error: 'edit_post requires post_id (number).' } }
+        // Hard refusal: we never change publish status. Publishing is the
+        // admin's call (no-auto-publish gate). Title/content only.
+        if ('status' in input) {
+          return { ok: false, payload: { error: 'edit_post does not accept `status`. Publishing/unpublishing is admin-only — change it in WP admin.' } }
+        }
+        const newContent = typeof input.content === 'string' ? input.content : undefined
+        const newTitle   = typeof input.title === 'string'   ? input.title   : undefined
+        if (newContent === undefined && newTitle === undefined) {
+          return { ok: false, payload: { error: 'edit_post needs at least one of content or title.' } }
+        }
+        if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
+        const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
+        const body: Record<string, unknown> = {}
+        if (newContent !== undefined) body.content = newContent
+        if (newTitle !== undefined)   body.title   = newTitle
+        const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${post_id}`, {
+          method:  'POST',  // WP accepts POST for updates on /posts/{id}
+          headers: { Authorization: auth, 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        })
+        const json = await r.json().catch(() => ({})) as any
+        if (!r.ok) return { ok: false, payload: { error: `WP update HTTP ${r.status}: ${(json?.message ?? JSON.stringify(json)).toString().slice(0, 300)}` } }
+        return {
+          ok: true,
+          payload: {
+            id:             json?.id,
+            link:           json?.link,
+            status:         json?.status,
+            modified:       json?.modified,
+            content_length: String(json?.content?.raw ?? json?.content?.rendered ?? '').length,
+            note:           json?.status === 'publish'
+              ? 'You just edited a LIVE post. Changes are visible immediately (WP Rocket cache may need a purge).'
+              : `Draft updated. Still in status='${json?.status}'; admin must click Publish to go live.`,
+          },
+        }
       }
 
       case 'read_product': {
