@@ -342,6 +342,7 @@ export type ChatToolName =
   | 'list_missions'
   | 'cancel_mission'
   | 'list_products'
+  | 'read_product'
 
 // ── Persistent missions ──────────────────────────────────────────────────
 // An open-ended objective the agent pursues autonomously across cron ticks
