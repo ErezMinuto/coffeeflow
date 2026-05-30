@@ -404,6 +404,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'list_products',
+    description: "Look up Minuto's LIVE product catalog (woo_products, in-stock only) for the exact name + permalink + short description. Use BEFORE referencing or recommending a Minuto product so the name and URL are exactly right. Pass `search` to narrow (e.g. 'Colombia', 'Velvet Star', 'decaf', 'Lelit', 'מטחנה') — search spans name + short_description + slug, so Hebrew + English mixed-language products are findable from either language. Returns {name, slug, url, short_description, categories, price_ils}.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Optional case-insensitive substring. Spans name/short_description/slug, so e.g. searching \"Colombia\" matches both \"Sweet Leona | Colombia Luz Helena\" (English in name) and \"קולומביה - Minuto Velvet Star\" (Hebrew name with English short_description) once those exist.' },
+        limit:  { type: 'number', description: 'Max rows. Default 30, hard cap 100.' },
+      },
+    },
+  },
+  {
     name: 'start_mission',
     description: "Start a PERSISTENT MISSION — an open-ended objective the agent pursues AUTONOMOUSLY in the background across many cron ticks, for hours or days, even after Erez closes the browser. A server-side worker wakes ~every 10 min, reviews progress + sub-task results, and queues the next gated work toward the goal (everything still stops at the publish gates — nothing goes live without Erez). Use for goals that need ongoing reasoning over time, NOT one-shot tasks (for a single article/research, use queue_task / queue_deep_research instead). Confirm the objective wording with Erez in one sentence before starting. Examples: 'grow our Hebrew YouTube presence', 'get us ranking top-3 for מטחנת קפה', 'build topical authority around cold brew'.",
     input_schema: {
@@ -689,6 +700,41 @@ async function executeTool(
             note: 'FAQ written LIVE. If WP Rocket caches the page, purge to see it immediately.',
           },
         }
+      }
+
+      case 'list_products': {
+        const search = typeof input.search === 'string' ? input.search.trim() : ''
+        const limit  = Math.max(1, Math.min(100, typeof input.limit === 'number' ? Math.floor(input.limit) : 30))
+        // `description` (long) populated by woo-products-enrich (daily cron);
+        // null until first enrichment — search still works, just narrower.
+        let pq = supabase
+          .from('woo_products')
+          .select('name, slug, permalink, short_description, description, categories, price')
+          .eq('stock_status', 'instock')
+          .limit(limit)
+        if (search) {
+          // Search name + short_description + long description + slug so
+          // bilingual products + descriptions-only signals (e.g. "anaerobic"
+          // / "co-fermentation" / a farm name buried in the long body) are
+          // findable from either language and either field.
+          const esc = search.replace(/[%_]/g, m => `\\${m}`)
+          pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,description.ilike.%${esc}%,slug.ilike.%${esc}%`)
+        }
+        const { data, error } = await pq
+        if (error) return { ok: false, payload: { error: `woo_products query failed: ${error.message}` } }
+        const trim = (s: unknown, n: number) => typeof s === 'string'
+          ? s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n)
+          : ''
+        const rows = (data ?? []).map((p: any) => ({
+          name:              p.name,
+          slug:              p.slug,
+          url:               p.permalink,
+          price_ils:         p.price ? Number(p.price) : null,
+          short_description: trim(p.short_description, 400),
+          description:       trim(p.description, 1200),  // full body, truncated for browse-view
+          categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
+        }))
+        return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows } }
       }
 
       case 'start_mission': {
