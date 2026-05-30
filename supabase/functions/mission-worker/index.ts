@@ -95,14 +95,22 @@ serve(async (req) => {
   let mission: MissionRow | null = null
   const lockUntil = new Date(Date.now() + 8 * 60_000).toISOString()
   for (const c of candidates as MissionRow[]) {
-    const { data: locked } = await supabase
+    // Optimistic claim: only succeed if the row is STILL in the exact state
+    // we saw it in (no one else re-locked between SELECT and UPDATE).
+    // Using .or() here was a footgun: PostgREST's UPDATE+RETURNING with .or()
+    // sometimes returned null even though the row WAS updated, leaving the
+    // mission locked but the worker thinking it didn't claim it (→ processed:0,
+    // → mission stuck forever). Conditional .eq/.is is the same pattern as
+    // claimNextTask's stale-lock reclaim and is unambiguous.
+    let updQ = supabase
       .from('agent_missions')
       .update({ locked_until: lockUntil, worker_id: workerId, updated_at: nowIso })
       .eq('id', c.id)
       .eq('status', 'active')
-      .or(`locked_until.is.null,locked_until.lt.${nowIso}`)
-      .select()
-      .maybeSingle()
+    updQ = c.locked_until === null
+      ? updQ.is('locked_until', null)
+      : updQ.eq('locked_until', c.locked_until)
+    const { data: locked } = await updQ.select().maybeSingle()
     if (locked) { mission = locked as MissionRow; break }
   }
   if (!mission) return json({ processed: 0, worker_id: workerId })
