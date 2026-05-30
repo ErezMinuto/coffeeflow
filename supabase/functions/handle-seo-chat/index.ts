@@ -405,12 +405,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'list_products',
-    description: "Look up Minuto's LIVE product catalog (woo_products, in-stock only) for the exact name + permalink + short description. Use BEFORE referencing or recommending a Minuto product so the name and URL are exactly right. Pass `search` to narrow (e.g. 'Colombia', 'Velvet Star', 'decaf', 'Lelit', 'מטחנה') — search spans name + short_description + slug, so Hebrew + English mixed-language products are findable from either language. Returns {name, slug, url, short_description, categories, price_ils}.",
+    description: "Discover what Minuto sells. Lists in-stock products from woo_products: name, slug, url, short_description, categories, price. Use to FIND products by name/keyword (search spans name + short_description + slug — try both languages for origins/processes). Returns shortlists; for the FULL description / origin story / attributes of a SPECIFIC product, follow up with read_product.",
     input_schema: {
       type: 'object',
       properties: {
-        search: { type: 'string', description: 'Optional case-insensitive substring. Spans name/short_description/slug, so e.g. searching \"Colombia\" matches both \"Sweet Leona | Colombia Luz Helena\" (English in name) and \"קולומביה - Minuto Velvet Star\" (Hebrew name with English short_description) once those exist.' },
+        search: { type: 'string', description: 'Optional case-insensitive substring. Try both English and Hebrew (e.g. \"Colombia\" + \"קולומביה\") since products are bilingual.' },
         limit:  { type: 'number', description: 'Max rows. Default 30, hard cap 100.' },
+      },
+    },
+  },
+  {
+    name: 'read_product',
+    description: "Fetch the FULL product detail LIVE from WooCommerce — long description (origin story, full tasting notes, processing detail, brew tips), short description, attributes, categories, price, stock status. Use whenever you need depth on a SPECIFIC product (writing an article, recommending it, learning about it). Pass `slug` (preferred — e.g. 'sweet-leona'), or `url` (the agent extracts the slug), or `woo_id`. Live fetch every call — no caching, no pre-staging — so newly-added products and edits are seen immediately.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        slug:   { type: 'string', description: 'Product slug (e.g. \"sweet-leona\"). Preferred.' },
+        url:    { type: 'string', description: 'Product permalink — slug is extracted from /product/<slug>/.' },
+        woo_id: { type: 'number', description: 'Direct WooCommerce product id, if you have it.' },
       },
     },
   },
@@ -703,22 +715,19 @@ async function executeTool(
       }
 
       case 'list_products': {
+        // DISCOVERY only — name + URL + short_description. For depth on a
+        // specific product (full description, attributes), the agent calls
+        // read_product live afterwards.
         const search = typeof input.search === 'string' ? input.search.trim() : ''
         const limit  = Math.max(1, Math.min(100, typeof input.limit === 'number' ? Math.floor(input.limit) : 30))
-        // `description` (long) populated by woo-products-enrich (daily cron);
-        // null until first enrichment — search still works, just narrower.
         let pq = supabase
           .from('woo_products')
-          .select('name, slug, permalink, short_description, description, categories, price')
+          .select('name, slug, permalink, short_description, categories, price')
           .eq('stock_status', 'instock')
           .limit(limit)
         if (search) {
-          // Search name + short_description + long description + slug so
-          // bilingual products + descriptions-only signals (e.g. "anaerobic"
-          // / "co-fermentation" / a farm name buried in the long body) are
-          // findable from either language and either field.
           const esc = search.replace(/[%_]/g, m => `\\${m}`)
-          pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,description.ilike.%${esc}%,slug.ilike.%${esc}%`)
+          pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,slug.ilike.%${esc}%`)
         }
         const { data, error } = await pq
         if (error) return { ok: false, payload: { error: `woo_products query failed: ${error.message}` } }
@@ -731,10 +740,93 @@ async function executeTool(
           url:               p.permalink,
           price_ils:         p.price ? Number(p.price) : null,
           short_description: trim(p.short_description, 400),
-          description:       trim(p.description, 1200),  // full body, truncated for browse-view
           categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
         }))
-        return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows } }
+        return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows, hint: 'For full description / origin story / attributes on a specific product, call read_product with its slug.' } }
+      }
+
+      case 'read_product': {
+        // LIVE fetch the full product from WC REST — no pre-staging. The
+        // agent calls this when it needs depth on a specific product
+        // (origin story, full tasting notes, attributes). Accepts `slug`
+        // or `url` (slug extracted from /product/<slug>/) or `woo_id`.
+        let wooId = typeof input.woo_id === 'number' ? Math.floor(input.woo_id) : 0
+        const slug = typeof input.slug === 'string' ? input.slug.trim() : ''
+        const url  = typeof input.url === 'string' ? input.url.trim() : ''
+        let effSlug = slug
+        if (!effSlug && url) {
+          try {
+            const path = new URL(url).pathname.replace(/\/+$/, '')
+            const m = path.match(/\/product\/([^/]+)/)
+            if (m) effSlug = decodeURIComponent(m[1])
+          } catch { /* fall through */ }
+        }
+        if (!wooId && effSlug) {
+          // Try exact slug match first.
+          const { data: exact } = await supabase
+            .from('woo_products').select('woo_id, name, slug').eq('slug', effSlug).maybeSingle()
+          if (exact?.woo_id) {
+            wooId = Number(exact.woo_id)
+          } else {
+            // Fuzzy fallback: search slug + name. Products often have URL-
+            // encoded Hebrew slugs that an English-speaking agent can't
+            // guess, so accept a sensible token (e.g. "velvet-star") and
+            // resolve it via name match.
+            const esc = effSlug.replace(/[%_]/g, m => `\\${m}`).replace(/-/g, ' ')
+            const { data: fuzzy } = await supabase
+              .from('woo_products')
+              .select('woo_id, name, slug, permalink')
+              .or(`slug.ilike.%${esc}%,name.ilike.%${esc}%`)
+              .eq('stock_status', 'instock')
+              .limit(5)
+            if (fuzzy && fuzzy.length === 1) {
+              wooId = Number(fuzzy[0].woo_id)
+            } else if (fuzzy && fuzzy.length > 1) {
+              return { ok: false, payload: {
+                error: `'${effSlug}' matches multiple products — pick one and call again with its exact slug.`,
+                candidates: fuzzy.map((f: any) => ({ name: f.name, slug: f.slug, url: f.permalink })),
+              } }
+            }
+          }
+        }
+        if (!wooId) return { ok: false, payload: { error: `Could not resolve to a product. Try list_products first to find the exact slug, then call read_product with it.` } }
+
+        const wooKey = Deno.env.get('WOO_KEY') ?? ''
+        const wooSec = Deno.env.get('WOO_SECRET') ?? ''
+        if (!wooKey || !wooSec) return { ok: false, payload: { error: 'WOO_KEY / WOO_SECRET not configured.' } }
+        const fetchUrl = `${WP_URL}/wp-json/wc/v3/products/${wooId}` +
+          `?consumer_key=${encodeURIComponent(wooKey)}&consumer_secret=${encodeURIComponent(wooSec)}`
+        let res: Response
+        try { res = await fetch(fetchUrl, { redirect: 'manual' }) }
+        catch (e: any) { return { ok: false, payload: { error: `WC fetch threw: ${e?.message ?? e}` } } }
+        if (res.status >= 300 && res.status < 400) {
+          return { ok: false, payload: { error: `WC redirect ${res.status} — WOO_URL must be canonical (https://www.minuto.co.il).` } }
+        }
+        if (!res.ok) return { ok: false, payload: { error: `WC HTTP ${res.status}` } }
+        let p: any
+        try { p = await res.json() } catch { return { ok: false, payload: { error: 'WC returned non-JSON' } } }
+        const stripHtml = (s: unknown) => typeof s === 'string'
+          ? s.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')
+              .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, ' ')
+              .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+          : ''
+        return {
+          ok: true,
+          payload: {
+            source:            'wc REST live',
+            woo_id:            p.id,
+            name:              p.name,
+            slug:              p.slug,
+            url:               p.permalink,
+            price_ils:         p.price ? Number(p.price) : null,
+            stock_status:      p.stock_status,
+            short_description: stripHtml(p.short_description),
+            description:       stripHtml(p.description),
+            attributes:        (p.attributes ?? []).map((a: any) => ({ name: a.name, options: a.options })),
+            categories:        (p.categories ?? []).map((c: any) => c.name),
+          },
+        }
       }
 
       case 'start_mission': {

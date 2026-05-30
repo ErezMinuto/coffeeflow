@@ -431,18 +431,18 @@ async function executeTool(
           // its name field is "פולי קפה ספשלטי ... קולומביה - Minuto Velvet
           // Star" — an English-only search of `name` for "Colombia" would
           // miss it). Always cross-check both languages.
+          // DISCOVERY only — name, url, short_description. For depth on a
+          // specific product the agent fetches its permalink live (fetch_url
+          // already exists for that). No pre-staged long descriptions.
           const filterName = typeof input.filter_name === 'string' ? input.filter_name.trim() : ''
           let pq = supabase
             .from('woo_products')
-            .select('name, slug, permalink, short_description, description, categories, price')
+            .select('name, slug, permalink, short_description, categories, price')
             .eq('stock_status', 'instock')
             .limit(filterName ? 100 : 200)
           if (filterName) {
             const esc = filterName.replace(/[%_]/g, m => `\\${m}`)
-            // Search across name + short + long description + slug. Long
-            // description (woo-products-enrich daily fill) is where deep
-            // signals live — farm names, processing detail, brew notes.
-            pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,description.ilike.%${esc}%,slug.ilike.%${esc}%`)
+            pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,slug.ilike.%${esc}%`)
           }
           const { data: prods, error: pErr } = await pq
           if (pErr) return { ok: false, payload: { error: `woo_products query failed: ${pErr.message}` } }
@@ -455,10 +455,9 @@ async function executeTool(
             url:               p.permalink,
             price_ils:         p.price ? Number(p.price) : null,
             short_description: trim(p.short_description, 400),
-            description:       trim(p.description, 1500),
             categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
           }))
-          return { ok: true, payload: { source: 'woo_products', count: rows.length, filter_name: filterName || null, rows } }
+          return { ok: true, payload: { source: 'woo_products', count: rows.length, filter_name: filterName || null, rows, hint: 'For full description on a specific product, call fetch_url on its permalink.' } }
         }
         default:
           return { ok: false, payload: { error: `unknown query_name "${queryName}". Allowed: top_landing_pages_by_conversions | ai_visibility_summary | competitor_co_mentions | recent_industry_insights | customer_rfm_segments | active_learnings | products_catalog` } }
