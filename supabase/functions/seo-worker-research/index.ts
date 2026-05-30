@@ -88,9 +88,10 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         query_name: {
           type: 'string',
-          description: 'One of: "top_landing_pages_by_conversions", "ai_visibility_summary", "competitor_co_mentions", "recent_industry_insights", "customer_rfm_segments", "active_learnings".',
+          description: 'One of: "top_landing_pages_by_conversions", "ai_visibility_summary", "competitor_co_mentions", "recent_industry_insights", "customer_rfm_segments", "active_learnings", "products_catalog".',
         },
         days: { type: 'number', description: 'Optional lookback window in days. Default 30.' },
+        filter_name: { type: 'string', description: 'For products_catalog: optional substring (case-insensitive) to narrow by name (e.g. "Colombia", "decaf", "Lelit"). Omit to return the whole in-stock catalog (up to 200).' },
       },
       required: ['query_name'],
     },
@@ -422,8 +423,45 @@ async function executeTool(
             .is('superseded_at', null).order('created_at', { ascending: false }).limit(50)
           return { ok: true, payload: { rows: data ?? [] } }
         }
+        case 'products_catalog': {
+          // Minuto's live in-stock catalog. Use this whenever you need the
+          // exact name + URL of a product so the article links correctly.
+          // SEARCH SPANS name + short_description + slug because Minuto's
+          // products mix Hebrew + English (e.g. "Velvet Star" is real, but
+          // its name field is "פולי קפה ספשלטי ... קולומביה - Minuto Velvet
+          // Star" — an English-only search of `name` for "Colombia" would
+          // miss it). Always cross-check both languages.
+          const filterName = typeof input.filter_name === 'string' ? input.filter_name.trim() : ''
+          let pq = supabase
+            .from('woo_products')
+            .select('name, slug, permalink, short_description, description, categories, price')
+            .eq('stock_status', 'instock')
+            .limit(filterName ? 100 : 200)
+          if (filterName) {
+            const esc = filterName.replace(/[%_]/g, m => `\\${m}`)
+            // Search across name + short + long description + slug. Long
+            // description (woo-products-enrich daily fill) is where deep
+            // signals live — farm names, processing detail, brew notes.
+            pq = pq.or(`name.ilike.%${esc}%,short_description.ilike.%${esc}%,description.ilike.%${esc}%,slug.ilike.%${esc}%`)
+          }
+          const { data: prods, error: pErr } = await pq
+          if (pErr) return { ok: false, payload: { error: `woo_products query failed: ${pErr.message}` } }
+          const trim = (s: unknown, n: number) => typeof s === 'string'
+            ? s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n)
+            : ''
+          const rows = (prods ?? []).map((p: any) => ({
+            name:              p.name,
+            slug:              p.slug,
+            url:               p.permalink,
+            price_ils:         p.price ? Number(p.price) : null,
+            short_description: trim(p.short_description, 400),
+            description:       trim(p.description, 1500),
+            categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
+          }))
+          return { ok: true, payload: { source: 'woo_products', count: rows.length, filter_name: filterName || null, rows } }
+        }
         default:
-          return { ok: false, payload: { error: `unknown query_name "${queryName}". Allowed: top_landing_pages_by_conversions | ai_visibility_summary | competitor_co_mentions | recent_industry_insights | customer_rfm_segments | active_learnings` } }
+          return { ok: false, payload: { error: `unknown query_name "${queryName}". Allowed: top_landing_pages_by_conversions | ai_visibility_summary | competitor_co_mentions | recent_industry_insights | customer_rfm_segments | active_learnings | products_catalog` } }
       }
     }
 
