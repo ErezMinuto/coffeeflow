@@ -156,9 +156,17 @@ serve(async (req) => {
   // serialization, so even a SYNCHRONOUS caller gets a clean response
   // inside the 150s gateway window (the cron drainer is fire-and-forget
   // and doesn't care, but manual/chat triggers do).
-  const RESEARCH_BUDGET_MS = 110_000
-  const MIN_TURN_MS        = 20_000
-  const loopStartedAt      = Date.now()
+  // SYNTH_RESERVE_MS is carved out of the budget and NEVER spent on research
+  // turns — it guarantees a final text-only synthesis call (see below) can
+  // run even if the last research turn aborts. RESEARCH_TURN_CAP_MS bounds a
+  // SINGLE turn so one stalled web_search can't swallow the whole budget and
+  // self-abort with nothing written (the exact empty-final_text failure):
+  // a hung turn now aborts in ~60s, leaving room to recover + synthesize.
+  const RESEARCH_BUDGET_MS   = 110_000
+  const SYNTH_RESERVE_MS     = 30_000
+  const RESEARCH_TURN_CAP_MS = 60_000
+  const MIN_TURN_MS          = 20_000
+  const loopStartedAt        = Date.now()
 
   // Track tools to enable Anthropic web_search via the per-call config —
   // it's not in our generic ToolDefinition type since it's a built-in.
@@ -177,9 +185,10 @@ serve(async (req) => {
   let loopError: string | null = null
   try {
   while (turn < maxTurns) {
-    // Stop before we risk a hard kill; finalize with what we have.
+    // Stop before we risk a hard kill; finalize with what we have. Hold back
+    // SYNTH_RESERVE_MS so the forced-synthesis call below always has budget.
     const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
-    if (remainingMs < MIN_TURN_MS) {
+    if (remainingMs < MIN_TURN_MS + SYNTH_RESERVE_MS) {
       hitTimeBudget = true
       break
     }
@@ -191,7 +200,9 @@ serve(async (req) => {
       tools:       fullTools as any,
       maxTokens:   4096,
       temperature: 0.3,
-      timeoutMs:   Math.min(120_000, remainingMs - 5_000),
+      // Cap a single research turn so a stalled web_search aborts fast and
+      // leaves the synthesis reserve intact, instead of eating everything.
+      timeoutMs:   Math.min(RESEARCH_TURN_CAP_MS, remainingMs - SYNTH_RESERVE_MS - 5_000),
     })
     totalInputTokens  += res.inputTokens
     totalOutputTokens += res.outputTokens
@@ -244,6 +255,51 @@ serve(async (req) => {
     // task COMPLETES with a partial report instead of dying.
     loopError = e?.message ?? String(e)
     console.error(`[seo-worker-research] ${workerId} loop threw at turn ${turn} (saving partial, not crashing): ${loopError}`)
+  }
+
+  // FORCED SYNTHESIS. The loop emits text only on a clean end_turn — but a
+  // budget-stop or an aborted web_search turn ends the loop mid-gathering,
+  // when every prior turn was a silent tool call. That left final_text EMPTY
+  // even though real evidence sits in `messages`. Recover it: one text-only
+  // call (NO tools, so it can't hang on web_search or loop) that synthesizes
+  // a report from whatever was gathered. Runs inside the reserved budget.
+  if (!finalText.trim() && messages.length > 1) {
+    const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
+    const synthMs = Math.max(15_000, Math.min(SYNTH_RESERVE_MS, remainingMs > 0 ? remainingMs : SYNTH_RESERVE_MS))
+    try {
+      const nudge = `You are out of research time. Do NOT call any tools. Using ONLY the information already gathered in this conversation, write your final ${expectedOut.toUpperCase()} now, following the required output shape. If the evidence is thin, say so explicitly rather than fabricating.`
+      const synthMsgs: ApiChatMessage[] = [...messages]
+      const last = synthMsgs[synthMsgs.length - 1]
+      // Keep roles alternating: research turns always leave a trailing
+      // user (tool_result) message, so fold the nudge into it; only push a
+      // fresh user turn in the unexpected case the last message is assistant.
+      if (last && last.role === 'user') {
+        synthMsgs[synthMsgs.length - 1] = typeof last.content === 'string'
+          ? { role: 'user', content: `${last.content}\n\n${nudge}` }
+          : { role: 'user', content: [...last.content, { type: 'text', text: nudge }] }
+      } else {
+        synthMsgs.push({ role: 'user', content: nudge })
+      }
+      const synth = await callClaude({
+        model:       MODEL_ORCHESTRATOR,
+        system:      systemPrompt,
+        messages:    synthMsgs,
+        // No tools — guarantees this call returns text and cannot stall.
+        maxTokens:   4096,
+        temperature: 0.3,
+        timeoutMs:   synthMs,
+      })
+      totalInputTokens  += synth.inputTokens
+      totalOutputTokens += synth.outputTokens
+      if (synth.text.trim()) {
+        finalText = synth.text
+        lastAssistantText = synth.text
+        researchLog.push({ turn: turn + 1, tool_calls: ['<forced_synthesis>'], text_snippet: synth.text.slice(0, 200) })
+        console.log(`[seo-worker-research] ${workerId} forced synthesis produced ${synth.text.length} chars`)
+      }
+    } catch (e: any) {
+      console.error(`[seo-worker-research] ${workerId} forced synthesis failed (falling back): ${e?.message ?? e}`)
+    }
   }
 
   // Fall back to the last substantive assistant text so a budget-stop OR a
