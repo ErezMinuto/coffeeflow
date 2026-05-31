@@ -437,7 +437,7 @@ async function executeTool(
           const filterName = typeof input.filter_name === 'string' ? input.filter_name.trim() : ''
           let pq = supabase
             .from('woo_products')
-            .select('name, slug, permalink, short_description, categories, price')
+            .select('woo_id, name, slug, permalink, short_description, categories, price')
             .eq('stock_status', 'instock')
             .limit(filterName ? 100 : 200)
           if (filterName) {
@@ -450,6 +450,7 @@ async function executeTool(
             ? s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n)
             : ''
           const rows = (prods ?? []).map((p: any) => ({
+            woo_id:            Number(p.woo_id),
             name:              p.name,
             slug:              p.slug,
             url:               p.permalink,
@@ -457,7 +458,7 @@ async function executeTool(
             short_description: trim(p.short_description, 400),
             categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
           }))
-          return { ok: true, payload: { source: 'woo_products', count: rows.length, filter_name: filterName || null, rows, hint: 'For full description on a specific product, call fetch_url on its permalink.' } }
+          return { ok: true, payload: { source: 'woo_products', count: rows.length, filter_name: filterName || null, rows, hint: 'For full description on a specific product, fetch_url its permalink.' } }
         }
         default:
           return { ok: false, payload: { error: `unknown query_name "${queryName}". Allowed: top_landing_pages_by_conversions | ai_visibility_summary | competitor_co_mentions | recent_industry_insights | customer_rfm_segments | active_learnings | products_catalog` } }
