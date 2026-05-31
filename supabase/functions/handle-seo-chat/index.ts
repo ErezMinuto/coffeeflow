@@ -1775,6 +1775,12 @@ serve(async (req: Request): Promise<Response> => {
           tools:    TOOL_DEFINITIONS,
           maxTokens:   4096,
           temperature: 0.3,
+          // Cache the (system + tools) prefix — ~30 tool schemas + the
+          // chat prompt is 5-10K input tokens. First call in the turn
+          // pays full cost; calls 2-N hit the 5-min cache and respond
+          // several×faster, which is exactly the failure mode the agent
+          // was hitting ("running out of time" on multi-round turns).
+          cachePrefix: true,
           // Size the call to the remaining budget (cap 90s) so one slow call
           // can't overrun the loop budget.
           timeoutMs: Math.min(90_000, remainingMs - 5_000),
@@ -1795,6 +1801,10 @@ serve(async (req: Request): Promise<Response> => {
         output:     res.outputTokens,
         cache_read: res.cacheReadTokens,
       }
+      // Per-loop timing + cache-hit telemetry so we can verify caching is
+      // actually firing (cache_read > 0 from loop 2 onward). Cheap log
+      // line — no PII, just numbers.
+      console.log(`[handle-seo-chat] loop=${loops} elapsed=${Date.now() - loopStartedAt}ms in=${res.inputTokens} out=${res.outputTokens} cache_read=${res.cacheReadTokens} cache_write=${res.cacheCreationTokens}`)
 
       const toolUses = res.content.filter(
         (b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use',

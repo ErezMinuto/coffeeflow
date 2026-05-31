@@ -75,6 +75,14 @@ export interface CallClaudeOptions {
   temperature?: number
   tools?: ToolDefinition[]
   timeoutMs?: number
+  // Prompt caching — when true, marks the system prompt + last tool with
+  // cache_control:'ephemeral' so Anthropic caches the (system + tools)
+  // prefix for ~5 min. First call in a chat turn pays full input cost;
+  // subsequent calls within the TTL get the cached prefix at ~10% cost
+  // AND respond several×faster (the cached input is processed at near-
+  // zero latency). Huge win for the chat handler where one turn can fire
+  // 4-8 Claude calls back-to-back with identical system + tools.
+  cachePrefix?: boolean
 }
 
 export interface CallClaudeResult {
@@ -101,11 +109,29 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   const body: Record<string, unknown> = {
     model,
     max_tokens: opts.maxTokens ?? 8192,
-    system: opts.system,
+    // System: when caching, send as a content-block array with a
+    // cache_control marker on the (only) block. Otherwise send as a
+    // plain string — Anthropic accepts both shapes.
+    system: opts.cachePrefix
+      ? [{ type: 'text', text: opts.system, cache_control: { type: 'ephemeral' } }]
+      : opts.system,
     messages: opts.messages,
   }
   if (opts.temperature != null) body.temperature = opts.temperature
-  if (opts.tools && opts.tools.length > 0) body.tools = opts.tools
+  if (opts.tools && opts.tools.length > 0) {
+    // Tools: when caching, attach cache_control to the LAST tool. The
+    // marker caches the WHOLE prefix up to and including that block, so
+    // one marker on the final tool caches all 30 tool schemas in one
+    // chunk. Order matters — Anthropic requires the tool list be stable
+    // between calls for the cache to hit.
+    body.tools = opts.cachePrefix
+      ? opts.tools.map((t, i) =>
+          i === opts.tools!.length - 1
+            ? { ...t, cache_control: { type: 'ephemeral' } }
+            : t,
+        )
+      : opts.tools
+  }
 
   const controller = new AbortController()
   const timeoutMs = opts.timeoutMs ?? 110_000  // stay under 150s edge cap
