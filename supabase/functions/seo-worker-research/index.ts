@@ -156,16 +156,20 @@ serve(async (req) => {
   // serialization, so even a SYNCHRONOUS caller gets a clean response
   // inside the 150s gateway window (the cron drainer is fire-and-forget
   // and doesn't care, but manual/chat triggers do).
-  // SYNTH_RESERVE_MS is carved out of the budget and NEVER spent on research
-  // turns — it guarantees a final text-only synthesis call (see below) can
-  // run even if the last research turn aborts. RESEARCH_TURN_CAP_MS bounds a
-  // SINGLE turn so one stalled web_search can't swallow the whole budget and
-  // self-abort with nothing written (the exact empty-final_text failure):
-  // a hung turn now aborts in ~60s, leaving room to recover + synthesize.
-  const RESEARCH_BUDGET_MS   = 110_000
-  const SYNTH_RESERVE_MS     = 30_000
-  const RESEARCH_TURN_CAP_MS = 60_000
-  const MIN_TURN_MS          = 20_000
+  // TWO-PHASE BUDGET (isolate hard-killed at ~150s wall-clock):
+  //   phase 1 — research/tool-gathering, confined to the first GATHER_DEADLINE_MS
+  //   phase 2 — a GUARANTEED text-only synthesis with SYNTH_TIMEOUT_MS to itself
+  // The earlier single-budget design starved synthesis: a 2.7k-token report
+  // needs ~45-50s to generate, but a hung web_search turn left synthesis only
+  // 15-30s, so it aborted MID-GENERATION and saved an empty final_text (the
+  // exact failure: turn-3 abort → starved synth → final_len 0). Now research
+  // is hard-stopped at 85s and synthesis always gets its own 50s, all inside
+  // a ~140s envelope so even a synchronous caller stays under the 150s cap.
+  const GATHER_DEADLINE_MS   = 85_000   // stop STARTING research turns after this
+  const RESEARCH_TURN_CAP_MS = 38_000   // a single stalled turn aborts here
+  const SYNTH_TIMEOUT_MS     = 50_000   // synthesis gets its own full window
+  const ISOLATE_CEILING_MS   = 145_000  // never run a call past this elapsed
+  const MIN_TURN_MS          = 16_000
   const loopStartedAt        = Date.now()
 
   // Track tools to enable Anthropic web_search via the per-call config —
@@ -173,22 +177,22 @@ serve(async (req) => {
   // We pass it as an extra in the body via the `tools` array; Anthropic
   // recognizes `{type: 'web_search_20250305', name: 'web_search'}`.
   const fullTools: any[] = [
-    // Cap total searches at 12 (not maxTurns*3, which was 24 for an 8-turn
-    // task). Within the 110s budget only ~2-4 turns actually run, and 24
-    // permitted searches let a single turn front-load many slow web_search
-    // calls → an overlong turn that times out. 12 is ample for a budget-
-    // bounded run and keeps each turn fast.
-    { type: 'web_search_20250305', name: 'web_search', max_uses: Math.min(12, maxTurns * 3) },
+    // Keep total searches LOW. web_search is server-executed by Anthropic and
+    // each search adds latency; letting the model front-load many in one turn
+    // is what produces the >38s hangs that abort the turn. A budget-bounded
+    // run only completes ~2-3 turns anyway, so 6 searches is ample and keeps
+    // every turn comfortably under the per-turn cap.
+    { type: 'web_search_20250305', name: 'web_search', max_uses: Math.min(6, maxTurns * 2) },
     ...TOOL_DEFINITIONS,
   ]
 
   let loopError: string | null = null
   try {
   while (turn < maxTurns) {
-    // Stop before we risk a hard kill; finalize with what we have. Hold back
-    // SYNTH_RESERVE_MS so the forced-synthesis call below always has budget.
-    const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
-    if (remainingMs < MIN_TURN_MS + SYNTH_RESERVE_MS) {
+    // Stop STARTING research turns once we're inside GATHER_DEADLINE_MS, so
+    // the guaranteed synthesis phase below always has its full window.
+    const gatherLeftMs = GATHER_DEADLINE_MS - (Date.now() - loopStartedAt)
+    if (gatherLeftMs < MIN_TURN_MS) {
       hitTimeBudget = true
       break
     }
@@ -200,9 +204,9 @@ serve(async (req) => {
       tools:       fullTools as any,
       maxTokens:   4096,
       temperature: 0.3,
-      // Cap a single research turn so a stalled web_search aborts fast and
-      // leaves the synthesis reserve intact, instead of eating everything.
-      timeoutMs:   Math.min(RESEARCH_TURN_CAP_MS, remainingMs - SYNTH_RESERVE_MS - 5_000),
+      // Cap a single research turn so a stalled web_search aborts fast, well
+      // before it can eat into the synthesis phase.
+      timeoutMs:   Math.min(RESEARCH_TURN_CAP_MS, gatherLeftMs),
     })
     totalInputTokens  += res.inputTokens
     totalOutputTokens += res.outputTokens
@@ -263,11 +267,18 @@ serve(async (req) => {
   // even though real evidence sits in `messages`. Recover it: one text-only
   // call (NO tools, so it can't hang on web_search or loop) that synthesizes
   // a report from whatever was gathered. Runs inside the reserved budget.
+  let synthRan = false
+  let synthError: string | null = null
   if (!finalText.trim() && messages.length > 1) {
-    const remainingMs = RESEARCH_BUDGET_MS - (Date.now() - loopStartedAt)
-    const synthMs = Math.max(15_000, Math.min(SYNTH_RESERVE_MS, remainingMs > 0 ? remainingMs : SYNTH_RESERVE_MS))
+    const elapsed = Date.now() - loopStartedAt
+    // Give synthesis its full window, bounded only by the isolate ceiling so
+    // we never start a call we can't finish. With gather hard-stopped at 85s
+    // this is the full 50s; even if a turn overran, synthesis still gets the
+    // time left under the 145s ceiling.
+    const synthMs = Math.max(20_000, Math.min(SYNTH_TIMEOUT_MS, ISOLATE_CEILING_MS - elapsed))
+    synthRan = true
     try {
-      const nudge = `You are out of research time. Do NOT call any tools. Using ONLY the information already gathered in this conversation, write your final ${expectedOut.toUpperCase()} now, following the required output shape. If the evidence is thin, say so explicitly rather than fabricating.`
+      const nudge = `You are out of research time. Do NOT call any tools. Using ONLY the information already gathered in this conversation, write your final ${expectedOut.toUpperCase()} now, following the required output shape and staying within its length limit (do not exceed it). If the evidence is thin, say so explicitly rather than fabricating.`
       const synthMsgs: ApiChatMessage[] = [...messages]
       const last = synthMsgs[synthMsgs.length - 1]
       // Keep roles alternating: research turns always leave a trailing
@@ -284,8 +295,10 @@ serve(async (req) => {
         model:       MODEL_ORCHESTRATOR,
         system:      systemPrompt,
         messages:    synthMsgs,
-        // No tools — guarantees this call returns text and cannot stall.
-        maxTokens:   4096,
+        // No tools — guarantees this call returns text and cannot stall on a
+        // web_search. Cap output at 3000 so generation finishes inside the
+        // window (a 400-800 word report is ~1.2k tokens; this is ample).
+        maxTokens:   3000,
         temperature: 0.3,
         timeoutMs:   synthMs,
       })
@@ -295,10 +308,15 @@ serve(async (req) => {
         finalText = synth.text
         lastAssistantText = synth.text
         researchLog.push({ turn: turn + 1, tool_calls: ['<forced_synthesis>'], text_snippet: synth.text.slice(0, 200) })
-        console.log(`[seo-worker-research] ${workerId} forced synthesis produced ${synth.text.length} chars`)
+        console.log(`[seo-worker-research] ${workerId} forced synthesis produced ${synth.text.length} chars (had ${synthMs}ms)`)
+      } else {
+        synthError = `empty response (stop_reason=${synth.stop_reason})`
       }
     } catch (e: any) {
-      console.error(`[seo-worker-research] ${workerId} forced synthesis failed (falling back): ${e?.message ?? e}`)
+      // Persisted into result_data below so we can diagnose WITHOUT the
+      // (invisible) edge console logs.
+      synthError = e?.message ?? String(e)
+      console.error(`[seo-worker-research] ${workerId} forced synthesis failed: ${synthError}`)
     }
   }
 
@@ -326,6 +344,8 @@ serve(async (req) => {
       max_turns:              maxTurns,
       hit_time_budget:        hitTimeBudget,
       loop_error:             loopError,
+      synth_ran:              synthRan,
+      synth_error:            synthError,
       partial:                Boolean(hitTimeBudget || loopError),
       tokens: { input: totalInputTokens, output: totalOutputTokens },
     })
