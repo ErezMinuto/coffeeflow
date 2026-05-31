@@ -415,6 +415,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'list_posts',
+    description: "List blog posts by status — fetches LIVE from WP REST in ONE call. Use to FIND which posts exist in a given state (e.g. 'show me all the drafts', 'which posts mention X') BEFORE scanning IDs one by one. Returns up to per_page posts: {id, title, slug, status, link, modified, excerpt}. Drafts/pending require auth (which we have); also works for 'publish'. Search is a WP-side full-text filter.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        status:   { type: 'string', description: "Filter by status: 'draft' | 'publish' | 'pending' | 'private' | 'any'. Default 'draft'." },
+        search:   { type: 'string', description: 'Optional WP search term (matches title + content).' },
+        per_page: { type: 'number', description: 'Max posts. Default 30, hard cap 100.' },
+      },
+    },
+  },
+  {
     name: 'read_post',
     description: "Fetch a blog post LIVE from WordPress (raw content, title, status, link). Use BEFORE edit_post so you can see what's currently in the post (you can't intelligently edit what you haven't read). Returns {id, title, content_html, content_text (stripped), status, link, modified}. Works for any status (draft / publish / pending).",
     input_schema: {
@@ -744,7 +756,7 @@ async function executeTool(
         const limit  = Math.max(1, Math.min(100, typeof input.limit === 'number' ? Math.floor(input.limit) : 30))
         let pq = supabase
           .from('woo_products')
-          .select('name, slug, permalink, short_description, categories, price')
+          .select('woo_id, name, slug, permalink, short_description, categories, price')
           .eq('stock_status', 'instock')
           .limit(limit)
         if (search) {
@@ -757,6 +769,7 @@ async function executeTool(
           ? s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n)
           : ''
         const rows = (data ?? []).map((p: any) => ({
+          woo_id:            Number(p.woo_id),     // ← reliable numeric id for read_product
           name:              p.name,
           slug:              p.slug,
           url:               p.permalink,
@@ -764,7 +777,43 @@ async function executeTool(
           short_description: trim(p.short_description, 400),
           categories:        Array.isArray(p.categories) ? p.categories.slice(0, 6) : [],
         }))
-        return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows, hint: 'For full description / origin story / attributes on a specific product, call read_product with its slug.' } }
+        return { ok: true, payload: { count: rows.length, search: search || null, source: 'woo_products (in-stock only)', rows, hint: 'For full description on a specific product, call read_product with woo_id (most reliable) — e.g. read_product({woo_id: 12345}).' } }
+      }
+
+      case 'list_posts': {
+        const status   = typeof input.status === 'string' && input.status.trim() ? input.status.trim() : 'draft'
+        const search   = typeof input.search === 'string' ? input.search.trim() : ''
+        const perPage  = Math.max(1, Math.min(100, typeof input.per_page === 'number' ? Math.floor(input.per_page) : 30))
+        if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
+        const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
+        const params = new URLSearchParams({
+          status, per_page: String(perPage),
+          _fields: 'id,title,slug,status,link,modified,excerpt',
+          context: 'edit',  // surfaces drafts/pending (anon GET can't see them)
+        })
+        if (search) params.set('search', search)
+        const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts?${params.toString()}`, { headers: { Authorization: auth } })
+        if (!r.ok) {
+          const body = await r.text().catch(() => '')
+          return { ok: false, payload: { error: `WP list HTTP ${r.status}: ${body.slice(0, 200)}` } }
+        }
+        const arr = await r.json() as any[]
+        const stripHtml = (s: unknown) => typeof s === 'string'
+          ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+          : ''
+        const rows = (Array.isArray(arr) ? arr : []).map((p: any) => ({
+          id:        p.id,
+          title:     stripHtml(p?.title?.rendered ?? p?.title?.raw ?? ''),
+          slug:      p.slug,
+          status:    p.status,
+          link:      p.link,
+          modified:  p.modified,
+          excerpt:   stripHtml(p?.excerpt?.rendered ?? '').slice(0, 240),
+        }))
+        return {
+          ok: true,
+          payload: { count: rows.length, status, search: search || null, source: 'wp REST live', rows, hint: 'Follow up with read_post(id) for full content, or edit_post(id, content) to modify.' },
+        }
       }
 
       case 'read_post': {
@@ -850,7 +899,12 @@ async function executeTool(
           try {
             const path = new URL(url).pathname.replace(/\/+$/, '')
             const m = path.match(/\/product\/([^/]+)/)
-            if (m) effSlug = decodeURIComponent(m[1])
+            // Keep the URL-encoded form — woo_products.slug stores the
+            // encoded string literally (e.g. "%d7%a4%d7%95%d7%9c..."), so
+            // .eq('slug', X) needs the encoded form to match. Decoding it
+            // to Hebrew chars (previous behavior) caused every URL-based
+            // lookup to fail.
+            if (m) effSlug = m[1]
           } catch { /* fall through */ }
         }
         if (!wooId && effSlug) {
