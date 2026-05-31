@@ -1684,17 +1684,30 @@ serve(async (req: Request): Promise<Response> => {
         break
       }
       loops++
-      const res = await callClaude({
-        model:    MODEL_CHAT,
-        system:   systemPrompt,
-        messages: apiMessages,
-        tools:    TOOL_DEFINITIONS,
-        maxTokens:   4096,
-        temperature: 0.3,
-        // Size the call to the remaining budget (cap 90s) so one slow call
-        // can't overrun the loop budget.
-        timeoutMs: Math.min(90_000, remainingMs - 5_000),
-      })
+      let res
+      try {
+        res = await callClaude({
+          model:    MODEL_CHAT,
+          system:   systemPrompt,
+          messages: apiMessages,
+          tools:    TOOL_DEFINITIONS,
+          maxTokens:   4096,
+          temperature: 0.3,
+          // Size the call to the remaining budget (cap 90s) so one slow call
+          // can't overrun the loop budget.
+          timeoutMs: Math.min(90_000, remainingMs - 5_000),
+        })
+      } catch (callErr: any) {
+        // The call itself threw — typically the AbortController firing
+        // when Claude takes longer than its sized timeout (manifested to
+        // the UI as a 500 with "The signal has been aborted"). Treat like
+        // a graceful budget-stop: don't crash the whole turn, just stop
+        // looping and let the admin continue. Anything done in PRIOR
+        // iterations (tool results, persisted messages) is already saved.
+        console.warn(`[handle-seo-chat] callClaude threw on loop ${loops} (treating as budget-stop): ${callErr?.message ?? callErr}`)
+        ranOutOfTime = true
+        break
+      }
       lastUsage = {
         input:      res.inputTokens,
         output:     res.outputTokens,
