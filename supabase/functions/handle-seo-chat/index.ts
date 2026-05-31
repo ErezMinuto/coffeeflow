@@ -416,13 +416,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'list_posts',
-    description: "List blog posts by status — fetches LIVE from WP REST in ONE call. Use to FIND which posts exist in a given state (e.g. 'show me all the drafts', 'which posts mention X') BEFORE scanning IDs one by one. Returns up to per_page posts: {id, title, slug, status, link, modified, excerpt}. Drafts/pending require auth (which we have); also works for 'publish'. Search is a WP-side full-text filter.",
+    description: "List blog posts by status — LIVE WP REST in ONE call. Returns {id, title, slug, status, link, modified, excerpt, has_product_links, product_link_count}. has_product_links is computed server-side by scanning each post's HTML for /product/ links, so you can find 'posts that forgot to link to products' in a SINGLE call — no need to read each post just to check. Use the missing_product_links filter for the most common task (fixing drafts that don't reference Minuto products). Drafts/pending require auth (which we have).",
     input_schema: {
       type: 'object',
       properties: {
-        status:   { type: 'string', description: "Filter by status: 'draft' | 'publish' | 'pending' | 'private' | 'any'. Default 'draft'." },
-        search:   { type: 'string', description: 'Optional WP search term (matches title + content).' },
-        per_page: { type: 'number', description: 'Max posts. Default 30, hard cap 100.' },
+        status:                { type: 'string', description: "Filter by status: 'draft' | 'publish' | 'pending' | 'private' | 'any'. Default 'draft'." },
+        search:                { type: 'string', description: 'Optional WP search term (matches title + content).' },
+        per_page:              { type: 'number', description: 'Max posts. Default 30, hard cap 100.' },
+        missing_product_links: { type: 'boolean', description: 'If true, return ONLY posts whose body contains NO Minuto product links. Perfect for the common "find drafts that need product references added" flow — one call collapses scan+identify into one round-trip.' },
       },
     },
   },
@@ -784,11 +785,16 @@ async function executeTool(
         const status   = typeof input.status === 'string' && input.status.trim() ? input.status.trim() : 'draft'
         const search   = typeof input.search === 'string' ? input.search.trim() : ''
         const perPage  = Math.max(1, Math.min(100, typeof input.per_page === 'number' ? Math.floor(input.per_page) : 30))
+        const missingProductLinks = input.missing_product_links === true
         if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
         const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
+        // content is required so we can compute has_product_links server-side
+        // (single round-trip for "find posts without product links" instead of
+        // N reads). content stays out of the returned rows — we only return the
+        // computed flag + count.
         const params = new URLSearchParams({
           status, per_page: String(perPage),
-          _fields: 'id,title,slug,status,link,modified,excerpt',
+          _fields: 'id,title,slug,status,link,modified,excerpt,content',
           context: 'edit',  // surfaces drafts/pending (anon GET can't see them)
         })
         if (search) params.set('search', search)
@@ -801,18 +807,40 @@ async function executeTool(
         const stripHtml = (s: unknown) => typeof s === 'string'
           ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
           : ''
-        const rows = (Array.isArray(arr) ? arr : []).map((p: any) => ({
-          id:        p.id,
-          title:     stripHtml(p?.title?.rendered ?? p?.title?.raw ?? ''),
-          slug:      p.slug,
-          status:    p.status,
-          link:      p.link,
-          modified:  p.modified,
-          excerpt:   stripHtml(p?.excerpt?.rendered ?? '').slice(0, 240),
-        }))
+        // Match anchor hrefs that point to /product/<slug> on minuto.co.il
+        // OR site-relative /product/ paths. Catches absolute and relative
+        // forms of INTERNAL product links only. Ignores text mentions
+        // ("Velvet Star" without a hyperlink) AND external /product/ URLs
+        // on other shops — the agent needs actual Minuto product anchors.
+        const PRODUCT_LINK_RE = /href=["'](?:https?:\/\/(?:www\.)?minuto\.co\.il)?\/product\/[^"']+["']/gi
+        let rows = (Array.isArray(arr) ? arr : []).map((p: any) => {
+          const html = String(p?.content?.raw ?? p?.content?.rendered ?? '')
+          const matches = html.match(PRODUCT_LINK_RE) ?? []
+          return {
+            id:                  p.id,
+            title:               stripHtml(p?.title?.rendered ?? p?.title?.raw ?? ''),
+            slug:                p.slug,
+            status:              p.status,
+            link:                p.link,
+            modified:            p.modified,
+            excerpt:             stripHtml(p?.excerpt?.rendered ?? '').slice(0, 240),
+            has_product_links:   matches.length > 0,
+            product_link_count:  matches.length,
+            content_length:      html.length,
+          }
+        })
+        if (missingProductLinks) rows = rows.filter(r => !r.has_product_links)
         return {
           ok: true,
-          payload: { count: rows.length, status, search: search || null, source: 'wp REST live', rows, hint: 'Follow up with read_post(id) for full content, or edit_post(id, content) to modify.' },
+          payload: {
+            count: rows.length,
+            status,
+            search: search || null,
+            missing_product_links_filter: missingProductLinks,
+            source: 'wp REST live',
+            rows,
+            hint: 'Use list_products({search: "..."}) (returns woo_id) → read_product({woo_id}) → read_post(id) → edit_post(id, content) to fix one in a few rounds.',
+          },
         }
       }
 
