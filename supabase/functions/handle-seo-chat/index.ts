@@ -95,6 +95,19 @@ const MAX_TOOL_LOOPS = 8
 const CHAT_LOOP_BUDGET_MS = 130_000
 const MIN_CALL_BUDGET_MS  = 20_000  // don't start another Claude call with less than this left
 
+// Per-call output cap. The OLD 4096 let the model spend ~90s generating a
+// full article body inline (writing it into an edit_post content arg) — a
+// single call would then hit the 90s timeout and abort the whole turn with
+// nothing saved. The chat agent is NOT a long-form writer: its outputs are
+// short answers + tool calls. The biggest LEGIT output is a full
+// text_generation brief or a 6-pair Hebrew FAQ (~1.2-1.5K tokens), so 2000
+// leaves headroom for those while bounding any single call to ~40s. If the
+// model still tries to draft an article inline it hits this cap
+// (stop_reason='max_tokens'); we DETECT that and refuse to execute the
+// (truncated) tool call, steering it to queue_task('text_generation')
+// instead — see the max-tokens guard in the tool-use loop.
+const MAX_OUTPUT_TOKENS_CHAT = 2000
+
 // ── Worker registry — what the agent can nudge ─────────────────────────
 // Maps a friendly name to the deployed function path. Used by the
 // auto-nudge after queue_task / repoint_ig_to_visual and by the
@@ -438,12 +451,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'edit_post',
-    description: "Update an EXISTING blog post (the post stays in whatever status it's in — drafts stay drafts; published stays published). Use to add a products section to a draft that forgot to include products, fix a typo, append a CTA, etc. PROVIDE the full new content (HTML) — the tool replaces it wholesale, so read_post first, modify in place, then write back. NEVER changes publish status — this tool will REFUSE any status field; promotion to publish is the admin's call. For PUBLISHED posts (live content edit), confirm with Erez in one sentence first; for DRAFTS no confirmation needed (admin still gates publishing). Returns {id, link, status, modified, content_length}.",
+    description: "SMALL-EDIT tool ONLY — for inserting/replacing a SHORT span in an existing post: add a products section to a draft that forgot one, fix/add links, tweak a paragraph, append a CTA, fix a typo. The post keeps its status (drafts stay drafts; published stays published). You read_post first, modify in place, then write back the full HTML (it replaces wholesale). ⛔ DO NOT use this to WRITE or REWRITE a full article body. A chat turn cannot fit article-length generation — attempting it gets your output cut off at the length cap and the write is REFUSED (nothing saved). For writing a thin/empty draft up into a full article, or rewriting an article end-to-end, call queue_task('text_generation', {...}) instead — the writer worker owns long-form and returns a NEW draft. NEVER changes publish status (REFUSES any status field). For PUBLISHED posts confirm with Erez in one sentence first; DRAFTS need no confirmation. Returns {id, link, status, modified, content_length}.",
     input_schema: {
       type: 'object',
       properties: {
         post_id: { type: 'number', description: 'WP post id.' },
-        content: { type: 'string', description: 'Full new HTML body. Will replace the existing content. Use read_post first to fetch + modify.' },
+        content: { type: 'string', description: 'New HTML body (replaces existing wholesale). Use read_post first to fetch + modify in place. Keep the change SMALL — this is not for generating a full article body; route those to queue_task(text_generation).' },
         title:   { type: 'string', description: 'Optional new title.' },
       },
       required: ['post_id'],
@@ -1773,7 +1786,7 @@ serve(async (req: Request): Promise<Response> => {
           system:   systemPrompt,
           messages: apiMessages,
           tools:    TOOL_DEFINITIONS,
-          maxTokens:   4096,
+          maxTokens:   MAX_OUTPUT_TOKENS_CHAT,
           temperature: 0.3,
           // Cache the (system + tools) prefix — ~30 tool schemas + the
           // chat prompt is 5-10K input tokens. First call in the turn
@@ -1855,10 +1868,21 @@ serve(async (req: Request): Promise<Response> => {
         })
       }
 
-      // 4b. If no tool calls or stop_reason indicates the model is done,
-      // we're finished. Note: stop_reason can be 'end_turn' even when
-      // the response includes a text-only block, so we trust both signals.
-      if (toolUses.length === 0 || res.stop_reason === 'end_turn') {
+      // 4b. Terminal cases — stop looping.
+      //  • no tool calls            → the model is answering; we're done
+      //  • stop_reason 'end_turn'   → model signalled completion
+      //  • stop_reason 'max_tokens' WITH no tool calls → the model was cut
+      //    off mid-prose (almost always drafting an article body straight
+      //    into the chat). Don't dump the truncated half-article — return a
+      //    short nudge to route long-form to the writer worker instead.
+      const hitTokenCap = res.stop_reason === 'max_tokens'
+      if (toolUses.length === 0) {
+        finalText = hitTokenCap
+          ? `(I started drafting something too long to finish in a single chat turn. For a full article body, tell me to "queue the writer for post <id>" — the writer worker is built for long-form and returns a fresh WP draft. I keep edit_post for small fixes only.)`
+          : assistantText
+        break
+      }
+      if (res.stop_reason === 'end_turn') {
         finalText = assistantText
         break
       }
@@ -1876,18 +1900,32 @@ serve(async (req: Request): Promise<Response> => {
         console.log(`[handle-seo-chat] tool=${call.name} input=${JSON.stringify(call.input).slice(0, 200)}`)
         let contentStr = ''
         let isError = false
-        try {
-          const result = await executeTool(
-            supabase,
-            call.name as ChatToolName,
-            call.input ?? {},
-          )
-          contentStr = JSON.stringify(result.payload)
-          isError = !result.ok
-        } catch (toolErr: any) {
-          console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
-          contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+        if (hitTokenCap) {
+          // The response was truncated at the output cap, so this tool_use's
+          // input is likely partial/invalid — executing it could write a
+          // half-finished article to WordPress. Refuse and steer the model
+          // to the writer worker. We still persist a matching tool_result so
+          // the assistant tool_use isn't left orphaned on the next replay.
           isError = true
+          contentStr = JSON.stringify({
+            error:  'OUTPUT_TRUNCATED',
+            detail: `Your response hit the length cap, so "${call.name}" was NOT executed — its input was cut off. You were almost certainly writing a full article body inline, which a chat turn cannot fit. NEVER draft a full body in chat. To write or rewrite a full article body, call queue_task('text_generation', {keyword, title, key_points, products_to_mention, ...}) — the writer worker has the budget for long-form and returns a NEW WP draft. Reserve edit_post for SMALL inserts only (a section, links, a paragraph). Re-issue your intent now as queue_task.`,
+          })
+          console.warn(`[handle-seo-chat] refused truncated tool=${call.name} (stop_reason=max_tokens) — steering to writer worker`)
+        } else {
+          try {
+            const result = await executeTool(
+              supabase,
+              call.name as ChatToolName,
+              call.input ?? {},
+            )
+            contentStr = JSON.stringify(result.payload)
+            isError = !result.ok
+          } catch (toolErr: any) {
+            console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
+            contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+            isError = true
+          }
         }
         // Persist tool_result row — failure here gets logged but doesn't
         // skip the in-memory toolResultBlocks push (Anthropic still needs
