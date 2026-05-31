@@ -1810,10 +1810,17 @@ serve(async (req: Request): Promise<Response> => {
         (b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use',
       )
       const assistantText = res.text
+      const elapsedMs = Date.now() - loopStartedAt
 
       // 4a. Persist this assistant turn. Always persist — even if it's
       // a pure tool_use turn — so the front-end can render the
       // "calling X tool" hint and history is faithful.
+      //
+      // Telemetry note: we stash per-loop elapsed_ms + cache stats in
+      // metadata. Lets us diagnose 'running out of time' without log
+      // scraping — just SELECT metadata FROM chat_messages WHERE
+      // session_id='...' AND role='assistant' to see per-loop timing
+      // + cache_read (verifies prompt-caching is actually firing).
       await appendChatMessage(supabase, {
         session_id: sessionId,
         role:       'assistant',
@@ -1822,11 +1829,15 @@ serve(async (req: Request): Promise<Response> => {
           ? toolUses.map(t => ({ id: t.id, name: t.name, input: t.input }))
           : null,
         metadata: {
-          model:        res.model,
-          stop_reason:  res.stop_reason,
-          input_tokens: res.inputTokens,
-          output_tokens: res.outputTokens,
-          loop_iteration: loops,
+          model:                res.model,
+          stop_reason:          res.stop_reason,
+          input_tokens:         res.inputTokens,
+          output_tokens:        res.outputTokens,
+          cache_read_tokens:    res.cacheReadTokens,
+          cache_write_tokens:   res.cacheCreationTokens,
+          loop_iteration:       loops,
+          elapsed_ms_at_loop:   elapsedMs,
+          tools_requested:      toolUses.map(t => t.name),
         },
       })
 
