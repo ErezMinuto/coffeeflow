@@ -150,6 +150,20 @@ serve(async (req) => {
 
   // ── 2. Parse + validate brief ────────────────────────────────────────
   const brief = task.brief_data as VisualGenerationBrief
+
+  // ── 2b. CAROUSEL FORK ────────────────────────────────────────────────
+  // When the brief carries a slides[] array it's a multi-slide IG carousel,
+  // not a single image. The carousel path has its own (simpler) flow: render
+  // each slide's background, composite the Hebrew heading/body via the
+  // deterministic visual-overlay function, and store the ordered slide URLs.
+  // No WP attach (carousel is ig_post only) and no Claude-vision QA loop —
+  // the text is crisp by construction (resvg, not a generative model) and
+  // the no-auto-publish HITL gate is the human review step. Handled and
+  // returned entirely inside handleCarousel.
+  if (Array.isArray(brief?.slides) && brief.slides.length > 0) {
+    return await handleCarousel(supabase, task, brief, workerId)
+  }
+
   if (!brief || typeof brief.scene_brief !== 'string' || !brief.scene_brief.trim()) {
     await safeMarkFailed(supabase, task, 'brief_data.scene_brief is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brief invalid' })
@@ -626,6 +640,158 @@ async function renderOnce(args: {
     throw new Error(`${endpoint} HTTP ${res.status}: ${(json.error as string) ?? JSON.stringify(json).slice(0, 300)}`)
   }
   return { url: json.url, raw: json }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CAROUSEL PATH — render N slides, each = a no_bag background + a
+// deterministic Hebrew text overlay (heading + optional body) composited
+// by the visual-overlay edge function. Slides render in PARALLEL so the
+// whole carousel fits the 240s cron budget (serial would be ~N×40s).
+//
+// Decisions (locked with Erez 2026-05-31):
+//   • distinct per-slide backgrounds (variety, true "journey" carousel)
+//   • 3-5 slides; hard-cap at 5 (extras truncated with a warning)
+//   • render_mode forced to no_bag — bag_hero is single-subject (Vertex
+//     SUBJECT customization) and wrong for a multi-slide text-forward set
+//   • aspect feed_portrait (1080×1350), IG carousel standard
+//   • strategist authors heading/body — workers never write IG copy
+// ─────────────────────────────────────────────────────────────────────────
+const CAROUSEL_MAX_SLIDES = 5
+const CAROUSEL_MIN_SLIDES = 2
+
+// Gemini (no_bag mode) has a strong "coffee scene → put a bag in frame"
+// prior and will hallucinate a generic NON-Minuto bag — often with an
+// invented competitor brand + logo baked in (a live test produced a
+// "STAG COFFEE" deer-logo bag). The single-image path catches this via
+// its Claude-vision QA loop; the carousel path skips QA for time/cost,
+// so we PRE-EMPT the prior with a negative directive appended to the tail
+// of every slide brief (generative models weight the prompt tail most).
+// Also forbids printed words/logos so the deterministic Hebrew overlay is
+// the ONLY text on the slide.
+function addNoBagGuard(sceneBrief: string): string {
+  return `${sceneBrief.trim()}
+
+DO NOT INCLUDE any of these — they are forbidden in this render:
+- No coffee bag, packaging, pouch, sachet, or product label of any kind
+- No brand names, logos, wordmarks, or printed text anywhere in the scene
+- No loose-bag spillage or product container
+The frame must carry NO printed words or brand marks — overlay text is added separately.`
+}
+
+async function handleCarousel(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  brief: VisualGenerationBrief,
+  workerId: string,
+): Promise<Response> {
+  const rawSlides = brief.slides ?? []
+  // Validate shape before doing any expensive render work.
+  const slides = rawSlides
+    .filter(s => s && typeof s.scene_brief === 'string' && s.scene_brief.trim() && typeof s.heading === 'string' && s.heading.trim())
+    .slice(0, CAROUSEL_MAX_SLIDES)
+
+  if (slides.length < CAROUSEL_MIN_SLIDES) {
+    await safeMarkFailed(
+      supabase,
+      task,
+      `carousel needs ${CAROUSEL_MIN_SLIDES}-${CAROUSEL_MAX_SLIDES} valid slides (each with non-empty scene_brief + heading); got ${slides.length} valid of ${rawSlides.length}`,
+      true,
+    )
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'carousel slides invalid' })
+  }
+  if (rawSlides.length > CAROUSEL_MAX_SLIDES) {
+    console.warn(`[seo-worker-visual] ${workerId} carousel truncated ${rawSlides.length} → ${CAROUSEL_MAX_SLIDES} slides`)
+  }
+
+  console.log(`[seo-worker-visual] ${workerId} carousel render: ${slides.length} slides (parallel)`)
+
+  // Render every slide in parallel: background (no_bag) → text overlay.
+  let renderedSlides: Array<{ image_url: string; bg_url: string; heading: string; body?: string }>
+  try {
+    renderedSlides = await Promise.all(slides.map(async (slide, i) => {
+      const bg = await renderOnce({
+        renderMode: 'no_bag',
+        sceneBrief: addNoBagGuard(slide.scene_brief),
+        aspect:     'feed_portrait',
+      })
+      const finalUrl = await overlaySlide({
+        imageUrl: bg.url,
+        heading:  slide.heading,
+        body:     slide.body,
+      })
+      console.log(`[seo-worker-visual] ${workerId} slide ${i + 1}/${slides.length} done: ${finalUrl}`)
+      return { image_url: finalUrl, bg_url: bg.url, heading: slide.heading, body: slide.body }
+    }))
+  } catch (e: any) {
+    // Any slide render/overlay failure fails the whole carousel — a partial
+    // carousel is not publishable. Linear retry via markTaskFailed.
+    const msg = `carousel slide render failed: ${e?.message ?? e}`
+    const permanently = task.attempts >= task.max_attempts
+    await safeMarkFailed(supabase, task, msg, permanently)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: msg, permanent: permanently }, 500)
+  }
+
+  try {
+    await markTaskCompleted(supabase, task.id, {
+      carousel:        true,
+      carousel_slides: renderedSlides,
+      slide_count:     renderedSlides.length,
+      aspect:          'feed_portrait',
+      destination:     'ig_post',
+      render_function: 'visual-test+visual-overlay',
+      render_mode:     'no_bag',
+      // Rendering succeeded → no QA-fail flag. The HITL gate downstream is
+      // the IG prepare/admin-publish step (same as a single feed image).
+      review_required: false,
+      qa_passed:       true,
+    })
+  } catch (e: any) {
+    console.error(`[seo-worker-visual] ${workerId} carousel markTaskCompleted failed: ${e?.message ?? e}`)
+    return jsonResponse({
+      processed: 1,
+      worker_id: workerId,
+      task_id:   task.id,
+      ok:        false,
+      error:     `carousel rendered (${renderedSlides.length} slides) but result write failed: ${e?.message ?? e}`,
+    }, 500)
+  }
+
+  return jsonResponse({
+    processed:   1,
+    worker_id:   workerId,
+    task_id:     task.id,
+    ok:          true,
+    carousel:    true,
+    slide_count: renderedSlides.length,
+    slides:      renderedSlides.map(s => s.image_url),
+  })
+}
+
+// Composite a Hebrew heading (+ optional body) onto a slide background via
+// the deterministic visual-overlay edge function (resvg/RTL). Returns the
+// final slide URL.
+async function overlaySlide(args: {
+  imageUrl: string
+  heading:  string
+  body?:    string
+}): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-overlay`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+    body: JSON.stringify({
+      image_url:    args.imageUrl,
+      overlay_text: args.heading,
+      body_text:    args.body,
+      aspect:       'feed_portrait',
+      direction:    'rtl',
+      position:     'bottom',
+    }),
+  })
+  const json = await res.json().catch(() => ({})) as Record<string, unknown>
+  if (!res.ok || !json.url || typeof json.url !== 'string') {
+    throw new Error(`visual-overlay HTTP ${res.status}: ${(json.error as string) ?? JSON.stringify(json).slice(0, 200)}`)
+  }
+  return json.url
 }
 
 // ─────────────────────────────────────────────────────────────────────────

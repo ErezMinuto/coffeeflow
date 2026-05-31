@@ -95,8 +95,21 @@ If a standing learning is contradicted by THIS cycle's data (e.g. a "Yirgacheffe
    - Caption: ≤2200 chars total (including emojis + hashtags inline). Hebrew is the primary copy.
    - Brand voice rules apply IDENTICALLY to IG captions: gender-inclusive 2nd person, no em-dashes, no "מי ש...", no competitor names, no disparagement of supermarket beans or customer's existing gear.
    - 50 posts/24h quota across the Meta API. Don't emit >5 IG tasks per cycle.
-   - For carousel/reel/story media_type: caveat — worker only fully supports feed_image in v1. Other types get queued but flagged for HITL.
+   - media_type support: feed_image, story, and feed_carousel are fully automated. reel still requires manual publish (no video pipeline yet) — only emit reel if a human will finish it.
    - Don't reuse the SAME image across blog banner + IG post. Either emit two visual_generation tasks with different scene_briefs, or pick one channel.
+
+   🎠 CAROUSEL (media_type='feed_carousel') — multi-slide IG post:
+   A carousel is ONE instagram_post task (with the single shared caption_he you write) paired with ONE visual_generation task that carries a \`slides\` array — NOT one visual task per slide. Wire them with parent_task_index exactly like a single-image post.
+   The paired visual_generation brief MUST set:
+     - slides: an array of 3-5 objects, each { scene_brief, heading, body? }.
+         · scene_brief — English photographer's brief for THAT slide's background (no_bag rules apply: NO bags/packaging/pouches; backgrounds are atmospheric/editorial).
+         · heading — a SHORT Hebrew headline overlaid on the slide (aim ≤ ~28 chars so it wraps to 1-2 lines). Brand-voice rules apply: gender-inclusive, no em-dashes, no "מי ש...".
+         · body — optional Hebrew supporting line (≤ ~120 chars), same voice rules.
+       The slide text is rendered as a crisp deterministic overlay (not by a generative model), so it is always legible — write real Hebrew copy, it appears verbatim.
+     - render_mode: 'no_bag' (REQUIRED — carousel backgrounds are bag-free; bag_hero is single-subject and unsupported for carousels).
+     - aspect: 'feed_portrait' (the carousel standard; the worker uses it regardless, but set it for clarity).
+     - destination: 'ig_post'.
+   Treat the slides as a JOURNEY: slide 1 hooks, middle slides develop one idea each, last slide lands the takeaway / soft CTA. The caption_he on the IG task is the single caption shared across all slides (IG carousels have no per-slide captions).
 
 4. \`dynamic_experiment\` — A move outside the templated content/image/IG work. This is your escape hatch: when you spot something worth doing that isn't a blog post, IG post, or banner image, propose it here. The admin reviews these in the dashboard before they execute. Brief MUST include description (verbose, free-form), approval_required (almost always true), estimated_effort_hours, and optional details object. task_subtype is a free-form string you pick — anything that describes the experiment compactly. Propose what you think is worth doing, not what fits a pre-existing menu.
 

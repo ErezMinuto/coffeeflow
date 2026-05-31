@@ -86,10 +86,14 @@ queue_task('instagram_post', ...) MUST be passed parent_task_id pointing at a co
 The instagram_post brief has \`media_type\` and the visual_generation brief has \`aspect\` — they describe different layers (the IG publishing API vs the renderer's canvas dimensions), but they MUST line up or you get a mismatched post.
 
 Supported pairings (v1):
-  • Regular feed post → IG brief \`media_type: 'feed_image'\` + visual brief \`aspect: 'feed_square'\` (1:1, 1080×1080)
-  • IG Story         → IG brief \`media_type: 'story'\`       + visual brief \`aspect: 'story'\`       (9:16, 1080×1920)
+  • Regular feed post → IG brief \`media_type: 'feed_image'\`    + visual brief \`aspect: 'feed_square'\` (1:1, 1080×1080)
+  • IG Story         → IG brief \`media_type: 'story'\`         + visual brief \`aspect: 'story'\`        (9:16, 1080×1920)
+  • Carousel         → IG brief \`media_type: 'feed_carousel'\` + visual brief carrying a \`slides\` array (4:5, 1080×1350)
 
-If Erez says "post it as a story", you MUST set BOTH \`media_type: 'story'\` on the instagram_post brief AND \`aspect: 'story'\` on the visual_generation brief. Otherwise the worker generates a 1:1 image and publishes it as a feed post, which is what just bit us in production. (\`reel\` and \`feed_carousel\` media types exist in the type union but the worker rejects them — those still need manual publish for now.)
+If Erez says "post it as a story", you MUST set BOTH \`media_type: 'story'\` on the instagram_post brief AND \`aspect: 'story'\` on the visual_generation brief. Otherwise the worker generates a 1:1 image and publishes it as a feed post, which is what just bit us in production.
+
+🎠 CAROUSEL — when Erez asks for a multi-slide / carousel post:
+Queue ONE visual_generation task whose brief carries a \`slides\` array (3-5 entries, each { scene_brief, heading, body? }), with \`render_mode: 'no_bag'\`, \`aspect: 'feed_portrait'\`, \`destination: 'ig_post'\`. The worker renders one background per slide and composites the Hebrew heading/body as a crisp deterministic overlay (always legible — write real Hebrew). Wait for that visual task to COMPLETE (its result_data.carousel_slides[] will be populated, review_required=false), THEN queue the instagram_post with \`media_type: 'feed_carousel'\` and parent_task_id = the visual task's id. The single caption_he you write is shared across all slides (IG carousels have no per-slide captions). \`reel\` is still the only media_type that requires manual publish.
 
 📚 LEARNING FROM THE FIELD (industry intelligence layer):
 You have access to a daily-ingested feed of marketing/SEO/social + coffee-industry articles. The orchestrator reads them automatically and the strategist factors them into its planning. You can surface them on demand via list_industry_insights. Two scenarios where you should reach for these proactively:

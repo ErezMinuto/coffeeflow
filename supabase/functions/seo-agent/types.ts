@@ -91,6 +91,22 @@ export interface VisualGenerationBrief {
   // dimensions. 'blog_banner' goes into WP featured image; 'ig_post'
   // into the IG queue.
   destination: 'blog_banner' | 'ig_post'
+  // CAROUSEL MODE. When present (2-5 entries), the visual worker renders
+  // a multi-slide IG carousel instead of a single image: one background
+  // per slide (no_bag, feed_portrait) with the Hebrew heading/body
+  // composited as a deterministic resvg text overlay (via visual-overlay).
+  // result_data.carousel_slides[] holds the final per-slide URLs in order.
+  // The strategist authors the per-slide copy — workers never write IG
+  // copy. When absent, single-image behavior (unchanged). Pair this task
+  // with an instagram_post task whose media_type='feed_carousel'.
+  slides?: Array<{
+    // English photographer's brief for THIS slide's background.
+    scene_brief: string
+    // Hebrew headline overlaid on the slide (short — wraps to 1-2 lines).
+    heading: string
+    // Optional Hebrew supporting line(s) under the heading.
+    body?: string
+  }>
 }
 
 export interface DeepResearchBrief {

@@ -103,18 +103,19 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, 'caption_he is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption_he missing' })
   }
-  // Worker handles single-image flows: feed_image (regular post) and
-  // story (9:16 ephemeral). reel + feed_carousel still need HITL —
-  // reel because we don't have a video pipeline yet, carousel because
-  // it needs multi-image briefs the strategist doesn't emit today.
+  // Worker handles feed_image (regular post), story (9:16 ephemeral), and
+  // feed_carousel (multi-slide — the paired visual task renders the slides).
+  // reel still needs HITL — we don't have a video pipeline yet.
   // Map our internal media_type → meta-publish's `type` parameter.
-  let metaPublishType: 'feed' | 'story'
+  let metaPublishType: 'feed' | 'story' | 'carousel'
   if (mediaType === 'feed_image') {
     metaPublishType = 'feed'
   } else if (mediaType === 'story') {
     metaPublishType = 'story'
+  } else if (mediaType === 'feed_carousel') {
+    metaPublishType = 'carousel'
   } else {
-    await safeMarkFailed(supabase, task, `media_type '${mediaType}' not yet supported by automated worker (v1 supports feed_image + story; reel/carousel require manual publish)`, true)
+    await safeMarkFailed(supabase, task, `media_type '${mediaType}' not yet supported by automated worker (supports feed_image + story + feed_carousel; reel requires manual publish)`, true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'media_type unsupported in v1' })
   }
 
@@ -156,7 +157,11 @@ serve(async (req) => {
     })
   }
 
-  const parentResult = (parent.result_data ?? {}) as { image_url?: string; review_required?: boolean }
+  const parentResult = (parent.result_data ?? {}) as {
+    image_url?: string
+    carousel_slides?: Array<{ image_url?: string }>
+    review_required?: boolean
+  }
   if (parentResult.review_required === true) {
     // Visual worker capped without passing QA → the image is bad. Don't
     // post a bad image to IG. Mark this task for HITL too so admin can
@@ -164,10 +169,28 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, `parent visual task ${task.parent_task_id} did NOT pass QA (review_required=true). Re-queue with a refined scene_brief before publishing.`, true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent visual failed QA' })
   }
-  const imageUrl = parentResult.image_url
-  if (!imageUrl) {
-    await safeMarkFailed(supabase, task, `parent visual task ${task.parent_task_id} completed but result_data has no image_url`, true)
-    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'image_url missing on parent' })
+
+  // For carousel: resolve the ordered slide URLs into Meta's children[].
+  // For single-image flows: resolve one image_url. imageUrl stays the
+  // primary field for non-carousel; carouselChildren drives the carousel.
+  let imageUrl: string | undefined
+  let carouselChildren: Array<{ image_url: string }> | null = null
+  if (metaPublishType === 'carousel') {
+    const slides = Array.isArray(parentResult.carousel_slides) ? parentResult.carousel_slides : []
+    carouselChildren = slides
+      .map(s => s?.image_url)
+      .filter((u): u is string => typeof u === 'string' && u.length > 0)
+      .map(u => ({ image_url: u }))
+    if (carouselChildren.length < 2 || carouselChildren.length > 10) {
+      await safeMarkFailed(supabase, task, `carousel requires 2-10 slide images from parent visual task ${task.parent_task_id}; got ${carouselChildren.length}`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'carousel children count invalid' })
+    }
+  } else {
+    imageUrl = parentResult.image_url
+    if (!imageUrl) {
+      await safeMarkFailed(supabase, task, `parent visual task ${task.parent_task_id} completed but result_data has no image_url`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'image_url missing on parent' })
+    }
   }
 
   // ── 4. Build the final caption ──────────────────────────────────────
@@ -187,26 +210,32 @@ serve(async (req) => {
 
   // ── 5. Call meta-publish based on publish_strategy ──────────────────
   const action = publishStrategy === 'auto' ? 'publish_now' : 'prepare'
-  console.log(`[organic-worker-instagram] ${workerId} action=${action} image_url=${imageUrl} caption_len=${finalCaption.length}`)
+  console.log(`[organic-worker-instagram] ${workerId} action=${action} type=${metaPublishType} ${carouselChildren ? `children=${carouselChildren.length}` : `image_url=${imageUrl}`} caption_len=${finalCaption.length}`)
+
+  // Carousel sends children[]; feed/story send a single image_url.
+  const metaBody: Record<string, unknown> = {
+    action,
+    type: metaPublishType,
+    // IG Stories ignore caption text (no text overlay rendered from the
+    // caption field), so strip hashtag tail to avoid confusing admin in
+    // the prepared-container preview. Keep CTA + product link because
+    // those are informational metadata even if not visible on the story.
+    caption: metaPublishType === 'story'
+      ? finalCaption.replace(/\n#[^\n]+$/, '').trim()
+      : finalCaption,
+  }
+  if (carouselChildren) {
+    metaBody.children = carouselChildren
+  } else {
+    metaBody.image_url = imageUrl
+  }
 
   let metaResult: Record<string, unknown> = {}
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-publish`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
-      body: JSON.stringify({
-        action,
-        type:      metaPublishType,
-        // IG Stories ignore caption text (no text overlay rendered from
-        // the caption field), so strip hashtag tail to avoid confusing
-        // admin in the prepared-container preview. Keep CTA + product
-        // link because those are informational metadata even if not
-        // visible on the story itself.
-        caption:   metaPublishType === 'story'
-          ? finalCaption.replace(/\n#[^\n]+$/, '').trim()
-          : finalCaption,
-        image_url: imageUrl,
-      }),
+      body: JSON.stringify(metaBody),
     })
     const json = await res.json().catch(() => ({})) as Record<string, unknown>
     if (!res.ok) {
@@ -244,7 +273,8 @@ serve(async (req) => {
 
   try {
     await markTaskCompleted(supabase, task.id, {
-      image_url:       imageUrl,
+      image_url:       imageUrl ?? null,
+      carousel_children: carouselChildren ? carouselChildren.map(c => c.image_url) : null,
       caption:         finalCaption,
       caption_length:  finalCaption.length,
       hashtags,
