@@ -72,11 +72,19 @@ interface AutomationTemplate {
   coupon_product_category_ids: number[]
 }
 
+interface CartItem {
+  name: string
+  quantity: number
+  total: string  // line total in store currency (ILS), as returned by WC
+  image_url: string  // product thumbnail from WC line_items[].image.src; '' if none
+}
+
 interface FirstOrderCandidate {
   customer_email: string
   customer_name: string | null
   woo_order_id: number
   order_date: string  // YYYY-MM-DD
+  cart_items?: CartItem[]  // abandoned_cart only — line items from the pending WC order
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,6 +95,79 @@ function renderTemplate(template: string, vars: Record<string, string | number>)
     const v = vars[key]
     return v === undefined || v === null ? '' : String(v)
   })
+}
+
+/** Escape text interpolated into email HTML (WC product names are untrusted). */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/** Map a WC orders-endpoint line_items array to our CartItem shape. */
+function mapLineItems(raw: any): CartItem[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((li: any) => ({
+    name: (String(li?.name ?? '').trim()) || 'מוצר',
+    quantity: Number(li?.quantity ?? 1) || 1,
+    total: String(li?.total ?? '').trim(),
+    image_url: String(li?.image?.src ?? '').trim(),
+  }))
+}
+
+/**
+ * Build the RTL cart-contents block for abandoned-cart emails. Returns ''
+ * when there are no items, so templates that include {{ cart_items_html }}
+ * render nothing (no empty heading) rather than a stray box. first_purchase
+ * and refill_reminder never set cart_items, so they're unaffected.
+ *
+ * Each row: product thumbnail (right, RTL start) · name · qty + line total
+ * (left). Thumbnail falls back to a neutral box when the line item has no
+ * image so the columns stay aligned. Inline styles + table layout for
+ * email-client compatibility (no flexbox/grid).
+ */
+function renderCartItemsHtml(items: CartItem[]): string {
+  if (!items || items.length === 0) return ''
+  const rows = items.map(it => {
+    const thumb = it.image_url
+      ? `<img src="${escapeHtml(it.image_url)}" width="52" height="52" alt="" style="display: block; width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #e0d8c8;" />`
+      : `<div style="width: 52px; height: 52px; border-radius: 8px; background: #e9e3d6;"></div>`
+    return `
+          <tr>
+            <td width="52" style="padding: 8px 0;" valign="middle">${thumb}</td>
+            <td style="padding: 8px 12px; color: #2a2a2a; font-size: 15px;" valign="middle">${escapeHtml(it.name)}</td>
+            <td style="padding: 8px 0; color: #6a6a6a; font-size: 14px; white-space: nowrap;" align="left" valign="middle">× ${it.quantity}${it.total ? ` &middot; ₪${escapeHtml(it.total)}` : ''}</td>
+          </tr>`
+  }).join('')
+  return `
+        <div style="margin: 8px 0 24px; padding: 16px 20px; background: #f6f3ee; border-radius: 8px;">
+          <p style="margin: 0 0 10px; font-weight: bold; color: #3D4A2E; font-size: 15px;">מה שחיכה בעגלה</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${rows}
+          </table>
+        </div>`
+}
+
+/**
+ * Test-send helper for abandoned_cart_*: pull the most recent real pending
+ * order's line items so the preview shows genuine product names + images
+ * (not placeholders). Returns [] on any failure; caller supplies a static
+ * fallback so a test-send never breaks just because WC is unreachable.
+ */
+async function fetchSampleCartItems(): Promise<CartItem[]> {
+  if (!WOO_KEY || !WOO_SECRET) return []
+  try {
+    const params = new URLSearchParams({
+      status: 'pending', per_page: '1', orderby: 'date', order: 'desc',
+      _fields: 'line_items',
+    })
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const orders = await res.json()
+    return Array.isArray(orders) && orders[0] ? mapLineItems(orders[0].line_items) : []
+  } catch { return [] }
 }
 
 /**
@@ -647,7 +728,7 @@ async function findAbandonedCartCandidates(
     per_page: '100',
     orderby: 'date',
     order: 'asc',
-    _fields: 'id,date_created,status,billing',
+    _fields: 'id,date_created,status,billing,line_items',
   })
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
   const res = await fetch(url)
@@ -663,16 +744,18 @@ async function findAbandonedCartCandidates(
 
   // Normalize to internal candidate shape. Drop rows without an email
   // (some pending orders, e.g. created via admin, won't have one).
-  type PendingOrder = { woo_order_id: number; email: string; first_name: string | null; order_date: string }
+  type PendingOrder = { woo_order_id: number; email: string; first_name: string | null; order_date: string; cart_items: CartItem[] }
   const pending: PendingOrder[] = []
   for (const o of orders) {
     const email = ((o?.billing?.email ?? '') as string).toLowerCase().trim()
     if (!email) continue
+    const cart_items = mapLineItems(o?.line_items)
     pending.push({
       woo_order_id: o.id,
       email,
       first_name: (o?.billing?.first_name ?? null) || null,
       order_date: String(o.date_created ?? '').split('T')[0],
+      cart_items,
     })
   }
   if (pending.length === 0) return []
@@ -728,6 +811,7 @@ async function findAbandonedCartCandidates(
       customer_name: p.first_name,
       woo_order_id: p.woo_order_id,
       order_date: p.order_date,
+      cart_items: p.cart_items,
     })
   }
   return candidates
@@ -818,6 +902,7 @@ async function processAutomation(
     order_id: candidate.woo_order_id,
     unsubscribe_url: unsubscribeUrl,
     logo_url: DEFAULT_LOGO_URL,
+    cart_items_html: renderCartItemsHtml(candidate.cart_items ?? []),
   }
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
@@ -888,6 +973,19 @@ serve(async (req) => {
         )
       }
       const unsubscribeUrl = generateUnsubscribeUrl(testTo)
+      // For abandoned_cart_* previews, show a REAL pending order's items
+      // (names + images) so the test matches what a customer would receive.
+      // Fall back to a static sample if there's no pending order / WC fails.
+      let sampleCart: CartItem[] = []
+      if (testTrigger.startsWith('abandoned_cart')) {
+        sampleCart = await fetchSampleCartItems()
+        if (sampleCart.length === 0) {
+          sampleCart = [
+            { name: 'אתיופיה יִרגָצֶ׳ף — 250 גרם', quantity: 1, total: '64.00', image_url: '' },
+            { name: 'בלנד הבית אספרסו — 1 ק״ג', quantity: 2, total: '240.00', image_url: '' },
+          ]
+        }
+      }
       const vars = {
         first_name: 'בוחן',
         coupon_code: couponCode ?? '',
@@ -895,6 +993,7 @@ serve(async (req) => {
         order_id: 0,
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
+        cart_items_html: renderCartItemsHtml(sampleCart),
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
