@@ -47,6 +47,11 @@ const UNSUBSCRIBE_BASE = Deno.env.get('UNSUBSCRIBE_BASE_URL') ?? `${SUPA_URL}/fu
 // touching code. Default to a known-existing URL on the storefront if
 // none is configured; owner can update via Supabase Table Editor.
 const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.co.il/wp-content/uploads/2024/01/minuto-logo.png'
+// Owner-copy (BCC) on every REAL automation send, so the owner can inspect
+// exactly what customers receive — requested for the abandoned-cart go-live.
+// Empty = no copy. Set/clear via `supabase secrets set AUTOMATION_BCC=...`
+// without a code change, so it's trivial to turn off once trust is built.
+const AUTOMATION_BCC = (Deno.env.get('AUTOMATION_BCC') ?? '').trim()
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -374,9 +379,23 @@ async function createCoupon(
  * sender reputation.
  */
 async function sendEmail(
-  to: string, subject: string, html: string, unsubscribeUrl: string
+  to: string, subject: string, html: string, unsubscribeUrl: string, bcc?: string
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!RESEND_KEY) return { ok: false, error: 'RESEND_API_KEY not configured' }
+
+  const payload: Record<string, unknown> = {
+    from: `Minuto <${SENDER_EMAIL}>`,
+    to: [to],
+    subject,
+    html,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
+  }
+  // Owner-copy: only on real sends (caller passes bcc). Never BCC the
+  // customer's own address (would double-deliver if they ever match).
+  if (bcc && bcc.toLowerCase() !== to.toLowerCase()) payload.bcc = [bcc]
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -384,16 +403,7 @@ async function sendEmail(
       Authorization: `Bearer ${RESEND_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: `Minuto <${SENDER_EMAIL}>`,
-      to: [to],
-      subject,
-      html,
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
@@ -976,7 +986,7 @@ async function processAutomation(
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
 
-  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl)
+  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl, AUTOMATION_BCC || undefined)
 
   if (!sendResult.ok) {
     await supabase.from('email_automations').update({
@@ -1072,7 +1082,7 @@ serve(async (req) => {
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
-      const r = await sendEmail(testTo, subject, html, unsubscribeUrl)
+      const r = await sendEmail(testTo, subject, html, unsubscribeUrl, AUTOMATION_BCC || undefined)
       return new Response(JSON.stringify({ test_send: testTo, trigger: testTrigger, coupon: couponCode, ...r }),
         { headers: { ...CORS, 'Content-Type': 'application/json' } })
     } catch (e: any) {
