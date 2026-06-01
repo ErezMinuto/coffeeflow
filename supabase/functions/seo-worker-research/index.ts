@@ -142,6 +142,10 @@ serve(async (req) => {
   let totalInputTokens = 0
   let totalOutputTokens = 0
   let hitTimeBudget = false
+  // True once we have a COMPLETE report (clean in-loop end_turn OR a successful
+  // synthesis pass). Drives the partial flag so we stop stamping "⚠️ PARTIAL"
+  // on reports that a recovered synthesis actually finished in full.
+  let producedCleanReport = false
 
   // WALL-CLOCK BUDGET. maxTurns × the old 120s per-turn timeout could reach
   // ~600s — far past the edge isolate's hard ~150-200s wall-clock cap, so
@@ -165,26 +169,85 @@ serve(async (req) => {
   // exact failure: turn-3 abort → starved synth → final_len 0). Now research
   // is hard-stopped at 85s and synthesis always gets its own 50s, all inside
   // a ~140s envelope so even a synchronous caller stays under the 150s cap.
+  const WEB_PHASE_CAP_MS     = 60_000   // isolated up-front web_search turn
   const GATHER_DEADLINE_MS   = 85_000   // stop STARTING research turns after this
-  const RESEARCH_TURN_CAP_MS = 38_000   // a single stalled turn aborts here
+  const RESEARCH_TURN_CAP_MS = 48_000   // room for a query_minuto turn to COMPLETE
   const SYNTH_TIMEOUT_MS     = 50_000   // synthesis gets its own full window
   const ISOLATE_CEILING_MS   = 145_000  // never run a call past this elapsed
   const MIN_TURN_MS          = 16_000
   const loopStartedAt        = Date.now()
 
-  // Track tools to enable Anthropic web_search via the per-call config —
-  // it's not in our generic ToolDefinition type since it's a built-in.
-  // We pass it as an extra in the body via the `tools` array; Anthropic
-  // recognizes `{type: 'web_search_20250305', name: 'web_search'}`.
-  const fullTools: any[] = [
-    // Keep total searches LOW. web_search is server-executed by Anthropic and
-    // each search adds latency; letting the model front-load many in one turn
-    // is what produces the >38s hangs that abort the turn. A budget-bounded
-    // run only completes ~2-3 turns anyway, so 6 searches is ample and keeps
-    // every turn comfortably under the per-turn cap.
-    { type: 'web_search_20250305', name: 'web_search', max_uses: Math.min(6, maxTurns * 2) },
-    ...TOOL_DEFINITIONS,
-  ]
+  // ── PHASE 0: ISOLATED WEB SEARCH ─────────────────────────────────────
+  // Run web_search ONCE, up front, against a MINIMAL context (just the
+  // question) — BEFORE any query_minuto results pile ~30-40k tokens into
+  // `messages`. Root cause of the old abort: the model batched several
+  // searches into a single turn AND that turn carried the full accumulated
+  // context, so generation crossed the per-turn timeout and aborted with
+  // "The signal has been aborted", landing ZERO web evidence and forcing the
+  // synthesis fallback to run on internal data only. Isolating the search on
+  // a tiny context makes the turn fast and reliable; we capture the model's
+  // findings as a TEXT digest and fold it into the loop's opening message so
+  // query_minuto grounding + the synthesis fallback can both cite it. (We
+  // keep only the text, not the raw web_search_tool_result blocks — those are
+  // server-tool blocks we can't cleanly re-feed; the digest is what matters.)
+  let webEvidence  = ''
+  let webPhaseRan  = false
+  let webPhaseError: string | null = null
+  // Structured {title,url} list pulled DETERMINISTICALLY from the
+  // web_search_tool_result blocks (see extractWebSources). This is the real
+  // fix for "no URLs in the report": the source URLs live in these structured
+  // blocks, NOT reliably as literal strings in the model's prose, so we stop
+  // depending on the LLM to carry them and attach them to the report ourselves.
+  let webSources: Array<{ title: string; url: string }> = []
+  try {
+    webPhaseRan = true
+    const webMsgs: ApiChatMessage[] = [{
+      role: 'user',
+      content: `${question}\n\nFIRST STEP — WEB EVIDENCE GATHERING ONLY. Use web_search now to find the most relevant, recent public sources for this question. Then write a concise BULLETED digest of the concrete findings, each bullet ending with its source URL. Do NOT write the full analysis yet — just the sourced findings. If web results are thin or irrelevant, say so explicitly.`,
+    }]
+    const web = await callClaude({
+      model:       MODEL_ORCHESTRATOR,
+      system:      systemPrompt,
+      messages:    webMsgs,
+      // web_search ONLY, on a clean context. max_uses 2: Anthropic executes
+      // searches SEQUENTIALLY server-side BEFORE returning the response, so
+      // each search adds ~6-20s of latency that the per-call timeout has to
+      // cover. 4 searches blew even a 40s cap on a clean context; 2 searches
+      // (~15-30s) + a short digest completes inside 60s and actually lands.
+      tools:       [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }] as any,
+      maxTokens:   1500,
+      temperature: 0.3,
+      timeoutMs:   Math.min(WEB_PHASE_CAP_MS, ISOLATE_CEILING_MS - (Date.now() - loopStartedAt)),
+    })
+    totalInputTokens  += web.inputTokens
+    totalOutputTokens += web.outputTokens
+    webEvidence = web.text.trim()
+    webSources  = extractWebSources(web.content as any[])
+    researchLog.push({ turn: 0, tool_calls: ['<web_search_phase>'], text_snippet: webEvidence.slice(0, 200) })
+    console.log(`[seo-worker-research] ${workerId} web-search phase produced ${webEvidence.length} chars, ${webSources.length} sources`)
+  } catch (e: any) {
+    // Never crash on a web-phase failure — the loop still runs on internal
+    // data. Persisted into result_data below for diagnosis.
+    webPhaseError = e?.message ?? String(e)
+    console.error(`[seo-worker-research] ${workerId} web-search phase failed (continuing on internal data): ${webPhaseError}`)
+  }
+  // Fold the digest into the loop's opening message so every subsequent turn
+  // (and the synthesis fallback) sees the sourced findings as context.
+  if (webEvidence) {
+    messages[0] = {
+      role: 'user',
+      content: `${question}\n\n<web_research_digest>\n${webEvidence}\n</web_research_digest>\n\nThe digest above was gathered from live web_search. Use query_minuto to ground it in Minuto's own data, then synthesize your final answer. Do NOT attempt web_search again — it is not available in this phase.`,
+    }
+  }
+
+  // Main-loop tools: query_minuto + fetch_url ONLY. Web search is done in
+  // the ISOLATED Phase 0 above, on a clean context, and its findings are
+  // already folded into messages[0]. Keeping web_search OUT of the loop is
+  // the whole fix: it stops the model from firing a heavy batched-search
+  // turn against the large accumulated query_minuto context — that turn is
+  // what crossed the per-turn timeout and aborted ("The signal has been
+  // aborted") every run, wiping out the web evidence.
+  const fullTools: any[] = [...TOOL_DEFINITIONS]
 
   let loopError: string | null = null
   try {
@@ -202,10 +265,15 @@ serve(async (req) => {
       system:      systemPrompt,
       messages,
       tools:       fullTools as any,
-      maxTokens:   4096,
+      // Gather turns are for CALLING query_minuto, not writing the report.
+      // Capped low (was 4096) so a turn can't try to generate a full ~4k-token
+      // report on top of ~35k tokens of context — that long generation is what
+      // crossed the 48s per-turn cap and aborted ("signal aborted") every run.
+      // The dedicated synthesis pass below writes the report with its own budget.
+      maxTokens:   1500,
       temperature: 0.3,
-      // Cap a single research turn so a stalled web_search aborts fast, well
-      // before it can eat into the synthesis phase.
+      // Cap a single research turn so a stalled turn aborts fast, well before
+      // it can eat into the synthesis phase.
       timeoutMs:   Math.min(RESEARCH_TURN_CAP_MS, gatherLeftMs),
     })
     totalInputTokens  += res.inputTokens
@@ -229,9 +297,17 @@ serve(async (req) => {
       messages.push({ role: 'assistant', content: echoBlocks.length === 1 && echoBlocks[0].type === 'text' ? echoBlocks[0].text : echoBlocks })
     }
 
-    // Stop if no more tool calls or model declared end_turn.
+    // Truncated mid-generation (hit the low gather cap): DON'T serve this
+    // cut-off turn as the report — break and let the dedicated synthesis pass
+    // write it properly with its full token budget. Its partial text is
+    // already echoed into `messages`, so synthesis still has it as context.
+    if (res.stop_reason === 'max_tokens' && toolUses.length === 0) {
+      break
+    }
+    // Clean finish: model produced its answer with no further tool calls.
     if (toolUses.length === 0 || res.stop_reason === 'end_turn') {
       finalText = assistantText
+      if (finalText.trim()) producedCleanReport = true
       break
     }
 
@@ -278,7 +354,11 @@ serve(async (req) => {
     const synthMs = Math.max(20_000, Math.min(SYNTH_TIMEOUT_MS, ISOLATE_CEILING_MS - elapsed))
     synthRan = true
     try {
-      const nudge = `You are out of research time. Do NOT call any tools. Using ONLY the information already gathered in this conversation, write your final ${expectedOut.toUpperCase()} now, following the required output shape and staying within its length limit (do not exceed it). If the evidence is thin, say so explicitly rather than fabricating.`
+      // Do NOT instruct the model to cite specific URLs here — the structured
+      // source list is appended deterministically after synthesis, and the
+      // synthesis context doesn't carry the literal URLs, so asking for inline
+      // URL citations would invite fabricated links. Keep it to the findings.
+      const nudge = `You are out of research time. Do NOT call any tools. Using ONLY the information already gathered in this conversation, write your final ${expectedOut.toUpperCase()} now, following the required output shape and staying within its length limit (do not exceed it).${webEvidence ? ' Incorporate the findings from the <web_research_digest> block alongside the query_minuto data.' : ''} If the evidence is thin, say so explicitly rather than fabricating.`
       const synthMsgs: ApiChatMessage[] = [...messages]
       const last = synthMsgs[synthMsgs.length - 1]
       // Keep roles alternating: research turns always leave a trailing
@@ -307,6 +387,7 @@ serve(async (req) => {
       if (synth.text.trim()) {
         finalText = synth.text
         lastAssistantText = synth.text
+        producedCleanReport = true
         researchLog.push({ turn: turn + 1, tool_calls: ['<forced_synthesis>'], text_snippet: synth.text.slice(0, 200) })
         console.log(`[seo-worker-research] ${workerId} forced synthesis produced ${synth.text.length} chars (had ${synthMs}ms)`)
       } else {
@@ -325,11 +406,22 @@ serve(async (req) => {
   if (!finalText.trim() && lastAssistantText.trim()) {
     finalText = lastAssistantText
   }
-  // Flag the report as partial so the reader (and the agent) treats it as
-  // preliminary, not a complete answer.
-  if ((hitTimeBudget || loopError) && finalText.trim()) {
-    const why = loopError ? 'an error mid-run' : 'the time budget'
-    finalText = `⚠️ PARTIAL RESULT — research was cut short after ${turn} turn(s) by ${why}; treat as preliminary.\n\n${finalText}`
+  // Flag the report as partial ONLY when we never produced a complete report
+  // (no clean end_turn and no successful synthesis) — i.e. we're serving a
+  // fallback scrap. A gather-turn abort that synthesis fully recovered from is
+  // NOT partial, so we no longer stamp the warning on complete reports.
+  if (!producedCleanReport && finalText.trim()) {
+    finalText = `⚠️ PARTIAL RESULT — research could not be fully synthesized after ${turn} turn(s); treat as preliminary.\n\n${finalText}`
+  }
+
+  // Deterministically append the live web sources pulled from the structured
+  // web_search_tool_result blocks. This GUARANTEES fresh web evidence is
+  // attributable in every report, independent of whether the LLM inlined any
+  // URLs into its prose (it usually doesn't — the URLs live in citation
+  // metadata, not the text). This is the core fix for url_count=0.
+  if (webSources.length > 0 && finalText.trim()) {
+    const list = webSources.map(s => `- [${s.title}](${s.url})`).join('\n')
+    finalText = `${finalText}\n\n---\n## Web sources (live search)\n${list}`
   }
 
   // ── Persist result ─────────────────────────────────────────────────
@@ -344,6 +436,11 @@ serve(async (req) => {
       max_turns:              maxTurns,
       hit_time_budget:        hitTimeBudget,
       loop_error:             loopError,
+      web_phase_ran:          webPhaseRan,
+      web_phase_error:        webPhaseError,
+      web_phase_chars:        webEvidence.length,
+      web_digest:             webEvidence,
+      web_sources:            webSources,
       synth_ran:              synthRan,
       synth_error:            synthError,
       partial:                Boolean(hitTimeBudget || loopError),
@@ -545,6 +642,30 @@ async function executeTool(
   } catch (e: any) {
     return { ok: false, payload: { error: e?.message ?? String(e) } }
   }
+}
+
+// Pull the structured source list out of Anthropic's server-side web_search
+// response. The URLs live in `web_search_tool_result` blocks as
+// `{ type:'web_search_result', title, url, ... }` — NOT reliably as literal
+// strings in the model's text (there they're citation metadata). Extracting
+// them here (deduped, capped) lets us attach real citations to the report
+// deterministically instead of hoping the LLM typed the URLs into prose.
+function extractWebSources(content: any[]): Array<{ title: string; url: string }> {
+  const out: Array<{ title: string; url: string }> = []
+  const seen = new Set<string>()
+  for (const block of content ?? []) {
+    if (block?.type !== 'web_search_tool_result') continue
+    const results = Array.isArray(block.content) ? block.content : []
+    for (const r of results) {
+      if (r?.type !== 'web_search_result') continue
+      const url = typeof r.url === 'string' ? r.url.trim() : ''
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      const title = typeof r.title === 'string' && r.title.trim() ? r.title.trim() : url
+      out.push({ title, url })
+    }
+  }
+  return out.slice(0, 12)
 }
 
 function aggregateByPage(rows: Array<{ page_path: string; sessions: number | null; conversions: number | null; conversion_value: number | null }>): Array<{ page_path: string; sessions: number; conversions: number; conversion_value: number }> {
