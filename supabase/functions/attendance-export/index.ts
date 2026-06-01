@@ -1,8 +1,11 @@
 /**
  * CoffeeFlow — Attendance Export (Supabase Edge Function)
  *
- * POST { year_month: "2026-04" }  → builds an XLSX (one sheet per employee)
- * for the given Israel-local month and emails it to the accountant via Resend.
+ * POST { year_month: "2026-04" }                  → builds an XLSX (one sheet
+ *   per employee) for the given Israel-local month and emails it to the
+ *   accountant via Resend.
+ * POST { year_month: "2026-04", mode: "download" } → returns the same XLSX as
+ *   { ok, base64, filename, employee_count } for the browser to save locally.
  *
  * Each sheet rows = one calendar day in the month. For days with multiple
  * in/out pairs, all pairs are collapsed into a single line (first in, last
@@ -210,18 +213,12 @@ function safeSheetName(name: string, used: Set<string>): string {
   return candidate;
 }
 
-async function buildAndSend(yearMonth: string) {
-  // Settings.
-  const { data: settings } = await supabase
-    .from("attendance_settings")
-    .select("accountant_email")
-    .eq("id", 1)
-    .single();
-  const to = settings?.accountant_email?.trim();
-  if (!to) {
-    return { ok: false, error: "accountant_email לא מוגדר" };
-  }
-
+// Build the XLSX workbook for a month and return it as a base64 string.
+// Shared by both the email path and the download path.
+async function buildWorkbook(yearMonth: string): Promise<
+  | { ok: true; base64: string; filename: string; employee_count: number }
+  | { ok: false; error: string }
+> {
   // Range.
   const { startUTC, endUTC, days } = monthRange(yearMonth);
 
@@ -279,7 +276,30 @@ async function buildAndSend(yearMonth: string) {
   // "content" field that Resend rejected with "invalid_attachment".
   const base64 = XLSX.write(wb, { type: "base64", bookType: "xlsx" }) as string;
 
-  const filename = `attendance_${yearMonth}.xlsx`;
+  return {
+    ok: true,
+    base64,
+    filename: `attendance_${yearMonth}.xlsx`,
+    employee_count: empIds.size,
+  };
+}
+
+async function buildAndSend(yearMonth: string) {
+  // Settings.
+  const { data: settings } = await supabase
+    .from("attendance_settings")
+    .select("accountant_email")
+    .eq("id", 1)
+    .single();
+  const to = settings?.accountant_email?.trim();
+  if (!to) {
+    return { ok: false, error: "accountant_email לא מוגדר" };
+  }
+
+  const built = await buildWorkbook(yearMonth);
+  if (!built.ok) return built;
+  const { base64, filename, employee_count } = built;
+
   const subject  = `דו״ח נוכחות — ${yearMonth}`;
   const html = `
     <div dir="rtl" style="font-family: sans-serif; font-size: 14px; color: #333;">
@@ -317,7 +337,7 @@ async function buildAndSend(yearMonth: string) {
     ok: true,
     sent_to: to,
     year_month: yearMonth,
-    employee_count: empIds.size,
+    employee_count,
     resend_id: body?.id ?? "",
   };
 }
@@ -328,15 +348,21 @@ serve(async (req) => {
   }
   try {
     let yearMonth = lastMonthYM();
+    let mode = "send";
     if (req.method === "POST") {
       try {
         const body = await req.json();
         if (typeof body?.year_month === "string" && /^\d{4}-\d{2}$/.test(body.year_month)) {
           yearMonth = body.year_month;
         }
+        if (body?.mode === "download") mode = "download";
       } catch { /* empty body OK */ }
     }
-    const result = await buildAndSend(yearMonth);
+    // Download mode returns the XLSX as base64 for the browser to save locally;
+    // send mode emails it to the configured accountant.
+    const result = mode === "download"
+      ? await buildWorkbook(yearMonth)
+      : await buildAndSend(yearMonth);
     return new Response(JSON.stringify(result), {
       status: result.ok ? 200 : 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

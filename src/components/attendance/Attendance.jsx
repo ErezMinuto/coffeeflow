@@ -457,6 +457,7 @@ export default function Attendance() {
   const [settings, setSettings] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const numDays = daysInMonth(year, month);
@@ -560,6 +561,38 @@ export default function Attendance() {
     }
   };
 
+  const downloadReport = async () => {
+    const ym = ymKey(year, month);
+    setDownloadBusy(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('attendance-export', {
+        body: { year_month: ym, mode: 'download' },
+      });
+      if (error) throw error;
+      if (!result?.ok) throw new Error(result?.error || 'unknown');
+      // Decode base64 → Blob and trigger a browser download.
+      const bin = atob(result.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename || `attendance_${ym}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`הורד דו״ח (${result.employee_count} עובדים)`, 'success');
+    } catch (e) {
+      showToast(`שגיאה: ${e.message}`, 'error');
+    } finally {
+      setDownloadBusy(false);
+    }
+  };
+
   return (
     <div style={{ padding: '1rem 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -572,13 +605,22 @@ export default function Attendance() {
           </span>
           <button onClick={goNext} style={navBtn}>›</button>
         </div>
-        <button onClick={exportToAccountant} disabled={exportBusy}
-                style={{ padding: '0.55rem 1.25rem', background: '#16a34a',
-                         color: 'white', border: 'none', borderRadius: 6,
-                         cursor: exportBusy ? 'not-allowed' : 'pointer',
-                         fontWeight: 600, opacity: exportBusy ? 0.6 : 1 }}>
-          {exportBusy ? 'שולח…' : '📧 שלח לרו״ח'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={downloadReport} disabled={downloadBusy}
+                  style={{ padding: '0.55rem 1.25rem', background: '#3D4A2E',
+                           color: 'white', border: 'none', borderRadius: 6,
+                           cursor: downloadBusy ? 'not-allowed' : 'pointer',
+                           fontWeight: 600, opacity: downloadBusy ? 0.6 : 1 }}>
+            {downloadBusy ? 'מוריד…' : '⬇️ הורד דו״ח'}
+          </button>
+          <button onClick={exportToAccountant} disabled={exportBusy}
+                  style={{ padding: '0.55rem 1.25rem', background: '#16a34a',
+                           color: 'white', border: 'none', borderRadius: 6,
+                           cursor: exportBusy ? 'not-allowed' : 'pointer',
+                           fontWeight: 600, opacity: exportBusy ? 0.6 : 1 }}>
+            {exportBusy ? 'שולח…' : '📧 שלח לרו״ח'}
+          </button>
+        </div>
       </div>
 
       <SettingsCard settings={settings} onSave={reload} />
