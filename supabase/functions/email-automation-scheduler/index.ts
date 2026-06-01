@@ -59,6 +59,7 @@ interface AutomationTemplate {
   enabled: boolean
   delay_days: number
   max_lookback_days: number  // upper bound on order_date — prevents historical backlog blast
+  not_before_date?: string | null  // abandoned_cart only: ignore carts whose order_date is before this (go-live floor, YYYY-MM-DD). NULL = no floor.
   subject_template: string
   body_html_template: string
   coupon_percent: number | null
@@ -760,6 +761,7 @@ async function findAbandonedCartCandidates(
   delayDays: number,
   maxLookbackDays: number,
   prerequisiteTrigger: string | null,
+  notBeforeDate: string | null,
 ): Promise<FirstOrderCandidate[]> {
   if (maxLookbackDays < delayDays) {
     console.warn(`[email-automation] abandoned_cart: max_lookback_days (${maxLookbackDays}) < delay_days (${delayDays}) — no orders can ever qualify. Fix the template.`)
@@ -847,6 +849,11 @@ async function findAbandonedCartCandidates(
 
   const surviving: FirstOrderCandidate[] = []
   for (const p of pending) {
+    // Go-live floor: ignore carts abandoned before the trigger's start date
+    // so enabling the automation doesn't blast the pre-existing backlog.
+    // Compared by calendar date (order_date is the store-local date), which
+    // matches the owner's "start from today's carts" intent. NULL = no floor.
+    if (notBeforeDate && p.order_date < notBeforeDate) continue
     const lp = latestPaid.get(p.email)
     if (lp && lp >= p.order_date) continue   // already recovered — skip
     if (prereqOrderIds && !prereqOrderIds.has(p.woo_order_id)) continue  // cart_1 not sent yet
@@ -1099,9 +1106,9 @@ serve(async (req) => {
       } else if (testTrigger === 'refill_reminder') {
         candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
       } else if (testTrigger === 'abandoned_cart_1') {
-        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null)
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
       } else if (testTrigger === 'abandoned_cart_2') {
-        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1')
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1', tmpl.not_before_date ?? null)
       } else {
         return new Response(JSON.stringify({ error: `no finder for trigger: ${testTrigger}` }),
           { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -1173,9 +1180,9 @@ serve(async (req) => {
     } else if (tmpl.trigger_type === 'refill_reminder') {
       candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else if (tmpl.trigger_type === 'abandoned_cart_1') {
-      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null)
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
     } else if (tmpl.trigger_type === 'abandoned_cart_2') {
-      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1')
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1', tmpl.not_before_date ?? null)
     } else {
       summary.runs.push({ trigger: tmpl.trigger_type, error: 'no handler implemented' })
       continue
