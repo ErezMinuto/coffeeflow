@@ -153,13 +153,14 @@ serve(async (req) => {
 
   // ── 2b. CAROUSEL FORK ────────────────────────────────────────────────
   // When the brief carries a slides[] array it's a multi-slide IG carousel,
-  // not a single image. The carousel path has its own (simpler) flow: render
-  // each slide's background, composite the Hebrew heading/body via the
-  // deterministic visual-overlay function, and store the ordered slide URLs.
-  // No WP attach (carousel is ig_post only) and no Claude-vision QA loop —
-  // the text is crisp by construction (resvg, not a generative model) and
-  // the no-auto-publish HITL gate is the human review step. Handled and
-  // returned entirely inside handleCarousel.
+  // not a single image. The carousel path renders each slide's background
+  // through the SAME per-slide Claude-vision QA loop the single-image path
+  // uses (render → eval → retry), composites the Hebrew heading/body via the
+  // deterministic visual-overlay function, and stores the ordered slide URLs.
+  // No WP attach (carousel is ig_post only). If any slide can't pass QA after
+  // its retries, the whole carousel is flagged review_required=true so the
+  // admin reviews it before approving — the worker never reports an
+  // unvetted carousel as ready. Handled and returned inside handleCarousel.
   if (Array.isArray(brief?.slides) && brief.slides.length > 0) {
     return await handleCarousel(supabase, task, brief, workerId)
   }
@@ -662,10 +663,11 @@ const CAROUSEL_MIN_SLIDES = 2
 // Gemini (no_bag mode) has a strong "coffee scene → put a bag in frame"
 // prior and will hallucinate a generic NON-Minuto bag — often with an
 // invented competitor brand + logo baked in (a live test produced a
-// "STAG COFFEE" deer-logo bag). The single-image path catches this via
-// its Claude-vision QA loop; the carousel path skips QA for time/cost,
-// so we PRE-EMPT the prior with a negative directive appended to the tail
-// of every slide brief (generative models weight the prompt tail most).
+// "STAG COFFEE" deer-logo bag). The carousel path now runs the same per-slide
+// Claude-vision QA loop as single images (so a hallucinated bag is caught and
+// retried, then flagged for review if it persists); this guard is the FIRST
+// line of defence — a negative directive appended to the tail of every slide
+// brief to cut down retries (generative models weight the prompt tail most).
 // Also forbids printed words/logos so the deterministic Hebrew overlay is
 // the ONLY text on the slide.
 function addNoBagGuard(sceneBrief: string): string {
@@ -705,30 +707,37 @@ async function handleCarousel(
 
   console.log(`[seo-worker-visual] ${workerId} carousel render: ${slides.length} slides (parallel)`)
 
-  // Render every slide in parallel: background (no_bag) → text overlay.
-  let renderedSlides: Array<{ image_url: string; bg_url: string; heading: string; body?: string }>
+  // Render every slide in parallel — EACH slide runs the same Claude-vision
+  // QA loop the single-image path uses (render → eval → retry), so generic /
+  // competitor bags, stray hands, and off-brand frames are CAUGHT here rather
+  // than surfaced to the admin as "ready to approve". Slides run concurrently
+  // so the carousel's wall-clock ≈ the slowest single slide (~one image's
+  // worth of attempts), keeping it inside the 240s cron budget.
+  let slideResults: Array<{
+    rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
+    qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
+    passed:      boolean
+  }>
   try {
-    renderedSlides = await Promise.all(slides.map(async (slide, i) => {
-      const bg = await renderOnce({
-        renderMode: 'no_bag',
-        sceneBrief: addNoBagGuard(slide.scene_brief),
-        aspect:     'feed_portrait',
-      })
-      const finalUrl = await overlaySlide({
-        imageUrl: bg.url,
-        heading:  slide.heading,
-        body:     slide.body,
-      })
-      console.log(`[seo-worker-visual] ${workerId} slide ${i + 1}/${slides.length} done: ${finalUrl}`)
-      return { image_url: finalUrl, bg_url: bg.url, heading: slide.heading, body: slide.body }
-    }))
+    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId)))
   } catch (e: any) {
-    // Any slide render/overlay failure fails the whole carousel — a partial
-    // carousel is not publishable. Linear retry via markTaskFailed.
+    // Any slide render/overlay INFRA failure (HTTP/API outage) fails the whole
+    // carousel — a partial carousel is not publishable. Linear retry via
+    // markTaskFailed. (A QA *fail* does NOT land here — that flags review.)
     const msg = `carousel slide render failed: ${e?.message ?? e}`
     const permanently = task.attempts >= task.max_attempts
     await safeMarkFailed(supabase, task, msg, permanently)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: msg, permanent: permanently }, 500)
+  }
+
+  const renderedSlides = slideResults.map(r => r.rendered)
+  // One slide that can't pass vision QA after its retries flags the WHOLE
+  // carousel for human review — a single off-brand slide makes the set
+  // unpublishable. This replaces the old hard-coded review_required:false.
+  const failedSlideCount = slideResults.filter(r => !r.passed).length
+  const carouselReviewRequired = failedSlideCount > 0
+  if (carouselReviewRequired) {
+    console.warn(`[seo-worker-visual] ${workerId} carousel review_required: ${failedSlideCount}/${slideResults.length} slide(s) failed QA`)
   }
 
   try {
@@ -740,10 +749,12 @@ async function handleCarousel(
       destination:     'ig_post',
       render_function: 'visual-test+visual-overlay',
       render_mode:     'no_bag',
-      // Rendering succeeded → no QA-fail flag. The HITL gate downstream is
-      // the IG prepare/admin-publish step (same as a single feed image).
-      review_required: false,
-      qa_passed:       true,
+      // Per-slide Claude-vision QA ran. review_required=true means at least
+      // one slide could not pass after its retries — a human reviews the
+      // slide_qa log before this carousel is approved for publish.
+      review_required: carouselReviewRequired,
+      qa_passed:       !carouselReviewRequired,
+      slide_qa:        slideResults.map((r, i) => ({ slide: i + 1, passed: r.passed, attempts: r.qa_attempts })),
     })
   } catch (e: any) {
     console.error(`[seo-worker-visual] ${workerId} carousel markTaskCompleted failed: ${e?.message ?? e}`)
@@ -757,14 +768,80 @@ async function handleCarousel(
   }
 
   return jsonResponse({
-    processed:   1,
-    worker_id:   workerId,
-    task_id:     task.id,
-    ok:          true,
-    carousel:    true,
-    slide_count: renderedSlides.length,
-    slides:      renderedSlides.map(s => s.image_url),
+    processed:        1,
+    worker_id:        workerId,
+    task_id:          task.id,
+    ok:               true,
+    carousel:         true,
+    slide_count:      renderedSlides.length,
+    slides:           renderedSlides.map(s => s.image_url),
+    review_required:  carouselReviewRequired,
+    failed_slides:    failedSlideCount,
   })
+}
+
+// Per-slide render + Claude-vision QA — mirrors the single-image loop, but
+// FIXED to no_bag (carousel slides are always text-forward backgrounds, never
+// a product-bag hero) and WITHOUT the espresso-machine-specific
+// stripConflictingTerms step (a carousel slide can be any scene — origins,
+// brewing, cherries — so we only use the generic critique-driven augmentation
+// + the no-bag guard). Attempts:
+//   1: slide brief + no-bag guard
+//   2: brief augmented with the prior critique's MUST-INCLUDE / AVOID directives
+//   3: same, re-augmented from attempt 2's critique
+// On all-fail we still overlay the best-effort background so there's a viewable
+// slide, but `passed:false` bubbles up and flags the carousel review_required.
+async function renderCarouselSlideWithQA(
+  slide: { scene_brief: string; heading: string; body?: string },
+  slideIndex: number,
+  workerId: string,
+): Promise<{
+  rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
+  qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
+  passed:      boolean
+}> {
+  const MAX_SLIDE_QA_ATTEMPTS = 3
+  const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }> = []
+  let bgUrl = ''
+  let passed = false
+
+  for (let a = 1; a <= MAX_SLIDE_QA_ATTEMPTS; a++) {
+    // Attempt 1 = the strategist's brief. Attempts 2-3 fold in the prior
+    // critique's directives (buildAugmentedSceneBrief is generic — safe for
+    // any slide scene). The no-bag guard wraps every attempt.
+    const baseBrief = a === 1
+      ? slide.scene_brief
+      : buildAugmentedSceneBrief(slide.scene_brief, attempts)
+    const guardedBrief = addNoBagGuard(baseBrief)
+
+    // Render (infra errors throw → bubble up to fail the whole carousel).
+    const bg = await renderOnce({ renderMode: 'no_bag', sceneBrief: guardedBrief, aspect: 'feed_portrait' })
+    bgUrl = bg.url
+
+    // Evaluate against the SAME guarded brief so the eval knows a bag/hand/
+    // logo is forbidden and flags it. Eval outage → treat as pass (don't burn
+    // the slide on an Anthropic blip — the image is already rendered).
+    let critique: VisualCritique
+    try {
+      critique = await evaluateVisual({ imageUrl: bgUrl, sceneBrief: guardedBrief, renderMode: 'no_bag' })
+    } catch (e: any) {
+      console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
+      critique = { passes: true, missing: [], issues: [], suggested_adjustment: '' } as VisualCritique
+    }
+    attempts.push({ attempt: a, image_url: bgUrl, scene_brief: baseBrief, critique })
+    console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} qa-attempt ${a}/${MAX_SLIDE_QA_ATTEMPTS} ${critique.passes ? 'PASSED' : `FAILED missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`}`)
+    if (critique.passes) { passed = true; break }
+  }
+
+  // Overlay the passed (or best-effort) background so the slide is always
+  // viewable — even a review_required carousel needs renderable slides for
+  // the admin to look at.
+  const finalUrl = await overlaySlide({ imageUrl: bgUrl, heading: slide.heading, body: slide.body })
+  return {
+    rendered:    { image_url: finalUrl, bg_url: bgUrl, heading: slide.heading, body: slide.body },
+    qa_attempts: attempts,
+    passed,
+  }
 }
 
 // Composite a Hebrew heading (+ optional body) onto a slide background via
