@@ -698,6 +698,63 @@ async function findRefillCandidates(
  *   POST /email-automation-scheduler {"dry_run": true}
  * which logs the WC fetch count.
  */
+/**
+ * Live recovery lookup: latest PAID (completed/processing) order date per
+ * customer email, fetched straight from WooCommerce — NOT the synced
+ * woo_orders table.
+ *
+ * Why live: woo_orders lags real-time payments (on 2026-06-01 the sync had
+ * frozen at order 80722 / 2026-05-26 while live abandoned carts were already
+ * at 80800+). A stale table makes the recovery check blind to anyone who
+ * paid in the gap, so we'd email a customer who already bought — exactly the
+ * spam we're trying to avoid. Querying WC live closes the gap: if the
+ * customer completed ANY order on/after their abandoned cart's date, they
+ * decided to buy and we skip them.
+ *
+ * Returns a map of lowercased email → latest paid order date (YYYY-MM-DD).
+ * Fetches every order placed since `afterIso` (bounded by the lookback
+ * window, so 1–2 pages) and keeps only completed/processing.
+ */
+async function fetchLatestPaidByEmail(afterIso: string): Promise<Map<string, string>> {
+  const latestPaid = new Map<string, string>()
+  if (!WOO_KEY || !WOO_SECRET) throw new Error('recovery: WOO_KEY/WOO_SECRET not configured')
+  let page = 1
+  for (;;) {
+    const params = new URLSearchParams({
+      after: afterIso,
+      per_page: '100',
+      page: String(page),
+      orderby: 'date',
+      order: 'asc',
+      _fields: 'id,date_created,status,billing',
+    })
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+    const res = await fetch(url)
+    if (!res.ok) {
+      const t = await res.text()
+      throw new Error(`recovery: WC orders fetch ${res.status}: ${t.slice(0, 300)}`)
+    }
+    const orders = await res.json()
+    if (!Array.isArray(orders)) {
+      throw new Error(`recovery: WC returned non-array (likely auth/redirect failure): ${JSON.stringify(orders).slice(0, 200)}`)
+    }
+    if (orders.length === 0) break
+    for (const o of orders) {
+      const status = String(o?.status ?? '')
+      if (status !== 'completed' && status !== 'processing') continue  // 'paid' = decided to buy
+      const email = ((o?.billing?.email ?? '') as string).toLowerCase().trim()
+      if (!email) continue
+      const od = String(o?.date_created ?? '').split('T')[0]
+      if (!od) continue
+      const prev = latestPaid.get(email)
+      if (!prev || od > prev) latestPaid.set(email, od)
+    }
+    if (orders.length < 100) break
+    page++
+  }
+  return latestPaid
+}
+
 async function findAbandonedCartCandidates(
   supabase: any,
   delayDays: number,
@@ -760,26 +817,13 @@ async function findAbandonedCartCandidates(
   }
   if (pending.length === 0) return []
 
-  // Recovery check: any paid (completed/processing) order from the same
-  // email on/after the pending order's date → they came back on their
-  // own. woo_orders only stores paid orders, so a match here is recovery.
-  const emails = Array.from(new Set(pending.map(p => p.email)))
-  const { data: paidRows, error: paidErr } = await supabase
-    .from('woo_orders')
-    .select('customer_email, order_date')
-    .in('status', ['completed', 'processing'])
-    .in('customer_email', emails)
-  if (paidErr) throw new Error(`abandoned_cart paid-orders query: ${paidErr.message}`)
-
-  // Track each email's latest paid-order date (YYYY-MM-DD is
-  // lexicographically sortable so string compare is safe).
-  const latestPaid = new Map<string, string>()
-  for (const r of (paidRows ?? [])) {
-    const e = (r.customer_email ?? '').toLowerCase().trim()
-    if (!e || !r.order_date) continue
-    const prev = latestPaid.get(e)
-    if (!prev || r.order_date > prev) latestPaid.set(e, r.order_date)
-  }
+  // Recovery check: if the customer completed/processing ANY order on/after
+  // their abandoned cart's date, they decided to buy and we must not spam
+  // them with a reminder. Matched by email (case-insensitive — emails are
+  // lowercased on both sides). Fetched LIVE from WooCommerce, not the synced
+  // woo_orders table, because that table lags real-time payments and a stale
+  // lookup would email people who already bought (see fetchLatestPaidByEmail).
+  const latestPaid = await fetchLatestPaidByEmail(lower)
 
   // Prerequisite check (cart_2 only): require a prior 'sent' row with the
   // prerequisite trigger and matching woo_order_id. Pre-fetch all matching
@@ -801,12 +845,12 @@ async function findAbandonedCartCandidates(
     console.log(`[email-automation] abandoned_cart: ${prereqOrderIds.size}/${pending.length} pending orders satisfy prerequisite '${prerequisiteTrigger}'`)
   }
 
-  const candidates: FirstOrderCandidate[] = []
+  const surviving: FirstOrderCandidate[] = []
   for (const p of pending) {
     const lp = latestPaid.get(p.email)
     if (lp && lp >= p.order_date) continue   // already recovered — skip
     if (prereqOrderIds && !prereqOrderIds.has(p.woo_order_id)) continue  // cart_1 not sent yet
-    candidates.push({
+    surviving.push({
       customer_email: p.email,
       customer_name: p.first_name,
       woo_order_id: p.woo_order_id,
@@ -814,7 +858,25 @@ async function findAbandonedCartCandidates(
       cart_items: p.cart_items,
     })
   }
-  return candidates
+
+  // Per-customer dedup (owner rule 2026-05-31): if one customer abandoned
+  // more than one cart in the window, remind about ONLY their most recent
+  // one. Newest = latest order_date, tie-broken by higher woo_order_id (WC
+  // ids are monotonic, so a higher id is the later order). Without this a
+  // customer with N pending carts would get N emails on a single tick.
+  // NOTE: the dedup key is the literal billing email. Gmail dot-variants
+  // (yogev.zorea@ vs yogevzorea@) are DIFFERENT keys here even though Gmail
+  // delivers both to one inbox, so those would still produce two emails.
+  const latestPerEmail = new Map<string, FirstOrderCandidate>()
+  for (const c of surviving) {
+    const prev = latestPerEmail.get(c.customer_email)
+    if (!prev ||
+        c.order_date > prev.order_date ||
+        (c.order_date === prev.order_date && c.woo_order_id > prev.woo_order_id)) {
+      latestPerEmail.set(c.customer_email, c)
+    }
+  }
+  return Array.from(latestPerEmail.values())
 }
 
 /**
@@ -941,6 +1003,12 @@ serve(async (req) => {
 
   const dryRun  = body.dry_run === true
   const testTo  = typeof body.test_send === 'string' ? body.test_send : null
+  // Review-send: render EACH real candidate's actual email (real name,
+  // real cart, real images) and send it to the owner's address for copy
+  // review — NOT to the customer. No coupon creation, no DB lock rows,
+  // no 'sent' marking. Purely a preview of what live sends would look
+  // like, so the owner can approve before flipping enabled=true.
+  const reviewTo = typeof body.review_send === 'string' ? body.review_send : null
   // Owner can pass {trigger_type: 'refill_reminder'} alongside test_send
   // to QA a different template. Defaults to first_purchase to keep the
   // existing UI button working without changes.
@@ -1004,6 +1072,78 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: e.message }),
         { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
+  }
+
+  // ── Review-send path ───────────────────────────────────────────────
+  // For the chosen trigger, find the REAL candidates and email each
+  // candidate's actual rendered message to the review address. The
+  // customer is never contacted; no coupon is minted; no email_automations
+  // row is written, so this neither consumes the dedup lock nor marks
+  // anyone 'sent'. Subject is prefixed with the destination customer so
+  // the owner can tell the previews apart in their inbox.
+  if (reviewTo) {
+    const { data: tmpl, error } = await supabase
+      .from('email_automation_templates')
+      .select('*')
+      .eq('trigger_type', testTrigger)
+      .maybeSingle()
+    if (error || !tmpl) {
+      return new Response(JSON.stringify({ error: `template not found: ${testTrigger}` }),
+        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    let candidates: FirstOrderCandidate[] = []
+    try {
+      if (testTrigger === 'first_purchase') {
+        candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+      } else if (testTrigger === 'refill_reminder') {
+        candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+      } else if (testTrigger === 'abandoned_cart_1') {
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null)
+      } else if (testTrigger === 'abandoned_cart_2') {
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1')
+      } else {
+        return new Response(JSON.stringify({ error: `no finder for trigger: ${testTrigger}` }),
+          { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
+      }
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: `find candidates: ${e.message}` }),
+        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    const previews: any[] = []
+    for (const c of candidates) {
+      const firstName = (c.customer_name ?? 'חבר/ה').trim()
+      const unsubscribeUrl = generateUnsubscribeUrl(c.customer_email)
+      const vars = {
+        first_name: firstName,
+        coupon_code: '',  // review never mints a real coupon
+        coupon_expiry_days: tmpl.coupon_expiry_days,
+        order_id: c.woo_order_id,
+        unsubscribe_url: unsubscribeUrl,
+        logo_url: DEFAULT_LOGO_URL,
+        cart_items_html: renderCartItemsHtml(c.cart_items ?? []),
+      }
+      const baseSubject = renderTemplate(tmpl.subject_template, vars)
+      const subject = `[תצוגה → ${c.customer_email} · הזמנה ${c.woo_order_id}] ${baseSubject}`
+      const html    = renderTemplate(tmpl.body_html_template, vars)
+      const r = await sendEmail(reviewTo, subject, html, unsubscribeUrl)
+      previews.push({
+        would_send_to: c.customer_email,
+        woo_order_id: c.woo_order_id,
+        cart_item_count: (c.cart_items ?? []).length,
+        sent_to_reviewer: r.ok,
+        error: r.ok ? undefined : r.error,
+      })
+    }
+
+    return new Response(JSON.stringify({
+      review_send: reviewTo,
+      trigger: testTrigger,
+      enabled: tmpl.enabled,
+      candidate_count: candidates.length,
+      previews,
+    }, null, 2), { headers: { ...CORS, 'Content-Type': 'application/json' } })
   }
 
   // ── Main scheduler path ────────────────────────────────────────────
