@@ -135,6 +135,66 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     }
   }
 
+  // Approve & publish an instagram_post: meta-publish already PREPAREd a
+  // container (ig_creation_id) when the worker ran; publishing just calls
+  // action='publish' with that id, which pushes the post LIVE to @minuto_cafe.
+  // This is the human-approval gate — nothing reaches IG without this click.
+  async function handlePublishIg(t: SeoTaskRow) {
+    const rd = (t.result_data ?? {}) as Record<string, any>
+    const creationId = rd.ig_creation_id as string | undefined
+    if (!creationId) {
+      window.alert('No staged Instagram container (ig_creation_id) on this task — nothing to publish. The post may need to be re-prepared.')
+      return
+    }
+    if (!window.confirm('Publish this post LIVE to @minuto_cafe now? It goes public immediately.')) return
+    setBusy(t.id)
+    try {
+      const { data, error } = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'publish', creation_id: creationId },
+      })
+      if (error) throw error
+      if (data && data.success === false) throw new Error(data.error ?? 'meta-publish returned success:false')
+      const updated = {
+        ...rd,
+        review_required:      false,
+        published_via_ui_at:  new Date().toISOString(),
+        ig_media_id:          (data?.media_id as string | undefined) ?? rd.ig_media_id ?? null,
+        ig_permalink:         (data?.permalink as string | undefined) ?? rd.ig_permalink ?? null,
+      }
+      const { error: upErr } = await supabase.from('seo_tasks').update({ result_data: updated }).eq('id', t.id)
+      if (upErr) throw upErr
+      setViewing(v => (v && v.id === t.id ? { ...v, result_data: updated } : v))
+      onTaskAction?.('approve', t)
+    } catch (e: any) {
+      console.error('[SeoTaskQueue] IG publish failed:', e)
+      window.alert(`Publish failed: ${e?.message ?? e}`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Reject an instagram_post — clears review_required so it leaves the
+  // review queue, records the reason. The prepared container is simply left
+  // to expire on Meta's side (no publish call), so nothing goes live.
+  async function handleRejectIg(t: SeoTaskRow) {
+    const reason = window.prompt('Reject this IG post (it will NOT be published).\n\nReason:', 'Off-brand / needs rework')
+    if (!reason) return
+    const rd = (t.result_data ?? {}) as Record<string, any>
+    setBusy(t.id)
+    try {
+      const updated = { ...rd, review_required: false, rejected_via_ui_at: new Date().toISOString(), reject_reason: reason }
+      const { error } = await supabase.from('seo_tasks').update({ result_data: updated }).eq('id', t.id)
+      if (error) throw error
+      setViewing(v => (v && v.id === t.id ? { ...v, result_data: updated } : v))
+      onTaskAction?.('cancel', t)
+    } catch (e: any) {
+      console.error('[SeoTaskQueue] IG reject failed:', e)
+      window.alert('Reject failed. See console.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     // `min-h-0` on the flex column + the scroll div is the standard
     // flex-overflow trap fix: without it, children's natural content
@@ -209,9 +269,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       <div className="mt-2 flex items-center gap-2">
                         <button
                           onClick={() => setViewing(t)}
-                          className="inline-flex items-center gap-1 text-surface-500 hover:text-surface-900"
-                          title="View brief"
-                        ><Eye size={12} /> brief</button>
+                          className={`inline-flex items-center gap-1 ${t.task_type === 'instagram_post' && reviewRequired ? 'text-amber-700 hover:text-amber-900 font-medium' : 'text-surface-500 hover:text-surface-900'}`}
+                          title={t.task_type === 'instagram_post' ? 'Review the post + approve/publish' : 'View brief'}
+                        ><Eye size={12} /> {t.task_type === 'instagram_post' ? 'review' : 'brief'}</button>
                         {t.task_type === 'dynamic_experiment' && t.status === 'pending' && (
                           <button
                             onClick={() => handleApprove(t)}
@@ -263,6 +323,92 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                   <div className="text-surface-800">{viewing.rationale}</div>
                 </div>
               )}
+
+              {/* INSTAGRAM PREVIEW — the actual post as it will appear: image(s)
+                  + final caption (Hebrew, RTL). Approve & Publish pushes the
+                  pre-staged container live; Reject drops it. Only for
+                  instagram_post tasks; everything else falls through to the
+                  generic brief view below. */}
+              {viewing.task_type === 'instagram_post' && (() => {
+                const rd       = (viewing.result_data ?? {}) as Record<string, any>
+                const brief    = (viewing.brief_data ?? {}) as Record<string, any>
+                const caption  = (rd.caption as string) ?? (brief.caption_he as string) ?? ''
+                const carousel = Array.isArray(rd.carousel_children) ? (rd.carousel_children as string[]) : []
+                const single   = (rd.image_url as string) ?? ''
+                const images   = carousel.length > 0 ? carousel : (single ? [single] : [])
+                const published = Boolean(rd.ig_permalink)
+                const rejected  = Boolean(rd.rejected_via_ui_at)
+                const canPublish = !published && !rejected && Boolean(rd.ig_creation_id)
+                const mediaType = (rd.media_type as string) ?? (brief.media_type as string) ?? 'feed_image'
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="font-semibold text-surface-700">Instagram preview</div>
+                      <span className="px-1.5 py-0.5 rounded bg-surface-100 text-surface-700 text-[10px] font-medium">{mediaType}{carousel.length > 0 ? ` · ${carousel.length} slides` : ''}</span>
+                      {published ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-900 text-[10px] font-medium"><CheckCircle2 size={10} /> published</span>
+                      ) : rejected ? (
+                        <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-900 text-[10px] font-medium">rejected</span>
+                      ) : rd.review_required === true ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
+                      ) : null}
+                    </div>
+
+                    {images.length > 0 ? (
+                      <div className={carousel.length > 0 ? 'flex gap-2 overflow-x-auto pb-1' : ''}>
+                        {images.map((src, i) => (
+                          <a key={i} href={src} target="_blank" rel="noreferrer" className="shrink-0">
+                            <img
+                              src={src}
+                              alt={`IG ${carousel.length > 0 ? `slide ${i + 1}` : 'image'}`}
+                              className="max-h-80 rounded border border-surface-200 object-contain bg-surface-50"
+                              loading="lazy"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-surface-500">No image yet — the visual task hasn't rendered.</div>
+                    )}
+
+                    {caption && (
+                      <div dir="rtl" className="bg-surface-50 border border-surface-200 rounded p-3 text-[13px] leading-relaxed text-surface-900 whitespace-pre-wrap break-words">
+                        {caption}
+                      </div>
+                    )}
+
+                    {canPublish && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => handlePublishIg(viewing)}
+                          disabled={busy === viewing.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50"
+                          title="Publish this post live to @minuto_cafe"
+                        >
+                          {busy === viewing.id ? <Loader2 size={13} className="animate-spin" /> : <ThumbsUp size={13} />} Approve &amp; Publish
+                        </button>
+                        <button
+                          onClick={() => handleRejectIg(viewing)}
+                          disabled={busy === viewing.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-300 text-red-700 font-medium hover:bg-red-50 disabled:opacity-50"
+                          title="Reject — do not publish"
+                        >
+                          <X size={13} /> Reject
+                        </button>
+                      </div>
+                    )}
+                    {published && rd.ig_permalink && (
+                      <a href={rd.ig_permalink as string} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-green-700 hover:text-green-900 font-medium">
+                        View on Instagram →
+                      </a>
+                    )}
+                    {rejected && rd.reject_reason && (
+                      <div className="text-red-700 text-[11px]">Rejected: {rd.reject_reason as string}</div>
+                    )}
+                  </div>
+                )
+              })()}
+
               <div>
                 <div className="font-semibold text-surface-700 mb-1">Brief</div>
                 <pre className="bg-surface-50 p-3 rounded text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
