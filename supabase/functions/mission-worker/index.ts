@@ -209,13 +209,38 @@ serve(async (req) => {
         continue
       }
       try {
+        const runId = crypto.randomUUID()
         const inserted = await insertTasks(supabase, [{
           task_type,
           brief_data: norm.brief as NewSeoTask['brief_data'],
           rationale:  `[mission ${mission.id.slice(0, 8)}] ${rationale}`,
-          orchestrator_run_id: crypto.randomUUID(),
+          orchestrator_run_id: runId,
         }])
-        if (inserted[0]?.id) newTaskIds.push(inserted[0].id)
+        const textId = inserted[0]?.id
+        if (textId) newTaskIds.push(textId)
+        // BANNER PAIRING. The strategist path emits a matching visual_generation
+        // (parent_task_index → parent_task_id) for every article so the post
+        // ships with a banner; the mission path queued the text task ALONE, so
+        // mission-produced drafts went out bannerless. Mirror the strategist:
+        // auto-pair a blog_banner visual whose parent is this text task. The
+        // visual worker waits for the text task's wp_post_id, then attaches the
+        // render as the WP featured image. bag_hero when the article features a
+        // real Minuto product (products_to_mention), else no_bag editorial.
+        if (textId && task_type === 'text_generation') {
+          try {
+            const visualBrief = buildBannerBrief(norm.brief)
+            const insVisual = await insertTasks(supabase, [{
+              task_type:           'visual_generation',
+              brief_data:          visualBrief as NewSeoTask['brief_data'],
+              rationale:           `[mission ${mission.id.slice(0, 8)}] banner for the article above`,
+              parent_task_id:      textId,
+              orchestrator_run_id: runId,
+            }])
+            if (insVisual[0]?.id) newTaskIds.push(insVisual[0].id)
+          } catch (e: any) {
+            newNotes.push(`(article queued but banner pairing failed: ${e?.message ?? e})`)
+          }
+        }
       } catch (e: any) {
         newNotes.push(`(failed to queue ${task_type}: ${e?.message ?? e})`)
       }
@@ -341,6 +366,44 @@ function normalizeBrief(taskType: string, raw: Record<string, unknown>): BriefRe
   return { ok: true, brief: b }
 }
 
+// ── Banner brief for a mission-queued article ────────────────────────────
+// Builds the paired visual_generation brief for a text_generation task. We
+// author it here (not the LLM) because the mission queues one task at a time
+// and never emitted a visual. The visual worker uses brief.scene_brief as the
+// render prompt verbatim and HARD-REQUIRES product_name for bag_hero — so a
+// complete brief matters. bag_hero when the article features a real Minuto
+// product (so the byte-perfect bag appears in-frame); otherwise a bag-free
+// editorial scene (writing a bag into a no_bag brief yields a generic off-brand
+// bag — the documented anti-pattern, so we keep no_bag bag-free).
+function buildBannerBrief(textBrief: Record<string, unknown>): Record<string, unknown> {
+  const topic = firstNonEmpty(textBrief, ['title', 'keyword', 'subject']) || 'specialty coffee'
+  const products = asStringArray(textBrief.products_to_mention)
+  const product = products[0] ?? ''
+  if (product) {
+    return {
+      scene_brief:
+        `Editorial product banner for a Minuto specialty-coffee blog article about "${topic}". ` +
+        `A single Minuto coffee bag is the hero, standing upright and in sharp focus on a warm natural surface (pale wood or stone). ` +
+        `Soft daylight rakes from one side, shallow depth of field, a few scattered light-cinnamon roasted beans, minimal uncluttered props. ` +
+        `Premium, calm, magazine-quality still life with generous negative space. No text, no logos other than what is on the bag.`,
+      aspect:      'feed_square',
+      render_mode: 'bag_hero',
+      product_name: product,
+      destination: 'blog_banner',
+    }
+  }
+  return {
+    scene_brief:
+      `Editorial banner for a Minuto specialty-coffee blog article about "${topic}". ` +
+      `A warm, inviting coffee scene in the locked Minuto identity: natural daylight, pale wood or stone surface, ` +
+      `light-cinnamon roasted beans and brewing details, shallow depth of field, minimal premium props, generous negative space. ` +
+      `Do NOT include any coffee bag, pouch, packaging, or label of any kind. No text, no logos.`,
+    aspect:      'feed_square',
+    render_mode: 'no_bag',
+    destination: 'blog_banner',
+  }
+}
+
 function buildMissionSystemPrompt(inflight: number): string {
   return `You are Minuto's autonomous MISSION EXECUTOR. Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
 
@@ -360,8 +423,8 @@ OPERATING RULES:
 
 BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the task_type, or the sub-task FAILS validation and is wasted. Required (✱) and optional fields:
 - deep_research → { question✱ (a specific researchable question), scope ("channel_discovery"|"geo_llmo"|"content_topic"|"other"), expected_output ("analysis") }
-- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of product names) }
-- visual_generation → { scene_brief✱ (one concrete scene to render), render_mode ("vertex"|"gemini"), aspect ("1:1"|"4:5"|"9:16"), destination } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }
+- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT Minuto product names — when set, the auto-paired banner shows that real bag, so use exact names from the catalog, never reseller brands) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
+- visual_generation → { scene_brief✱ (one concrete scene to render), aspect ("feed_square"|"feed_portrait"|"reel_cover"), render_mode ("bag_hero"|"no_bag" — bag_hero composites the real Minuto bag and REQUIRES product_name set to an exact Minuto product; no_bag is a bag-free editorial scene and must NOT mention any bag/pouch/packaging), product_name (exact Minuto product name, required when render_mode="bag_hero"), destination ("blog_banner"|"ig_post") } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }. (Blog articles get a banner auto-paired — only queue this for IG visuals or standalone scenes.)
 - instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he✱, hashtags (array), media_type } — never queue this before the visual exists.
 - technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
 - dynamic_experiment → { description✱, approval_required: true }
