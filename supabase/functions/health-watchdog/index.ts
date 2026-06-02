@@ -165,6 +165,12 @@ serve(async (req) => {
   }
 
   // ── 4. No autonomous learnings written in 14d ────────────────────────
+  // Only meaningful if the loop actually HAD a chance to write one. An
+  // orchestrator learning is the OUTPUT of evaluating a matured experiment,
+  // so "no learnings" is expected — not a stall — whenever no experiment has
+  // yet aged past its min_lookback_days. Gate the warning on the existence of
+  // at least one matured (evaluation-eligible) experiment; otherwise stay
+  // silent so we don't flag normal early-collection state as a system fault.
   try {
     const fourteenAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
     const { data: orchLearnings } = await supabase
@@ -174,12 +180,29 @@ serve(async (req) => {
       .gte('created_at', fourteenAgo)
       .limit(1)
     if ((orchLearnings ?? []).length === 0) {
-      // Only WARN — could just mean experiments haven't matured yet.
-      findings.push({
-        severity: 'WARN',
-        category: 'no_learnings',
-        message:  'No autonomous learnings written by orchestrator in last 14 days — experiment loop may be stalled, or experiments not maturing past min_lookback_days',
+      // How many experiments have matured past their own min_lookback_days?
+      // (Same per-row date math the evaluator uses in getExperimentsDueForEvaluation.)
+      const { data: exps } = await supabase
+        .from('seo_experiments')
+        .select('id, created_at, min_lookback_days, status')
+        .limit(500)
+      const now = Date.now()
+      const matured = (exps ?? []).filter(e => {
+        const lookbackDays = (e as { min_lookback_days?: number }).min_lookback_days ?? 7
+        const eligibleAt = new Date((e as { created_at: string }).created_at).getTime()
+          + lookbackDays * 24 * 3600 * 1000
+        return eligibleAt <= now
       })
+      // No matured experiment → nothing could have produced a learning yet.
+      // Suppress the warning entirely (this is the common false positive).
+      if (matured.length > 0) {
+        findings.push({
+          severity: 'WARN',
+          category: 'no_learnings',
+          message:  `No autonomous learnings written by orchestrator in last 14 days, despite ${matured.length} experiment(s) matured past min_lookback_days — experiment loop may be stalled`,
+          context:  { matured_experiments: matured.length },
+        })
+      }
     }
   } catch (e: any) {
     console.warn(`[health-watchdog] learnings check threw: ${e?.message ?? e}`)
