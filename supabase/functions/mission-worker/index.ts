@@ -24,6 +24,8 @@ import {
   type ChatMessage,
 } from '../seo-agent/claude.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
+import { fetchMinutoCoffeeCatalog, fetchRecentBlogPosts, type WooProduct } from '../seo-agent/services/cmsApi.ts'
+import { fetchTopKeywords } from '../seo-agent/services/googleApi.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 
 const CORS = {
@@ -144,6 +146,33 @@ serve(async (req) => {
     }).join('\n')
   }
 
+  // ── 2.5 Grounding data — content choices must be research-led, not random ──
+  // The mission used to pick topics + product mentions out of thin air (e.g. it
+  // invented generic phrases like "קפה אתיופיה" for products_to_mention that
+  // resolve to nothing, or picked a green 1kg / reseller bag as the hero). Feed
+  // it the same kind of real signals the strategist sees so it grounds topic +
+  // EXACT-product choices in data: Minuto's OWN coffee lineup (the only products
+  // valid as a content hero — green home-roasting SKUs and resold brands like
+  // Veneto/Toddy are filtered out), GSC demand (what people actually search),
+  // and the last 90d of posts (so it doesn't re-write a topic we just covered).
+  // All guarded — a single source failing degrades the block, never the step.
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
+  const [catalog, gscKeywords, recentPosts] = await Promise.all([
+    fetchMinutoCoffeeCatalog(supabase).catch((e: any) => { console.warn(`[mission-worker] catalog fetch failed: ${e?.message ?? e}`); return [] as WooProduct[] }),
+    fetchTopKeywords(supabase, 30, 25).catch((e: any) => { console.warn(`[mission-worker] GSC fetch failed: ${e?.message ?? e}`); return [] }),
+    fetchRecentBlogPosts(supabase, ninetyDaysAgo, 40).catch((e: any) => { console.warn(`[mission-worker] blog fetch failed: ${e?.message ?? e}`); return [] }),
+  ])
+
+  const catalogBlock = catalog.length === 0
+    ? '(catalog unavailable this step)'
+    : catalog.map(p => `- ${p.name}${p.stock_status && p.stock_status !== 'instock' ? ` [${p.stock_status}]` : ''}`).join('\n')
+  const gscBlock = gscKeywords.length === 0
+    ? '(no GSC data this step)'
+    : gscKeywords.slice(0, 25).map(k => `- "${k.keyword}" — ${k.impressions} impr, ${k.clicks} clicks, avg pos ${k.position.toFixed(1)}`).join('\n')
+  const recentBlock = recentPosts.length === 0
+    ? '(no posts published in the last 90 days)'
+    : recentPosts.slice(0, 30).map(p => `- ${p.title}`).join('\n')
+
   // ── 3. ONE reasoning step ───────────────────────────────────────────
   const system = buildMissionSystemPrompt(inflight)
   const userMsg =
@@ -151,6 +180,9 @@ serve(async (req) => {
     `STEP ${mission.steps_taken + 1} of max ${mission.max_steps}.\n\n` +
     `PROGRESS NOTES SO FAR:\n${(state.progress_notes ?? []).slice(-12).map(n => `- ${n}`).join('\n') || '(none yet)'}\n\n` +
     `SUB-TASKS YOU'VE QUEUED (${inflight} still in-flight):\n${subtaskSummary}\n\n` +
+    `=== MINUTO COFFEE LINEUP (the ONLY products to feature — copy an EXACT name into products_to_mention; products_to_mention[0] becomes the article's banner hero bag. Never invent a name or feature anything not on this list) ===\n${catalogBlock}\n\n` +
+    `=== SEARCH DEMAND — top GSC keywords, last 30d (what real people search; ground topic choices here) ===\n${gscBlock}\n\n` +
+    `=== ALREADY PUBLISHED — blog posts, last 90d (do NOT re-write a topic we just covered) ===\n${recentBlock}\n\n` +
     `Decide the SINGLE next move toward the objective. If sub-tasks are still in-flight and you have nothing independent to do, note_progress and wait. If the objective is met, complete_mission.`
 
   let res
@@ -417,13 +449,15 @@ YOUR ACTIONS (tools):
 OPERATING RULES:
 - ONE focused step. Queue at most 1-3 sub-tasks, then WAIT — you'll see their results next session and build on them. ${inflight >= MAX_INFLIGHT ? `You already have ${inflight} sub-tasks in-flight — do NOT queue more this step; note progress and wait.` : ''}
 - Be data-driven: read the sub-task results you can see and ADAPT. Don't re-queue work that's still in-flight.
+- RESEARCH BEFORE YOU WRITE — never decide a topic, angle, or expression arbitrarily. Every content sub-task (text_generation / instagram_post / a content visual) must be JUSTIFIED by the data in this message: tie the topic to a real SEARCH DEMAND keyword (or to a completed deep_research finding you can see above), confirm the angle isn't an ALREADY PUBLISHED topic, and choose products_to_mention by copying EXACT names from the PRODUCT CATALOG. If the data above doesn't yet support a confident content choice, queue a deep_research sub-task FIRST (or note_progress) instead of writing a speculative post. In your rationale, state which signal grounds the choice (e.g. the keyword, the research finding, the catalog SKU). A post you can't ground in the data is a random post — don't queue it.
+- products_to_mention values MUST be verbatim names from the MINUTO COFFEE LINEUP above — that list is the ONLY set of products you may feature. Do NOT invent generic phrases (e.g. "קפה אתיופיה") and do NOT feature any product not on the list. products_to_mention[0] becomes the auto-paired banner's hero bag, so it must be a real Minuto coffee from the lineup. If no lineup coffee fits the article, leave products_to_mention empty (the banner falls back to a bag-free editorial scene) rather than guessing.
 - Decompose big objectives into concrete, gated tasks the pipeline can execute. Use deep_research (scope channel_discovery / geo_llmo / etc.) for "figure out HOW", text/visual/IG for content, dynamic_experiment for anything novel that needs the admin to greenlight a new capability.
 - KNOW WHEN TO STOP. When the objective is genuinely achieved (or you've done all you autonomously can and the rest needs the admin), complete_mission with a clear summary. Don't spin in circles to burn steps.
 - Stay in Minuto's organic-growth lane; respect any standing brand rules. Anything outside your execution tools → propose as a dynamic_experiment for the admin.
 
 BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the task_type, or the sub-task FAILS validation and is wasted. Required (✱) and optional fields:
 - deep_research → { question✱ (a specific researchable question), scope ("channel_discovery"|"geo_llmo"|"content_topic"|"other"), expected_output ("analysis") }
-- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT Minuto product names — when set, the auto-paired banner shows that real bag, so use exact names from the catalog, never reseller brands) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
+- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT names copied from the MINUTO COFFEE LINEUP block — when set, the auto-paired banner shows that real bag, so never invent a name or use anything off the list) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
 - visual_generation → { scene_brief✱ (one concrete scene to render), aspect ("feed_square"|"feed_portrait"|"reel_cover"), render_mode ("bag_hero"|"no_bag" — bag_hero composites the real Minuto bag and REQUIRES product_name set to an exact Minuto product; no_bag is a bag-free editorial scene and must NOT mention any bag/pouch/packaging), product_name (exact Minuto product name, required when render_mode="bag_hero"), destination ("blog_banner"|"ig_post") } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }. (Blog articles get a banner auto-paired — only queue this for IG visuals or standalone scenes.)
 - instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he✱, hashtags (array), media_type } — never queue this before the visual exists.
 - technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
