@@ -530,9 +530,22 @@ async function executeTool(
         if (!task_type || !brief_data || !rationale) {
           return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
         }
-        const parent_task_id = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+        // parent_task_id is a TOP-LEVEL queue_task argument, but the model
+        // frequently misplaces it INSIDE brief_data. When it does, the task's
+        // top-level parent_task_id column stays null and the worker can't find
+        // its parent — e.g. a blog banner never resolves the parent text
+        // task's wp_post_id, so the rendered image is orphaned and never
+        // attached as the featured image. Defensively promote a nested
+        // parent_task_id out of brief_data (and strip it from the brief).
+        const nestedParent = typeof (brief_data as Record<string, unknown>).parent_task_id === 'string'
+          && ((brief_data as Record<string, unknown>).parent_task_id as string).trim().length > 0
+          ? ((brief_data as Record<string, unknown>).parent_task_id as string).trim()
+          : null
+        if (nestedParent) delete (brief_data as Record<string, unknown>).parent_task_id
+        const topLevelParent = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
           ? input.parent_task_id.trim()
           : null
+        const parent_task_id = topLevelParent ?? nestedParent
         const depends_on = Array.isArray(input.depends_on)
           ? (input.depends_on as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0)
           : []
