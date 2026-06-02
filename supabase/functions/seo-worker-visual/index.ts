@@ -12,13 +12,22 @@
 // 1. ONE TASK PER INVOCATION. Same lock-mechanic semantics as the
 //    writer worker. Idle if no eligible row.
 //
-// 2. WE DO NOT REIMPLEMENT IMAGE GENERATION. Routes to:
-//      render_mode='no_bag'   → visual-test  with use_reference:false
-//      render_mode='bag_hero' → vertex-imagen-edit with render_mode:'bag_hero'
-//    These functions own the locked Minuto visual identity (style anchor,
-//    Strada X / Coffee-Tech roaster references, Scene Director rewrite
-//    from PR #88). We pass scene_brief through faithfully — NEVER bypass
-//    the Scene Director.
+// 2. WE DO NOT REIMPLEMENT IMAGE GENERATION. BOTH modes route to the
+//    visual-test edge function (Gemini Image + Minuto reference images):
+//      render_mode='no_bag'   → visual-test, use_reference:false (no bag)
+//      render_mode='bag_hero' → visual-test, use_reference:true + product_name
+//    For bag_hero, visual-test resolves the product's real bag photo from
+//    woo_products and passes it to Gemini as a reference (with beans /
+//    Strada X / roaster refs), so the real Minuto bag is rendered FAITHFULLY
+//    into the full scene ALONGSIDE its co-subjects. visual-test owns the
+//    locked Minuto visual identity + Scene Director rewrite (PR #88); we
+//    pass scene_brief through faithfully — NEVER bypass the Scene Director.
+//
+//    (History: bag_hero used to route to vertex-imagen-edit, whose Imagen
+//    SUBJECT customization is single-subject — it dropped co-subjects and
+//    reinvented the label. That made bag briefs fail QA and the old ladder
+//    degraded them to bagless images. Switched to Gemini+reference, which
+//    Erez verified renders the bag reliably, 2026-06-01.)
 //
 // 3. FEATURED-IMAGE ATTACH. The existing blog-publish edge function only
 //    supports attaching a featured image AT POST CREATION TIME (one-shot
@@ -39,50 +48,19 @@
 //    Session A's writer worker). attempts>=max_attempts flips to 'failed'.
 //
 // ─────────────────────────────────────────────────────────────────────────
-// TODO (future upgrade — two-step composite pipeline for "machine + Minuto
-// bag in one frame")
+// "Machine + Minuto bag in one frame" — SOLVED by Gemini+reference
 // ─────────────────────────────────────────────────────────────────────────
-// Current state (2026-05-26): the autonomous escalation ladder produces
-// the BEST AVAILABLE outcome for a multi-subject scene brief, but cannot
-// satisfy "render a Cafelat Robot machine AND a byte-perfect Minuto bag
-// together in the same frame". Each route has a structural limitation:
+// The old design (Vertex SUBJECT customization for bag_hero) could NOT put
+// the real bag and a co-subject (e.g. an espresso machine) in the same frame
+// — Imagen SUBJECT customization is single-subject. That forced an ugly
+// trade and an abandoned "two-step composite" idea (pasted-PNG compositing,
+// which looked fake — see _shared/compositor.ts, kept but not imported).
 //
-//   • bag_hero (Vertex Imagen SUBJECT customization): centers on the
-//     supplied product reference, drops every co-subject. Renders the
-//     real Minuto bag with sharp label artwork but no other elements.
-//   • no_bag (Gemini Image): renders any scene cleanly but cannot use
-//     the real Minuto bag — at best it hallucinates a generic non-Minuto
-//     bag (caught by QA + stripped on attempt 3), at worst it draws
-//     other coffee imagery that violates render_mode.
-//
-// FIX: a two-step composite pipeline:
-//   Step 1: render the scene via no_bag (Gemini), describing the bag's
-//           position/orientation but NOT its branding ("a coffee bag
-//           stands on the right side of the countertop, label facing
-//           camera, partially in shadow").
-//   Step 2: programmatic composite of the real Minuto bag PNG (from
-//           `woo_products` lookup, same as bag_hero today) onto the
-//           rendered scene at the position Gemini drew the generic bag.
-//           The existing `supabase/functions/_shared/compositor.ts`
-//           (compositeProductIntoScene) already does this — it's used
-//           inside vertex-imagen-edit's handleHybridComposite but not
-//           imported standalone. Lift it into a new `render_mode:
-//           'scene_with_bag'` route here, OR call vertex-imagen-edit
-//           with a new flag that does scene-then-composite without the
-//           SUBJECT customization step.
-//
-// COMPLEXITY: needs bag-region detection in the Gemini output (probably
-// a Claude vision call to find bounding box) OR a deterministic region
-// the strategist agrees to use in scene_briefs. The existing compositor
-// uses a fixed BAG_REGION which is hero-sized — not appropriate for a
-// scene where the bag is one of several subjects. New region sizing
-// logic required.
-//
-// PRIORITY: low until the strategist starts emitting briefs that
-// specifically need this (product-recommendation articles where the
-// bag MUST be in-frame alongside other subjects). The QA loop's HITL
-// surface catches these today — admin reviews and decides whether to
-// re-queue with a hand-crafted brief or ship the machine-only render.
+// Routing bag_hero through visual-test (Gemini + bag reference) removes the
+// limitation: Gemini renders the real bag faithfully ALONGSIDE beans /
+// machine / roaster references in a single pass (Erez-verified 2026-06-01).
+// So multi-subject bag scenes are now a normal render, not a special case,
+// and the QA ladder no longer degrades them to bagless images.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import {
@@ -177,10 +155,10 @@ serve(async (req) => {
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'unknown render_mode' })
   }
   if (renderMode === 'bag_hero' && !brief.product_name?.trim()) {
-    // vertex-imagen-edit requires one of reference_image_url / product_id /
-    // product_name. The orchestrator's VisualGenerationBrief only exposes
-    // product_name, so it must be set for bag_hero. Permanent failure —
-    // the brief is malformed, no point retrying.
+    // visual-test (use_reference:true) needs one of reference_image_url /
+    // product_id / product_name to resolve WHICH bag to render. The
+    // orchestrator's VisualGenerationBrief only exposes product_name, so it
+    // must be set for bag_hero. Permanent failure — brief is malformed.
     await safeMarkFailed(supabase, task, 'bag_hero render_mode requires product_name in brief_data', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'product_name missing for bag_hero' })
   }
@@ -290,22 +268,27 @@ serve(async (req) => {
     // critiques. First attempt = caller's choices. Subsequent attempts
     // apply the escalation ladder.
     if (qaAttempt === 2 && qaAttempts.length > 0) {
-      // ESCALATION STEP 1: switch render_mode. If the original mode
-      // can't produce what the brief asks for, the alternative mode
-      // gets a fresh shot. We keep the original scene_brief here so the
-      // escalation tests *just* the mode change.
-      workingRenderMode = renderMode === 'bag_hero' ? 'no_bag' : 'bag_hero'
-      // If switching INTO bag_hero and we don't have a product_name,
-      // we can't actually switch — bag_hero requires it. In that case
-      // stick with the same mode but use the augmented brief.
-      if (workingRenderMode === 'bag_hero' && !brief.product_name?.trim()) {
-        console.warn(`[seo-worker-visual] ${workerId} can't escalate to bag_hero (no product_name); retrying same mode with augmented brief`)
-        workingRenderMode = renderMode
+      // ESCALATION STEP 1. The OLD ladder switched bag_hero → no_bag here,
+      // which DROPPED the Minuto bag and let a bagless image "pass" QA — the
+      // bug that produced only no-bag banners. Now that bag_hero renders via
+      // Gemini+reference (reliable at placing the bag), a failed bag attempt
+      // is a brief/composition problem, NOT a "can't do a bag" problem. So:
+      //   • bag_hero origin → STAY in bag_hero, augment the brief from the
+      //     QA critique. Never fall back to bagless.
+      //   • no_bag origin   → upgrade to bag_hero if we have a product to
+      //     show, else stay no_bag with an augmented brief.
+      if (renderMode === 'bag_hero') {
+        workingRenderMode = 'bag_hero'
         workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
-      } else {
-        console.log(`[seo-worker-visual] ${workerId} escalation step 1: switching mode ${renderMode} → ${workingRenderMode}`)
-        // Keep brief verbatim on the mode-switch attempt — clean A/B.
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: staying in bag_hero with augmented brief (never drop the bag)`)
+      } else if (brief.product_name?.trim()) {
+        workingRenderMode = 'bag_hero'
         workingSceneBrief = brief.scene_brief
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: upgrading no_bag → bag_hero`)
+      } else {
+        workingRenderMode = 'no_bag'
+        workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: no product to show, staying no_bag with augmented brief`)
       }
     } else if (qaAttempt === 3 && qaAttempts.length > 0) {
       // ESCALATION STEP 2: stay in attempt-2's mode but strip the brief
@@ -489,7 +472,7 @@ serve(async (req) => {
   // can render thumbnails + critiques. Future agents can also re-queue
   // a fresh task with a modified brief if review concludes the image
   // is unusable.
-  const finalRenderFunction = finalRenderMode === 'no_bag' ? 'visual-test' : 'vertex-imagen-edit'
+  const finalRenderFunction = 'visual-test'  // both bag + no_bag render via Gemini now
   try {
     await markTaskCompleted(supabase, task.id, {
       image_url:           imageUrl,
@@ -624,12 +607,18 @@ async function renderOnce(args: {
   aspect:      string
   productName?: string
 }): Promise<{ url: string; raw: Record<string, unknown> }> {
-  const endpoint = args.renderMode === 'no_bag'
-    ? 'visual-test'
-    : 'vertex-imagen-edit'
+  // BOTH modes now render through Gemini (visual-test). The bag is placed
+  // by passing use_reference:true + product_name — visual-test resolves the
+  // product's real bag photo from woo_products and feeds it to Gemini as a
+  // reference (alongside beans / machine / roaster refs), so the Minuto bag
+  // is rendered FAITHFULLY into the full scene WITH its co-subjects. This
+  // replaces the old vertex-imagen-edit route, whose SUBJECT customization
+  // is single-subject (drops co-subjects) and reinvents the label — which is
+  // why bag renders kept failing QA and degrading to bagless images.
+  const endpoint = 'visual-test'
   const body: Record<string, unknown> = args.renderMode === 'no_bag'
     ? { scene_brief: args.sceneBrief, aspect: args.aspect, use_reference: false }
-    : { scene_brief: args.sceneBrief, aspect: args.aspect, render_mode: 'bag_hero', product_name: args.productName }
+    : { scene_brief: args.sceneBrief, aspect: args.aspect, use_reference: true, product_name: args.productName }
 
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${endpoint}`, {
     method:  'POST',
@@ -996,9 +985,11 @@ ${directives.map(d => `- ${d}`).join('\n')}`
 //   no_bag mode: scene_brief commonly mentions "bag of beans" /
 //     "packaging" / "pouch", and Gemini happily draws a generic
 //     non-Minuto bag. Strip bag terms so the bag stops appearing.
-//   bag_hero mode: Vertex SUBJECT customization centers on the bag
-//     and drops co-subjects. Strip co-subject mentions so the brief
-//     becomes a clean single-subject hero shot Vertex can do well.
+//   bag_hero mode: last-ditch simplification — strip co-subject mentions
+//     so the brief becomes a clean single-subject bag hero shot. Gemini
+//     handles multi-subject fine, but on a 3rd failed attempt narrowing to
+//     the bag alone maximises the odds of a clean, on-brand render that
+//     STILL shows the Minuto bag (never drops it).
 //
 // This is line-by-line scrubbing — leaves the rest of the brief intact
 // so the photographer's intent (lighting, palette, mood) survives.
