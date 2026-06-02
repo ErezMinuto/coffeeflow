@@ -42,7 +42,7 @@ import {
 } from '../seo-agent/services/googleApi.ts'
 import {
   fetchRecentBlogPosts,
-  fetchActiveCatalog,
+  fetchMinutoCoffeeCatalog,
   fetchInventoryAlerts,
   fetchVocInsights,
   fetchKeywordOpportunities,
@@ -168,7 +168,7 @@ serve(async (req: Request): Promise<Response> => {
       }),
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
-      fetchActiveCatalog(supabase),
+      fetchMinutoCoffeeCatalog(supabase),
       fetchInventoryAlerts(supabase),
       getRecentTasks(supabase, fourteenDaysAgo, 100),
       getRecentMetricsSnapshots(supabase, 'orchestrator_run', 2),
@@ -702,7 +702,10 @@ function buildStrategistUserMessage(args: {
         return `  • ${p.title}${when ? ` (${when})` : ''}`
       }).join('\n')
 
-  // Catalog — just names with stock/price, for products_to_mention picking.
+  // Catalog — Minuto's OWN roasted coffee lineup only (green 1kg home-roasting
+  // SKUs and resold brands like Veneto/Toddy are filtered out at the source).
+  // products_to_mention[0] becomes a bag_hero banner's product, so the strategist
+  // must only ever pick from on-brand Minuto coffee. Names with stock/price.
   const catalogBlock = catalog.length === 0
     ? '  (catalog empty)'
     : catalog.slice(0, 50).map(p => {
@@ -761,7 +764,7 @@ ${recentTasksBlock}
 
 ${blogBlock}
 
-=== PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
+=== MINUTO COFFEE LINEUP (the ONLY products to feature; copy EXACT names into products_to_mention — products_to_mention[0] becomes the article/post banner's hero bag, so never pick anything off this list) ===
 
 ${catalogBlock}
 
