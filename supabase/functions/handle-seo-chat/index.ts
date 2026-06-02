@@ -95,6 +95,19 @@ const MAX_TOOL_LOOPS = 8
 const CHAT_LOOP_BUDGET_MS = 130_000
 const MIN_CALL_BUDGET_MS  = 20_000  // don't start another Claude call with less than this left
 
+// Per-call output cap. The OLD 4096 let the model spend ~90s generating a
+// full article body inline (writing it into an edit_post content arg) — a
+// single call would then hit the 90s timeout and abort the whole turn with
+// nothing saved. The chat agent is NOT a long-form writer: its outputs are
+// short answers + tool calls. The biggest LEGIT output is a full
+// text_generation brief or a 6-pair Hebrew FAQ (~1.2-1.5K tokens), so 2000
+// leaves headroom for those while bounding any single call to ~40s. If the
+// model still tries to draft an article inline it hits this cap
+// (stop_reason='max_tokens'); we DETECT that and refuse to execute the
+// (truncated) tool call, steering it to queue_task('text_generation')
+// instead — see the max-tokens guard in the tool-use loop.
+const MAX_OUTPUT_TOKENS_CHAT = 2000
+
 // ── Worker registry — what the agent can nudge ─────────────────────────
 // Maps a friendly name to the deployed function path. Used by the
 // auto-nudge after queue_task / repoint_ig_to_visual and by the
@@ -416,13 +429,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'list_posts',
-    description: "List blog posts by status — fetches LIVE from WP REST in ONE call. Use to FIND which posts exist in a given state (e.g. 'show me all the drafts', 'which posts mention X') BEFORE scanning IDs one by one. Returns up to per_page posts: {id, title, slug, status, link, modified, excerpt}. Drafts/pending require auth (which we have); also works for 'publish'. Search is a WP-side full-text filter.",
+    description: "List blog posts by status — LIVE WP REST in ONE call. Returns {id, title, slug, status, link, modified, excerpt, has_product_links, product_link_count}. has_product_links is computed server-side by scanning each post's HTML for /product/ links, so you can find 'posts that forgot to link to products' in a SINGLE call — no need to read each post just to check. Use the missing_product_links filter for the most common task (fixing drafts that don't reference Minuto products). Drafts/pending require auth (which we have).",
     input_schema: {
       type: 'object',
       properties: {
-        status:   { type: 'string', description: "Filter by status: 'draft' | 'publish' | 'pending' | 'private' | 'any'. Default 'draft'." },
-        search:   { type: 'string', description: 'Optional WP search term (matches title + content).' },
-        per_page: { type: 'number', description: 'Max posts. Default 30, hard cap 100.' },
+        status:                { type: 'string', description: "Filter by status: 'draft' | 'publish' | 'pending' | 'private' | 'any'. Default 'draft'." },
+        search:                { type: 'string', description: 'Optional WP search term (matches title + content).' },
+        per_page:              { type: 'number', description: 'Max posts. Default 30, hard cap 100.' },
+        missing_product_links: { type: 'boolean', description: 'If true, return ONLY posts whose body contains NO Minuto product links. Perfect for the common "find drafts that need product references added" flow — one call collapses scan+identify into one round-trip.' },
       },
     },
   },
@@ -437,12 +451,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'edit_post',
-    description: "Update an EXISTING blog post (the post stays in whatever status it's in — drafts stay drafts; published stays published). Use to add a products section to a draft that forgot to include products, fix a typo, append a CTA, etc. PROVIDE the full new content (HTML) — the tool replaces it wholesale, so read_post first, modify in place, then write back. NEVER changes publish status — this tool will REFUSE any status field; promotion to publish is the admin's call. For PUBLISHED posts (live content edit), confirm with Erez in one sentence first; for DRAFTS no confirmation needed (admin still gates publishing). Returns {id, link, status, modified, content_length}.",
+    description: "SMALL-EDIT tool ONLY — for inserting/replacing a SHORT span in an existing post: add a products section to a draft that forgot one, fix/add links, tweak a paragraph, append a CTA, fix a typo. The post keeps its status (drafts stay drafts; published stays published). You read_post first, modify in place, then write back the full HTML (it replaces wholesale). ⛔ DO NOT use this to WRITE or REWRITE a full article body. A chat turn cannot fit article-length generation — attempting it gets your output cut off at the length cap and the write is REFUSED (nothing saved). For writing a thin/empty draft up into a full article, or rewriting an article end-to-end, call queue_task('text_generation', {...}) instead — the writer worker owns long-form and returns a NEW draft. NEVER changes publish status (REFUSES any status field). For PUBLISHED posts confirm with Erez in one sentence first; DRAFTS need no confirmation. Returns {id, link, status, modified, content_length}.",
     input_schema: {
       type: 'object',
       properties: {
         post_id: { type: 'number', description: 'WP post id.' },
-        content: { type: 'string', description: 'Full new HTML body. Will replace the existing content. Use read_post first to fetch + modify.' },
+        content: { type: 'string', description: 'New HTML body (replaces existing wholesale). Use read_post first to fetch + modify in place. Keep the change SMALL — this is not for generating a full article body; route those to queue_task(text_generation).' },
         title:   { type: 'string', description: 'Optional new title.' },
       },
       required: ['post_id'],
@@ -784,11 +798,16 @@ async function executeTool(
         const status   = typeof input.status === 'string' && input.status.trim() ? input.status.trim() : 'draft'
         const search   = typeof input.search === 'string' ? input.search.trim() : ''
         const perPage  = Math.max(1, Math.min(100, typeof input.per_page === 'number' ? Math.floor(input.per_page) : 30))
+        const missingProductLinks = input.missing_product_links === true
         if (!WP_USERNAME || !WP_APP_PASSWORD) return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not set.' } }
         const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
+        // content is required so we can compute has_product_links server-side
+        // (single round-trip for "find posts without product links" instead of
+        // N reads). content stays out of the returned rows — we only return the
+        // computed flag + count.
         const params = new URLSearchParams({
           status, per_page: String(perPage),
-          _fields: 'id,title,slug,status,link,modified,excerpt',
+          _fields: 'id,title,slug,status,link,modified,excerpt,content',
           context: 'edit',  // surfaces drafts/pending (anon GET can't see them)
         })
         if (search) params.set('search', search)
@@ -801,18 +820,40 @@ async function executeTool(
         const stripHtml = (s: unknown) => typeof s === 'string'
           ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
           : ''
-        const rows = (Array.isArray(arr) ? arr : []).map((p: any) => ({
-          id:        p.id,
-          title:     stripHtml(p?.title?.rendered ?? p?.title?.raw ?? ''),
-          slug:      p.slug,
-          status:    p.status,
-          link:      p.link,
-          modified:  p.modified,
-          excerpt:   stripHtml(p?.excerpt?.rendered ?? '').slice(0, 240),
-        }))
+        // Match anchor hrefs that point to /product/<slug> on minuto.co.il
+        // OR site-relative /product/ paths. Catches absolute and relative
+        // forms of INTERNAL product links only. Ignores text mentions
+        // ("Velvet Star" without a hyperlink) AND external /product/ URLs
+        // on other shops — the agent needs actual Minuto product anchors.
+        const PRODUCT_LINK_RE = /href=["'](?:https?:\/\/(?:www\.)?minuto\.co\.il)?\/product\/[^"']+["']/gi
+        let rows = (Array.isArray(arr) ? arr : []).map((p: any) => {
+          const html = String(p?.content?.raw ?? p?.content?.rendered ?? '')
+          const matches = html.match(PRODUCT_LINK_RE) ?? []
+          return {
+            id:                  p.id,
+            title:               stripHtml(p?.title?.rendered ?? p?.title?.raw ?? ''),
+            slug:                p.slug,
+            status:              p.status,
+            link:                p.link,
+            modified:            p.modified,
+            excerpt:             stripHtml(p?.excerpt?.rendered ?? '').slice(0, 240),
+            has_product_links:   matches.length > 0,
+            product_link_count:  matches.length,
+            content_length:      html.length,
+          }
+        })
+        if (missingProductLinks) rows = rows.filter(r => !r.has_product_links)
         return {
           ok: true,
-          payload: { count: rows.length, status, search: search || null, source: 'wp REST live', rows, hint: 'Follow up with read_post(id) for full content, or edit_post(id, content) to modify.' },
+          payload: {
+            count: rows.length,
+            status,
+            search: search || null,
+            missing_product_links_filter: missingProductLinks,
+            source: 'wp REST live',
+            rows,
+            hint: 'Use list_products({search: "..."}) (returns woo_id) → read_product({woo_id}) → read_post(id) → edit_post(id, content) to fix one in a few rounds.',
+          },
         }
       }
 
@@ -1745,8 +1786,14 @@ serve(async (req: Request): Promise<Response> => {
           system:   systemPrompt,
           messages: apiMessages,
           tools:    TOOL_DEFINITIONS,
-          maxTokens:   4096,
+          maxTokens:   MAX_OUTPUT_TOKENS_CHAT,
           temperature: 0.3,
+          // Cache the (system + tools) prefix — ~30 tool schemas + the
+          // chat prompt is 5-10K input tokens. First call in the turn
+          // pays full cost; calls 2-N hit the 5-min cache and respond
+          // several×faster, which is exactly the failure mode the agent
+          // was hitting ("running out of time" on multi-round turns).
+          cachePrefix: true,
           // Size the call to the remaining budget (cap 90s) so one slow call
           // can't overrun the loop budget.
           timeoutMs: Math.min(90_000, remainingMs - 5_000),
@@ -1767,15 +1814,26 @@ serve(async (req: Request): Promise<Response> => {
         output:     res.outputTokens,
         cache_read: res.cacheReadTokens,
       }
+      // Per-loop timing + cache-hit telemetry so we can verify caching is
+      // actually firing (cache_read > 0 from loop 2 onward). Cheap log
+      // line — no PII, just numbers.
+      console.log(`[handle-seo-chat] loop=${loops} elapsed=${Date.now() - loopStartedAt}ms in=${res.inputTokens} out=${res.outputTokens} cache_read=${res.cacheReadTokens} cache_write=${res.cacheCreationTokens}`)
 
       const toolUses = res.content.filter(
         (b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use',
       )
       const assistantText = res.text
+      const elapsedMs = Date.now() - loopStartedAt
 
       // 4a. Persist this assistant turn. Always persist — even if it's
       // a pure tool_use turn — so the front-end can render the
       // "calling X tool" hint and history is faithful.
+      //
+      // Telemetry note: we stash per-loop elapsed_ms + cache stats in
+      // metadata. Lets us diagnose 'running out of time' without log
+      // scraping — just SELECT metadata FROM chat_messages WHERE
+      // session_id='...' AND role='assistant' to see per-loop timing
+      // + cache_read (verifies prompt-caching is actually firing).
       await appendChatMessage(supabase, {
         session_id: sessionId,
         role:       'assistant',
@@ -1784,11 +1842,15 @@ serve(async (req: Request): Promise<Response> => {
           ? toolUses.map(t => ({ id: t.id, name: t.name, input: t.input }))
           : null,
         metadata: {
-          model:        res.model,
-          stop_reason:  res.stop_reason,
-          input_tokens: res.inputTokens,
-          output_tokens: res.outputTokens,
-          loop_iteration: loops,
+          model:                res.model,
+          stop_reason:          res.stop_reason,
+          input_tokens:         res.inputTokens,
+          output_tokens:        res.outputTokens,
+          cache_read_tokens:    res.cacheReadTokens,
+          cache_write_tokens:   res.cacheCreationTokens,
+          loop_iteration:       loops,
+          elapsed_ms_at_loop:   elapsedMs,
+          tools_requested:      toolUses.map(t => t.name),
         },
       })
 
@@ -1806,10 +1868,21 @@ serve(async (req: Request): Promise<Response> => {
         })
       }
 
-      // 4b. If no tool calls or stop_reason indicates the model is done,
-      // we're finished. Note: stop_reason can be 'end_turn' even when
-      // the response includes a text-only block, so we trust both signals.
-      if (toolUses.length === 0 || res.stop_reason === 'end_turn') {
+      // 4b. Terminal cases — stop looping.
+      //  • no tool calls            → the model is answering; we're done
+      //  • stop_reason 'end_turn'   → model signalled completion
+      //  • stop_reason 'max_tokens' WITH no tool calls → the model was cut
+      //    off mid-prose (almost always drafting an article body straight
+      //    into the chat). Don't dump the truncated half-article — return a
+      //    short nudge to route long-form to the writer worker instead.
+      const hitTokenCap = res.stop_reason === 'max_tokens'
+      if (toolUses.length === 0) {
+        finalText = hitTokenCap
+          ? `(I started drafting something too long to finish in a single chat turn. For a full article body, tell me to "queue the writer for post <id>" — the writer worker is built for long-form and returns a fresh WP draft. I keep edit_post for small fixes only.)`
+          : assistantText
+        break
+      }
+      if (res.stop_reason === 'end_turn') {
         finalText = assistantText
         break
       }
@@ -1827,18 +1900,32 @@ serve(async (req: Request): Promise<Response> => {
         console.log(`[handle-seo-chat] tool=${call.name} input=${JSON.stringify(call.input).slice(0, 200)}`)
         let contentStr = ''
         let isError = false
-        try {
-          const result = await executeTool(
-            supabase,
-            call.name as ChatToolName,
-            call.input ?? {},
-          )
-          contentStr = JSON.stringify(result.payload)
-          isError = !result.ok
-        } catch (toolErr: any) {
-          console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
-          contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+        if (hitTokenCap) {
+          // The response was truncated at the output cap, so this tool_use's
+          // input is likely partial/invalid — executing it could write a
+          // half-finished article to WordPress. Refuse and steer the model
+          // to the writer worker. We still persist a matching tool_result so
+          // the assistant tool_use isn't left orphaned on the next replay.
           isError = true
+          contentStr = JSON.stringify({
+            error:  'OUTPUT_TRUNCATED',
+            detail: `Your response hit the length cap, so "${call.name}" was NOT executed — its input was cut off. You were almost certainly writing a full article body inline, which a chat turn cannot fit. NEVER draft a full body in chat. To write or rewrite a full article body, call queue_task('text_generation', {keyword, title, key_points, products_to_mention, ...}) — the writer worker has the budget for long-form and returns a NEW WP draft. Reserve edit_post for SMALL inserts only (a section, links, a paragraph). Re-issue your intent now as queue_task.`,
+          })
+          console.warn(`[handle-seo-chat] refused truncated tool=${call.name} (stop_reason=max_tokens) — steering to writer worker`)
+        } else {
+          try {
+            const result = await executeTool(
+              supabase,
+              call.name as ChatToolName,
+              call.input ?? {},
+            )
+            contentStr = JSON.stringify(result.payload)
+            isError = !result.ok
+          } catch (toolErr: any) {
+            console.error(`[handle-seo-chat] executeTool(${call.name}) threw:`, toolErr?.message ?? toolErr)
+            contentStr = JSON.stringify({ error: toolErr?.message ?? String(toolErr) })
+            isError = true
+          }
         }
         // Persist tool_result row — failure here gets logged but doesn't
         // skip the in-memory toolResultBlocks push (Anthropic still needs

@@ -47,6 +47,11 @@ const UNSUBSCRIBE_BASE = Deno.env.get('UNSUBSCRIBE_BASE_URL') ?? `${SUPA_URL}/fu
 // touching code. Default to a known-existing URL on the storefront if
 // none is configured; owner can update via Supabase Table Editor.
 const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.co.il/wp-content/uploads/2024/01/minuto-logo.png'
+// Owner-copy (BCC) on every REAL automation send, so the owner can inspect
+// exactly what customers receive — requested for the abandoned-cart go-live.
+// Empty = no copy. Set/clear via `supabase secrets set AUTOMATION_BCC=...`
+// without a code change, so it's trivial to turn off once trust is built.
+const AUTOMATION_BCC = (Deno.env.get('AUTOMATION_BCC') ?? '').trim()
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -59,6 +64,7 @@ interface AutomationTemplate {
   enabled: boolean
   delay_days: number
   max_lookback_days: number  // upper bound on order_date — prevents historical backlog blast
+  not_before_date?: string | null  // abandoned_cart only: ignore carts whose order_date is before this (go-live floor, YYYY-MM-DD). NULL = no floor.
   subject_template: string
   body_html_template: string
   coupon_percent: number | null
@@ -72,11 +78,19 @@ interface AutomationTemplate {
   coupon_product_category_ids: number[]
 }
 
+interface CartItem {
+  name: string
+  quantity: number
+  total: string  // line total in store currency (ILS), as returned by WC
+  image_url: string  // product thumbnail from WC line_items[].image.src; '' if none
+}
+
 interface FirstOrderCandidate {
   customer_email: string
   customer_name: string | null
   woo_order_id: number
   order_date: string  // YYYY-MM-DD
+  cart_items?: CartItem[]  // abandoned_cart only — line items from the pending WC order
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,6 +101,79 @@ function renderTemplate(template: string, vars: Record<string, string | number>)
     const v = vars[key]
     return v === undefined || v === null ? '' : String(v)
   })
+}
+
+/** Escape text interpolated into email HTML (WC product names are untrusted). */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/** Map a WC orders-endpoint line_items array to our CartItem shape. */
+function mapLineItems(raw: any): CartItem[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((li: any) => ({
+    name: (String(li?.name ?? '').trim()) || 'מוצר',
+    quantity: Number(li?.quantity ?? 1) || 1,
+    total: String(li?.total ?? '').trim(),
+    image_url: String(li?.image?.src ?? '').trim(),
+  }))
+}
+
+/**
+ * Build the RTL cart-contents block for abandoned-cart emails. Returns ''
+ * when there are no items, so templates that include {{ cart_items_html }}
+ * render nothing (no empty heading) rather than a stray box. first_purchase
+ * and refill_reminder never set cart_items, so they're unaffected.
+ *
+ * Each row: product thumbnail (right, RTL start) · name · qty + line total
+ * (left). Thumbnail falls back to a neutral box when the line item has no
+ * image so the columns stay aligned. Inline styles + table layout for
+ * email-client compatibility (no flexbox/grid).
+ */
+function renderCartItemsHtml(items: CartItem[]): string {
+  if (!items || items.length === 0) return ''
+  const rows = items.map(it => {
+    const thumb = it.image_url
+      ? `<img src="${escapeHtml(it.image_url)}" width="52" height="52" alt="" style="display: block; width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #e0d8c8;" />`
+      : `<div style="width: 52px; height: 52px; border-radius: 8px; background: #e9e3d6;"></div>`
+    return `
+          <tr>
+            <td width="52" style="padding: 8px 0;" valign="middle">${thumb}</td>
+            <td style="padding: 8px 12px; color: #2a2a2a; font-size: 15px;" valign="middle">${escapeHtml(it.name)}</td>
+            <td style="padding: 8px 0; color: #6a6a6a; font-size: 14px; white-space: nowrap;" align="left" valign="middle">× ${it.quantity}${it.total ? ` &middot; ₪${escapeHtml(it.total)}` : ''}</td>
+          </tr>`
+  }).join('')
+  return `
+        <div style="margin: 8px 0 24px; padding: 16px 20px; background: #f6f3ee; border-radius: 8px;">
+          <p style="margin: 0 0 10px; font-weight: bold; color: #3D4A2E; font-size: 15px;">מה שחיכה בעגלה</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${rows}
+          </table>
+        </div>`
+}
+
+/**
+ * Test-send helper for abandoned_cart_*: pull the most recent real pending
+ * order's line items so the preview shows genuine product names + images
+ * (not placeholders). Returns [] on any failure; caller supplies a static
+ * fallback so a test-send never breaks just because WC is unreachable.
+ */
+async function fetchSampleCartItems(): Promise<CartItem[]> {
+  if (!WOO_KEY || !WOO_SECRET) return []
+  try {
+    const params = new URLSearchParams({
+      status: 'pending', per_page: '1', orderby: 'date', order: 'desc',
+      _fields: 'line_items',
+    })
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const orders = await res.json()
+    return Array.isArray(orders) && orders[0] ? mapLineItems(orders[0].line_items) : []
+  } catch { return [] }
 }
 
 /**
@@ -292,9 +379,23 @@ async function createCoupon(
  * sender reputation.
  */
 async function sendEmail(
-  to: string, subject: string, html: string, unsubscribeUrl: string
+  to: string, subject: string, html: string, unsubscribeUrl: string, bcc?: string
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!RESEND_KEY) return { ok: false, error: 'RESEND_API_KEY not configured' }
+
+  const payload: Record<string, unknown> = {
+    from: `Minuto <${SENDER_EMAIL}>`,
+    to: [to],
+    subject,
+    html,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
+  }
+  // Owner-copy: only on real sends (caller passes bcc). Never BCC the
+  // customer's own address (would double-deliver if they ever match).
+  if (bcc && bcc.toLowerCase() !== to.toLowerCase()) payload.bcc = [bcc]
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -302,16 +403,7 @@ async function sendEmail(
       Authorization: `Bearer ${RESEND_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: `Minuto <${SENDER_EMAIL}>`,
-      to: [to],
-      subject,
-      html,
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
@@ -617,11 +709,69 @@ async function findRefillCandidates(
  *   POST /email-automation-scheduler {"dry_run": true}
  * which logs the WC fetch count.
  */
+/**
+ * Live recovery lookup: latest PAID (completed/processing) order date per
+ * customer email, fetched straight from WooCommerce — NOT the synced
+ * woo_orders table.
+ *
+ * Why live: woo_orders lags real-time payments (on 2026-06-01 the sync had
+ * frozen at order 80722 / 2026-05-26 while live abandoned carts were already
+ * at 80800+). A stale table makes the recovery check blind to anyone who
+ * paid in the gap, so we'd email a customer who already bought — exactly the
+ * spam we're trying to avoid. Querying WC live closes the gap: if the
+ * customer completed ANY order on/after their abandoned cart's date, they
+ * decided to buy and we skip them.
+ *
+ * Returns a map of lowercased email → latest paid order date (YYYY-MM-DD).
+ * Fetches every order placed since `afterIso` (bounded by the lookback
+ * window, so 1–2 pages) and keeps only completed/processing.
+ */
+async function fetchLatestPaidByEmail(afterIso: string): Promise<Map<string, string>> {
+  const latestPaid = new Map<string, string>()
+  if (!WOO_KEY || !WOO_SECRET) throw new Error('recovery: WOO_KEY/WOO_SECRET not configured')
+  let page = 1
+  for (;;) {
+    const params = new URLSearchParams({
+      after: afterIso,
+      per_page: '100',
+      page: String(page),
+      orderby: 'date',
+      order: 'asc',
+      _fields: 'id,date_created,status,billing',
+    })
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+    const res = await fetch(url)
+    if (!res.ok) {
+      const t = await res.text()
+      throw new Error(`recovery: WC orders fetch ${res.status}: ${t.slice(0, 300)}`)
+    }
+    const orders = await res.json()
+    if (!Array.isArray(orders)) {
+      throw new Error(`recovery: WC returned non-array (likely auth/redirect failure): ${JSON.stringify(orders).slice(0, 200)}`)
+    }
+    if (orders.length === 0) break
+    for (const o of orders) {
+      const status = String(o?.status ?? '')
+      if (status !== 'completed' && status !== 'processing') continue  // 'paid' = decided to buy
+      const email = ((o?.billing?.email ?? '') as string).toLowerCase().trim()
+      if (!email) continue
+      const od = String(o?.date_created ?? '').split('T')[0]
+      if (!od) continue
+      const prev = latestPaid.get(email)
+      if (!prev || od > prev) latestPaid.set(email, od)
+    }
+    if (orders.length < 100) break
+    page++
+  }
+  return latestPaid
+}
+
 async function findAbandonedCartCandidates(
   supabase: any,
   delayDays: number,
   maxLookbackDays: number,
   prerequisiteTrigger: string | null,
+  notBeforeDate: string | null,
 ): Promise<FirstOrderCandidate[]> {
   if (maxLookbackDays < delayDays) {
     console.warn(`[email-automation] abandoned_cart: max_lookback_days (${maxLookbackDays}) < delay_days (${delayDays}) — no orders can ever qualify. Fix the template.`)
@@ -647,7 +797,7 @@ async function findAbandonedCartCandidates(
     per_page: '100',
     orderby: 'date',
     order: 'asc',
-    _fields: 'id,date_created,status,billing',
+    _fields: 'id,date_created,status,billing,line_items',
   })
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
   const res = await fetch(url)
@@ -663,40 +813,29 @@ async function findAbandonedCartCandidates(
 
   // Normalize to internal candidate shape. Drop rows without an email
   // (some pending orders, e.g. created via admin, won't have one).
-  type PendingOrder = { woo_order_id: number; email: string; first_name: string | null; order_date: string }
+  type PendingOrder = { woo_order_id: number; email: string; first_name: string | null; order_date: string; cart_items: CartItem[] }
   const pending: PendingOrder[] = []
   for (const o of orders) {
     const email = ((o?.billing?.email ?? '') as string).toLowerCase().trim()
     if (!email) continue
+    const cart_items = mapLineItems(o?.line_items)
     pending.push({
       woo_order_id: o.id,
       email,
       first_name: (o?.billing?.first_name ?? null) || null,
       order_date: String(o.date_created ?? '').split('T')[0],
+      cart_items,
     })
   }
   if (pending.length === 0) return []
 
-  // Recovery check: any paid (completed/processing) order from the same
-  // email on/after the pending order's date → they came back on their
-  // own. woo_orders only stores paid orders, so a match here is recovery.
-  const emails = Array.from(new Set(pending.map(p => p.email)))
-  const { data: paidRows, error: paidErr } = await supabase
-    .from('woo_orders')
-    .select('customer_email, order_date')
-    .in('status', ['completed', 'processing'])
-    .in('customer_email', emails)
-  if (paidErr) throw new Error(`abandoned_cart paid-orders query: ${paidErr.message}`)
-
-  // Track each email's latest paid-order date (YYYY-MM-DD is
-  // lexicographically sortable so string compare is safe).
-  const latestPaid = new Map<string, string>()
-  for (const r of (paidRows ?? [])) {
-    const e = (r.customer_email ?? '').toLowerCase().trim()
-    if (!e || !r.order_date) continue
-    const prev = latestPaid.get(e)
-    if (!prev || r.order_date > prev) latestPaid.set(e, r.order_date)
-  }
+  // Recovery check: if the customer completed/processing ANY order on/after
+  // their abandoned cart's date, they decided to buy and we must not spam
+  // them with a reminder. Matched by email (case-insensitive — emails are
+  // lowercased on both sides). Fetched LIVE from WooCommerce, not the synced
+  // woo_orders table, because that table lags real-time payments and a stale
+  // lookup would email people who already bought (see fetchLatestPaidByEmail).
+  const latestPaid = await fetchLatestPaidByEmail(lower)
 
   // Prerequisite check (cart_2 only): require a prior 'sent' row with the
   // prerequisite trigger and matching woo_order_id. Pre-fetch all matching
@@ -718,19 +857,43 @@ async function findAbandonedCartCandidates(
     console.log(`[email-automation] abandoned_cart: ${prereqOrderIds.size}/${pending.length} pending orders satisfy prerequisite '${prerequisiteTrigger}'`)
   }
 
-  const candidates: FirstOrderCandidate[] = []
+  const surviving: FirstOrderCandidate[] = []
   for (const p of pending) {
+    // Go-live floor: ignore carts abandoned before the trigger's start date
+    // so enabling the automation doesn't blast the pre-existing backlog.
+    // Compared by calendar date (order_date is the store-local date), which
+    // matches the owner's "start from today's carts" intent. NULL = no floor.
+    if (notBeforeDate && p.order_date < notBeforeDate) continue
     const lp = latestPaid.get(p.email)
     if (lp && lp >= p.order_date) continue   // already recovered — skip
     if (prereqOrderIds && !prereqOrderIds.has(p.woo_order_id)) continue  // cart_1 not sent yet
-    candidates.push({
+    surviving.push({
       customer_email: p.email,
       customer_name: p.first_name,
       woo_order_id: p.woo_order_id,
       order_date: p.order_date,
+      cart_items: p.cart_items,
     })
   }
-  return candidates
+
+  // Per-customer dedup (owner rule 2026-05-31): if one customer abandoned
+  // more than one cart in the window, remind about ONLY their most recent
+  // one. Newest = latest order_date, tie-broken by higher woo_order_id (WC
+  // ids are monotonic, so a higher id is the later order). Without this a
+  // customer with N pending carts would get N emails on a single tick.
+  // NOTE: the dedup key is the literal billing email. Gmail dot-variants
+  // (yogev.zorea@ vs yogevzorea@) are DIFFERENT keys here even though Gmail
+  // delivers both to one inbox, so those would still produce two emails.
+  const latestPerEmail = new Map<string, FirstOrderCandidate>()
+  for (const c of surviving) {
+    const prev = latestPerEmail.get(c.customer_email)
+    if (!prev ||
+        c.order_date > prev.order_date ||
+        (c.order_date === prev.order_date && c.woo_order_id > prev.woo_order_id)) {
+      latestPerEmail.set(c.customer_email, c)
+    }
+  }
+  return Array.from(latestPerEmail.values())
 }
 
 /**
@@ -818,11 +981,12 @@ async function processAutomation(
     order_id: candidate.woo_order_id,
     unsubscribe_url: unsubscribeUrl,
     logo_url: DEFAULT_LOGO_URL,
+    cart_items_html: renderCartItemsHtml(candidate.cart_items ?? []),
   }
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
 
-  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl)
+  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl, AUTOMATION_BCC || undefined)
 
   if (!sendResult.ok) {
     await supabase.from('email_automations').update({
@@ -856,6 +1020,12 @@ serve(async (req) => {
 
   const dryRun  = body.dry_run === true
   const testTo  = typeof body.test_send === 'string' ? body.test_send : null
+  // Review-send: render EACH real candidate's actual email (real name,
+  // real cart, real images) and send it to the owner's address for copy
+  // review — NOT to the customer. No coupon creation, no DB lock rows,
+  // no 'sent' marking. Purely a preview of what live sends would look
+  // like, so the owner can approve before flipping enabled=true.
+  const reviewTo = typeof body.review_send === 'string' ? body.review_send : null
   // Owner can pass {trigger_type: 'refill_reminder'} alongside test_send
   // to QA a different template. Defaults to first_purchase to keep the
   // existing UI button working without changes.
@@ -888,6 +1058,19 @@ serve(async (req) => {
         )
       }
       const unsubscribeUrl = generateUnsubscribeUrl(testTo)
+      // For abandoned_cart_* previews, show a REAL pending order's items
+      // (names + images) so the test matches what a customer would receive.
+      // Fall back to a static sample if there's no pending order / WC fails.
+      let sampleCart: CartItem[] = []
+      if (testTrigger.startsWith('abandoned_cart')) {
+        sampleCart = await fetchSampleCartItems()
+        if (sampleCart.length === 0) {
+          sampleCart = [
+            { name: 'אתיופיה יִרגָצֶ׳ף — 250 גרם', quantity: 1, total: '64.00', image_url: '' },
+            { name: 'בלנד הבית אספרסו — 1 ק״ג', quantity: 2, total: '240.00', image_url: '' },
+          ]
+        }
+      }
       const vars = {
         first_name: 'בוחן',
         coupon_code: couponCode ?? '',
@@ -895,16 +1078,89 @@ serve(async (req) => {
         order_id: 0,
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
+        cart_items_html: renderCartItemsHtml(sampleCart),
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
-      const r = await sendEmail(testTo, subject, html, unsubscribeUrl)
+      const r = await sendEmail(testTo, subject, html, unsubscribeUrl, AUTOMATION_BCC || undefined)
       return new Response(JSON.stringify({ test_send: testTo, trigger: testTrigger, coupon: couponCode, ...r }),
         { headers: { ...CORS, 'Content-Type': 'application/json' } })
     } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }),
         { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
+  }
+
+  // ── Review-send path ───────────────────────────────────────────────
+  // For the chosen trigger, find the REAL candidates and email each
+  // candidate's actual rendered message to the review address. The
+  // customer is never contacted; no coupon is minted; no email_automations
+  // row is written, so this neither consumes the dedup lock nor marks
+  // anyone 'sent'. Subject is prefixed with the destination customer so
+  // the owner can tell the previews apart in their inbox.
+  if (reviewTo) {
+    const { data: tmpl, error } = await supabase
+      .from('email_automation_templates')
+      .select('*')
+      .eq('trigger_type', testTrigger)
+      .maybeSingle()
+    if (error || !tmpl) {
+      return new Response(JSON.stringify({ error: `template not found: ${testTrigger}` }),
+        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    let candidates: FirstOrderCandidate[] = []
+    try {
+      if (testTrigger === 'first_purchase') {
+        candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+      } else if (testTrigger === 'refill_reminder') {
+        candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+      } else if (testTrigger === 'abandoned_cart_1') {
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
+      } else if (testTrigger === 'abandoned_cart_2') {
+        candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1', tmpl.not_before_date ?? null)
+      } else {
+        return new Response(JSON.stringify({ error: `no finder for trigger: ${testTrigger}` }),
+          { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
+      }
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: `find candidates: ${e.message}` }),
+        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    const previews: any[] = []
+    for (const c of candidates) {
+      const firstName = (c.customer_name ?? 'חבר/ה').trim()
+      const unsubscribeUrl = generateUnsubscribeUrl(c.customer_email)
+      const vars = {
+        first_name: firstName,
+        coupon_code: '',  // review never mints a real coupon
+        coupon_expiry_days: tmpl.coupon_expiry_days,
+        order_id: c.woo_order_id,
+        unsubscribe_url: unsubscribeUrl,
+        logo_url: DEFAULT_LOGO_URL,
+        cart_items_html: renderCartItemsHtml(c.cart_items ?? []),
+      }
+      const baseSubject = renderTemplate(tmpl.subject_template, vars)
+      const subject = `[תצוגה → ${c.customer_email} · הזמנה ${c.woo_order_id}] ${baseSubject}`
+      const html    = renderTemplate(tmpl.body_html_template, vars)
+      const r = await sendEmail(reviewTo, subject, html, unsubscribeUrl)
+      previews.push({
+        would_send_to: c.customer_email,
+        woo_order_id: c.woo_order_id,
+        cart_item_count: (c.cart_items ?? []).length,
+        sent_to_reviewer: r.ok,
+        error: r.ok ? undefined : r.error,
+      })
+    }
+
+    return new Response(JSON.stringify({
+      review_send: reviewTo,
+      trigger: testTrigger,
+      enabled: tmpl.enabled,
+      candidate_count: candidates.length,
+      previews,
+    }, null, 2), { headers: { ...CORS, 'Content-Type': 'application/json' } })
   }
 
   // ── Main scheduler path ────────────────────────────────────────────
@@ -934,9 +1190,9 @@ serve(async (req) => {
     } else if (tmpl.trigger_type === 'refill_reminder') {
       candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
     } else if (tmpl.trigger_type === 'abandoned_cart_1') {
-      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null)
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
     } else if (tmpl.trigger_type === 'abandoned_cart_2') {
-      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1')
+      candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, 'abandoned_cart_1', tmpl.not_before_date ?? null)
     } else {
       summary.runs.push({ trigger: tmpl.trigger_type, error: 'no handler implemented' })
       continue

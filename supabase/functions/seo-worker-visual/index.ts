@@ -12,13 +12,22 @@
 // 1. ONE TASK PER INVOCATION. Same lock-mechanic semantics as the
 //    writer worker. Idle if no eligible row.
 //
-// 2. WE DO NOT REIMPLEMENT IMAGE GENERATION. Routes to:
-//      render_mode='no_bag'   → visual-test  with use_reference:false
-//      render_mode='bag_hero' → vertex-imagen-edit with render_mode:'bag_hero'
-//    These functions own the locked Minuto visual identity (style anchor,
-//    Strada X / Coffee-Tech roaster references, Scene Director rewrite
-//    from PR #88). We pass scene_brief through faithfully — NEVER bypass
-//    the Scene Director.
+// 2. WE DO NOT REIMPLEMENT IMAGE GENERATION. BOTH modes route to the
+//    visual-test edge function (Gemini Image + Minuto reference images):
+//      render_mode='no_bag'   → visual-test, use_reference:false (no bag)
+//      render_mode='bag_hero' → visual-test, use_reference:true + product_name
+//    For bag_hero, visual-test resolves the product's real bag photo from
+//    woo_products and passes it to Gemini as a reference (with beans /
+//    Strada X / roaster refs), so the real Minuto bag is rendered FAITHFULLY
+//    into the full scene ALONGSIDE its co-subjects. visual-test owns the
+//    locked Minuto visual identity + Scene Director rewrite (PR #88); we
+//    pass scene_brief through faithfully — NEVER bypass the Scene Director.
+//
+//    (History: bag_hero used to route to vertex-imagen-edit, whose Imagen
+//    SUBJECT customization is single-subject — it dropped co-subjects and
+//    reinvented the label. That made bag briefs fail QA and the old ladder
+//    degraded them to bagless images. Switched to Gemini+reference, which
+//    Erez verified renders the bag reliably, 2026-06-01.)
 //
 // 3. FEATURED-IMAGE ATTACH. The existing blog-publish edge function only
 //    supports attaching a featured image AT POST CREATION TIME (one-shot
@@ -39,50 +48,19 @@
 //    Session A's writer worker). attempts>=max_attempts flips to 'failed'.
 //
 // ─────────────────────────────────────────────────────────────────────────
-// TODO (future upgrade — two-step composite pipeline for "machine + Minuto
-// bag in one frame")
+// "Machine + Minuto bag in one frame" — SOLVED by Gemini+reference
 // ─────────────────────────────────────────────────────────────────────────
-// Current state (2026-05-26): the autonomous escalation ladder produces
-// the BEST AVAILABLE outcome for a multi-subject scene brief, but cannot
-// satisfy "render a Cafelat Robot machine AND a byte-perfect Minuto bag
-// together in the same frame". Each route has a structural limitation:
+// The old design (Vertex SUBJECT customization for bag_hero) could NOT put
+// the real bag and a co-subject (e.g. an espresso machine) in the same frame
+// — Imagen SUBJECT customization is single-subject. That forced an ugly
+// trade and an abandoned "two-step composite" idea (pasted-PNG compositing,
+// which looked fake — see _shared/compositor.ts, kept but not imported).
 //
-//   • bag_hero (Vertex Imagen SUBJECT customization): centers on the
-//     supplied product reference, drops every co-subject. Renders the
-//     real Minuto bag with sharp label artwork but no other elements.
-//   • no_bag (Gemini Image): renders any scene cleanly but cannot use
-//     the real Minuto bag — at best it hallucinates a generic non-Minuto
-//     bag (caught by QA + stripped on attempt 3), at worst it draws
-//     other coffee imagery that violates render_mode.
-//
-// FIX: a two-step composite pipeline:
-//   Step 1: render the scene via no_bag (Gemini), describing the bag's
-//           position/orientation but NOT its branding ("a coffee bag
-//           stands on the right side of the countertop, label facing
-//           camera, partially in shadow").
-//   Step 2: programmatic composite of the real Minuto bag PNG (from
-//           `woo_products` lookup, same as bag_hero today) onto the
-//           rendered scene at the position Gemini drew the generic bag.
-//           The existing `supabase/functions/_shared/compositor.ts`
-//           (compositeProductIntoScene) already does this — it's used
-//           inside vertex-imagen-edit's handleHybridComposite but not
-//           imported standalone. Lift it into a new `render_mode:
-//           'scene_with_bag'` route here, OR call vertex-imagen-edit
-//           with a new flag that does scene-then-composite without the
-//           SUBJECT customization step.
-//
-// COMPLEXITY: needs bag-region detection in the Gemini output (probably
-// a Claude vision call to find bounding box) OR a deterministic region
-// the strategist agrees to use in scene_briefs. The existing compositor
-// uses a fixed BAG_REGION which is hero-sized — not appropriate for a
-// scene where the bag is one of several subjects. New region sizing
-// logic required.
-//
-// PRIORITY: low until the strategist starts emitting briefs that
-// specifically need this (product-recommendation articles where the
-// bag MUST be in-frame alongside other subjects). The QA loop's HITL
-// surface catches these today — admin reviews and decides whether to
-// re-queue with a hand-crafted brief or ship the machine-only render.
+// Routing bag_hero through visual-test (Gemini + bag reference) removes the
+// limitation: Gemini renders the real bag faithfully ALONGSIDE beans /
+// machine / roaster references in a single pass (Erez-verified 2026-06-01).
+// So multi-subject bag scenes are now a normal render, not a special case,
+// and the QA ladder no longer degrades them to bagless images.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import {
@@ -150,6 +128,21 @@ serve(async (req) => {
 
   // ── 2. Parse + validate brief ────────────────────────────────────────
   const brief = task.brief_data as VisualGenerationBrief
+
+  // ── 2b. CAROUSEL FORK ────────────────────────────────────────────────
+  // When the brief carries a slides[] array it's a multi-slide IG carousel,
+  // not a single image. The carousel path renders each slide's background
+  // through the SAME per-slide Claude-vision QA loop the single-image path
+  // uses (render → eval → retry), composites the Hebrew heading/body via the
+  // deterministic visual-overlay function, and stores the ordered slide URLs.
+  // No WP attach (carousel is ig_post only). If any slide can't pass QA after
+  // its retries, the whole carousel is flagged review_required=true so the
+  // admin reviews it before approving — the worker never reports an
+  // unvetted carousel as ready. Handled and returned inside handleCarousel.
+  if (Array.isArray(brief?.slides) && brief.slides.length > 0) {
+    return await handleCarousel(supabase, task, brief, workerId)
+  }
+
   if (!brief || typeof brief.scene_brief !== 'string' || !brief.scene_brief.trim()) {
     await safeMarkFailed(supabase, task, 'brief_data.scene_brief is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brief invalid' })
@@ -162,10 +155,10 @@ serve(async (req) => {
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'unknown render_mode' })
   }
   if (renderMode === 'bag_hero' && !brief.product_name?.trim()) {
-    // vertex-imagen-edit requires one of reference_image_url / product_id /
-    // product_name. The orchestrator's VisualGenerationBrief only exposes
-    // product_name, so it must be set for bag_hero. Permanent failure —
-    // the brief is malformed, no point retrying.
+    // visual-test (use_reference:true) needs one of reference_image_url /
+    // product_id / product_name to resolve WHICH bag to render. The
+    // orchestrator's VisualGenerationBrief only exposes product_name, so it
+    // must be set for bag_hero. Permanent failure — brief is malformed.
     await safeMarkFailed(supabase, task, 'bag_hero render_mode requires product_name in brief_data', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'product_name missing for bag_hero' })
   }
@@ -275,22 +268,27 @@ serve(async (req) => {
     // critiques. First attempt = caller's choices. Subsequent attempts
     // apply the escalation ladder.
     if (qaAttempt === 2 && qaAttempts.length > 0) {
-      // ESCALATION STEP 1: switch render_mode. If the original mode
-      // can't produce what the brief asks for, the alternative mode
-      // gets a fresh shot. We keep the original scene_brief here so the
-      // escalation tests *just* the mode change.
-      workingRenderMode = renderMode === 'bag_hero' ? 'no_bag' : 'bag_hero'
-      // If switching INTO bag_hero and we don't have a product_name,
-      // we can't actually switch — bag_hero requires it. In that case
-      // stick with the same mode but use the augmented brief.
-      if (workingRenderMode === 'bag_hero' && !brief.product_name?.trim()) {
-        console.warn(`[seo-worker-visual] ${workerId} can't escalate to bag_hero (no product_name); retrying same mode with augmented brief`)
-        workingRenderMode = renderMode
+      // ESCALATION STEP 1. The OLD ladder switched bag_hero → no_bag here,
+      // which DROPPED the Minuto bag and let a bagless image "pass" QA — the
+      // bug that produced only no-bag banners. Now that bag_hero renders via
+      // Gemini+reference (reliable at placing the bag), a failed bag attempt
+      // is a brief/composition problem, NOT a "can't do a bag" problem. So:
+      //   • bag_hero origin → STAY in bag_hero, augment the brief from the
+      //     QA critique. Never fall back to bagless.
+      //   • no_bag origin   → upgrade to bag_hero if we have a product to
+      //     show, else stay no_bag with an augmented brief.
+      if (renderMode === 'bag_hero') {
+        workingRenderMode = 'bag_hero'
         workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
-      } else {
-        console.log(`[seo-worker-visual] ${workerId} escalation step 1: switching mode ${renderMode} → ${workingRenderMode}`)
-        // Keep brief verbatim on the mode-switch attempt — clean A/B.
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: staying in bag_hero with augmented brief (never drop the bag)`)
+      } else if (brief.product_name?.trim()) {
+        workingRenderMode = 'bag_hero'
         workingSceneBrief = brief.scene_brief
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: upgrading no_bag → bag_hero`)
+      } else {
+        workingRenderMode = 'no_bag'
+        workingSceneBrief = buildAugmentedSceneBrief(brief.scene_brief, qaAttempts)
+        console.log(`[seo-worker-visual] ${workerId} escalation step 1: no product to show, staying no_bag with augmented brief`)
       }
     } else if (qaAttempt === 3 && qaAttempts.length > 0) {
       // ESCALATION STEP 2: stay in attempt-2's mode but strip the brief
@@ -474,7 +472,7 @@ serve(async (req) => {
   // can render thumbnails + critiques. Future agents can also re-queue
   // a fresh task with a modified brief if review concludes the image
   // is unusable.
-  const finalRenderFunction = finalRenderMode === 'no_bag' ? 'visual-test' : 'vertex-imagen-edit'
+  const finalRenderFunction = 'visual-test'  // both bag + no_bag render via Gemini now
   try {
     await markTaskCompleted(supabase, task.id, {
       image_url:           imageUrl,
@@ -609,12 +607,18 @@ async function renderOnce(args: {
   aspect:      string
   productName?: string
 }): Promise<{ url: string; raw: Record<string, unknown> }> {
-  const endpoint = args.renderMode === 'no_bag'
-    ? 'visual-test'
-    : 'vertex-imagen-edit'
+  // BOTH modes now render through Gemini (visual-test). The bag is placed
+  // by passing use_reference:true + product_name — visual-test resolves the
+  // product's real bag photo from woo_products and feeds it to Gemini as a
+  // reference (alongside beans / machine / roaster refs), so the Minuto bag
+  // is rendered FAITHFULLY into the full scene WITH its co-subjects. This
+  // replaces the old vertex-imagen-edit route, whose SUBJECT customization
+  // is single-subject (drops co-subjects) and reinvents the label — which is
+  // why bag renders kept failing QA and degrading to bagless images.
+  const endpoint = 'visual-test'
   const body: Record<string, unknown> = args.renderMode === 'no_bag'
     ? { scene_brief: args.sceneBrief, aspect: args.aspect, use_reference: false }
-    : { scene_brief: args.sceneBrief, aspect: args.aspect, render_mode: 'bag_hero', product_name: args.productName }
+    : { scene_brief: args.sceneBrief, aspect: args.aspect, use_reference: true, product_name: args.productName }
 
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${endpoint}`, {
     method:  'POST',
@@ -626,6 +630,234 @@ async function renderOnce(args: {
     throw new Error(`${endpoint} HTTP ${res.status}: ${(json.error as string) ?? JSON.stringify(json).slice(0, 300)}`)
   }
   return { url: json.url, raw: json }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CAROUSEL PATH — render N slides, each = a no_bag background + a
+// deterministic Hebrew text overlay (heading + optional body) composited
+// by the visual-overlay edge function. Slides render in PARALLEL so the
+// whole carousel fits the 240s cron budget (serial would be ~N×40s).
+//
+// Decisions (locked with Erez 2026-05-31):
+//   • distinct per-slide backgrounds (variety, true "journey" carousel)
+//   • 3-5 slides; hard-cap at 5 (extras truncated with a warning)
+//   • render_mode forced to no_bag — bag_hero is single-subject (Vertex
+//     SUBJECT customization) and wrong for a multi-slide text-forward set
+//   • aspect feed_portrait (1080×1350), IG carousel standard
+//   • strategist authors heading/body — workers never write IG copy
+// ─────────────────────────────────────────────────────────────────────────
+const CAROUSEL_MAX_SLIDES = 5
+const CAROUSEL_MIN_SLIDES = 2
+
+// Gemini (no_bag mode) has a strong "coffee scene → put a bag in frame"
+// prior and will hallucinate a generic NON-Minuto bag — often with an
+// invented competitor brand + logo baked in (a live test produced a
+// "STAG COFFEE" deer-logo bag). The carousel path now runs the same per-slide
+// Claude-vision QA loop as single images (so a hallucinated bag is caught and
+// retried, then flagged for review if it persists); this guard is the FIRST
+// line of defence — a negative directive appended to the tail of every slide
+// brief to cut down retries (generative models weight the prompt tail most).
+// Also forbids printed words/logos so the deterministic Hebrew overlay is
+// the ONLY text on the slide.
+function addNoBagGuard(sceneBrief: string): string {
+  return `${sceneBrief.trim()}
+
+DO NOT INCLUDE any of these — they are forbidden in this render:
+- No coffee bag, packaging, pouch, sachet, or product label of any kind
+- No brand names, logos, wordmarks, or printed text anywhere in the scene
+- No loose-bag spillage or product container
+The frame must carry NO printed words or brand marks — overlay text is added separately.`
+}
+
+async function handleCarousel(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  brief: VisualGenerationBrief,
+  workerId: string,
+): Promise<Response> {
+  const rawSlides = brief.slides ?? []
+  // Validate shape before doing any expensive render work.
+  const slides = rawSlides
+    .filter(s => s && typeof s.scene_brief === 'string' && s.scene_brief.trim() && typeof s.heading === 'string' && s.heading.trim())
+    .slice(0, CAROUSEL_MAX_SLIDES)
+
+  if (slides.length < CAROUSEL_MIN_SLIDES) {
+    await safeMarkFailed(
+      supabase,
+      task,
+      `carousel needs ${CAROUSEL_MIN_SLIDES}-${CAROUSEL_MAX_SLIDES} valid slides (each with non-empty scene_brief + heading); got ${slides.length} valid of ${rawSlides.length}`,
+      true,
+    )
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'carousel slides invalid' })
+  }
+  if (rawSlides.length > CAROUSEL_MAX_SLIDES) {
+    console.warn(`[seo-worker-visual] ${workerId} carousel truncated ${rawSlides.length} → ${CAROUSEL_MAX_SLIDES} slides`)
+  }
+
+  console.log(`[seo-worker-visual] ${workerId} carousel render: ${slides.length} slides (parallel)`)
+
+  // Render every slide in parallel — EACH slide runs the same Claude-vision
+  // QA loop the single-image path uses (render → eval → retry), so generic /
+  // competitor bags, stray hands, and off-brand frames are CAUGHT here rather
+  // than surfaced to the admin as "ready to approve". Slides run concurrently
+  // so the carousel's wall-clock ≈ the slowest single slide (~one image's
+  // worth of attempts), keeping it inside the 240s cron budget.
+  let slideResults: Array<{
+    rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
+    qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
+    passed:      boolean
+  }>
+  try {
+    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId)))
+  } catch (e: any) {
+    // Any slide render/overlay INFRA failure (HTTP/API outage) fails the whole
+    // carousel — a partial carousel is not publishable. Linear retry via
+    // markTaskFailed. (A QA *fail* does NOT land here — that flags review.)
+    const msg = `carousel slide render failed: ${e?.message ?? e}`
+    const permanently = task.attempts >= task.max_attempts
+    await safeMarkFailed(supabase, task, msg, permanently)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: msg, permanent: permanently }, 500)
+  }
+
+  const renderedSlides = slideResults.map(r => r.rendered)
+  // One slide that can't pass vision QA after its retries flags the WHOLE
+  // carousel for human review — a single off-brand slide makes the set
+  // unpublishable. This replaces the old hard-coded review_required:false.
+  const failedSlideCount = slideResults.filter(r => !r.passed).length
+  const carouselReviewRequired = failedSlideCount > 0
+  if (carouselReviewRequired) {
+    console.warn(`[seo-worker-visual] ${workerId} carousel review_required: ${failedSlideCount}/${slideResults.length} slide(s) failed QA`)
+  }
+
+  try {
+    await markTaskCompleted(supabase, task.id, {
+      carousel:        true,
+      carousel_slides: renderedSlides,
+      slide_count:     renderedSlides.length,
+      aspect:          'feed_portrait',
+      destination:     'ig_post',
+      render_function: 'visual-test+visual-overlay',
+      render_mode:     'no_bag',
+      // Per-slide Claude-vision QA ran. review_required=true means at least
+      // one slide could not pass after its retries — a human reviews the
+      // slide_qa log before this carousel is approved for publish.
+      review_required: carouselReviewRequired,
+      qa_passed:       !carouselReviewRequired,
+      slide_qa:        slideResults.map((r, i) => ({ slide: i + 1, passed: r.passed, attempts: r.qa_attempts })),
+    })
+  } catch (e: any) {
+    console.error(`[seo-worker-visual] ${workerId} carousel markTaskCompleted failed: ${e?.message ?? e}`)
+    return jsonResponse({
+      processed: 1,
+      worker_id: workerId,
+      task_id:   task.id,
+      ok:        false,
+      error:     `carousel rendered (${renderedSlides.length} slides) but result write failed: ${e?.message ?? e}`,
+    }, 500)
+  }
+
+  return jsonResponse({
+    processed:        1,
+    worker_id:        workerId,
+    task_id:          task.id,
+    ok:               true,
+    carousel:         true,
+    slide_count:      renderedSlides.length,
+    slides:           renderedSlides.map(s => s.image_url),
+    review_required:  carouselReviewRequired,
+    failed_slides:    failedSlideCount,
+  })
+}
+
+// Per-slide render + Claude-vision QA — mirrors the single-image loop, but
+// FIXED to no_bag (carousel slides are always text-forward backgrounds, never
+// a product-bag hero) and WITHOUT the espresso-machine-specific
+// stripConflictingTerms step (a carousel slide can be any scene — origins,
+// brewing, cherries — so we only use the generic critique-driven augmentation
+// + the no-bag guard). Attempts:
+//   1: slide brief + no-bag guard
+//   2: brief augmented with the prior critique's MUST-INCLUDE / AVOID directives
+//   3: same, re-augmented from attempt 2's critique
+// On all-fail we still overlay the best-effort background so there's a viewable
+// slide, but `passed:false` bubbles up and flags the carousel review_required.
+async function renderCarouselSlideWithQA(
+  slide: { scene_brief: string; heading: string; body?: string },
+  slideIndex: number,
+  workerId: string,
+): Promise<{
+  rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
+  qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
+  passed:      boolean
+}> {
+  const MAX_SLIDE_QA_ATTEMPTS = 3
+  const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }> = []
+  let bgUrl = ''
+  let passed = false
+
+  for (let a = 1; a <= MAX_SLIDE_QA_ATTEMPTS; a++) {
+    // Attempt 1 = the strategist's brief. Attempts 2-3 fold in the prior
+    // critique's directives (buildAugmentedSceneBrief is generic — safe for
+    // any slide scene). The no-bag guard wraps every attempt.
+    const baseBrief = a === 1
+      ? slide.scene_brief
+      : buildAugmentedSceneBrief(slide.scene_brief, attempts)
+    const guardedBrief = addNoBagGuard(baseBrief)
+
+    // Render (infra errors throw → bubble up to fail the whole carousel).
+    const bg = await renderOnce({ renderMode: 'no_bag', sceneBrief: guardedBrief, aspect: 'feed_portrait' })
+    bgUrl = bg.url
+
+    // Evaluate against the SAME guarded brief so the eval knows a bag/hand/
+    // logo is forbidden and flags it. Eval outage → treat as pass (don't burn
+    // the slide on an Anthropic blip — the image is already rendered).
+    let critique: VisualCritique
+    try {
+      critique = await evaluateVisual({ imageUrl: bgUrl, sceneBrief: guardedBrief, renderMode: 'no_bag' })
+    } catch (e: any) {
+      console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
+      critique = { passes: true, missing: [], issues: [], suggested_adjustment: '' } as VisualCritique
+    }
+    attempts.push({ attempt: a, image_url: bgUrl, scene_brief: baseBrief, critique })
+    console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} qa-attempt ${a}/${MAX_SLIDE_QA_ATTEMPTS} ${critique.passes ? 'PASSED' : `FAILED missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`}`)
+    if (critique.passes) { passed = true; break }
+  }
+
+  // Overlay the passed (or best-effort) background so the slide is always
+  // viewable — even a review_required carousel needs renderable slides for
+  // the admin to look at.
+  const finalUrl = await overlaySlide({ imageUrl: bgUrl, heading: slide.heading, body: slide.body })
+  return {
+    rendered:    { image_url: finalUrl, bg_url: bgUrl, heading: slide.heading, body: slide.body },
+    qa_attempts: attempts,
+    passed,
+  }
+}
+
+// Composite a Hebrew heading (+ optional body) onto a slide background via
+// the deterministic visual-overlay edge function (resvg/RTL). Returns the
+// final slide URL.
+async function overlaySlide(args: {
+  imageUrl: string
+  heading:  string
+  body?:    string
+}): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-overlay`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+    body: JSON.stringify({
+      image_url:    args.imageUrl,
+      overlay_text: args.heading,
+      body_text:    args.body,
+      aspect:       'feed_portrait',
+      direction:    'rtl',
+      position:     'bottom',
+    }),
+  })
+  const json = await res.json().catch(() => ({})) as Record<string, unknown>
+  if (!res.ok || !json.url || typeof json.url !== 'string') {
+    throw new Error(`visual-overlay HTTP ${res.status}: ${(json.error as string) ?? JSON.stringify(json).slice(0, 200)}`)
+  }
+  return json.url
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -753,9 +985,11 @@ ${directives.map(d => `- ${d}`).join('\n')}`
 //   no_bag mode: scene_brief commonly mentions "bag of beans" /
 //     "packaging" / "pouch", and Gemini happily draws a generic
 //     non-Minuto bag. Strip bag terms so the bag stops appearing.
-//   bag_hero mode: Vertex SUBJECT customization centers on the bag
-//     and drops co-subjects. Strip co-subject mentions so the brief
-//     becomes a clean single-subject hero shot Vertex can do well.
+//   bag_hero mode: last-ditch simplification — strip co-subject mentions
+//     so the brief becomes a clean single-subject bag hero shot. Gemini
+//     handles multi-subject fine, but on a 3rd failed attempt narrowing to
+//     the bag alone maximises the odds of a clean, on-brand render that
+//     STILL shows the Minuto bag (never drops it).
 //
 // This is line-by-line scrubbing — leaves the rest of the brief intact
 // so the photographer's intent (lighting, palette, mood) survives.

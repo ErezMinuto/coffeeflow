@@ -125,13 +125,19 @@ serve(async (req) => {
   if (queuedIds.length > 0) {
     const { data: subs } = await supabase
       .from('seo_tasks')
-      .select('id, task_type, status, rationale, result_data')
+      .select('id, task_type, status, rationale, result_data, error_msg')
       .in('id', queuedIds.slice(-30))
-    const rows = (subs ?? []) as Array<{ id: string; task_type: string; status: string; rationale: string | null; result_data: any }>
+    const rows = (subs ?? []) as Array<{ id: string; task_type: string; status: string; rationale: string | null; result_data: any; error_msg: string | null }>
     inflight = rows.filter(r => r.status === 'pending' || r.status === 'processing').length
     subtaskSummary = rows.map(r => {
       const rd = r.result_data ?? {}
-      const out = typeof rd.final_text === 'string' ? rd.final_text.slice(0, 300)
+      // Surface the FAILURE REASON for failed tasks. Without this the mission
+      // only saw "[failed] deep_research" with no cause, so it re-queued the
+      // same malformed brief forever. Now it can read the gate error (e.g.
+      // "brief.question is required") and correct the next sub-task.
+      const out = r.status === 'failed'
+          ? `FAILED — ${(r.error_msg ?? 'unknown error').slice(0, 220)}`
+        : typeof rd.final_text === 'string' ? rd.final_text.slice(0, 300)
         : rd.review_required ? '(awaiting admin review)'
         : r.status === 'completed' ? '(completed)' : ''
       return `- [${r.status}] ${r.task_type} (${r.id.slice(0, 8)}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
@@ -187,13 +193,25 @@ serve(async (req) => {
         continue
       }
       const task_type  = String(input.task_type ?? '').trim()
-      const brief_data = input.brief_data as Record<string, unknown> | undefined
+      const rawBrief   = (input.brief_data ?? {}) as Record<string, unknown>
       const rationale  = String(input.rationale ?? '').trim()
-      if (!task_type || !brief_data) continue
+      if (!task_type) continue
+      // PRE-INSERT VALIDATION. A malformed brief inserts fine (brief_data is
+      // raw JSONB) but then dies at the worker's claim-time gate — and the
+      // mission, seeing only a failed sub-task, used to re-queue the same
+      // broken shape forever. Validate + light-repair HERE so we never queue
+      // a doomed task. If a brief is genuinely unrecoverable, skip it and
+      // leave a precise note the next step can act on (instead of burning the
+      // step on a guaranteed failure).
+      const norm = normalizeBrief(task_type, rawBrief)
+      if (!norm.ok) {
+        newNotes.push(`(did NOT queue ${task_type} — ${norm.error}. Re-queue next step with that field filled.)`)
+        continue
+      }
       try {
         const inserted = await insertTasks(supabase, [{
           task_type,
-          brief_data: brief_data as NewSeoTask['brief_data'],
+          brief_data: norm.brief as NewSeoTask['brief_data'],
           rationale:  `[mission ${mission.id.slice(0, 8)}] ${rationale}`,
           orchestrator_run_id: crypto.randomUUID(),
         }])
@@ -264,6 +282,65 @@ serve(async (req) => {
   })
 })
 
+// ── Brief validation + light repair ──────────────────────────────────────
+// The mission LLM authors brief_data freehand and insertTasks writes it as
+// raw JSONB (no validation), so a brief missing a worker-required field used
+// to insert successfully then fail at claim time. We validate the auto-
+// executed types missions actually use, recovering values from the alternate
+// keys the model tends to invent (e.g. `topic`/`query` → `question`). Unknown
+// / HITL types pass through unchanged (their workers or admin review handle
+// shape). Returns the normalized brief, or a precise error the mission acts on.
+type BriefResult = { ok: true; brief: Record<string, unknown> } | { ok: false; error: string }
+
+function firstNonEmpty(obj: Record<string, unknown>, keys: string[]): string {
+  for (const k of keys) {
+    const v = obj[k]
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return ''
+}
+function asStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(x => (typeof x === 'string' ? x.trim() : String(x ?? '').trim())).filter(Boolean)
+  if (typeof v === 'string' && v.trim()) {
+    // Accept a newline / bullet-delimited block as a fallback.
+    return v.split(/\r?\n|•|^\s*[-*]\s+/m).map(s => s.replace(/^\s*[-*]\s+/, '').trim()).filter(Boolean)
+  }
+  return []
+}
+
+function normalizeBrief(taskType: string, raw: Record<string, unknown>): BriefResult {
+  const b: Record<string, unknown> = { ...raw }
+  if (taskType === 'deep_research') {
+    const question = firstNonEmpty(b, ['question', 'query', 'topic', 'objective', 'prompt', 'goal', 'research_question'])
+    if (!question) return { ok: false, error: 'deep_research needs brief.question (the strategic question to research)' }
+    b.question = question
+    if (!firstNonEmpty(b, ['scope']))           b.scope = 'other'
+    if (!firstNonEmpty(b, ['expected_output'])) b.expected_output = 'analysis'
+    return { ok: true, brief: b }
+  }
+  if (taskType === 'text_generation') {
+    const keyword = firstNonEmpty(b, ['keyword', 'topic', 'subject', 'focus_keyword', 'target_keyword'])
+    if (!keyword) return { ok: false, error: 'text_generation needs brief.keyword (the target keyword/topic)' }
+    b.keyword = keyword
+    b.title = firstNonEmpty(b, ['title', 'headline', 'h1']) || keyword
+    const keyPoints = asStringArray(b.key_points ?? b.points ?? b.outline ?? b.bullets ?? b.sections)
+    if (keyPoints.length === 0) return { ok: false, error: 'text_generation needs brief.key_points (a non-empty array of points the article must cover)' }
+    b.key_points = keyPoints
+    b.products_to_mention = asStringArray(b.products_to_mention)
+    return { ok: true, brief: b }
+  }
+  if (taskType === 'visual_generation') {
+    const hasSlides = Array.isArray((b as { slides?: unknown }).slides) && ((b as { slides: unknown[] }).slides).length > 0
+    const sceneBrief = firstNonEmpty(b, ['scene_brief', 'scene', 'description', 'prompt'])
+    if (!hasSlides && !sceneBrief) return { ok: false, error: 'visual_generation needs brief.scene_brief (or a slides[] array for a carousel)' }
+    if (sceneBrief) b.scene_brief = sceneBrief
+    return { ok: true, brief: b }
+  }
+  // technical_seo, dynamic_experiment, instagram_post, novel experiment
+  // subtypes → pass through; their workers or the admin review handle shape.
+  return { ok: true, brief: b }
+}
+
 function buildMissionSystemPrompt(inflight: number): string {
   return `You are Minuto's autonomous MISSION EXECUTOR. Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
 
@@ -280,6 +357,15 @@ OPERATING RULES:
 - Decompose big objectives into concrete, gated tasks the pipeline can execute. Use deep_research (scope channel_discovery / geo_llmo / etc.) for "figure out HOW", text/visual/IG for content, dynamic_experiment for anything novel that needs the admin to greenlight a new capability.
 - KNOW WHEN TO STOP. When the objective is genuinely achieved (or you've done all you autonomously can and the rest needs the admin), complete_mission with a clear summary. Don't spin in circles to burn steps.
 - Stay in Minuto's organic-growth lane; respect any standing brand rules. Anything outside your execution tools → propose as a dynamic_experiment for the admin.
+
+BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the task_type, or the sub-task FAILS validation and is wasted. Required (✱) and optional fields:
+- deep_research → { question✱ (a specific researchable question), scope ("channel_discovery"|"geo_llmo"|"content_topic"|"other"), expected_output ("analysis") }
+- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of product names) }
+- visual_generation → { scene_brief✱ (one concrete scene to render), render_mode ("vertex"|"gemini"), aspect ("1:1"|"4:5"|"9:16"), destination } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }
+- instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he✱, hashtags (array), media_type } — never queue this before the visual exists.
+- technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
+- dynamic_experiment → { description✱, approval_required: true }
+Fill every ✱ field with real content. If you lack the info for a required field, do deep_research first or note_progress — do NOT queue a task with placeholder/missing fields.
 
 Output your reasoning briefly as text, then the tool call(s) for this step's action.`
 }
