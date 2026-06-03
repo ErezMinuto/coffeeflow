@@ -525,10 +525,26 @@ async function executeTool(
     switch (name) {
       case 'queue_task': {
         const task_type  = String(input.task_type ?? '').trim()
-        const brief_data = input.brief_data as Record<string, unknown> | undefined
+        // The model sometimes emits brief_data as a JSON STRING rather than an
+        // object (despite the schema saying object), especially for nested
+        // briefs like carousels. Stored verbatim into the jsonb column it
+        // becomes a string scalar, so the worker sees no .slides / .scene_brief
+        // and rejects it as "brief invalid" — which the agent then misreads as
+        // a schema change and loops on. Coerce a stringified brief back to an
+        // object up front (also so the parent_task_id promotion below operates
+        // on a real object).
+        let brief_data = input.brief_data as Record<string, unknown> | undefined
+        if (typeof input.brief_data === 'string') {
+          try {
+            const parsed = JSON.parse(input.brief_data)
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              brief_data = parsed as Record<string, unknown>
+            }
+          } catch { /* malformed JSON string — the required-field check below rejects it cleanly */ }
+        }
         const rationale  = String(input.rationale ?? '').trim()
-        if (!task_type || !brief_data || !rationale) {
-          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
+        if (!task_type || !brief_data || typeof brief_data !== 'object' || !rationale) {
+          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data (an object), rationale.' } }
         }
         // parent_task_id is a TOP-LEVEL queue_task argument, but the model
         // frequently misplaces it INSIDE brief_data. When it does, the task's

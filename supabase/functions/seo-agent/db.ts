@@ -29,9 +29,26 @@ export async function insertTasks(
   tasks: NewSeoTask[],
 ): Promise<SeoTaskRow[]> {
   if (tasks.length === 0) return []
+  // Defense-in-depth: a model-authored brief_data sometimes arrives as a JSON
+  // STRING instead of an object. Inserted into the jsonb column verbatim it
+  // becomes a string scalar, so workers see no fields (e.g. no .slides) and
+  // reject the task as "brief invalid". Coerce any stringified brief_data to an
+  // object here so EVERY caller (chat, mission worker, orchestrator) is safe.
+  const normalized = tasks.map((t) => {
+    const bd = (t as { brief_data?: unknown }).brief_data
+    if (typeof bd === 'string') {
+      try {
+        const parsed = JSON.parse(bd)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return { ...t, brief_data: parsed }
+        }
+      } catch { /* leave as-is — let the worker's validation surface it */ }
+    }
+    return t
+  })
   const { data, error } = await supabase
     .from('seo_tasks')
-    .insert(tasks)
+    .insert(normalized)
     .select()
   if (error) throw new Error(`insertTasks failed: ${error.message}`)
   return (data ?? []) as SeoTaskRow[]

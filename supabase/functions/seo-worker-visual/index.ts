@@ -127,7 +127,13 @@ serve(async (req) => {
   console.log(`[seo-worker-visual] ${workerId} claimed task ${task.id} attempt=${task.attempts}`)
 
   // ── 2. Parse + validate brief ────────────────────────────────────────
-  const brief = task.brief_data as VisualGenerationBrief
+  // Tolerate a double-encoded brief: if brief_data was stored as a JSON string
+  // (a model that stringified its tool input), parse it back to an object so a
+  // valid carousel/bag_hero brief isn't rejected as "brief invalid".
+  const rawBrief = task.brief_data as unknown
+  const brief = (typeof rawBrief === 'string'
+    ? (() => { try { return JSON.parse(rawBrief) } catch { return rawBrief } })()
+    : rawBrief) as VisualGenerationBrief
 
   // ── 2b. CAROUSEL FORK ────────────────────────────────────────────────
   // When the brief carries a slides[] array it's a multi-slide IG carousel,
