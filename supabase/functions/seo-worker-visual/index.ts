@@ -641,8 +641,10 @@ async function renderOnce(args: {
 // Decisions (locked with Erez 2026-05-31):
 //   • distinct per-slide backgrounds (variety, true "journey" carousel)
 //   • 3-5 slides; hard-cap at 5 (extras truncated with a warning)
-//   • render_mode forced to no_bag — bag_hero is single-subject (Vertex
-//     SUBJECT customization) and wrong for a multi-slide text-forward set
+//   • per-slide render mode: a bag_hero carousel composites the real Minuto bag
+//     on the slide(s) whose brief calls for it (Gemini+reference, NOT the old
+//     single-subject Vertex route), while bag-free slides stay no_bag. (Was:
+//     "forced to no_bag" — that silently dropped the bag from bag_hero carousels.)
 //   • aspect feed_portrait (1080×1350), IG carousel standard
 //   • strategist authors heading/body — workers never write IG copy
 // ─────────────────────────────────────────────────────────────────────────
@@ -667,6 +669,27 @@ DO NOT INCLUDE any of these — they are forbidden in this render:
 - No brand names, logos, wordmarks, or printed text anywhere in the scene
 - No loose-bag spillage or product container
 The frame must carry NO printed words or brand marks — overlay text is added separately.`
+}
+
+// Some carousel slides ARE meant to feature the product bag (typically the
+// hero slide), now that bag_hero renders via Gemini+reference (NOT the old
+// single-subject Vertex route — so a bag composites fine alongside co-subjects
+// in a multi-slide set). A slide "wants the bag" when its scene brief calls for
+// one — bag / pouch / packaging / sachet, EN or HE. Bag-free slides (beans,
+// brewing gear, cups) stay no_bag so addNoBagGuard still suppresses Gemini's
+// hallucinated generic competitor bag.
+function slideWantsBag(sceneBrief: string): boolean {
+  return /\bbags?\b|\bpouch(?:es)?\b|packaging|\bsachets?\b|שקית|שקיק|אריזה/i.test(sceneBrief)
+}
+
+// For bag slides, keep the bag but still forbid printed words/logos so the
+// deterministic Hebrew overlay stays the only text on the slide (the bag's own
+// label is the real Minuto artwork from the reference image, which is fine).
+function addBagSlideGuard(sceneBrief: string): string {
+  return `${sceneBrief.trim()}
+
+The single Minuto coffee bag shown must be the real product (rendered from the supplied reference image) — never a generic or invented bag.
+DO NOT add any brand names, logos, wordmarks, or printed text to the SCENE other than what is printed on the product bag itself — overlay text is added separately.`
 }
 
 async function handleCarousel(
@@ -694,7 +717,18 @@ async function handleCarousel(
     console.warn(`[seo-worker-visual] ${workerId} carousel truncated ${rawSlides.length} → ${CAROUSEL_MAX_SLIDES} slides`)
   }
 
-  console.log(`[seo-worker-visual] ${workerId} carousel render: ${slides.length} slides (parallel)`)
+  // Carousel-level render mode. bag_hero opts the hero slide(s) into bag
+  // compositing; everything else is no_bag. (Previously the carousel forced
+  // ALL slides to no_bag — that silently dropped the bag from bag_hero
+  // carousels even when the hero slide's brief explicitly asked for it.)
+  const carouselRenderMode: 'no_bag' | 'bag_hero' =
+    brief.render_mode === 'bag_hero' ? 'bag_hero' : 'no_bag'
+  const productName = brief.product_name?.trim() || undefined
+  if (carouselRenderMode === 'bag_hero' && !productName) {
+    console.warn(`[seo-worker-visual] ${workerId} carousel render_mode=bag_hero but no product_name — no bag to composite, slides render bag-free`)
+  }
+
+  console.log(`[seo-worker-visual] ${workerId} carousel render: ${slides.length} slides (parallel), mode=${carouselRenderMode}`)
 
   // Render every slide in parallel — EACH slide runs the same Claude-vision
   // QA loop the single-image path uses (render → eval → retry), so generic /
@@ -706,9 +740,10 @@ async function handleCarousel(
     rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
     qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
     passed:      boolean
+    mode:        'no_bag' | 'bag_hero'
   }>
   try {
-    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId)))
+    slideResults = await Promise.all(slides.map((slide, i) => renderCarouselSlideWithQA(slide, i, workerId, carouselRenderMode, productName)))
   } catch (e: any) {
     // Any slide render/overlay INFRA failure (HTTP/API outage) fails the whole
     // carousel — a partial carousel is not publishable. Linear retry via
@@ -720,6 +755,7 @@ async function handleCarousel(
   }
 
   const renderedSlides = slideResults.map(r => r.rendered)
+  const anyBagSlide = slideResults.some(r => r.mode === 'bag_hero')
   // One slide that can't pass vision QA after its retries flags the WHOLE
   // carousel for human review — a single off-brand slide makes the set
   // unpublishable. This replaces the old hard-coded review_required:false.
@@ -737,7 +773,7 @@ async function handleCarousel(
       aspect:          'feed_portrait',
       destination:     'ig_post',
       render_function: 'visual-test+visual-overlay',
-      render_mode:     'no_bag',
+      render_mode:     anyBagSlide ? 'bag_hero' : 'no_bag',
       // Per-slide Claude-vision QA ran. review_required=true means at least
       // one slide could not pass after its retries — a human reviews the
       // slide_qa log before this carousel is approved for publish.
@@ -769,13 +805,15 @@ async function handleCarousel(
   })
 }
 
-// Per-slide render + Claude-vision QA — mirrors the single-image loop, but
-// FIXED to no_bag (carousel slides are always text-forward backgrounds, never
-// a product-bag hero) and WITHOUT the espresso-machine-specific
-// stripConflictingTerms step (a carousel slide can be any scene — origins,
-// brewing, cherries — so we only use the generic critique-driven augmentation
-// + the no-bag guard). Attempts:
-//   1: slide brief + no-bag guard
+// Per-slide render + Claude-vision QA — mirrors the single-image loop, WITHOUT
+// the espresso-machine-specific stripConflictingTerms step (a carousel slide
+// can be any scene — origins, brewing, cherries — so we only use the generic
+// critique-driven augmentation). Each slide picks its OWN mode: a slide whose
+// brief calls for the product bag (and whose carousel is bag_hero with a
+// product_name) renders bag_hero (use_reference:true + product_name → the real
+// Minuto bag is composited); every other slide stays no_bag with the no-bag
+// guard suppressing Gemini's hallucinated generic bag. Attempts:
+//   1: slide brief + mode-appropriate guard
 //   2: brief augmented with the prior critique's MUST-INCLUDE / AVOID directives
 //   3: same, re-augmented from attempt 2's critique
 // On all-fail we still overlay the best-effort background so there's a viewable
@@ -784,11 +822,22 @@ async function renderCarouselSlideWithQA(
   slide: { scene_brief: string; heading: string; body?: string },
   slideIndex: number,
   workerId: string,
+  carouselRenderMode: 'no_bag' | 'bag_hero',
+  productName: string | undefined,
 ): Promise<{
   rendered:    { image_url: string; bg_url: string; heading: string; body?: string }
   qa_attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }>
   passed:      boolean
+  mode:        'no_bag' | 'bag_hero'
 }> {
+  // A slide renders the bag only when the carousel opted into bag_hero, we have
+  // a product to composite, AND this slide's brief actually asks for the bag.
+  const slideMode: 'no_bag' | 'bag_hero' =
+    carouselRenderMode === 'bag_hero' && !!productName && slideWantsBag(slide.scene_brief)
+      ? 'bag_hero'
+      : 'no_bag'
+  console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} mode=${slideMode}`)
+
   const MAX_SLIDE_QA_ATTEMPTS = 3
   const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }> = []
   let bgUrl = ''
@@ -797,22 +846,34 @@ async function renderCarouselSlideWithQA(
   for (let a = 1; a <= MAX_SLIDE_QA_ATTEMPTS; a++) {
     // Attempt 1 = the strategist's brief. Attempts 2-3 fold in the prior
     // critique's directives (buildAugmentedSceneBrief is generic — safe for
-    // any slide scene). The no-bag guard wraps every attempt.
+    // any slide scene). The mode-appropriate guard wraps every attempt: bag
+    // slides keep the bag (only suppress stray scene text/logos), bag-free
+    // slides forbid any bag.
     const baseBrief = a === 1
       ? slide.scene_brief
       : buildAugmentedSceneBrief(slide.scene_brief, attempts)
-    const guardedBrief = addNoBagGuard(baseBrief)
+    const guardedBrief = slideMode === 'bag_hero' ? addBagSlideGuard(baseBrief) : addNoBagGuard(baseBrief)
 
     // Render (infra errors throw → bubble up to fail the whole carousel).
-    const bg = await renderOnce({ renderMode: 'no_bag', sceneBrief: guardedBrief, aspect: 'feed_portrait' })
+    const bg = await renderOnce({
+      renderMode:  slideMode,
+      sceneBrief:  guardedBrief,
+      aspect:      'feed_portrait',
+      productName: slideMode === 'bag_hero' ? productName : undefined,
+    })
     bgUrl = bg.url
 
-    // Evaluate against the SAME guarded brief so the eval knows a bag/hand/
-    // logo is forbidden and flags it. Eval outage → treat as pass (don't burn
-    // the slide on an Anthropic blip — the image is already rendered).
+    // Evaluate against the SAME guarded brief + mode so the eval applies the
+    // right rules (bag required vs forbidden). Eval outage → treat as pass
+    // (don't burn the slide on an Anthropic blip — the image is already rendered).
     let critique: VisualCritique
     try {
-      critique = await evaluateVisual({ imageUrl: bgUrl, sceneBrief: guardedBrief, renderMode: 'no_bag' })
+      critique = await evaluateVisual({
+        imageUrl:    bgUrl,
+        sceneBrief:  guardedBrief,
+        renderMode:  slideMode,
+        productName: slideMode === 'bag_hero' ? productName : undefined,
+      })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
       critique = { passes: true, missing: [], issues: [], suggested_adjustment: '' } as VisualCritique
@@ -830,6 +891,7 @@ async function renderCarouselSlideWithQA(
     rendered:    { image_url: finalUrl, bg_url: bgUrl, heading: slide.heading, body: slide.body },
     qa_attempts: attempts,
     passed,
+    mode:        slideMode,
   }
 }
 
