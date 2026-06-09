@@ -359,6 +359,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       ) : rd.review_required === true ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
                       ) : null}
+                      {rd.qa_flagged === true && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 text-[10px] font-medium" title="Automated vision-QA flagged this image, but you can still publish it — your call.">⚠ QA flagged (you decide)</span>
+                      )}
                     </div>
 
                     {images.length > 0 ? (
