@@ -49,8 +49,9 @@ const TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         task_type:  { type: 'string', description: 'text_generation | visual_generation | instagram_post | technical_seo | deep_research | dynamic_experiment' },
-        brief_data: { type: 'object', description: 'Brief payload matching the task_type (see types.ts). For instagram_post you must also be able to point at a visual; if unsure, prefer text_generation / deep_research / dynamic_experiment.' },
+        brief_data: { type: 'object', description: 'Brief payload matching the task_type (see types.ts).' },
         rationale:  { type: 'string', description: 'One line: how this advances the mission.' },
+        parent_task_id: { type: 'string', description: 'Optional UUID of a prior sub-task this one depends on. REQUIRED for instagram_post: set it to the completed visual_generation sub-task whose image/carousel this post publishes (the IG worker rejects an instagram_post with no parent). Use the sub-task IDs shown in the "SUB-TASKS YOU\'VE QUEUED" list.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
     },
@@ -142,7 +143,9 @@ serve(async (req) => {
         : typeof rd.final_text === 'string' ? rd.final_text.slice(0, 300)
         : rd.review_required ? '(awaiting admin review)'
         : r.status === 'completed' ? '(completed)' : ''
-      return `- [${r.status}] ${r.task_type} (${r.id.slice(0, 8)}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
+      // FULL task UUID (not an 8-char slice) so the mission can reference it
+      // in notes/escalations and the admin can look it up via get_task_details.
+      return `- [${r.status}] ${r.task_type} (${r.id}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
     }).join('\n')
   }
 
@@ -207,6 +210,10 @@ serve(async (req) => {
   const toolUses = res.content.filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
   const newNotes: string[] = []
   const newTaskIds: string[] = []
+  // dynamic_experiment sub-tasks need an ADMIN decision — collect them so we can
+  // raise a high-visibility health_alert briefing this step (otherwise an
+  // escalation just sits pending in the queue and the admin never learns of it).
+  const escalations: string[] = []
   let completed = false
   let completionSummary = ''
 
@@ -228,6 +235,21 @@ serve(async (req) => {
       const rawBrief   = (input.brief_data ?? {}) as Record<string, unknown>
       const rationale  = String(input.rationale ?? '').trim()
       if (!task_type) continue
+      // parent_task_id: a TOP-LEVEL queue_subtask arg, but the model often
+      // misplaces it INSIDE brief_data — promote it out (and strip it from the
+      // brief). Without this the mission could NEVER queue a valid
+      // instagram_post (the IG worker hard-requires a parent visual), so every
+      // autonomous story/post the mission tried silently died.
+      const nestedParent = typeof rawBrief.parent_task_id === 'string' && (rawBrief.parent_task_id as string).trim().length > 0
+        ? (rawBrief.parent_task_id as string).trim() : null
+      if (nestedParent) delete rawBrief.parent_task_id
+      const topLevelParent = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+        ? input.parent_task_id.trim() : null
+      const parent_task_id = topLevelParent ?? nestedParent
+      if (task_type === 'instagram_post' && !parent_task_id) {
+        newNotes.push(`(did NOT queue instagram_post — it needs parent_task_id pointing at a COMPLETED visual_generation sub-task whose media it posts. Queue the visual first, wait for it to complete, then re-queue the IG post with that sub-task's id as parent_task_id.)`)
+        continue
+      }
       // PRE-INSERT VALIDATION. A malformed brief inserts fine (brief_data is
       // raw JSONB) but then dies at the worker's claim-time gate — and the
       // mission, seeing only a failed sub-task, used to re-queue the same
@@ -246,10 +268,15 @@ serve(async (req) => {
           task_type,
           brief_data: norm.brief as NewSeoTask['brief_data'],
           rationale:  `[mission ${mission.id.slice(0, 8)}] ${rationale}`,
+          parent_task_id: parent_task_id ?? undefined,
           orchestrator_run_id: runId,
         }])
         const textId = inserted[0]?.id
         if (textId) newTaskIds.push(textId)
+        if (textId && task_type === 'dynamic_experiment') {
+          const what = rationale || String((norm.brief as Record<string, unknown>).description ?? '').trim() || 'needs your decision'
+          escalations.push(what.slice(0, 300))
+        }
         // BANNER PAIRING. The strategist path emits a matching visual_generation
         // (parent_task_index → parent_task_id) for every article so the post
         // ships with a banner; the mission path queued the text task ALONE, so
@@ -307,6 +334,18 @@ serve(async (req) => {
 
   // ── 6. Briefing — on completion, or when work was queued this step ──
   try {
+    // ESCALATION ALERT (highest priority). A dynamic_experiment is admin-action-
+    // required by definition; surface it as a health_alert so it shows in the
+    // "while you were away" badge instead of silently waiting in the queue for
+    // hours until the admin happens to ask.
+    if (escalations.length > 0) {
+      await writeBriefing(supabase, {
+        subtype: 'health_alert',
+        title:   `⚠️ Mission needs your decision: ${mission.objective.slice(0, 50)}`,
+        body:    `The mission raised ${escalations.length} item(s) that require YOU (queued as dynamic_experiment, now waiting in your review queue):\n${escalations.map(e => `- ${e}`).join('\n').slice(0, 1200)}`,
+        context: { mission_id: mission.id, step: stepsTaken, escalations: escalations.length, type: 'escalation' },
+      })
+    }
     if (finishing) {
       await writeBriefing(supabase, {
         subtype: 'orchestrator_cycle',

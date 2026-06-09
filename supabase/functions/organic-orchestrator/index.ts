@@ -443,6 +443,20 @@ serve(async (req: Request): Promise<Response> => {
       console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
     }
 
+    // ── Per-task emit log (BUG3 observability) — record what the strategist
+    // PLANNED and whether each task actually inserted, so a run that produced
+    // no feed posts is explicit in the logs + the admin briefing rather than a
+    // silent zero. emittedTasks[i] ↔ insertedRows[i].
+    const emitLog = emittedTasks.map((et, i) => ({
+      task_type: et.task_type,
+      outcome:   (insertedRows[i] ? 'inserted' : 'dropped') as 'inserted' | 'dropped',
+      task_id:   insertedRows[i]?.id ?? null,
+    }))
+    console.log(`[organic-orchestrator] task emit log (${emitLog.length} planned): ${JSON.stringify(emitLog)}`)
+    if (emittedTasks.length === 0) {
+      console.log('[organic-orchestrator] NOTE: strategist emitted 0 content tasks this run (no visual_generation / instagram_post / text_generation planned).')
+    }
+
     // ── 6b-FAQ. Identify ranking blog articles missing FAQ → queue proposals ─
     // Deterministic technical-SEO scan (NOT routed through the strategist
     // LLM — pure data). Top organic blog landing pages from GA4 that don't
@@ -558,6 +572,7 @@ serve(async (req: Request): Promise<Response> => {
         experimentsEvaluated: experimentEvalSummary,
         tasksEmitted:         insertedRows.length,
         taskIds:              insertedRows.map(r => r.id),
+        emitLog,
       }))
     } catch (e: any) {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
@@ -571,6 +586,7 @@ serve(async (req: Request): Promise<Response> => {
       experiments_evaluated: experimentEvalSummary,
       experiments_emitted:   experimentIdByGroup.size,
       tasks_emitted:         insertedRows.length,
+      task_emit_log:         emitLog,
       faq_candidates_queued: faqCandidatesQueued,
       tokens: {
         input:  claudeRes.inputTokens,

@@ -70,6 +70,10 @@ export function buildOrchestratorCycleBriefing(args: {
   experimentsEvaluated:   { evaluated: number; inconclusive: number; winners: Array<{ experiment_id: string; winner_label: string; learning_id: string }> }
   tasksEmitted:           number
   taskIds:                string[]
+  // Per-task emit outcome — what the strategist PLANNED vs what actually
+  // inserted. Surfaces silent drops / zero-task runs in the admin-visible
+  // run record instead of only a bare count.
+  emitLog?:               Array<{ task_type: string; outcome: 'inserted' | 'dropped'; task_id: string | null }>
 }): BriefingContent {
   const reflectionList = (args.selfReflection ?? []).map(r => `- ${r}`).join('\n')
   const winnerLines    = args.experimentsEvaluated.winners.map(w =>
@@ -85,6 +89,13 @@ export function buildOrchestratorCycleBriefing(args: {
     winnerLines ? winnerLines : '',
     '',
     `**This cycle:** queued ${args.experimentsEmitted} new experiment(s) totaling ${args.tasksEmitted} task(s).`,
+    // Explicit per-task emit record so a "no feed posts were produced" run is
+    // visible at a glance (planned-but-dropped, or nothing planned at all).
+    args.emitLog
+      ? (args.emitLog.length > 0
+          ? `**Tasks attempted (${args.emitLog.length}):** ${args.emitLog.map(e => `${e.task_type}→${e.outcome}`).join(', ')}`
+          : '_Strategist planned 0 content tasks this cycle (no visual/post/article tasks emitted)._')
+      : '',
     '',
     reflectionList ? `**Self-reflection:**\n${reflectionList}` : '',
   ].filter(Boolean).join('\n')
