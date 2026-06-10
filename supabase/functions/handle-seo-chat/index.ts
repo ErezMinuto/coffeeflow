@@ -525,14 +525,43 @@ async function executeTool(
     switch (name) {
       case 'queue_task': {
         const task_type  = String(input.task_type ?? '').trim()
-        const brief_data = input.brief_data as Record<string, unknown> | undefined
-        const rationale  = String(input.rationale ?? '').trim()
-        if (!task_type || !brief_data || !rationale) {
-          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
+        // The model sometimes emits brief_data as a JSON STRING rather than an
+        // object (despite the schema saying object), especially for nested
+        // briefs like carousels. Stored verbatim into the jsonb column it
+        // becomes a string scalar, so the worker sees no .slides / .scene_brief
+        // and rejects it as "brief invalid" — which the agent then misreads as
+        // a schema change and loops on. Coerce a stringified brief back to an
+        // object up front (also so the parent_task_id promotion below operates
+        // on a real object).
+        let brief_data = input.brief_data as Record<string, unknown> | undefined
+        if (typeof input.brief_data === 'string') {
+          try {
+            const parsed = JSON.parse(input.brief_data)
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              brief_data = parsed as Record<string, unknown>
+            }
+          } catch { /* malformed JSON string — the required-field check below rejects it cleanly */ }
         }
-        const parent_task_id = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+        const rationale  = String(input.rationale ?? '').trim()
+        if (!task_type || !brief_data || typeof brief_data !== 'object' || !rationale) {
+          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data (an object), rationale.' } }
+        }
+        // parent_task_id is a TOP-LEVEL queue_task argument, but the model
+        // frequently misplaces it INSIDE brief_data. When it does, the task's
+        // top-level parent_task_id column stays null and the worker can't find
+        // its parent — e.g. a blog banner never resolves the parent text
+        // task's wp_post_id, so the rendered image is orphaned and never
+        // attached as the featured image. Defensively promote a nested
+        // parent_task_id out of brief_data (and strip it from the brief).
+        const nestedParent = typeof (brief_data as Record<string, unknown>).parent_task_id === 'string'
+          && ((brief_data as Record<string, unknown>).parent_task_id as string).trim().length > 0
+          ? ((brief_data as Record<string, unknown>).parent_task_id as string).trim()
+          : null
+        if (nestedParent) delete (brief_data as Record<string, unknown>).parent_task_id
+        const topLevelParent = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
           ? input.parent_task_id.trim()
           : null
+        const parent_task_id = topLevelParent ?? nestedParent
         const depends_on = Array.isArray(input.depends_on)
           ? (input.depends_on as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0)
           : []
@@ -1132,6 +1161,17 @@ async function executeTool(
           return { ok: false, payload: { error: 'cancel_task requires task_id and reason.' } }
         }
         await markTaskFailed(supabase, task_id, `[chat-cancel] ${reason}`, true)
+        // Also clear any HITL review flag so a cancelled task LEAVES the review
+        // queue. The review UI keys off result_data.review_required (independent
+        // of task status), so without this a cancelled IG post/carousel lingers
+        // as "awaiting review" with broken/blank content.
+        const { data: cRow } = await supabase.from('seo_tasks').select('result_data').eq('id', task_id).maybeSingle()
+        const cRd = (cRow?.result_data ?? {}) as Record<string, unknown>
+        if (cRd.review_required === true) {
+          await supabase.from('seo_tasks').update({
+            result_data: { ...cRd, review_required: false, cancelled_via_chat_at: new Date().toISOString(), cancel_reason: reason },
+          }).eq('id', task_id)
+        }
         return { ok: true, payload: { status: 'cancelled', task_id } }
       }
 
@@ -1663,10 +1703,22 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
   // Most-recent orchestrator snapshot + 10 most-recent tasks + 20 most-
   // recent active learnings (cross-session memory). All three are read
   // fresh on every chat turn so the agent always sees the latest state.
-  const [snapshots, recentTasks, learnings] = await Promise.all([
+  const [snapshots, recentTasks, learnings, pendingExp] = await Promise.all([
     getRecentMetricsSnapshots(supabase, 'orchestrator_run', 1),
     getRecentTasks(supabase, new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(), 10),
     getRecentLearnings(supabase, { limit: 20 }),
+    // Pending dynamic_experiments are admin-action-required and can sit in the
+    // queue for days. Surface them in EVERY chat turn's context so the agent
+    // proactively raises them with Erez (rather than only when he asks).
+    supabase
+      .from('seo_tasks')
+      .select('id, created_at, rationale, brief_data')
+      .eq('task_type', 'dynamic_experiment')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(20)
+      .then(r => r.data ?? [])
+      .then(rows => rows as Array<{ id: string; created_at: string; rationale: string | null; brief_data: unknown }>),
   ])
 
   const snapBlock = snapshots[0]
@@ -1688,11 +1740,26 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
     ? '(no learnings recorded yet — use record_learning to teach me durable rules)'
     : groupLearningsForPrompt(learnings)
 
+  const approvalsBlock = pendingExp.length === 0
+    ? '(none waiting)'
+    : pendingExp.map((t) => {
+        const b = (typeof t.brief_data === 'string'
+          ? (() => { try { return JSON.parse(t.brief_data as string) } catch { return {} } })()
+          : (t.brief_data ?? {})) as Record<string, unknown>
+        const desc = String(b.description ?? t.rationale ?? '').slice(0, 220)
+        const age = t.created_at ? `since ${t.created_at.slice(0, 10)}` : ''
+        return `  ⚠️ [${t.id}] ${age} — ${desc}`
+      }).join('\n')
+
   return `${CHAT_SYSTEM_PROMPT}
 
 === STANDING INSIGHTS (cross-session memory — apply unless explicitly overridden) ===
 
 ${learningsBlock}
+
+=== PENDING APPROVALS (dynamic_experiments awaiting Erez's decision — proactively raise these with him; he may not know they're here. Resolve via approve_dynamic_experiment or cancel_task) ===
+
+${approvalsBlock}
 
 === LIVE CONTEXT (refreshed on each chat turn) ===
 

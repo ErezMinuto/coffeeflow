@@ -237,36 +237,136 @@ function validateBrief(brief: TextGenerationBrief, taskId: string): void {
   }
 }
 
-// Resolve catalog-exact woo_products names → permalinks with UTM. Names
-// that don't match (typo, retired SKU, etc.) get dropped silently — the
-// writer prompt's "mismatched names get dropped, not approximated" rule.
+// products_to_mention is *supposed* to be an array of catalog-exact strings,
+// but in the wild it arrives in two broken shapes that both produced
+// link-free articles:
+//   1. generic phrases the LLM invented ("קפה אתיופיה", "קפה מינוטו") that
+//      never equal a real woo_products.name, so a strict .in() match dropped
+//      every product.
+//   2. objects { name, url } instead of plain strings — String(item) became
+//      "[object Object]", so even a correct product with its real URL right
+//      there in the payload resolved to nothing.
+// So normalize the entries to { name, permalink? } first.
+function normalizeProductItems(raw: unknown): Array<{ name: string; permalink: string | null }> {
+  if (!Array.isArray(raw)) return []
+  const out: Array<{ name: string; permalink: string | null }> = []
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      const name = item.trim()
+      if (name) out.push({ name, permalink: null })
+    } else if (item && typeof item === 'object') {
+      const o = item as Record<string, unknown>
+      const name = String(o.name ?? o.product ?? o.title ?? '').trim()
+      const pl   = String(o.permalink ?? o.url ?? o.link ?? '').trim()
+      if (name) out.push({ name, permalink: isMinutoUrl(pl) ? pl : null })
+    }
+  }
+  return out
+}
+
+function isMinutoUrl(u: string): boolean {
+  return /^https?:\/\/(www\.)?minuto\.co\.il\//i.test(u)
+}
+
+// Lowercase, strip niqqud, collapse everything that isn't a latin/digit/Hebrew
+// letter to single spaces. Lets us match a short token the LLM actually wrote
+// ("Yirgacheffe", "קפה אתיופיה דיי בנסה") against the long bilingual catalog
+// name ("פולי קפה אתיופיה דיי בנסה חד זני - Minuto Daye Bensa...").
+function normalizeForMatch(s: string): string {
+  return (s ?? '')
+    .toLowerCase()
+    .replace(/[֑-ׇ]/g, '')              // niqqud / cantillation
+    .replace(/[^a-z0-9֐-׿]+/g, ' ')     // keep latin, digits, Hebrew
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Best fuzzy match of a requested product name against the live catalog.
+// Two-level rank:
+//   1. matchScore — exact-normalized (3) > catalog-contains-request (2, the
+//      common case: short token inside the long bilingual name) > request-
+//      contains-catalog (1).
+//   2. quality — among equal matches, prefer a roasted Minuto RETAIL bag and
+//      penalize GREEN/unroasted SKUs ("קפה ירוק", sold by the kg for home
+//      roasters), which a consumer article must never link. Ties then go to
+//      the shortest name (most specific).
+// Skips ultra-generic tokens (< 4 letters, e.g. "קפה" alone).
+function bestCatalogMatch(
+  name: string,
+  catalog: Array<{ name: string; permalink: string; norm: string }>,
+): { name: string; permalink: string } | null {
+  const q = normalizeForMatch(name)
+  if (q.replace(/\s/g, '').length < 4) return null
+  let best: { row: { name: string; permalink: string }; matchScore: number; quality: number; len: number } | null = null
+  for (const row of catalog) {
+    let matchScore = 0
+    if (row.norm === q) matchScore = 3
+    else if (row.norm.includes(q)) matchScore = 2
+    else if (q.includes(row.norm) && row.norm.replace(/\s/g, '').length >= 4) matchScore = 1
+    if (matchScore === 0) continue
+    let quality = 0
+    if (row.norm.includes('minuto'))   quality += 1   // our own roastery line
+    if (row.norm.includes('פולי קפה')) quality += 1   // whole roasted beans
+    if (row.norm.includes('ירוק'))     quality -= 3   // green/unroasted — wrong for a consumer post
+    const better = !best
+      || matchScore > best.matchScore
+      || (matchScore === best.matchScore && quality > best.quality)
+      || (matchScore === best.matchScore && quality === best.quality && row.name.length < best.len)
+    if (better) best = { row: { name: row.name, permalink: row.permalink }, matchScore, quality, len: row.name.length }
+  }
+  return best ? best.row : null
+}
+
+// Resolve products_to_mention → { displayName → permalink+UTM }. An entry that
+// already carries a real Minuto URL uses it directly; otherwise we fuzzy-match
+// the name against the live catalog. Keyed by the name the WRITER will use as
+// anchor text, so the prompt's products block + substitutePermalinks line up.
+// Truly unresolvable names are dropped (no invented URLs).
 async function buildPermalinkMap(
   supabase: ReturnType<typeof createSupabase>,
-  names: string[],
+  rawProducts: unknown,
   keyword: string,
 ): Promise<Record<string, string>> {
-  const clean = (names ?? []).map(n => String(n ?? '').trim()).filter(Boolean)
-  if (clean.length === 0) return {}
-
-  const { data, error } = await supabase
-    .from('woo_products')
-    .select('name, permalink')
-    .in('name', clean)
-
-  if (error) {
-    console.warn(`[seo-worker-writer] woo_products lookup failed: ${error.message}`)
-    return {}
-  }
+  const items = normalizeProductItems(rawProducts)
+  if (items.length === 0) return {}
 
   const utmCampaign = slugifyKeyword(keyword)
   const map: Record<string, string> = {}
-  for (const row of (data ?? []) as Array<{ name: string; permalink: string | null }>) {
-    if (!row.permalink) continue
-    map[row.name] = withUtm(row.permalink, utmCampaign)
+
+  // Catalog snapshot (name + permalink) for fuzzy matching. Only fetched if
+  // at least one item needs a lookup (i.e. has no embedded permalink).
+  // PostgREST caps a plain select at db-max-rows (1000) and woo_products has
+  // more than that, so PAGINATE — otherwise the tail of the catalog (e.g. the
+  // Colombian single-origins) is invisible and those products never resolve.
+  let catalog: Array<{ name: string; permalink: string; norm: string }> = []
+  if (items.some(i => !i.permalink)) {
+    const PAGE = 1000
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('woo_products')
+        .select('name, permalink')
+        .range(from, from + PAGE - 1)
+      if (error) {
+        console.warn(`[seo-worker-writer] woo_products lookup failed: ${error.message}`)
+        break
+      }
+      const rows = data ?? []
+      for (const r of rows) {
+        if (typeof r.permalink === 'string' && r.permalink.length > 0) {
+          catalog.push({ name: r.name as string, permalink: r.permalink, norm: normalizeForMatch(r.name as string) })
+        }
+      }
+      if (rows.length < PAGE) break
+    }
   }
-  // Log which requested names had no match so we can spot orchestrator
-  // drift between its catalog snapshot and the live table.
-  const missing = clean.filter(n => !(n in map))
+
+  for (const item of items) {
+    if (item.permalink) { map[item.name] = withUtm(item.permalink, utmCampaign); continue }
+    const match = bestCatalogMatch(item.name, catalog)
+    if (match) map[item.name] = withUtm(match.permalink, utmCampaign)
+  }
+
+  const missing = items.filter(i => !(i.name in map)).map(i => i.name)
   if (missing.length > 0) {
     console.log(`[seo-worker-writer] no permalink for: ${missing.join(' | ')}`)
   }
@@ -345,9 +445,10 @@ function buildWriterUserMessage(
     .map((kp, i) => `  ${i + 1}. ${kp}`)
     .join('\n')
 
-  const productsBlock = (brief.products_to_mention ?? []).length === 0
+  const productNames = normalizeProductItems(brief.products_to_mention).map(i => i.name)
+  const productsBlock = productNames.length === 0
     ? '  (none — orchestrator chose not to anchor to specific SKUs this round)'
-    : (brief.products_to_mention ?? [])
+    : productNames
         .map(name => {
           const url = permalinkMap[name]
           return url ? `  • "${name}" → ${url}` : `  • "${name}" → (no permalink in catalog — DROP this product, do not invent a URL)`
@@ -382,7 +483,7 @@ ${productsBlock}
 ${internalLinksBlock}${optionalLines ? '\n' + optionalLines + '\n' : ''}
 === INSTRUCTIONS ===
 
-Write the full article body in Hebrew markdown per the system prompt. For each product above that has a resolved URL, write [שם המוצר](THAT_URL) inline at least once in the body — substitute the real URL, NOT the literal text PERMALINK. If a product has no resolved URL, drop it entirely; do not invent a link.
+Write the full article body in Hebrew markdown per the system prompt. EVERY product above that has a resolved URL MUST appear in the body as a real markdown link [שם המוצר](THAT_URL) at least once, woven naturally into the relevant section — substitute the real URL, NOT the literal text PERMALINK, and do not skip a resolved product. If a product has no resolved URL, drop it entirely; do not invent a link. An article that recommends or discusses a coffee we sell but links zero products is a failure — prefer placing the product link where the reader is most likely to act (next to a tasting note, brew recommendation, or "which beans" mention).
 
 Return strict JSON only:
 {

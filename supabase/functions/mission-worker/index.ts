@@ -24,6 +24,8 @@ import {
   type ChatMessage,
 } from '../seo-agent/claude.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
+import { fetchMinutoCoffeeCatalog, fetchRecentBlogPosts, type WooProduct } from '../seo-agent/services/cmsApi.ts'
+import { fetchTopKeywords } from '../seo-agent/services/googleApi.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 
 const CORS = {
@@ -47,8 +49,9 @@ const TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         task_type:  { type: 'string', description: 'text_generation | visual_generation | instagram_post | technical_seo | deep_research | dynamic_experiment' },
-        brief_data: { type: 'object', description: 'Brief payload matching the task_type (see types.ts). For instagram_post you must also be able to point at a visual; if unsure, prefer text_generation / deep_research / dynamic_experiment.' },
+        brief_data: { type: 'object', description: 'Brief payload matching the task_type (see types.ts).' },
         rationale:  { type: 'string', description: 'One line: how this advances the mission.' },
+        parent_task_id: { type: 'string', description: 'Optional UUID of a prior sub-task this one depends on. REQUIRED for instagram_post: set it to the completed visual_generation sub-task whose image/carousel this post publishes (the IG worker rejects an instagram_post with no parent). Use the sub-task IDs shown in the "SUB-TASKS YOU\'VE QUEUED" list.' },
       },
       required: ['task_type', 'brief_data', 'rationale'],
     },
@@ -140,9 +143,38 @@ serve(async (req) => {
         : typeof rd.final_text === 'string' ? rd.final_text.slice(0, 300)
         : rd.review_required ? '(awaiting admin review)'
         : r.status === 'completed' ? '(completed)' : ''
-      return `- [${r.status}] ${r.task_type} (${r.id.slice(0, 8)}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
+      // FULL task UUID (not an 8-char slice) so the mission can reference it
+      // in notes/escalations and the admin can look it up via get_task_details.
+      return `- [${r.status}] ${r.task_type} (${r.id}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
     }).join('\n')
   }
+
+  // ── 2.5 Grounding data — content choices must be research-led, not random ──
+  // The mission used to pick topics + product mentions out of thin air (e.g. it
+  // invented generic phrases like "קפה אתיופיה" for products_to_mention that
+  // resolve to nothing, or picked a green 1kg / reseller bag as the hero). Feed
+  // it the same kind of real signals the strategist sees so it grounds topic +
+  // EXACT-product choices in data: Minuto's OWN coffee lineup (the only products
+  // valid as a content hero — green home-roasting SKUs and resold brands like
+  // Veneto/Toddy are filtered out), GSC demand (what people actually search),
+  // and the last 90d of posts (so it doesn't re-write a topic we just covered).
+  // All guarded — a single source failing degrades the block, never the step.
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
+  const [catalog, gscKeywords, recentPosts] = await Promise.all([
+    fetchMinutoCoffeeCatalog(supabase).catch((e: any) => { console.warn(`[mission-worker] catalog fetch failed: ${e?.message ?? e}`); return [] as WooProduct[] }),
+    fetchTopKeywords(supabase, 30, 25).catch((e: any) => { console.warn(`[mission-worker] GSC fetch failed: ${e?.message ?? e}`); return [] }),
+    fetchRecentBlogPosts(supabase, ninetyDaysAgo, 40).catch((e: any) => { console.warn(`[mission-worker] blog fetch failed: ${e?.message ?? e}`); return [] }),
+  ])
+
+  const catalogBlock = catalog.length === 0
+    ? '(catalog unavailable this step)'
+    : catalog.map(p => `- ${p.name}${p.stock_status && p.stock_status !== 'instock' ? ` [${p.stock_status}]` : ''}`).join('\n')
+  const gscBlock = gscKeywords.length === 0
+    ? '(no GSC data this step)'
+    : gscKeywords.slice(0, 25).map(k => `- "${k.keyword}" — ${k.impressions} impr, ${k.clicks} clicks, avg pos ${k.position.toFixed(1)}`).join('\n')
+  const recentBlock = recentPosts.length === 0
+    ? '(no posts published in the last 90 days)'
+    : recentPosts.slice(0, 30).map(p => `- ${p.title}`).join('\n')
 
   // ── 3. ONE reasoning step ───────────────────────────────────────────
   const system = buildMissionSystemPrompt(inflight)
@@ -151,6 +183,9 @@ serve(async (req) => {
     `STEP ${mission.steps_taken + 1} of max ${mission.max_steps}.\n\n` +
     `PROGRESS NOTES SO FAR:\n${(state.progress_notes ?? []).slice(-12).map(n => `- ${n}`).join('\n') || '(none yet)'}\n\n` +
     `SUB-TASKS YOU'VE QUEUED (${inflight} still in-flight):\n${subtaskSummary}\n\n` +
+    `=== MINUTO COFFEE LINEUP (the ONLY products to feature — copy an EXACT name into products_to_mention; products_to_mention[0] becomes the article's banner hero bag. Never invent a name or feature anything not on this list) ===\n${catalogBlock}\n\n` +
+    `=== SEARCH DEMAND — top GSC keywords, last 30d (what real people search; ground topic choices here) ===\n${gscBlock}\n\n` +
+    `=== ALREADY PUBLISHED — blog posts, last 90d (do NOT re-write a topic we just covered) ===\n${recentBlock}\n\n` +
     `Decide the SINGLE next move toward the objective. If sub-tasks are still in-flight and you have nothing independent to do, note_progress and wait. If the objective is met, complete_mission.`
 
   let res
@@ -175,6 +210,10 @@ serve(async (req) => {
   const toolUses = res.content.filter((b): b is Extract<MessageContentBlock, { type: 'tool_use' }> => b.type === 'tool_use')
   const newNotes: string[] = []
   const newTaskIds: string[] = []
+  // dynamic_experiment sub-tasks need an ADMIN decision — collect them so we can
+  // raise a high-visibility health_alert briefing this step (otherwise an
+  // escalation just sits pending in the queue and the admin never learns of it).
+  const escalations: string[] = []
   let completed = false
   let completionSummary = ''
 
@@ -196,6 +235,21 @@ serve(async (req) => {
       const rawBrief   = (input.brief_data ?? {}) as Record<string, unknown>
       const rationale  = String(input.rationale ?? '').trim()
       if (!task_type) continue
+      // parent_task_id: a TOP-LEVEL queue_subtask arg, but the model often
+      // misplaces it INSIDE brief_data — promote it out (and strip it from the
+      // brief). Without this the mission could NEVER queue a valid
+      // instagram_post (the IG worker hard-requires a parent visual), so every
+      // autonomous story/post the mission tried silently died.
+      const nestedParent = typeof rawBrief.parent_task_id === 'string' && (rawBrief.parent_task_id as string).trim().length > 0
+        ? (rawBrief.parent_task_id as string).trim() : null
+      if (nestedParent) delete rawBrief.parent_task_id
+      const topLevelParent = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+        ? input.parent_task_id.trim() : null
+      const parent_task_id = topLevelParent ?? nestedParent
+      if (task_type === 'instagram_post' && !parent_task_id) {
+        newNotes.push(`(did NOT queue instagram_post — it needs parent_task_id pointing at a COMPLETED visual_generation sub-task whose media it posts. Queue the visual first, wait for it to complete, then re-queue the IG post with that sub-task's id as parent_task_id.)`)
+        continue
+      }
       // PRE-INSERT VALIDATION. A malformed brief inserts fine (brief_data is
       // raw JSONB) but then dies at the worker's claim-time gate — and the
       // mission, seeing only a failed sub-task, used to re-queue the same
@@ -209,13 +263,43 @@ serve(async (req) => {
         continue
       }
       try {
+        const runId = crypto.randomUUID()
         const inserted = await insertTasks(supabase, [{
           task_type,
           brief_data: norm.brief as NewSeoTask['brief_data'],
           rationale:  `[mission ${mission.id.slice(0, 8)}] ${rationale}`,
-          orchestrator_run_id: crypto.randomUUID(),
+          parent_task_id: parent_task_id ?? undefined,
+          orchestrator_run_id: runId,
         }])
-        if (inserted[0]?.id) newTaskIds.push(inserted[0].id)
+        const textId = inserted[0]?.id
+        if (textId) newTaskIds.push(textId)
+        if (textId && task_type === 'dynamic_experiment') {
+          const what = rationale || String((norm.brief as Record<string, unknown>).description ?? '').trim() || 'needs your decision'
+          escalations.push(what.slice(0, 300))
+        }
+        // BANNER PAIRING. The strategist path emits a matching visual_generation
+        // (parent_task_index → parent_task_id) for every article so the post
+        // ships with a banner; the mission path queued the text task ALONE, so
+        // mission-produced drafts went out bannerless. Mirror the strategist:
+        // auto-pair a blog_banner visual whose parent is this text task. The
+        // visual worker waits for the text task's wp_post_id, then attaches the
+        // render as the WP featured image. bag_hero when the article features a
+        // real Minuto product (products_to_mention), else no_bag editorial.
+        if (textId && task_type === 'text_generation') {
+          try {
+            const visualBrief = buildBannerBrief(norm.brief)
+            const insVisual = await insertTasks(supabase, [{
+              task_type:           'visual_generation',
+              brief_data:          visualBrief as NewSeoTask['brief_data'],
+              rationale:           `[mission ${mission.id.slice(0, 8)}] banner for the article above`,
+              parent_task_id:      textId,
+              orchestrator_run_id: runId,
+            }])
+            if (insVisual[0]?.id) newTaskIds.push(insVisual[0].id)
+          } catch (e: any) {
+            newNotes.push(`(article queued but banner pairing failed: ${e?.message ?? e})`)
+          }
+        }
       } catch (e: any) {
         newNotes.push(`(failed to queue ${task_type}: ${e?.message ?? e})`)
       }
@@ -250,6 +334,18 @@ serve(async (req) => {
 
   // ── 6. Briefing — on completion, or when work was queued this step ──
   try {
+    // ESCALATION ALERT (highest priority). A dynamic_experiment is admin-action-
+    // required by definition; surface it as a health_alert so it shows in the
+    // "while you were away" badge instead of silently waiting in the queue for
+    // hours until the admin happens to ask.
+    if (escalations.length > 0) {
+      await writeBriefing(supabase, {
+        subtype: 'health_alert',
+        title:   `⚠️ Mission needs your decision: ${mission.objective.slice(0, 50)}`,
+        body:    `The mission raised ${escalations.length} item(s) that require YOU (queued as dynamic_experiment, now waiting in your review queue):\n${escalations.map(e => `- ${e}`).join('\n').slice(0, 1200)}`,
+        context: { mission_id: mission.id, step: stepsTaken, escalations: escalations.length, type: 'escalation' },
+      })
+    }
     if (finishing) {
       await writeBriefing(supabase, {
         subtype: 'orchestrator_cycle',
@@ -341,6 +437,44 @@ function normalizeBrief(taskType: string, raw: Record<string, unknown>): BriefRe
   return { ok: true, brief: b }
 }
 
+// ── Banner brief for a mission-queued article ────────────────────────────
+// Builds the paired visual_generation brief for a text_generation task. We
+// author it here (not the LLM) because the mission queues one task at a time
+// and never emitted a visual. The visual worker uses brief.scene_brief as the
+// render prompt verbatim and HARD-REQUIRES product_name for bag_hero — so a
+// complete brief matters. bag_hero when the article features a real Minuto
+// product (so the byte-perfect bag appears in-frame); otherwise a bag-free
+// editorial scene (writing a bag into a no_bag brief yields a generic off-brand
+// bag — the documented anti-pattern, so we keep no_bag bag-free).
+function buildBannerBrief(textBrief: Record<string, unknown>): Record<string, unknown> {
+  const topic = firstNonEmpty(textBrief, ['title', 'keyword', 'subject']) || 'specialty coffee'
+  const products = asStringArray(textBrief.products_to_mention)
+  const product = products[0] ?? ''
+  if (product) {
+    return {
+      scene_brief:
+        `Editorial product banner for a Minuto specialty-coffee blog article about "${topic}". ` +
+        `A single Minuto coffee bag is the hero, standing upright and in sharp focus on a warm natural surface (pale wood or stone). ` +
+        `Soft daylight rakes from one side, shallow depth of field, a few scattered light-cinnamon roasted beans, minimal uncluttered props. ` +
+        `Premium, calm, magazine-quality still life with generous negative space. No text, no logos other than what is on the bag.`,
+      aspect:      'feed_square',
+      render_mode: 'bag_hero',
+      product_name: product,
+      destination: 'blog_banner',
+    }
+  }
+  return {
+    scene_brief:
+      `Editorial banner for a Minuto specialty-coffee blog article about "${topic}". ` +
+      `A warm, inviting coffee scene in the locked Minuto identity: natural daylight, pale wood or stone surface, ` +
+      `light-cinnamon roasted beans and brewing details, shallow depth of field, minimal premium props, generous negative space. ` +
+      `Do NOT include any coffee bag, pouch, packaging, or label of any kind. No text, no logos.`,
+    aspect:      'feed_square',
+    render_mode: 'no_bag',
+    destination: 'blog_banner',
+  }
+}
+
 function buildMissionSystemPrompt(inflight: number): string {
   return `You are Minuto's autonomous MISSION EXECUTOR. Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
 
@@ -354,14 +488,16 @@ YOUR ACTIONS (tools):
 OPERATING RULES:
 - ONE focused step. Queue at most 1-3 sub-tasks, then WAIT — you'll see their results next session and build on them. ${inflight >= MAX_INFLIGHT ? `You already have ${inflight} sub-tasks in-flight — do NOT queue more this step; note progress and wait.` : ''}
 - Be data-driven: read the sub-task results you can see and ADAPT. Don't re-queue work that's still in-flight.
+- RESEARCH BEFORE YOU WRITE — never decide a topic, angle, or expression arbitrarily. Every content sub-task (text_generation / instagram_post / a content visual) must be JUSTIFIED by the data in this message: tie the topic to a real SEARCH DEMAND keyword (or to a completed deep_research finding you can see above), confirm the angle isn't an ALREADY PUBLISHED topic, and choose products_to_mention by copying EXACT names from the PRODUCT CATALOG. If the data above doesn't yet support a confident content choice, queue a deep_research sub-task FIRST (or note_progress) instead of writing a speculative post. In your rationale, state which signal grounds the choice (e.g. the keyword, the research finding, the catalog SKU). A post you can't ground in the data is a random post — don't queue it.
+- products_to_mention values MUST be verbatim names from the MINUTO COFFEE LINEUP above — that list is the ONLY set of products you may feature. Do NOT invent generic phrases (e.g. "קפה אתיופיה") and do NOT feature any product not on the list. products_to_mention[0] becomes the auto-paired banner's hero bag, so it must be a real Minuto coffee from the lineup. If no lineup coffee fits the article, leave products_to_mention empty (the banner falls back to a bag-free editorial scene) rather than guessing.
 - Decompose big objectives into concrete, gated tasks the pipeline can execute. Use deep_research (scope channel_discovery / geo_llmo / etc.) for "figure out HOW", text/visual/IG for content, dynamic_experiment for anything novel that needs the admin to greenlight a new capability.
 - KNOW WHEN TO STOP. When the objective is genuinely achieved (or you've done all you autonomously can and the rest needs the admin), complete_mission with a clear summary. Don't spin in circles to burn steps.
 - Stay in Minuto's organic-growth lane; respect any standing brand rules. Anything outside your execution tools → propose as a dynamic_experiment for the admin.
 
 BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the task_type, or the sub-task FAILS validation and is wasted. Required (✱) and optional fields:
 - deep_research → { question✱ (a specific researchable question), scope ("channel_discovery"|"geo_llmo"|"content_topic"|"other"), expected_output ("analysis") }
-- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of product names) }
-- visual_generation → { scene_brief✱ (one concrete scene to render), render_mode ("vertex"|"gemini"), aspect ("1:1"|"4:5"|"9:16"), destination } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }
+- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT names copied from the MINUTO COFFEE LINEUP block — when set, the auto-paired banner shows that real bag, so never invent a name or use anything off the list) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
+- visual_generation → { scene_brief✱ (one concrete scene to render), aspect ("feed_square"|"feed_portrait"|"reel_cover"), render_mode ("bag_hero"|"no_bag" — bag_hero composites the real Minuto bag and REQUIRES product_name set to an exact Minuto product; no_bag is a bag-free editorial scene and must NOT mention any bag/pouch/packaging), product_name (exact Minuto product name, required when render_mode="bag_hero"), destination ("blog_banner"|"ig_post") } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }. (Blog articles get a banner auto-paired — only queue this for IG visuals or standalone scenes.)
 - instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he✱, hashtags (array), media_type } — never queue this before the visual exists.
 - technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
 - dynamic_experiment → { description✱, approval_required: true }

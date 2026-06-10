@@ -333,7 +333,14 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                 const rd       = (viewing.result_data ?? {}) as Record<string, any>
                 const brief    = (viewing.brief_data ?? {}) as Record<string, any>
                 const caption  = (rd.caption as string) ?? (brief.caption_he as string) ?? ''
-                const carousel = Array.isArray(rd.carousel_children) ? (rd.carousel_children as string[]) : []
+                // carousel_children is an array of { image_url } OBJECTS (the
+                // shape meta-publish + the IG worker store), not bare strings.
+                // Normalize to URL strings (tolerate either shape) — otherwise
+                // <img src={obj}> renders [object Object] and the slides show
+                // blank, which is exactly the "buttons but no images" bug.
+                const carousel = (Array.isArray(rd.carousel_children) ? rd.carousel_children : [])
+                  .map((c: unknown) => (typeof c === 'string' ? c : (c as { image_url?: string })?.image_url ?? ''))
+                  .filter((u: string) => u.length > 0)
                 const single   = (rd.image_url as string) ?? ''
                 const images   = carousel.length > 0 ? carousel : (single ? [single] : [])
                 const published = Boolean(rd.ig_permalink)
@@ -352,6 +359,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       ) : rd.review_required === true ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
                       ) : null}
+                      {rd.qa_flagged === true && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 text-[10px] font-medium" title="Automated vision-QA flagged this image, but you can still publish it — your call.">⚠ QA flagged (you decide)</span>
+                      )}
                     </div>
 
                     {images.length > 0 ? (

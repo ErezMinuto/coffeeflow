@@ -162,12 +162,16 @@ serve(async (req) => {
     carousel_slides?: Array<{ image_url?: string }>
     review_required?: boolean
   }
-  if (parentResult.review_required === true) {
-    // Visual worker capped without passing QA → the image is bad. Don't
-    // post a bad image to IG. Mark this task for HITL too so admin can
-    // re-queue the whole pair with a better visual brief.
-    await safeMarkFailed(supabase, task, `parent visual task ${task.parent_task_id} did NOT pass QA (review_required=true). Re-queue with a refined scene_brief before publishing.`, true)
-    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent visual failed QA' })
+  // AUTO-QA IS ADVISORY FOR IG, NOT A HARD GATE. The visual worker's vision-QA
+  // loop sometimes rejects perfectly good images, and every IG post already
+  // passes through the HUMAN review gate (queue_for_review → admin clicks
+  // Publish). Hard-failing a QA-flagged image here meant good images silently
+  // never reached the admin to approve. Instead: STILL stage the post and
+  // surface it for review, carrying a qa_flagged marker so the review UI can
+  // warn — the human makes the final call.
+  const qaFlagged = parentResult.review_required === true
+  if (qaFlagged) {
+    console.warn(`[organic-worker-instagram] ${workerId} parent visual ${task.parent_task_id} is QA-flagged (review_required) — staging for HUMAN review anyway, not auto-failing`)
   }
 
   // For carousel: resolve the ordered slide URLs into Meta's children[].
@@ -285,6 +289,9 @@ serve(async (req) => {
       meta_action:     action,
       meta_response:   metaResult,
       review_required: reviewRequired,
+      // QA had concerns about the image(s) but we staged it for human review
+      // anyway — the review UI shows this as a warning next to Publish/Reject.
+      qa_flagged:      qaFlagged,
       ig_creation_id:  (metaResult.creation_id as string | undefined) ?? null,
       ig_media_id:     (metaResult.media_id as string | undefined) ?? null,
       ig_permalink:    (metaResult.permalink as string | undefined) ?? null,
