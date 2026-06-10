@@ -772,10 +772,23 @@ async function callClaude(
   model: string,
   system: string,
   userMessage: string,
-  { maxTokens = 5000, timeoutMs = 120_000 }: { maxTokens?: number; timeoutMs?: number } = {},
+  { maxTokens = 5000, timeoutMs = 120_000, cachePrefix }: { maxTokens?: number; timeoutMs?: number; cachePrefix?: string } = {},
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  // When a large static prefix is reused across back-to-back calls (e.g. the
+  // two-phase strategist shares baseSystem between phase 1 and phase 2), mark
+  // it ephemeral so the second call reads it from cache instead of re-billing
+  // the full prefix. Only worth it when the same prefix recurs within the 5-min
+  // cache TTL — do NOT use for one-shot calls (they'd pay the write surcharge
+  // with no hit). The prefix block must come first; `system` is the per-call tail.
+  const systemField = cachePrefix
+    ? [
+        { type: "text", text: cachePrefix, cache_control: { type: "ephemeral" } },
+        { type: "text", text: system },
+      ]
+    : system;
 
   let response: Response;
   try {
@@ -786,11 +799,12 @@ async function callClaude(
         "Content-Type": "application/json",
         "x-api-key": ANTHROPIC_KEY,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-16",
       },
       body: JSON.stringify({
         model,
         max_tokens: maxTokens,
-        system,
+        system: systemField,
         messages: [{ role: "user", content: userMessage }],
       }),
     });
@@ -813,6 +827,15 @@ async function callClaude(
   // If Claude hit the token limit mid-response the JSON will be truncated
   if (data.stop_reason === "max_tokens") {
     throw new Error("Claude response was truncated (max_tokens reached). Try reducing the focus text or contact support.");
+  }
+
+  // Surface cache activity so we can confirm the prefix is actually being reused.
+  // write = first call paid +25% to populate the cache; read = a later call paid
+  // ~10% to reuse it. Want read >> write over a run.
+  const cacheWrite = data.usage?.cache_creation_input_tokens ?? 0;
+  const cacheRead  = data.usage?.cache_read_input_tokens ?? 0;
+  if (cacheWrite || cacheRead) {
+    console.log(`[cache] model=${model} write=${cacheWrite} read=${cacheRead} input=${data.usage?.input_tokens ?? 0}`);
   }
 
   return {
@@ -3824,14 +3847,18 @@ async function runStrategistSplit(
 ): Promise<{ report: any; tokensUsed: number }> {
   // Phase 1 — Strategy
   console.log(`[${label}] Phase 1/2: strategy...`);
-  const sysStrategy = `${baseSystem}\n\n=== פאזה 1: אסטרטגיה ===\nבפאזה זו אתה מחזיר רק את שדות האסטרטגיה. אל תיצור weekly_action_plan / campaigns_to_create / ads_to_rewrite / meta_campaign_ideas — אלה יגיעו בפאזה 2.\n${strategySchema}\nענה אך ורק ב-JSON תקין.`;
-  const s = await callClaude(MODEL_STRATEGIST, sysStrategy, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  // baseSystem (brief + expertise, ~15k tokens) is byte-identical across both
+  // phases, which run back-to-back well within the 5-min cache TTL. Pass it as
+  // cachePrefix so phase 2 reads it from cache instead of re-billing it; only
+  // the phase-specific tail below differs per call.
+  const sysStrategy = `\n\n=== פאזה 1: אסטרטגיה ===\nבפאזה זו אתה מחזיר רק את שדות האסטרטגיה. אל תיצור weekly_action_plan / campaigns_to_create / ads_to_rewrite / meta_campaign_ideas — אלה יגיעו בפאזה 2.\n${strategySchema}\nענה אך ורק ב-JSON תקין.`;
+  const s = await callClaude(MODEL_STRATEGIST, sysStrategy, userMessage, { maxTokens: 6000, timeoutMs: 130_000, cachePrefix: baseSystem });
   const strategy = parseClaudeJson(s.text);
 
   // Phase 2 — Execution, given the strategy
   console.log(`[${label}] Phase 2/2: execution...`);
-  const sysExecution = `${baseSystem}\n\n=== פאזה 2: ביצוע ===\nבפאזה 1 פיתחת את האסטרטגיה הבאה:\n\`\`\`json\n${JSON.stringify(strategy, null, 2).slice(0, 4000)}\n\`\`\`\nעכשיו בנה את שכבת הביצוע — weekly_action_plan, campaigns_to_create, meta_campaign_ideas, budget_recommendations, ads_to_rewrite, wednesday_check. הביצוע חייב להיגזר ישירות מהאסטרטגיה (wild_ideas + capital_allocation) — לא מהלכים גנריים.\n${executionSchema}\nענה אך ורק ב-JSON תקין.`;
-  const e = await callClaude(MODEL_STRATEGIST, sysExecution, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const sysExecution = `\n\n=== פאזה 2: ביצוע ===\nבפאזה 1 פיתחת את האסטרטגיה הבאה:\n\`\`\`json\n${JSON.stringify(strategy, null, 2).slice(0, 4000)}\n\`\`\`\nעכשיו בנה את שכבת הביצוע — weekly_action_plan, campaigns_to_create, meta_campaign_ideas, budget_recommendations, ads_to_rewrite, wednesday_check. הביצוע חייב להיגזר ישירות מהאסטרטגיה (wild_ideas + capital_allocation) — לא מהלכים גנריים.\n${executionSchema}\nענה אך ורק ב-JSON תקין.`;
+  const e = await callClaude(MODEL_STRATEGIST, sysExecution, userMessage, { maxTokens: 6000, timeoutMs: 130_000, cachePrefix: baseSystem });
   const execution = parseClaudeJson(e.text);
 
   console.log(`[${label}] Both phases done. Tokens: ${s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens}`);
