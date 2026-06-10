@@ -117,6 +117,20 @@ serve(async (req) => {
     const aspect    = body.aspect ?? 'feed_square'
     const ratio     = ASPECT_TO_RATIO[aspect]
     const useReference = body.use_reference !== false
+
+    // ── Minimal-scene gate ────────────────────────────────────────────────
+    // Some briefs explicitly demand a clean single-subject / studio / no-prop
+    // shot ("zero beans", "nothing else", "only the glass", "pure product on
+    // white"). The default bag_hero scaffolding FIGHTS those: it force-attaches
+    // a beans color-anchor + a cups/brewing style-anchor, lists "supporting
+    // props", and overrides the brief's surface with a rotated rustic one. That
+    // self-contradiction is exactly what made these briefs fail QA 3x and then
+    // brief-regen to a HITL cap (real examples: tasks 8421991d, ff7e8c3f,
+    // ac72e06d). no_bag briefs already render clean because they skip these
+    // refs — this makes a prop-forbidding bag_hero behave the same way: keep
+    // the bag, drop the contradicting scaffolding, respect the brief.
+    const forbidsProps = /\b(no props|zero props|no secondary|no other objects?|without (?:any )?props|no clutter|no decorative|nothing else|no beans|zero beans|no roasted beans|no cups?|zero cups?|no glassware|zero glassware|no ceramic|sole (?:subject|object|hero)|only the (?:bag|glass|mug|cup|jar)|pure product|seamless (?:white|ivory|cream|backdrop)|studio (?:backdrop|sweep|shot)|product[- ]on[- ]white)\b/.test(sceneBrief.toLowerCase())
+    if (forbidsProps) console.log('[visual-test] minimal-scene gate ON — brief forbids props: skipping beans + style refs, deferring surface/composition to the brief')
     // Compositing DISABLED — pivoted to a "Gemini renders bag from reference
     // image + style reference images + bullet-structured prompt" architecture
     // (Erez's test proved Gemini renders the bag faithfully when given a
@@ -242,7 +256,7 @@ serve(async (req) => {
       // conditional on a commercial-context espresso scene.
       const [b1, b2, b3, b4] = await Promise.all([
         fetchAsB64(bagUrl),
-        fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
+        forbidsProps ? Promise.resolve(null) : fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
         useStradaXReference  ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
         roasterSceneRegex    ? fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
       ])
@@ -288,7 +302,7 @@ serve(async (req) => {
       return url
     }
 
-    const styleRefUrl = useReference ? await pickStyleReferenceUrl(sceneBrief) : null
+    const styleRefUrl = (useReference && !forbidsProps) ? await pickStyleReferenceUrl(sceneBrief) : null
     let styleRef: { data: string; mime: string } | null = null
     if (styleRefUrl) {
       styleRef = await fetchAsB64(styleRefUrl)
@@ -349,13 +363,13 @@ ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered).
-• SUPPORTING PROPS — cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.
+• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
-• SURFACE — **${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.
+• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
 • FOCUS — the Minuto bag is dominant; supporting props secondary; background softly out of focus.
-• COMPOSITION — asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.${referencesBlock}
+• COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 
