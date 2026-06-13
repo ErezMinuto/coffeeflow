@@ -263,6 +263,19 @@ export default function Schedule() {
   }, [weekStart]);
 
   // ── Save helpers ─────────────────────────────────────────────────────────────
+  // Persist day-type / roast-day changes to the schedules row. Without this the
+  // edits live only in local state, so the on-screen grid shows them but the
+  // export (which reads day_types/roast_days from the DB) renders a stale layout.
+  // When no schedule exists yet (scheduleId null), there's nothing to update —
+  // the values get captured when the first cell is saved (setCell create branch).
+  const persistDayMeta = async (nextDayTypes, nextRoastDays, sid = scheduleId) => {
+    if (!sid) return;
+    const { error } = await supabase.from('schedules')
+      .update({ day_types: nextDayTypes, roast_days: nextRoastDays })
+      .eq('id', sid);
+    if (error) { console.error('persistDayMeta failed:', error); showToast('שמירת סוג היום נכשלה', 'error'); }
+  };
+
   const saveSchedule = async (grid, sid) => {
     // Delete existing assignments for this schedule then re-insert
     await supabase.from('schedule_assignments').delete().eq('schedule_id', sid);
@@ -788,7 +801,11 @@ export default function Schedule() {
                   <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{d.label} {formatDate(d.date)}</span>
                   <select
                     value={dayTypes[d.code]}
-                    onChange={e => setDayTypes(prev => ({ ...prev, [d.code]: e.target.value }))}
+                    onChange={e => {
+                      const next = { ...dayTypes, [d.code]: e.target.value };
+                      setDayTypes(next);
+                      persistDayMeta(next, roastDays);
+                    }}
                     style={{ padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.75rem' }}
                   >
                     <option value="regular">רגיל</option>
@@ -805,7 +822,11 @@ export default function Schedule() {
               {/* Friday excluded — it's always the cafe/pre-holiday day type, no roasting */}
               {['sun', 'mon', 'tue', 'wed', 'thu'].map(d => (
                 <label key={d} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roastDays[d] || false} onChange={e => setRoastDays(prev => ({ ...prev, [d]: e.target.checked }))} />
+                  <input type="checkbox" checked={roastDays[d] || false} onChange={e => {
+                    const next = { ...roastDays, [d]: e.target.checked };
+                    setRoastDays(next);
+                    persistDayMeta(dayTypes, next);
+                  }} />
                   {DAYS.find(day => day.code === d)?.label}
                 </label>
               ))}
