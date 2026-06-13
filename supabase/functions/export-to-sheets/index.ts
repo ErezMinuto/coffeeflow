@@ -15,16 +15,30 @@ const supabase = createClient(
 
 const DAYS_HE = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי"];
 const DAYS    = ["sun", "mon", "tue", "wed", "thu", "fri"];
+// Mirror the frontend's POSITIONS + visibility flags (src/components/schedule/Schedule.jsx).
+// Keep these in sync — the on-screen grid and this export must produce the same rows/columns.
 const POSITIONS = [
-  { id: "opening", label: "פתיחת קפה", time: "07:30" },
-  { id: "cafe",    label: "בית קפה",   time: "07:45" },
-  { id: "roasting",label: "קלייה",     time: "" },
+  { id: "opening", label: "פתיחת קפה", time: "07:30", always: true },
+  { id: "cafe",    label: "בית קפה",   time: "07:45", fridayOnly: true },
+  { id: "roasting",label: "קלייה",     time: "",      roastingOnly: true },
 
-  { id: "store1",  label: "חנות",      time: "09:30" },
-  { id: "store2",  label: "חנות",      time: "09:30" },
-  { id: "store3",  label: "חנות",      time: "09:30" },
-  { id: "store4",  label: "חנות",      time: "09:30" },
+  { id: "store1",  label: "חנות",      time: "09:30", always: true },
+  { id: "store2",  label: "חנות",      time: "09:30", always: true },
+  { id: "store3",  label: "חנות",      time: "09:30", always: true },
+  { id: "store4",  label: "חנות",      time: "09:30", always: true },
 ];
+
+// Same logic as visiblePositions() on the frontend.
+function isPositionVisible(
+  pos: { fridayOnly?: boolean; roastingOnly?: boolean },
+  dayType: string | undefined,
+  isRoastDay: boolean,
+): boolean {
+  const isFriday = dayType === "friday" || dayType === "holiday-eve";
+  if (pos.fridayOnly)   return isFriday;
+  if (pos.roastingOnly) return isRoastDay && !isFriday;
+  return true;
+}
 
 // ── Google JWT auth ───────────────────────────────────────────────────────────
 function base64url(data: string | Uint8Array): string {
@@ -135,33 +149,40 @@ serve(async (req) => {
       ranges: ["A1:G50"]
     });
 
+    // Active days = days that aren't closed (the on-screen grid drops closed columns).
+    const activeDays = DAYS
+      .map((d, i) => ({ code: d, index: i }))
+      .filter(d => dayTypes[d.code] !== "closed");
+
+    // Only include a position row if it's visible on at least one active day —
+    // same `appearsInAnyDay` rule the frontend grid uses.
+    const visiblePositions = POSITIONS.filter(pos =>
+      activeDays.some(d => isPositionVisible(pos, dayTypes[d.code], !!roastDays[d.code]))
+    );
+
     // Build rows
-    const headers = ["תפקיד", ...DAYS.map((d, i) => {
-      const type = dayTypes[d];
+    const headers = ["תפקיד", ...activeDays.map(({ code, index }) => {
+      const type = dayTypes[code];
       const date = new Date(week_start);
-      date.setDate(date.getDate() + i);
+      date.setDate(date.getDate() + index);
       const dateStr = `${String(date.getDate()).padStart(2,"0")}.${String(date.getMonth()+1).padStart(2,"0")}`;
-      if (type === "closed") return `${DAYS_HE[i]}\n${dateStr}\n(סגור)`;
-      if (type === "holiday-eve") return `${DAYS_HE[i]}\n${dateStr}\nערב חג`;
-      return `${DAYS_HE[i]}\n${dateStr}`;
+      if (type === "holiday-eve") return `${DAYS_HE[index]}\n${dateStr}\nערב חג`;
+      return `${DAYS_HE[index]}\n${dateStr}`;
     })];
 
     const rows: string[][] = [headers];
 
-    for (const pos of POSITIONS) {
+    for (const pos of visiblePositions) {
       const row = [pos.time ? `${pos.label}\n${pos.time}` : pos.label];
-      for (const day of DAYS) {
-        const type = dayTypes[day];
-        if (type === "closed") { row.push(""); continue; }
-        if (pos.id === "roasting" && (!roastDays[day] || type === "friday" || type === "holiday-eve")) { row.push(""); continue; }
-        if (pos.id === "cashier" && type !== "friday" && type !== "holiday-eve") { row.push(""); continue; }
-        row.push(cell(day, pos.id));
+      for (const { code } of activeDays) {
+        if (!isPositionVisible(pos, dayTypes[code], !!roastDays[code])) { row.push(""); continue; }
+        row.push(cell(code, pos.id));
       }
       rows.push(row);
     }
 
-    // Add title row at top
-    const titleRow = [`☕ MINUTO Café Roastery — סידור עבודה ${week_start}`, "", "", "", "", "", ""];
+    // Add title row at top (pad to the header width so the merge spans every column)
+    const titleRow = [`☕ MINUTO Café Roastery — סידור עבודה ${week_start}`, ...Array(headers.length - 1).fill("")];
     const allRows = [titleRow, ...rows];
 
     // Write data
@@ -172,7 +193,7 @@ serve(async (req) => {
 
     // ── Formatting ────────────────────────────────────────────────────────────
     const numRows = allRows.length;
-    const numCols = 7;
+    const numCols = headers.length;
 
     // Minuto brand colors
     const darkGreen  = { red: 0.239, green: 0.290, blue: 0.180 }; // #3D4A2E
