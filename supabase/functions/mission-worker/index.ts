@@ -41,6 +41,61 @@ function json(body: unknown, status = 200): Response {
 // stops queuing more and waits — prevents a mission from flooding the queue.
 const MAX_INFLIGHT = 3
 
+// ── Daily IG cadence (standing mission) ───────────────────────────────────
+// A mission whose state.kind === 'daily_ig_cadence' is a PERPETUAL standing
+// cadence rather than a finite objective: it tops up Minuto's Instagram to a
+// daily target, never auto-completes, and resets its count each UTC day. The
+// worker feeds it today's progress so it paces itself instead of front-loading
+// the whole day. Everything still flows through queue_for_review — this only
+// drafts posts into the review queue, it never publishes.
+const IG_CADENCE_KIND   = 'daily_ig_cadence'
+const IG_STORY_TARGET   = 1   // 1 story / day
+const IG_FEED_MIN       = 3   // 3–4 feed posts / day
+const IG_FEED_MAX       = 4
+
+// Count today's (UTC) IG output so the standing cadence mission knows how much
+// is left to queue. Counts committed instagram_post tasks (any status — a
+// queued post counts toward the day even while it renders) split by story vs
+// feed, plus IG-destined visuals still in flight (pipelines underway that will
+// become posts) so we don't double-queue. All guarded; a query failure yields
+// zeros (the mission then behaves as if nothing's been done yet — safe, since
+// MAX_INFLIGHT still throttles).
+async function computeDailyIgCadence(supabase: ReturnType<typeof createSupabase>) {
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0)
+  const sinceIso = start.toISOString()
+  let stories = 0, feeds = 0, igVisualsInFlight = 0
+  try {
+    const { data: igTasks } = await supabase
+      .from('seo_tasks')
+      .select('brief_data')
+      .eq('task_type', 'instagram_post')
+      .gte('created_at', sinceIso)
+      .limit(200)
+    for (const t of (igTasks ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
+      const mt = String((t.brief_data as { media_type?: unknown } | null)?.media_type ?? '').toLowerCase()
+      if (mt === 'story') stories++; else feeds++
+    }
+    const { data: vis } = await supabase
+      .from('seo_tasks')
+      .select('brief_data')
+      .eq('task_type', 'visual_generation')
+      .in('status', ['pending', 'processing'])
+      .gte('created_at', sinceIso)
+      .limit(200)
+    for (const v of (vis ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
+      if (String((v.brief_data as { destination?: unknown } | null)?.destination ?? '').toLowerCase() === 'ig_post') igVisualsInFlight++
+    }
+  } catch (e: any) {
+    console.warn(`[mission-worker] daily-IG-cadence count failed: ${e?.message ?? e}`)
+  }
+  const storyRemaining   = Math.max(0, IG_STORY_TARGET - stories)
+  const feedRemainingMin = Math.max(0, IG_FEED_MIN - feeds)
+  const feedRemainingMax = Math.max(0, IG_FEED_MAX - feeds)
+  // Day's minimum is met once the story + the 3-post feed floor are committed.
+  const minMet = stories >= IG_STORY_TARGET && feeds >= IG_FEED_MIN
+  return { stories, feeds, igVisualsInFlight, storyRemaining, feedRemainingMin, feedRemainingMax, minMet }
+}
+
 const TOOLS: ToolDefinition[] = [
   {
     name: 'queue_subtask',
@@ -121,6 +176,7 @@ serve(async (req) => {
 
   const state: MissionState = (mission.state ?? {}) as MissionState
   const queuedIds = Array.isArray(state.queued_task_ids) ? state.queued_task_ids : []
+  const isDailyIgCadence = (state as { kind?: unknown }).kind === IG_CADENCE_KIND
 
   // ── 2. Gather the status/results of sub-tasks queued earlier ────────
   let inflight = 0
@@ -147,6 +203,35 @@ serve(async (req) => {
       // in notes/escalations and the admin can look it up via get_task_details.
       return `- [${r.status}] ${r.task_type} (${r.id}) — ${(r.rationale ?? '').slice(0, 70)}${out ? ` → ${out}` : ''}`
     }).join('\n')
+  }
+
+  // ── 2.4 Daily IG cadence — compute today's progress + idle short-circuit ──
+  // For the standing cadence mission, fetch how much IG content already went
+  // out today so we can (a) feed the LLM an explicit "still needed" target and
+  // (b) skip the Claude reasoning step entirely on the many ticks where the
+  // day's minimum is already met and nothing is in-flight — otherwise this
+  // mission would burn ~144 idle Claude calls/day doing nothing.
+  let igCadenceBlock = ''
+  if (isDailyIgCadence) {
+    const c = await computeDailyIgCadence(supabase)
+    if (c.minMet && inflight === 0) {
+      // Day's quota satisfied and nothing pending — sleep this tick cheaply.
+      await supabase.from('agent_missions').update({
+        steps_taken:  mission.steps_taken + 1,
+        last_step_at: new Date().toISOString(),
+        updated_at:   new Date().toISOString(),
+        locked_until: null,
+        worker_id:    null,
+      }).eq('id', mission.id)
+      console.log(`[mission-worker] ${workerId} daily-IG-cadence quota met (${c.stories} story / ${c.feeds} feed) — idle tick, no Claude call`)
+      return json({ processed: 1, worker_id: workerId, mission_id: mission.id, ok: true, idle: true, cadence: c })
+    }
+    igCadenceBlock =
+      `=== TODAY'S IG CADENCE (UTC day) — your STANDING daily quota ===\n` +
+      `Target: ${IG_STORY_TARGET} story + ${IG_FEED_MIN}-${IG_FEED_MAX} feed posts per day.\n` +
+      `Queued so far today: ${c.stories} story, ${c.feeds} feed${c.igVisualsInFlight > 0 ? ` (+${c.igVisualsInFlight} IG visual(s) still rendering)` : ''}.\n` +
+      `STILL NEEDED today: ${c.storyRemaining} story, ${c.feedRemainingMin}-${c.feedRemainingMax} feed.\n` +
+      `Pace yourself — queue the NEXT 1-2 pipelines now (a visual_generation with destination:"ig_post", then an instagram_post parented to it once that visual COMPLETES), then WAIT for them. Do NOT front-load the whole day. When the target is met, note_progress and wait; the count resets at the next UTC midnight.\n\n`
   }
 
   // ── 2.5 Grounding data — content choices must be research-led, not random ──
@@ -177,9 +262,10 @@ serve(async (req) => {
     : recentPosts.slice(0, 30).map(p => `- ${p.title}`).join('\n')
 
   // ── 3. ONE reasoning step ───────────────────────────────────────────
-  const system = buildMissionSystemPrompt(inflight)
+  const system = buildMissionSystemPrompt(inflight, isDailyIgCadence)
   const userMsg =
     `MISSION OBJECTIVE:\n${mission.objective}\n\n` +
+    igCadenceBlock +
     `STEP ${mission.steps_taken + 1} of max ${mission.max_steps}.\n\n` +
     `PROGRESS NOTES SO FAR:\n${(state.progress_notes ?? []).slice(-12).map(n => `- ${n}`).join('\n') || '(none yet)'}\n\n` +
     `SUB-TASKS YOU'VE QUEUED (${inflight} still in-flight):\n${subtaskSummary}\n\n` +
@@ -307,10 +393,18 @@ serve(async (req) => {
   }
   if (res.text.trim()) newNotes.push(res.text.trim().slice(0, 400))
 
+  // A standing daily cadence has no terminal "done" — never let it end itself,
+  // whether via an over-eager complete_mission call or the step cap. It runs
+  // until the admin pauses/cancels the mission row.
+  if (isDailyIgCadence && completed) {
+    newNotes.push('(ignored complete_mission — this is a STANDING daily IG cadence and does not complete; continuing.)')
+    completed = false
+  }
+
   // ── 5. Persist mission state + decide lifecycle ─────────────────────
   const stepsTaken = mission.steps_taken + 1
   const hitCap     = stepsTaken >= mission.max_steps
-  const finishing  = completed || hitCap
+  const finishing  = completed || (hitCap && !isDailyIgCadence)
   const nextState: MissionState = {
     ...state,
     progress_notes:  [...(state.progress_notes ?? []), ...newNotes].slice(-50),
@@ -475,8 +569,17 @@ function buildBannerBrief(textBrief: Record<string, unknown>): Record<string, un
   }
 }
 
-function buildMissionSystemPrompt(inflight: number): string {
-  return `You are Minuto's autonomous MISSION EXECUTOR. Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
+function buildMissionSystemPrompt(inflight: number, isDailyIgCadence = false): string {
+  const cadenceAddendum = isDailyIgCadence ? `
+
+⭐ THIS IS A STANDING DAILY IG CADENCE MISSION — special operating mode:
+- Your job is to keep Minuto's Instagram topped up to the daily target shown in the "TODAY'S IG CADENCE" block: ${IG_STORY_TARGET} story + ${IG_FEED_MIN}-${IG_FEED_MAX} feed posts every UTC day. The count resets at UTC midnight.
+- This mission NEVER completes. Do NOT call complete_mission — there is no "done"; it runs every day until the admin pauses it.
+- Each tick: look at "STILL NEEDED today". If 0 story and 0 feed remain, just note_progress and wait. Otherwise queue the next pipeline toward the remainder — and only the next 1-2, never the whole day at once (MAX_INFLIGHT throttles you anyway).
+- A post is a TWO-STEP pipeline: first queue a visual_generation (set brief.destination:"ig_post", choose render_mode bag_hero with an exact product_name when featuring a coffee, else no_bag for a lifestyle scene), WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts). Set media_type:"story" on exactly the story.
+- Vary it: don't post the same product/angle every day; ground each choice in the SEARCH DEMAND + CATALOG data below, same as any content task.
+- Everything still queues for review — you never publish. The admin approves what ships.` : ''
+  return `You are Minuto's autonomous MISSION EXECUTOR.${cadenceAddendum} Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
 
 THIS SESSION: read the objective + your progress + the results of sub-tasks you queued earlier, then take the SINGLE most valuable next action.
 

@@ -219,14 +219,28 @@ serve(async (req) => {
       .limit(200)
     const flat = (errs ?? []).map(r => r.error_msg as string).join(' | ').toLowerCase()
     const patterns = [
-      { needle: 'unauthorized',        category: 'API auth (401)' },
-      { needle: 'forbidden',           category: 'API permission (403)' },
-      { needle: 'rate limit',          category: 'API rate limit' },
-      { needle: 'quota exhausted',     category: 'IG quota exhausted' },
-      { needle: 'scope_insufficient',  category: 'OAuth scope insufficient' },
+      { needle: 'unauthorized',          category: 'API auth (401)' },
+      { needle: 'forbidden',             category: 'API permission (403)' },
+      { needle: 'rate limit',            category: 'API rate limit' },
+      { needle: 'quota exhausted',       category: 'IG quota exhausted' },
+      { needle: 'scope_insufficient',    category: 'OAuth scope insufficient' },
+      // Meta's expired/invalid-token errors don't contain "unauthorized" —
+      // they read "Session has expired" / "OAuthException" / our own
+      // "Meta access token expired … re-auth". Match those so a lapsed 60-day
+      // Meta token (the IG-worker 401 cause) raises an alert instead of
+      // silently failing IG tasks. Kept in sync with meta-publish's messages.
+      { needle: 'access token expired',  category: 'Meta token expired — re-auth needed' },
+      { needle: 'session has expired',   category: 'Meta token expired — re-auth needed' },
+      { needle: 'oauthexception',        category: 'Meta OAuth error — re-auth needed' },
+      { needle: 're-auth via settings',  category: 'Meta token expired — re-auth needed' },
     ]
+    // Dedupe by display category — several needles intentionally map to the
+    // same category (e.g. the Meta token-expiry phrasings), and we want ONE
+    // alert line per distinct problem, not one per matched phrase.
+    const seenCategories = new Set<string>()
     for (const p of patterns) {
-      if (flat.includes(p.needle)) {
+      if (flat.includes(p.needle) && !seenCategories.has(p.category)) {
+        seenCategories.add(p.category)
         findings.push({
           severity: 'ERROR',
           category: 'api_errors',

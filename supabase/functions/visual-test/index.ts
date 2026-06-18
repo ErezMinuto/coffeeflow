@@ -251,6 +251,22 @@ serve(async (req) => {
       machineRef = b3
       roasterRef = b4
       console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
+
+      // FAIL-FAST when the bag was requested but its reference image could not
+      // be fetched (404 / network / bad URL → fetchAsB64 returned null).
+      // Continuing here is the documented hallucination vector: the prompt
+      // still tells Gemini to render "the Minuto bag" but attaches NO bag
+      // reference, so it invents label artwork and gibberish text and pads the
+      // frame with hallucinated props (the Velvet Star failure mode). Better to
+      // fail loudly with the exact bad URL so the task retries / surfaces and
+      // the broken woo_products.image_url gets fixed — never ship a fabricated
+      // bag. (A null bag ref is ONLY a problem when a bag was actually
+      // requested; no_bag scenes never set bagUrl.)
+      if (bagUrl && !bagRef) {
+        return jsonResponse({
+          error: `bag reference image could not be fetched (source=${bagSource}, url=${bagUrl}). Refusing to render a bag_hero without its reference — that produces a hallucinated label. Fix the product's image_url (or pass a reachable reference_image_url).`,
+        }, 502, corsHeaders)
+      }
     }
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
