@@ -20,6 +20,7 @@ const allNavItems = [
       { path: '/schedule',   icon: '📅', label: 'Schedule'   },
       { path: '/attendance', icon: '⏱️', label: 'Attendance' },
       { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
+      { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount' },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
