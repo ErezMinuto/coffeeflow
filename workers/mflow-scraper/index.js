@@ -1,4 +1,5 @@
 const { checkAndAlert } = require('./alert');
+const { alertAuthFailure, isAuthError } = require('./notify');
 const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
@@ -23,6 +24,19 @@ async function scrapeSales() {
   let browser;
 
   try {
+    // Preflight: confirm Supabase auth BEFORE scraping. A rotated/invalid key
+    // otherwise produces a no-op sync with dozens of buried per-SKU errors and
+    // no signal to anyone. Fail loud (email + Telegram) and abort early.
+    {
+      const { error: authErr } = await supabase.from('products').select('id').limit(1);
+      if (authErr) {
+        if (isAuthError(authErr)) {
+          await alertAuthFailure('Supabase preflight failed: ' + authErr.message);
+        }
+        throw new Error('Supabase preflight failed: ' + authErr.message);
+      }
+    }
+
     const now = new Date();
     const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
     const yesterdayDate = new Date(israelTime);
@@ -320,6 +334,11 @@ async function scrapeSales() {
     console.log('Sync complete — Processed: ' + processed + ', Skipped: ' + skipped + ', Errors: ' + errors.length);
     if (errors.length > 0) {
       console.error('Errors:', errors);
+      // Safety net: if a key was revoked mid-run (preflight passed, then failed),
+      // surface it. alertAuthFailure de-dupes, so this won't double-send.
+      if (errors.some(e => isAuthError(e))) {
+        await alertAuthFailure('Supabase auth failed during deduction: ' + errors[0]);
+      }
     }
     // Send stock alerts
     await checkAndAlert();
@@ -332,6 +351,25 @@ async function scrapeSales() {
 }
 
 console.log('MFlow Scraper started');
+
+// One-off QA: set ALERT_TEST=1 in Railway to verify the email + Telegram alert
+// pipeline end-to-end, then remove the var. Bypasses the real-alert de-dupe so
+// it never masks a genuine auth alert in the same run.
+if (process.env.ALERT_TEST) {
+  const { sendEmail, sendTelegram } = require('./notify');
+  Promise.all([
+    sendEmail(
+      '✅ MFlow Scraper — alert test',
+      '<p>This is a test of the auth-failure alert pipeline. If you received ' +
+      'this email, alerts work. You can remove the <code>ALERT_TEST</code> ' +
+      'env var from Railway now.</p>'
+    ),
+    sendTelegram('✅ MFlow Scraper alert test — alerts work. Remove the ALERT_TEST env var.')
+  ])
+    .then(() => console.log('[notify] ALERT_TEST sent'))
+    .catch(e => console.error('[notify] ALERT_TEST failed:', e.message));
+}
+
 scrapeSales()
   .then(() => console.log('Initial sync completed'))
   .catch(err => console.error('Initial sync failed:', err.message));

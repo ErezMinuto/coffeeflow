@@ -25,6 +25,16 @@ Set these in the Railway dashboard under **Variables**:
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Telegram chat ID for alerts |
 | `ANTHROPIC_API_KEY` | Claude API key for alert generation |
+| `RESEND_API_KEY` | Resend API key — required to email auth-failure alerts |
+| `SENDER_EMAIL` | Optional. From-address for alerts (default `info@minuto.co.il`, must be a verified Resend sender) |
+| `ALERT_EMAIL` | Optional. Where auth-failure alerts are sent (default `erez@minuto.co.il`) |
+
+### Failure alerting
+
+On every run the worker does a Supabase **preflight auth check** before scraping.
+If the `SUPABASE_KEY` is invalid (e.g. the Supabase JWT was rotated), it aborts
+early and sends an **email (via Resend) + Telegram** alert instead of silently
+no-op-syncing. See `notify.js`.
 
 > **Never commit credentials to this file or any tracked file.**
 

@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { alertAuthFailure, isAuthError } = require('./notify');
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -77,7 +78,7 @@ Write a short, practical WhatsApp-style alert message in Hebrew for the roastery
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 500,
       messages: [{ role: 'user', content: prompt }]
     })
@@ -129,6 +130,9 @@ async function checkAndAlert() {
 
   } catch (err) {
     console.error('Error in checkAndAlert:', err.message);
+    if (isAuthError(err)) {
+      await alertAuthFailure('checkAndAlert auth failure: ' + err.message);
+    }
   }
 }
 
