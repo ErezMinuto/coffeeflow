@@ -28,6 +28,55 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// Email alerting for auth/credential problems. Reuses the same Resend account
+// the rest of the app uses. ADMIN_EMAIL is an existing project secret.
+const RESEND_KEY   = Deno.env.get('RESEND_API_KEY') ?? ''
+const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL')   ?? 'info@minuto.co.il'
+const ALERT_EMAIL  = Deno.env.get('ADMIN_EMAIL')    ?? 'erez@minuto.co.il'
+
+// Email the admin when an auth/credential failure pattern is detected. Scoped
+// to the 'api_errors' category (401/403/expired-token/scope/quota) so routine
+// WARN noise doesn't generate email — only credential problems do.
+async function emailAuthAlert(authFindings: HealthFinding[]): Promise<void> {
+  if (!RESEND_KEY) {
+    console.warn('[health-watchdog] RESEND_API_KEY not set — skipping auth email')
+    return
+  }
+  const rows = authFindings
+    .map(f => `<li><b>[${f.severity}]</b> ${f.message}</li>`)
+    .join('')
+  const html =
+    `<div style="font-family: sans-serif; font-size: 14px; color: #333;">` +
+    `<h2>🚨 CoffeeFlow — authentication / credential problem</h2>` +
+    `<p>The health-watchdog detected ${authFindings.length} auth/credential ` +
+    `issue(s) in the last 48h of system activity:</p>` +
+    `<ul>${rows}</ul>` +
+    `<p>Common fixes: a rotated Supabase JWT (update any manually-copied keys), ` +
+    `an expired Meta 60-day token (re-auth via Settings), or an OAuth scope/quota ` +
+    `problem. Check the function logs for the affected service.</p>` +
+    `<p style="color:#888;">Sent by health-watchdog at ${new Date().toISOString()}</p>` +
+    `</div>`
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: `Minuto Alerts <${SENDER_EMAIL}>`,
+        to: [ALERT_EMAIL],
+        subject: '🚨 CoffeeFlow: authentication / credential problem detected',
+        html,
+      }),
+    })
+    if (!res.ok) {
+      console.error(`[health-watchdog] Resend ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    } else {
+      console.log(`[health-watchdog] auth alert emailed to ${ALERT_EMAIL}`)
+    }
+  } catch (e: any) {
+    console.error(`[health-watchdog] auth email threw: ${e?.message ?? e}`)
+  }
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -243,6 +292,13 @@ serve(async (req) => {
   if (findings.length === 0) {
     console.log('[health-watchdog] all healthy, no task created')
     return jsonResponse({ ok: true, healthy: true, findings_count: 0 })
+  }
+
+  // Email the admin immediately on any auth/credential finding. Explicit ask:
+  // auth problems must reach me by email, not just sit in the task queue.
+  const authFindings = findings.filter(f => f.category === 'api_errors')
+  if (authFindings.length > 0) {
+    await emailAuthAlert(authFindings)
   }
 
   const errCount  = findings.filter(f => f.severity === 'ERROR').length
