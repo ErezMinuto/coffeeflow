@@ -208,11 +208,13 @@ async function handleStock(chatId: string) {
 }
 
 // ── Tap-to-select packing menu ──────────────────────────────────────────────
-// Step 1: show every product as a tappable button. Tapping one records the
-// selection in coffee_bot_pending_packing and asks for the bag count. This
-// removes the name-matching step that caused mis-packings.
-
-async function handlePackMenu(chatId: string) {
+// Show every product as a tappable button. The employee picks the exact
+// product instead of us guessing from a typed name — that's where the
+// mis-packings came from. The bag count is usually already known (parsed from
+// the message they typed, e.g. "ארזתי 35 שקיות …") and is carried inside each
+// button's callback_data as pack:<id>:<qty>. When the count isn't known yet
+// (e.g. a bare /pack) the buttons are pack:<id> and we ask for it after the tap.
+async function handlePackMenu(chatId: string, qty: number | null) {
   const { data: products } = await supabase
     .from("products")
     .select("id, name, size")
@@ -224,23 +226,29 @@ async function handlePackMenu(chatId: string) {
     return;
   }
 
+  const suffix = qty != null ? `:${qty}` : "";
   // One product per row — Hebrew names are long and wrap badly side by side.
   const inline: InlineKeyboard = {
     inline_keyboard: [
       ...products.map(p => [
-        { text: `${p.name} ${p.size}g`, callback_data: `pack:${p.id}` },
+        { text: `${p.name} ${p.size}g`, callback_data: `pack:${p.id}${suffix}` },
       ]),
       [{ text: "❌ ביטול", callback_data: "pack:cancel" }],
     ],
   };
 
-  await send(chatId, "📦 <b>איזה מוצר ארזת?</b>\nבחרו מהרשימה 👇", inline);
+  const header = qty != null
+    ? `📦 <b>${qty} שקיות</b> — איזה מוצר ארזת?\nבחרו מהרשימה 👇`
+    : `📦 <b>איזה מוצר ארזת?</b>\nבחרו מהרשימה 👇`;
+
+  await send(chatId, header, inline);
 }
 
-// Step 2: a product button was tapped. Remember the selection and ask for the
-// bag count. Upsert so a fresh tap overwrites any earlier un-finished one.
+// A product button was tapped. If the bag count rode along in callback_data,
+// record the packing now. Otherwise remember the product and ask for the count.
 async function handlePackSelect(
-  chatId: string, telegramId: string, productId: number, messageId: number, callbackId: string,
+  chatId: string, telegramId: string, fromName: string,
+  productId: number, qty: number | null, messageId: number, callbackId: string,
 ) {
   const { data: product } = await supabase
     .from("products")
@@ -251,10 +259,23 @@ async function handlePackSelect(
 
   if (!product) {
     await answerCallback(callbackId, "המוצר לא נמצא");
-    await editMessage(chatId, messageId, "⚠️ המוצר לא נמצא יותר במערכת. נסו /pack שוב.");
+    await editMessage(chatId, messageId, "⚠️ המוצר לא נמצא יותר במערכת. נסו שוב.");
     return;
   }
 
+  if (qty != null && qty > 0) {
+    // Quantity already known → record immediately. Edit the menu to drop the
+    // buttons first so a double-tap can't double-count.
+    await answerCallback(callbackId, `${product.name} ✓`);
+    await editMessage(chatId, messageId, `📦 <b>${product.name} ${product.size}g</b> × ${qty} שקיות`);
+    await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", telegramId);
+    const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
+    await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[]);
+    return;
+  }
+
+  // No count yet — remember the selection and ask for it. Upsert so a fresh
+  // tap overwrites any earlier un-finished one.
   await supabase.from("coffee_bot_pending_packing").upsert({
     telegram_id: telegramId,
     chat_id:     chatId,
@@ -489,13 +510,22 @@ serve(async (req) => {
       if (data === "pack:cancel") {
         await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(cbTelegramId));
         await answerCallback(cb.id, "בוטל");
-        await editMessage(cbChatId, cbMessageId, "בוטל. שלחו /pack כדי להתחיל מחדש.");
+        await editMessage(cbChatId, cbMessageId, "בוטל. כדי לרשום אריזה כתבו לדוגמה: ארזתי 35 שקיות");
         return new Response("ok");
       }
 
-      const m = data.match(/^pack:(\d+)$/);
+      // callback_data is pack:<id> or pack:<id>:<qty>
+      const m = data.match(/^pack:(\d+)(?::(\d+))?$/);
       if (m && cbTelegramId && cbMessageId) {
-        await handlePackSelect(cbChatId, String(cbTelegramId), parseInt(m[1], 10), cbMessageId, cb.id);
+        // Resolve the employee's Hebrew name for the packing log.
+        let cbFromName = cb.from?.first_name ?? "עובד";
+        const { data: cbEmp } = await supabase
+          .from("employees").select("name").eq("telegram_id", cbTelegramId).maybeSingle();
+        if (cbEmp?.name) cbFromName = cbEmp.name;
+
+        const productId = parseInt(m[1], 10);
+        const qty       = m[2] ? parseInt(m[2], 10) : null;
+        await handlePackSelect(cbChatId, String(cbTelegramId), cbFromName, productId, qty, cbMessageId, cb.id);
       } else {
         await answerCallback(cb.id);
       }
@@ -522,7 +552,7 @@ serve(async (req) => {
     // Reject obvious prompt-injection attempts before they reach Claude.
     if (looksLikeInjection(text)) {
       console.warn(`coffee-bot rejected injection attempt from telegram_id=${telegramId}: "${text.slice(0, 100)}"`);
-      await send(chatId, "לא הבנתי 🤔 — לרישום אריזה לחצו /pack, או /stock לצפייה במלאי");
+      await send(chatId, "לא הבנתי 🤔 — לרישום אריזה כתבו לדוגמה 'ארזתי 35 שקיות', או /stock לצפייה במלאי");
       return new Response("ok");
     }
 
@@ -542,7 +572,7 @@ serve(async (req) => {
     } else if (lower.startsWith("/shop")) {
       await handleShopStock(chatId);
     } else if (lower.startsWith("/pack") || lower.startsWith("/start")) {
-      await handlePackMenu(chatId);
+      await handlePackMenu(chatId, null);
     } else if (!lower.startsWith("/")) {
       // Shop consumption still works as free text — it's measured in grams and
       // names a coffee source, so the list-of-products menu doesn't fit it.
@@ -574,52 +604,53 @@ serve(async (req) => {
         return new Response("ok");
       }
 
-      // ── Packing is button-only ───────────────────────────────────────────
-      // Free-text product names caused mis-packings, so the only way to record
-      // a packing is now: /pack → tap a product → type the bag count. If the
-      // employee tapped a product, this incoming text is that bag count.
-      const { data: pending } = await supabase
-        .from("coffee_bot_pending_packing")
-        .select("product_id, created_at")
-        .eq("telegram_id", String(telegramId))
-        .maybeSingle();
+      // ── Packing: type the report, tap the product ────────────────────────
+      // The employee types naturally, e.g. "ארזתי 35 שקיות דיי בנסה". We take
+      // the bag count from the text and pop up the product list so they tap the
+      // exact product. Picking from the list (instead of matching a typed name)
+      // is what removes the mis-packings.
 
-      if (pending) {
-        const ageMs = Date.now() - new Date(pending.created_at).getTime();
-        if (ageMs > PENDING_TTL_SECONDS * 1000) {
-          await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
-          await send(chatId, "⏰ עבר יותר מדי זמן מאז שבחרת מוצר. שלחו /pack כדי להתחיל מחדש.");
-          return new Response("ok");
+      // A bare number completes an in-progress selection — i.e. they tapped a
+      // product that had no count attached and are now sending it.
+      const bareQty = text.match(/^(\d+)\s*(?:שקיות|שקית|שק׳|שק')?$/);
+      if (bareQty) {
+        const { data: pending } = await supabase
+          .from("coffee_bot_pending_packing")
+          .select("product_id, created_at")
+          .eq("telegram_id", String(telegramId))
+          .maybeSingle();
+        if (pending) {
+          const ageMs = Date.now() - new Date(pending.created_at).getTime();
+          if (ageMs <= PENDING_TTL_SECONDS * 1000) {
+            const bags = parseInt(bareQty[1], 10);
+            if (bags > 0) {
+              const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
+              // Clear before recording so a duplicate number can't double-count.
+              await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
+              await handlePacking(chatId, fromName, pending.product_id, bags, (allProducts ?? []) as Product[]);
+              return new Response("ok");
+            }
+          } else {
+            // Stale selection — drop it and treat the number as a fresh report.
+            await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
+          }
         }
+      }
 
-        // Accept a bare number, optionally followed by "שקיות"/"שקית".
-        const qtyMatch = text.match(/^(\d+)\s*(?:שקיות|שקית|שק׳|שק')?$/);
-        if (!qtyMatch) {
-          await send(chatId, "שלחו <b>מספר שקיות בלבד</b> (לדוגמה: <code>20</code>), או /pack לבחירה מחדש.");
-          return new Response("ok");
-        }
-
-        const bags = parseInt(qtyMatch[1], 10);
-        if (bags <= 0) {
-          await send(chatId, "שלחו מספר גדול מאפס 🙂");
-          return new Response("ok");
-        }
-
-        const { data: allProducts } = await supabase
-          .from("products")
-          .select("*")
-          .eq("user_id", USER_ID);
-
-        // Selection consumed — clear it before recording so a duplicate number
-        // can't double-count.
-        await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
-        await handlePacking(chatId, fromName, pending.product_id, bags, (allProducts ?? []) as Product[]);
+      // New packing report → pull the bag count out of the text (if present) and
+      // show the product list. Trigger on a packing word or any number.
+      const numMatch = text.match(/(\d+)/);
+      const looksLikePacking = /ארז|שקי|שק׳|שק'/.test(text) || !!numMatch;
+      if (looksLikePacking) {
+        const qty = numMatch ? parseInt(numMatch[1], 10) : null;
+        await handlePackMenu(chatId, qty);
         return new Response("ok");
       }
 
-      // No pending selection → guide them to the button flow.
+      // Anything else → show how to report.
       await send(chatId,
-        `כדי לרשום אריזה לחצו /pack ובחרו מוצר מהרשימה 👇\n\n` +
+        `כדי לרשום אריזה כתבו לדוגמה:\n<code>ארזתי 35 שקיות דיי בנסה</code>\n` +
+        `ואז בחרו את המוצר מהרשימה 👇\n\n` +
         `לצפייה במלאי: /stock   ☕ /shop`,
       );
     }
