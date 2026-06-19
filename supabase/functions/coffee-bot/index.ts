@@ -84,11 +84,15 @@ async function send(chatId: string | number, text: string, inline?: InlineKeyboa
   });
 }
 
-async function editMessage(chatId: string | number, messageId: number, text: string) {
+async function editMessage(chatId: string | number, messageId: number, text: string, inline?: InlineKeyboard) {
+  const payload: Record<string, unknown> = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
+  // Always set reply_markup: when omitted, pass an empty markup so editing a
+  // message that had buttons removes them (prevents tapping a stale keyboard).
+  payload.reply_markup = inline ?? { inline_keyboard: [] };
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -98,6 +102,18 @@ async function answerCallback(callbackId: string, text?: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ callback_query_id: callbackId, text: text ?? "" }),
   });
+}
+
+// Yes/cancel buttons shown before a packing is recorded, so a wrong tap can be
+// caught. callback_data carries the product + bag count so the confirm tap has
+// everything it needs.
+function confirmKeyboard(productId: number, qty: number): InlineKeyboard {
+  return {
+    inline_keyboard: [[
+      { text: "✅ כן, רשום", callback_data: `confirm:${productId}:${qty}` },
+      { text: "❌ ביטול",    callback_data: "pack:cancel" },
+    ]],
+  };
 }
 
 // How long a tapped-product selection stays valid before the typed number is
@@ -264,13 +280,13 @@ async function handlePackSelect(
   }
 
   if (qty != null && qty > 0) {
-    // Quantity already known → record immediately. Edit the menu to drop the
-    // buttons first so a double-tap can't double-count.
-    await answerCallback(callbackId, `${product.name} ✓`);
-    await editMessage(chatId, messageId, `📦 <b>${product.name} ${product.size}g</b> × ${qty} שקיות`);
-    await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", telegramId);
-    const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
-    await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[]);
+    // Quantity already known → ask for confirmation before recording, so a
+    // wrong-product tap can be caught. The confirm button carries id + qty.
+    await answerCallback(callbackId, product.name);
+    await editMessage(chatId, messageId,
+      `❓ לרשום <b>${qty} שקיות ${product.name} ${product.size}g</b>?`,
+      confirmKeyboard(productId, qty),
+    );
     return;
   }
 
@@ -287,6 +303,19 @@ async function handlePackSelect(
   await editMessage(chatId, messageId,
     `📦 <b>${product.name} ${product.size}g</b>\n\nכמה שקיות ארזת? שלחו מספר בלבד (לדוגמה: <code>20</code>)`,
   );
+}
+
+// Confirmation tapped (✅ כן) → now actually record the packing.
+async function handlePackConfirm(
+  chatId: string, telegramId: string, fromName: string,
+  productId: number, qty: number, messageId: number, callbackId: string,
+) {
+  await answerCallback(callbackId, "נרשם ✓");
+  // Drop the buttons so it can't be confirmed twice.
+  await editMessage(chatId, messageId, "✍️ רושם את האריזה...");
+  await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", telegramId);
+  const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
+  await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[]);
 }
 
 async function handlePacking(chatId: string, fromName: string, productId: number, bagsCount: number, allProducts: Product[]) {
@@ -514,15 +543,27 @@ serve(async (req) => {
         return new Response("ok");
       }
 
-      // callback_data is pack:<id> or pack:<id>:<qty>
-      const m = data.match(/^pack:(\d+)(?::(\d+))?$/);
-      if (m && cbTelegramId && cbMessageId) {
-        // Resolve the employee's Hebrew name for the packing log.
-        let cbFromName = cb.from?.first_name ?? "עובד";
+      // Resolve the employee's Hebrew name for the packing log / confirmation.
+      let cbFromName = cb.from?.first_name ?? "עובד";
+      if (cbTelegramId) {
         const { data: cbEmp } = await supabase
           .from("employees").select("name").eq("telegram_id", cbTelegramId).maybeSingle();
         if (cbEmp?.name) cbFromName = cbEmp.name;
+      }
 
+      // ✅ confirm:<id>:<qty> → record the packing.
+      const c = data.match(/^confirm:(\d+):(\d+)$/);
+      if (c && cbTelegramId && cbMessageId) {
+        await handlePackConfirm(
+          cbChatId, String(cbTelegramId), cbFromName,
+          parseInt(c[1], 10), parseInt(c[2], 10), cbMessageId, cb.id,
+        );
+        return new Response("ok");
+      }
+
+      // pack:<id> or pack:<id>:<qty> → product picked → confirm or ask count.
+      const m = data.match(/^pack:(\d+)(?::(\d+))?$/);
+      if (m && cbTelegramId && cbMessageId) {
         const productId = parseInt(m[1], 10);
         const qty       = m[2] ? parseInt(m[2], 10) : null;
         await handlePackSelect(cbChatId, String(cbTelegramId), cbFromName, productId, qty, cbMessageId, cb.id);
@@ -624,10 +665,13 @@ serve(async (req) => {
           if (ageMs <= PENDING_TTL_SECONDS * 1000) {
             const bags = parseInt(bareQty[1], 10);
             if (bags > 0) {
-              const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
-              // Clear before recording so a duplicate number can't double-count.
-              await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
-              await handlePacking(chatId, fromName, pending.product_id, bags, (allProducts ?? []) as Product[]);
+              // Ask for confirmation before recording (same gate as the tap flow).
+              const { data: prod } = await supabase
+                .from("products").select("name, size").eq("user_id", USER_ID).eq("id", pending.product_id).maybeSingle();
+              await send(chatId,
+                `❓ לרשום <b>${bags} שקיות ${prod?.name ?? ""} ${prod?.size ?? ""}g</b>?`,
+                confirmKeyboard(pending.product_id, bags),
+              );
               return new Response("ok");
             }
           } else {
