@@ -64,7 +64,7 @@ const EXPECTED_CRONS: Array<{
 
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
-  category: 'cron_silent' | 'cron_failed' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors'
+  category: 'cron_silent' | 'cron_failed' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry'
   message:  string
   context?: Record<string, unknown>
 }
@@ -251,6 +251,45 @@ serve(async (req) => {
     }
   } catch (e: any) {
     console.warn(`[health-watchdog] api-error scan threw: ${e?.message ?? e}`)
+  }
+
+  // ── 5b. OAuth token expiry — warn BEFORE tokens lapse ────────────────
+  // The api_errors scan (section 5) is REACTIVE: it only fires once a token is
+  // already dead and tasks are failing. This proactive check reads
+  // oauth_tokens.expires_at and warns ~7 days ahead so the admin can reconnect
+  // on their own schedule instead of via an outage. Meta's long-lived USER
+  // token is the usual offender (~60-day TTL, no auto-refresh) — the exact
+  // failure that bled silently for 2+ weeks before being caught.
+  try {
+    const { data: tokens } = await supabase
+      .from('oauth_tokens')
+      .select('platform, expires_at')
+      .not('expires_at', 'is', null)
+    const now = Date.now()
+    const WARN_WINDOW_MS = 7 * 24 * 3600 * 1000
+    for (const t of (tokens ?? []) as Array<{ platform: string; expires_at: string }>) {
+      const expMs = new Date(t.expires_at).getTime()
+      if (!Number.isFinite(expMs)) continue
+      const daysLeft = Math.floor((expMs - now) / 86_400_000)
+      const when = t.expires_at.slice(0, 10)
+      if (expMs <= now) {
+        findings.push({
+          severity: 'ERROR',
+          category: 'token_expiry',
+          message:  `${t.platform} OAuth token EXPIRED ${Math.abs(daysLeft)}d ago (${when}) — reconnect via Settings to restore ${t.platform} publishing/sync`,
+          context:  { platform: t.platform, expires_at: t.expires_at, days_left: daysLeft },
+        })
+      } else if (expMs - now <= WARN_WINDOW_MS) {
+        findings.push({
+          severity: 'WARN',
+          category: 'token_expiry',
+          message:  `${t.platform} OAuth token expires in ${daysLeft}d (${when}) — reconnect soon via Settings to avoid an outage`,
+          context:  { platform: t.platform, expires_at: t.expires_at, days_left: daysLeft },
+        })
+      }
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] token-expiry check threw: ${e?.message ?? e}`)
   }
 
   // ── 6. Emit findings → ONE consolidated dynamic_experiment task ──────
