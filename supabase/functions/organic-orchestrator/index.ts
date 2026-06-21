@@ -350,6 +350,60 @@ serve(async (req: Request): Promise<Response> => {
       `tasks=${emittedTasks.length}`,
     )
 
+    // ── 6a-pre. Blog same-topic dedup (anti-cannibalization backstop) ─────
+    // SEO articles must never cannibalize: two pages on the same keyword split
+    // ranking signal and both lose. The strategist is told blog is one-article-
+    // per-topic, but enforce it deterministically here too. Drop any
+    // text_generation whose normalized keyword collides with (a) an earlier
+    // text_generation in THIS plan, or (b) any blog task from the last 14d
+    // (pending/completed/failed — i.e. existing + in-flight drafts). When a blog
+    // task is dropped, cascade-drop tasks that depend on it (e.g. its paired
+    // banner visual) and remap the positional parent/depends indices so the
+    // wiring below stays correct. Non-text tasks are never dropped here.
+    const normKw = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+    const existingBlogKeywords = new Set<string>()
+    for (const t of recentTasks) {
+      if (t.task_type !== 'text_generation') continue
+      const kw = normKw((t.brief_data as { keyword?: unknown } | null)?.keyword)
+      if (kw) existingBlogKeywords.add(kw)
+    }
+    const droppedIdx = new Set<number>()
+    const droppedKws: string[] = []
+    const seenKw = new Set<string>()
+    emittedTasks.forEach((et, i) => {
+      if (et.task_type !== 'text_generation') return
+      const kw = normKw((et.brief_data as { keyword?: unknown } | null)?.keyword)
+      if (!kw) return                                   // no keyword to dedup on
+      if (seenKw.has(kw) || existingBlogKeywords.has(kw)) { droppedIdx.add(i); droppedKws.push(kw); return }
+      seenKw.add(kw)
+    })
+    // Cascade: drop anything whose parent/dependency was dropped (transitively).
+    for (let changed = true; changed; ) {
+      changed = false
+      emittedTasks.forEach((et, i) => {
+        if (droppedIdx.has(i)) return
+        const p = et.parent_task_index, d = et.depends_on_index
+        if ((typeof p === 'number' && droppedIdx.has(p)) || (typeof d === 'number' && droppedIdx.has(d))) {
+          droppedIdx.add(i); changed = true
+        }
+      })
+    }
+    // Build kept list + old→new index map, then remap positional references so
+    // parent_task_index / depends_on_index still point at the right rows.
+    const oldToNew = new Map<number, number>()
+    let nextKeptIdx = 0
+    emittedTasks.forEach((_, i) => { if (!droppedIdx.has(i)) oldToNew.set(i, nextKeptIdx++) })
+    const planTasks = emittedTasks
+      .filter((_, i) => !droppedIdx.has(i))
+      .map(et => ({
+        ...et,
+        parent_task_index: typeof et.parent_task_index === 'number' ? oldToNew.get(et.parent_task_index) : et.parent_task_index,
+        depends_on_index:  typeof et.depends_on_index  === 'number' ? oldToNew.get(et.depends_on_index)  : et.depends_on_index,
+      }))
+    if (droppedIdx.size > 0) {
+      console.warn(`[organic-orchestrator] anti-cannibalization: dropped ${droppedIdx.size} task(s) — duplicate blog keyword(s): ${[...new Set(droppedKws)].join(' | ')} (plus cascaded dependents)`)
+    }
+
     // ── 6a. Materialize experiments. Each experiment_group string from
     // the strategist becomes one seo_experiments row; the row's UUID is
     // then stamped onto every task that referenced the same group.
@@ -382,8 +436,8 @@ serve(async (req: Request): Promise<Response> => {
     // depends_on so we get UUIDs back. Second pass updates the rows
     // that have parent_task_index / depends_on_index references.
     let insertedRows: SeoTaskRow[] = []
-    if (emittedTasks.length > 0) {
-      const newTasks: NewSeoTask[] = emittedTasks.map(et => {
+    if (planTasks.length > 0) {
+      const newTasks: NewSeoTask[] = planTasks.map(et => {
         const base: NewSeoTask = {
           task_type:           et.task_type,
           task_subtype:        et.task_subtype ?? null,
@@ -413,8 +467,8 @@ serve(async (req: Request): Promise<Response> => {
       // Wire parent_task_id + depends_on from indexes → UUIDs.
       // Each emittedTask[i] corresponds to insertedRows[i].
       const updates: Array<{ id: string; patch: Record<string, unknown> }> = []
-      for (let i = 0; i < emittedTasks.length; i++) {
-        const et = emittedTasks[i]
+      for (let i = 0; i < planTasks.length; i++) {
+        const et = planTasks[i]
         const row = insertedRows[i]
         if (!row) continue
         const patch: Record<string, unknown> = {}
@@ -446,15 +500,15 @@ serve(async (req: Request): Promise<Response> => {
     // ── Per-task emit log (BUG3 observability) — record what the strategist
     // PLANNED and whether each task actually inserted, so a run that produced
     // no feed posts is explicit in the logs + the admin briefing rather than a
-    // silent zero. emittedTasks[i] ↔ insertedRows[i].
-    const emitLog = emittedTasks.map((et, i) => ({
+    // silent zero. planTasks[i] ↔ insertedRows[i] (after duplicate-topic drop).
+    const emitLog = planTasks.map((et, i) => ({
       task_type: et.task_type,
       outcome:   (insertedRows[i] ? 'inserted' : 'dropped') as 'inserted' | 'dropped',
       task_id:   insertedRows[i]?.id ?? null,
     }))
-    console.log(`[organic-orchestrator] task emit log (${emitLog.length} planned): ${JSON.stringify(emitLog)}`)
-    if (emittedTasks.length === 0) {
-      console.log('[organic-orchestrator] NOTE: strategist emitted 0 content tasks this run (no visual_generation / instagram_post / text_generation planned).')
+    console.log(`[organic-orchestrator] task emit log (${emitLog.length} inserted of ${emittedTasks.length} planned, ${droppedIdx.size} dropped as duplicates): ${JSON.stringify(emitLog)}`)
+    if (planTasks.length === 0) {
+      console.log('[organic-orchestrator] NOTE: 0 content tasks to insert this run (strategist emitted none, or all were dropped as duplicate-topic).')
     }
 
     // ── 6b-FAQ. Identify ranking blog articles missing FAQ → queue proposals ─
