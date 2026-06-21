@@ -27,7 +27,13 @@
 INSERT INTO agent_missions (objective, status, state, max_steps, created_by)
 SELECT
   'Keep Minuto''s Instagram topped up to a daily cadence of 1 story + 3-4 feed posts per UTC day. Each day, queue a varied mix grounded in real search demand and the Minuto coffee catalog; never repeat the same product/angle day over day. Story + feed each go through the normal visual->instagram_post pipeline and queue for review (never publish live). This is a standing cadence with no end.',
-  'active',
+  -- Seeded PAUSED on purpose. The cadence over-generated visual_generation
+  -- tasks in its first prod run (the daily cap is enforced on instagram_post
+  -- count, but the mission queues uncapped visuals → ~370 renders/day). Do NOT
+  -- set this to 'active' until the visual-generation cap is fixed in
+  -- mission-worker. Activate with:
+  --   UPDATE agent_missions SET status='active' WHERE state->>'kind'='daily_ig_cadence';
+  'paused',
   '{"kind": "daily_ig_cadence", "progress_notes": [], "queued_task_ids": []}'::jsonb,
   2000000000,   -- effectively unbounded; the worker also never finishes this kind on the step cap
   'system'
