@@ -67,6 +67,43 @@ const IG_FEED_MAX_PER_DAY  = 1   // never queue >1 feed in a day — spread the 
 // re-queues and is purely a runaway brake. Counts ALL IG visuals (every status,
 // incl. worker-spawned brief-regens) created this UTC day. Resets UTC midnight.
 const IG_VISUAL_DAILY_CAP  = 4
+// No-repeat window for the FEATURED COFFEE: the mission must not feature the same
+// bean on Instagram twice within this many days, or posts cannibalize each other
+// (e.g. two Sweet Leona feed posts in one day). The catalog has ~16 coffees, so a
+// 7-day window (~3-5 posts) always leaves plenty to rotate through.
+const IG_PRODUCT_REPEAT_DAYS = 7
+
+// Normalize a product_name for dedup comparison (the mission copies exact catalog
+// names, so trim + lowercase is enough for an exact match).
+const normProduct = (s: string) => s.trim().toLowerCase()
+
+// Coffees featured on Instagram within the window — read off the product_name of
+// ig_post visuals (set for bag_hero AND product-centric no_bag scenes). Lets the
+// mission avoid re-featuring a bean, and backs the hard queue-time dedup. Guarded;
+// a failure returns [] (degrades to "no recent history" — never blocks the step).
+async function fetchRecentlyFeaturedIgProducts(
+  supabase: ReturnType<typeof createSupabase>, sinceIso: string,
+): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('seo_tasks')
+      .select('brief_data')
+      .eq('task_type', 'visual_generation')
+      .gte('created_at', sinceIso)
+      .limit(400)
+    const names = new Set<string>()
+    for (const v of (data ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
+      const b = v.brief_data as { destination?: unknown; product_name?: unknown } | null
+      if (String(b?.destination ?? '').toLowerCase() !== 'ig_post') continue
+      const pn = String(b?.product_name ?? '').trim()
+      if (pn) names.add(pn)
+    }
+    return [...names]
+  } catch (e: any) {
+    console.warn(`[mission-worker] recent-IG-products fetch failed: ${e?.message ?? e}`)
+    return []
+  }
+}
 
 // Compute the cadence state: today's story count (daily quota), this week's
 // feed count (weekly quota), and today's IG render volume (for the runaway
@@ -296,11 +333,16 @@ serve(async (req) => {
   // and the last 90d of posts (so it doesn't re-write a topic we just covered).
   // All guarded — a single source failing degrades the block, never the step.
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
-  const [catalog, gscKeywords, recentPosts] = await Promise.all([
+  const igProductsSince = new Date(Date.now() - IG_PRODUCT_REPEAT_DAYS * 24 * 3600 * 1000).toISOString()
+  const [catalog, gscKeywords, recentPosts, recentIgProducts] = await Promise.all([
     fetchMinutoCoffeeCatalog(supabase).catch((e: any) => { console.warn(`[mission-worker] catalog fetch failed: ${e?.message ?? e}`); return [] as WooProduct[] }),
     fetchTopKeywords(supabase, 30, 25).catch((e: any) => { console.warn(`[mission-worker] GSC fetch failed: ${e?.message ?? e}`); return [] }),
     fetchRecentBlogPosts(supabase, ninetyDaysAgo, 40).catch((e: any) => { console.warn(`[mission-worker] blog fetch failed: ${e?.message ?? e}`); return [] }),
+    fetchRecentlyFeaturedIgProducts(supabase, igProductsSince),
   ])
+  // Set of recently-featured coffees (normalized) backing the hard queue-time
+  // dedup below; the prompt block keeps the model from picking them in the first place.
+  const recentIgProductSet = new Set(recentIgProducts.map(normProduct))
 
   const catalogBlock = catalog.length === 0
     ? '(catalog unavailable this step)'
@@ -311,6 +353,9 @@ serve(async (req) => {
   const recentBlock = recentPosts.length === 0
     ? '(no posts published in the last 90 days)'
     : recentPosts.slice(0, 30).map(p => `- ${p.title}`).join('\n')
+  const recentIgBlock = recentIgProducts.length === 0
+    ? `(no coffees featured on IG in the last ${IG_PRODUCT_REPEAT_DAYS} days)`
+    : recentIgProducts.map(p => `- ${p}`).join('\n')
 
   // ── 3. ONE reasoning step ───────────────────────────────────────────
   const system = buildMissionSystemPrompt(inflight, isDailyIgCadence)
@@ -323,6 +368,7 @@ serve(async (req) => {
     `=== MINUTO COFFEE LINEUP (the ONLY products to feature — copy an EXACT name into products_to_mention; products_to_mention[0] becomes the article's banner hero bag. Never invent a name or feature anything not on this list) ===\n${catalogBlock}\n\n` +
     `=== SEARCH DEMAND — top GSC keywords, last 30d (what real people search; ground topic choices here) ===\n${gscBlock}\n\n` +
     `=== ALREADY PUBLISHED — blog posts, last 90d (do NOT re-write a topic we just covered) ===\n${recentBlock}\n\n` +
+    `=== FEATURED ON INSTAGRAM — last ${IG_PRODUCT_REPEAT_DAYS}d (do NOT feature any of these coffees again; pick a DIFFERENT bean from the lineup so IG posts don't cannibalize each other) ===\n${recentIgBlock}\n\n` +
     `Decide the SINGLE next move toward the objective. If sub-tasks are still in-flight and you have nothing independent to do, note_progress and wait. If the objective is met, complete_mission.`
 
   let res
@@ -356,6 +402,9 @@ serve(async (req) => {
   // IG-destined visuals queued in THIS step — folded into the daily-cap check
   // alongside cadence.igVisualsToday so a single step can't blow past the cap.
   let igVisualsQueuedThisStep = 0
+  // Coffees featured by an IG visual queued THIS step — folded into the no-repeat
+  // dedup so one step can't queue the same bean twice.
+  const igProductsQueuedThisStep = new Set<string>()
 
   for (const call of toolUses) {
     const input = (call.input ?? {}) as Record<string, unknown>
@@ -381,12 +430,32 @@ serve(async (req) => {
       // hundreds/day. Block any new IG-destined visual once the day's ceiling
       // is reached; the mission can still queue instagram_posts for completed
       // visuals. Counts visuals already created today + any queued this step.
-      if (isDailyIgCadence && task_type === 'visual_generation') {
+      if (task_type === 'visual_generation') {
         const dest = String((rawBrief as { destination?: unknown }).destination ?? '').toLowerCase()
-        const alreadyToday = cadence?.igVisualsToday ?? 0
-        if (dest === 'ig_post' && alreadyToday + igVisualsQueuedThisStep >= IG_VISUAL_DAILY_CAP) {
-          newNotes.push(`(held off queuing IG visual — daily cap of ${IG_VISUAL_DAILY_CAP} IG visuals reached (${alreadyToday + igVisualsQueuedThisStep}). Queue instagram_post for a COMPLETED visual instead, or wait; the cap resets at UTC midnight.)`)
-          continue
+        if (dest === 'ig_post') {
+          // (a) Hard daily render cap (cadence only). The throttle above only
+          // counts still-in-flight sub-tasks, so a mission queuing visuals that
+          // COMPLETE (then drop out of in-flight) could queue hundreds/day.
+          if (isDailyIgCadence) {
+            const alreadyToday = cadence?.igVisualsToday ?? 0
+            if (alreadyToday + igVisualsQueuedThisStep >= IG_VISUAL_DAILY_CAP) {
+              newNotes.push(`(held off queuing IG visual — daily cap of ${IG_VISUAL_DAILY_CAP} IG visuals reached (${alreadyToday + igVisualsQueuedThisStep}). Queue instagram_post for a COMPLETED visual instead, or wait; the cap resets at UTC midnight.)`)
+              continue
+            }
+          }
+          // (b) No-repeat dedup: don't feature a coffee already featured on IG
+          // within IG_PRODUCT_REPEAT_DAYS, or this step — prevents cannibalizing
+          // (e.g. two Sweet Leona feed posts in a day). Only applies when a
+          // product is named; bag-free lifestyle scenes (no product_name) pass.
+          const productName = String((rawBrief as { product_name?: unknown }).product_name ?? '').trim()
+          if (productName) {
+            const key = normProduct(productName)
+            if (recentIgProductSet.has(key) || igProductsQueuedThisStep.has(key)) {
+              newNotes.push(`(did NOT queue IG visual for "${productName}" — that coffee was already featured on Instagram within the last ${IG_PRODUCT_REPEAT_DAYS} days. Pick a DIFFERENT bean from the lineup so posts don't cannibalize.)`)
+              continue
+            }
+            igProductsQueuedThisStep.add(key)
+          }
         }
       }
       // parent_task_id: a TOP-LEVEL queue_subtask arg, but the model often
