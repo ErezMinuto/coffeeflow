@@ -48,52 +48,89 @@ const MAX_INFLIGHT = 3
 // worker feeds it today's progress so it paces itself instead of front-loading
 // the whole day. Everything still flows through queue_for_review — this only
 // drafts posts into the review queue, it never publishes.
-const IG_CADENCE_KIND   = 'daily_ig_cadence'
-const IG_STORY_TARGET   = 1   // 1 story / day
-const IG_FEED_MIN       = 3   // 3–4 feed posts / day
-const IG_FEED_MAX       = 4
+// state.kind value (stored on the mission row — do NOT change the string).
+const IG_CADENCE_KIND      = 'daily_ig_cadence'
+// Cadence targets. STORY is a DAILY quota; FEED is a WEEKLY quota spread across
+// the week (NOT per day — historically these were mis-encoded as per-day, which
+// is what made the cadence queue 3–4 feeds every single day).
+const IG_STORY_PER_DAY     = 1   // 1 story / day        (resets UTC midnight)
+const IG_FEED_PER_WEEK_MIN = 3   // 3–4 feed posts / WEEK (resets Sun 00:00 UTC)
+const IG_FEED_PER_WEEK_MAX = 4
+const IG_FEED_MAX_PER_DAY  = 1   // never queue >1 feed in a day — spread the week out
+// HARD daily ceiling on IG-destined visual renders, independent of whether
+// posts ever commit. The cadence's pacing is derived from committed
+// instagram_post tasks, but the mission's actual per-tick action is queuing
+// VISUALS — previously uncapped. When IG posts never commit (e.g. visuals stay
+// flagged for review) the pacing signal never advanced and the mission queued
+// ~2 visuals/tick × ~144 ticks/day = hundreds of renders. A healthy day needs
+// at most 1 story + 1 feed = 2 renders; this 4 leaves headroom for a couple of
+// re-queues and is purely a runaway brake. Counts ALL IG visuals (every status,
+// incl. worker-spawned brief-regens) created this UTC day. Resets UTC midnight.
+const IG_VISUAL_DAILY_CAP  = 4
 
-// Count today's (UTC) IG output so the standing cadence mission knows how much
-// is left to queue. Counts committed instagram_post tasks (any status — a
-// queued post counts toward the day even while it renders) split by story vs
-// feed, plus IG-destined visuals still in flight (pipelines underway that will
-// become posts) so we don't double-queue. All guarded; a query failure yields
-// zeros (the mission then behaves as if nothing's been done yet — safe, since
-// MAX_INFLIGHT still throttles).
-async function computeDailyIgCadence(supabase: ReturnType<typeof createSupabase>) {
-  const start = new Date(); start.setUTCHours(0, 0, 0, 0)
-  const sinceIso = start.toISOString()
-  let stories = 0, feeds = 0, igVisualsInFlight = 0
+// Compute the cadence state: today's story count (daily quota), this week's
+// feed count (weekly quota), and today's IG render volume (for the runaway
+// brake). Committed instagram_post tasks count toward quota at any status (a
+// queued post counts even while it renders). All guarded; a query failure
+// yields zeros (mission behaves as if nothing's done yet — safe, the daily
+// render cap + MAX_INFLIGHT still throttle). The week resets Sunday 00:00 UTC.
+async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
+  const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0)
+  const dayIso = dayStart.toISOString()
+  const dayIndex = dayStart.getUTCDay()                 // 0 = Sun … 6 = Sat
+  const weekStart = new Date(dayStart); weekStart.setUTCDate(weekStart.getUTCDate() - dayIndex)
+  const weekIso = weekStart.toISOString()
+  let storiesToday = 0, feedsToday = 0, feedsThisWeek = 0, igVisualsToday = 0, igVisualsInFlight = 0
   try {
+    // instagram_post tasks since the start of THIS week (covers today too).
     const { data: igTasks } = await supabase
       .from('seo_tasks')
-      .select('brief_data')
+      .select('brief_data, created_at')
       .eq('task_type', 'instagram_post')
-      .gte('created_at', sinceIso)
+      .gte('created_at', weekIso)
       .limit(200)
-    for (const t of (igTasks ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
+    for (const t of (igTasks ?? []) as Array<{ brief_data: Record<string, unknown> | null; created_at: string }>) {
       const mt = String((t.brief_data as { media_type?: unknown } | null)?.media_type ?? '').toLowerCase()
-      if (mt === 'story') stories++; else feeds++
+      const isToday = t.created_at >= dayIso
+      if (mt === 'story') { if (isToday) storiesToday++ }
+      else { feedsThisWeek++; if (isToday) feedsToday++ }
     }
+    // ALL IG-destined visuals created today (every status, incl. completed +
+    // worker-spawned brief-regens) so the daily render cap sees the full
+    // volume; split out the still-in-flight subset for pacing context.
     const { data: vis } = await supabase
       .from('seo_tasks')
-      .select('brief_data')
+      .select('brief_data, status')
       .eq('task_type', 'visual_generation')
-      .in('status', ['pending', 'processing'])
-      .gte('created_at', sinceIso)
-      .limit(200)
-    for (const v of (vis ?? []) as Array<{ brief_data: Record<string, unknown> | null }>) {
-      if (String((v.brief_data as { destination?: unknown } | null)?.destination ?? '').toLowerCase() === 'ig_post') igVisualsInFlight++
+      .gte('created_at', dayIso)
+      .limit(400)
+    for (const v of (vis ?? []) as Array<{ brief_data: Record<string, unknown> | null; status: string }>) {
+      if (String((v.brief_data as { destination?: unknown } | null)?.destination ?? '').toLowerCase() !== 'ig_post') continue
+      igVisualsToday++
+      if (v.status === 'pending' || v.status === 'processing') igVisualsInFlight++
     }
   } catch (e: any) {
-    console.warn(`[mission-worker] daily-IG-cadence count failed: ${e?.message ?? e}`)
+    console.warn(`[mission-worker] IG-cadence count failed: ${e?.message ?? e}`)
   }
-  const storyRemaining   = Math.max(0, IG_STORY_TARGET - stories)
-  const feedRemainingMin = Math.max(0, IG_FEED_MIN - feeds)
-  const feedRemainingMax = Math.max(0, IG_FEED_MAX - feeds)
-  // Day's minimum is met once the story + the 3-post feed floor are committed.
-  const minMet = stories >= IG_STORY_TARGET && feeds >= IG_FEED_MIN
-  return { stories, feeds, igVisualsInFlight, storyRemaining, feedRemainingMin, feedRemainingMax, minMet }
+  const storyRemainingToday  = Math.max(0, IG_STORY_PER_DAY - storiesToday)
+  const feedRemainingWeekMin = Math.max(0, IG_FEED_PER_WEEK_MIN - feedsThisWeek)
+  const feedRemainingWeekMax = Math.max(0, IG_FEED_PER_WEEK_MAX - feedsThisWeek)
+  // Spread the week's feeds with a linear pace: by the end of day N (1-indexed
+  // within the Sun-started week) we want ceil(min × N/7) feeds out. A feed is
+  // "due today" only if we're behind that pace AND haven't queued one today
+  // (≤1 feed/day). Yields ~Sun/Tue/Thu posting, self-catches-up if the mission
+  // was idle, and never front-loads the week.
+  const pacedFeedTarget = Math.ceil(IG_FEED_PER_WEEK_MIN * (dayIndex + 1) / 7)
+  const feedDueToday = feedsThisWeek < pacedFeedTarget && feedsToday < IG_FEED_MAX_PER_DAY
+  // Today's cadence is satisfied when the story is queued and no feed is due.
+  const dayQuotaMet = storyRemainingToday === 0 && !feedDueToday
+  // Hard ceiling on render volume, independent of whether posts ever commit.
+  const visualCapHit = igVisualsToday >= IG_VISUAL_DAILY_CAP
+  return {
+    storiesToday, feedsToday, feedsThisWeek, igVisualsToday, igVisualsInFlight,
+    storyRemainingToday, feedRemainingWeekMin, feedRemainingWeekMax,
+    pacedFeedTarget, feedDueToday, dayQuotaMet, visualCapHit,
+  }
 }
 
 const TOOLS: ToolDefinition[] = [
@@ -205,17 +242,24 @@ serve(async (req) => {
     }).join('\n')
   }
 
-  // ── 2.4 Daily IG cadence — compute today's progress + idle short-circuit ──
-  // For the standing cadence mission, fetch how much IG content already went
-  // out today so we can (a) feed the LLM an explicit "still needed" target and
-  // (b) skip the Claude reasoning step entirely on the many ticks where the
-  // day's minimum is already met and nothing is in-flight — otherwise this
-  // mission would burn ~144 idle Claude calls/day doing nothing.
+  // ── 2.4 IG cadence — compute progress + idle short-circuit ──────────────
+  // For the standing cadence mission, compute today's story progress + this
+  // week's feed progress so we can (a) feed the LLM an explicit "still needed"
+  // target and (b) skip the Claude reasoning step entirely on the many ticks
+  // where today's cadence is already satisfied (or the daily render cap is hit)
+  // and nothing is in-flight — otherwise this mission burns ~144 Claude
+  // calls/day doing nothing.
   let igCadenceBlock = ''
+  let cadence: Awaited<ReturnType<typeof computeIgCadence>> | null = null
   if (isDailyIgCadence) {
-    const c = await computeDailyIgCadence(supabase)
-    if (c.minMet && inflight === 0) {
-      // Day's quota satisfied and nothing pending — sleep this tick cheaply.
+    const c = await computeIgCadence(supabase)
+    cadence = c
+    // Cheap idle short-circuit: skip the Claude call entirely when nothing is
+    // in-flight AND either today's cadence is met OR the hard render cap is hit
+    // (the latter stops the runaway when posts never commit — no amount of
+    // additional reasoning should queue more renders today).
+    if ((c.dayQuotaMet || c.visualCapHit) && inflight === 0) {
+      const why = c.dayQuotaMet ? "today's cadence met" : `render cap hit (${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP})`
       await supabase.from('agent_missions').update({
         steps_taken:  mission.steps_taken + 1,
         last_step_at: new Date().toISOString(),
@@ -223,15 +267,22 @@ serve(async (req) => {
         locked_until: null,
         worker_id:    null,
       }).eq('id', mission.id)
-      console.log(`[mission-worker] ${workerId} daily-IG-cadence quota met (${c.stories} story / ${c.feeds} feed) — idle tick, no Claude call`)
+      console.log(`[mission-worker] ${workerId} IG-cadence ${why} (story ${c.storiesToday}/${IG_STORY_PER_DAY} today, feed ${c.feedsThisWeek}/${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} wk, ${c.igVisualsToday} renders) — idle tick, no Claude call`)
       return json({ processed: 1, worker_id: workerId, mission_id: mission.id, ok: true, idle: true, cadence: c })
     }
+    const capLine = c.visualCapHit
+      ? `⚠ DAILY RENDER CAP REACHED (${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP} IG visuals queued today) — do NOT queue any more visual_generation today. Only queue instagram_post for a COMPLETED visual, or note_progress and wait. Resets UTC midnight.\n`
+      : `IG renders today: ${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP} (daily render cap). Each post needs exactly ONE visual.\n`
+    const feedLine = c.feedDueToday
+      ? `1 feed post (the week is behind pace — ${c.feedsThisWeek}/${c.pacedFeedTarget} feeds due by today; weekly target ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX})`
+      : `NO feed post due today (feed quota is on pace — do NOT queue a feed; the week's feeds are spread across days)`
     igCadenceBlock =
-      `=== TODAY'S IG CADENCE (UTC day) — your STANDING daily quota ===\n` +
-      `Target: ${IG_STORY_TARGET} story + ${IG_FEED_MIN}-${IG_FEED_MAX} feed posts per day.\n` +
-      `Queued so far today: ${c.stories} story, ${c.feeds} feed${c.igVisualsInFlight > 0 ? ` (+${c.igVisualsInFlight} IG visual(s) still rendering)` : ''}.\n` +
-      `STILL NEEDED today: ${c.storyRemaining} story, ${c.feedRemainingMin}-${c.feedRemainingMax} feed.\n` +
-      `Pace yourself — queue the NEXT 1-2 pipelines now (a visual_generation with destination:"ig_post", then an instagram_post parented to it once that visual COMPLETES), then WAIT for them. Do NOT front-load the whole day. When the target is met, note_progress and wait; the count resets at the next UTC midnight.\n\n`
+      `=== IG CADENCE — your STANDING quota ===\n` +
+      `Target: ${IG_STORY_PER_DAY} story PER DAY + ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} feed posts PER WEEK (feeds spread across the week, max ${IG_FEED_MAX_PER_DAY}/day).\n` +
+      `Today so far: ${c.storiesToday} story, ${c.feedsToday} feed. This week so far: ${c.feedsThisWeek} feed${c.igVisualsInFlight > 0 ? ` (+${c.igVisualsInFlight} IG visual(s) still rendering)` : ''}.\n` +
+      `STILL NEEDED right now: ${c.storyRemainingToday} story today, ${feedLine}.\n` +
+      capLine +
+      `Queue ONLY what STILL NEEDED lists, then WAIT. A post is a TWO-STEP pipeline (visual_generation destination:"ig_post" → wait for COMPLETE → instagram_post parented to it). Never queue a feed when none is due, never more than ${IG_FEED_MAX_PER_DAY} feed/day. When nothing is needed, note_progress and wait.\n\n`
   }
 
   // ── 2.5 Grounding data — content choices must be research-led, not random ──
@@ -302,6 +353,9 @@ serve(async (req) => {
   const escalations: string[] = []
   let completed = false
   let completionSummary = ''
+  // IG-destined visuals queued in THIS step — folded into the daily-cap check
+  // alongside cadence.igVisualsToday so a single step can't blow past the cap.
+  let igVisualsQueuedThisStep = 0
 
   for (const call of toolUses) {
     const input = (call.input ?? {}) as Record<string, unknown>
@@ -321,6 +375,20 @@ serve(async (req) => {
       const rawBrief   = (input.brief_data ?? {}) as Record<string, unknown>
       const rationale  = String(input.rationale ?? '').trim()
       if (!task_type) continue
+      // HARD daily cap on IG visuals (cadence only). The throttle above only
+      // counts still-in-flight sub-tasks, so a mission that keeps queuing
+      // visuals which COMPLETE (then drop out of in-flight) could queue
+      // hundreds/day. Block any new IG-destined visual once the day's ceiling
+      // is reached; the mission can still queue instagram_posts for completed
+      // visuals. Counts visuals already created today + any queued this step.
+      if (isDailyIgCadence && task_type === 'visual_generation') {
+        const dest = String((rawBrief as { destination?: unknown }).destination ?? '').toLowerCase()
+        const alreadyToday = cadence?.igVisualsToday ?? 0
+        if (dest === 'ig_post' && alreadyToday + igVisualsQueuedThisStep >= IG_VISUAL_DAILY_CAP) {
+          newNotes.push(`(held off queuing IG visual — daily cap of ${IG_VISUAL_DAILY_CAP} IG visuals reached (${alreadyToday + igVisualsQueuedThisStep}). Queue instagram_post for a COMPLETED visual instead, or wait; the cap resets at UTC midnight.)`)
+          continue
+        }
+      }
       // parent_task_id: a TOP-LEVEL queue_subtask arg, but the model often
       // misplaces it INSIDE brief_data — promote it out (and strip it from the
       // brief). Without this the mission could NEVER queue a valid
@@ -359,6 +427,10 @@ serve(async (req) => {
         }])
         const textId = inserted[0]?.id
         if (textId) newTaskIds.push(textId)
+        if (textId && task_type === 'visual_generation' &&
+            String((norm.brief as { destination?: unknown }).destination ?? '').toLowerCase() === 'ig_post') {
+          igVisualsQueuedThisStep++
+        }
         if (textId && task_type === 'dynamic_experiment') {
           const what = rationale || String((norm.brief as Record<string, unknown>).description ?? '').trim() || 'needs your decision'
           escalations.push(what.slice(0, 300))
@@ -572,10 +644,10 @@ function buildBannerBrief(textBrief: Record<string, unknown>): Record<string, un
 function buildMissionSystemPrompt(inflight: number, isDailyIgCadence = false): string {
   const cadenceAddendum = isDailyIgCadence ? `
 
-⭐ THIS IS A STANDING DAILY IG CADENCE MISSION — special operating mode:
-- Your job is to keep Minuto's Instagram topped up to the daily target shown in the "TODAY'S IG CADENCE" block: ${IG_STORY_TARGET} story + ${IG_FEED_MIN}-${IG_FEED_MAX} feed posts every UTC day. The count resets at UTC midnight.
-- This mission NEVER completes. Do NOT call complete_mission — there is no "done"; it runs every day until the admin pauses it.
-- Each tick: look at "STILL NEEDED today". If 0 story and 0 feed remain, just note_progress and wait. Otherwise queue the next pipeline toward the remainder — and only the next 1-2, never the whole day at once (MAX_INFLIGHT throttles you anyway).
+⭐ THIS IS A STANDING IG CADENCE MISSION — special operating mode:
+- Your job is to keep Minuto's Instagram on cadence per the "IG CADENCE" block: ${IG_STORY_PER_DAY} story PER DAY plus ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} feed posts PER WEEK. Feed posts are SPREAD across the week (at most ${IG_FEED_MAX_PER_DAY}/day) — do NOT post 3-4 feeds in one day. The story count resets at UTC midnight; the feed count resets at the start of each week (Sunday).
+- This mission NEVER completes. Do NOT call complete_mission — there is no "done"; it runs until the admin pauses it.
+- Each tick: do EXACTLY what "STILL NEEDED right now" lists — nothing more. If it says 0 story and no feed due, just note_progress and wait. Crucially: if no feed is due today, do NOT queue a feed (the weekly quota is on pace). Queue at most the next 1-2 sub-tasks, never a day/week at once.
 - A post is a TWO-STEP pipeline: first queue a visual_generation (set brief.destination:"ig_post", choose render_mode bag_hero with an exact product_name when featuring a coffee, else no_bag for a lifestyle scene), WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts). Set media_type:"story" on exactly the story.
 - Vary it: don't post the same product/angle every day; ground each choice in the SEARCH DEMAND + CATALOG data below, same as any content task.
 - Everything still queues for review — you never publish. The admin approves what ships.` : ''

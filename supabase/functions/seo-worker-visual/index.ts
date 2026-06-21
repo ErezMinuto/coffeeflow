@@ -409,7 +409,15 @@ serve(async (req) => {
   // brief_regen_count + 1; recursion caps at MAX_BRIEF_REGENS.
   const currentRegenCount = ((task.brief_data as VisualGenerationBrief & { _brief_regen_count?: number })._brief_regen_count) ?? 0
   let regenQueuedTaskId: string | null = null
-  if (reviewRequired && currentRegenCount < MAX_BRIEF_REGENS) {
+  // Brief-regen spawns a FRESH visual_generation task. For blog_banner that's
+  // worthwhile (the banner auto-attaches, so a better brief ships unattended).
+  // For ig_post it is NOT: a review-flagged IG visual already stages for HITL
+  // review (vision-QA is advisory there, not a gate), so a human picks the best
+  // attempt — auto-respawning just multiplies renders. Combined with the daily
+  // IG cadence, each flagged visual used to fan out into 2 more, compounding the
+  // mission's per-tick queuing into hundreds of renders/day. Skip regen for IG.
+  const regenAllowed = destination !== 'ig_post'
+  if (reviewRequired && regenAllowed && currentRegenCount < MAX_BRIEF_REGENS) {
     try {
       const rewrittenBrief = await regenerateVisualBrief({
         originalBrief: brief,
@@ -440,6 +448,8 @@ serve(async (req) => {
       // Regen failed (Claude error etc.) — fall through to HITL as before.
       console.warn(`[seo-worker-visual] ${workerId} brief regen threw — falling back to HITL: ${e?.message ?? e}`)
     }
+  } else if (reviewRequired && !regenAllowed) {
+    console.log(`[seo-worker-visual] ${workerId} IG visual flagged for review — staging for HITL (no auto-regen for ig_post)`)
   } else if (reviewRequired && currentRegenCount >= MAX_BRIEF_REGENS) {
     console.warn(`[seo-worker-visual] ${workerId} brief-regen cap reached (${currentRegenCount}/${MAX_BRIEF_REGENS}) — HITL is the path forward`)
   }
