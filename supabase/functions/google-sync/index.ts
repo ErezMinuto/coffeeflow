@@ -147,7 +147,7 @@ serve(async (req) => {
     }).eq('platform', 'google')
 
     const customerId = Deno.env.get('GOOGLE_CUSTOMER_ID')!.replace(/-/g, '')
-    const apiUrl = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:search`
+    const apiUrl = `https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:search`
     const apiHeaders = {
       'Authorization':    `Bearer ${accessToken}`,
       'developer-token':  devToken,
@@ -218,8 +218,8 @@ serve(async (req) => {
             campaign.network_settings.target_partner_search_network,
             campaign.final_url_suffix,
             campaign.tracking_url_template,
-            campaign.start_date,
-            campaign.end_date,
+            campaign.start_date_time,
+            campaign.end_date_time,
             campaign_budget.amount_micros,
             campaign_budget.delivery_method
           FROM campaign
@@ -245,8 +245,8 @@ serve(async (req) => {
             budget_delivery_method:   b.deliveryMethod ?? null,
             final_url_suffix:         c.finalUrlSuffix ?? null,
             tracking_template:        c.trackingUrlTemplate ?? null,
-            start_date:               c.startDate ?? null,
-            end_date:                 c.endDate && c.endDate !== '2037-12-30' ? c.endDate : null,
+            start_date:               c.startDateTime ? String(c.startDateTime).slice(0, 10) : null,
+            end_date:                 (() => { const d = c.endDateTime ? String(c.endDateTime).slice(0, 10) : null; return d && d !== '2037-12-30' ? d : null })(),
             synced_at:                new Date().toISOString(),
           }, { onConflict: 'campaign_id' })
           stats.campaign_settings_rows++
