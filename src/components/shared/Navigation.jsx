@@ -5,6 +5,7 @@ import { useApp } from '../../lib/context';
 
 const allNavItems = [
   { path: '/dashboard', icon: '📊', label: 'Dashboard' },
+  { path: '/supplier-intake', icon: '📥', label: 'קליטת סחורה' },
   {
     label: 'Production', icon: '☕', children: [
       { path: '/origins',   icon: '🌱', label: 'Origins'   },
@@ -21,7 +22,6 @@ const allNavItems = [
       { path: '/attendance', icon: '⏱️', label: 'Attendance' },
       { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
       { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי' },
-      { path: '/supplier-intake', icon: '📥', label: 'קליטת סחורה' },
       { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount' },
     ],
   },

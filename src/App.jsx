@@ -73,7 +73,7 @@ function AppContent() {
               <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
               <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />
               <Route path="/stock-admin" element={<AdminRoute><StockAdmin /></AdminRoute>} />
-              <Route path="/supplier-intake" element={<AdminRoute><SupplierIntake /></AdminRoute>} />
+              <Route path="/supplier-intake" element={<SupplierIntake />} />
               <Route path="/icount-admin" element={<AdminRoute><IcountAdmin /></AdminRoute>} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
