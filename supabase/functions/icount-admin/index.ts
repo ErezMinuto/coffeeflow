@@ -92,17 +92,41 @@ async function addItemImage(sid: string, itemId: string, buf: ArrayBuffer, mime:
   return await res.json().catch(() => ({ status: false }));
 }
 
+async function deleteItemImage(sid: string, itemId: string, imageId: string | number): Promise<any> {
+  return await icount("inventory/delete_item_image", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: itemId, image_id: imageId });
+}
+
 // ── Woo helpers ─────────────────────────────────────────────────────────────
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Retries transient failures (network error, 429, 5xx) so a hiccup under batch
+// load doesn't get mis-read as "SKU has no Woo match". 4xx (other than 429) and
+// redirects fail fast — those are real, not transient.
 async function wooGet(pathAndQuery: string): Promise<any> {
-  const res = await fetch(`${WOO_URL}/wp-json/wc/v3/${pathAndQuery}`, {
-    headers: { Authorization: `Basic ${wooAuth}` },
-    redirect: "manual",
-  });
-  if (res.status >= 300 && res.status < 400)
-    throw new Error(`Woo redirect ${res.status} on ${pathAndQuery} — set WOO_URL to canonical host`);
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Woo ${pathAndQuery} HTTP ${res.status}: ${text.slice(0, 200)}`);
-  return JSON.parse(text);
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await sleep(300 * attempt);
+    try {
+      const res = await fetch(`${WOO_URL}/wp-json/wc/v3/${pathAndQuery}`, {
+        headers: { Authorization: `Basic ${wooAuth}` },
+        redirect: "manual",
+      });
+      if (res.status >= 300 && res.status < 400)
+        throw new Error(`Woo redirect ${res.status} on ${pathAndQuery} — set WOO_URL to canonical host`);
+      if (res.status === 429 || res.status >= 500) {
+        lastErr = new Error(`Woo ${pathAndQuery} transient HTTP ${res.status}`);
+        continue; // retry
+      }
+      const text = await res.text();
+      if (!res.ok) throw new Error(`Woo ${pathAndQuery} HTTP ${res.status}: ${text.slice(0, 200)}`);
+      return JSON.parse(text);
+    } catch (e) {
+      lastErr = e;
+      // network/parse errors are retryable; redirect/4xx already threw above and
+      // will just retry then surface — acceptable
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(`Woo ${pathAndQuery} failed`);
 }
 
 // Collect SKUs of every product+variation in the specialty-coffee category.
@@ -149,6 +173,40 @@ async function wooImageForSku(sku: string): Promise<string | null> {
     if (img) return img;
   }
   return null;
+}
+
+// Given a full Woo image URL, return the best SQUARE variant for the iCount POS
+// app (recommends 150x150). WordPress generates -150x150 / -300x300 crops; pick
+// the first that exists and is a real thumbnail (guards against the ~2MB
+// fallback some non-generated sizes return). Falls back to the full URL.
+async function squareImageUrl(src: string): Promise<string> {
+  const clean = src.split("?")[0];
+  const dot = clean.lastIndexOf(".");
+  if (dot < 0) return src;
+  const baseUrl = clean.slice(0, dot), ext = clean.slice(dot);
+  for (const size of ["-150x150", "-300x300"]) {
+    const cand = baseUrl + size + ext;
+    try {
+      const r = await fetch(cand);
+      if (r.ok) {
+        const buf = await r.arrayBuffer();
+        if (buf.byteLength > 0 && buf.byteLength < 500_000) return cand;
+      }
+    } catch { /* try next size */ }
+  }
+  return src;
+}
+
+// Woo stock for a SKU: a number = managed stock; null = found but not tracking
+// stock (e.g. variable parent); undefined = SKU not in Woo.
+async function wooStockForSku(sku: string): Promise<number | null | undefined> {
+  const products = await wooGet(`products?sku=${encodeURIComponent(sku)}&per_page=1`);
+  if (Array.isArray(products) && products.length) {
+    const p = products[0];
+    if (p.manage_stock === true && typeof p.stock_quantity === "number") return p.stock_quantity;
+    return null;
+  }
+  return undefined;
 }
 
 function itemSku(it: any): string { return norm(it.sku ?? it.makat ?? it.barcode); }
@@ -254,6 +312,169 @@ async function actionSetImages(opts: { offset: number; limit: number; dryRun: bo
   };
 }
 
+// Replace each item's image(s) with a SQUARE 150x150 (POS-friendly). Deletes the
+// existing full-size image, uploads the square variant named with a marker so
+// re-runs skip already-squared items (idempotent / resumable). Batched by offset.
+const SQ_MARKER = "_sq150";
+async function actionSquareImages(opts: { offset: number; limit: number; dryRun: boolean }) {
+  const { offset, limit, dryRun } = opts;
+  const sid = await login();
+  const all = (await getAllItems(sid))
+    .filter((i) => itemSku(i))
+    .sort((a, b) => Number(itemId(a)) - Number(itemId(b)));
+
+  const batch = all.slice(offset, offset + limit);
+
+  async function processOne(it: any): Promise<any> {
+    const id = itemId(it), sku = itemSku(it);
+    const existing = await getItemImages(sid, id);
+    if (existing.some((i: any) => String(i.filename ?? "").includes(SQ_MARKER)))
+      return { id, sku, status: "already_square" };
+    const fullUrl = await wooImageForSku(sku).catch(() => null);
+    if (!fullUrl) return { id, sku, status: "no_woo_image" };
+    const sqUrl = await squareImageUrl(fullUrl);
+    if (dryRun) return { id, sku, status: "would_square", img: sqUrl };
+    try {
+      const r = await fetch(sqUrl);
+      if (!r.ok) return { id, sku, status: "fetch_failed" };
+      const buf = await r.arrayBuffer();
+      const mime = r.headers.get("content-type") ?? "image/jpeg";
+      for (const img of existing) await deleteItemImage(sid, id, img.file_id);
+      const up = await addItemImage(sid, id, buf, mime, `${sku}${SQ_MARKER}.jpg`);
+      return up?.status === true
+        ? { id, sku, status: "squared", img: sqUrl }
+        : { id, sku, status: "upload_failed", reason: up?.reason ?? "?" };
+    } catch (e) {
+      return { id, sku, status: "error", reason: String(e).slice(0, 120) };
+    }
+  }
+
+  // Concurrency pool — iCount latency dominates, so run several items in flight.
+  const CONC = 6;
+  const results: any[] = new Array(batch.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(CONC, batch.length) }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= batch.length) break;
+      results[i] = await processOne(batch[i]);
+    }
+  }));
+
+  let squared = 0, alreadySquare = 0, skippedNoWoo = 0, failed = 0;
+  for (const r of results) {
+    if (r.status === "squared") squared++;
+    else if (r.status === "already_square") alreadySquare++;
+    else if (r.status === "no_woo_image") skippedNoWoo++;
+    else if (r.status !== "would_square") failed++;
+  }
+
+  const nextOffset = offset + batch.length;
+  return {
+    ok: true, dry_run: dryRun, total_with_sku: all.length,
+    offset, limit, processed: batch.length, next_offset: nextOffset, done: nextOffset >= all.length,
+    squared, already_square: alreadySquare, skipped_no_woo: skippedNoWoo, failed, results,
+  };
+}
+
+// Woo publish-status for a SKU (status=any so drafts are visible). Returns the
+// status string + name, or null if the SKU isn't in Woo at all.
+async function wooStatusForSku(sku: string): Promise<{ status: string; name: string } | null> {
+  const products = await wooGet(`products?sku=${encodeURIComponent(sku)}&status=any&per_page=1`);
+  if (Array.isArray(products) && products.length) return { status: String(products[0].status), name: String(products[0].name ?? "") };
+  return null;
+}
+
+// Delete iCount items whose Woo product is draft/unpublished (status != publish).
+// Items published, or with no Woo match, are left alone. iCount may block delete
+// for items on past invoices — those are reported as delete_blocked, not forced.
+async function actionDeleteHidden(opts: { offset: number; limit: number; dryRun: boolean }) {
+  const { offset, limit, dryRun } = opts;
+  const sid = await login();
+  const all = (await getAllItems(sid)).filter((i) => itemSku(i)).sort((a, b) => Number(itemId(a)) - Number(itemId(b)));
+  const batch = all.slice(offset, offset + limit);
+
+  async function processOne(it: any): Promise<any> {
+    const id = itemId(it), sku = itemSku(it), name = norm(it.description);
+    let woo: { status: string; name: string } | null;
+    try { woo = await wooStatusForSku(sku); }
+    catch (e) { return { id, sku, status: "woo_error", reason: String(e).slice(0, 80) }; }
+    if (!woo) return { id, sku, status: "no_woo_match" };
+    if (woo.status === "publish") return { id, sku, status: "published" };
+    if (dryRun) return { id, sku, name, woo_status: woo.status, status: "would_delete" };
+    let r = await icount("inventory/delete_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id });
+    // iCount blocks deleting an item that still has stock — zero it then retry.
+    if (r?.status !== true && /stock/i.test(String(r?.reason ?? ""))) {
+      await icount("inventory/update_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id, stock: 0 });
+      r = await icount("inventory/delete_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id });
+    }
+    return r?.status === true
+      ? { id, sku, name, woo_status: woo.status, status: "deleted" }
+      : { id, sku, name, woo_status: woo.status, status: "delete_blocked", reason: r?.reason ?? "?" };
+  }
+
+  const CONC = 6;
+  const results: any[] = new Array(batch.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(CONC, batch.length) }, async () => {
+    for (;;) { const i = cursor++; if (i >= batch.length) break; results[i] = await processOne(batch[i]); }
+  }));
+
+  const tally: Record<string, number> = {};
+  for (const r of results) tally[r.status] = (tally[r.status] ?? 0) + 1;
+  const nextOffset = offset + batch.length;
+  return {
+    ok: true, dry_run: dryRun, total_with_sku: all.length,
+    offset, limit, processed: batch.length, next_offset: nextOffset, done: nextOffset >= all.length,
+    tally, hits: results.filter((r) => ["would_delete", "deleted", "delete_blocked"].includes(r.status)),
+  };
+}
+
+// Sync NON-COFFEE stock: set each iCount item's stock = its Woo stock_quantity.
+// Coffee items (SKU in the specialty-coffee category) are skipped — their master
+// is CoffeeFlow packed_stock. Items with no Woo match or untracked Woo stock are
+// left unchanged. Batched + concurrent. dry-run shows current -> target.
+async function actionStockSync(opts: { offset: number; limit: number; dryRun: boolean }) {
+  const { offset, limit, dryRun } = opts;
+  const sid = await login();
+  const [coffeeSkus, allRaw] = await Promise.all([coffeeCategorySkus(), getAllItems(sid)]);
+  const all = allRaw.filter((i) => itemSku(i)).sort((a, b) => Number(itemId(a)) - Number(itemId(b)));
+  const batch = all.slice(offset, offset + limit);
+
+  async function processOne(it: any): Promise<any> {
+    const id = itemId(it), sku = itemSku(it);
+    const current = Number(it.stock ?? 0);
+    if (coffeeSkus.has(sku)) return { id, sku, status: "skip_coffee" };
+    let wooStock: number | null | undefined;
+    try { wooStock = await wooStockForSku(sku); }
+    catch (e) { return { id, sku, status: "woo_error", reason: String(e).slice(0, 80) }; }
+    if (wooStock === undefined) return { id, sku, status: "no_woo_match" };
+    if (wooStock === null) return { id, sku, status: "woo_untracked" };
+    if (current === wooStock) return { id, sku, status: "in_sync", stock: current };
+    if (dryRun) return { id, sku, status: "would_set", from: current, to: wooStock };
+    const r = await icount("inventory/update_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id, stock: wooStock });
+    return r?.status === true
+      ? { id, sku, status: "set", from: current, to: wooStock }
+      : { id, sku, status: "set_failed", from: current, to: wooStock, reason: r?.reason ?? "?" };
+  }
+
+  const CONC = 6;
+  const results: any[] = new Array(batch.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(CONC, batch.length) }, async () => {
+    for (;;) { const i = cursor++; if (i >= batch.length) break; results[i] = await processOne(batch[i]); }
+  }));
+
+  const tally: Record<string, number> = {};
+  for (const r of results) tally[r.status] = (tally[r.status] ?? 0) + 1;
+  const nextOffset = offset + batch.length;
+  return {
+    ok: true, dry_run: dryRun, total_with_sku: all.length,
+    offset, limit, processed: batch.length, next_offset: nextOffset, done: nextOffset >= all.length,
+    tally, changes: results.filter((r) => r.status === "would_set" || r.status === "set" || r.status === "set_failed"),
+  };
+}
+
 // ── HTTP ────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -275,6 +496,21 @@ serve(async (req) => {
         limit:  Math.min(Number(body.limit ?? 15), 40),
         dryRun: body.dry_run !== false, // default dry-run
         force:  body.force === true,
+      }));
+      case "square_images": return json(await actionSquareImages({
+        offset: Number(body.offset ?? 0),
+        limit:  Math.min(Number(body.limit ?? 30), 60),
+        dryRun: body.dry_run !== false, // default dry-run
+      }));
+      case "delete_hidden": return json(await actionDeleteHidden({
+        offset: Number(body.offset ?? 0),
+        limit:  Math.min(Number(body.limit ?? 30), 60),
+        dryRun: body.dry_run !== false, // default dry-run
+      }));
+      case "stock_sync": return json(await actionStockSync({
+        offset: Number(body.offset ?? 0),
+        limit:  Math.min(Number(body.limit ?? 30), 60),
+        dryRun: body.dry_run !== false, // default dry-run
       }));
       default: return json({ error: `unknown action: ${action}` }, 400);
     }
