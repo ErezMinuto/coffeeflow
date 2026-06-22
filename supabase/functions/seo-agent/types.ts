@@ -79,8 +79,9 @@ export interface VisualGenerationBrief {
   // forwards this to visual-test or vertex-imagen-edit (depending on
   // render_mode). Same shape as the existing IG pipeline's scene_brief.
   scene_brief: string
-  // Aspect ratio for the render.
-  aspect: 'feed_square' | 'feed_portrait' | 'reel_cover'
+  // Aspect ratio for the render. 'story' is 9:16 full-bleed (1080×1920) and
+  // MUST be used for any instagram_post with media_type:'story'.
+  aspect: 'feed_square' | 'feed_portrait' | 'reel_cover' | 'story'
   // bag_hero composites a real Minuto bag PNG byte-perfect via Vertex;
   // no_bag is bag-free editorial scene via Gemini Image.
   render_mode: 'bag_hero' | 'no_bag'

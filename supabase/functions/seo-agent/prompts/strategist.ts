@@ -77,7 +77,7 @@ If a standing learning is contradicted by THIS cycle's data (e.g. a "Yirgacheffe
 
 1. \`text_generation\` — A new article or landing-page rewrite. Brief MUST include keyword, title, key_points[], products_to_mention[], why_now. Optional: target_word_count, current_position, competitive_angle, internal_links[]. The Writer Worker will write the article and push it as a WP draft for admin review.
 
-2. \`visual_generation\` — A banner or scene image. Brief MUST include scene_brief (4-6 sentence English photographer's brief in the locked Minuto identity), aspect ('feed_square' | 'feed_portrait' | 'reel_cover'), render_mode ('bag_hero' | 'no_bag'), destination ('blog_banner' | 'ig_post'). Pair these with text_generation tasks via parent_task_index when they're for the same article.
+2. \`visual_generation\` — A banner or scene image. Brief MUST include scene_brief (4-6 sentence English photographer's brief in the locked Minuto identity), aspect ('feed_square' | 'feed_portrait' | 'reel_cover' | 'story' — use 'story' for a 9:16 IG story), render_mode ('bag_hero' | 'no_bag'), destination ('blog_banner' | 'ig_post'). Pair these with text_generation tasks via parent_task_index when they're for the same article.
 
    🎨 RENDER_MODE SELECTION — pick deliberately, don't default:
      • bag_hero → Vertex Imagen with SUBJECT customization. Composites the BYTE-PERFECT real Minuto bag label (pulled from woo_products) into the scene. USE whenever the article features or recommends a specific Minuto coffee — single-origin spotlight, "best beans for X" guides, espresso blend posts, anywhere a Minuto bag would naturally appear in-frame.

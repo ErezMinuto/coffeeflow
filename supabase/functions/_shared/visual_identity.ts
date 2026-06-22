@@ -462,6 +462,7 @@ export const ASPECT_TO_RATIO = {
   feed_square:    '1:1',
   feed_portrait:  '4:5',
   reel_cover:     '9:16',
+  story:          '9:16',   // IG story — full-bleed vertical (1080×1920)
 } as const
 export type Aspect = keyof typeof ASPECT_TO_RATIO
 
