@@ -132,15 +132,24 @@ export default function SupplierIntake() {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || 'שגיאה לא ידועה');
 
-      setPreview(data);
       if (dryRun) {
+        setPreview(data);
         showToast(`✅ תצוגה מקדימה: ${data.count} שורות`, 'success');
       } else {
         const ok = data.results.filter(r => r.status === 'ok').length;
         const bad = data.results.length - ok;
-        showToast(`✅ נקלטו ${ok} שורות${bad ? `, ${bad} עם בעיה` : ''}`, bad ? 'warning' : 'success');
         const s = supplier.trim();
         if (s && !knownSuppliers.includes(s)) setKnownSuppliers(list => [s, ...list]);
+        if (bad === 0) {
+          // Full success → clear the form and results, ready for the next invoice.
+          showToast(`✅ המלאי עודכן בהצלחה (${ok} שורות) — מוכן לחשבונית הבאה`, 'success');
+          setRows([blankRow(), blankRow(), blankRow()]);
+          setPreview(null);
+        } else {
+          // Something needs attention → keep the results visible so it can be fixed.
+          setPreview(data);
+          showToast(`⚠️ נקלטו ${ok} שורות, ${bad} עם בעיה — בדוק את התוצאות`, 'warning');
+        }
       }
     } catch (err) {
       console.error(err);
