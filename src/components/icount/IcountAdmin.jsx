@@ -27,6 +27,11 @@ export default function IcountAdmin() {
   const [busy, setBusy] = useState({});   // keyed by op name
   const [delHits, setDelHits] = useState(null);
 
+  // delete-by-name
+  const [namedKeyword, setNamedKeyword] = useState('');
+  const [namedPreview, setNamedPreview] = useState(null);
+  const [namedBusy, setNamedBusy]       = useState(false);
+
   useEffect(() => { loadStatus(); }, []); // eslint-disable-line
 
   async function loadStatus() {
@@ -132,6 +137,34 @@ export default function IcountAdmin() {
     } catch (e) { showToast(`❌ ${e.message}`, 'error'); }
   }
 
+  // ── Delete by name keyword ────────────────────────────────────────────────────
+  async function previewNamed() {
+    const kw = namedKeyword.trim();
+    if (!kw) { showToast('⚠️ נא להזין מילת חיפוש', 'warning'); return; }
+    setNamedBusy(true); setNamedPreview(null);
+    try {
+      const { data, error } = await call({ action: 'delete_named', keyword: kw, dry_run: true });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      setNamedPreview(data);
+      showToast(`✅ ${data.matched} פריטים תואמים ל"${kw}"`, 'success');
+    } catch (e) { showToast(`❌ ${e.message}`, 'error'); }
+    finally { setNamedBusy(false); }
+  }
+  async function applyNamed() {
+    const kw = namedKeyword.trim();
+    const n = namedPreview?.matched ?? 0;
+    if (!kw || !n) return;
+    if (!window.confirm(`למחוק ${n} פריטים שהשם שלהם מכיל "${kw}"? פעולה זו אינה הפיכה.`)) return;
+    setNamedBusy(true);
+    try {
+      const { data, error } = await call({ action: 'delete_named', keyword: kw, dry_run: false });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      showToast(`✅ נמחקו ${data.deleted} פריטים${data.blocked ? `, ${data.blocked} נחסמו` : ''}`, data.blocked ? 'warning' : 'success');
+      setNamedPreview(null); loadStatus();
+    } catch (e) { showToast(`❌ ${e.message}`, 'error'); }
+    finally { setNamedBusy(false); }
+  }
+
   // ── styles ──────────────────────────────────────────────────────────────────
   const card = { background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxWidth: '720px', margin: '1.25rem auto' };
   const btn = (bg, disabled) => ({ padding: '0.7rem 1.1rem', fontSize: '0.95rem', fontWeight: 700, color: 'white', background: disabled ? '#9CA3AF' : bg, border: 'none', borderRadius: '8px', cursor: disabled ? 'default' : 'pointer', marginInlineEnd: '0.6rem' });
@@ -230,6 +263,39 @@ export default function IcountAdmin() {
                 <span style={{ color: '#B45309' }}>[{h.woo_status}]</span> {h.sku} — {h.name}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* delete by name keyword */}
+      <div style={card}>
+        <h3 style={{ marginTop: 0 }}>מחיקה לפי שם מוצר</h3>
+        <p style={{ color: '#555', fontSize: '0.9rem' }}>מוחק מ-iCount פריטים שהשם של המוצר התואם ב-WooCommerce מכיל את מילת החיפוש (למשל "אייס"). מאפס מלאי לפני מחיקה. תצוגה מקדימה תמיד לפני מחיקה.</p>
+        <input
+          value={namedKeyword}
+          onChange={(e) => { setNamedKeyword(e.target.value); setNamedPreview(null); }}
+          placeholder="מילת חיפוש בשם המוצר"
+          style={{ padding: '0.6rem 0.8rem', fontSize: '0.95rem', border: '1px solid #D5DBC8', borderRadius: '8px', marginInlineEnd: '0.6rem', minWidth: '200px' }}
+        />
+        <button style={btn('#2563EB', namedBusy)} disabled={namedBusy} onClick={previewNamed}>תצוגה מקדימה</button>
+        {namedPreview && (
+          <button style={btn('#DC2626', namedBusy || !namedPreview.matched)} disabled={namedBusy || !namedPreview.matched} onClick={applyNamed}>
+            מחק {namedPreview.matched} פריטים
+          </button>
+        )}
+        {namedPreview && (
+          <div style={{ marginTop: '0.9rem', fontSize: '0.9rem' }}>
+            <span style={stat}>מוצרים תואמים ב-Woo: <b>{namedPreview.woo_name_matches}</b></span>
+            <span style={stat}>תואמים ב-iCount: <b>{namedPreview.matched}</b></span>
+            {namedPreview.items?.length > 0 && (
+              <div style={{ maxHeight: '200px', overflow: 'auto', marginTop: '0.5rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
+                {namedPreview.items.map((it) => (
+                  <div key={it.id} style={{ fontSize: '0.82rem', padding: '0.15rem 0' }}>
+                    {it.sku} (מלאי {it.stock}) — {it.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

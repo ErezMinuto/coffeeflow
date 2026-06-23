@@ -430,6 +430,74 @@ async function actionDeleteHidden(opts: { offset: number; limit: number; dryRun:
   };
 }
 
+// Collect SKUs (parent + variations) of every Woo product whose NAME contains
+// `keyword` (status=any so drafts count). Woo `search` also hits descriptions,
+// so we re-filter on the product name.
+async function wooSkusByName(keyword: string): Promise<{ skus: Set<string>; products: any[] }> {
+  const skus = new Set<string>();
+  const products: any[] = [];
+  let page = 1;
+  for (;;) {
+    const list = await wooGet(`products?search=${encodeURIComponent(keyword)}&status=any&per_page=100&page=${page}`);
+    if (!Array.isArray(list) || !list.length) break;
+    for (const p of list) {
+      if (!String(p.name ?? "").includes(keyword)) continue;
+      if (norm(p.sku)) skus.add(norm(p.sku));
+      products.push({ sku: norm(p.sku), name: p.name, status: p.status, type: p.type });
+      if (p.type === "variable") {
+        let vp = 1;
+        for (;;) {
+          const vars = await wooGet(`products/${p.id}/variations?per_page=100&page=${vp}`);
+          if (!Array.isArray(vars) || !vars.length) break;
+          for (const v of vars) if (norm(v.sku)) skus.add(norm(v.sku));
+          if (vars.length < 100) break;
+          vp++;
+        }
+      }
+    }
+    if (list.length < 100) break;
+    page++;
+  }
+  return { skus, products };
+}
+
+// Delete iCount items whose Woo product NAME contains `keyword` (e.g. "אייס").
+// Zeroes stock first (iCount blocks deleting items with stock), then deletes.
+// The matched set is small, so it runs in a single call (concurrency pool).
+async function actionDeleteNamed(keyword: string, dryRun: boolean) {
+  const sid = await login();
+  const { skus, products } = await wooSkusByName(keyword);
+  const matched = (await getAllItems(sid)).filter((i) => itemSku(i) && skus.has(itemSku(i)));
+
+  if (dryRun) {
+    return {
+      ok: true, dry_run: true, keyword, woo_name_matches: products.length, matched: matched.length,
+      items: matched.map((it) => ({ id: itemId(it), sku: itemSku(it), name: norm(it.description), stock: it.stock })),
+    };
+  }
+
+  async function processOne(it: any): Promise<any> {
+    const id = itemId(it), sku = itemSku(it), name = norm(it.description);
+    let r = await icount("inventory/delete_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id });
+    if (r?.status !== true && /stock/i.test(String(r?.reason ?? ""))) {
+      await icount("inventory/update_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id, stock: 0 });
+      r = await icount("inventory/delete_item", { sid, cid: CID, user: USER, pass: PASS, inventory_item_id: id });
+    }
+    return r?.status === true
+      ? { id, sku, name, status: "deleted" }
+      : { id, sku, name, status: "delete_blocked", reason: r?.reason ?? "?" };
+  }
+
+  const CONC = 6;
+  const results: any[] = new Array(matched.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(CONC, matched.length) }, async () => {
+    for (;;) { const i = cursor++; if (i >= matched.length) break; results[i] = await processOne(matched[i]); }
+  }));
+  const deleted = results.filter((r) => r.status === "deleted").length;
+  return { ok: true, dry_run: false, keyword, matched: matched.length, deleted, blocked: results.length - deleted, results };
+}
+
 // Sync NON-COFFEE stock: set each iCount item's stock = its Woo stock_quantity.
 // Coffee items (SKU in the specialty-coffee category) are skipped — their master
 // is CoffeeFlow packed_stock. Items with no Woo match or untracked Woo stock are
@@ -507,6 +575,7 @@ serve(async (req) => {
         limit:  Math.min(Number(body.limit ?? 30), 60),
         dryRun: body.dry_run !== false, // default dry-run
       }));
+      case "delete_named": return json(await actionDeleteNamed(String(body.keyword ?? ""), body.dry_run !== false));
       case "stock_sync": return json(await actionStockSync({
         offset: Number(body.offset ?? 0),
         limit:  Math.min(Number(body.limit ?? 30), 60),
