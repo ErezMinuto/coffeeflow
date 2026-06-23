@@ -10,7 +10,6 @@ import Origins                 from './components/origins/Origins';
 import Roasting                from './components/roasting/Roasting';
 import Products                from './components/products/Products';
 import Packaging               from './components/packaging/Packaging';
-import Purchases               from './components/purchases/Purchases';
 import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
@@ -69,7 +68,6 @@ function AppContent() {
               <Route path="/roasting"   element={<Roasting />} />
               <Route path="/products"   element={<Products />} />
               <Route path="/packaging"  element={<Packaging />} />
-              <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
               <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
               <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />

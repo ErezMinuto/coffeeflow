@@ -25,7 +25,6 @@ const allNavItems = [
       { path: '/tasks',      icon: '📋', label: 'Tasks'      },
       { path: '/schedule',   icon: '📅', label: 'Schedule'   },
       { path: '/attendance', icon: '⏱️', label: 'Attendance' },
-      { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
       { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי' },
       { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount' },
     ],
