@@ -5,7 +5,12 @@ import { useApp } from '../../lib/context';
 
 const allNavItems = [
   { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-  { path: '/supplier-intake', icon: '📥', label: 'קליטת סחורה' },
+  {
+    label: 'מלאי', icon: '📦', children: [
+      { path: '/supplier-intake', icon: '📥', label: 'קליטת סחורה' },
+      { path: '/product-editor',  icon: '💰', label: 'עדכון מחיר ומלאי' },
+    ],
+  },
   {
     label: 'Production', icon: '☕', children: [
       { path: '/origins',   icon: '🌱', label: 'Origins'   },
