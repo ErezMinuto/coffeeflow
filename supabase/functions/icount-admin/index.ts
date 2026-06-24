@@ -39,6 +39,10 @@ const wooAuth = btoa(`${WOO_KEY}:${WOO_SEC}`);
 
 const COFFEE_CATEGORY_SLUG = Deno.env.get("WOO_COFFEE_CATEGORY_SLUG") ?? "פולי-קפה-טרי-מינוטו-specialty-coffee";
 const TARGET_TYPE = Number(Deno.env.get("TARGET_ITEM_TYPE_ID") ?? "8");
+// Coffee sales report counts type-8 (Minuto) items PLUS resold-coffee items
+// matched by name keyword (Veneto etc.) since those aren't tagged type 8.
+const EXTRA_COFFEE_KEYWORDS = (Deno.env.get("COFFEE_EXTRA_NAME_KEYWORDS") ?? "veneto")
+  .toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
@@ -544,17 +548,34 @@ async function actionStockSync(opts: { offset: number; limit: number; dryRun: bo
 }
 
 // Coffee-beans sales report from iCount over a date range. Pulls sales docs
-// (invrec = retail/POS, invoice = B2B), keeps only line items that are coffee
-// (their iCount item is item_type_id=8), and aggregates per product: bags sold
-// + net (ex-VAT) revenue. Skips cancelled docs and refunded lines.
+// (invrec = retail/POS, invoice = B2B) via doc/search, keeps only line items
+// that are coffee — item_type_id=8 (Minuto) OR name contains a resold-coffee
+// keyword (Veneto) — and aggregates per product: bags + net (ex-VAT) revenue.
+// Skips cancelled docs and refunded lines.
 async function actionCoffeeSales(fromDate: string, toDate: string) {
   if (!fromDate || !toDate) throw new Error("from_date and to_date are required (YYYY-MM-DD)");
   const sid = await login();
   const auth = { sid, cid: CID, user: USER, pass: PASS };
 
   const items = await getAllItems(sid);
-  const coffeeIds  = new Set(items.filter((i) => String(i.item_type_id) === String(TARGET_TYPE)).map((i) => String(i.inventory_item_id)));
-  const coffeeSkus = new Set(items.filter((i) => String(i.item_type_id) === String(TARGET_TYPE)).map((i) => norm(i.sku)).filter(Boolean));
+  const isCoffee = (i: any) =>
+    String(i.item_type_id) === String(TARGET_TYPE) ||
+    EXTRA_COFFEE_KEYWORDS.some((k) => String(i.description ?? "").toLowerCase().includes(k));
+  const coffeeItems = items.filter(isCoffee);
+  const coffeeIds = new Set(coffeeItems.map((i) => String(i.inventory_item_id)));
+  // SKU set = iCount coffee SKUs (parent) + Woo specialty-coffee category SKUs
+  // (which include the per-size/grind VARIATION SKUs). The latter is how website
+  // sales are caught: their iCount lines carry the Woo variation SKU + no item id.
+  const coffeeSkus = new Set(coffeeItems.map((i) => norm(i.sku)).filter(Boolean));
+  try { for (const s of await coffeeCategorySkus()) coffeeSkus.add(s); } catch (_) { /* Woo down → iCount-only matching */ }
+  const nameBySku = new Map<string, string>();
+  for (const i of coffeeItems) { const s = norm(i.sku); if (s) nameBySku.set(s, norm(i.description)); }
+
+  const parentSku = (sku: string) => sku.split("-")[0];
+  const lineIsCoffee = (iid: string, sku: string, desc: string) =>
+    (iid && coffeeIds.has(iid)) ||
+    (sku && (coffeeSkus.has(sku) || coffeeSkus.has(parentSku(sku)))) ||
+    EXTRA_COFFEE_KEYWORDS.some((k) => desc.toLowerCase().includes(k));
 
   async function fetchDocs(doctype: string): Promise<any[]> {
     const all: any[] = [];
@@ -574,7 +595,7 @@ async function actionCoffeeSales(fromDate: string, toDate: string) {
   const docs = [...await fetchDocs("invrec"), ...await fetchDocs("invoice")];
 
   const byProduct = new Map<string, { sku: string; name: string; bags: number; revenue: number }>();
-  let totalBags = 0, totalRevenue = 0, docCount = 0, refundLines = 0;
+  let totalBags = 0, totalRevenue = 0, docCount = 0;
 
   for (const doc of docs) {
     const cancelled = doc.is_cancelled === true || doc.is_cancelled === "1" || doc.is_cancellation === true || doc.is_cancellation === "1";
@@ -582,13 +603,15 @@ async function actionCoffeeSales(fromDate: string, toDate: string) {
     const lines = Array.isArray(doc.items) ? doc.items : (doc.items && typeof doc.items === "object" ? Object.values(doc.items) : []);
     let docHasCoffee = false;
     for (const ln of lines as any[]) {
-      const iid = String(ln.inventory_item_id ?? ""), sku = norm(ln.sku);
-      if (!((iid && coffeeIds.has(iid)) || (sku && coffeeSkus.has(sku)))) continue;
-      if (ln.is_refunded === "1" || ln.is_refunded === 1) { refundLines++; continue; }
+      const iid = String(ln.inventory_item_id ?? ""), sku = norm(ln.sku), desc = String(ln.description ?? "");
+      if (!lineIsCoffee(iid, sku, desc)) continue;
+      if (ln.is_refunded === "1" || ln.is_refunded === 1) continue;
       const qty = Number(ln.quantity ?? 0);
       const rev = Number(ln.unitprice ?? 0) * qty;
-      const key = sku || iid;
-      const cur = byProduct.get(key) ?? { sku, name: norm(ln.description), bags: 0, revenue: 0 };
+      // group POS (parent SKU) + website (variation SKU) sales of one coffee together
+      const key = parentSku(sku) || iid;
+      const name = nameBySku.get(parentSku(sku)) || nameBySku.get(sku) || desc;
+      const cur = byProduct.get(key) ?? { sku: parentSku(sku) || sku, name, bags: 0, revenue: 0 };
       cur.bags += qty; cur.revenue += rev;
       byProduct.set(key, cur);
       totalBags += qty; totalRevenue += rev; docHasCoffee = true;
@@ -603,7 +626,7 @@ async function actionCoffeeSales(fromDate: string, toDate: string) {
 
   return {
     ok: true, from_date: fromDate, to_date: toDate,
-    sales_doc_count: docCount, refund_lines_skipped: refundLines,
+    sales_doc_count: docCount,
     total_bags: round2(totalBags), total_revenue: round2(totalRevenue),
     products,
   };
