@@ -28,6 +28,7 @@ const allNavItems = [
       { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
       { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי' },
       { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount' },
+      { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה' },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },

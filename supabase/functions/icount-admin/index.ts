@@ -543,6 +543,72 @@ async function actionStockSync(opts: { offset: number; limit: number; dryRun: bo
   };
 }
 
+// Coffee-beans sales report from iCount over a date range. Pulls sales docs
+// (invrec = retail/POS, invoice = B2B), keeps only line items that are coffee
+// (their iCount item is item_type_id=8), and aggregates per product: bags sold
+// + net (ex-VAT) revenue. Skips cancelled docs and refunded lines.
+async function actionCoffeeSales(fromDate: string, toDate: string) {
+  if (!fromDate || !toDate) throw new Error("from_date and to_date are required (YYYY-MM-DD)");
+  const sid = await login();
+  const auth = { sid, cid: CID, user: USER, pass: PASS };
+
+  const items = await getAllItems(sid);
+  const coffeeIds  = new Set(items.filter((i) => String(i.item_type_id) === String(TARGET_TYPE)).map((i) => String(i.inventory_item_id)));
+  const coffeeSkus = new Set(items.filter((i) => String(i.item_type_id) === String(TARGET_TYPE)).map((i) => norm(i.sku)).filter(Boolean));
+
+  async function fetchDocs(doctype: string): Promise<any[]> {
+    const all: any[] = [];
+    let offset = 0;
+    for (;;) {
+      const r = await icount("doc/search", { ...auth, doctype, from_date: fromDate, to_date: toDate, detail_level: 10, max_results: 200, offset });
+      const list = r?.results_list;
+      const docs = Array.isArray(list) ? list : (list && typeof list === "object" ? Object.values(list) : []);
+      if (!docs.length) break;
+      all.push(...docs);
+      if (docs.length < 200 || offset > 8000) break;
+      offset += docs.length;
+    }
+    return all;
+  }
+
+  const docs = [...await fetchDocs("invrec"), ...await fetchDocs("invoice")];
+
+  const byProduct = new Map<string, { sku: string; name: string; bags: number; revenue: number }>();
+  let totalBags = 0, totalRevenue = 0, docCount = 0, refundLines = 0;
+
+  for (const doc of docs) {
+    const cancelled = doc.is_cancelled === true || doc.is_cancelled === "1" || doc.is_cancellation === true || doc.is_cancellation === "1";
+    if (cancelled) continue;
+    const lines = Array.isArray(doc.items) ? doc.items : (doc.items && typeof doc.items === "object" ? Object.values(doc.items) : []);
+    let docHasCoffee = false;
+    for (const ln of lines as any[]) {
+      const iid = String(ln.inventory_item_id ?? ""), sku = norm(ln.sku);
+      if (!((iid && coffeeIds.has(iid)) || (sku && coffeeSkus.has(sku)))) continue;
+      if (ln.is_refunded === "1" || ln.is_refunded === 1) { refundLines++; continue; }
+      const qty = Number(ln.quantity ?? 0);
+      const rev = Number(ln.unitprice ?? 0) * qty;
+      const key = sku || iid;
+      const cur = byProduct.get(key) ?? { sku, name: norm(ln.description), bags: 0, revenue: 0 };
+      cur.bags += qty; cur.revenue += rev;
+      byProduct.set(key, cur);
+      totalBags += qty; totalRevenue += rev; docHasCoffee = true;
+    }
+    if (docHasCoffee) docCount++;
+  }
+
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const products = [...byProduct.values()]
+    .map((p) => ({ ...p, revenue: round2(p.revenue) }))
+    .sort((a, b) => b.bags - a.bags);
+
+  return {
+    ok: true, from_date: fromDate, to_date: toDate,
+    sales_doc_count: docCount, refund_lines_skipped: refundLines,
+    total_bags: round2(totalBags), total_revenue: round2(totalRevenue),
+    products,
+  };
+}
+
 // ── HTTP ────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -575,6 +641,7 @@ serve(async (req) => {
         limit:  Math.min(Number(body.limit ?? 30), 60),
         dryRun: body.dry_run !== false, // default dry-run
       }));
+      case "coffee_sales": return json(await actionCoffeeSales(String(body.from_date ?? ""), String(body.to_date ?? "")));
       case "delete_named": return json(await actionDeleteNamed(String(body.keyword ?? ""), body.dry_run !== false));
       case "stock_sync": return json(await actionStockSync({
         offset: Number(body.offset ?? 0),
