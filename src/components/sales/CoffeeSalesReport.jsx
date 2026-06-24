@@ -11,14 +11,10 @@ const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-const monthStartISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-};
 
 export default function CoffeeSalesReport() {
   const { showToast } = useApp();
-  const [from, setFrom]       = useState(monthStartISO());
+  const [from, setFrom]       = useState(todayISO());
   const [to, setTo]           = useState(todayISO());
   const [loading, setLoading] = useState(false);
   const [report, setReport]   = useState(null);
