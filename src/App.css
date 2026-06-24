@@ -321,6 +321,17 @@ input:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(85, 107, 58, 0.12);
 }
 
+/* Hide native up/down spinner arrows on number inputs */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ── Buttons ────────────────────────────────────────────────────────────────── */
 button {
   font-family: inherit;
