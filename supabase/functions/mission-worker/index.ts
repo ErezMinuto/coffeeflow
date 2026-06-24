@@ -105,6 +105,51 @@ async function fetchRecentlyFeaturedIgProducts(
   }
 }
 
+// Completed IG-destined visuals created today that have NO instagram_post child
+// yet — a render that SUCCEEDED but was never committed into a post. This stranded
+// the 2026-06-23 story: a product-free story image rendered at 00:02, but the
+// mission then looped on product selection and never posted it, so the day ended
+// with a perfectly good unused render. Surfaced in the prompt (and unblocks the
+// idle short-circuit) so the mission commits the existing render instead of
+// re-deriving — and instead of wasting a fresh render slot under the daily cap.
+// Guarded: any failure returns [] (degrades to "nothing to commit", never blocks).
+async function fetchUncommittedIgVisuals(
+  supabase: ReturnType<typeof createSupabase>, sinceIso: string,
+): Promise<Array<{ id: string; aspect: string; productName: string | null }>> {
+  try {
+    const { data: vis } = await supabase
+      .from('seo_tasks')
+      .select('id, brief_data')
+      .eq('task_type', 'visual_generation')
+      .eq('status', 'completed')
+      .gte('created_at', sinceIso)
+      .limit(50)
+    const igVis = ((vis ?? []) as Array<{ id: string; brief_data: Record<string, unknown> | null }>)
+      .filter(v => String((v.brief_data as { destination?: unknown } | null)?.destination ?? '').toLowerCase() === 'ig_post')
+    if (igVis.length === 0) return []
+    const { data: posts } = await supabase
+      .from('seo_tasks')
+      .select('parent_task_id')
+      .eq('task_type', 'instagram_post')
+      .gte('created_at', sinceIso)
+      .limit(100)
+    const committed = new Set(
+      ((posts ?? []) as Array<{ parent_task_id: string | null }>)
+        .map(p => p.parent_task_id).filter(Boolean) as string[]
+    )
+    return igVis
+      .filter(v => !committed.has(v.id))
+      .map(v => ({
+        id:          v.id,
+        aspect:      String((v.brief_data as { aspect?: unknown } | null)?.aspect ?? '').toLowerCase(),
+        productName: ((v.brief_data as { product_name?: unknown } | null)?.product_name as string | null) ?? null,
+      }))
+  } catch (e: any) {
+    console.warn(`[mission-worker] uncommitted-IG-visuals fetch failed: ${e?.message ?? e}`)
+    return []
+  }
+}
+
 // Compute the cadence state: today's story count (daily quota), this week's
 // feed count (weekly quota), and today's IG render volume (for the runaway
 // brake). Committed instagram_post tasks count toward quota at any status (a
@@ -117,7 +162,7 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
   const dayIndex = dayStart.getUTCDay()                 // 0 = Sun … 6 = Sat
   const weekStart = new Date(dayStart); weekStart.setUTCDate(weekStart.getUTCDate() - dayIndex)
   const weekIso = weekStart.toISOString()
-  let storiesToday = 0, feedsToday = 0, feedsThisWeek = 0, igVisualsToday = 0, igVisualsInFlight = 0
+  let storiesToday = 0, feedsToday = 0, feedsThisWeek = 0, igVisualsToday = 0, igVisualsInFlight = 0, igStoryVisualsToday = 0
   try {
     // instagram_post tasks since the start of THIS week (covers today too).
     const { data: igTasks } = await supabase
@@ -144,6 +189,7 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
     for (const v of (vis ?? []) as Array<{ brief_data: Record<string, unknown> | null; status: string }>) {
       if (String((v.brief_data as { destination?: unknown } | null)?.destination ?? '').toLowerCase() !== 'ig_post') continue
       igVisualsToday++
+      if (String((v.brief_data as { aspect?: unknown } | null)?.aspect ?? '').toLowerCase() === 'story') igStoryVisualsToday++
       if (v.status === 'pending' || v.status === 'processing') igVisualsInFlight++
     }
   } catch (e: any) {
@@ -164,7 +210,7 @@ async function computeIgCadence(supabase: ReturnType<typeof createSupabase>) {
   // Hard ceiling on render volume, independent of whether posts ever commit.
   const visualCapHit = igVisualsToday >= IG_VISUAL_DAILY_CAP
   return {
-    storiesToday, feedsToday, feedsThisWeek, igVisualsToday, igVisualsInFlight,
+    storiesToday, feedsToday, feedsThisWeek, igVisualsToday, igVisualsInFlight, igStoryVisualsToday,
     storyRemainingToday, feedRemainingWeekMin, feedRemainingWeekMax,
     pacedFeedTarget, feedDueToday, dayQuotaMet, visualCapHit,
   }
@@ -288,14 +334,29 @@ serve(async (req) => {
   // calls/day doing nothing.
   let igCadenceBlock = ''
   let cadence: Awaited<ReturnType<typeof computeIgCadence>> | null = null
+  let actionableOrphans: Awaited<ReturnType<typeof fetchUncommittedIgVisuals>> = []
   if (isDailyIgCadence) {
     const c = await computeIgCadence(supabase)
     cadence = c
+    const dayStartIso = (() => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d.toISOString() })()
+    // Completed-but-uncommitted IG visuals worth posting RIGHT NOW: a story orphan
+    // only if today's story quota isn't met, a feed orphan only if the weekly feed
+    // cap isn't reached. Filtering by quota here keeps the mission from committing a
+    // 2nd/3rd story off leftover renders (the 2026-06-24 over-commit) AND keeps the
+    // idle short-circuit from waking every tick over orphans it isn't allowed to post.
+    const orphans = await fetchUncommittedIgVisuals(supabase, dayStartIso)
+    actionableOrphans = orphans.filter(v => v.aspect === 'story'
+      ? c.storyRemainingToday > 0
+      : c.feedsThisWeek < IG_FEED_PER_WEEK_MAX)
     // Cheap idle short-circuit: skip the Claude call entirely when nothing is
     // in-flight AND either today's cadence is met OR the hard render cap is hit
     // (the latter stops the runaway when posts never commit — no amount of
     // additional reasoning should queue more renders today).
-    if ((c.dayQuotaMet || c.visualCapHit) && inflight === 0) {
+    // BUT never idle while an ACTIONABLE orphan is waiting: that's a finished render
+    // that still owes a post, and committing it needs no new render (so the cap is
+    // irrelevant). Skipping the Claude call here is exactly what stranded the
+    // 2026-06-23 story (cap hit + story visual ready + no post).
+    if ((c.dayQuotaMet || c.visualCapHit) && inflight === 0 && actionableOrphans.length === 0) {
       const why = c.dayQuotaMet ? "today's cadence met" : `render cap hit (${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP})`
       await supabase.from('agent_missions').update({
         steps_taken:  mission.steps_taken + 1,
@@ -310,16 +371,34 @@ serve(async (req) => {
     const capLine = c.visualCapHit
       ? `⚠ DAILY RENDER CAP REACHED (${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP} IG visuals queued today) — do NOT queue any more visual_generation today. Only queue instagram_post for a COMPLETED visual, or note_progress and wait. Resets UTC midnight.\n`
       : `IG renders today: ${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP} (daily render cap). Each post needs exactly ONE visual.\n`
-    const feedLine = c.feedDueToday
+    const feedLine = c.feedDueToday && c.feedsThisWeek < IG_FEED_PER_WEEK_MAX
       ? `1 feed post (the week is behind pace — ${c.feedsThisWeek}/${c.pacedFeedTarget} feeds due by today; weekly target ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX})`
-      : `NO feed post due today (feed quota is on pace — do NOT queue a feed; the week's feeds are spread across days)`
+      : `NO feed post due today (${c.feedsThisWeek >= IG_FEED_PER_WEEK_MAX ? `weekly feed cap of ${IG_FEED_PER_WEEK_MAX} already reached` : 'feed quota is on pace'} — do NOT queue a feed; the week's feeds are spread across days)`
+    // STORY POLICY. The story is the part that kept deadlocking: the LLM treated
+    // it like a feed (must feature a not-recently-used bean) and, with the bean
+    // pool exhausted, looped forever picking a product. A story is NOT a product
+    // feature — it's a brewing/ritual/tip/ambiance scene — so it is exempt from
+    // the no-repeat-bean rule and must never be blocked by it.
+    const storyPolicy = c.storyRemainingToday > 0
+      ? `STORY POLICY: the daily story is PRODUCT-FREE by default — a brewing method, ritual, brewing tip, or café-ambiance scene (visual aspect:"story", render_mode:"no_bag", NO product_name; post media_type:"story"). Do NOT pick a coffee for the story and do NOT consult the "featured on Instagram" list for it — that no-repeat rule is for FEED posts only. A story is therefore NEVER blocked by recently-featured beans: if a story is still needed, queue it now.\n`
+      : ''
+    // ORPHAN RECOVERY. A completed IG visual with no instagram_post is a finished
+    // render waiting to be posted — committing it needs NO new render, so it works
+    // even when the daily render cap is hit. Only ACTIONABLE orphans are listed
+    // (within the day's story quota / week's feed cap) so we never over-commit.
+    const orphanBlock = actionableOrphans.length > 0
+      ? `⚠ COMPLETED IG VISUALS AWAITING THEIR POST — these renders already succeeded but have NO instagram_post yet. Commit them FIRST (queue_subtask instagram_post with parent_task_id set to the visual id below) before rendering anything new; do NOT re-render. This needs no new render, so the daily cap does not apply:\n` +
+        actionableOrphans.map(v => `  - visual ${v.id} (aspect:${v.aspect || '?'}${v.productName ? `, product:${v.productName}` : ', product-free'}) → queue instagram_post media_type:${v.aspect === 'story' ? '"story"' : '"feed_image"'} parent_task_id:"${v.id}"\n`).join('') + `\n`
+      : ''
     igCadenceBlock =
       `=== IG CADENCE — your STANDING quota ===\n` +
       `Target: ${IG_STORY_PER_DAY} story PER DAY + ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} feed posts PER WEEK (feeds spread across the week, max ${IG_FEED_MAX_PER_DAY}/day).\n` +
       `Today so far: ${c.storiesToday} story, ${c.feedsToday} feed. This week so far: ${c.feedsThisWeek} feed${c.igVisualsInFlight > 0 ? ` (+${c.igVisualsInFlight} IG visual(s) still rendering)` : ''}.\n` +
       `STILL NEEDED right now: ${c.storyRemainingToday} story today, ${feedLine}.\n` +
       capLine +
-      `Queue ONLY what STILL NEEDED lists, then WAIT. A post is a TWO-STEP pipeline (visual_generation destination:"ig_post" → wait for COMPLETE → instagram_post parented to it). Never queue a feed when none is due, never more than ${IG_FEED_MAX_PER_DAY} feed/day. When nothing is needed, note_progress and wait.\n\n`
+      orphanBlock +
+      storyPolicy +
+      `Queue ONLY what STILL NEEDED lists, then WAIT. A post is a TWO-STEP pipeline (visual_generation destination:"ig_post" → wait for COMPLETE → instagram_post parented to it). Never queue a feed when none is due or the weekly cap is reached, never more than ${IG_FEED_MAX_PER_DAY} feed/day. When nothing is needed, note_progress and wait.\n\n`
   }
 
   // ── 2.5 Grounding data — content choices must be research-led, not random ──
@@ -368,7 +447,7 @@ serve(async (req) => {
     `=== MINUTO COFFEE LINEUP (the ONLY products to feature — copy an EXACT name into products_to_mention; products_to_mention[0] becomes the article's banner hero bag. Never invent a name or feature anything not on this list) ===\n${catalogBlock}\n\n` +
     `=== SEARCH DEMAND — top GSC keywords, last 30d (what real people search; ground topic choices here) ===\n${gscBlock}\n\n` +
     `=== ALREADY PUBLISHED — blog posts, last 90d (do NOT re-write a topic we just covered) ===\n${recentBlock}\n\n` +
-    `=== FEATURED ON INSTAGRAM — last ${IG_PRODUCT_REPEAT_DAYS}d (do NOT feature any of these coffees again; pick a DIFFERENT bean from the lineup so IG posts don't cannibalize each other) ===\n${recentIgBlock}\n\n` +
+    `=== FEATURED ON INSTAGRAM — last ${IG_PRODUCT_REPEAT_DAYS}d (applies to FEED posts ONLY: do NOT feature any of these coffees in another FEED; pick a DIFFERENT bean so feeds don't cannibalize. STORIES are product-free and EXEMPT — never block a story on this list) ===\n${recentIgBlock}\n\n` +
     `Decide the SINGLE next move toward the objective. If sub-tasks are still in-flight and you have nothing independent to do, note_progress and wait. If the objective is met, complete_mission.`
 
   let res
@@ -402,6 +481,15 @@ serve(async (req) => {
   // IG-destined visuals queued in THIS step — folded into the daily-cap check
   // alongside cadence.igVisualsToday so a single step can't blow past the cap.
   let igVisualsQueuedThisStep = 0
+  // Story visuals queued THIS step — folded into the story-render cap exemption so
+  // a step can't queue two stories past the shared daily cap.
+  let igStoryVisualsQueuedThisStep = 0
+  // Feed UNITS (visual or post) initiated THIS step — folded into the weekly feed
+  // cap so one step can't push feeds past IG_FEED_PER_WEEK_MAX.
+  let feedUnitsQueuedThisStep = 0
+  // Story POSTS committed THIS step — folded into the daily story cap so one step
+  // (e.g. committing several orphaned story renders) can't exceed IG_STORY_PER_DAY.
+  let storyPostsQueuedThisStep = 0
   // Coffees featured by an IG visual queued THIS step — folded into the no-repeat
   // dedup so one step can't queue the same bean twice.
   const igProductsQueuedThisStep = new Set<string>()
@@ -433,14 +521,35 @@ serve(async (req) => {
       if (task_type === 'visual_generation') {
         const dest = String((rawBrief as { destination?: unknown }).destination ?? '').toLowerCase()
         if (dest === 'ig_post') {
+          const aspect        = String((rawBrief as { aspect?: unknown }).aspect ?? '').toLowerCase()
+          const isStoryVisual = aspect === 'story'
+          const isFeedVisual  = aspect.startsWith('feed')
           // (a) Hard daily render cap (cadence only). The throttle above only
           // counts still-in-flight sub-tasks, so a mission queuing visuals that
           // COMPLETE (then drop out of in-flight) could queue hundreds/day.
+          // EXCEPTION: always let the day's FIRST story render through. A story is
+          // the cadence's primary deliverable and is 1/day, so it can't run away —
+          // without this a busy feed day consumes all 4 slots and starves the
+          // story (the 2026-06-23 failure). The exemption is bounded to one.
           if (isDailyIgCadence) {
-            const alreadyToday = cadence?.igVisualsToday ?? 0
-            if (alreadyToday + igVisualsQueuedThisStep >= IG_VISUAL_DAILY_CAP) {
+            const storyRenderedToday = (cadence?.igStoryVisualsToday ?? 0) + igStoryVisualsQueuedThisStep
+            const storyExempt        = isStoryVisual && storyRenderedToday === 0
+            const alreadyToday       = cadence?.igVisualsToday ?? 0
+            if (!storyExempt && alreadyToday + igVisualsQueuedThisStep >= IG_VISUAL_DAILY_CAP) {
               newNotes.push(`(held off queuing IG visual — daily cap of ${IG_VISUAL_DAILY_CAP} IG visuals reached (${alreadyToday + igVisualsQueuedThisStep}). Queue instagram_post for a COMPLETED visual instead, or wait; the cap resets at UTC midnight.)`)
               continue
+            }
+            // (a2) Hard WEEKLY feed cap — block a new FEED visual once the week's
+            // feed ceiling is reached, so feeds can't over-produce and exhaust the
+            // bean pool (5 feeds the week of 2026-06-23 left no un-featured bean,
+            // deadlocking story selection). Stories are exempt — product-free.
+            if (isFeedVisual) {
+              const feedsWk = (cadence?.feedsThisWeek ?? 0) + feedUnitsQueuedThisStep
+              if (feedsWk >= IG_FEED_PER_WEEK_MAX) {
+                newNotes.push(`(held off queuing FEED visual — weekly feed cap of ${IG_FEED_PER_WEEK_MAX} reached (${feedsWk}/${IG_FEED_PER_WEEK_MAX} this week). Feeds spread across the week; queue the STORY instead or wait. Resets Sunday 00:00 UTC.)`)
+                continue
+              }
+              feedUnitsQueuedThisStep++
             }
           }
           // (b) No-repeat dedup: don't feature a coffee already featured on IG
@@ -473,6 +582,28 @@ serve(async (req) => {
         newNotes.push(`(did NOT queue instagram_post — it needs parent_task_id pointing at a COMPLETED visual_generation sub-task whose media it posts. Queue the visual first, wait for it to complete, then re-queue the IG post with that sub-task's id as parent_task_id.)`)
         continue
       }
+      // Hard cadence caps at the authoritative point — the committed POST is exactly
+      // what computeIgCadence counts. STORY: ≤IG_STORY_PER_DAY/day (stops the orphan-
+      // recovery from committing 2-3 stories off leftover renders, the 2026-06-24
+      // over-commit). FEED: ≤IG_FEED_PER_WEEK_MAX/week even if a feed visual slipped through.
+      if (task_type === 'instagram_post' && isDailyIgCadence) {
+        const mt = String((rawBrief as { media_type?: unknown }).media_type ?? '').toLowerCase()
+        if (mt === 'story') {
+          const storiesDone = (cadence?.storiesToday ?? 0) + storyPostsQueuedThisStep
+          if (storiesDone >= IG_STORY_PER_DAY) {
+            newNotes.push(`(did NOT queue STORY post — today's story quota of ${IG_STORY_PER_DAY} is already met (${storiesDone}/${IG_STORY_PER_DAY}). One story per day; leave any extra rendered story visuals uncommitted. Resets UTC midnight.)`)
+            continue
+          }
+          storyPostsQueuedThisStep++
+        } else if (mt) {
+          const feedsWk = (cadence?.feedsThisWeek ?? 0) + feedUnitsQueuedThisStep
+          if (feedsWk >= IG_FEED_PER_WEEK_MAX) {
+            newNotes.push(`(did NOT queue FEED post — weekly feed cap of ${IG_FEED_PER_WEEK_MAX} reached (${feedsWk}/${IG_FEED_PER_WEEK_MAX} this week). Post the STORY if it's still needed; feeds resume next week. Resets Sunday 00:00 UTC.)`)
+            continue
+          }
+          feedUnitsQueuedThisStep++
+        }
+      }
       // PRE-INSERT VALIDATION. A malformed brief inserts fine (brief_data is
       // raw JSONB) but then dies at the worker's claim-time gate — and the
       // mission, seeing only a failed sub-task, used to re-queue the same
@@ -499,6 +630,7 @@ serve(async (req) => {
         if (textId && task_type === 'visual_generation' &&
             String((norm.brief as { destination?: unknown }).destination ?? '').toLowerCase() === 'ig_post') {
           igVisualsQueuedThisStep++
+          if (String((norm.brief as { aspect?: unknown }).aspect ?? '').toLowerCase() === 'story') igStoryVisualsQueuedThisStep++
         }
         if (textId && task_type === 'dynamic_experiment') {
           const what = rationale || String((norm.brief as Record<string, unknown>).description ?? '').trim() || 'needs your decision'
@@ -719,6 +851,7 @@ function buildMissionSystemPrompt(inflight: number, isDailyIgCadence = false): s
 - Each tick: do EXACTLY what "STILL NEEDED right now" lists — nothing more. If it says 0 story and no feed due, just note_progress and wait. Crucially: if no feed is due today, do NOT queue a feed (the weekly quota is on pace). Queue at most the next 1-2 sub-tasks, never a day/week at once.
 - A post is a TWO-STEP pipeline: first queue a visual_generation (set brief.destination:"ig_post", choose render_mode bag_hero with an exact product_name when featuring a coffee, else no_bag for a lifestyle scene), WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts). Set media_type:"story" on exactly the story.
 - CRITICAL — match the aspect to the format: the STORY's visual_generation MUST set aspect:"story" (9:16 full-bleed, 1080×1920). FEED posts use aspect:"feed_square" (1:1) for a single image or aspect:"feed_portrait" (4:5) for a carousel. A story rendered at feed_square/feed_portrait is WRONG — it must be aspect:"story". So: story → visual aspect:"story" + post media_type:"story"; feed → visual aspect:"feed_square"/"feed_portrait" + post media_type:"feed_image"/"feed_carousel".
+- STORY vs FEED are different formats with different rules. The daily STORY is PRODUCT-FREE by default: a brewing method, ritual, brewing tip, or café-ambiance scene (aspect:"story", render_mode:"no_bag", no product_name). It does NOT feature a specific bean and is NOT subject to the "featured on Instagram" no-repeat list — so the story is NEVER blocked by recently-used beans. Only FEED posts feature an exact coffee and must rotate to a bean not featured in the last ${IG_PRODUCT_REPEAT_DAYS} days. If you can't find an un-featured bean for a feed, that just means no feed is due — it never blocks the story.
 - Vary it: don't post the same product/angle every day; ground each choice in the SEARCH DEMAND + CATALOG data below, same as any content task.
 - Everything still queues for review — you never publish. The admin approves what ships.` : ''
   return `You are Minuto's autonomous MISSION EXECUTOR.${cadenceAddendum} Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
