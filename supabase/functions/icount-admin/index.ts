@@ -560,7 +560,7 @@ async function actionCoffeeSales(fromDate: string, toDate: string) {
     const all: any[] = [];
     let offset = 0;
     for (;;) {
-      const r = await icount("doc/search", { ...auth, doctype, from_date: fromDate, to_date: toDate, detail_level: 10, max_results: 200, offset });
+      const r = await icount("doc/search", { ...auth, doctype, start_date: fromDate, end_date: toDate, detail_level: 10, max_results: 200, offset });
       const list = r?.results_list;
       const docs = Array.isArray(list) ? list : (list && typeof list === "object" ? Object.values(list) : []);
       if (!docs.length) break;
