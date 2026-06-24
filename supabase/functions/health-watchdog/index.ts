@@ -121,6 +121,10 @@ const EXPECTED_CRONS: Array<{
   { jobname: 'woo-products-enrich-tick',            max_silence_hours: 30, required: false },
   { jobname: 'seo-worker-research-tick',            max_silence_hours: 1,  required: true  },
   { jobname: 'mission-worker-tick',                 max_silence_hours: 1,  required: false },
+  // Weekly Wed 18:00 IDT employee availability reminder (see
+  // 20260624_employee_availability_reminder_weekly_cron.sql). 8-day window
+  // allows for the weekly cadence + DST slack before alarming.
+  { jobname: 'employee-availability-reminder-weekly', max_silence_hours: 8 * 24, required: true },
   // Self-check: if the watchdog's OWN cron is unscheduled or made inactive,
   // the next run (or this run, if late) reports it. Not a substitute for an
   // external dead-man's-switch, but catches the in-band failure modes.
