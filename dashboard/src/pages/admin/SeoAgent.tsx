@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { LayoutGrid, Compass } from 'lucide-react'
 import SeoAgentLayout from './SeoAgentLayout'
 import SeoTaskQueue from './SeoTaskQueue'
 import SeoChatThread from './SeoChatThread'
 import SeoMetricsPanel from './SeoMetricsPanel'
+import StrategicBriefPanel from './StrategicBriefPanel'
 
 const SESSION_STORAGE_KEY = 'seo_agent_session_id'
 
@@ -17,6 +19,10 @@ function loadOrCreateSessionId(): string {
 }
 
 type MobilePanel = 'tasks' | 'chat' | 'metrics'
+// Top-level view: the existing 3-panel content workspace, or the full-width
+// strategist "State of Minuto" brief (a reading surface that wants width, so
+// it gets its own view rather than a cramped 4th grid column).
+type View = 'workspace' | 'brief'
 
 export default function SeoAgent() {
   const [sessionId, setSessionId] = useState<string>('')
@@ -24,6 +30,7 @@ export default function SeoAgent() {
   // once via the grid; this only drives the small-screen tab switcher.
   // Chat is the default — it's the primary interaction surface.
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>('chat')
+  const [view, setView] = useState<View>('workspace')
 
   useEffect(() => {
     setSessionId(loadOrCreateSessionId())
@@ -49,9 +56,39 @@ export default function SeoAgent() {
     { key: 'metrics', label: 'Metrics' },
   ]
 
+  const views: Array<{ key: View; label: string; icon: typeof LayoutGrid }> = [
+    { key: 'workspace', label: 'Workspace',      icon: LayoutGrid },
+    { key: 'brief',     label: 'State of Minuto', icon: Compass },
+  ]
+
   return (
     <SeoAgentLayout>
       <div className="h-full flex flex-col min-h-0">
+        {/* Top-level view switcher (always visible): the content workspace vs
+            the full-width strategist brief. */}
+        <div className="flex shrink-0 border-b border-surface-200 bg-white">
+          {views.map(v => {
+            const Icon = v.icon
+            return (
+              <button
+                key={v.key}
+                onClick={() => setView(v.key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors ${
+                  view === v.key
+                    ? 'text-brand-700 border-b-2 border-brand-600 bg-brand-50/40'
+                    : 'text-surface-500 hover:text-surface-800'
+                }`}
+              ><Icon size={13} /> {v.label}</button>
+            )
+          })}
+        </div>
+
+        {view === 'brief' ? (
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <StrategicBriefPanel />
+          </div>
+        ) : (
+        <div className="flex-1 min-h-0 flex flex-col">
         {/* Mobile-only tab switcher. Hidden at lg+ where all three panels
             show side by side. Lets the page work on a phone instead of
             overflowing the fixed 280/1fr/300 desktop grid. */}
@@ -96,6 +133,8 @@ export default function SeoAgent() {
             </div>
           </div>
         </div>
+        </div>
+        )}
       </div>
     </SeoAgentLayout>
   )

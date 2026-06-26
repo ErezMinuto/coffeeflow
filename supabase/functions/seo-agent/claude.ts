@@ -13,14 +13,21 @@
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
-// Latest Claude model IDs. Updated 2026-05-26 to Opus 4.7 / Sonnet 4.6
-// / Haiku 4.5 per the platform's current naming. The orchestrator uses
-// Sonnet for self-reflection (better at structured planning than Haiku,
-// cheaper than Opus). The chat handler can use Sonnet by default and
-// upgrade to Opus on-demand for hard tasks.
+// Claude model IDs. The content-planner stack (orchestrator, writers, chat)
+// runs on Sonnet — cheap, fast, good at structured planning. The STRATEGIST
+// BRAIN runs on Opus 4.8: it reasons deeply over the whole business once a
+// week, so quality-per-decision matters far more than per-token cost.
 export const MODEL_ORCHESTRATOR = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
 export const MODEL_CHAT         = 'claude-sonnet-4-6'
+export const MODEL_STRATEGIST   = 'claude-opus-4-8'
+
+// Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
+// budget_tokens (400). Detect them so callClaude omits sampling params and
+// sends thinking:adaptive instead. Sonnet/Haiku keep the temperature path.
+function usesAdaptiveThinking(model: string): boolean {
+  return /^claude-opus-4-(7|8)/.test(model) || model.startsWith('claude-fable')
+}
 
 // Anthropic Messages API shapes — minimal, just what we use.
 
@@ -72,7 +79,11 @@ export interface CallClaudeOptions {
   system: string
   messages: ChatMessage[]
   maxTokens?: number
+  // Ignored by adaptive-thinking models (Opus 4.7+/Fable) — they reject it.
   temperature?: number
+  // Reasoning depth vs token-spend tradeoff (GA; Opus 4.5+ / Sonnet 4.6).
+  // 'high' is the strategist default; omit for the cheap Sonnet workers.
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   tools?: ToolDefinition[]
   timeoutMs?: number
   // Prompt caching — when true, marks the system prompt + last tool with
@@ -106,6 +117,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   }
 
   const model = opts.model ?? MODEL_ORCHESTRATOR
+  const adaptive = usesAdaptiveThinking(model)
   const body: Record<string, unknown> = {
     model,
     max_tokens: opts.maxTokens ?? 8192,
@@ -117,7 +129,15 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
       : opts.system,
     messages: opts.messages,
   }
-  if (opts.temperature != null) body.temperature = opts.temperature
+  if (adaptive) {
+    // Adaptive thinking is the only on-mode for Opus 4.7+/Fable; Claude
+    // decides how much to think per request. Sending temperature would 400.
+    body.thinking = { type: 'adaptive' }
+  } else if (opts.temperature != null) {
+    body.temperature = opts.temperature
+  }
+  // effort is opt-in, so existing Sonnet callers (no effort) are unchanged.
+  if (opts.effort) body.output_config = { effort: opts.effort }
   if (opts.tools && opts.tools.length > 0) {
     // Tools: when caching, attach cache_control to the LAST tool. The
     // marker caches the WHOLE prefix up to and including that block, so
