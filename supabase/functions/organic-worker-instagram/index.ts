@@ -42,6 +42,7 @@ import {
   markTaskFailed,
 } from '../seo-agent/db.ts'
 import type { SeoTaskRow, InstagramPostBrief } from '../seo-agent/types.ts'
+import { sendOwnerEmail } from '../_shared/email.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -104,18 +105,7 @@ async function notifyPostReadyForReview(args: {
     </div>
   </div>
 </body></html>`
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `Minuto <${SENDER_EMAIL}>`, to: [ADMIN_ALERT_EMAIL], subject, html }),
-    })
-    if (!res.ok) return `Resend ${res.status}: ${(await res.text()).slice(0, 180)}`
-    const data = await res.json().catch(() => ({}))
-    return `sent (${data?.id ?? 'ok'})`
-  } catch (e: any) {
-    return `error: ${e?.message ?? e}`
-  }
+  return await sendOwnerEmail({ subject, html })
 }
 
 serve(async (req) => {

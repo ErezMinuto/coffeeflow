@@ -495,3 +495,100 @@ export interface ChatToolResult {
   content: string
   is_error?: boolean
 }
+
+// ── Strategist Brain — business snapshot shapes ──────────────────────────────
+// The single source of truth for the world-state the Opus brain reasons over
+// (services/businessSnapshot.ts assembles it). REVENUE FIRST: `sales` is the
+// north-star; every other block is a candidate driver the brain tests against it.
+// Each sense degrades to `{ error }` rather than failing the whole snapshot, so
+// most blocks are a union with that marker.
+
+/** A degraded sense — one fetcher threw; the brain is told which went dark. */
+export interface SnapshotError { error: string }
+
+export interface CategorySales {
+  category:    string      // 'coffee' | 'machine' | 'grinder' | 'accessory' | 'other'
+  revenue_ils: number
+  units:       number
+  order_count: number
+}
+
+export interface SkuSales {
+  sku:         string
+  name:        string
+  category:    string
+  revenue_ils: number
+  units:       number
+}
+
+export interface SalesWindow {
+  since:               string  // ISO date (inclusive lower bound)
+  revenue_ils:         number
+  order_count:         number
+  avg_order_value_ils: number
+  by_category:         CategorySales[]
+  top_skus:            SkuSales[]
+}
+
+export interface SalesSnapshot {
+  window_days: number
+  current:     SalesWindow
+  prior:       SalesWindow  // the equal-length window immediately before `current` (for trend)
+  trend: {
+    revenue_pct_change:     number | null  // null when the prior window was zero
+    order_count_pct_change: number | null
+    aov_pct_change:         number | null
+  }
+}
+
+export interface EmailCampaignPerf {
+  subject:       string
+  campaign_type: string
+  sent_at:       string | null
+  recipients:    number
+  open_rate:     number   // 0..1
+  click_rate:    number   // 0..1
+  bounce_count:  number
+}
+
+export interface EmailPerformance {
+  lookback_days:   number
+  campaigns_sent:  number
+  total_recipients: number
+  avg_open_rate:   number  // recipient-weighted, 0..1
+  avg_click_rate:  number  // recipient-weighted, 0..1
+  recent:          EmailCampaignPerf[]
+}
+
+/** An active driver-hypothesis read back into the brain's prompt (its memory). */
+export interface TheseSnapshotRow {
+  id:              string
+  thesis:          string
+  lever:           string
+  success_metric:  string
+  metric_baseline: number | null
+  check_date:      string | null
+  rationale:       string | null
+  due_for_check:   boolean  // check_date has arrived — Phase 3 will score it vs revenue
+}
+
+// Deliberately loose imports-by-shape for blocks owned by services/*: those
+// modules export their own row interfaces; the snapshot just unions each with
+// the error marker. `unknown[]` would lose the shape, so businessSnapshot.ts
+// casts to the concrete service types and we mirror that here via the union.
+export interface BusinessSnapshot {
+  as_of:                 string  // the ONLY intentionally-variable field (sort-stable otherwise)
+  north_star:            'revenue'
+  sales:                 SalesSnapshot | SnapshotError
+  customer_segments:     unknown | SnapshotError       // CustomerSegmentSummary (services/cmsApi.ts)
+  email:                 EmailPerformance | SnapshotError
+  inventory_alerts:      unknown[] | SnapshotError      // InventoryAlert[] (non-healthy only)
+  coffee_catalog:        unknown[] | SnapshotError      // WooProduct[]
+  voice_of_customer:     unknown[] | SnapshotError      // VocInsight[]
+  organic_landing_pages: unknown[] | SnapshotError      // Ga4LandingPageSignal[]
+  search_keywords:       unknown[] | SnapshotError      // GscKeywordRow[]
+  organic_posts:         unknown[] | SnapshotError      // OrganicPostSignal[]
+  converting_ads:        unknown[] | SnapshotError      // AdInsightSignal[]
+  open_theses:           TheseSnapshotRow[] | SnapshotError
+  recent_learnings:      unknown[] | SnapshotError      // LearningRow[]
+}

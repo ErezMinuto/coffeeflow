@@ -24,6 +24,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendOwnerEmail } from '../_shared/email.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -80,17 +81,7 @@ async function sendAlertEmail(
     </table>
     <p style="color:#9ca3af;font-size:12px;margin-top:16px">Full detail is also in the admin task queue (task_subtype=health_alert). — health-watchdog</p>
   </div>`
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `Minuto <${SENDER_EMAIL}>`, to: [ADMIN_ALERT_EMAIL], subject, html }),
-    })
-    if (!res.ok) return `failed (${res.status}: ${(await res.text()).slice(0, 200)})`
-    return 'sent'
-  } catch (e: any) {
-    return `failed (${e?.message ?? e})`
-  }
+  return await sendOwnerEmail({ subject, html })
 }
 
 // Crons we expect to run on a known cadence. The schedule is intentionally

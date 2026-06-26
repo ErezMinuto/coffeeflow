@@ -516,3 +516,59 @@ export async function updateExperimentStatus(
 }
 
 type ExperimentStatusUpdate = 'evaluating' | 'evaluated' | 'inconclusive' | 'cancelled'
+
+// ── Cost ledger (spend observability + monthly kill-switch) ──────────────────
+// One row per callClaude() return across the whole agent stack. callClaude
+// already returns the four token counts; estimateUsd turns them into a dollar
+// figure. The strategist kickoff sums est_usd month-to-date against the ceiling.
+// Best-effort: a ledger write must NEVER break the caller's run — we swallow +
+// log errors rather than throw, since losing one cost row is far cheaper than
+// failing an expensive reasoning step that already happened.
+
+import { estimateUsd } from './strategistConfig.ts'
+
+export async function logClaudeCost(
+  supabase: SupabaseClient,
+  args: {
+    sourceFn:            string          // e.g. 'strategist-brain', 'organic-orchestrator'
+    model:               string
+    inputTokens:         number
+    outputTokens:        number
+    cacheReadTokens:     number
+    cacheCreationTokens: number
+    runId?:              string | null
+  },
+): Promise<void> {
+  const est_usd = estimateUsd({
+    model:               args.model,
+    inputTokens:         args.inputTokens,
+    outputTokens:        args.outputTokens,
+    cacheReadTokens:     args.cacheReadTokens,
+    cacheCreationTokens: args.cacheCreationTokens,
+  })
+  const { error } = await supabase.from('agent_cost_ledger').insert({
+    source_fn:             args.sourceFn,
+    run_id:                args.runId ?? null,
+    model:                 args.model,
+    input_tokens:          args.inputTokens,
+    output_tokens:         args.outputTokens,
+    cache_read_tokens:     args.cacheReadTokens,
+    cache_creation_tokens: args.cacheCreationTokens,
+    est_usd,
+  })
+  if (error) console.warn(`[db] logClaudeCost(${args.sourceFn}) failed (non-fatal): ${error.message}`)
+}
+
+// Sum est_usd across the agent stack for the current calendar month (UTC). Powers
+// the kickoff kill-switch: skip + alert when month-to-date >= the ceiling.
+export async function getMonthToDateSpendUsd(supabase: SupabaseClient): Promise<number> {
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+  const { data, error } = await supabase
+    .from('agent_cost_ledger')
+    .select('est_usd')
+    .gte('created_at', monthStart)
+    .limit(100000)
+  if (error) throw new Error(`getMonthToDateSpendUsd failed: ${error.message}`)
+  return (data ?? []).reduce((s: number, r: { est_usd: number | null }) => s + Number(r.est_usd ?? 0), 0)
+}
