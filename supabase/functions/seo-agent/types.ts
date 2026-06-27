@@ -590,6 +590,7 @@ export interface BusinessSnapshot {
   organic_posts:         unknown[] | SnapshotError      // OrganicPostSignal[]
   converting_ads:        unknown[] | SnapshotError      // AdInsightSignal[]
   open_theses:           TheseSnapshotRow[] | SnapshotError
+  resolved_theses:       unknown[] | SnapshotError      // validated/refuted theses + outcomes (Phase 3 learning)
   recent_learnings:      unknown[] | SnapshotError      // LearningRow[]
 }
 

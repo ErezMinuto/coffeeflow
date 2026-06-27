@@ -82,17 +82,35 @@ const SIGNAL_STATUS_STYLE: Record<StrategistSignal['status'], string> = {
   declined: 'bg-surface-200 text-surface-500',
 }
 
+type ThesisStatus = 'active' | 'validated' | 'refuted' | 'superseded'
+interface StrategistThesis {
+  id:             string
+  thesis:         string
+  lever:          string
+  success_metric: string
+  check_date:     string | null
+  status:         ThesisStatus
+  outcome:        string | null
+}
+const THESIS_STATUS_STYLE: Record<ThesisStatus, string> = {
+  active:     'bg-blue-100 text-blue-900',
+  validated:  'bg-green-100 text-green-900',
+  refuted:    'bg-red-100 text-red-900',
+  superseded: 'bg-surface-200 text-surface-500',
+}
+
 export default function StrategicBriefPanel() {
   const [brief, setBrief]     = useState<StrategicBrief | null>(null)
   const [signals, setSignals] = useState<StrategistSignal[]>([])
   const [recs, setRecs]       = useState<StrategistRec[]>([])
+  const [theses, setTheses]   = useState<StrategistThesis[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const cancelledRef = useRef(false)
 
   const load = useCallback(async () => {
-    const [briefRes, signalRes] = await Promise.all([
+    const [briefRes, signalRes, thesisRes] = await Promise.all([
       supabase
         .from('strategic_briefs')
         .select('*')
@@ -104,11 +122,17 @@ export default function StrategicBriefPanel() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50),
+      supabase
+        .from('strategic_theses')
+        .select('id,thesis,lever,success_metric,check_date,status,outcome')
+        .order('updated_at', { ascending: false })
+        .limit(20),
     ])
     if (cancelledRef.current) return
     const latestBrief = ((briefRes.data ?? [])[0] as StrategicBrief) ?? null
     setBrief(latestBrief)
     setSignals((signalRes.data ?? []) as StrategistSignal[])
+    setTheses((thesisRes.data ?? []) as StrategistThesis[])
     if (latestBrief) {
       const { data: recData } = await supabase
         .from('strategic_recommendations')
@@ -130,6 +154,7 @@ export default function StrategicBriefPanel() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_briefs' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategist_signals' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_recommendations' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_theses' }, () => load())
       .subscribe()
     const poll = setInterval(() => load(), 30_000)
     return () => {
@@ -326,6 +351,31 @@ export default function StrategicBriefPanel() {
                     brief {brief.id.slice(0, 8)} · {new Date(brief.created_at).toISOString().slice(0, 16).replace('T', ' ')} · {brief.status}
                   </div>
                 </article>
+              )}
+
+              {/* ── Theses — the revenue-graded memory ──────────────────── */}
+              {theses.length > 0 && (
+                <div className="border-t border-surface-200 pt-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-3">Theses — bets scored against revenue</h3>
+                  <ul className="space-y-2">
+                    {theses.map(t => (
+                      <li key={t.id} className={`rounded-lg border border-surface-200 p-3 text-sm ${t.status === 'superseded' ? 'opacity-60' : ''}`}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-surface-900">{t.thesis}</div>
+                            <div className="text-[12px] text-surface-500 mt-0.5">
+                              <span className="font-medium">{t.lever}</span> · metric: {t.success_metric}{t.check_date ? ` · check ${t.check_date}` : ''}
+                            </div>
+                            {t.outcome && (
+                              <div className={`text-[12px] mt-1 ${t.status === 'validated' ? 'text-green-700' : t.status === 'refuted' ? 'text-red-700' : 'text-surface-500'}`}>{t.outcome}</div>
+                            )}
+                          </div>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${THESIS_STATUS_STYLE[t.status]}`}>{t.status}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               {/* ── Signals (agent → team) ──────────────────────────────── */}
