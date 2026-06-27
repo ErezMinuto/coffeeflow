@@ -23,7 +23,7 @@ set -euo pipefail
 : "${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY is required}"
 
 REST="${SUPABASE_URL%/}/rest/v1/strategist_signals"
-WORKER_ID="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
+RUN_REF="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
 SIGNAL_ID="${SIGNAL_ID:-}"
 
 # Tiny helper so we never echo the key into logs.
@@ -50,17 +50,18 @@ fi
 
 # 2. Atomic claim: only succeeds while the row is still an approved bug_report.
 #    An empty representation array means we lost the race / wrong state / wrong kind.
+#    (strategist_signals has no worker_id column — the status filter IS the lock.)
 claimed=$(curl -fsS -X PATCH "${auth[@]}" \
   -H "Content-Type: application/json" \
   -H "Prefer: return=representation" \
   "${REST}?id=eq.${SIGNAL_ID}&status=eq.approved&kind=eq.bug_report" \
-  -d "$(jq -nc --arg w "$WORKER_ID" '{status:"building", worker_id:$w, updated_at:(now|todateiso8601)}')")
+  -d "$(jq -nc '{status:"building", updated_at:(now|todateiso8601)}')")
 
 count=$(echo "$claimed" | jq 'length')
 [[ "$count" == "0" ]] && bail_unclaimed "signal ${SIGNAL_ID} was not in approved/bug_report state"
 
 # 3. Persist the claimed row for the agent to read, and report success.
 echo "$claimed" | jq '.[0]' > fixer-signal.json
-echo "claim-signal: claimed ${SIGNAL_ID} (worker ${WORKER_ID})" >&2
+echo "claim-signal: claimed ${SIGNAL_ID} (run ${RUN_REF})" >&2
 emit "claimed=true"
 emit "signal_id=${SIGNAL_ID}"
