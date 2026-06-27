@@ -363,6 +363,14 @@ export type ChatToolName =
   | 'read_post'
   | 'edit_post'
   | 'list_posts'
+  // Strategist (State of Minuto) — read + act on the autonomous strategist's work
+  | 'list_strategist_signals'
+  | 'get_strategic_brief'
+  | 'list_strategic_theses'
+  | 'list_strategic_recommendations'
+  | 'set_signal_status'
+  | 'set_recommendation_status'
+  | 'trigger_fixer'
 
 // ── Persistent missions ──────────────────────────────────────────────────
 // An open-ended objective the agent pursues autonomously across cron ticks

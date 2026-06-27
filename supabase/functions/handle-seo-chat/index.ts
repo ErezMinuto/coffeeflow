@@ -512,6 +512,95 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ['task_id', 'attempt_number'],
     },
   },
+
+  // ── Strategist (State of Minuto) ───────────────────────────────────────
+  // Read + act on the autonomous strategist-brain's output: weekly briefs,
+  // agent→team signals (bug_report/capability_request/feature_idea — bug_reports
+  // carry the PR-gated fixer's pr_url + fixer_note), revenue-graded theses, and
+  // drafted recommendations. Read tools are free; the three action tools mutate
+  // and MUST be gated on Erez's explicit in-turn confirmation (see prompt).
+  {
+    name: 'list_strategist_signals',
+    description: "List the strategist's signals — the agent→team channel. kind ∈ {bug_report, capability_request, feature_idea}; status ∈ {open, approved, building, shipped, declined, needs_human}. Each row has title, detail, evidence, blocked_decision, leverage, and (for bug_reports the fixer touched) pr_url + fixer_note. Use to answer 'what bugs/requests have you raised?', 'what got fixed?', 'show open signals'.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        kind:   { type: 'string', description: 'bug_report | capability_request | feature_idea (omit for all)' },
+        status: { type: 'string', description: 'open | approved | building | shipped | declined | needs_human (omit for all)' },
+        limit:  { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'get_strategic_brief',
+    description: "Fetch a weekly 'State of Minuto' strategic brief in full: summary, diagnosis[] (cited claims), top_thesis, recommendations[], out_of_hands[]. Pass latest=true for the newest, or brief_id for a specific one. Use when Erez asks to summarize/discuss the brief.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        latest:   { type: 'boolean', description: 'true = newest brief (default if no brief_id)' },
+        brief_id: { type: 'string', description: 'UUID of a specific strategic_briefs row' },
+      },
+    },
+  },
+  {
+    name: 'list_strategic_theses',
+    description: "List the strategist's revenue-graded theses (its long-term memory of what moves Minuto). status ∈ {active, validated, refuted, superseded}. Each has thesis, lever, success_metric, check_date, and outcome (once scored). Use to discuss what bets are open and how past bets resolved.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', description: 'active | validated | refuted | superseded (omit for all)' },
+        limit:  { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'list_strategic_recommendations',
+    description: "List the strategist's recommendations (in-hands moves it drafts on approval). status ∈ {proposed, approved, drafted, dismissed, failed}; action_type ∈ {email_campaign, content_blog, content_ig, none}. Each has title, rationale, success_metric, draft_ref. Filter by brief_id or status.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        brief_id: { type: 'string', description: 'UUID — recs for one brief (omit for recent across briefs)' },
+        status:   { type: 'string', description: 'proposed | approved | drafted | dismissed | failed (omit for all)' },
+        limit:    { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'set_signal_status',
+    description: "ACTION (confirm first): set a strategist signal's status — 'approved' (mark it for action; for a bug_report this is the prerequisite the fixer needs), 'declined' (with decline_reason; the strategist reads it and won't re-raise), or 'open' (reset). Mirrors the dashboard's approve/decline. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        signal_id:      { type: 'string', description: 'UUID of the strategist_signals row' },
+        status:         { type: 'string', description: 'approved | declined | open' },
+        decline_reason: { type: 'string', description: "required when status='declined' — the strategist reads this" },
+      },
+      required: ['signal_id', 'status'],
+    },
+  },
+  {
+    name: 'set_recommendation_status',
+    description: "ACTION (confirm first): set a strategist recommendation's status — 'approved' (the executor drafts it — a blog/IG/email draft, never sends) or 'dismissed'. Mirrors the dashboard. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        rec_id: { type: 'string', description: 'UUID of the strategic_recommendations row' },
+        status: { type: 'string', description: 'approved | dismissed' },
+      },
+      required: ['rec_id', 'status'],
+    },
+  },
+  {
+    name: 'trigger_fixer',
+    description: "ACTION (confirm first): hand a bug_report to the PR-gated fixer agent. Ensures the signal is an approved bug_report, then dispatches the fixer GitHub Action, which writes a code fix on a branch and opens a PR (it NEVER deploys or merges — Erez reviews/merges). Returns the Actions URL. If the GitHub token isn't configured it still approves the signal and tells you to run the workflow manually. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        signal_id: { type: 'string', description: 'UUID of a bug_report strategist_signals row' },
+      },
+      required: ['signal_id'],
+    },
+  },
 ]
 
 // ── Tool execution ─────────────────────────────────────────────────────
@@ -525,14 +614,43 @@ async function executeTool(
     switch (name) {
       case 'queue_task': {
         const task_type  = String(input.task_type ?? '').trim()
-        const brief_data = input.brief_data as Record<string, unknown> | undefined
-        const rationale  = String(input.rationale ?? '').trim()
-        if (!task_type || !brief_data || !rationale) {
-          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data, rationale.' } }
+        // The model sometimes emits brief_data as a JSON STRING rather than an
+        // object (despite the schema saying object), especially for nested
+        // briefs like carousels. Stored verbatim into the jsonb column it
+        // becomes a string scalar, so the worker sees no .slides / .scene_brief
+        // and rejects it as "brief invalid" — which the agent then misreads as
+        // a schema change and loops on. Coerce a stringified brief back to an
+        // object up front (also so the parent_task_id promotion below operates
+        // on a real object).
+        let brief_data = input.brief_data as Record<string, unknown> | undefined
+        if (typeof input.brief_data === 'string') {
+          try {
+            const parsed = JSON.parse(input.brief_data)
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              brief_data = parsed as Record<string, unknown>
+            }
+          } catch { /* malformed JSON string — the required-field check below rejects it cleanly */ }
         }
-        const parent_task_id = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
+        const rationale  = String(input.rationale ?? '').trim()
+        if (!task_type || !brief_data || typeof brief_data !== 'object' || !rationale) {
+          return { ok: false, payload: { error: 'queue_task requires task_type, brief_data (an object), rationale.' } }
+        }
+        // parent_task_id is a TOP-LEVEL queue_task argument, but the model
+        // frequently misplaces it INSIDE brief_data. When it does, the task's
+        // top-level parent_task_id column stays null and the worker can't find
+        // its parent — e.g. a blog banner never resolves the parent text
+        // task's wp_post_id, so the rendered image is orphaned and never
+        // attached as the featured image. Defensively promote a nested
+        // parent_task_id out of brief_data (and strip it from the brief).
+        const nestedParent = typeof (brief_data as Record<string, unknown>).parent_task_id === 'string'
+          && ((brief_data as Record<string, unknown>).parent_task_id as string).trim().length > 0
+          ? ((brief_data as Record<string, unknown>).parent_task_id as string).trim()
+          : null
+        if (nestedParent) delete (brief_data as Record<string, unknown>).parent_task_id
+        const topLevelParent = typeof input.parent_task_id === 'string' && input.parent_task_id.trim().length > 0
           ? input.parent_task_id.trim()
           : null
+        const parent_task_id = topLevelParent ?? nestedParent
         const depends_on = Array.isArray(input.depends_on)
           ? (input.depends_on as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0)
           : []
@@ -1132,6 +1250,17 @@ async function executeTool(
           return { ok: false, payload: { error: 'cancel_task requires task_id and reason.' } }
         }
         await markTaskFailed(supabase, task_id, `[chat-cancel] ${reason}`, true)
+        // Also clear any HITL review flag so a cancelled task LEAVES the review
+        // queue. The review UI keys off result_data.review_required (independent
+        // of task status), so without this a cancelled IG post/carousel lingers
+        // as "awaiting review" with broken/blank content.
+        const { data: cRow } = await supabase.from('seo_tasks').select('result_data').eq('id', task_id).maybeSingle()
+        const cRd = (cRow?.result_data ?? {}) as Record<string, unknown>
+        if (cRd.review_required === true) {
+          await supabase.from('seo_tasks').update({
+            result_data: { ...cRd, review_required: false, cancelled_via_chat_at: new Date().toISOString(), cancel_reason: reason },
+          }).eq('id', task_id)
+        }
         return { ok: true, payload: { status: 'cancelled', task_id } }
       }
 
@@ -1194,6 +1323,143 @@ async function executeTool(
           limit,
         })
         return { ok: true, payload: { learnings: rows } }
+      }
+
+      // ── Strategist (State of Minuto) ─────────────────────────────────────
+      case 'list_strategist_signals': {
+        const kind   = typeof input.kind === 'string' ? input.kind : undefined
+        const status = typeof input.status === 'string' ? input.status : undefined
+        const limit  = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategist_signals')
+          .select('id, kind, title, detail, status, blocked_decision, leverage, pr_url, fixer_note, decline_reason, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (kind)   q = q.eq('kind', kind)
+        if (status) q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { signals: data ?? [] } }
+      }
+
+      case 'get_strategic_brief': {
+        const briefId = typeof input.brief_id === 'string' ? input.brief_id.trim() : ''
+        let q = supabase
+          .from('strategic_briefs')
+          .select('id, week_start, summary, diagnosis, top_thesis, recommendations, out_of_hands, status, created_at')
+        q = briefId
+          ? q.eq('id', briefId)
+          : q.order('week_start', { ascending: false }).order('created_at', { ascending: false })
+        const { data, error } = await q.limit(1)
+        if (error) return { ok: false, payload: { error: error.message } }
+        if (!data || data.length === 0) return { ok: true, payload: { brief: null, note: 'no brief found' } }
+        return { ok: true, payload: { brief: data[0] } }
+      }
+
+      case 'list_strategic_theses': {
+        const status = typeof input.status === 'string' ? input.status : undefined
+        const limit  = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategic_theses')
+          .select('id, thesis, lever, success_metric, metric_baseline, check_date, status, outcome, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (status) q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { theses: data ?? [] } }
+      }
+
+      case 'list_strategic_recommendations': {
+        const briefId = typeof input.brief_id === 'string' ? input.brief_id : undefined
+        const status  = typeof input.status === 'string' ? input.status : undefined
+        const limit   = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategic_recommendations')
+          .select('id, brief_id, title, rationale, action_type, success_metric, status, draft_ref, draft_error, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (briefId) q = q.eq('brief_id', briefId)
+        if (status)  q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { recommendations: data ?? [] } }
+      }
+
+      case 'set_signal_status': {
+        const signalId = String(input.signal_id ?? '').trim()
+        const status   = String(input.status ?? '').trim()
+        const allowed  = ['approved', 'declined', 'open']
+        if (!signalId || !allowed.includes(status)) {
+          return { ok: false, payload: { error: `set_signal_status requires signal_id and status ∈ {${allowed.join(', ')}}` } }
+        }
+        const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
+        if (status === 'declined') {
+          const reason = String(input.decline_reason ?? '').trim()
+          if (!reason) return { ok: false, payload: { error: 'decline_reason is required when declining (the strategist reads it)' } }
+          patch.decline_reason = reason
+        }
+        const { data, error } = await supabase
+          .from('strategist_signals').update(patch).eq('id', signalId).select('id, status').single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { updated: data } }
+      }
+
+      case 'set_recommendation_status': {
+        const recId   = String(input.rec_id ?? '').trim()
+        const status  = String(input.status ?? '').trim()
+        const allowed = ['approved', 'dismissed']
+        if (!recId || !allowed.includes(status)) {
+          return { ok: false, payload: { error: `set_recommendation_status requires rec_id and status ∈ {${allowed.join(', ')}}` } }
+        }
+        const { data, error } = await supabase
+          .from('strategic_recommendations')
+          .update({ status, updated_at: new Date().toISOString() }).eq('id', recId).select('id, status').single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { updated: data } }
+      }
+
+      case 'trigger_fixer': {
+        const signalId = String(input.signal_id ?? '').trim()
+        if (!signalId) return { ok: false, payload: { error: 'trigger_fixer requires signal_id' } }
+        // Must be a bug_report; ensure it's approved (the fixer claims approved bug_reports).
+        const { data: sig, error: sigErr } = await supabase
+          .from('strategist_signals').select('id, kind, status').eq('id', signalId).single()
+        if (sigErr) return { ok: false, payload: { error: sigErr.message } }
+        if (!sig) return { ok: false, payload: { error: 'signal not found' } }
+        if ((sig as { kind: string }).kind !== 'bug_report') {
+          return { ok: false, payload: { error: 'trigger_fixer only applies to bug_report signals' } }
+        }
+        if ((sig as { status: string }).status !== 'approved') {
+          const { error: upErr } = await supabase
+            .from('strategist_signals').update({ status: 'approved', updated_at: new Date().toISOString() }).eq('id', signalId)
+          if (upErr) return { ok: false, payload: { error: `could not approve signal: ${upErr.message}` } }
+        }
+        const token = Deno.env.get('GITHUB_DISPATCH_TOKEN')
+        const repo  = Deno.env.get('GITHUB_REPO') ?? 'ErezMinuto/coffeeflow'
+        if (!token) {
+          return { ok: true, payload: { dispatched: false, signal_approved: true,
+            note: `Signal approved. I can't start the fixer from here — GITHUB_DISPATCH_TOKEN isn't configured. Run it manually: \`gh workflow run fixer-agent.yml -f signal_id=${signalId} --repo ${repo}\` (or add the secret to enable one-click dispatch).` } }
+        }
+        const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/fixer-agent.yml/dispatches`, {
+          method: 'POST',
+          headers: {
+            'Authorization':        `Bearer ${token}`,
+            'Accept':               'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent':           'minuto-seo-chat',
+            'Content-Type':         'application/json',
+          },
+          body: JSON.stringify({ ref: 'main', inputs: { signal_id: signalId } }),
+        })
+        if (resp.status === 204) {
+          return { ok: true, payload: { dispatched: true, signal_approved: true,
+            actions_url: `https://github.com/${repo}/actions/workflows/fixer-agent.yml`,
+            note: 'Fixer dispatched. It will open a PR (it never deploys or merges); review and merge it there.' } }
+        }
+        const body = await resp.text()
+        return { ok: false, payload: { dispatched: false, signal_approved: true,
+          error: `GitHub dispatch failed: HTTP ${resp.status} ${body.slice(0, 300)}` } }
       }
 
       case 'supersede_learning': {
@@ -1663,10 +1929,35 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
   // Most-recent orchestrator snapshot + 10 most-recent tasks + 20 most-
   // recent active learnings (cross-session memory). All three are read
   // fresh on every chat turn so the agent always sees the latest state.
-  const [snapshots, recentTasks, learnings] = await Promise.all([
+  const [snapshots, recentTasks, learnings, pendingExp, stratBrief, openSignals, activeTheses, proposedRecs] = await Promise.all([
     getRecentMetricsSnapshots(supabase, 'orchestrator_run', 1),
     getRecentTasks(supabase, new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(), 10),
     getRecentLearnings(supabase, { limit: 20 }),
+    // Pending dynamic_experiments are admin-action-required and can sit in the
+    // queue for days. Surface them in EVERY chat turn's context so the agent
+    // proactively raises them with Erez (rather than only when he asks).
+    supabase
+      .from('seo_tasks')
+      .select('id, created_at, rationale, brief_data')
+      .eq('task_type', 'dynamic_experiment')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(20)
+      .then(r => r.data ?? [])
+      .then(rows => rows as Array<{ id: string; created_at: string; rationale: string | null; brief_data: unknown }>),
+    // Strategist (State of Minuto) — proactive awareness so the agent can speak
+    // to what the strategist found/decided without being asked. Details on tool
+    // call (list_strategist_signals / get_strategic_brief / list_strategic_*).
+    supabase.from('strategic_briefs').select('id, week_start, summary, top_thesis')
+      .order('week_start', { ascending: false }).order('created_at', { ascending: false }).limit(1)
+      .then(r => (r.data ?? [])[0] as { id: string; week_start: string; summary: string; top_thesis: string | null } | undefined),
+    supabase.from('strategist_signals').select('id, kind, title, status')
+      .eq('status', 'open').order('created_at', { ascending: false }).limit(15)
+      .then(r => (r.data ?? []) as Array<{ id: string; kind: string; title: string; status: string }>),
+    supabase.from('strategic_theses').select('id', { count: 'exact', head: true }).eq('status', 'active')
+      .then(r => r.count ?? 0),
+    supabase.from('strategic_recommendations').select('id', { count: 'exact', head: true }).eq('status', 'proposed')
+      .then(r => r.count ?? 0),
   ])
 
   const snapBlock = snapshots[0]
@@ -1688,11 +1979,44 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
     ? '(no learnings recorded yet — use record_learning to teach me durable rules)'
     : groupLearningsForPrompt(learnings)
 
+  const approvalsBlock = pendingExp.length === 0
+    ? '(none waiting)'
+    : pendingExp.map((t) => {
+        const b = (typeof t.brief_data === 'string'
+          ? (() => { try { return JSON.parse(t.brief_data as string) } catch { return {} } })()
+          : (t.brief_data ?? {})) as Record<string, unknown>
+        const desc = String(b.description ?? t.rationale ?? '').slice(0, 220)
+        const age = t.created_at ? `since ${t.created_at.slice(0, 10)}` : ''
+        return `  ⚠️ [${t.id}] ${age} — ${desc}`
+      }).join('\n')
+
+  // Strategist state — compact pointer so the agent knows what the autonomous
+  // strategist has on file. Full detail via the strategist read tools.
+  const strategistBlock = [
+    stratBrief
+      ? `Latest brief (week ${stratBrief.week_start}, ${stratBrief.id.slice(0, 8)}): ${stratBrief.summary}` +
+        (stratBrief.top_thesis ? `\n  Top bet: ${stratBrief.top_thesis}` : '')
+      : '(no brief yet)',
+    openSignals.length === 0
+      ? 'Open signals: none.'
+      : `Open signals (awaiting your call — approve/decline, or trigger_fixer on a bug_report):\n` +
+        openSignals.map(s => `  • [${s.kind}] ${s.title} (${s.id.slice(0, 8)})`).join('\n'),
+    `Active theses: ${activeTheses} · Recommendations awaiting approval: ${proposedRecs}`,
+  ].join('\n')
+
   return `${CHAT_SYSTEM_PROMPT}
 
 === STANDING INSIGHTS (cross-session memory — apply unless explicitly overridden) ===
 
 ${learningsBlock}
+
+=== PENDING APPROVALS (dynamic_experiments awaiting Erez's decision — proactively raise these with him; he may not know they're here. Resolve via approve_dynamic_experiment or cancel_task) ===
+
+${approvalsBlock}
+
+=== STRATEGIST (State of Minuto — the autonomous weekly strategist's current state) ===
+
+${strategistBlock}
 
 === LIVE CONTEXT (refreshed on each chat turn) ===
 
