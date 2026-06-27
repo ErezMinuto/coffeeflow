@@ -622,7 +622,14 @@ export interface RecActionParams {
   topic?:          string
   key_points?:     string[]
   why_now?:        string
-  caption_he?:     string           // content_ig
+  // content_ig
+  caption_he?:     string
+  hashtags?:       string[]
+  media_type?:     'feed_image' | 'story'
+  scene_brief?:    string            // English photographer's brief for the image
+  render_mode?:    'bag_hero' | 'no_bag'
+  aspect?:         'feed_square' | 'story'
+  product_name?:   string            // exact Minuto product when render_mode='bag_hero'
   [k: string]:     unknown
 }
 
