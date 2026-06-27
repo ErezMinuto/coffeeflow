@@ -546,8 +546,9 @@ export interface EmailCampaignPerf {
   campaign_type: string
   sent_at:       string | null
   recipients:    number
-  open_rate:     number   // 0..1
-  click_rate:    number   // 0..1
+  delivered:     number   // delivered events; denominator for the rates below
+  open_rate:     number   // opens / delivered, 0..1
+  click_rate:    number   // clicks / delivered, 0..1
   bounce_count:  number
 }
 
@@ -555,8 +556,9 @@ export interface EmailPerformance {
   lookback_days:   number
   campaigns_sent:  number
   total_recipients: number
-  avg_open_rate:   number  // recipient-weighted, 0..1
-  avg_click_rate:  number  // recipient-weighted, 0..1
+  total_delivered: number
+  avg_open_rate:   number  // delivered-weighted, 0..1
+  avg_click_rate:  number  // delivered-weighted, 0..1
   recent:          EmailCampaignPerf[]
 }
 
