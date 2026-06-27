@@ -31,6 +31,8 @@ on:
 permissions:
   contents: write          # push the fixer/* branch
   pull-requests: write     # open the PR
+  issues: write            # required by claude-code-action
+  id-token: write          # required by claude-code-action (fetches a GitHub OIDC token)
 
 jobs:
   fix:
