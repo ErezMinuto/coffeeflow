@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Compass, RefreshCw, Lightbulb, AlertTriangle, Wrench, ThumbsUp, X,
-  FlaskConical, ChevronRight,
+  FlaskConical, ChevronRight, GitPullRequest,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -63,8 +63,10 @@ interface StrategistSignal {
   evidence:         Record<string, unknown> | null
   blocked_decision: string | null
   leverage:         string | null
-  status:           'open' | 'approved' | 'building' | 'shipped' | 'declined'
+  status:           'open' | 'approved' | 'building' | 'shipped' | 'declined' | 'needs_human'
   decline_reason:   string | null
+  pr_url:           string | null   // set by the fixer agent when it opens a PR
+  fixer_note:       string | null   // the fixer's reason when it can't auto-fix (needs_human)
   created_at:       string
 }
 
@@ -75,11 +77,12 @@ const KIND_META: Record<SignalKind, { label: string; icon: typeof Wrench; bg: st
 }
 
 const SIGNAL_STATUS_STYLE: Record<StrategistSignal['status'], string> = {
-  open:     'bg-surface-100 text-surface-700',
-  approved: 'bg-green-100 text-green-900',
-  building: 'bg-blue-100 text-blue-900',
-  shipped:  'bg-green-100 text-green-900',
-  declined: 'bg-surface-200 text-surface-500',
+  open:        'bg-surface-100 text-surface-700',
+  approved:    'bg-green-100 text-green-900',
+  building:    'bg-blue-100 text-blue-900',
+  shipped:     'bg-green-100 text-green-900',
+  declined:    'bg-surface-200 text-surface-500',
+  needs_human: 'bg-amber-100 text-amber-900',
 }
 
 type ThesisStatus = 'active' | 'validated' | 'refuted' | 'superseded'
@@ -412,6 +415,17 @@ export default function StrategicBriefPanel() {
                               )}
                               {s.decline_reason && (
                                 <div className="text-[12px] text-surface-500 mt-1 italic">Declined: {s.decline_reason}</div>
+                              )}
+                              {s.fixer_note && (
+                                <div className="text-[12px] text-amber-700 mt-1"><span className="font-medium">Fixer:</span> {s.fixer_note}</div>
+                              )}
+                              {s.pr_url && (
+                                <a
+                                  href={s.pr_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-900 mt-1"
+                                ><GitPullRequest size={12} /> View PR →</a>
                               )}
                             </div>
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${SIGNAL_STATUS_STYLE[s.status]}`}>{s.status}</span>

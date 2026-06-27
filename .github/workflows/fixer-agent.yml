@@ -1,0 +1,85 @@
+name: Fixer agent
+
+# PR-gated fixer agent. Consumes ONE approved strategist `bug_report` signal,
+# writes a code fix on a branch, and opens a pull request. It NEVER deploys, never
+# touches the production Supabase project, never merges its own PR — a human reviews
+# and merges. This closes the strategist loop's last gap (it reports bugs; this fixes
+# them) while keeping the same human-in-the-loop gate as every other agent surface.
+#
+# Why a GitHub Action and not an edge function: the fixer needs git + gh + a
+# filesystem + a coding agent, none of which exist in Supabase's Deno runtime.
+#
+# Trigger: Actions tab -> "Fixer agent" -> Run workflow (optionally paste a signal
+# id), or `gh workflow run fixer-agent.yml -f signal_id=<uuid>`. With no id it claims
+# the oldest approved bug_report. One signal per run.
+#
+# Required GitHub Secrets:
+#   ANTHROPIC_API_KEY            sk-ant-...  (NEW — add this; it's only a Supabase secret today)
+#   SUPABASE_URL                 https://ytydgldyeygpzmlxvpvb.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY    eyJ... (JWT format, NOT sb_secret_*)
+# GITHUB_TOKEN is auto-provided. NOTE: no SUPABASE_ACCESS_TOKEN here — by design the
+# agent has no credential that can deploy or migrate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      signal_id:
+        description: 'strategist_signals.id to fix (blank = oldest approved bug_report)'
+        required: false
+        type: string
+
+permissions:
+  contents: write          # push the fixer/* branch
+  pull-requests: write     # open the PR
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_BRANCH: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the agent can branch/diff cleanly
+
+      - name: Configure git identity
+        run: |
+          # Erez's verified email so Vercel doesn't reject the eventual commit
+          # (dashboard project requires a verified GitHub author email).
+          git config user.name  "minuto-fixer-agent"
+          git config user.email "erez@minuto.co.il"
+
+      - name: Claim an approved bug_report
+        id: claim
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SIGNAL_ID: ${{ inputs.signal_id }}
+        run: bash scripts/fixer/claim-signal.sh
+
+      - name: Render fixer prompt
+        id: prompt
+        if: steps.claim.outputs.claimed == 'true'
+        run: bash scripts/fixer/render-prompt.sh
+
+      - name: Run the fixer
+        if: steps.claim.outputs.claimed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.prompt.outputs.text }}
+          claude_args: |
+            --max-turns 40
+            --allowedTools Read,Edit,Write,Bash,Glob,Grep
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Finalize signal status
+        if: always() && steps.claim.outputs.claimed == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SIGNAL_ID: ${{ steps.claim.outputs.signal_id }}
+        run: bash scripts/fixer/finalize-signal.sh
