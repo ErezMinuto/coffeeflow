@@ -32,8 +32,8 @@ interface StrategistRec {
   draft_error:    string | null
 }
 
-// Only content_blog auto-drafts in Phase 2a; others approve but wait for 2b.
-const REC_DRAFTABLE: RecActionType[] = ['content_blog']
+// Content + email all draft (never send/publish); 'none' is pure advice.
+const REC_DRAFTABLE: RecActionType[] = ['content_blog', 'content_ig', 'email_campaign']
 const REC_STATUS_STYLE: Record<RecStatus, string> = {
   proposed:  'bg-surface-100 text-surface-700',
   approved:  'bg-blue-100 text-blue-900',
@@ -267,13 +267,18 @@ export default function StrategicBriefPanel() {
                                     <div className="text-[12px] text-surface-500 mt-0.5">Measure: {r.success_metric.metric}{r.success_metric.check_date ? ` (by ${r.success_metric.check_date})` : ''}</div>
                                   )}
                                   {r.status === 'drafted' && (
-                                    <div className="text-[12px] text-green-700 mt-1">Drafted — review in Workspace → Tasks{r.draft_ref ? ` (#${r.draft_ref.slice(0, 8)})` : ''}, then publish there.</div>
+                                    <div className="text-[12px] text-green-700 mt-1">
+                                      Drafted — {r.draft_ref?.startsWith('campaign:')
+                                        ? 'review in Marketing → Campaigns (draft), then send there'
+                                        : 'review in Workspace → Tasks, then publish there'}
+                                      {r.draft_ref ? ` (${r.draft_ref})` : ''}. Nothing was sent or published.
+                                    </div>
                                   )}
                                   {r.status === 'failed' && r.draft_error && (
                                     <div className="text-[12px] text-red-700 mt-1">Draft failed: {r.draft_error}</div>
                                   )}
                                   {r.status === 'approved' && !draftable && (
-                                    <div className="text-[12px] text-surface-500 mt-1">Approved — {r.action_type} drafting arrives in Phase 2b.</div>
+                                    <div className="text-[12px] text-surface-500 mt-1">Approved — advice with no draftable artifact.</div>
                                   )}
                                 </div>
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${REC_STATUS_STYLE[r.status]}`}>{r.status}</span>
