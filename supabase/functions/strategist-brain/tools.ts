@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { ToolDefinition } from '../seo-agent/claude.ts'
+import type { BriefRecommendation } from '../seo-agent/types.ts'
 import { appendChatMessage } from '../seo-agent/db.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
 
@@ -250,7 +251,7 @@ async function handleEmitSignal(
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface DiagnosisItem { claim: string; evidence: string }
-interface Recommendation { title: string; rationale: string; expected_revenue_effect?: string }
+interface OutOfHandsItem { title: string; rationale: string }
 
 async function handleConcludeBrief(
   supabase: SupabaseClient,
@@ -259,8 +260,8 @@ async function handleConcludeBrief(
     summary: string
     diagnosis: DiagnosisItem[]
     top_thesis?: string
-    recommendations?: Recommendation[]
-    out_of_hands?: Recommendation[]
+    recommendations?: BriefRecommendation[]
+    out_of_hands?: OutOfHandsItem[]
   },
 ): Promise<ToolOutcome> {
   if (!input.summary || !Array.isArray(input.diagnosis)) {
@@ -282,6 +283,26 @@ async function handleConcludeBrief(
     .single()
   if (error) return { result: { error: `conclude_brief insert failed: ${error.message}` } }
   const briefId = (brief as { id: string }).id
+
+  // Promote recommendations into the execution ledger (Phase 2): each becomes a
+  // strategic_recommendations row the human approves in the dashboard → the
+  // executor drafts it (content task / email draft), never sends. Best-effort —
+  // a brief that's already persisted must not unwind if this insert hiccups.
+  const recs = input.recommendations ?? []
+  if (recs.length > 0) {
+    const rows = recs.map(r => ({
+      brief_id:       briefId,
+      run_id:         ctx.runId,
+      title:          r.title,
+      rationale:      r.rationale ?? null,
+      action_type:    r.action_type ?? 'none',
+      action_params:  r.action_params ?? {},
+      success_metric: r.success_metric ?? {},
+      status:         'proposed',
+    }))
+    const { error: recErr } = await supabase.from('strategic_recommendations').insert(rows)
+    if (recErr) console.warn(`[strategist] recommendation rows insert failed (non-fatal): ${recErr.message}`)
+  }
 
   // Email the owner + log a chat briefing. Both best-effort — a notification
   // failure must not unwind a brief that's already persisted.
@@ -313,14 +334,18 @@ function esc(s: string): string {
 }
 
 function renderBriefHtml(
-  b: { summary: string; diagnosis: DiagnosisItem[]; top_thesis?: string; recommendations?: Recommendation[]; out_of_hands?: Recommendation[] },
+  b: { summary: string; diagnosis: DiagnosisItem[]; top_thesis?: string; recommendations?: BriefRecommendation[]; out_of_hands?: OutOfHandsItem[] },
   dashboardUrl: string,
 ): string {
   const diag = (b.diagnosis ?? [])
     .map(d => `<li style="margin:0 0 8px"><span style="color:#111827">${esc(d.claim)}</span><br><span style="color:#6b7280;font-size:13px">${esc(d.evidence)}</span></li>`)
     .join('')
   const recs = (b.recommendations ?? [])
-    .map(r => `<li style="margin:0 0 8px"><b style="color:#111827">${esc(r.title)}</b> — <span style="color:#374151">${esc(r.rationale)}</span>${r.expected_revenue_effect ? `<br><span style="color:#6b7280;font-size:13px">Expected: ${esc(r.expected_revenue_effect)}</span>` : ''}</li>`)
+    .map(r => {
+      const tag = r.action_type && r.action_type !== 'none' ? ` <span style="font-size:11px;color:#6A7D45">[${esc(r.action_type)}]</span>` : ''
+      const measure = r.success_metric?.metric ? `<br><span style="color:#6b7280;font-size:13px">Measure: ${esc(r.success_metric.metric)}</span>` : ''
+      return `<li style="margin:0 0 8px"><b style="color:#111827">${esc(r.title)}</b>${tag} — <span style="color:#374151">${esc(r.rationale)}</span>${measure}</li>`
+    })
     .join('')
   const ooh = (b.out_of_hands ?? [])
     .map(r => `<li style="margin:0 0 8px"><b style="color:#111827">${esc(r.title)}</b> — <span style="color:#374151">${esc(r.rationale)}</span></li>`)
@@ -398,14 +423,38 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   },
   {
     name: 'conclude_brief',
-    description: 'End the cycle and write the "State of Minuto" brief. Call EXACTLY ONCE, only after your adversarial self-check. diagnosis must be cited (claim + evidence). recommendations are in-hands (content/email) drafts; out_of_hands need Erez. Concluding with little or nothing to do is valid if the data supports it.',
+    description: 'End the cycle and write the "State of Minuto" brief. Call EXACTLY ONCE, only after your adversarial self-check. diagnosis must be cited (claim + evidence). recommendations are in-hands moves that get DRAFTED (never sent/published) on your approval; out_of_hands need Erez. Concluding with little or nothing to do is valid if the data supports it.',
     input_schema: {
       type: 'object',
       properties: {
         summary: { type: 'string' },
         diagnosis: { type: 'array', items: { type: 'object', properties: { claim: { type: 'string' }, evidence: { type: 'string' } }, required: ['claim', 'evidence'] } },
         top_thesis: { type: 'string' },
-        recommendations: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, rationale: { type: 'string' }, expected_revenue_effect: { type: 'string' } }, required: ['title', 'rationale'] } },
+        recommendations: {
+          type: 'array',
+          description: 'In-hands moves. Each must name how it will be DRAFTED (action_type) and how it will be MEASURED (success_metric). Use action_type "none" for advice with no draftable artifact.',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              rationale: { type: 'string' },
+              action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, or none (pure advice)' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog/content_ig: {keyword|topic, key_points[], why_now, caption_he?}' },
+              success_metric: {
+                type: 'object',
+                description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
+                properties: {
+                  metric:     { type: 'string', description: 'what is measured' },
+                  source:     { type: 'string', description: 'the table/query it comes from' },
+                  baseline:   { type: 'string', description: 'its value right now' },
+                  check_date: { type: 'string', description: 'ISO date to evaluate it' },
+                },
+                required: ['metric', 'source', 'baseline', 'check_date'],
+              },
+            },
+            required: ['title', 'rationale', 'action_type', 'success_metric'],
+          },
+        },
         out_of_hands: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, rationale: { type: 'string' } }, required: ['title', 'rationale'] } },
       },
       required: ['summary', 'diagnosis'],

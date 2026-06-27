@@ -19,6 +19,29 @@ import { supabase } from '../../lib/supabase'
 interface DiagnosisItem { claim: string; evidence: string }
 interface Recommendation { title: string; rationale: string; expected_revenue_effect?: string }
 
+type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
+type RecStatus = 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed'
+interface StrategistRec {
+  id:             string
+  title:          string
+  rationale:      string | null
+  action_type:    RecActionType
+  success_metric: { metric?: string; source?: string; baseline?: string; check_date?: string } | null
+  status:         RecStatus
+  draft_ref:      string | null
+  draft_error:    string | null
+}
+
+// Only content_blog auto-drafts in Phase 2a; others approve but wait for 2b.
+const REC_DRAFTABLE: RecActionType[] = ['content_blog']
+const REC_STATUS_STYLE: Record<RecStatus, string> = {
+  proposed:  'bg-surface-100 text-surface-700',
+  approved:  'bg-blue-100 text-blue-900',
+  drafted:   'bg-green-100 text-green-900',
+  dismissed: 'bg-surface-200 text-surface-500',
+  failed:    'bg-red-100 text-red-900',
+}
+
 interface StrategicBrief {
   id:              string
   week_start:      string
@@ -62,6 +85,7 @@ const SIGNAL_STATUS_STYLE: Record<StrategistSignal['status'], string> = {
 export default function StrategicBriefPanel() {
   const [brief, setBrief]     = useState<StrategicBrief | null>(null)
   const [signals, setSignals] = useState<StrategistSignal[]>([])
+  const [recs, setRecs]       = useState<StrategistRec[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -82,8 +106,19 @@ export default function StrategicBriefPanel() {
         .limit(50),
     ])
     if (cancelledRef.current) return
-    setBrief(((briefRes.data ?? [])[0] as StrategicBrief) ?? null)
+    const latestBrief = ((briefRes.data ?? [])[0] as StrategicBrief) ?? null
+    setBrief(latestBrief)
     setSignals((signalRes.data ?? []) as StrategistSignal[])
+    if (latestBrief) {
+      const { data: recData } = await supabase
+        .from('strategic_recommendations')
+        .select('id,title,rationale,action_type,success_metric,status,draft_ref,draft_error')
+        .eq('brief_id', latestBrief.id)
+        .order('created_at', { ascending: true })
+      if (!cancelledRef.current) setRecs((recData ?? []) as StrategistRec[])
+    } else {
+      setRecs([])
+    }
     setLoading(false)
   }, [])
 
@@ -94,6 +129,7 @@ export default function StrategicBriefPanel() {
       .channel('strategist_brain_panel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_briefs' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategist_signals' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_recommendations' }, () => load())
       .subscribe()
     const poll = setInterval(() => load(), 30_000)
     return () => {
@@ -129,6 +165,25 @@ export default function StrategicBriefPanel() {
     const reason = window.prompt(`Decline "${s.title}"?\n\nReason (the agent reads this and won't re-ask):`, '')
     if (reason == null) return
     setSignalStatus(s, 'declined', reason)
+  }
+
+  // Approve a recommendation → the executor drafts it (content task / email
+  // draft) — it never sends or publishes. Dismiss → drop it.
+  async function setRecStatus(r: StrategistRec, status: RecStatus) {
+    setBusy(r.id)
+    try {
+      const { error } = await supabase
+        .from('strategic_recommendations')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', r.id)
+      if (error) throw error
+      setRecs(prev => prev.map(x => (x.id === r.id ? { ...x, status } : x)))
+    } catch (e) {
+      console.error('[StrategicBriefPanel] recommendation update failed:', e)
+      window.alert('Update failed. See console.')
+    } finally {
+      setBusy(null)
+    }
   }
 
   const openSignals = signals.filter(s => s.status === 'open')
@@ -192,22 +247,55 @@ export default function StrategicBriefPanel() {
                     </div>
                   )}
 
-                  {brief.recommendations?.length > 0 && (
+                  {recs.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">Recommended (for your approval)</h3>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">Recommended — approve to draft (never sends)</h3>
                       <ul className="space-y-2">
-                        {brief.recommendations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <ChevronRight size={14} className="text-brand-500 mt-1 shrink-0" />
-                            <div>
-                              <span className="font-medium text-surface-900">{r.title}</span>
-                              <span className="text-surface-700"> — {r.rationale}</span>
-                              {r.expected_revenue_effect && (
-                                <div className="text-[12px] text-surface-500 mt-0.5">Expected: {r.expected_revenue_effect}</div>
+                        {recs.map(r => {
+                          const draftable = REC_DRAFTABLE.includes(r.action_type)
+                          return (
+                            <li key={r.id} className="rounded-lg border border-surface-200 p-3 text-sm">
+                              <div className="flex items-start gap-2">
+                                <ChevronRight size={14} className="text-brand-500 mt-1 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium text-surface-900">{r.title}</span>
+                                  {r.action_type !== 'none' && (
+                                    <span className="ml-1.5 text-[10px] font-medium text-brand-700">[{r.action_type}]</span>
+                                  )}
+                                  {r.rationale && <span className="text-surface-700"> — {r.rationale}</span>}
+                                  {r.success_metric?.metric && (
+                                    <div className="text-[12px] text-surface-500 mt-0.5">Measure: {r.success_metric.metric}{r.success_metric.check_date ? ` (by ${r.success_metric.check_date})` : ''}</div>
+                                  )}
+                                  {r.status === 'drafted' && (
+                                    <div className="text-[12px] text-green-700 mt-1">Drafted — review in Workspace → Tasks{r.draft_ref ? ` (#${r.draft_ref.slice(0, 8)})` : ''}, then publish there.</div>
+                                  )}
+                                  {r.status === 'failed' && r.draft_error && (
+                                    <div className="text-[12px] text-red-700 mt-1">Draft failed: {r.draft_error}</div>
+                                  )}
+                                  {r.status === 'approved' && !draftable && (
+                                    <div className="text-[12px] text-surface-500 mt-1">Approved — {r.action_type} drafting arrives in Phase 2b.</div>
+                                  )}
+                                </div>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${REC_STATUS_STYLE[r.status]}`}>{r.status}</span>
+                              </div>
+                              {r.status === 'proposed' && (
+                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                  <button
+                                    onClick={() => setRecStatus(r, 'approved')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+                                    title={draftable ? 'Approve — drafts a blog post for your review' : 'Approve — execution arrives in Phase 2b'}
+                                  ><ThumbsUp size={12} /> approve</button>
+                                  <button
+                                    onClick={() => setRecStatus(r, 'dismissed')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
+                                  ><X size={12} /> dismiss</button>
+                                </div>
                               )}
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          )
+                        })}
                       </ul>
                     </div>
                   )}
