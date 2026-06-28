@@ -1,3 +1,5 @@
+<!-- This agent is dispatched from the strategist brain via an approved signal; see fixer-prompt.md for the runtime contract. -->
+
 # Builder / Fixer Agent
 
 A **PR-gated** agent that turns an approved strategist signal into a change delivered as a
