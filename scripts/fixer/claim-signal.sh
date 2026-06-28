@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# claim-signal.sh — atomically claim ONE approved bug_report for the fixer agent.
+# claim-signal.sh — atomically claim ONE approved, actionable signal for the
+# builder/fixer agent (a bug_report to fix, or a feature_idea / capability_request
+# to build).
 #
-# Resolves the target signal (an explicit id, else the oldest approved bug_report),
-# then flips it approved -> building with a PostgREST filter guarded on the current
+# Resolves the target signal (an explicit id, else the oldest approved actionable
+# one), then flips it approved -> building with a PostgREST filter guarded on the current
 # status, so two concurrent runs can never double-claim the same row. On success it
 # writes the full signal row to ./fixer-signal.json (the agent's input) and exports
 # `signal_id` / `claimed` to $GITHUB_OUTPUT.
@@ -25,6 +27,8 @@ set -euo pipefail
 REST="${SUPABASE_URL%/}/rest/v1/strategist_signals"
 RUN_REF="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
 SIGNAL_ID="${SIGNAL_ID:-}"
+# Kinds the agent acts on: fix a bug, or build a feature / capability.
+KINDS_FILTER="kind=in.(bug_report,feature_idea,capability_request)"
 
 # Tiny helper so we never echo the key into logs.
 auth=(-H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}")
@@ -40,25 +44,25 @@ bail_unclaimed() {
   exit 0
 }
 
-# 1. Resolve the target id if not given: oldest approved bug_report.
+# 1. Resolve the target id if not given: oldest approved actionable signal.
 if [[ -z "$SIGNAL_ID" ]]; then
   picked=$(curl -fsS "${auth[@]}" \
-    "${REST}?kind=eq.bug_report&status=eq.approved&select=id&order=created_at.asc&limit=1")
+    "${REST}?${KINDS_FILTER}&status=eq.approved&select=id&order=created_at.asc&limit=1")
   SIGNAL_ID=$(echo "$picked" | jq -r '.[0].id // empty')
-  [[ -z "$SIGNAL_ID" ]] && bail_unclaimed "no approved bug_report in queue"
+  [[ -z "$SIGNAL_ID" ]] && bail_unclaimed "no approved actionable signal in queue"
 fi
 
-# 2. Atomic claim: only succeeds while the row is still an approved bug_report.
+# 2. Atomic claim: only succeeds while the row is still an approved actionable signal.
 #    An empty representation array means we lost the race / wrong state / wrong kind.
 #    (strategist_signals has no worker_id column — the status filter IS the lock.)
 claimed=$(curl -fsS -X PATCH "${auth[@]}" \
   -H "Content-Type: application/json" \
   -H "Prefer: return=representation" \
-  "${REST}?id=eq.${SIGNAL_ID}&status=eq.approved&kind=eq.bug_report" \
+  "${REST}?id=eq.${SIGNAL_ID}&status=eq.approved&${KINDS_FILTER}" \
   -d "$(jq -nc '{status:"building", updated_at:(now|todateiso8601)}')")
 
 count=$(echo "$claimed" | jq 'length')
-[[ "$count" == "0" ]] && bail_unclaimed "signal ${SIGNAL_ID} was not in approved/bug_report state"
+[[ "$count" == "0" ]] && bail_unclaimed "signal ${SIGNAL_ID} was not approved + an actionable kind"
 
 # 3. Persist the claimed row for the agent to read, and report success.
 echo "$claimed" | jq '.[0]' > fixer-signal.json
