@@ -592,11 +592,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'trigger_fixer',
-    description: "ACTION (confirm first): hand a bug_report to the PR-gated fixer agent. Ensures the signal is an approved bug_report, then dispatches the fixer GitHub Action, which writes a code fix on a branch and opens a PR (it NEVER deploys or merges — Erez reviews/merges). Returns the Actions URL. If the GitHub token isn't configured it still approves the signal and tells you to run the workflow manually. NEVER call without Erez's explicit yes/go in this turn.",
+    description: "ACTION (confirm first): hand an actionable signal to the PR-gated builder/fixer agent — a bug_report to FIX, or a feature_idea / capability_request to BUILD. Ensures the signal is approved, then dispatches the GitHub Action, which writes the change on a branch and opens a PR (it NEVER deploys or merges — Erez reviews/merges). Returns the Actions URL. If the GitHub token isn't configured it still approves the signal and tells you to run the workflow manually. NEVER call without Erez's explicit yes/go in this turn.",
     input_schema: {
       type: 'object',
       properties: {
-        signal_id: { type: 'string', description: 'UUID of a bug_report strategist_signals row' },
+        signal_id: { type: 'string', description: 'UUID of a bug_report | feature_idea | capability_request strategist_signals row' },
       },
       required: ['signal_id'],
     },
@@ -1422,13 +1422,14 @@ async function executeTool(
       case 'trigger_fixer': {
         const signalId = String(input.signal_id ?? '').trim()
         if (!signalId) return { ok: false, payload: { error: 'trigger_fixer requires signal_id' } }
-        // Must be a bug_report; ensure it's approved (the fixer claims approved bug_reports).
+        // Must be an actionable kind; ensure it's approved (the agent claims approved signals).
         const { data: sig, error: sigErr } = await supabase
           .from('strategist_signals').select('id, kind, status').eq('id', signalId).single()
         if (sigErr) return { ok: false, payload: { error: sigErr.message } }
         if (!sig) return { ok: false, payload: { error: 'signal not found' } }
-        if ((sig as { kind: string }).kind !== 'bug_report') {
-          return { ok: false, payload: { error: 'trigger_fixer only applies to bug_report signals' } }
+        const ACTIONABLE_KINDS = ['bug_report', 'feature_idea', 'capability_request']
+        if (!ACTIONABLE_KINDS.includes((sig as { kind: string }).kind)) {
+          return { ok: false, payload: { error: `trigger_fixer only applies to ${ACTIONABLE_KINDS.join(' / ')} signals` } }
         }
         if ((sig as { status: string }).status !== 'approved') {
           const { error: upErr } = await supabase
@@ -1999,7 +2000,7 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
       : '(no brief yet)',
     openSignals.length === 0
       ? 'Open signals: none.'
-      : `Open signals (awaiting your call — approve/decline, or trigger_fixer on a bug_report):\n` +
+      : `Open signals (awaiting your call — approve/decline, or trigger_fixer to fix/build it — bug_report/feature_idea/capability_request):\n` +
         openSignals.map(s => `  • [${s.kind}] ${s.title} (${s.id.slice(0, 8)})`).join('\n'),
     `Active theses: ${activeTheses} · Recommendations awaiting approval: ${proposedRecs}`,
   ].join('\n')

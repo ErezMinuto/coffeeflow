@@ -1,10 +1,17 @@
-# Fixer Agent
+# Builder / Fixer Agent
 
-A **PR-gated** agent that turns an approved strategist `bug_report` into a code fix
-delivered as a pull request. It never deploys, never touches the production Supabase
-project, and never merges its own PR — a human reviews and merges. This closes the last
-gap in the strategist loop: the brain *reports* bugs (`strategist_signals`); the fixer
-*fixes* them, up to the merge gate.
+A **PR-gated** agent that turns an approved strategist signal into a change delivered as a
+pull request — it **fixes a `bug_report`** or **builds a `feature_idea` / `capability_request`**.
+It never deploys, never touches the production Supabase project, and never merges its own PR — a
+human reviews and merges. This closes the last gap in the strategist loop: the brain *reports*
+(`strategist_signals`); this agent *acts on* them, up to the merge gate.
+
+Scope per kind: `bug_report` → smallest correct fix · `feature_idea` → smallest complete working
+feature · `capability_request` → the code part (incl. a migration *file*, never applied), or
+`needs_human` when it needs an API key / external data / a human decision. It may add migration
+files but **never applies** them — apply manually via the SQL editor after merge (the repo's norm).
+
+> File/dir names keep the `fixer-` prefix for continuity; the agent now builds as well as fixes.
 
 It runs in **GitHub Actions** (not a Supabase edge function) because it needs git, the
 `gh` CLI, a filesystem, and a coding agent — none of which exist in Supabase's Deno
@@ -13,11 +20,11 @@ runtime. The agent engine is the official [`anthropics/claude-code-action`](http
 ## How it runs
 
 ```
-strategist brain  ─emit_signal(bug_report)─▶  strategist_signals (status=open)
+strategist brain  ─emit_signal(bug_report|feature_idea|capability_request)─▶  strategist_signals (open)
 Erez (dashboard)  ─approve─────────────────▶  status=approved
 fixer-agent.yml   ─claim (atomic)──────────▶  status=building   + ./fixer-signal.json
-  claude-code-action: triage → fix → branch → gh pr create
-fixer-agent.yml   ─finalize────────────────▶  status=shipped (+pr_url)
+  claude-code-action: triage → fix or build → branch → gh pr create
+fixer-agent.yml   ─finalize────────────────▶  status=shipped (+pr_url)  |  needs_human (+fixer_note)
                                               or  needs_human (+fixer_note)
 Erez              ─review & merge the PR
 ```
