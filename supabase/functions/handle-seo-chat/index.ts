@@ -566,6 +566,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: 'create_signal',
+    description: "ACTION (confirm first): open a NEW strategist signal that Erez raises directly in chat — a bug_report to fix, a feature_idea to build, or a capability_request — without waiting for the autonomous strategist to find it. Use this when Erez asks you to fix/build something for which no signal exists yet. Returns the new signal_id; you then typically trigger_fixer on it (with his go) to dispatch the builder/fixer. Write a clear title + a detailed description so the agent that picks it up has enough to act. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        kind:   { type: 'string', description: 'bug_report | feature_idea | capability_request' },
+        title:  { type: 'string', description: 'one-line summary' },
+        detail: { type: 'string', description: 'full description: for a bug — what is wrong, where (file/function/symptom) + how to reproduce; for a feature — what to build and the acceptance criteria' },
+        evidence: { type: 'object', description: 'optional structured data/anomaly supporting it' },
+      },
+      required: ['kind', 'title', 'detail'],
+    },
+  },
+  {
     name: 'set_signal_status',
     description: "ACTION (confirm first): set a strategist signal's status — 'approved' (mark it for action; for a bug_report this is the prerequisite the fixer needs), 'declined' (with decline_reason; the strategist reads it and won't re-raise), or 'open' (reset). Mirrors the dashboard's approve/decline. NEVER call without Erez's explicit yes/go in this turn.",
     input_schema: {
@@ -1384,6 +1398,38 @@ async function executeTool(
         const { data, error } = await q
         if (error) return { ok: false, payload: { error: error.message } }
         return { ok: true, payload: { recommendations: data ?? [] } }
+      }
+
+      case 'create_signal': {
+        const kind   = String(input.kind ?? '').trim()
+        const title  = String(input.title ?? '').trim()
+        const detail = String(input.detail ?? '').trim()
+        const KINDS  = ['bug_report', 'feature_idea', 'capability_request']
+        if (!KINDS.includes(kind) || !title || !detail) {
+          return { ok: false, payload: { error: `create_signal requires kind ∈ {${KINDS.join(', ')}}, title, and detail` } }
+        }
+        // Stable-ish dedupe key so an accidental double-create collapses; the chat
+        // origin is recorded in it. Slug the title, cap length.
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48)
+        const dedupe_key = `chat-${slug || 'signal'}`
+        const { data: existing } = await supabase
+          .from('strategist_signals').select('id, status').eq('dedupe_key', dedupe_key).limit(1)
+        if (existing && existing.length > 0) {
+          const e = existing[0] as { id: string; status: string }
+          return { ok: true, payload: { created: false, reason: `a signal with this title already exists (status=${e.status})`, signal_id: e.id } }
+        }
+        const { data, error } = await supabase
+          .from('strategist_signals')
+          .insert({
+            kind, title, detail,
+            evidence:   (input.evidence && typeof input.evidence === 'object') ? input.evidence : {},
+            status:     'open',
+            dedupe_key,
+          })
+          .select('id, kind, status')
+          .single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { created: true, signal: data } }
       }
 
       case 'set_signal_status': {
