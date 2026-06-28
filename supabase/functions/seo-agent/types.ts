@@ -368,6 +368,7 @@ export type ChatToolName =
   | 'get_strategic_brief'
   | 'list_strategic_theses'
   | 'list_strategic_recommendations'
+  | 'create_signal'
   | 'set_signal_status'
   | 'set_recommendation_status'
   | 'trigger_fixer'
