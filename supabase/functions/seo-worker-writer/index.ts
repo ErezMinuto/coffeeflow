@@ -103,6 +103,12 @@ serve(async (req: Request): Promise<Response> => {
       messages:    [{ role: 'user', content: userMessage }],
       maxTokens:   8192,
       temperature: 0.6,
+      // Long-form Hebrew generation regularly runs past callClaude's 110s
+      // default, which fires the AbortController mid-stream → every task
+      // failed with "The signal has been aborted". Give it 130s — enough
+      // headroom for a full article, while still leaving ~20s under the
+      // ~150s edge hard-kill for the blog-publish POST + markTaskCompleted.
+      timeoutMs:   130_000,
     })
     console.log(
       `[seo-worker-writer] writer done tokens in=${claudeRes.inputTokens} ` +
