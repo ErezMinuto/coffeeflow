@@ -31,6 +31,14 @@ export interface ToolContext {
 
 const REVENUE_ORDER_STATUSES = ['completed', 'processing']
 
+// Email-attribution window: an order placed by a campaign recipient within this
+// many days AFTER the send is credited to that campaign. Deliberately short — it
+// reads a same-window reorder as "the email prompted it" rather than crediting
+// email for every later purchase a subscriber ever makes. This is a
+// recipient-match + time-window PROXY (association, not proven causation: there's
+// no per-click order tag), so treat the number as directional, not exact.
+const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 7
+
 // ── Tool result shape ────────────────────────────────────────────────────────
 // Handlers return a plain JS value; the runner JSON-stringifies it into the
 // tool_result block. `concluded:true` tells the runner the loop is over.
@@ -161,6 +169,167 @@ async function drilldownEmailCampaign(
     counts[r.event_type] = (counts[r.event_type] ?? 0) + 1
   }
   return { campaign_id: campaignId, subject, event_counts: counts }
+}
+
+// Distinct, normalized set of addresses a campaign actually reached (sent or
+// delivered). This — not the rollup recipient_count — is the join key against
+// order emails. Capped defensively; recipient lists are small here, the cap just
+// stops a runaway event log from blowing the request.
+async function campaignRecipients(
+  supabase: SupabaseClient,
+  campaignId: number,
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('campaign_events')
+    .select('recipient_email')
+    .eq('campaign_id', campaignId)
+    .in('event_type', ['sent', 'delivered'])
+    .limit(50000)
+  if (error) throw new Error(error.message)
+  const set = new Set<string>()
+  for (const r of (data ?? []) as Array<{ recipient_email: string | null }>) {
+    const e = (r.recipient_email ?? '').trim().toLowerCase()
+    if (e) set.add(e)
+  }
+  return set
+}
+
+function addDaysISO(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+interface CampaignRow { id: number; subject: string | null; sent_at: string | null; recipient_count: number | null }
+
+// Compute email-attributed revenue: recipients who placed a revenue order within
+// the attribution window after the send. `seenOrders` (optional) accumulates
+// woo_order_id → total across calls so a channel rollup can de-dup orders that
+// fall in more than one campaign's window.
+async function attributeCampaign(
+  supabase: SupabaseClient,
+  c: CampaignRow,
+  attribWindow: number,
+  seenOrders?: Map<number, number>,
+): Promise<Record<string, unknown>> {
+  if (!c.sent_at) {
+    return { campaign_id: c.id, subject: c.subject, sent_at: null, error: 'campaign has no sent_at; cannot window-attribute' }
+  }
+  const recipients = await campaignRecipients(supabase, c.id)
+  const sentDate = c.sent_at.split('T')[0]
+  const untilDate = addDaysISO(sentDate, attribWindow)
+  // Pull revenue orders in the window once, then match by recipient email in JS
+  // — avoids a giant .in() on the full recipient list.
+  const { data: orders, error: oErr } = await supabase
+    .from('woo_orders')
+    .select('woo_order_id, customer_email, total, order_date')
+    .gte('order_date', sentDate)
+    .lte('order_date', untilDate)
+    .in('status', REVENUE_ORDER_STATUSES)
+    .limit(20000)
+  if (oErr) return { campaign_id: c.id, subject: c.subject, sent_at: c.sent_at, error: oErr.message }
+
+  let revenue = 0
+  let attributedOrders = 0
+  const buyers = new Set<string>()
+  for (const o of (orders ?? []) as Array<{ woo_order_id: number | null; customer_email: string | null; total: number | null }>) {
+    const email = (o.customer_email ?? '').trim().toLowerCase()
+    if (!email || !recipients.has(email)) continue
+    const total = Number(o.total ?? 0)
+    revenue += total
+    attributedOrders++
+    buyers.add(email)
+    if (seenOrders && o.woo_order_id != null) seenOrders.set(o.woo_order_id, total)
+  }
+
+  return {
+    campaign_id: c.id,
+    subject: c.subject,
+    sent_at: c.sent_at,
+    attribution_window_days: attribWindow,
+    recipients_matched: recipients.size,
+    ...(recipients.size === 0 ? { recipients_note: 'no sent/delivered events captured — campaign predates webhook tracking, so recipient-match attribution is unavailable (shown as 0, not a true zero)' } : {}),
+    attributed_orders: attributedOrders,
+    attributed_buyers: buyers.size,
+    attributed_revenue_ils: Math.round(revenue),
+    revenue_per_recipient_ils: recipients.size > 0 ? Math.round((revenue / recipients.size) * 100) / 100 : null,
+  }
+}
+
+// Per-campaign (and channel-rollup) revenue attribution — the link the engagement
+// drilldown can't give. Names one campaign (campaign_id|subject_contains) or, given
+// neither, rolls up every sent email campaign in a lookback window so email can be
+// graded as a revenue channel.
+async function drilldownEmailAttribution(
+  supabase: SupabaseClient,
+  input: { campaign_id?: number; subject_contains?: string; window_days?: number; attribution_window_days?: number },
+): Promise<unknown> {
+  const attribWindow = Math.min(Math.max(input.attribution_window_days ?? DEFAULT_ATTRIBUTION_WINDOW_DAYS, 1), 30)
+  const single = Boolean(input.campaign_id || input.subject_contains)
+
+  let campaigns: CampaignRow[] = []
+  if (single) {
+    let q = supabase
+      .from('campaigns')
+      .select('id, subject, sent_at, recipient_count')
+      .eq('channel', 'email')
+      .eq('status', 'sent')
+    q = input.campaign_id
+      ? q.eq('id', input.campaign_id)
+      : q.ilike('subject', `%${input.subject_contains}%`)
+    const { data, error } = await q.order('sent_at', { ascending: false }).limit(input.campaign_id ? 1 : 5)
+    if (error) return { error: error.message }
+    campaigns = (data ?? []) as CampaignRow[]
+    if (campaigns.length === 0) {
+      return { error: `no sent email campaign matching ${input.campaign_id ? `id=${input.campaign_id}` : `"${input.subject_contains}"`}` }
+    }
+  } else {
+    const lookback = Math.min(Math.max(input.window_days ?? 90, 7), 365)
+    const since = new Date(Date.now() - lookback * 24 * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('id, subject, sent_at, recipient_count')
+      .eq('channel', 'email')
+      .eq('status', 'sent')
+      .gte('sent_at', since)
+      .order('sent_at', { ascending: false })
+      .limit(50)
+    if (error) return { error: error.message }
+    campaigns = (data ?? []) as CampaignRow[]
+    if (campaigns.length === 0) {
+      return { method: 'recipient_match_within_window', window_days: lookback, campaigns_sent: 0, note: 'no sent email campaigns in window' }
+    }
+  }
+
+  // Single named campaign → return its attribution directly.
+  if (single && input.campaign_id) {
+    return { method: 'recipient_match_within_window', ...(await attributeCampaign(supabase, campaigns[0], attribWindow)) }
+  }
+
+  // One-or-more campaigns → channel rollup. De-dup orders across overlapping
+  // windows so a buyer who got two campaigns in the same week isn't counted twice
+  // in the channel total.
+  const seenOrders = new Map<number, number>()
+  const perCampaign: Record<string, unknown>[] = []
+  for (const c of campaigns) {
+    perCampaign.push(await attributeCampaign(supabase, c, attribWindow, seenOrders))
+  }
+  const rawRevenue = perCampaign.reduce((s, c) => s + (Number(c.attributed_revenue_ils) || 0), 0)
+  const rawOrders = perCampaign.reduce((s, c) => s + (Number(c.attributed_orders) || 0), 0)
+  let dedupRevenue = 0
+  for (const t of seenOrders.values()) dedupRevenue += t
+
+  return {
+    method: 'recipient_match_within_window',
+    attribution_window_days: attribWindow,
+    campaigns_considered: perCampaign.length,
+    total_attributed_revenue_ils: Math.round(dedupRevenue),
+    total_attributed_orders: seenOrders.size,
+    sum_attributed_revenue_ils: Math.round(rawRevenue),
+    sum_attributed_orders: rawOrders,
+    rollup_note: 'total_* de-dups orders shared across overlapping campaign windows; sum_* is the per-campaign total before de-dup. They diverge only when sends overlap within the attribution window.',
+    per_campaign: perCampaign,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -388,6 +557,19 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
     input_schema: { type: 'object', properties: { campaign_id: { type: 'number' }, subject_contains: { type: 'string' } } },
   },
   {
+    name: 'drilldown_email_attribution',
+    description: 'Revenue a campaign DROVE — the link the engagement drilldown can\'t give. For each campaign it credits orders placed by a recipient within attribution_window_days (default 7, max 30) of the send. Pass campaign_id or subject_contains for ONE campaign; pass NEITHER to roll up every sent email campaign in window_days (default 90) so you can grade email as a revenue channel. Method is recipient-match-within-window: an ASSOCIATION proxy (no per-click order tag), directional not exact — and recipients_matched=0 means that campaign predates open/click webhook tracking, so its 0 is "unknown", not a true zero. Use this to revenue-grade the email reactivation thesis instead of guessing from opens/clicks.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        campaign_id: { type: 'number', description: 'attribute one campaign by id' },
+        subject_contains: { type: 'string', description: 'attribute campaign(s) whose subject matches this substring' },
+        window_days: { type: 'number', description: 'lookback for the all-campaigns rollup (7–365, default 90); ignored when a campaign is named' },
+        attribution_window_days: { type: 'number', description: 'days after send an order still counts as email-driven (1–30, default 7)' },
+      },
+    },
+  },
+  {
     name: 'record_thesis',
     description: 'Record a durable, revenue-graded belief about what moves Minuto (your long-term memory). Must name a falsifiable success_metric, its baseline now, and a check_date when reality will judge it. Do not duplicate a thesis you already hold.',
     input_schema: {
@@ -477,6 +659,7 @@ export async function dispatchTool(
       case 'drilldown_category_skus':     return { result: await drilldownCategorySkus(supabase, input as { category: string; window_days?: number }) }
       case 'drilldown_segment_detail':    return { result: await drilldownSegmentDetail(supabase, input as { segment: string }) }
       case 'drilldown_email_campaign':    return { result: await drilldownEmailCampaign(supabase, input as { subject_contains?: string; campaign_id?: number }) }
+      case 'drilldown_email_attribution': return { result: await drilldownEmailAttribution(supabase, input as { campaign_id?: number; subject_contains?: string; window_days?: number; attribution_window_days?: number }) }
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
       case 'conclude_brief':              return await handleConcludeBrief(supabase, ctx, input as Parameters<typeof handleConcludeBrief>[2])
