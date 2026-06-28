@@ -57,6 +57,31 @@ export async function fetchActiveCatalog(supabase: SupabaseClient): Promise<WooP
   return (data ?? []) as WooProduct[]
 }
 
+// Minuto's OWN roasted coffee lineup — the only products valid as the "hero"
+// of a piece of content. A blog/IG banner renders bag_hero = the byte-perfect
+// Minuto bag, so green 1kg home-roasting SKUs (you can't brew green coffee) and
+// resold third-party brands (Veneto / Toddy) are off-brand and must NEVER be
+// featured (QA rejects them). The full woo_products catalog is mostly equipment
+// + accessories + reseller coffee; this narrows to the two WooCommerce
+// categories that hold Minuto's roasted line, with green/reseller stripped as
+// defense-in-depth. Server-side category filter also dodges the 1000-row page
+// cap (some coffee SKUs sit past row 1000).
+const MINUTO_COFFEE_CATEGORIES = [
+  'פולי קפה טרי - קפה ספשלטי specialty coffee',
+  'תערובות קפה מינוטו',
+]
+export async function fetchMinutoCoffeeCatalog(supabase: SupabaseClient): Promise<WooProduct[]> {
+  const orFilter = MINUTO_COFFEE_CATEGORIES.map(c => `categories.cs.{"${c}"}`).join(',')
+  const { data, error } = await supabase
+    .from('woo_products')
+    .select('name, price, permalink, image_url, stock_status')
+    .or(orFilter)
+    .order('name')
+  if (error) throw new Error(`fetchMinutoCoffeeCatalog failed: ${error.message}`)
+  const isOffBrand = (n: string) => /ירוק|green coffee|unroasted|raw coffee|veneto|ונטו|toddy|טודי/i.test(n)
+  return ((data ?? []) as WooProduct[]).filter(p => !isOffBrand(p.name))
+}
+
 // ── Inventory health (low-stock signals into orchestrator's planning) ────
 
 export interface InventoryAlert {
