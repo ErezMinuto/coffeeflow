@@ -103,9 +103,18 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
     }
   }, [sessionId])
 
+  // Briefings is a FEED (newest brief shown first, at the top) — opening it
+  // should land on the latest brief's start with no scrolling. The interactive
+  // chat stays chronological and follows new messages to the bottom. sessionId
+  // is in the deps so switching views re-runs this even when message counts
+  // happen to match (length-only deps silently skipped that case).
+  const isBriefings = sessionId === BRIEFING_SESSION_ID
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages.length, sending])
+    const el = scrollRef.current
+    if (!el) return
+    if (isBriefings) el.scrollTo({ top: 0 })
+    else el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [messages.length, sending, isBriefings])
 
   async function send() {
     const text = draft.trim()
@@ -235,7 +244,7 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
             Start typing below. Try: "what's pending?" or "queue an article about V60 brewing for beginners".
           </div>
         ) : (
-          messages.map(m => <ChatBubble key={m.id} m={m} />)
+          (isBriefings ? [...messages].reverse() : messages).map(m => <ChatBubble key={m.id} m={m} />)
         )}
         {sending && (
           <div className="text-xs text-surface-500 inline-flex items-center gap-2">
