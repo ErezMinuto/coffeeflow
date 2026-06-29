@@ -75,14 +75,22 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      // CRITICAL: fetch the MOST-RECENT 200 rows, not the oldest. Ordering
+      // ascending + limit(200) silently dropped the newest messages once a
+      // session passed 200 rows — and sessions cross that fast, since every
+      // chat turn writes several rows (user + assistant tool_use turns + tool
+      // results + final text). That truncation is exactly the "recent history
+      // missing on session open" bug. Mirror the server-side getChatHistory
+      // fix: order descending, limit, then reverse back to chronological so
+      // the rest of the component (and the briefings reverse) is unchanged.
       const { data } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('session_id', sessionId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(200)
       if (!cancelled) {
-        setMessages((data ?? []) as ChatRow[])
+        setMessages(((data ?? []) as ChatRow[]).reverse())
         setLoading(false)
       }
     }
