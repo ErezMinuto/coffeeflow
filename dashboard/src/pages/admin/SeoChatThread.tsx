@@ -111,18 +111,18 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
     }
   }, [sessionId])
 
-  // Briefings is a FEED (newest brief shown first, at the top) — opening it
-  // should land on the latest brief's start with no scrolling. The interactive
-  // chat stays chronological and follows new messages to the bottom. sessionId
-  // is in the deps so switching views re-runs this even when message counts
-  // happen to match (length-only deps silently skipped that case).
-  const isBriefings = sessionId === BRIEFING_SESSION_ID
+  // Both the interactive chat AND the briefings feed use standard chat UX:
+  // messages render chronologically (newest at the bottom, above the input)
+  // and the view follows new messages down. On load + on every new message we
+  // scroll to the bottom so the latest message is visible without scrolling;
+  // older messages are reachable by scrolling up. sessionId is in the deps so
+  // switching views re-runs this even when message counts happen to match
+  // (length-only deps silently skipped that case).
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    if (isBriefings) el.scrollTo({ top: 0 })
-    else el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [messages.length, sending, isBriefings])
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [messages.length, sending, sessionId])
 
   async function send() {
     const text = draft.trim()
@@ -252,7 +252,7 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
             Start typing below. Try: "what's pending?" or "queue an article about V60 brewing for beginners".
           </div>
         ) : (
-          (isBriefings ? [...messages].reverse() : messages).map(m => <ChatBubble key={m.id} m={m} />)
+          messages.map(m => <ChatBubble key={m.id} m={m} />)
         )}
         {sending && (
           <div className="text-xs text-surface-500 inline-flex items-center gap-2">
