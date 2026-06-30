@@ -112,18 +112,6 @@ async function icountLogin(): Promise<string> {
 const icountSku = (it: any) => String(it.sku ?? it.makat ?? it.barcode ?? "").trim();
 const icountId  = (it: any) => String(it.inventory_item_id ?? it.id ?? "");
 
-// One get_items call per request → a SKU-keyed map of {id, stock, name}.
-async function icountItemMap(sid: string): Promise<Map<string, { id: string; stock: number; name: string }>> {
-  const r = await icount("inventory/get_items", { sid, cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS });
-  const raw = Array.isArray(r?.items) ? r.items : (r?.items && typeof r.items === "object" ? Object.values(r.items) : []);
-  const map = new Map<string, { id: string; stock: number; name: string }>();
-  for (const it of raw as any[]) {
-    const sku = icountSku(it);
-    if (sku) map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? "") });
-  }
-  return map;
-}
-
 async function icountSetStock(sid: string, itemId: string, stock: number): Promise<void> {
   await icountUpdateItem(sid, itemId, { stock });
 }
@@ -147,15 +135,43 @@ function icountPriceIncVat(it: any): number | null {
   return v == null || v === "" ? null : Number(v);
 }
 
+// iCount's BUYING (cost) price. We don't know the canonical field name for this
+// account up front, and it isn't documented uniformly, so we detect it: the
+// first of these keys that the item actually carries is treated as the cost
+// field, and writes go back to that same key. A value of 0/"0" still counts as
+// "present" — that's how we learn the real field name even before any cost is
+// set. DEFAULT_COST_FIELD is the fallback used only when the item carries none
+// of them (first cost ever written for this item).
+const COST_FIELDS = [
+  "cost", "unitcost", "unit_cost", "cost_price", "costprice",
+  "unitcost_incvat", "cost_incvat", "buy_price", "buyprice",
+  "purchase_price", "purchaseprice", "supplier_price",
+];
+const DEFAULT_COST_FIELD = "cost";
+function icountCost(it: any): { field: string | null; value: number | null } {
+  for (const f of COST_FIELDS) {
+    const v = it?.[f];
+    if (v !== undefined && v !== null && v !== "") {
+      const n = Number(v);
+      return { field: f, value: Number.isFinite(n) ? n : null };
+    }
+  }
+  return { field: null, value: null };
+}
+
 // Full SKU-keyed map carrying the raw item (so the preview can surface price
-// fields for verification and we can read the current price).
-async function icountItemMapFull(sid: string): Promise<Map<string, { id: string; stock: number; name: string; price: number | null; raw: any }>> {
+// fields for verification and we can read the current sale + cost price).
+type IcItem = { id: string; stock: number; name: string; price: number | null; cost: number | null; costField: string | null; raw: any };
+async function icountItemMapFull(sid: string): Promise<Map<string, IcItem>> {
   const r = await icount("inventory/get_items", { sid, cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS });
   const raw = Array.isArray(r?.items) ? r.items : (r?.items && typeof r.items === "object" ? Object.values(r.items) : []);
-  const map = new Map<string, { id: string; stock: number; name: string; price: number | null; raw: any }>();
+  const map = new Map<string, IcItem>();
   for (const it of raw as any[]) {
     const sku = icountSku(it);
-    if (sku) map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? ""), price: icountPriceIncVat(it), raw: it });
+    if (sku) {
+      const c = icountCost(it);
+      map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? ""), price: icountPriceIncVat(it), cost: c.value, costField: c.field, raw: it });
+    }
   }
   return map;
 }
@@ -239,32 +255,47 @@ async function handleProductSet(body: any) {
 }
 
 // ── Goods receipt (non-coffee only) ──────────────────────────────────────────
-// For each line: WooCommerce is master (read current + add qty). iCount mirrors
-// the same +qty against its OWN current stock. Coffee bags (in product_sku_map)
-// are rejected — those stay on the packing/packed_stock flow.
+// For each line: WooCommerce is master for stock (read current + add qty) and
+// for the sale price; iCount mirrors both. The BUYING (cost) price lives in
+// iCount (master) and is also logged to inventory_adjustments. Coffee bags
+// (in product_sku_map) are rejected — those stay on the packing/packed_stock flow.
+//
+// Each item may carry, alongside {sku, qty}:
+//   • cost  — new buying price per unit. Compared to the current iCount cost so
+//             the UI can flag it (red = went up, green = went down). Written to
+//             iCount's cost field + logged. Omit/blank/unchanged → left as-is.
+//   • price — new sale price (VAT-inclusive consumer price). Written to Woo +
+//             iCount. Omit/blank/unchanged → left as-is.
+// A dry run writes nothing; it returns each line's current cost + sale price so
+// the page can pre-fill the editable fields and colour the buying price.
 async function handleReceive(body: any) {
   const dryRun = body.dry_run !== false; // default to a safe preview
   const supplier = String(body.supplier ?? "").trim() || null;
   const rawItems: any[] = Array.isArray(body.items) ? body.items : [];
+  const num = (v: unknown) => (v === undefined || v === null || String(v).trim() === "" ? null : Number(v));
   const items = rawItems
-    .map((it) => ({ sku: String(it.sku ?? "").trim(), qty: Number(it.qty) }))
+    .map((it) => ({ sku: String(it.sku ?? "").trim(), qty: Number(it.qty), cost: num(it.cost), price: num(it.price) }))
     .filter((it) => it.sku);
   if (items.length === 0) return json({ error: "items[] is required (each {sku, qty})" }, 400);
   for (const it of items) {
     if (!Number.isFinite(it.qty) || it.qty <= 0)
       return json({ error: `qty for SKU "${it.sku}" must be a positive number` }, 400);
+    if (it.cost !== null && (!Number.isFinite(it.cost) || it.cost < 0))
+      return json({ error: `cost for SKU "${it.sku}" must be a non-negative number` }, 400);
+    if (it.price !== null && (!Number.isFinite(it.price) || it.price < 0))
+      return json({ error: `price for SKU "${it.sku}" must be a non-negative number` }, 400);
   }
 
   const haveIcount = icountConfigured();
   let sid = "";
-  let imap: Map<string, { id: string; stock: number; name: string }> = new Map();
+  let imap: Map<string, IcItem> = new Map();
   if (haveIcount) {
-    try { sid = await icountLogin(); imap = await icountItemMap(sid); }
+    try { sid = await icountLogin(); imap = await icountItemMapFull(sid); }
     catch (e) { console.error("iCount init failed:", (e as Error).message); }
   }
 
   const results: any[] = [];
-  for (const { sku, qty } of items) {
+  for (const { sku, qty, cost, price } of items) {
     const line: any = { sku, qty, woo: null, icount: null, status: "ok" };
     try {
       // Coffee bag? → reject (packing flow owns these)
@@ -272,8 +303,21 @@ async function handleReceive(body: any) {
         .from("product_sku_map").select("product_id").eq("sku", sku).maybeSingle();
       if (skuMap) { line.status = "rejected_coffee"; results.push(line); continue; }
 
-      // ── WooCommerce (master) ──
+      const ic = haveIcount ? imap.get(sku) : undefined;
+      // Current buy price (iCount) + sale price (Woo master, iCount fallback),
+      // surfaced on every line so the page can pre-fill the editable fields and
+      // decide the buying-price colour.
+      const costBefore  = ic?.cost ?? null;
+      const wantCost    = cost  !== null && (costBefore  === null || cost  !== costBefore);
+      // ── WooCommerce (master: stock + sale price) ──
       const wc = await wooFindBySku(sku);
+      const saleBefore  = wc?.regularPrice != null ? Number(wc.regularPrice) : (ic?.price ?? null);
+      const wantSale    = price !== null && (saleBefore === null || price !== saleBefore);
+
+      line.current = { cost: costBefore, cost_field: ic?.costField ?? null, sale: saleBefore };
+      if (wantCost)  line.intended_cost  = cost;
+      if (wantSale)  line.intended_price = price;
+
       if (!wc) {
         line.woo = { status: "no_woo_match" };
       } else if (!wc.manageStock || wc.stockQuantity === null) {
@@ -290,24 +334,38 @@ async function handleReceive(body: any) {
           line.woo = { status: "would_update", before, after, is_variation: wc.parentId > 0 };
         }
       }
+      // sale price → Woo (real runs only)
+      if (wantSale && wc && !dryRun) {
+        try { line.woo = { ...(line.woo ?? {}), sale_after: await wooSetPrice(wc.id, wc.parentId, price as number) }; }
+        catch (e) { line.woo = { ...(line.woo ?? {}), sale_error: (e as Error).message }; }
+      }
 
-      // ── iCount (mirror same +qty against its own stock) ──
+      // ── iCount (mirror +qty stock; buy price master; mirror sale price) ──
       if (!haveIcount) {
         line.icount = { status: "not_configured" };
+      } else if (!ic) {
+        line.icount = { status: "no_icount_match" };
       } else {
-        const ic = imap.get(sku);
-        if (!ic) {
-          line.icount = { status: "no_icount_match" };
-        } else {
-          if (!line.name && ic.name) line.name = ic.name;
-          const before = ic.stock;
-          const after  = before + qty;
-          if (!dryRun) {
-            await icountSetStock(sid, ic.id, after);
-            line.icount = { status: "updated", before, after, id: ic.id };
-          } else {
-            line.icount = { status: "would_update", before, after, id: ic.id };
+        if (!line.name && ic.name) line.name = ic.name;
+        const before = ic.stock;
+        const after  = before + qty;
+        if (!dryRun) {
+          await icountSetStock(sid, ic.id, after);
+          line.icount = { status: "updated", before, after, id: ic.id, cost: costBefore };
+          // buy price → iCount (write back to the detected field, or the default
+          // when this item carries no cost field yet).
+          if (wantCost) {
+            const field = ic.costField || DEFAULT_COST_FIELD;
+            try { await icountUpdateItem(sid, ic.id, { [field]: cost }); line.icount.cost = cost; line.icount.cost_field = field; }
+            catch (e) { line.icount.cost_error = (e as Error).message; }
           }
+          // sale price → iCount
+          if (wantSale) {
+            try { await icountUpdateItem(sid, ic.id, { unitprice_incvat: price, unitprice_incvat_entered: 1 }); line.icount.sale_after = price; }
+            catch (e) { line.icount.sale_error = (e as Error).message; }
+          }
+        } else {
+          line.icount = { status: "would_update", before, after, id: ic.id, cost: costBefore };
         }
       }
 
@@ -323,9 +381,14 @@ async function handleReceive(body: any) {
           source: "receive", supplier, sku, description: line.name ?? null, qty_delta: qty,
           woo_product_id: line.woo?.id ?? null,
           woo_before: line.woo?.before ?? null, woo_after: line.woo?.after ?? null,
+          unit_cost: wantCost ? cost : null,
+          unit_cost_before: wantCost ? costBefore : null,
+          sale_price: wantSale ? price : null,
           applied: line.woo?.status === "updated" || line.icount?.status === "updated",
           note: `supplier intake · iCount ${line.icount?.status ?? "n/a"}` +
-                (line.icount?.before != null ? ` (${line.icount.before}→${line.icount.after})` : ""),
+                (line.icount?.before != null ? ` (${line.icount.before}→${line.icount.after})` : "") +
+                (wantCost ? ` · cost ${costBefore ?? "—"}→${cost}` : "") +
+                (wantSale ? ` · price→${price}` : ""),
         });
       }
     } catch (e) {
