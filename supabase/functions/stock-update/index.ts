@@ -135,33 +135,19 @@ function icountPriceIncVat(it: any): number | null {
   return v == null || v === "" ? null : Number(v);
 }
 
-// iCount's BUYING (cost) price. We don't know the canonical field name for this
-// account up front, and it isn't documented uniformly, so we detect it: the
-// first of these keys that the item actually carries is treated as the cost
-// field, and writes go back to that same key. A value of 0/"0" still counts as
-// "present" — that's how we learn the real field name even before any cost is
-// set. DEFAULT_COST_FIELD is the fallback used only when the item carries none
-// of them (first cost ever written for this item).
-const COST_FIELDS = [
-  "cost", "unitcost", "unit_cost", "cost_price", "costprice",
-  "unitcost_incvat", "cost_incvat", "buy_price", "buyprice",
-  "purchase_price", "purchaseprice", "supplier_price",
-];
-const DEFAULT_COST_FIELD = "cost";
-function icountCost(it: any): { field: string | null; value: number | null } {
-  for (const f of COST_FIELDS) {
-    const v = it?.[f];
-    if (v !== undefined && v !== null && v !== "") {
-      const n = Number(v);
-      return { field: f, value: Number.isFinite(n) ? n : null };
-    }
-  }
-  return { field: null, value: null };
+// iCount's BUYING (cost) price for an inventory item lives in `cost_amount`
+// (confirmed by the account owner; `unitprice` is the *sale* price shown on a
+// document, not the cost). A value of 0/"0" counts as present (= "0 on record");
+// only null/""/missing reads as "no cost yet".
+const ICOUNT_COST_FIELD = "cost_amount";
+function icountCost(it: any): number | null {
+  const v = it?.[ICOUNT_COST_FIELD];
+  return v === undefined || v === null || v === "" ? null : Number(v);
 }
 
 // Full SKU-keyed map carrying the raw item (so the preview can surface price
 // fields for verification and we can read the current sale + cost price).
-type IcItem = { id: string; stock: number; name: string; price: number | null; cost: number | null; costField: string | null; raw: any };
+type IcItem = { id: string; stock: number; name: string; price: number | null; cost: number | null; raw: any };
 async function icountItemMapFull(sid: string): Promise<Map<string, IcItem>> {
   const r = await icount("inventory/get_items", { sid, cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS });
   const raw = Array.isArray(r?.items) ? r.items : (r?.items && typeof r.items === "object" ? Object.values(r.items) : []);
@@ -169,8 +155,7 @@ async function icountItemMapFull(sid: string): Promise<Map<string, IcItem>> {
   for (const it of raw as any[]) {
     const sku = icountSku(it);
     if (sku) {
-      const c = icountCost(it);
-      map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? ""), price: icountPriceIncVat(it), cost: c.value, costField: c.field, raw: it });
+      map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? ""), price: icountPriceIncVat(it), cost: icountCost(it), raw: it });
     }
   }
   return map;
@@ -314,7 +299,7 @@ async function handleReceive(body: any) {
       const saleBefore  = wc?.regularPrice != null ? Number(wc.regularPrice) : (ic?.price ?? null);
       const wantSale    = price !== null && (saleBefore === null || price !== saleBefore);
 
-      line.current = { cost: costBefore, cost_field: ic?.costField ?? null, sale: saleBefore };
+      line.current = { cost: costBefore, cost_field: ICOUNT_COST_FIELD, sale: saleBefore };
       if (wantCost)  line.intended_cost  = cost;
       if (wantSale)  line.intended_price = price;
 
@@ -352,11 +337,9 @@ async function handleReceive(body: any) {
         if (!dryRun) {
           await icountSetStock(sid, ic.id, after);
           line.icount = { status: "updated", before, after, id: ic.id, cost: costBefore };
-          // buy price → iCount (write back to the detected field, or the default
-          // when this item carries no cost field yet).
+          // buy price → iCount cost_amount.
           if (wantCost) {
-            const field = ic.costField || DEFAULT_COST_FIELD;
-            try { await icountUpdateItem(sid, ic.id, { [field]: cost }); line.icount.cost = cost; line.icount.cost_field = field; }
+            try { await icountUpdateItem(sid, ic.id, { [ICOUNT_COST_FIELD]: cost }); line.icount.cost = cost; line.icount.cost_field = ICOUNT_COST_FIELD; }
             catch (e) { line.icount.cost_error = (e as Error).message; }
           }
           // sale price → iCount
