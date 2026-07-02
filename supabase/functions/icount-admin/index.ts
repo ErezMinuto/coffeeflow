@@ -281,26 +281,34 @@ async function actionCreateMissing({ dryRun, limit }: { dryRun: boolean; limit: 
     };
   }
 
+  // Attempt each create; keep the raw response for reconciliation.
   async function createOne(p: { sku: string; name: string; price: number | null }): Promise<any> {
-    try {
-      const r = await icountCreateItem(sid, p, coffeeSkus.has(p.sku));
-      const newId = r?.inventory_item_id ?? r?.id ?? null;
-      if (r?.status === true || newId) return { sku: p.sku, name: p.name, status: "created", id: String(newId ?? "") };
-      if (r?.reason === "duplicate_sku") return { sku: p.sku, name: p.name, status: "already_exists" };
-      return { sku: p.sku, name: p.name, status: "failed", reason: JSON.stringify(r?.reason ?? r?._raw ?? r).slice(0, 200) };
-    } catch (e) {
-      return { sku: p.sku, name: p.name, status: "failed", reason: String(e instanceof Error ? e.message : e).slice(0, 200) };
-    }
+    try { return { p, r: await icountCreateItem(sid, p, coffeeSkus.has(p.sku)) }; }
+    catch (e) { return { p, r: { status: false, reason: String(e instanceof Error ? e.message : e).slice(0, 160) } }; }
   }
 
   const CONC = 4;
-  const results: any[] = new Array(batch.length);
+  const attempts: any[] = new Array(batch.length);
   let cursor = 0;
   await Promise.all(Array.from({ length: Math.min(CONC, batch.length) }, async () => {
-    for (;;) { const i = cursor++; if (i >= batch.length) break; results[i] = await createOne(batch[i]); }
+    for (;;) { const i = cursor++; if (i >= batch.length) break; attempts[i] = await createOne(batch[i]); }
   }));
-  const created  = results.filter((r) => r.status === "created").length;
-  const existed  = results.filter((r) => r.status === "already_exists").length;
+
+  // Reconcile: iCount sometimes returns item_creation_failed even though the item
+  // was actually saved. Re-read the catalog and trust that over the response.
+  // (Skip the extra fetch on empty ticks — the common cron case with nothing new.)
+  const afterSkus = batch.length ? new Set((await getAllItems(sid)).map(itemSku).filter(Boolean)) : existing;
+  const results = attempts.map(({ p, r }) => {
+    const newId = r?.inventory_item_id ?? r?.id ?? null;
+    const nowExists = afterSkus.has(p.sku);
+    if (r?.status === true || newId)                 return { sku: p.sku, name: p.name, status: "created", id: String(newId ?? "") };
+    if (nowExists && !existing.has(p.sku))           return { sku: p.sku, name: p.name, status: "created_despite_error" };
+    if (r?.reason === "duplicate_sku" || nowExists)  return { sku: p.sku, name: p.name, status: "already_exists" };
+    return { sku: p.sku, name: p.name, status: "failed", reason: JSON.stringify(r?.reason ?? r?._raw ?? r).slice(0, 200) };
+  });
+
+  const created = results.filter((r) => r.status === "created" || r.status === "created_despite_error").length;
+  const existed = results.filter((r) => r.status === "already_exists").length;
   return {
     ok: true, dry_run: false,
     missing_total: missing.length, attempted: batch.length, created, already_exists: existed,
