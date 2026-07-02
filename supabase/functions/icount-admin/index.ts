@@ -217,7 +217,105 @@ function itemSku(it: any): string { return norm(it.sku ?? it.makat ?? it.barcode
 function itemId(it: any): string { return String(it.inventory_item_id ?? it.id ?? ""); }
 function itemType(it: any): string { return String(it.item_type_id ?? ""); }
 
+// Every published Woo product (simple + variable PARENT) that carries a SKU.
+// iCount tracks ONE item per product keyed by the (parent) SKU — variations stay
+// in Woo — so this is the unit we mirror into iCount.
+async function allWooProducts(): Promise<{ id: number; sku: string; name: string; price: number | null }[]> {
+  const out: { id: number; sku: string; name: string; price: number | null }[] = [];
+  let page = 1;
+  for (;;) {
+    const products = await wooGet(`products?per_page=100&page=${page}&status=publish`);
+    if (!Array.isArray(products) || !products.length) break;
+    for (const p of products) {
+      const sku = norm(p.sku);
+      if (!sku) continue;
+      out.push({ id: p.id, sku, name: norm(p.name), price: p.price === "" || p.price == null ? null : Number(p.price) });
+    }
+    if (products.length < 100) break;
+    if (++page > 40) break; // safety cap (~4000 products)
+  }
+  return out;
+}
+
+// Create one iCount inventory item from a Woo product via inventory/add_item.
+// Field names per the iCount API spec: `unitprice` + `unit_price_includes_vat`
+// for the VAT-inclusive consumer price (NOT unitprice_incvat — that's update_item).
+// Buying price (cost_amount) is left unset (captured later at goods-receipt).
+// Coffee SKUs are tagged item_type_id=8. iCount requires a UNIQUE description,
+// so a duplicate name is retried disambiguated as "name (sku)".
+async function icountCreateItem(sid: string, p: { sku: string; name: string; price: number | null }, isCoffee: boolean): Promise<any> {
+  const fields: Record<string, unknown> = { sid, cid: CID, user: USER, pass: PASS, sku: p.sku };
+  if (p.price != null && Number.isFinite(p.price)) { fields.unitprice = p.price; fields.unit_price_includes_vat = true; }
+  if (isCoffee) fields.item_type_id = TARGET_TYPE;
+  const name = p.name || p.sku;
+  let r = await icount("inventory/add_item", { ...fields, description: name });
+  if (r?.reason === "duplicate_description")
+    r = await icount("inventory/add_item", { ...fields, description: `${name} (${p.sku})` });
+  return r;
+}
+
 // ── Actions ─────────────────────────────────────────────────────────────────
+
+// Create iCount items for every published Woo product whose SKU isn't in iCount
+// yet — so a product added in WooCommerce gets a matching iCount item (same SKU)
+// on the next run. dry_run (default) reports what's missing; a real run creates
+// up to `limit` of them (the rest follow on the next tick / cron run).
+async function actionCreateMissing({ dryRun, limit }: { dryRun: boolean; limit: number }) {
+  const sid = await login();
+  const [items, wooProducts, coffeeSkus] = await Promise.all([
+    getAllItems(sid),
+    allWooProducts(),
+    coffeeCategorySkus().catch(() => new Set<string>()),
+  ]);
+  const existing = new Set(items.map(itemSku).filter(Boolean));
+  const missing  = wooProducts.filter((p) => !existing.has(p.sku));
+  const batch    = missing.slice(0, limit);
+
+  if (dryRun) {
+    return {
+      ok: true, dry_run: true,
+      woo_products: wooProducts.length,
+      icount_items_with_sku: existing.size,
+      missing: missing.length,
+      would_create: batch.map((p) => ({ sku: p.sku, name: p.name, price: p.price, coffee: coffeeSkus.has(p.sku) })),
+    };
+  }
+
+  // Attempt each create; keep the raw response for reconciliation.
+  async function createOne(p: { sku: string; name: string; price: number | null }): Promise<any> {
+    try { return { p, r: await icountCreateItem(sid, p, coffeeSkus.has(p.sku)) }; }
+    catch (e) { return { p, r: { status: false, reason: String(e instanceof Error ? e.message : e).slice(0, 160) } }; }
+  }
+
+  const CONC = 4;
+  const attempts: any[] = new Array(batch.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(CONC, batch.length) }, async () => {
+    for (;;) { const i = cursor++; if (i >= batch.length) break; attempts[i] = await createOne(batch[i]); }
+  }));
+
+  // Reconcile: iCount sometimes returns item_creation_failed even though the item
+  // was actually saved. Re-read the catalog and trust that over the response.
+  // (Skip the extra fetch on empty ticks — the common cron case with nothing new.)
+  const afterSkus = batch.length ? new Set((await getAllItems(sid)).map(itemSku).filter(Boolean)) : existing;
+  const results = attempts.map(({ p, r }) => {
+    const newId = r?.inventory_item_id ?? r?.id ?? null;
+    const nowExists = afterSkus.has(p.sku);
+    if (r?.status === true || newId)                 return { sku: p.sku, name: p.name, status: "created", id: String(newId ?? "") };
+    if (nowExists && !existing.has(p.sku))           return { sku: p.sku, name: p.name, status: "created_despite_error" };
+    if (r?.reason === "duplicate_sku" || nowExists)  return { sku: p.sku, name: p.name, status: "already_exists" };
+    return { sku: p.sku, name: p.name, status: "failed", reason: JSON.stringify(r?.reason ?? r?._raw ?? r).slice(0, 200) };
+  });
+
+  const created = results.filter((r) => r.status === "created" || r.status === "created_despite_error").length;
+  const existed = results.filter((r) => r.status === "already_exists").length;
+  return {
+    ok: true, dry_run: false,
+    missing_total: missing.length, attempted: batch.length, created, already_exists: existed,
+    remaining: missing.length - created - existed,
+    results,
+  };
+}
 
 // Confirm config + counts for the page header.
 async function actionStatus() {
@@ -670,6 +768,10 @@ serve(async (req) => {
         offset: Number(body.offset ?? 0),
         limit:  Math.min(Number(body.limit ?? 30), 60),
         dryRun: body.dry_run !== false, // default dry-run
+      }));
+      case "create_missing": return json(await actionCreateMissing({
+        dryRun: body.dry_run !== false, // default dry-run
+        limit:  Math.min(Number(body.limit ?? 25), 100),
       }));
       default: return json({ error: `unknown action: ${action}` }, 400);
     }
