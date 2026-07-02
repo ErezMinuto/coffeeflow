@@ -297,21 +297,33 @@ async function actionCreateMissing({ dryRun, limit }: { dryRun: boolean; limit: 
   // Reconcile: iCount sometimes returns item_creation_failed even though the item
   // was actually saved. Re-read the catalog and trust that over the response.
   // (Skip the extra fetch on empty ticks — the common cron case with nothing new.)
-  const afterSkus = batch.length ? new Set((await getAllItems(sid)).map(itemSku).filter(Boolean)) : existing;
-  const results = attempts.map(({ p, r }) => {
+  const afterItems = batch.length ? await getAllItems(sid) : items;
+  const skuToId = new Map<string, string>();
+  for (const it of afterItems) { const s = itemSku(it); if (s) skuToId.set(s, itemId(it)); }
+  const afterSkus = new Set(skuToId.keys());
+  const results: any[] = attempts.map(({ p, r }) => {
     const newId = r?.inventory_item_id ?? r?.id ?? null;
     const nowExists = afterSkus.has(p.sku);
-    if (r?.status === true || newId)                 return { sku: p.sku, name: p.name, status: "created", id: String(newId ?? "") };
-    if (nowExists && !existing.has(p.sku))           return { sku: p.sku, name: p.name, status: "created_despite_error" };
+    if (r?.status === true || newId)                 return { sku: p.sku, name: p.name, status: "created", id: String(newId ?? skuToId.get(p.sku) ?? "") };
+    if (nowExists && !existing.has(p.sku))           return { sku: p.sku, name: p.name, status: "created_despite_error", id: skuToId.get(p.sku) ?? "" };
     if (r?.reason === "duplicate_sku" || nowExists)  return { sku: p.sku, name: p.name, status: "already_exists" };
     return { sku: p.sku, name: p.name, status: "failed", reason: JSON.stringify(r?.reason ?? r?._raw ?? r).slice(0, 200) };
   });
 
+  // Give each newly-created item its matching Woo product image (150x150 square
+  // for the iCount POS). Bounded concurrency; failures don't fail the create.
+  const toImage = results.filter((r) => (r.status === "created" || r.status === "created_despite_error") && r.id);
+  let ic = 0;
+  await Promise.all(Array.from({ length: Math.min(4, toImage.length) }, async () => {
+    for (;;) { const i = ic++; if (i >= toImage.length) break; toImage[i].image = await ensureSquareImage(sid, toImage[i].id, toImage[i].sku); }
+  }));
+
   const created = results.filter((r) => r.status === "created" || r.status === "created_despite_error").length;
   const existed = results.filter((r) => r.status === "already_exists").length;
+  const imaged  = results.filter((r) => r.image === "squared").length;
   return {
     ok: true, dry_run: false,
-    missing_total: missing.length, attempted: batch.length, created, already_exists: existed,
+    missing_total: missing.length, attempted: batch.length, created, already_exists: existed, imaged,
     remaining: missing.length - created - existed,
     results,
   };
@@ -418,6 +430,27 @@ async function actionSetImages(opts: { offset: number; limit: number; dryRun: bo
 // existing full-size image, uploads the square variant named with a marker so
 // re-runs skip already-squared items (idempotent / resumable). Batched by offset.
 const SQ_MARKER = "_sq150";
+
+// Upload one item's matching Woo product image as a 150x150 square (iCount POS).
+// Idempotent: skips if the item already has a _sq150 image. Never throws — returns
+// a short status so a create still counts as a success if the image step fails.
+async function ensureSquareImage(sid: string, id: string, sku: string): Promise<string> {
+  try {
+    const existing = await getItemImages(sid, id);
+    if (existing.some((i: any) => String(i.filename ?? "").includes(SQ_MARKER))) return "already_square";
+    const fullUrl = await wooImageForSku(sku).catch(() => null);
+    if (!fullUrl) return "no_woo_image";
+    const sqUrl = await squareImageUrl(fullUrl);
+    const r = await fetch(sqUrl);
+    if (!r.ok) return "fetch_failed";
+    const buf = await r.arrayBuffer();
+    const mime = r.headers.get("content-type") ?? "image/jpeg";
+    for (const img of existing) await deleteItemImage(sid, id, img.file_id);
+    const up = await addItemImage(sid, id, buf, mime, `${sku}${SQ_MARKER}.jpg`);
+    return up?.status === true ? "squared" : "upload_failed";
+  } catch (e) { return `image_error: ${String(e instanceof Error ? e.message : e).slice(0, 80)}`; }
+}
+
 async function actionSquareImages(opts: { offset: number; limit: number; dryRun: boolean }) {
   const { offset, limit, dryRun } = opts;
   const sid = await login();
