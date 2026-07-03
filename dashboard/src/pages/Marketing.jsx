@@ -69,7 +69,12 @@ function AutosaveStatus({ saving, dirty, lastSavedAt, onSaveNow, hasDraftId }) {
 
 export default function Marketing() {
   const { data, user, showToast, marketingContactsDb, campaignsDb, contactGroupsDb, contactGroupMembersDb } = useApp();
-  const [activeTab, setActiveTab] = useState('compose');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Honor a ?tab= deep-link (e.g. the home "Needs You" panel links straight
+    // to History so you land on the drafts, not the empty compose form).
+    const t = new URLSearchParams(window.location.search).get('tab');
+    return TABS.some(tab => tab.id === t) ? t : 'compose';
+  });
   const [duplicateData, setDuplicateData] = useState(null);
   const [editData, setEditData] = useState(null);
 

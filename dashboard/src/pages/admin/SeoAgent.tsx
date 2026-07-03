@@ -30,7 +30,11 @@ export default function SeoAgent() {
   // once via the grid; this only drives the small-screen tab switcher.
   // Chat is the default — it's the primary interaction surface.
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>('chat')
-  const [view, setView] = useState<View>('workspace')
+  // Honor a ?view=brief deep-link (the home "Needs You" panel links proposals
+  // and signals straight to the strategist brief, not the content workspace).
+  const [view, setView] = useState<View>(
+    new URLSearchParams(window.location.search).get('view') === 'brief' ? 'brief' : 'workspace'
+  )
 
   useEffect(() => {
     setSessionId(loadOrCreateSessionId())
