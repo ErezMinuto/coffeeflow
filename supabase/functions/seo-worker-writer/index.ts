@@ -31,6 +31,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { WRITER_SYSTEM_PROMPT } from '../seo-agent/prompts/writer.ts'
 import { callClaude, parseClaudeJson, MODEL_WRITER } from '../seo-agent/claude.ts'
+import { checkKeywordCannibalization } from '../seo-agent/cannibalizationCheck.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -84,6 +85,33 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const brief = task.brief_data as TextGenerationBrief
     validateBrief(brief, task.id)
+
+    // ── 1.5 Pre-flight cannibalization check ────────────────────────────
+    // Before spending a Claude call + creating another WP draft, ask WP
+    // whether an existing post (any status) already covers this keyword.
+    // If so, fail the task PERMANENTLY (regenerating can't resolve a
+    // duplicate-topic conflict) and hand the admin the conflicting URLs
+    // so they can dedupe/redirect instead of splitting ranking signals.
+    // Fails open: a WP outage (checked=false) never blocks writing.
+    const cannibal = await checkKeywordCannibalization(brief.keyword, brief.title)
+    if (cannibal.checked && cannibal.conflicts.length > 0) {
+      const list = cannibal.conflicts
+        .map(c => `#${c.id} "${c.title}" [${c.status}] ${c.link}`)
+        .join(' ; ')
+      const msg = `cannibalization blocked: ${cannibal.conflicts.length} existing post(s) overlap keyword "${brief.keyword}" — ${list}. Dedupe/redirect/rewrite in place before re-queuing.`
+      console.warn(`[seo-worker-writer] ✗ task=${task.id} ${msg}`)
+      // Permanent regardless of attempts — a retry would hit the same conflict.
+      await markTaskFailed(supabase, task.id, msg, true)
+      return jsonResponse({
+        processed:      0,
+        worker_id:      workerId,
+        task_id:        task.id,
+        failed:         true,
+        permanent:      true,
+        cannibalization: cannibal.conflicts,
+        error:          msg,
+      }, 200)
+    }
 
     // ── 2. Resolve products_to_mention → permalink+UTM map ──────────────
     const permalinkMap = await buildPermalinkMap(
