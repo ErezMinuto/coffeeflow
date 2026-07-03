@@ -14,7 +14,7 @@ import ProductSearchInput from './ProductSearchInput';
 // rejected here.
 
 const blankRow = () => ({
-  text: '', sku: '', name: '', qty: '1',
+  text: '', sku: '', name: '', qty: '',
   buy: '', sale: '', buyBefore: null, saleBefore: null,
   loadingPrice: false, isCoffee: false,
 });
@@ -81,8 +81,8 @@ export default function SupplierIntake() {
       const sku = (r.sku || r.text).trim();
       const qty = parseInt(r.qty, 10);
       if (!sku) continue;
-      if (!qty || qty <= 0) { showToast(`⚠️ כמות לא תקינה למק"ט ${sku}`, 'warning'); return null; }
-      const it = { sku, qty };
+      if (!qty || qty <= 0) { showToast(`⚠️ יש להזין כמות למוצר ${r.name || sku}`, 'warning'); return null; }
+      const it = { sku, qty, name: r.name || sku };
       if (String(r.buy).trim()  !== '') it.cost  = Number(r.buy);
       if (String(r.sale).trim() !== '') it.price = Number(r.sale);
       items.push(it);
@@ -206,7 +206,7 @@ export default function SupplierIntake() {
                   onPick={(picked) => onPick(i, picked)}
                 />
                 <input style={input} type="number" min="1" value={r.qty} disabled={busy}
-                  onChange={e => setRow(i, { qty: e.target.value })} />
+                  placeholder="כמות" onChange={e => setRow(i, { qty: e.target.value })} />
                 <input
                   style={{ ...input, border: `2px solid ${buyBorder}`, color: buyColor, fontWeight: dir ? 700 : 400 }}
                   type="number" min="0" step="0.01" value={r.buy} disabled={priceDisabled}
@@ -246,7 +246,13 @@ export default function SupplierIntake() {
             {busy ? 'מעבד…' : '👁️ תצוגה מקדימה'}
           </button>
           <button style={btn(GREEN, busy)} disabled={busy}
-            onClick={() => { if (window.confirm('לעדכן מלאי + מחירים ב-WooCommerce וב-iCount?')) run(false); }}>
+            onClick={() => {
+              const items = collectItems();
+              if (!items) return;
+              const summary = items.map(it => `• ${it.name}: +${it.qty} יח׳`).join('\n');
+              const total = items.reduce((s, it) => s + it.qty, 0);
+              if (window.confirm(`לאשר קליטת ${items.length} מוצרים · סה"כ ${total} יחידות?\n\nהכמות תתווסף למלאי הקיים:\n${summary}`)) run(false);
+            }}>
             {busy ? 'מעבד…' : '✅ אשר ועדכן מלאי ומחירים'}
           </button>
         </div>
