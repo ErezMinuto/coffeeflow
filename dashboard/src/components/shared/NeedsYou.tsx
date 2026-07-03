@@ -43,10 +43,10 @@ export function NeedsYou() {
       ])
       if (!alive) return
       setRows([
-        { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent', cta: 'לאישור',  count: proposals },
-        { key: 'drafts',    icon: '✉️', label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing',       cta: 'למרקטינג', count: drafts },
-        { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent', cta: 'לבדיקה',  count: review },
-        { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent', cta: 'לצפייה',  count: signals },
+        { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=brief',     cta: 'לאישור',  count: proposals },
+        { key: 'drafts',    icon: '✉️', label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing?tab=history',          cta: 'למרקטינג', count: drafts },
+        { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=workspace', cta: 'לבדיקה',  count: review },
+        { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=brief',     cta: 'לצפייה',  count: signals },
       ])
     })()
     return () => { alive = false }
