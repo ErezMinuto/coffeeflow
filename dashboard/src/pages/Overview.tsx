@@ -5,6 +5,7 @@ import { ConnectionStatusBar } from '../components/shared/ConnectionStatus'
 import { DateRange, ConnectionStatus } from '../lib/types'
 import { getDefaultDateRange, getMetaAuthUrl, getGoogleAuthUrl } from '../lib/utils'
 import { supabase } from '../lib/supabase'
+import { NeedsYou } from '../components/shared/NeedsYou'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
@@ -80,6 +81,9 @@ export default function OverviewPage() {
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
+
+      {/* What needs your attention — pulls every pending item into one place */}
+      <NeedsYou />
 
       {/* Connections */}
       <ConnectionStatusBar
