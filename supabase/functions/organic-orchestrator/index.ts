@@ -31,6 +31,10 @@ import {
   insertExperiment,
 } from '../seo-agent/db.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
+import {
+  checkCannibalizationForQueue,
+  buildCannibalizationConflictBrief,
+} from '../seo-agent/cannibalizationCheck.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
 import {
@@ -349,6 +353,48 @@ serve(async (req: Request): Promise<Response> => {
       `experiments=${emittedExperiments.length} ` +
       `tasks=${emittedTasks.length}`,
     )
+
+    // ── 5b. PRE-QUEUE CANNIBALIZATION GATE (text_generation only) ──────
+    // Before materializing tasks, ask WP whether each intended article's
+    // keyword is already covered by an existing post (any status). On a
+    // conflict we do NOT queue the article — we convert that emitted task
+    // IN PLACE into a dynamic_experiment (cannibalization_conflict) so the
+    // conflict surfaces in the admin's pending-approvals queue instead of a
+    // silently-failed writer task. Converting in place (rather than dropping)
+    // keeps the emittedTasks↔insertedRows index alignment the parent/depends
+    // wiring below relies on. Fails open per-task (WP outage → queue anyway).
+    // One WP call per text_generation task; run concurrently.
+    phase = 'cannibalization_gate'
+    let cannibalConflictsFiled = 0
+    if (emittedTasks.length > 0) {
+      await Promise.all(emittedTasks.map(async (et) => {
+        if (et.task_type !== 'text_generation') return
+        const brief   = (et.brief_data ?? {}) as Record<string, unknown>
+        const keyword = String(brief.keyword ?? '').trim()
+        const title   = String(brief.title ?? '').trim()
+        if (!keyword) return
+        let gate
+        try { gate = await checkCannibalizationForQueue(keyword, title) }
+        catch (e: any) {
+          console.warn(`[organic-orchestrator] cannibalization check threw for "${keyword}" (fail-open): ${e?.message ?? e}`)
+          return
+        }
+        if (gate.checked && gate.conflicts.length > 0) {
+          et.task_type       = 'dynamic_experiment'
+          et.task_subtype    = 'cannibalization_conflict'
+          et.brief_data      = buildCannibalizationConflictBrief({ keyword, title, conflicts: gate.conflicts })
+          et.rationale       = `[cannibalization-gate] did NOT queue "${keyword}" — ${gate.conflicts.length} overlapping post(s); needs admin dedupe. (was: ${et.rationale ?? ''})`.slice(0, 500)
+          // Strip experiment tagging — a conflict proposal is not an A/B variation.
+          delete et.experiment_group
+          delete et.variation_label
+          cannibalConflictsFiled++
+          console.warn(`[organic-orchestrator] cannibalization: "${keyword}" overlaps ${gate.conflicts.length} post(s) → filed conflict for admin review`)
+        }
+      }))
+      if (cannibalConflictsFiled > 0) {
+        console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} text_generation task(s) converted to conflict proposals`)
+      }
+    }
 
     // ── 6a. Materialize experiments. Each experiment_group string from
     // the strategist becomes one seo_experiments row; the row's UUID is

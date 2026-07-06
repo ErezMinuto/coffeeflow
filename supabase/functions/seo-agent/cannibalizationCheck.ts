@@ -8,15 +8,28 @@
 // FAILS the task and surfaces the conflicting post(s) to the admin,
 // instead of silently drafting a duplicate.
 //
-// This is the pipeline-layer half of the belt-and-suspenders check the
-// signal asks for: the chat agent is separately prompted to run
-// list_posts(search: keyword, status: 'any') before it calls
-// queue_task('text_generation'), and this module re-verifies at the
-// worker so orchestrator- and mission-queued tasks are covered too.
+// This module now covers BOTH halves of the belt-and-suspenders check:
+//
+//   • checkKeywordCannibalization() — the PIPELINE-LAYER half. The writer
+//     worker calls it at claim time; on a conflict it fails the task and
+//     hands the admin the conflicting URLs.
+//
+//   • checkCannibalizationForQueue() + buildCannibalizationConflictBrief()
+//     — the PRE-QUEUE gate. The mission worker and orchestrator call it
+//     immediately BEFORE queuing a text_generation task. On a conflict
+//     they DON'T queue the task at all; instead they insert a
+//     dynamic_experiment (subtype: cannibalization_conflict) with
+//     approval_required so the conflict surfaces in Erez's pending-
+//     approvals queue rather than as a silently-failed task. The gate
+//     uses a token-intersection ratio (Hebrew stop-words stripped) so it
+//     catches paraphrased/reordered titles the exact/contains check
+//     might miss.
 //
 // Uses the same WP Application Password env vars as blog-publish,
 // wpPublishDetector, and the visual worker's featured-image attach:
 // WP_BLOG_POST_USER_NAME + WP_BLOG_POST_PASS. WOO_URL for the base URL.
+
+import type { DynamicExperimentBrief } from './types.ts'
 
 const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
 const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''
@@ -34,11 +47,32 @@ const MATCH_MODE = (Deno.env.get('SEO_CANNIBAL_MATCH') ?? 'title_contains').trim
   | 'title_contains'
   | 'keyword_exact'
 
+// Pre-queue gate threshold: the minimum share of the KEYWORD's tokens that
+// must also appear in a candidate post's title (or slug) for that post to
+// count as a cannibalization conflict. Default 0.6 per the signal's spec —
+// tunable via env without a redeploy. Clamped to (0, 1].
+const TOKEN_OVERLAP_MIN = (() => {
+  const raw = Number(Deno.env.get('SEO_CANNIBAL_TOKEN_OVERLAP') ?? '')
+  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.6
+})()
+
+// Common Hebrew (+ a few English) stop-words stripped before the token
+// overlap is computed, so filler words don't dilute the ratio. Kept small
+// and high-frequency on purpose — this is a similarity heuristic, not a
+// linguistic parser.
+const STOPWORDS = new Set([
+  'של', 'את', 'על', 'לפי', 'עם', 'גם', 'כל', 'או', 'כי', 'זה', 'זו', 'אלה',
+  'הוא', 'היא', 'הם', 'הן', 'יש', 'אין', 'מה', 'מי', 'לא', 'כן', 'אני', 'אתה',
+  'אנחנו', 'אך', 'רק', 'עד', 'אם', 'כמו',
+  'the', 'a', 'an', 'to', 'for', 'of', 'and', 'or', 'in', 'on', 'with',
+])
+
 export interface CannibalConflict {
   id:     number
   title:  string
   status: string
   link:   string
+  slug?:  string
 }
 
 export interface CannibalizationResult {
@@ -66,7 +100,30 @@ function normalize(s: string): string {
     .trim()
 }
 
-// Decide whether one existing post title conflicts with our brief.
+// Normalize → split → drop stop-words and 1-char tokens (bare Hebrew
+// prefixes, stray digits). Returns the meaningful comparison tokens.
+function tokens(s: string): string[] {
+  return normalize(s)
+    .split(' ')
+    .filter(t => t.length >= 2 && !STOPWORDS.has(t))
+}
+
+// Fraction of the KEYWORD's tokens that also appear in `candidate`.
+// Asymmetric on purpose: "does the existing post cover (most of) what this
+// keyword is about?" A short keyword fully contained in a longer title
+// scores 1.0; an unrelated title scores ~0.
+function tokenOverlapRatio(keyword: string, candidate: string): number {
+  const kw = tokens(keyword)
+  if (kw.length === 0) return 0
+  const cand = new Set(tokens(candidate))
+  let hits = 0
+  for (const t of kw) if (cand.has(t)) hits++
+  return hits / kw.length
+}
+
+// Decide whether one existing post title conflicts with our brief
+// (title_contains / keyword_exact modes — used by the writer worker's
+// claim-time check).
 function titleConflicts(existingTitle: string, keyword: string, targetTitle: string): boolean {
   const t  = normalize(existingTitle)
   const kw = normalize(keyword)
@@ -85,20 +142,20 @@ function titleConflicts(existingTitle: string, keyword: string, targetTitle: str
   )
 }
 
-// Query WP for posts overlapping `keyword` across every status, then
-// filter by the configured title-similarity threshold. Returns the
-// surviving conflicts (may be empty). Never throws — infra failures
-// resolve to {checked:false}, and the caller fails open.
-export async function checkKeywordCannibalization(
+// Query WP for posts overlapping `keyword` across every status. Returns
+// the raw candidate posts (title HTML stripped). Never throws — infra
+// failures resolve to {checked:false} and callers fail open. This is the
+// single WP round-trip both public entry points share, so a text_generation
+// task incurs at most ONE extra API call at its queuing site.
+async function fetchCandidatePosts(
   keyword: string,
-  title: string,
-): Promise<CannibalizationResult> {
+): Promise<{ posts: CannibalConflict[]; checked: boolean; reason?: string }> {
   const kw = (keyword ?? '').trim()
-  if (!kw) return { conflicts: [], checked: false, reason: 'empty keyword' }
+  if (!kw) return { posts: [], checked: false, reason: 'empty keyword' }
 
   if (!WP_USERNAME || !WP_APP_PASSWORD) {
     console.warn('[cannibalization] WP credentials missing; skipping (fail-open)')
-    return { conflicts: [], checked: false, reason: 'WP credentials missing' }
+    return { posts: [], checked: false, reason: 'WP credentials missing' }
   }
 
   const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
@@ -122,30 +179,121 @@ export async function checkKeywordCannibalization(
     if (!r.ok) {
       const body = await r.text().catch(() => '')
       console.warn(`[cannibalization] WP search HTTP ${r.status}: ${body.slice(0, 200)} (fail-open)`)
-      return { conflicts: [], checked: false, reason: `WP search HTTP ${r.status}` }
+      return { posts: [], checked: false, reason: `WP search HTTP ${r.status}` }
     }
     arr = await r.json()
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.warn(`[cannibalization] WP search threw: ${msg} (fail-open)`)
-    return { conflicts: [], checked: false, reason: msg }
+    return { posts: [], checked: false, reason: msg }
   }
 
   const stripHtml = (s: unknown) => typeof s === 'string'
     ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
     : ''
 
-  const conflicts: CannibalConflict[] = (Array.isArray(arr) ? arr : [])
+  const posts: CannibalConflict[] = (Array.isArray(arr) ? arr : [])
     .map((p) => {
-      const post = p as { id?: number; title?: { rendered?: string; raw?: string }; status?: string; link?: string }
+      const post = p as { id?: number; title?: { rendered?: string; raw?: string }; slug?: string; status?: string; link?: string }
       return {
         id:     typeof post.id === 'number' ? post.id : 0,
         title:  stripHtml(post.title?.raw ?? post.title?.rendered ?? ''),
         status: String(post.status ?? 'unknown'),
         link:   String(post.link ?? ''),
+        slug:   String(post.slug ?? ''),
       }
     })
-    .filter((c) => c.id > 0 && titleConflicts(c.title, kw, title))
+    .filter((c) => c.id > 0)
 
+  return { posts, checked: true }
+}
+
+// PIPELINE-LAYER check (writer worker, claim time). Fetches candidates and
+// filters by the configured title-similarity threshold. Returns the
+// surviving conflicts (may be empty). Never throws.
+export async function checkKeywordCannibalization(
+  keyword: string,
+  title: string,
+): Promise<CannibalizationResult> {
+  const { posts, checked, reason } = await fetchCandidatePosts(keyword)
+  if (!checked) return { conflicts: [], checked: false, reason }
+  const conflicts = posts.filter((c) => titleConflicts(c.title, keyword, title))
   return { conflicts, checked: true }
+}
+
+// PRE-QUEUE gate (mission worker + orchestrator, BEFORE queuing a
+// text_generation task). Same WP round-trip as above, but matches by a
+// token-intersection ratio: a candidate conflicts when ≥ TOKEN_OVERLAP_MIN
+// of the keyword's meaningful tokens also appear in the post's title OR
+// slug. Catches reordered/paraphrased titles the substring check misses.
+// Never throws — callers fail open (queue anyway) when checked=false.
+export async function checkCannibalizationForQueue(
+  keyword: string,
+  title: string,
+): Promise<CannibalizationResult> {
+  const { posts, checked, reason } = await fetchCandidatePosts(keyword)
+  if (!checked) return { conflicts: [], checked: false, reason }
+  const conflicts = posts.filter((c) => {
+    const titleRatio = tokenOverlapRatio(keyword, c.title)
+    const slugRatio  = tokenOverlapRatio(keyword, c.slug ?? '')
+    // The intended article title is also weighed so a keyword-light brief
+    // with a descriptive title still gets caught.
+    const fromTitle  = title ? tokenOverlapRatio(title, c.title) : 0
+    return Math.max(titleRatio, slugRatio, fromTitle) >= TOKEN_OVERLAP_MIN
+  })
+  return { conflicts, checked: true }
+}
+
+// Pick which remediation to recommend. A LIVE (published) conflict is the
+// canonical URL — fold the new angle into it. If every conflict is still a
+// draft/pending/future, the duplicate never went live — delete it (and set
+// up a redirect if it ever had a URL) rather than consolidate.
+function recommendationFor(conflicts: CannibalConflict[]): string {
+  return conflicts.some((c) => c.status === 'publish')
+    ? 'consolidate into existing post'
+    : 'delete draft and redirect'
+}
+
+// Build the dynamic_experiment brief the mission worker / orchestrator
+// inserts INSTEAD of the blocked text_generation task. Shape matches the
+// scout-tick / health-watchdog dynamic_experiment pattern (description +
+// approval_required + details) so it renders in the pending-approvals queue
+// the chat agent already surfaces.
+export function buildCannibalizationConflictBrief(args: {
+  keyword:   string
+  title:     string
+  conflicts: CannibalConflict[]
+}): DynamicExperimentBrief {
+  const { keyword, title, conflicts } = args
+  const top            = conflicts[0]
+  const recommendation = recommendationFor(conflicts)
+  const list = conflicts
+    .map((c) => `#${c.id} "${c.title}" [${c.status}] ${c.link}`)
+    .join(' ; ')
+
+  return {
+    description:
+      `Keyword-cannibalization conflict — did NOT queue a new article for ` +
+      `"${keyword}"${title && title !== keyword ? ` (title "${title}")` : ''}. ` +
+      `${conflicts.length} existing post(s) already cover this topic: ${list}. ` +
+      `Recommendation: ${recommendation}. Queuing was skipped to avoid splitting ` +
+      `ranking signals across near-duplicate URLs — approve after you dedupe/redirect, ` +
+      `or cancel this proposal.`,
+    approval_required: true,
+    details: {
+      conflict_subtype:        'cannibalization_conflict',
+      intended_keyword:        keyword,
+      intended_title:          title || keyword,
+      conflicting_post_url:    top?.link ?? '',
+      conflicting_post_status: top?.status ?? '',
+      recommendation,
+      conflicting_posts: conflicts.map((c) => ({
+        id:     c.id,
+        title:  c.title,
+        status: c.status,
+        url:    c.link,
+        slug:   c.slug ?? '',
+      })),
+    },
+  }
 }
