@@ -33,6 +33,13 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function ScheduleRoute({ children }) {
+  const { canSchedule, roleLoading } = useApp();
+  if (roleLoading) return null;
+  if (!canSchedule) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 function SagieOnlyRoute({ children }) {
   const { user, roleLoading } = useApp();
   if (roleLoading) return null;
@@ -72,7 +79,7 @@ function AppContent() {
               <Route path="/packaging"  element={<Packaging />} />
               <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
-              <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
+              <Route path="/schedule"   element={<ScheduleRoute><Schedule /></ScheduleRoute>} />
               <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />
               <Route path="/stock-admin" element={<AdminRoute><StockAdmin /></AdminRoute>} />
               <Route path="/supplier-intake" element={<SupplierIntake />} />
