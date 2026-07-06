@@ -24,6 +24,10 @@ import {
   type ChatMessage,
 } from '../seo-agent/claude.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
+import {
+  checkCannibalizationForQueue,
+  buildCannibalizationConflictBrief,
+} from '../seo-agent/cannibalizationCheck.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 
 const CORS = {
@@ -207,6 +211,36 @@ serve(async (req) => {
       if (!norm.ok) {
         newNotes.push(`(did NOT queue ${task_type} — ${norm.error}. Re-queue next step with that field filled.)`)
         continue
+      }
+      // PRE-QUEUE CANNIBALIZATION GATE (text_generation only). Before queuing
+      // a new article, ask WP whether an existing post already covers this
+      // keyword. If so, do NOT queue the article — instead insert a
+      // dynamic_experiment (cannibalization_conflict) so the conflict surfaces
+      // in the admin's pending-approvals queue rather than as a silently-failed
+      // task down the pipeline. Fails open: a WP outage (checked=false) never
+      // blocks queuing. Adds exactly one WP call per text_generation queued.
+      if (task_type === 'text_generation') {
+        const kw = String((norm.brief as Record<string, unknown>).keyword ?? '')
+        const ti = String((norm.brief as Record<string, unknown>).title ?? '')
+        let gate
+        try { gate = await checkCannibalizationForQueue(kw, ti) }
+        catch (e: any) { gate = { conflicts: [], checked: false, reason: e?.message ?? String(e) } }
+        if (gate.checked && gate.conflicts.length > 0) {
+          try {
+            const inserted = await insertTasks(supabase, [{
+              task_type:    'dynamic_experiment',
+              task_subtype: 'cannibalization_conflict',
+              brief_data:   buildCannibalizationConflictBrief({ keyword: kw, title: ti, conflicts: gate.conflicts }) as NewSeoTask['brief_data'],
+              rationale:    `[mission ${mission.id.slice(0, 8)}] cannibalization: "${kw}" overlaps ${gate.conflicts.length} existing post(s) — queued for admin dedupe instead of a duplicate article`,
+              orchestrator_run_id: crypto.randomUUID(),
+            }])
+            if (inserted[0]?.id) newTaskIds.push(inserted[0].id)
+          } catch (e: any) {
+            newNotes.push(`(cannibalization conflict on "${kw}" but failed to file experiment: ${e?.message ?? e})`)
+          }
+          newNotes.push(`(did NOT queue article "${kw}" — ${gate.conflicts.length} existing post(s) overlap it; filed a cannibalization_conflict for admin review.)`)
+          continue
+        }
       }
       try {
         const inserted = await insertTasks(supabase, [{
