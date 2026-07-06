@@ -21,14 +21,14 @@ const allNavItems = [
     ],
   },
   {
-    label: 'Operations', icon: '🏪', adminOnly: true, children: [
-      { path: '/tasks',      icon: '📋', label: 'Tasks'      },
-      { path: '/schedule',   icon: '📅', label: 'Schedule'   },
-      { path: '/attendance', icon: '⏱️', label: 'Attendance' },
-      { path: '/purchases',  icon: '🛒', label: 'Purchases'  },
-      { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי' },
-      { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount' },
-      { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה' },
+    label: 'Operations', icon: '🏪', children: [
+      { path: '/tasks',      icon: '📋', label: 'Tasks',      adminOnly:    true },
+      { path: '/schedule',   icon: '📅', label: 'Schedule',   scheduleOnly: true },
+      { path: '/attendance', icon: '⏱️', label: 'Attendance', adminOnly:    true },
+      { path: '/purchases',  icon: '🛒', label: 'Purchases',  adminOnly:    true },
+      { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי',  adminOnly:    true },
+      { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount', adminOnly:  true },
+      { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה', adminOnly: true },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
@@ -133,9 +133,16 @@ function NavDropdown({ item, badges }) {
 }
 
 export default function Navigation() {
-  const { data, isAdmin } = useApp();
+  const { data, isAdmin, canSchedule } = useApp();
   const { user } = useUser();
   const isSagie = user?.primaryEmailAddress?.emailAddress === 'sagieelbaz@gmail.com';
+
+  // Visibility predicate for a nav item / child.
+  //   scheduleOnly → admins + schedule_manager   |   adminOnly → admins only   |   else everyone
+  const canSee = item =>
+    item.scheduleOnly ? canSchedule
+    : item.adminOnly  ? isAdmin
+    : true;
 
   const pendingTasks = (data.waitingCustomers || []).filter(wc => !wc.notified_at).length;
   const pendingEmployees = (data.employees || []).filter(e => e.user_id === 'pending').length;
@@ -144,9 +151,16 @@ export default function Navigation() {
   if (pendingTasks > 0) badges['/tasks'] = { count: pendingTasks, color: '#DC2626' };
   if (pendingEmployees > 0) badges['/schedule'] = { count: pendingEmployees, color: '#F59E0B' };
 
-  // Filter nav items based on role
+  // Filter nav items based on role. For dropdown groups, filter the children
+  // and drop the group entirely if nothing inside is visible.
   const navItems = [
-    ...allNavItems.filter(item => !item.adminOnly || isAdmin),
+    ...allNavItems
+      .map(item => {
+        if (!item.children) return canSee(item) ? item : null;
+        const children = item.children.filter(canSee);
+        return children.length ? { ...item, children } : null;
+      })
+      .filter(Boolean),
     ...(isSagie ? [{ path: '/checklist-editor', icon: '📋', label: 'Checklist Editor' }] : []),
   ];
 
