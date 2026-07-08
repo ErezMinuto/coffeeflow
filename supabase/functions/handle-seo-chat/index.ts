@@ -513,6 +513,42 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
+  // ── Audience segmentation (WooCommerce order data → email segments) ─────
+  {
+    name: 'query_customers',
+    description: "Filter customers by their WooCommerce order history (READ-ONLY, no side effects). Universe = customers with a revenue order (completed|processing) in woo_orders. Filters combine with AND: bought_category / not_bought_category (item-level, categories coffee|machine|grinder|accessory|other — e.g. bought_category='machine' + not_bought_category='coffee' = 'bought a machine but never beans'), segment (RFM: champion|loyal|big_spender|at_risk|new|regular|lost), last_order_days_ago_min (lapsed: days since last order ≥ N) / last_order_days_ago_max (recent), min/max_total_spent_ils (lifetime value), min_order_count, opted_in_only. Returns total_matched, opted_in_reachable (how many can actually be emailed), a segment_breakdown, and a top-N sample by spend (limit, default 25). To turn a match into a sendable segment, call create_email_segment with the SAME filters — the emails are re-queried server-side, so you never pass a long list through chat.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        bought_category:         { type: 'string', description: 'coffee|machine|grinder|accessory|other — customer bought ≥1 item in this category.' },
+        not_bought_category:     { type: 'string', description: 'coffee|machine|grinder|accessory|other — customer NEVER bought this category.' },
+        segment:                 { type: 'string', description: 'RFM segment: champion|loyal|big_spender|at_risk|new|regular|lost.' },
+        last_order_days_ago_min: { type: 'number', description: 'Days since last order ≥ this (find lapsed/dormant buyers).' },
+        last_order_days_ago_max: { type: 'number', description: 'Days since last order ≤ this (find recent buyers).' },
+        min_total_spent_ils:     { type: 'number', description: 'Lifetime spend ≥ this (ILS).' },
+        max_total_spent_ils:     { type: 'number', description: 'Lifetime spend ≤ this (ILS).' },
+        min_order_count:         { type: 'number', description: 'At least this many orders.' },
+        opted_in_only:           { type: 'boolean', description: 'If true, only customers opted-in in marketing_contacts (email-reachable). Default false.' },
+        limit:                   { type: 'number', description: 'Max sample rows returned (default 25, max 500). total_matched is always the full count.' },
+      },
+    },
+  },
+  {
+    name: 'create_email_segment',
+    description: "Create a named, sendable email segment from an audience — it lands as a contact_groups row (+ contact_group_members) in Minuto's own email platform, which the Marketing dashboard / campaign sender targets by name. Provide EITHER filters (same shape as query_customers — PREFERRED; the emails are queried server-side so no long list crosses chat) OR an explicit customer_list ([{email,name}] or [email,...]). This tool CREATES DATA — confirm the name + audience with Erez first. It NEVER sends anything: a campaign send intersects the group with opted-in marketing_contacts at send time, so the result reports opted_in_reachable (how many will actually receive) and flags needs_human when 0 are opted-in. rfm_* names are reserved (managed by rfm-sync). Pass replace_if_exists:true to overwrite an existing same-named group's members.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        name:          { type: 'string', description: 'Segment/group name (shown in the Marketing dashboard, used as the send target). Cannot start with rfm_.' },
+        description:   { type: 'string', description: 'Optional human description of who is in this segment and why.' },
+        filters:       { type: 'object', description: 'Same fields as query_customers (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only). PREFERRED over customer_list.' },
+        customer_list: { type: 'array', description: 'Explicit members: array of {email, name} objects or plain email strings. Use only when you already hold a specific list; otherwise pass filters.', items: { type: 'object' } },
+        replace_if_exists: { type: 'boolean', description: 'If a group with this name exists, replace its members (default false → the call refuses so you do not clobber an existing group by accident).' },
+      },
+      required: ['name'],
+    },
+  },
+
   // ── Strategist (State of Minuto) ───────────────────────────────────────
   // Read + act on the autonomous strategist-brain's output: weekly briefs,
   // agent→team signals (bug_report/capability_request/feature_idea — bug_reports
@@ -616,6 +652,237 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 ]
+
+// ── Audience segmentation helpers ──────────────────────────────────────
+// Shared by the query_customers (preview) + create_email_segment (build)
+// tools. READ-ONLY: reads synced order data (woo_orders +
+// woo_order_items_enriched), RFM segments (customer_rfm), and opt-in state
+// (marketing_contacts). No writes here — create_email_segment does the one
+// write, into contact_groups/contact_group_members.
+
+// Only paid orders count as a purchase. Mirrors rfm-sync + strategist tools.
+const SEG_REVENUE_STATUSES = ['completed', 'processing']
+// Item categories, as tagged heuristically by woo-orders-sync.
+const SEG_CATEGORIES = ['coffee', 'machine', 'grinder', 'accessory', 'other']
+// Defensive scan caps. Order/line counts here are in the low tens of
+// thousands, so these bound a runaway query without truncating real data in
+// practice; hitting one is surfaced as a warning, not silently swallowed.
+const SEG_ORDER_SCAN_CAP = 100_000
+const SEG_ITEM_SCAN_CAP  = 200_000
+
+interface CustomerFilters {
+  bought_category?:         string
+  not_bought_category?:     string
+  segment?:                 string
+  last_order_days_ago_min?: number
+  last_order_days_ago_max?: number
+  min_total_spent_ils?:     number
+  max_total_spent_ils?:     number
+  min_order_count?:         number
+  opted_in_only?:           boolean
+}
+
+interface CustomerRow {
+  email:            string
+  name:             string | null
+  order_count:      number
+  total_spent_ils:  number
+  first_order_date: string
+  last_order_date:  string
+  days_since_last:  number
+  segment:          string | null
+  opted_in:         boolean
+}
+
+interface CustomerSelection {
+  customers: CustomerRow[]   // sorted by total_spent_ils desc
+  warnings:  string[]
+}
+
+// Pull the filter object out of a tool input (either the input itself, for
+// query_customers, or input.filters, for create_email_segment).
+function parseCustomerFilters(input: Record<string, unknown>): CustomerFilters {
+  const num = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : undefined)
+  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+  return {
+    bought_category:         str(input.bought_category),
+    not_bought_category:     str(input.not_bought_category),
+    segment:                 str(input.segment),
+    last_order_days_ago_min: num(input.last_order_days_ago_min),
+    last_order_days_ago_max: num(input.last_order_days_ago_max),
+    min_total_spent_ils:     num(input.min_total_spent_ils),
+    max_total_spent_ils:     num(input.max_total_spent_ils),
+    min_order_count:         num(input.min_order_count),
+    opted_in_only:           input.opted_in_only === true,
+  }
+}
+
+function hasAnyFilter(f: CustomerFilters): boolean {
+  return Boolean(
+    f.bought_category || f.not_bought_category || f.segment ||
+    f.last_order_days_ago_min != null || f.last_order_days_ago_max != null ||
+    f.min_total_spent_ils != null || f.max_total_spent_ils != null ||
+    f.min_order_count != null || f.opted_in_only,
+  )
+}
+
+// Resolve a filter set to the matching customers, computed from order data.
+async function selectCustomers(
+  supabase: SupabaseClient,
+  filters: CustomerFilters,
+): Promise<{ ok: true; data: CustomerSelection } | { ok: false; error: string }> {
+  const warnings: string[] = []
+
+  for (const [k, v] of [['bought_category', filters.bought_category], ['not_bought_category', filters.not_bought_category]] as const) {
+    if (v != null && !SEG_CATEGORIES.includes(v)) {
+      return { ok: false, error: `${k} must be one of ${SEG_CATEGORIES.join('|')} (got "${v}")` }
+    }
+  }
+  if (filters.bought_category && filters.not_bought_category && filters.bought_category === filters.not_bought_category) {
+    return { ok: false, error: `bought_category and not_bought_category are both "${filters.bought_category}" — no customer can match.` }
+  }
+
+  // 1. Per-customer aggregate from revenue orders.
+  const { data: orders, error: oErr } = await supabase
+    .from('woo_orders')
+    .select('woo_order_id, customer_email, total, order_date')
+    .in('status', SEG_REVENUE_STATUSES)
+    .not('customer_email', 'is', null)
+    .limit(SEG_ORDER_SCAN_CAP)
+  if (oErr) return { ok: false, error: `woo_orders query failed: ${oErr.message}` }
+  const orderRows = (orders ?? []) as Array<{ woo_order_id: number | null; customer_email: string | null; total: number | null; order_date: string }>
+  if (orderRows.length >= SEG_ORDER_SCAN_CAP) warnings.push(`order scan hit the ${SEG_ORDER_SCAN_CAP}-row cap — results may be partial`)
+
+  interface Agg { orders: number; total: number; first: string; last: string; orderIds: number[] }
+  const byEmail = new Map<string, Agg>()
+  const orderIdToEmail = new Map<number, string>()
+  for (const o of orderRows) {
+    const email = (o.customer_email ?? '').trim().toLowerCase()
+    if (!email) continue
+    if (o.woo_order_id != null) orderIdToEmail.set(o.woo_order_id, email)
+    const total = Number(o.total ?? 0)
+    const a = byEmail.get(email)
+    if (!a) {
+      byEmail.set(email, { orders: 1, total, first: o.order_date, last: o.order_date, orderIds: o.woo_order_id != null ? [o.woo_order_id] : [] })
+    } else {
+      a.orders++; a.total += total
+      if (o.order_date < a.first) a.first = o.order_date
+      if (o.order_date > a.last)  a.last  = o.order_date
+      if (o.woo_order_id != null) a.orderIds.push(o.woo_order_id)
+    }
+  }
+
+  // 2. Category membership → the set of emails that bought that category.
+  //    woo_order_items_enriched keys on order_id = woo_orders.woo_order_id.
+  async function emailsWithCategory(category: string): Promise<Set<string>> {
+    const { data, error } = await supabase
+      .from('woo_order_items_enriched')
+      .select('order_id')
+      .eq('product_category', category)
+      .limit(SEG_ITEM_SCAN_CAP)
+    if (error) throw new Error(`woo_order_items_enriched query failed: ${error.message}`)
+    const rows = (data ?? []) as Array<{ order_id: number | null }>
+    if (rows.length >= SEG_ITEM_SCAN_CAP) warnings.push(`item scan for "${category}" hit the ${SEG_ITEM_SCAN_CAP}-row cap — results may be partial`)
+    const emails = new Set<string>()
+    for (const r of rows) {
+      if (r.order_id == null) continue
+      const e = orderIdToEmail.get(r.order_id)
+      if (e) emails.add(e)
+    }
+    return emails
+  }
+
+  let keep = new Set(byEmail.keys())
+  try {
+    if (filters.bought_category) {
+      const b = await emailsWithCategory(filters.bought_category)
+      keep = new Set([...keep].filter(e => b.has(e)))
+    }
+    if (filters.not_bought_category) {
+      const n = await emailsWithCategory(filters.not_bought_category)
+      keep = new Set([...keep].filter(e => !n.has(e)))
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+
+  // 3. RFM segment map (for the segment filter + enrichment).
+  const segmentByEmail = new Map<string, string>()
+  {
+    const { data, error } = await supabase
+      .from('customer_rfm')
+      .select('email, segment')
+      .limit(SEG_ORDER_SCAN_CAP)
+    if (error) warnings.push(`customer_rfm enrichment skipped: ${error.message}`)
+    else for (const r of (data ?? []) as Array<{ email: string; segment: string }>) {
+      segmentByEmail.set((r.email ?? '').trim().toLowerCase(), r.segment)
+    }
+  }
+
+  // 4. Opt-in + name enrichment (marketing_contacts, paged).
+  const contactByEmail = new Map<string, { name: string | null; opted_in: boolean }>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('marketing_contacts')
+      .select('email, name, opted_in')
+      .range(from, from + 999)
+    if (error) { warnings.push(`marketing_contacts enrichment skipped: ${error.message}`); break }
+    const rows = (data ?? []) as Array<{ email: string; name: string | null; opted_in: boolean }>
+    for (const r of rows) contactByEmail.set((r.email ?? '').trim().toLowerCase(), { name: r.name ?? null, opted_in: r.opted_in === true })
+    if (rows.length < 1000) break
+  }
+
+  // 5. Materialize rows + apply the numeric / segment / opt-in predicates.
+  const now = Date.now()
+  const out: CustomerRow[] = []
+  for (const email of keep) {
+    const a = byEmail.get(email)!
+    const daysSinceLast = Math.floor((now - new Date(a.last).getTime()) / 86_400_000)
+    const segment = segmentByEmail.get(email) ?? null
+    const contact = contactByEmail.get(email)
+    const optedIn = contact?.opted_in === true
+
+    if (filters.segment && segment !== filters.segment) continue
+    if (filters.min_order_count != null && a.orders < filters.min_order_count) continue
+    if (filters.min_total_spent_ils != null && a.total < filters.min_total_spent_ils) continue
+    if (filters.max_total_spent_ils != null && a.total > filters.max_total_spent_ils) continue
+    if (filters.last_order_days_ago_min != null && daysSinceLast < filters.last_order_days_ago_min) continue
+    if (filters.last_order_days_ago_max != null && daysSinceLast > filters.last_order_days_ago_max) continue
+    if (filters.opted_in_only && !optedIn) continue
+
+    out.push({
+      email,
+      name:             contact?.name ?? null,
+      order_count:      a.orders,
+      total_spent_ils:  Math.round(a.total * 100) / 100,
+      first_order_date: a.first,
+      last_order_date:  a.last,
+      days_since_last:  daysSinceLast,
+      segment,
+      opted_in:         optedIn,
+    })
+  }
+  out.sort((x, y) => y.total_spent_ils - x.total_spent_ils)
+  return { ok: true, data: { customers: out, warnings } }
+}
+
+// The distinct set of opted-in addresses — the reachable universe a campaign
+// send intersects a group against. Paged; emails only.
+async function optedInEmailSet(supabase: SupabaseClient): Promise<Set<string>> {
+  const set = new Set<string>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('marketing_contacts')
+      .select('email')
+      .eq('opted_in', true)
+      .range(from, from + 999)
+    if (error) break
+    const rows = (data ?? []) as Array<{ email: string }>
+    for (const r of rows) set.add((r.email ?? '').trim().toLowerCase())
+    if (rows.length < 1000) break
+  }
+  return set
+}
 
 // ── Tool execution ─────────────────────────────────────────────────────
 
@@ -1834,6 +2101,142 @@ async function executeTool(
         const { data, error } = await q
         if (error) return { ok: false, payload: { error: error.message } }
         return { ok: true, payload: { count: (data ?? []).length, insights: data ?? [] } }
+      }
+
+      case 'query_customers': {
+        const filters = parseCustomerFilters(input)
+        if (!hasAnyFilter(filters)) {
+          return { ok: false, payload: { error: 'query_customers needs at least one filter (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only).' } }
+        }
+        const sel = await selectCustomers(supabase, filters)
+        if (!sel.ok) return { ok: false, payload: { error: sel.error } }
+        const all = sel.data.customers
+        const limit = Math.max(1, Math.min(500, typeof input.limit === 'number' ? Math.floor(input.limit) : 25))
+        const optedInReachable = all.filter(c => c.opted_in).length
+        const totalValue = all.reduce((s, c) => s + c.total_spent_ils, 0)
+        const segmentBreakdown: Record<string, number> = {}
+        for (const c of all) { const k = c.segment ?? 'unscored'; segmentBreakdown[k] = (segmentBreakdown[k] ?? 0) + 1 }
+        return {
+          ok: true,
+          payload: {
+            total_matched:      all.length,
+            opted_in_reachable: optedInReachable,
+            total_value_ils:    Math.round(totalValue),
+            segment_breakdown:  segmentBreakdown,
+            filters,
+            warnings:           sel.data.warnings,
+            sample_count:       Math.min(limit, all.length),
+            sample_truncated:   all.length > limit,
+            sample:             all.slice(0, limit),
+            hint: 'This is READ-ONLY. To make it a sendable segment, call create_email_segment({name, filters}) with these SAME filters — the full list is re-queried server-side (no need to pass emails through chat). Confirm the name + audience with Erez first.',
+          },
+        }
+      }
+
+      case 'create_email_segment': {
+        const name = typeof input.name === 'string' ? input.name.trim() : ''
+        if (!name) return { ok: false, payload: { error: 'create_email_segment requires a non-empty name.' } }
+        if (/^rfm_/i.test(name)) {
+          return { ok: false, payload: { error: `"${name}" collides with the reserved rfm_* namespace (rfm-sync clears + repopulates those groups nightly, so your members would be wiped). Choose a different name.` } }
+        }
+        const description = typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null
+        const replaceIfExists = input.replace_if_exists === true
+
+        // Resolve members: explicit customer_list OR filters (server-side query).
+        let members: Array<{ email: string; name: string | null }> = []
+        let sourceNote = ''
+        if (Array.isArray(input.customer_list) && input.customer_list.length > 0) {
+          const seen = new Set<string>()
+          for (const item of input.customer_list as unknown[]) {
+            let email = ''
+            let nm: string | null = null
+            if (typeof item === 'string') {
+              email = item
+            } else if (item && typeof item === 'object') {
+              email = String((item as Record<string, unknown>).email ?? '')
+              const rawName = (item as Record<string, unknown>).name
+              nm = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : null
+            }
+            email = email.trim().toLowerCase()
+            if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || seen.has(email)) continue
+            seen.add(email)
+            members.push({ email, name: nm })
+          }
+          sourceNote = `explicit customer_list (${members.length} valid unique emails)`
+        } else {
+          const filters = parseCustomerFilters(
+            input.filters && typeof input.filters === 'object' ? input.filters as Record<string, unknown> : input,
+          )
+          if (!hasAnyFilter(filters)) {
+            return { ok: false, payload: { error: 'create_email_segment needs either customer_list[] or filters{} (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only).' } }
+          }
+          const sel = await selectCustomers(supabase, filters)
+          if (!sel.ok) return { ok: false, payload: { error: sel.error } }
+          members = sel.data.customers.map(c => ({ email: c.email, name: c.name }))
+          sourceNote = `filters ${JSON.stringify(filters)}`
+        }
+        if (members.length === 0) {
+          return { ok: false, payload: { error: `no customers matched (${sourceNote}). Segment not created.` } }
+        }
+
+        // Existing group? (contact_groups.name is not unique — match exactly.)
+        const { data: existingRows, error: exErr } = await supabase
+          .from('contact_groups')
+          .select('id')
+          .eq('name', name)
+          .limit(1)
+        if (exErr) return { ok: false, payload: { error: `contact_groups lookup failed: ${exErr.message}` } }
+        let groupId: number
+        let replaced = false
+        if (existingRows && existingRows.length > 0) {
+          groupId = (existingRows[0] as { id: number }).id
+          if (!replaceIfExists) {
+            return { ok: false, payload: { error: `a contact group named "${name}" already exists (id=${groupId}). Pass replace_if_exists:true to overwrite its members, or choose a new name.` } }
+          }
+          await supabase.from('contact_group_members').delete().eq('group_id', groupId)
+          await supabase.from('contact_groups').update({ description, updated_at: new Date().toISOString() }).eq('id', groupId)
+          replaced = true
+        } else {
+          const { data: created, error: cErr } = await supabase
+            .from('contact_groups')
+            .insert({ name, description })
+            .select('id')
+            .single()
+          if (cErr) return { ok: false, payload: { error: `contact_groups insert failed: ${cErr.message}` } }
+          groupId = (created as { id: number }).id
+        }
+
+        // Insert members in batches. UNIQUE(group_id,email) → ignore dupes.
+        for (let i = 0; i < members.length; i += 500) {
+          const batch = members.slice(i, i + 500).map(m => ({ group_id: groupId, email: m.email, name: m.name }))
+          const { error: insErr } = await supabase
+            .from('contact_group_members')
+            .upsert(batch, { onConflict: 'group_id,email', ignoreDuplicates: true })
+          if (insErr) {
+            return { ok: false, payload: { error: `member insert failed at batch offset ${i}: ${insErr.message}`, segment_id: groupId } }
+          }
+        }
+
+        // Reachability: a send intersects the group with opted-in contacts.
+        const optedIn = await optedInEmailSet(supabase)
+        const reachable = members.filter(m => optedIn.has(m.email)).length
+
+        return {
+          ok: true,
+          payload: {
+            segment_id:         groupId,
+            name,
+            replaced,
+            members_total:      members.length,
+            opted_in_reachable: reachable,
+            not_opted_in:       members.length - reachable,
+            source:             sourceNote,
+            needs_human:        reachable === 0,
+            note: reachable === 0
+              ? `Segment "${name}" created (${members.length} members), but NONE are opted-in in marketing_contacts. A campaign send intersects the group with opted-in contacts, so as-is this segment reaches 0 people. needs_human: import/opt-in these customers (set marketing_contacts.opted_in=true, respecting consent) before sending.`
+              : `Segment "${name}" is live as a contact group. Send by targeting groupName="${name}" in the Marketing dashboard / generate-campaign — it is intersected with opted-in contacts at send time, so ${reachable} of ${members.length} are currently reachable. Nothing has been sent.`,
+          },
+        }
       }
 
       default:

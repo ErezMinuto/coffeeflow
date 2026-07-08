@@ -363,6 +363,9 @@ export type ChatToolName =
   | 'read_post'
   | 'edit_post'
   | 'list_posts'
+  // Audience segmentation (WooCommerce order data → sendable email segments)
+  | 'query_customers'
+  | 'create_email_segment'
   // Strategist (State of Minuto) — read + act on the autonomous strategist's work
   | 'list_strategist_signals'
   | 'get_strategic_brief'
