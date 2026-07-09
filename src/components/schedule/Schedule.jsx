@@ -474,6 +474,13 @@ export default function Schedule() {
         headers: { 'x-action': 'publish' },
       });
       if (error) throw error;
+      // Mark this schedule as published so the opening-shift confirmation cron
+      // only sends reminders off a finalized (hand-edited) schedule — never a draft.
+      if (scheduleId) {
+        await supabase.from('schedules')
+          .update({ status: 'published', published_at: new Date().toISOString() })
+          .eq('id', scheduleId);
+      }
       showToast('סידור פורסם לקבוצה! 🎉');
     } catch (err) {
       showToast('שגיאה בפרסום', 'error');

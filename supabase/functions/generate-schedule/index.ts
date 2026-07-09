@@ -102,6 +102,7 @@ ${dayDescriptions.join("\n")}
 HARD RULE — זמינות: שבץ עובד ONLY ביום שמפורש ברשימת "זמין רק בימים" שלו. כל שיבוץ ביום אחר הוא שגיאה קריטית.
 HARD RULE — מקסימום: אל תשבץ עובד יותר מ-מקס׳ ימים שלו בשבוע.
 HARD RULE — עד שעה: אם הזמינות כוללת "עד XX:XX", אל תשבץ לעמדה שמסתיימת אחרי השעה הזו.
+HARD RULE — אין כפילות ביום: כל עובד תופס עמדה אחת בלבד באותו יום. לעולם אל תשבץ את אותו שם לשתי עמדות באותו יום. אם אין מספיק עובדים זמינים כדי למלא את כל העמדות — השאר עמדות ריקות (אל תכלול את המפתח שלהן בכלל בתשובה). עדיף פחות עובדים ליום מאשר שם שחוזר פעמיים באותו יום.
 
 עמדות לפי סוג יום:
 - יום רגיל (לא קלייה): opening + store1 + store2 + store3 + store4 (5 עובדים)
@@ -142,7 +143,80 @@ Start your response with { and end with }`;
     const clean = match ? match[0] : "{}";
     const schedule = JSON.parse(clean);
 
-    return new Response(JSON.stringify({ schedule }), {
+    // ── Deterministic safety net: availability + no-duplicates ──────────────────
+    // The model still breaks the HARD RULES when a day is short-staffed — it will
+    // schedule someone on a day they marked UNavailable (to cover roasting / fill
+    // 5), or repeat a name. Neither can be allowed to reach the schedule, so we
+    // enforce both here, in code, regardless of what the model returned:
+    //   1. Availability — drop any assignment where the employee didn't mark that
+    //      day available (or never submitted). A person who can't work simply
+    //      can't be scheduled; the day shows fewer people, which is the truth.
+    //   2. No duplicates — drop any name already used earlier that same day.
+    // Specialized positions (opening/roasting/cafe) are processed first so they
+    // keep the employee and a generic store slot is the one left empty. A dropped
+    // slot is omitted from the result → the UI shows "— בחר —" for the manager.
+
+    // name (lowercased) → set of day-codes that employee actually marked available.
+    // A day value of true OR "HH:MM" both count as available for that day.
+    const availByName: Record<string, Set<string>> = {};
+    for (const e of employees as any[]) {
+      const av = availability.find((a: any) => a.employee_id === e.id)?.days || null;
+      const set = new Set<string>();
+      if (av) {
+        for (const d of activeDays as string[]) {
+          if (av[d]) set.add(d);
+        }
+      }
+      availByName[String(e.name ?? "").trim().toLowerCase()] = set;
+    }
+
+    const POSITION_PRIORITY = ["opening", "roasting", "cafe", "store1", "store2", "store3", "store4"];
+    const positionRank = (pos: string) => {
+      const i = POSITION_PRIORITY.indexOf(pos);
+      return i === -1 ? POSITION_PRIORITY.length : i;
+    };
+    const deduped: Record<string, string> = {};
+    const seenPerDay: Record<string, Set<string>> = {};
+    let droppedDupes = 0;
+    let droppedUnavailable = 0;
+
+    // Sort keys so higher-priority positions are assigned before generic slots.
+    const orderedKeys = Object.keys(schedule).sort((a, b) => {
+      const posA = a.split("_").slice(1).join("_");
+      const posB = b.split("_").slice(1).join("_");
+      return positionRank(posA) - positionRank(posB);
+    });
+
+    for (const key of orderedKeys) {
+      const name = schedule[key];
+      if (typeof name !== "string" || !name.trim()) continue;
+      const day = key.split("_")[0];
+      const trimmed = name.trim();
+
+      // 1. Availability — never schedule someone on a day they can't work.
+      const availSet = availByName[trimmed.toLowerCase()];
+      if (!availSet || !availSet.has(day)) {
+        droppedUnavailable++;
+        console.warn(`generate-schedule: dropped "${trimmed}" on ${day} — not available (${key})`);
+        continue; // leave the slot empty rather than schedule an unavailable person
+      }
+
+      // 2. No duplicates within the same day.
+      const seen = (seenPerDay[day] ??= new Set<string>());
+      if (seen.has(trimmed)) {
+        droppedDupes++;
+        console.warn(`generate-schedule: dropped duplicate "${trimmed}" on ${day} (${key})`);
+        continue; // leave the slot empty rather than repeat a name
+      }
+      seen.add(trimmed);
+      deduped[key] = trimmed;
+    }
+
+    if (droppedDupes > 0 || droppedUnavailable > 0) {
+      console.log(`generate-schedule: removed ${droppedUnavailable} unavailable + ${droppedDupes} duplicate assignment(s)`);
+    }
+
+    return new Response(JSON.stringify({ schedule: deduped }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
