@@ -19,6 +19,9 @@ const SUPA_URL       = Deno.env.get("SUPABASE_URL")                ?? "";
 const SUPA_KEY       = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")   ?? "";
 const CLAUDE_KEY     = Deno.env.get("ANTHROPIC_API_KEY")           ?? "";
 const WEBHOOK_SECRET = Deno.env.get("EMPLOYEE_BOT_WEBHOOK_SECRET") ?? "";
+// Where "opening not confirmed" alerts go. Defaults to the employee group if a
+// dedicated manager chat isn't configured.
+const MANAGER_CHAT_ID = Deno.env.get("MANAGER_TELEGRAM_ID") || GROUP_ID;
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
@@ -146,6 +149,34 @@ function israelTimeOf(d: Date): string {
     timeZone: "Asia/Jerusalem",
     hour: "2-digit", minute: "2-digit", hour12: false,
   }).format(d);
+}
+
+// Israel-local calendar date (YYYY-MM-DD) offset by N days. Anchors at noon UTC
+// on Israel's *current* date so a DST shift can never bump the result across
+// midnight. offsetDays=1 → tomorrow, 0 → today.
+function israelDateStr(offsetDays = 0): string {
+  const todayIL = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  const d = new Date(`${todayIL}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+const DOW_CODES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+function dayCodeOf(dateStr: string): string {
+  return DOW_CODES[new Date(`${dateStr}T12:00:00Z`).getUTCDay()];
+}
+// Sunday (week_start) of the week containing dateStr, as YYYY-MM-DD.
+function weekStartOf(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d.toISOString().slice(0, 10);
+}
+// DD/MM label for a YYYY-MM-DD date.
+function ddmm(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 const DAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri"];
@@ -300,6 +331,190 @@ async function handlePublish(req: Request) {
   return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 }
 
+// ── Opening-shift confirmation ─────────────────────────────────────────────
+// The 07:30 opener (schedule_assignments.position='opening') confirms their
+// shift a day ahead via an inline button. Driven off the PUBLISHED, hand-edited
+// schedule only. Two crons: confirm-opening (evening before) and
+// confirm-opening-followup (morning of — re-remind + alert the manager).
+
+// Resolve the opener for a calendar date off the latest PUBLISHED schedule for
+// that week. null → no published schedule, day not worked, or slot left empty.
+async function resolveOpening(
+  dateStr: string,
+): Promise<{ schedule_id: string; day_code: string; employee_name: string } | null> {
+  const dayCode = dayCodeOf(dateStr);
+  if (dayCode === "sat") return null; // coffee shop closed Saturday
+
+  const { data: sched } = await supabase
+    .from("schedules")
+    .select("id")
+    .eq("week_start", weekStartOf(dateStr))
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!sched) return null;
+
+  const { data: asn } = await supabase
+    .from("schedule_assignments")
+    .select("employee_name")
+    .eq("schedule_id", sched.id)
+    .eq("day", dayCode)
+    .eq("position", "opening")
+    .maybeSingle();
+
+  const name = asn?.employee_name?.trim();
+  if (!name) return null;
+  return { schedule_id: sched.id, day_code: dayCode, employee_name: name };
+}
+
+// Send the confirm DM with the ✅ button. Returns whether Telegram accepted it.
+async function sendOpeningConfirm(
+  chatId: string, rowId: string, name: string, shiftDate: string, isFollowup: boolean,
+): Promise<boolean> {
+  const dateLabel = `${DAY_HE[dayCodeOf(shiftDate)] ?? ""} ${ddmm(shiftDate)}`.trim();
+  const header = isFollowup
+    ? `🔔 <b>תזכורת — פתיחת בית הקפה היום (${dateLabel}) בשעה 07:30</b>`
+    : `☕ <b>פתיחת בית הקפה מחר (${dateLabel}) בשעה 07:30</b>`;
+  const text =
+    `${header}\n\n` +
+    `היי ${name}, את/ה משובצ/ת לפתיחה.\n` +
+    `אנא אשר/י שתגיע/י 👇`;
+
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId, text, parse_mode: "HTML",
+      reply_markup: { inline_keyboard: [[{ text: "✅ מאשר/ת הגעה", callback_data: `openconf:${rowId}` }]] },
+    }),
+  });
+  const tg = await res.json().catch(() => ({ ok: false }));
+  if (!tg.ok) console.error(`confirm-opening send reject for ${chatId}:`, tg.description);
+  return tg.ok === true;
+}
+
+// Evening-before cron: message tomorrow's opener.
+async function handleConfirmOpening() {
+  const shiftDate = israelDateStr(1); // tomorrow (Israel-local)
+  const opening = await resolveOpening(shiftDate);
+  if (!opening) {
+    console.log(`confirm-opening: nothing to send for ${shiftDate}`);
+    return new Response(JSON.stringify({ ok: true, sent: 0, reason: "no published opening" }), { headers: corsHeaders });
+  }
+
+  const { data: emp } = await supabase
+    .from("employees")
+    .select("id, name, telegram_id")
+    .ilike("name", opening.employee_name)
+    .limit(1)
+    .maybeSingle();
+  const telegramId = emp?.telegram_id ? String(emp.telegram_id) : null;
+
+  // One tracking row per (schedule, date). Idempotent across re-runs.
+  const { data: existing } = await supabase
+    .from("opening_shift_confirmations")
+    .select("*")
+    .eq("schedule_id", opening.schedule_id)
+    .eq("shift_date", shiftDate)
+    .maybeSingle();
+
+  if (existing?.status === "confirmed") {
+    return new Response(JSON.stringify({ ok: true, sent: 0, reason: "already confirmed" }), { headers: corsHeaders });
+  }
+  // Already messaged this same opener today → don't nag again.
+  if (existing?.sent_at && existing.employee_name === opening.employee_name) {
+    return new Response(JSON.stringify({ ok: true, sent: 0, reason: "already sent" }), { headers: corsHeaders });
+  }
+
+  let rowId = existing?.id as string | undefined;
+  if (!rowId) {
+    const { data: inserted, error } = await supabase
+      .from("opening_shift_confirmations")
+      .insert({
+        schedule_id:   opening.schedule_id,
+        shift_date:    shiftDate,
+        day_code:      opening.day_code,
+        employee_name: opening.employee_name,
+        telegram_id:   telegramId,
+        status:        "pending",
+      })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("confirm-opening insert error:", error);
+      return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: corsHeaders });
+    }
+    rowId = inserted.id;
+  } else {
+    // Opener changed after publish → re-point the row at the new barista.
+    await supabase.from("opening_shift_confirmations")
+      .update({
+        employee_name: opening.employee_name,
+        telegram_id:   telegramId,
+        status:        "pending",
+        confirmed_at:  null,
+      })
+      .eq("id", rowId);
+  }
+
+  if (!telegramId) {
+    console.warn(`confirm-opening: no telegram_id for opener "${opening.employee_name}" on ${shiftDate}`);
+    await send(MANAGER_CHAT_ID,
+      `⚠️ <b>פתיחה מחר (${ddmm(shiftDate)}) 07:30</b>\n` +
+      `${opening.employee_name} משובצ/ת לפתיחה אבל אין טלגרם רשום — אי אפשר לשלוח בקשת אישור.`);
+    return new Response(JSON.stringify({ ok: true, sent: 0, reason: "no telegram" }), { headers: corsHeaders });
+  }
+
+  const ok = await sendOpeningConfirm(telegramId, rowId!, opening.employee_name, shiftDate, false);
+  if (ok) {
+    await supabase.from("opening_shift_confirmations")
+      .update({ sent_at: new Date().toISOString() })
+      .eq("id", rowId!);
+  }
+  console.log(`confirm-opening: ${shiftDate} opener=${opening.employee_name} sent=${ok}`);
+  return new Response(JSON.stringify({ ok: true, sent: ok ? 1 : 0 }), { headers: corsHeaders });
+}
+
+// Morning-of cron: for any still-pending opening today, re-remind the barista
+// AND alert the manager (once).
+async function handleConfirmOpeningFollowup() {
+  const shiftDate = israelDateStr(0); // today (Israel-local)
+  if (dayCodeOf(shiftDate) === "sat") {
+    return new Response(JSON.stringify({ ok: true, reminded: 0, alerted: 0 }), { headers: corsHeaders });
+  }
+
+  const { data: pending } = await supabase
+    .from("opening_shift_confirmations")
+    .select("*")
+    .eq("shift_date", shiftDate)
+    .eq("status", "pending");
+
+  let reminded = 0, alerted = 0;
+  for (const row of pending ?? []) {
+    if (row.telegram_id) {
+      const ok = await sendOpeningConfirm(String(row.telegram_id), row.id, row.employee_name, shiftDate, true);
+      if (ok) {
+        reminded++;
+        await supabase.from("opening_shift_confirmations")
+          .update({ reminder_count: (row.reminder_count ?? 0) + 1, last_reminded_at: new Date().toISOString() })
+          .eq("id", row.id);
+      }
+    }
+    if (!row.manager_alerted_at) {
+      await send(MANAGER_CHAT_ID,
+        `⚠️ <b>פתיחה לא אושרה — היום (${ddmm(shiftDate)}) 07:30</b>\n` +
+        `${row.employee_name} עדיין לא אישר/ה את משמרת הפתיחה. כדאי לוודא טלפונית.`);
+      alerted++;
+      await supabase.from("opening_shift_confirmations")
+        .update({ manager_alerted_at: new Date().toISOString() })
+        .eq("id", row.id);
+    }
+  }
+  console.log(`confirm-opening-followup: ${shiftDate} reminded=${reminded} alerted=${alerted}`);
+  return new Response(JSON.stringify({ ok: true, reminded, alerted }), { headers: corsHeaders });
+}
+
 async function handleCallback(cq: any): Promise<Response> {
   const callbackId = cq.id;
   const data       = cq.data ?? "";
@@ -309,6 +524,36 @@ async function handleCallback(cq: any): Promise<Response> {
 
   if (!chatId || !messageId || !fromId) {
     await answerCallback(callbackId);
+    return new Response("ok");
+  }
+
+  // Opening-shift confirmation: "openconf:<rowId>".
+  if (data.startsWith("openconf:")) {
+    const rowId = data.slice("openconf:".length);
+    const { data: row } = await supabase
+      .from("opening_shift_confirmations")
+      .select("*")
+      .eq("id", rowId)
+      .maybeSingle();
+
+    if (!row) {
+      await answerCallback(callbackId);
+      await editMessage(chatId, messageId, "⚠️ הבקשה לא נמצאה.");
+      return new Response("ok");
+    }
+    if (row.status === "confirmed") {
+      await answerCallback(callbackId, "כבר אושר");
+      return new Response("ok");
+    }
+
+    await supabase.from("opening_shift_confirmations")
+      .update({ status: "confirmed", confirmed_at: new Date().toISOString() })
+      .eq("id", rowId);
+    await answerCallback(callbackId, "אושר, תודה!");
+    const dateLabel = `${DAY_HE[row.day_code] ?? ""} ${ddmm(row.shift_date)}`.trim();
+    await editMessage(chatId, messageId,
+      `✅ אישרת/ה את פתיחת בית הקפה — ${dateLabel} בשעה 07:30. תודה! ☕`);
+    console.log(`confirm-opening: row ${rowId} confirmed by tg=${fromId}`);
     return new Response("ok");
   }
 
@@ -909,6 +1154,8 @@ serve(async (req) => {
       if (action === "onboard") return await handleOnboard();
       if (action === "remind")  return await handleRemind();
       if (action === "publish") return await handlePublish(req);
+      if (action === "confirm-opening")          return await handleConfirmOpening();
+      if (action === "confirm-opening-followup") return await handleConfirmOpeningFollowup();
       if (action === "diagnose") {
         // One-shot diagnostic: ask Telegram what webhook is set, plus a
         // hash-only echo of our local secret so we can spot a mismatch

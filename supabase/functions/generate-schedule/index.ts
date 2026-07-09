@@ -102,6 +102,7 @@ ${dayDescriptions.join("\n")}
 HARD RULE — זמינות: שבץ עובד ONLY ביום שמפורש ברשימת "זמין רק בימים" שלו. כל שיבוץ ביום אחר הוא שגיאה קריטית.
 HARD RULE — מקסימום: אל תשבץ עובד יותר מ-מקס׳ ימים שלו בשבוע.
 HARD RULE — עד שעה: אם הזמינות כוללת "עד XX:XX", אל תשבץ לעמדה שמסתיימת אחרי השעה הזו.
+HARD RULE — אין כפילות ביום: כל עובד תופס עמדה אחת בלבד באותו יום. לעולם אל תשבץ את אותו שם לשתי עמדות באותו יום. אם אין מספיק עובדים זמינים כדי למלא את כל העמדות — השאר עמדות ריקות (אל תכלול את המפתח שלהן בכלל בתשובה). עדיף פחות עובדים ליום מאשר שם שחוזר פעמיים באותו יום.
 
 עמדות לפי סוג יום:
 - יום רגיל (לא קלייה): opening + store1 + store2 + store3 + store4 (5 עובדים)
@@ -142,7 +143,49 @@ Start your response with { and end with }`;
     const clean = match ? match[0] : "{}";
     const schedule = JSON.parse(clean);
 
-    return new Response(JSON.stringify({ schedule }), {
+    // ── Deterministic dedup safety net ──────────────────────────────────────────
+    // Even with the HARD RULE above, the model can still repeat a name within a
+    // day when availability is short (it tries to "fill 5"). Walk every day and
+    // drop any name already used earlier that same day. Specialized positions
+    // (opening/roasting/cafe) are processed first so they keep the employee and
+    // a generic store slot is the one that ends up empty. An empty slot is
+    // simply omitted from the result → the UI shows "— בחר —" for the manager.
+    const POSITION_PRIORITY = ["opening", "roasting", "cafe", "store1", "store2", "store3", "store4"];
+    const positionRank = (pos: string) => {
+      const i = POSITION_PRIORITY.indexOf(pos);
+      return i === -1 ? POSITION_PRIORITY.length : i;
+    };
+    const deduped: Record<string, string> = {};
+    const seenPerDay: Record<string, Set<string>> = {};
+    let droppedDupes = 0;
+
+    // Sort keys so higher-priority positions are assigned before generic slots.
+    const orderedKeys = Object.keys(schedule).sort((a, b) => {
+      const posA = a.split("_").slice(1).join("_");
+      const posB = b.split("_").slice(1).join("_");
+      return positionRank(posA) - positionRank(posB);
+    });
+
+    for (const key of orderedKeys) {
+      const name = schedule[key];
+      if (typeof name !== "string" || !name.trim()) continue;
+      const day = key.split("_")[0];
+      const trimmed = name.trim();
+      const seen = (seenPerDay[day] ??= new Set<string>());
+      if (seen.has(trimmed)) {
+        droppedDupes++;
+        console.warn(`generate-schedule: dropped duplicate "${trimmed}" on ${day} (${key})`);
+        continue; // leave the slot empty rather than repeat a name
+      }
+      seen.add(trimmed);
+      deduped[key] = trimmed;
+    }
+
+    if (droppedDupes > 0) {
+      console.log(`generate-schedule: removed ${droppedDupes} duplicate assignment(s)`);
+    }
+
+    return new Response(JSON.stringify({ schedule: deduped }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
