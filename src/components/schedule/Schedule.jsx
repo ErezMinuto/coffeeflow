@@ -262,6 +262,30 @@ export default function Schedule() {
     load();
   }, [weekStart]);
 
+  // ── Default to the next week that has no schedule yet ───────────────────────
+  // So creating a new schedule lands on the upcoming EMPTY week instead of
+  // re-opening (and overwriting) a week that's already been scheduled. The old
+  // week's schedule stays put for the current week; the new one goes to next
+  // week. Runs once on mount; the date picker can still override to view/edit
+  // any week.
+  useEffect(() => {
+    const pickNextEmptyWeek = async () => {
+      const first = getNextSunday();
+      const { data: rows } = await supabase
+        .from('schedules')
+        .select('week_start')
+        .gte('week_start', toISO(first));
+      const taken = new Set((rows || []).map(r => r.week_start));
+      const candidate = new Date(first);
+      for (let i = 0; i < 52; i++) {
+        const iso = toISO(candidate);
+        if (!taken.has(iso)) { setWeekStart(iso); return; }
+        candidate.setDate(candidate.getDate() + 7);
+      }
+    };
+    pickNextEmptyWeek();
+  }, []); // once on mount
+
   // ── Save helpers ─────────────────────────────────────────────────────────────
   const saveSchedule = async (grid, sid) => {
     // Delete existing assignments for this schedule then re-insert
