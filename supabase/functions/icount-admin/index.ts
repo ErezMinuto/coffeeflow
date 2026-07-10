@@ -50,6 +50,10 @@ const TARGET_TYPE = Number(Deno.env.get("TARGET_ITEM_TYPE_ID") ?? "8");
 // matched by name keyword (Veneto etc.) since those aren't tagged type 8.
 const EXTRA_COFFEE_KEYWORDS = (Deno.env.get("COFFEE_EXTRA_NAME_KEYWORDS") ?? "veneto")
   .toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+// Israel standard VAT (מע"מ) — coffee is standard-rated. Report revenue is summed
+// ex-VAT (line unitprice is net); the incl-VAT total is derived at read time so a
+// rate change needs no recompute. Override via ICOUNT_VAT_RATE (e.g. 0.17).
+const VAT_RATE = Number(Deno.env.get("ICOUNT_VAT_RATE") ?? "0.18");
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
@@ -965,7 +969,10 @@ async function actionCoffeeSales(fromDate: string, toDate: string) {
   return {
     ok: true, from_date: fromDate, to_date: toDate,
     sales_doc_count: docCount,
-    total_bags: round2(totalBags), total_revenue: round2(totalRevenue),
+    total_bags: round2(totalBags),
+    total_revenue: round2(totalRevenue),                          // ex-VAT (net)
+    total_revenue_incl_vat: round2(totalRevenue * (1 + VAT_RATE)), // incl-VAT (gross)
+    vat_rate: VAT_RATE,
     products,
     // partial if any final day is missing from cache (over the heal cap) or a heal
     // fetch failed — numbers under-count until a backfill/retry fills those days.
