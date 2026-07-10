@@ -11,10 +11,16 @@ const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+const monthStartISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+};
 
 export default function CoffeeSalesReport() {
   const { showToast } = useApp();
-  const [from, setFrom]       = useState(todayISO());
+  // Month-to-date default: ranges are now served from the daily cache, so a wide
+  // default is fast (it was set to a single day back when multi-day was slow).
+  const [from, setFrom]       = useState(monthStartISO());
   const [to, setTo]           = useState(todayISO());
   const [loading, setLoading] = useState(false);
   const [report, setReport]   = useState(null);
@@ -73,6 +79,11 @@ export default function CoffeeSalesReport() {
 
       {report && (
         <div style={card}>
+          {report.cache_incomplete && (
+            <p style={{ background: '#FEF3C7', color: '#92400E', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', marginTop: 0 }}>
+              ⚠️ חלק מהימים בטווח עדיין לא חושבו במטמון, כך שהנתונים חלקיים. המספרים יתמלאו אוטומטית תוך זמן קצר — נסו להפיק שוב בעוד רגע.
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>סה"כ שקיות</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>{report.total_bags}</div></div>
             <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>מחזור (ללא מע"מ)</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>₪{report.total_revenue.toLocaleString()}</div></div>
