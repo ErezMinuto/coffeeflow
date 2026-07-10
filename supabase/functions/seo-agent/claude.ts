@@ -20,10 +20,7 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 export const MODEL_ORCHESTRATOR = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
 export const MODEL_CHAT         = 'claude-sonnet-4-6'
-// Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
-// ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
-// fallback is wired in callClaude below as a seatbelt.
-export const MODEL_STRATEGIST   = 'claude-fable-5'
+export const MODEL_STRATEGIST   = 'claude-opus-4-8'
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
@@ -121,13 +118,6 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
 
   const model = opts.model ?? MODEL_ORCHESTRATOR
   const adaptive = usesAdaptiveThinking(model)
-  // Fable 5's safety classifiers can decline a request as stop_reason:"refusal".
-  // In an unattended weekly cron that would silently fail the run, so opt into
-  // server-side fallback: on a policy decline Anthropic transparently re-serves
-  // the SAME request on Opus 4.8 within this one call (repriced automatically).
-  // Gated to Fable — the param/header is unnecessary for other models. A refused
-  // partial is billed but discarded server-side; a pre-output decline isn't billed.
-  const fableFallback = model.startsWith('claude-fable')
   const body: Record<string, unknown> = {
     model,
     max_tokens: opts.maxTokens ?? 8192,
@@ -148,7 +138,6 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   }
   // effort is opt-in, so existing Sonnet callers (no effort) are unchanged.
   if (opts.effort) body.output_config = { effort: opts.effort }
-  if (fableFallback) body.fallbacks = [{ model: 'claude-opus-4-8' }]
   if (opts.tools && opts.tools.length > 0) {
     // Tools: when caching, attach cache_control to the LAST tool. The
     // marker caches the WHOLE prefix up to and including that block, so
@@ -176,7 +165,6 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
         'x-api-key':         ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
         'content-type':      'application/json',
-        ...(fableFallback ? { 'anthropic-beta': 'server-side-fallback-2026-06-01' } : {}),
       },
       body: JSON.stringify(body),
       signal: controller.signal,

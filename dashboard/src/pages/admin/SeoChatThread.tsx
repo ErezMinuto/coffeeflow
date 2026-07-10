@@ -75,14 +75,22 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      // CRITICAL: fetch the MOST-RECENT 200 rows, not the oldest. Ordering
+      // ascending + limit(200) silently dropped the newest messages once a
+      // session passed 200 rows — and sessions cross that fast, since every
+      // chat turn writes several rows (user + assistant tool_use turns + tool
+      // results + final text). That truncation is exactly the "recent history
+      // missing on session open" bug. Mirror the server-side getChatHistory
+      // fix: order descending, limit, then reverse back to chronological so
+      // the rest of the component (and the briefings reverse) is unchanged.
       const { data } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('session_id', sessionId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(200)
       if (!cancelled) {
-        setMessages((data ?? []) as ChatRow[])
+        setMessages(((data ?? []) as ChatRow[]).reverse())
         setLoading(false)
       }
     }
@@ -103,9 +111,18 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
     }
   }, [sessionId])
 
+  // Both the interactive chat AND the briefings feed use standard chat UX:
+  // messages render chronologically (newest at the bottom, above the input)
+  // and the view follows new messages down. On load + on every new message we
+  // scroll to the bottom so the latest message is visible without scrolling;
+  // older messages are reachable by scrolling up. sessionId is in the deps so
+  // switching views re-runs this even when message counts happen to match
+  // (length-only deps silently skipped that case).
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages.length, sending])
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [messages.length, sending, sessionId])
 
   async function send() {
     const text = draft.trim()

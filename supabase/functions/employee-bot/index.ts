@@ -515,50 +515,6 @@ async function handleConfirmOpeningFollowup() {
   return new Response(JSON.stringify({ ok: true, reminded, alerted }), { headers: corsHeaders });
 }
 
-// TEMPORARY test trigger — sends the real confirm DM (same text/button/callback)
-// to a named employee's Telegram, independent of any schedule. Remove after QA.
-async function handleConfirmOpeningTest(req: Request) {
-  let body: any = {};
-  try { body = await req.json(); } catch { /* no body */ }
-  const name = body.name || "ארז אלבז";
-  const shiftDate = body.date || israelDateStr(2);
-
-  const { data: emp } = await supabase
-    .from("employees")
-    .select("id, name, telegram_id")
-    .ilike("name", name)
-    .not("telegram_id", "is", null)
-    .limit(1)
-    .maybeSingle();
-  if (!emp?.telegram_id) {
-    return new Response(JSON.stringify({ ok: false, error: `no telegram for "${name}"` }), { headers: corsHeaders });
-  }
-
-  const { data: row, error } = await supabase
-    .from("opening_shift_confirmations")
-    .insert({
-      schedule_id:   "00000000-0000-0000-0000-000000000000", // sentinel — test only, no FK
-      shift_date:    shiftDate,
-      day_code:      dayCodeOf(shiftDate),
-      employee_name: emp.name,
-      telegram_id:   String(emp.telegram_id),
-      status:        "pending",
-    })
-    .select("id")
-    .single();
-  if (error) {
-    return new Response(JSON.stringify({ ok: false, error: error.message }), { headers: corsHeaders });
-  }
-
-  const ok = await sendOpeningConfirm(String(emp.telegram_id), row.id, emp.name, shiftDate, false);
-  if (ok) {
-    await supabase.from("opening_shift_confirmations")
-      .update({ sent_at: new Date().toISOString() })
-      .eq("id", row.id);
-  }
-  return new Response(JSON.stringify({ ok, sent_to: emp.name, row_id: row.id, shift_date: shiftDate }), { headers: corsHeaders });
-}
-
 async function handleCallback(cq: any): Promise<Response> {
   const callbackId = cq.id;
   const data       = cq.data ?? "";
@@ -1200,7 +1156,6 @@ serve(async (req) => {
       if (action === "publish") return await handlePublish(req);
       if (action === "confirm-opening")          return await handleConfirmOpening();
       if (action === "confirm-opening-followup") return await handleConfirmOpeningFollowup();
-      if (action === "confirm-opening-test")     return await handleConfirmOpeningTest(req);
       if (action === "diagnose") {
         // One-shot diagnostic: ask Telegram what webhook is set, plus a
         // hash-only echo of our local secret so we can spot a mismatch

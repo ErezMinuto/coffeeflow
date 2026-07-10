@@ -18,6 +18,11 @@ import Attendance              from './components/attendance/Attendance';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
 import PendingOrders           from './components/orders/PendingOrders';
+import StockAdmin              from './components/stock/StockAdmin';
+import SupplierIntake          from './components/stock/SupplierIntake';
+import ProductEditor           from './components/stock/ProductEditor';
+import IcountAdmin             from './components/icount/IcountAdmin';
+import CoffeeSalesReport       from './components/sales/CoffeeSalesReport';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -25,6 +30,13 @@ function AdminRoute({ children }) {
   const { isAdmin, roleLoading } = useApp();
   if (roleLoading) return null;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+function ScheduleRoute({ children }) {
+  const { canSchedule, roleLoading } = useApp();
+  if (roleLoading) return null;
+  if (!canSchedule) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -67,8 +79,13 @@ function AppContent() {
               <Route path="/packaging"  element={<Packaging />} />
               <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
-              <Route path="/schedule"   element={<AdminRoute><Schedule /></AdminRoute>} />
+              <Route path="/schedule"   element={<ScheduleRoute><Schedule /></ScheduleRoute>} />
               <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />
+              <Route path="/stock-admin" element={<AdminRoute><StockAdmin /></AdminRoute>} />
+              <Route path="/supplier-intake" element={<SupplierIntake />} />
+              <Route path="/product-editor" element={<ProductEditor />} />
+              <Route path="/icount-admin" element={<AdminRoute><IcountAdmin /></AdminRoute>} />
+              <Route path="/coffee-sales" element={<AdminRoute><CoffeeSalesReport /></AdminRoute>} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
               <Route path="/orders"           element={<PendingOrders />} />

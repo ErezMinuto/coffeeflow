@@ -363,6 +363,18 @@ export type ChatToolName =
   | 'read_post'
   | 'edit_post'
   | 'list_posts'
+  // Audience segmentation (WooCommerce order data → sendable email segments)
+  | 'query_customers'
+  | 'create_email_segment'
+  // Strategist (State of Minuto) — read + act on the autonomous strategist's work
+  | 'list_strategist_signals'
+  | 'get_strategic_brief'
+  | 'list_strategic_theses'
+  | 'list_strategic_recommendations'
+  | 'create_signal'
+  | 'set_signal_status'
+  | 'set_recommendation_status'
+  | 'trigger_fixer'
 
 // ── Persistent missions ──────────────────────────────────────────────────
 // An open-ended objective the agent pursues autonomously across cron ticks
@@ -546,8 +558,9 @@ export interface EmailCampaignPerf {
   campaign_type: string
   sent_at:       string | null
   recipients:    number
-  open_rate:     number   // 0..1
-  click_rate:    number   // 0..1
+  delivered:     number   // delivered events; denominator for the rates below
+  open_rate:     number   // opens / delivered, 0..1
+  click_rate:    number   // clicks / delivered, 0..1
   bounce_count:  number
 }
 
@@ -555,8 +568,9 @@ export interface EmailPerformance {
   lookback_days:   number
   campaigns_sent:  number
   total_recipients: number
-  avg_open_rate:   number  // recipient-weighted, 0..1
-  avg_click_rate:  number  // recipient-weighted, 0..1
+  total_delivered: number
+  avg_open_rate:   number  // delivered-weighted, 0..1
+  avg_click_rate:  number  // delivered-weighted, 0..1
   recent:          EmailCampaignPerf[]
 }
 

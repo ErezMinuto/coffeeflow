@@ -512,7 +512,377 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ['task_id', 'attempt_number'],
     },
   },
+
+  // ── Audience segmentation (WooCommerce order data → email segments) ─────
+  {
+    name: 'query_customers',
+    description: "Filter customers by their WooCommerce order history (READ-ONLY, no side effects). Universe = customers with a revenue order (completed|processing) in woo_orders. Filters combine with AND: bought_category / not_bought_category (item-level, categories coffee|machine|grinder|accessory|other — e.g. bought_category='machine' + not_bought_category='coffee' = 'bought a machine but never beans'), segment (RFM: champion|loyal|big_spender|at_risk|new|regular|lost), last_order_days_ago_min (lapsed: days since last order ≥ N) / last_order_days_ago_max (recent), min/max_total_spent_ils (lifetime value), min_order_count, opted_in_only. Returns total_matched, opted_in_reachable (how many can actually be emailed), a segment_breakdown, and a top-N sample by spend (limit, default 25). To turn a match into a sendable segment, call create_email_segment with the SAME filters — the emails are re-queried server-side, so you never pass a long list through chat.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        bought_category:         { type: 'string', description: 'coffee|machine|grinder|accessory|other — customer bought ≥1 item in this category.' },
+        not_bought_category:     { type: 'string', description: 'coffee|machine|grinder|accessory|other — customer NEVER bought this category.' },
+        segment:                 { type: 'string', description: 'RFM segment: champion|loyal|big_spender|at_risk|new|regular|lost.' },
+        last_order_days_ago_min: { type: 'number', description: 'Days since last order ≥ this (find lapsed/dormant buyers).' },
+        last_order_days_ago_max: { type: 'number', description: 'Days since last order ≤ this (find recent buyers).' },
+        min_total_spent_ils:     { type: 'number', description: 'Lifetime spend ≥ this (ILS).' },
+        max_total_spent_ils:     { type: 'number', description: 'Lifetime spend ≤ this (ILS).' },
+        min_order_count:         { type: 'number', description: 'At least this many orders.' },
+        opted_in_only:           { type: 'boolean', description: 'If true, only customers opted-in in marketing_contacts (email-reachable). Default false.' },
+        limit:                   { type: 'number', description: 'Max sample rows returned (default 25, max 500). total_matched is always the full count.' },
+      },
+    },
+  },
+  {
+    name: 'create_email_segment',
+    description: "Create a named, sendable email segment from an audience — it lands as a contact_groups row (+ contact_group_members) in Minuto's own email platform, which the Marketing dashboard / campaign sender targets by name. Provide EITHER filters (same shape as query_customers — PREFERRED; the emails are queried server-side so no long list crosses chat) OR an explicit customer_list ([{email,name}] or [email,...]). This tool CREATES DATA — confirm the name + audience with Erez first. It NEVER sends anything: a campaign send intersects the group with opted-in marketing_contacts at send time, so the result reports opted_in_reachable (how many will actually receive) and flags needs_human when 0 are opted-in. rfm_* names are reserved (managed by rfm-sync). Pass replace_if_exists:true to overwrite an existing same-named group's members.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        name:          { type: 'string', description: 'Segment/group name (shown in the Marketing dashboard, used as the send target). Cannot start with rfm_.' },
+        description:   { type: 'string', description: 'Optional human description of who is in this segment and why.' },
+        filters:       { type: 'object', description: 'Same fields as query_customers (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only). PREFERRED over customer_list.' },
+        customer_list: { type: 'array', description: 'Explicit members: array of {email, name} objects or plain email strings. Use only when you already hold a specific list; otherwise pass filters.', items: { type: 'object' } },
+        replace_if_exists: { type: 'boolean', description: 'If a group with this name exists, replace its members (default false → the call refuses so you do not clobber an existing group by accident).' },
+      },
+      required: ['name'],
+    },
+  },
+
+  // ── Strategist (State of Minuto) ───────────────────────────────────────
+  // Read + act on the autonomous strategist-brain's output: weekly briefs,
+  // agent→team signals (bug_report/capability_request/feature_idea — bug_reports
+  // carry the PR-gated fixer's pr_url + fixer_note), revenue-graded theses, and
+  // drafted recommendations. Read tools are free; the three action tools mutate
+  // and MUST be gated on Erez's explicit in-turn confirmation (see prompt).
+  {
+    name: 'list_strategist_signals',
+    description: "List the strategist's signals — the agent→team channel. kind ∈ {bug_report, capability_request, feature_idea}; status ∈ {open, approved, building, shipped, declined, needs_human}. Each row has title, detail, evidence, blocked_decision, leverage, and (for bug_reports the fixer touched) pr_url + fixer_note. Use to answer 'what bugs/requests have you raised?', 'what got fixed?', 'show open signals'.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        kind:   { type: 'string', description: 'bug_report | capability_request | feature_idea (omit for all)' },
+        status: { type: 'string', description: 'open | approved | building | shipped | declined | needs_human (omit for all)' },
+        limit:  { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'get_strategic_brief',
+    description: "Fetch a weekly 'State of Minuto' strategic brief in full: summary, diagnosis[] (cited claims), top_thesis, recommendations[], out_of_hands[]. Pass latest=true for the newest, or brief_id for a specific one. Use when Erez asks to summarize/discuss the brief.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        latest:   { type: 'boolean', description: 'true = newest brief (default if no brief_id)' },
+        brief_id: { type: 'string', description: 'UUID of a specific strategic_briefs row' },
+      },
+    },
+  },
+  {
+    name: 'list_strategic_theses',
+    description: "List the strategist's revenue-graded theses (its long-term memory of what moves Minuto). status ∈ {active, validated, refuted, superseded}. Each has thesis, lever, success_metric, check_date, and outcome (once scored). Use to discuss what bets are open and how past bets resolved.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', description: 'active | validated | refuted | superseded (omit for all)' },
+        limit:  { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'list_strategic_recommendations',
+    description: "List the strategist's recommendations (in-hands moves it drafts on approval). status ∈ {proposed, approved, drafted, dismissed, failed}; action_type ∈ {email_campaign, content_blog, content_ig, none}. Each has title, rationale, success_metric, draft_ref. Filter by brief_id or status.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        brief_id: { type: 'string', description: 'UUID — recs for one brief (omit for recent across briefs)' },
+        status:   { type: 'string', description: 'proposed | approved | drafted | dismissed | failed (omit for all)' },
+        limit:    { type: 'number', description: 'max rows (default 25, max 100)' },
+      },
+    },
+  },
+  {
+    name: 'create_signal',
+    description: "ACTION (confirm first): open a NEW strategist signal that Erez raises directly in chat — a bug_report to fix, a feature_idea to build, or a capability_request — without waiting for the autonomous strategist to find it. Use this when Erez asks you to fix/build something for which no signal exists yet. Returns the new signal_id; you then typically trigger_fixer on it (with his go) to dispatch the builder/fixer. Write a clear title + a detailed description so the agent that picks it up has enough to act. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        kind:   { type: 'string', description: 'bug_report | feature_idea | capability_request' },
+        title:  { type: 'string', description: 'one-line summary' },
+        detail: { type: 'string', description: 'full description: for a bug — what is wrong, where (file/function/symptom) + how to reproduce; for a feature — what to build and the acceptance criteria' },
+        evidence: { type: 'object', description: 'optional structured data/anomaly supporting it' },
+      },
+      required: ['kind', 'title', 'detail'],
+    },
+  },
+  {
+    name: 'set_signal_status',
+    description: "ACTION (confirm first): set a strategist signal's status — 'approved' (mark it for action; for a bug_report this is the prerequisite the fixer needs), 'declined' (with decline_reason; the strategist reads it and won't re-raise), or 'open' (reset). Mirrors the dashboard's approve/decline. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        signal_id:      { type: 'string', description: 'UUID of the strategist_signals row' },
+        status:         { type: 'string', description: 'approved | declined | open' },
+        decline_reason: { type: 'string', description: "required when status='declined' — the strategist reads this" },
+      },
+      required: ['signal_id', 'status'],
+    },
+  },
+  {
+    name: 'set_recommendation_status',
+    description: "ACTION (confirm first): set a strategist recommendation's status — 'approved' (the executor drafts it — a blog/IG/email draft, never sends) or 'dismissed'. Mirrors the dashboard. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        rec_id: { type: 'string', description: 'UUID of the strategic_recommendations row' },
+        status: { type: 'string', description: 'approved | dismissed' },
+      },
+      required: ['rec_id', 'status'],
+    },
+  },
+  {
+    name: 'trigger_fixer',
+    description: "ACTION (confirm first): hand an actionable signal to the PR-gated builder/fixer agent — a bug_report to FIX, or a feature_idea / capability_request to BUILD. Ensures the signal is approved, then dispatches the GitHub Action, which writes the change on a branch and opens a PR (it NEVER deploys or merges — Erez reviews/merges). Returns the Actions URL. If the GitHub token isn't configured it still approves the signal and tells you to run the workflow manually. NEVER call without Erez's explicit yes/go in this turn.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        signal_id: { type: 'string', description: 'UUID of a bug_report | feature_idea | capability_request strategist_signals row' },
+      },
+      required: ['signal_id'],
+    },
+  },
 ]
+
+// ── Audience segmentation helpers ──────────────────────────────────────
+// Shared by the query_customers (preview) + create_email_segment (build)
+// tools. READ-ONLY: reads synced order data (woo_orders +
+// woo_order_items_enriched), RFM segments (customer_rfm), and opt-in state
+// (marketing_contacts). No writes here — create_email_segment does the one
+// write, into contact_groups/contact_group_members.
+
+// Only paid orders count as a purchase. Mirrors rfm-sync + strategist tools.
+const SEG_REVENUE_STATUSES = ['completed', 'processing']
+// Item categories, as tagged heuristically by woo-orders-sync.
+const SEG_CATEGORIES = ['coffee', 'machine', 'grinder', 'accessory', 'other']
+// Defensive scan caps. Order/line counts here are in the low tens of
+// thousands, so these bound a runaway query without truncating real data in
+// practice; hitting one is surfaced as a warning, not silently swallowed.
+const SEG_ORDER_SCAN_CAP = 100_000
+const SEG_ITEM_SCAN_CAP  = 200_000
+
+interface CustomerFilters {
+  bought_category?:         string
+  not_bought_category?:     string
+  segment?:                 string
+  last_order_days_ago_min?: number
+  last_order_days_ago_max?: number
+  min_total_spent_ils?:     number
+  max_total_spent_ils?:     number
+  min_order_count?:         number
+  opted_in_only?:           boolean
+}
+
+interface CustomerRow {
+  email:            string
+  name:             string | null
+  order_count:      number
+  total_spent_ils:  number
+  first_order_date: string
+  last_order_date:  string
+  days_since_last:  number
+  segment:          string | null
+  opted_in:         boolean
+}
+
+interface CustomerSelection {
+  customers: CustomerRow[]   // sorted by total_spent_ils desc
+  warnings:  string[]
+}
+
+// Pull the filter object out of a tool input (either the input itself, for
+// query_customers, or input.filters, for create_email_segment).
+function parseCustomerFilters(input: Record<string, unknown>): CustomerFilters {
+  const num = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : undefined)
+  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+  return {
+    bought_category:         str(input.bought_category),
+    not_bought_category:     str(input.not_bought_category),
+    segment:                 str(input.segment),
+    last_order_days_ago_min: num(input.last_order_days_ago_min),
+    last_order_days_ago_max: num(input.last_order_days_ago_max),
+    min_total_spent_ils:     num(input.min_total_spent_ils),
+    max_total_spent_ils:     num(input.max_total_spent_ils),
+    min_order_count:         num(input.min_order_count),
+    opted_in_only:           input.opted_in_only === true,
+  }
+}
+
+function hasAnyFilter(f: CustomerFilters): boolean {
+  return Boolean(
+    f.bought_category || f.not_bought_category || f.segment ||
+    f.last_order_days_ago_min != null || f.last_order_days_ago_max != null ||
+    f.min_total_spent_ils != null || f.max_total_spent_ils != null ||
+    f.min_order_count != null || f.opted_in_only,
+  )
+}
+
+// Resolve a filter set to the matching customers, computed from order data.
+async function selectCustomers(
+  supabase: SupabaseClient,
+  filters: CustomerFilters,
+): Promise<{ ok: true; data: CustomerSelection } | { ok: false; error: string }> {
+  const warnings: string[] = []
+
+  for (const [k, v] of [['bought_category', filters.bought_category], ['not_bought_category', filters.not_bought_category]] as const) {
+    if (v != null && !SEG_CATEGORIES.includes(v)) {
+      return { ok: false, error: `${k} must be one of ${SEG_CATEGORIES.join('|')} (got "${v}")` }
+    }
+  }
+  if (filters.bought_category && filters.not_bought_category && filters.bought_category === filters.not_bought_category) {
+    return { ok: false, error: `bought_category and not_bought_category are both "${filters.bought_category}" — no customer can match.` }
+  }
+
+  // 1. Per-customer aggregate from revenue orders.
+  const { data: orders, error: oErr } = await supabase
+    .from('woo_orders')
+    .select('woo_order_id, customer_email, total, order_date')
+    .in('status', SEG_REVENUE_STATUSES)
+    .not('customer_email', 'is', null)
+    .limit(SEG_ORDER_SCAN_CAP)
+  if (oErr) return { ok: false, error: `woo_orders query failed: ${oErr.message}` }
+  const orderRows = (orders ?? []) as Array<{ woo_order_id: number | null; customer_email: string | null; total: number | null; order_date: string }>
+  if (orderRows.length >= SEG_ORDER_SCAN_CAP) warnings.push(`order scan hit the ${SEG_ORDER_SCAN_CAP}-row cap — results may be partial`)
+
+  interface Agg { orders: number; total: number; first: string; last: string; orderIds: number[] }
+  const byEmail = new Map<string, Agg>()
+  const orderIdToEmail = new Map<number, string>()
+  for (const o of orderRows) {
+    const email = (o.customer_email ?? '').trim().toLowerCase()
+    if (!email) continue
+    if (o.woo_order_id != null) orderIdToEmail.set(o.woo_order_id, email)
+    const total = Number(o.total ?? 0)
+    const a = byEmail.get(email)
+    if (!a) {
+      byEmail.set(email, { orders: 1, total, first: o.order_date, last: o.order_date, orderIds: o.woo_order_id != null ? [o.woo_order_id] : [] })
+    } else {
+      a.orders++; a.total += total
+      if (o.order_date < a.first) a.first = o.order_date
+      if (o.order_date > a.last)  a.last  = o.order_date
+      if (o.woo_order_id != null) a.orderIds.push(o.woo_order_id)
+    }
+  }
+
+  // 2. Category membership → the set of emails that bought that category.
+  //    woo_order_items_enriched keys on order_id = woo_orders.woo_order_id.
+  async function emailsWithCategory(category: string): Promise<Set<string>> {
+    const { data, error } = await supabase
+      .from('woo_order_items_enriched')
+      .select('order_id')
+      .eq('product_category', category)
+      .limit(SEG_ITEM_SCAN_CAP)
+    if (error) throw new Error(`woo_order_items_enriched query failed: ${error.message}`)
+    const rows = (data ?? []) as Array<{ order_id: number | null }>
+    if (rows.length >= SEG_ITEM_SCAN_CAP) warnings.push(`item scan for "${category}" hit the ${SEG_ITEM_SCAN_CAP}-row cap — results may be partial`)
+    const emails = new Set<string>()
+    for (const r of rows) {
+      if (r.order_id == null) continue
+      const e = orderIdToEmail.get(r.order_id)
+      if (e) emails.add(e)
+    }
+    return emails
+  }
+
+  let keep = new Set(byEmail.keys())
+  try {
+    if (filters.bought_category) {
+      const b = await emailsWithCategory(filters.bought_category)
+      keep = new Set([...keep].filter(e => b.has(e)))
+    }
+    if (filters.not_bought_category) {
+      const n = await emailsWithCategory(filters.not_bought_category)
+      keep = new Set([...keep].filter(e => !n.has(e)))
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+
+  // 3. RFM segment map (for the segment filter + enrichment).
+  const segmentByEmail = new Map<string, string>()
+  {
+    const { data, error } = await supabase
+      .from('customer_rfm')
+      .select('email, segment')
+      .limit(SEG_ORDER_SCAN_CAP)
+    if (error) warnings.push(`customer_rfm enrichment skipped: ${error.message}`)
+    else for (const r of (data ?? []) as Array<{ email: string; segment: string }>) {
+      segmentByEmail.set((r.email ?? '').trim().toLowerCase(), r.segment)
+    }
+  }
+
+  // 4. Opt-in + name enrichment (marketing_contacts, paged).
+  const contactByEmail = new Map<string, { name: string | null; opted_in: boolean }>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('marketing_contacts')
+      .select('email, name, opted_in')
+      .range(from, from + 999)
+    if (error) { warnings.push(`marketing_contacts enrichment skipped: ${error.message}`); break }
+    const rows = (data ?? []) as Array<{ email: string; name: string | null; opted_in: boolean }>
+    for (const r of rows) contactByEmail.set((r.email ?? '').trim().toLowerCase(), { name: r.name ?? null, opted_in: r.opted_in === true })
+    if (rows.length < 1000) break
+  }
+
+  // 5. Materialize rows + apply the numeric / segment / opt-in predicates.
+  const now = Date.now()
+  const out: CustomerRow[] = []
+  for (const email of keep) {
+    const a = byEmail.get(email)!
+    const daysSinceLast = Math.floor((now - new Date(a.last).getTime()) / 86_400_000)
+    const segment = segmentByEmail.get(email) ?? null
+    const contact = contactByEmail.get(email)
+    const optedIn = contact?.opted_in === true
+
+    if (filters.segment && segment !== filters.segment) continue
+    if (filters.min_order_count != null && a.orders < filters.min_order_count) continue
+    if (filters.min_total_spent_ils != null && a.total < filters.min_total_spent_ils) continue
+    if (filters.max_total_spent_ils != null && a.total > filters.max_total_spent_ils) continue
+    if (filters.last_order_days_ago_min != null && daysSinceLast < filters.last_order_days_ago_min) continue
+    if (filters.last_order_days_ago_max != null && daysSinceLast > filters.last_order_days_ago_max) continue
+    if (filters.opted_in_only && !optedIn) continue
+
+    out.push({
+      email,
+      name:             contact?.name ?? null,
+      order_count:      a.orders,
+      total_spent_ils:  Math.round(a.total * 100) / 100,
+      first_order_date: a.first,
+      last_order_date:  a.last,
+      days_since_last:  daysSinceLast,
+      segment,
+      opted_in:         optedIn,
+    })
+  }
+  out.sort((x, y) => y.total_spent_ils - x.total_spent_ils)
+  return { ok: true, data: { customers: out, warnings } }
+}
+
+// The distinct set of opted-in addresses — the reachable universe a campaign
+// send intersects a group against. Paged; emails only.
+async function optedInEmailSet(supabase: SupabaseClient): Promise<Set<string>> {
+  const set = new Set<string>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('marketing_contacts')
+      .select('email')
+      .eq('opted_in', true)
+      .range(from, from + 999)
+    if (error) break
+    const rows = (data ?? []) as Array<{ email: string }>
+    for (const r of rows) set.add((r.email ?? '').trim().toLowerCase())
+    if (rows.length < 1000) break
+  }
+  return set
+}
 
 // ── Tool execution ─────────────────────────────────────────────────────
 
@@ -1236,6 +1606,176 @@ async function executeTool(
         return { ok: true, payload: { learnings: rows } }
       }
 
+      // ── Strategist (State of Minuto) ─────────────────────────────────────
+      case 'list_strategist_signals': {
+        const kind   = typeof input.kind === 'string' ? input.kind : undefined
+        const status = typeof input.status === 'string' ? input.status : undefined
+        const limit  = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategist_signals')
+          .select('id, kind, title, detail, status, blocked_decision, leverage, pr_url, fixer_note, decline_reason, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (kind)   q = q.eq('kind', kind)
+        if (status) q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { signals: data ?? [] } }
+      }
+
+      case 'get_strategic_brief': {
+        const briefId = typeof input.brief_id === 'string' ? input.brief_id.trim() : ''
+        let q = supabase
+          .from('strategic_briefs')
+          .select('id, week_start, summary, diagnosis, top_thesis, recommendations, out_of_hands, status, created_at')
+        q = briefId
+          ? q.eq('id', briefId)
+          : q.order('week_start', { ascending: false }).order('created_at', { ascending: false })
+        const { data, error } = await q.limit(1)
+        if (error) return { ok: false, payload: { error: error.message } }
+        if (!data || data.length === 0) return { ok: true, payload: { brief: null, note: 'no brief found' } }
+        return { ok: true, payload: { brief: data[0] } }
+      }
+
+      case 'list_strategic_theses': {
+        const status = typeof input.status === 'string' ? input.status : undefined
+        const limit  = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategic_theses')
+          .select('id, thesis, lever, success_metric, metric_baseline, check_date, status, outcome, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (status) q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { theses: data ?? [] } }
+      }
+
+      case 'list_strategic_recommendations': {
+        const briefId = typeof input.brief_id === 'string' ? input.brief_id : undefined
+        const status  = typeof input.status === 'string' ? input.status : undefined
+        const limit   = typeof input.limit === 'number' ? Math.max(1, Math.min(100, input.limit)) : 25
+        let q = supabase
+          .from('strategic_recommendations')
+          .select('id, brief_id, title, rationale, action_type, success_metric, status, draft_ref, draft_error, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (briefId) q = q.eq('brief_id', briefId)
+        if (status)  q = q.eq('status', status)
+        const { data, error } = await q
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { recommendations: data ?? [] } }
+      }
+
+      case 'create_signal': {
+        const kind   = String(input.kind ?? '').trim()
+        const title  = String(input.title ?? '').trim()
+        const detail = String(input.detail ?? '').trim()
+        const KINDS  = ['bug_report', 'feature_idea', 'capability_request']
+        if (!KINDS.includes(kind) || !title || !detail) {
+          return { ok: false, payload: { error: `create_signal requires kind ∈ {${KINDS.join(', ')}}, title, and detail` } }
+        }
+        // Stable-ish dedupe key so an accidental double-create collapses; the chat
+        // origin is recorded in it. Slug the title, cap length.
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48)
+        const dedupe_key = `chat-${slug || 'signal'}`
+        const { data: existing } = await supabase
+          .from('strategist_signals').select('id, status').eq('dedupe_key', dedupe_key).limit(1)
+        if (existing && existing.length > 0) {
+          const e = existing[0] as { id: string; status: string }
+          return { ok: true, payload: { created: false, reason: `a signal with this title already exists (status=${e.status})`, signal_id: e.id } }
+        }
+        const { data, error } = await supabase
+          .from('strategist_signals')
+          .insert({
+            kind, title, detail,
+            evidence:   (input.evidence && typeof input.evidence === 'object') ? input.evidence : {},
+            status:     'open',
+            dedupe_key,
+          })
+          .select('id, kind, status')
+          .single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { created: true, signal: data } }
+      }
+
+      case 'set_signal_status': {
+        const signalId = String(input.signal_id ?? '').trim()
+        const status   = String(input.status ?? '').trim()
+        const allowed  = ['approved', 'declined', 'open']
+        if (!signalId || !allowed.includes(status)) {
+          return { ok: false, payload: { error: `set_signal_status requires signal_id and status ∈ {${allowed.join(', ')}}` } }
+        }
+        const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
+        if (status === 'declined') {
+          const reason = String(input.decline_reason ?? '').trim()
+          if (!reason) return { ok: false, payload: { error: 'decline_reason is required when declining (the strategist reads it)' } }
+          patch.decline_reason = reason
+        }
+        const { data, error } = await supabase
+          .from('strategist_signals').update(patch).eq('id', signalId).select('id, status').single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { updated: data } }
+      }
+
+      case 'set_recommendation_status': {
+        const recId   = String(input.rec_id ?? '').trim()
+        const status  = String(input.status ?? '').trim()
+        const allowed = ['approved', 'dismissed']
+        if (!recId || !allowed.includes(status)) {
+          return { ok: false, payload: { error: `set_recommendation_status requires rec_id and status ∈ {${allowed.join(', ')}}` } }
+        }
+        const { data, error } = await supabase
+          .from('strategic_recommendations')
+          .update({ status, updated_at: new Date().toISOString() }).eq('id', recId).select('id, status').single()
+        if (error) return { ok: false, payload: { error: error.message } }
+        return { ok: true, payload: { updated: data } }
+      }
+
+      case 'trigger_fixer': {
+        const signalId = String(input.signal_id ?? '').trim()
+        if (!signalId) return { ok: false, payload: { error: 'trigger_fixer requires signal_id' } }
+        // Must be an actionable kind; ensure it's approved (the agent claims approved signals).
+        const { data: sig, error: sigErr } = await supabase
+          .from('strategist_signals').select('id, kind, status').eq('id', signalId).single()
+        if (sigErr) return { ok: false, payload: { error: sigErr.message } }
+        if (!sig) return { ok: false, payload: { error: 'signal not found' } }
+        const ACTIONABLE_KINDS = ['bug_report', 'feature_idea', 'capability_request']
+        if (!ACTIONABLE_KINDS.includes((sig as { kind: string }).kind)) {
+          return { ok: false, payload: { error: `trigger_fixer only applies to ${ACTIONABLE_KINDS.join(' / ')} signals` } }
+        }
+        if ((sig as { status: string }).status !== 'approved') {
+          const { error: upErr } = await supabase
+            .from('strategist_signals').update({ status: 'approved', updated_at: new Date().toISOString() }).eq('id', signalId)
+          if (upErr) return { ok: false, payload: { error: `could not approve signal: ${upErr.message}` } }
+        }
+        const token = Deno.env.get('GITHUB_DISPATCH_TOKEN')
+        const repo  = Deno.env.get('GITHUB_REPO') ?? 'ErezMinuto/coffeeflow'
+        if (!token) {
+          return { ok: true, payload: { dispatched: false, signal_approved: true,
+            note: `Signal approved. I can't start the fixer from here — GITHUB_DISPATCH_TOKEN isn't configured. Run it manually: \`gh workflow run fixer-agent.yml -f signal_id=${signalId} --repo ${repo}\` (or add the secret to enable one-click dispatch).` } }
+        }
+        const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/fixer-agent.yml/dispatches`, {
+          method: 'POST',
+          headers: {
+            'Authorization':        `Bearer ${token}`,
+            'Accept':               'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent':           'minuto-seo-chat',
+            'Content-Type':         'application/json',
+          },
+          body: JSON.stringify({ ref: 'main', inputs: { signal_id: signalId } }),
+        })
+        if (resp.status === 204) {
+          return { ok: true, payload: { dispatched: true, signal_approved: true,
+            actions_url: `https://github.com/${repo}/actions/workflows/fixer-agent.yml`,
+            note: 'Fixer dispatched. It will open a PR (it never deploys or merges); review and merge it there.' } }
+        }
+        const body = await resp.text()
+        return { ok: false, payload: { dispatched: false, signal_approved: true,
+          error: `GitHub dispatch failed: HTTP ${resp.status} ${body.slice(0, 300)}` } }
+      }
+
       case 'supersede_learning': {
         const learning_id = String(input.learning_id ?? '').trim()
         const reason      = String(input.reason ?? '').trim()
@@ -1563,6 +2103,142 @@ async function executeTool(
         return { ok: true, payload: { count: (data ?? []).length, insights: data ?? [] } }
       }
 
+      case 'query_customers': {
+        const filters = parseCustomerFilters(input)
+        if (!hasAnyFilter(filters)) {
+          return { ok: false, payload: { error: 'query_customers needs at least one filter (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only).' } }
+        }
+        const sel = await selectCustomers(supabase, filters)
+        if (!sel.ok) return { ok: false, payload: { error: sel.error } }
+        const all = sel.data.customers
+        const limit = Math.max(1, Math.min(500, typeof input.limit === 'number' ? Math.floor(input.limit) : 25))
+        const optedInReachable = all.filter(c => c.opted_in).length
+        const totalValue = all.reduce((s, c) => s + c.total_spent_ils, 0)
+        const segmentBreakdown: Record<string, number> = {}
+        for (const c of all) { const k = c.segment ?? 'unscored'; segmentBreakdown[k] = (segmentBreakdown[k] ?? 0) + 1 }
+        return {
+          ok: true,
+          payload: {
+            total_matched:      all.length,
+            opted_in_reachable: optedInReachable,
+            total_value_ils:    Math.round(totalValue),
+            segment_breakdown:  segmentBreakdown,
+            filters,
+            warnings:           sel.data.warnings,
+            sample_count:       Math.min(limit, all.length),
+            sample_truncated:   all.length > limit,
+            sample:             all.slice(0, limit),
+            hint: 'This is READ-ONLY. To make it a sendable segment, call create_email_segment({name, filters}) with these SAME filters — the full list is re-queried server-side (no need to pass emails through chat). Confirm the name + audience with Erez first.',
+          },
+        }
+      }
+
+      case 'create_email_segment': {
+        const name = typeof input.name === 'string' ? input.name.trim() : ''
+        if (!name) return { ok: false, payload: { error: 'create_email_segment requires a non-empty name.' } }
+        if (/^rfm_/i.test(name)) {
+          return { ok: false, payload: { error: `"${name}" collides with the reserved rfm_* namespace (rfm-sync clears + repopulates those groups nightly, so your members would be wiped). Choose a different name.` } }
+        }
+        const description = typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null
+        const replaceIfExists = input.replace_if_exists === true
+
+        // Resolve members: explicit customer_list OR filters (server-side query).
+        let members: Array<{ email: string; name: string | null }> = []
+        let sourceNote = ''
+        if (Array.isArray(input.customer_list) && input.customer_list.length > 0) {
+          const seen = new Set<string>()
+          for (const item of input.customer_list as unknown[]) {
+            let email = ''
+            let nm: string | null = null
+            if (typeof item === 'string') {
+              email = item
+            } else if (item && typeof item === 'object') {
+              email = String((item as Record<string, unknown>).email ?? '')
+              const rawName = (item as Record<string, unknown>).name
+              nm = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : null
+            }
+            email = email.trim().toLowerCase()
+            if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || seen.has(email)) continue
+            seen.add(email)
+            members.push({ email, name: nm })
+          }
+          sourceNote = `explicit customer_list (${members.length} valid unique emails)`
+        } else {
+          const filters = parseCustomerFilters(
+            input.filters && typeof input.filters === 'object' ? input.filters as Record<string, unknown> : input,
+          )
+          if (!hasAnyFilter(filters)) {
+            return { ok: false, payload: { error: 'create_email_segment needs either customer_list[] or filters{} (bought_category, not_bought_category, segment, last_order_days_ago_min/max, min/max_total_spent_ils, min_order_count, opted_in_only).' } }
+          }
+          const sel = await selectCustomers(supabase, filters)
+          if (!sel.ok) return { ok: false, payload: { error: sel.error } }
+          members = sel.data.customers.map(c => ({ email: c.email, name: c.name }))
+          sourceNote = `filters ${JSON.stringify(filters)}`
+        }
+        if (members.length === 0) {
+          return { ok: false, payload: { error: `no customers matched (${sourceNote}). Segment not created.` } }
+        }
+
+        // Existing group? (contact_groups.name is not unique — match exactly.)
+        const { data: existingRows, error: exErr } = await supabase
+          .from('contact_groups')
+          .select('id')
+          .eq('name', name)
+          .limit(1)
+        if (exErr) return { ok: false, payload: { error: `contact_groups lookup failed: ${exErr.message}` } }
+        let groupId: number
+        let replaced = false
+        if (existingRows && existingRows.length > 0) {
+          groupId = (existingRows[0] as { id: number }).id
+          if (!replaceIfExists) {
+            return { ok: false, payload: { error: `a contact group named "${name}" already exists (id=${groupId}). Pass replace_if_exists:true to overwrite its members, or choose a new name.` } }
+          }
+          await supabase.from('contact_group_members').delete().eq('group_id', groupId)
+          await supabase.from('contact_groups').update({ description, updated_at: new Date().toISOString() }).eq('id', groupId)
+          replaced = true
+        } else {
+          const { data: created, error: cErr } = await supabase
+            .from('contact_groups')
+            .insert({ name, description })
+            .select('id')
+            .single()
+          if (cErr) return { ok: false, payload: { error: `contact_groups insert failed: ${cErr.message}` } }
+          groupId = (created as { id: number }).id
+        }
+
+        // Insert members in batches. UNIQUE(group_id,email) → ignore dupes.
+        for (let i = 0; i < members.length; i += 500) {
+          const batch = members.slice(i, i + 500).map(m => ({ group_id: groupId, email: m.email, name: m.name }))
+          const { error: insErr } = await supabase
+            .from('contact_group_members')
+            .upsert(batch, { onConflict: 'group_id,email', ignoreDuplicates: true })
+          if (insErr) {
+            return { ok: false, payload: { error: `member insert failed at batch offset ${i}: ${insErr.message}`, segment_id: groupId } }
+          }
+        }
+
+        // Reachability: a send intersects the group with opted-in contacts.
+        const optedIn = await optedInEmailSet(supabase)
+        const reachable = members.filter(m => optedIn.has(m.email)).length
+
+        return {
+          ok: true,
+          payload: {
+            segment_id:         groupId,
+            name,
+            replaced,
+            members_total:      members.length,
+            opted_in_reachable: reachable,
+            not_opted_in:       members.length - reachable,
+            source:             sourceNote,
+            needs_human:        reachable === 0,
+            note: reachable === 0
+              ? `Segment "${name}" created (${members.length} members), but NONE are opted-in in marketing_contacts. A campaign send intersects the group with opted-in contacts, so as-is this segment reaches 0 people. needs_human: import/opt-in these customers (set marketing_contacts.opted_in=true, respecting consent) before sending.`
+              : `Segment "${name}" is live as a contact group. Send by targeting groupName="${name}" in the Marketing dashboard / generate-campaign — it is intersected with opted-in contacts at send time, so ${reachable} of ${members.length} are currently reachable. Nothing has been sent.`,
+          },
+        }
+      }
+
       default:
         return { ok: false, payload: { error: `unknown tool: ${name}` } }
     }
@@ -1703,7 +2379,7 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
   // Most-recent orchestrator snapshot + 10 most-recent tasks + 20 most-
   // recent active learnings (cross-session memory). All three are read
   // fresh on every chat turn so the agent always sees the latest state.
-  const [snapshots, recentTasks, learnings, pendingExp] = await Promise.all([
+  const [snapshots, recentTasks, learnings, pendingExp, stratBrief, openSignals, activeTheses, proposedRecs] = await Promise.all([
     getRecentMetricsSnapshots(supabase, 'orchestrator_run', 1),
     getRecentTasks(supabase, new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(), 10),
     getRecentLearnings(supabase, { limit: 20 }),
@@ -1719,6 +2395,19 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
       .limit(20)
       .then(r => r.data ?? [])
       .then(rows => rows as Array<{ id: string; created_at: string; rationale: string | null; brief_data: unknown }>),
+    // Strategist (State of Minuto) — proactive awareness so the agent can speak
+    // to what the strategist found/decided without being asked. Details on tool
+    // call (list_strategist_signals / get_strategic_brief / list_strategic_*).
+    supabase.from('strategic_briefs').select('id, week_start, summary, top_thesis')
+      .order('week_start', { ascending: false }).order('created_at', { ascending: false }).limit(1)
+      .then(r => (r.data ?? [])[0] as { id: string; week_start: string; summary: string; top_thesis: string | null } | undefined),
+    supabase.from('strategist_signals').select('id, kind, title, status')
+      .eq('status', 'open').order('created_at', { ascending: false }).limit(15)
+      .then(r => (r.data ?? []) as Array<{ id: string; kind: string; title: string; status: string }>),
+    supabase.from('strategic_theses').select('id', { count: 'exact', head: true }).eq('status', 'active')
+      .then(r => r.count ?? 0),
+    supabase.from('strategic_recommendations').select('id', { count: 'exact', head: true }).eq('status', 'proposed')
+      .then(r => r.count ?? 0),
   ])
 
   const snapBlock = snapshots[0]
@@ -1751,6 +2440,20 @@ async function buildSystemPrompt(supabase: SupabaseClient): Promise<string> {
         return `  ⚠️ [${t.id}] ${age} — ${desc}`
       }).join('\n')
 
+  // Strategist state — compact pointer so the agent knows what the autonomous
+  // strategist has on file. Full detail via the strategist read tools.
+  const strategistBlock = [
+    stratBrief
+      ? `Latest brief (week ${stratBrief.week_start}, ${stratBrief.id.slice(0, 8)}): ${stratBrief.summary}` +
+        (stratBrief.top_thesis ? `\n  Top bet: ${stratBrief.top_thesis}` : '')
+      : '(no brief yet)',
+    openSignals.length === 0
+      ? 'Open signals: none.'
+      : `Open signals (awaiting your call — approve/decline, or trigger_fixer to fix/build it — bug_report/feature_idea/capability_request):\n` +
+        openSignals.map(s => `  • [${s.kind}] ${s.title} (${s.id.slice(0, 8)})`).join('\n'),
+    `Active theses: ${activeTheses} · Recommendations awaiting approval: ${proposedRecs}`,
+  ].join('\n')
+
   return `${CHAT_SYSTEM_PROMPT}
 
 === STANDING INSIGHTS (cross-session memory — apply unless explicitly overridden) ===
@@ -1760,6 +2463,10 @@ ${learningsBlock}
 === PENDING APPROVALS (dynamic_experiments awaiting Erez's decision — proactively raise these with him; he may not know they're here. Resolve via approve_dynamic_experiment or cancel_task) ===
 
 ${approvalsBlock}
+
+=== STRATEGIST (State of Minuto — the autonomous weekly strategist's current state) ===
+
+${strategistBlock}
 
 === LIVE CONTEXT (refreshed on each chat turn) ===
 

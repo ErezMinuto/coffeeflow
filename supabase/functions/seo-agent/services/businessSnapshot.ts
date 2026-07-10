@@ -177,9 +177,11 @@ export async function fetchSalesSnapshot(
 
 // ── Email performance ───────────────────────────────────────────────────────
 // campaigns holds rolled-up open_count/click_count/bounce_count per sent
-// campaign; campaign_events is the raw event log (we use it only to confirm the
-// rollups aren't stale-zero, since this repo has a history of silent sync gaps —
-// a campaign with sent recipients but zero events is a signal the brain may flag).
+// campaign; campaign_events is the raw event log. We tally 'delivered' events
+// from it per campaign because that — not the full recipient list — is the
+// correct denominator for engagement rates (recipients includes bounces and
+// suppressions; using it understated open_rate badly). The recipients-vs-
+// delivered gap is itself surfaced so the brain can flag throttling/sync gaps.
 
 export async function fetchEmailPerformance(
   supabase: SupabaseClient,
@@ -208,31 +210,52 @@ export async function fetchEmailPerformance(
     bounce_count: number | null
   }>
 
+  // Tally delivered emails per campaign from the raw event log — open/click
+  // events only fire for delivered mail, so 'delivered' is the right rate
+  // denominator. head:true count keeps this to one lightweight query each.
+  const deliveredByCampaign = new Map<number, number>()
+  await Promise.all(rows.map(async r => {
+    const { count } = await supabase
+      .from('campaign_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('campaign_id', r.id)
+      .eq('event_type', 'delivered')
+    deliveredByCampaign.set(r.id, count ?? 0)
+  }))
+
   const campaigns: EmailCampaignPerf[] = rows.map(r => {
     const recipients = r.recipient_count ?? 0
     const opens = r.open_count ?? 0
     const clicks = r.click_count ?? 0
+    // Fall back to recipients when no delivered events were captured (campaigns
+    // predating webhook tracking) so a rate is still produced rather than 0.
+    const delivered = deliveredByCampaign.get(r.id) || recipients
     return {
       subject: r.subject ?? '(no subject)',
       campaign_type: r.campaign_type ?? 'manual',
       sent_at: r.sent_at,
       recipients,
-      open_rate: recipients > 0 ? Math.round((opens / recipients) * 1000) / 1000 : 0,
-      click_rate: recipients > 0 ? Math.round((clicks / recipients) * 1000) / 1000 : 0,
+      delivered,
+      open_rate: delivered > 0 ? Math.round((opens / delivered) * 1000) / 1000 : 0,
+      click_rate: delivered > 0 ? Math.round((clicks / delivered) * 1000) / 1000 : 0,
       bounce_count: r.bounce_count ?? 0,
     }
   })
 
+  // Weight the averages by delivered (matching the per-campaign denominator) so
+  // avg_open_rate == total opens / total delivered, the true aggregate rate.
   const totalRecipients = campaigns.reduce((s, c) => s + c.recipients, 0)
-  const weightedOpen = campaigns.reduce((s, c) => s + c.open_rate * c.recipients, 0)
-  const weightedClick = campaigns.reduce((s, c) => s + c.click_rate * c.recipients, 0)
+  const totalDelivered = campaigns.reduce((s, c) => s + c.delivered, 0)
+  const weightedOpen = campaigns.reduce((s, c) => s + c.open_rate * c.delivered, 0)
+  const weightedClick = campaigns.reduce((s, c) => s + c.click_rate * c.delivered, 0)
 
   return {
     lookback_days: lookbackDays,
     campaigns_sent: campaigns.length,
     total_recipients: totalRecipients,
-    avg_open_rate: totalRecipients > 0 ? Math.round((weightedOpen / totalRecipients) * 1000) / 1000 : 0,
-    avg_click_rate: totalRecipients > 0 ? Math.round((weightedClick / totalRecipients) * 1000) / 1000 : 0,
+    total_delivered: totalDelivered,
+    avg_open_rate: totalDelivered > 0 ? Math.round((weightedOpen / totalDelivered) * 1000) / 1000 : 0,
+    avg_click_rate: totalDelivered > 0 ? Math.round((weightedClick / totalDelivered) * 1000) / 1000 : 0,
     recent: campaigns,
   }
 }

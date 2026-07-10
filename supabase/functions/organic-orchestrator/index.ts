@@ -31,6 +31,10 @@ import {
   insertExperiment,
 } from '../seo-agent/db.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
+import {
+  checkCannibalizationForQueue,
+  buildCannibalizationConflictBrief,
+} from '../seo-agent/cannibalizationCheck.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
 import {
@@ -42,7 +46,7 @@ import {
 } from '../seo-agent/services/googleApi.ts'
 import {
   fetchRecentBlogPosts,
-  fetchMinutoCoffeeCatalog,
+  fetchActiveCatalog,
   fetchInventoryAlerts,
   fetchVocInsights,
   fetchKeywordOpportunities,
@@ -168,7 +172,7 @@ serve(async (req: Request): Promise<Response> => {
       }),
       fetchTopKeywords(supabase, 30, 30),
       fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
-      fetchMinutoCoffeeCatalog(supabase),
+      fetchActiveCatalog(supabase),
       fetchInventoryAlerts(supabase),
       getRecentTasks(supabase, fourteenDaysAgo, 100),
       getRecentMetricsSnapshots(supabase, 'orchestrator_run', 2),
@@ -350,58 +354,46 @@ serve(async (req: Request): Promise<Response> => {
       `tasks=${emittedTasks.length}`,
     )
 
-    // ── 6a-pre. Blog same-topic dedup (anti-cannibalization backstop) ─────
-    // SEO articles must never cannibalize: two pages on the same keyword split
-    // ranking signal and both lose. The strategist is told blog is one-article-
-    // per-topic, but enforce it deterministically here too. Drop any
-    // text_generation whose normalized keyword collides with (a) an earlier
-    // text_generation in THIS plan, or (b) any blog task from the last 14d
-    // (pending/completed/failed — i.e. existing + in-flight drafts). When a blog
-    // task is dropped, cascade-drop tasks that depend on it (e.g. its paired
-    // banner visual) and remap the positional parent/depends indices so the
-    // wiring below stays correct. Non-text tasks are never dropped here.
-    const normKw = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
-    const existingBlogKeywords = new Set<string>()
-    for (const t of recentTasks) {
-      if (t.task_type !== 'text_generation') continue
-      const kw = normKw((t.brief_data as { keyword?: unknown } | null)?.keyword)
-      if (kw) existingBlogKeywords.add(kw)
-    }
-    const droppedIdx = new Set<number>()
-    const droppedKws: string[] = []
-    const seenKw = new Set<string>()
-    emittedTasks.forEach((et, i) => {
-      if (et.task_type !== 'text_generation') return
-      const kw = normKw((et.brief_data as { keyword?: unknown } | null)?.keyword)
-      if (!kw) return                                   // no keyword to dedup on
-      if (seenKw.has(kw) || existingBlogKeywords.has(kw)) { droppedIdx.add(i); droppedKws.push(kw); return }
-      seenKw.add(kw)
-    })
-    // Cascade: drop anything whose parent/dependency was dropped (transitively).
-    for (let changed = true; changed; ) {
-      changed = false
-      emittedTasks.forEach((et, i) => {
-        if (droppedIdx.has(i)) return
-        const p = et.parent_task_index, d = et.depends_on_index
-        if ((typeof p === 'number' && droppedIdx.has(p)) || (typeof d === 'number' && droppedIdx.has(d))) {
-          droppedIdx.add(i); changed = true
+    // ── 5b. PRE-QUEUE CANNIBALIZATION GATE (text_generation only) ──────
+    // Before materializing tasks, ask WP whether each intended article's
+    // keyword is already covered by an existing post (any status). On a
+    // conflict we do NOT queue the article — we convert that emitted task
+    // IN PLACE into a dynamic_experiment (cannibalization_conflict) so the
+    // conflict surfaces in the admin's pending-approvals queue instead of a
+    // silently-failed writer task. Converting in place (rather than dropping)
+    // keeps the emittedTasks↔insertedRows index alignment the parent/depends
+    // wiring below relies on. Fails open per-task (WP outage → queue anyway).
+    // One WP call per text_generation task; run concurrently.
+    phase = 'cannibalization_gate'
+    let cannibalConflictsFiled = 0
+    if (emittedTasks.length > 0) {
+      await Promise.all(emittedTasks.map(async (et) => {
+        if (et.task_type !== 'text_generation') return
+        const brief   = (et.brief_data ?? {}) as Record<string, unknown>
+        const keyword = String(brief.keyword ?? '').trim()
+        const title   = String(brief.title ?? '').trim()
+        if (!keyword) return
+        let gate
+        try { gate = await checkCannibalizationForQueue(keyword, title) }
+        catch (e: any) {
+          console.warn(`[organic-orchestrator] cannibalization check threw for "${keyword}" (fail-open): ${e?.message ?? e}`)
+          return
         }
-      })
-    }
-    // Build kept list + old→new index map, then remap positional references so
-    // parent_task_index / depends_on_index still point at the right rows.
-    const oldToNew = new Map<number, number>()
-    let nextKeptIdx = 0
-    emittedTasks.forEach((_, i) => { if (!droppedIdx.has(i)) oldToNew.set(i, nextKeptIdx++) })
-    const planTasks = emittedTasks
-      .filter((_, i) => !droppedIdx.has(i))
-      .map(et => ({
-        ...et,
-        parent_task_index: typeof et.parent_task_index === 'number' ? oldToNew.get(et.parent_task_index) : et.parent_task_index,
-        depends_on_index:  typeof et.depends_on_index  === 'number' ? oldToNew.get(et.depends_on_index)  : et.depends_on_index,
+        if (gate.checked && gate.conflicts.length > 0) {
+          et.task_type       = 'dynamic_experiment'
+          et.task_subtype    = 'cannibalization_conflict'
+          et.brief_data      = buildCannibalizationConflictBrief({ keyword, title, conflicts: gate.conflicts })
+          et.rationale       = `[cannibalization-gate] did NOT queue "${keyword}" — ${gate.conflicts.length} overlapping post(s); needs admin dedupe. (was: ${et.rationale ?? ''})`.slice(0, 500)
+          // Strip experiment tagging — a conflict proposal is not an A/B variation.
+          delete et.experiment_group
+          delete et.variation_label
+          cannibalConflictsFiled++
+          console.warn(`[organic-orchestrator] cannibalization: "${keyword}" overlaps ${gate.conflicts.length} post(s) → filed conflict for admin review`)
+        }
       }))
-    if (droppedIdx.size > 0) {
-      console.warn(`[organic-orchestrator] anti-cannibalization: dropped ${droppedIdx.size} task(s) — duplicate blog keyword(s): ${[...new Set(droppedKws)].join(' | ')} (plus cascaded dependents)`)
+      if (cannibalConflictsFiled > 0) {
+        console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} text_generation task(s) converted to conflict proposals`)
+      }
     }
 
     // ── 6a. Materialize experiments. Each experiment_group string from
@@ -436,8 +428,8 @@ serve(async (req: Request): Promise<Response> => {
     // depends_on so we get UUIDs back. Second pass updates the rows
     // that have parent_task_index / depends_on_index references.
     let insertedRows: SeoTaskRow[] = []
-    if (planTasks.length > 0) {
-      const newTasks: NewSeoTask[] = planTasks.map(et => {
+    if (emittedTasks.length > 0) {
+      const newTasks: NewSeoTask[] = emittedTasks.map(et => {
         const base: NewSeoTask = {
           task_type:           et.task_type,
           task_subtype:        et.task_subtype ?? null,
@@ -467,8 +459,8 @@ serve(async (req: Request): Promise<Response> => {
       // Wire parent_task_id + depends_on from indexes → UUIDs.
       // Each emittedTask[i] corresponds to insertedRows[i].
       const updates: Array<{ id: string; patch: Record<string, unknown> }> = []
-      for (let i = 0; i < planTasks.length; i++) {
-        const et = planTasks[i]
+      for (let i = 0; i < emittedTasks.length; i++) {
+        const et = emittedTasks[i]
         const row = insertedRows[i]
         if (!row) continue
         const patch: Record<string, unknown> = {}
@@ -495,20 +487,6 @@ serve(async (req: Request): Promise<Response> => {
         if (error) console.warn(`[organic-orchestrator] wire-up update failed for ${u.id}: ${error.message}`)
       }
       console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
-    }
-
-    // ── Per-task emit log (BUG3 observability) — record what the strategist
-    // PLANNED and whether each task actually inserted, so a run that produced
-    // no feed posts is explicit in the logs + the admin briefing rather than a
-    // silent zero. planTasks[i] ↔ insertedRows[i] (after duplicate-topic drop).
-    const emitLog = planTasks.map((et, i) => ({
-      task_type: et.task_type,
-      outcome:   (insertedRows[i] ? 'inserted' : 'dropped') as 'inserted' | 'dropped',
-      task_id:   insertedRows[i]?.id ?? null,
-    }))
-    console.log(`[organic-orchestrator] task emit log (${emitLog.length} inserted of ${emittedTasks.length} planned, ${droppedIdx.size} dropped as duplicates): ${JSON.stringify(emitLog)}`)
-    if (planTasks.length === 0) {
-      console.log('[organic-orchestrator] NOTE: 0 content tasks to insert this run (strategist emitted none, or all were dropped as duplicate-topic).')
     }
 
     // ── 6b-FAQ. Identify ranking blog articles missing FAQ → queue proposals ─
@@ -626,7 +604,6 @@ serve(async (req: Request): Promise<Response> => {
         experimentsEvaluated: experimentEvalSummary,
         tasksEmitted:         insertedRows.length,
         taskIds:              insertedRows.map(r => r.id),
-        emitLog,
       }))
     } catch (e: any) {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
@@ -640,7 +617,6 @@ serve(async (req: Request): Promise<Response> => {
       experiments_evaluated: experimentEvalSummary,
       experiments_emitted:   experimentIdByGroup.size,
       tasks_emitted:         insertedRows.length,
-      task_emit_log:         emitLog,
       faq_candidates_queued: faqCandidatesQueued,
       tokens: {
         input:  claudeRes.inputTokens,
@@ -772,10 +748,7 @@ function buildStrategistUserMessage(args: {
         return `  • ${p.title}${when ? ` (${when})` : ''}`
       }).join('\n')
 
-  // Catalog — Minuto's OWN roasted coffee lineup only (green 1kg home-roasting
-  // SKUs and resold brands like Veneto/Toddy are filtered out at the source).
-  // products_to_mention[0] becomes a bag_hero banner's product, so the strategist
-  // must only ever pick from on-brand Minuto coffee. Names with stock/price.
+  // Catalog — just names with stock/price, for products_to_mention picking.
   const catalogBlock = catalog.length === 0
     ? '  (catalog empty)'
     : catalog.slice(0, 50).map(p => {
@@ -834,7 +807,7 @@ ${recentTasksBlock}
 
 ${blogBlock}
 
-=== MINUTO COFFEE LINEUP (the ONLY products to feature; copy EXACT names into products_to_mention — products_to_mention[0] becomes the article/post banner's hero bag, so never pick anything off this list) ===
+=== PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
 
 ${catalogBlock}
 

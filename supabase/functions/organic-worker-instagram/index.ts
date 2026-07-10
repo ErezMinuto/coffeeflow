@@ -257,8 +257,10 @@ serve(async (req) => {
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption too long' })
   }
 
-  // ── 5. Call meta-publish based on publish_strategy ──────────────────
-  const action = publishStrategy === 'auto' ? 'publish_now' : 'prepare'
+  // ── 5. Call meta-publish ────────────────────────────────────────────
+  // HARD GATE: publishStrategy is locked to 'queue_for_review' (above), so we
+  // always 'prepare' (stage for admin review) — auto-publish is never reached.
+  const action = 'prepare'
   console.log(`[organic-worker-instagram] ${workerId} action=${action} type=${metaPublishType} ${carouselChildren ? `children=${carouselChildren.length}` : `image_url=${imageUrl}`} caption_len=${finalCaption.length}`)
 
   // Carousel sends children[]; feed/story send a single image_url.

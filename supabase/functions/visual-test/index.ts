@@ -117,6 +117,20 @@ serve(async (req) => {
     const aspect    = body.aspect ?? 'feed_square'
     const ratio     = ASPECT_TO_RATIO[aspect]
     const useReference = body.use_reference !== false
+
+    // ── Minimal-scene gate ────────────────────────────────────────────────
+    // Some briefs explicitly demand a clean single-subject / studio / no-prop
+    // shot ("zero beans", "nothing else", "only the glass", "pure product on
+    // white"). The default bag_hero scaffolding FIGHTS those: it force-attaches
+    // a beans color-anchor + a cups/brewing style-anchor, lists "supporting
+    // props", and overrides the brief's surface with a rotated rustic one. That
+    // self-contradiction is exactly what made these briefs fail QA 3x and then
+    // brief-regen to a HITL cap (real examples: tasks 8421991d, ff7e8c3f,
+    // ac72e06d). no_bag briefs already render clean because they skip these
+    // refs — this makes a prop-forbidding bag_hero behave the same way: keep
+    // the bag, drop the contradicting scaffolding, respect the brief.
+    const forbidsProps = /\b(no props|zero props|no secondary|no other objects?|without (?:any )?props|no clutter|no decorative|nothing else|no beans|zero beans|no roasted beans|no cups?|zero cups?|no glassware|zero glassware|no ceramic|sole (?:subject|object|hero)|only the (?:bag|glass|mug|cup|jar)|pure product|seamless (?:white|ivory|cream|backdrop)|studio (?:backdrop|sweep|shot)|product[- ]on[- ]white)\b/.test(sceneBrief.toLowerCase())
+    if (forbidsProps) console.log('[visual-test] minimal-scene gate ON — brief forbids props: skipping beans + style refs, deferring surface/composition to the brief')
     // Compositing DISABLED — pivoted to a "Gemini renders bag from reference
     // image + style reference images + bullet-structured prompt" architecture
     // (Erez's test proved Gemini renders the bag faithfully when given a
@@ -242,7 +256,7 @@ serve(async (req) => {
       // conditional on a commercial-context espresso scene.
       const [b1, b2, b3, b4] = await Promise.all([
         fetchAsB64(bagUrl),
-        fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
+        forbidsProps ? Promise.resolve(null) : fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
         useStradaXReference  ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
         roasterSceneRegex    ? fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
       ])
@@ -251,22 +265,6 @@ serve(async (req) => {
       machineRef = b3
       roasterRef = b4
       console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
-
-      // FAIL-FAST when the bag was requested but its reference image could not
-      // be fetched (404 / network / bad URL → fetchAsB64 returned null).
-      // Continuing here is the documented hallucination vector: the prompt
-      // still tells Gemini to render "the Minuto bag" but attaches NO bag
-      // reference, so it invents label artwork and gibberish text and pads the
-      // frame with hallucinated props (the Velvet Star failure mode). Better to
-      // fail loudly with the exact bad URL so the task retries / surfaces and
-      // the broken woo_products.image_url gets fixed — never ship a fabricated
-      // bag. (A null bag ref is ONLY a problem when a bag was actually
-      // requested; no_bag scenes never set bagUrl.)
-      if (bagUrl && !bagRef) {
-        return jsonResponse({
-          error: `bag reference image could not be fetched (source=${bagSource}, url=${bagUrl}). Refusing to render a bag_hero without its reference — that produces a hallucinated label. Fix the product's image_url (or pass a reachable reference_image_url).`,
-        }, 502, corsHeaders)
-      }
     }
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
@@ -304,7 +302,7 @@ serve(async (req) => {
       return url
     }
 
-    const styleRefUrl = useReference ? await pickStyleReferenceUrl(sceneBrief) : null
+    const styleRefUrl = (useReference && !forbidsProps) ? await pickStyleReferenceUrl(sceneBrief) : null
     let styleRef: { data: string; mime: string } | null = null
     if (styleRefUrl) {
       styleRef = await fetchAsB64(styleRefUrl)
@@ -358,36 +356,25 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
 🎯 PRIMARY DIRECTIVE
-Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
-
-🔤 LABEL TEXT — render the LARGE elements sharp and faithful: the "Minuto" brand wordmark, the stag-head emblem, and the product name exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
+Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. Retain ALL text, branding, and design features of the bag exactly as shown in the reference image — the bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
 
 SCENE BRIEF — interpret this as the structured elements below:
 ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered).
-• SUPPORTING PROPS — cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.
+• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
-• SURFACE — **${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.
+• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
-• FOCUS — the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness; supporting props secondary; background softly out of focus.
-• COMPOSITION — asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.${referencesBlock}
+• FOCUS — the Minuto bag is dominant; supporting props secondary; background softly out of focus.
+• COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 
 ⛔ FINAL OVERRIDE — read this LAST and let it overrule the SCENE
 description above wherever they conflict:
-
-🚫 PROP DISCIPLINE: render ONLY the props the SCENE brief explicitly
-names. Do NOT invent or add cups, mugs, bowls, dishes, saucers, trays,
-loose coffee beans, spoons, books, plants, or windows that the brief
-did not ask for. A HUMAN HAND — or any body part — must NEVER appear
-unless the brief explicitly calls for a hand holding something. If the
-brief says "no props", "no other props", or "nothing else on the
-surface", then render ONLY the bag on the named surface: empty surface,
-nothing else in frame. Extra invented props are an automatic reject.
 
 🔒 SUBJECT-LOCK: when the SCENE brief names specific equipment — steam
 wand, portafilter, espresso machine group head, thermometer, milk

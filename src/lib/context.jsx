@@ -91,6 +91,9 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   const isAdmin = userRole === 'admin';
+  // schedule_manager: scoped role — may manage the work schedule (and approve
+  // employees) but nothing else. Admins can do everything a scheduler can.
+  const canSchedule = isAdmin || userRole === 'schedule_manager';
 
   // Shared org-wide tables — all team members see the same data
   const originsDb                = useSupabaseData('origins',                   { filterByUser: false });
@@ -176,7 +179,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       user,
       data,
-      isAdmin, userRole, roleLoading,
+      isAdmin, canSchedule, userRole, roleLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,

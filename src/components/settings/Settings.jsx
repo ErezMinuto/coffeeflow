@@ -210,7 +210,8 @@ function RolesSection({ user, showToast }) {
       if (upsertError) throw new Error(upsertError.message);
       setNewEmail('');
       fetchRoles();
-      showToast(`✅ ${data.full_name || data.email} נוסף כ${newRoleRole === 'admin' ? 'מנהל' : 'עובד'}!`);
+      const roleLabel = newRoleRole === 'admin' ? 'מנהל' : newRoleRole === 'schedule_manager' ? 'אחראי/ת סידור' : 'עובד';
+      showToast(`✅ ${data.full_name || data.email} נוסף כ${roleLabel}!`);
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
     } finally {
@@ -232,7 +233,7 @@ function RolesSection({ user, showToast }) {
   };
 
   return (
-    <Section title="🔐 ניהול תפקידים" description="מנהל — גישה מלאה. עובד — דשבורד + ייצור בלבד.">
+    <Section title="🔐 ניהול תפקידים" description="מנהל — גישה מלאה. אחראי/ת סידור — סידור עבודה בלבד. עובד — דשבורד + ייצור בלבד.">
       {/* Add */}
       <div className="form-card" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -249,6 +250,7 @@ function RolesSection({ user, showToast }) {
             <select value={newRoleRole} onChange={e => setNewRoleRole(e.target.value)}
               style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
               <option value="employee">👤 עובד</option>
+              <option value="schedule_manager">📅 אחראי/ת סידור</option>
               <option value="admin">👑 מנהל</option>
             </select>
           </div>
@@ -290,6 +292,7 @@ function RolesSection({ user, showToast }) {
                     <select value={r.role} onChange={e => updateRole(r.user_id, e.target.value)}
                       style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.85rem' }}>
                       <option value="employee">👤 עובד</option>
+                      <option value="schedule_manager">📅 אחראי/ת סידור</option>
                       <option value="admin">👑 מנהל</option>
                     </select>
                   </td>
