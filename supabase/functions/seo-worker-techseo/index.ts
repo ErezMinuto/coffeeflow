@@ -201,20 +201,59 @@ serve(async (req) => {
   })
 })
 
-// Resolve a post URL → numeric id via the public WP REST API (by slug).
+// Resolve a post URL → numeric id.
+//
+// First tries the fast public slug lookup. That can miss on this Hebrew site:
+// GA4 page_paths carry percent-encoded Hebrew slugs whose sanitized form does
+// not always round-trip against WP's stored post_name, and some top organic
+// /blog/* URLs aren't a plain post slug at all. So when the slug lookup finds
+// nothing, fall back to the post id WordPress reliably emits in the rendered
+// page HTML (shortlink ?p= / body "postid-" class / embedded REST link) —
+// encoding- and permalink-agnostic.
 async function resolvePostId(url: string): Promise<number | null> {
   let slug = ''
   try {
     const path = new URL(url).pathname.replace(/\/+$/, '')
     slug = decodeURIComponent(path.split('/').filter(Boolean).pop() ?? '')
   } catch { return null }
-  if (!slug) return null
+
+  if (slug) {
+    try {
+      const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_fields=id`)
+      if (res.ok) {
+        const arr = await res.json()
+        if (Array.isArray(arr) && arr[0] && typeof arr[0].id === 'number') return arr[0].id
+      }
+    } catch { /* fall through to the HTML parse below */ }
+  }
+
+  // Fallback: the WP-rendered page carries its own post id in stable places.
   try {
-    const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_fields=id`)
-    if (!res.ok) return null
-    const arr = await res.json()
-    if (Array.isArray(arr) && arr[0] && typeof arr[0].id === 'number') return arr[0].id
+    const res = await fetch(url, { headers: { 'User-Agent': 'MinutoTechSeoWorker/1.0' } })
+    if (res.ok) {
+      const id = extractPostIdFromHtml(await res.text())
+      if (id) return id
+    }
   } catch { /* noop */ }
+  return null
+}
+
+// Pull the numeric post id out of a WordPress-rendered page. WP emits it in
+// several stable places regardless of slug encoding or permalink structure.
+function extractPostIdFromHtml(html: string): number | null {
+  const patterns = [
+    /rel=["']shortlink["'][^>]*?href=["'][^"']*?[?&]p=(\d+)/i,        // <link rel=shortlink href=".../?p=123">
+    /href=["'][^"']*?[?&]p=(\d+)["'][^>]*?rel=["']shortlink["']/i,    // same, attrs reversed
+    /<body[^>]*\bclass=["'][^"']*\bpostid-(\d+)/i,                    // <body class="... postid-123 ...">
+    /wp-json\\?\/wp\\?\/v2\\?\/posts\\?\/(\d+)/i,                     // embedded REST link (raw or JSON-escaped)
+  ]
+  for (const re of patterns) {
+    const m = html.match(re)
+    if (m) {
+      const id = Number(m[1])
+      if (Number.isInteger(id) && id > 0) return id
+    }
+  }
   return null
 }
 
