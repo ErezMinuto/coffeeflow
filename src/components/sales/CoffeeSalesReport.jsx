@@ -11,10 +11,16 @@ const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+const monthStartISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+};
 
 export default function CoffeeSalesReport() {
   const { showToast } = useApp();
-  const [from, setFrom]       = useState(todayISO());
+  // Month-to-date default: ranges are now served from the daily cache, so a wide
+  // default is fast (it was set to a single day back when multi-day was slow).
+  const [from, setFrom]       = useState(monthStartISO());
   const [to, setTo]           = useState(todayISO());
   const [loading, setLoading] = useState(false);
   const [report, setReport]   = useState(null);
@@ -39,7 +45,8 @@ export default function CoffeeSalesReport() {
     const rows = [['מק"ט', 'שם', 'שקיות', 'מחזור ללא מעמ']];
     for (const p of report.products) rows.push([p.sku, p.name, p.bags, p.revenue]);
     rows.push([]);
-    rows.push(['', 'סה"כ', report.total_bags, report.total_revenue]);
+    rows.push(['', 'סה"כ (ללא מע"מ)', report.total_bags, report.total_revenue]);
+    if (report.total_revenue_incl_vat != null) rows.push(['', 'סה"כ (כולל מע"מ)', '', report.total_revenue_incl_vat]);
     const csv = '﻿' + rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
@@ -73,9 +80,17 @@ export default function CoffeeSalesReport() {
 
       {report && (
         <div style={card}>
+          {report.cache_incomplete && (
+            <p style={{ background: '#FEF3C7', color: '#92400E', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', marginTop: 0 }}>
+              ⚠️ חלק מהימים בטווח עדיין לא חושבו במטמון, כך שהנתונים חלקיים. המספרים יתמלאו אוטומטית תוך זמן קצר — נסו להפיק שוב בעוד רגע.
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>סה"כ שקיות</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>{report.total_bags}</div></div>
             <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>מחזור (ללא מע"מ)</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>₪{report.total_revenue.toLocaleString()}</div></div>
+            {report.total_revenue_incl_vat != null && (
+              <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>מחזור (כולל מע"מ)</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>₪{report.total_revenue_incl_vat.toLocaleString()}</div></div>
+            )}
             <div><div style={{ fontSize: '0.8rem', color: '#6B7280' }}>חשבוניות מכירה</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3D4A2E' }}>{report.sales_doc_count}</div></div>
           </div>
 
