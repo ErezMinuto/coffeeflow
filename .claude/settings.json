@@ -1,11 +1,21 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(deno check *)",
+      "Bash(git fetch *)",
+      "Bash(git grep *)",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_logs"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/erezelbaz/Downloads/CoffeeFlow && git pull origin main 2>&1 || true",
+            "command": "git pull origin main 2>&1 || true",
             "statusMessage": "Syncing with team (git pull)..."
           }
         ]
