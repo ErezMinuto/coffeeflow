@@ -590,5 +590,77 @@ export interface BusinessSnapshot {
   organic_posts:         unknown[] | SnapshotError      // OrganicPostSignal[]
   converting_ads:        unknown[] | SnapshotError      // AdInsightSignal[]
   open_theses:           TheseSnapshotRow[] | SnapshotError
+  resolved_theses:       unknown[] | SnapshotError      // validated/refuted theses + outcomes (Phase 3 learning)
   recent_learnings:      unknown[] | SnapshotError      // LearningRow[]
+}
+
+// ── Strategist Brain — Phase 2: actionable recommendations ───────────────────
+// A brief recommendation the executor can DRAFT (never send/publish). The brain
+// emits these structured inside conclude_brief; conclude_brief promotes each into
+// a strategic_recommendations row the human approves in the dashboard.
+
+export type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
+
+/** Attributable success metric — the Phase-1 weakness fix. Every recommendation
+ *  must say HOW it will be measured (source + baseline + when), preferring a
+ *  revenue/repeat-purchase proxy over a noisy segment-count. */
+export interface SuccessMetric {
+  metric:     string   // what is measured, e.g. "repeat bean orders from big_spender cohort (30d)"
+  source:     string   // where it comes from, e.g. "woo_order_items_enriched filtered to segment"
+  baseline:   string   // value now (string so the brain can express units/qualifiers)
+  check_date: string   // ISO date to evaluate it (Phase 3 grading)
+}
+
+/** Type-specific draft inputs. Loose by design — each executor validates its own. */
+export interface RecActionParams {
+  // email_campaign
+  target_segment?: string          // customer_rfm segment name (e.g. 'big_spender')
+  angle?:          string
+  products?:       string[]         // exact Minuto coffee names
+  subject_he?:     string
+  // content_blog / content_ig
+  keyword?:        string
+  topic?:          string
+  key_points?:     string[]
+  why_now?:        string
+  // content_ig
+  caption_he?:     string
+  hashtags?:       string[]
+  media_type?:     'feed_image' | 'story'
+  scene_brief?:    string            // English photographer's brief for the image
+  render_mode?:    'bag_hero' | 'no_bag'
+  aspect?:         'feed_square' | 'story'
+  product_name?:   string            // exact Minuto product when render_mode='bag_hero'
+  [k: string]:     unknown
+}
+
+/** What the brain emits per recommendation inside conclude_brief. */
+export interface BriefRecommendation {
+  title:          string
+  rationale:      string
+  action_type:    RecActionType
+  action_params?: RecActionParams
+  success_metric: SuccessMetric
+}
+
+export type RecStatus = 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed'
+
+/** A strategic_recommendations row (the execution ledger). */
+export interface RecommendationRow {
+  id:             string
+  brief_id:       string | null
+  run_id:         string | null
+  thesis_id:      string | null
+  title:          string
+  rationale:      string | null
+  action_type:    RecActionType
+  action_params:  RecActionParams
+  success_metric: SuccessMetric | Record<string, never>
+  status:         RecStatus
+  draft_ref:      string | null
+  draft_error:    string | null
+  locked_until:   string | null
+  worker_id:      string | null
+  created_at:     string
+  updated_at:     string
 }

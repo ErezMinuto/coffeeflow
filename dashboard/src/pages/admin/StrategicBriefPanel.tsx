@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Compass, RefreshCw, Lightbulb, AlertTriangle, Wrench, ThumbsUp, X,
-  FlaskConical, ChevronRight,
+  FlaskConical, ChevronRight, GitPullRequest,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -18,6 +18,29 @@ import { supabase } from '../../lib/supabase'
 
 interface DiagnosisItem { claim: string; evidence: string }
 interface Recommendation { title: string; rationale: string; expected_revenue_effect?: string }
+
+type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
+type RecStatus = 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed'
+interface StrategistRec {
+  id:             string
+  title:          string
+  rationale:      string | null
+  action_type:    RecActionType
+  success_metric: { metric?: string; source?: string; baseline?: string; check_date?: string } | null
+  status:         RecStatus
+  draft_ref:      string | null
+  draft_error:    string | null
+}
+
+// Content + email all draft (never send/publish); 'none' is pure advice.
+const REC_DRAFTABLE: RecActionType[] = ['content_blog', 'content_ig', 'email_campaign']
+const REC_STATUS_STYLE: Record<RecStatus, string> = {
+  proposed:  'bg-surface-100 text-surface-700',
+  approved:  'bg-blue-100 text-blue-900',
+  drafted:   'bg-green-100 text-green-900',
+  dismissed: 'bg-surface-200 text-surface-500',
+  failed:    'bg-red-100 text-red-900',
+}
 
 interface StrategicBrief {
   id:              string
@@ -40,8 +63,10 @@ interface StrategistSignal {
   evidence:         Record<string, unknown> | null
   blocked_decision: string | null
   leverage:         string | null
-  status:           'open' | 'approved' | 'building' | 'shipped' | 'declined'
+  status:           'open' | 'approved' | 'building' | 'shipped' | 'declined' | 'needs_human'
   decline_reason:   string | null
+  pr_url:           string | null   // set by the fixer agent when it opens a PR
+  fixer_note:       string | null   // the fixer's reason when it can't auto-fix (needs_human)
   created_at:       string
 }
 
@@ -52,23 +77,43 @@ const KIND_META: Record<SignalKind, { label: string; icon: typeof Wrench; bg: st
 }
 
 const SIGNAL_STATUS_STYLE: Record<StrategistSignal['status'], string> = {
-  open:     'bg-surface-100 text-surface-700',
-  approved: 'bg-green-100 text-green-900',
-  building: 'bg-blue-100 text-blue-900',
-  shipped:  'bg-green-100 text-green-900',
-  declined: 'bg-surface-200 text-surface-500',
+  open:        'bg-surface-100 text-surface-700',
+  approved:    'bg-green-100 text-green-900',
+  building:    'bg-blue-100 text-blue-900',
+  shipped:     'bg-green-100 text-green-900',
+  declined:    'bg-surface-200 text-surface-500',
+  needs_human: 'bg-amber-100 text-amber-900',
+}
+
+type ThesisStatus = 'active' | 'validated' | 'refuted' | 'superseded'
+interface StrategistThesis {
+  id:             string
+  thesis:         string
+  lever:          string
+  success_metric: string
+  check_date:     string | null
+  status:         ThesisStatus
+  outcome:        string | null
+}
+const THESIS_STATUS_STYLE: Record<ThesisStatus, string> = {
+  active:     'bg-blue-100 text-blue-900',
+  validated:  'bg-green-100 text-green-900',
+  refuted:    'bg-red-100 text-red-900',
+  superseded: 'bg-surface-200 text-surface-500',
 }
 
 export default function StrategicBriefPanel() {
   const [brief, setBrief]     = useState<StrategicBrief | null>(null)
   const [signals, setSignals] = useState<StrategistSignal[]>([])
+  const [recs, setRecs]       = useState<StrategistRec[]>([])
+  const [theses, setTheses]   = useState<StrategistThesis[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const cancelledRef = useRef(false)
 
   const load = useCallback(async () => {
-    const [briefRes, signalRes] = await Promise.all([
+    const [briefRes, signalRes, thesisRes] = await Promise.all([
       supabase
         .from('strategic_briefs')
         .select('*')
@@ -80,10 +125,27 @@ export default function StrategicBriefPanel() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50),
+      supabase
+        .from('strategic_theses')
+        .select('id,thesis,lever,success_metric,check_date,status,outcome')
+        .order('updated_at', { ascending: false })
+        .limit(20),
     ])
     if (cancelledRef.current) return
-    setBrief(((briefRes.data ?? [])[0] as StrategicBrief) ?? null)
+    const latestBrief = ((briefRes.data ?? [])[0] as StrategicBrief) ?? null
+    setBrief(latestBrief)
     setSignals((signalRes.data ?? []) as StrategistSignal[])
+    setTheses((thesisRes.data ?? []) as StrategistThesis[])
+    if (latestBrief) {
+      const { data: recData } = await supabase
+        .from('strategic_recommendations')
+        .select('id,title,rationale,action_type,success_metric,status,draft_ref,draft_error')
+        .eq('brief_id', latestBrief.id)
+        .order('created_at', { ascending: true })
+      if (!cancelledRef.current) setRecs((recData ?? []) as StrategistRec[])
+    } else {
+      setRecs([])
+    }
     setLoading(false)
   }, [])
 
@@ -94,6 +156,8 @@ export default function StrategicBriefPanel() {
       .channel('strategist_brain_panel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_briefs' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'strategist_signals' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_recommendations' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'strategic_theses' }, () => load())
       .subscribe()
     const poll = setInterval(() => load(), 30_000)
     return () => {
@@ -129,6 +193,25 @@ export default function StrategicBriefPanel() {
     const reason = window.prompt(`Decline "${s.title}"?\n\nReason (the agent reads this and won't re-ask):`, '')
     if (reason == null) return
     setSignalStatus(s, 'declined', reason)
+  }
+
+  // Approve a recommendation → the executor drafts it (content task / email
+  // draft) — it never sends or publishes. Dismiss → drop it.
+  async function setRecStatus(r: StrategistRec, status: RecStatus) {
+    setBusy(r.id)
+    try {
+      const { error } = await supabase
+        .from('strategic_recommendations')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', r.id)
+      if (error) throw error
+      setRecs(prev => prev.map(x => (x.id === r.id ? { ...x, status } : x)))
+    } catch (e) {
+      console.error('[StrategicBriefPanel] recommendation update failed:', e)
+      window.alert('Update failed. See console.')
+    } finally {
+      setBusy(null)
+    }
   }
 
   const openSignals = signals.filter(s => s.status === 'open')
@@ -192,22 +275,60 @@ export default function StrategicBriefPanel() {
                     </div>
                   )}
 
-                  {brief.recommendations?.length > 0 && (
+                  {recs.length > 0 && (
                     <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">Recommended (for your approval)</h3>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-2">Recommended — approve to draft (never sends)</h3>
                       <ul className="space-y-2">
-                        {brief.recommendations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <ChevronRight size={14} className="text-brand-500 mt-1 shrink-0" />
-                            <div>
-                              <span className="font-medium text-surface-900">{r.title}</span>
-                              <span className="text-surface-700"> — {r.rationale}</span>
-                              {r.expected_revenue_effect && (
-                                <div className="text-[12px] text-surface-500 mt-0.5">Expected: {r.expected_revenue_effect}</div>
+                        {recs.map(r => {
+                          const draftable = REC_DRAFTABLE.includes(r.action_type)
+                          return (
+                            <li key={r.id} className="rounded-lg border border-surface-200 p-3 text-sm">
+                              <div className="flex items-start gap-2">
+                                <ChevronRight size={14} className="text-brand-500 mt-1 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium text-surface-900">{r.title}</span>
+                                  {r.action_type !== 'none' && (
+                                    <span className="ml-1.5 text-[10px] font-medium text-brand-700">[{r.action_type}]</span>
+                                  )}
+                                  {r.rationale && <span className="text-surface-700"> — {r.rationale}</span>}
+                                  {r.success_metric?.metric && (
+                                    <div className="text-[12px] text-surface-500 mt-0.5">Measure: {r.success_metric.metric}{r.success_metric.check_date ? ` (by ${r.success_metric.check_date})` : ''}</div>
+                                  )}
+                                  {r.status === 'drafted' && (
+                                    <div className="text-[12px] text-green-700 mt-1">
+                                      Drafted — {r.draft_ref?.startsWith('campaign:')
+                                        ? 'review in Marketing → Campaigns (draft), then send there'
+                                        : 'review in Workspace → Tasks, then publish there'}
+                                      {r.draft_ref ? ` (${r.draft_ref})` : ''}. Nothing was sent or published.
+                                    </div>
+                                  )}
+                                  {r.status === 'failed' && r.draft_error && (
+                                    <div className="text-[12px] text-red-700 mt-1">Draft failed: {r.draft_error}</div>
+                                  )}
+                                  {r.status === 'approved' && !draftable && (
+                                    <div className="text-[12px] text-surface-500 mt-1">Approved — advice with no draftable artifact.</div>
+                                  )}
+                                </div>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${REC_STATUS_STYLE[r.status]}`}>{r.status}</span>
+                              </div>
+                              {r.status === 'proposed' && (
+                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                  <button
+                                    onClick={() => setRecStatus(r, 'approved')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+                                    title={draftable ? 'Approve — drafts a blog post for your review' : 'Approve — execution arrives in Phase 2b'}
+                                  ><ThumbsUp size={12} /> approve</button>
+                                  <button
+                                    onClick={() => setRecStatus(r, 'dismissed')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
+                                  ><X size={12} /> dismiss</button>
+                                </div>
                               )}
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          )
+                        })}
                       </ul>
                     </div>
                   )}
@@ -233,6 +354,31 @@ export default function StrategicBriefPanel() {
                     brief {brief.id.slice(0, 8)} · {new Date(brief.created_at).toISOString().slice(0, 16).replace('T', ' ')} · {brief.status}
                   </div>
                 </article>
+              )}
+
+              {/* ── Theses — the revenue-graded memory ──────────────────── */}
+              {theses.length > 0 && (
+                <div className="border-t border-surface-200 pt-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-surface-500 mb-3">Theses — bets scored against revenue</h3>
+                  <ul className="space-y-2">
+                    {theses.map(t => (
+                      <li key={t.id} className={`rounded-lg border border-surface-200 p-3 text-sm ${t.status === 'superseded' ? 'opacity-60' : ''}`}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-surface-900">{t.thesis}</div>
+                            <div className="text-[12px] text-surface-500 mt-0.5">
+                              <span className="font-medium">{t.lever}</span> · metric: {t.success_metric}{t.check_date ? ` · check ${t.check_date}` : ''}
+                            </div>
+                            {t.outcome && (
+                              <div className={`text-[12px] mt-1 ${t.status === 'validated' ? 'text-green-700' : t.status === 'refuted' ? 'text-red-700' : 'text-surface-500'}`}>{t.outcome}</div>
+                            )}
+                          </div>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${THESIS_STATUS_STYLE[t.status]}`}>{t.status}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               {/* ── Signals (agent → team) ──────────────────────────────── */}
@@ -269,6 +415,17 @@ export default function StrategicBriefPanel() {
                               )}
                               {s.decline_reason && (
                                 <div className="text-[12px] text-surface-500 mt-1 italic">Declined: {s.decline_reason}</div>
+                              )}
+                              {s.fixer_note && (
+                                <div className="text-[12px] text-amber-700 mt-1"><span className="font-medium">Fixer:</span> {s.fixer_note}</div>
+                              )}
+                              {s.pr_url && (
+                                <a
+                                  href={s.pr_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-900 mt-1"
+                                ><GitPullRequest size={12} /> View PR →</a>
                               )}
                             </div>
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${SIGNAL_STATUS_STYLE[s.status]}`}>{s.status}</span>

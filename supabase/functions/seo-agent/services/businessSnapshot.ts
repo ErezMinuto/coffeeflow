@@ -275,6 +275,23 @@ export async function fetchOpenTheses(
   }))
 }
 
+// Recently RESOLVED theses (validated/refuted) with their outcome — the
+// Reflexion feedback the brain reads to learn what its past bets actually did
+// against revenue, and pivot. This is what makes next cycle smarter than this one.
+export async function fetchResolvedTheses(
+  supabase: SupabaseClient,
+  limit = 10,
+): Promise<Array<{ thesis: string; lever: string; status: string; outcome: string | null; check_date: string | null }>> {
+  const { data, error } = await supabase
+    .from('strategic_theses')
+    .select('thesis, lever, status, outcome, check_date')
+    .in('status', ['validated', 'refuted'])
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`fetchResolvedTheses failed: ${error.message}`)
+  return (data ?? []) as Array<{ thesis: string; lever: string; status: string; outcome: string | null; check_date: string | null }>
+}
+
 // ── Assembler ───────────────────────────────────────────────────────────────
 // Fan out all reads concurrently (they hit independent tables), then assemble a
 // deterministic, deep-sorted object. Each sense is wrapped so one failing fetcher
@@ -310,6 +327,7 @@ export async function assembleBusinessSnapshot(
     convertingAds,
     theses,
     learnings,
+    resolvedTheses,
   ] = await Promise.all([
     safe('sales', fetchSalesSnapshot(supabase, salesWindowDays)),
     safe('customer_segments', fetchCustomerSegmentSummary(supabase)),
@@ -323,6 +341,7 @@ export async function assembleBusinessSnapshot(
     safe('converting_ads', fetchTopConvertingAds(supabase, salesWindowDays, 10)),
     safe('open_theses', fetchOpenTheses(supabase)),
     safe('learnings', getRecentLearnings(supabase, { limit: 15 })),
+    safe('resolved_theses', fetchResolvedTheses(supabase)),
   ])
 
   // Inventory is large + mostly healthy; surface only the actionable subset so
@@ -345,6 +364,7 @@ export async function assembleBusinessSnapshot(
     organic_posts: organicPosts as OrganicPostSignal[] | { error: string },
     converting_ads: convertingAds as AdInsightSignal[] | { error: string },
     open_theses: theses as TheseSnapshotRow[] | { error: string },
+    resolved_theses: resolvedTheses as unknown[] | { error: string },
     recent_learnings: learnings as LearningRow[] | { error: string },
   }
 
