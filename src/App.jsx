@@ -21,7 +21,6 @@ import PendingOrders           from './components/orders/PendingOrders';
 import StockAdmin              from './components/stock/StockAdmin';
 import SupplierIntake          from './components/stock/SupplierIntake';
 import ProductEditor           from './components/stock/ProductEditor';
-import IcountAdmin             from './components/icount/IcountAdmin';
 import CoffeeSalesReport       from './components/sales/CoffeeSalesReport';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
@@ -84,7 +83,6 @@ function AppContent() {
               <Route path="/stock-admin" element={<AdminRoute><StockAdmin /></AdminRoute>} />
               <Route path="/supplier-intake" element={<SupplierIntake />} />
               <Route path="/product-editor" element={<ProductEditor />} />
-              <Route path="/icount-admin" element={<AdminRoute><IcountAdmin /></AdminRoute>} />
               <Route path="/coffee-sales" element={<AdminRoute><CoffeeSalesReport /></AdminRoute>} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />

@@ -1,13 +1,15 @@
 /**
  * CoffeeFlow — Manual Stock Update (Supabase Edge Function)
  *
- * Called from the admin "Stock" page. Operator enters a SKU and a signed delta
- * (+N to add, -N to remove); this routes the change the same way the iCount sync
- * does:
+ * Called from the admin "Stock" pages. Routes each change to its master system:
  *   • SKU is a coffee bag (in product_sku_map) → adjust CoffeeFlow products.packed_stock
  *   • otherwise                                → adjust WooCommerce stock_quantity
  *
- * Every change is written to inventory_adjustments (source='manual') for audit.
+ * Every change is written to inventory_adjustments for audit.
+ *
+ * iCount mirroring was removed 2026-07-12 (Minuto stopped using iCount for stock).
+ * Buying-cost tracking (previously mastered in iCount's cost_amount) was dropped
+ * with it — goods receipt now records quantity + optional sale price to Woo only.
  *
  * Deploy:
  *   supabase functions deploy stock-update --project-ref <ref> --no-verify-jwt
@@ -21,11 +23,6 @@ const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const WOO_URL  = (Deno.env.get("WOO_URL") ?? "").replace(/\/+$/, "");
 const WOO_KEY  = Deno.env.get("WOO_KEY")                   ?? "";
 const WOO_SEC  = Deno.env.get("WOO_SECRET")                ?? "";
-
-const ICOUNT_BASE = "https://api.icount.co.il/api/v3.php";
-const ICOUNT_CID  = Deno.env.get("ICOUNT_CID")  ?? "";
-const ICOUNT_USER = Deno.env.get("ICOUNT_USER") ?? "";
-const ICOUNT_PASS = Deno.env.get("ICOUNT_PASS") ?? "";
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 const wooAuth  = btoa(`${WOO_KEY}:${WOO_SEC}`);
@@ -85,83 +82,7 @@ async function wooSetStock(productId: number, parentId: number, qty: number) {
   return p.stock_quantity === null ? null : Number(p.stock_quantity);
 }
 
-// ── iCount helpers ────────────────────────────────────────────────────────────
-// Same v3 contract icount-admin uses: login → sid, get_items lists stock, and
-// update_item with `stock` SETS an absolute value (not a delta).
-const icountConfigured = () => !!(ICOUNT_CID && ICOUNT_USER && ICOUNT_PASS);
-
-async function icount(path: string, body: Record<string, unknown>): Promise<any> {
-  const res = await fetch(`${ICOUNT_BASE}/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  try { return JSON.parse(text); } catch { return { _raw: text.slice(0, 300), status: false }; }
-}
-
-let icountSid = "";
-async function icountLogin(): Promise<string> {
-  if (icountSid) return icountSid;
-  const r = await icount("auth/login", { cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS });
-  if (!r?.sid) throw new Error(`iCount login failed: ${JSON.stringify(r?.reason ?? r).slice(0, 160)}`);
-  icountSid = r.sid;
-  return icountSid;
-}
-
-const icountSku = (it: any) => String(it.sku ?? it.makat ?? it.barcode ?? "").trim();
-const icountId  = (it: any) => String(it.inventory_item_id ?? it.id ?? "");
-
-async function icountSetStock(sid: string, itemId: string, stock: number): Promise<void> {
-  await icountUpdateItem(sid, itemId, { stock });
-}
-
-// Generic update_item with arbitrary fields (stock, price, etc.).
-async function icountUpdateItem(sid: string, itemId: string, fields: Record<string, unknown>): Promise<void> {
-  const r = await icount("inventory/update_item", {
-    sid, cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS,
-    inventory_item_id: itemId, ...fields,
-  });
-  if (r?.status !== true) throw new Error(`iCount update_item failed: ${JSON.stringify(r?.reason ?? r).slice(0, 160)}`);
-}
-
-// iCount stores both unitprice (ex-VAT) and unitprice_incvat (VAT-inclusive
-// consumer price). WooCommerce prices are the VAT-inclusive consumer price, so
-// we read/write the *incvat* side to keep the two systems aligned. Verified
-// live: update_item with {unitprice_incvat} sets the inclusive price; iCount
-// recomputes the ex-VAT side (ILS / 18%).
-function icountPriceIncVat(it: any): number | null {
-  const v = it.unitprice_incvat ?? it.unitprice ?? it.price ?? null;
-  return v == null || v === "" ? null : Number(v);
-}
-
-// iCount's BUYING (cost) price for an inventory item lives in `cost_amount`
-// (confirmed by the account owner; `unitprice` is the *sale* price shown on a
-// document, not the cost). A value of 0/"0" counts as present (= "0 on record");
-// only null/""/missing reads as "no cost yet".
-const ICOUNT_COST_FIELD = "cost_amount";
-function icountCost(it: any): number | null {
-  const v = it?.[ICOUNT_COST_FIELD];
-  return v === undefined || v === null || v === "" ? null : Number(v);
-}
-
-// Full SKU-keyed map carrying the raw item (so the preview can surface price
-// fields for verification and we can read the current sale + cost price).
-type IcItem = { id: string; stock: number; name: string; price: number | null; cost: number | null; raw: any };
-async function icountItemMapFull(sid: string): Promise<Map<string, IcItem>> {
-  const r = await icount("inventory/get_items", { sid, cid: ICOUNT_CID, user: ICOUNT_USER, pass: ICOUNT_PASS });
-  const raw = Array.isArray(r?.items) ? r.items : (r?.items && typeof r.items === "object" ? Object.values(r.items) : []);
-  const map = new Map<string, IcItem>();
-  for (const it of raw as any[]) {
-    const sku = icountSku(it);
-    if (sku) {
-      map.set(sku, { id: icountId(it), stock: Number(it.stock ?? 0), name: String(it.description ?? ""), price: icountPriceIncVat(it), cost: icountCost(it), raw: it });
-    }
-  }
-  return map;
-}
-
-// ── Product editor: overwrite price and/or stock on BOTH systems ─────────────
+// ── Product editor: overwrite price and/or stock on WooCommerce ──────────────
 // Absolute set (not a delta). Blank field = leave untouched. Coffee bags
 // (in product_sku_map) are price-only here — their stock master is CoffeeFlow
 // packed_stock (packing flow), so stock edits are skipped for them.
@@ -184,124 +105,91 @@ async function handleProductSet(body: any) {
   const { data: skuMap } = await supabase.from("product_sku_map").select("product_id").eq("sku", sku).maybeSingle();
   const isCoffee = !!skuMap;
 
-  // iCount current
-  let sid = "";
-  let ic: { id: string; stock: number; name: string; price: number | null; raw: any } | undefined;
-  let icErr: string | null = null;
-  if (icountConfigured()) {
-    try { sid = await icountLogin(); ic = (await icountItemMapFull(sid)).get(sku); }
-    catch (e) { icErr = (e as Error).message; }
-  }
-
   // Woo current
   let wc: Awaited<ReturnType<typeof wooFindBySku>> = null;
   let wooErr: string | null = null;
   try { wc = await wooFindBySku(sku); } catch (e) { wooErr = (e as Error).message; }
 
   const wooView = wc ? { name: wc.name, id: wc.id, is_variation: wc.parentId > 0, price: wc.regularPrice, stock: wc.stockQuantity, manage_stock: wc.manageStock } : (wooErr ? { status: "error", error: wooErr } : { status: "no_woo_match" });
-  const icView  = ic ? { id: ic.id, name: ic.name, price: ic.price, stock: ic.stock } : (!icountConfigured() ? { status: "not_configured" } : icErr ? { status: "error", error: icErr } : { status: "no_icount_match" });
-  const name = wc?.name || ic?.name || null;
+  const name = wc?.name || null;
 
   const base = {
     ok: true, dry_run: dryRun, sku, name, is_coffee: isCoffee,
     intended: { price: hasPrice ? price : null, stock: hasStock ? stock : null },
-    woo: wooView, icount: icView,
+    woo: wooView,
     stock_skipped_coffee: isCoffee && hasStock,
   };
 
   if (dryRun) return json(base);
 
-  const applied: any = { woo: {}, icount: {} };
-  // ── PRICE (both systems) ──
-  if (hasPrice) {
-    if (wc) { try { applied.woo.price = await wooSetPrice(wc.id, wc.parentId, price as number); } catch (e) { applied.woo.price_error = (e as Error).message; } }
-    if (ic) { try { await icountUpdateItem(sid, ic.id, { unitprice_incvat: price, unitprice_incvat_entered: 1 }); applied.icount.price = price; } catch (e) { applied.icount.price_error = (e as Error).message; } }
+  const applied: any = { woo: {} };
+  // ── PRICE ──
+  if (hasPrice && wc) {
+    try { applied.woo.price = await wooSetPrice(wc.id, wc.parentId, price as number); } catch (e) { applied.woo.price_error = (e as Error).message; }
   }
   // ── STOCK (non-coffee only) ──
   if (hasStock && !isCoffee) {
     if (wc && wc.manageStock && wc.stockQuantity !== null) {
       try { applied.woo.stock = await wooSetStock(wc.id, wc.parentId, stock as number); } catch (e) { applied.woo.stock_error = (e as Error).message; }
     } else if (wc) { applied.woo.stock_skipped = "manage_stock_off"; }
-    if (ic) { try { await icountSetStock(sid, ic.id, stock as number); applied.icount.stock = stock; } catch (e) { applied.icount.stock_error = (e as Error).message; } }
   }
 
   // ── Audit ──
   await supabase.from("inventory_adjustments").insert({
     source: "edit", sku, description: name,
-    qty_delta: hasStock && !isCoffee && ic ? (stock as number) - ic.stock : 0,
+    qty_delta: hasStock && !isCoffee && wc && wc.stockQuantity !== null ? (stock as number) - wc.stockQuantity : 0,
     woo_product_id: wc?.id ?? null,
     woo_before: wc?.stockQuantity ?? null,
     woo_after: hasStock && !isCoffee ? applied.woo.stock ?? null : null,
     applied: true,
-    note: `price/stock edit${hasPrice ? ` · price→${price}` : ""}${hasStock ? (isCoffee ? " · coffee stock skipped" : ` · stock→${stock}`) : ""} · iCount ${ic ? "matched" : "no match"}`.slice(0, 280),
+    note: `price/stock edit${hasPrice ? ` · price→${price}` : ""}${hasStock ? (isCoffee ? " · coffee stock skipped" : ` · stock→${stock}`) : ""}`.slice(0, 280),
   });
 
   return json({ ...base, applied });
 }
 
 // ── Goods receipt (non-coffee only) ──────────────────────────────────────────
-// For each line: WooCommerce is master for stock (read current + add qty) and
-// for the sale price; iCount mirrors both. The BUYING (cost) price lives in
-// iCount (master) and is also logged to inventory_adjustments. Coffee bags
-// (in product_sku_map) are rejected — those stay on the packing/packed_stock flow.
+// For each line: WooCommerce is master for stock (read current + add qty) and for
+// the sale price. Coffee bags (in product_sku_map) are rejected — those stay on
+// the packing/packed_stock flow.
 //
 // Each item may carry, alongside {sku, qty}:
-//   • cost  — new buying price per unit. Compared to the current iCount cost so
-//             the UI can flag it (red = went up, green = went down). Written to
-//             iCount's cost field + logged. Omit/blank/unchanged → left as-is.
-//   • price — new sale price (VAT-inclusive consumer price). Written to Woo +
-//             iCount. Omit/blank/unchanged → left as-is.
-// A dry run writes nothing; it returns each line's current cost + sale price so
-// the page can pre-fill the editable fields and colour the buying price.
+//   • price — new sale price (VAT-inclusive consumer price). Written to Woo.
+//             Omit/blank/unchanged → left as-is.
+// A dry run writes nothing; it returns each line's current sale price so the page
+// can pre-fill the editable field.
 async function handleReceive(body: any) {
   const dryRun = body.dry_run !== false; // default to a safe preview
   const supplier = String(body.supplier ?? "").trim() || null;
   const rawItems: any[] = Array.isArray(body.items) ? body.items : [];
   const num = (v: unknown) => (v === undefined || v === null || String(v).trim() === "" ? null : Number(v));
   const items = rawItems
-    .map((it) => ({ sku: String(it.sku ?? "").trim(), qty: Number(it.qty), cost: num(it.cost), price: num(it.price) }))
+    .map((it) => ({ sku: String(it.sku ?? "").trim(), qty: Number(it.qty), price: num(it.price) }))
     .filter((it) => it.sku);
   if (items.length === 0) return json({ error: "items[] is required (each {sku, qty})" }, 400);
   for (const it of items) {
     if (!Number.isFinite(it.qty) || it.qty <= 0)
       return json({ error: `qty for SKU "${it.sku}" must be a positive number` }, 400);
-    if (it.cost !== null && (!Number.isFinite(it.cost) || it.cost < 0))
-      return json({ error: `cost for SKU "${it.sku}" must be a non-negative number` }, 400);
     if (it.price !== null && (!Number.isFinite(it.price) || it.price < 0))
       return json({ error: `price for SKU "${it.sku}" must be a non-negative number` }, 400);
   }
 
-  const haveIcount = icountConfigured();
-  let sid = "";
-  let imap: Map<string, IcItem> = new Map();
-  if (haveIcount) {
-    try { sid = await icountLogin(); imap = await icountItemMapFull(sid); }
-    catch (e) { console.error("iCount init failed:", (e as Error).message); }
-  }
-
   const results: any[] = [];
-  for (const { sku, qty, cost, price } of items) {
-    const line: any = { sku, qty, woo: null, icount: null, status: "ok" };
+  for (const { sku, qty, price } of items) {
+    const line: any = { sku, qty, woo: null, status: "ok" };
     try {
       // Coffee bag? → reject (packing flow owns these)
       const { data: skuMap } = await supabase
         .from("product_sku_map").select("product_id").eq("sku", sku).maybeSingle();
       if (skuMap) { line.status = "rejected_coffee"; results.push(line); continue; }
 
-      const ic = haveIcount ? imap.get(sku) : undefined;
-      // Current buy price (iCount) + sale price (Woo master, iCount fallback),
-      // surfaced on every line so the page can pre-fill the editable fields and
-      // decide the buying-price colour.
-      const costBefore  = ic?.cost ?? null;
-      const wantCost    = cost  !== null && (costBefore  === null || cost  !== costBefore);
       // ── WooCommerce (master: stock + sale price) ──
       const wc = await wooFindBySku(sku);
-      const saleBefore  = wc?.regularPrice != null ? Number(wc.regularPrice) : (ic?.price ?? null);
-      const wantSale    = price !== null && (saleBefore === null || price !== saleBefore);
+      const saleBefore = wc?.regularPrice != null ? Number(wc.regularPrice) : null;
+      const wantSale   = price !== null && (saleBefore === null || price !== saleBefore);
 
-      line.current = { cost: costBefore, cost_field: ICOUNT_COST_FIELD, sale: saleBefore };
-      if (wantCost)  line.intended_cost  = cost;
-      if (wantSale)  line.intended_price = price;
+      line.current = { sale: saleBefore };
+      if (wantSale) line.intended_price = price;
 
       if (!wc) {
         line.woo = { status: "no_woo_match" };
@@ -325,38 +213,9 @@ async function handleReceive(body: any) {
         catch (e) { line.woo = { ...(line.woo ?? {}), sale_error: (e as Error).message }; }
       }
 
-      // ── iCount (mirror +qty stock; buy price master; mirror sale price) ──
-      if (!haveIcount) {
-        line.icount = { status: "not_configured" };
-      } else if (!ic) {
-        line.icount = { status: "no_icount_match" };
-      } else {
-        if (!line.name && ic.name) line.name = ic.name;
-        const before = ic.stock;
-        const after  = before + qty;
-        if (!dryRun) {
-          await icountSetStock(sid, ic.id, after);
-          line.icount = { status: "updated", before, after, id: ic.id, cost: costBefore };
-          // buy price → iCount cost_amount.
-          if (wantCost) {
-            try { await icountUpdateItem(sid, ic.id, { [ICOUNT_COST_FIELD]: cost }); line.icount.cost = cost; line.icount.cost_field = ICOUNT_COST_FIELD; }
-            catch (e) { line.icount.cost_error = (e as Error).message; }
-          }
-          // sale price → iCount
-          if (wantSale) {
-            try { await icountUpdateItem(sid, ic.id, { unitprice_incvat: price, unitprice_incvat_entered: 1 }); line.icount.sale_after = price; }
-            catch (e) { line.icount.sale_error = (e as Error).message; }
-          }
-        } else {
-          line.icount = { status: "would_update", before, after, id: ic.id, cost: costBefore };
-        }
-      }
-
       // overall line status
       const wooFailed = line.woo && !["updated", "would_update"].includes(line.woo.status);
-      const icFailed  = line.icount && !["updated", "would_update", "not_configured"].includes(line.icount.status);
-      if (wooFailed && icFailed) line.status = "no_match";
-      else if (wooFailed || icFailed) line.status = "partial";
+      if (wooFailed) line.status = "no_match";
 
       // ── Audit (real runs only) ──
       if (!dryRun && line.status !== "rejected_coffee") {
@@ -364,14 +223,9 @@ async function handleReceive(body: any) {
           source: "receive", supplier, sku, description: line.name ?? null, qty_delta: qty,
           woo_product_id: line.woo?.id ?? null,
           woo_before: line.woo?.before ?? null, woo_after: line.woo?.after ?? null,
-          unit_cost: wantCost ? cost : null,
-          unit_cost_before: wantCost ? costBefore : null,
           sale_price: wantSale ? price : null,
-          applied: line.woo?.status === "updated" || line.icount?.status === "updated",
-          note: `supplier intake · iCount ${line.icount?.status ?? "n/a"}` +
-                (line.icount?.before != null ? ` (${line.icount.before}→${line.icount.after})` : "") +
-                (wantCost ? ` · cost ${costBefore ?? "—"}→${cost}` : "") +
-                (wantSale ? ` · price→${price}` : ""),
+          applied: line.woo?.status === "updated",
+          note: `supplier intake${wantSale ? ` · price→${price}` : ""}`,
         });
       }
     } catch (e) {
@@ -382,7 +236,7 @@ async function handleReceive(body: any) {
     results.push(line);
   }
 
-  return json({ ok: true, dry_run: dryRun, supplier, icount_configured: haveIcount, count: results.length, results });
+  return json({ ok: true, dry_run: dryRun, supplier, count: results.length, results });
 }
 
 serve(async (req) => {
@@ -392,7 +246,7 @@ serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
 
-  // Multi-line supplier goods receipt (non-coffee → Woo + iCount).
+  // Multi-line supplier goods receipt (non-coffee → Woo).
   if (body.action === "receive") {
     try { return await handleReceive(body); }
     catch (e) {

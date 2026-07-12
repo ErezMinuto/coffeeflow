@@ -27,7 +27,6 @@ const allNavItems = [
       { path: '/attendance', icon: '⏱️', label: 'Attendance', adminOnly:    true },
       { path: '/purchases',  icon: '🛒', label: 'Purchases',  adminOnly:    true },
       { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי',  adminOnly:    true },
-      { path: '/icount-admin', icon: '🧾', label: 'ניהול iCount', adminOnly:  true },
       { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה', adminOnly: true },
     ],
   },

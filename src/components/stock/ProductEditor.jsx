@@ -4,10 +4,10 @@ import { supabase } from '../../lib/supabase';
 import ProductSearchInput from './ProductSearchInput';
 
 // ── Product price / stock editor (עדכון מחיר ומלאי) ──────────────────────────
-// Search a product, see its current price + stock in WooCommerce and iCount,
-// type new value(s), and overwrite BOTH systems. Prices are VAT-inclusive
-// consumer prices (same as the website). Leaving a field unchanged from the
-// current value is harmless; clearing a field leaves it untouched.
+// Search a product, see its current price + stock in WooCommerce, type new
+// value(s), and overwrite WooCommerce. Prices are VAT-inclusive consumer prices
+// (same as the website). Leaving a field unchanged from the current value is
+// harmless; clearing a field leaves it untouched.
 // Coffee bags are price-only here — their stock master is CoffeeFlow packed_stock
 // (packing flow), so the stock field is disabled for them.
 
@@ -32,8 +32,8 @@ export default function ProductEditor() {
       if (error || data?.error) throw new Error(data?.error || error?.message || 'שגיאה');
       setCurrent(data);
       // pre-fill the editable fields with the current Woo values
-      setPrice(data.woo?.price != null ? String(Number(data.woo.price)) : (data.icount?.price != null ? String(data.icount.price) : ''));
-      setStock(data.is_coffee ? '' : (data.woo?.stock != null ? String(data.woo.stock) : (data.icount?.stock != null ? String(data.icount.stock) : '')));
+      setPrice(data.woo?.price != null ? String(Number(data.woo.price)) : '');
+      setStock(data.is_coffee ? '' : (data.woo?.stock != null ? String(data.woo.stock) : ''));
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
     } finally {
@@ -54,7 +54,7 @@ export default function ProductEditor() {
     if (hasPrice) body.price = Number(price);
     if (hasStock) body.stock = Number(stock);
 
-    if (!window.confirm(`לעדכן את "${current?.name || sku}" בשתי המערכות?` +
+    if (!window.confirm(`לעדכן את "${current?.name || sku}"?` +
       (hasPrice ? `\nמחיר → ₪${body.price}` : '') + (hasStock ? `\nמלאי → ${body.stock}` : ''))) return;
 
     setBusy(true);
@@ -62,8 +62,8 @@ export default function ProductEditor() {
       const { data, error } = await call(body);
       if (error || data?.error) throw new Error(data?.error || error?.message || 'שגיאה');
       const a = data.applied || {};
-      const probs = [a.woo?.price_error, a.woo?.stock_error, a.icount?.price_error, a.icount?.stock_error].filter(Boolean);
-      showToast(probs.length ? `⚠️ עודכן חלקית: ${probs[0]}` : '✅ עודכן בהצלחה בשתי המערכות', probs.length ? 'warning' : 'success');
+      const probs = [a.woo?.price_error, a.woo?.stock_error].filter(Boolean);
+      showToast(probs.length ? `⚠️ עודכן חלקית: ${probs[0]}` : '✅ עודכן בהצלחה', probs.length ? 'warning' : 'success');
       loadProduct(sku); // refresh shown values
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
@@ -89,7 +89,7 @@ export default function ProductEditor() {
       <div style={card}>
         <h2 style={{ margin: '0 0 0.4rem', color: '#3D4A2E' }}>💰 עדכון מחיר ומלאי</h2>
         <p style={{ margin: '0 0 1.25rem', color: '#6B7280', fontSize: '0.9rem', lineHeight: 1.5 }}>
-          חפש מוצר, עדכן מחיר ו/או מלאי, והשינוי ייכתב גם ל-WooCommerce וגם ל-iCount.
+          חפש מוצר, עדכן מחיר ו/או מלאי, והשינוי ייכתב ל-WooCommerce.
           המחיר כולל מע"מ (כמו באתר). שקיות קפה: מחיר בלבד (המלאי מנוהל באריזה).
         </p>
 
@@ -109,7 +109,6 @@ export default function ProductEditor() {
           <>
             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.25rem' }}>
               {sysBox('🛒 WooCommerce', current.woo?.price, current.woo?.stock)}
-              {sysBox('🧾 iCount', current.icount?.price, current.icount?.stock)}
             </div>
             {current.is_coffee && (
               <div style={{ marginTop: '0.6rem', color: '#B45309', fontSize: '0.84rem' }}>
@@ -131,7 +130,7 @@ export default function ProductEditor() {
 
             <button onClick={save} disabled={busy}
               style={{ width: '100%', marginTop: '1.5rem', padding: '0.85rem', fontSize: '1rem', fontWeight: 700, color: 'white', background: busy ? '#9CA3AF' : '#16A34A', border: 'none', borderRadius: '8px', cursor: busy ? 'default' : 'pointer' }}>
-              {busy ? 'מעדכן…' : '✅ עדכן בשתי המערכות'}
+              {busy ? 'מעדכן…' : '✅ עדכן'}
             </button>
           </>
         )}
