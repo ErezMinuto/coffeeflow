@@ -337,8 +337,11 @@ async function handlePublish(req: Request) {
 // schedule only. Two crons: confirm-opening (evening before) and
 // confirm-opening-followup (morning of — re-remind + alert the manager).
 
-// Resolve the opener for a calendar date off the latest PUBLISHED schedule for
-// that week. null → no published schedule, day not worked, or slot left empty.
+// Resolve the opener for a calendar date off the LATEST saved schedule for that
+// week. The manager finalizes by exporting to Google Sheets rather than clicking
+// "publish", so we don't gate on status='published' — the newest schedule row
+// for the week is the operative one. null → no schedule for that week, day not
+// worked, or the opening slot is empty.
 async function resolveOpening(
   dateStr: string,
 ): Promise<{ schedule_id: string; day_code: string; employee_name: string } | null> {
@@ -349,8 +352,7 @@ async function resolveOpening(
     .from("schedules")
     .select("id")
     .eq("week_start", weekStartOf(dateStr))
-    .eq("status", "published")
-    .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (!sched) return null;
