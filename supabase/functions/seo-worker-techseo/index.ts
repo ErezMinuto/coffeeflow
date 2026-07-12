@@ -75,10 +75,20 @@ serve(async (req) => {
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'unsupported subtype' })
   }
 
+  // The canonical brief fields are target_post_id / target_post_url, but the
+  // chat queue_task tool routinely emits the bare post_id / post_url aliases —
+  // every other FAQ tool in that same toolset (set_post_faq, get_post_faq,
+  // approve_post_faq) speaks post_id/post_url, so the agent naturally reuses
+  // them here. Accept both, or the task dies at "unresolved target" before the
+  // resolver (and its #191 HTML fallback) ever runs.
+  const briefAlias   = brief as unknown as Record<string, unknown>
+  const briefPostId  = coercePostId(brief.target_post_id) || coercePostId(briefAlias.post_id)
+  const briefPostUrl = coerceUrl(brief.target_post_url) || coerceUrl(briefAlias.post_url)
+
   // ── 1. Resolve target post id ──────────────────────────────────────
-  let postId = typeof brief.target_post_id === 'number' ? brief.target_post_id : 0
-  if (!postId && brief.target_post_url) {
-    const resolved = await resolvePostId(brief.target_post_url)
+  let postId = briefPostId
+  if (!postId && briefPostUrl) {
+    const resolved = await resolvePostId(briefPostUrl)
     if (resolved) postId = resolved
   }
   if (!postId) {
@@ -87,7 +97,7 @@ serve(async (req) => {
   }
 
   // ── 2. Skip if the article already has an FAQ ──────────────────────
-  const pageUrl = brief.target_post_url || `${WP_URL}/?p=${postId}`
+  const pageUrl = briefPostUrl || `${WP_URL}/?p=${postId}`
   try {
     const pageRes = await fetch(pageUrl, { headers: { 'User-Agent': 'MinutoTechSeoWorker/1.0' } })
     if (pageRes.ok) {
@@ -96,7 +106,7 @@ serve(async (req) => {
         await markTaskCompleted(supabase, task.id, {
           subtype: 'faq_injection',
           target_post_id: postId,
-          target_post_url: brief.target_post_url ?? null,
+          target_post_url: briefPostUrl || null,
           skipped: 'already_has_faq',
           review_required: false,
           faq_written: false,
@@ -175,7 +185,7 @@ serve(async (req) => {
     await markTaskCompleted(supabase, task.id, {
       subtype:          'faq_injection',
       target_post_id:   postId,
-      target_post_url:  brief.target_post_url ?? null,
+      target_post_url:  briefPostUrl || null,
       article_title:    title,
       rationale_signal: brief.rationale_signal ?? null,
       proposed_faq:     proposedFaq,
@@ -200,6 +210,19 @@ serve(async (req) => {
     review_required: true,
   })
 })
+
+// Coerce a brief value to a positive integer post id. Tolerates the number
+// the canonical brief carries and the numeric string an LLM-built brief may
+// emit; anything else → 0 (falsy, so the URL resolver takes over).
+function coercePostId(v: unknown): number {
+  const n = typeof v === 'number' ? v : (typeof v === 'string' && /^\d+$/.test(v.trim()) ? Number(v.trim()) : NaN)
+  return Number.isInteger(n) && n > 0 ? n : 0
+}
+
+// Coerce a brief value to a non-empty trimmed URL string, else ''.
+function coerceUrl(v: unknown): string {
+  return typeof v === 'string' && v.trim() ? v.trim() : ''
+}
 
 // Resolve a post URL → numeric id.
 //
