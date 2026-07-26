@@ -106,6 +106,7 @@ export default function Origins() {
         stock: 0, roasted_stock: 0,
         notes: origin.notes
       });
+      await originsDb.refresh();
       showToast('✅ זן שוכפל בהצלחה!');
     } catch (error) {
       console.error('Error duplicating origin:', error);
@@ -206,7 +207,7 @@ export default function Origins() {
       </div>
 
       <div className="toolbar">
-        <input type="text" placeholder="🔍 חיפוש זן..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" />
+        <input type="text" aria-label="חיפוש זן" placeholder="🔍 חיפוש זן..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" />
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sort-select">
           <option value="name">מיון לפי שם</option>
           <option value="stock">מיון לפי מלאי</option>
@@ -367,9 +368,9 @@ export default function Origins() {
                   <td>{parseFloat(origin.min_stock || 0).toFixed(2)} ק"ג</td>
                   <td>
                     <div className="action-buttons">
-                      <button onClick={() => startEdit(origin)} className="btn-icon">✏️</button>
-                      <button onClick={() => duplicateOrigin(origin)} className="btn-icon">📋</button>
-                      <button onClick={() => deleteOrigin(origin)} className="btn-icon">🗑️</button>
+                      <button onClick={() => startEdit(origin)} className="btn-icon" title="עריכה" aria-label={`עריכת ${origin.name}`}>✏️</button>
+                      <button onClick={() => duplicateOrigin(origin)} className="btn-icon" title="שכפול" aria-label={`שכפול ${origin.name}`}>📋</button>
+                      <button onClick={() => deleteOrigin(origin)} className="btn-icon" title="מחיקה" aria-label={`מחיקת ${origin.name}`}>🗑️</button>
                     </div>
                   </td>
                 </tr>
