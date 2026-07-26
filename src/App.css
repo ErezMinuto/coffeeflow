@@ -371,6 +371,53 @@ button {
   color: var(--minuto-dark);
 }
 
+/* Icon-only buttons (edit / duplicate / delete). Previously unstyled — give them a
+   consistent affordance and a comfortable touch target (~40px) for mobile. */
+.action-buttons {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-icon:hover {
+  background: var(--minuto-cream);
+  border-color: var(--minuto-sage);
+}
+
+.btn-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(85, 107, 58, 0.25);
+}
+
+/* Origins page toolbar: search + sort + export in a single wrapping row. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.toolbar .search-input {
+  flex: 1 1 220px;
+}
+
 /* ── Alerts ─────────────────────────────────────────────────────────────────── */
 .alerts {
   display: flex;
