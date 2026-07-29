@@ -74,16 +74,6 @@ function summarizeDay(events) {
   };
 }
 
-// Israel-local YYYY-MM string for current "last month".
-function defaultExportMonth() {
-  const now = new Date();
-  const israelDate = israelDateOf(now.toISOString());
-  const [y, m] = israelDate.split('-').map(Number);
-  const prevM = m === 1 ? 12 : m - 1;
-  const prevY = m === 1 ? y - 1 : y;
-  return ymKey(prevY, prevM);
-}
-
 // Build the UTC instant for Israel-local midnight of the given Y-M-D.
 function utcForIsraelMidnight(year, month1, day) {
   const ymd = `${year}-${String(month1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -98,6 +88,26 @@ function utcForIsraelMidnight(year, month1, day) {
   utc.setUTCHours(utc.getUTCHours() - offset);
   return utc;
 }
+
+// ── Inline SVG icons (Lucide-style) ───────────────────────────────────────────
+const Icon = ({ d, size = 16, sw = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+);
+const A = {
+  clock:   <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
+  chevR:   <path d="m9 18 6-6-6-6" />,
+  chevL:   <path d="m15 18-6-6 6-6" />,
+  download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>,
+  mail:    <><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
+  gear:    <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
+  x:       <><path d="M18 6 6 18M6 6l12 12" /></>,
+  plus:    <><path d="M5 12h14M12 5v14" /></>,
+  logout:  <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>,
+};
+const initials = (n) => (n || '').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('');
+const AVATAR_COLORS = ['#7C5CD6', '#556B3A', '#C77914', '#3D8B8B', '#B5546E', '#4A72B5'];
+const avatarColor = (id) => AVATAR_COLORS[Math.abs(Number(id) || 0) % AVATAR_COLORS.length];
 
 // ── Edit modal ───────────────────────────────────────────────────────────────
 
@@ -173,92 +183,45 @@ function EditDayModal({ employee, dateStr, events, userId, onClose, onSaved }) {
   const summary = summarizeDay(sorted);
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }} onClick={onClose}>
-      <div style={{
-        background: 'white', borderRadius: 12, padding: '1.5rem',
-        minWidth: 360, maxWidth: 480, direction: 'rtl',
-      }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ margin: 0, marginBottom: 4 }}>{employee.name}</h3>
-        <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>{dateStr}</div>
+    <div className="att-modal open" onClick={onClose}>
+      <div className="att-modal-card" onClick={e => e.stopPropagation()}>
+        <div className="am-h">
+          <div className="att-av" style={{ background: avatarColor(employee.id) }}>{initials(employee.name)}</div>
+          <div><h3>{employee.name}</h3><div className="am-date">{dateStr}</div></div>
+          <button className="att-ico" style={{ marginInlineStart: 'auto' }} onClick={onClose} aria-label="סגור"><Icon d={A.x} /></button>
+        </div>
+        <div className="am-b">
+          {sorted.length === 0 && <div className="am-empty">אין רישומים ליום זה</div>}
+          {sorted.map(ev => (
+            <div key={ev.id} className="am-ev">
+              <span className={`am-type ${ev.event_type}`}>{ev.event_type === 'in' ? 'כניסה' : 'יציאה'}</span>
+              <input
+                type="time"
+                defaultValue={israelTimeOf(ev.event_at)}
+                onBlur={e => { if (e.target.value !== israelTimeOf(ev.event_at)) updateTime(ev, e.target.value); }}
+              />
+              <span className="am-src" title={ev.source === 'manual' ? 'עריכה ידנית' : 'אוטומטי'}>{ev.source === 'manual' ? '✏️' : '🤖'}</span>
+              <button className="am-del" onClick={() => deleteEvent(ev.id)}>מחק</button>
+            </div>
+          ))}
 
-        {sorted.length === 0 && (
-          <div style={{ color: '#999', padding: '1rem 0' }}>אין רישומים ליום זה</div>
-        )}
-
-        {sorted.map(ev => (
-          <div key={ev.id} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '0.5rem 0', borderBottom: '1px solid #eee',
-          }}>
-            <span style={{
-              fontWeight: 600, color: ev.event_type === 'in' ? '#16a34a' : '#dc2626',
-              minWidth: 60,
-            }}>
-              {ev.event_type === 'in' ? 'כניסה' : 'יציאה'}
-            </span>
-            <input
-              type="time"
-              defaultValue={israelTimeOf(ev.event_at)}
-              onBlur={e => {
-                if (e.target.value !== israelTimeOf(ev.event_at)) {
-                  updateTime(ev, e.target.value);
-                }
-              }}
-              style={{ padding: '0.3rem 0.5rem', border: '1px solid #ddd', borderRadius: 4 }}
-            />
-            <span style={{ fontSize: '0.75rem', color: '#888' }}>
-              {ev.source === 'manual' ? '✏️' : '🤖'}
-            </span>
-            <button
-              onClick={() => deleteEvent(ev.id)}
-              style={{ marginRight: 'auto', background: 'none', border: 'none',
-                       cursor: 'pointer', color: '#dc2626' }}
-            >
-              מחק
-            </button>
+          <div className="am-add">
+            <div className="t">הוסף רישום</div>
+            <div className="am-addrow">
+              <select value={newType} onChange={e => setNewType(e.target.value)}>
+                <option value="in">כניסה</option>
+                <option value="out">יציאה</option>
+              </select>
+              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} />
+              <button className="att-btn primary" onClick={addEvent} disabled={busy}>{busy ? '…' : 'הוסף'}</button>
+            </div>
           </div>
-        ))}
 
-        <div style={{ marginTop: '1rem', padding: '0.75rem',
-                      background: '#f9fafb', borderRadius: 8 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>הוסף רישום</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <select value={newType} onChange={e => setNewType(e.target.value)}
-                    style={{ padding: '0.3rem' }}>
-              <option value="in">כניסה</option>
-              <option value="out">יציאה</option>
-            </select>
-            <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-                   style={{ padding: '0.3rem 0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
-            <button onClick={addEvent} disabled={busy}
-                    style={{ padding: '0.4rem 0.9rem', background: '#16a34a',
-                             color: 'white', border: 'none', borderRadius: 6,
-                             cursor: 'pointer', fontWeight: 600 }}>
-              הוסף
-            </button>
+          <div className="am-sum">סה״כ שעות: <b>{summary.hours.toFixed(2)}</b>
+            {summary.warnings.length > 0 && <span className="w">⚠ {summary.warnings.join(', ')}</span>}
           </div>
         </div>
-
-        <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#444' }}>
-          סה״כ שעות: <b>{summary.hours.toFixed(2)}</b>
-          {summary.warnings.length > 0 && (
-            <span style={{ color: '#dc2626', marginRight: 12 }}>
-              ⚠️ {summary.warnings.join(', ')}
-            </span>
-          )}
-        </div>
-
-        <div style={{ marginTop: '1rem', textAlign: 'left' }}>
-          <button onClick={onClose}
-                  style={{ padding: '0.5rem 1rem', background: '#6b7280',
-                           color: 'white', border: 'none', borderRadius: 6,
-                           cursor: 'pointer' }}>
-            סגור
-          </button>
-        </div>
+        <div className="am-f"><button className="att-btn ghost" onClick={onClose}>סגור</button></div>
       </div>
     </div>
   );
@@ -295,39 +258,16 @@ function SettingsCard({ settings, onSave }) {
   };
 
   return (
-    <div style={{
-      background: 'white', padding: '1rem', borderRadius: 10,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '1rem',
-    }}>
-      <h3 style={{ margin: 0, marginBottom: 12 }}>הגדרות</h3>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 240px' }}>
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>אימייל רו״ח</span>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                 placeholder="accountant@example.com"
-                 style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: 6 }} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>תזכורת כניסה (דקות אחרי תחילת משמרת)</span>
-          <input type="number" min="0" value={checkinGrace}
-                 onChange={e => setCheckinGrace(e.target.value)}
-                 style={{ padding: '0.5rem', border: '1px solid #ddd',
-                          borderRadius: 6, width: 80 }} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>תזכורת יציאה (דקות אחרי סיום משמרת)</span>
-          <input type="number" min="0" value={checkoutGrace}
-                 onChange={e => setCheckoutGrace(e.target.value)}
-                 style={{ padding: '0.5rem', border: '1px solid #ddd',
-                          borderRadius: 6, width: 80 }} />
-        </label>
-        <button onClick={save} disabled={busy}
-                style={{ padding: '0.55rem 1.25rem', background: '#3D4A2E',
-                         color: 'white', border: 'none', borderRadius: 6,
-                         cursor: 'pointer', fontWeight: 600 }}>
-          {busy ? 'שומר…' : 'שמור'}
-        </button>
+    <div className="att-setblock">
+      <div className="att-field"><label>אימייל רו״ח</label>
+        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="accountant@example.com" /></div>
+      <div className="att-row2">
+        <div className="att-field"><label>תזכורת כניסה (דק')</label>
+          <input type="number" min="0" value={checkinGrace} onChange={e => setCheckinGrace(e.target.value)} /></div>
+        <div className="att-field"><label>תזכורת יציאה (דק')</label>
+          <input type="number" min="0" value={checkoutGrace} onChange={e => setCheckoutGrace(e.target.value)} /></div>
       </div>
+      <button className="att-btn primary block" onClick={save} disabled={busy}>{busy ? 'שומר…' : 'שמור הגדרות'}</button>
     </div>
   );
 }
@@ -372,46 +312,22 @@ function HolidaysCard({ onChange }) {
   };
 
   return (
-    <div style={{
-      background: 'white', padding: '1rem', borderRadius: 10,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '1rem',
-    }}>
-      <h3 style={{ margin: 0, marginBottom: 4 }}>חגים</h3>
-      <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 12 }}>
-        בתאריכים אלו תחול חוקת יום שישי (סיום ב-15:00).
+    <div className="att-setblock">
+      <div className="att-subhead">🗓 חגים <span>— חוקת שישי (סיום 15:00)</span></div>
+      <div className="att-holiadd">
+        <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} />
+        <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="שם החג (אופציונלי)" />
+        <button className="att-btn forest" onClick={add} disabled={busy || !newDate}>הוסף</button>
       </div>
-
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-        <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
-               style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: 6 }} />
-        <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)}
-               placeholder="שם החג (אופציונלי)"
-               style={{ padding: '0.4rem', border: '1px solid #ddd',
-                        borderRadius: 6, flex: '1 1 200px' }} />
-        <button onClick={add} disabled={busy || !newDate}
-                style={{ padding: '0.45rem 1rem', background: '#3D4A2E',
-                         color: 'white', border: 'none', borderRadius: 6,
-                         cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
-          הוסף
-        </button>
-      </div>
-
       {list.length === 0 ? (
-        <div style={{ color: '#999', fontSize: '0.9rem' }}>אין חגים מוגדרים.</div>
+        <div className="att-holi-empty">אין חגים מוגדרים.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="att-holilist">
           {list.map(h => (
-            <div key={h.holiday_date}
-                 style={{ display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '0.4rem 0.6rem',
-                          background: '#f9fafb', borderRadius: 6 }}>
-              <span style={{ fontWeight: 600, minWidth: 100 }}>{h.holiday_date}</span>
-              <span style={{ color: '#444', flex: 1 }}>{h.label || ''}</span>
-              <button onClick={() => remove(h.holiday_date)}
-                      style={{ background: 'none', border: 'none',
-                               color: '#dc2626', cursor: 'pointer' }}>
-                מחק
-              </button>
+            <div key={h.holiday_date} className="att-holi">
+              <b>{h.holiday_date}</b>
+              <span>{h.label || ''}</span>
+              <button className="hx" onClick={() => remove(h.holiday_date)}>מחק</button>
             </div>
           ))}
         </div>
@@ -459,6 +375,7 @@ export default function Attendance() {
   const [exportBusy, setExportBusy] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
 
   const numDays = daysInMonth(year, month);
   const days = useMemo(
@@ -527,6 +444,22 @@ export default function Attendance() {
     return { hours: h, days: d };
   }, [days, eventsByEmpDay, year, month]);
 
+  // Month-wide KPI summary across all employees.
+  const monthStats = useMemo(() => {
+    let hours = 0, wdays = 0, warnDays = 0;
+    for (const emp of employees) {
+      for (const day of days) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const ev = eventsByEmpDay.get(`${emp.id}|${dateStr}`);
+        if (!ev) continue;
+        const s = summarizeDay(ev);
+        if (s.hours > 0) { hours += s.hours; wdays += 1; }
+        if (s.warnings.length > 0) warnDays += 1;
+      }
+    }
+    return { hours, wdays, warnDays, emps: employees.length };
+  }, [employees, days, eventsByEmpDay, year, month]);
+
   const goPrev = () => {
     if (month === 1) { setYear(y => y - 1); setMonth(12); }
     else setMonth(m => m - 1);
@@ -594,125 +527,111 @@ export default function Attendance() {
   };
 
   return (
-    <div style={{ padding: '1rem 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: '1rem', flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ margin: 0 }}>נוכחות</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={goPrev} style={navBtn}>‹</button>
-          <span style={{ fontSize: '1.05rem', fontWeight: 600, minWidth: 140, textAlign: 'center' }}>
-            {HEBREW_MONTHS[month - 1]} {year}
-          </span>
-          <button onClick={goNext} style={navBtn}>›</button>
+    <div className="page att-page">
+      <div className="att-head">
+        <h1><span className="att-cl"><Icon d={A.clock} size={26} /></span>נוכחות</h1>
+        <div className="att-monthnav">
+          <button onClick={goPrev} aria-label="חודש קודם"><Icon d={A.chevR} /></button>
+          <span className="m">{HEBREW_MONTHS[month - 1]} {year}</span>
+          <button onClick={goNext} aria-label="חודש הבא"><Icon d={A.chevL} /></button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={downloadReport} disabled={downloadBusy}
-                  style={{ padding: '0.55rem 1.25rem', background: '#3D4A2E',
-                           color: 'white', border: 'none', borderRadius: 6,
-                           cursor: downloadBusy ? 'not-allowed' : 'pointer',
-                           fontWeight: 600, opacity: downloadBusy ? 0.6 : 1 }}>
-            {downloadBusy ? 'מוריד…' : '⬇️ הורד דו״ח'}
-          </button>
-          <button onClick={exportToAccountant} disabled={exportBusy}
-                  style={{ padding: '0.55rem 1.25rem', background: '#16a34a',
-                           color: 'white', border: 'none', borderRadius: 6,
-                           cursor: exportBusy ? 'not-allowed' : 'pointer',
-                           fontWeight: 600, opacity: exportBusy ? 0.6 : 1 }}>
-            {exportBusy ? 'שולח…' : '📧 שלח לרו״ח'}
-          </button>
+        <div className="att-actions">
+          <button className="att-btn ghost" onClick={() => setShowSettings(true)}><Icon d={A.gear} /> הגדרות</button>
+          <button className="att-btn forest" onClick={downloadReport} disabled={downloadBusy}><Icon d={A.download} /> {downloadBusy ? 'מוריד…' : 'הורד דו״ח'}</button>
+          <button className="att-btn primary" onClick={exportToAccountant} disabled={exportBusy}><Icon d={A.mail} /> {exportBusy ? 'שולח…' : 'שלח לרו״ח'}</button>
         </div>
       </div>
 
-      <SettingsCard settings={settings} onSave={reload} />
-      <HolidaysCard />
+      {/* KPI */}
+      <div className="att-kpis">
+        <div className="att-kpi"><div className="lbl"><Icon d={A.clock} size={14} /> סה"כ שעות בחודש</div><div className="val">{monthStats.hours.toFixed(0)} <small>ש'</small></div><i className="spark" /></div>
+        <div className="att-kpi"><div className="lbl">ימי עבודה</div><div className="val">{monthStats.wdays}</div><i className="spark" /></div>
+        <div className="att-kpi"><div className="lbl">עובדים פעילים</div><div className="val">{monthStats.emps}</div><i className="spark" /></div>
+        <div className={`att-kpi ${monthStats.warnDays ? 'warn' : ''}`}><div className="lbl">ימים עם התראה</div><div className="val">{monthStats.warnDays}</div><i className="spark" /></div>
+      </div>
 
-      <div style={{ overflowX: 'auto', background: 'white', borderRadius: 10,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-        <table style={{ borderCollapse: 'collapse', minWidth: '100%' }}>
-          <thead>
-            <tr>
-              <th style={{ ...cellTh, position: 'sticky', right: 0, background: '#f3f4f6',
-                            minWidth: 120, zIndex: 2 }}>
-                עובד
-              </th>
-              {days.map(d => {
-                const dow = dayOfWeekFor(year, month, d);
-                const isWeekend = dow === 5 || dow === 6;
+      {/* Grid */}
+      <div className="att-card">
+        <div className="att-legend">
+          <span><i className="present" /> נוכח</span>
+          <span><i className="open" /> משמרת פתוחה</span>
+          <span><i className="warn" /> התראה</span>
+          <span><i className="we" /> סופ״ש / חג</span>
+          <span className="mut">· לחיצה על תא פותחת עריכה</span>
+        </div>
+        <div className="att-gscroll">
+          <table className="att-table">
+            <thead>
+              <tr>
+                <th className="emp">עובד</th>
+                {days.map(d => {
+                  const dw = dayOfWeekFor(year, month, d);
+                  const weekend = dw === 5 || dw === 6;
+                  return <th key={d} className={weekend ? 'we' : ''}><div>{d}</div><div className="dw">{DAY_LABELS[dw]}</div></th>;
+                })}
+                <th className="tot">סה״כ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map(emp => {
+                const total = monthlyTotal(emp.id);
                 return (
-                  <th key={d} style={{
-                    ...cellTh,
-                    background: isWeekend ? '#fef3c7' : '#f3f4f6',
-                    minWidth: 64,
-                  }}>
-                    <div>{d}</div>
-                    <div style={{ fontWeight: 400, fontSize: '0.75rem', color: '#666' }}>
-                      {DAY_LABELS[dow]}
-                    </div>
-                  </th>
+                  <tr key={emp.id}>
+                    <td className="emp">
+                      <div className="emp-inner">
+                        <div className="att-av" style={{ background: avatarColor(emp.id) }}>{initials(emp.name)}</div>
+                        <span className="emp-nm">{emp.name}</span>
+                        <button className="emp-off" title="סיום העסקה" aria-label={`סיום העסקה ${emp.name}`} onClick={() => offBoard(emp)}><Icon d={A.logout} size={15} /></button>
+                      </div>
+                    </td>
+                    {days.map(d => {
+                      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                      const dayEvents = eventsByEmpDay.get(`${emp.id}|${dateStr}`) ?? [];
+                      const s = dayEvents.length ? summarizeDay(dayEvents) : null;
+                      const dw = dayOfWeekFor(year, month, d);
+                      const weekend = dw === 5 || dw === 6;
+                      const state = !s ? '' : s.isOpen ? 'open' : (s.warnings.length ? 'warn' : 'present');
+                      return (
+                        <td key={d} className={`cell ${state} ${weekend && !s ? 'we' : ''}`}
+                          onClick={() => setEditTarget({ employee: emp, dateStr, events: dayEvents })}>
+                          {s && state !== 'present' && <span className="flag" />}
+                          {s ? (<>
+                            <div className="io">{s.firstIn ? israelTimeOf(s.firstIn.toISOString()) : '—'}</div>
+                            <div className="io">{s.lastOut ? israelTimeOf(s.lastOut.toISOString()) : '—'}</div>
+                            <div className="hh">{s.hours > 0 ? s.hours.toFixed(1) : '·'}</div>
+                          </>) : null}
+                        </td>
+                      );
+                    })}
+                    <td className="tot"><div className="th">{total.hours.toFixed(1)}</div><div className="td">{total.days} ימים</div></td>
+                  </tr>
                 );
               })}
-              <th style={{ ...cellTh, background: '#e5e7eb', minWidth: 90 }}>סה״כ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map(emp => {
-              const total = monthlyTotal(emp.id);
-              return (
-                <tr key={emp.id}>
-                  <td style={{ ...cellTd, position: 'sticky', right: 0, background: 'white',
-                                fontWeight: 600 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                      <span>{emp.name}</span>
-                      <button
-                        onClick={() => offBoard(emp)}
-                        title="סיום העסקה"
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: '#9ca3af', fontSize: '0.85rem', padding: '2px 6px',
-                          borderRadius: 4,
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.background = '#fef2f2'; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'none'; }}
-                      >
-                        🚪
-                      </button>
-                    </div>
-                  </td>
-                  {days.map(d => {
-                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    const dayEvents = eventsByEmpDay.get(`${emp.id}|${dateStr}`) ?? [];
-                    const s = dayEvents.length ? summarizeDay(dayEvents) : null;
-                    const hasWarn = s && s.warnings.length > 0;
-                    return (
-                      <td key={d}
-                          onClick={() => setEditTarget({ employee: emp, dateStr, events: dayEvents })}
-                          style={{
-                            ...cellTd, cursor: 'pointer',
-                            background: hasWarn ? '#fef2f2' : (s ? '#f0fdf4' : 'white'),
-                            fontSize: '0.78rem', textAlign: 'center',
-                          }}>
-                        {s ? (
-                          <>
-                            <div>{s.firstIn ? israelTimeOf(s.firstIn.toISOString()) : '—'}</div>
-                            <div>{s.lastOut ? israelTimeOf(s.lastOut.toISOString()) : '—'}</div>
-                            <div style={{ fontWeight: 700 }}>{s.hours.toFixed(1)}</div>
-                          </>
-                        ) : ''}
-                      </td>
-                    );
-                  })}
-                  <td style={{ ...cellTd, background: '#f9fafb', fontWeight: 700, textAlign: 'center' }}>
-                    <div>{total.hours.toFixed(1)}</div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 400, color: '#666' }}>
-                      {total.days} ימים
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              {employees.length === 0 && (
+                <tr><td className="att-empty" colSpan={days.length + 2}>אין עובדים פעילים</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Settings drawer */}
+      {showSettings && (
+        <>
+          <div className="att-ov open" onClick={() => setShowSettings(false)} />
+          <aside className="att-drawer open" role="dialog" aria-modal="true">
+            <div className="att-dh">
+              <div className="att-dh-ico"><Icon d={A.gear} size={20} /></div>
+              <h2>הגדרות נוכחות</h2>
+              <button className="att-ico att-dx" onClick={() => setShowSettings(false)} aria-label="סגור"><Icon d={A.x} /></button>
+            </div>
+            <div className="att-db">
+              <SettingsCard settings={settings} onSave={reload} />
+              <HolidaysCard />
+            </div>
+          </aside>
+        </>
+      )}
 
       {editTarget && (
         <EditDayModal
@@ -728,26 +647,3 @@ export default function Attendance() {
   );
 }
 
-const cellTh = {
-  padding: '0.5rem 0.4rem',
-  borderBottom: '1px solid #e5e7eb',
-  borderInline: '1px solid #f3f4f6',
-  fontSize: '0.85rem',
-  fontWeight: 600,
-};
-
-const cellTd = {
-  padding: '0.4rem',
-  borderBottom: '1px solid #f3f4f6',
-  borderInline: '1px solid #f9fafb',
-  verticalAlign: 'middle',
-};
-
-const navBtn = {
-  padding: '0.3rem 0.7rem',
-  background: '#f3f4f6',
-  border: '1px solid #e5e7eb',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: '1.1rem',
-};
