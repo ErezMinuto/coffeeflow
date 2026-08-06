@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 
 // Creates a PAUSED ad campaign in Meta Ads Manager from a build_meta_campaign
 // spec. The owner reviews + activates manually in Ads Manager.
@@ -31,14 +32,19 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST')    return json({ error: 'POST only' }, 405)
 
+  // Track a created campaign so we can roll it back if a later step in the
+  // chain fails — otherwise a failed ad-set/creative leaves an orphan shell.
+  let createdCampaignId: string | null = null
+  let rollbackCtx: AdsContext | null = null
+
   try {
     const body = await req.json()
-    const action  = body.action as 'dry_run' | 'create'
+    const action  = body.action as 'dry_run' | 'create' | 'list' | 'delete'
     const ideaId  = String(body.idea_id ?? '').trim()
     const spec    = body.spec
     const imageUrl = body.image_url as string | undefined
 
-    if (!action) throw new Error("'action' is required (dry_run|create)")
+    if (!action) throw new Error("'action' is required (dry_run|create|list|delete)")
     if (action === 'create' && !ideaId) throw new Error("'idea_id' is required for create")
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
@@ -50,6 +56,7 @@ serve(async (req) => {
     )
 
     const ctx = await loadAdsContext(supabase)
+    rollbackCtx = ctx
 
     if (action === 'dry_run') {
       return json({
@@ -59,8 +66,30 @@ serve(async (req) => {
         ig_user_id:    ctx.igUserId,
         scopes:        ctx.scopes,
         pixel_id:      ctx.pixelId,
+        token_source:  ctx.tokenSource,
         has_ads_management: ctx.scopes.includes('ads_management'),
       })
+    }
+
+    // ── list ── enumerate campaigns on the ad account (id/name/status). Used
+    // for cleanup and to let the strategist see what already exists.
+    if (action === 'list') {
+      const r = await fetch(`${GRAPH}/${ctx.adAccountId}/campaigns?fields=id,name,status,effective_status,created_time&limit=100&access_token=${ctx.userToken}`)
+      const j = await r.json()
+      if (j.error) throw new Error(`campaigns list: ${j.error.message}`)
+      return json({ ok: true, campaigns: j.data ?? [] })
+    }
+
+    // ── delete ── remove a campaign by id (Meta cascades to its ad sets/ads).
+    // Best-effort clears any matching meta_ad_drafts row too.
+    if (action === 'delete') {
+      const campaignId = String(body.campaign_id ?? '').trim()
+      if (!campaignId) throw new Error("'campaign_id' is required for delete")
+      const r = await fetch(`${GRAPH}/${campaignId}?access_token=${ctx.userToken}`, { method: 'DELETE' })
+      const j = await r.json()
+      if (j.error) throw new Error(`delete ${campaignId}: ${j.error.message}`)
+      await supabase.from('meta_ad_drafts').delete().eq('campaign_id', campaignId)
+      return json({ ok: true, deleted: campaignId })
     }
 
     // Dedupe — return existing draft if we already created one for this idea
@@ -105,6 +134,7 @@ serve(async (req) => {
       bid_strategy:           'LOWEST_COST_WITHOUT_CAP',
     })
     const campaignId = campaign.id
+    createdCampaignId = campaignId
 
     // ── 2. Ad Set ──────────────────────────────────────────────────────────
     const ageMin = parseAgeMin(spec.audience?.age_range) ?? 18
@@ -127,6 +157,10 @@ serve(async (req) => {
       age_min: ageMin,
       age_max: ageMax,
       publisher_platforms:  ['facebook', 'instagram'],
+      // Meta now REQUIRES advantage_audience on ad-set creation (OAuthException
+      // 100 otherwise). 0 = keep the defined audience (no auto-expansion);
+      // 1 = let Meta broaden it. We specify interests, so keep it off.
+      targeting_automation: { advantage_audience: 0 },
     }
     if (resolvedInterests.length > 0) {
       targeting.flexible_spec = [{ interests: resolvedInterests }]
@@ -158,14 +192,7 @@ serve(async (req) => {
 
     // ── 3. Image upload ────────────────────────────────────────────────────
     if (!imageUrl) throw new Error("image_url is required — pass a public URL Meta can fetch")
-    const imgRes = await graphPost(`${GRAPH}/${ctx.adAccountId}/adimages`, ctx.userToken, {
-      url: imageUrl,
-    })
-    // /adimages response shape: { images: { "<filename>": { hash, url, ... } } }
-    const imagesObj = imgRes.images ?? {}
-    const firstKey  = Object.keys(imagesObj)[0]
-    const imageHash = firstKey ? imagesObj[firstKey].hash : null
-    if (!imageHash) throw new Error("image upload did not return a hash — check image_url is public + valid")
+    const imageHash = await uploadAdImage(ctx.adAccountId, ctx.userToken, imageUrl)
 
     // ── 4. Ad Creative ─────────────────────────────────────────────────────
     const utm = buildUtm(spec.tracking, ideaId)
@@ -181,14 +208,32 @@ serve(async (req) => {
     const ctaType = mapCta(spec.creative?.cta_button)
     if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
 
-    const creative = await graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
-      name: truncate(`${spec.campaign_name} — Creative`, 400),
-      object_story_spec: JSON.stringify({
+    // instagram_actor_id was deprecated → v23 wants instagram_user_id. Build
+    // the creative with the IG identity; if Meta still rejects the IG param,
+    // retry once WITHOUT it (the ad then runs on the Page identity and Meta
+    // still delivers to IG placements via the Page-linked account).
+    const creativeName = truncate(`${spec.campaign_name} — Creative`, 400)
+    const makeCreative = (storySpec: Record<string, any>) =>
+      graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+        name: creativeName,
+        object_story_spec: JSON.stringify(storySpec),
+      })
+
+    let creative: any
+    try {
+      creative = await makeCreative({
         page_id:            ctx.pageId,
-        instagram_actor_id: ctx.igUserId,
+        instagram_user_id:  ctx.igUserId,
         link_data:          linkData,
-      }),
-    })
+      })
+    } catch (creErr: any) {
+      if (/instagram/i.test(String(creErr?.message ?? '')) && ctx.igUserId) {
+        warnings.push(`IG identity dropped from creative: ${creErr?.message ?? 'instagram param rejected'}`)
+        creative = await makeCreative({ page_id: ctx.pageId, link_data: linkData })
+      } else {
+        throw creErr
+      }
+    }
     const creativeId = creative.id
 
     // ── 5. Ad ──────────────────────────────────────────────────────────────
@@ -227,6 +272,15 @@ serve(async (req) => {
     })
   } catch (err: any) {
     console.error('[meta-ads-draft]', err?.message, err?.stack)
+    // Roll back a half-built campaign so we never leave an orphan PAUSED shell.
+    if (createdCampaignId && rollbackCtx) {
+      try {
+        await fetch(`${GRAPH}/${createdCampaignId}?access_token=${rollbackCtx.userToken}`, { method: 'DELETE' })
+        console.log('[meta-ads-draft] rolled back campaign', createdCampaignId)
+      } catch (rbErr) {
+        console.error('[meta-ads-draft] rollback failed', rbErr)
+      }
+    }
     return json({ ok: false, error: err?.message ?? 'unknown error' }, 400)
   }
 })
@@ -240,6 +294,7 @@ interface AdsContext {
   igUserId:     string
   pixelId:      string | null
   scopes:       string[]
+  tokenSource:  'system_user' | 'oauth_user'
 }
 
 async function loadAdsContext(supabase: ReturnType<typeof createClient>): Promise<AdsContext> {
@@ -251,9 +306,12 @@ async function loadAdsContext(supabase: ReturnType<typeof createClient>): Promis
   // oauth_tokens only when no system user token is configured.
   const systemUserToken = Deno.env.get('META_SYSTEM_USER_TOKEN')
   let userToken: string
+  let tokenSource: 'system_user' | 'oauth_user'
   if (systemUserToken) {
     userToken = systemUserToken
+    tokenSource = 'system_user'
   } else {
+    tokenSource = 'oauth_user'
     const { data: tokenRow, error } = await supabase
       .from('oauth_tokens').select('access_token').eq('platform', 'meta').single()
     if (error || !tokenRow) throw new Error('Meta not connected — re-auth via Settings')
@@ -290,7 +348,7 @@ async function loadAdsContext(supabase: ReturnType<typeof createClient>): Promis
     } catch { /* non-fatal */ }
   }
 
-  return { userToken, adAccountId, pageId, igUserId, pixelId, scopes }
+  return { userToken, adAccountId, pageId, igUserId, pixelId, scopes, tokenSource }
 }
 
 async function graphPost(url: string, token: string, params: Record<string, string>): Promise<any> {
@@ -302,9 +360,43 @@ async function graphPost(url: string, token: string, params: Record<string, stri
   })
   const j = await r.json()
   if (j.error) {
-    throw new Error(`${j.error.type ?? 'Graph'} ${j.error.code ?? ''}: ${j.error.message} ${j.error.error_user_msg ? `(${j.error.error_user_msg})` : ''}`)
+    const endpoint = url.split('?')[0].replace('https://graph.facebook.com', '')
+    throw new Error(`[POST ${endpoint}] ${j.error.type ?? 'Graph'} ${j.error.code ?? ''}: ${j.error.message} ${j.error.error_user_msg ? `(${j.error.error_user_msg})` : ''}`)
   }
   return j
+}
+
+// Upload the creative image and return its hash. Tries the cheap URL-fetch
+// path first; some app access levels reject that with OAuthException #3, so we
+// fall back to uploading the raw bytes (base64) which is more broadly allowed.
+async function uploadAdImage(adAccountId: string, token: string, imageUrl: string): Promise<string> {
+  // /adimages response shape: { images: { "<filename>": { hash, url, ... } } }
+  const hashOf = (res: any): string | null => {
+    const imagesObj = res?.images ?? {}
+    const firstKey  = Object.keys(imagesObj)[0]
+    return firstKey ? (imagesObj[firstKey].hash ?? null) : null
+  }
+
+  let urlErr: unknown = null
+  try {
+    const res = await graphPost(`${GRAPH}/${adAccountId}/adimages`, token, { url: imageUrl })
+    const hash = hashOf(res)
+    if (hash) return hash
+  } catch (e) {
+    urlErr = e
+  }
+
+  // Bytes fallback — fetch the image ourselves and hand Meta the raw data.
+  const img = await fetch(imageUrl)
+  if (!img.ok) throw new Error(`could not fetch image_url (HTTP ${img.status})`)
+  const bytesB64 = encodeBase64(new Uint8Array(await img.arrayBuffer()))
+  const res2 = await graphPost(`${GRAPH}/${adAccountId}/adimages`, token, { bytes: bytesB64 })
+  const hash2 = hashOf(res2)
+  if (hash2) return hash2
+
+  throw new Error(
+    `image upload returned no hash (url path: ${urlErr instanceof Error ? urlErr.message : 'n/a'})`,
+  )
 }
 
 async function resolveInterest(name: string, token: string): Promise<{ id: string; name: string } | null> {
