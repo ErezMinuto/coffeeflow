@@ -6,6 +6,7 @@ import {
   Megaphone, Search, Layers, AlertTriangle, RefreshCw,
   TrendingUp, ShieldCheck, Wallet, Sparkles,
 } from 'lucide-react'
+import { DraftCampaignDrawer } from '../components/DraftCampaignDrawer'
 
 // ── Types — mirror the `unified_marketing_plan` action's JSON output ──────────
 interface Evidence { organic: string; paid: string; margin: string }
@@ -87,8 +88,11 @@ function EvidenceRow({ label, text }: { label: string; text: string }) {
   )
 }
 
-function ThemeCard({ t }: { t: Theme }) {
+function ThemeCard({ t, onDraft }: { t: Theme; onDraft: (t: Theme) => void }) {
   const ch = CHANNEL[t.channel] ?? CHANNEL.both
+  // Meta-actionable = a paid/both theme with a real budget. Google-only and
+  // "fix infra first" themes come through with budget 0 → recommendation-only.
+  const actionable = (t.channel === 'paid' || t.channel === 'both') && t.suggested_daily_budget_ils > 0
   return (
     <article className="bg-white border border-surface-200 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -110,15 +114,22 @@ function ThemeCard({ t }: { t: Theme }) {
       <p className="text-sm text-surface-800 leading-relaxed mb-4">{t.recommendation}</p>
 
       <div className="flex flex-wrap items-center gap-2">
-        {t.channel !== 'organic' && t.suggested_daily_budget_ils > 0 && (
+        {t.suggested_daily_budget_ils > 0 && (
           <span className="inline-flex items-center gap-1.5 badge bg-brand-50 text-brand-700">
             <Wallet size={12} />
             תקציב מוצע: {formatCurrency(t.suggested_daily_budget_ils)}/יום
           </span>
         )}
-        {t.channel === 'paid' && (
-          <span className="text-xs text-surface-400">Google — המלצה בלבד (לא נבנה אוטומטית)</span>
-        )}
+        {actionable ? (
+          <button
+            onClick={() => onDraft(t)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-medium hover:bg-brand-700 transition-colors cursor-pointer"
+          >
+            <Megaphone size={13} /> בנה טיוטה מושהית
+          </button>
+        ) : t.channel !== 'organic' ? (
+          <span className="text-xs text-surface-400">המלצה בלבד (לא נבנה אוטומטית)</span>
+        ) : null}
       </div>
 
       {t.unknowns?.length > 0 && (
@@ -142,6 +153,7 @@ export default function UnifiedPlanPage() {
   const [plan, setPlan] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [drafting, setDrafting] = useState<Theme | null>(null)
 
   // Cheap spend KPIs on mount; the expensive analysis is gated behind a click.
   useEffect(() => {
@@ -223,7 +235,7 @@ export default function UnifiedPlanPage() {
             </div>
           )}
 
-          {plan.themes?.map((t, i) => <ThemeCard key={i} t={t} />)}
+          {plan.themes?.map((t, i) => <ThemeCard key={i} t={t} onDraft={setDrafting} />)}
 
           {plan.global_unknowns?.length > 0 && (
             <div className="bg-white border border-surface-200 rounded-2xl p-5">
@@ -239,6 +251,8 @@ export default function UnifiedPlanPage() {
           )}
         </div>
       )}
+
+      {drafting && <DraftCampaignDrawer theme={drafting} onClose={() => setDrafting(null)} />}
     </div>
   )
 }
