@@ -186,18 +186,22 @@ serve(async (req) => {
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
     }
     if (destination === 'blog_banner') {
-      if (!parent || parent.status !== 'completed') {
-        // Writer task hasn't finished. Release the row back to 'pending'
-        // WITHOUT counting this as an attempt — the visual itself never
-        // ran, so it would be wrong to burn a retry slot on the writer's
-        // schedule. We undo the attempts++ that claimNextTask did when it
-        // locked the row, clear the lock, and let the next cron tick
-        // re-evaluate. Attempts are reserved for genuine render or attach
-        // failures (see the catch around step 4).
-        await releaseForParentNotReady(
+      const parentStatus = parent?.status ?? 'missing'
+      if (parentStatus === 'pending' || parentStatus === 'processing') {
+        // Writer task hasn't finished YET (still queued or running).
+        // Release the row back to 'pending' WITHOUT counting this as an
+        // attempt — the visual itself never ran, so it would be wrong to
+        // burn a retry slot on the writer's schedule. We undo the
+        // attempts++ that claimNextTask did when it locked the row, clear
+        // the lock, PUSH scheduled_for FORWARD (see
+        // releaseForParentNotReady — without the push this row starves the
+        // whole queue), and let a later cron tick re-evaluate. Attempts are
+        // reserved for genuine render or attach failures (see the catch
+        // around step 4).
+        const backoffMinutes = await releaseForParentNotReady(
           supabase,
           task,
-          `parent text task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
+          `parent text task ${task.parent_task_id} not yet completed (status=${parentStatus})`,
         )
         return jsonResponse({
           processed: 1,
@@ -206,18 +210,28 @@ serve(async (req) => {
           ok:        false,
           retry:     true,
           reason:    'parent_not_ready',
+          retry_in_minutes: backoffMinutes,
         })
       }
-      const result = (parent.result_data ?? {}) as { wp_post_id?: number; edit_url?: string }
-      if (typeof result.wp_post_id === 'number' && Number.isFinite(result.wp_post_id)) {
-        parentWpPostId = result.wp_post_id
-        parentEditUrl  = result.edit_url ?? null
+      if (!parent || parent.status !== 'completed') {
+        // Parent is 'failed' (or gone) — it will NEVER produce a
+        // wp_post_id, so deferring again would defer forever. Render the
+        // image anyway and skip the attach, exactly like the
+        // no-parent_task_id branch below: the image_url lands in
+        // result_data so a human can attach it manually from the admin UI.
+        console.warn(`[seo-worker-visual] ${workerId} parent ${task.parent_task_id} is ${parentStatus} — will render but cannot attach`)
       } else {
-        // Parent completed but didn't expose wp_post_id — render the
-        // image anyway, just skip the attach with a warning. The
-        // image_url ends up in our result_data so a human can attach
-        // manually from the admin UI later.
-        console.warn(`[seo-worker-visual] ${workerId} parent ${task.parent_task_id} completed but result_data has no wp_post_id`)
+        const result = (parent.result_data ?? {}) as { wp_post_id?: number; edit_url?: string }
+        if (typeof result.wp_post_id === 'number' && Number.isFinite(result.wp_post_id)) {
+          parentWpPostId = result.wp_post_id
+          parentEditUrl  = result.edit_url ?? null
+        } else {
+          // Parent completed but didn't expose wp_post_id — render the
+          // image anyway, just skip the attach with a warning. The
+          // image_url ends up in our result_data so a human can attach
+          // manually from the admin UI later.
+          console.warn(`[seo-worker-visual] ${workerId} parent ${task.parent_task_id} completed but result_data has no wp_post_id`)
+        }
       }
     }
   } else if (destination === 'blog_banner') {
@@ -554,28 +568,61 @@ async function safeMarkFailed(
 // (parent text task not ready). claimNextTask already did attempts++ as
 // part of the lock, so we explicitly decrement it back. error_msg gets
 // the diagnostic so the admin UI shows why the row keeps cycling, but
-// status stays 'pending' so the next cron tick re-evaluates.
+// status stays 'pending' so a later cron tick re-evaluates.
+//
+// ⚠️ scheduled_for MUST move forward here — this is the whole reason the
+// queue used to stall. claimNextTask orders eligible rows by scheduled_for
+// ASC and returns the FIRST claimable one, and this worker processes exactly
+// ONE task per invocation. So a row released back to 'pending' with its
+// ORIGINAL scheduled_for is the oldest candidate again on the very next
+// tick: the worker re-claims it, defers it again, and returns — burning
+// every 2-minute tick on the one task that cannot run while every other
+// pending visual task behind it is never even looked at. (That is exactly
+// how three story tasks sat pending with attempts=0 from Aug 3 onward while
+// the worker reported processed:1 / reason:parent_not_ready each tick.)
+// Pushing scheduled_for out sends this row to the BACK of the queue, so the
+// runnable tasks drain first and the deferred one is rechecked on its own
+// cadence. Returns the backoff it applied (minutes) for the HTTP response.
 async function releaseForParentNotReady(
   supabase: ReturnType<typeof createSupabase>,
   task: SeoTaskRow,
   reason: string,
-): Promise<void> {
+): Promise<number> {
   const restoredAttempts = Math.max(0, (task.attempts ?? 1) - 1)
+  const backoffMinutes   = parentWaitBackoffMinutes(task)
+  const nextScheduledFor = new Date(Date.now() + backoffMinutes * 60_000).toISOString()
   try {
     const { error } = await supabase
       .from('seo_tasks')
       .update({
-        status:       'pending',
-        attempts:     restoredAttempts,
-        worker_id:    null,
-        locked_until: null,
-        error_msg:    `[deferred] ${reason}`,
+        status:        'pending',
+        attempts:      restoredAttempts,
+        worker_id:     null,
+        locked_until:  null,
+        scheduled_for: nextScheduledFor,
+        error_msg:     `[deferred ${backoffMinutes}m] ${reason}`,
       })
       .eq('id', task.id)
     if (error) throw error
   } catch (e: any) {
     console.error(`[seo-worker-visual] release-without-attempt failed: ${e?.message ?? e}`)
   }
+  return backoffMinutes
+}
+
+// How far to push scheduled_for on a parent-not-ready deferral. Escalates
+// with how long the task has already been waiting: a writer task normally
+// finishes within a couple of cron ticks, so recheck a fresh task soon, but
+// stop re-polling a long-waiting one every few minutes. We deliberately
+// never give up on a 'pending'/'processing' parent — the orchestrator is
+// allowed to time-shift a parent weeks out (scheduled_for exists for exactly
+// that) — the deferral just gets cheap, and it no longer blocks anyone.
+function parentWaitBackoffMinutes(task: SeoTaskRow): number {
+  const createdMs = Date.parse(task.created_at ?? '')
+  const waitedMs  = Number.isFinite(createdMs) ? Date.now() - createdMs : 0
+  if (waitedMs < 30 * 60_000)      return 5    // first half hour: recheck quickly
+  if (waitedMs < 4 * 60 * 60_000)  return 15
+  return 30
 }
 
 // Trim render-function response to the fields useful for downstream
