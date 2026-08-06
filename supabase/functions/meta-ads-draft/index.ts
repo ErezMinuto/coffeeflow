@@ -39,12 +39,12 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const action  = body.action as 'dry_run' | 'create' | 'list' | 'delete'
+    const action  = body.action as 'dry_run' | 'create' | 'list' | 'delete' | 'spend'
     const ideaId  = String(body.idea_id ?? '').trim()
     const spec    = body.spec
     const imageUrl = body.image_url as string | undefined
 
-    if (!action) throw new Error("'action' is required (dry_run|create|list|delete)")
+    if (!action) throw new Error("'action' is required (dry_run|create|list|delete|spend)")
     if (action === 'create' && !ideaId) throw new Error("'idea_id' is required for create")
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
@@ -92,6 +92,32 @@ serve(async (req) => {
       return json({ ok: true, deleted: campaignId })
     }
 
+    // ── spend ── account-level ad spend from Meta (authoritative). Returns
+    // month-to-date and last month, in the ad account's currency + timezone
+    // (date_preset lets Meta compute the month boundaries, not us). This is
+    // also the "actual spend" signal the monthly budget guard will read.
+    if (action === 'spend') {
+      // Account currency for correct labelling (ad accounts are not always ILS).
+      const accRes  = await fetch(`${GRAPH}/${ctx.adAccountId}?fields=currency,account_id,timezone_name&access_token=${ctx.userToken}`)
+      const accJson = await accRes.json()
+      const [monthToDate, lastMonth, committed] = await Promise.all([
+        accountSpend(ctx, 'this_month'),
+        accountSpend(ctx, 'last_month'),
+        committedThisMonth(supabase),
+      ])
+      const monthlyCap = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS') ?? 3000)
+      return json({
+        ok: true,
+        currency:      accJson.currency ?? 'unknown',
+        timezone:      accJson.timezone_name ?? 'unknown',
+        month_to_date: round2(monthToDate),
+        last_month:    round2(lastMonth),
+        committed_drafts_this_month: round2(committed),
+        monthly_cap:   monthlyCap,
+        remaining_under_cap: round2(monthlyCap - monthToDate - committed),
+      })
+    }
+
     // Dedupe — return existing draft if we already created one for this idea
     const { data: existing } = await supabase
       .from('meta_ad_drafts')
@@ -113,6 +139,29 @@ serve(async (req) => {
 
     if (!ctx.scopes.includes('ads_management')) {
       throw new Error("token missing 'ads_management' scope — re-auth Meta with the updated FLB config")
+    }
+
+    // ── Budget guard ── hard ceilings enforced in code BEFORE any Graph write,
+    // so an over-budget request creates nothing (no rollback needed).
+    //   • daily cap  — a single campaign may not exceed this per day.
+    //   • monthly cap — total exposure = actual month-to-date spend (from Meta)
+    //     + committed drafts this month + this campaign's planned spend.
+    // Deliberately conservative: if either would be breached, refuse the draft.
+    const dailyCap    = Number(Deno.env.get('META_MAX_DAILY_BUDGET_ILS') ?? 100)
+    const monthlyCap  = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS')   ?? 3000)
+    const reqDaily    = Number(spec.daily_budget_ils ?? 60)
+    const reqDuration = Math.max(1, Number(spec.duration_days ?? 14))
+    if (reqDaily > dailyCap) {
+      throw new Error(`daily budget ₪${reqDaily} exceeds per-campaign cap ₪${dailyCap} (META_MAX_DAILY_BUDGET_ILS)`)
+    }
+    const mtdSpend   = await accountSpend(ctx, 'this_month')
+    const committed  = await committedThisMonth(supabase)
+    const newPlanned = reqDaily * reqDuration
+    const projected  = mtdSpend + committed + newPlanned
+    if (projected > monthlyCap) {
+      throw new Error(
+        `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committed)} + this campaign ₪${round2(newPlanned)} = ₪${round2(projected)} > cap ₪${monthlyCap} (META_MONTHLY_BUDGET_ILS)`,
+      )
     }
 
     const warnings: string[] = []
@@ -364,6 +413,37 @@ async function graphPost(url: string, token: string, params: Record<string, stri
     throw new Error(`[POST ${endpoint}] ${j.error.type ?? 'Graph'} ${j.error.code ?? ''}: ${j.error.message} ${j.error.error_user_msg ? `(${j.error.error_user_msg})` : ''}`)
   }
   return j
+}
+
+function round2(n: number): number { return Math.round(n * 100) / 100 }
+
+// Account-level ad spend from Meta for a date_preset (e.g. this_month,
+// last_month). Meta computes the range in the ad account's own timezone.
+async function accountSpend(ctx: AdsContext, preset: string): Promise<number> {
+  const url = `${GRAPH}/${ctx.adAccountId}/insights?fields=spend&level=account&date_preset=${preset}&access_token=${ctx.userToken}`
+  const r = await fetch(url)
+  const j = await r.json()
+  if (j.error) throw new Error(`insights ${preset}: ${j.error.message}`)
+  return Number(j.data?.[0]?.spend ?? 0)
+}
+
+// Planned spend already committed by drafts created this calendar month —
+// sum of daily_budget_ils × duration_days across meta_ad_drafts rows. Deleted
+// drafts are gone from the table, so they drop out automatically.
+async function committedThisMonth(supabase: ReturnType<typeof createClient>): Promise<number> {
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+  const { data } = await supabase
+    .from('meta_ad_drafts')
+    .select('daily_budget_ils, spec, created_at')
+    .gte('created_at', monthStart)
+  let sum = 0
+  for (const row of (data ?? []) as any[]) {
+    const daily    = Number(row.daily_budget_ils ?? 0)
+    const duration = Math.max(1, Number(row?.spec?.duration_days ?? 14))
+    sum += daily * duration
+  }
+  return sum
 }
 
 // Upload the creative image and return its hash. Tries the cheap URL-fetch
