@@ -7,6 +7,10 @@ import {
   TrendingUp, ShieldCheck, Wallet, Sparkles,
 } from 'lucide-react'
 import { DraftCampaignDrawer } from '../components/DraftCampaignDrawer'
+import MetaAdsPage from './MetaAds'
+import GoogleAdsPage from './GoogleAds'
+import MetaOrganicPage from './MetaOrganic'
+import GoogleOrganicPage from './GoogleOrganic'
 
 // ── Types — mirror the `unified_marketing_plan` action's JSON output ──────────
 interface Evidence { organic: string; paid: string; margin: string }
@@ -148,7 +152,7 @@ function ThemeCard({ t, onDraft }: { t: Theme; onDraft: (t: Theme) => void }) {
   )
 }
 
-export default function UnifiedPlanPage() {
+function PlanTab() {
   const [spend, setSpend] = useState<Spend | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(false)
@@ -253,6 +257,45 @@ export default function UnifiedPlanPage() {
       )}
 
       {drafting && <DraftCampaignDrawer theme={drafting} onClose={() => setDrafting(null)} />}
+    </div>
+  )
+}
+
+// ── Marketing cockpit ─────────────────────────────────────────────────────────
+// One page consolidating the Meta + Google marketing views. The unified plan is
+// the default tab; the per-channel analytics tabs embed the existing page
+// components verbatim (no rewrite) so parity is immediate and reversible.
+const COCKPIT_TABS = [
+  { id: 'plan',     label: 'תוכנית' },
+  { id: 'meta',     label: 'Meta Ads' },
+  { id: 'google',   label: 'Google Ads' },
+  { id: 'ig',       label: 'אינסטגרם' },
+  { id: 'gorganic', label: 'Google אורגני' },
+] as const
+type CockpitTab = typeof COCKPIT_TABS[number]['id']
+
+export default function UnifiedPlanPage() {
+  const [tab, setTab] = useState<CockpitTab>('plan')
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-1 border-b border-surface-200 overflow-x-auto">
+        {COCKPIT_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors cursor-pointer ${
+              tab === t.id ? 'border-brand-600 text-brand-700' : 'border-transparent text-surface-400 hover:text-surface-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'plan'     && <PlanTab />}
+      {tab === 'meta'     && <MetaAdsPage />}
+      {tab === 'google'   && <GoogleAdsPage />}
+      {tab === 'ig'       && <MetaOrganicPage />}
+      {tab === 'gorganic' && <GoogleOrganicPage />}
     </div>
   )
 }
