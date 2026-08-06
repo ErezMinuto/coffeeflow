@@ -13,6 +13,7 @@ import { MetaCallback, GoogleCallback } from './pages/OAuthCallback'
 import AIAnalystPage from './pages/AIAnalyst'
 import MarketingPage from './pages/Marketing'
 import AdvisorPage from './pages/Advisor'
+import UnifiedPlanPage from './pages/UnifiedPlan'
 import GoogleOrganicPage from './pages/GoogleOrganic'
 import SeoAgentPage from './pages/admin/SeoAgent'
 import { AppProvider } from './lib/context'
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="/google"          element={<Page name="Google Ads"><GoogleAdsPage /></Page>} />
             <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
             <Route path="/advisor"         element={<Page name="יועץ שיווק"><AdvisorPage /></Page>} />
+            <Route path="/plan"            element={<Page name="תוכנית שיווק"><UnifiedPlanPage /></Page>} />
             <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
             <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
             <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />

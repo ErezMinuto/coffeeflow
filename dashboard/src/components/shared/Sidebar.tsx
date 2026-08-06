@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Instagram, Megaphone, Search, Globe, Bot, Mail, Settings, TrendingUp, Sparkles, X } from 'lucide-react'
+import { LayoutDashboard, Instagram, Megaphone, Search, Globe, Bot, Mail, Settings, TrendingUp, Sparkles, Target, X } from 'lucide-react'
 import { UserButton } from '@clerk/clerk-react'
 
 const NAV = [
@@ -9,6 +9,7 @@ const NAV = [
   { to: '/google',         icon: Search,          label: 'Google Ads' },
   { to: '/google-organic', icon: Globe,           label: 'Google Organic' },
   { to: '/admin/seo-agent', icon: Sparkles,       label: 'סוכן אורגני' },
+  { to: '/plan',           icon: Target,          label: 'תוכנית שיווק' },
   { to: '/advisor',        icon: TrendingUp,      label: 'יועץ שיווק AI' },
   { to: '/analyst',        icon: Bot,             label: 'AI Analyst' },
   { to: '/marketing',      icon: Mail,            label: 'Email Generator' },
