@@ -7500,14 +7500,36 @@ ${capped.map((q, i) =>
       const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) + " …[truncated]" : s);
 
       // Every feed below already exists in this function — nothing is invented.
-      const [metaData, googleOrganic, wooSalesBlock, productsRes, learningsRes, gAdsRes] = await Promise.all([
+      const hist90Start = subtractDays(weekStart, 90);
+      const [metaData, googleOrganic, wooSalesBlock, productsRes, learningsRes, gAdsRes, attribOrdersRes, metaHistRes] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEndU),
         fetchGoogleData(supabase, weekStart, weekEndU),
         fetchWooSales(supabase, weekStart, weekEndU),
         supabase.from("woo_products").select("name, regular_price, total_sales, stock_status").order("total_sales", { ascending: false }).limit(15),
         supabase.from("seo_learnings").select("scope, insight, created_at").order("created_at", { ascending: false }).limit(20),
         supabase.from("google_ads").select("campaign_name, ad_group_name, status, impressions, clicks, conversions").limit(50),
+        supabase.from("woo_orders").select("order_date, total, utm_source, utm_medium, utm_campaign").gte("order_date", hist90Start).limit(2000),
+        supabase.from("meta_ad_campaigns").select("name, date, spend, conversions").gte("date", hist90Start).limit(3000),
       ]);
+
+      // ── Historical attributed performance (last 90d) — meaningful now that
+      // woo_orders carries real UTM sources. "What actually drove revenue."
+      const orders90 = (attribOrdersRes.data ?? []) as any[];
+      const bySource: Record<string, { rev: number; n: number }> = {};
+      const byCampaign: Record<string, { rev: number; n: number }> = {};
+      for (const o of orders90) {
+        const src = o.utm_source || "(direct)";
+        const camp = o.utm_campaign || "(none)";
+        (bySource[src] ??= { rev: 0, n: 0 }); bySource[src].rev += Number(o.total || 0); bySource[src].n++;
+        (byCampaign[camp] ??= { rev: 0, n: 0 }); byCampaign[camp].rev += Number(o.total || 0); byCampaign[camp].n++;
+      }
+      const srcLines = Object.entries(bySource).sort((a, b) => b[1].rev - a[1].rev)
+        .map(([s, v]) => `  • ${s}: ₪${Math.round(v.rev)} (${v.n} orders)`).join("\n");
+      const campLines = Object.entries(byCampaign).sort((a, b) => b[1].rev - a[1].rev).slice(0, 12)
+        .map(([c, v]) => `  • ${c}: ₪${Math.round(v.rev)} (${v.n} orders)`).join("\n");
+      const metaHist = (metaHistRes.data ?? []) as any[];
+      const metaSpend90 = Math.round(metaHist.reduce((s, r) => s + Number(r.spend || 0), 0));
+      const metaConv90 = metaHist.reduce((s, r) => s + Number(r.conversions || 0), 0);
 
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
       const dataSection = [
@@ -7526,6 +7548,15 @@ ${capped.map((q, i) =>
         ``,
         `## PRODUCTS — top by sales (roasted-specialty catalog)`,
         (productsRes.data ?? []).map((p: any) => `  • ${p.name} — ₪${p.regular_price} — ${p.total_sales ?? 0} sales — ${p.stock_status}`).join("\n") || "  (none)",
+        ``,
+        `## HISTORICAL (90d) — revenue by ATTRIBUTED source (woo_orders UTM; reliable as of the attribution fix)`,
+        srcLines || "  (no attributed orders in window)",
+        ``,
+        `## HISTORICAL (90d) — revenue by campaign (utm_campaign)`,
+        campLines || "  (none)",
+        ``,
+        `## HISTORICAL (90d) — Meta spend vs Meta-reported conversions: spend ₪${metaSpend90} | conversions ${metaConv90}`,
+        `  NOTE: Meta-reported conversions are NOT UTM-attributed to the woo_orders revenue above — existing Meta campaigns lack UTM tags, so Meta's sales impact is currently unmeasurable in first-party data. Weigh accordingly; do not treat Meta conversions as confirmed revenue.`,
         ``,
         `## PRIOR LEARNINGS — seo_learnings`,
         (learningsRes.data ?? []).map((l: any) => `  • [${l.scope}] ${l.insight}`).join("\n") || "  (none)",
@@ -7582,7 +7613,7 @@ ${dataSection}`;
           system: [{ type: "text", text: sysPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userMsg }],
         }),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(150_000),
       });
       const jr = await res.json();
       if (jr.error) throw new Error(jr.error.message ?? "Claude error");
