@@ -76,12 +76,22 @@ function extractUtm(meta: WooMeta[]): Record<string, string | null> {
     }
     return null;
   };
+  // Fallback: WooCommerce's native Order Attribution stores the landing URL —
+  // parse UTM out of its query string when dedicated meta keys are absent.
+  const entryUrl = meta.find(m => m.key === '_wc_order_attribution_session_entry_url')?.value;
+  const fromUrl = (param: string): string | null => {
+    if (!entryUrl) return null;
+    try { return new URL(String(entryUrl)).searchParams.get(param); } catch { return null; }
+  };
+  // Native WooCommerce Order Attribution keys (_wc_order_attribution_utm_*) are
+  // checked FIRST — this is what WC 8.5+ populates for tagged/paid clicks, and
+  // is why orders WC classified as source_type='utm' were still reading NULL.
   return {
-    utm_source:   find('utm_source',   '_utm_source',   'ga_utm_source',   'woo_ga_utm_source'),
-    utm_medium:   find('utm_medium',   '_utm_medium',   'ga_utm_medium',   'woo_ga_utm_medium'),
-    utm_campaign: find('utm_campaign', '_utm_campaign', 'ga_utm_campaign', 'woo_ga_utm_campaign'),
-    utm_content:  find('utm_content',  '_utm_content',  'ga_utm_content'),
-    utm_term:     find('utm_term',     '_utm_term',     'ga_utm_term'),
+    utm_source:   find('_wc_order_attribution_utm_source',   'utm_source',   '_utm_source',   'ga_utm_source',   'woo_ga_utm_source')   ?? fromUrl('utm_source'),
+    utm_medium:   find('_wc_order_attribution_utm_medium',   'utm_medium',   '_utm_medium',   'ga_utm_medium',   'woo_ga_utm_medium')   ?? fromUrl('utm_medium'),
+    utm_campaign: find('_wc_order_attribution_utm_campaign', 'utm_campaign', '_utm_campaign', 'ga_utm_campaign', 'woo_ga_utm_campaign') ?? fromUrl('utm_campaign'),
+    utm_content:  find('_wc_order_attribution_utm_content',  'utm_content',  '_utm_content',  'ga_utm_content')  ?? fromUrl('utm_content'),
+    utm_term:     find('_wc_order_attribution_utm_term',     'utm_term',     '_utm_term',     'ga_utm_term')     ?? fromUrl('utm_term'),
   };
 }
 
