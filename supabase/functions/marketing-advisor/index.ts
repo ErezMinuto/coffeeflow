@@ -772,10 +772,23 @@ async function callClaude(
   model: string,
   system: string,
   userMessage: string,
-  { maxTokens = 5000, timeoutMs = 120_000 }: { maxTokens?: number; timeoutMs?: number } = {},
+  { maxTokens = 5000, timeoutMs = 120_000, cachePrefix }: { maxTokens?: number; timeoutMs?: number; cachePrefix?: string } = {},
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  // When a large static prefix is reused across back-to-back calls (e.g. the
+  // two-phase strategist shares baseSystem between phase 1 and phase 2), mark
+  // it ephemeral so the second call reads it from cache instead of re-billing
+  // the full prefix. Only worth it when the same prefix recurs within the 5-min
+  // cache TTL — do NOT use for one-shot calls (they'd pay the write surcharge
+  // with no hit). The prefix block must come first; `system` is the per-call tail.
+  const systemField = cachePrefix
+    ? [
+        { type: "text", text: cachePrefix, cache_control: { type: "ephemeral" } },
+        { type: "text", text: system },
+      ]
+    : system;
 
   let response: Response;
   try {
@@ -790,7 +803,7 @@ async function callClaude(
       body: JSON.stringify({
         model,
         max_tokens: maxTokens,
-        system,
+        system: systemField,
         messages: [{ role: "user", content: userMessage }],
       }),
     });
@@ -813,6 +826,15 @@ async function callClaude(
   // If Claude hit the token limit mid-response the JSON will be truncated
   if (data.stop_reason === "max_tokens") {
     throw new Error("Claude response was truncated (max_tokens reached). Try reducing the focus text or contact support.");
+  }
+
+  // Surface cache activity so we can confirm the prefix is actually being reused.
+  // write = first call paid +25% to populate the cache; read = a later call paid
+  // ~10% to reuse it. Want read >> write over a run.
+  const cacheWrite = data.usage?.cache_creation_input_tokens ?? 0;
+  const cacheRead  = data.usage?.cache_read_input_tokens ?? 0;
+  if (cacheWrite || cacheRead) {
+    console.log(`[cache] model=${model} write=${cacheWrite} read=${cacheRead} input=${data.usage?.input_tokens ?? 0}`);
   }
 
   return {
@@ -1295,45 +1317,6 @@ function detectCreativeViolations(text: string): { hasViolation: boolean; issues
   return { hasViolation: issues.length > 0, issues };
 }
 
-async function rewriteToCompliantCreative(
-  originalAnswer: string,
-  issues: string[],
-  originalQuestion: string,
-): Promise<string> {
-  const sysPrompt = `אתה עורך משפטי-שיווקי. התשובה המקורית כוללת הפרות: ${issues.join(" | ")}.
-
-חובה לשכתב את התשובה כך ש:
-✓ לא יופיע שום שם מתחרה בטקסט, בוויז'ואל, או כהפניה ("לוגו מטושטש של X" עדיין אסור).
-✓ אין "שקית ניטרלית דמוית X" — גם זה trademark/misleading.
-✓ אין טענות על מתחרים אלא אם הן מגובות בהוכחה ציבורית מאומתת. תאריך שקריא על שקית של מישהו אחר = הפקת ראיות = אסור.
-✓ הברייף חייב לעבוד ללא שום התייחסות חזותית או מילולית למתחרה. מינוטו על המסך בלבד.
-✓ שמור על הכוונה האסטרטגית והרעיון היצירתי המרכזי.
-
-שמור על עברית, כותרות, מבנה ה-timeline של הברייף המקורי — רק הוצא את ההפרות. החזר את הגרסה המתוקנת בלבד, בלי להסביר את השינויים.`;
-
-  const userMsg = `שאלה מקורית של הבעלים:\n${originalQuestion}\n\nהתשובה עם ההפרות:\n${originalAnswer}\n\nשכתב לגרסה חוקית.`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 3000,
-        system: sysPrompt,
-        messages: [{ role: "user", content: userMsg }],
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    const json = await res.json();
-    if (json.error) throw new Error(json.error.message ?? "rewrite error");
-    const rewritten = json.content?.[0]?.text ?? "";
-    return rewritten || originalAnswer;
-  } catch (e: any) {
-    console.error("[compliance] rewrite failed, returning original with warning:", e?.message);
-    return `⚠️ זוהו הפרות בברייף המקורי: ${issues.join(", ")}. נסה לשאול שוב ללא התייחסות למתחרים.\n\n---\n\n${originalAnswer}`;
-  }
-}
 
 // ── Meta Ad Library ────────────────────────────────────────────────────────
 // Shows every ad currently running on Meta (Facebook + Instagram) worldwide,
@@ -2616,24 +2599,6 @@ async function getScoreHistory(supabase: ReturnType<typeof createClient>, agentT
   return lines.join("\n");
 }
 
-// Fetch what the user already DID, SKIPPED, or SNOOZED across the last few
-// weeks. The agents see this so they don't re-recommend things the user
-// already handled (e.g. don't suggest "write a blog post on macchiato"
-// if the user already marked that done).
-// Raw rows — used by post-processing filters that need to check action_id
-// text against proposed recommendations. Keeps getCompletedActions() as a
-// string builder for prompt injection, unchanged.
-async function fetchCompletedActionRows(
-  supabase: ReturnType<typeof createClient>,
-): Promise<Array<{ week_start: string; action_id: string; action_label: string | null; state: string }>> {
-  const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 86400000).toISOString().split("T")[0];
-  const { data } = await supabase
-    .from("advisor_completed_actions")
-    .select("week_start, action_id, action_label, state")
-    .gte("week_start", eightWeeksAgo)
-    .in("state", ["done", "skipped"]);
-  return (data ?? []) as any[];
-}
 
 async function getCompletedActions(supabase: ReturnType<typeof createClient>): Promise<string> {
   // Look back 8 weeks of action history
@@ -3073,231 +3038,6 @@ ${topProducts || "  אין נתונים"}`;
 
 // ── Google Ads Agent — GROWTH ─────────────────────────────────────────────────
 
-async function runGrowthAgent(
-  supabase: ReturnType<typeof createClient>,
-  weekStart: string,
-  focus?: string,
-) {
-  const weekEnd = addDays(weekStart, 6);
-  console.log(`[growth] Fetching data ${weekStart} → ${weekEnd}`);
-
-  const thirtyDaysAgo = subtractDays(weekStart, 30);
-  // Growth agent gets: campaign metrics (for context), GSC opportunities,
-  // Keyword Planner, WooCommerce trends, and product inventory — but NOT
-  // ad creatives (that's Efficiency's job). This ensures Growth focuses on
-  // "what new campaigns should we create" instead of "how to fix existing ads".
-  const [{ currentAgg, prevAgg }, wooSales, gscRes, pastReports, kwIdeas, productsRes] = await Promise.all([
-    fetchGoogleData(supabase, weekStart, weekEnd),
-    fetchWooSales(supabase, weekStart, weekEnd),
-    supabase
-      .from("google_search_console")
-      .select("keyword,clicks,impressions,position")
-      .neq("keyword", "__page__")
-      .gte("date", thirtyDaysAgo)
-      .order("impressions", { ascending: false })
-      .limit(30),
-    fetchPastReports(supabase, "google_ads_growth", weekStart),
-    fetchKeywordIdeas(supabase),
-    supabase.from("woo_products").select("name,price,packed_stock").order("name"),
-  ]);
-  const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
-    = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
-
-  // Aggregate GSC keywords
-  const gscKwMap = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
-  for (const r of (gscRes.data ?? [])) {
-    const e = gscKwMap.get(r.keyword);
-    if (e) { e.clicks += r.clicks; e.impressions += r.impressions; e.positions.push(r.position); }
-    else gscKwMap.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
-  }
-  const gscKeywords = Array.from(gscKwMap.entries())
-    .map(([kw, v]) => ({ keyword: kw, clicks: v.clicks, impressions: v.impressions,
-      position: Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10 }))
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 20);
-  const gscBlock = gscKeywords.length > 0
-    ? gscKeywords.map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`).join("\n")
-    : "  אין נתוני GSC עדיין";
-
-  // Focus override — injected at the TOP of the system prompt so it takes
-  // precedence over data-driven recommendations. If the user says "don't
-  // promote grinders", the agent must respect that even if GSC shows an
-  // opportunity for "מטחנת קפה".
-  const focusOverride = focus
-    ? `=== הוראות מנהל — עדיפות עליונה ===
-${focus}
-התעלם מכל נתון שסותר הוראות אלה. אם GSC מראה הזדמנות שמנהל ביקש לא לקדם — דלג עליה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
-    : '';
-
-  // Product inventory for Growth to know what's sellable
-  const productsBlock = (productsRes.data ?? [])
-    .filter((p: any) => p.packed_stock > 0)
-    .map((p: any) => `  ${p.name} | ₪${p.price} | מלאי: ${p.packed_stock}`)
-    .join("\n") || "  אין נתוני מוצרים";
-
-  const systemPrompt = `${focusOverride}אתה אסטרטג שיווק דיגיטלי בכיר המתמחה בגילוי הזדמנויות צמיחה חדשות בשוק הקפה הישראלי. אתה מייעץ ל-Minuto Coffee.
-${BUSINESS_BRIEF}
-${COMPETITIVE_INTELLIGENCE}
-${ADS_EXPERTISE}
-${CUSTOMER_JOURNEY}
-${BUYING_MOTIVATIONS}
-${HEBREW_COPY_RULES}
-
-=== התפקיד שלך: מציאת הזדמנויות חדשות בלבד ===
-אתה אחראי אך ורק על מציאת הזדמנויות חדשות. אתה לא נוגע בקמפיינים קיימים.
-❌ אסור לך: להמליץ על שינויי תקציב לקמפיינים פעילים, לשכתב מודעות קיימות, להשהות/לעצור קמפיינים.
-✅ התפקיד שלך: לגלות מילות מפתח חדשות, להמליץ על קמפיינים חדשים ליצירה, לזהות הזדמנויות עונתיות, לנתח מה הישראלים מחפשים.
-
-אל תמליץ על "cold brew" ואל תמציא ביטויים. כל המלצה חייבת להתבסס על נתוני GSC/Keyword Planner שניתנו לך.
-
-=== מודיעין שוק ישראלי ===
-כללי כתיבה:
-- עברית שיווקית מדוברת. "קפה טרי" ולא "משקה חם מרענן".
-- מילות מפתח בעברית: "פולי קפה", "קפה טרי", "קפה ספשלטי", "קפה חד זני", "קפה אתיופי", "שקית קפה", "קפה לבית"
-- ביטויי חיפוש ישראליים: "איפה קונים פולי קפה", "קפה טרי משלוח", "פולי קפה אונליין", "קפה ספשלטי ישראל"
-- מתחרים: עלית (mass market), לנדוור/ארומה (chains), נספרסו/דולצ'ה גוסטו (קפסולות). Minuto מתחרה על "ספשלטי" — לא על "קפה" הכללי.
-- חגים: ראש השנה (ספט — מתנות), סוכות (אוקט), חנוכה (דצמ — מתנות), פורים (מרץ — משלוחי מנות), פסח (אפריל), שבועות (יוני — חלבי + לילות לבנים)
-- תרבות רכישה: תשלומים (3-6), סף משלוח חינם, תמיכה בWhatsApp
-
-=== כתיבת קופי לGoogle Ads — כללים וסגנון ===
-
-גבולות טכניים (ספור לפני שאתה שולח — כל אות, רווח ופיסוק):
-• כותרות: עד 30 תווים. בדרך כלל 3-4 מילים.
-• תיאורים: עד 90 תווים.
-
-זוויות אפקטיביות לקפה ספשלטי (ראה 10 הדוגמאות ב-ADS_EXPERTISE למעלה):
-• איכות/ציון: "קפה ספשלטי בציון 85+" — ספציפי ואמין
-• טריות: "נקלה ונשלח אליכם היום" — עובדה שמנצחת נספרסו
-• בריסטה ביתי: "שדרגו את הקפה הביתי שלכם" — שאיפה, לא מוצר
-• פרופיל טעמים: "תווים של שוקולד ופירות הדר" — חושני וספציפי
-• משלוח/תועלת: "קפה ספשלטי עם משלוח חינם" — הסרת חסמים
-• שאלה/סקרנות: "מה זה קפה ספשלטי באמת?" — פותח סקרנות
-• Single Origin: "היישר מחוות קטנות באתיופיה" — סיפור ומקוריות
-• חוויה: "הקפה שישנה לכם את הבוקר" — רגשי, לא מחירי
-• מקצועי: "מומחים לקפה ספשלטי" — סמכות
-• קצר: "פשוט קפה מעולה" — לפעמים פחות זה יותר
-
-כלל CTA: "הזמינו עכשיו", "קנו עכשיו", "גלו עכשיו", "הצטרפו" — לגיטימי ומומלץ בתיאורים.
-
-מה אסור:
-✗ "קלינו ביום X, מגיעים ביום Y" בכותרת — תמיד 36+ תווים. NEVER.
-✗ שניים+ מקורות בכותרת אחת: "Ethiopia, Kenya AA, Brazil" = 46 תווים. NEVER.
-✗ "טריות אמיתית" / "איכות אמיתית" — "אמיתית" אחרי שם עצם = קלישאה. NEVER.
-✗ "ועם", "אשר", "הינו" — עברית פורמלית/מתורגמת. NEVER.
-✗ "קלויים טרי" — שגיאת הסכמה → "קלויים טריים". NEVER.
-✗ כותרת שאפשר לתלות על כל מוצר בעולם — חייבת לאמר משהו ספציפי לקפה/Minuto.
-שמות מקור: באנגלית בלבד. מקור אחד בכותרת.
-
-⚠️ חוק קריטי — שמות מתחרים בטקסט מודעות (TRADEMARK POLICY):
-✗ אסור להשתמש בשמות מתחרים בכותרות או תיאורים: Lavazza, Illy, Nespresso, נחת, Jera, אגרו, Mauro, Bristot, Hausbrandt, Kimbo. NEVER.
-✗ Google Ads ידחה מודעות שמכילות סימנים מסחריים רשומים בטקסט. המתחרים מגישים תלונות trademark.
-✓ מותר לטרגט מילות מפתח של מתחרים (bidding on competitor keywords) — המשתמש מחפש "Lavazza", רואה את המודעה שלנו.
-✓ במקום לנקוב בשם — תקוף את הקטגוריה: "לא מהמדף", "לא מהסופר", "לא קפה ישן", "תאריך קלייה על כל שקית".
-דוגמאות נכונות:
-  ✓ "פולי קפה טריים, לא מהמדף" — תוקף Lavazza בלי לנקוב בשם
-  ✓ "למה לקנות פולים מהסופר?" — מעלה ספק בלי trademark
-  ✓ "נקלה היום, אצלכם מחר" — הבטחה שאף מותג מדף לא יכול לתת
-  ✓ "פולים עם תאריך קלייה" — עובדה שמפילה כל מותג סופר
-
-=== ידע שוק — חיפושי קפה בישראל (נתוני שוק כלליים, לא רק Minuto) ===
-נפח חיפוש גבוה בישראל (אלפי חיפושים/חודש):
-  "קפה" | "מכונת קפה" | "פולי קפה" | "קפסולות קפה" | "קפה טחון"
-נפח בינוני (מאות חיפושים/חודש — פוטנציאל אמיתי לספשלטי):
-  "פולי קפה איכותיים" | "קפה ספשלטי" | "קפה טרי" | "בית קלייה קפה" | "קפה מקור יחיד"
-  "Ethiopia coffee" | "Kenya coffee" | "Brazil coffee beans"
-נפח נמוך — לא משתלם לפרסום ממומן:
-  "cold brew" | "cold brew coffee" | "קפה קר" | "nitro coffee" | "chemex" | "v60"
-  הערה: ישראלים לא מחפשים "cold brew" בגוגל — זה ביטוי שמכירים ממסעדות/קפה, לא מחיפוש.
-
-חוק קריטי לגבי מילות מפתח: העדף מילות מפתח מהרשימה עם נפח בינוני/גבוה למעלה + מה שמופיע ב-GSC של Minuto למטה. אם ביטוי לא מופיע בשתי הרשימות — אל תמליץ עליו לפרסום ממומן.
-חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
-חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
-
-דוגמאות לסגנון עברית נכון לשדות הטקסט:
-✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
-✓ "ה-ROAS של MM|SRC ירד ב-40% למרות CTR גבוה — בעיה ב-landing page, לא במודעה."
-✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
-✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
-✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
-✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
-
-  const seasonalContext = getSeasonalContext(weekStart);
-
-  const userMessage = `${seasonalContext}
-
-נתוני Google Ads שבוע ${weekStart}–${weekEnd} (לידיעה כללית — אתה לא נוגע בקמפיינים האלה):
-
-=== קמפיינים פעילים ===
-${campaignBlock}
-
-=== סיכום ===
-עלות כוללת: ₪${Math.round(totalCost * 100) / 100} | קליקים: ${totalClicks} | חשיפות: ${totalImpressions} | המרות: ${Math.round(totalConversions * 10) / 10} | ROAS: ${Math.round(overallRoas * 100) / 100}x
-
-=== מכירות WooCommerce השבוע ===
-${wooSales}
-
-=== מוצרים עם מלאי (ניתן לקדם) ===
-${productsBlock}
-
-=== Google Search Console — הביטויים שבהם Minuto כבר מופיעה (30 יום) ===
-חפש הזדמנויות: ביטויים עם חשיפות גבוהות אך מיקום 5+ = אפשר לחזק עם קמפיין ממומן.
-${gscBlock}
-
-=== Keyword Planner — ביטויי חיפוש בשוק הישראלי ===
-${kwIdeas}
-
-=== היסטוריית המלצות קודמות ===
-${pastReports}
-השווה: מה המלצת בעבר → מה קרה בפועל. אם קמפיין חדש שהמלצת כבר קיים (בקמפיינים הפעילים למעלה) — אל תמליץ עליו שוב.
-
-המלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC + Keyword Planner. אל תמציא ביטויים.
-
-הגבלות פלט: growth_opportunities עד 3, campaigns_to_create עד 2, market_insights עד 2, key_insights עד 2.
-
-לכל קמפיין חדש (campaigns_to_create):
-- צור landing_page_url מלא עם UTM: https://www.minuto.co.il/product/SLUG?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
-  אם אין מוצר ספציפי: https://www.minuto.co.il?utm_source=google&utm_medium=cpc&utm_campaign=CAMPAIGN_NAME
-- הוסף negative_keywords: מילים שליליות שימנעו תנועה לא רלוונטית ("חינם", "מתכון", "נמס", "קפסולות")
-- הוסף creation_steps: הוראות צעד-אחר-צעד ליצירת הקמפיין בGoogle Ads (איפה ללחוץ, מה לבחור)
-
-החזר JSON בפורמט הזה בדיוק:
-{
-  "agent_philosophy": "משפט אחד",
-  "summary": "2 משפטים בלבד",
-  "google": {
-    "total_cost": ${Math.round(totalCost * 100) / 100},
-    "total_clicks": ${totalClicks},
-    "total_impressions": ${totalImpressions},
-    "total_conversions": ${Math.round(totalConversions * 10) / 10},
-    "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "שם הקמפיין",
-    "worst_campaign": "שם הקמפיין"
-  },
-  "growth_opportunities": [
-    { "opportunity": "הזדמנות", "action": "מה לעשות", "expected_impact": "תוצאה צפויה" }
-  ],
-  "market_insights": [
-    { "insight": "תובנה שוקית", "relevance": "למה זה רלוונטי ל-Minuto", "action": "מה לעשות" }
-  ],
-  "campaigns_to_create": [
-    {
-      "campaign_name": "שם",
-      "campaign_type": "Search|Performance Max|Shopping",
-      "target_audience": "קהל יעד",
-      "keywords": ["מילה 1", "מילה 2"],
-      "negative_keywords": ["מילה שלילית 1", "מילה שלילית 2"],
-      "headlines": ["כותרת 1 (עד 30 תווים)", "כותרת 2", "כותרת 3"],
-      "descriptions": ["תיאור 1 (עד 90 תווים)"],
-      "daily_budget_ils": 50,
-      "rationale": "הסבר קצר",
-      "landing_page_url": "https://www.minuto.co.il/product/xxx?utm_source=google&utm_medium=cpc&utm_campaign=campaign_name",
-      "creation_steps": ["צעד 1", "צעד 2"]
-    }
-  ],
-  "key_insights": ["תובנה 1", "תובנה 2"],
-  "next_week_focus": "משפט אחד — המהלך העיקרי"
-}`;
 
   // Focus is already injected at the TOP of the system prompt as an override,
   // so we don't append it again to the user message.
@@ -3313,206 +3053,6 @@ ${pastReports}
 
 // ── Google Ads Agent — EFFICIENCY ─────────────────────────────────────────────
 
-async function runEfficiencyAgent(
-  supabase: ReturnType<typeof createClient>,
-  weekStart: string,
-  focus?: string,
-) {
-  const weekEnd = addDays(weekStart, 6);
-  console.log(`[efficiency] Fetching data ${weekStart} → ${weekEnd}`);
-
-  const thirtyDaysAgoEff = subtractDays(weekStart, 30);
-  const [{ currentAgg, prevAgg }, wooSales, adCreatives, gscResEff, pastReportsEff, kwIdeasEff] = await Promise.all([
-    fetchGoogleData(supabase, weekStart, weekEnd),
-    fetchWooSales(supabase, weekStart, weekEnd),
-    fetchAdCreatives(supabase),
-    supabase
-      .from("google_search_console")
-      .select("keyword,clicks,impressions,position")
-      .neq("keyword", "__page__")
-      .gte("date", thirtyDaysAgoEff)
-      .order("impressions", { ascending: false })
-      .limit(30),
-    fetchPastReports(supabase, "google_ads_efficiency", weekStart),
-    fetchKeywordIdeas(supabase),
-  ]);
-  const { totalCost, totalClicks, totalImpressions, totalConversions, overallRoas, campaignBlock, prevBlock }
-    = buildGoogleDataBlock(currentAgg, prevAgg, weekStart, weekEnd);
-
-  const gscKwMapEff = new Map<string, { clicks: number; impressions: number; positions: number[] }>();
-  for (const r of (gscResEff.data ?? [])) {
-    const e = gscKwMapEff.get(r.keyword);
-    if (e) { e.clicks += r.clicks; e.impressions += r.impressions; e.positions.push(r.position); }
-    else gscKwMapEff.set(r.keyword, { clicks: r.clicks, impressions: r.impressions, positions: [r.position] });
-  }
-  const gscBlockEff = Array.from(gscKwMapEff.entries())
-    .map(([kw, v]) => ({ keyword: kw, clicks: v.clicks, impressions: v.impressions,
-      position: Math.round((v.positions.reduce((a, b) => a + b, 0) / v.positions.length) * 10) / 10 }))
-    .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
-    .map(k => `  "${k.keyword}" | חשיפות: ${k.impressions} | קליקים: ${k.clicks} | מיקום: ${k.position}`)
-    .join("\n") || "  אין נתוני GSC עדיין";
-
-  const focusOverride = focus
-    ? `=== הוראות מנהל — עדיפות עליונה ===
-${focus}
-התעלם מכל נתון שסותר הוראות אלה. אם המנהל ביקש להתמקד בנושא מסוים — כל ההמלצות שלך חייבות להיות על הנושא הזה.\n\n`
-    : '';
-
-  const systemPrompt = `${focusOverride}אתה יועץ Google Ads בכיר המתמחה באופטימיזציה של קמפיינים קיימים. אתה מייעץ ל-Minuto Coffee.
-${BUSINESS_BRIEF}
-${COMPETITIVE_INTELLIGENCE}
-${ADS_EXPERTISE}
-${CUSTOMER_JOURNEY}
-${BUYING_MOTIVATIONS}
-${HEBREW_COPY_RULES}
-
-=== התפקיד שלך: שיפור קמפיינים קיימים בלבד ===
-אתה אחראי אך ורק על אופטימיזציה של מה שכבר רץ.
-❌ אסור לך: להמליץ על קמפיינים חדשים, להציע מילות מפתח שלא קיימות בקמפיינים הנוכחיים, להמליץ על הגדלת תקציב כללית.
-✅ התפקיד שלך: לזהות בזבוז, לשפר קופי מודעות, לתקן מילות מפתח שליליות, להמליץ על שינויי תקציב בין קמפיינים קיימים, לשכתב מודעות חלשות.
-
-הפילוסופיה שלך: יעילות ורווחיות. כל שקל חייב לייצר החזר מדיד. אתה מזהה בזבוז לפני שמישהו אחר רואה אותו — CTR נמוך, Quality Score גרוע, קמפיין שמקבל קליקים ולא המרות.
-בנוסף לניתוח, תכתוב מודעות משופרות אמיתיות — כותרות ותיאורים מבוססי נתוני GSC וביצועי הקמפיין.
-
-=== כתיבת קופי לGoogle Ads — כללים וסגנון ===
-
-גבולות טכניים (ספור לפני שאתה שולח — כל אות, רווח ופיסוק):
-• כותרות: עד 30 תווים. בדרך כלל 3-4 מילים.
-• תיאורים: עד 90 תווים.
-
-זוויות אפקטיביות לקפה ספשלטי (ראה 10 הדוגמאות ב-ADS_EXPERTISE למעלה):
-• איכות/ציון: "קפה ספשלטי בציון 85+" — ספציפי ואמין
-• טריות: "נקלה ונשלח אליכם היום" — עובדה שמנצחת נספרסו
-• בריסטה ביתי: "שדרגו את הקפה הביתי שלכם" — שאיפה, לא מוצר
-• פרופיל טעמים: "תווים של שוקולד ופירות הדר" — חושני וספציפי
-• משלוח/תועלת: "קפה ספשלטי עם משלוח חינם" — הסרת חסמים
-• שאלה/סקרנות: "מה זה קפה ספשלטי באמת?" — פותח סקרנות
-• Single Origin: "היישר מחוות קטנות באתיופיה" — סיפור ומקוריות
-• חוויה: "הקפה שישנה לכם את הבוקר" — רגשי, לא מחירי
-• מקצועי: "מומחים לקפה ספשלטי" — סמכות
-• קצר: "פשוט קפה מעולה" — לפעמים פחות זה יותר
-
-כלל CTA: "הזמינו עכשיו", "קנו עכשיו", "גלו עכשיו", "הצטרפו" — לגיטימי ומומלץ בתיאורים.
-
-מה אסור:
-✗ "קלינו ביום X, מגיעים ביום Y" בכותרת — תמיד 36+ תווים. NEVER.
-✗ שניים+ מקורות בכותרת אחת: "Ethiopia, Kenya AA, Brazil" = 46 תווים. NEVER.
-✗ "טריות אמיתית" / "איכות אמיתית" — "אמיתית" אחרי שם עצם = קלישאה. NEVER.
-✗ "ועם", "אשר", "הינו" — עברית פורמלית/מתורגמת. NEVER.
-✗ "קלויים טרי" — שגיאת הסכמה → "קלויים טריים". NEVER.
-✗ כותרת שאפשר לתלות על כל מוצר בעולם — חייבת לאמר משהו ספציפי לקפה/Minuto.
-שמות מקור: באנגלית בלבד. מקור אחד בכותרת.
-
-⚠️ חוק קריטי — שמות מתחרים בטקסט מודעות (TRADEMARK POLICY):
-✗ אסור להשתמש בשמות מתחרים בכותרות או תיאורים: Lavazza, Illy, Nespresso, נחת, Jera, אגרו, Mauro, Bristot, Hausbrandt, Kimbo. NEVER.
-✗ Google Ads ידחה מודעות שמכילות סימנים מסחריים רשומים בטקסט. המתחרים מגישים תלונות trademark.
-✓ מותר לטרגט מילות מפתח של מתחרים (bidding on competitor keywords) — המשתמש מחפש "Lavazza", רואה את המודעה שלנו.
-✓ במקום לנקוב בשם — תקוף את הקטגוריה: "לא מהמדף", "לא מהסופר", "לא קפה ישן", "תאריך קלייה על כל שקית".
-דוגמאות נכונות:
-  ✓ "פולי קפה טריים, לא מהמדף" — תוקף Lavazza בלי לנקוב בשם
-  ✓ "למה לקנות פולים מהסופר?" — מעלה ספק בלי trademark
-  ✓ "נקלה היום, אצלכם מחר" — הבטחה שאף מותג מדף לא יכול לתת
-  ✓ "פולים עם תאריך קלייה" — עובדה שמפילה כל מותג סופר
-
-חשוב: הנתונים כוללים רק הזמנות B2C — B2B (mflow) סוננו. אל תציין B2B.
-חשוב: המילה הנכונה היא "ספשלטי" — לא "ספשיאלטי".
-ענה אך ורק ב-JSON תקין — ללא טקסט לפניו או אחריו.
-
-דוגמאות לסגנון עברית נכון לשדות הטקסט:
-✓ "ה-CTR של Coffee_beans_oam נפל — הקופי גנרי ולא מדבר לאף אחד. עוצרים."
-✓ "ה-ROAS של MM|SRC ירד ב-40% למרות CTR גבוה — בעיה ב-landing page, לא במודעה."
-✓ "קמפיין טריות עם הכותרת 'נקלה ונשלח היום' יכול להכפיל את ה-CTR הנוכחי."
-✗ "הקמפיין הינו בעל ביצועים שאינם מספקים" — עברית מתה. NEVER.
-✗ "מומלץ לבחון אפשרות של שיפור" — ריק ולא אומר כלום. NEVER.
-✗ "יש לציין כי" / "יש לקחת בחשבון" / "כמו כן" — לא כותבים ככה. NEVER.`;
-
-  const seasonalContext = getSeasonalContext(weekStart);
-
-  const userMessage = `${seasonalContext}
-
-נתוני Google Ads שבוע ${weekStart}–${weekEnd}:
-
-=== קמפיינים השבוע ===
-${campaignBlock}
-
-=== סיכום ===
-עלות כוללת: ₪${Math.round(totalCost * 100) / 100} | קליקים: ${totalClicks} | חשיפות: ${totalImpressions} | המרות: ${Math.round(totalConversions * 10) / 10} | ROAS: ${Math.round(overallRoas * 100) / 100}x
-
-=== 3 שבועות קודמים (מגמה) ===
-${prevBlock}
-
-=== מכירות WooCommerce השבוע ===
-${wooSales}
-
-=== קריאייטיב מודעות נוכחי (RSA) ===
-${adCreatives}
-
-=== Google Search Console — נתוני Minuto בפועל (30 יום אחרונים) ===
-${gscBlockEff}
-
-=== מילות מפתח — ביצועי קמפיינים Minuto בפועל (30 יום) ===
-ביצועים אמיתיים לפי מילת מפתח. בדוק: אילו ביטויים מביאים קליקים יקרים עם המרות נמוכות? אילו ביטויים יש להם CPC גבוה בלי תוצאות? אלה מועמדים להסרה. ביטויים עם impression share נמוך = שווה להגדיל תקציב.
-${kwIdeasEff}
-
-השתמש בהקשר העונתי — חגים ואירועים — בניתוח תזמון הקמפיינים והמלצות התקציב.
-נתח את הכותרות והתיאורים הקיימים שורה-שורה: עבור כל כותרת/תיאור חלש — ציין את הטקסט המקורי בדיוק (original), הסבר מה לא בסדר (problem), והצע החלפה ספציפית (replacement). ה-ads_to_rewrite חייב להשתמש בטקסט האמיתי מהקריאייטיב שמוצג למעלה — לא להמציא כותרות שלא קיימות.
-בהמלצות מילות מפתח — השתמש אך ורק בביטויים מ-GSC + Keyword Planner. אל תמציא ביטויים.
-
-=== היסטוריית המלצות קודמות — למד מהן ===
-${pastReportsEff}
-השווה: מה המלצת בעבר → מה קרה בפועל. המלצות שעבדו — חזק. שלא עבדו — נתח למה.
-
-הגבלות פלט קפדניות: budget_recommendations עד 3, waste_identified עד 2, key_insights עד 2.
-חובה: ads_to_rewrite חייב תמיד להכיל לפחות פריט אחד — בחר את הקמפיין עם הקריאייטיב החלש ביותר (Ad Strength נמוך, CTR נמוך, או כותרות גנריות). אם כל הקמפיינים נראים טובים — בחר אחד ושפר את הכותרות לפי הכללים. אל תחזיר ads_to_rewrite ריק.
-
-מילות מפתח שליליות (negative_keywords_to_add): נתח את הביטויים שהביאו תנועה יקרה ללא המרות ואת נתוני GSC. המלץ על מילים שליליות שחייבים להוסיף כדי לחסום תנועה לא רלוונטית. לכל פריט waste — הוסף negative_keywords עם מילים ספציפיות לחסימה. בנוסף, הוסף negative_keywords_to_add עם המלצות ברמת החשבון/קמפיין.
-
-החזר JSON בפורמט הזה בדיוק:
-{
-  "agent_philosophy": "משפט אחד",
-  "summary": "2 משפטים בלבד",
-  "google": {
-    "total_cost": ${Math.round(totalCost * 100) / 100},
-    "total_clicks": ${totalClicks},
-    "total_impressions": ${totalImpressions},
-    "total_conversions": ${Math.round(totalConversions * 10) / 10},
-    "roas": ${Math.round(overallRoas * 100) / 100},
-    "top_campaign": "שם הקמפיין",
-    "worst_campaign": "שם הקמפיין"
-  },
-  "budget_recommendations": [
-    { "platform": "google", "campaign": "שם", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": -20 }
-  ],
-  "waste_identified": [
-    { "campaign": "שם", "issue": "תיאור הבעיה", "estimated_waste": "₪X בשבוע", "fix": "פתרון קצר", "negative_keywords": ["מילה שלילית רלוונטית"] }
-  ],
-  "negative_keywords_to_add": [
-    { "campaign": "שם הקמפיין או account-level", "keywords": ["חינם", "נמס", "קפסולות"], "reason": "הסבר למה לחסום מילים אלו" }
-  ],
-  "ads_to_rewrite": [
-    {
-      "campaign": "שם הקמפיין",
-      "ad_strength": "POOR|AVERAGE|GOOD",
-      "headline_fixes": [
-        {
-          "original": "הכותרת הקיימת בדיוק כמו שהיא",
-          "problem": "למה זו כותרת חלשה — ספציפי",
-          "replacement": "הכותרת החדשה המוצעת"
-        }
-      ],
-      "description_fixes": [
-        {
-          "original": "התיאור הקיים בדיוק כמו שהוא",
-          "problem": "למה זה תיאור חלש",
-          "replacement": "התיאור החדש המוצע"
-        }
-      ],
-      "expected_improvement": "מה ישתפר"
-    }
-  ],
-  "key_insights": ["תובנה 1", "תובנה 2"],
-  "next_week_focus": "משפט אחד — המהלך העיקרי"
-}`;
 
   // Focus is already injected at the TOP of the system prompt as an override.
   const finalMessage = userMessage;
@@ -3824,14 +3364,18 @@ async function runStrategistSplit(
 ): Promise<{ report: any; tokensUsed: number }> {
   // Phase 1 — Strategy
   console.log(`[${label}] Phase 1/2: strategy...`);
-  const sysStrategy = `${baseSystem}\n\n=== פאזה 1: אסטרטגיה ===\nבפאזה זו אתה מחזיר רק את שדות האסטרטגיה. אל תיצור weekly_action_plan / campaigns_to_create / ads_to_rewrite / meta_campaign_ideas — אלה יגיעו בפאזה 2.\n${strategySchema}\nענה אך ורק ב-JSON תקין.`;
-  const s = await callClaude(MODEL_STRATEGIST, sysStrategy, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  // baseSystem (brief + expertise, ~15k tokens) is byte-identical across both
+  // phases, which run back-to-back well within the 5-min cache TTL. Pass it as
+  // cachePrefix so phase 2 reads it from cache instead of re-billing it; only
+  // the phase-specific tail below differs per call.
+  const sysStrategy = `\n\n=== פאזה 1: אסטרטגיה ===\nבפאזה זו אתה מחזיר רק את שדות האסטרטגיה. אל תיצור weekly_action_plan / campaigns_to_create / ads_to_rewrite / meta_campaign_ideas — אלה יגיעו בפאזה 2.\n${strategySchema}\nענה אך ורק ב-JSON תקין.`;
+  const s = await callClaude(MODEL_STRATEGIST, sysStrategy, userMessage, { maxTokens: 6000, timeoutMs: 130_000, cachePrefix: baseSystem });
   const strategy = parseClaudeJson(s.text);
 
   // Phase 2 — Execution, given the strategy
   console.log(`[${label}] Phase 2/2: execution...`);
-  const sysExecution = `${baseSystem}\n\n=== פאזה 2: ביצוע ===\nבפאזה 1 פיתחת את האסטרטגיה הבאה:\n\`\`\`json\n${JSON.stringify(strategy, null, 2).slice(0, 4000)}\n\`\`\`\nעכשיו בנה את שכבת הביצוע — weekly_action_plan, campaigns_to_create, meta_campaign_ideas, budget_recommendations, ads_to_rewrite, wednesday_check. הביצוע חייב להיגזר ישירות מהאסטרטגיה (wild_ideas + capital_allocation) — לא מהלכים גנריים.\n${executionSchema}\nענה אך ורק ב-JSON תקין.`;
-  const e = await callClaude(MODEL_STRATEGIST, sysExecution, userMessage, { maxTokens: 6000, timeoutMs: 130_000 });
+  const sysExecution = `\n\n=== פאזה 2: ביצוע ===\nבפאזה 1 פיתחת את האסטרטגיה הבאה:\n\`\`\`json\n${JSON.stringify(strategy, null, 2).slice(0, 4000)}\n\`\`\`\nעכשיו בנה את שכבת הביצוע — weekly_action_plan, campaigns_to_create, meta_campaign_ideas, budget_recommendations, ads_to_rewrite, wednesday_check. הביצוע חייב להיגזר ישירות מהאסטרטגיה (wild_ideas + capital_allocation) — לא מהלכים גנריים.\n${executionSchema}\nענה אך ורק ב-JSON תקין.`;
+  const e = await callClaude(MODEL_STRATEGIST, sysExecution, userMessage, { maxTokens: 6000, timeoutMs: 130_000, cachePrefix: baseSystem });
   const execution = parseClaudeJson(e.text);
 
   console.log(`[${label}] Both phases done. Tokens: ${s.inputTokens + s.outputTokens + e.inputTokens + e.outputTokens}`);
@@ -3857,111 +3401,6 @@ async function runStrategistSplit(
   };
 }
 
-// Unified JSON schema instruction for both strategists
-// TACTICAL agent schema — hyper-specific, ready to execute THIS WEEK
-function getTacticalJsonSchema(d: any) {
-  return `
-החזר JSON בפורמט הזה בדיוק. כל שדה חייב להיות מלא ומפורט:
-{
-  "agent_philosophy": "משפט אחד — חובה להזכיר שהקהל הוא חובבי ספשלטי",
-  "summary": "2-3 משפטים — מה לעשות השבוע, כולל הרעיון הפרוע שבחרת",
-  "confidence_level": "low|medium|high",
-  "wild_ideas": {
-    "audiences_untapped":      ["קהל 1 שמינוטו לא מטרגטת", "קהל 2"],
-    "messaging_angles_unused": ["זווית 1 שאף קלייה לא משתמשת", "זווית 2"],
-    "formats_or_channels":     ["ערוץ/פורמט 1 שאף מתחרה לא נוכח", "ערוץ/פורמט 2"],
-    "product_or_bundle":       ["רעיון חבילה 1", "רעיון חבילה 2"],
-    "cross_industry_analogy":  "הסבר: כמו שמותג X בתעשיה Y עשה, נעשה בקפה. חובה — בלי זה הרעיון נדחה.",
-    "picked_for_this_week":    ["שני-שלושה רעיונות מהרשימה למעלה — הכי נועזים + ניתנים לביצוע"]
-  },
-  "google": {
-    "total_cost": ${Math.round(d.totalCost * 100) / 100},
-    "total_clicks": ${d.totalClicks},
-    "total_impressions": ${d.totalImpressions},
-    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
-    "roas": ${Math.round(d.overallRoas * 100) / 100},
-    "top_campaign": "שם",
-    "worst_campaign": "שם"
-  },
-  "devils_advocate": {
-    "strongest_counterargument": "למה התכנית שלך עלולה להיכשל — חייב להיות משכנע",
-    "what_would_change_my_mind": "איזה אות/נתון אם הייתי רואה הייתי נוטש את התכנית ועובר לX"
-  },
-  "weekly_action_plan": [
-    {
-      "day": "ראשון|שני|שלישי|רביעי|חמישי",
-      "action": "מה בדיוק לעשות",
-      "expected_result": "מה צפוי לקרות",
-      "how_to_measure": "איך נדע שעבד"
-    }
-  ],
-  "campaigns_to_create": [
-    {
-      "campaign_name": "שם",
-      "campaign_type": "Search",
-      "launch_day": "ראשון|שני|שלישי",
-      "daily_budget_ils": 60,
-      "bid_strategy": "Maximize Conversions|Manual CPC|Target ROAS",
-      "target_audience": "תיאור מדויק של הקהל",
-      "keywords": [
-        { "keyword": "פולי קפה", "match_type": "phrase", "expected_cpc": 2.5 },
-        { "keyword": "קפה טרי", "match_type": "broad", "expected_cpc": 1.8 }
-      ],
-      "negative_keywords": ["מטחנ", "מכונ", "cold brew", "קפסול", "נמס", "חינם", "מתכון"],
-      "headlines": ["10 כותרות — כל אחת עד 30 תווים"],
-      "descriptions": ["3 תיאורים — כל אחד עד 90 תווים"],
-      "landing_page_url": "https://www.minuto.co.il/...",
-      "rationale": "למה דווקא הקמפיין הזה, למה עכשיו, למה התקציב הזה",
-      "expected_results_7_days": "כמה קליקים, המרות, ועלות צפויים ב-7 ימים"
-    }
-  ],
-  "channel_allocation": {
-    "summary": "המלצה ברורה על איך לחלק תקציב בין Google ו-Meta השבוע — חובה לענות!",
-    "google_change_pct": 0,
-    "meta_change_pct": 0,
-    "reasoning": "למה — CPA/ROAS/נפח לפי הנתונים שראית למעלה"
-  },
-  "meta_campaign_ideas": [
-    {
-      "idea_id": "unique_slug_like_retargeting_cart_reel",
-      "campaign_name": "שם קצר ברור",
-      "one_line_pitch": "משפט אחד — מה הקמפיין עושה ולמי מיועד",
-      "audience_lens": "specialty_enthusiast|commercial_buyer|retargeting_warm|custom",
-      "expected_cpa_range_ils": "₪8-15",
-      "daily_budget_ils": 80
-    }
-  ],
-  "budget_recommendations": [
-    { "channel": "google|meta", "campaign": "שם קמפיין קיים", "action": "increase|decrease|pause|keep", "reason": "הסבר קצר", "suggested_budget_change_pct": 30 }
-  ],
-  "ads_to_rewrite": [
-    {
-      "channel": "google|meta",
-      "campaign": "שם",
-      "headline_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }],
-      "description_fixes": [{ "original": "קיים", "problem": "למה חלש", "replacement": "חדש" }]
-    }
-  ],
-  "capital_allocation": {
-    "top_priority_action": "אם הבעלים יכול לעשות רק דבר אחד השבוע — מה? (לא 'השתמש ב-Meta יותר' — פעולה ספציפית)",
-    "top_priority_evidence": "למה דווקא זו הפעולה הנכונה — נתון אחד מהמחקר/קמפיינים שמוכיח את זה",
-    "funding_source": "מאיפה הכסף לזה? חובה לומר 'לקצץ X ב-₪Y' — לא סתם 'להוסיף ₪Z'. אם התקציב גמיש תגיד את זה במפורש.",
-    "expected_weekly_revenue_ils": { "low": 0, "likely": 0, "high": 0 },
-    "payback_period_weeks": 4,
-    "confidence_tier": "proven|likely|speculative",
-    "why_not_the_obvious_choice": "למה לא ההמלצה המובנת מאליה (להוסיף עוד ל-Google/Meta על הקמפיינים הקיימים)"
-  },
-  "staged_rollout": [
-    { "phase": 1, "daily_budget_ils": 30, "duration_days": 3, "advance_if": "CPA מתחת ל-X OR Y המרות", "kill_if": "הוצאנו ₪90 ללא המרות" },
-    { "phase": 2, "daily_budget_ils": 60, "duration_days": 4, "advance_if": "CPA עדיין מתחת ל-X", "kill_if": "CPA קפץ מעל Z" },
-    { "phase": 3, "daily_budget_ils": 120, "duration_days": 7, "advance_if": "ROAS מעל 3x", "kill_if": "ROAS ירד מתחת 1.5x" }
-  ],
-  "what_to_stop_doing": [
-    "הוצאה אחת שאתה ממליץ לבטל/להשהות — בשם הקמפיין — כולל כמה ₪ זה משחרר"
-  ],
-  "wednesday_check": "מה לבדוק ביום רביעי — אילו מדדים, מה סף ההצלחה, מה לעשות אם לא עובד",
-  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
-}`;
 }
 
 // TACTICAL split — strategy half (phase 1 of two-call flow)
@@ -4061,139 +3500,6 @@ function getTacticalExecutionSchema(_d: any) {
 }`;
 }
 
-// STRATEGIC agent schema — 90-day roadmap with monthly milestones
-function getStrategicJsonSchema(d: any) {
-  return `
-החזר JSON בפורמט הזה בדיוק. כל שדה חייב להיות מלא ומפורט:
-{
-  "agent_philosophy": "משפט אחד — חובה להזכיר שהקהל הוא הקונה המסחרי (לוואצה/איליי/סופר)",
-  "summary": "2-3 משפטים — האסטרטגיה ל-90 ימים, כולל הרעיון הפרוע שבחרת",
-  "confidence_level": "low|medium|high",
-  "wild_ideas": {
-    "audiences_untapped":      ["תת-קהל מסחרי 1 לא מטורגט (ספציפי, לא 'קונים לוואצה' כללי)", "תת-קהל 2"],
-    "messaging_angles_unused": ["זווית מסר 1 שאף קלייה לא משתמשת כלפי הקהל המסחרי", "זווית 2"],
-    "channels_or_partnerships": ["ערוץ/שותפות 1 שאף מתחרה לא מנצל", "ערוץ/שותפות 2"],
-    "bundle_or_pricing":       ["חבילה/תמחור 1 שמסיר את מחסום ה'יקר מדי'", "חבילה 2"],
-    "cross_industry_analogy":  "הסבר: כמו שמותג X בתעשיה Y עשה, נעשה בקפה. חובה — בלי זה הרעיון נדחה.",
-    "picked_for_roadmap":      ["שני-שלושה רעיונות שיגדירו את חודש 1, 2, 3"]
-  },
-  "devils_advocate": {
-    "strongest_counterargument": "למה התכנית ל-90 ימים עלולה להיכשל — חייב להיות משכנע",
-    "what_would_change_my_mind": "איזה אות/נתון ב-30 הימים הראשונים יגרום לי לבטל ולעבור לתכנית ב'"
-  },
-  "google": {
-    "total_cost": ${Math.round(d.totalCost * 100) / 100},
-    "total_clicks": ${d.totalClicks},
-    "total_impressions": ${d.totalImpressions},
-    "total_conversions": ${Math.round(d.totalConversions * 10) / 10},
-    "roas": ${Math.round(d.overallRoas * 100) / 100},
-    "top_campaign": "שם",
-    "worst_campaign": "שם"
-  },
-  "meta": {
-    "total_spend": ${d.metaTotalSpend ?? 0},
-    "total_clicks": ${d.metaTotalClicks ?? 0},
-    "total_impressions": ${d.metaTotalImpressions ?? 0},
-    "total_conversions": ${d.metaTotalConversions ?? 0},
-    "cpa": ${d.metaOverallCpa ?? 0}
-  },
-  "meta_campaign_ideas": [
-    {
-      "idea_id": "unique_slug",
-      "campaign_name": "שם קצר",
-      "launch_month": 1,
-      "one_line_pitch": "משפט אחד — מה הקמפיין עושה ולמי",
-      "audience_lens": "specialty_enthusiast|commercial_buyer|retargeting_warm|custom",
-      "monthly_budget_ils": 2400
-    }
-  ],
-  "channel_allocation_90d": {
-    "summary": "איך לחלק תקציב בין Google ו-Meta ב-90 הימים הבאים — חובה!",
-    "google_pct_of_total": 50,
-    "meta_pct_of_total": 50,
-    "reasoning": "למה החלוקה הזו — לפי CPA/ROAS/שלב המשפך/היתרון היחסי של כל ערוץ"
-  },
-  "current_diagnosis": "מה המצב עכשיו — בשני משפטים חריפים",
-  "target_90_days": "איפה רוצים להיות בעוד 90 ימים — מספרים ספציפיים (הכנסות, ROAS, לקוחות)",
-  "monthly_roadmap": [
-    {
-      "month": "חודש 1 (אפריל-מאי)",
-      "theme": "נושא מרכזי לחודש",
-      "budget_total": 3000,
-      "audience_focus": "על מי מתמקדים",
-      "content_strategy": "מה מפרסמים באינסטגרם/בלוג",
-      "kpi_targets": { "roas": 2.5, "conversions_per_week": 15, "new_customers": 40 },
-      "seasonal_events": "חגים/אירועים",
-      "implementation": [
-        {
-          "campaign_name": "שם הקמפיין",
-          "campaign_type": "Search",
-          "daily_budget_ils": 60,
-          "keywords": ["מילה 1 [match_type]", "מילה 2 [match_type]"],
-          "headlines": ["כותרת 1 (30 תווים)", "כותרת 2", "כותרת 3"],
-          "descriptions": ["תיאור 1 (90 תווים)", "תיאור 2"],
-          "landing_page_url": "https://www.minuto.co.il/...",
-          "negative_keywords": ["מילה שלילית 1"],
-          "launch_when": "מתי להשיק (באיזה שבוע בחודש)",
-          "success_criteria": "מה הסף — מתחת לזה עוצרים/משנים"
-        }
-      ]
-    },
-    {
-      "month": "חודש 2",
-      "theme": "...",
-      "budget_total": 4000,
-      "audience_focus": "",
-      "content_strategy": "",
-      "kpi_targets": {},
-      "seasonal_events": "",
-      "implementation": []
-    },
-    {
-      "month": "חודש 3",
-      "theme": "...",
-      "budget_total": 5000,
-      "audience_focus": "",
-      "content_strategy": "",
-      "kpi_targets": {},
-      "seasonal_events": "",
-      "implementation": []
-    }
-  ],
-  "capital_allocation_90d": {
-    "top_priority_bet": "השקעה #1 הכי חשובה ב-90 ימים (לא קטגוריה — השקעה ספציפית עם מספר). אם הבעלים יכול לעשות רק דבר אחד מהתכנית — זה.",
-    "top_priority_evidence": "למה דווקא זו ההשקעה — נתון אחד מהמחקר/קמפיינים שמוכיח",
-    "total_90d_spend_ils": 0,
-    "expected_90d_revenue_ils": { "low": 0, "likely": 0, "high": 0 },
-    "projected_90d_roas": 0,
-    "payback_month": 1,
-    "confidence_tier": "proven|likely|speculative",
-    "funding_sources": [
-      "מאיפה הכסף: לקצץ Google ב-₪X / להזיז מ-Y / לא להוסיף — להעביר מקמפיין Z"
-    ],
-    "what_to_stop_spending_on": [
-      "קמפיין/פעילות אחת שחייבים לעצור כדי לממן את התכנית — בשם — כולל ₪ שזה משחרר"
-    ],
-    "risk_adjusted_roi": "אחרי הורדת חלק הסבירות שלא יעבוד (25-40%), מה הציפייה הריאלית? כן, זה פחות מה-likely."
-  },
-  "no_regret_moves": [
-    "פעולה 1 שהיא NO-BRAINER — עלות נמוכה, downside נמוך, upside ברור. חובה לפחות אחת.",
-    "פעולה 2"
-  ],
-  "speculative_bets": [
-    "פעולה 1 שהיא SPECULATIVE — upside גדול אבל לא מוכח. חובה לציין 'אל תוציא כאן יותר מ-₪X בלי אות חיובי'"
-  ],
-  "competitor_strategy": [
-    { "competitor": "שם", "their_weakness": "חולשה שלהם", "our_attack": "איך ננצל את זה לאורך 90 ימים" }
-  ],
-  "audience_build_plan": [
-    { "phase": "שבועות 1-4", "audience": "מי מטרגטים", "message": "מה המסר", "budget_pct": 50 },
-    { "phase": "שבועות 5-8", "audience": "", "message": "", "budget_pct": 30 },
-    { "phase": "שבועות 9-12", "audience": "", "message": "", "budget_pct": 20 }
-  ],
-  "risk_and_pivot": "מה הסיכון הגדול ומתי וכיצד לשנות כיוון אם לא עובד",
-  "key_insights": ["תובנה 1", "תובנה 2", "תובנה 3"]
-}`;
 }
 
 // STRATEGIC split — strategy half
@@ -4576,35 +3882,7 @@ const BOILERPLATE_WORDS = new Set([
   "coffee", "the", "a", "in", "of", "and", "for", "to", "is", "&#8211;",
 ]);
 
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&#8211;|&ndash;/g, "–")
-    .replace(/&#8212;|&mdash;/g, "—")
-    .replace(/&#124;|&vert;/g, "|")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;|&#39;/g, "'")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
-}
 
-function distinctiveWords(text: string): Set<string> {
-  const decoded = decodeEntities(text || "").toLowerCase();
-  // Split on non-Hebrew/non-Latin characters
-  const tokens = decoded.split(/[^\u0590-\u05FFa-z0-9]+/).filter(Boolean);
-  const out = new Set<string>();
-  for (const t of tokens) {
-    if (t.length < 2) continue;
-    if (BOILERPLATE_WORDS.has(t)) continue;
-    // Strip common Hebrew affixes (ו, ה, ב, ל, מ prefixes; -ים, -ות suffixes)
-    const normalized = t
-      .replace(/^[והבלמש]/, "")
-      .replace(/(ים|ות|ית|ה)$/, "");
-    if (normalized.length >= 2 && !BOILERPLATE_WORDS.has(normalized)) {
-      out.add(normalized);
-    }
-  }
-  return out;
-}
 
 // ── Blacklisted-keyword scrubber ───────────────────────────────────────────
 // Agents keep slipping banned keywords into compound variants ("פולי קפה
@@ -4710,37 +3988,6 @@ function enforceComplianceOnReport(
   return { blacklistDrops, cooldownClears };
 }
 
-function filterDuplicateRecommendations(
-  recs: any[],
-  existingPosts: Array<{ title: string; url: string }>,
-): any[] {
-  const existingSignatures = existingPosts.map(p => ({
-    title: p.title,
-    words: distinctiveWords(p.title),
-  }));
-
-  return recs.filter((rec: any) => {
-    const recText = `${rec.keyword ?? ""} ${rec.suggested_title ?? ""}`;
-    const recWords = distinctiveWords(recText);
-    if (recWords.size === 0) return true;  // nothing to match on, keep it
-
-    for (const sig of existingSignatures) {
-      if (sig.words.size === 0) continue;
-      // Count shared distinctive words
-      let shared = 0;
-      for (const w of recWords) {
-        if (sig.words.has(w)) shared++;
-      }
-      // Drop if ≥2 shared distinctive words AND ≥40% of recommendation overlaps
-      const overlapPct = shared / recWords.size;
-      if (shared >= 2 && overlapPct >= 0.4) {
-        console.log(`[organic] Dropping dup rec "${rec.keyword}" — ${shared} words shared with "${sig.title}" (${Math.round(overlapPct * 100)}%)`);
-        return false;
-      }
-    }
-    return true;
-  });
-}
 
 // ── Weekly Email Digest ───────────────────────────────────────────────────────
 
@@ -7443,6 +6690,128 @@ ${capped.map((q, i) =>
   // one tool: draft_meta_campaign — calls meta-ads-draft to create a PAUSED
   // campaign in Ads Manager (owner reviews + activates manually). Tool is
   // gated by the system prompt to only fire after explicit owner approval.
+  // ── Unified Marketing Plan (Phase 1: analyze + recommend, READ-ONLY) ─────────
+  // Joins ORGANIC (Search Console, seo_learnings) + PAID (Meta, Google Ads) +
+  // SALES/MARGIN (Woo) on a per-THEME axis and returns grounded recommendations.
+  // Research-first: every recommendation must cite the real datapoint it rests
+  // on; unknowns are declared, never invented. Meta is actionable (drafted PAUSED
+  // later via meta_ads_strategist); Google Ads is recommendation-only for now.
+  // No writes here — this only reads and reasons.
+  if (body.agent === "unified_marketing_plan") {
+    try {
+      const weekEndU = addDays(weekStart, 6);
+      const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) + " …[truncated]" : s);
+
+      // Every feed below already exists in this function — nothing is invented.
+      const [metaData, googleOrganic, wooSalesBlock, productsRes, learningsRes, gAdsRes] = await Promise.all([
+        fetchMetaAdData(supabase, weekStart, weekEndU),
+        fetchGoogleData(supabase, weekStart, weekEndU),
+        fetchWooSales(supabase, weekStart, weekEndU),
+        supabase.from("woo_products").select("name, regular_price, total_sales, stock_status").order("total_sales", { ascending: false }).limit(15),
+        supabase.from("seo_learnings").select("scope, insight, created_at").order("created_at", { ascending: false }).limit(20),
+        supabase.from("google_ads").select("campaign_name, ad_group_name, status, impressions, clicks, conversions").limit(50),
+      ]);
+
+      const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
+      const dataSection = [
+        `## PAID — Meta (week ${weekStart} → ${weekEndU})`,
+        `Totals: spend ₪${metaBlock.metaTotalSpend ?? 0} | clicks ${metaBlock.metaTotalClicks ?? 0} | conversions ${metaBlock.metaTotalConversions ?? 0} | CPA ${metaBlock.metaOverallCpa != null ? "₪" + metaBlock.metaOverallCpa : "n/a"}`,
+        `Campaigns:\n${metaBlock.metaCampaignBlock || "  (none reporting)"}`,
+        ``,
+        `## PAID — Google Ads (recent, recommendation-only)`,
+        cap(JSON.stringify(gAdsRes.data ?? []), 3000),
+        ``,
+        `## ORGANIC — Google Search Console (week)`,
+        cap(JSON.stringify(googleOrganic ?? {}), 3000),
+        ``,
+        `## SALES — WooCommerce`,
+        cap(String(wooSalesBlock ?? ""), 3000),
+        ``,
+        `## PRODUCTS — top by sales (roasted-specialty catalog)`,
+        (productsRes.data ?? []).map((p: any) => `  • ${p.name} — ₪${p.regular_price} — ${p.total_sales ?? 0} sales — ${p.stock_status}`).join("\n") || "  (none)",
+        ``,
+        `## PRIOR LEARNINGS — seo_learnings`,
+        (learningsRes.data ?? []).map((l: any) => `  • [${l.scope}] ${l.insight}`).join("\n") || "  (none)",
+      ].join("\n");
+
+      const sysPrompt = `${BUSINESS_BRIEF}
+You are Minuto's UNIFIED marketing planner. You reason across ORGANIC (SEO / content / search) and PAID (Meta, Google Ads) TOGETHER, against ONE north-star: specialty-coffee BEAN revenue and margin. Machines and hardware are low-margin resale, a means, not the goal.
+
+# HARD RULES — research-first, insight-grounded (NON-NEGOTIABLE)
+- Every recommendation MUST cite the specific datapoint from the DATA section it rests on (name the number and its source).
+- If a datapoint you need is missing, mark it UNKNOWN and say how to get it — or hold. NEVER invent a number, trend, audience size, or result.
+- Do not recommend anything you cannot ground in the DATA below. No guesses, no hallucinations.
+
+# METHOD
+1. Propose 3–6 THEMES (topic / audience / product clusters) that emerge FROM the data — no fixed list.
+2. For each theme, join its evidence across organic + paid + sales/margin.
+3. Recommend a channel lean (organic / paid / both). For paid, suggest a daily budget in ILS that respects the caps: ≤ ₪100/day per campaign, account ~₪3,000/month.
+4. Meta is ACTIONABLE (can be drafted PAUSED later). Google Ads is RECOMMENDATION-ONLY — never propose to auto-create Google campaigns.
+
+# BRAND / COMPLIANCE
+- Promote only roasted specialty beans. Never name competitors. Any Hebrew copy: gender-inclusive, no em-dashes, premium positioning, no discounts.
+
+# OUTPUT — return PURE JSON only (no prose, no markdown fences):
+{
+  "summary": "2-3 sentence English overview, grounded in the data",
+  "themes": [{
+    "name": "string",
+    "evidence": { "organic": "cite data or UNKNOWN", "paid": "cite data or UNKNOWN", "margin": "cite data or UNKNOWN" },
+    "recommendation": "string",
+    "channel": "organic|paid|both",
+    "suggested_daily_budget_ils": 0,
+    "confidence": "high|medium|low",
+    "unknowns": ["string"]
+  }],
+  "global_unknowns": ["data we lack that would change the plan"]
+}
+
+# DATA — everything you may reason from (nothing outside this block exists)
+${dataSection}`;
+
+      const question = String((body as any).question ?? "").trim();
+      const userMsg = question || "Produce the unified marketing plan from the data. Return JSON only.";
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4000,
+          system: [{ type: "text", text: sysPrompt, cache_control: { type: "ephemeral" } }],
+          messages: [{ role: "user", content: userMsg }],
+        }),
+        signal: AbortSignal.timeout(90_000),
+      });
+      const jr = await res.json();
+      if (jr.error) throw new Error(jr.error.message ?? "Claude error");
+      const rawText = (jr.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
+
+      // Parse the plan JSON — strip fences, else extract the first {...} block.
+      let plan: any = null;
+      try {
+        plan = JSON.parse(rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim());
+      } catch {
+        const m = rawText.match(/\{[\s\S]*\}/);
+        if (m) { try { plan = JSON.parse(m[0]); } catch { /* fall through */ } }
+      }
+      if (!plan) {
+        return new Response(JSON.stringify({ ok: false, error: "could not parse plan JSON", raw: cap(rawText, 2000) }),
+          { status: 502, headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ ok: true, week_start: weekStart, plan }),
+        { headers: { ...CORS, "Content-Type": "application/json" } });
+    } catch (err: any) {
+      console.error("[unified_marketing_plan]", err?.message);
+      return new Response(JSON.stringify({ ok: false, error: err?.message ?? "unknown error" }),
+        { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+    }
+  }
+
   if (body.agent === "meta_ads_strategist") {
     const question = (body as any).question as string | undefined;
     const history  = ((body as any).history ?? []) as Array<{ role: "user" | "assistant"; content: any }>;
@@ -7640,11 +7009,20 @@ ${draftsBlock}
       for (let iter = 0; iter < 5; iter++) {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
-          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+          headers: {
+            "x-api-key": ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
             max_tokens: 4000,
-            system: sysPromptStrategist,
+            // tools + sysPromptStrategist are both built once above the loop and
+            // never mutated, so this prefix is byte-identical across all 5
+            // iterations while only `messages` grows. The cacheable prefix is
+            // ordered tools → system → messages, so one breakpoint at the end of
+            // system covers both. Iteration 1 writes it (+25%); 2-5 read it (~10%).
+            system: [{ type: "text", text: sysPromptStrategist, cache_control: { type: "ephemeral" } }],
             tools,
             messages,
           }),
@@ -7653,6 +7031,9 @@ ${draftsBlock}
         const json = await res.json();
         if (json.error) throw new Error(json.error.message ?? "Claude error");
         totalTokens += (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+        const cw = json.usage?.cache_creation_input_tokens ?? 0;
+        const cr = json.usage?.cache_read_input_tokens ?? 0;
+        if (cw || cr) console.log(`[cache] strategist-chat iter=${iter} write=${cw} read=${cr} input=${json.usage?.input_tokens ?? 0}`);
 
         // Aggregate any text blocks emitted this iteration (might come alongside tool_use).
         const textBlocks = (json.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
