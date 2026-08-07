@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatCurrency } from '../lib/utils'
 import { startOfWeek, format } from 'date-fns'
@@ -158,27 +158,62 @@ function PlanTab() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [drafting, setDrafting] = useState<Theme | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Cheap spend KPIs on mount; the expensive analysis is gated behind a click.
+  function stopPoll() { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
+
+  // The analysis is a ~85s job that runs server-side and writes to
+  // advisor_reports; we read/poll that row instead of blocking on the call.
+  async function fetchReport(ws: string) {
+    const { data } = await supabase
+      .from('advisor_reports')
+      .select('status, report, error_msg')
+      .eq('agent_type', 'unified_plan')
+      .eq('week_start', ws)
+      .maybeSingle()
+    return data as { status: string; report: Plan | null; error_msg: string | null } | null
+  }
+
+  function startPolling(ws: string) {
+    stopPoll()
+    let elapsed = 0
+    pollRef.current = setInterval(async () => {
+      elapsed += 4
+      const r = await fetchReport(ws)
+      if (r?.status === 'done' && r.report) { setPlan(r.report); setLoading(false); stopPoll() }
+      else if (r?.status === 'error') { setError(r.error_msg || 'הניתוח נכשל'); setLoading(false); stopPoll() }
+      else if (elapsed > 180) { setError('הניתוח נמשך זמן רב מהצפוי, נסו שוב'); setLoading(false); stopPoll() }
+    }, 4000)
+  }
+
+  // On mount: cheap spend KPIs + resume/show any existing plan for this week.
   useEffect(() => {
     supabase.functions.invoke('meta-ads-draft', { body: { action: 'spend' } })
       .then(({ data }) => { if (data?.ok) setSpend(data as Spend) })
       .catch(() => { /* KPIs are best-effort */ })
+
+    const ws = thisWeekStart()
+    fetchReport(ws).then((r) => {
+      if (r?.status === 'done' && r.report) setPlan(r.report)
+      else if (r?.status === 'running') { setLoading(true); startPolling(ws) }
+    }).catch(() => { /* best-effort */ })
+
+    return () => stopPoll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function runAnalysis() {
-    setLoading(true); setError(null)
+    const ws = thisWeekStart()
+    setLoading(true); setError(null); setPlan(null)
     try {
-      const { data, error } = await supabase.functions.invoke('marketing-advisor', {
-        body: { agent: 'unified_marketing_plan', week_start: thisWeekStart() },
+      // Trigger — returns 202 immediately; the work happens server-side.
+      const { error } = await supabase.functions.invoke('marketing-advisor', {
+        body: { agent: 'unified_marketing_plan', week_start: ws },
       })
       if (error) throw error
-      if (!data?.ok) throw new Error(data?.error || 'הניתוח נכשל')
-      setPlan(data.plan as Plan)
+      startPolling(ws)
     } catch (e: any) {
-      setError(e?.message ?? 'שגיאה לא ידועה')
-    } finally {
-      setLoading(false)
+      setError(e?.message ?? 'שגיאה לא ידועה'); setLoading(false)
     }
   }
 
