@@ -7591,8 +7591,18 @@ You are Minuto's UNIFIED marketing planner. You reason across ORGANIC (SEO / con
     "confidence": "high|medium|low",
     "unknowns": ["string"]
   }],
-  "global_unknowns": ["data we lack that would change the plan"]
+  "global_unknowns": ["data we lack that would change the plan"],
+  "new_learnings": [{
+    "insight": "a durable, reusable RULE confirmed by attributed data (e.g. 'google/cpc converts beans at CPA around X — scale it')",
+    "confidence": "high|medium|low",
+    "sample_orders": 0,
+    "evidence": "cite the exact numbers this rule rests on"
+  }]
 }
+
+# LEARNINGS (reinforcement loop)
+- Treat the PRIOR LEARNINGS block as ALREADY-ESTABLISHED rules — apply them, do not re-derive them.
+- Propose new_learnings ONLY for patterns CONFIRMED by attributed data with a real sample (>= 10 attributed orders). They become permanent rules, so be conservative: a single lucky week is not a learning. If unsure, omit.
 
 # DATA — everything you may reason from (nothing outside this block exists)
 ${dataSection}`;
@@ -7632,8 +7642,34 @@ ${dataSection}`;
         return new Response(JSON.stringify({ ok: false, error: "could not parse plan JSON", raw: cap(rawText, 2000) }),
           { status: 502, headers: { ...CORS, "Content-Type": "application/json" } });
       }
+      // ── Phase 2: persist high-confidence, well-sampled paid learnings.
+      // Conservative gate (confidence=high AND >=10 attributed orders) + dedup
+      // by insight. These flow back into PRIOR LEARNINGS on the next run.
+      let _lWritten = 0; let _lErr: string | null = null;
+      try {
+        const cands = Array.isArray((plan as any).new_learnings) ? (plan as any).new_learnings : [];
+        if (cands.length) {
+          const { data: existL } = await supabase.from("seo_learnings")
+            .select("insight").eq("scope", "paid_performance").is("superseded_at", null);
+          const seen = new Set((existL ?? []).map((r: any) => String(r.insight).trim().toLowerCase()));
+          for (const l of cands) {
+            const insight = String(l?.insight ?? "").trim();
+            const conf = String(l?.confidence ?? "").toLowerCase();
+            const n = Number(l?.sample_orders ?? 0);
+            const text = `[paid] ${insight}${l?.evidence ? ` (evidence: ${String(l.evidence).slice(0, 240)})` : ""}`;
+            const key = text.toLowerCase();
+            if (!insight || conf !== "high" || n < 10 || seen.has(key)) continue;
+            const { error: insErr } = await supabase.from("seo_learnings").insert({
+              scope: "paid_performance", insight: text, evidence_task_ids: [], created_by: "orchestrator",
+            });
+            if (insErr) { _lErr = insErr.message; continue; }
+            _lWritten++; seen.add(key);
+          }
+        }
+      } catch (e) { _lErr = (e as any)?.message ?? "exception"; }
+
       await upsertReport(supabase, "unified_plan", weekStart, { status: "done", report: plan, error_msg: null });
-      return new Response(JSON.stringify({ ok: true, week_start: weekStart, plan }),
+      return new Response(JSON.stringify({ ok: true, week_start: weekStart, plan, _learnings: { written: _lWritten, err: _lErr } }),
         { headers: { ...CORS, "Content-Type": "application/json" } });
     } catch (err: any) {
       console.error("[unified_marketing_plan]", err?.message);
