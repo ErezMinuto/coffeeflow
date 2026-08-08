@@ -7,6 +7,7 @@ import {
   TrendingUp, ShieldCheck, Wallet, Sparkles,
 } from 'lucide-react'
 import { DraftCampaignDrawer } from '../components/DraftCampaignDrawer'
+import { BrainChat } from '../components/BrainChat'
 import MetaAdsPage from './MetaAds'
 import GoogleAdsPage from './GoogleAds'
 import MetaOrganicPage from './MetaOrganic'
@@ -301,6 +302,7 @@ function PlanTab() {
 // the default tab; the per-channel analytics tabs embed the existing page
 // components verbatim (no rewrite) so parity is immediate and reversible.
 const COCKPIT_TABS = [
+  { id: 'brain',    label: 'מוח שיווקי' },
   { id: 'plan',     label: 'תוכנית' },
   { id: 'meta',     label: 'Meta Ads' },
   { id: 'google',   label: 'Google Ads' },
@@ -310,7 +312,7 @@ const COCKPIT_TABS = [
 type CockpitTab = typeof COCKPIT_TABS[number]['id']
 
 export default function UnifiedPlanPage() {
-  const [tab, setTab] = useState<CockpitTab>('plan')
+  const [tab, setTab] = useState<CockpitTab>('brain')
   return (
     <div className="space-y-5">
       <div className="flex gap-1 border-b border-surface-200 overflow-x-auto">
@@ -326,6 +328,7 @@ export default function UnifiedPlanPage() {
           </button>
         ))}
       </div>
+      {tab === 'brain'    && <BrainChat />}
       {tab === 'plan'     && <PlanTab />}
       {tab === 'meta'     && <MetaAdsPage />}
       {tab === 'google'   && <GoogleAdsPage />}
