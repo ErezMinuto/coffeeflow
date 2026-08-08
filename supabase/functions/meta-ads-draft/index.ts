@@ -542,10 +542,17 @@ function buildUtm(tracking: any, ideaId: string): Record<string, string> {
   }
 }
 function appendUtm(url: any, utm: Record<string, string>): string {
-  const base = String(url ?? 'https://www.minuto.co.il')
-  const sep = base.includes('?') ? '&' : '?'
+  // The spec's landing_page_url can arrive messy — the model sometimes packs
+  // commentary or multiple URLs into it. Extract the FIRST clean http(s) URL,
+  // drop any existing query/hash + trailing punctuation, then append our UTM.
+  const raw = String(url ?? '')
+  const m = raw.match(/https?:\/\/[^\s"'<>)\]]+/)
+  const base = (m ? m[0] : 'https://www.minuto.co.il')
+    .replace(/[.,;!?]+$/, '')
+    .split('?')[0]
+    .split('#')[0]
   const qs = Object.entries(utm).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
-  return `${base}${sep}${qs}`
+  return `${base}?${qs}`
 }
 function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'draft'

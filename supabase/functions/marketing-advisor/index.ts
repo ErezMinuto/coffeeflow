@@ -5573,7 +5573,7 @@ serve(withCors(async (req) => {
     "utm_campaign": "slug_of_campaign",
     "utm_content": "ad_variant_name"
   },
-  "landing_page_url": "https://www.minuto.co.il/... — עמוד מטרה מתאים",
+  "landing_page_url": "https://www.minuto.co.il/product/SLUG",   // URL נקי אחד בלבד — בלי הערות, בלי חלופות, בלי UTM (המערכת מוסיפה UTM)
   "step_by_step_build": [
     "1. Ads Manager → + Create → Sales objective",
     "2. Campaign: הפעל CBO, תקציב יומי ₪X",
