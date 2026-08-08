@@ -7888,6 +7888,15 @@ ${draftsBlock}
           },
           required: ["task_type", "topic", "rationale"],
         },
+      }, {
+        name: "get_campaign_performance",
+        description: "Pull LIVE campaign performance from the Meta API — spend, impressions, clicks, CTR, CPC, purchases, CPA per campaign — for a time window. Use this YOURSELF whenever the owner asks how a campaign is doing or wants to monitor. Do NOT ask the owner to paste numbers — you can fetch them. Read-only.",
+        input_schema: {
+          type: "object",
+          properties: {
+            date_preset: { type: "string", enum: ["today", "yesterday", "last_3d", "last_7d", "last_14d", "last_30d"], description: "Time window. Default last_7d." },
+          },
+        },
       }];
 
       // ── Tool-use loop ─────────────────────────────────────────────────
@@ -7993,6 +8002,26 @@ ${draftsBlock}
               }
             } catch (e: any) {
               resultText = `Queue FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "get_campaign_performance") {
+            // LIVE performance pull via meta-ads-draft's insights action.
+            try {
+              const perfRes = await fetch(`${SUPA_URL}/functions/v1/meta-ads-draft`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "insights", date_preset: tu.input.date_preset ?? "last_7d" }),
+              });
+              const perf = await perfRes.json();
+              if (perf.ok) {
+                resultData = perf;
+                const lines = (perf.campaigns ?? []).map((c: any) => `${c.campaign}: spend ₪${c.spend} | ${c.impressions} impr | ${c.clicks} clicks | CTR ${c.ctr}% | CPC ₪${c.cpc} | ${c.purchases} purchases | CPA ${c.cpa != null ? "₪" + c.cpa : "n/a"}`).join("\n");
+                resultText = `LIVE campaign performance (${perf.date_preset}):\n${lines || "(no delivering campaigns in this window — likely still paused or no spend yet)"}`;
+              } else {
+                resultText = `Could not fetch performance: ${perf.error ?? "unknown"}`;
+              }
+            } catch (e: any) {
+              resultText = `Performance fetch FAILED: ${e?.message}`;
             }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else {
