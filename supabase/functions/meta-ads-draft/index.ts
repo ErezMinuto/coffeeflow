@@ -118,6 +118,33 @@ serve(async (req) => {
       })
     }
 
+    // ── insights ── LIVE per-campaign performance from Meta (spend, impressions,
+    // clicks, CTR, CPC, purchases, CPA) over a date window. Powers on-demand
+    // monitoring so the strategist can pull numbers itself instead of asking.
+    if (action === 'insights') {
+      const preset = String(body.date_preset ?? 'last_7d')
+      const url = `${GRAPH}/${ctx.adAccountId}/insights?level=campaign&fields=campaign_name,spend,impressions,clicks,ctr,cpc,actions&date_preset=${encodeURIComponent(preset)}&limit=100&access_token=${ctx.userToken}`
+      const r = await fetch(url)
+      const j = await r.json()
+      if (j.error) throw new Error(`insights: ${j.error.message}`)
+      const rows = ((j.data ?? []) as any[]).map((d) => {
+        const acts = (d.actions ?? []) as any[]
+        const purchases = Number(acts.find((a) => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value ?? 0)
+        const spend = Number(d.spend ?? 0)
+        return {
+          campaign:    d.campaign_name,
+          spend:       round2(spend),
+          impressions: Number(d.impressions ?? 0),
+          clicks:      Number(d.clicks ?? 0),
+          ctr:         round2(Number(d.ctr ?? 0)),
+          cpc:         round2(Number(d.cpc ?? 0)),
+          purchases,
+          cpa:         purchases > 0 ? round2(spend / purchases) : null,
+        }
+      })
+      return json({ ok: true, date_preset: preset, campaigns: rows })
+    }
+
     // Dedupe — return existing draft if we already created one for this idea
     const { data: existing } = await supabase
       .from('meta_ad_drafts')
