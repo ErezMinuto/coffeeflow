@@ -22,17 +22,22 @@ function themeId(name: string): string {
   return `theme_${(h >>> 0).toString(36)}`
 }
 
-const DEFAULT_IMAGE = 'https://www.minuto.co.il/content/uploads/2025/06/main_page1.jpg'
-
 type Step = 'building' | 'review' | 'creating' | 'done' | 'error'
 
-interface Product { name: string; image_url: string }
+interface Asset { url: string; label: string; source: 'product' | 'ig' }
+
+// Distinctive words from a theme name, used to match assets to the campaign
+// (e.g. "Brazil Fazenda Sertão …" → matches the Sertão product + IG posts).
+const STOP = new Set(['the', 'and', 'for', 'hero', 'product', 'amplification', 'single', 'origin', 'campaign', 'audience', ' קפה', 'פולי'])
+function keywordsFrom(s: string): string[] {
+  return (s.match(/[A-Za-z֐-׿]{3,}/g) ?? []).map((w) => w.toLowerCase()).filter((w) => !STOP.has(w))
+}
 
 export function DraftCampaignDrawer({ theme, onClose }: { theme: Theme; onClose: () => void }) {
   const [step, setStep] = useState<Step>('building')
   const [spec, setSpec] = useState<any>(null)
-  const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGE)
-  const [products, setProducts] = useState<Product[]>([])
+  const [imageUrl, setImageUrl] = useState('')
+  const [assets, setAssets] = useState<Asset[]>([])
   const [result, setResult] = useState<{ campaign_id: string; edit_url: string; warnings: string[]; existed?: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,10 +66,24 @@ export function DraftCampaignDrawer({ theme, onClose }: { theme: Theme; onClose:
         setError(e?.message ?? 'שגיאה'); setStep('error')
       }
     })()
-    // Existing product images to reuse as the creative (owner picks — human gate
-    // keeps it on-brand). Best-effort; the URL field is the fallback.
-    supabase.from('woo_products').select('name, image_url').not('image_url', 'is', null).limit(24)
-      .then(({ data }) => { if (alive && data) setProducts(data as Product[]) })
+    // Real assets to reuse as the creative: product images + recent IG posts.
+    // Auto-match to this campaign's product so we never fall back to a random
+    // image. Owner still picks/overrides — human gate keeps it on-brand.
+    ;(async () => {
+      const kws = keywordsFrom(theme.name)
+      const [prodRes, igRes] = await Promise.all([
+        supabase.from('woo_products').select('name, image_url').not('image_url', 'is', null).limit(40),
+        supabase.from('meta_organic_posts').select('message, thumbnail_url').not('thumbnail_url', 'is', null).order('created_at', { ascending: false }).limit(30),
+      ])
+      if (!alive) return
+      const prodAssets: Asset[] = (prodRes.data ?? []).map((p: any) => ({ url: p.image_url, label: p.name, source: 'product' as const }))
+      const igAssets: Asset[]   = (igRes.data ?? []).map((p: any) => ({ url: p.thumbnail_url, label: (p.message || 'Instagram').slice(0, 60), source: 'ig' as const }))
+      const all = [...prodAssets, ...igAssets]
+      const matches = (a: Asset) => kws.some((k) => a.label.toLowerCase().includes(k))
+      setAssets([...all.filter(matches), ...all.filter((a) => !matches(a))]) // matched first
+      const best = all.find((a) => a.source === 'product' && matches(a)) || all.find(matches)
+      if (best) setImageUrl(best.url) // pre-select the matched real asset
+    })()
     return () => { alive = false }
   }, [theme.name])
 
@@ -148,30 +167,36 @@ export function DraftCampaignDrawer({ theme, onClose }: { theme: Theme; onClose:
                 {c.cta_button && <span className="inline-block badge bg-brand-50 text-brand-700">{c.cta_button}</span>}
               </div>
 
-              {/* Image — reuse an existing product image, or paste a URL */}
+              {/* Image — pick a REAL matched asset (product image or IG post), or paste a URL */}
               <div className="bg-white border border-surface-200 rounded-2xl p-4">
-                <p className="text-xs text-surface-400 mb-2 flex items-center gap-1.5"><ImageIcon size={13} /> תמונת המודעה</p>
-                {products.length > 0 && (
+                <p className="text-xs text-surface-400 mb-2 flex items-center gap-1.5"><ImageIcon size={13} /> תמונת המודעה — נכסים אמיתיים (המתאימים למוצר מופיעים ראשונים)</p>
+                {assets.length > 0 ? (
                   <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
-                    {products.filter(p => p.image_url).slice(0, 12).map((p) => (
+                    {assets.slice(0, 18).map((a) => (
                       <button
-                        key={p.image_url}
-                        onClick={() => setImageUrl(p.image_url)}
-                        title={p.name}
-                        className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${imageUrl === p.image_url ? 'border-brand-500' : 'border-surface-200 hover:border-surface-400'}`}
+                        key={a.url}
+                        onClick={() => setImageUrl(a.url)}
+                        title={`${a.source === 'ig' ? 'אינסטגרם' : 'מוצר'} · ${a.label}`}
+                        className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${imageUrl === a.url ? 'border-brand-500' : 'border-surface-200 hover:border-surface-400'}`}
                       >
-                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={a.url} alt={a.label} className="w-full h-full object-cover" />
+                        <span className={`absolute bottom-0 inset-x-0 text-[9px] leading-tight text-white text-center ${a.source === 'ig' ? 'bg-pink-600/85' : 'bg-brand-700/85'}`}>
+                          {a.source === 'ig' ? 'IG' : 'מוצר'}
+                        </span>
                       </button>
                     ))}
                   </div>
+                ) : (
+                  <p className="text-xs text-surface-400 mb-2">טוען נכסים…</p>
                 )}
                 <input
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://…"
+                  placeholder="או הדביקו URL…"
                   dir="ltr"
                   className="w-full text-xs border border-surface-200 rounded-lg px-2 py-1.5 text-surface-700 focus:border-brand-400 focus:outline-none"
                 />
+                {!imageUrl && <p className="text-xs text-amber-600 mt-1.5">בחרו תמונה כדי להמשיך</p>}
               </div>
 
               {error && <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-sm">{error}</div>}
