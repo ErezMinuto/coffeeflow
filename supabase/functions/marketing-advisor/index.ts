@@ -5602,7 +5602,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
       // Sonnet 4 (not 4.5) + 2500 tokens → keeps worker CPU + wall time under
       // Supabase's WORKER_RESOURCE_LIMIT (546). 4.5 + 4000 tokens was hitting
       // it on larger prompts with full META_ADS_EXPERTISE injected.
-      const { text: out } = await callClaude("claude-sonnet-4-6", sysPrompt, userMsg, { maxTokens: 3500, timeoutMs: 120_000 });
+      const { text: out } = await callClaude("claude-sonnet-4-6", sysPrompt, userMsg, { maxTokens: 6000, timeoutMs: 150_000 });
       const spec = parseClaudeJson(out);
 
       // Compliance sweep — flag violations so the frontend can show a warning,
