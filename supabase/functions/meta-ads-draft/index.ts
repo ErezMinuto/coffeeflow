@@ -125,16 +125,29 @@ serve(async (req) => {
       .eq('idea_id', ideaId)
       .maybeSingle()
     if (existing?.campaign_id) {
-      return json({
-        ok: true,
-        existed: true,
-        campaign_id: existing.campaign_id,
-        adset_id:    existing.adset_id,
-        ad_id:       existing.ad_id,
-        creative_id: existing.creative_id,
-        edit_url:    adsManagerEditUrl(ctx.adAccountId, existing.campaign_id),
-        warnings:    existing.warnings ?? [],
-      })
+      // Verify it still exists in Meta. The owner may have deleted the campaign
+      // in Ads Manager, which leaves this dedup row stale — returning its dead
+      // campaign_id would (wrongly) say "already exists". If it's gone, drop the
+      // row and fall through to create a fresh campaign.
+      let stillExists = false
+      try {
+        const chk = await fetch(`${GRAPH}/${existing.campaign_id}?fields=id&access_token=${ctx.userToken}`)
+        const chkJson = await chk.json()
+        stillExists = !chkJson.error && !!chkJson.id
+      } catch { stillExists = false }
+      if (stillExists) {
+        return json({
+          ok: true,
+          existed: true,
+          campaign_id: existing.campaign_id,
+          adset_id:    existing.adset_id,
+          ad_id:       existing.ad_id,
+          creative_id: existing.creative_id,
+          edit_url:    adsManagerEditUrl(ctx.adAccountId, existing.campaign_id),
+          warnings:    existing.warnings ?? [],
+        })
+      }
+      await supabase.from('meta_ad_drafts').delete().eq('idea_id', ideaId)
     }
 
     if (!ctx.scopes.includes('ads_management')) {
