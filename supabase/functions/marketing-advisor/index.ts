@@ -7772,12 +7772,14 @@ To research, plan, and draft high-converting ad campaigns that find the perfect 
 
 🔍 **SELF-CHECK before sending any creative**: scan your Hebrew copy for: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, נגרו, עלית, לנדוור, ארומה, "לוגו מטושטש", "שקית דמוית". If any are present, rewrite before responding.
 
-# Tool Use
-You have ONE tool: \`draft_meta_campaign\`. It creates a PAUSED ad campaign in the owner's Meta Ads Manager (campaign + ad set + creative + ad, all status=PAUSED). The owner reviews in Meta's UI and clicks Activate manually.
+# Tools — you coordinate BOTH channels (paid + organic)
+You have TWO tools. BOTH fire ONLY after the owner's explicit written approval ("yes build it" / "approved" / "אישרתי" / "תבנה"). Speculation is never approval; "should I?" is never approval.
 
-**When to use it**: ONLY after the owner has given explicit written approval for ALL of: campaign name, objective, audience definition, Hebrew creative copy, daily budget, AND image URL. If ANY of those is still pending approval, do not call the tool — keep the conversation going to nail down the missing piece.
+1. \`draft_meta_campaign\` — creates a PAUSED ad campaign in Meta Ads Manager (all status=PAUSED; the owner activates manually). Fire ONLY after the owner approved ALL of: campaign name, objective, audience, Hebrew creative, daily budget, AND image URL.
 
-**When NOT to use it**: Speculatively. "Let me show you what this would look like" is not approval. Asking "should I build this?" is not approval. The owner must say something like "yes build it" / "approved, draft it" / "אישרתי, תבנה" before you fire the tool.
+2. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). Use it when the plan calls for organic/content work. It only QUEUES the task into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
+
+You are the brain over both hands: recommend across paid AND organic, but only ACT (fire a tool) on the owner's explicit approval for that specific action.
 
 # What You Already Know About Minuto (do NOT re-ask)
 - **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts to order. Sells online + cafe storefront.
@@ -7874,6 +7876,18 @@ ${draftsBlock}
           },
           required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url", "image_url"],
         },
+      }, {
+        name: "queue_organic_task",
+        description: "Queue an ORGANIC task for the SEO/content agent. Fire ONLY after explicit owner approval. Publishes nothing — it enters the SEO agent's own review pipeline. Not for Instagram (needs the SEO agent's visual-first flow).",
+        input_schema: {
+          type: "object",
+          properties: {
+            task_type: { type: "string", enum: ["deep_research", "text_generation"], description: "deep_research = research a topic/angle; text_generation = draft a blog article." },
+            topic: { type: "string", description: "What to research or write, in one clear sentence (Hebrew or English)." },
+            rationale: { type: "string", description: "One-line justification, surfaced in the SEO admin UI." },
+          },
+          required: ["task_type", "topic", "rationale"],
+        },
       }];
 
       // ── Tool-use loop ─────────────────────────────────────────────────
@@ -7954,6 +7968,31 @@ ${draftsBlock}
               }
             } catch (e: any) {
               resultText = `Draft FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "queue_organic_task") {
+            // Organic hand — insert a task into the SEO agent's queue. Service
+            // role bypasses RLS. Nothing publishes; it enters the SEO pipeline.
+            try {
+              const isText = tu.input.task_type === "text_generation";
+              const topic  = String(tu.input.topic ?? "").trim();
+              const brief  = isText
+                ? { topic, source: "marketing_brain" }
+                : { question: topic, scope: "content_topic", expected_output: "action_plan", source: "marketing_brain" };
+              const { data: qRow, error: qErr } = await supabase.from("seo_tasks").insert({
+                task_type:  isText ? "text_generation" : "deep_research",
+                status:     "pending",
+                brief_data: brief,
+                rationale:  String(tu.input.rationale ?? "queued by the marketing brain"),
+              }).select("id").single();
+              if (qErr) {
+                resultText = `Queue FAILED: ${qErr.message}. Tell the owner what went wrong.`;
+              } else {
+                resultData = qRow;
+                resultText = `Organic task queued for the SEO agent (id ${String(qRow?.id ?? "").slice(0, 8)}, type ${isText ? "text_generation" : "deep_research"}). It will appear in the SEO agent's pipeline for review — nothing is published yet.`;
+              }
+            } catch (e: any) {
+              resultText = `Queue FAILED with exception: ${e?.message}`;
             }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else {
