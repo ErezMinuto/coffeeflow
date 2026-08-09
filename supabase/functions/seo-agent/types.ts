@@ -247,6 +247,22 @@ export interface SeoTaskRow {
   updated_at: string
 }
 
+// A caption that already went out on Instagram, flattened from a completed
+// instagram_post task. Fed back into the strategist's context so it can see
+// its own recent copy and avoid repeating hooks, themes, and framing angles.
+export interface RecentIgCaption {
+  task_id:      string
+  published_at: string
+  // The assembled caption the worker sent to Meta (caption_he + CTA +
+  // product link + hashtags), i.e. exactly what readers saw.
+  caption:      string
+  hashtags:     string[]
+  media_type:   string | null
+  // false = staged for review but the admin never approved it, so it never
+  // reached the feed. Still useful as anti-repetition context.
+  ig_live:      boolean
+}
+
 // What the orchestrator inserts. Lifecycle fields default in the DB.
 export interface NewSeoTask {
   task_type: TaskType

@@ -28,6 +28,7 @@ import {
   getRecentTasks,
   getRecentMetricsSnapshots,
   getRecentLearnings,
+  getRecentInstagramCaptions,
   insertExperiment,
 } from '../seo-agent/db.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
@@ -65,6 +66,7 @@ import type {
   NewSeoTask,
   OrchestratorEmittedTask,
   OrchestratorEmittedExperiment,
+  RecentIgCaption,
   SeoTaskRow,
 } from '../seo-agent/types.ts'
 
@@ -159,6 +161,7 @@ serve(async (req: Request): Promise<Response> => {
       aiVisibility,
       customerSegments,
       competitorIntel,
+      recentIgCaptions,
     ] = await Promise.all([
       // Housekeeping (side-effecting / strategist-input) — guarded so a
       // single failure degrades gracefully instead of killing the cycle.
@@ -213,6 +216,15 @@ serve(async (req: Request): Promise<Response> => {
       // Competitor intelligence — aggregated from existing tables (LLM
       // probe co-mentions + market_research scans). No new scrapers.
       fetchCompetitorIntelligence(supabase, 30),
+      // The last 20 IG captions that actually went out. The RECENT TASKS
+      // block only carries a 200-char brief_data preview, so the strategist
+      // was writing new captions half-blind to its own recent copy and
+      // recycling opening lines / themes / framing angles. Guarded — losing
+      // this block degrades caption novelty, it shouldn't kill the cycle.
+      getRecentInstagramCaptions(supabase, 20).catch((e: any) => {
+        console.error(`[organic-orchestrator] IG caption history failed (non-fatal): ${e?.message ?? e}`)
+        return [] as RecentIgCaption[]
+      }),
     ])
 
     console.log(
@@ -224,6 +236,7 @@ serve(async (req: Request): Promise<Response> => {
       `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
       `voc:${vocInsights.length} kwOps:${keywordOpportunities.length} ` +
       `research:${marketResearch.length} ga4Pages:${ga4LandingPages.length} ` +
+      `igCaptions:${recentIgCaptions.length} ` +
       `wpDetector(newly_live:${wpDetectorSummary.newly_live}) followback:${postFollowback.length}`,
     )
 
@@ -287,6 +300,7 @@ serve(async (req: Request): Promise<Response> => {
       customerSegments,
       competitorIntel,
       postFollowback,
+      recentIgCaptions,
     })
 
     // ── 4. Call Claude ───────────────────────────────────────────────
@@ -688,10 +702,12 @@ function buildStrategistUserMessage(args: {
   customerSegments: { total_customers: number; by_segment: Array<{ segment: string; count: number; avg_total_spent_ils: number; avg_order_count: number; avg_days_since_last: number }>; new_in_last_30d: number; at_risk_count: number }
   competitorIntel:  { llm_co_mentions: Array<{ name: string; mention_count_30d: number; queries_appearing_in: number }>; recent_research: Array<{ source: string; research_date: string; summary_excerpt: string }> }
   postFollowback:  PostFollowback[]
+  recentIgCaptions: RecentIgCaption[]
 }): string {
   const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback } = args
+          ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback,
+          recentIgCaptions } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -765,6 +781,31 @@ function buildStrategistUserMessage(args: {
         .map(i => `  ${i.state === 'critical' ? '⛔' : '⚠️'} ${i.name} — ${i.packed_stock} bags`)
         .join('\n') || '  (all inventory healthy)'
 
+  // Recent IG captions — the anti-repetition source for NEW captions.
+  // The opening line is pulled out on its own because that's what repeats
+  // most visibly in the feed; the rest is excerpted (captions run up to
+  // 2200 chars and 20 full ones would bloat the prompt for little gain —
+  // the hook plus the first paragraph is enough to recognize a rerun).
+  const CAPTION_EXCERPT_CHARS = 500
+  const OPENING_LINE_CHARS    = 140
+  const igCaptionsBlock = recentIgCaptions.length === 0
+    ? '  (no IG captions published yet)'
+    : recentIgCaptions.map((c, i) => {
+        const when      = c.published_at ? c.published_at.split('T')[0] : ''
+        // First non-empty line, capped — a caption written as one long
+        // paragraph would otherwise repeat the whole excerpt here.
+        const firstLine = c.caption.split('\n').map(l => l.trim()).find(l => l.length > 0) ?? ''
+        const opening   = firstLine.length > OPENING_LINE_CHARS
+          ? `${firstLine.slice(0, OPENING_LINE_CHARS)}…`
+          : firstLine
+        const excerpt   = c.caption.replace(/\s+/g, ' ').slice(0, CAPTION_EXCERPT_CHARS)
+        const truncated = c.caption.length > CAPTION_EXCERPT_CHARS ? '…' : ''
+        const tags     = c.hashtags.length > 0 ? `\n     hashtags: ${c.hashtags.map(t => `#${t.replace(/^#/, '')}`).join(' ')}` : ''
+        return `  ${i + 1}. [${when}] ${c.media_type ?? 'feed_image'}${c.ig_live ? '' : ' (staged, never approved)'}\n` +
+               `     OPENING LINE: ${opening}\n` +
+               `     ${excerpt}${truncated}${tags}`
+      }).join('\n\n')
+
   // Standing learnings — cross-session memory recorded via the chat
   // agent or future orchestrator self-writes. These are PRESCRIPTIVE
   // rules the strategist must honor when planning. Grouped by scope.
@@ -806,6 +847,17 @@ ${recentTasksBlock}
 === PUBLISHED BLOG POSTS (LAST 60 DAYS) — FORBIDDEN AS NEW ARTICLE TOPICS ===
 
 ${blogBlock}
+
+=== YOUR LAST ${recentIgCaptions.length || 20} IG CAPTIONS (newest first) — DO NOT REPEAT THESE ===
+
+This is the copy you actually shipped to Instagram, in your own words. Before you write any new caption_he, read every OPENING LINE below. Your new captions MUST NOT:
+  • reuse an opening line, or a near-paraphrase of one (same question, same "did you know", same emoji-then-hook shape)
+  • re-run a theme or framing angle that already appears here, even applied to a different product
+  • recycle the same hashtag set wholesale — vary it with the topic
+
+If your best idea this cycle collides with something below, change the angle or drop the post. A caption that reads like a rerun costs more reach than emitting one fewer post.
+
+${igCaptionsBlock}
 
 === PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
 

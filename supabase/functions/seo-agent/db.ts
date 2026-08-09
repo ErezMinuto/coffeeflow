@@ -9,6 +9,7 @@ import type {
   NewSeoTask,
   SeoTaskRow,
   MetricsSnapshot,
+  RecentIgCaption,
   TaskType,
   TaskStatus,
 } from './types.ts'
@@ -210,6 +211,69 @@ export async function getRecentTasks(
     .limit(limit)
   if (error) throw new Error(`getRecentTasks failed: ${error.message}`)
   return (data ?? []) as SeoTaskRow[]
+}
+
+// Captions of the most recently PUBLISHED IG posts, newest first.
+//
+// The strategist writes caption_he verbatim and the IG worker publishes it
+// as-is (after appending CTA/product-link/hashtags), so the assembled
+// caption in result_data.caption is literally what went out. Feeding those
+// back into the strategist's context is what stops it re-using the same
+// opening lines, themes, and framing angles cycle after cycle — the
+// RECENT TASKS block only carries a 200-char brief_data preview, which is
+// far too lossy to spot a repeated hook.
+//
+// We over-fetch (2×) and then keep only rows that actually carry a caption,
+// so a handful of older completed rows without result_data.caption can't
+// shrink the window below `limit`.
+export async function getRecentInstagramCaptions(
+  supabase: SupabaseClient,
+  limit = 20,
+): Promise<RecentIgCaption[]> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('id, completed_at, created_at, brief_data, result_data')
+    .eq('task_type', 'instagram_post')
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false, nullsFirst: false })
+    .limit(limit * 2)
+  if (error) throw new Error(`getRecentInstagramCaptions failed: ${error.message}`)
+
+  const out: RecentIgCaption[] = []
+  for (const row of (data ?? []) as Array<{
+    id: string
+    completed_at: string | null
+    created_at: string
+    brief_data: Record<string, unknown> | null
+    result_data: Record<string, unknown> | null
+  }>) {
+    const result = (row.result_data ?? {}) as Record<string, unknown>
+    const brief  = (row.brief_data  ?? {}) as Record<string, unknown>
+    // result_data.caption is the assembled, actually-published text. Fall
+    // back to the brief's caption_he for rows written before the worker
+    // started persisting the assembled caption.
+    const caption = String(result.caption ?? brief.caption_he ?? '').trim()
+    if (!caption) continue
+    const hashtags = Array.isArray(result.hashtags)
+      ? (result.hashtags as unknown[]).map(String)
+      : Array.isArray(brief.hashtags)
+        ? (brief.hashtags as unknown[]).map(String)
+        : []
+    out.push({
+      task_id:      row.id,
+      published_at: row.completed_at ?? row.created_at,
+      caption,
+      hashtags,
+      media_type:   (result.media_type ?? brief.media_type) != null
+        ? String(result.media_type ?? brief.media_type)
+        : null,
+      // 'completed' means the container was staged on Meta; it only went
+      // live once the admin approved it (media_id / permalink get stamped).
+      ig_live: Boolean(result.ig_media_id ?? result.ig_permalink),
+    })
+    if (out.length >= limit) break
+  }
+  return out
 }
 
 // ── seo_metrics ──────────────────────────────────────────────────────────

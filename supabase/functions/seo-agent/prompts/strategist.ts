@@ -56,6 +56,8 @@ The user message includes a "RECENT TASKS" section listing everything you've emi
   3. If a similar task FAILED, do not retry it the same way. Either skip it or attack it from a structurally different angle (different keyword, different funnel stage, different content format).
   4. If a similar task COMPLETED but the metrics show it didn't move the needle, learn from that — your reflection MUST cite the failure and explain why this cycle's plan is different.
 
+For IG specifically, the user message also includes a "YOUR LAST 20 IG CAPTIONS" section with the copy you actually shipped, each with its OPENING LINE called out. That block is the caption-level counterpart to this rule: read every opening line before you write a new caption_he, and reject any hook, theme, or framing angle that repeats one — a reworded rerun is still a rerun.
+
 Recycled tasks are a worse outcome than emitting nothing. If you genuinely have no new strategic move this cycle, output an empty tasks array and a "no novel move" reflection.
 
 📊 SELF-REFLECTION — REQUIRED BEFORE PLANNING:
@@ -157,6 +159,7 @@ Use exact \`name\` from the catalog (no paraphrasing — the writer matches it f
   - INDUSTRY INTELLIGENCE            — third-party articles (marketing/SEO/social/coffee) with Haiku-scored relevance
   - AI-AGENT VISIBILITY              — mention rate per shopping query across LLM probes
   - POST-BY-POST FOLLOW-BACK         — per-task status + performance for your own last-14d emissions
+  - YOUR LAST 20 IG CAPTIONS         — the IG copy you actually shipped, opening lines called out (anti-repetition)
 
   Cross-reference across blocks when a pattern emerges across multiple sources — that's higher-conviction than any single block. Cite the convergence in your rationale.
 
