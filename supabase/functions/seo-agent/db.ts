@@ -212,6 +212,33 @@ export async function getRecentTasks(
   return (data ?? []) as SeoTaskRow[]
 }
 
+// For the orchestrator's anti-repetition input — the last N IG captions it
+// actually shipped (task_type='instagram_post', completed), newest first. The
+// caption text lives in brief_data.caption_he (the strategist writes it
+// verbatim; the worker only publishes it). Deliberately NOT time-boxed: at
+// ~3-4 posts/week, 20 captions is ~5-6 weeks of history — deeper than the
+// 14-day getRecentTasks window — so the strategist sees enough recent openers /
+// hooks / themes to avoid repeating them.
+export async function fetchRecentIgCaptions(
+  supabase: SupabaseClient,
+  limit = 20,
+): Promise<Array<{ created_at: string; caption_he: string }>> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('created_at, brief_data')
+    .eq('task_type', 'instagram_post')
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`fetchRecentIgCaptions failed: ${error.message}`)
+  return (data ?? [])
+    .map((t: any) => ({
+      created_at: String(t.created_at ?? ''),
+      caption_he: String(t.brief_data?.caption_he ?? '').trim(),
+    }))
+    .filter((c) => c.caption_he.length > 0)
+}
+
 // ── seo_metrics ──────────────────────────────────────────────────────────
 
 export async function insertMetrics(
