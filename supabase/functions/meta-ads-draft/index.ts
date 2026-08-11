@@ -278,6 +278,9 @@ serve(async (req) => {
     // of sending to a URL. Forces Engagement objective + WhatsApp ad-set +
     // WHATSAPP_MESSAGE creative CTA below.
     const isWhatsapp = String((body as any).destination ?? '').toLowerCase() === 'whatsapp'
+    if (isWhatsapp && (body as any).existing_post?.id) {
+      throw new Error("Click-to-WhatsApp can't reuse an existing organic post/reel via the API (the reel wasn't authored with a WhatsApp CTA, so Meta rejects the creative). For a WhatsApp ad use a FRESH image, or build the reel→WhatsApp ad in Ads Manager ('Use existing post').")
+    }
     const objective = isWhatsapp ? 'OUTCOME_ENGAGEMENT' : mapObjective(spec.objective)
     const dailyBudgetAgorot = String(Math.round(Number(spec.daily_budget_ils ?? 60) * 100))
     const campaign  = await graphPost(`${GRAPH}/${ctx.adAccountId}/campaigns`, ctx.userToken, {
@@ -375,9 +378,7 @@ serve(async (req) => {
           name: creativeName,
           instagram_user_id: ctx.igUserId,
           source_instagram_media_id: String(existingPost.id),
-          call_to_action: JSON.stringify(isWhatsapp
-            ? { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } }
-            : { type: ctaForPost, value: { link: linkForPost } }),
+          call_to_action: JSON.stringify({ type: ctaForPost, value: { link: linkForPost } }),
         })
       }
     } else {
