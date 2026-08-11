@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../../lib/context';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -50,6 +50,8 @@ export default function Roasting() {
   const [endDate,       setEndDate]       = useState('');
   const [displayLimit,  setDisplayLimit]  = useState(20);
   const [selectedRoasts, setSelectedRoasts] = useState([]);
+  const [isSaving,      setIsSaving]      = useState(false);
+  const savingRef = useRef(false); // synchronous in-flight lock — blocks double-submit before React re-renders
 
   const navigate = useNavigate();
 
@@ -103,6 +105,7 @@ export default function Roasting() {
   // ── RECORD — SIMPLE ORIGIN ────────────────────────────────────────────────────
 
   const recordOriginRoast = async () => {
+    if (savingRef.current) return; // ignore repeat taps while an insert is in flight
     if (!selectedOrigin || !greenWeight || !selectedOperator) {
       showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
     }
@@ -118,6 +121,7 @@ export default function Roasting() {
     const roastedWeight = parseFloat(calculateRoastedWeight(weight, origin.weight_loss));
     const batchNum = makeBatchNum();
 
+    savingRef.current = true; setIsSaving(true);
     try {
       await roastsDb.insert({
         origin_id: origin.id, roast_profile_id: null,
@@ -137,12 +141,15 @@ export default function Roasting() {
     } catch (err) {
       console.error('Error recording roast:', err);
       showToast('❌ שגיאה ברישום קלייה', 'error');
+    } finally {
+      savingRef.current = false; setIsSaving(false);
     }
   };
 
   // ── RECORD — PROFILE ──────────────────────────────────────────────────────────
 
   const recordProfileRoast = async () => {
+    if (savingRef.current) return; // ignore repeat taps while an insert is in flight
     if (!selectedProfileId || !greenWeight || !selectedOperator) {
       showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
     }
@@ -167,6 +174,7 @@ export default function Roasting() {
     const roastedWeight = calcProfileRoastedWeight(selectedProfileId, weight);
     const batchNum = makeBatchNum();
 
+    savingRef.current = true; setIsSaving(true);
     try {
       const { data: roastRow, error: roastErr } = await supabase
         .from('roasts')
@@ -203,6 +211,8 @@ export default function Roasting() {
     } catch (err) {
       console.error('Error recording profile roast:', err);
       showToast('❌ שגיאה ברישום קלייה', 'error');
+    } finally {
+      savingRef.current = false; setIsSaving(false);
     }
   };
 
@@ -224,12 +234,14 @@ export default function Roasting() {
   };
 
   const saveEditRoast = async () => {
+    if (savingRef.current) return; // ignore repeat taps while an update is in flight
     if (!editingRoast.greenWeight || !editingRoast.operator) {
       showToast('⚠️ נא למלא את כל השדות', 'warning'); return;
     }
     const newWeight = parseFloat(editingRoast.greenWeight);
     if (newWeight <= 0 || newWeight > 20) { showToast('⚠️ משקל לא תקין', 'warning'); return; }
 
+    savingRef.current = true; setIsSaving(true);
     try {
       if (editingRoast.isProfile) {
         const profile  = getProfileById(editingRoast.profileId);
@@ -305,6 +317,8 @@ export default function Roasting() {
     } catch (err) {
       console.error('Error updating roast:', err);
       showToast('❌ שגיאה בעדכון קלייה', 'error');
+    } finally {
+      savingRef.current = false; setIsSaving(false);
     }
   };
 
@@ -639,7 +653,7 @@ export default function Roasting() {
               <input type="number" step="0.1" placeholder="למשל: 65.4" value={colorReading} onChange={e => setColorReading(e.target.value)} />
             </div>
 
-            <button onClick={recordRoast} className="rbtn roast rbtn-block"><Icon d={RI.fire} /> רשום קלייה</button>
+            <button onClick={recordRoast} disabled={isSaving} className="rbtn roast rbtn-block"><Icon d={RI.fire} /> {isSaving ? 'רושם…' : 'רשום קלייה'}</button>
           </div>
         </div>
 
@@ -800,7 +814,7 @@ export default function Roasting() {
             </div>
             <div className="rdf">
               <button className="rbtn ghost" onClick={() => setEditingRoast(null)}>ביטול</button>
-              <button className="rbtn roast" onClick={saveEditRoast}>שמור שינויים</button>
+              <button className="rbtn roast" onClick={saveEditRoast} disabled={isSaving}>{isSaving ? 'שומר…' : 'שמור שינויים'}</button>
             </div>
           </aside>
         </>
