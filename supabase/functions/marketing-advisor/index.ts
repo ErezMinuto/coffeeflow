@@ -7947,6 +7947,16 @@ ${postsBlock}
           },
           required: ["campaign_id", "targeting"],
         },
+      }, {
+        name: "find_post",
+        description: "Search ALL organic Instagram/Facebook posts and reels by keyword/topic — not just the recent ones in your context. Use when the owner references a specific post by what it's about (e.g. 'the don't-buy-coffee-beans reel') to get its id, then boost it via existing_post.",
+        input_schema: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Keywords from the post's caption/topic (Hebrew or English)." },
+          },
+          required: ["query"],
+        },
       }];
 
       // ── Tool-use loop ─────────────────────────────────────────────────
@@ -8096,6 +8106,23 @@ ${postsBlock}
                 ? `Targeting updated on ${(j.adsets_updated ?? []).length} ad set(s). Interests: ${(j.resolved_interests ?? []).join(", ") || "none"}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""}`
                 : `Targeting update FAILED: ${j.error ?? "unknown"}.`;
             } catch (e: any) { resultText = `Targeting update FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "find_post") {
+            // Search ALL organic posts/reels by keyword (not just the recent 12).
+            try {
+              const kw = String(tu.input.query ?? "").trim();
+              if (!kw) { resultText = "Provide a search query."; }
+              else {
+                const { data } = await supabase.from("meta_organic_posts")
+                  .select("post_id, post_type, message, likes, comments")
+                  .ilike("message", `%${kw}%`)
+                  .order("created_at", { ascending: false })
+                  .limit(10);
+                resultData = data;
+                const lines = (data ?? []).map((p: any) => `[${p.post_type}] id=${p.post_id} | ${p.likes ?? 0}❤ ${p.comments ?? 0}💬 | ${String(p.message ?? "").replace(/\n/g, " ").slice(0, 60)}`).join("\n");
+                resultText = lines ? `Matching posts/reels:\n${lines}` : `No posts found matching "${kw}".`;
+              }
+            } catch (e: any) { resultText = `Search FAILED: ${e?.message}`; }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else {
             resultText = `Unknown tool: ${tu.name}`;
