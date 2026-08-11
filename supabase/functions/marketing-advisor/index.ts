@@ -7892,7 +7892,7 @@ ${postsBlock}
                 id: { type: "string", description: "The post/media id from the Recent organic posts list." },
               },
             },
-            destination: { type: "string", enum: ["website", "whatsapp"], description: "website (default) = ad sends to landing_page_url. whatsapp = Click-to-WhatsApp — tapping the ad opens a WhatsApp chat via the Page (no URL); use for conversation/lead campaigns. Works with a fresh image or an existing_post." },
+            destination: { type: "string", enum: ["website", "whatsapp"], description: "website (default) = ad sends to landing_page_url. whatsapp = Click-to-WhatsApp — tapping opens a WhatsApp chat via the Page (no URL); use for conversation/lead campaigns. IMPORTANT: WhatsApp works ONLY with a FRESH image (image_url), NOT existing_post — Meta's API can't put a WhatsApp CTA on an existing organic reel. To use a reel's look, describe a fresh creative instead." },
           },
           required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url"],
         },
