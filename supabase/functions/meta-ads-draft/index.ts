@@ -123,7 +123,7 @@ serve(async (req) => {
     // monitoring so the strategist can pull numbers itself instead of asking.
     if (action === 'insights') {
       const preset = String(body.date_preset ?? 'last_7d')
-      const url = `${GRAPH}/${ctx.adAccountId}/insights?level=campaign&fields=campaign_name,spend,impressions,clicks,ctr,cpc,actions&date_preset=${encodeURIComponent(preset)}&limit=100&access_token=${ctx.userToken}`
+      const url = `${GRAPH}/${ctx.adAccountId}/insights?level=campaign&fields=campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions&date_preset=${encodeURIComponent(preset)}&limit=100&access_token=${ctx.userToken}`
       const r = await fetch(url)
       const j = await r.json()
       if (j.error) throw new Error(`insights: ${j.error.message}`)
@@ -132,6 +132,7 @@ serve(async (req) => {
         const purchases = Number(acts.find((a) => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value ?? 0)
         const spend = Number(d.spend ?? 0)
         return {
+          campaign_id: d.campaign_id,
           campaign:    d.campaign_name,
           spend:       round2(spend),
           impressions: Number(d.impressions ?? 0),
@@ -143,6 +144,68 @@ serve(async (req) => {
         }
       })
       return json({ ok: true, date_preset: preset, campaigns: rows })
+    }
+
+    // ── update_campaign ── edit a campaign's name / status / daily budget.
+    // Budget cap applies to edits too (can't raise a live campaign over it).
+    if (action === 'update_campaign') {
+      const campaignId = String(body.campaign_id ?? '').trim()
+      if (!campaignId) throw new Error("'campaign_id' is required for update_campaign")
+      const fields: Record<string, string> = {}
+      if (body.name != null) fields.name = String(body.name).slice(0, 400)
+      if (body.status != null) {
+        const st = String(body.status).toUpperCase()
+        if (!['ACTIVE', 'PAUSED'].includes(st)) throw new Error("status must be ACTIVE or PAUSED")
+        fields.status = st
+      }
+      if (body.daily_budget_ils != null) {
+        const cap = Number(Deno.env.get('META_MAX_DAILY_BUDGET_ILS') ?? 100)
+        const req = Number(body.daily_budget_ils)
+        if (!(req > 0)) throw new Error("daily_budget_ils must be a positive number")
+        if (req > cap) throw new Error(`daily budget ₪${req} exceeds per-campaign cap ₪${cap} (META_MAX_DAILY_BUDGET_ILS)`)
+        fields.daily_budget = String(Math.round(req * 100))
+      }
+      if (Object.keys(fields).length === 0) throw new Error("nothing to update — pass name, status, and/or daily_budget_ils")
+      const res = await graphPost(`${GRAPH}/${campaignId}`, ctx.userToken, fields)
+      return json({ ok: true, updated: campaignId, fields, result: res })
+    }
+
+    // ── update_targeting ── rebuild targeting + apply it to every ad set on a
+    // campaign. Resolves interest names to IDs; advantage_audience set explicitly.
+    if (action === 'update_targeting') {
+      const campaignId = String(body.campaign_id ?? '').trim()
+      if (!campaignId) throw new Error("'campaign_id' is required for update_targeting")
+      const t = (body.targeting ?? {}) as any
+      const ageMin = parseAgeMin(t.age_range) ?? Number(t.age_min ?? 18)
+      const ageMax = parseAgeMax(t.age_range) ?? Number(t.age_max ?? 65)
+      const countries = Array.isArray(t.countries) && t.countries.length ? t.countries.map(String) : ['IL']
+      const names: string[] = Array.isArray(t.interests_or_behaviors) ? t.interests_or_behaviors.map(String)
+        : Array.isArray(t.interests) ? t.interests.map(String) : []
+      const resolved: Array<{ id: string; name: string }> = []
+      const warnings: string[] = []
+      for (const n of names) {
+        const rr = await resolveInterest(n, ctx.userToken)
+        if (rr) resolved.push(rr); else warnings.push(`interest not resolved: "${n}"`)
+      }
+      const targeting: any = {
+        geo_locations: { countries },
+        age_min: Math.max(13, Math.min(65, ageMin)),
+        age_max: Math.max(13, Math.min(65, ageMax)),
+        publisher_platforms: ['facebook', 'instagram'],
+        targeting_automation: { advantage_audience: 0 },
+      }
+      if (resolved.length) targeting.flexible_spec = [{ interests: resolved }]
+      const asRes = await fetch(`${GRAPH}/${campaignId}/adsets?fields=id,name&limit=50&access_token=${ctx.userToken}`)
+      const asJson = await asRes.json()
+      if (asJson.error) throw new Error(`adsets: ${asJson.error.message}`)
+      const adsets = (asJson.data ?? []) as any[]
+      if (!adsets.length) throw new Error("no ad sets found on this campaign")
+      const updated: string[] = []
+      for (const as of adsets) {
+        try { await graphPost(`${GRAPH}/${as.id}`, ctx.userToken, { targeting: JSON.stringify(targeting) }); updated.push(as.id) }
+        catch (e: any) { warnings.push(`adset ${as.id}: ${e?.message}`) }
+      }
+      return json({ ok: updated.length > 0, campaign_id: campaignId, adsets_updated: updated, resolved_interests: resolved.map((r) => r.name), warnings })
     }
 
     // Dedupe — return existing draft if we already created one for this idea
@@ -279,48 +342,68 @@ serve(async (req) => {
     const adset    = await graphPost(`${GRAPH}/${ctx.adAccountId}/adsets`, ctx.userToken, adsetParams)
     const adsetId  = adset.id
 
-    // ── 3. Image upload ────────────────────────────────────────────────────
-    if (!imageUrl) throw new Error("image_url is required — pass a public URL Meta can fetch")
-    const imageHash = await uploadAdImage(ctx.adAccountId, ctx.userToken, imageUrl)
-
-    // ── 4. Ad Creative ─────────────────────────────────────────────────────
-    const utm = buildUtm(spec.tracking, ideaId)
-    const linkWithUtm = appendUtm(spec.landing_page_url, utm)
-
-    const linkData: Record<string, any> = {
-      link:       linkWithUtm,
-      image_hash: imageHash,
-      message:    truncate(String(spec.creative?.primary_text ?? ''), 1500),
-    }
-    if (spec.creative?.headline)    linkData.name        = truncate(String(spec.creative.headline), 255)
-    if (spec.creative?.description) linkData.description = truncate(String(spec.creative.description), 255)
-    const ctaType = mapCta(spec.creative?.cta_button)
-    if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
-
-    // instagram_actor_id was deprecated → v23 wants instagram_user_id. Build
-    // the creative with the IG identity; if Meta still rejects the IG param,
-    // retry once WITHOUT it (the ad then runs on the Page identity and Meta
-    // still delivers to IG placements via the Page-linked account).
+    // ── 3+4. Creative — an EXISTING post/reel, or a fresh image + copy ───────
+    const existingPost = (body as any).existing_post as { source?: string; id?: string } | undefined
     const creativeName = truncate(`${spec.campaign_name} — Creative`, 400)
-    const makeCreative = (storySpec: Record<string, any>) =>
-      graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
-        name: creativeName,
-        object_story_spec: JSON.stringify(storySpec),
-      })
-
     let creative: any
-    try {
-      creative = await makeCreative({
-        page_id:            ctx.pageId,
-        instagram_user_id:  ctx.igUserId,
-        link_data:          linkData,
-      })
-    } catch (creErr: any) {
-      if (/instagram/i.test(String(creErr?.message ?? '')) && ctx.igUserId) {
-        warnings.push(`IG identity dropped from creative: ${creErr?.message ?? 'instagram param rejected'}`)
-        creative = await makeCreative({ page_id: ctx.pageId, link_data: linkData })
+
+    if (existingPost?.id) {
+      // Run an existing organic post/reel AS the ad (keeps its real engagement).
+      // FB page post → object_story_id (PAGEID_POSTID). IG post/reel →
+      // instagram_user_id + source_instagram_media_id. No image upload and no
+      // link_data — the post's own content/link are used as-is.
+      // A destination link + CTA — objectives like Traffic/Sales require a URL,
+      // and an organic reel/post usually has none of its own.
+      const linkForPost = appendUtm(spec.landing_page_url, buildUtm(spec.tracking, ideaId))
+      const ctaForPost  = mapCta(spec.creative?.cta_button) || 'LEARN_MORE'
+      const src = String(existingPost.source ?? 'ig').toLowerCase()
+      if (src === 'fb' || src === 'facebook') {
+        const rawId = String(existingPost.id)
+        creative = await graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          object_story_id: rawId.includes('_') ? rawId : `${ctx.pageId}_${rawId}`,
+        })
       } else {
-        throw creErr
+        creative = await graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          instagram_user_id: ctx.igUserId,
+          source_instagram_media_id: String(existingPost.id),
+          call_to_action: JSON.stringify({ type: ctaForPost, value: { link: linkForPost } }),
+        })
+      }
+    } else {
+      // ── Fresh creative from an uploaded image + copy ──
+      if (!imageUrl) throw new Error("image_url is required — pass a public URL Meta can fetch (or an existing_post)")
+      const imageHash = await uploadAdImage(ctx.adAccountId, ctx.userToken, imageUrl)
+
+      const utm = buildUtm(spec.tracking, ideaId)
+      const linkWithUtm = appendUtm(spec.landing_page_url, utm)
+      const linkData: Record<string, any> = {
+        link:       linkWithUtm,
+        image_hash: imageHash,
+        message:    truncate(String(spec.creative?.primary_text ?? ''), 1500),
+      }
+      if (spec.creative?.headline)    linkData.name        = truncate(String(spec.creative.headline), 255)
+      if (spec.creative?.description) linkData.description = truncate(String(spec.creative.description), 255)
+      const ctaType = mapCta(spec.creative?.cta_button)
+      if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
+
+      // instagram_actor_id was deprecated → v23 wants instagram_user_id; if Meta
+      // rejects the IG param, retry without it (runs on the Page identity).
+      const makeCreative = (storySpec: Record<string, any>) =>
+        graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          object_story_spec: JSON.stringify(storySpec),
+        })
+      try {
+        creative = await makeCreative({ page_id: ctx.pageId, instagram_user_id: ctx.igUserId, link_data: linkData })
+      } catch (creErr: any) {
+        if (/instagram/i.test(String(creErr?.message ?? '')) && ctx.igUserId) {
+          warnings.push(`IG identity dropped from creative: ${creErr?.message ?? 'instagram param rejected'}`)
+          creative = await makeCreative({ page_id: ctx.pageId, link_data: linkData })
+        } else {
+          throw creErr
+        }
       }
     }
     const creativeId = creative.id

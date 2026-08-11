@@ -7707,7 +7707,7 @@ ${dataSection}`;
       // Last 30d Meta performance, top SKUs, past drafts. Pixel event volumes
       // would also be useful but require a Graph API call — deferred to V2.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -7717,6 +7717,10 @@ ${dataSection}`;
           .select("idea_id, campaign_name, objective, daily_budget_ils, status, created_at, warnings")
           .order("created_at", { ascending: false })
           .limit(10),
+        supabase.from("meta_organic_posts")
+          .select("post_id, post_type, message, likes, comments")
+          .order("created_at", { ascending: false })
+          .limit(12),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -7727,6 +7731,10 @@ ${dataSection}`;
       const draftsBlock = (pastDrafts.data ?? [])
         .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.objective} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
         .join("\n") || "  (no campaigns drafted yet — you've never built one through this system)";
+
+      const postsBlock = (recentPosts.data ?? [])
+        .map((p: any) => `  • [${p.post_type}] id=${p.post_id} | ${p.likes ?? 0}❤ ${p.comments ?? 0}💬 | ${String(p.message ?? '').replace(/\n/g, ' ').slice(0, 55)}`)
+        .join("\n") || "  (no organic posts synced)";
 
       // System prompt — combines the owner's verbatim persona prompt with the
       // operational guardrails (compliance, brand voice) and the live data.
@@ -7821,6 +7829,9 @@ ${productsBlock}
 ## Past Drafts (created via this strategist — for continuity)
 ${draftsBlock}
 
+## Recent organic posts/reels — boostable (pass existing_post {source:"ig", id} to draft_meta_campaign to run one AS an ad; no image needed)
+${postsBlock}
+
 # Conversational Style
 - Reply in **English** for strategy and analysis. Ad copy stays in **Hebrew**.
 - Be terse. The owner is busy and not an expert — short focused answers beat walls of text.
@@ -7872,9 +7883,17 @@ ${draftsBlock}
                 utm_content: { type: "string" },
               },
             },
-            image_url: { type: "string", description: "PUBLIC URL of an image Meta will fetch and upload. Owner must have provided this URL." },
+            image_url: { type: "string", description: "PUBLIC image URL Meta will fetch. Provide EITHER image_url OR existing_post — not both." },
+            existing_post: {
+              type: "object",
+              description: "Run an EXISTING organic post/reel AS the ad (keeps its real engagement) instead of a fresh image. Use when the owner wants to boost a specific post/reel. Take the id from the 'Recent organic posts' list in your live data.",
+              properties: {
+                source: { type: "string", enum: ["ig", "fb"], description: "ig = Instagram post/reel; fb = Facebook page post." },
+                id: { type: "string", description: "The post/media id from the Recent organic posts list." },
+              },
+            },
           },
-          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url", "image_url"],
+          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url"],
         },
       }, {
         name: "queue_organic_task",
@@ -7896,6 +7915,37 @@ ${draftsBlock}
           properties: {
             date_preset: { type: "string", enum: ["today", "yesterday", "last_3d", "last_7d", "last_14d", "last_30d"], description: "Time window. Default last_7d." },
           },
+        },
+      }, {
+        name: "edit_campaign",
+        description: "Edit a LIVE campaign — name, status (ACTIVE|PAUSED), and/or daily budget (ILS, hard-capped at ₪100/day). Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new (before/after). Get campaign_id from get_campaign_performance. Setting status=ACTIVE goes LIVE and starts spending — treat that as the owner activating; require an unmistakable yes.",
+        input_schema: {
+          type: "object",
+          properties: {
+            campaign_id: { type: "string", description: "From get_campaign_performance." },
+            name: { type: "string" },
+            status: { type: "string", enum: ["ACTIVE", "PAUSED"] },
+            daily_budget_ils: { type: "number", description: "New daily budget in ILS (≤100)." },
+          },
+          required: ["campaign_id"],
+        },
+      }, {
+        name: "change_targeting",
+        description: "Change the audience targeting of a LIVE campaign (applies to all its ad sets). Fire ONLY after explicit owner approval; show before → after. WARN the owner first: changing targeting on an active campaign resets its learning phase.",
+        input_schema: {
+          type: "object",
+          properties: {
+            campaign_id: { type: "string", description: "From get_campaign_performance." },
+            targeting: {
+              type: "object",
+              properties: {
+                age_range: { type: "string", description: "e.g. '30-60'" },
+                countries: { type: "array", items: { type: "string" }, description: "Default ['IL']." },
+                interests_or_behaviors: { type: "array", items: { type: "string" }, description: "Interest names — resolved to Meta IDs server-side." },
+              },
+            },
+          },
+          required: ["campaign_id", "targeting"],
         },
       }];
 
@@ -7967,6 +8017,7 @@ ${draftsBlock}
                   idea_id: tu.input.idea_id,
                   spec: tu.input,
                   image_url: tu.input.image_url,
+                  existing_post: tu.input.existing_post,
                 }),
               });
               resultData = await draftRes.json();
@@ -8023,6 +8074,28 @@ ${draftsBlock}
             } catch (e: any) {
               resultText = `Performance fetch FAILED: ${e?.message}`;
             }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "edit_campaign") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/meta-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "update_campaign", campaign_id: tu.input.campaign_id, name: tu.input.name, status: tu.input.status, daily_budget_ils: tu.input.daily_budget_ils }),
+              });
+              const j = await r.json(); resultData = j;
+              resultText = j.ok ? `Campaign updated: ${JSON.stringify(j.fields)}.` : `Update FAILED: ${j.error ?? "unknown"}. Tell the owner what went wrong.`;
+            } catch (e: any) { resultText = `Update FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "change_targeting") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/meta-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "update_targeting", campaign_id: tu.input.campaign_id, targeting: tu.input.targeting }),
+              });
+              const j = await r.json(); resultData = j;
+              resultText = j.ok
+                ? `Targeting updated on ${(j.adsets_updated ?? []).length} ad set(s). Interests: ${(j.resolved_interests ?? []).join(", ") || "none"}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""}`
+                : `Targeting update FAILED: ${j.error ?? "unknown"}.`;
+            } catch (e: any) { resultText = `Targeting update FAILED: ${e?.message}`; }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else {
             resultText = `Unknown tool: ${tu.name}`;
