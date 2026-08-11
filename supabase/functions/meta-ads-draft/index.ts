@@ -274,7 +274,11 @@ serve(async (req) => {
     // campaign, not the ad set. Meta's modern default and required for several
     // objectives. Putting budget on the ad set triggers errors about
     // is_adset_budget_sharing_enabled / SOURCE / budget_remaining / etc.
-    const objective = mapObjective(spec.objective)
+    // Click-to-WhatsApp mode: the ad opens a WhatsApp chat via the Page instead
+    // of sending to a URL. Forces Engagement objective + WhatsApp ad-set +
+    // WHATSAPP_MESSAGE creative CTA below.
+    const isWhatsapp = String((body as any).destination ?? '').toLowerCase() === 'whatsapp'
+    const objective = isWhatsapp ? 'OUTCOME_ENGAGEMENT' : mapObjective(spec.objective)
     const dailyBudgetAgorot = String(Math.round(Number(spec.daily_budget_ils ?? 60) * 100))
     const campaign  = await graphPost(`${GRAPH}/${ctx.adAccountId}/campaigns`, ctx.userToken, {
       name:                   String(spec.campaign_name ?? 'Untitled').slice(0, 400),
@@ -318,10 +322,12 @@ serve(async (req) => {
       targeting.flexible_spec = [{ interests: resolvedInterests }]
     }
 
-    const optimizationGoal = pickOptimizationGoal(objective, ctx.pixelId)
-    const promotedObject   = (objective === 'OUTCOME_SALES' && ctx.pixelId)
-      ? { pixel_id: ctx.pixelId, custom_event_type: 'PURCHASE' }
-      : undefined
+    const optimizationGoal = isWhatsapp ? 'CONVERSATIONS' : pickOptimizationGoal(objective, ctx.pixelId)
+    const promotedObject   = isWhatsapp
+      ? { page_id: ctx.pageId }
+      : (objective === 'OUTCOME_SALES' && ctx.pixelId)
+        ? { pixel_id: ctx.pixelId, custom_event_type: 'PURCHASE' }
+        : undefined
     if (objective === 'OUTCOME_SALES' && !ctx.pixelId) {
       warnings.push('no Meta Pixel found on ad account — falling back to LINK_CLICKS optimization')
     }
@@ -338,6 +344,7 @@ serve(async (req) => {
       start_time:         startTime,
     }
     if (promotedObject) adsetParams.promoted_object = JSON.stringify(promotedObject)
+    if (isWhatsapp) adsetParams.destination_type = 'WHATSAPP'
 
     const adset    = await graphPost(`${GRAPH}/${ctx.adAccountId}/adsets`, ctx.userToken, adsetParams)
     const adsetId  = adset.id
@@ -368,7 +375,9 @@ serve(async (req) => {
           name: creativeName,
           instagram_user_id: ctx.igUserId,
           source_instagram_media_id: String(existingPost.id),
-          call_to_action: JSON.stringify({ type: ctaForPost, value: { link: linkForPost } }),
+          call_to_action: JSON.stringify(isWhatsapp
+            ? { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } }
+            : { type: ctaForPost, value: { link: linkForPost } }),
         })
       }
     } else {
@@ -385,8 +394,12 @@ serve(async (req) => {
       }
       if (spec.creative?.headline)    linkData.name        = truncate(String(spec.creative.headline), 255)
       if (spec.creative?.description) linkData.description = truncate(String(spec.creative.description), 255)
-      const ctaType = mapCta(spec.creative?.cta_button)
-      if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
+      if (isWhatsapp) {
+        linkData.call_to_action = { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } }
+      } else {
+        const ctaType = mapCta(spec.creative?.cta_button)
+        if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
+      }
 
       // instagram_actor_id was deprecated → v23 wants instagram_user_id; if Meta
       // rejects the IG param, retry without it (runs on the Page identity).
