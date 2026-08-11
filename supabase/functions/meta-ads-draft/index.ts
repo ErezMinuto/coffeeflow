@@ -279,48 +279,68 @@ serve(async (req) => {
     const adset    = await graphPost(`${GRAPH}/${ctx.adAccountId}/adsets`, ctx.userToken, adsetParams)
     const adsetId  = adset.id
 
-    // ── 3. Image upload ────────────────────────────────────────────────────
-    if (!imageUrl) throw new Error("image_url is required — pass a public URL Meta can fetch")
-    const imageHash = await uploadAdImage(ctx.adAccountId, ctx.userToken, imageUrl)
-
-    // ── 4. Ad Creative ─────────────────────────────────────────────────────
-    const utm = buildUtm(spec.tracking, ideaId)
-    const linkWithUtm = appendUtm(spec.landing_page_url, utm)
-
-    const linkData: Record<string, any> = {
-      link:       linkWithUtm,
-      image_hash: imageHash,
-      message:    truncate(String(spec.creative?.primary_text ?? ''), 1500),
-    }
-    if (spec.creative?.headline)    linkData.name        = truncate(String(spec.creative.headline), 255)
-    if (spec.creative?.description) linkData.description = truncate(String(spec.creative.description), 255)
-    const ctaType = mapCta(spec.creative?.cta_button)
-    if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
-
-    // instagram_actor_id was deprecated → v23 wants instagram_user_id. Build
-    // the creative with the IG identity; if Meta still rejects the IG param,
-    // retry once WITHOUT it (the ad then runs on the Page identity and Meta
-    // still delivers to IG placements via the Page-linked account).
+    // ── 3+4. Creative — an EXISTING post/reel, or a fresh image + copy ───────
+    const existingPost = (body as any).existing_post as { source?: string; id?: string } | undefined
     const creativeName = truncate(`${spec.campaign_name} — Creative`, 400)
-    const makeCreative = (storySpec: Record<string, any>) =>
-      graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
-        name: creativeName,
-        object_story_spec: JSON.stringify(storySpec),
-      })
-
     let creative: any
-    try {
-      creative = await makeCreative({
-        page_id:            ctx.pageId,
-        instagram_user_id:  ctx.igUserId,
-        link_data:          linkData,
-      })
-    } catch (creErr: any) {
-      if (/instagram/i.test(String(creErr?.message ?? '')) && ctx.igUserId) {
-        warnings.push(`IG identity dropped from creative: ${creErr?.message ?? 'instagram param rejected'}`)
-        creative = await makeCreative({ page_id: ctx.pageId, link_data: linkData })
+
+    if (existingPost?.id) {
+      // Run an existing organic post/reel AS the ad (keeps its real engagement).
+      // FB page post → object_story_id (PAGEID_POSTID). IG post/reel →
+      // instagram_user_id + source_instagram_media_id. No image upload and no
+      // link_data — the post's own content/link are used as-is.
+      // A destination link + CTA — objectives like Traffic/Sales require a URL,
+      // and an organic reel/post usually has none of its own.
+      const linkForPost = appendUtm(spec.landing_page_url, buildUtm(spec.tracking, ideaId))
+      const ctaForPost  = mapCta(spec.creative?.cta_button) || 'LEARN_MORE'
+      const src = String(existingPost.source ?? 'ig').toLowerCase()
+      if (src === 'fb' || src === 'facebook') {
+        const rawId = String(existingPost.id)
+        creative = await graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          object_story_id: rawId.includes('_') ? rawId : `${ctx.pageId}_${rawId}`,
+        })
       } else {
-        throw creErr
+        creative = await graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          instagram_user_id: ctx.igUserId,
+          source_instagram_media_id: String(existingPost.id),
+          call_to_action: JSON.stringify({ type: ctaForPost, value: { link: linkForPost } }),
+        })
+      }
+    } else {
+      // ── Fresh creative from an uploaded image + copy ──
+      if (!imageUrl) throw new Error("image_url is required — pass a public URL Meta can fetch (or an existing_post)")
+      const imageHash = await uploadAdImage(ctx.adAccountId, ctx.userToken, imageUrl)
+
+      const utm = buildUtm(spec.tracking, ideaId)
+      const linkWithUtm = appendUtm(spec.landing_page_url, utm)
+      const linkData: Record<string, any> = {
+        link:       linkWithUtm,
+        image_hash: imageHash,
+        message:    truncate(String(spec.creative?.primary_text ?? ''), 1500),
+      }
+      if (spec.creative?.headline)    linkData.name        = truncate(String(spec.creative.headline), 255)
+      if (spec.creative?.description) linkData.description = truncate(String(spec.creative.description), 255)
+      const ctaType = mapCta(spec.creative?.cta_button)
+      if (ctaType) linkData.call_to_action = { type: ctaType, value: { link: linkWithUtm } }
+
+      // instagram_actor_id was deprecated → v23 wants instagram_user_id; if Meta
+      // rejects the IG param, retry without it (runs on the Page identity).
+      const makeCreative = (storySpec: Record<string, any>) =>
+        graphPost(`${GRAPH}/${ctx.adAccountId}/adcreatives`, ctx.userToken, {
+          name: creativeName,
+          object_story_spec: JSON.stringify(storySpec),
+        })
+      try {
+        creative = await makeCreative({ page_id: ctx.pageId, instagram_user_id: ctx.igUserId, link_data: linkData })
+      } catch (creErr: any) {
+        if (/instagram/i.test(String(creErr?.message ?? '')) && ctx.igUserId) {
+          warnings.push(`IG identity dropped from creative: ${creErr?.message ?? 'instagram param rejected'}`)
+          creative = await makeCreative({ page_id: ctx.pageId, link_data: linkData })
+        } else {
+          throw creErr
+        }
       }
     }
     const creativeId = creative.id

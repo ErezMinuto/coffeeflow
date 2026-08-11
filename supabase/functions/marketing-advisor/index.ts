@@ -7707,7 +7707,7 @@ ${dataSection}`;
       // Last 30d Meta performance, top SKUs, past drafts. Pixel event volumes
       // would also be useful but require a Graph API call — deferred to V2.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -7717,6 +7717,10 @@ ${dataSection}`;
           .select("idea_id, campaign_name, objective, daily_budget_ils, status, created_at, warnings")
           .order("created_at", { ascending: false })
           .limit(10),
+        supabase.from("meta_organic_posts")
+          .select("post_id, post_type, message, likes, comments")
+          .order("created_at", { ascending: false })
+          .limit(12),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -7727,6 +7731,10 @@ ${dataSection}`;
       const draftsBlock = (pastDrafts.data ?? [])
         .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.objective} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
         .join("\n") || "  (no campaigns drafted yet — you've never built one through this system)";
+
+      const postsBlock = (recentPosts.data ?? [])
+        .map((p: any) => `  • [${p.post_type}] id=${p.post_id} | ${p.likes ?? 0}❤ ${p.comments ?? 0}💬 | ${String(p.message ?? '').replace(/\n/g, ' ').slice(0, 55)}`)
+        .join("\n") || "  (no organic posts synced)";
 
       // System prompt — combines the owner's verbatim persona prompt with the
       // operational guardrails (compliance, brand voice) and the live data.
@@ -7821,6 +7829,9 @@ ${productsBlock}
 ## Past Drafts (created via this strategist — for continuity)
 ${draftsBlock}
 
+## Recent organic posts/reels — boostable (pass existing_post {source:"ig", id} to draft_meta_campaign to run one AS an ad; no image needed)
+${postsBlock}
+
 # Conversational Style
 - Reply in **English** for strategy and analysis. Ad copy stays in **Hebrew**.
 - Be terse. The owner is busy and not an expert — short focused answers beat walls of text.
@@ -7872,9 +7883,17 @@ ${draftsBlock}
                 utm_content: { type: "string" },
               },
             },
-            image_url: { type: "string", description: "PUBLIC URL of an image Meta will fetch and upload. Owner must have provided this URL." },
+            image_url: { type: "string", description: "PUBLIC image URL Meta will fetch. Provide EITHER image_url OR existing_post — not both." },
+            existing_post: {
+              type: "object",
+              description: "Run an EXISTING organic post/reel AS the ad (keeps its real engagement) instead of a fresh image. Use when the owner wants to boost a specific post/reel. Take the id from the 'Recent organic posts' list in your live data.",
+              properties: {
+                source: { type: "string", enum: ["ig", "fb"], description: "ig = Instagram post/reel; fb = Facebook page post." },
+                id: { type: "string", description: "The post/media id from the Recent organic posts list." },
+              },
+            },
           },
-          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url", "image_url"],
+          required: ["idea_id", "campaign_name", "objective", "daily_budget_ils", "audience", "creative", "landing_page_url"],
         },
       }, {
         name: "queue_organic_task",
@@ -7967,6 +7986,7 @@ ${draftsBlock}
                   idea_id: tu.input.idea_id,
                   spec: tu.input,
                   image_url: tu.input.image_url,
+                  existing_post: tu.input.existing_post,
                 }),
               });
               resultData = await draftRes.json();
