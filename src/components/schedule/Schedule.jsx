@@ -362,9 +362,19 @@ export default function Schedule() {
   };
 
   const removeEmployee = async (id) => {
-    if (!window.confirm('למחוק עובד זה?')) return;
+    const emp  = (data.employees || []).find(e => e.id === id);
+    const name = emp && emp.name && emp.name !== '__PENDING__' ? emp.name : 'עובד זה';
+    const isPending = emp?.user_id === 'pending';
+
+    const msg = isPending
+      ? `לדחות את הבקשה של ${name}?`
+      : `למחוק את ${name} לצמיתות?\n\n` +
+        `הפעולה בלתי הפיכה. שיבוצי העבר יישמרו לפי השם, ` +
+        `אבל החיבור לטלגרם והזמינות יימחקו, ותצטרכו להוסיף מחדש ולצרף שוב לבוט.`;
+
+    if (!window.confirm(msg)) return;
     await employeesDb.remove(id);
-    showToast('עובד הוסר');
+    showToast(isPending ? `הבקשה של ${name} נדחתה` : `${name} הוסר/ה מהרשימה`);
   };
 
   const addEmployee = async () => {
