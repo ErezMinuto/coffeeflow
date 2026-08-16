@@ -439,11 +439,13 @@ async function handleMflowSearch(body: any) {
   return json({ ok: r.ok, status: r.status, results: r.data?.data ?? r.data });
 }
 
-// ── MFlow sells fetch (READ-ONLY inspection) ─────────────────────────────────
+// ── MFlow sells → packed_stock sync ──────────────────────────────────────────
 // Pull recent sells and match coffee-bag lines by MFlow product_id (SKU prefixes
 // overlap across coffees, so product_id is the only safe key). Reports the doc-type
-// mix + per-product units so we can decide which doc types actually move stock,
-// BEFORE wiring the packed_stock decrement. No writes.
+// mix + per-product units.
+//
+// Writes only when body.apply === true (the */15 cron passes it); apply:false is
+// a read-only dry run of the same matching, safe to call for diagnosis.
 async function handleMflowSyncSells(body: any) {
   if (!mflowConfigured()) return json({ error: "MFlow not configured" }, 500);
   const days = Number(body.days ?? 3);
@@ -528,24 +530,50 @@ async function handleMflowSyncSells(body: any) {
   let applied = 0;
   const appliedByProduct = new Map<number, number>();
   for (const t of toApply) for (const [cf, dq] of t.delta) appliedByProduct.set(cf, (appliedByProduct.get(cf) ?? 0) + dq);
+  const failedProducts = new Set<number>();
+  const clamped: { cf_product: number; units_lost: number }[] = [];
   if (apply && toApply.length) {
-    for (const [cf, dq] of appliedByProduct) {
+    for (const [cf, rawDq] of appliedByProduct) {
+      const dq = Math.round(rawDq);
       if (!dq) continue;
-      const before = Number(cfById.get(cf)?.packed_stock ?? 0);
-      const after = Math.max(0, before + dq);
-      await supabase.from("products").update({ packed_stock: after }).eq("id", cf);
+      // Atomic: apply_packed_stock_delta re-reads packed_stock under a row lock
+      // and applies the delta in one statement. cfById was loaded before the
+      // MFlow paging above, so using it for the arithmetic would overwrite any
+      // packing coffee-bot recorded while we were fetching sells.
+      const { data: res, error: updErr } = await supabase.rpc("apply_packed_stock_delta", {
+        p_product_id: cf,
+        p_delta:      dq,
+      });
+      const row = Array.isArray(res) ? res[0] : res;
+      if (updErr || !row) {
+        // Don't record this product's sells — leaving them unseen means the next
+        // run retries the delta instead of losing it to an applied:true marker.
+        console.error(`packed_stock delta failed for product ${cf}:`, updErr?.message ?? "product not found");
+        failedProducts.add(cf);
+        continue;
+      }
+      const before = Number(row.packed_before);
+      const after  = Number(row.packed_after);
+      const lost   = Number(row.units_lost ?? 0);
+      if (lost) clamped.push({ cf_product: cf, units_lost: lost });
       await supabase.from("inventory_adjustments").insert({
         source: "mflow_sell", sku: cfById.get(cf)?.sku ?? String(cf), description: cfById.get(cf)?.name ?? null,
         qty_delta: dq, packed_before: before, packed_after: after, applied: true,
-        note: `mflow sells sync ${fromDate}..${toDate}`,
+        note: `mflow sells sync ${fromDate}..${toDate}`
+          + (lost ? ` — clamped at 0, ${lost} unit(s) not deducted` : ""),
       });
     }
-    const rows = toApply.map((t) => ({
+    // A sell is recorded only when every product it touches applied cleanly.
+    const recordable = toApply.filter((t) => ![...t.delta.keys()].some((cf) => failedProducts.has(cf)));
+    const rows = recordable.map((t) => ({
       mflow_sell_id: t.id, type: t.type, status: t.status, is_return: t.isReturn, source: t.source,
       transaction_date: t.date, coffee_delta: Object.fromEntries(t.delta), applied: true,
     }));
-    for (let i = 0; i < rows.length; i += 200) await supabase.from("mflow_sell_events").insert(rows.slice(i, i + 200));
-    applied = toApply.length;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error: insErr } = await supabase.from("mflow_sell_events").insert(rows.slice(i, i + 200));
+      if (insErr) console.error("mflow_sell_events insert failed:", insErr.message);
+    }
+    applied = recordable.length;
   }
 
   return json({
@@ -553,6 +581,11 @@ async function handleMflowSyncSells(body: any) {
     sells_fetched: sells.length, class_tally: classTally,
     coffee_products_mapped: mflowIdToCF.size,
     new_eligible: toApply.length, already_processed: alreadyProcessed, skipped_draft: skippedDraft, applied,
+    // Non-empty means stock did NOT move for those products; their sells were
+    // deliberately left unrecorded and will retry on the next run.
+    failed_products: failedProducts.size ? [...failedProducts] : undefined,
+    // Sales that hit the ≥0 clamp — these units are gone and will NOT retry.
+    clamped: clamped.length ? clamped : undefined,
     per_product_bags_sold: [...perProduct.entries()].map(([cf, v]) => ({ cf_product: cf, name: v.name, bags: v.units })).sort((a, b) => b.bags - a.bags),
     applied_by_product: apply ? [...appliedByProduct.entries()].map(([cf, dq]) => ({ cf_product: cf, delta: dq })) : undefined,
     sample,
