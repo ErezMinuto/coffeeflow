@@ -105,7 +105,7 @@ serve(async (req) => {
         accountSpend(ctx, 'last_month'),
         committedThisMonth(supabase),
       ])
-      const monthlyCap = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS') ?? 3000)
+      const monthlyCap = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS') ?? 3500)
       return json({
         ok: true,
         currency:      accJson.currency ?? 'unknown',
@@ -251,7 +251,7 @@ serve(async (req) => {
     //     + committed drafts this month + this campaign's planned spend.
     // Deliberately conservative: if either would be breached, refuse the draft.
     const dailyCap    = Number(Deno.env.get('META_MAX_DAILY_BUDGET_ILS') ?? 100)
-    const monthlyCap  = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS')   ?? 3000)
+    const monthlyCap  = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS')   ?? 3500)
     const reqDaily    = Number(spec.daily_budget_ils ?? 60)
     const reqDuration = Math.max(1, Number(spec.duration_days ?? 14))
     if (reqDaily > dailyCap) {
