@@ -299,6 +299,7 @@ ${args.body}
 Output strict JSON per the system prompt.`
 
   const res = await callClaude({
+    sourceFn:    'industry-intelligence-sync',
     model:       'claude-haiku-4-5',
     system:      SYNTH_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],

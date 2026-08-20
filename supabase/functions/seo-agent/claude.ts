@@ -10,6 +10,8 @@
 //     handling, and streaming. Sharing risks one side's change breaking
 //     the other.
 
+import { estimateUsd, type TokenUsage } from './pricing.ts'
+
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
@@ -20,7 +22,10 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 export const MODEL_ORCHESTRATOR = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
 export const MODEL_CHAT         = 'claude-sonnet-4-6'
-export const MODEL_STRATEGIST   = 'claude-opus-4-8'
+// Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
+// ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
+// fallback is wired in callClaude below as a seatbelt.
+export const MODEL_STRATEGIST   = 'claude-fable-5'
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
@@ -31,21 +36,28 @@ function usesAdaptiveThinking(model: string): boolean {
 
 // Anthropic Messages API shapes — minimal, just what we use.
 
+// A cache breakpoint. Legal on any content block; caches the whole rendered
+// prefix (tools → system → messages) up to and including that block.
+export interface CacheControl { type: 'ephemeral'; ttl?: '5m' | '1h' }
+
 export interface MessageContentText {
   type: 'text'
   text: string
+  cache_control?: CacheControl
 }
 export interface MessageContentToolUse {
   type: 'tool_use'
   id: string
   name: string
   input: Record<string, unknown>
+  cache_control?: CacheControl
 }
 export interface MessageContentToolResult {
   type: 'tool_result'
   tool_use_id: string
   content: string
   is_error?: boolean
+  cache_control?: CacheControl
 }
 // Vision input. Anthropic accepts source.type='url' (added 2024) for any
 // publicly-fetchable image URL, or source.type='base64' for inline bytes.
@@ -56,6 +68,7 @@ export interface MessageContentImage {
   source:
     | { type: 'url'; url: string }
     | { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; data: string }
+  cache_control?: CacheControl
 }
 export type MessageContentBlock =
   | MessageContentText
@@ -93,7 +106,49 @@ export interface CallClaudeOptions {
   // AND respond several×faster (the cached input is processed at near-
   // zero latency). Huge win for the chat handler where one turn can fire
   // 4-8 Claude calls back-to-back with identical system + tools.
+  //
+  // It ALSO marks the last block of the last message (see
+  // withMessageBreakpoint). In a tool loop the system+tools prefix is a
+  // fixed cost but `messages` GROWS every turn, and without a breakpoint
+  // there the whole accumulated history is re-billed at full price on
+  // every single turn. Measured on a real strategist-brain run: turn 2
+  // paid full price on 9,129 input tokens, turn 3 on 16,282 — while the
+  // 33,776-token system prefix was correctly served from cache both times.
   cachePrefix?: boolean
+  // Cost ledger attribution. When sourceFn is set, every call writes one
+  // agent_cost_ledger row (fire-and-forget) so spend and cache-hit rate are
+  // observable per function. Without it the call is unattributed and skipped
+  // — which is why only strategist-brain/-evaluator had any cost history.
+  sourceFn?: string
+  runId?: string | null
+}
+
+// Attach a cache breakpoint to the final block of the final message, so the
+// NEXT turn in a tool loop reads this turn's history instead of re-paying for
+// it. Returns a shallow-cloned array — callers like strategist-brain persist
+// `state.messages` to the DB, so mutating in place would poison stored state.
+export function withMessageBreakpoint(messages: ChatMessage[]): ChatMessage[] {
+  // A single message means a one-shot call: there is no prior turn to read and
+  // no next turn to be read by, so a breakpoint here would write an entry
+  // nobody ever hits — a pure +25% on those tokens. Only loops benefit.
+  if (messages.length < 2) return messages
+  const last = messages[messages.length - 1]
+  let blocks: MessageContentBlock[]
+  if (typeof last.content === 'string') {
+    // An empty text block is a 400 — leave a blank message unmarked.
+    if (last.content.trim() === '') return messages
+    blocks = [{ type: 'text', text: last.content }]
+  } else {
+    if (last.content.length === 0) return messages
+    blocks = last.content.slice()
+  }
+  blocks[blocks.length - 1] = {
+    ...blocks[blocks.length - 1],
+    cache_control: { type: 'ephemeral' },
+  }
+  const out = messages.slice()
+  out[out.length - 1] = { ...last, content: blocks }
+  return out
 }
 
 export interface CallClaudeResult {
@@ -118,6 +173,13 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
 
   const model = opts.model ?? MODEL_ORCHESTRATOR
   const adaptive = usesAdaptiveThinking(model)
+  // Fable 5's safety classifiers can decline a request as stop_reason:"refusal".
+  // In an unattended weekly cron that would silently fail the run, so opt into
+  // server-side fallback: on a policy decline Anthropic transparently re-serves
+  // the SAME request on Opus 4.8 within this one call (repriced automatically).
+  // Gated to Fable — the param/header is unnecessary for other models. A refused
+  // partial is billed but discarded server-side; a pre-output decline isn't billed.
+  const fableFallback = model.startsWith('claude-fable')
   const body: Record<string, unknown> = {
     model,
     max_tokens: opts.maxTokens ?? 8192,
@@ -127,7 +189,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
     system: opts.cachePrefix
       ? [{ type: 'text', text: opts.system, cache_control: { type: 'ephemeral' } }]
       : opts.system,
-    messages: opts.messages,
+    messages: opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages,
   }
   if (adaptive) {
     // Adaptive thinking is the only on-mode for Opus 4.7+/Fable; Claude
@@ -138,6 +200,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   }
   // effort is opt-in, so existing Sonnet callers (no effort) are unchanged.
   if (opts.effort) body.output_config = { effort: opts.effort }
+  if (fableFallback) body.fallbacks = [{ model: 'claude-opus-4-8' }]
   if (opts.tools && opts.tools.length > 0) {
     // Tools: when caching, attach cache_control to the LAST tool. The
     // marker caches the WHOLE prefix up to and including that block, so
@@ -165,6 +228,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
         'x-api-key':         ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
         'content-type':      'application/json',
+        ...(fableFallback ? { 'anthropic-beta': 'server-side-fallback-2026-06-01' } : {}),
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -196,16 +260,70 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
     .map(b => b.text)
     .join('')
 
+  const inputTokens         = json.usage?.input_tokens ?? 0
+  const outputTokens        = json.usage?.output_tokens ?? 0
+  const cacheReadTokens     = json.usage?.cache_read_input_tokens ?? 0
+  const cacheCreationTokens = json.usage?.cache_creation_input_tokens ?? 0
+  const servedModel         = json.model ?? model
+
+  // A measured READ is the only proof caching pays. write>0 with read=0 across
+  // a whole run means the prefix is never reused (or sits under the model's
+  // minimum cacheable size) — that costs +25% and should be reverted, not kept.
+  if (cacheReadTokens || cacheCreationTokens) {
+    console.log(`[cache] model=${servedModel} write=${cacheCreationTokens} read=${cacheReadTokens} input=${inputTokens}`)
+  }
+  logCost(opts, { model: servedModel, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens })
+
   return {
     text,
     content,
     stop_reason:        json.stop_reason ?? 'unknown',
-    inputTokens:        json.usage?.input_tokens ?? 0,
-    outputTokens:       json.usage?.output_tokens ?? 0,
-    cacheReadTokens:    json.usage?.cache_read_input_tokens ?? 0,
-    cacheCreationTokens: json.usage?.cache_creation_input_tokens ?? 0,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheCreationTokens,
     model:              json.model ?? model,
   }
+}
+
+// ── Cost ledger ──────────────────────────────────────────────────────────────
+// One agent_cost_ledger row per call, written here rather than at each call
+// site so instrumentation can't drift out of sync with the calls themselves.
+// (It had: only strategist-brain and strategist-evaluator ever called
+// logClaudeCost, leaving ~14 other Claude-calling functions with zero spend or
+// cache-hit visibility.)
+//
+// Deliberately NOT awaited and never throws: a lost cost row is far cheaper
+// than failing an expensive reasoning step that already completed and was
+// already billed by Anthropic. Posts straight to PostgREST instead of going
+// through db.ts, so callers don't have to thread a SupabaseClient through and
+// claude.ts stays free of a db.ts import.
+function logCost(opts: CallClaudeOptions, usage: TokenUsage): void {
+  if (!opts.sourceFn) return   // unattributed call — nothing useful to record
+  const url = Deno.env.get('SUPABASE_URL')
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !key) return
+  fetch(`${url}/rest/v1/agent_cost_ledger`, {
+    method: 'POST',
+    headers: {
+      apikey:          key,
+      Authorization:   `Bearer ${key}`,
+      'Content-Type':  'application/json',
+      Prefer:          'return=minimal',
+    },
+    body: JSON.stringify({
+      source_fn:             opts.sourceFn,
+      run_id:                opts.runId ?? null,
+      model:                 usage.model,
+      input_tokens:          usage.inputTokens,
+      output_tokens:         usage.outputTokens,
+      cache_read_tokens:     usage.cacheReadTokens,
+      cache_creation_tokens: usage.cacheCreationTokens,
+      est_usd:               estimateUsd(usage),
+    }),
+  })
+    .then(r => { if (!r.ok) return r.text().then(t => console.warn(`[cost-ledger] ${opts.sourceFn} insert ${r.status}: ${t.slice(0, 200)}`)) })
+    .catch(e => console.warn(`[cost-ledger] ${opts.sourceFn} insert failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`))
 }
 
 // Robust JSON parser for Claude's text output. Claude sometimes wraps

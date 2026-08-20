@@ -206,6 +206,7 @@ serve(async (req) => {
       content: `${question}\n\nFIRST STEP — WEB EVIDENCE GATHERING ONLY. Use web_search now to find the most relevant, recent public sources for this question. Then write a concise BULLETED digest of the concrete findings, each bullet ending with its source URL. Do NOT write the full analysis yet — just the sourced findings. If web results are thin or irrelevant, say so explicitly.`,
     }]
     const web = await callClaude({
+      sourceFn:    'seo-worker-research',
       model:       MODEL_ORCHESTRATOR,
       system:      systemPrompt,
       messages:    webMsgs,
@@ -261,10 +262,20 @@ serve(async (req) => {
     }
     turn++
     const res = await callClaude({
+      sourceFn:    'seo-worker-research',
       model:       MODEL_ORCHESTRATOR,
       system:      systemPrompt,
       messages,
       tools:       fullTools as any,
+      // systemPrompt and fullTools are built once above and never mutated, so
+      // this prefix repeats byte-for-byte across every gather turn while only
+      // `messages` grows — turn 1 writes the cache, turns 2..N read it.
+      // Deliberately NOT set on the web-evidence call above or the synthesis
+      // call below: those pass different `tools` (web_search / none), and since
+      // the cacheable prefix is tools→system→messages, a different tools array
+      // is a different prefix. They're one-shot, so a marker there would write
+      // a cache nobody reads and cost +25%.
+      cachePrefix: true,
       // Gather turns are for CALLING query_minuto, not writing the report.
       // Capped low (was 4096) so a turn can't try to generate a full ~4k-token
       // report on top of ~35k tokens of context — that long generation is what
@@ -372,6 +383,7 @@ serve(async (req) => {
         synthMsgs.push({ role: 'user', content: nudge })
       }
       const synth = await callClaude({
+        sourceFn:    'seo-worker-research',
         model:       MODEL_ORCHESTRATOR,
         system:      systemPrompt,
         messages:    synthMsgs,

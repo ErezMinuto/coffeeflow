@@ -11,7 +11,7 @@
 // when nothing is due.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabase, logClaudeCost, appendChatMessage } from '../seo-agent/db.ts'
+import { createSupabase, appendChatMessage } from '../seo-agent/db.ts'
 import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
 import { THESIS_EVALUATOR_SYSTEM_PROMPT } from '../seo-agent/prompts/thesisEvaluator.ts'
 import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot.ts'
@@ -66,11 +66,18 @@ async function gradeThesis(snapshotJson: string, t: ThesisRow): Promise<{ verdic
     `Compare THEN vs the CURRENT business snapshot in your system context, and return the JSON verdict.`
 
   const res = await callClaude({
+    sourceFn:  'strategist-evaluator',
     model:     STRATEGIST_MODEL,
     system:    THESIS_EVALUATOR_SYSTEM_PROMPT + '\n\n═══ CURRENT BUSINESS SNAPSHOT (revenue-first) ═══\n' + snapshotJson,
     messages:  [{ role: 'user', content: userMsg }],
     effort:    STRATEGIST_EFFORT,
     maxTokens: 4000,
+    // The system prompt + business snapshot (~30k tokens, measured) is built
+    // ONCE per run and reused verbatim to grade every due thesis, and the
+    // theses are graded sequentially — so thesis 1 writes the prefix and
+    // theses 2..BATCH read it. It was running at a 0% hit rate: 119,248
+    // uncached input tokens across 4 calls.
+    cachePrefix: true,
     timeoutMs: 120_000,
   })
   const verdict = parseClaudeJson<Verdict>(res.text)
@@ -101,8 +108,8 @@ async function evaluate(supabase: SupabaseClient): Promise<Response> {
 
   for (const t of due) {
     try {
+      // The per-call agent_cost_ledger row is written inside callClaude now.
       const { verdict: v, cost } = await gradeThesis(snapshotJson, t)
-      await logClaudeCost(supabase, { sourceFn: 'strategist-evaluator', model: cost.model, inputTokens: cost.i, outputTokens: cost.o, cacheReadTokens: cost.cr, cacheCreationTokens: cost.cc })
 
       if (v.verdict === 'validated' || v.verdict === 'refuted') {
         await supabase

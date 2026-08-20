@@ -1936,6 +1936,7 @@ async function executeTool(
           if (body.length < 200) return { ok: false, payload: { error: 'page body too short after HTML strip (paywall, JS-heavy SPA, or PDF?). Try a different URL.' } }
           // Synthesize via Haiku — same prompt as the industry ingester.
           const synth = await callClaude({
+            sourceFn: 'handle-seo-chat',
             model:  'claude-haiku-4-5',
             system: `You are Minuto's organic-marketing research analyst. Given a URL pasted by the admin, summarize it as an actionable insight for Minuto's organic stack (Hebrew SEO blog + Instagram + dynamic experiments). Output strict JSON only:\n{"insight":"2-4 sentences explaining WHAT the source argues + HOW Minuto could apply it","relevance":0.0-1.0,"tags":["tag1","tag2"]}`,
             messages: [{ role: 'user', content: `URL: ${url}\n\nBODY:\n${body}` }],
@@ -2556,6 +2557,7 @@ serve(async (req: Request): Promise<Response> => {
       let res
       try {
         res = await callClaude({
+          sourceFn: 'handle-seo-chat',
           model:    MODEL_CHAT,
           system:   systemPrompt,
           messages: apiMessages,
