@@ -223,13 +223,20 @@ export async function getCompetitorAds(
     snapshots.add(row.research_date)
     for (const a of (row.raw_data?.ads ?? [])) {
       const started = a.started ? new Date(a.started) : null
+      const stopped = a.stopped ? new Date(a.stopped) : null
+      // A stopped ad's run is start→stop. A live one is start→now, and is still
+      // accruing — so the two are labelled differently rather than blended: a
+      // 60-day ad that ENDED is proven, a 60-day ad still running is stronger.
+      const end = stopped ?? today
       ads.push({
         page_name: a.page_name ?? null,
         body: (a.bodies ?? [])[0] ?? null,
         headline: (a.link_titles ?? [])[0] ?? null,
         platforms: a.platforms ?? [],
         started: a.started ?? null,
-        days_running: started ? Math.max(0, Math.round((+today - +started) / 86400000)) : null,
+        stopped: a.stopped ?? null,
+        still_running: !stopped,
+        days_running: started ? Math.max(0, Math.round((+end - +started) / 86400000)) : null,
         seen_on: row.research_date,
       })
     }
