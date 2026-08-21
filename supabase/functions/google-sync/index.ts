@@ -411,6 +411,16 @@ serve(async (req) => {
           const primaryConv = Number(r.metrics.conversions ?? 0)
           const allVal = Number(r.metrics.allConversionsValue ?? 0)
           const primaryVal = Number(r.metrics.conversionsValue ?? 0)
+          // Legacy behaviour preserved so historical rows stay comparable with
+          // each other — but the PRIMARY figures are now stored alongside, and
+          // they are what any CPA decision should use.
+          //
+          // all_conversions counts Secondary actions (page views, add-to-cart,
+          // phone clicks) as conversions. Measured over 30 days it reported 794
+          // against 124 real web orders, ~6.4x. It is also inconsistent with the
+          // ad-level and keyword-level syncs in this same file, which already
+          // read metrics.conversions — so the account answers differently
+          // depending which level you ask.
           const conversions = allConv > 0 ? allConv : primaryConv
           const convValue = allVal > 0 ? allVal : primaryVal
           const roas = cost > 0 ? convValue / cost : 0
@@ -426,6 +436,8 @@ serve(async (req) => {
             cpc: (r.metrics.averageCpc || 0) / 1_000_000,
             conversions,
             conversion_value: convValue,
+            primary_conversions:      primaryConv,
+            primary_conversion_value: primaryVal,
             roas,
             search_impression_share:             r.metrics.searchImpressionShare ?? null,
             search_budget_lost_impression_share: r.metrics.searchBudgetLostImpressionShare ?? null,
