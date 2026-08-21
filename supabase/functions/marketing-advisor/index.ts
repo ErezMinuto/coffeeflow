@@ -1477,7 +1477,7 @@ async function searchMetaAdLibraryByPage(
 // competitor's: nothing ever checked that the returned page was the right one.
 async function resolveCompetitorPageId(
   token: string, brand: string, country = "IL",
-): Promise<{ page_id: string; page_name: string; confidence: number } | null> {
+): Promise<{ match: { page_id: string; page_name: string; confidence: number } | null; candidates: Array<{ page_id: string; page_name: string; ads: number }>; total_ads_seen?: number; error?: string }> {
   const url = `https://graph.facebook.com/v23.0/ads_archive?` + new URLSearchParams({
     search_terms:         brand,
     ad_reached_countries: `['${country}']`,
@@ -1490,7 +1490,7 @@ async function resolveCompetitorPageId(
   try {
     const res = await fetch(url);
     const data = await res.json();
-    if (data.error || !Array.isArray(data.data)) return null;
+    if (data.error || !Array.isArray(data.data)) return { match: null, candidates: [], error: data.error?.message ?? 'no data array' };
 
     // Tally pages, then score by how well the page name matches the brand we
     // asked for. A search for "נחת" will also return anyone whose ad TEXT
@@ -1503,6 +1503,7 @@ async function resolveCompetitorPageId(
       const t = tally.get(ad.page_id) ?? { name: ad.page_name ?? "", n: 0 };
       t.n++; tally.set(ad.page_id, t);
     }
+    const candidates = [...tally.entries()].map(([id, v]) => ({ page_id: id, page_name: v.name, ads: v.n }));
     let best: { page_id: string; page_name: string; confidence: number } | null = null;
     for (const [page_id, v] of tally) {
       const name = norm(v.name);
@@ -1516,8 +1517,13 @@ async function resolveCompetitorPageId(
     // Below 0.6 the name did not match at all — return nothing rather than a
     // confident wrong answer. An unresolved competitor is recoverable; a
     // silently wrong one poisons every downstream recommendation.
-    return best && best.confidence >= 0.6 ? best : null;
-  } catch { return null; }
+    // Attach what the archive actually returned. A NO MATCH is otherwise
+    // indistinguishable between "this brand runs no ads", "the token lacks
+    // ads_read", and "the name-match threshold is too strict" — three very
+    // different problems with the same empty output.
+    const out = best && best.confidence >= 0.6 ? best : null;
+    return { match: out, candidates: candidates.slice(0, 8), total_ads_seen: data.data.length };
+  } catch (e: any) { return { match: null, candidates: [], error: e?.message ?? String(e) }; }
 }
 
 // Scrape a competitor homepage for its Facebook page URL. Returns the vanity
@@ -5547,8 +5553,9 @@ serve(withCors(async (req) => {
     const apply = (body as Record<string, unknown>).apply === true;
     const out: any[] = [];
     for (const c of CURATED) {
-      const hit = await resolveCompetitorPageId(metaToken, c.brand);
-      out.push({ competitor: c.key, brand: c.brand, resolved: hit });
+      const r = await resolveCompetitorPageId(metaToken, c.brand);
+      const hit = r.match;
+      out.push({ competitor: c.key, brand: c.brand, resolved: hit, candidates: r.candidates, ads_seen: r.total_ads_seen ?? 0, error: r.error ?? null });
       if (apply && hit) {
         await supabase.from("competitor_pages").upsert(
           { domain: `${c.key}.resolved`, name: hit.page_name, fb_page_id: hit.page_id, discovery_source: "ad_library_verified" },
