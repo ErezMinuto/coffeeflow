@@ -549,6 +549,22 @@ serve(async (req: Request): Promise<Response> => {
       console.log(`[organic-orchestrator] wire-up updates: ${updates.length}`)
     }
 
+    // Per-task emit record, so a "nothing was produced this cycle" run is
+    // visible at a glance instead of showing only a bare count. Restored after
+    // a deploy from git silently dropped it — it had been live in production
+    // and never committed.
+    //
+    // Simpler than the version it replaces: convert-in-place keeps
+    // emittedTasks[i] aligned with insertedRows[i], so this needs no dropped-
+    // index bookkeeping. A task that became a cannibalization_conflict is still
+    // inserted — as a proposal — so it shows as 'inserted', which is accurate.
+    const emitLog = emittedTasks.map((et, i) => ({
+      task_type: et.task_type,
+      outcome:   (insertedRows[i] ? 'inserted' : 'dropped') as 'inserted' | 'dropped',
+      task_id:   insertedRows[i]?.id ?? null,
+    }))
+    console.log(`[organic-orchestrator] task emit log (${insertedRows.length} inserted of ${emittedTasks.length} planned): ${JSON.stringify(emitLog)}`)
+
     // ── 6b-FAQ. Identify ranking blog articles missing FAQ → queue proposals ─
     // Deterministic technical-SEO scan (NOT routed through the strategist
     // LLM — pure data). Top organic blog landing pages from GA4 that don't
@@ -664,6 +680,7 @@ serve(async (req: Request): Promise<Response> => {
         experimentsEvaluated: experimentEvalSummary,
         tasksEmitted:         insertedRows.length,
         taskIds:              insertedRows.map(r => r.id),
+        emitLog,
       }))
     } catch (e: any) {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
