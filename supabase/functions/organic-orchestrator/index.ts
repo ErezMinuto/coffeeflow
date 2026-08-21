@@ -34,6 +34,7 @@ import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
 import {
   checkCannibalizationForQueue,
   buildCannibalizationConflictBrief,
+  type CannibalConflict,
 } from '../seo-agent/cannibalizationCheck.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
@@ -355,46 +356,104 @@ serve(async (req: Request): Promise<Response> => {
       `tasks=${emittedTasks.length}`,
     )
 
-    // ── 5b. PRE-QUEUE CANNIBALIZATION GATE (text_generation only) ──────
-    // Before materializing tasks, ask WP whether each intended article's
-    // keyword is already covered by an existing post (any status). On a
-    // conflict we do NOT queue the article — we convert that emitted task
-    // IN PLACE into a dynamic_experiment (cannibalization_conflict) so the
-    // conflict surfaces in the admin's pending-approvals queue instead of a
-    // silently-failed writer task. Converting in place (rather than dropping)
-    // keeps the emittedTasks↔insertedRows index alignment the parent/depends
-    // wiring below relies on. Fails open per-task (WP outage → queue anyway).
-    // One WP call per text_generation task; run concurrently.
+    // ── 5b. CANNIBALIZATION GATE (text_generation only) ────────────────
+    // ONE mechanism, TWO detection sources.
+    //
+    // Production and git had grown SEPARATE solutions to this. Prod dropped
+    // colliding tasks — which forced cascade-dropping their dependents and
+    // remapping every positional parent/depends index. Git converted the task
+    // in place. Unified here on convert-in-place: it leaves the array's length
+    // and order untouched, so ~50 lines of index bookkeeping that existed only
+    // to compensate for removing items mid-array are simply not needed.
+    //
+    // Neither detection source subsumes the other, so both run:
+    //   • WP (checkCannibalizationForQueue) sees anything published or drafted
+    //     on the site, including posts far older than our task table.
+    //   • The local pass sees what WP cannot — two articles colliding inside
+    //     THIS plan, and articles already queued in seo_tasks but not yet
+    //     written. Neither exists on WP yet, so WP cannot object to them.
+    //
+    // On a conflict the task BECOMES a dynamic_experiment
+    // (cannibalization_conflict, approval_required), landing in the admin's
+    // pending-approvals queue rather than vanishing from the plan silently.
     phase = 'cannibalization_gate'
     let cannibalConflictsFiled = 0
-    if (emittedTasks.length > 0) {
-      await Promise.all(emittedTasks.map(async (et) => {
-        if (et.task_type !== 'text_generation') return
-        const brief   = (et.brief_data ?? {}) as Record<string, unknown>
-        const keyword = String(brief.keyword ?? '').trim()
-        const title   = String(brief.title ?? '').trim()
-        if (!keyword) return
-        let gate
-        try { gate = await checkCannibalizationForQueue(keyword, title) }
-        catch (e: any) {
-          console.warn(`[organic-orchestrator] cannibalization check threw for "${keyword}" (fail-open): ${e?.message ?? e}`)
-          return
-        }
-        if (gate.checked && gate.conflicts.length > 0) {
-          et.task_type       = 'dynamic_experiment'
-          et.task_subtype    = 'cannibalization_conflict'
-          et.brief_data      = buildCannibalizationConflictBrief({ keyword, title, conflicts: gate.conflicts })
-          et.rationale       = `[cannibalization-gate] did NOT queue "${keyword}" — ${gate.conflicts.length} overlapping post(s); needs admin dedupe. (was: ${et.rationale ?? ''})`.slice(0, 500)
-          // Strip experiment tagging — a conflict proposal is not an A/B variation.
-          delete et.experiment_group
-          delete et.variation_label
-          cannibalConflictsFiled++
-          console.warn(`[organic-orchestrator] cannibalization: "${keyword}" overlaps ${gate.conflicts.length} post(s) → filed conflict for admin review`)
-        }
-      }))
-      if (cannibalConflictsFiled > 0) {
-        console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} text_generation task(s) converted to conflict proposals`)
+
+    const normKw   = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+    const briefStr = (b: unknown, k: string) =>
+      String((b as Record<string, unknown> | null)?.[k] ?? '').trim()
+
+    const fileConflict = (
+      et: (typeof emittedTasks)[number],
+      keyword: string,
+      title: string,
+      conflicts: CannibalConflict[],
+      why: string,
+    ) => {
+      et.task_type    = 'dynamic_experiment'
+      et.task_subtype = 'cannibalization_conflict'
+      et.brief_data   = buildCannibalizationConflictBrief({ keyword, title, conflicts })
+      et.rationale    = `[cannibalization-gate] did NOT queue "${keyword}" — ${why}`
+      // Strip experiment tagging — a conflict proposal is not an A/B variation.
+      delete et.experiment_group
+      delete et.variation_label
+      cannibalConflictsFiled++
+      console.warn(`[organic-orchestrator] cannibalization: "${keyword}" — ${why}`)
+    }
+
+    // Pass 1 — local, no network. In-plan duplicates and already-queued blog
+    // tasks (recentTasks spans pending/completed/failed, so in-flight drafts
+    // count). Runs first so pass 2 never spends a WP call on a task already
+    // resolved here.
+    const queuedTitleByKw = new Map<string, string>()
+    for (const t of recentTasks) {
+      if (t.task_type !== 'text_generation') continue
+      const kw = normKw(briefStr(t.brief_data, 'keyword'))
+      if (kw) queuedTitleByKw.set(kw, briefStr(t.brief_data, 'title') || kw)
+    }
+    const seenKw = new Set<string>()
+    for (const et of emittedTasks) {
+      if (et.task_type !== 'text_generation') continue
+      const raw = briefStr(et.brief_data, 'keyword')
+      const kw  = normKw(raw)
+      if (!kw) continue                                   // no keyword to dedup on
+      const title = briefStr(et.brief_data, 'title')
+      if (seenKw.has(kw)) {
+        fileConflict(et, raw, title,
+          [{ id: 0, title: 'another article in this same plan', status: 'in_plan', link: '' }],
+          'a second article on this keyword in the same plan')
+        continue
       }
+      const queued = queuedTitleByKw.get(kw)
+      if (queued !== undefined) {
+        fileConflict(et, raw, title,
+          [{ id: 0, title: queued, status: 'queued (not yet published)', link: '' }],
+          'already queued as a blog task')
+        continue
+      }
+      seenKw.add(kw)
+    }
+
+    // Pass 2 — WP. Only tasks that survived pass 1 are still text_generation.
+    // Fails open per task: a WP outage must never block the whole plan.
+    await Promise.all(emittedTasks.map(async (et) => {
+      if (et.task_type !== 'text_generation') return
+      const keyword = briefStr(et.brief_data, 'keyword')
+      const title   = briefStr(et.brief_data, 'title')
+      if (!keyword) return
+      let gate
+      try { gate = await checkCannibalizationForQueue(keyword, title) }
+      catch (e: any) {
+        console.warn(`[organic-orchestrator] cannibalization check threw for "${keyword}" (fail-open): ${e?.message ?? e}`)
+        return
+      }
+      if (gate.checked && gate.conflicts.length > 0) {
+        fileConflict(et, keyword, title, gate.conflicts, `${gate.conflicts.length} existing post(s) overlap`)
+      }
+    }))
+
+    if (cannibalConflictsFiled > 0) {
+      console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} task(s) converted to conflict proposals`)
     }
 
     // ── 6a. Materialize experiments. Each experiment_group string from
