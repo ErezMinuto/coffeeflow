@@ -23,10 +23,25 @@ name: Edge function drift check
 # It is READ-ONLY: it downloads each deployed function and diffs it against the
 # committed source. It never deploys and never writes to Supabase.
 #
-# Required GitHub Secret:
-#   SUPABASE_ACCESS_TOKEN — a personal access token from
-#   https://supabase.com/dashboard/account/tokens (Settings → Access Tokens).
-#   Read access is enough. Until it is set, this job fails with a clear message.
+# Required: a SUPABASE_ACCESS_TOKEN secret scoped to the `edge-drift-check`
+# ENVIRONMENT — deliberately NOT a repo-level secret.
+#
+# Repo secrets are readable by every workflow in the repo, and fixer-agent.yml
+# states the rule this would have broken: "by design the agent has no credential
+# that can deploy or migrate." A Supabase access token can do both. Scoping it to
+# an environment means only a job that declares `environment: edge-drift-check`
+# can see it — this job does, fixer-agent does not.
+#
+# Setup:
+#   1. Settings → Environments → New environment → `edge-drift-check`
+#   2. Add an environment secret SUPABASE_ACCESS_TOKEN, from
+#      https://supabase.com/dashboard/account/tokens
+#
+# Note: Supabase personal access tokens are account-wide. Confirm on that page
+# whether a narrower scope is available before minting one; if not, the
+# environment scoping above is what limits the blast radius.
+#
+# Until the secret exists, this job fails with a message saying so.
 
 on:
   schedule:
@@ -44,6 +59,8 @@ concurrency:
 jobs:
   drift:
     runs-on: ubuntu-latest
+    # Gates access to the SUPABASE_ACCESS_TOKEN secret — see the note above.
+    environment: edge-drift-check
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ytydgldyeygpzmlxvpvb
