@@ -2884,15 +2884,17 @@ interface MetaCampaignAgg {
   spend:        number;
   impressions:  number;
   clicks:       number;
-  conversions:  number;
+  conversions:  number;      // LEGACY: whole funnel, one shopper counted many times
+  purchases:    number | null; // true purchases — the CPA denominator; null = not yet synced
   ctr:          number;
   cpc:          number;
-  cpa:          number | null;
+  cpa:          number | null; // cost per PURCHASE
 }
 
 function aggregateMetaCampaigns(rows: Array<{
   campaign_id: string; name: string; status: string; objective?: string | null;
   spend: number; impressions: number; clicks: number; conversions: number;
+  purchases?: number | null;
   ctr: number; cpc: number;
 }>): MetaCampaignAgg[] {
   const m = new Map<string, MetaCampaignAgg>();
@@ -2908,16 +2910,28 @@ function aggregateMetaCampaigns(rows: Array<{
         impressions: r.impressions,
         clicks:      r.clicks,
         conversions: r.conversions,
+        // Purchases ONLY. `conversions` sums the whole funnel — add_to_cart,
+        // initiate_checkout, add_payment_info, every offsite_conversion.* —
+        // so one shopper lands in it several times. Measured on the live
+        // account: 851 "conversions" against 22 real purchases on the same
+        // ₪1,511 of spend, i.e. a CPA of ₪1.8 where the truth was ₪69.
+        // The scale/kill rules are written in purchase terms, so feeding them
+        // the funnel number made the kill rule unreachable and the answer was
+        // always "scale". Deliberately NOT falling back to `conversions` when
+        // this is null — mixing the two metrics is what produced the phantom
+        // "CPA fell from ₪1.28 to ₪120" alarm. Unknown must read as unknown.
+        purchases:   r.purchases ?? null,
         ctr:         r.ctr,
         cpc:         r.cpc,
-        cpa:         r.conversions > 0 ? r.spend / r.conversions : null,
+        cpa:         (r.purchases ?? 0) > 0 ? r.spend / (r.purchases as number) : null,
       });
     } else {
       e.spend       += r.spend;
       e.impressions += r.impressions;
       e.clicks      += r.clicks;
       e.conversions += r.conversions;
-      e.cpa = e.conversions > 0 ? Math.round((e.spend / e.conversions) * 100) / 100 : null;
+      e.purchases    = (e.purchases ?? 0) + (r.purchases ?? 0);
+      e.cpa = (e.purchases ?? 0) > 0 ? Math.round((e.spend / e.purchases) * 100) / 100 : null;
       // recompute weighted ctr/cpc
       e.ctr = e.impressions > 0 ? e.clicks / e.impressions : 0;
       e.cpc = e.clicks > 0 ? e.spend / e.clicks : 0;
@@ -2939,7 +2953,7 @@ async function fetchMetaAdData(
   const fourWksAgo = subtractDays(weekStart, 28);
   const { data, error } = await supabase
     .from("meta_ad_campaigns")
-    .select("campaign_id,name,status,objective,date,spend,impressions,clicks,ctr,cpc,conversions")
+    .select("campaign_id,name,status,objective,date,spend,impressions,clicks,ctr,cpc,conversions,purchases")
     .gte("date", fourWksAgo)
     .lte("date", weekEnd)
     .order("date", { ascending: false });
@@ -2973,7 +2987,7 @@ function buildMetaDataBlock(
 
   const metaPrevBlock = metaPrevAgg.length > 0
     ? metaPrevAgg.map(c =>
-        `  ${c.name} | עלות: ₪${c.spend} | המרות: ${c.conversions} | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"}`
+        `  ${c.name} | עלות: ₪${c.spend} | רכישות: ${c.purchases ?? "לא נמדד"} | CPA לרכישה: ${c.cpa != null ? `₪${c.cpa}` : "אין רכישות"} | אירועי משפך: ${c.conversions}`
       ).join("\n")
     : "  אין נתוני השוואה לתקופה הקודמת במטא";
 
@@ -3637,7 +3651,7 @@ async function fetchNewCampaigns(
   // ── Meta campaigns that first appeared in last 14 days ───────────────────
   const { data: metaRows } = await supabase
     .from("meta_ad_campaigns")
-    .select("campaign_id, name, status, objective, date, impressions, clicks, spend, conversions")
+    .select("campaign_id, name, status, objective, date, impressions, clicks, spend, conversions, purchases")
     .gte("date", lookbackDate)
     .order("date", { ascending: true });
 
@@ -5661,7 +5675,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
           .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
         supabase.from("google_ads").select("ad_id, campaign_name, ad_group_name, status, ad_strength, headlines, descriptions, final_urls, impressions, clicks, conversions")
           .eq("status", "ENABLED"),
-        supabase.from("meta_ad_campaigns").select("campaign_id, name, status, objective, spend, conversions, date")
+        supabase.from("meta_ad_campaigns").select("campaign_id, name, status, objective, spend, conversions, purchases, date")
           .eq("status", "ACTIVE")
           .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
         // Live keywords from our Google campaigns (keyword_view via google-sync)
@@ -6100,7 +6114,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
           .select("audience_id,name,type,description,size_for_search,membership_life_span_days")
           .eq("membership_status", "OPEN"),
         supabase.from("meta_ad_campaigns")
-          .select("campaign_id,name,status,objective,date,spend,impressions,clicks,conversions")
+          .select("campaign_id,name,status,objective,date,spend,impressions,clicks,conversions,purchases")
           .eq("status", "ACTIVE")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
@@ -7509,7 +7523,7 @@ ${capped.map((q, i) =>
         supabase.from("seo_learnings").select("scope, insight, created_at").order("created_at", { ascending: false }).limit(20),
         supabase.from("google_ads").select("campaign_name, ad_group_name, status, impressions, clicks, conversions").limit(50),
         supabase.from("woo_orders").select("order_date, total, utm_source, utm_medium, utm_campaign").gte("order_date", hist90Start).limit(2000),
-        supabase.from("meta_ad_campaigns").select("name, date, spend, conversions").gte("date", hist90Start).limit(3000),
+        supabase.from("meta_ad_campaigns").select("name, date, spend, conversions, purchases").gte("date", hist90Start).limit(3000),
       ]);
 
       // ── Historical attributed performance (last 90d) — meaningful now that
