@@ -740,20 +740,35 @@ async function handleMflowSyncRevenue(body: any) {
     }
   }
 
+  // DEDUPE BEFORE UPSERT. Postgres rejects a batch containing the same
+  // conflict key twice ("ON CONFLICT DO UPDATE command cannot affect row a
+  // second time"). Paging over a window that is still being written to — i.e.
+  // the CURRENT month — can return the same sell on two pages, so the same
+  // (sell, line, is_return) lands in one batch. Static months never tripped it,
+  // which is why only the newest chunk failed. Last occurrence wins: later
+  // pages carry the fresher copy of a document that changed mid-scan.
+  const byKey = new Map<string, Record<string, unknown>>();
+  for (const r of rows) byKey.set(`${r.mflow_sell_id}|${r.line_id}|${r.is_return}`, r);
+  const deduped = [...byKey.values()];
+  const dupesDropped = rows.length - deduped.length;
+
   let written = 0;
-  if (apply && rows.length > 0) {
-    for (let i = 0; i < rows.length; i += 500) {
+  if (apply && deduped.length > 0) {
+    for (let i = 0; i < deduped.length; i += 500) {
       const { error } = await supabase
         .from("mflow_sell_lines")
-        .upsert(rows.slice(i, i + 500), { onConflict: "mflow_sell_id,line_id,is_return" });
+        .upsert(deduped.slice(i, i + 500), { onConflict: "mflow_sell_id,line_id,is_return" });
       if (error) return json({ ok: false, error: `upsert failed: ${error.message}`, written });
-      written += rows.slice(i, i + 500).length;
+      written += deduped.slice(i, i + 500).length;
     }
   }
 
   return json({
     ok: true, apply, from_date: fromDate, to_date: toDate,
     sells_fetched: sells.length, lines: linesTotal, rows_built: rows.length, written,
+    // Non-zero is normal on the current month (a sell seen on two pages while
+    // the window is still being written to), and should be 0 on closed months.
+    duplicate_rows_dropped: dupesDropped || undefined,
     truncated_window: truncated || undefined,
     class_tally: byClass,
     // Non-empty means a status we have never classified showed up. It was
