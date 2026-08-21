@@ -247,9 +247,14 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
     const res = await fetch(url, {
       signal: ctrl.signal,
       headers: {
-        // Some sources block default Deno user-agent.
-        'User-Agent': 'Mozilla/5.0 (compatible; MinutoOrganicAgent/1.0)',
+        // Present as a real browser. Several sources (e.g. Perfect Daily
+        // Grind) sit behind a WAF that 403s the old "compatible; Agent/1.0"
+        // UA; a normal Chrome UA gets through. Note: this does NOT defeat
+        // interactive bot challenges (Sprudge's Cloudflare "managed
+        // challenge" 403s every server-side client regardless of UA).
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/atom+xml, text/html, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
