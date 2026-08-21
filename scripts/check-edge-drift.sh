@@ -22,6 +22,28 @@ WORK="$(mktemp -d)"
 cleanup() { local rc=$?; chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK" 2>/dev/null; return $rc; }
 trap cleanup EXIT
 
+# Compare the whitespace TOKEN STREAM, not raw bytes.
+#
+# A download can come back re-printed rather than as the original file: blank
+# lines dropped, an import hoisted onto the preceding `*/` line, runs of spaces
+# collapsed. That is a rendering difference, not a code change, but byte
+# comparison calls it 100% drift on every function — which is exactly what the
+# first three CI runs reported.
+#
+# Measured against a simulated re-print of ai-analyst:
+#   raw bytes            164 diff lines   (false)
+#   line-normalised        3 diff lines   (still false — cannot undo line joins)
+#   whitespace stream      equal          (correct)
+#
+# So `canon` decides in-sync/drift, and the line-normalised diff is used only to
+# report a rough magnitude for functions that genuinely differ.
+#
+# Trade-off, stated plainly: a whitespace-ONLY change between git and prod is
+# invisible here. That is the right trade — the alternative is a check that
+# cries drift on all 54 functions and gets ignored.
+canon()     { tr -s '[:space:]' ' ' < "$1"; }
+line_norm() { sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' -e '/^$/d' "$1"; }
+
 is_allowed() {
   [ -f "$ALLOWLIST" ] || return 1
   grep -vE '^\s*(#|$)' "$ALLOWLIST" | awk '{print $1}' | grep -qx "$1"
@@ -74,12 +96,12 @@ for dir in "$ROOT"/supabase/functions/*/; do
     failed+=("$fn"); continue
   fi
 
-  if diff -q "$dir/index.ts" "$live" >/dev/null 2>&1; then
+  if cmp -s <(canon "$dir/index.ts") <(canon "$live"); then
     clean+=("$fn")
     is_allowed "$fn" && stale_allow+=("$fn")
   else
-    p=$(diff "$dir/index.ts" "$live" | grep -c '^>')
-    g=$(diff "$dir/index.ts" "$live" | grep -c '^<')
+    p=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^>')
+    g=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^<')
     if [ "${DRIFT_DEBUG:-0}" = "1" ] && [ -z "${debugged:-}" ]; then
       debugged=1
       echo "── DEBUG: what is actually being compared for '$fn' ──"
@@ -90,7 +112,7 @@ for dir in "$ROOT"/supabase/functions/*/; do
       echo "  cli : $(supabase --version 2>&1 | head -1)"
       echo "  md5 : git=$(md5sum < "$dir/index.ts" | cut -c1-32) live=$(md5sum < "$live" | cut -c1-32)"
       echo "  ── live file, lines 1-20 ──"; sed -n '1,20p' "$live" | cat -A | cut -c1-100 | sed 's/^/    /'
-      echo "  ── first diff hunk (both sides) ──"; diff "$dir/index.ts" "$live" | head -20 | sed 's/^/    /'
+      echo "  ── first normalised diff hunk (both sides) ──"; diff <(line_norm "$dir/index.ts") <(line_norm "$live") | head -20 | sed 's/^/    /'
       echo "──────────────────────────────────────────────────────"
     fi
     if is_allowed "$fn"; then known_drift+=("$fn (prod-only: $p, git-only: $g)")
