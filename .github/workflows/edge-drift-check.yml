@@ -74,9 +74,17 @@ jobs:
             exit 1
           fi
 
+      # PINNED, and the script asserts it. CLI 2.115.0 returns source
+      # RE-PRINTED from the deployed bundle — blank lines stripped, imports
+      # hoisted onto the preceding line, runs of spaces collapsed. Every
+      # function then "differs" from its committed source and the check
+      # reports 100% drift. 2.98.1 returns the original files byte-for-byte
+      # (verified against ai-analyst: identical md5 vs git).
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.98.1
 
       - name: Compare every deployed function against this commit
         run: bash scripts/check-edge-drift.sh
+        env:
+          DRIFT_DEBUG: '1'

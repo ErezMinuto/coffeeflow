@@ -17,7 +17,32 @@ PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ALLOWLIST="$ROOT/.github/edge-drift-allowlist.txt"
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# The CLI leaves files the runner user cannot unlink; make them writable first
+# and swallow any failure. A failing cleanup must never decide the build result.
+cleanup() { local rc=$?; chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK" 2>/dev/null; return $rc; }
+trap cleanup EXIT
+
+# Compare the whitespace TOKEN STREAM, not raw bytes.
+#
+# A download can come back re-printed rather than as the original file: blank
+# lines dropped, an import hoisted onto the preceding `*/` line, runs of spaces
+# collapsed. That is a rendering difference, not a code change, but byte
+# comparison calls it 100% drift on every function — which is exactly what the
+# first three CI runs reported.
+#
+# Measured against a simulated re-print of ai-analyst:
+#   raw bytes            164 diff lines   (false)
+#   line-normalised        3 diff lines   (still false — cannot undo line joins)
+#   whitespace stream      equal          (correct)
+#
+# So `canon` decides in-sync/drift, and the line-normalised diff is used only to
+# report a rough magnitude for functions that genuinely differ.
+#
+# Trade-off, stated plainly: a whitespace-ONLY change between git and prod is
+# invisible here. That is the right trade — the alternative is a check that
+# cries drift on all 54 functions and gets ignored.
+canon()     { tr -s '[:space:]' ' ' < "$1"; }
+line_norm() { sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' -e '/^$/d' "$1"; }
 
 is_allowed() {
   [ -f "$ALLOWLIST" ] || return 1
@@ -31,6 +56,19 @@ new_drift=(); known_drift=(); clean=(); missing=(); stale_allow=(); failed=()
 # silently filing it as the latter SUPPRESSES the drift it was meant to catch.
 # (It did exactly that on the first run here: two different totals, 17 and 9,
 # because a handful of downloads flaked and were quietly skipped.)
+# Version gate. 2.115.0 returns source re-printed from the deployed bundle
+# (blank lines stripped, imports hoisted, spaces collapsed), which makes every
+# function look drifted. Newer versions may or may not; verify before bumping,
+# by downloading one function and diffing it against its unchanged committed
+# source. Warn rather than fail, so a local run on another version still works.
+KNOWN_GOOD_CLI="2.98.1"
+CLI_VER="$(supabase --version 2>/dev/null | tr -d ' ' | tail -1)"
+if [ -n "$CLI_VER" ] && [ "$CLI_VER" != "$KNOWN_GOOD_CLI" ]; then
+  echo "⚠️  Supabase CLI is $CLI_VER, not the verified $KNOWN_GOOD_CLI."
+  echo "   If everything below reports drift, suspect the CLI re-printing source,"
+  echo "   not $CLI_VER of your code changing overnight."
+fi
+
 supabase functions list --project-ref "$PROJECT_REF" > "$WORK/deployed.txt" 2>/dev/null || {
   echo "::error::could not list deployed functions — check SUPABASE_ACCESS_TOKEN"; exit 1
 }
@@ -58,12 +96,25 @@ for dir in "$ROOT"/supabase/functions/*/; do
     failed+=("$fn"); continue
   fi
 
-  if diff -q "$dir/index.ts" "$live" >/dev/null 2>&1; then
+  if cmp -s <(canon "$dir/index.ts") <(canon "$live"); then
     clean+=("$fn")
     is_allowed "$fn" && stale_allow+=("$fn")
   else
-    p=$(diff "$dir/index.ts" "$live" | grep -c '^>')
-    g=$(diff "$dir/index.ts" "$live" | grep -c '^<')
+    p=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^>')
+    g=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^<')
+    if [ "${DRIFT_DEBUG:-0}" = "1" ] && [ -z "${debugged:-}" ]; then
+      debugged=1
+      echo "── DEBUG: what is actually being compared for '$fn' ──"
+      echo "  git : $(wc -lc < "$dir/index.ts" | tr -s ' ') $(file -b "$dir/index.ts")"
+      echo "  live: $(wc -lc < "$live" | tr -s ' ') $(file -b "$live")"
+      echo "  git  line 1: $(head -1 "$dir/index.ts" | cat -A | cut -c1-90)"
+      echo "  live line 1: $(head -1 "$live"          | cat -A | cut -c1-90)"
+      echo "  cli : $(supabase --version 2>&1 | head -1)"
+      echo "  md5 : git=$(md5sum < "$dir/index.ts" | cut -c1-32) live=$(md5sum < "$live" | cut -c1-32)"
+      echo "  ── live file, lines 1-20 ──"; sed -n '1,20p' "$live" | cat -A | cut -c1-100 | sed 's/^/    /'
+      echo "  ── first normalised diff hunk (both sides) ──"; diff <(line_norm "$dir/index.ts") <(line_norm "$live") | head -20 | sed 's/^/    /'
+      echo "──────────────────────────────────────────────────────"
+    fi
     if is_allowed "$fn"; then known_drift+=("$fn (prod-only: $p, git-only: $g)")
     else                   new_drift+=("$fn (prod-only: $p, git-only: $g)")
     fi
@@ -91,6 +142,16 @@ if [ "${#stale_allow[@]}" -gt 0 ]; then
   printf '  ✅ %s — back in sync; delete its line from .github/edge-drift-allowlist.txt\n' "${stale_allow[@]}"
   echo
   fail=1
+fi
+
+compared=$(( ${#clean[@]} + ${#known_drift[@]} + ${#new_drift[@]} ))
+if [ "$compared" -gt 10 ] && [ "${#clean[@]}" -eq 0 ]; then
+  echo "── RESULT REJECTED — the comparison itself is broken ────"
+  echo "  $compared functions compared, ZERO in sync. Real drift is never"
+  echo "  universal: some function always matches. Treat this as a bug in"
+  echo "  this script or its inputs, not as $compared drifted functions."
+  echo "  Re-run with DRIFT_DEBUG=1 to dump what is being compared."
+  exit 1
 fi
 
 if [ "${#new_drift[@]}" -gt 0 ]; then
