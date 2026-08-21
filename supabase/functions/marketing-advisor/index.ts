@@ -1463,6 +1463,63 @@ async function searchMetaAdLibraryByPage(
   }
 }
 
+// Resolve a competitor's Facebook page_id from their BRAND NAME, using the Ad
+// Library itself rather than scraping their site for a vanity URL.
+//
+// Why this replaces the scrape path: every fb_page_id in competitor_pages is
+// NULL, so the collection loop has not run since April 2026. The scrape needed
+// the brand to link Facebook from their homepage, then a second resolution step
+// from vanity to numeric id — two failure points, both silent.
+//
+// An advertiser who runs ads necessarily appears in the archive, and the reply
+// carries page_id AND page_name together. So the match can be VERIFIED instead
+// of assumed — which is how a shoe retailer's ads ended up stored as a coffee
+// competitor's: nothing ever checked that the returned page was the right one.
+async function resolveCompetitorPageId(
+  token: string, brand: string, country = "IL",
+): Promise<{ page_id: string; page_name: string; confidence: number } | null> {
+  const url = `https://graph.facebook.com/v23.0/ads_archive?` + new URLSearchParams({
+    search_terms:         brand,
+    ad_reached_countries: `['${country}']`,
+    ad_active_status:     "ALL",
+    ad_type:              "ALL",
+    fields:               "page_id,page_name",
+    limit:                "50",
+    access_token:         token,
+  });
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error || !Array.isArray(data.data)) return null;
+
+    // Tally pages, then score by how well the page name matches the brand we
+    // asked for. A search for "נחת" will also return anyone whose ad TEXT
+    // mentions it, so frequency alone is not enough.
+    const norm = (x: string) => x.toLowerCase().replace(/\s+/g, " ").trim();
+    const want = norm(brand);
+    const tally = new Map<string, { name: string; n: number }>();
+    for (const ad of data.data) {
+      if (!ad.page_id) continue;
+      const t = tally.get(ad.page_id) ?? { name: ad.page_name ?? "", n: 0 };
+      t.n++; tally.set(ad.page_id, t);
+    }
+    let best: { page_id: string; page_name: string; confidence: number } | null = null;
+    for (const [page_id, v] of tally) {
+      const name = norm(v.name);
+      const exact    = name === want;
+      const contains = name.includes(want) || want.includes(name);
+      const confidence = exact ? 1 : contains ? 0.6 : 0.1;
+      if (!best || confidence > best.confidence || (confidence === best.confidence && v.n > 0)) {
+        if (!best || confidence > best.confidence) best = { page_id, page_name: v.name, confidence };
+      }
+    }
+    // Below 0.6 the name did not match at all — return nothing rather than a
+    // confident wrong answer. An unresolved competitor is recoverable; a
+    // silently wrong one poisons every downstream recommendation.
+    return best && best.confidence >= 0.6 ? best : null;
+  } catch { return null; }
+}
+
 // Scrape a competitor homepage for its Facebook page URL. Returns the vanity
 // segment (e.g. "Nachatcafe") which can then be resolved to a numeric page_id.
 // Used by the Serper auto-discovery path when a new domain appears in organic
@@ -5459,6 +5516,49 @@ serve(withCors(async (req) => {
   console.log(`[marketing-advisor] weekStart: ${weekStart}`);
 
   // ── BLOG WRITER — instant response, not stored in DB ──────────────────────
+  // Resolve the Facebook page_id for the CURATED competitor list, so the Ad
+  // Library collection can run at all. Every fb_page_id in competitor_pages is
+  // NULL, which is why nothing has been collected since April 2026.
+  //
+  // Deliberately a fixed list, not the auto-discovered rows: Serper discovery
+  // filled that table with ksp.co.il and milog.co.il, which are a general
+  // retailer and a dictionary. Resolving those would spend quota to collect
+  // ads from businesses that are not competitors.
+  //
+  // apply:false (default) reports what it WOULD write, including the matched
+  // page name and confidence, so a wrong match is caught before it is stored.
+  if (body.agent === "resolve_competitor_pages") {
+    const CURATED = [
+      { key: "nahat",     brand: "נחת" },
+      { key: "jera",      brand: "Jera Coffee" },
+      { key: "agro",      brand: "אגרו" },
+      { key: "negro",     brand: "נגרו" },
+      { key: "coffee4u",  brand: "Coffee4U" },
+    ];
+    const metaToken = Deno.env.get("META_ACCESS_TOKEN") ?? Deno.env.get("META_TOKEN") ?? "";
+    if (!metaToken) return new Response(JSON.stringify({ error: "no Meta token in env" }),
+      { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    const apply = (body as Record<string, unknown>).apply === true;
+    const out: any[] = [];
+    for (const c of CURATED) {
+      const hit = await resolveCompetitorPageId(metaToken, c.brand);
+      out.push({ competitor: c.key, brand: c.brand, resolved: hit });
+      if (apply && hit) {
+        await supabase.from("competitor_pages").upsert(
+          { domain: `${c.key}.resolved`, name: hit.page_name, fb_page_id: hit.page_id, discovery_source: "ad_library_verified" },
+          { onConflict: "domain" },
+        );
+      }
+    }
+    return new Response(JSON.stringify({
+      ok: true, apply,
+      note: "confidence 1 = page name matched the brand exactly; 0.6 = one contains the other; anything lower is rejected rather than guessed.",
+      results: out,
+      resolved: out.filter(o => o.resolved).length,
+      unresolved: out.filter(o => !o.resolved).map(o => o.brand),
+    }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
+  }
+
   if (body.agent === "blog_writer") {
     if (!body.keyword || !body.title) {
       return new Response(JSON.stringify({ error: "keyword and title are required" }),
