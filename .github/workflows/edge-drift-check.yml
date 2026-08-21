@@ -86,3 +86,5 @@ jobs:
 
       - name: Compare every deployed function against this commit
         run: bash scripts/check-edge-drift.sh
+        env:
+          DRIFT_DEBUG: '1'
