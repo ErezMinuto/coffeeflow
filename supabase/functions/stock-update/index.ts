@@ -592,6 +592,183 @@ async function handleMflowSyncSells(body: any) {
   });
 }
 
+// ── MFlow sells → revenue ledger (mflow_sell_lines) ──────────────────────────
+// SEPARATE from handleMflowSyncSells on purpose. That one owns packed_stock;
+// this one only ever writes mflow_sell_lines and never touches inventory, so a
+// revenue backfill cannot corrupt real stock.
+//
+// Writes only when body.apply === true. apply:false is a full read-only report
+// including a reconciliation of summed line revenue against each document's own
+// header total — which is what validates the discount assumption before any
+// number is stored.
+type SellClass = 'counted' | 'return' | 'excluded'
+
+// Revenue status rule, derived from a 30-day tally of the live feed (1,320
+// documents): Completed 1271, Completed/return 27, Processing 9, הוחזר/return
+// 5, הצעת מחיר 4, draft 3, בוטל 1.
+//
+// The trap: price QUOTES (הצעת מחיר) and CANCELLED docs (בוטל) come back from
+// the same /sells/list endpoint as real sales. Summing without excluding them
+// invents revenue that never happened. EcoSite web orders sit at 'Processing',
+// not 'Completed', so requiring 'Completed' would silently drop the entire
+// online channel.
+function classifySell(s: any): { cls: SellClass; status: string; isReturn: boolean } {
+  const status   = String(s.sell_status?.status ?? s.status ?? '?');
+  const isReturn = s.return_parent_id != null || s?.flags?.is_return_and_credit_order === true || status === 'הוחזר';
+  if (status === 'draft' || s.status === 'draft') return { cls: 'excluded', status, isReturn };
+  if (status === 'הצעת מחיר')                     return { cls: 'excluded', status, isReturn };
+  if (status === 'בוטל')                          return { cls: 'excluded', status, isReturn };
+  if (isReturn)                                    return { cls: 'return',   status, isReturn };
+  if (status === 'Completed' || status === 'Processing') return { cls: 'counted', status, isReturn };
+  // Unknown status → excluded, but the caller reports it. A status we have
+  // never seen must not silently become revenue OR silently vanish.
+  return { cls: 'excluded', status, isReturn };
+}
+
+function channelOf(src: string, wooId: unknown): string {
+  if (wooId != null) return 'ecosite';
+  const s = src.toLowerCase();
+  if (s.startsWith('pos'))         return 'pos';
+  if (s.startsWith('ecosite'))     return 'ecosite';
+  if (s.startsWith('back office')) return 'back_office';
+  return 'other';
+}
+
+async function handleMflowSyncRevenue(body: any) {
+  if (!mflowConfigured()) return json({ error: "MFlow not configured" }, 500);
+  const apply    = body.apply === true;
+  const toDate   = String(body.to_date ?? new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }));
+  const days     = Number(body.days ?? 7);
+  const fromDate = String(body.from_date ?? new Date(Date.now() - days * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }));
+  const maxPages = Math.max(1, Math.min(200, Number(body.max_pages ?? 60)));
+
+  // MFlow product_id → CoffeeFlow product, for the bean lines. Non-coffee lines
+  // are still recorded (revenue is revenue) with cf_product_id null.
+  const { data: skuRows } = await supabase.from("product_sku_map").select("sku, product_id");
+  const skuToProduct = new Map<string, number>();
+  for (const r of skuRows ?? []) skuToProduct.set(String(r.sku).trim(), r.product_id);
+  const idsRes = await mflow("/api/v3/products/ids");
+  const mflowIdToCF = new Map<number, number>();
+  for (const p of (idsRes.data?.data?.products ?? [])) {
+    const cf = skuToProduct.get(String(p.sku).trim());
+    if (cf != null) mflowIdToCF.set(Number(p.id), cf);
+  }
+
+  const sells: any[] = [];
+  let truncated = false;
+  for (let page = 1; page <= maxPages; page++) {
+    const r = await mflow(`/api/v3/sells/list?start_date=${fromDate}&end_date=${toDate}&per_page=50&page=${page}`);
+    if (!r.ok) return json({ ok: false, error: "sells fetch failed", http: r.status, from_date: fromDate, to_date: toDate });
+    const c = r.data?.data;
+    const list = Array.isArray(c?.list) ? c.list : (Array.isArray(c) ? c : []);
+    if (!list.length) break;
+    sells.push(...list);
+    const lastPage = c?.pagination?.last_page;
+    if (lastPage && page >= lastPage) break;
+    if (list.length < 50) break;
+    // Never claim a complete window we did not actually read.
+    if (page === maxPages && lastPage && lastPage > maxPages) truncated = true;
+  }
+
+  const now = new Date().toISOString();
+  const rows: Record<string, unknown>[] = [];
+  const byClass: Record<string, number> = {};
+  const unknownStatuses: Record<string, number> = {};
+  const revenueByChannel: Record<string, number> = {};
+  const mismatches: any[] = [];
+  let linesTotal = 0, unmappedCoffeeLike = 0;
+
+  for (const s of sells) {
+    const { cls, status, isReturn } = classifySell(s);
+    byClass[`${status}${isReturn ? '/return' : ''}`] = (byClass[`${status}${isReturn ? '/return' : ''}`] ?? 0) + 1;
+    if (cls === 'excluded' && status !== 'draft' && status !== 'הצעת מחיר' && status !== 'בוטל') {
+      unknownStatuses[status] = (unknownStatuses[status] ?? 0) + 1;
+    }
+    const lines = Array.isArray(s.sell_items) ? s.sell_items : [];
+    const sign  = isReturn ? -1 : 1;
+    let sellSum = 0;
+
+    for (const ln of lines) {
+      linesTotal++;
+      const qty    = Number(ln.quantity ?? 0);
+      const unitEx = Number(ln.unit_price_exc_tax ?? 0);
+      const disc   = Number(ln.discount_amount ?? 0);
+      // ASSUMPTION: discount_amount is per-line and ex-tax. Reconciled below.
+      const rev    = sign * (qty * unitEx - disc);
+      sellSum += rev;
+      const cf = mflowIdToCF.get(Number(ln.product_id)) ?? null;
+      if (cf == null && String(ln.sku ?? '').length > 0 && String(ln.product_name ?? '').includes('פולי')) unmappedCoffeeLike++;
+
+      if (cls !== 'excluded') {
+        revenueByChannel[channelOf(String(s.sell_source ?? ''), s.woocommerce_order_id)] =
+          (revenueByChannel[channelOf(String(s.sell_source ?? ''), s.woocommerce_order_id)] ?? 0) + rev;
+      }
+      rows.push({
+        mflow_sell_id: Number(s.id),
+        line_id:       Number(ln.id),
+        is_return:     isReturn,
+        transaction_date: s.transaction_date,
+        sell_source:   String(s.sell_source ?? ''),
+        channel:       channelOf(String(s.sell_source ?? ''), s.woocommerce_order_id),
+        woocommerce_order_id: s.woocommerce_order_id ?? null,
+        status,
+        status_class:  cls,
+        sku:           ln.sku ?? null,
+        mflow_product_id: ln.product_id ?? null,
+        variation_id:  ln.variation_id ?? null,
+        cf_product_id: cf,
+        product_name:  ln.product_name ?? null,
+        variation_name: ln.variation_name ?? null,
+        quantity:      qty,
+        unit_price_exc_tax: unitEx,
+        discount_amount: disc,
+        item_tax:      Number(ln.item_tax ?? 0),
+        line_revenue_exc_tax: Number(rev.toFixed(4)),
+        dpp_exc_tax:   ln.dpp_exc_tax ?? null,
+        synced_at:     now,           // every upsert, never a column DEFAULT
+      });
+    }
+
+    // RECONCILIATION — the check that validates the discount assumption before
+    // any of this is trusted. Header total_before_tax is MFlow's own ex-VAT
+    // figure; our summed lines must match it.
+    if (cls !== 'excluded') {
+      const header = sign * Number(s.total_before_tax ?? 0);
+      if (Math.abs(header - sellSum) > 0.01 && mismatches.length < 15) {
+        mismatches.push({ sell_id: s.id, status, header_ex_vat: header, summed_lines: Number(sellSum.toFixed(4)), delta: Number((header - sellSum).toFixed(4)) });
+      }
+    }
+  }
+
+  let written = 0;
+  if (apply && rows.length > 0) {
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await supabase
+        .from("mflow_sell_lines")
+        .upsert(rows.slice(i, i + 500), { onConflict: "mflow_sell_id,line_id,is_return" });
+      if (error) return json({ ok: false, error: `upsert failed: ${error.message}`, written });
+      written += rows.slice(i, i + 500).length;
+    }
+  }
+
+  return json({
+    ok: true, apply, from_date: fromDate, to_date: toDate,
+    sells_fetched: sells.length, lines: linesTotal, rows_built: rows.length, written,
+    truncated_window: truncated || undefined,
+    class_tally: byClass,
+    // Non-empty means a status we have never classified showed up. It was
+    // EXCLUDED from revenue — decide deliberately, don't leave it drifting.
+    unknown_statuses: Object.keys(unknownStatuses).length ? unknownStatuses : undefined,
+    revenue_ex_vat_by_channel: Object.fromEntries(Object.entries(revenueByChannel).map(([k, v]) => [k, Number(v.toFixed(2))])),
+    // Empty = summed lines match MFlow's own header totals, so the discount
+    // assumption holds. Non-empty = do NOT trust the revenue numbers yet.
+    header_mismatches: mismatches.length ? mismatches : undefined,
+    // Bean-looking lines with no CoffeeFlow product mapping — these contribute
+    // revenue but no bean volume, so a high count means product_sku_map is thin.
+    unmapped_coffee_like_lines: unmappedCoffeeLike || undefined,
+  });
+}
+
 // ── MFlow raw GET (READ-ONLY debug) ──────────────────────────────────────────
 // Proxy an arbitrary GET under /api/v3/ (e.g. products/view/{id}) for lookups.
 async function handleMflowGet(body: any) {
@@ -755,6 +932,14 @@ serve(async (req) => {
   }
 
   // MFlow raw GET (read-only lookup).
+  if (body.action === "mflow_sync_revenue") {
+    try { return await handleMflowSyncRevenue(body); }
+    catch (e) {
+      console.error("mflow_sync_revenue error:", (e as Error).message);
+      return json({ error: (e as Error).message }, 500);
+    }
+  }
+
   if (body.action === "mflow_get") {
     try { return await handleMflowGet(body); }
     catch (e) { return json({ error: (e as Error).message }, 500); }
