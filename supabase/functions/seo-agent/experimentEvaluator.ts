@@ -425,6 +425,7 @@ ${perfTable}
 Write the single prescriptive rule per the system prompt. Output strict JSON only.`
 
   const res = await callClaude({
+    sourceFn:    'experiment-evaluator',
     model:       MODEL_ORCHESTRATOR,
     system:      HEURISTIC_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],
@@ -500,6 +501,7 @@ ${existingBlock}
 Classify each existing rule's relation to the new one. Output strict JSON only. Empty relations array if all unrelated.`
 
   const res = await callClaude({
+    sourceFn:    'experiment-evaluator',
     model:       MODEL_ORCHESTRATOR,
     system:      EVIDENCE_SCORE_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],

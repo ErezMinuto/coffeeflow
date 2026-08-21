@@ -160,6 +160,7 @@ serve(async (req) => {
   let res
   try {
     res = await callClaude({
+      sourceFn:    'mission-worker',
       model:       MODEL_ORCHESTRATOR,
       system,
       messages:    [{ role: 'user', content: userMsg }] as ChatMessage[],

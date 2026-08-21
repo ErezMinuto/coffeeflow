@@ -158,6 +158,7 @@ serve(async (req) => {
   let tokens = { input: 0, output: 0 }
   try {
     const res = await callClaude({
+      sourceFn:    'seo-worker-techseo',
       model:       MODEL_ORCHESTRATOR,
       system:      SYSTEM_PROMPT,
       messages:    [{ role: 'user', content: userMsg }],

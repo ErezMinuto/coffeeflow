@@ -959,6 +959,7 @@ ${args.sceneBrief}
 Evaluate the attached image against this brief. Output strict JSON only.`
 
   const res = await callClaude({
+    sourceFn: 'seo-worker-visual',
     model:  MODEL_ORCHESTRATOR,  // Sonnet handles vision + structured JSON reliably
     system: VISUAL_EVAL_SYSTEM_PROMPT,
     messages: [
@@ -1149,6 +1150,7 @@ ${attemptsLog}
 Rewrite the brief per the system prompt. Output strict JSON only.`
 
   const res = await callClaude({
+    sourceFn:    'seo-worker-visual',
     model:       MODEL_ORCHESTRATOR,
     system:      BRIEF_REGEN_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],

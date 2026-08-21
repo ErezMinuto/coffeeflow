@@ -16,7 +16,7 @@
 // nothing. All heavy lifting lives in shared modules — this file is glue.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabase, logClaudeCost, getMonthToDateSpendUsd } from '../seo-agent/db.ts'
+import { createSupabase, getMonthToDateSpendUsd } from '../seo-agent/db.ts'
 import { callClaude, type ChatMessage, type MessageContentBlock } from '../seo-agent/claude.ts'
 import { STRATEGIST_BRAIN_SYSTEM_PROMPT } from '../seo-agent/prompts/strategistBrain.ts'
 import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot.ts'
@@ -220,6 +220,8 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
     let res
     try {
       res = await callClaude({
+        sourceFn:    'strategist-brain',
+        runId:       run.id,
         model:       STRATEGIST_MODEL,
         system,
         messages:    state.messages,
@@ -243,7 +245,9 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
     state.retries = 0   // a clean call clears the transient counter
     steps++
 
-    // Roll up cost + persist one ledger row per call.
+    // Roll up cost for the run row. The per-call agent_cost_ledger row is now
+    // written inside callClaude (sourceFn/runId above) — logging it here too
+    // would double-count every call.
     cost.input_tokens          += res.inputTokens
     cost.output_tokens         += res.outputTokens
     cost.cache_read_tokens     += res.cacheReadTokens
@@ -253,11 +257,6 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
       model: res.model, inputTokens: res.inputTokens, outputTokens: res.outputTokens,
       cacheReadTokens: res.cacheReadTokens, cacheCreationTokens: res.cacheCreationTokens,
     })) * 10000) / 10000
-    await logClaudeCost(supabase, {
-      sourceFn: 'strategist-brain', runId: run.id, model: res.model,
-      inputTokens: res.inputTokens, outputTokens: res.outputTokens,
-      cacheReadTokens: res.cacheReadTokens, cacheCreationTokens: res.cacheCreationTokens,
-    })
 
     // Record the assistant turn verbatim (tool_use blocks must round-trip exactly).
     state.messages.push({ role: 'assistant', content: res.content })

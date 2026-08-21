@@ -126,6 +126,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[seo-worker-writer] calling ${MODEL_WRITER} keyword="${brief.keyword.slice(0, 60)}"`)
 
     const claudeRes = await callClaude({
+      sourceFn:    'seo-worker-writer',
       model:       MODEL_WRITER,
       system:      WRITER_SYSTEM_PROMPT,
       messages:    [{ role: 'user', content: userMessage }],

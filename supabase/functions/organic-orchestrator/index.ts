@@ -293,6 +293,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[organic-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
     phase = 'strategist_claude'
     const claudeRes = await callClaude({
+      sourceFn: 'organic-orchestrator',
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],

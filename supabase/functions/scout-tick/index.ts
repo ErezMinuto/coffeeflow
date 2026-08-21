@@ -313,6 +313,7 @@ PAYLOAD: ${JSON.stringify(signal.signal_payload).slice(0, 2000)}
 Propose ONE focused action per the system prompt. Output strict JSON only.`
 
   const res = await callClaude({
+    sourceFn:    'scout-tick',
     model:       'claude-haiku-4-5',
     system:      SYNTH_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],
