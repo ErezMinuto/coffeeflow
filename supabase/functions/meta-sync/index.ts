@@ -129,6 +129,47 @@ serve(async (req) => {
     ]
     const isConversionType = (t: string) => CONVERSION_TYPE_PATTERNS.some(rx => rx.test(t))
 
+    // TRUE PURCHASES — the only sane denominator for a cost-per-acquisition
+    // rule. The list above deliberately sums the WHOLE funnel, so one shopper
+    // who carts, checks out, adds payment and buys lands in `conversions` four
+    // times or more. Measured 2026-06-01..08-19: 3,309 "conversions" against
+    // 276 real web orders, ~12x inflated.
+    //
+    // That matters because the paid agent's rules are written in purchase
+    // terms — "CPA < 15 -> scale", "CPA > 70 -> kill". At a CPA 12x too low the
+    // kill rule can never fire and the agent can only ever say "scale".
+    const PURCHASE_TYPE_PATTERNS = [
+      /^purchase$/,
+      /^offsite_conversion\.fb_pixel_purchase$/,
+      /^onsite_conversion\.purchase$/,
+    ]
+    const isPurchaseType = (t: string) => PURCHASE_TYPE_PATTERNS.some(rx => rx.test(t))
+
+    // Click-to-WhatsApp campaigns are judged on conversations opened, not
+    // purchases — the chat is the conversion, and it usually closes by phone or
+    // in the shop where no pixel can see it. This action type was in NEITHER
+    // list before, so those campaigns reported a flat zero and looked like
+    // failures while their actual objective went unmeasured.
+    const isMessagingType = (t: string) => /^onsite_conversion\.messaging_conversation_started/.test(t)
+
+    // Full verbatim breakdown, so a later question about carts or checkouts
+    // needs no re-sync.
+    function summariseActions(actions: any[]): {
+      conversions: number; purchases: number; messaging: number; breakdown: Record<string, number>
+    } {
+      let conversions = 0, purchases = 0, messaging = 0
+      const breakdown: Record<string, number> = {}
+      for (const a of actions || []) {
+        const t = String(a.action_type ?? ''), v = parseInt(a.value || '0', 10) || 0
+        if (!t) continue
+        breakdown[t] = (breakdown[t] ?? 0) + v
+        if (isConversionType(t)) conversions += v
+        if (isPurchaseType(t))   purchases   += v
+        if (isMessagingType(t))  messaging   += v
+      }
+      return { conversions, purchases, messaging, breakdown }
+    }
+
     // Helper: page through all results when Meta returns paging.next.
     // Surfaces Meta API errors to stats.last_meta_error — without this,
     // a permission issue or malformed field list returns [] with no clue
@@ -172,12 +213,13 @@ serve(async (req) => {
 
       for (const i of dailyRows) {
         const dayDate = i.date_start ?? today
-        let conversions = 0
-        for (const a of (i.actions || [])) {
-          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
-        }
+        const act = summariseActions(i.actions || [])
+        const conversions = act.conversions
 
         const { error: upErr } = await supabase.from('meta_ad_campaigns').upsert({
+          // Honest figures alongside the legacy inflated `conversions`.
+          purchases:         act.purchases,
+          actions_breakdown: act.breakdown,
           campaign_id: String(campaign.id),
           date:        dayDate,
           name:        campaign.name,
@@ -470,11 +512,12 @@ serve(async (req) => {
         + `&limit=500&access_token=${token}`
       const rows = await fetchAll<any>(insightsUrl, 'ad_daily')
       for (const r of rows) {
-        let conversions = 0
-        for (const a of (r.actions || [])) {
-          if (isConversionType(a.action_type)) conversions += parseInt(a.value || '0', 10)
-        }
+        const act = summariseActions(r.actions || [])
+        const conversions = act.conversions
         const { error: upErr } = await supabase.from('meta_ad_daily').upsert({
+          // Honest figures alongside the legacy inflated `conversions`.
+          purchases:         act.purchases,
+          actions_breakdown: act.breakdown,
           ad_id:       String(r.ad_id ?? ''),
           adset_id:    r.adset_id ? String(r.adset_id) : null,
           campaign_id: r.campaign_id ? String(r.campaign_id) : null,
