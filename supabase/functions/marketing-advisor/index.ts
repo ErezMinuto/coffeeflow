@@ -15,6 +15,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
+} from "../_shared/marketing_intel.ts";
 import { HebrewCalendar } from "https://esm.sh/@hebcal/core@6.3.3";
 import { MINUTO_BAG_REFERENCE_URL, MINUTO_BAG_REFERENCE_POOL } from "../_shared/visual_identity.ts";
 // Bag-reference fallback policy (revised 2026-05-24):
@@ -7949,6 +7952,26 @@ ${postsBlock}
           required: ["campaign_id", "targeting"],
         },
       }, {
+        name: "get_ga4_data",
+        description: "Site behaviour from GA4 — sessions, conversions, conversion VALUE, bounce rate, session duration and engagement BY TRAFFIC CHANNEL, plus top landing pages. Use it to check whether ad traffic actually arrives and converts, INDEPENDENTLY of what Meta reports about itself. A channel missing from the reply was never synced; that is not the same as no traffic.",
+        input_schema: { type: "object", properties: { window_days: { type: "number", description: "default 30, max 365" }, channel: { type: "string", description: "optional exact channel, e.g. 'Paid Social'" }, top_pages: { type: "number" } } },
+      },
+      {
+        name: "get_search_console_data",
+        description: "Google Search Console queries — clicks, impressions, CTR, impression-weighted average position. Also surfaces high-impression / low-CTR queries: already ranking, nobody clicking, usually a title or snippet problem.",
+        input_schema: { type: "object", properties: { window_days: { type: "number", description: "default 30, max 180" }, limit: { type: "number" }, min_impressions: { type: "number" } } },
+      },
+      {
+        name: "get_woocommerce_data",
+        description: "REAL sales — revenue ex-VAT, orders, mean AND median AOV, revenue by channel (pos / ecosite / back_office), top products. Use the median AOV to judge whether a CPA is profitable. Reads the MFlow ledger, a superset that includes web orders; a Woo-only view sees under a tenth of the business. Bean units sold at ₪0 are reported separately.",
+        input_schema: { type: "object", properties: { window_days: { type: "number", description: "default 30, max 400" }, channel: { type: "string", description: "optional: pos | ecosite | back_office" }, top_products: { type: "number" } } },
+      },
+      {
+        name: "get_competitor_ads",
+        description: "Competitor creative from the Meta Ad Library — body copy, headline, platforms, DAYS RUNNING. Meta publishes no performance for other advertisers, so longevity is the proxy: losers die in days, winners run for months. The reply states its own signal quality.",
+        input_schema: { type: "object", properties: { window_days: { type: "number", description: "default 90" }, limit: { type: "number" } } },
+      },
+      {
         name: "find_post",
         description: "Search ALL organic Instagram/Facebook posts and reels by keyword/topic — not just the recent ones in your context. Use when the owner references a specific post by what it's about (e.g. 'the don't-buy-coffee-beans reel') to get its id, then boost it via existing_post.",
         input_schema: {
@@ -8065,6 +8088,21 @@ ${postsBlock}
               }
             } catch (e: any) {
               resultText = `Queue FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "get_ga4_data" || tu.name === "get_search_console_data"
+                     || tu.name === "get_woocommerce_data" || tu.name === "get_competitor_ads") {
+            // Read-only intelligence, shared verbatim with the strategist brain
+            // so the two cannot answer the same question differently.
+            try {
+              const fn = tu.name === "get_ga4_data"            ? getGa4Data
+                       : tu.name === "get_search_console_data" ? getSearchConsoleData
+                       : tu.name === "get_woocommerce_data"    ? getWooCommerceData
+                       :                                         getCompetitorAds;
+              resultData = await fn(supabase as any, (tu.input ?? {}) as any);
+              resultText = JSON.stringify(resultData);
+            } catch (e: any) {
+              resultText = `${tu.name} failed: ${e?.message ?? e}`;
             }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else if (tu.name === "get_campaign_performance") {
