@@ -34,6 +34,19 @@ new_drift=(); known_drift=(); clean=(); missing=(); stale_allow=(); failed=()
 # silently filing it as the latter SUPPRESSES the drift it was meant to catch.
 # (It did exactly that on the first run here: two different totals, 17 and 9,
 # because a handful of downloads flaked and were quietly skipped.)
+# Version gate. 2.115.0 returns source re-printed from the deployed bundle
+# (blank lines stripped, imports hoisted, spaces collapsed), which makes every
+# function look drifted. Newer versions may or may not; verify before bumping,
+# by downloading one function and diffing it against its unchanged committed
+# source. Warn rather than fail, so a local run on another version still works.
+KNOWN_GOOD_CLI="2.98.1"
+CLI_VER="$(supabase --version 2>/dev/null | tr -d ' ' | tail -1)"
+if [ -n "$CLI_VER" ] && [ "$CLI_VER" != "$KNOWN_GOOD_CLI" ]; then
+  echo "⚠️  Supabase CLI is $CLI_VER, not the verified $KNOWN_GOOD_CLI."
+  echo "   If everything below reports drift, suspect the CLI re-printing source,"
+  echo "   not $CLI_VER of your code changing overnight."
+fi
+
 supabase functions list --project-ref "$PROJECT_REF" > "$WORK/deployed.txt" 2>/dev/null || {
   echo "::error::could not list deployed functions — check SUPABASE_ACCESS_TOKEN"; exit 1
 }
