@@ -265,6 +265,22 @@ serve(async (req) => {
       machineRef = b3
       roasterRef = b4
       console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
+
+      // FAIL-FAST when the bag was requested but its reference image could not
+      // be fetched (404 / network / bad URL → fetchAsB64 returned null).
+      // Continuing here is the documented hallucination vector: the prompt
+      // still tells Gemini to render "the Minuto bag" but attaches NO bag
+      // reference, so it invents label artwork and gibberish text and pads the
+      // frame with hallucinated props (the Velvet Star failure mode). Better to
+      // fail loudly with the exact bad URL so the task retries / surfaces and
+      // the broken woo_products.image_url gets fixed — never ship a fabricated
+      // bag. (A null bag ref is ONLY a problem when a bag was actually
+      // requested; no_bag scenes never set bagUrl.)
+      if (bagUrl && !bagRef) {
+        return jsonResponse({
+          error: `bag reference image could not be fetched (source=${bagSource}, url=${bagUrl}). Refusing to render a bag_hero without its reference — that produces a hallucinated label. Fix the product's image_url (or pass a reachable reference_image_url).`,
+        }, 502, corsHeaders)
+      }
     }
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
@@ -356,7 +372,9 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
 🎯 PRIMARY DIRECTIVE
-Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. Retain ALL text, branding, and design features of the bag exactly as shown in the reference image — the bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
+Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
+
+🔤 LABEL TEXT — render the LARGE elements sharp and faithful: the "Minuto" brand wordmark, the stag-head emblem, and the product name exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
 
 SCENE BRIEF — interpret this as the structured elements below:
 ${sceneBrief}
@@ -368,13 +386,22 @@ INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
 • SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
-• FOCUS — the Minuto bag is dominant; supporting props secondary; background softly out of focus.
+• FOCUS — the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 
 ⛔ FINAL OVERRIDE — read this LAST and let it overrule the SCENE
 description above wherever they conflict:
+
+🚫 PROP DISCIPLINE: render ONLY the props the SCENE brief explicitly
+names. Do NOT invent or add cups, mugs, bowls, dishes, saucers, trays,
+loose coffee beans, spoons, books, plants, or windows that the brief
+did not ask for. A HUMAN HAND — or any body part — must NEVER appear
+unless the brief explicitly calls for a hand holding something. If the
+brief says "no props", "no other props", or "nothing else on the
+surface", then render ONLY the bag on the named surface: empty surface,
+nothing else in frame. Extra invented props are an automatic reject.
 
 🔒 SUBJECT-LOCK: when the SCENE brief names specific equipment — steam
 wand, portafilter, espresso machine group head, thermometer, milk

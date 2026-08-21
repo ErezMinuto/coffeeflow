@@ -1,8 +1,8 @@
 /**
  * CoffeeFlow — Public form submission endpoint
  *
- * Replaces the Flashy form action URL on minuto.co.il. Three form types
- * supported, controlled by `?type=` or `body.type`:
+ * Replaces the Flashy form action URL on minuto.co.il. Four form types
+ * supported, controlled by `body.type`:
  *
  *   newsletter — single-email subscription:
  *      • adds to marketing_contacts (opted_in=true, source='newsletter_form')
@@ -18,6 +18,15 @@
  *      • sends an acknowledgment email to the customer
  *      • adds to marketing_contacts (consent text covers marketing)
  *      • sends a light welcome email
+ *
+ *   cancel_order — order cancellation request (name + email + phone +
+ *                  order_id + message):
+ *      • forwards to info@minuto.co.il with order_id in the subject so
+ *        customer service can triage cancellations from the inbox
+ *      • sends an acknowledgment email to the customer
+ *      • does NOT add to marketing_contacts (the legal disclaimer on the
+ *        form says "info used solely for handling the cancellation request")
+ *      • does NOT send a welcome email (same reason)
  *
  * Every submission is logged to form_submissions for audit. The handler
  * is permissive on input validation (required fields per type) and
@@ -64,7 +73,7 @@ const CORS = {
 const COFFEEFLOW_USER_ID = Deno.env.get('COFFEEFLOW_USER_ID')
 if (!COFFEEFLOW_USER_ID) throw new Error('COFFEEFLOW_USER_ID secret is required')
 
-type FormType = 'newsletter' | 'contact' | 'callback'
+type FormType = 'newsletter' | 'contact' | 'callback' | 'cancel_order'
 
 interface SubmitPayload {
   type: FormType
@@ -72,6 +81,9 @@ interface SubmitPayload {
   name?: string
   phone?: string
   message?: string
+  // Order number for cancel_order submissions — required for that type,
+  // ignored for the others.
+  order_id?: string
   consent: boolean
   // Honeypot — must be empty/absent. Bots auto-fill all input fields.
   website?: string
@@ -88,8 +100,8 @@ function isValidEmail(s: string): boolean {
 function validatePayload(p: any): { ok: true; payload: SubmitPayload } | { ok: false; error: string } {
   if (!p || typeof p !== 'object') return { ok: false, error: 'Body must be JSON object' }
   const type = String(p.type ?? '').toLowerCase()
-  if (!['newsletter', 'contact', 'callback'].includes(type)) {
-    return { ok: false, error: `type must be one of: newsletter, contact, callback (got "${type}")` }
+  if (!['newsletter', 'contact', 'callback', 'cancel_order'].includes(type)) {
+    return { ok: false, error: `type must be one of: newsletter, contact, callback, cancel_order (got "${type}")` }
   }
   const email = String(p.email ?? '').trim().toLowerCase()
   if (!isValidEmail(email)) return { ok: false, error: 'Invalid email format' }
@@ -102,14 +114,19 @@ function validatePayload(p: any): { ok: true; payload: SubmitPayload } | { ok: f
   if (p.consent !== true) return { ok: false, error: 'Consent checkbox must be checked' }
 
   // Per-type field requirements
-  if (type === 'contact' || type === 'callback') {
+  if (type === 'contact' || type === 'callback' || type === 'cancel_order') {
     if (!p.name || String(p.name).trim().length === 0) {
-      return { ok: false, error: 'name required for contact/callback' }
+      return { ok: false, error: `name required for ${type}` }
     }
     if (!p.message || String(p.message).trim().length === 0) {
-      return { ok: false, error: 'message required for contact/callback' }
+      return { ok: false, error: `message required for ${type}` }
     }
     // phone is encouraged but not required (some forms make it optional)
+  }
+  if (type === 'cancel_order') {
+    if (!p.order_id || String(p.order_id).trim().length === 0) {
+      return { ok: false, error: 'order_id required for cancel_order' }
+    }
   }
 
   return {
@@ -120,6 +137,7 @@ function validatePayload(p: any): { ok: true; payload: SubmitPayload } | { ok: f
       name: p.name ? String(p.name).trim() : undefined,
       phone: p.phone ? String(p.phone).trim() : undefined,
       message: p.message ? String(p.message).trim() : undefined,
+      order_id: p.order_id ? String(p.order_id).trim() : undefined,
       consent: true,
     }
   }
@@ -180,18 +198,27 @@ function renderWelcomeEmail(firstName: string, logoUrl: string): { subject: stri
 }
 
 /**
- * Acknowledgment email for contact + callback submissions. Tells the
- * customer we received their message and someone (Erez) will reply.
- * Echoes the message back so they have a record.
+ * Acknowledgment email for contact / callback / cancel_order submissions.
+ * Tells the customer we received their message and someone will reply.
+ * Echoes the message back so they have a record. The variant string
+ * controls subject + intro copy.
  */
-function renderAckEmail(firstName: string, message: string, isCallback: boolean, logoUrl: string): { subject: string; html: string } {
+function renderAckEmail(
+  firstName: string,
+  message: string,
+  variant: 'contact' | 'callback' | 'cancel_order',
+  logoUrl: string,
+  orderId?: string,
+): { subject: string; html: string } {
   const greeting = firstName.trim() ? `היי ${escapeHtml(firstName.trim())},` : 'היי,'
-  const subject = isCallback
-    ? 'קיבלנו את פנייתך — נחזור אליך בהקדם'
-    : 'קיבלנו את הודעתך — נענה בקרוב'
-  const introLine = isCallback
-    ? 'תודה על פנייתך. קיבלנו את הפרטים שלך, וניצור איתך קשר בהקדם האפשרי.'
-    : 'תודה שכתבת אלינו. קיבלנו את הודעתך, ונענה אישית בקרוב.'
+  const subject =
+    variant === 'callback'   ? 'קיבלנו את פנייתך — נחזור אליך בהקדם' :
+    variant === 'cancel_order' ? `קיבלנו את בקשת הביטול${orderId ? ` להזמנה #${escapeHtml(orderId)}` : ''}` :
+                                 'קיבלנו את הודעתך — נענה בקרוב'
+  const introLine =
+    variant === 'callback'   ? 'תודה על פנייתך. קיבלנו את הפרטים שלך, וניצור איתך קשר בהקדם האפשרי.' :
+    variant === 'cancel_order' ? `תודה שפנית אלינו. קיבלנו את בקשת הביטול${orderId ? ` להזמנה <strong>#${escapeHtml(orderId)}</strong>` : ''}, וצוות שירות הלקוחות שלנו יטפל בפנייתך בהקדם האפשרי בתוך מסגרת הזמן הקבועה בחוק.` :
+                                 'תודה שכתבת אלינו. קיבלנו את הודעתך, ונענה אישית בקרוב.'
   const html = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><title>קיבלנו את פנייתך</title></head>
@@ -235,14 +262,21 @@ function renderForwardEmail(payload: SubmitPayload): { subject: string; html: st
     newsletter: 'הרשמה לניוזלטר',
     contact: 'פנייה דרך טופס "צור קשר"',
     callback: 'בקשה לחזרה ("חזור אליי")',
+    cancel_order: 'בקשת ביטול עסקה',
   }
-  const subject = `[${labelByType[payload.type]}] ${payload.name ?? payload.email}`
+  // Cancel-order forwards put the order number in the subject so the
+  // customer-service inbox can sort/search by it without opening the mail.
+  const subject = payload.type === 'cancel_order' && payload.order_id
+    ? `[${labelByType[payload.type]} #${payload.order_id}] ${payload.name ?? payload.email}`
+    : `[${labelByType[payload.type]}] ${payload.name ?? payload.email}`
+  const messageLabel = payload.type === 'cancel_order' ? 'סיבת ביטול' : 'הודעה'
   const lines = [
     `<strong>סוג טופס:</strong> ${escapeHtml(labelByType[payload.type])}`,
     payload.name ? `<strong>שם:</strong> ${escapeHtml(payload.name)}` : null,
     `<strong>אימייל:</strong> <a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a>`,
     payload.phone ? `<strong>טלפון:</strong> <a href="tel:${escapeHtml(payload.phone)}">${escapeHtml(payload.phone)}</a>` : null,
-    payload.message ? `<strong>הודעה:</strong><br><div style="white-space: pre-wrap; background: #f6f3ee; padding: 12px; border-right: 3px solid #6A7D45;">${escapeHtml(payload.message)}</div>` : null,
+    payload.order_id ? `<strong>מספר הזמנה:</strong> #${escapeHtml(payload.order_id)}` : null,
+    payload.message ? `<strong>${messageLabel}:</strong><br><div style="white-space: pre-wrap; background: #f6f3ee; padding: 12px; border-right: 3px solid #6A7D45;">${escapeHtml(payload.message)}</div>` : null,
   ].filter(Boolean)
   const html = `<!DOCTYPE html><html dir="rtl" lang="he"><body style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
   <h2 style="color: #3D4A2E;">${escapeHtml(labelByType[payload.type])}</h2>
@@ -401,6 +435,7 @@ serve(async (req) => {
       name: payload.name ?? null,
       phone: payload.phone ?? null,
       message: payload.message ?? null,
+      order_id: payload.order_id ?? null,
       consent_given: payload.consent,
       ip_address: ip,
       user_agent: ua,
@@ -426,21 +461,22 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Forward to inbox (contact + callback only)
-    if (payload.type === 'contact' || payload.type === 'callback') {
+    // 1. Forward to inbox (contact + callback + cancel_order)
+    if (payload.type === 'contact' || payload.type === 'callback' || payload.type === 'cancel_order') {
       const fwd = renderForwardEmail(payload)
       const r = await sendEmail(INBOX_EMAIL, fwd.subject, fwd.html, payload.email)
       if (r.ok) result.forward_sent = true
       else console.warn(`[forms-submit] forward send failed: ${r.error}`)
     }
 
-    // 2. Acknowledgment to customer (contact + callback only)
-    if (payload.type === 'contact' || payload.type === 'callback') {
+    // 2. Acknowledgment to customer (contact + callback + cancel_order)
+    if (payload.type === 'contact' || payload.type === 'callback' || payload.type === 'cancel_order') {
       const ack = renderAckEmail(
         payload.name ?? '',
         payload.message ?? '',
-        payload.type === 'callback',
+        payload.type,
         DEFAULT_LOGO_URL,
+        payload.order_id,
       )
       const r = await sendEmail(payload.email, ack.subject, ack.html)
       if (r.ok) result.ack_sent = true

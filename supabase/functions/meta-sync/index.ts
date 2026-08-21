@@ -603,6 +603,14 @@ serve(async (req) => {
                 comments: post.comments_count || 0,
                 thumbnail_url: post.thumbnail_url || post.media_url || null,
                 reach, impressions, saves, shares,
+                // Stamp synced_at on EVERY upsert. The column's DEFAULT NOW() only
+                // fires on INSERT, so without this an existing post's synced_at stays
+                // frozen at first-seen time and max(synced_at) only advances when a
+                // brand-new post is published. The health-watchdog treats this column
+                // as a sync-liveness signal — leaving it unset makes a perfectly
+                // healthy sync look stale whenever no new IG post lands inside the
+                // freshness budget (false STALE alarm, 2026-06-23).
+                synced_at: new Date().toISOString(),
               }, { onConflict: 'post_id' })
               if (upErr) {
                 stats.ig_post_errors++

@@ -116,6 +116,10 @@ const EXPECTED_CRONS: Array<{
   // 20260624_employee_availability_reminder_weekly_cron.sql). 8-day window
   // allows for the weekly cadence + DST slack before alarming.
   { jobname: 'employee-availability-reminder-weekly', max_silence_hours: 8 * 24, required: true },
+  // Weekly Sun 03:00 UTC storage cleanup (see
+  // 20260809_purge_old_media_weekly_cron.sql). 8-day window covers the weekly
+  // cadence with slack. Non-critical: a missed purge only wastes storage.
+  { jobname: 'purge-old-media-weekly',              max_silence_hours: 8 * 24, required: false },
   // Self-check: if the watchdog's OWN cron is unscheduled or made inactive,
   // the next run (or this run, if late) reports it. Not a substitute for an
   // external dead-man's-switch, but catches the in-band failure modes.

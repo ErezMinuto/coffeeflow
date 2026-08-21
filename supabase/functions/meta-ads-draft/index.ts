@@ -279,7 +279,7 @@ serve(async (req) => {
     // WHATSAPP_MESSAGE creative CTA below.
     const isWhatsapp = String((body as any).destination ?? '').toLowerCase() === 'whatsapp'
     if (isWhatsapp && (body as any).existing_post?.id) {
-      throw new Error("Click-to-WhatsApp can't reuse an existing organic post/reel via the API (the reel wasn't authored with a WhatsApp CTA, so Meta rejects the creative). For a WhatsApp ad use a FRESH image, or build the reel→WhatsApp ad in Ads Manager ('Use existing post').")
+      throw new Error("Click-to-WhatsApp can't reuse an existing organic post/reel via the API (Meta rejects the creative — either 'not a valid media id' or 'can't be promoted'). For a WhatsApp ad use a FRESH image, or build the reel→WhatsApp ad in Ads Manager ('Use existing post').")
     }
     const objective = isWhatsapp ? 'OUTCOME_ENGAGEMENT' : mapObjective(spec.objective)
     const dailyBudgetAgorot = String(Math.round(Number(spec.daily_budget_ils ?? 60) * 100))

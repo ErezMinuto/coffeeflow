@@ -178,18 +178,52 @@ function validateContent(b: ContentFields) {
   }
 }
 
+// A Meta long-lived USER token expires after ~60 days (see
+// meta-exchange-token). When it lapses, EVERY Graph call below fails with an
+// OAuthException (code 190) — the dominant cause of the IG-worker 401 task
+// failures. We surface that as a single, unambiguous, greppable error so (a)
+// the admin knows the fix is "re-auth", not a code bug, and (b) the
+// health-watchdog's error-pattern scan can flag it (it keys off the phrases
+// below). The phrase "Meta access token expired" + "re-auth via Settings"
+// is the contract the watchdog matches on — keep them in sync.
+const META_REAUTH_HINT = 're-auth via Settings page (Meta → Reconnect)'
+
+// True when a Graph API error object signals an expired/invalid OAuth token
+// rather than a transient or content problem. code 190 = access token issues;
+// type OAuthException covers the broader auth family (revoked, expired,
+// permissions changed). Either means the same remedy: reconnect Meta.
+function isAuthError(err: { code?: number; type?: string } | undefined | null): boolean {
+  if (!err) return false
+  return err.code === 190 || err.type === 'OAuthException'
+}
+
 async function loadIgContext() {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
   const { data: tokenRow, error } = await supabase
-    .from('oauth_tokens').select('access_token').eq('platform', 'meta').single()
-  if (error || !tokenRow) throw new Error('Meta not connected — re-auth via Settings page')
+    .from('oauth_tokens').select('access_token, expires_at').eq('platform', 'meta').single()
+  if (error || !tokenRow) throw new Error(`Meta not connected — ${META_REAUTH_HINT}`)
+
+  // Proactive expiry check — fail BEFORE the round-trip with a clear remedy.
+  // Cheaper than waiting for Graph's 401 and gives an exact expiry date.
+  if (tokenRow.expires_at) {
+    const expMs = new Date(tokenRow.expires_at as string).getTime()
+    if (Number.isFinite(expMs) && expMs <= Date.now()) {
+      const ageDays = Math.floor((Date.now() - expMs) / 86_400_000)
+      throw new Error(`Meta access token expired ${ageDays}d ago (on ${(tokenRow.expires_at as string).slice(0, 10)}) — ${META_REAUTH_HINT}`)
+    }
+  }
 
   const accountsRes = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${tokenRow.access_token}`)
   const accounts = await accountsRes.json()
-  if (accounts.error) throw new Error(`me/accounts: ${accounts.error.message}`)
+  if (accounts.error) {
+    if (isAuthError(accounts.error)) {
+      throw new Error(`Meta access token expired or invalid (Graph code ${accounts.error.code ?? '?'}: ${accounts.error.message}) — ${META_REAUTH_HINT}`)
+    }
+    throw new Error(`me/accounts: ${accounts.error.message}`)
+  }
   const pageCount = accounts.data?.length ?? 0
   const page = accounts.data?.[0]
   if (!page) throw new Error('user does not manage any FB pages')
