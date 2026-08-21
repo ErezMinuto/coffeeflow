@@ -74,7 +74,10 @@ for dir in "$ROOT"/supabase/functions/*/; do
       echo "  live: $(wc -lc < "$live" | tr -s ' ') $(file -b "$live")"
       echo "  git  line 1: $(head -1 "$dir/index.ts" | cat -A | cut -c1-90)"
       echo "  live line 1: $(head -1 "$live"          | cat -A | cut -c1-90)"
-      echo "  first diff hunk:"; diff "$dir/index.ts" "$live" | head -6 | sed 's/^/    /'
+      echo "  cli : $(supabase --version 2>&1 | head -1)"
+      echo "  md5 : git=$(md5sum < "$dir/index.ts" | cut -c1-32) live=$(md5sum < "$live" | cut -c1-32)"
+      echo "  ── live file, lines 1-20 ──"; sed -n '1,20p' "$live" | cat -A | cut -c1-100 | sed 's/^/    /'
+      echo "  ── first diff hunk (both sides) ──"; diff "$dir/index.ts" "$live" | head -20 | sed 's/^/    /'
       echo "──────────────────────────────────────────────────────"
     fi
     if is_allowed "$fn"; then known_drift+=("$fn (prod-only: $p, git-only: $g)")
