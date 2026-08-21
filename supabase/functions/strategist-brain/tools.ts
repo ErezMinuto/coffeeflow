@@ -13,6 +13,9 @@
 // or spends. Every tool touches only the strategist's own tables or reads.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
+} from '../_shared/marketing_intel.ts'
 import type { ToolDefinition } from '../seo-agent/claude.ts'
 import type { BriefRecommendation } from '../seo-agent/types.ts'
 import { appendChatMessage } from '../seo-agent/db.ts'
@@ -570,6 +573,26 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
     },
   },
   {
+    name: 'get_ga4_data',
+    description: 'Site behaviour from GA4: sessions, conversions, conversion VALUE, bounce rate, session duration and engagement, broken down by traffic channel, plus the top landing pages. Use it to answer "is traffic arriving and does it convert" independently of what any ad platform claims about itself. Channels absent from the reply were never synced — that is not the same as no traffic.',
+    input_schema: { type: 'object', properties: { window_days: { type: 'number', description: 'lookback, default 30, max 365' }, channel: { type: 'string', description: 'optional exact channel e.g. "Paid Social", "Organic Search"' }, top_pages: { type: 'number' } } },
+  },
+  {
+    name: 'get_search_console_data',
+    description: 'Google Search Console queries: clicks, impressions, CTR and impression-weighted average position. Also returns high-impression / low-CTR queries — where Minuto already ranks but nobody clicks, which is usually a title or snippet problem rather than a ranking one.',
+    input_schema: { type: 'object', properties: { window_days: { type: 'number', description: 'default 30, max 180' }, limit: { type: 'number' }, min_impressions: { type: 'number' } } },
+  },
+  {
+    name: 'get_woocommerce_data',
+    description: 'REAL sales: revenue ex-VAT, order count, mean AND median AOV, revenue by channel (pos / ecosite / back_office), and top products by revenue. Reads the MFlow ledger, which is a superset containing the web orders too — a Woo-only view sees under a tenth of the business. Also reports bean units sold at ₪0 separately, since folding those into revenue-per-unit makes the number meaningless.',
+    input_schema: { type: 'object', properties: { window_days: { type: 'number', description: 'default 30, max 400' }, channel: { type: 'string', description: 'optional: pos | ecosite | back_office' }, top_products: { type: 'number' } } },
+  },
+  {
+    name: 'get_competitor_ads',
+    description: 'Competitor ad creative from the Meta Ad Library — body copy, headline, platforms, and DAYS RUNNING. Meta publishes no performance for other advertisers, so longevity is the proxy: losers are killed within days, winners run for months. The reply states its own signal quality; with a single snapshot days_running proves nothing.',
+    input_schema: { type: 'object', properties: { window_days: { type: 'number', description: 'default 90' }, limit: { type: 'number' } } },
+  },
+  {
     name: 'record_thesis',
     description: 'Record a durable, revenue-graded belief about what moves Minuto (your long-term memory). Must name a falsifiable success_metric, its baseline now, and a check_date when reality will judge it. Do not duplicate a thesis you already hold.',
     input_schema: {
@@ -659,6 +682,10 @@ export async function dispatchTool(
       case 'drilldown_category_skus':     return { result: await drilldownCategorySkus(supabase, input as { category: string; window_days?: number }) }
       case 'drilldown_segment_detail':    return { result: await drilldownSegmentDetail(supabase, input as { segment: string }) }
       case 'drilldown_email_campaign':    return { result: await drilldownEmailCampaign(supabase, input as { subject_contains?: string; campaign_id?: number }) }
+      case 'get_ga4_data':             return { result: await getGa4Data(supabase, input as any) }
+      case 'get_search_console_data':  return { result: await getSearchConsoleData(supabase, input as any) }
+      case 'get_woocommerce_data':     return { result: await getWooCommerceData(supabase, input as any) }
+      case 'get_competitor_ads':       return { result: await getCompetitorAds(supabase, input as any) }
       case 'drilldown_email_attribution': return { result: await drilldownEmailAttribution(supabase, input as { campaign_id?: number; subject_contains?: string; window_days?: number; attribution_window_days?: number }) }
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
