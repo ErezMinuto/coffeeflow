@@ -53,7 +53,7 @@ interface Verdict {
 
 function isoToday(): string { return new Date().toISOString().split('T')[0] }
 
-async function gradeThesis(snapshotJson: string, t: ThesisRow): Promise<{ verdict: Verdict; cost: { i: number; o: number; cr: number; cc: number; model: string } }> {
+async function gradeThesis(snapshotJson: string, t: ThesisRow, cachePrefix: boolean): Promise<{ verdict: Verdict; cost: { i: number; o: number; cr: number; cc: number; model: string } }> {
   const userMsg =
     `Grade this thesis now. It is at (or past) its check_date.\n\n` +
     `THESIS: ${t.thesis}\n` +
@@ -77,7 +77,12 @@ async function gradeThesis(snapshotJson: string, t: ThesisRow): Promise<{ verdic
     // theses are graded sequentially — so thesis 1 writes the prefix and
     // theses 2..BATCH read it. It was running at a 0% hit rate: 119,248
     // uncached input tokens across 4 calls.
-    cachePrefix: true,
+    //
+    // Caller-gated on there being a second thesis to read it. On a daily cron
+    // most runs have exactly one due thesis, and a lone call would write the
+    // ~30k prefix at the 1.25× rate with nothing ever reading it — a pure +25%,
+    // the exact write-without-read case callClaude's [cache] log warns about.
+    cachePrefix,
     timeoutMs: 120_000,
   })
   const verdict = parseClaudeJson<Verdict>(res.text)
@@ -109,7 +114,7 @@ async function evaluate(supabase: SupabaseClient): Promise<Response> {
   for (const t of due) {
     try {
       // The per-call agent_cost_ledger row is written inside callClaude now.
-      const { verdict: v, cost } = await gradeThesis(snapshotJson, t)
+      const { verdict: v, cost } = await gradeThesis(snapshotJson, t, due.length > 1)
 
       if (v.verdict === 'validated' || v.verdict === 'refuted') {
         await supabase

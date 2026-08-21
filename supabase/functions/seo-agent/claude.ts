@@ -293,17 +293,26 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
 // logClaudeCost, leaving ~14 other Claude-calling functions with zero spend or
 // cache-hit visibility.)
 //
-// Deliberately NOT awaited and never throws: a lost cost row is far cheaper
+// Never throws and never blocks the caller: a lost cost row is far cheaper
 // than failing an expensive reasoning step that already completed and was
 // already billed by Anthropic. Posts straight to PostgREST instead of going
 // through db.ts, so callers don't have to thread a SupabaseClient through and
 // claude.ts stays free of a db.ts import.
+//
+// The POST is handed to EdgeRuntime.waitUntil rather than left dangling. A bare
+// un-awaited fetch races isolate teardown, and the row most at risk is the one
+// we can least afford to lose: strategist-brain starts a step only while a full
+// per-call timeout still fits its wall-clock budget, so an invocation typically
+// makes ONE call and returns right after. getMonthToDateSpendUsd sums this table
+// to enforce BUDGET_CEILING_USD, so dropped rows read as under-spend and the
+// kill-switch can miss. Same guard shape as organic-orchestrator/google-sync;
+// outside the edge runtime (deno test) it stays plain fire-and-forget.
 function logCost(opts: CallClaudeOptions, usage: TokenUsage): void {
   if (!opts.sourceFn) return   // unattributed call — nothing useful to record
   const url = Deno.env.get('SUPABASE_URL')
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !key) return
-  fetch(`${url}/rest/v1/agent_cost_ledger`, {
+  const post = fetch(`${url}/rest/v1/agent_cost_ledger`, {
     method: 'POST',
     headers: {
       apikey:          key,
@@ -324,6 +333,12 @@ function logCost(opts: CallClaudeOptions, usage: TokenUsage): void {
   })
     .then(r => { if (!r.ok) return r.text().then(t => console.warn(`[cost-ledger] ${opts.sourceFn} insert ${r.status}: ${t.slice(0, 200)}`)) })
     .catch(e => console.warn(`[cost-ledger] ${opts.sourceFn} insert failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`))
+  // `post` already swallows its own errors, so waitUntil can never see a rejection.
+  // @ts-ignore — EdgeRuntime is injected by the Supabase edge runtime.
+  if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(post)
+  }
 }
 
 // Robust JSON parser for Claude's text output. Claude sometimes wraps
