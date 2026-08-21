@@ -1444,7 +1444,13 @@ async function searchMetaAdLibraryByPage(
   const url = `https://graph.facebook.com/v23.0/ads_archive?` + new URLSearchParams({
     search_page_ids:       `[${pageId}]`,
     ad_reached_countries:  `['${country}']`,
-    ad_active_status:      "ACTIVE",
+    // ALL, not ACTIVE. The whole value of this data is HOW LONG an ad ran —
+    // Meta publishes no performance for other advertisers, so longevity is the
+    // only proxy for whether a creative worked. An ad that ran sixty days and
+    // then stopped is the STRONGEST evidence of a winner, and ACTIVE-only can
+    // never show it: it returns just what happens to be live this minute, with
+    // no stop date to measure against.
+    ad_active_status:      "ALL",
     ad_type:               "ALL",
     fields,
     limit:                 String(limit),
@@ -2159,6 +2165,9 @@ async function runMarketResearch(supabase: ReturnType<typeof createClient>): Pro
               link_descriptions:(a.ad_creative_link_descriptions ?? []).slice(0, 3),
               snapshot_url:     a.ad_snapshot_url,
               started:          a.ad_delivery_start_time,
+              // Present only on ads that have STOPPED. Its absence means the ad
+              // is still live, which is itself the signal.
+              stopped:          a.ad_delivery_stop_time ?? null,
               platforms:        a.publisher_platforms,
             }));
             await supabase.from("market_research").upsert(
