@@ -5498,16 +5498,22 @@ serve(withCors(async (req) => {
   //
   // apply:false (default) reports what it WOULD write, including the matched
   // page name and confidence, so a wrong match is caught before it is stored.
+  // Register competitor Ad Library page ids and VERIFY them against real ads.
+  //
+  // Automated resolution is not available to us. Scraping their sites found no
+  // Facebook links; Ad Library search_terms searches ad COPY, so "נחת" returned
+  // politicians; and resolving a vanity through the Graph API needs Meta's
+  // reviewable 'Page Public Metadata Access' feature, which this app lacks.
+  // Facebook also serves a login wall to unauthenticated page fetches.
+  //
+  // So the ids come from the owner reading them off the Ad Library UI. The
+  // VERIFICATION is what matters here: we immediately pull ads for each id and
+  // report the page_name Facebook attaches to them. A wrong id then shows up as
+  // an obviously wrong business name — which is exactly the check that was
+  // missing when a shoe retailer's ads were stored as a coffee competitor.
   if (body.agent === "resolve_competitor_pages") {
-    // Vanities supplied by the owner after automated discovery failed for four
-    // months. Coffee4U is absent deliberately — no page was provided, and
-    // guessing one is how the wrong advertiser gets stored.
-    const CURATED = [
-      { key: "nahat", brand: "נחת",      vanity: "Nachatcafe" },
-      { key: "jera",  brand: "Jera",     vanity: "jeracoffeeshop" },
-      { key: "agro",  brand: "אגרו",     vanity: "agrocafeisrael" },
-      { key: "negro", brand: "נגרו",     vanity: "negro.roastery" },
-    ];
+    const supplied = ((body as Record<string, unknown>).page_ids ?? {}) as Record<string, string>;
+    const KNOWN: Record<string, string> = { nahat: "נחת", jera: "Jera", agro: "אגרו", negro: "נגרו" };
     const { data: tokenRow } = await supabase
       .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
     const metaToken = (tokenRow as any)?.access_token ?? "";
@@ -5516,23 +5522,29 @@ serve(withCors(async (req) => {
 
     const apply = (body as Record<string, unknown>).apply === true;
     const out: any[] = [];
-    for (const c of CURATED) {
-      const r = await resolveVanityToPageId(metaToken, c.vanity);
-      out.push({ competitor: c.key, brand: c.brand, vanity: c.vanity, page_id: r.page_id, page_name: r.page_name, error: r.error });
-      if (apply && r.page_id) {
+    for (const [key, pageId] of Object.entries(supplied)) {
+      const { ads, error: adsError } = await searchMetaAdLibraryByPage(metaToken, String(pageId));
+      const names = [...new Set((ads ?? []).map((a: any) => a.page_name).filter(Boolean))];
+      const ok = names.length > 0;
+      out.push({
+        competitor: key, expected: KNOWN[key] ?? key, page_id: String(pageId),
+        ads_found: ads?.length ?? 0,
+        page_names_returned: names,          // read this before applying
+        error: adsError ?? null,
+      });
+      if (apply && ok) {
         await supabase.from("competitor_pages").upsert(
-          { domain: `${c.key}.fb`, name: r.page_name ?? c.brand, fb_vanity: c.vanity,
-            fb_page_id: r.page_id, discovery_source: "owner_supplied_vanity", last_error: null },
+          { domain: `${key}.fb`, name: names[0], fb_page_id: String(pageId),
+            discovery_source: "owner_supplied_ad_library_id", last_error: null },
           { onConflict: "domain" },
         );
       }
     }
     return new Response(JSON.stringify({
       ok: true, apply,
-      note: "page_name is what Facebook returned for the vanity — check it reads like the right business before applying.",
+      note: "Check page_names_returned reads like the right business BEFORE re-running with apply:true. ads_found=0 means that page runs no ads in Israel — a real answer, not a failure.",
       results: out,
-      resolved: out.filter(o => o.page_id).length,
-      failed: out.filter(o => !o.page_id).map(o => ({ brand: o.brand, error: o.error })),
+      registered: apply ? out.filter(o => o.ads_found > 0).length : 0,
     }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
