@@ -1,0 +1,40 @@
+# Known edge-function drift, accepted for now.
+#
+# One function slug per line. Listed functions are still reported by
+# scripts/check-edge-drift.sh but do NOT fail the build, so the job is green
+# today and fires only when something NEW drifts.
+#
+# The list is a ratchet, not an excuse: if a listed function comes back into
+# sync, the check FAILS and tells you to delete its line. Shrink this file as
+# each one is reconciled; when it is empty, delete it.
+#
+# Seeded 2026-08-21 from a full run against ytydgldyeygpzmlxvpvb.
+# "prod-only" = live lines a deploy from git would delete. That is the danger
+# number, and it is the one to drive to zero first.
+
+# ── Reconciled (PRs #237/#238) — prod-only is now 0 or explained.
+#    Git is AHEAD; deploying is safe and is what closes these out.
+mission-worker              # prod-only 0, git-only 35 (cannibalization gate + cost line)
+seo-worker-writer           # prod-only 0, git-only 1  (cost line)
+industry-intelligence-sync  # prod-only 0, git-only 1  (cost line)
+seo-worker-visual           # prod-only 26, git-only 75 — the 26 are the old
+                            # parent-wait block that main's backoff version replaces
+
+# ── Committed but never deployed. No live code at risk.
+handle-seo-chat             # prod-only 0, git-only 405 (audience segmentation)
+
+# ── PROD IS AHEAD — a deploy from git would DELETE live code. Reconcile first.
+coffee-bot                  # prod-only 262 — the /pack inline-keyboard flow
+organic-orchestrator        # prod-only 77, git-only 51 — prod and main each
+                            # implement anti-cannibalization DIFFERENTLY. Needs a
+                            # decision, not a merge.
+forms-submit                # prod-only 61
+meta-publish                # prod-only 37
+visual-test                 # prod-only 35
+meta-sync                   # prod-only 8
+health-watchdog             # prod-only 4
+meta-exchange-token         # prod-only 3
+organic-worker-instagram    # prod-only 2 (dead auto-publish ternary; git deletes it)
+marketing-advisor           # prod-only 2
+meta-ads-draft              # prod-only 1
+generate-schedule           # prod-only 1
