@@ -17,7 +17,10 @@ PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ALLOWLIST="$ROOT/.github/edge-drift-allowlist.txt"
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# The CLI leaves files the runner user cannot unlink; make them writable first
+# and swallow any failure. A failing cleanup must never decide the build result.
+cleanup() { local rc=$?; chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK" 2>/dev/null; return $rc; }
+trap cleanup EXIT
 
 is_allowed() {
   [ -f "$ALLOWLIST" ] || return 1
@@ -64,6 +67,16 @@ for dir in "$ROOT"/supabase/functions/*/; do
   else
     p=$(diff "$dir/index.ts" "$live" | grep -c '^>')
     g=$(diff "$dir/index.ts" "$live" | grep -c '^<')
+    if [ "${DRIFT_DEBUG:-0}" = "1" ] && [ -z "${debugged:-}" ]; then
+      debugged=1
+      echo "── DEBUG: what is actually being compared for '$fn' ──"
+      echo "  git : $(wc -lc < "$dir/index.ts" | tr -s ' ') $(file -b "$dir/index.ts")"
+      echo "  live: $(wc -lc < "$live" | tr -s ' ') $(file -b "$live")"
+      echo "  git  line 1: $(head -1 "$dir/index.ts" | cat -A | cut -c1-90)"
+      echo "  live line 1: $(head -1 "$live"          | cat -A | cut -c1-90)"
+      echo "  first diff hunk:"; diff "$dir/index.ts" "$live" | head -6 | sed 's/^/    /'
+      echo "──────────────────────────────────────────────────────"
+    fi
     if is_allowed "$fn"; then known_drift+=("$fn (prod-only: $p, git-only: $g)")
     else                   new_drift+=("$fn (prod-only: $p, git-only: $g)")
     fi
@@ -91,6 +104,16 @@ if [ "${#stale_allow[@]}" -gt 0 ]; then
   printf '  ✅ %s — back in sync; delete its line from .github/edge-drift-allowlist.txt\n' "${stale_allow[@]}"
   echo
   fail=1
+fi
+
+compared=$(( ${#clean[@]} + ${#known_drift[@]} + ${#new_drift[@]} ))
+if [ "$compared" -gt 10 ] && [ "${#clean[@]}" -eq 0 ]; then
+  echo "── RESULT REJECTED — the comparison itself is broken ────"
+  echo "  $compared functions compared, ZERO in sync. Real drift is never"
+  echo "  universal: some function always matches. Treat this as a bug in"
+  echo "  this script or its inputs, not as $compared drifted functions."
+  echo "  Re-run with DRIFT_DEBUG=1 to dump what is being compared."
+  exit 1
 fi
 
 if [ "${#new_drift[@]}" -gt 0 ]; then
