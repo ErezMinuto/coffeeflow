@@ -72,63 +72,59 @@ function looksLikeInjection(text: string): boolean {
   return INJECTION_PATTERNS.some((p) => p.test(text));
 }
 
-async function send(chatId: string | number, text: string) {
+type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> };
+
+async function send(chatId: string | number, text: string, inline?: InlineKeyboard) {
+  const payload: Record<string, unknown> = { chat_id: chatId, text, parse_mode: "HTML" };
+  if (inline) payload.reply_markup = inline;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    body: JSON.stringify(payload),
   });
 }
 
-// ── Claude: extract packing intent ─────────────────────────────────────────
+async function editMessage(chatId: string | number, messageId: number, text: string, inline?: InlineKeyboard) {
+  const payload: Record<string, unknown> = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
+  // Always set reply_markup: when omitted, pass an empty markup so editing a
+  // message that had buttons removes them (prevents tapping a stale keyboard).
+  payload.reply_markup = inline ?? { inline_keyboard: [] };
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function answerCallback(callbackId: string, text?: string) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackId, text: text ?? "" }),
+  });
+}
+
+// Yes/cancel buttons shown before a packing is recorded, so a wrong tap can be
+// caught. callback_data carries the product + bag count so the confirm tap has
+// everything it needs.
+function confirmKeyboard(productId: number, qty: number): InlineKeyboard {
+  return {
+    inline_keyboard: [[
+      { text: "✅ כן, רשום", callback_data: `confirm:${productId}:${qty}` },
+      { text: "❌ ביטול",    callback_data: "pack:cancel" },
+    ]],
+  };
+}
+
+// How long a tapped-product selection stays valid before the typed number is
+// ignored. Keeps a stale tap from being paired with an unrelated later number.
+const PENDING_TTL_SECONDS = 10 * 60;
+
+// Packing is now a tap-to-select flow (/pack → product buttons → typed bag
+// count), so there's no free-text product-name matching to parse. See
+// handlePackMenu / handlePackSelect / the pending-quantity branch in serve().
 
 interface Product { id: number; name: string; size: number; [key: string]: unknown }
-
-async function extractPacking(
-  text: string,
-  products: Product[],
-): Promise<{ productId: number; bags: number } | null> {
-  const productList = products
-    .map(p => `id:${p.id} → "${p.name} ${p.size}g"`)
-    .join("\n");
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key":         ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type":      "application/json",
-    },
-    body: JSON.stringify({
-      model:      "claude-haiku-4-5",
-      max_tokens: 100,
-      system: `אתה מזהה דיווחי אריזה מהודעות עברית.
-רשימת המוצרים הזמינים:
-${productList}
-
-החזר JSON בלבד:
-  {"product_id": <id של המוצר המתאים>, "bags": <כמות שקיות>}
-אם לא מדובר בדיווח אריזה, או שהמוצר לא קיים ברשימה:
-  {"product_id": 0, "bags": 0}
-
-דוגמאות: "ארזתי 20 אתיופיה" → זהה לפי שם קרוב ברשימה. "אתיופיה דיי בנסה חד זני קלייה בהירה" — מצא את המוצר הכי קרוב גם אם הניסוח שונה.`,
-      messages: [{ role: "user", content: text }],
-    }),
-  });
-
-  const json = await res.json();
-  const raw  = json.content?.[0]?.text ?? "";
-  try {
-    const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(clean);
-    if (parsed.product_id > 0 && parsed.bags > 0) {
-      return { productId: parsed.product_id, bags: parsed.bags };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 // ── Claude: extract shop-consumption intent ────────────────────────────────
 // Shop consumption = roasted coffee taken from the roastery to the coffee
@@ -227,6 +223,101 @@ async function handleStock(chatId: string) {
   await send(chatId, `📦 <b>מלאי שקיות ארוזות:</b>\n\n${lines}`);
 }
 
+// ── Tap-to-select packing menu ──────────────────────────────────────────────
+// Show every product as a tappable button. The employee picks the exact
+// product instead of us guessing from a typed name — that's where the
+// mis-packings came from. The bag count is usually already known (parsed from
+// the message they typed, e.g. "ארזתי 35 שקיות …") and is carried inside each
+// button's callback_data as pack:<id>:<qty>. When the count isn't known yet
+// (e.g. a bare /pack) the buttons are pack:<id> and we ask for it after the tap.
+async function handlePackMenu(chatId: string, qty: number | null) {
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, name, size")
+    .eq("user_id", USER_ID)
+    .order("name");
+
+  if (!products || products.length === 0) {
+    await send(chatId, "❌ לא נמצאו מוצרים במערכת");
+    return;
+  }
+
+  const suffix = qty != null ? `:${qty}` : "";
+  // One product per row — Hebrew names are long and wrap badly side by side.
+  const inline: InlineKeyboard = {
+    inline_keyboard: [
+      ...products.map(p => [
+        { text: `${p.name} ${p.size}g`, callback_data: `pack:${p.id}${suffix}` },
+      ]),
+      [{ text: "❌ ביטול", callback_data: "pack:cancel" }],
+    ],
+  };
+
+  const header = qty != null
+    ? `📦 <b>${qty} שקיות</b> — איזה מוצר ארזת?\nבחרו מהרשימה 👇`
+    : `📦 <b>איזה מוצר ארזת?</b>\nבחרו מהרשימה 👇`;
+
+  await send(chatId, header, inline);
+}
+
+// A product button was tapped. If the bag count rode along in callback_data,
+// record the packing now. Otherwise remember the product and ask for the count.
+async function handlePackSelect(
+  chatId: string, telegramId: string, fromName: string,
+  productId: number, qty: number | null, messageId: number, callbackId: string,
+) {
+  const { data: product } = await supabase
+    .from("products")
+    .select("id, name, size")
+    .eq("user_id", USER_ID)
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (!product) {
+    await answerCallback(callbackId, "המוצר לא נמצא");
+    await editMessage(chatId, messageId, "⚠️ המוצר לא נמצא יותר במערכת. נסו שוב.");
+    return;
+  }
+
+  if (qty != null && qty > 0) {
+    // Quantity already known → ask for confirmation before recording, so a
+    // wrong-product tap can be caught. The confirm button carries id + qty.
+    await answerCallback(callbackId, product.name);
+    await editMessage(chatId, messageId,
+      `❓ לרשום <b>${qty} שקיות ${product.name} ${product.size}g</b>?`,
+      confirmKeyboard(productId, qty),
+    );
+    return;
+  }
+
+  // No count yet — remember the selection and ask for it. Upsert so a fresh
+  // tap overwrites any earlier un-finished one.
+  await supabase.from("coffee_bot_pending_packing").upsert({
+    telegram_id: telegramId,
+    chat_id:     chatId,
+    product_id:  productId,
+    created_at:  new Date().toISOString(),
+  }, { onConflict: "telegram_id" });
+
+  await answerCallback(callbackId, `${product.name} נבחר`);
+  await editMessage(chatId, messageId,
+    `📦 <b>${product.name} ${product.size}g</b>\n\nכמה שקיות ארזת? שלחו מספר בלבד (לדוגמה: <code>20</code>)`,
+  );
+}
+
+// Confirmation tapped (✅ כן) → now actually record the packing.
+async function handlePackConfirm(
+  chatId: string, telegramId: string, fromName: string,
+  productId: number, qty: number, messageId: number, callbackId: string,
+) {
+  await answerCallback(callbackId, "נרשם ✓");
+  // Drop the buttons so it can't be confirmed twice.
+  await editMessage(chatId, messageId, "✍️ רושם את האריזה...");
+  await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", telegramId);
+  const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
+  await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[]);
+}
+
 async function handlePacking(chatId: string, fromName: string, productId: number, bagsCount: number, allProducts: Product[]) {
   const product = allProducts.find(p => p.id === productId);
 
@@ -264,15 +355,15 @@ async function handlePacking(chatId: string, fromName: string, productId: number
     }
   }
 
+  // A roasted-stock shortage is NOT a hard block: the bags were physically
+  // packed, so the packing must always be recorded. The usual cause of a
+  // shortage is the roaster forgetting to update roasted_stock, so the data —
+  // not the packing — is what's wrong. Deduct what we can (floored at 0 to
+  // avoid confusing negative inventory) and warn that roasted_stock looks low.
   const shortages = deductions.filter(d => d.currentStock < d.kgNeeded);
-  if (shortages.length > 0) {
-    const lines = shortages.map(s => `• ${s.name}: יש ${s.currentStock.toFixed(1)} ק"ג, צריך ${s.kgNeeded.toFixed(2)} ק"ג`).join("\n");
-    await send(chatId, `⛔ <b>אין מספיק מלאי קלוי:</b>\n\n${lines}`);
-    return;
-  }
 
   for (const d of deductions) {
-    const newStock = parseFloat((d.currentStock - d.kgNeeded).toFixed(3));
+    const newStock = Math.max(0, parseFloat((d.currentStock - d.kgNeeded).toFixed(3)));
     if (d.type === "origin") {
       await supabase.from("origins").update({ roasted_stock: newStock }).eq("id", d.id);
     } else {
@@ -307,9 +398,18 @@ async function handlePacking(chatId: string, fromName: string, productId: number
     `📊 מלאי ארוז כעת: <b>${newPackedStock} שקיות</b>`,
   ].join("\n");
 
+  // Shortage warning: the packing was still recorded, but the roasted stock
+  // didn't cover it — almost always because the roaster hasn't updated it yet.
+  if (shortages.length > 0) {
+    const lines = shortages
+      .map(s => `⚠️ ${s.name}: היה רשום ${s.currentStock.toFixed(1)} ק"ג, נדרשו ${s.kgNeeded.toFixed(2)} ק"ג`)
+      .join("\n");
+    msg += `\n\n🚨 <b>שימו לב — המלאי הקלוי לא הספיק (עוגל לאפס):</b>\n${lines}\n\nכנראה הקלייה עדיין לא עודכנה. עדכנו את המלאי הקלוי במערכת.`;
+  }
+
   const alerts = deductions
-    .filter(d => d.minStock !== null && (d.currentStock - d.kgNeeded) < d.minStock!)
-    .map(d => `⚠️ ${d.name}: נותרו ${(d.currentStock - d.kgNeeded).toFixed(1)} ק"ג (מינימום: ${d.minStock} ק"ג)`);
+    .filter(d => d.minStock !== null && Math.max(0, d.currentStock - d.kgNeeded) < d.minStock!)
+    .map(d => `⚠️ ${d.name}: נותרו ${Math.max(0, d.currentStock - d.kgNeeded).toFixed(1)} ק"ג (מינימום: ${d.minStock} ק"ג)`);
 
   if (alerts.length > 0) msg += `\n\n🚨 <b>התראת מלאי נמוך!</b>\n${alerts.join("\n")}`;
 
@@ -419,7 +519,60 @@ serve(async (req) => {
       }
     }
 
-    const body    = await req.json();
+    const body = await req.json();
+
+    // ── Inline-keyboard button press (product selection) ───────────────────
+    // The packing menu (/pack) sends product buttons with callback_data
+    // "pack:<id>". Tapping one lands here.
+    if (body.callback_query) {
+      const cb           = body.callback_query;
+      const cbChatId     = String(cb.message?.chat?.id ?? "");
+      const cbTelegramId = cb.from?.id;
+      const cbMessageId  = cb.message?.message_id;
+      const data         = String(cb.data ?? "");
+
+      if (!(await checkRateLimit(cbTelegramId))) {
+        await answerCallback(cb.id);
+        return new Response("ok");
+      }
+
+      if (data === "pack:cancel") {
+        await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(cbTelegramId));
+        await answerCallback(cb.id, "בוטל");
+        await editMessage(cbChatId, cbMessageId, "בוטל. כדי לרשום אריזה כתבו לדוגמה: ארזתי 35 שקיות");
+        return new Response("ok");
+      }
+
+      // Resolve the employee's Hebrew name for the packing log / confirmation.
+      let cbFromName = cb.from?.first_name ?? "עובד";
+      if (cbTelegramId) {
+        const { data: cbEmp } = await supabase
+          .from("employees").select("name").eq("telegram_id", cbTelegramId).maybeSingle();
+        if (cbEmp?.name) cbFromName = cbEmp.name;
+      }
+
+      // ✅ confirm:<id>:<qty> → record the packing.
+      const c = data.match(/^confirm:(\d+):(\d+)$/);
+      if (c && cbTelegramId && cbMessageId) {
+        await handlePackConfirm(
+          cbChatId, String(cbTelegramId), cbFromName,
+          parseInt(c[1], 10), parseInt(c[2], 10), cbMessageId, cb.id,
+        );
+        return new Response("ok");
+      }
+
+      // pack:<id> or pack:<id>:<qty> → product picked → confirm or ask count.
+      const m = data.match(/^pack:(\d+)(?::(\d+))?$/);
+      if (m && cbTelegramId && cbMessageId) {
+        const productId = parseInt(m[1], 10);
+        const qty       = m[2] ? parseInt(m[2], 10) : null;
+        await handlePackSelect(cbChatId, String(cbTelegramId), cbFromName, productId, qty, cbMessageId, cb.id);
+      } else {
+        await answerCallback(cb.id);
+      }
+      return new Response("ok");
+    }
+
     const message = body.message;
     if (!message?.text) return new Response("ok");
 
@@ -440,7 +593,7 @@ serve(async (req) => {
     // Reject obvious prompt-injection attempts before they reach Claude.
     if (looksLikeInjection(text)) {
       console.warn(`coffee-bot rejected injection attempt from telegram_id=${telegramId}: "${text.slice(0, 100)}"`);
-      await send(chatId, "לא הבנתי 🤔 — שלח דיווח אריזה כמו 'ארזתי 20 שקיות אתיופיה' או /stock");
+      await send(chatId, "לא הבנתי 🤔 — לרישום אריזה כתבו לדוגמה 'ארזתי 35 שקיות', או /stock לצפייה במלאי");
       return new Response("ok");
     }
 
@@ -459,10 +612,12 @@ serve(async (req) => {
       await handleStock(chatId);
     } else if (lower.startsWith("/shop")) {
       await handleShopStock(chatId);
+    } else if (lower.startsWith("/pack") || lower.startsWith("/start")) {
+      await handlePackMenu(chatId, null);
     } else if (!lower.startsWith("/")) {
-      // Shop consumption takes priority — triggered by "לבית הקפה" / "לחנות".
-      // Same message may contain "ארזתי", but the destination phrase is what
-      // distinguishes a shop transfer (grams) from a packing report (bags).
+      // Shop consumption still works as free text — it's measured in grams and
+      // names a coffee source, so the list-of-products menu doesn't fit it.
+      // Triggered by "לבית הקפה" / "לחנות".
       if (isShopConsumption(text)) {
         const [{ data: origins }, { data: profiles }] = await Promise.all([
           supabase.from("origins").select("id, name, roasted_stock, critical_stock").eq("user_id", USER_ID),
@@ -490,30 +645,58 @@ serve(async (req) => {
         return new Response("ok");
       }
 
-      // Fetch products once — passed to both Claude (for smart matching) and handlePacking
-      const { data: allProducts } = await supabase
-        .from("products")
-        .select("*")
-        .eq("user_id", USER_ID);
+      // ── Packing: type the report, tap the product ────────────────────────
+      // The employee types naturally, e.g. "ארזתי 35 שקיות דיי בנסה". We take
+      // the bag count from the text and pop up the product list so they tap the
+      // exact product. Picking from the list (instead of matching a typed name)
+      // is what removes the mis-packings.
 
-      if (!allProducts || allProducts.length === 0) {
-        await send(chatId, "❌ לא נמצאו מוצרים במערכת");
+      // A bare number completes an in-progress selection — i.e. they tapped a
+      // product that had no count attached and are now sending it.
+      const bareQty = text.match(/^(\d+)\s*(?:שקיות|שקית|שק׳|שק')?$/);
+      if (bareQty) {
+        const { data: pending } = await supabase
+          .from("coffee_bot_pending_packing")
+          .select("product_id, created_at")
+          .eq("telegram_id", String(telegramId))
+          .maybeSingle();
+        if (pending) {
+          const ageMs = Date.now() - new Date(pending.created_at).getTime();
+          if (ageMs <= PENDING_TTL_SECONDS * 1000) {
+            const bags = parseInt(bareQty[1], 10);
+            if (bags > 0) {
+              // Ask for confirmation before recording (same gate as the tap flow).
+              const { data: prod } = await supabase
+                .from("products").select("name, size").eq("user_id", USER_ID).eq("id", pending.product_id).maybeSingle();
+              await send(chatId,
+                `❓ לרשום <b>${bags} שקיות ${prod?.name ?? ""} ${prod?.size ?? ""}g</b>?`,
+                confirmKeyboard(pending.product_id, bags),
+              );
+              return new Response("ok");
+            }
+          } else {
+            // Stale selection — drop it and treat the number as a fresh report.
+            await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", String(telegramId));
+          }
+        }
+      }
+
+      // New packing report → pull the bag count out of the text (if present) and
+      // show the product list. Trigger on a packing word or any number.
+      const numMatch = text.match(/(\d+)/);
+      const looksLikePacking = /ארז|שקי|שק׳|שק'/.test(text) || !!numMatch;
+      if (looksLikePacking) {
+        const qty = numMatch ? parseInt(numMatch[1], 10) : null;
+        await handlePackMenu(chatId, qty);
         return new Response("ok");
       }
 
-      const packing = await extractPacking(text, allProducts as Product[]);
-      if (packing) {
-        await handlePacking(chatId, fromName, packing.productId, packing.bags, allProducts as Product[]);
-      } else {
-        const list = (allProducts as Product[]).map(p => `• ${p.name} ${p.size}g`).join("\n");
-        await send(chatId,
-          `לא הבנתי 🤔\n\n` +
-          `לדיווח אריזה:\n<code>ארזתי 20 שקיות אתיופיה</code>\n\n` +
-          `להעברה לבית הקפה:\n<code>ארזתי 660 גר דיי בנסה לבית הקפה</code>\n\n` +
-          `לצפייה במלאי:\n<code>/stock</code>   <code>/shop</code>\n\n` +
-          `מוצרים במערכת:\n${list}`
-        );
-      }
+      // Anything else → show how to report.
+      await send(chatId,
+        `כדי לרשום אריזה כתבו לדוגמה:\n<code>ארזתי 35 שקיות דיי בנסה</code>\n` +
+        `ואז בחרו את המוצר מהרשימה 👇\n\n` +
+        `לצפייה במלאי: /stock   ☕ /shop`,
+      );
     }
 
     return new Response("ok");
