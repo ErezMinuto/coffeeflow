@@ -23,6 +23,33 @@ name: Edge function drift check
 # It is READ-ONLY: it downloads each deployed function and diffs it against the
 # committed source. It never deploys and never writes to Supabase.
 #
+# ⚠️ DOES NOT WORK IN CI — MANUAL DISPATCH ONLY, AND DO NOT TRUST THE RESULT.
+#
+# `supabase functions download` returns different bytes on the GitHub runner
+# than it does locally. Not a formatting difference — an AST RE-PRINT: blank
+# lines dropped, imports hoisted onto the preceding line, spaces collapsed, and
+# TRAILING COMMAS REMOVED. The code is semantically identical; the text is not.
+# Every function therefore compares as 100% drifted and `in sync` comes back 0.
+#
+# Ruled out, so nobody retries them: CRLF (clean LF, no BOM); CLI version
+# (pinned 2.98.1 reproduces it, and 2.115.0 locally does NOT — it is the
+# environment, not the version); whitespace normalisation (cannot undo a
+# removed trailing comma).
+#
+# The script is CORRECT when run locally — verified against the full function
+# set, where it found the real 17-of-59 drift. Run it by hand:
+#     SUPABASE_ACCESS_TOKEN=… bash scripts/check-edge-drift.sh
+#
+# Two real fixes, neither attempted yet:
+#   1. Push both sides through `deno fmt` before diffing, so the runner's
+#      re-print and the committed source converge on one canonical form.
+#   2. Stamp the git SHA into each function at deploy time and compare SHAs
+#      instead of content — which mostly stops mattering once deploys come
+#      from CI, since drift becomes structurally impossible.
+#
+# The RESULT REJECTED guard means a manual run fails loudly rather than
+# reporting 54 false findings. That guard stays regardless of the fix.
+#
 # Required: a SUPABASE_ACCESS_TOKEN secret scoped to the `edge-drift-check`
 # ENVIRONMENT — deliberately NOT a repo-level secret.
 #
@@ -43,14 +70,11 @@ name: Edge function drift check
 #
 # Until the secret exists, this job fails with a message saying so.
 
+# SCHEDULE AND PUSH TRIGGERS ARE DISABLED — the comparison does not work on
+# the runner. See the DOES-NOT-WORK-IN-CI note above. Manual only until the
+# content comparison is replaced with something that survives an AST re-print.
 on:
-  schedule:
-    - cron: '0 5 * * *'      # 05:00 UTC daily, before the working day in Israel
   workflow_dispatch:          # Actions → Edge function drift check → Run workflow
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/functions/**'
 
 concurrency:
   group: edge-drift-check
