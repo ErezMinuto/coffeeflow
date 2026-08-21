@@ -5535,8 +5535,14 @@ serve(withCors(async (req) => {
       { key: "negro",     brand: "נגרו" },
       { key: "coffee4u",  brand: "Coffee4U" },
     ];
-    const metaToken = Deno.env.get("META_ACCESS_TOKEN") ?? Deno.env.get("META_TOKEN") ?? "";
-    if (!metaToken) return new Response(JSON.stringify({ error: "no Meta token in env" }),
+    // The Meta token lives in oauth_tokens, not the environment — same source
+    // the Ad Library research path already uses. It is a 60-day user token, so
+    // an expiry surfaces here as a clean message rather than an empty result
+    // that looks like "these competitors run no ads".
+    const { data: tokenRow } = await supabase
+      .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
+    const metaToken = (tokenRow as any)?.access_token ?? "";
+    if (!metaToken) return new Response(JSON.stringify({ error: "no Meta token in oauth_tokens (platform='meta')" }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
     const apply = (body as Record<string, unknown>).apply === true;
     const out: any[] = [];
