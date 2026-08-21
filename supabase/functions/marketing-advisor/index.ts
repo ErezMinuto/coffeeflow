@@ -1463,67 +1463,32 @@ async function searchMetaAdLibraryByPage(
   }
 }
 
-// Resolve a competitor's Facebook page_id from their BRAND NAME, using the Ad
-// Library itself rather than scraping their site for a vanity URL.
+// Resolve a competitor's Facebook page_id from their page VANITY
+// (facebook.com/<vanity>), and verify the name that comes back.
 //
-// Why this replaces the scrape path: every fb_page_id in competitor_pages is
-// NULL, so the collection loop has not run since April 2026. The scrape needed
-// the brand to link Facebook from their homepage, then a second resolution step
-// from vanity to numeric id — two failure points, both silent.
+// The previous attempt searched the Ad Library by brand name. That was wrong:
+// search_terms is a full-text search over AD COPY, not a page lookup. Searching
+// "נחת" returned fifty ads from politicians and news pages, because it is an
+// ordinary Hebrew word appearing in their creative — and that is precisely how
+// a shoe retailer's ads came to be stored under a coffee competitor in April.
 //
-// An advertiser who runs ads necessarily appears in the archive, and the reply
-// carries page_id AND page_name together. So the match can be VERIFIED instead
-// of assumed — which is how a shoe retailer's ads ended up stored as a coffee
-// competitor's: nothing ever checked that the returned page was the right one.
-async function resolveCompetitorPageId(
-  token: string, brand: string, country = "IL",
-): Promise<{ match: { page_id: string; page_name: string; confidence: number } | null; candidates: Array<{ page_id: string; page_name: string; ads: number }>; total_ads_seen?: number; error?: string }> {
-  const url = `https://graph.facebook.com/v23.0/ads_archive?` + new URLSearchParams({
-    search_terms:         brand,
-    ad_reached_countries: `['${country}']`,
-    ad_active_status:     "ALL",
-    ad_type:              "ALL",
-    fields:               "page_id,page_name",
-    limit:                "50",
-    access_token:         token,
-  });
+// The Ad Library REQUIRES a page id; it cannot find one. A vanity is the only
+// reliable input, and a human reading five Facebook pages produces it in two
+// minutes where four months of automated scraping produced nothing.
+async function resolveVanityToPageId(
+  token: string, vanity: string,
+): Promise<{ page_id: string | null; page_name: string | null; error: string | null }> {
   try {
-    const res = await fetch(url);
+    const url = `https://graph.facebook.com/v23.0/${encodeURIComponent(vanity)}` +
+                `?fields=id,name&access_token=${token}`;
+    const res  = await fetch(url);
     const data = await res.json();
-    if (data.error || !Array.isArray(data.data)) return { match: null, candidates: [], error: data.error?.message ?? 'no data array' };
-
-    // Tally pages, then score by how well the page name matches the brand we
-    // asked for. A search for "נחת" will also return anyone whose ad TEXT
-    // mentions it, so frequency alone is not enough.
-    const norm = (x: string) => x.toLowerCase().replace(/\s+/g, " ").trim();
-    const want = norm(brand);
-    const tally = new Map<string, { name: string; n: number }>();
-    for (const ad of data.data) {
-      if (!ad.page_id) continue;
-      const t = tally.get(ad.page_id) ?? { name: ad.page_name ?? "", n: 0 };
-      t.n++; tally.set(ad.page_id, t);
-    }
-    const candidates = [...tally.entries()].map(([id, v]) => ({ page_id: id, page_name: v.name, ads: v.n }));
-    let best: { page_id: string; page_name: string; confidence: number } | null = null;
-    for (const [page_id, v] of tally) {
-      const name = norm(v.name);
-      const exact    = name === want;
-      const contains = name.includes(want) || want.includes(name);
-      const confidence = exact ? 1 : contains ? 0.6 : 0.1;
-      if (!best || confidence > best.confidence || (confidence === best.confidence && v.n > 0)) {
-        if (!best || confidence > best.confidence) best = { page_id, page_name: v.name, confidence };
-      }
-    }
-    // Below 0.6 the name did not match at all — return nothing rather than a
-    // confident wrong answer. An unresolved competitor is recoverable; a
-    // silently wrong one poisons every downstream recommendation.
-    // Attach what the archive actually returned. A NO MATCH is otherwise
-    // indistinguishable between "this brand runs no ads", "the token lacks
-    // ads_read", and "the name-match threshold is too strict" — three very
-    // different problems with the same empty output.
-    const out = best && best.confidence >= 0.6 ? best : null;
-    return { match: out, candidates: candidates.slice(0, 8), total_ads_seen: data.data.length };
-  } catch (e: any) { return { match: null, candidates: [], error: e?.message ?? String(e) }; }
+    if (data.error) return { page_id: null, page_name: null, error: data.error.message ?? "graph error" };
+    if (!data.id)   return { page_id: null, page_name: null, error: "no id in response" };
+    return { page_id: String(data.id), page_name: data.name ?? null, error: null };
+  } catch (e: any) {
+    return { page_id: null, page_name: null, error: e?.message ?? String(e) };
+  }
 }
 
 // Scrape a competitor homepage for its Facebook page URL. Returns the vanity
@@ -5534,41 +5499,40 @@ serve(withCors(async (req) => {
   // apply:false (default) reports what it WOULD write, including the matched
   // page name and confidence, so a wrong match is caught before it is stored.
   if (body.agent === "resolve_competitor_pages") {
+    // Vanities supplied by the owner after automated discovery failed for four
+    // months. Coffee4U is absent deliberately — no page was provided, and
+    // guessing one is how the wrong advertiser gets stored.
     const CURATED = [
-      { key: "nahat",     brand: "נחת" },
-      { key: "jera",      brand: "Jera Coffee" },
-      { key: "agro",      brand: "אגרו" },
-      { key: "negro",     brand: "נגרו" },
-      { key: "coffee4u",  brand: "Coffee4U" },
+      { key: "nahat", brand: "נחת",      vanity: "Nachatcafe" },
+      { key: "jera",  brand: "Jera",     vanity: "jeracoffeeshop" },
+      { key: "agro",  brand: "אגרו",     vanity: "agrocafeisrael" },
+      { key: "negro", brand: "נגרו",     vanity: "negro.roastery" },
     ];
-    // The Meta token lives in oauth_tokens, not the environment — same source
-    // the Ad Library research path already uses. It is a 60-day user token, so
-    // an expiry surfaces here as a clean message rather than an empty result
-    // that looks like "these competitors run no ads".
     const { data: tokenRow } = await supabase
       .from("oauth_tokens").select("access_token").eq("platform", "meta").single();
     const metaToken = (tokenRow as any)?.access_token ?? "";
     if (!metaToken) return new Response(JSON.stringify({ error: "no Meta token in oauth_tokens (platform='meta')" }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+
     const apply = (body as Record<string, unknown>).apply === true;
     const out: any[] = [];
     for (const c of CURATED) {
-      const r = await resolveCompetitorPageId(metaToken, c.brand);
-      const hit = r.match;
-      out.push({ competitor: c.key, brand: c.brand, resolved: hit, candidates: r.candidates, ads_seen: r.total_ads_seen ?? 0, error: r.error ?? null });
-      if (apply && hit) {
+      const r = await resolveVanityToPageId(metaToken, c.vanity);
+      out.push({ competitor: c.key, brand: c.brand, vanity: c.vanity, page_id: r.page_id, page_name: r.page_name, error: r.error });
+      if (apply && r.page_id) {
         await supabase.from("competitor_pages").upsert(
-          { domain: `${c.key}.resolved`, name: hit.page_name, fb_page_id: hit.page_id, discovery_source: "ad_library_verified" },
+          { domain: `${c.key}.fb`, name: r.page_name ?? c.brand, fb_vanity: c.vanity,
+            fb_page_id: r.page_id, discovery_source: "owner_supplied_vanity", last_error: null },
           { onConflict: "domain" },
         );
       }
     }
     return new Response(JSON.stringify({
       ok: true, apply,
-      note: "confidence 1 = page name matched the brand exactly; 0.6 = one contains the other; anything lower is rejected rather than guessed.",
+      note: "page_name is what Facebook returned for the vanity — check it reads like the right business before applying.",
       results: out,
-      resolved: out.filter(o => o.resolved).length,
-      unresolved: out.filter(o => !o.resolved).map(o => o.brand),
+      resolved: out.filter(o => o.page_id).length,
+      failed: out.filter(o => !o.page_id).map(o => ({ brand: o.brand, error: o.error })),
     }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
