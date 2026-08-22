@@ -2740,7 +2740,12 @@ async function getCompletedActions(supabase: ReturnType<typeof createClient>): P
 interface GoogleRow {
   campaign_id: string; name: string; status: string;
   date: string; impressions: number; clicks: number; cost: number;
-  ctr: number; cpc: number; conversions: number; conversion_value: number; roas: number;
+  ctr: number; cpc: number;
+  conversions: number;                     // LEGACY: prefers all_conversions — counts Secondary actions
+  conversion_value: number;
+  primary_conversions?: number | null;     // metrics.conversions — the CPA denominator
+  primary_conversion_value?: number | null;
+  roas: number;
 }
 
 function aggregateGoogleCampaigns(rows: GoogleRow[]) {
@@ -2748,6 +2753,7 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
     name: string; status: string;
     cost: number; clicks: number; impressions: number;
     conversions: number; convValue: number;
+    primaryConv: number; primaryVal: number;
   }>();
   for (const r of rows) {
     const e = map.get(r.campaign_id);
@@ -2757,11 +2763,15 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
       e.impressions += r.impressions;
       e.conversions += r.conversions;
       e.convValue   += r.conversion_value;
+      e.primaryConv += Number(r.primary_conversions ?? 0);
+      e.primaryVal  += Number(r.primary_conversion_value ?? 0);
     } else {
       map.set(r.campaign_id, {
         name: r.name, status: r.status,
         cost: r.cost, clicks: r.clicks, impressions: r.impressions,
         conversions: r.conversions, convValue: r.conversion_value,
+        primaryConv: Number(r.primary_conversions ?? 0),
+        primaryVal:  Number(r.primary_conversion_value ?? 0),
       });
     }
   }
@@ -2770,9 +2780,16 @@ function aggregateGoogleCampaigns(rows: GoogleRow[]) {
     cost:        Math.round(v.cost * 100) / 100,
     clicks:      v.clicks,
     impressions: v.impressions,
-    conversions: Math.round(v.conversions * 10) / 10,
-    roas:        v.cost > 0 ? Math.round((v.convValue / v.cost) * 100) / 100 : 0,
-    cpa:         v.conversions > 0 ? Math.round((v.cost / v.conversions) * 100) / 100 : null,
+    // LEGACY figure, kept visible but clearly labelled. google-sync prefers
+    // all_conversions, which counts Secondary actions — page views, add-to-cart,
+    // phone clicks. Measured over 30 days it read 451 where the real number was
+    // 18, so a CPA of ₪3.5 was actually ₪87.
+    all_conversions_inflated: Math.round(v.conversions * 10) / 10,
+    // PRIMARY conversions — the same metric the ad-level and keyword-level
+    // syncs already use, so the account finally answers consistently.
+    conversions: Math.round(v.primaryConv * 10) / 10,
+    roas:        v.cost > 0 ? Math.round((v.primaryVal / v.cost) * 100) / 100 : 0,
+    cpa:         v.primaryConv > 0 ? Math.round((v.cost / v.primaryConv) * 100) / 100 : null,
   }));
 }
 
@@ -2858,7 +2875,7 @@ async function fetchGoogleData(
   const fourWksAgo = subtractDays(weekStart, 28);
   const { data, error } = await supabase
     .from("google_campaigns")
-    .select("campaign_id,name,status,date,impressions,clicks,cost,ctr,cpc,conversions,conversion_value,roas")
+    .select("campaign_id,name,status,date,impressions,clicks,cost,ctr,cpc,conversions,conversion_value,roas,primary_conversions,primary_conversion_value")
     .gte("date", fourWksAgo)
     .lte("date", weekEnd)
     .order("date", { ascending: false });
@@ -3647,7 +3664,7 @@ async function fetchNewCampaigns(
   // ── Google campaigns that first appeared in last 14 days ─────────────────
   const { data: googleRows } = await supabase
     .from("google_campaigns")
-    .select("campaign_id, name, status, date, impressions, clicks, cost, conversions")
+    .select("campaign_id, name, status, date, impressions, clicks, cost, conversions, primary_conversions")
     .gte("date", lookbackDate)
     .order("date", { ascending: true });
 
@@ -5771,7 +5788,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
         { data: liveKeywordsRaw },
         { data: novelKwRow },
       ] = await Promise.all([
-        supabase.from("google_campaigns").select("campaign_id, name, status, cost, conversions, roas, date")
+        supabase.from("google_campaigns").select("campaign_id, name, status, cost, conversions, primary_conversions, primary_conversion_value, roas, date")
           .eq("status", "ENABLED")
           .gte("date", subtractDays(weekStart, 14)).order("date", { ascending: false }),
         supabase.from("google_ads").select("ad_id, campaign_name, ad_group_name, status, ad_strength, headlines, descriptions, final_urls, impressions, clicks, conversions")
@@ -6175,7 +6192,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         { data: wooItemsEnrichedRaw },
       ] = await Promise.all([
         supabase.from("google_campaigns")
-          .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,ctr,cpc,roas,search_impression_share,search_budget_lost_impression_share,search_rank_lost_impression_share,search_top_impression_share")
+          .select("campaign_id,name,status,date,impressions,clicks,cost,conversions,conversion_value,primary_conversions,primary_conversion_value,ctr,cpc,roas,search_impression_share,search_budget_lost_impression_share,search_rank_lost_impression_share,search_top_impression_share")
           .eq("status", "ENABLED")
           .gte("date", fourteenDaysAgo)
           .order("date", { ascending: false }),
