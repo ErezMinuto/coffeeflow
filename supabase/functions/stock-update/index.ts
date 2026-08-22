@@ -489,19 +489,36 @@ async function handleMflowSyncSells(body: any) {
     for (const r of seen ?? []) processed.add(Number(r.mflow_sell_id));
   }
 
-  // Classify each sell + match coffee lines by MFlow product_id. A completed
-  // "sell" reduces stock; a return (return_parent_id / is_return_and_credit_order /
-  // status "הוחזר") adds it back; drafts are ignored. Signed qty: sale negative.
+  // Classify each sell + match coffee lines by MFlow product_id. Drafts are
+  // ignored. Signed qty: a sale is negative, because it reduces packed_stock.
+  //
+  // THE SIGN COMES FROM MFLOW, NOT FROM US. A credit document already carries
+  // NEGATIVE line quantities, so negating every line handles sales and returns
+  // in one rule. The previous version instead flipped the sign whenever
+  // return_parent_id was set — but that field marks a SALE that was later
+  // credited, not a return (see classifySell for the measurement), so every
+  // such document ADDED stock that should have been deducted, a double error.
+  //
+  // That is exactly what happened to doc 3117789 on 2026-08-16: a plain +₪600
+  // sale of 6 Aristo + 6 Dark Chocolate, carrying return_parent_id 3125649,
+  // which put 12 bags INTO stock instead of taking 12 out — a 24-bag swing that
+  // was mistaken at the time for a broken sync.
+  //
+  // הוחזר is skipped like a draft: the sale and its (invisible) credit net to
+  // zero units, and a document already applied while it read Completed is held
+  // off by the idempotency check below rather than re-applied on the flip.
   const classTally: Record<string, number> = {};
   const perProduct = new Map<number, { name: string; units: number }>();  // net bags sold (report)
   const sample: any[] = [];
   const toApply: { id: number; type: string; status: string; isReturn: boolean; source: string; date: any; delta: Map<number, number> }[] = [];
-  let alreadyProcessed = 0, skippedDraft = 0;
+  let alreadyProcessed = 0, skippedDraft = 0, skippedReturned = 0;
 
   for (const s of sells) {
     const statusStr = String(s.sell_status?.status ?? s.status ?? "?");
-    const isReturn = s.return_parent_id != null || s?.flags?.is_return_and_credit_order === true || statusStr === "הוחזר";
+    // Label only — a credit document is one whose own net value is negative.
+    const isReturn = Number(s.total_before_tax ?? 0) < 0;
     const isDraft = statusStr === "draft" || s.status === "draft";
+    const isReturnedSale = statusStr === "הוחזר";
     const klass = `${s.type ?? "?"}/${statusStr}${isReturn ? "/return" : ""}`;
     classTally[klass] = (classTally[klass] ?? 0) + 1;
 
@@ -512,7 +529,7 @@ async function handleMflowSyncSells(body: any) {
       const cf = mflowIdToCF.get(Number(ln.product_id));
       if (cf == null) continue;
       const raw = Number(ln.quantity ?? 0);
-      const signed = isReturn ? raw : -raw;                 // sale reduces packed_stock
+      const signed = -raw;                                  // sale reduces packed_stock; MFlow signs credits itself
       coffee.push({ cf_product: cf, sku: ln.sku, qty: raw, signed });
       delta.set(cf, (delta.get(cf) ?? 0) + signed);
       const cur = perProduct.get(cf) ?? { name: cfById.get(cf)?.name?.slice(0, 28) ?? String(cf), units: 0 };
@@ -522,6 +539,7 @@ async function handleMflowSyncSells(body: any) {
     if (!coffee.length) continue;
     if (processed.has(Number(s.id))) { alreadyProcessed++; continue; }
     if (isDraft) { skippedDraft++; continue; }
+    if (isReturnedSale) { skippedReturned++; continue; }
     toApply.push({ id: Number(s.id), type: String(s.type ?? ""), status: statusStr, isReturn, source: String(s.sell_source ?? ""), date: s.transaction_date, delta });
     if (sample.length < 25) sample.push({ sell_id: s.id, status: statusStr, is_return: isReturn, source: s.sell_source, date: s.transaction_date, coffee: coffee.map((c) => ({ cf: c.cf_product, signed: c.signed })) });
   }
@@ -580,7 +598,9 @@ async function handleMflowSyncSells(body: any) {
     ok: true, apply, from_date: fromDate, to_date: toDate,
     sells_fetched: sells.length, class_tally: classTally,
     coffee_products_mapped: mflowIdToCF.size,
-    new_eligible: toApply.length, already_processed: alreadyProcessed, skipped_draft: skippedDraft, applied,
+    new_eligible: toApply.length, already_processed: alreadyProcessed, skipped_draft: skippedDraft,
+    // Sales marked הוחזר — sale plus invisible credit nets to zero units.
+    skipped_returned_sale: skippedReturned || undefined, applied,
     // Non-empty means stock did NOT move for those products; their sells were
     // deliberately left unrecorded and will retry on the next run.
     failed_products: failedProducts.size ? [...failedProducts] : undefined,
@@ -603,26 +623,80 @@ async function handleMflowSyncSells(body: any) {
 // number is stored.
 type SellClass = 'counted' | 'return' | 'excluded'
 
-// Revenue status rule, derived from a 30-day tally of the live feed (1,320
-// documents): Completed 1271, Completed/return 27, Processing 9, הוחזר/return
-// 5, הצעת מחיר 4, draft 3, בוטל 1.
-//
 // The trap: price QUOTES (הצעת מחיר) and CANCELLED docs (בוטל) come back from
 // the same /sells/list endpoint as real sales. Summing without excluding them
 // invents revenue that never happened. EcoSite web orders sit at 'Processing',
 // not 'Completed', so requiring 'Completed' would silently drop the entire
 // online channel.
+//
+// HOW A RETURN IS ACTUALLY MARKED — measured on the complete May-2026 window
+// (1,445 documents pulled raw from /sells/list, 2026-08-22):
+//
+//   • return_parent_id does NOT mean "this document is a return". It points
+//     FORWARD from a sale to the credit document raised against it later. All
+//     43 May documents carrying it had a POSITIVE total_before_tax — e.g. doc
+//     3117789, +₪600, twelve bags of beans, return_parent_id 3125649.
+//   • flags.is_return_and_credit_order was true on ZERO of the 1,445.
+//   • A real credit is signed BY MFLOW IN THE DATA: the document carries
+//     negative line quantities and a negative header (4 such docs in May).
+//
+// So the sign is already in the payload and must simply be respected. Deriving
+// it from return_parent_id flipped 43 genuine sales negative in May alone,
+// understating the month by ₪127,049 — double their ₪63,524 value.
+//
+// הוחזר ("returned") is a THIRD case: the original sale, still positive, whose
+// credit document is not exposed by /sells/list at all (fetching one by id
+// returns "No Record Found"). It nets to zero, so it is excluded rather than
+// counted or flipped — and reported, so the choice stays visible. Caveat: a
+// PARTIAL return would lose the retained portion this way. 3 docs in May.
 function classifySell(s: any): { cls: SellClass; status: string; isReturn: boolean } {
   const status   = String(s.sell_status?.status ?? s.status ?? '?');
-  const isReturn = s.return_parent_id != null || s?.flags?.is_return_and_credit_order === true || status === 'הוחזר';
+  // A credit document is one whose own net value is negative. Nothing else.
+  const isReturn = Number(s.total_before_tax ?? 0) < 0;
   if (status === 'draft' || s.status === 'draft') return { cls: 'excluded', status, isReturn };
   if (status === 'הצעת מחיר')                     return { cls: 'excluded', status, isReturn };
   if (status === 'בוטל')                          return { cls: 'excluded', status, isReturn };
+  if (status === 'הוחזר')                         return { cls: 'excluded', status, isReturn };
   if (isReturn)                                    return { cls: 'return',   status, isReturn };
   if (status === 'Completed' || status === 'Processing') return { cls: 'counted', status, isReturn };
   // Unknown status → excluded, but the caller reports it. A status we have
   // never seen must not silently become revenue OR silently vanish.
   return { cls: 'excluded', status, isReturn };
+}
+
+// A document's effective VAT rate, taken from its own numbers so a rate change
+// does not silently rot this code. Falls back to 18% on tax-free or zero docs.
+function vatRateOf(s: any): number {
+  const tbt = Number(s.total_before_tax ?? 0);
+  const tax = Number(s.tax_amount ?? 0);
+  if (s.is_tax_free || !(tbt > 0) || !(tax > 0)) return 0.18;
+  return tax / tbt;
+}
+
+// DOCUMENT-LEVEL DISCOUNT. Separate from each line's own discount_amount, and
+// previously ignored entirely — which silently overstated revenue.
+//
+//   discount_type 'percentage' → discount_amount is a percent of the line total
+//   discount_type 'fixed'      → discount_amount is a shekel figure INCLUDING
+//                                VAT, apportioned across lines pro-rata
+//
+// Verified against MFlow's own header total_before_tax on every May document:
+// applying this closed 1,380 of the 1,432 reconciliations that the old
+// line-discount-only formula got wrong on 92 of them.
+function docDiscountFactor(s: any, grossExTax: number): { scale: number; flat: number } {
+  const d = Number(s.discount_amount ?? 0);
+  if (!d) return { scale: 1, flat: 0 };
+  if (String(s.discount_type ?? '') === 'percentage') return { scale: 1 - d / 100, flat: 0 };
+  if (!grossExTax) return { scale: 1, flat: 0 };
+  return { scale: 1, flat: d / (1 + vatRateOf(s)) };
+}
+
+// Header-level shipping, e.g. delivery.shipping.shipping_charges = 30 (VAT-inc).
+// It is real revenue but has no line item, so it is REPORTED as a reconciliation
+// residual rather than invented as a synthetic line. ₪992 ex-VAT in May 2026.
+function shippingExTax(s: any): number {
+  const c = Number(s?.delivery?.shipping?.shipping_charges ?? 0);
+  return c > 0 ? c / (1 + vatRateOf(s)) : 0;
 }
 
 function channelOf(src: string, wooId: unknown): string {
@@ -677,24 +751,44 @@ async function handleMflowSyncRevenue(body: any) {
   const revenueByChannel: Record<string, number> = {};
   const mismatches: any[] = [];
   let linesTotal = 0, unmappedCoffeeLike = 0;
+  let reconciled = 0, mismatchCount = 0, mismatchValue = 0, shippingExVat = 0;
+  let zeroLineDocs = 0, zeroLineValue = 0;
 
   for (const s of sells) {
     const { cls, status, isReturn } = classifySell(s);
     byClass[`${status}${isReturn ? '/return' : ''}`] = (byClass[`${status}${isReturn ? '/return' : ''}`] ?? 0) + 1;
-    if (cls === 'excluded' && status !== 'draft' && status !== 'הצעת מחיר' && status !== 'בוטל') {
+    if (cls === 'excluded' && status !== 'draft' && status !== 'הצעת מחיר' && status !== 'בוטל' && status !== 'הוחזר') {
       unknownStatuses[status] = (unknownStatuses[status] ?? 0) + 1;
     }
     const lines = Array.isArray(s.sell_items) ? s.sell_items : [];
-    const sign  = isReturn ? -1 : 1;
+    // NO SIGN MULTIPLIER. MFlow already signs a credit with negative line
+    // quantities; multiplying by anything flips genuine sales. See classifySell.
     let sellSum = 0;
+
+    // Document-level discount needs the document's gross before it can be
+    // apportioned, so the lines are priced in two passes.
+    const grossOf = (ln: any) =>
+      Number(ln.quantity ?? 0) * Number(ln.unit_price_exc_tax ?? 0) - Number(ln.discount_amount ?? 0);
+    const docGross = lines.reduce((a: number, ln: any) => a + grossOf(ln), 0);
+    const { scale, flat } = docDiscountFactor(s, docGross);
+
+    // Zero-line documents are consolidating invoices: they carry a header total
+    // but no items, and the sales they consolidate are already counted through
+    // their own lines. A line ledger correctly stores nothing for them — but
+    // they are counted and reported so the header gap they open is not a mystery.
+    if (cls !== 'excluded' && !lines.length) {
+      zeroLineDocs++;
+      zeroLineValue += Number(s.total_before_tax ?? 0);
+    }
 
     for (const ln of lines) {
       linesTotal++;
       const qty    = Number(ln.quantity ?? 0);
       const unitEx = Number(ln.unit_price_exc_tax ?? 0);
       const disc   = Number(ln.discount_amount ?? 0);
-      // ASSUMPTION: discount_amount is per-line and ex-tax. Reconciled below.
-      const rev    = sign * (qty * unitEx - disc);
+      const gross  = qty * unitEx - disc;
+      // Line discount, then the document discount apportioned pro-rata.
+      const rev    = gross * scale - (docGross ? flat * (gross / docGross) : 0);
       sellSum += rev;
       const cf = mflowIdToCF.get(Number(ln.product_id)) ?? null;
       if (cf == null && String(ln.sku ?? '').length > 0 && String(ln.product_name ?? '').includes('פולי')) unmappedCoffeeLike++;
@@ -729,13 +823,31 @@ async function handleMflowSyncRevenue(body: any) {
       });
     }
 
-    // RECONCILIATION — the check that validates the discount assumption before
-    // any of this is trusted. Header total_before_tax is MFlow's own ex-VAT
-    // figure; our summed lines must match it.
-    if (cls !== 'excluded') {
-      const header = sign * Number(s.total_before_tax ?? 0);
-      if (Math.abs(header - sellSum) > 0.01 && mismatches.length < 15) {
-        mismatches.push({ sell_id: s.id, status, header_ex_vat: header, summed_lines: Number(sellSum.toFixed(4)), delta: Number((header - sellSum).toFixed(4)) });
+    // RECONCILIATION — the check that validates the pricing rules before any of
+    // this is trusted. Header total_before_tax is MFlow's own ex-VAT figure and
+    // carries its own sign, so our summed lines must match it as-is.
+    //
+    // Zero-line consolidating documents are skipped: they have no lines to sum,
+    // so scoring them would report a permanent phantom gap.
+    //
+    // COUNT EVERY MISMATCH, list only a sample. The previous version pushed to a
+    // list capped at 15 and reported only that list — which read as "just 15
+    // tiny mismatches" when May alone actually had 92 of them, hiding the
+    // document-discount bug completely.
+    if (cls !== 'excluded' && lines.length) {
+      const header   = Number(s.total_before_tax ?? 0);
+      const ship     = shippingExTax(s);
+      shippingExVat += ship;
+      // Shipping has no line, so the ledger cannot hold it; credit it here so
+      // the residual reflects genuinely unexplained money only.
+      const delta = header - (sellSum + ship);
+      reconciled++;
+      if (Math.abs(delta) > 0.05) {
+        mismatchCount++;
+        mismatchValue += delta;
+        if (mismatches.length < 15) {
+          mismatches.push({ sell_id: s.id, status, header_ex_vat: header, summed_lines: Number(sellSum.toFixed(4)), shipping_ex_vat: Number(ship.toFixed(4)), delta: Number(delta.toFixed(4)) });
+        }
       }
     }
   }
@@ -752,6 +864,28 @@ async function handleMflowSyncRevenue(body: any) {
   const deduped = [...byKey.values()];
   const dupesDropped = rows.length - deduped.length;
 
+  // PURGE BEFORE REWRITE — required by any run that can change is_return.
+  //
+  // is_return is part of the primary key, so a row stored under the OLD, wrong
+  // classification is not overwritten by the corrected one: the upsert inserts a
+  // second row and the document is then counted twice, once with each sign. An
+  // in-place backfill without this step is worse than no backfill.
+  //
+  // Scoped to the document ids actually fetched — never a blind date-range
+  // delete, so a truncated or partly-failed window cannot erase rows it is not
+  // about to replace.
+  const purge = body.purge === true;
+  let purgedFor = 0;
+  if (apply && purge && !truncated) {
+    const ids = [...new Set(sells.map((s: any) => Number(s.id)).filter((n: number) => Number.isFinite(n)))];
+    for (let i = 0; i < ids.length; i += 200) {
+      const chunk = ids.slice(i, i + 200);
+      const { error } = await supabase.from("mflow_sell_lines").delete().in("mflow_sell_id", chunk);
+      if (error) return json({ ok: false, error: `purge failed: ${error.message}`, purged_for_docs: purgedFor });
+      purgedFor += chunk.length;
+    }
+  }
+
   let written = 0;
   if (apply && deduped.length > 0) {
     for (let i = 0; i < deduped.length; i += 500) {
@@ -766,6 +900,10 @@ async function handleMflowSyncRevenue(body: any) {
   return json({
     ok: true, apply, from_date: fromDate, to_date: toDate,
     sells_fetched: sells.length, lines: linesTotal, rows_built: rows.length, written,
+    // Documents whose existing rows were cleared before rewriting. Backfilling a
+    // window WITHOUT purge:true leaves the old, wrongly-signed rows in place.
+    purged_for_docs: purge ? purgedFor : undefined,
+    purge_skipped_truncated: (apply && purge && truncated) || undefined,
     // Non-zero is normal on the current month (a sell seen on two pages while
     // the window is still being written to), and should be 0 on closed months.
     duplicate_rows_dropped: dupesDropped || undefined,
@@ -775,8 +913,19 @@ async function handleMflowSyncRevenue(body: any) {
     // EXCLUDED from revenue — decide deliberately, don't leave it drifting.
     unknown_statuses: Object.keys(unknownStatuses).length ? unknownStatuses : undefined,
     revenue_ex_vat_by_channel: Object.fromEntries(Object.entries(revenueByChannel).map(([k, v]) => [k, Number(v.toFixed(2))])),
-    // Empty = summed lines match MFlow's own header totals, so the discount
-    // assumption holds. Non-empty = do NOT trust the revenue numbers yet.
+    // Reconciliation against MFlow's own header totals. mismatch_count is the
+    // TRUE count; header_mismatches is only the first 15 as a sample. A healthy
+    // window reconciles ~99% of documents and leaves a residual near zero.
+    reconciled_docs: reconciled,
+    mismatch_count: mismatchCount,
+    mismatch_value_ex_vat: Number(mismatchValue.toFixed(2)),
+    // Header-level shipping. Real revenue with no line item, so it is NOT stored
+    // in mflow_sell_lines — reported here so the omission is explicit.
+    shipping_ex_vat_not_stored: Number(shippingExVat.toFixed(2)) || undefined,
+    // Consolidating invoices: header value, zero lines, and the sales behind
+    // them are already counted individually. Stored as nothing, on purpose.
+    zero_line_docs: zeroLineDocs || undefined,
+    zero_line_header_value: Number(zeroLineValue.toFixed(2)) || undefined,
     header_mismatches: mismatches.length ? mismatches : undefined,
     // Bean-looking lines with no CoffeeFlow product mapping — these contribute
     // revenue but no bean volume, so a high count means product_sku_map is thin.
