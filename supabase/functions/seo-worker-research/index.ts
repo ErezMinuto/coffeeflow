@@ -34,7 +34,8 @@ import {
 } from '../seo-agent/db.ts'
 import {
   callClaude,
-  MODEL_ORCHESTRATOR,
+  MODEL_RESEARCH,
+  isGeminiModel,
   type MessageContentBlock,
   type ToolDefinition,
   type ChatMessage as ApiChatMessage,
@@ -193,6 +194,10 @@ serve(async (req) => {
   let webEvidence  = ''
   let webPhaseRan  = false
   let webPhaseError: string | null = null
+  // Which provider is serving this run, resolved from the MODEL_RESEARCH slot.
+  // It decides how the web phase searches (Google Search grounding vs
+  // Anthropic's web_search) and how its source URLs are read back out.
+  const usingGemini = isGeminiModel(MODEL_RESEARCH)
   // Structured {title,url} list pulled DETERMINISTICALLY from the
   // web_search_tool_result blocks (see extractWebSources). This is the real
   // fix for "no URLs in the report": the source URLs live in these structured
@@ -207,15 +212,24 @@ serve(async (req) => {
     }]
     const web = await callClaude({
       sourceFn:    'seo-worker-research',
-      model:       MODEL_ORCHESTRATOR,
+      model:       MODEL_RESEARCH,
       system:      systemPrompt,
       messages:    webMsgs,
-      // web_search ONLY, on a clean context. max_uses 2: Anthropic executes
-      // searches SEQUENTIALLY server-side BEFORE returning the response, so
-      // each search adds ~6-20s of latency that the per-call timeout has to
-      // cover. 4 searches blew even a 40s cap on a clean context; 2 searches
-      // (~15-30s) + a short digest completes inside 60s and actually lands.
-      tools:       [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }] as any,
+      // THE SEARCH INDEX IS THE WHOLE POINT. On Claude this is Anthropic's
+      // web_search, which runs against a THIRD-PARTY index — a structural gap
+      // for work whose goal is ranking in Google. On Gemini it is Google
+      // Search grounding, i.e. the same index we are trying to rank in. The
+      // two are mutually exclusive and shaped differently, so the phase picks
+      // one by provider rather than trying to pass both.
+      //
+      // Anthropic's max_uses 2: searches run SEQUENTIALLY server-side BEFORE
+      // the response returns, so each adds ~6-20s the per-call timeout must
+      // cover. 4 searches blew even a 40s cap; 2 (~15-30s) plus a short digest
+      // lands inside 60s. Gemini decides its own search count, which is why
+      // there is no equivalent knob on that side.
+      ...(usingGemini
+        ? { googleSearch: true }
+        : { tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }] as any }),
       maxTokens:   1500,
       temperature: 0.3,
       timeoutMs:   Math.min(WEB_PHASE_CAP_MS, ISOLATE_CEILING_MS - (Date.now() - loopStartedAt)),
@@ -223,7 +237,10 @@ serve(async (req) => {
     totalInputTokens  += web.inputTokens
     totalOutputTokens += web.outputTokens
     webEvidence = web.text.trim()
-    webSources  = extractWebSources(web.content as any[])
+    // Gemini returns cited URLs out-of-band in groundingMetadata (surfaced as
+    // groundingSources); Anthropic returns them as web_search_tool_result
+    // content blocks. Neither extractor works on the other's shape.
+    webSources  = web.groundingSources ?? extractWebSources(web.content as any[])
     researchLog.push({ turn: 0, tool_calls: ['<web_search_phase>'], text_snippet: webEvidence.slice(0, 200) })
     console.log(`[seo-worker-research] ${workerId} web-search phase produced ${webEvidence.length} chars, ${webSources.length} sources`)
   } catch (e: any) {
@@ -263,7 +280,7 @@ serve(async (req) => {
     turn++
     const res = await callClaude({
       sourceFn:    'seo-worker-research',
-      model:       MODEL_ORCHESTRATOR,
+      model:       MODEL_RESEARCH,
       system:      systemPrompt,
       messages,
       tools:       fullTools as any,
@@ -384,7 +401,7 @@ serve(async (req) => {
       }
       const synth = await callClaude({
         sourceFn:    'seo-worker-research',
-        model:       MODEL_ORCHESTRATOR,
+        model:       MODEL_RESEARCH,
         system:      systemPrompt,
         messages:    synthMsgs,
         // No tools — guarantees this call returns text and cannot stall on a
