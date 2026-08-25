@@ -11,6 +11,16 @@
  * Buying-cost tracking (previously mastered in iCount's cost_amount) was dropped
  * with it — goods receipt now records quantity + optional sale price to Woo only.
  *
+ * MFlow stock PUSH was removed 2026-08-25, same reason: Minuto does not manage
+ * stock in MFlow. The MFlow relationship is now strictly INBOUND — we read its
+ * sells feed to decrement packed_stock (mflow_sync_sells) and to build the
+ * revenue ledger (mflow_sync_revenue). Nothing writes inventory back to it.
+ * Removed with it: mflow_push, mflow_refresh_map (its product-id cache) and
+ * mflow_enable_stock (which switched manage_stock ON for MFlow products —
+ * exactly the thing we are not doing). The mflow_product_map table is now
+ * unused; left in place rather than dropped, since dropping is irreversible
+ * and an empty table costs nothing.
+ *
  * Deploy:
  *   supabase functions deploy stock-update --project-ref <ref> --no-verify-jwt
  */
@@ -28,48 +38,14 @@ const supabase = createClient(SUPA_URL, SUPA_KEY);
 const wooAuth  = btoa(`${WOO_KEY}:${WOO_SEC}`);
 
 // ── MFlow (ERP) config ───────────────────────────────────────────────────────
-// Minuto's business inventory system. Coffee-bag stock master stays CoffeeFlow
-// (products.packed_stock); we PUSH the absolute value to MFlow, which then
-// auto-syncs it to WooCommerce. Auth = public/secret key pair (NOT the old
-// scraper's email/password). REST v3, absolute-set stock writes.
+// Minuto's POS / business system. READ-ONLY as far as inventory is concerned:
+// coffee-bag stock is mastered in CoffeeFlow (products.packed_stock) and is
+// never written back to MFlow. We consume its /sells feed only. Auth =
+// public/secret key pair (NOT the old scraper's email/password), REST v3.
 const MFLOW_BASE = (Deno.env.get("MFLOW_BASE") ?? "https://my.mflow.co.il").replace(/\/+$/, "");
 const MFLOW_PUB  = Deno.env.get("MFLOW_PUBLIC_KEY") ?? "";
 const MFLOW_SEC  = Deno.env.get("MFLOW_SECRET_KEY") ?? "";
-// The roasted-bags warehouse (discovery: the only MFlow warehouse, "מינוטו קפה בע"מ").
-const MFLOW_LOCATION_ID = Number(Deno.env.get("MFLOW_LOCATION_ID") ?? "706");
 const mflowConfigured = () => !!(MFLOW_PUB && MFLOW_SEC);
-
-// Build the CoffeeFlow-product → MFlow-product-id map. A coffee bag is any product
-// with at least one SKU in product_sku_map; we resolve it to an MFlow product by
-// trying each of its SKUs against MFlow's SKU→id catalog (/products/ids).
-async function mflowCoffeeTargets(onlyIds: number[] | null): Promise<{
-  targets: { id: number; name: string; packed_stock: number; mflowId: number | null; usedSku: string | null; skus: string[] }[];
-}> {
-  const { data: prods } = await supabase
-    .from("products").select("id, name, packed_stock").order("id");
-  const { data: skuRows } = await supabase
-    .from("product_sku_map").select("sku, product_id");
-  const skusByProduct = new Map<number, string[]>();
-  for (const r of skuRows ?? []) {
-    const arr = skusByProduct.get(r.product_id) ?? [];
-    arr.push(String(r.sku).trim());
-    skusByProduct.set(r.product_id, arr);
-  }
-  const ids = await mflow("/api/v3/products/ids");
-  const mflowBySku = new Map<string, number>();
-  for (const p of (ids.data?.data?.products ?? [])) if (p?.sku) mflowBySku.set(String(p.sku).trim(), Number(p.id));
-
-  const idSet = onlyIds && onlyIds.length ? new Set(onlyIds) : null;
-  const targets = (prods ?? [])
-    .filter((p: any) => skusByProduct.has(p.id) && (!idSet || idSet.has(p.id)))
-    .map((p: any) => {
-      const skus = skusByProduct.get(p.id) ?? [];
-      let mflowId: number | null = null, usedSku: string | null = null;
-      for (const s of skus) if (mflowBySku.has(s)) { mflowId = mflowBySku.get(s)!; usedSku = s; break; }
-      return { id: p.id, name: String(p.name ?? "").slice(0, 45), packed_stock: Math.max(0, Math.round(Number(p.packed_stock ?? 0))), mflowId, usedSku, skus };
-    });
-  return { targets };
-}
 
 // MFlow rate limit is 30 requests / MINUTE per key. Throttle to ~27/min (a
 // 2.2s min gap between calls) so we never trip it, and retry on a 429 (wait for
@@ -391,41 +367,6 @@ async function handleMflowDiscover(_body: any) {
     products,
     stock_probe,
   });
-}
-
-// Parse an optional CoffeeFlow product-id filter from the request body: a
-// product_ids array, a single product_id, else null (= all coffee bags).
-function parseIds(body: any): number[] | null {
-  if (Array.isArray(body.product_ids) && body.product_ids.length) return body.product_ids.map(Number).filter((n: number) => Number.isFinite(n));
-  if (body.product_id != null) return [Number(body.product_id)];
-  return null;
-}
-
-// ── MFlow enable stock-management (WRITE) ────────────────────────────────────
-// Flip manage_stock=true on coffee products via the product-update endpoint.
-// Verified once (Intenso) that this is a clean partial update — variations are
-// untouched — so the rollout just PUTs manage_stock per product (1 call each,
-// rate-throttled). dry_run (default) previews. product_id / product_ids limit
-// the set; all:true does every mapped bag.
-async function handleMflowEnableStock(body: any) {
-  if (!mflowConfigured()) return json({ error: "MFlow not configured" }, 500);
-  const dryRun = body.dry_run !== false;
-  const ids = parseIds(body);
-  const doAll = body.all === true;
-  if (!ids && !doAll) return json({ error: "pass product_id / product_ids or all:true" }, 400);
-
-  const { targets } = await mflowCoffeeTargets(doAll ? null : ids);
-  const results: any[] = [];
-  let enabled = 0, failed = 0, skipped = 0;
-  for (const t of targets) {
-    if (!t.mflowId) { skipped++; results.push({ product_id: t.id, name: t.name, status: "no_mflow_match" }); continue; }
-    if (dryRun) { results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, status: "would_enable" }); continue; }
-    const upd = await mflow(`/api/v3/products/update/${t.mflowId}`, { method: "PUT", body: { manage_stock: true } });
-    if (upd.ok) { enabled++; results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, status: "enabled" }); }
-    else { failed++; results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, status: "failed", http: upd.status, message: upd.data?.message ?? null }); }
-  }
-  console.log(`[mflow_enable_stock] dry=${dryRun} targets=${targets.length} enabled=${enabled} failed=${failed} skipped=${skipped}`);
-  return json({ ok: true, dry_run: dryRun, targets: targets.length, enabled, failed, skipped, results });
 }
 
 // ── MFlow product search (READ-ONLY) ─────────────────────────────────────────
@@ -943,106 +884,6 @@ async function handleMflowGet(body: any) {
   return json({ status: r.status, ok: r.ok, data: r.data });
 }
 
-// ── MFlow map refresh ────────────────────────────────────────────────────────
-// Resolve each coffee bag to its MFlow product + active grind variations and cache
-// it in mflow_product_map, so the frequent push doesn't re-resolve every run (MFlow
-// caps at 30 req/min). Costs 1 (/products/ids) + 1 (/variations/list) per bag —
-// batch with product_ids to stay under the cap. Run occasionally (catalog changes).
-async function handleMflowRefreshMap(body: any) {
-  if (!mflowConfigured()) return json({ error: "MFlow not configured" }, 500);
-  const dryRun = body.dry_run === true;                          // default: really refresh
-  const doAll = body.all === true;
-  const ids = parseIds(body);
-  if (!ids && !doAll) return json({ error: "pass product_id / product_ids or all:true" }, 400);
-
-  const { targets } = await mflowCoffeeTargets(doAll ? null : ids);   // 1 call: /products/ids
-  const results: any[] = [];
-  let mapped = 0, unmatched = 0, failed = 0;
-  for (const t of targets) {
-    if (!t.mflowId) { unmatched++; results.push({ product_id: t.id, name: t.name, status: "no_mflow_match", skus: t.skus }); continue; }
-    const vr = await mflow(`/api/v3/products/${t.mflowId}/variations/list?per_page=100`);
-    let kind: string, variationIds: number[] = [];
-    if (vr.ok) {
-      variationIds = (vr.data?.data?.variations ?? [])
-        .filter((v: any) => v?.is_inactive !== true)
-        .map((v: any) => Number(v.id)).filter((n: number) => Number.isFinite(n));
-      if (!variationIds.length) { failed++; results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, status: "no_active_variations" }); continue; }
-      kind = "variable";
-    } else if (vr.status === 422 && /single product/i.test(String(vr.data?.message ?? ""))) {
-      kind = "single";
-    } else {
-      failed++; results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, status: "variations_error", http: vr.status, message: vr.data?.message ?? null }); continue;
-    }
-    if (!dryRun) {
-      await supabase.from("mflow_product_map").upsert({
-        product_id: t.id, mflow_product_id: t.mflowId, kind, variation_ids: variationIds,
-        matched_sku: t.usedSku, refreshed_at: new Date().toISOString(),
-      }, { onConflict: "product_id" });
-    }
-    mapped++;
-    results.push({ product_id: t.id, name: t.name, mflow_product_id: t.mflowId, kind, grind_variations: variationIds.length, status: dryRun ? "would_map" : "mapped" });
-  }
-  console.log(`[mflow_refresh_map] dry=${dryRun} targets=${targets.length} mapped=${mapped} unmatched=${unmatched} failed=${failed}`);
-  return json({ ok: true, dry_run: dryRun, targets: targets.length, mapped, unmatched, failed, results });
-}
-
-// ── MFlow stock PUSH ─────────────────────────────────────────────────────────
-// Push each coffee bag's packed_stock to MFlow as the ABSOLUTE quantity at the
-// roasted-bags warehouse (which auto-syncs to WooCommerce). CoffeeFlow is master;
-// one-way mirror, absolute-set → idempotent + self-healing. Reads the cached
-// mflow_product_map (populated by mflow_refresh_map) so it's just ONE /stock/update
-// call per bag — cheap enough for a frequent cron under the 30 req/min cap.
-// Stock is the whole-bean pool: variable products set the SAME qty on every grind
-// variation (all grinds orderable up to the real bag count); single products take
-// the quantity directly. dry_run (default) previews. product_id(s) limit the set.
-// NOTE: MFlow needs enable_stock=1 per product or the write 422s.
-async function handleMflowPush(body: any) {
-  if (!mflowConfigured()) return json({ error: "MFlow not configured (set MFLOW_PUBLIC_KEY / MFLOW_SECRET_KEY)" }, 500);
-  const dryRun = body.dry_run !== false;                         // default dry-run
-  const locationId = Number(body.location_id ?? MFLOW_LOCATION_ID);
-  const ids = parseIds(body);
-
-  // Read the cached mapping + current packed_stock — both DB, no MFlow calls.
-  let q = supabase.from("mflow_product_map").select("product_id, mflow_product_id, kind, variation_ids, matched_sku");
-  if (ids && ids.length) q = q.in("product_id", ids);
-  const { data: maps } = await q;
-  if (!maps || !maps.length) return json({ ok: true, dry_run: dryRun, count: 0, pushed: 0, note: "mflow_product_map empty for this set — run mflow_refresh_map first", results: [] });
-  const { data: prods } = await supabase.from("products").select("id, name, packed_stock").in("id", maps.map((m: any) => m.product_id));
-  const pById = new Map<number, any>((prods ?? []).map((p: any) => [p.id, p]));
-
-  const results: any[] = [];
-  let pushed = 0, failed = 0;
-  for (const m of maps) {
-    const p = pById.get(m.product_id);
-    if (!p) continue;
-    const qty = Math.max(0, Math.round(Number(p.packed_stock ?? 0)));
-    const name = String(p.name ?? "").slice(0, 45);
-    const variationIds: number[] = Array.isArray(m.variation_ids) ? m.variation_ids : [];
-    const mflowProduct = m.kind === "single"
-      ? { type: "single", quantity: qty }
-      : { type: "variable", variations: variationIds.map((variation_id: number) => ({ variation_id, quantity: qty })) };
-
-    if (dryRun) {
-      results.push({ product_id: m.product_id, name, mflow_product_id: m.mflow_product_id, kind: m.kind, would_set: qty, grind_variations: variationIds.length, status: "would_push" });
-      continue;
-    }
-    const r = await mflow(`/api/v3/products/${m.mflow_product_id}/stock/update`, {
-      method: "POST",
-      body: { stocks: [{ location_id: locationId, product: mflowProduct }] },
-    });
-    if (r.ok) {
-      pushed++;
-      await supabase.from("products").update({ last_synced_at: new Date().toISOString() }).eq("id", m.product_id);
-      results.push({ product_id: m.product_id, name, mflow_product_id: m.mflow_product_id, kind: m.kind, set: qty, status: "pushed" });
-    } else {
-      failed++;
-      results.push({ product_id: m.product_id, name, mflow_product_id: m.mflow_product_id, kind: m.kind, attempted: qty, status: "failed", http: r.status, message: r.data?.message ?? null, errors: r.data?.errors ?? null });
-    }
-  }
-  console.log(`[mflow_push] dry=${dryRun} loc=${locationId} n=${maps.length} pushed=${pushed} failed=${failed}`);
-  return json({ ok: true, dry_run: dryRun, location_id: locationId, count: maps.length, pushed, failed, results });
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: CORS });
   if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
@@ -1107,33 +948,6 @@ serve(async (req) => {
   if (body.action === "mflow_get") {
     try { return await handleMflowGet(body); }
     catch (e) { return json({ error: (e as Error).message }, 500); }
-  }
-
-  // MFlow enable stock-management (guarded write, before/after snapshot).
-  if (body.action === "mflow_enable_stock") {
-    try { return await handleMflowEnableStock(body); }
-    catch (e) {
-      console.error("mflow_enable_stock error:", (e as Error).message);
-      return json({ error: (e as Error).message }, 500);
-    }
-  }
-
-  // MFlow map refresh (cache product_id + variation_ids). dry_run optional.
-  if (body.action === "mflow_refresh_map") {
-    try { return await handleMflowRefreshMap(body); }
-    catch (e) {
-      console.error("mflow_refresh_map error:", (e as Error).message);
-      return json({ error: (e as Error).message }, 500);
-    }
-  }
-
-  // MFlow stock push (packed_stock → MFlow absolute set). dry_run default.
-  if (body.action === "mflow_push") {
-    try { return await handleMflowPush(body); }
-    catch (e) {
-      console.error("mflow_push error:", (e as Error).message);
-      return json({ error: (e as Error).message }, 500);
-    }
   }
 
   // ── Legacy single-SKU manual adjust (sku + signed delta) ──
