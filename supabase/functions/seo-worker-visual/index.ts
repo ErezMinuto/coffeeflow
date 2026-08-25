@@ -647,6 +647,12 @@ function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> 
   return {
     aspect:                r.aspect,
     ratio:                 r.ratio,
+    // Actual rendered pixel dimensions + whether they match the requested
+    // ratio. visual-test measures the returned image; a false here means
+    // the render came back the wrong shape (e.g. a horizontal "story").
+    width:                 r.width,
+    height:                r.height,
+    aspect_ok:             r.aspect_ok,
     bytes:                 r.bytes,
     pipeline:              r.pipeline,
     used_reference:        r.used_reference,
