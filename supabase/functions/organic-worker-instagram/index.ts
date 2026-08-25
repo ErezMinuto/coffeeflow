@@ -78,19 +78,34 @@ const IG_CAPTION_MAX = 2200
 // Sent once, the moment a post/story is staged for review. Best-effort: any
 // failure (missing key, Resend error) is logged and swallowed — it must NEVER
 // fail or retry the task itself. Returns a short status string for the log.
+// One A/B experiment's publishing state, used to warn the admin when a post is
+// one arm of a test. See fetchExperimentArmContext.
+interface ExperimentArmContext {
+  variationLabel: string | null
+  totalArms:      number
+  publishedArms:  number
+}
+
 async function notifyPostReadyForReview(args: {
   mediaType: string
   caption: string
   imageUrl: string | null
   taskId: string
   qaFlagged: boolean
+  arm: ExperimentArmContext | null
 }): Promise<string> {
   if (!RESEND_KEY) return 'skipped (no RESEND_API_KEY)'
   const isStory = String(args.mediaType).toLowerCase().includes('story')
   const kind = isStory ? 'Story' : 'Feed post'
   const captionPreview = (args.caption || '').trim().slice(0, 240)
   const reviewUrl = `${DASHBOARD_URL}/admin/seo-agent`
-  const subject = `📸 Minuto IG ${isStory ? 'story' : 'post'} ready for review`
+  // An experiment arm gets a louder subject line, because approving only one
+  // arm is what has silently voided every A/B test so far (17 of 22 arms were
+  // prepared and never approved, so no experiment ever had two live arms to
+  // compare and the self-optimizing loop produced zero winners).
+  const subject = args.arm
+    ? `🧪 Minuto IG ${isStory ? 'story' : 'post'} — A/B arm ${args.arm.publishedArms + 1}/${args.arm.totalArms}, needs review`
+    : `📸 Minuto IG ${isStory ? 'story' : 'post'} ready for review`
   // Plain, scannable HTML — phone-friendly. The image is shown when present so
   // a glance from the email is often enough to decide whether to open the app.
   const html = `<!doctype html><html><body style="margin:0;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;background:#f6f6f4;padding:24px;color:#2b2b2b;">
@@ -99,6 +114,7 @@ async function notifyPostReadyForReview(args: {
     ${args.imageUrl ? `<img src="${args.imageUrl}" alt="post preview" style="width:100%;display:block;" />` : ''}
     <div style="padding:18px 22px;">
       ${args.qaFlagged ? `<p style="margin:0 0 12px;padding:8px 12px;background:#fff4e5;border:1px solid #f0c987;border-radius:8px;font-size:13px;color:#8a5a00;">⚠ The image was flagged by visual QA — give it a closer look before approving.</p>` : ''}
+      ${args.arm ? `<p style="margin:0 0 12px;padding:10px 12px;background:#eef3fb;border:1px solid #a9c2e8;border-radius:8px;font-size:13px;color:#274b7d;"><strong>🧪 This is arm ${args.arm.publishedArms + 1} of ${args.arm.totalArms} in an A/B test${args.arm.variationLabel ? ` (variation: <code>${args.arm.variationLabel}</code>)` : ''}.</strong><br/>Publishing only one arm voids the experiment — the agent cannot compare a variation against nothing, and no learning is recorded. ${args.arm.publishedArms === 0 ? 'No arm of this test is live yet.' : `${args.arm.publishedArms} of ${args.arm.totalArms} arms already live.`} Approve <em>every</em> arm, or reject them all.</p>` : ''}
       ${captionPreview ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;white-space:pre-wrap;color:#444;">${captionPreview}${args.caption.length > 240 ? '…' : ''}</p>` : '<p style="margin:0 0 16px;font-size:14px;color:#888;">(no caption)</p>'}
       <a href="${reviewUrl}" style="display:inline-block;background:#6A7D45;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-size:14px;font-weight:600;">Review &amp; publish →</a>
       <p style="margin:16px 0 0;font-size:12px;color:#999;">Nothing is published until you approve it here. Task ${args.taskId.slice(0, 8)}.</p>
@@ -106,6 +122,40 @@ async function notifyPostReadyForReview(args: {
   </div>
 </body></html>`
   return await sendOwnerEmail({ subject, html })
+}
+
+// How many arms this experiment has, and how many are already live. Used only
+// to warn the admin in the review email; any failure degrades to null (no
+// warning) rather than disturbing the task.
+//
+// "Live" is judged by a non-null ig_permalink, which is what meta-publish writes
+// back only after an actual publish. A prepared-but-unapproved arm carries an
+// ig_media_id but a NULL permalink, so counting media ids would report arms as
+// live that never shipped.
+async function fetchExperimentArmContext(
+  supabase: ReturnType<typeof createSupabase>,
+  task: { experiment_id?: string | null; variation_label?: string | null },
+): Promise<ExperimentArmContext | null> {
+  if (!task.experiment_id) return null
+  try {
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('id, result_data')
+      .eq('experiment_id', task.experiment_id)
+      .eq('task_type', 'instagram_post')
+    if (error || !data || data.length < 2) return null   // a lone arm isn't a test
+    const publishedArms = data.filter((r: { result_data?: unknown }) =>
+      ((r.result_data ?? {}) as { ig_permalink?: string | null }).ig_permalink != null
+    ).length
+    return {
+      variationLabel: task.variation_label ?? null,
+      totalArms:      data.length,
+      publishedArms,
+    }
+  } catch (e: any) {
+    console.error(`[organic-worker-instagram] arm-context lookup failed: ${e?.message ?? e}`)
+    return null
+  }
 }
 
 serve(async (req) => {
@@ -360,12 +410,14 @@ serve(async (req) => {
   // failed/slow email never affects the pipeline. Only for review-staged posts
   // (the only path this worker takes), so this fires exactly once per post.
   if (reviewRequired) {
+    const armContext = await fetchExperimentArmContext(supabase, task)
     const notifyStatus = await notifyPostReadyForReview({
       mediaType: mediaType,
       caption:   finalCaption,
       imageUrl:  imageUrl ?? (carouselChildren?.[0]?.image_url ?? null),
       taskId:    task.id,
       qaFlagged: qaFlagged,
+      arm:       armContext,
     })
     console.log(`[organic-worker-instagram] ${workerId} ready-for-review email → ${ADMIN_ALERT_EMAIL}: ${notifyStatus}`)
   }

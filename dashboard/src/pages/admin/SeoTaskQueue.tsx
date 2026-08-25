@@ -20,6 +20,10 @@ export interface SeoTaskRow {
   scheduled_for:   string
   error_msg:       string | null
   result_data:     Record<string, unknown> | null
+  // A/B experiment membership. Null on manually queued and non-experiment
+  // tasks; set by the orchestrator when a task is one arm of a cohort.
+  experiment_id:   string | null
+  variation_label: string | null
 }
 
 interface Props {
@@ -340,6 +344,21 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                 const rejected  = Boolean(rd.rejected_via_ui_at)
                 const canPublish = !published && !rejected && Boolean(rd.ig_creation_id)
                 const mediaType = (rd.media_type as string) ?? (brief.media_type as string) ?? 'feed_image'
+                // A/B ARM WARNING. Approving only one arm of an experiment
+                // voids it: the evaluator needs two live arms to compare, and
+                // with one it records nothing. Historically 17 of 22 arms were
+                // prepared and never approved, which is why the self-optimizing
+                // loop produced zero winners in three months.
+                //
+                // Siblings come from the already-loaded 7-day task list. Arms of
+                // one experiment are emitted in the same orchestrator run, so
+                // they are in the window together; if an older sibling has aged
+                // out the count simply reads low, never wrong-high.
+                const armSiblings = viewing.experiment_id
+                  ? tasks.filter(t => t.experiment_id === viewing.experiment_id && t.task_type === 'instagram_post')
+                  : []
+                const isArm = armSiblings.length > 1
+                const armsLive = armSiblings.filter(t => Boolean((t.result_data as Record<string, any> | null)?.ig_permalink)).length
                 return (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -352,7 +371,25 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       ) : rd.review_required === true ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
                       ) : null}
+                      {isArm && (
+                        <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-medium">
+                          🧪 A/B arm{viewing.variation_label ? `: ${viewing.variation_label}` : ''}
+                        </span>
+                      )}
                     </div>
+
+                    {isArm && !published && !rejected && (
+                      <div className="rounded border border-blue-200 bg-blue-50 p-2.5 text-[12px] leading-relaxed text-blue-900">
+                        <div className="font-semibold">This post is 1 of {armSiblings.length} arms in an A/B test.</div>
+                        <div className="mt-0.5">
+                          Publishing only some arms voids the experiment — the agent can't compare a variation
+                          against nothing, so no learning gets recorded. {armsLive === 0
+                            ? 'No arm is live yet.'
+                            : `${armsLive} of ${armSiblings.length} arms already live.`}{' '}
+                          Publish <em>every</em> arm, or reject them all.
+                        </div>
+                      </div>
+                    )}
 
                     {images.length > 0 ? (
                       <div className={carousel.length > 0 ? 'flex gap-2 overflow-x-auto pb-1' : ''}>

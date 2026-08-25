@@ -994,7 +994,7 @@ ${postFollowback.length === 0 ? '  (no tasks in the last 14 days)' : postFollowb
     else if (p.wp_published === false)        parts.push(`    → drafted on WP (post ${p.wp_post_id}), NOT YET PUBLISHED by admin`)
     else if (p.wp_post_id)                    parts.push(`    → drafted on WP (post ${p.wp_post_id}), publish-status unknown`)
   } else if (p.task_type === 'instagram_post') {
-    if (p.ig_published)                       parts.push(`    → LIVE on IG (${p.ig_permalink ?? p.ig_media_id}); impressions:${p.meta_impressions ?? '?'} engagements:${p.meta_engagement ?? '?'}`)
+    if (p.ig_published)                       parts.push(`    → LIVE on IG (${p.ig_permalink ?? p.ig_media_id}); reach:${p.meta_reach ?? '?'} engagements:${p.meta_engagement ?? '?'}`)
     else if (p.ig_creation_id)                parts.push(`    → PREPARED on Meta (creation_id ${p.ig_creation_id.slice(-8)}), AWAITING admin approval`)
     else                                       parts.push(`    → no IG container prepared`)
   } else if (p.task_type === 'dynamic_experiment') {
