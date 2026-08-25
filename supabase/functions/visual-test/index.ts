@@ -81,6 +81,44 @@ function pickSurface(): { name: string; description: string } {
   return SURFACES[0]
 }
 
+// Read the pixel dimensions straight out of a PNG/JPEG header. Used to
+// VERIFY that the image Gemini returned actually has the aspect ratio we
+// asked for — the model accepts the request either way and silently
+// returns its own shape when it ignores us, which is invisible unless we
+// measure. Returns null for formats we don't parse (never throws).
+function readImageSize(bytes: Uint8Array): { w: number; h: number } | null {
+  // PNG: 8-byte signature, then IHDR with width/height as big-endian u32.
+  if (bytes.length > 24 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+    return { w: dv.getUint32(16), h: dv.getUint32(20) }
+  }
+  // JPEG: walk the segment chain to the first SOFn frame header.
+  if (bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+    let i = 2
+    while (i + 9 < bytes.length) {
+      if (bytes[i] !== 0xff) { i++; continue }
+      const marker = bytes[i + 1]
+      // SOF0-SOF15 carry the dimensions; C4/C8/CC are DHT/JPG/DAC, not SOF.
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        return { h: (bytes[i + 5] << 8) | bytes[i + 6], w: (bytes[i + 7] << 8) | bytes[i + 8] }
+      }
+      i += 2 + ((bytes[i + 2] << 8) | bytes[i + 3])
+    }
+  }
+  return null
+}
+
+// True when the rendered image matches the requested "W:H" within 5%.
+// Unknown dimensions (unparsed format) count as OK — never block a render
+// on our own inability to measure it.
+function matchesRatio(dims: { w: number; h: number } | null, ratio: string): boolean {
+  if (!dims || !dims.h) return true
+  const [rw, rh] = ratio.split(':').map(Number)
+  if (!rw || !rh) return true
+  const want = rw / rh
+  return Math.abs(dims.w / dims.h - want) <= want * 0.05
+}
+
 const GEMINI_KEY    = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -115,7 +153,16 @@ serve(async (req) => {
       throw new Error(`provide either 'scene_brief' or 'preset' (one of: ${Object.keys(SCENE_PRESETS).join(', ')})`)
     }
     const aspect    = body.aspect ?? 'feed_square'
-    const ratio     = ASPECT_TO_RATIO[aspect]
+    // Resolve the ratio LOUDLY. Callers pass `aspect` as a plain string at
+    // runtime (seo-worker-visual forwards whatever the strategist wrote),
+    // so an unmapped key used to yield `undefined` — which interpolated
+    // into the prompt as the literal "at undefined aspect ratio" and sent
+    // no aspect to Gemini at all. That is how IG stories shipped
+    // horizontal. Never render on an unknown aspect silently.
+    const ratio: string = ASPECT_TO_RATIO[aspect] ?? '1:1'
+    if (!ASPECT_TO_RATIO[aspect]) {
+      console.warn(`[visual-test] unknown aspect "${aspect}" — falling back to 1:1 (known: ${Object.keys(ASPECT_TO_RATIO).join(', ')})`)
+    }
     const useReference = body.use_reference !== false
 
     // ── Minimal-scene gate ────────────────────────────────────────────────
@@ -547,35 +594,63 @@ text is inspiration; these are mandatory.`
     if (roasterRef) parts.push({ inlineData: { mimeType: roasterRef.mime, data: roasterRef.data } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
-    const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
-        }),
-      },
-    )
-    if (!genRes.ok) {
-      const errText = await genRes.text().catch(() => '')
-      throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
-    }
-    const genJson = await genRes.json()
-
-    let imageB64: string | null = null
-    let imageMime = 'image/png'
-    for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
-      if (part.inlineData?.mimeType?.startsWith('image/')) {
-        imageB64 = part.inlineData.data
-        imageMime = part.inlineData.mimeType
-        break
+    async function callGemini(): Promise<{ b64: string; mime: string }> {
+      const genRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: {
+              responseModalities: ['IMAGE', 'TEXT'],
+              // HARD aspect-ratio control. The FORMAT line in the prompt is
+              // only a suggestion — Gemini routinely ignores prose framing
+              // instructions and returns its own default shape. imageConfig
+              // is the contract, and it is what keeps a 'story' render at
+              // 9:16 instead of whatever the model felt like.
+              imageConfig: { aspectRatio: ratio },
+            },
+          }),
+        },
+      )
+      if (!genRes.ok) {
+        const errText = await genRes.text().catch(() => '')
+        throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
       }
-    }
-    if (!imageB64) {
+      const genJson = await genRes.json()
+      for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
+        if (part.inlineData?.mimeType?.startsWith('image/')) {
+          return { b64: part.inlineData.data as string, mime: part.inlineData.mimeType as string }
+        }
+      }
       throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
     }
+
+    const b64ToBytes = (b64: string) => Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+
+    let gen        = await callGemini()
+    let imageBytes = b64ToBytes(gen.b64)
+    let dims       = readImageSize(imageBytes)
+    // ASPECT GUARD — measure what actually came back and retry once if the
+    // shape is wrong. A story published at the wrong ratio gets cropped or
+    // pillarboxed by Instagram, and nothing downstream (not even the
+    // Claude-vision QA pass) looks at dimensions, so this is the only place
+    // the mistake can be caught.
+    if (!matchesRatio(dims, ratio)) {
+      console.warn(`[visual-test] aspect mismatch — asked ${ratio} (${aspect}), got ${dims?.w}x${dims?.h}. Retrying once.`)
+      const retry      = await callGemini()
+      const retryBytes = b64ToBytes(retry.b64)
+      const retryDims  = readImageSize(retryBytes)
+      if (matchesRatio(retryDims, ratio)) {
+        gen = retry; imageBytes = retryBytes; dims = retryDims
+      } else {
+        console.error(`[visual-test] aspect STILL wrong after retry — asked ${ratio}, got ${retryDims?.w}x${retryDims?.h}. Returning aspect_ok:false.`)
+      }
+    }
+    const aspectOk  = matchesRatio(dims, ratio)
+    const imageMime = gen.mime
+    console.log(`[visual-test] render ${aspect} (${ratio}) → ${dims?.w}x${dims?.h} aspect_ok=${aspectOk}`)
 
     // 3.5 Post-processing — compositing is DISABLED. The Gemini output is
     //     the final image; we trust the reference images + bullet-structured
@@ -591,7 +666,7 @@ text is inspiration; these are mandatory.`
     //    multiple test runs don't overwrite each other.
     const ext      = imageMime.includes('jpeg') ? 'jpg' : 'png'
     const filename = `ig-test/${aspect}_${Date.now()}.${ext}`
-    const fileBytes = Uint8Array.from(atob(imageB64), c => c.charCodeAt(0))
+    const fileBytes = imageBytes
 
     const { error: upErr } = await supabase.storage
       .from('marketing')
@@ -605,6 +680,9 @@ text is inspiration; these are mandatory.`
       url: pub.publicUrl,
       aspect,
       ratio,
+      width:     dims?.w ?? null,
+      height:    dims?.h ?? null,
+      aspect_ok: aspectOk,
       bytes: fileBytes.length,
       used_reference: bagInScene,
       composited_bag: bagComposited,

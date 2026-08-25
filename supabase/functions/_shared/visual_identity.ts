@@ -462,6 +462,12 @@ export const ASPECT_TO_RATIO = {
   feed_square:    '1:1',
   feed_portrait:  '4:5',
   reel_cover:     '9:16',
+  // IG STORY — 9:16 full-bleed (1080x1920). This key MUST exist: the
+  // strategist/mission-worker prompts emit aspect:'story' for the daily
+  // story, and a missing key resolved to `undefined`, which meant the
+  // render got NO aspect ratio at all and Gemini free-ran (horizontal
+  // stories in production).
+  story:          '9:16',
 } as const
 export type Aspect = keyof typeof ASPECT_TO_RATIO
 
