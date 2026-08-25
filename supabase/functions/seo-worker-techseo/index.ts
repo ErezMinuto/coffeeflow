@@ -24,7 +24,7 @@ import {
   markTaskCompleted,
   markTaskFailed,
 } from '../seo-agent/db.ts'
-import { callClaude, MODEL_ORCHESTRATOR, parseClaudeJson } from '../seo-agent/claude.ts'
+import { callClaude, MODEL_TECHSEO, parseClaudeJson } from '../seo-agent/claude.ts'
 import type { SeoTaskRow, TechnicalSeoBrief } from '../seo-agent/types.ts'
 
 const WP_URL = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
@@ -159,12 +159,33 @@ serve(async (req) => {
   try {
     const res = await callClaude({
       sourceFn:    'seo-worker-techseo',
-      model:       MODEL_ORCHESTRATOR,
+      model:       MODEL_TECHSEO,
       system:      SYSTEM_PROMPT,
       messages:    [{ role: 'user', content: userMsg }],
       maxTokens:   2048,
       temperature: 0.4,
       timeoutMs:   90_000,
+      // Gemini-only, ignored on Claude: constrain the reply to this exact
+      // shape so it cannot come back fenced or wrapped in prose. The
+      // parseClaudeJson call below still runs and still works either way —
+      // on structured output it simply parses a clean document.
+      responseSchema: {
+        type: 'object',
+        properties: {
+          faq: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                q: { type: 'string', description: 'The question, in Hebrew' },
+                a: { type: 'string', description: 'The answer, in Hebrew, grounded only in the article text' },
+              },
+              required: ['q', 'a'],
+            },
+          },
+        },
+        required: ['faq'],
+      },
     })
     tokens = { input: res.inputTokens, output: res.outputTokens }
     const parsed = parseClaudeJson<{ faq?: Array<{ q?: unknown; a?: unknown }> }>(res.text)

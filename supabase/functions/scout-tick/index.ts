@@ -25,7 +25,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
+import { callClaude, MODEL_SCOUT, parseClaudeJson } from '../seo-agent/claude.ts'
 import { getSystemConfig } from '../seo-agent/db.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
 
@@ -314,12 +314,25 @@ Propose ONE focused action per the system prompt. Output strict JSON only.`
 
   const res = await callClaude({
     sourceFn:    'scout-tick',
-    model:       'claude-haiku-4-5',
+    model:       MODEL_SCOUT,
     system:      SYNTH_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],
     maxTokens:   500,
     temperature: 0.3,
     timeoutMs:   30_000,
+    // Gemini-only, ignored on Claude. The four fields below are exactly what
+    // the caller reads; constraining them removes the "(synth failed ...)"
+    // fallback path that a fenced or chatty reply used to trigger.
+    responseSchema: {
+      type: 'object',
+      properties: {
+        description:       { type: 'string' },
+        action:            { type: 'string' },
+        urgency_rationale: { type: 'string' },
+        effort_hours:      { type: 'number', description: 'Estimated hours, 0.5 to 4' },
+      },
+      required: ['description', 'action', 'urgency_rationale', 'effort_hours'],
+    },
   })
 
   const parsed = parseClaudeJson<{ description?: unknown; action?: unknown; urgency_rationale?: unknown; effort_hours?: unknown }>(res.text)

@@ -11,6 +11,11 @@
 //     the other.
 
 import { estimateUsd, type TokenUsage } from './pricing.ts'
+import { callGemini, isGeminiModel } from './gemini.ts'
+// Re-exported so call sites can branch on the provider (e.g. the research
+// worker picks Google Search grounding vs Anthropic web_search) without
+// importing gemini.ts directly — claude.ts stays the single entry point.
+export { isGeminiModel }
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -26,6 +31,28 @@ export const MODEL_CHAT         = 'claude-sonnet-4-6'
 // ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
 // fallback is wired in callClaude below as a seatbelt.
 export const MODEL_STRATEGIST   = 'claude-fable-5'
+
+// ── PROVIDER SWITCH (Gemini migration, Wave A) ──────────────────────────────
+//
+// The organic agent's job is to rank in Google's index, and Gemini grounds on
+// that index natively; Anthropic's web_search runs against a third-party index,
+// which is a structural gap for SEO work that no prompt fixes. So these four
+// slots are moving to Gemini one at a time.
+//
+// Each slot reads an env var with a CLAUDE DEFAULT. Nothing changes on deploy:
+// flipping a function to Gemini is `supabase secrets set MODEL_RESEARCH=
+// gemini-3.1-pro`, and flipping it BACK is unsetting that var. No redeploy, no
+// code change, no PR — which is the whole point of a switch rather than a
+// replacement. callClaude routes on the resolved model id (see below), so the
+// call sites themselves never learn which provider served them.
+function modelSlot(slot: string, fallback: string): string {
+  const v = Deno.env.get(`MODEL_${slot}`)?.trim()
+  return v && v !== '' ? v : fallback
+}
+export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
+export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
+export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
+export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  'claude-sonnet-4-6')
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
@@ -121,6 +148,20 @@ export interface CallClaudeOptions {
   // — which is why only strategist-brain/-evaluator had any cost history.
   sourceFn?: string
   runId?: string | null
+  // ── Gemini-only options (ignored when an Anthropic model is serving) ──────
+  // Both are no-ops on Claude rather than errors, so a slot can be flipped
+  // between providers by env var alone without the call site changing shape.
+  //
+  // googleSearch turns on Google Search grounding — the reason for the
+  // migration. Claude's nearest equivalent is its own web_search tool, which
+  // call sites still pass explicitly via `tools`, so there is nothing sensible
+  // to map this onto on the Anthropic path.
+  googleSearch?: boolean
+  // responseSchema constrains Gemini to emit JSON matching the schema, which
+  // removes the fence-stripping failure class parseClaudeJson exists to paper
+  // over. On Claude the call site keeps using parseClaudeJson, which is why
+  // ignoring this is safe rather than silently lossy.
+  responseSchema?: Record<string, unknown>
 }
 
 // Attach a cache breakpoint to the final block of the final message, so the
@@ -164,14 +205,34 @@ export interface CallClaudeResult {
   cacheReadTokens: number
   cacheCreationTokens: number
   model: string
+  // Gemini-only. Grounded source URLs, which Gemini returns out-of-band in
+  // groundingMetadata rather than as content blocks. Undefined on the Anthropic
+  // path, where the same information arrives as web_search_tool_result blocks
+  // inside `content` and callers extract it from there.
+  groundingSources?: Array<{ title: string; url: string }>
 }
 
 export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeResult> {
+  const model = opts.model ?? MODEL_ORCHESTRATOR
+
+  // PROVIDER SWITCH. Routing on the model id keeps every call site provider-
+  // agnostic: a function moves to Gemini by its slot env var resolving to a
+  // gemini-* id, and nothing at the call site changes. callGemini returns this
+  // same CallClaudeResult shape, so callers cannot tell the difference.
+  //
+  // Anthropic-only options are dropped rather than approximated, because Gemini
+  // has no equivalent: cache_control (its explicit cache has different
+  // semantics and a different billing model), thinking:adaptive, output_config
+  // effort, and the Fable refusal fallback. Silently pretending to honour them
+  // would be worse than not honouring them.
+  if (isGeminiModel(model)) {
+    return await callGemini({ ...opts, model })
+  }
+
   if (!ANTHROPIC_API_KEY) {
     throw new Error('ANTHROPIC_API_KEY env var not set')
   }
 
-  const model = opts.model ?? MODEL_ORCHESTRATOR
   const adaptive = usesAdaptiveThinking(model)
   // Fable 5's safety classifiers can decline a request as stop_reason:"refusal".
   // In an unattended weekly cron that would silently fail the run, so opt into
