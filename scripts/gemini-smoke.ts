@@ -19,12 +19,17 @@
 //   deno run --allow-net --allow-env scripts/gemini-smoke.ts
 //
 // Optional: pick the model to probe (defaults to the cheap flash tier)
-//   GEMINI_SMOKE_MODEL=gemini-3.1-pro deno run ... scripts/gemini-smoke.ts
+//   GEMINI_SMOKE_MODEL=gemini-2.5-pro deno run ... scripts/gemini-smoke.ts
+//
+// LIST THE REAL MODEL IDS before picking one — they are not guessable, and a
+// wrong id fails as 404 NOT_FOUND on every call:
+//   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+//     | jq -r '.models[] | select(.supportedGenerationMethods[]? == "generateContent") | .name'
 
 import { callGemini } from '../supabase/functions/seo-agent/gemini.ts'
 import type { ToolDefinition } from '../supabase/functions/seo-agent/claude.ts'
 
-const MODEL = Deno.env.get('GEMINI_SMOKE_MODEL') ?? 'gemini-3.1-flash'
+const MODEL = Deno.env.get('GEMINI_SMOKE_MODEL') ?? 'gemini-2.5-flash'
 
 if (!Deno.env.get('GEMINI_API_KEY')) {
   console.error('GEMINI_API_KEY is not set. Run:  read -rs GEMINI_API_KEY && export GEMINI_API_KEY')
@@ -167,6 +172,44 @@ await check('tool call surfaces as tool_use', async () => {
   if (r.stop_reason !== 'tool_use') return `stop_reason=${r.stop_reason}, expected tool_use`
   if (toolUse.name !== 'get_stock_level') return `called "${toolUse.name}"`
   console.log(`        → ${toolUse.name}(${JSON.stringify(toolUse.input).slice(0, 60)})`)
+  return null
+})
+
+// 5. THE TIGHT-BUDGET CHECK. Gemini 2.5+ spends "thinking" tokens out of
+// maxOutputTokens BEFORE any visible text, so a caller with a small cap gets a
+// truncated or empty answer with finishReason STOP and no error at all. Checks
+// 1-4 all use generous caps and sail past it; scout-tick uses 500 and returned
+// out=8 tokens in production. This mirrors a real worker call — small cap,
+// structured output — so the trap cannot come back unnoticed.
+await check('tight maxTokens still returns usable output (thinking off)', async () => {
+  const r = await callGemini({
+    model:     MODEL,
+    system:    'You extract structured data. Be terse.',
+    messages:  [{ role: 'user', content: 'Name one Ethiopian coffee region and a three-word flavour note. Think about which is most distinctive.' }],
+    maxTokens: 500,
+    temperature: 0.3,
+    responseSchema: {
+      type: 'object',
+      properties: {
+        region:       { type: 'string' },
+        note:         { type: 'string' },
+        confidence:   { type: 'number', description: '0 to 1' },
+      },
+      required: ['region', 'note', 'confidence'],
+    },
+  })
+  if (r.outputTokens < 10) {
+    return `only ${r.outputTokens} output tokens — thinking is eating the budget. ` +
+           'generationConfig.thinkingConfig.thinkingBudget must be 0 for tight-cap calls.'
+  }
+  let parsed: any
+  try { parsed = JSON.parse(r.text) } catch {
+    return `unparseable at maxTokens=500 (out=${r.outputTokens}): ${r.text.slice(0, 120)}`
+  }
+  if (!parsed?.region || typeof parsed.confidence !== 'number') {
+    return `schema not honoured: ${JSON.stringify(parsed).slice(0, 120)}`
+  }
+  console.log(`        → ${parsed.region} (${parsed.note}) conf=${parsed.confidence}  [out=${r.outputTokens} tokens]`)
   return null
 })
 
