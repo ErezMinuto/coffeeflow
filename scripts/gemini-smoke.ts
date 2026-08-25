@@ -19,12 +19,17 @@
 //   deno run --allow-net --allow-env scripts/gemini-smoke.ts
 //
 // Optional: pick the model to probe (defaults to the cheap flash tier)
-//   GEMINI_SMOKE_MODEL=gemini-3.1-pro deno run ... scripts/gemini-smoke.ts
+//   GEMINI_SMOKE_MODEL=gemini-2.5-pro deno run ... scripts/gemini-smoke.ts
+//
+// LIST THE REAL MODEL IDS before picking one — they are not guessable, and a
+// wrong id fails as 404 NOT_FOUND on every call:
+//   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+//     | jq -r '.models[] | select(.supportedGenerationMethods[]? == "generateContent") | .name'
 
 import { callGemini } from '../supabase/functions/seo-agent/gemini.ts'
 import type { ToolDefinition } from '../supabase/functions/seo-agent/claude.ts'
 
-const MODEL = Deno.env.get('GEMINI_SMOKE_MODEL') ?? 'gemini-3.1-flash'
+const MODEL = Deno.env.get('GEMINI_SMOKE_MODEL') ?? 'gemini-2.5-flash'
 
 if (!Deno.env.get('GEMINI_API_KEY')) {
   console.error('GEMINI_API_KEY is not set. Run:  read -rs GEMINI_API_KEY && export GEMINI_API_KEY')

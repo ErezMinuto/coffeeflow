@@ -221,7 +221,11 @@ export async function callGemini(
 ): Promise<CallClaudeResult> {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY env var not set')
 
-  const model = opts.model ?? 'gemini-3.1-flash'
+  // Fallback only — every Wave A slot passes an explicit model. It must still
+  // be a REAL id: 'gemini-3.1-flash' was used here originally and does not
+  // exist on this endpoint (404 NOT_FOUND on every call). Verify any new id
+  // against GET /v1beta/models before using it.
+  const model = opts.model ?? 'gemini-2.5-flash'
   const contents = await toGeminiContents(opts.messages)
 
   const body: Record<string, unknown> = {

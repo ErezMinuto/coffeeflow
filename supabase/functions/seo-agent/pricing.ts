@@ -17,13 +17,20 @@ const MODEL_PRICES: Record<string, ModelPrice> = {
   'claude-sonnet-4-6': { input: 3,  output: 15 },
   'claude-haiku-4-5':  { input: 1,  output: 5 },
   'claude-fable-5':    { input: 10, output: 50 },
-  // Gemini (provider switch — see gemini.ts). Priced here so both providers
-  // land in agent_cost_ledger on the same basis and the migration can actually
-  // be costed rather than guessed at. Without these entries the unknown-model
-  // fallback below would price every Gemini call as Opus, i.e. ~40× high, and
-  // the monthly kill-switch would trip on spend that never happened.
-  'gemini-3.1-flash':  { input: 0.30, output: 2.50 },
-  'gemini-3.1-pro':    { input: 1.25, output: 10 },
+  // Gemini (provider switch — see gemini.ts). Priced here so both providers land
+  // in agent_cost_ledger on the same basis.
+  //
+  // ONLY MODELS WITH PUBLISHED RATES ARE LISTED, and only ids confirmed to exist
+  // via GET /v1beta/models. The first version of this block invented entries for
+  // 'gemini-3.1-flash' and 'gemini-3.1-pro' — NEITHER MODEL EXISTS, so the rates
+  // were fiction attached to ids that 404.
+  //
+  // A Gemini 3.x model is deliberately NOT listed: its rates are unconfirmed, and
+  // the unknown-model fallback below prices as Opus. That over-states 3.x spend,
+  // which is the safe direction — the monthly kill-switch trips early rather than
+  // late. Add a 3.x entry only with a rate taken from Google's pricing page.
+  'gemini-2.5-flash':  { input: 0.30, output: 2.50 },
+  'gemini-2.5-pro':    { input: 1.25, output: 10 },
 }
 // Cache reads cost ~0.1× the input rate; cache writes (5-min TTL) ~1.25×.
 const CACHE_READ_MULT = 0.1

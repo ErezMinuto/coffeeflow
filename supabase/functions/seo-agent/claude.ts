@@ -41,13 +41,28 @@ export const MODEL_STRATEGIST   = 'claude-fable-5'
 //
 // Each slot reads an env var with a CLAUDE DEFAULT. Nothing changes on deploy:
 // flipping a function to Gemini is `supabase secrets set MODEL_RESEARCH=
-// gemini-3.1-pro`, and flipping it BACK is unsetting that var. No redeploy, no
+// gemini-2.5-pro`, and flipping it BACK is unsetting that var. No redeploy, no
 // code change, no PR — which is the whole point of a switch rather than a
 // replacement. callClaude routes on the resolved model id (see below), so the
 // call sites themselves never learn which provider served them.
+// VERIFY ANY GEMINI ID AGAINST THE LIVE MODEL LIST BEFORE SETTING A SLOT:
+//   curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+//     | jq -r '.models[] | select(.supportedGenerationMethods[]? == "generateContent") | .name'
+// The ids are NOT guessable from the marketing names. 'gemini-3.1-flash' looks
+// entirely plausible and does not exist — it 404s every call, which surfaced as
+// scout-tick finding 3 signals and silently creating 0 tasks. Note also that a
+// Vertex AI model id is NOT necessarily valid on this endpoint; that is exactly
+// where the bad id was copied from.
 function modelSlot(slot: string, fallback: string): string {
   const v = Deno.env.get(`MODEL_${slot}`)?.trim()
-  return v && v !== '' ? v : fallback
+  if (v && v !== '') {
+    // Fail loudly at module load rather than once per call deep inside a worker.
+    if (!/^(claude|gemini)/.test(v)) {
+      console.error(`[model-slot] MODEL_${slot}="${v}" matches no known provider prefix — calls will fail`)
+    }
+    return v
+  }
+  return fallback
 }
 export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
 export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
