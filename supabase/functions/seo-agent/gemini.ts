@@ -234,6 +234,21 @@ export async function callGemini(
     generationConfig: {
       maxOutputTokens: opts.maxTokens ?? 8192,
       ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+      // THINKING EATS THE OUTPUT BUDGET. Gemini 2.5+ defaults to dynamic
+      // "thinking", and those tokens are drawn from maxOutputTokens BEFORE any
+      // visible text — so a caller with a tight cap gets a truncated or empty
+      // answer with finishReason STOP and no error anywhere. Measured on
+      // scout-tick (maxTokens 500): three calls returned out=8, out=8, out=142
+      // tokens, the JSON was unparseable, and the worker reported
+      // "signals_found 3, tasks_created 0" with nothing in the logs.
+      //
+      // vertex-imagen-edit hit this same trap and disables thinking outright.
+      // Here it is tied to `effort`, the knob callers already use to ask for
+      // reasoning depth: no effort → no thinking, which suits the structured
+      // extraction and short-synthesis calls that make up Wave A. A caller that
+      // sets effort keeps Gemini's default dynamic thinking, and must budget
+      // maxTokens for it.
+      ...(opts.effort ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
     },
   }
 

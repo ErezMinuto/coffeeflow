@@ -175,6 +175,44 @@ await check('tool call surfaces as tool_use', async () => {
   return null
 })
 
+// 5. THE TIGHT-BUDGET CHECK. Gemini 2.5+ spends "thinking" tokens out of
+// maxOutputTokens BEFORE any visible text, so a caller with a small cap gets a
+// truncated or empty answer with finishReason STOP and no error at all. Checks
+// 1-4 all use generous caps and sail past it; scout-tick uses 500 and returned
+// out=8 tokens in production. This mirrors a real worker call — small cap,
+// structured output — so the trap cannot come back unnoticed.
+await check('tight maxTokens still returns usable output (thinking off)', async () => {
+  const r = await callGemini({
+    model:     MODEL,
+    system:    'You extract structured data. Be terse.',
+    messages:  [{ role: 'user', content: 'Name one Ethiopian coffee region and a three-word flavour note. Think about which is most distinctive.' }],
+    maxTokens: 500,
+    temperature: 0.3,
+    responseSchema: {
+      type: 'object',
+      properties: {
+        region:       { type: 'string' },
+        note:         { type: 'string' },
+        confidence:   { type: 'number', description: '0 to 1' },
+      },
+      required: ['region', 'note', 'confidence'],
+    },
+  })
+  if (r.outputTokens < 10) {
+    return `only ${r.outputTokens} output tokens — thinking is eating the budget. ` +
+           'generationConfig.thinkingConfig.thinkingBudget must be 0 for tight-cap calls.'
+  }
+  let parsed: any
+  try { parsed = JSON.parse(r.text) } catch {
+    return `unparseable at maxTokens=500 (out=${r.outputTokens}): ${r.text.slice(0, 120)}`
+  }
+  if (!parsed?.region || typeof parsed.confidence !== 'number') {
+    return `schema not honoured: ${JSON.stringify(parsed).slice(0, 120)}`
+  }
+  console.log(`        → ${parsed.region} (${parsed.note}) conf=${parsed.confidence}  [out=${r.outputTokens} tokens]`)
+  return null
+})
+
 console.log(`\n${failed === 0 ? 'ALL PASSED' : 'FAILURES PRESENT'} — ${passed} passed, ${failed} failed\n`)
 if (failed > 0) {
   console.log('Do not flip any MODEL_* slot to Gemini until these pass.\n')
