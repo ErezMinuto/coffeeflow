@@ -120,6 +120,13 @@ const EXPECTED_CRONS: Array<{
   // 20260809_purge_old_media_weekly_cron.sql). 8-day window covers the weekly
   // cadence with slack. Non-critical: a missed purge only wastes storage.
   { jobname: 'purge-old-media-weekly',              max_silence_hours: 8 * 24, required: false },
+  // MFlow is the single source of revenue truth AND the thing that moves real
+  // packed_stock, and NEITHER job was registered here. The revenue half had no
+  // cron at all until 2026-08-25 and sat frozen for three days after its
+  // backfill without anything noticing — the exact woo-orders-sync failure
+  // repeated. Both are now watched.
+  { jobname: 'mflow-sells-sync',                    max_silence_hours: 2,  required: true  },  // */15 — moves packed_stock
+  { jobname: 'mflow-revenue-sync',                  max_silence_hours: 4,  required: true  },  // hourly — revenue ledger
   // Self-check: if the watchdog's OWN cron is unscheduled or made inactive,
   // the next run (or this run, if late) reports it. Not a substitute for an
   // external dead-man's-switch, but catches the in-band failure modes.
@@ -153,6 +160,12 @@ const EXPECTED_FRESH_DATA: Array<{
   // Content tables only advance when new material exists (a no-RSS-news day
   // is normal), so the budget is deliberately generous + non-critical.
   { table: 'industry_articles',  column: 'summarized_at', max_age_hours: 72, required: false, label: 'Industry intelligence feed' },
+  // transaction_date (business signal), not synced_at: the hourly revenue sync
+  // re-writes rows constantly, so synced_at would advance even if MFlow stopped
+  // returning new documents. Minuto sells every day across POS + EcoSite +
+  // back office, so a 12h budget catches a freeze within half a day without
+  // false-positiving on a quiet evening.
+  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
 interface HealthFinding {
