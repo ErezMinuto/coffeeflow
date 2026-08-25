@@ -141,7 +141,7 @@ async function evaluateOne(
 
   // Apply min_sample_size gate (per-variation).
   const sampleSizeField = sampleSizeFieldFor(exp.primary_metric)
-  const undersized = performance.filter(p => (p[sampleSizeField] ?? 0) < exp.min_sample_size)
+  const undersized = performance.filter(p => Number(p[sampleSizeField] ?? 0) < exp.min_sample_size)
   if (undersized.length > 0) {
     const summary = {
       reason: `${undersized.length}/${performance.length} variation(s) under min_sample_size=${exp.min_sample_size} on '${sampleSizeField}'`,
@@ -348,14 +348,22 @@ async function fetchMetaPerformanceForIgVariations(
     const mediaId = ((v.result_data ?? {}) as { ig_media_id?: string }).ig_media_id
     const row     = mediaId ? byMediaId.get(mediaId) : null
     const imp     = row ? (row.impressions ?? 0) : 0
+    const reach   = row ? (row.reach ?? 0) : 0
     const eng     = row ? ((row.likes ?? 0) + (row.comments ?? 0) + (row.shares ?? 0) + (row.saves ?? 0)) : 0
-    const engRate = imp > 0 ? eng / imp : 0
+    // Engagement rate is per REACH (unique accounts), not per impression.
+    // `impressions` is deprecated for IG media and now reads 0 on nearly every
+    // post, which made this rate identically 0 for EVERY variation — so even an
+    // experiment that cleared the sample-size gate had a perfect tie and could
+    // never produce a winner. Impressions is kept only as a fallback so the
+    // pre-May-2026 posts, where it was still populated, stay comparable.
+    const denom   = reach > 0 ? reach : imp
+    const engRate = denom > 0 ? eng / denom : 0
     out.push({
       task_id:               v.id,
       variation_label:       v.variation_label ?? '?',
       meta_impressions:      imp,
       meta_engagement_rate:  engRate,
-      meta_reach:            row?.reach ?? 0,
+      meta_reach:            reach,
     })
   }
   return out
@@ -363,7 +371,15 @@ async function fetchMetaPerformanceForIgVariations(
 
 // Which field the min_sample_size gate looks at. Sample size is volume,
 // not the optimization target — even for engagement_rate experiments we
-// gate on impressions (the denominator).
+// gate on the DENOMINATOR.
+//
+// That denominator is REACH, not impressions. Meta deprecated `impressions`
+// for IG media, and the feed reflects it: of the posts synced since May 2026
+// only 1-4 per month carry a non-zero impressions value, while reach is
+// populated on 100% of them (April: 7/7 impressions; August: 1/6 impressions
+// but 6/6 reach). Gating on impressions therefore failed EVERY experiment on
+// sample size — 21 inconclusive, zero winners ever recorded, the whole
+// self-optimizing loop silently inert since 2026-05-31.
 function sampleSizeFieldFor(metric: ExperimentMetric): string {
   switch (metric) {
     case 'ga4_conversions':
@@ -371,7 +387,7 @@ function sampleSizeFieldFor(metric: ExperimentMetric): string {
       return 'ga4_sessions'
     case 'meta_engagement_rate':
     case 'meta_reach':
-      return 'meta_impressions'
+      return 'meta_reach'
     default:
       return 'ga4_sessions'  // safe default
   }

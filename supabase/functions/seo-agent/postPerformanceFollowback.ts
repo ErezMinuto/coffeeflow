@@ -39,6 +39,7 @@ export interface PostFollowback {
   ig_permalink?:     string | null
   ig_published?:     boolean | null
   meta_impressions?: number
+  meta_reach?:       number
   meta_engagement?:  number
   // Catch-all for QA / approval / failure context the agent should see.
   status_note?:      string
@@ -112,6 +113,11 @@ export async function collectPostFollowback(
           .eq('post_id', fb.ig_media_id)
           .maybeSingle()
         if (meta) {
+          // reach, not impressions: Meta deprecated `impressions` for IG media,
+          // so it now reads 0 on nearly every post while reach stays populated.
+          // Reporting impressions told the strategist that every post it shipped
+          // had reached nobody.
+          fb.meta_reach       = Number(meta.reach ?? 0)
           fb.meta_impressions = Number(meta.impressions ?? 0)
           fb.meta_engagement  = Number(meta.likes ?? 0) + Number(meta.comments ?? 0) + Number(meta.shares ?? 0) + Number(meta.saves ?? 0)
         }
