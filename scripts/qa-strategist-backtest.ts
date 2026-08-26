@@ -61,6 +61,8 @@ if (/flash/i.test(CHALLENGER)) {
   Deno.exit(1)
 }
 
+console.log(`keys loaded: supabase=${SERVICE_KEY.length}c anthropic=${(Deno.env.get('ANTHROPIC_API_KEY') ?? '').length}c gemini=${(Deno.env.get('GEMINI_API_KEY') ?? '').length}c`)
+
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
 // Mirrors strategist-brain/index.ts.
@@ -101,6 +103,10 @@ async function runArm(model: string, snapshot: unknown, weekStart: string): Prom
   }
 
   while (out.steps < MAX_STEPS && !out.concluded) {
+    // A step can legitimately take a minute or more. Without a heartbeat the
+    // whole arm looks hung, which is exactly how the first run was read.
+    Deno.stdout.writeSync(new TextEncoder().encode(
+      `\r    ${model} step ${out.steps + 1}/${MAX_STEPS} … `))
     let res
     try {
       res = await callClaude({
@@ -123,6 +129,8 @@ async function runArm(model: string, snapshot: unknown, weekStart: string): Prom
 
     const toolUses = res.content.filter(b => b.type === 'tool_use') as Array<
       { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }>
+    Deno.stdout.writeSync(new TextEncoder().encode(
+      `${toolUses.length ? toolUses.map(t => t.name).join(',') : '(prose, done)'}`))
     if (toolUses.length === 0) break   // model answered in prose; loop is done
 
     messages.push({ role: 'assistant', content: res.content })
@@ -211,11 +219,13 @@ for (const run of runs) {
   console.log(`\n══ week ${run.week_start} (run ${String(run.id).slice(0, 8)}) ══`)
 
   const inc = await runArm(INCUMBENT,  run.snapshot, run.week_start)
+  console.log('')
   console.log(`  ${INCUMBENT.padEnd(18)} steps=${inc.steps} tools=${inc.toolCalls.length} `
             + `writes=${inc.writes.length} in=${inc.inputTokens} out=${inc.outputTokens}`
             + `${inc.error ? ` ERROR: ${inc.error.slice(0, 60)}` : ''}`)
 
   const chl = await runArm(CHALLENGER, run.snapshot, run.week_start)
+  console.log('')
   console.log(`  ${CHALLENGER.padEnd(18)} steps=${chl.steps} tools=${chl.toolCalls.length} `
             + `writes=${chl.writes.length} in=${chl.inputTokens} out=${chl.outputTokens}`
             + `${chl.error ? ` ERROR: ${chl.error.slice(0, 60)}` : ''}`)
@@ -223,6 +233,7 @@ for (const run of runs) {
   // Positions swapped between the two judges so neither sees its own output in
   // the same slot — a judge that simply favours position A cancels out.
   const incText = briefText(inc), chlText = briefText(chl)
+  console.log('  judging (both vendors, blind, positions swapped) …')
   const jClaude = await judge(INCUMBENT,  incText, chlText)   // A=incumbent
   const jGemini = await judge(CHALLENGER, chlText, incText)   // A=challenger
 
