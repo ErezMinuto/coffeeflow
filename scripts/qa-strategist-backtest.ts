@@ -47,7 +47,11 @@ import { BRAIN_TOOLS, dispatchTool, type ToolContext } from '../supabase/functio
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? 'https://ytydgldyeygpzmlxvpvb.supabase.co'
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const INCUMBENT    = Deno.env.get('INCUMBENT_MODEL')  ?? 'claude-fable-5'
-const CHALLENGER   = Deno.env.get('CHALLENGER_MODEL') ?? 'gemini-2.5-pro'
+// gemini-2.5-pro is NOT usable: the API returns 404 "no longer available to new
+// users. Please update your code to use models/gemini-3.1-pro-preview". Note it
+// still APPEARS in ListModels — listing a model does not mean this key may call
+// it, and only a real call proves it. Same trap as gemini-3.1-flash.
+const CHALLENGER   = Deno.env.get('CHALLENGER_MODEL') ?? 'gemini-3.1-pro-preview'
 const MAX_STEPS    = Number(Deno.env.get('MAX_STEPS') ?? '8')
 const N_SNAPSHOTS  = Number(Deno.args[0] ?? '2')
 
@@ -213,7 +217,7 @@ if (error || !runs?.length) {
 console.log(`\nStrategist backtest — ${INCUMBENT} (incumbent) vs ${CHALLENGER} (challenger)`)
 console.log(`${runs.length} real snapshot(s), max ${MAX_STEPS} steps per arm, writes intercepted\n`)
 
-const tally = { incumbent: 0, challenger: 0, tie: 0, disagreed: 0 }
+const tally = { incumbent: 0, challenger: 0, tie: 0, disagreed: 0, failed: 0, judgeless: 0 }
 
 for (const run of runs) {
   console.log(`\n══ week ${run.week_start} (run ${String(run.id).slice(0, 8)}) ══`)
@@ -230,6 +234,16 @@ for (const run of runs) {
             + `writes=${chl.writes.length} in=${chl.inputTokens} out=${chl.outputTokens}`
             + `${chl.error ? ` ERROR: ${chl.error.slice(0, 60)}` : ''}`)
 
+  // An arm that ERRORED produced nothing to judge. Judging it anyway burns money
+  // and, worse, files the result as "inconclusive" when the truth is "the run
+  // did not happen" — which is how a totally broken run can look like a tie.
+  if (inc.error || chl.error) {
+    tally.failed++
+    console.log('  → ARM FAILED — nothing to judge. Fix the error above and re-run;')
+    console.log('    this is NOT evidence about either model.')
+    continue
+  }
+
   // Positions swapped between the two judges so neither sees its own output in
   // the same slot — a judge that simply favours position A cancels out.
   const incText = briefText(inc), chlText = briefText(chl)
@@ -242,7 +256,10 @@ for (const run of runs) {
   console.log(`  judge(${INCUMBENT}):  ${claudeSays}  [${jClaude?.confidence ?? '-'}] ${jClaude?.why ?? ''}`)
   console.log(`  judge(${CHALLENGER}): ${geminiSays}  [${jGemini?.confidence ?? '-'}] ${jGemini?.why ?? ''}`)
 
-  if (claudeSays === geminiSays && claudeSays !== '?') {
+  if (claudeSays === '?' && geminiSays === '?') {
+    tally.judgeless++
+    console.log('  → BOTH JUDGES FAILED — no verdict. Not disagreement, not evidence.')
+  } else if (claudeSays === geminiSays && claudeSays !== '?') {
     if (claudeSays === 'incumbent')  tally.incumbent++
     else if (claudeSays === 'challenger') tally.challenger++
     else tally.tie++
@@ -258,6 +275,8 @@ console.log(`agreed incumbent wins : ${tally.incumbent}`)
 console.log(`agreed challenger wins: ${tally.challenger}`)
 console.log(`agreed ties           : ${tally.tie}`)
 console.log(`judges disagreed      : ${tally.disagreed}   ← not evidence either way`)
+console.log(`arms that ERRORED     : ${tally.failed}   ← run did not happen; fix and re-run`)
+console.log(`both judges failed    : ${tally.judgeless}   ← no verdict, not a tie`)
 console.log('\nOnly AGREED results are signal. A challenger that does not clearly win should not')
 console.log('take the seat: the incumbent is the known quantity and switching has its own costs')
 console.log('(prompt caching lost, refusal fallback replaced, resumed-state path unproven).\n')
