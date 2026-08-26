@@ -64,6 +64,12 @@ function modelSlot(slot: string, fallback: string): string {
   }
   return fallback
 }
+// The strategist is slot-driven too, but it is NOT a Wave A slot and must not
+// be flipped casually. It holds Fable 5 because a real-snapshot backtest beat
+// Opus 4.8, it is the only weekly whole-business reasoning call, and its cost
+// profile leans on prompt caching that Gemini does not reproduce. Backtest
+// against a PRO tier before setting this — never flash.
+export const MODEL_STRATEGIST_SLOT = modelSlot('STRATEGIST',   MODEL_STRATEGIST)
 export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
 export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
 export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
@@ -177,6 +183,23 @@ export interface CallClaudeOptions {
   // over. On Claude the call site keeps using parseClaudeJson, which is why
   // ignoring this is safe rather than silently lossy.
   responseSchema?: Record<string, unknown>
+  // ── Cross-provider seatbelt ───────────────────────────────────────────────
+  // When a GEMINI-routed call throws, retry once on this Claude model instead of
+  // failing the caller.
+  //
+  // This exists because moving a slot to Gemini silently DROPS Anthropic's
+  // server-side `fallbacks` param, which is what protects strategist-brain: an
+  // unattended weekly cron whose model can decline on policy. Without a
+  // replacement, a single safety block or 5xx kills a run that only gets one
+  // shot a week.
+  //
+  // OPT-IN, deliberately. A blanket fallback would mask Gemini failures
+  // everywhere — a slot could be "on Gemini" while quietly being served by
+  // Claude, and nobody would notice. Callers that would rather fail loudly (the
+  // Wave A workers, which retry on their own cron minutes later) simply leave it
+  // unset. When it does fire it logs loudly and the cost ledger records the
+  // model that ACTUALLY served the call, so the substitution is never invisible.
+  fallbackModel?: string
 }
 
 // Attach a cache breakpoint to the final block of the final message, so the
@@ -241,7 +264,23 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   // effort, and the Fable refusal fallback. Silently pretending to honour them
   // would be worse than not honouring them.
   if (isGeminiModel(model)) {
-    return await callGemini({ ...opts, model })
+    try {
+      return await callGemini({ ...opts, model })
+    } catch (e: any) {
+      if (!opts.fallbackModel) throw e
+      // Loud on purpose: a fallback that fires unnoticed turns "we migrated to
+      // Gemini" into a belief rather than a fact.
+      console.error(`[provider-switch] ${opts.sourceFn ?? 'call'} FELL BACK from ${model} `
+                    + `to ${opts.fallbackModel}: ${e?.message ?? e}`)
+      return await callClaude({ ...opts, model: opts.fallbackModel, fallbackModel: undefined })
+    }
+  }
+
+  // cachePrefix has no Gemini equivalent and is dropped on that path. Say so
+  // once per call rather than letting a caller believe it is still caching —
+  // strategist-brain's cost profile is built on 425k cached tokens a month.
+  if (opts.cachePrefix && isGeminiModel(model)) {
+    console.warn(`[provider-switch] cachePrefix requested but ${model} does not support it — input billed in full`)
   }
 
   if (!ANTHROPIC_API_KEY) {

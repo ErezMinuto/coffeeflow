@@ -25,6 +25,7 @@ import {
   STRATEGIST_EFFORT,
   STRATEGIST_MAX_STEPS,
   STRATEGIST_MAX_TOKENS,
+  STRATEGIST_FALLBACK_MODEL,
   BUDGET_CEILING_USD,
   estimateUsd,
 } from '../seo-agent/strategistConfig.ts'
@@ -229,6 +230,9 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
         effort:      STRATEGIST_EFFORT,
         maxTokens:   STRATEGIST_MAX_TOKENS,
         cachePrefix: true,
+        // Only fires when the slot is on Gemini — replaces the Anthropic-only
+        // `fallbacks` param that protects this unattended weekly run.
+        fallbackModel: STRATEGIST_FALLBACK_MODEL,
         timeoutMs:   PER_CALL_TIMEOUT_MS,
       })
     } catch (e) {

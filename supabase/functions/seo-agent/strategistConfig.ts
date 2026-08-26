@@ -5,12 +5,33 @@
 // used to estimate cost. Change cadence/budget/effort in ONE place — never
 // scatter these across the runner.
 
-import { MODEL_STRATEGIST } from './claude.ts'
+import { MODEL_STRATEGIST_SLOT } from './claude.ts'
 
 // ── Reasoning ──────────────────────────────────────────────────────────────
-// The brain runs on Opus 4.8 (see claude.ts). 'high' effort is the default for
-// strategy work; the loop is bounded so it can't run away on cost.
-export const STRATEGIST_MODEL = MODEL_STRATEGIST
+// The brain runs on Fable 5 by default (see claude.ts). 'high' effort is the
+// default for strategy work; the loop is bounded so it can't run away on cost.
+//
+// Now slot-driven via MODEL_STRATEGIST, so a provider change is an env var
+// rather than a deploy — but this is NOT a Wave A slot and should not be
+// flipped on the same casual basis:
+//   · Fable 5 holds this seat because a real-snapshot backtest beat Opus 4.8.
+//     Compare against a PRO tier, never flash.
+//   · Its economics lean on prompt caching (425k cached input tokens in 30
+//     days, billed at 0.1x). Gemini does not reproduce that, so model down,
+//     input cost up — the net is still favourable but is not the naive ratio.
+//   · It is unattended and weekly. One failure costs a whole cycle, which is
+//     why STRATEGIST_FALLBACK_MODEL exists below.
+export const STRATEGIST_MODEL = MODEL_STRATEGIST_SLOT
+
+// Cross-provider seatbelt. Anthropic's server-side `fallbacks` param covers a
+// Fable policy decline today, but that param is Anthropic-only and vanishes the
+// moment this slot points at Gemini — leaving a weekly unattended run with no
+// protection against a single safety block or 5xx.
+//
+// Only takes effect when the slot IS on Gemini (callClaude ignores it otherwise),
+// and every use is logged loudly and attributed in the cost ledger under the
+// model that actually served the call, so a silent substitution is impossible.
+export const STRATEGIST_FALLBACK_MODEL = 'claude-fable-5'
 export const STRATEGIST_EFFORT: 'low' | 'medium' | 'high' | 'xhigh' | 'max' = 'high'
 
 // Hard cap on ReAct steps per run (also enforced by strategist_runs.max_steps).
