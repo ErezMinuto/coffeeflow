@@ -439,17 +439,52 @@ serve(async (req) => {
 // Caption assembly. Strategist owns caption_he verbatim; we append the
 // optional CTA, optional product link (UTM-tagged), and hashtags.
 // ─────────────────────────────────────────────────────────────────────────
+// BRAND VOICE, ENFORCED — not requested. Em-dashes are one of Minuto's named
+// AI tells and Hebrew copy must use commas instead.
+//
+// The rule was already stated FOUR times in the strategist prompt, including in
+// the JSON example ("NO em-dashes"), and the model ignored it anyway: all 8 of
+// the last 8 IG captions shipped with em-dashes. A prompt rule is a request; the
+// only thing that actually holds is a deterministic pass on the way out. This is
+// the last chokepoint before the caption reaches Meta.
+//
+// Word-internal hyphens are LEFT ALONE (חד-זני, Ethiopia-Guji, ranges like
+// 30-40, and every hyphen inside a URL) — only dashes acting as clause breaks
+// are rewritten, which is what the spacing rules below distinguish. Verified
+// against the real captions this fires on plus 8 edge cases.
+export function stripAiDashes(s: string): string {
+  return s
+    // A dash opening a line is a bullet, not a clause break — drop it outright.
+    .replace(/^[ \t]*[—–―][ \t]*/gm, '')
+    // Dash at end of line: nothing follows to join, so just remove it.
+    .replace(/[ \t]*[—–―][ \t]*$/gm, '')
+    // The real case: an em/en dash used as a clause break becomes a comma.
+    .replace(/[ \t]*[—–―][ \t]*/g, ', ')
+    // " - " is the ASCII spelling of the same tell. Word-internal hyphens have
+    // no surrounding spaces, so they never match.
+    .replace(/ +- +/g, ', ')
+    .replace(/[ \t]+,/g, ',')            // no space before a comma
+    .replace(/,[ \t]*,/g, ',')           // collapse doubles
+    .replace(/,[ \t]*([.!?…:])/g, '$1')  // comma glued to end punctuation
+    .replace(/,[ \t]*\n/g, '\n')         // trailing comma at line end
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
 function buildFinalCaption(args: {
   caption_he:        string
   cta?:              string
   product_reference?: { name: string; permalink: string }
   hashtags:          string[]
 }): string {
-  const parts: string[] = [args.caption_he.trim()]
+  // Sanitize the PROSE only. The product URL and hashtags are appended below and
+  // deliberately never pass through this — a hyphen inside a permalink is load-
+  // bearing.
+  const parts: string[] = [stripAiDashes(args.caption_he)]
 
   if (args.cta?.trim()) {
     parts.push('')  // blank line
-    parts.push(args.cta.trim())
+    parts.push(stripAiDashes(args.cta))
   }
 
   if (args.product_reference?.permalink) {
