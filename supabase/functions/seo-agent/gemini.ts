@@ -202,6 +202,73 @@ export async function toGeminiContents(messages: ChatMessage[]): Promise<GeminiC
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GROUNDING REDIRECT RESOLUTION
+//
+// Gemini does not hand back the publisher's URL. Every grounded citation is a
+// Google redirect:
+//
+//   https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQ...
+//
+// seo-worker-research attaches these to its report as the source list, so
+// without resolution a Gemini-backed report cites opaque tokens where the
+// Anthropic path cites real domains — and those tokens are not durable, so an
+// old report degrades to dead links. That is a straight downgrade on the exact
+// axis this migration is meant to improve.
+//
+// Resolution is one HTTP hop per source with redirect:'manual', reading the
+// Location header — no page body is fetched. Two fallbacks, in order, because
+// the redirect could be served as a 3xx today and something else tomorrow:
+//   1. Location header from a manual-redirect HEAD
+//   2. res.url after following redirects (GET, but body left unread)
+// If both fail the ORIGINAL redirect URL is kept. A citation that still works
+// beats no citation, so this can degrade but never lose a source.
+//
+// All sources resolve concurrently against one short deadline, so the added
+// latency is one hop rather than N — which matters inside seo-worker-research's
+// 60s web-phase cap.
+const REDIRECT_HOST = 'vertexaisearch.cloud.google.com'
+const RESOLVE_TIMEOUT_MS = 4_000
+
+async function resolveOneRedirect(url: string): Promise<string> {
+  if (!url.includes(REDIRECT_HOST)) return url   // already a real URL
+  const ctl = new AbortController()
+  const t = setTimeout(() => ctl.abort(), RESOLVE_TIMEOUT_MS)
+  try {
+    const head = await fetch(url, { method: 'HEAD', redirect: 'manual', signal: ctl.signal })
+    const loc = head.headers.get('location')
+    if (loc && /^https?:\/\//.test(loc) && !loc.includes(REDIRECT_HOST)) return loc
+
+    const got = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctl.signal })
+    // Release the connection without buffering the page.
+    try { await got.body?.cancel() } catch { /* already closed */ }
+    if (got.url && !got.url.includes(REDIRECT_HOST)) return got.url
+    return url
+  } catch (e: any) {
+    console.warn(`[gemini] grounding redirect unresolved (keeping redirect url): ${e?.message ?? e}`)
+    return url
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+async function resolveGroundingUrls(
+  sources: Array<{ title: string; url: string }>,
+): Promise<Array<{ title: string; url: string }>> {
+  if (sources.length === 0) return sources
+  const resolved = await Promise.all(sources.map(async s => ({ ...s, url: await resolveOneRedirect(s.url) })))
+  // Distinct redirects can land on the same article, so dedupe AFTER resolving.
+  // Keep the first title seen — Gemini's titles are ordered by relevance.
+  const seen = new Set<string>()
+  const out: Array<{ title: string; url: string }> = []
+  for (const s of resolved) {
+    if (seen.has(s.url)) continue
+    seen.add(s.url)
+    out.push(s)
+  }
+  return out
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC ENTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export interface CallGeminiExtras {
@@ -364,6 +431,11 @@ export async function callGemini(
     groundingSources.push({ title: chunk.web?.title?.trim() || url, url })
   }
 
+  // Only pay the resolution hop when grounding actually returned something.
+  const resolvedSources = groundingSources.length > 0
+    ? await resolveGroundingUrls(groundingSources.slice(0, 12))
+    : groundingSources
+
   logGeminiCost(opts, { model, inputTokens: uncachedInput, outputTokens, cacheReadTokens })
 
   return {
@@ -375,7 +447,7 @@ export async function callGemini(
     cacheReadTokens,
     cacheCreationTokens: 0,   // Gemini's explicit cache is not used here
     model,
-    groundingSources:    groundingSources.length > 0 ? groundingSources.slice(0, 12) : undefined,
+    groundingSources:    resolvedSources.length > 0 ? resolvedSources : undefined,
   }
 }
 

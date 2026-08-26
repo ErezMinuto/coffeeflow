@@ -136,7 +136,22 @@ await check('google_search grounding returns real sources', async () => {
   }
   const bad = r.groundingSources.find(s => !/^https?:\/\//.test(s.url))
   if (bad) return `source url is not http(s): ${bad.url}`
-  console.log(`        → ${r.groundingSources.length} sources, e.g. ${r.groundingSources[0].url.slice(0, 70)}`)
+  // THE CITATIONS MUST BE REAL PUBLISHER URLS. Gemini hands back
+  // vertexaisearch.cloud.google.com/grounding-api-redirect/<token> links;
+  // seo-worker-research puts these straight into its report as the source list,
+  // so an unresolved redirect means the report cites opaque, non-durable tokens
+  // where the Anthropic path cites real domains — a downgrade on the exact axis
+  // this migration exists to improve. callGemini resolves them; this asserts it.
+  const unresolved = r.groundingSources.filter(s => s.url.includes('vertexaisearch.cloud.google.com'))
+  if (unresolved.length === r.groundingSources.length) {
+    return `all ${unresolved.length} citations are still Google redirect URLs — resolution did not run. `
+         + 'Do NOT flip MODEL_RESEARCH: reports would cite opaque, expiring links.'
+  }
+  console.log(`        → ${r.groundingSources.length} sources`
+    + (unresolved.length ? ` (${unresolved.length} unresolved)` : ' (all resolved)'))
+  for (const s of r.groundingSources.slice(0, 3)) {
+    console.log(`             ${s.url.slice(0, 78)}`)
+  }
   return null
 })
 
