@@ -305,22 +305,53 @@ serve(async (req) => {
   }
 
   // ── 2. Task failure rate (last 24h) ───────────────────────────────────
+  //
+  // A CANCELLED TASK IS A DECISION, NOT A FAILURE. seo_tasks has no 'cancelled'
+  // status — the chat's cancel_task writes status='failed' with a '[chat-cancel]'
+  // prefix on error_msg — so every deliberate cancellation used to count against
+  // this rate. Measured 2026-08-26: of all failed rows ever, 101 were
+  // '[chat-cancel]' against 80 genuine failures. MORE THAN HALF of the "failure"
+  // signal was the admin triaging their own queue, which inverts the metric —
+  // the more diligently you clear the queue, the unhealthier the system looks.
+  //
+  // Concretely: a 41% alert fired with 7 failures of which 6 were bookkeeping.
+  // The real rate was 6%.
+  //
+  // Anything whose error_msg starts with a [bracketed] marker is an annotation,
+  // not an independent worker fault. Matching the marker SHAPE rather than one
+  // literal keeps future markers excluded automatically. Verified against 90
+  // days of real rows — every bracketed message is one of:
+  //   [chat-cancel] / [ui-cancel]  the admin killed it; a decision, not a fault
+  //   [test-cleanup]               synthetic rows from a verification run
+  //   [cascade]                    dropped because its PARENT failed, and that
+  //                                parent is already counted, so including the
+  //                                child double-counts a single root cause
+  // and no genuine worker error starts with '[' — those are all raw exception
+  // text. If that ever stops holding this would hide a real failure, so the
+  // excluded count is reported in the message and context, never dropped
+  // silently.
+  const OPERATOR_MARKER = /^\s*\[[a-z0-9 _-]+\]/i
   try {
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
     const { data: recentTasks } = await supabase
       .from('seo_tasks')
-      .select('status')
+      .select('status, error_msg')
       .gte('created_at', since)
       .limit(500)
-    const total  = (recentTasks ?? []).length
-    const failed = (recentTasks ?? []).filter(t => t.status === 'failed').length
+    const rows      = (recentTasks ?? []) as Array<{ status: string; error_msg: string | null }>
+    const cancelled = rows.filter(t => t.status === 'failed' && OPERATOR_MARKER.test(t.error_msg ?? '')).length
+    // Cancellations leave the DENOMINATOR too: a task the admin killed was never
+    // given the chance to succeed, so counting it either way skews the rate.
+    const total  = rows.length - cancelled
+    const failed = rows.filter(t => t.status === 'failed' && !OPERATOR_MARKER.test(t.error_msg ?? '')).length
     const rate   = total > 0 ? failed / total : 0
     if (total >= 5 && rate >= 0.25) {
       findings.push({
         severity: rate >= 0.5 ? 'ERROR' : 'WARN',
         category: 'task_failure_rate',
-        message:  `seo_tasks failure rate ${(rate * 100).toFixed(0)}% over last 24h (${failed}/${total})`,
-        context:  { failed, total, rate, since },
+        message:  `seo_tasks failure rate ${(rate * 100).toFixed(0)}% over last 24h (${failed}/${total}`
+                  + `${cancelled > 0 ? `, excluding ${cancelled} operator-cancelled` : ''})`,
+        context:  { failed, total, cancelled, rate, since },
       })
     }
   } catch (e: any) {
