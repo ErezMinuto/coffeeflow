@@ -317,10 +317,19 @@ serve(async (req) => {
   // Concretely: a 41% alert fired with 7 failures of which 6 were bookkeeping.
   // The real rate was 6%.
   //
-  // Anything whose error_msg starts with a [bracketed] marker is an operator
-  // annotation rather than a worker fault. Matching the marker shape rather than
-  // one literal keeps future markers excluded automatically, and a real worker
-  // error never starts with '[' — they are all raw exception text.
+  // Anything whose error_msg starts with a [bracketed] marker is an annotation,
+  // not an independent worker fault. Matching the marker SHAPE rather than one
+  // literal keeps future markers excluded automatically. Verified against 90
+  // days of real rows — every bracketed message is one of:
+  //   [chat-cancel] / [ui-cancel]  the admin killed it; a decision, not a fault
+  //   [test-cleanup]               synthetic rows from a verification run
+  //   [cascade]                    dropped because its PARENT failed, and that
+  //                                parent is already counted, so including the
+  //                                child double-counts a single root cause
+  // and no genuine worker error starts with '[' — those are all raw exception
+  // text. If that ever stops holding this would hide a real failure, so the
+  // excluded count is reported in the message and context, never dropped
+  // silently.
   const OPERATOR_MARKER = /^\s*\[[a-z0-9 _-]+\]/i
   try {
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
