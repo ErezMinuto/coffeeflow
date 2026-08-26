@@ -198,7 +198,8 @@ serve(async (req) => {
         continue
       }
       const row = (data?.[0] ?? null) as
-        { active: boolean; schedule: string; last_start: string | null; last_status: string | null } | null
+        { active: boolean; schedule: string; last_start: string | null; last_status: string | null
+          last_success?: string | null } | null
 
       // No row → the job does not exist in cron.job at all. THE woo-orders-sync
       // failure mode. Always an ERROR for required jobs.
@@ -250,13 +251,47 @@ serve(async (req) => {
           context:  { jobname: cron.jobname, last_run: row.last_start, age_hours: ageHours },
         })
       }
+      // A SINGLE FAILED RUN IS NOT A DEAD CRON. This check sees only the most
+      // recent run, so it cannot tell "stopped working" from "hiccuped once and
+      // will retry" — and for a DAILY job that distinction costs a full 24h of
+      // ERROR emails about something already fixed, with no action available.
+      //
+      // 2026-08-26: a project-wide outage failed one run each of
+      // industry-intelligence-daily and meta-sync-daily. Both had succeeded on
+      // 08-24 and 08-25 and both would retry on schedule, yet the watchdog kept
+      // raising two ERRORs because "most recent = failed" stays true until the
+      // next day's run.
+      //
+      // So a failure with a RECENT SUCCESS behind it is treated as transient.
+      // Nothing is hidden by this: a job that fails every run stops producing
+      // successes, and cron_silent above fires on the job's own
+      // max_silence_hours budget. That check is the real death detector; this
+      // one is for "it is broken RIGHT NOW and has been for a while".
+      //
+      // last_success is optional so an older cron_job_health (which does not
+      // return it) leaves it undefined — and undefined means "unknown", which
+      // keeps the OLD alerting behaviour. A half-applied deploy is noisy, never
+      // blind.
       if (row.last_status === 'failed') {
-        findings.push({
-          severity: cron.required ? 'ERROR' : 'WARN',
-          category: 'cron_failed',
-          message:  `cron "${cron.jobname}" most recent run FAILED at ${row.last_start}`,
-          context:  { jobname: cron.jobname, last_run: row.last_start, status: row.last_status },
-        })
+        const successAgeHours = row.last_success
+          ? (Date.now() - new Date(row.last_success).getTime()) / (3600 * 1000)
+          : Infinity
+        const transient = successAgeHours <= cron.max_silence_hours
+        if (!transient) {
+          findings.push({
+            severity: cron.required ? 'ERROR' : 'WARN',
+            category: 'cron_failed',
+            message:  `cron "${cron.jobname}" most recent run FAILED at ${row.last_start}`
+                      + (row.last_success
+                          ? ` and has not succeeded in ${successAgeHours.toFixed(1)}h (budget ${cron.max_silence_hours}h)`
+                          : ' and has no successful run on record'),
+            context:  { jobname: cron.jobname, last_run: row.last_start, status: row.last_status,
+                        last_success: row.last_success ?? null, success_age_hours: successAgeHours },
+          })
+        } else {
+          console.log(`[health-watchdog] ${cron.jobname}: last run failed but succeeded `
+                      + `${successAgeHours.toFixed(1)}h ago (budget ${cron.max_silence_hours}h) — transient, not reported`)
+        }
       }
     } catch (e: any) {
       // Don't let a single cron-check failure kill the whole watchdog.
