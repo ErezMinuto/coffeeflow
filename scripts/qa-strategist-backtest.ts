@@ -59,9 +59,25 @@ const PROJECT_REF  = SUPABASE_URL.replace(/^https:\/\//, '').split('.')[0]
 // machine that has run `supabase login`, and asking the Management API for the
 // key always returns the live one. An explicit SUPABASE_SERVICE_ROLE_KEY still
 // wins if you set it.
+async function keyWorks(key: string): Promise<boolean> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/strategist_runs?select=id&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } })
+    return r.ok
+  } catch { return false }
+}
+
 async function resolveServiceKey(): Promise<string> {
+  // An explicit key is TESTED, not trusted. A stale one left exported in the
+  // shell from an earlier attempt looks identical to a good one and would
+  // silently shadow the live key on every subsequent run — which is exactly how
+  // three runs in a row failed with the same 'Invalid API key'.
   const explicit = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim()
-  if (explicit) return explicit
+  if (explicit) {
+    if (await keyWorks(explicit)) return explicit
+    console.warn(`SUPABASE_SERVICE_ROLE_KEY is set (${explicit.length}c) but the project REJECTS it — `
+               + 'most likely signed with a rotated JWT secret. Ignoring it and fetching the live key.')
+  }
   const token = Deno.env.get('SUPABASE_ACCESS_TOKEN')?.trim()
   if (!token) return ''
   try {
