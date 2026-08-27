@@ -45,7 +45,37 @@ import { STRATEGIST_BRAIN_SYSTEM_PROMPT } from '../supabase/functions/seo-agent/
 import { BRAIN_TOOLS, dispatchTool, type ToolContext } from '../supabase/functions/strategist-brain/tools.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? 'https://ytydgldyeygpzmlxvpvb.supabase.co'
-const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const PROJECT_REF  = SUPABASE_URL.replace(/^https:\/\//, '').split('.')[0]
+
+// Prefer fetching the CURRENT service_role key over having a human paste one.
+//
+// Pasting it is where this harness kept dying, and for a subtle reason: a key
+// can carry the right ref, the right role and a valid expiry and STILL be
+// rejected, because it was signed with a JWT secret that has since been
+// rotated. Nothing about the token looks wrong — the project just stopped
+// trusting it. (Same failure took down the MFlow scraper in June 2026.)
+//
+// SUPABASE_ACCESS_TOKEN is the CLI's own credential, already present on any
+// machine that has run `supabase login`, and asking the Management API for the
+// key always returns the live one. An explicit SUPABASE_SERVICE_ROLE_KEY still
+// wins if you set it.
+async function resolveServiceKey(): Promise<string> {
+  const explicit = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim()
+  if (explicit) return explicit
+  const token = Deno.env.get('SUPABASE_ACCESS_TOKEN')?.trim()
+  if (!token) return ''
+  try {
+    const r = await fetch(`https://api.supabase.com/v1/projects/${PROJECT_REF}/api-keys`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!r.ok) return ''
+    const keys = await r.json() as Array<{ name: string; api_key: string }>
+    const k = keys.find(x => x.name === 'service_role')?.api_key ?? ''
+    if (k) console.log('service_role key fetched from the Management API (current, not pasted)')
+    return k
+  } catch { return '' }
+}
+const SERVICE_KEY = await resolveServiceKey()
 const INCUMBENT    = Deno.env.get('INCUMBENT_MODEL')  ?? 'claude-fable-5'
 // gemini-2.5-pro is NOT usable: the API returns 404 "no longer available to new
 // users. Please update your code to use models/gemini-3.1-pro-preview". Note it
@@ -55,8 +85,13 @@ const CHALLENGER   = Deno.env.get('CHALLENGER_MODEL') ?? 'gemini-3.1-pro-preview
 const MAX_STEPS    = Number(Deno.env.get('MAX_STEPS') ?? '8')
 const N_SNAPSHOTS  = Number(Deno.args[0] ?? '2')
 
-if (!SERVICE_KEY || !Deno.env.get('ANTHROPIC_API_KEY') || !Deno.env.get('GEMINI_API_KEY')) {
-  console.error('Need SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY and GEMINI_API_KEY in env.')
+if (!SERVICE_KEY) {
+  console.error('No Supabase service_role key. Either run `supabase login` (then this fetches the')
+  console.error('current key itself) or export SUPABASE_SERVICE_ROLE_KEY explicitly.')
+  Deno.exit(1)
+}
+if (!Deno.env.get('ANTHROPIC_API_KEY') || !Deno.env.get('GEMINI_API_KEY')) {
+  console.error('Need ANTHROPIC_API_KEY and GEMINI_API_KEY in env.')
   Deno.exit(1)
 }
 if (/flash/i.test(CHALLENGER)) {
