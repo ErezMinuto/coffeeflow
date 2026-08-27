@@ -251,11 +251,35 @@ async function judge(model: string, a: string, b: string): Promise<{ winner: str
       model,
       system:    JUDGE_SYSTEM,
       messages:  [{ role: 'user', content: `=== BRIEF A ===\n${a}\n\n=== BRIEF B ===\n${b}` }],
-      maxTokens: 700,
-      timeoutMs: 90_000,
+      // 6000, not 700. On a thinking-only model (gemini-3.1-pro-preview cannot
+      // disable thinking) those tokens come out of THIS budget before any
+      // visible text, so a tight cap returns an empty answer with no error at
+      // all — which is how the judge silently returned '?' while the HTTP call
+      // succeeded. Judging two briefs is worth thinking about anyway.
+      maxTokens: 6000,
+      timeoutMs: 120_000,
+      // Gemini-only, ignored by Claude: makes the verdict impossible to mangle.
+      responseSchema: {
+        type: 'object',
+        properties: {
+          winner:     { type: 'string', description: 'A, B or tie' },
+          confidence: { type: 'string', description: 'low, medium or high' },
+          why:        { type: 'string' },
+        },
+        required: ['winner', 'confidence', 'why'],
+      },
     })
     const m = res.text.match(/\{[\s\S]*\}/)
-    return m ? JSON.parse(m[0]) : null
+    if (!m) {
+      // Say WHY there is no verdict. A judge that returns nothing is a broken
+      // judge, not a neutral one, and must never be mistaken for disagreement.
+      console.warn(`   judge ${model} produced no JSON `
+        + `(out=${res.outputTokens} tokens, stop=${res.stop_reason}) — `
+        + (res.outputTokens < 20 ? 'output truncated, almost certainly thinking eating the budget'
+                                 : `text: ${res.text.slice(0, 120)}`))
+      return null
+    }
+    return JSON.parse(m[0])
   } catch (e: any) {
     console.warn(`   judge ${model} failed: ${e?.message ?? e}`)
     return null
