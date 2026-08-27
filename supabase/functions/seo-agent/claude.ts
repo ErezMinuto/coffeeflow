@@ -24,7 +24,7 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 // runs on Sonnet — cheap, fast, good at structured planning. The STRATEGIST
 // BRAIN runs on Opus 4.8: it reasons deeply over the whole business once a
 // week, so quality-per-decision matters far more than per-token cost.
-export const MODEL_ORCHESTRATOR = 'claude-sonnet-4-6'
+const MODEL_ORCHESTRATOR_DEFAULT = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
 export const MODEL_CHAT         = 'claude-sonnet-4-6'
 // Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
@@ -64,6 +64,17 @@ function modelSlot(slot: string, fallback: string): string {
   }
   return fallback
 }
+// The SEO/content PLANNER — reads GSC keywords, blog history and past tasks and
+// decides what to write. This is the slot where Gemini's index access is most
+// plausibly an edge: the job is literally "what should rank on Google".
+//
+// Unlike the strategist it is a SINGLE call with NO tools, so the fan-out and
+// resumed-state hazards do not apply. One hazard does apply: it caps maxTokens
+// at 7000 for a ~3500-token plan, and on a THINKING-ONLY Gemini model those
+// tokens are spent before any visible output — a truncated plan fails
+// parseClaudeJson and the cycle emits NOTHING. Prefer a model whose thinking can
+// be disabled (gemini-2.5-flash), or raise the cap first.
+export const MODEL_ORCHESTRATOR   = modelSlot('ORCHESTRATOR', MODEL_ORCHESTRATOR_DEFAULT)
 export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
 export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
 export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
