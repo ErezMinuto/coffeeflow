@@ -161,7 +161,7 @@ async function runArm(model: string, snapshot: unknown, weekStart: string): Prom
     // A step can legitimately take a minute or more. Without a heartbeat the
     // whole arm looks hung, which is exactly how the first run was read.
     Deno.stdout.writeSync(new TextEncoder().encode(
-      `\r    ${model} step ${out.steps + 1}/${MAX_STEPS} … `))
+      `\r\x1b[2K    ${model} step ${out.steps + 1}/${MAX_STEPS} … `))
     let res
     try {
       res = await callClaude({
@@ -176,6 +176,21 @@ async function runArm(model: string, snapshot: unknown, weekStart: string): Prom
       })
     } catch (e: any) {
       out.error = e?.message ?? String(e)
+      // What the model had just asked for is the evidence for WHY the next call
+      // was rejected — a 400 with no request context is undebuggable.
+      const lastAsst = messages[messages.length - 2]
+      const lastUser = messages[messages.length - 1]
+      if (lastUser && Array.isArray(lastUser.content)) {
+        const names = (lastUser.content as any[])
+          .filter(b => b?.type === 'tool_result').length
+        const asstNames = Array.isArray((lastAsst as any)?.content)
+          ? ((lastAsst as any).content as any[]).filter(b => b?.type === 'tool_use').map(b => b.name)
+          : []
+        out.error += `\n   context: previous turn requested [${asstNames.join(', ')}]`
+                   + ` and we replied with ${names} tool_result block(s)`
+                   + (new Set(asstNames).size !== asstNames.length
+                       ? ' — NOTE: DUPLICATE function names in one turn' : '')
+      }
       break
     }
     out.steps++
@@ -277,13 +292,13 @@ for (const run of runs) {
   console.log('')
   console.log(`  ${INCUMBENT.padEnd(18)} steps=${inc.steps} tools=${inc.toolCalls.length} `
             + `writes=${inc.writes.length} in=${inc.inputTokens} out=${inc.outputTokens}`
-            + `${inc.error ? ` ERROR: ${inc.error.slice(0, 60)}` : ''}`)
+            + `${inc.error ? ' ERROR (full):\n' + inc.error : ''}`)
 
   const chl = await runArm(CHALLENGER, run.snapshot, run.week_start)
   console.log('')
   console.log(`  ${CHALLENGER.padEnd(18)} steps=${chl.steps} tools=${chl.toolCalls.length} `
             + `writes=${chl.writes.length} in=${chl.inputTokens} out=${chl.outputTokens}`
-            + `${chl.error ? ` ERROR: ${chl.error.slice(0, 60)}` : ''}`)
+            + `${chl.error ? ' ERROR (full):\n' + chl.error : ''}`)
 
   // An arm that ERRORED produced nothing to judge. Judging it anyway burns money
   // and, worse, files the result as "inconclusive" when the truth is "the run
