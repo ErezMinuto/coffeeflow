@@ -20,7 +20,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
-import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR } from '../seo-agent/claude.ts'
+import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
 import {
   createSupabase,
   insertTasks,
@@ -290,6 +290,64 @@ serve(async (req: Request): Promise<Response> => {
       postFollowback,
     })
 
+    // ── 3b. SERP REALITY CHECK (Gemini only) ─────────────────────────
+    // The planner has always chosen keywords from OUR OWN history — GSC
+    // impressions, past posts, keyword_ideas volumes. It has never looked at
+    // what actually ranks for a keyword before committing an article to it, so
+    // it can happily target a query owned by Wikipedia or a national retailer
+    // and lose before writing a word.
+    //
+    // Gemini can ground on Google's live index, which is the one index that
+    // matters here. This runs it as an ISOLATED phase and folds the findings
+    // into the planning prompt as plain text.
+    //
+    // WHY A SEPARATE CALL rather than grounding the planning call itself: the
+    // planner must return STRICT JSON for parseClaudeJson. Grounded replies come
+    // back as prose with citations, so grounding the planning call would break
+    // the parse and the cycle would emit NOTHING — silently, which is the
+    // failure mode this codebase keeps getting bitten by. seo-worker-research
+    // already uses this same isolate-then-synthesise shape.
+    //
+    // Best-effort throughout: any failure logs and leaves the block empty, so
+    // the planner degrades to exactly its previous behaviour.
+    let serpBlock = ''
+    if (isGeminiModel(MODEL_ORCHESTRATOR) && keywordOpportunities.length > 0) {
+      phase = 'serp_grounding'
+      const candidates = keywordOpportunities.slice(0, 6).map(k => k.keyword)
+      try {
+        const serp = await callClaude({
+          sourceFn: 'organic-orchestrator',
+          model:    MODEL_ORCHESTRATOR,
+          system:   'You are an SEO analyst checking live Hebrew/Israeli search results. '
+                  + 'Be terse and factual. Never speculate about rankings you did not see.',
+          messages: [{ role: 'user', content:
+            'For each Hebrew keyword below, search Google and report what ACTUALLY ranks in Israel today.\n\n'
+            + candidates.map((k, i) => `${i + 1}. ${k}`).join('\n')
+            + '\n\nFor each, give ONE line:\n'
+            + '  keyword — who owns the top results (retailer / publisher / forum / brand), '
+            + "and whether a specialty roastery's blog post could realistically compete.\n\n"
+            + 'Mark a keyword WINNABLE only if the top results are thin, dated, or not already '
+            + 'a large retailer or encyclopedia. Say NOT WINNABLE plainly when it is not — '
+            + 'that is more useful than optimism.' }],
+          googleSearch: true,
+          maxTokens:    2000,
+          timeoutMs:    60_000,
+        })
+        if (serp.text.trim()) {
+          serpBlock = '\n\n=== LIVE SERP CHECK (Google, today — grounded) ===\n'
+                    + 'What actually ranks for your top keyword candidates. Prefer WINNABLE ones; '
+                    + 'do NOT queue an article for a keyword marked NOT WINNABLE.\n'
+                    + serp.text.trim()
+                    + (serp.groundingSources?.length
+                        ? `\nSources: ${serp.groundingSources.slice(0, 6).map(x => x.url).join(' ')}`
+                        : '')
+          console.log(`[organic-orchestrator] SERP check: ${serp.text.length} chars, `
+                    + `${serp.groundingSources?.length ?? 0} sources`)
+        }
+      } catch (e: any) {
+        console.warn(`[organic-orchestrator] SERP check failed (non-fatal, planning continues): ${e?.message ?? e}`)
+      }
+    }
     // ── 4. Call Claude ───────────────────────────────────────────────
     console.log(`[organic-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
     phase = 'strategist_claude'
@@ -297,7 +355,7 @@ serve(async (req: Request): Promise<Response> => {
       sourceFn: 'organic-orchestrator',
       model:    MODEL_ORCHESTRATOR,
       system:   STRATEGIST_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content: userMessage + serpBlock }],
       // maxTokens 7000: the strategist prompt now caps the plan at ~3500
       // output tokens (OUTPUT BUDGET section), so 7000 is 2× headroom — a
       // compact plan completes WITHOUT truncating, and ~3500-4500 tokens
