@@ -99,6 +99,17 @@ export interface MessageContentToolUse {
   name: string
   input: Record<string, unknown>
   cache_control?: CacheControl
+  // GEMINI-ONLY, PROVIDER-PRIVATE. Gemini 3.x thinking models attach a
+  // thought_signature to each functionCall part and REJECT the next turn if it
+  // is not echoed back ("Function call is missing a thought_signature in
+  // functionCall parts"). The signature is opaque and its exact field naming is
+  // not something to guess at, so the whole original part is kept and replayed
+  // verbatim — which is also what Google's own rule demands: resend thought
+  // blocks exactly as received.
+  //
+  // STRIPPED before any Anthropic request (see stripProviderPrivate) — the
+  // Messages API rejects unknown fields on content blocks.
+  _geminiRawParts?: unknown[]
 }
 export interface MessageContentToolResult {
   type: 'tool_result'
@@ -250,6 +261,25 @@ export interface CallClaudeResult {
   groundingSources?: Array<{ title: string; url: string }>
 }
 
+// Remove provider-private fields before a request leaves for Anthropic. They
+// exist only so a Gemini conversation can be replayed faithfully; Anthropic
+// 400s on unknown keys inside a content block.
+function stripProviderPrivate(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map(m => {
+    if (typeof m.content === 'string') return m
+    return {
+      ...m,
+      content: m.content.map(b => {
+        if (b.type === 'tool_use' && '_geminiRawParts' in b) {
+          const { _geminiRawParts: _drop, ...rest } = b as MessageContentToolUse
+          return rest as MessageContentBlock
+        }
+        return b
+      }),
+    }
+  })
+}
+
 export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeResult> {
   const model = opts.model ?? MODEL_ORCHESTRATOR
 
@@ -304,7 +334,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
     system: opts.cachePrefix
       ? [{ type: 'text', text: opts.system, cache_control: { type: 'ephemeral' } }]
       : opts.system,
-    messages: opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages,
+    messages: stripProviderPrivate(opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages),
   }
   if (adaptive) {
     // Adaptive thinking is the only on-mode for Opus 4.7+/Fable; Claude

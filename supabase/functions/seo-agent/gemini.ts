@@ -162,6 +162,28 @@ export async function toGeminiContents(messages: ChatMessage[]): Promise<GeminiC
       continue
     }
 
+    // THOUGHT SIGNATURES. A Gemini 3.x thinking model stamps each functionCall
+    // part with a thought_signature and REJECTS the following turn if it is not
+    // echoed back verbatim ("Function call is missing a thought_signature in
+    // functionCall parts", 400). Reconstructing {functionCall:{name,args}} from
+    // our Anthropic-shaped block DROPS that stamp, which is what broke the
+    // strategist backtest on step 2 — the first turn that had to send tool
+    // results back.
+    //
+    // So when this assistant turn came from Gemini, replay the model's OWN parts
+    // exactly as received rather than rebuilding them. That satisfies Google's
+    // stated rule (resend thought blocks exactly as received) without this code
+    // needing to know the signature's field name or which parts carry one, and
+    // it also preserves any thought parts we do not otherwise model.
+    if (role === 'model') {
+      const carrier = m.content.find(
+        b => b.type === 'tool_use' && Array.isArray((b as any)._geminiRawParts)) as any
+      if (carrier?._geminiRawParts?.length) {
+        out.push({ role, parts: carrier._geminiRawParts as GeminiPart[] })
+        continue
+      }
+    }
+
     const parts: GeminiPart[] = []
     for (const b of m.content) {
       if (b.type === 'text') {
@@ -393,7 +415,13 @@ export async function callGemini(
         id:    `gemini_${Date.now()}_${i}`,
         name:  p.functionCall.name,
         input: p.functionCall.args ?? {},
-      })
+        // Only the FIRST tool_use carries the raw turn — it represents the whole
+        // assistant message, not this one call, and duplicating it would replay
+        // the turn once per tool call.
+        ...(sawFunctionCall && !content.some(b => (b as any)._geminiRawParts)
+              ? { _geminiRawParts: parts }
+              : {}),
+      } as MessageContentBlock)
     }
   })
 
