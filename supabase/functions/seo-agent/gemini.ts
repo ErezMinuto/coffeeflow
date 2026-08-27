@@ -358,17 +358,38 @@ export async function callGemini(
   const timeoutMs = opts.timeoutMs ?? 110_000   // stay under the 150s edge cap
   const t = setTimeout(() => controller.abort(), timeoutMs)
 
+  const post = () => fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': GEMINI_API_KEY,
+      'content-type':   'application/json',
+    },
+    body:   JSON.stringify(body),
+    signal: controller.signal,
+  })
+
   let res: Response
   try {
-    res = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': GEMINI_API_KEY,
-        'content-type':   'application/json',
-      },
-      body:   JSON.stringify(body),
-      signal: controller.signal,
-    })
+    res = await post()
+
+    // SOME MODELS CANNOT TURN THINKING OFF. gemini-3.1-pro-preview rejects
+    // thinkingBudget:0 outright — "Budget 0 is invalid. This model only works in
+    // thinking mode." Our default is to disable thinking (it otherwise eats
+    // maxOutputTokens before any visible text), so on a thinking-only model that
+    // default is itself a 400.
+    //
+    // Retried by REMOVING the constraint rather than by keeping a list of which
+    // models are thinking-only — that list would rot, and the API already tells
+    // us. The caller must then budget maxTokens for thinking, same as when
+    // `effort` is set.
+    if (!res.ok && (body.generationConfig as any)?.thinkingConfig) {
+      const peek = await res.clone().text().catch(() => '')
+      if (/only works in thinking mode|Budget 0 is invalid/i.test(peek)) {
+        console.warn(`[gemini] ${model} is thinking-only — retrying without thinkingBudget:0`)
+        delete (body.generationConfig as any).thinkingConfig
+        res = await post()
+      }
+    }
   } finally {
     clearTimeout(t)
   }
