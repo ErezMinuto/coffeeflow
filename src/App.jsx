@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import './App.css';
 import { SignIn, useUser } from '@clerk/clerk-react';
+import MfaGate                from './components/shared/MfaGate';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import { AppProvider, useApp } from './lib/context';
@@ -167,10 +168,12 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </BrowserRouter>
+    <MfaGate>
+      <BrowserRouter>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </BrowserRouter>
+    </MfaGate>
   );
 }
