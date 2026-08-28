@@ -277,20 +277,44 @@ export default function Schedule() {
     load();
   }, [weekStart]);
 
-  // ── Default to the next week that has no schedule yet ───────────────────────
-  // So creating a new schedule lands on the upcoming EMPTY week instead of
-  // re-opening (and overwriting) a week that's already been scheduled. The old
-  // week's schedule stays put for the current week; the new one goes to next
-  // week. Runs once on mount; the date picker can still override to view/edit
-  // any week.
+  // ── Default to the week that actually needs you ─────────────────────────────
+  // Priority: the earliest upcoming week that HAS availability submissions and
+  // is not published yet. Employees submitting is the signal that a week wants
+  // attention; a week nobody has submitted for has nothing to look at.
+  //
+  // WHY NOT "the first week with no schedule row", which is what this used to do:
+  // a schedules row appears as soon as the week is opened, so an already-touched
+  // week counted as done and got skipped — even when fresh availability had
+  // arrived for it afterwards.
+  //
+  // That happened on 2026-08-28: six employees submitted for the week of 08-30
+  // (last one 08-27 18:01), the week already had a schedule row, and the page
+  // opened on 09-06 showing nothing. The submissions were never lost — they were
+  // one week back, and the only clue was a date field nobody had reason to
+  // change. Silence looked identical to "no one submitted".
+  //
+  // Published weeks are finished and skipped. If no upcoming week has
+  // submissions, fall back to the old behaviour so creating a fresh schedule
+  // still lands somewhere sensible.
   useEffect(() => {
-    const pickNextEmptyWeek = async () => {
+    const pickWeekNeedingAttention = async () => {
       const first = getNextSunday();
-      const { data: rows } = await supabase
-        .from('schedules')
-        .select('week_start')
-        .gte('week_start', toISO(first));
-      const taken = new Set((rows || []).map(r => r.week_start));
+      const firstIso = toISO(first);
+      const [{ data: scheduleRows }, { data: availRows }] = await Promise.all([
+        supabase.from('schedules').select('week_start, status').gte('week_start', firstIso),
+        supabase.from('availability_submissions').select('week_start').gte('week_start', firstIso),
+      ]);
+      const published = new Set(
+        (scheduleRows || []).filter(r => r.status === 'published').map(r => r.week_start)
+      );
+      const withSubmissions = [...new Set((availRows || []).map(r => r.week_start))]
+        .filter(w => !published.has(w))
+        .sort();
+      if (withSubmissions.length > 0) { setWeekStart(withSubmissions[0]); return; }
+
+      // Nothing submitted yet for any upcoming week — fall back to the first
+      // week without a schedule row, so starting a new one still works.
+      const taken = new Set((scheduleRows || []).map(r => r.week_start));
       const candidate = new Date(first);
       for (let i = 0; i < 52; i++) {
         const iso = toISO(candidate);
@@ -298,7 +322,7 @@ export default function Schedule() {
         candidate.setDate(candidate.getDate() + 7);
       }
     };
-    pickNextEmptyWeek();
+    pickWeekNeedingAttention();
   }, []); // once on mount
 
   // ── Save helpers ─────────────────────────────────────────────────────────────
