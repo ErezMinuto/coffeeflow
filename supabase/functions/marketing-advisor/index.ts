@@ -15,6 +15,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callClaude as sharedCallClaude } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from "../_shared/marketing_intel.ts";
@@ -771,80 +772,49 @@ function parseClaudeJson(raw: string): unknown {
   throw new SyntaxError(`Could not parse Claude JSON response. Preview: ${text.slice(0, 200)}`);
 }
 
+// Delegates to the SHARED client instead of holding its own Anthropic fetch.
+//
+// Keeping the positional signature deliberately: eight call sites use it, and
+// rewriting them all in an 8,452-line function that creates campaigns and moves
+// budgets is risk without benefit. One adapter buys everything at once.
+//
+// What this function gains by delegating:
+//   • cost telemetry — marketing-advisor had ZERO rows in agent_cost_ledger
+//     while 13 other functions were instrumented. The function that manages
+//     the ad budget was the one we could not cost.
+//   • a model slot — MODEL_ADVISOR, flippable by secret with no redeploy
+//   • conversation-history caching (PR #236), which its own client never had
 async function callClaude(
   model: string,
   system: string,
   userMessage: string,
   { maxTokens = 5000, timeoutMs = 120_000, cachePrefix }: { maxTokens?: number; timeoutMs?: number; cachePrefix?: string } = {},
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  // The private client took a cachePrefix STRING and prepended it to system.
+  // The shared one takes a boolean and caches the whole system block, so fold
+  // the prefix in and ask for caching when one was supplied.
+  const fullSystem = cachePrefix ? `${cachePrefix}\n\n${system}` : system;
+  const res = await sharedCallClaude({
+    sourceFn:    'marketing-advisor',
+    model:       resolveAdvisorModel(model),
+    system:      fullSystem,
+    messages:    [{ role: 'user', content: userMessage }],
+    maxTokens,
+    timeoutMs,
+    cachePrefix: Boolean(cachePrefix),
+  });
+  return { text: res.text, inputTokens: res.inputTokens, outputTokens: res.outputTokens };
+}
 
-  // When a large static prefix is reused across back-to-back calls (e.g. the
-  // two-phase strategist shares baseSystem between phase 1 and phase 2), mark
-  // it ephemeral so the second call reads it from cache instead of re-billing
-  // the full prefix. Only worth it when the same prefix recurs within the 5-min
-  // cache TTL — do NOT use for one-shot calls (they'd pay the write surcharge
-  // with no hit). The prefix block must come first; `system` is the per-call tail.
-  const systemField = cachePrefix
-    ? [
-        { type: "text", text: cachePrefix, cache_control: { type: "ephemeral" } },
-        { type: "text", text: system },
-      ]
-    : system;
-
-  let response: Response;
-  try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        system: systemField,
-        messages: [{ role: "user", content: userMessage }],
-      }),
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    if ((e as Error).name === "AbortError") {
-      throw new Error(`Claude API timeout after ${timeoutMs / 1000}s — try again later.`);
-    }
-    throw e;
-  }
-  clearTimeout(timeout);
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Claude API error (${response.status}): ${err}`);
-  }
-
-  const data = await response.json();
-
-  // If Claude hit the token limit mid-response the JSON will be truncated
-  if (data.stop_reason === "max_tokens") {
-    throw new Error("Claude response was truncated (max_tokens reached). Try reducing the focus text or contact support.");
-  }
-
-  // Surface cache activity so we can confirm the prefix is actually being reused.
-  // write = first call paid +25% to populate the cache; read = a later call paid
-  // ~10% to reuse it. Want read >> write over a run.
-  const cacheWrite = data.usage?.cache_creation_input_tokens ?? 0;
-  const cacheRead  = data.usage?.cache_read_input_tokens ?? 0;
-  if (cacheWrite || cacheRead) {
-    console.log(`[cache] model=${model} write=${cacheWrite} read=${cacheRead} input=${data.usage?.input_tokens ?? 0}`);
-  }
-
-  return {
-    text: data.content?.[0]?.text ?? "",
-    inputTokens:  data.usage?.input_tokens  ?? 0,
-    outputTokens: data.usage?.output_tokens ?? 0,
-  };
+// Call sites pass literal Claude ids. Route them through the slot so the whole
+// function can be flipped with one secret, while a caller that asks for a
+// specific model still gets it.
+function resolveAdvisorModel(requested: string): string {
+  const slot = Deno.env.get('MODEL_ADVISOR');
+  if (!slot) return requested;
+  // Haiku-tier calls stay cheap-tier even when the slot names a big model.
+  if (/haiku/i.test(requested)) return Deno.env.get('MODEL_ADVISOR_CHEAP') ?? requested;
+  return slot;
 }
 
 // ── Israeli Seasonal & Holiday Context ───────────────────────────────────────
