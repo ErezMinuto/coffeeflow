@@ -836,9 +836,17 @@ async function anthropicShim(
   // would touch seven parse paths for no behavioural gain.
   error?: { message?: string };
 }> {
-  const system = typeof reqBody.system === "string"
-    ? reqBody.system
-    : ((reqBody.system as any[] | undefined) ?? []).map((b: any) => b?.text ?? "").join("\n\n");
+  const systemBlocks = Array.isArray(reqBody.system) ? reqBody.system as any[] : null;
+  const system = systemBlocks
+    ? systemBlocks.map((b: any) => b?.text ?? "").join("\n\n")
+    : String(reqBody.system ?? "");
+  // Flattening the array would DROP the cache_control marker a call site put
+  // on it — silently un-caching a 5-iteration tool loop whose system prefix is
+  // tens of thousands of tokens. Detect the marker and re-express it as the
+  // shared client's cachePrefix, which is strictly better than the original:
+  // it caches system + tools AND sets a breakpoint on the growing `messages`,
+  // which the hand-rolled call never did.
+  const wantsCache = Boolean(systemBlocks?.some((b: any) => b?.cache_control));
   const res = await sharedCallClaude({
     sourceFn:  "marketing-advisor",
     model:     resolveAdvisorModel(reqBody.model),
@@ -846,6 +854,7 @@ async function anthropicShim(
     messages:  (reqBody.messages ?? []) as any,
     maxTokens: reqBody.max_tokens ?? 4000,
     ...(reqBody.tools ? { tools: reqBody.tools as any } : {}),
+    ...(wantsCache ? { cachePrefix: true } : {}),
     ...(reqBody.temperature != null ? { temperature: reqBody.temperature } : {}),
     timeoutMs,
   });
