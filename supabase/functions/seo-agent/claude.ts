@@ -88,6 +88,11 @@ export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  'claude-sonnet-4
 // functionDeclarations, so this slot gets TOOLS and no grounding — which is
 // correct here: the chat's value is in its tools, not in web search.
 export const MODEL_CHAT           = modelSlot('CHAT',           MODEL_CHAT_DEFAULT)
+// The chat's URL-synthesis sub-call — same shape as the industry ingester's:
+// fetch a page, summarise it as one insight. Cheap, structured, no judgement,
+// and its output is a suggestion the admin reads. Slotted separately so it can
+// run on a cheap tier while the chat loop itself runs on a strong one.
+export const MODEL_CHAT_SYNTH     = modelSlot('CHAT_SYNTH',     'claude-haiku-4-5')
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
