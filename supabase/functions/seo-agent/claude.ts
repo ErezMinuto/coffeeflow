@@ -26,7 +26,7 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 // week, so quality-per-decision matters far more than per-token cost.
 const MODEL_ORCHESTRATOR_DEFAULT = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
-export const MODEL_CHAT         = 'claude-sonnet-4-6'
+const MODEL_CHAT_DEFAULT        = 'claude-sonnet-4-6'
 // Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
 // ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
 // fallback is wired in callClaude below as a seatbelt.
@@ -79,6 +79,15 @@ export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4
 export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
 export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
 export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  'claude-sonnet-4-6')
+// The admin chat is the single largest line in agent_cost_ledger — $4.03 over
+// 14 days, ~37% of all spend, more than strategist-brain and 13x the entire
+// migrated organic stack. Its output goes to the owner, not to customers, so a
+// regression is visible immediately and nothing gets published in the meantime.
+//
+// It carries a large tool set. Gemini forbids google_search alongside
+// functionDeclarations, so this slot gets TOOLS and no grounding — which is
+// correct here: the chat's value is in its tools, not in web search.
+export const MODEL_CHAT           = modelSlot('CHAT',           MODEL_CHAT_DEFAULT)
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
