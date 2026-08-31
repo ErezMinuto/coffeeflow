@@ -806,6 +806,64 @@ async function callClaude(
   return { text: res.text, inputTokens: res.inputTokens, outputTokens: res.outputTokens };
 }
 
+// Shim for the seven call sites that hand-rolled their own Anthropic fetch.
+//
+// Returns the SAME response shape those sites already parse — json.content[0].text
+// and json.usage — so none of the downstream handling changes. Same reasoning as
+// the callClaude adapter above: this is an 8,000-line function that creates
+// campaigns and moves budgets, and rewriting seven independent parse paths buys
+// nothing that adapting the interface does.
+//
+// Message content is passed through UNTOUCHED rather than flattened to a string,
+// because one of the seven (imageIsValidCoffeeBanner) sends an image block and
+// flattening would silently drop the image.
+async function anthropicShim(
+  reqBody: {
+    model: string; max_tokens?: number; system?: unknown;
+    messages?: any[]; tools?: any[]; temperature?: number;
+  },
+  timeoutMs = 60_000,
+): Promise<{
+  content: any[];
+  stop_reason: string;
+  usage: {
+    input_tokens: number; output_tokens: number;
+    cache_creation_input_tokens: number; cache_read_input_tokens: number;
+  };
+  // Never populated: the shared client THROWS on an API error rather than
+  // returning one in the body. Declared because the call sites still check
+  // `json.error`, and leaving those checks costs nothing while removing them
+  // would touch seven parse paths for no behavioural gain.
+  error?: { message?: string };
+}> {
+  const system = typeof reqBody.system === "string"
+    ? reqBody.system
+    : ((reqBody.system as any[] | undefined) ?? []).map((b: any) => b?.text ?? "").join("\n\n");
+  const res = await sharedCallClaude({
+    sourceFn:  "marketing-advisor",
+    model:     resolveAdvisorModel(reqBody.model),
+    system,
+    messages:  (reqBody.messages ?? []) as any,
+    maxTokens: reqBody.max_tokens ?? 4000,
+    ...(reqBody.tools ? { tools: reqBody.tools as any } : {}),
+    ...(reqBody.temperature != null ? { temperature: reqBody.temperature } : {}),
+    timeoutMs,
+  });
+  // Raw content blocks, not just text: one of these call sites
+  // (meta_ads_strategist) is a full tool loop that reads stop_reason and
+  // filters content for tool_use. Flattening to text would break it silently.
+  return {
+    content: res.content as any[],
+    stop_reason: res.stop_reason,
+    usage: {
+      input_tokens:                res.inputTokens,
+      output_tokens:               res.outputTokens,
+      cache_creation_input_tokens: res.cacheCreationTokens,
+      cache_read_input_tokens:     res.cacheReadTokens,
+    },
+  };
+}
+
 // Call sites pass literal Claude ids. Route them through the slot so the whole
 // function can be flipped with one secret, while a caller that asks for a
 // specific model still gets it.
@@ -1309,18 +1367,12 @@ async function rewriteToCompliantCreative(
   const userMsg = `שאלה מקורית של הבעלים:\n${originalQuestion}\n\nהתשובה עם ההפרות:\n${originalAnswer}\n\nשכתב לגרסה חוקית.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const json = await anthropicShim({
         model: "claude-sonnet-4-6",
         max_tokens: 3000,
         system: sysPrompt,
         messages: [{ role: "user", content: userMsg }],
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    const json = await res.json();
+      }, 60000);
     if (json.error) throw new Error(json.error.message ?? "rewrite error");
     const rewritten = json.content?.[0]?.text ?? "";
     return rewritten || originalAnswer;
@@ -1735,18 +1787,12 @@ ${existingSeeds.map(s => `- ${s}`).join("\n")}
 החזר JSON בלבד במבנה: { "queries": ["שאילתה 1", "שאילתה 2", ...] } — 50 שאילתות שונות.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const json = await anthropicShim({
         model: "claude-haiku-4-5",
         max_tokens: 2500,
         system: systemPrompt,
         messages: [{ role: "user", content: "הפק את 50 השאילתות עכשיו." }],
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    const json = await res.json();
+      }, 60000);
     const raw  = json.content?.[0]?.text ?? "";
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
@@ -5183,10 +5229,7 @@ Format: 16:9 wide landscape, photorealistic.`;
   async function imageIsValidCoffeeBanner(b64: string, mimeType: string): Promise<boolean> {
     if (!ANTHROPIC_KEY) return true;
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const json = await anthropicShim({
           model: "claude-haiku-4-5",
           max_tokens: 50,
           messages: [{
@@ -5196,10 +5239,7 @@ Format: 16:9 wide landscape, photorealistic.`;
               { type: "text", text: `This should be a coffee-related product/still-life photo for a specialty coffee blog. The image MUST NOT contain any people, faces, hands, or body parts.\n\nAnswer with exactly ONE word:\n- "OK" if the image shows only coffee/equipment/food objects and no humans\n- "REJECT" if it contains any person, face, hand, or body part, OR if it's not related to coffee at all` }
             ],
           }],
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      const json = await res.json();
+        }, 15000);
       const verdict = (json.content?.[0]?.text ?? "").trim().toUpperCase();
       console.log(`[banner-vision] verdict: ${verdict}`);
       return verdict.startsWith("OK");
@@ -6039,18 +6079,12 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
       let strategicFindings: any[] = [];
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const json = await anthropicShim({
             model: "claude-sonnet-4-6",
             max_tokens: 2000,
             system: claudeSys,
             messages: [{ role: "user", content: `נתוני הקמפיינים:\n${flatData}` }],
-          }),
-          signal: AbortSignal.timeout(60_000),
-        });
-        const json = await res.json();
+          }, 60000);
         const raw = json.content?.[0]?.text ?? "";
         const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(clean);
@@ -7727,22 +7761,12 @@ ${dataSection}`;
       const question = String((body as any).question ?? "").trim();
       const userMsg = question || "Produce the unified marketing plan from the data. Return JSON only.";
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const json = await anthropicShim({
           model: "claude-sonnet-4-6",
           max_tokens: 6000,
           system: [{ type: "text", text: sysPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userMsg }],
-        }),
-        signal: AbortSignal.timeout(150_000),
-      });
-      const jr = await res.json();
+        }, 150000);
       if (jr.error) throw new Error(jr.error.message ?? "Claude error");
       const rawText = (jr.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
 
@@ -8095,14 +8119,7 @@ ${postsBlock}
       let totalTokens = 0;
 
       for (let iter = 0; iter < 5; iter++) {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "x-api-key": ANTHROPIC_KEY,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        const json = await anthropicShim({
             model: "claude-sonnet-4-6",
             max_tokens: 4000,
             // tools + sysPromptStrategist are both built once above the loop and
@@ -8113,10 +8130,7 @@ ${postsBlock}
             system: [{ type: "text", text: sysPromptStrategist, cache_control: { type: "ephemeral" } }],
             tools,
             messages,
-          }),
-          signal: AbortSignal.timeout(90_000),
-        });
-        const json = await res.json();
+          }, 90000);
         if (json.error) throw new Error(json.error.message ?? "Claude error");
         totalTokens += (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
         const cw = json.usage?.cache_creation_input_tokens ?? 0;
@@ -8392,18 +8406,12 @@ ${researchBlock.slice(0, 3500)}
         { role: "user" as const, content: question },
       ];
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const json = await anthropicShim({
           model: "claude-sonnet-4-6",
           max_tokens: 2000,
           system: sysPromptChat,
           messages,
-        }),
-        signal: AbortSignal.timeout(60_000),
-      });
-      const json = await res.json();
+        }, 60000);
       if (json.error) throw new Error(json.error.message ?? "Claude error");
       const answer = json.content?.[0]?.text ?? "";
       const tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
