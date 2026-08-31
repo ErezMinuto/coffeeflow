@@ -109,6 +109,107 @@ serve(async (req) => {
   const workerId = `research-${crypto.randomUUID().slice(0, 8)}`
   const supabase = createSupabase()
 
+  // ── Backtest (READ-ONLY) ──────────────────────────────────────────────────
+  // Replays REAL past research questions through both stacks and has EACH
+  // VENDOR blind-judge the pair, positions swapped. Runs server-side because
+  // both API keys already live here; the local harness in PR #248 needs them
+  // pasted into a shell, which puts secrets in a transcript.
+  //
+  // It compares two SEARCH STACKS as much as two models — Anthropic web_search
+  // vs Google Search grounding — so sources-found is reported separately from
+  // who won. Only agreement between two rival judges is treated as signal.
+  //
+  // Two questions per call: four model calls each against a ~150s wall clock.
+  // Repeat with `offset`. Writes nothing.
+  {
+    const body = await req.clone().json().catch(() => ({} as Record<string, unknown>))
+    if (body?.action === 'backtest') {
+      const limit  = Math.max(1, Math.min(3, Number(body.limit)  || 2))
+      const offset = Math.max(0, Number(body.offset) || 0)
+      const GEM = Deno.env.get('GEMINI_API_KEY') ?? ''
+      const ANT = Deno.env.get('ANTHROPIC_API_KEY') ?? ''
+      if (!GEM || !ANT) return jsonResponse({ error: 'need both GEMINI_API_KEY and ANTHROPIC_API_KEY' }, 500)
+
+      const { data: rows } = await supabase
+        .from('seo_tasks').select('id, brief_data')
+        .eq('task_type', 'deep_research').eq('status', 'completed')
+        .order('created_at', { ascending: false }).range(offset, offset + limit - 1)
+
+      const countUrls = (t: string) => new Set(t.match(/https?:\/\/[^\s)\]]+/g) ?? []).size
+      const sysFor = (scope: string, out: string) =>
+        `You are Minuto's deep-research module. Minuto is a specialty-coffee roastery in Israel.\n` +
+        `Scope: ${scope}. Expected output: ${out}.\n` +
+        `CITE YOUR SOURCES — every claim references a URL. Unsourced claims are noise. ` +
+        `If a question is genuinely unanswerable from available sources, SAY SO rather than inventing an answer.`
+
+      const askClaude = async (q: string, sys: string) => {
+        const t0 = Date.now()
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'x-api-key': ANT, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, system: sys,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+            messages: [{ role: 'user', content: q }] }),
+        })
+        const j = await r.json()
+        const text = (j.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+        return { text, ms: Date.now() - t0, err: j.error?.message ?? null }
+      }
+      const askGemini = async (q: string, sys: string) => {
+        const t0 = Date.now()
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEM}`, {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sys }] },
+            contents: [{ role: 'user', parts: [{ text: q }] }],
+            tools: [{ google_search: {} }],          // the whole point of the comparison
+            generationConfig: { maxOutputTokens: 3000 },
+          }),
+        })
+        const j = await r.json()
+        const text = (j.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? '').join('')
+        return { text, ms: Date.now() - t0, err: j.error?.message ?? null }
+      }
+
+      const JUDGE = `Grade two research answers to the same question about a small Israeli specialty-coffee roastery.
+Judge ONLY on: (1) claims backed by real specific sources; (2) advice concrete and actionable for a small boutique
+roaster, not generic marketing filler; (3) admits uncertainty instead of inventing facts.
+Length is not quality. Confident vagueness is worse than a short sourced answer.
+Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
+      const pick = (t: string) => { try { return JSON.parse(t.match(/\{[\s\S]*\}/)?.[0] ?? '{}').winner ?? '?' } catch { return '?' } }
+
+      const results: any[] = []
+      for (const row of (rows ?? []) as any[]) {
+        const b = row.brief_data ?? {}
+        const question = String(b.question ?? '')
+        if (!question) continue
+        const sys = sysFor(String(b.scope ?? 'other'), String(b.expected_output ?? 'analysis'))
+        const [c, g] = await Promise.all([askClaude(question, sys), askGemini(question, sys)])
+        if (c.err || g.err) { results.push({ id: row.id, skipped: true, claude_err: c.err, gemini_err: g.err }); continue }
+
+        // Positions swapped so a judge that always picks its own slot exposes itself.
+        const [jcRaw, jgRaw] = await Promise.all([
+          askClaude(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${c.text}\n\n--- ANSWER B ---\n${g.text}`, JUDGE),
+          askGemini(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${g.text}\n\n--- ANSWER B ---\n${c.text}`, JUDGE),
+        ])
+        const jc = pick(jcRaw.text), jg = pick(jgRaw.text)
+        const claudeVote = jc === 'A' ? 'claude' : jc === 'B' ? 'gemini' : 'tie'
+        const geminiVote = jg === 'A' ? 'gemini' : jg === 'B' ? 'claude' : 'tie'
+        results.push({
+          id: row.id, scope: b.scope, question: question.slice(0, 90),
+          claude: { chars: c.text.length, urls: countUrls(c.text), sec: Math.round(c.ms / 1000) },
+          gemini: { chars: g.text.length, urls: countUrls(g.text), sec: Math.round(g.ms / 1000) },
+          judges: { claude_says: claudeVote, gemini_says: geminiVote, agreed: claudeVote === geminiVote },
+        })
+      }
+      return jsonResponse({
+        ok: true, offset, returned: results.length,
+        note: 'Only rows where both judges agreed are signal. Disagreements are noise, not a draw.',
+        results,
+      })
+    }
+  }
+
   let task: SeoTaskRow | null
   try {
     task = await claimNextTask(supabase, 'deep_research', workerId)
