@@ -27,6 +27,7 @@ import {
   parseClaudeJson,
   MODEL_CHAT,
   MODEL_CHAT_SYNTH,
+  isGeminiModel,
   type ChatMessage as ApiChatMessage,
   type MessageContentBlock,
   type ToolDefinition,
@@ -107,7 +108,19 @@ const MIN_CALL_BUDGET_MS  = 20_000  // don't start another Claude call with less
 // (stop_reason='max_tokens'); we DETECT that and refuse to execute the
 // (truncated) tool call, steering it to queue_task('text_generation')
 // instead — see the max-tokens guard in the tool-use loop.
+// 2000 is plenty for Claude, where the whole budget is visible text.
+//
+// On a thinking model it is not: Gemini draws reasoning tokens from
+// maxOutputTokens BEFORE writing anything, so a 2000 cap on
+// gemini-3.1-pro-preview produced out=16 across two loops and an EMPTY reply —
+// finishReason STOP, no error, no clue. Same trap scout-tick hit at 500
+// (out=8, out=8, out=142), documented in gemini.ts.
+//
+// Pro-tier Gemini cannot opt out of thinking, so the budget has to cover it.
+// Note what that means commercially: those reasoning tokens are billed and
+// never seen, and they are part of why Gemini measured 1.9x Claude here.
 const MAX_OUTPUT_TOKENS_CHAT = 2000
+const MAX_OUTPUT_TOKENS_CHAT_THINKING = 8000
 
 // ── Worker registry — what the agent can nudge ─────────────────────────
 // Maps a friendly name to the deployed function path. Used by the
@@ -2600,7 +2613,7 @@ serve(async (req: Request): Promise<Response> => {
           system:   systemPrompt,
           messages: apiMessages,
           tools:    TOOL_DEFINITIONS,
-          maxTokens:   MAX_OUTPUT_TOKENS_CHAT,
+          maxTokens:   isGeminiModel(MODEL_CHAT) ? MAX_OUTPUT_TOKENS_CHAT_THINKING : MAX_OUTPUT_TOKENS_CHAT,
           temperature: 0.3,
           // Cache the (system + tools) prefix — ~30 tool schemas + the
           // chat prompt is 5-10K input tokens. First call in the turn
