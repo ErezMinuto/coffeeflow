@@ -2496,6 +2496,42 @@ function groupLearningsForPrompt(rows: LearningRow[]): string {
 // ── HTTP entry point ───────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
+  // ── Gemini probe (READ-ONLY diagnostic) ───────────────────────────────────
+  // Flipping MODEL_CHAT to Gemini produced success:true with a fallback reply,
+  // zero tokens and NO cost-ledger row — i.e. the call threw before logCost.
+  // The thrown message never reaches the client, so this surfaces it.
+  //
+  // The model id is not the suspect: the research backtest ran the same
+  // gemini-3.1-pro-preview and got a real answer. The difference is that the
+  // chat sends 41 functionDeclarations where the backtest sent google_search.
+  {
+    const b = await req.clone().json().catch(() => ({} as Record<string, unknown>))
+    if (b?.action === 'probe_gemini') {
+      const key = Deno.env.get('GEMINI_API_KEY') ?? ''
+      const model = String(b.model ?? 'gemini-3.1-pro-preview')
+      const nTools = Math.max(0, Math.min(60, Number(b.tools) || 0))
+      const decls = Array.from({ length: nTools }, (_, i) => ({
+        name: `probe_tool_${i}`,
+        description: `Probe tool ${i} — checks how many declarations the request tolerates.`,
+        parameters: { type: 'object', properties: { q: { type: 'string', description: 'query' } }, required: ['q'] },
+      }))
+      const body: Record<string, unknown> = {
+        contents: [{ role: 'user', parts: [{ text: 'Reply with the single word OK.' }] }],
+        generationConfig: { maxOutputTokens: 32, thinkingConfig: { thinkingBudget: 0 } },
+      }
+      if (nTools > 0) body.tools = [{ functionDeclarations: decls }]
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      const j = await r.json().catch(() => ({}))
+      return jsonResponse({
+        model, tools_sent: nTools, http: r.status,
+        error: j?.error?.message ?? null,
+        text: (j?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? '').join('').slice(0, 120) || null,
+        finish: j?.candidates?.[0]?.finishReason ?? null,
+      })
+    }
+  }
+
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
