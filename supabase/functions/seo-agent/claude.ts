@@ -105,9 +105,15 @@ export const MODEL_STRATEGIST     = modelSlot('STRATEGIST',     MODEL_STRATEGIST
 // Slots for the four functions that used to call Anthropic directly. Those
 // hand-rolled fetches are why they were invisible in agent_cost_ledger and
 // unreachable by a provider switch.
+// NOTE: there is deliberately NO slot for ai-visibility-probe or for
+// seo-worker-research's backtest arm. Both call Claude as a SUBJECT OF
+// MEASUREMENT, not as a tool: the probe files rows under llm_provider='claude',
+// and the backtest is the Claude-vs-Gemini comparison that justified this
+// migration. Pointing either at Gemini would corrupt the data it exists to
+// produce, so they keep their direct calls on purpose.
 export const MODEL_ANALYST        = modelSlot('ANALYST',        'claude-sonnet-4-6')
-export const MODEL_PROBE          = modelSlot('PROBE',          'claude-sonnet-4-6')
 export const MODEL_CAMPAIGN       = modelSlot('CAMPAIGN',       'claude-sonnet-4-6')
+export const MODEL_CAMPAIGN_CHEAP = modelSlot('CAMPAIGN_CHEAP', 'claude-haiku-4-5')
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
