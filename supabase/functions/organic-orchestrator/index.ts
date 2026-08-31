@@ -26,6 +26,7 @@ import {
   insertTasks,
   insertMetrics,
   getRecentTasks,
+  fetchRecentIgCaptions,
   getRecentMetricsSnapshots,
   getRecentLearnings,
   insertExperiment,
@@ -145,6 +146,7 @@ serve(async (req: Request): Promise<Response> => {
       catalog,
       inventoryAlerts,
       recentTasks,
+      recentIgCaptions,
       priorSnapshots,
       learnings,
       // New data sources — already-synced tables previously unused by strategist
@@ -176,6 +178,10 @@ serve(async (req: Request): Promise<Response> => {
       fetchActiveCatalog(supabase),
       fetchInventoryAlerts(supabase),
       getRecentTasks(supabase, fourteenDaysAgo, 100),
+      // Last 20 IG captions we actually shipped — the strategist's
+      // anti-repetition reference so it stops reusing the same openers /
+      // hooks / themes. Not time-boxed (see fetchRecentIgCaptions).
+      fetchRecentIgCaptions(supabase, 20),
       getRecentMetricsSnapshots(supabase, 'orchestrator_run', 2),
       // Cross-session learnings — scopes most relevant to strategist planning.
       // Excludes brand_voice (the writer worker enforces those via its own
@@ -220,6 +226,7 @@ serve(async (req: Request): Promise<Response> => {
       `[organic-orchestrator] sources — gsc:${gscKeywords.length} ` +
       `blog:${blogPosts.length} catalog:${catalog.length} ` +
       `inv:${inventoryAlerts.length} recentTasks:${recentTasks.length} ` +
+      `igCaptions:${recentIgCaptions.length} ` +
       `priorSnapshots:${priorSnapshots.length} learnings:${learnings.length} ` +
       `paidKw:${paidKeywords.length} searchTerms:${searchTerms.length} ` +
       `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
@@ -271,6 +278,7 @@ serve(async (req: Request): Promise<Response> => {
       focus,
       snapshot,
       recentTasks,
+      recentIgCaptions,
       blogPosts,
       catalog,
       inventoryAlerts,
@@ -806,6 +814,7 @@ function buildStrategistUserMessage(args: {
   focus:           string
   snapshot:        MetricsSnapshot
   recentTasks:     SeoTaskRow[]
+  recentIgCaptions: Array<{ created_at: string; caption_he: string }>
   blogPosts:       Array<{ title: string; url: string; published_at: string | null }>
   catalog:         Array<{ name: string; price: number | null; permalink: string | null; stock_status: string | null }>
   inventoryAlerts: Array<{ name: string; packed_stock: number; state: string }>
@@ -824,7 +833,7 @@ function buildStrategistUserMessage(args: {
   competitorIntel:  { llm_co_mentions: Array<{ name: string; mention_count_30d: number; queries_appearing_in: number }>; recent_research: Array<{ source: string; research_date: string; summary_excerpt: string }> }
   postFollowback:  PostFollowback[]
 }): string {
-  const { focus, snapshot, recentTasks, blogPosts, catalog, inventoryAlerts, learnings,
+  const { focus, snapshot, recentTasks, recentIgCaptions, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
           ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback } = args
 
@@ -976,6 +985,16 @@ Top converting paid ads (last 30d):
 ${paidAds.length === 0 ? '  (no paid ad data)' : paidAds.map(a =>
   `  ad/${a.ad_id.slice(-6)} (campaign ${a.campaign_id?.slice(-6) ?? '-'}) — conv:${a.conversions.toFixed(1)} clicks:${a.clicks} spend:₪${a.spend_ils.toFixed(0)} ${a.cost_per_conv ? `cpa:₪${a.cost_per_conv.toFixed(0)}` : ''}`,
 ).join('\n')}
+
+=== RECENTLY SHIPPED IG CAPTIONS — DO NOT REPEAT THESE OPENERS / HOOKS / THEMES ===
+
+The last ${recentIgCaptions.length} Instagram captions you actually published (newest first) — these are captions YOU wrote in earlier cycles. Before writing any new caption_he, read these and deliberately pick a DIFFERENT opening line, hook structure, framing angle, and theme. Repeating an opener or angle already in this list is a failure. Fresh angle every post.
+${recentIgCaptions.length === 0 ? '  (no shipped IG captions yet)' : recentIgCaptions.map(c => {
+  const when   = c.created_at ? c.created_at.split('T')[0] : ''
+  const opener = c.caption_he.split('\n')[0].trim().slice(0, 120)
+  const body   = c.caption_he.replace(/\s+/g, ' ').slice(0, 300)
+  return `  • [${when}] opener: "${opener}"\n    ${body}${c.caption_he.length > 300 ? '…' : ''}`
+}).join('\n\n')}
 
 === CUSTOMER RESEARCH — VoC + UNTAPPED KEYWORDS + COMPETITOR SCANS ===
 
