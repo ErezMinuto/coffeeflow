@@ -64,6 +64,14 @@ const SCHEMA_KEYS_KEPT = new Set([
   'type', 'description', 'properties', 'required', 'items', 'enum', 'nullable',
 ])
 
+// Models that reject an explicit zero thinking budget. Pro tiers reason by
+// design and treat "no thinking" as invalid rather than as a cheaper mode.
+// Matching on the tier name rather than an allow-list of exact ids, because
+// Gemini ids change often and a stale list fails the same silent way.
+export function modelRequiresThinking(model: string): boolean {
+  return /(^|[-_])pro([-_]|$)/i.test(model)
+}
+
 export function sanitizeSchema(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sanitizeSchema)
   if (node === null || typeof node !== 'object') return node
@@ -315,7 +323,13 @@ export async function callGemini(
       // extraction and short-synthesis calls that make up Wave A. A caller that
       // sets effort keeps Gemini's default dynamic thinking, and must budget
       // maxTokens for it.
-      ...(opts.effort ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+      // ...EXCEPT on models that refuse to run without thinking. Probed
+      // 2026-08-31: gemini-3.1-pro-preview returns 400 "Budget 0 is invalid.
+      // This model only works in thinking mode" for EVERY request — with 0, 5,
+      // 20 and 41 tool declarations alike, so it is the budget and not the tool
+      // payload. Sending no thinkingConfig at all lets such a model use its own
+      // default. Flash-tier keeps the explicit 0, which is what that fix was for.
+      ...(opts.effort || modelRequiresThinking(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
     },
   }
 

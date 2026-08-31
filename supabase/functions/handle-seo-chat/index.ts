@@ -2580,6 +2580,7 @@ serve(async (req: Request): Promise<Response> => {
     let lastUsage = { input: 0, output: 0, cache_read: 0 }
     const loopStartedAt = Date.now()
     let ranOutOfTime = false
+  let modelError: string | null = null
 
     while (loops < MAX_TOOL_LOOPS) {
       // Wall-clock guard: never start a Claude call that could push us past
@@ -2618,6 +2619,21 @@ serve(async (req: Request): Promise<Response> => {
         // a graceful budget-stop: don't crash the whole turn, just stop
         // looping and let the admin continue. Anything done in PRIOR
         // iterations (tool results, persisted messages) is already saved.
+        // Only an ABORT is a budget stop. Anything else — a 400 from the
+        // provider, a bad model id, a rejected request shape — is a real
+        // failure and must not be dressed up as "I ran out of time".
+        //
+        // That disguise cost real debugging: flipping MODEL_CHAT to Gemini
+        // returned success:true with the out-of-time message, zero tokens and
+        // no cost-ledger row, while the actual cause was a 400 reading
+        // "Budget 0 is invalid. This model only works in thinking mode."
+        const isAbort = callErr?.name === 'AbortError'
+          || /abort|timed? ?out|signal/i.test(String(callErr?.message ?? ''))
+        if (!isAbort) {
+          console.error(`[handle-seo-chat] model call FAILED on loop ${loops}: ${callErr?.message ?? callErr}`)
+          modelError = String(callErr?.message ?? callErr).slice(0, 300)
+          break
+        }
         console.warn(`[handle-seo-chat] callClaude threw on loop ${loops} (treating as budget-stop): ${callErr?.message ?? callErr}`)
         ranOutOfTime = true
         break
@@ -2770,7 +2786,9 @@ serve(async (req: Request): Promise<Response> => {
       // Hit the wall-clock budget mid-task. Whatever tool calls already ran
       // are persisted (and committed live, e.g. an FAQ write), so this is a
       // safe stopping point — the admin just continues.
-      finalText = `(I ran out of time for this turn after completing the steps above — anything still pending wasn't started. Say "continue" and I'll pick up where I left off.)`
+      if (modelError) {
+        finalText = `(The model call failed: ${modelError})`
+      } else       finalText = `(I ran out of time for this turn after completing the steps above — anything still pending wasn't started. Say "continue" and I'll pick up where I left off.)`
       await appendChatMessage(supabase, {
         session_id: sessionId,
         role:       'system',
