@@ -24,9 +24,9 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 // runs on Sonnet — cheap, fast, good at structured planning. The STRATEGIST
 // BRAIN runs on Opus 4.8: it reasons deeply over the whole business once a
 // week, so quality-per-decision matters far more than per-token cost.
-const MODEL_ORCHESTRATOR_DEFAULT = 'claude-sonnet-4-6'
+export const MODEL_ORCHESTRATOR = 'claude-sonnet-4-6'
 export const MODEL_WRITER       = 'claude-sonnet-4-6'
-const MODEL_CHAT_DEFAULT        = 'claude-sonnet-4-6'
+export const MODEL_CHAT         = 'claude-sonnet-4-6'
 // Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
 // ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
 // fallback is wired in callClaude below as a seatbelt.
@@ -64,35 +64,10 @@ function modelSlot(slot: string, fallback: string): string {
   }
   return fallback
 }
-// The SEO/content PLANNER — reads GSC keywords, blog history and past tasks and
-// decides what to write. This is the slot where Gemini's index access is most
-// plausibly an edge: the job is literally "what should rank on Google".
-//
-// Unlike the strategist it is a SINGLE call with NO tools, so the fan-out and
-// resumed-state hazards do not apply. One hazard does apply: it caps maxTokens
-// at 7000 for a ~3500-token plan, and on a THINKING-ONLY Gemini model those
-// tokens are spent before any visible output — a truncated plan fails
-// parseClaudeJson and the cycle emits NOTHING. Prefer a model whose thinking can
-// be disabled (gemini-2.5-flash), or raise the cap first.
-export const MODEL_ORCHESTRATOR   = modelSlot('ORCHESTRATOR', MODEL_ORCHESTRATOR_DEFAULT)
 export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
 export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
 export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
 export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  'claude-sonnet-4-6')
-// The admin chat is the single largest line in agent_cost_ledger — $4.03 over
-// 14 days, ~37% of all spend, more than strategist-brain and 13x the entire
-// migrated organic stack. Its output goes to the owner, not to customers, so a
-// regression is visible immediately and nothing gets published in the meantime.
-//
-// It carries a large tool set. Gemini forbids google_search alongside
-// functionDeclarations, so this slot gets TOOLS and no grounding — which is
-// correct here: the chat's value is in its tools, not in web search.
-export const MODEL_CHAT           = modelSlot('CHAT',           MODEL_CHAT_DEFAULT)
-// The chat's URL-synthesis sub-call — same shape as the industry ingester's:
-// fetch a page, summarise it as one insight. Cheap, structured, no judgement,
-// and its output is a suggestion the admin reads. Slotted separately so it can
-// run on a cheap tier while the chat loop itself runs on a strong one.
-export const MODEL_CHAT_SYNTH     = modelSlot('CHAT_SYNTH',     'claude-haiku-4-5')
 
 // Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
