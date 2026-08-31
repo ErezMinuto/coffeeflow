@@ -157,7 +157,11 @@ serve(async (req) => {
       }
       const askGemini = async (q: string, sys: string) => {
         const t0 = Date.now()
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEM}`, {
+        // gemini-2.5-pro is RETIRED — the API refuses it for new users and names
+        // gemini-3.1-pro-preview as the replacement. Pro tier, not Flash, so the
+        // comparison against Sonnet is like-for-like. Ids here are not guessable
+        // from marketing names; take them from the API's own error text.
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${GEM}`, {
           method: 'POST', headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: sys }] },
