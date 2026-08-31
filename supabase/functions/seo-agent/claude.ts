@@ -139,6 +139,13 @@ export interface MessageContentToolUse {
   name: string
   input: Record<string, unknown>
   cache_control?: CacheControl
+  // Gemini 3.x REQUIRES that the thought_signature it attached to a functionCall
+  // be replayed when that call is sent back as history. Omit it and the SECOND
+  // tool-loop turn dies with 400 INVALID_ARGUMENT ("Function call is missing a
+  // thought_signature ... position 2"). It rides on the Anthropic-shaped block
+  // because that is the only thing that survives a caller's tool loop; it is
+  // stripped again before any Anthropic request (see stripProviderFields).
+  thoughtSignature?: string
 }
 export interface MessageContentToolResult {
   type: 'tool_result'
@@ -273,6 +280,27 @@ export interface CallClaudeResult {
   groundingSources?: Array<{ title: string; url: string }>
 }
 
+// Anthropic rejects unknown fields inside content blocks, and thoughtSignature
+// is a Gemini-only field we attach to tool_use blocks. A conversation started on
+// Gemini and continued on Claude — exactly what a model-slot flip does mid-loop —
+// would otherwise 400. Strip on the way out rather than never storing it, because
+// the signature has to survive the caller's loop to be replayed to Gemini.
+function stripProviderFields(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map(m => {
+    if (typeof m.content === 'string') return m
+    let touched = false
+    const blocks = m.content.map(b => {
+      if (b.type === 'tool_use' && b.thoughtSignature !== undefined) {
+        touched = true
+        const { thoughtSignature: _drop, ...rest } = b
+        return rest as MessageContentBlock
+      }
+      return b
+    })
+    return touched ? { ...m, content: blocks } : m
+  })
+}
+
 export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeResult> {
   const model = opts.model ?? MODEL_ORCHESTRATOR
 
@@ -311,7 +339,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
     system: opts.cachePrefix
       ? [{ type: 'text', text: opts.system, cache_control: { type: 'ephemeral' } }]
       : opts.system,
-    messages: opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages,
+    messages: stripProviderFields(opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages),
   }
   if (adaptive) {
     // Adaptive thinking is the only on-mode for Opus 4.7+/Fable; Claude
