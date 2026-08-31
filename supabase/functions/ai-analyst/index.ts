@@ -10,6 +10,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callClaude, MODEL_ANALYST } from "../seo-agent/claude.ts";
 
 const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY")  ?? "";
 const JWT_SECRET     = Deno.env.get("JWT_SECRET") ?? "";
@@ -66,31 +67,33 @@ serve(async (req) => {
       );
     }
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: systemPrompt || "אתה אנליסט שיווק דיגיטלי. ענה בעברית.",
+    // Routed through the shared client so this call is measured in
+    // agent_cost_ledger and follows the MODEL_ANALYST slot. The browser parses
+    // Anthropic's response shape, so the shape is rebuilt rather than changed —
+    // porting the transport must not become a frontend change.
+    let res;
+    try {
+      res = await callClaude({
+        sourceFn: "ai-analyst",
+        model:    MODEL_ANALYST,
+        system:   systemPrompt || "אתה אנליסט שיווק דיגיטלי. ענה בעברית.",
         messages,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("Anthropic error:", err);
+        maxTokens: 1024,
+      });
+    } catch (e: unknown) {
+      console.error("model error:", e instanceof Error ? e.message : String(e));
       return new Response(
         JSON.stringify({ error: "Upstream API error" }),
         { status: 502, headers: { ...CORS, "Content-Type": "application/json" } },
       );
     }
 
-    const data = await response.json();
+    const data = {
+      content: res.content,
+      stop_reason: res.stop_reason,
+      usage: { input_tokens: res.inputTokens, output_tokens: res.outputTokens },
+      model: res.model,
+    };
 
     return new Response(JSON.stringify(data), {
       headers: { ...CORS, "Content-Type": "application/json" },

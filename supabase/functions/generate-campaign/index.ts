@@ -12,6 +12,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -805,29 +806,22 @@ ${p.context ? "הקשר מהמשתמש: " + p.context : ""}
   ]
 }`;
 
-  const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key":         ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type":      "application/json",
-    },
-    body: JSON.stringify({
-      model:      "claude-haiku-4-5-20251001",
-      max_tokens: 2000,
-      system:     systemPrompt,
-      messages:   [{ role: "user", content: p.context || "תן לי 5 רעיונות לקמפיין הבא" }],
-    }),
-  });
-
-  if (!aiRes.ok) {
-    const errText = await aiRes.text();
-    console.error("Claude API error:", aiRes.status, errText);
-    return err(500, "Claude API error: " + aiRes.status);
+  // Routed through the shared client: measured in agent_cost_ledger and
+  // switchable by the MODEL_CAMPAIGN_CHEAP slot, like the rest of the marketing stack.
+  let rawText = "";
+  try {
+    const res = await callClaude({
+      sourceFn:  "generate-campaign",
+      model:     MODEL_CAMPAIGN_CHEAP,
+      system:    systemPrompt,
+      messages:  [{ role: "user", content: p.context || "תן לי 5 רעיונות לקמפיין הבא" }],
+      maxTokens: 2000,
+    });
+    rawText = res.text;
+  } catch (e: unknown) {
+    console.error("model error:", e instanceof Error ? e.message : String(e));
+    return err(500, "Claude API error: " + (e instanceof Error ? e.message : String(e)));
   }
-
-  const aiJson = await aiRes.json();
-  const rawText = aiJson.content?.[0]?.text ?? "";
 
   let parsed: any;
   try {
@@ -1058,30 +1052,23 @@ ${p.customInstructions
   "banner_prompt": "A short English description of a CONCRETE coffee-only scene — beans, cup, latte art, bag, roasting drum, or café counter. NO metaphors. NO 'journey', 'road', 'mountain', 'landscape', 'travel', 'adventure'. NO people, vehicles, or outdoor scenery. Example: 'close-up of dark roasted coffee beans next to a white ceramic cup with steam, warm lighting, wooden table'. 10-20 words max."
 }`;
 
-  const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key":         ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type":      "application/json",
-    },
-    body: JSON.stringify({
-      model:      "claude-sonnet-4-6",
-      max_tokens: 1500,
-      system:     systemPrompt,
-      messages:   [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
-    }),
-  });
-
-  if (!aiRes.ok) {
-    const errText = await aiRes.text();
-    console.error("Claude API error:", aiRes.status, errText);
-    return err(500, "Claude API error: " + aiRes.status);
+  // Routed through the shared client: measured in agent_cost_ledger and
+  // switchable by the MODEL_CAMPAIGN slot, like the rest of the marketing stack.
+  let rawText = "";
+  try {
+    const res = await callClaude({
+      sourceFn:  "generate-campaign",
+      model:     MODEL_CAMPAIGN,
+      system:    systemPrompt,
+      messages:  [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
+      maxTokens: 1500,
+    });
+    rawText = res.text;
+  } catch (e: unknown) {
+    console.error("model error:", e instanceof Error ? e.message : String(e));
+    return err(500, "Claude API error: " + (e instanceof Error ? e.message : String(e)));
   }
-
-  const aiJson = await aiRes.json();
-  const rawText = aiJson.content?.[0]?.text ?? "";
-  console.log("Claude raw response length:", rawText.length);
+  console.log("model raw response length:", rawText.length);
 
   let campaign: any;
   try {
