@@ -39,6 +39,9 @@ interface GeminiPart {
   inlineData?:       { mimeType: string; data: string }
   functionCall?:     { name: string; args: Record<string, unknown> }
   functionResponse?: { name: string; response: Record<string, unknown> }
+  // Gemini 3.x returns this alongside a functionCall and REQUIRES it back when
+  // that call is replayed as history. See MessageContentToolUse.thoughtSignature.
+  thoughtSignature?: string
 }
 interface GeminiContent {
   role:  'user' | 'model'
@@ -255,7 +258,12 @@ export async function toGeminiContents(messages: ChatMessage[]): Promise<GeminiC
       if (b.type === 'text') {
         if (b.text.trim() !== '') parts.push({ text: b.text })
       } else if (b.type === 'tool_use') {
-        parts.push({ functionCall: { name: b.name, args: b.input ?? {} } })
+        // The signature must ride on the SAME part as the functionCall it
+        // belongs to; Gemini matches them positionally.
+        parts.push({
+          functionCall: { name: b.name, args: b.input ?? {} },
+          ...(b.thoughtSignature ? { thoughtSignature: b.thoughtSignature } : {}),
+        })
       } else if (b.type === 'tool_result') {
         // Gemini wants a JSON object. Our tool results are strings (often JSON
         // already), so parse when possible and wrap when not — a bare string
@@ -502,6 +510,7 @@ export async function callGemini(
         id:    `gemini_${Date.now()}_${i}`,
         name:  p.functionCall.name,
         input: p.functionCall.args ?? {},
+        ...(p.thoughtSignature ? { thoughtSignature: p.thoughtSignature } : {}),
       })
     }
   })
