@@ -64,6 +64,86 @@ const SCHEMA_KEYS_KEPT = new Set([
   'type', 'description', 'properties', 'required', 'items', 'enum', 'nullable',
 ])
 
+
+// ── Explicit context caching ────────────────────────────────────────────────
+// Anthropic caches INLINE: mark a block, done. Gemini needs an OBJECT created
+// up front, referenced by name, with the cached parts OMITTED from the request.
+// Edge functions are stateless, so the handle is persisted in
+// gemini_prompt_cache and keyed by a hash of exactly what went into it.
+//
+// Worth the machinery: measured on handle-seo-chat, Claude read 35,981 tokens
+// from cache and paid full price on 4; Gemini paid full price on all 79,484 —
+// $0.169 vs $0.398 per call. The prefix IS the bill on tool-heavy callers.
+//
+// Fails OPEN in every direction. A cache that cannot be created, is too small,
+// has expired, or was deleted server-side simply falls back to sending the
+// prefix inline — the call still succeeds, it just costs what it costs today.
+const CACHE_TTL_SECONDS = 3600
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function getOrCreateCache(
+  model: string, system: string, toolsPart: unknown,
+): Promise<{ name: string; tokens: number } | null> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !key) return null
+  const H = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+
+  const cacheKey = await sha256Hex(`${model}\u0000${system}\u0000${JSON.stringify(toolsPart ?? null)}`)
+  try {
+    // Reuse a live handle. 60s of headroom so a cache cannot expire mid-call.
+    const look = await fetch(
+      `${url}/rest/v1/gemini_prompt_cache?cache_key=eq.${cacheKey}&select=cache_name,expires_at,token_count`,
+      { headers: H })
+    const rows = look.ok ? await look.json() : []
+    const hit = rows?.[0]
+    if (hit && new Date(hit.expires_at).getTime() > Date.now() + 60_000) {
+      fetch(`${url}/rest/v1/gemini_prompt_cache?cache_key=eq.${cacheKey}`, {
+        method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ last_used_at: new Date().toISOString() }),
+      }).catch(() => {})
+      return { name: hit.cache_name, tokens: hit.token_count ?? 0 }
+    }
+
+    const body: Record<string, unknown> = {
+      model: `models/${model}`,
+      systemInstruction: { parts: [{ text: system }] },
+      ttl: `${CACHE_TTL_SECONDS}s`,
+    }
+    if (toolsPart) body.tools = toolsPart
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${GEMINI_API_KEY}`,
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j?.name) {
+      // The common rejection is "too small": Gemini enforces a minimum cacheable
+      // size and a short prompt simply is not worth an object. Log once and move
+      // on inline rather than failing the caller's actual request.
+      console.warn(`[gemini-cache] not created (${res.status}): ${j?.error?.message ?? 'no name returned'}`)
+      return null
+    }
+    const tokens = j?.usageMetadata?.totalTokenCount ?? 0
+    fetch(`${url}/rest/v1/gemini_prompt_cache`, {
+      method: 'POST',
+      headers: { ...H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
+        cache_key: cacheKey, cache_name: j.name, model, token_count: tokens,
+        expires_at: new Date(Date.now() + CACHE_TTL_SECONDS * 1000).toISOString(),
+        last_used_at: new Date().toISOString(),
+      }),
+    }).catch(() => {})
+    console.log(`[gemini-cache] created ${j.name} (${tokens} tokens, ttl ${CACHE_TTL_SECONDS}s)`)
+    return { name: j.name, tokens }
+  } catch (e) {
+    console.warn(`[gemini-cache] lookup/create threw (non-fatal): ${e instanceof Error ? e.message : String(e)}`)
+    return null
+  }
+}
+
 // Models that reject an explicit zero thinking budget. Pro tiers reason by
 // design and treat "no thinking" as invalid rather than as a cheaper mode.
 // Matching on the tier name rather than an allow-list of exact ids, because
@@ -344,6 +424,21 @@ export async function callGemini(
     // responseSchema is only legal without tools.
     ;(body.generationConfig as Record<string, unknown>).responseMimeType = 'application/json'
     ;(body.generationConfig as Record<string, unknown>).responseSchema = sanitizeSchema(opts.responseSchema)
+  }
+
+  // Move the system prompt + tools into an explicit cache when the caller asked
+  // for a cached prefix. Both MUST be removed from the request afterwards —
+  // Gemini rejects a call that carries cachedContent alongside the same parts.
+  //
+  // Grounding is excluded: google_search cannot live inside a cached object,
+  // and a research call's cost is its search anyway, not its prefix.
+  if (opts.cachePrefix && !opts.googleSearch) {
+    const cached = await getOrCreateCache(model, opts.system, body.tools)
+    if (cached) {
+      body.cachedContent = cached.name
+      delete body.systemInstruction
+      delete body.tools
+    }
   }
 
   const controller = new AbortController()
