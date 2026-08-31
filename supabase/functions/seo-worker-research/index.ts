@@ -124,7 +124,10 @@ serve(async (req) => {
   {
     const body = await req.clone().json().catch(() => ({} as Record<string, unknown>))
     if (body?.action === 'backtest') {
-      const limit  = Math.max(1, Math.min(3, Number(body.limit)  || 2))
+      // ONE question per invocation. Two blew the edge worker's memory
+      // (WORKER_RESOURCE_LIMIT): four model calls, each holding a multi-KB
+      // answer, plus both answers concatenated again for each of two judges.
+      const limit  = Math.max(1, Math.min(2, Number(body.limit)  || 1))
       const offset = Math.max(0, Number(body.offset) || 0)
       const GEM = Deno.env.get('GEMINI_API_KEY') ?? ''
       const ANT = Deno.env.get('ANTHROPIC_API_KEY') ?? ''
@@ -192,9 +195,13 @@ Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
         if (c.err || g.err) { results.push({ id: row.id, skipped: true, claude_err: c.err, gemini_err: g.err }); continue }
 
         // Positions swapped so a judge that always picks its own slot exposes itself.
+        // Trim what goes to the judges. Quality shows in the first few
+        // thousand characters, and sending two full answers to each of two
+        // judges is what exhausted the worker.
+        const cut = (t: string) => t.slice(0, 6000)
         const [jcRaw, jgRaw] = await Promise.all([
-          askClaude(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${c.text}\n\n--- ANSWER B ---\n${g.text}`, JUDGE),
-          askGemini(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${g.text}\n\n--- ANSWER B ---\n${c.text}`, JUDGE),
+          askClaude(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${cut(c.text)}\n\n--- ANSWER B ---\n${cut(g.text)}`, JUDGE),
+          askGemini(`QUESTION:\n${question}\n\n--- ANSWER A ---\n${cut(g.text)}\n\n--- ANSWER B ---\n${cut(c.text)}`, JUDGE),
         ])
         const jc = pick(jcRaw.text), jg = pick(jgRaw.text)
         const claudeVote = jc === 'A' ? 'claude' : jc === 'B' ? 'gemini' : 'tie'
