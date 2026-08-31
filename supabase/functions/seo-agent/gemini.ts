@@ -64,6 +64,94 @@ const SCHEMA_KEYS_KEPT = new Set([
   'type', 'description', 'properties', 'required', 'items', 'enum', 'nullable',
 ])
 
+
+// ── Explicit context caching ────────────────────────────────────────────────
+// Anthropic caches INLINE: mark a block, done. Gemini needs an OBJECT created
+// up front, referenced by name, with the cached parts OMITTED from the request.
+// Edge functions are stateless, so the handle is persisted in
+// gemini_prompt_cache and keyed by a hash of exactly what went into it.
+//
+// Worth the machinery: measured on handle-seo-chat, Claude read 35,981 tokens
+// from cache and paid full price on 4; Gemini paid full price on all 79,484 —
+// $0.169 vs $0.398 per call. The prefix IS the bill on tool-heavy callers.
+//
+// Fails OPEN in every direction. A cache that cannot be created, is too small,
+// has expired, or was deleted server-side simply falls back to sending the
+// prefix inline — the call still succeeds, it just costs what it costs today.
+const CACHE_TTL_SECONDS = 3600
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function getOrCreateCache(
+  model: string, system: string, toolsPart: unknown,
+): Promise<{ name: string; tokens: number } | null> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !key) return null
+  const H = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+
+  const cacheKey = await sha256Hex(`${model}\u0000${system}\u0000${JSON.stringify(toolsPart ?? null)}`)
+  try {
+    // Reuse a live handle. 60s of headroom so a cache cannot expire mid-call.
+    const look = await fetch(
+      `${url}/rest/v1/gemini_prompt_cache?cache_key=eq.${cacheKey}&select=cache_name,expires_at,token_count`,
+      { headers: H })
+    const rows = look.ok ? await look.json() : []
+    const hit = rows?.[0]
+    if (hit && new Date(hit.expires_at).getTime() > Date.now() + 60_000) {
+      fetch(`${url}/rest/v1/gemini_prompt_cache?cache_key=eq.${cacheKey}`, {
+        method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ last_used_at: new Date().toISOString() }),
+      }).catch(() => {})
+      return { name: hit.cache_name, tokens: hit.token_count ?? 0 }
+    }
+
+    const body: Record<string, unknown> = {
+      model: `models/${model}`,
+      systemInstruction: { parts: [{ text: system }] },
+      ttl: `${CACHE_TTL_SECONDS}s`,
+    }
+    if (toolsPart) body.tools = toolsPart
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${GEMINI_API_KEY}`,
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j?.name) {
+      // The common rejection is "too small": Gemini enforces a minimum cacheable
+      // size and a short prompt simply is not worth an object. Log once and move
+      // on inline rather than failing the caller's actual request.
+      console.warn(`[gemini-cache] not created (${res.status}): ${j?.error?.message ?? 'no name returned'}`)
+      return null
+    }
+    const tokens = j?.usageMetadata?.totalTokenCount ?? 0
+    fetch(`${url}/rest/v1/gemini_prompt_cache`, {
+      method: 'POST',
+      headers: { ...H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
+        cache_key: cacheKey, cache_name: j.name, model, token_count: tokens,
+        expires_at: new Date(Date.now() + CACHE_TTL_SECONDS * 1000).toISOString(),
+        last_used_at: new Date().toISOString(),
+      }),
+    }).catch(() => {})
+    console.log(`[gemini-cache] created ${j.name} (${tokens} tokens, ttl ${CACHE_TTL_SECONDS}s)`)
+    return { name: j.name, tokens }
+  } catch (e) {
+    console.warn(`[gemini-cache] lookup/create threw (non-fatal): ${e instanceof Error ? e.message : String(e)}`)
+    return null
+  }
+}
+
+// Models that reject an explicit zero thinking budget. Pro tiers reason by
+// design and treat "no thinking" as invalid rather than as a cheaper mode.
+// Matching on the tier name rather than an allow-list of exact ids, because
+// Gemini ids change often and a stale list fails the same silent way.
+export function modelRequiresThinking(model: string): boolean {
+  return /(^|[-_])pro([-_]|$)/i.test(model)
+}
+
 export function sanitizeSchema(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sanitizeSchema)
   if (node === null || typeof node !== 'object') return node
@@ -202,6 +290,73 @@ export async function toGeminiContents(messages: ChatMessage[]): Promise<GeminiC
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GROUNDING REDIRECT RESOLUTION
+//
+// Gemini does not hand back the publisher's URL. Every grounded citation is a
+// Google redirect:
+//
+//   https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQ...
+//
+// seo-worker-research attaches these to its report as the source list, so
+// without resolution a Gemini-backed report cites opaque tokens where the
+// Anthropic path cites real domains — and those tokens are not durable, so an
+// old report degrades to dead links. That is a straight downgrade on the exact
+// axis this migration is meant to improve.
+//
+// Resolution is one HTTP hop per source with redirect:'manual', reading the
+// Location header — no page body is fetched. Two fallbacks, in order, because
+// the redirect could be served as a 3xx today and something else tomorrow:
+//   1. Location header from a manual-redirect HEAD
+//   2. res.url after following redirects (GET, but body left unread)
+// If both fail the ORIGINAL redirect URL is kept. A citation that still works
+// beats no citation, so this can degrade but never lose a source.
+//
+// All sources resolve concurrently against one short deadline, so the added
+// latency is one hop rather than N — which matters inside seo-worker-research's
+// 60s web-phase cap.
+const REDIRECT_HOST = 'vertexaisearch.cloud.google.com'
+const RESOLVE_TIMEOUT_MS = 4_000
+
+async function resolveOneRedirect(url: string): Promise<string> {
+  if (!url.includes(REDIRECT_HOST)) return url   // already a real URL
+  const ctl = new AbortController()
+  const t = setTimeout(() => ctl.abort(), RESOLVE_TIMEOUT_MS)
+  try {
+    const head = await fetch(url, { method: 'HEAD', redirect: 'manual', signal: ctl.signal })
+    const loc = head.headers.get('location')
+    if (loc && /^https?:\/\//.test(loc) && !loc.includes(REDIRECT_HOST)) return loc
+
+    const got = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctl.signal })
+    // Release the connection without buffering the page.
+    try { await got.body?.cancel() } catch { /* already closed */ }
+    if (got.url && !got.url.includes(REDIRECT_HOST)) return got.url
+    return url
+  } catch (e: any) {
+    console.warn(`[gemini] grounding redirect unresolved (keeping redirect url): ${e?.message ?? e}`)
+    return url
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+async function resolveGroundingUrls(
+  sources: Array<{ title: string; url: string }>,
+): Promise<Array<{ title: string; url: string }>> {
+  if (sources.length === 0) return sources
+  const resolved = await Promise.all(sources.map(async s => ({ ...s, url: await resolveOneRedirect(s.url) })))
+  // Distinct redirects can land on the same article, so dedupe AFTER resolving.
+  // Keep the first title seen — Gemini's titles are ordered by relevance.
+  const seen = new Set<string>()
+  const out: Array<{ title: string; url: string }> = []
+  for (const s of resolved) {
+    if (seen.has(s.url)) continue
+    seen.add(s.url)
+    out.push(s)
+  }
+  return out
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC ENTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export interface CallGeminiExtras {
@@ -248,7 +403,13 @@ export async function callGemini(
       // extraction and short-synthesis calls that make up Wave A. A caller that
       // sets effort keeps Gemini's default dynamic thinking, and must budget
       // maxTokens for it.
-      ...(opts.effort ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+      // ...EXCEPT on models that refuse to run without thinking. Probed
+      // 2026-08-31: gemini-3.1-pro-preview returns 400 "Budget 0 is invalid.
+      // This model only works in thinking mode" for EVERY request — with 0, 5,
+      // 20 and 41 tool declarations alike, so it is the budget and not the tool
+      // payload. Sending no thinkingConfig at all lets such a model use its own
+      // default. Flash-tier keeps the explicit 0, which is what that fix was for.
+      ...(opts.effort || modelRequiresThinking(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
     },
   }
 
@@ -263,6 +424,21 @@ export async function callGemini(
     // responseSchema is only legal without tools.
     ;(body.generationConfig as Record<string, unknown>).responseMimeType = 'application/json'
     ;(body.generationConfig as Record<string, unknown>).responseSchema = sanitizeSchema(opts.responseSchema)
+  }
+
+  // Move the system prompt + tools into an explicit cache when the caller asked
+  // for a cached prefix. Both MUST be removed from the request afterwards —
+  // Gemini rejects a call that carries cachedContent alongside the same parts.
+  //
+  // Grounding is excluded: google_search cannot live inside a cached object,
+  // and a research call's cost is its search anyway, not its prefix.
+  if (opts.cachePrefix && !opts.googleSearch) {
+    const cached = await getOrCreateCache(model, opts.system, body.tools)
+    if (cached) {
+      body.cachedContent = cached.name
+      delete body.systemInstruction
+      delete body.tools
+    }
   }
 
   const controller = new AbortController()
@@ -364,6 +540,11 @@ export async function callGemini(
     groundingSources.push({ title: chunk.web?.title?.trim() || url, url })
   }
 
+  // Only pay the resolution hop when grounding actually returned something.
+  const resolvedSources = groundingSources.length > 0
+    ? await resolveGroundingUrls(groundingSources.slice(0, 12))
+    : groundingSources
+
   logGeminiCost(opts, { model, inputTokens: uncachedInput, outputTokens, cacheReadTokens })
 
   return {
@@ -375,7 +556,7 @@ export async function callGemini(
     cacheReadTokens,
     cacheCreationTokens: 0,   // Gemini's explicit cache is not used here
     model,
-    groundingSources:    groundingSources.length > 0 ? groundingSources.slice(0, 12) : undefined,
+    groundingSources:    resolvedSources.length > 0 ? resolvedSources : undefined,
   }
 }
 
