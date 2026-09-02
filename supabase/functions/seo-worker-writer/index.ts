@@ -114,7 +114,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ── 2. Resolve products_to_mention → permalink+UTM map ──────────────
-    const permalinkMap = await buildPermalinkMap(
+    const { map: permalinkMap, facts: productFactsMap } = await buildPermalinkMap(
       supabase,
       brief.products_to_mention ?? [],
       brief.keyword,
@@ -122,7 +122,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[seo-worker-writer] permalink map size=${Object.keys(permalinkMap).length}`)
 
     // ── 3. Call Claude ──────────────────────────────────────────────────
-    const userMessage = buildWriterUserMessage(brief, permalinkMap)
+    const userMessage = buildWriterUserMessage(brief, permalinkMap, productFactsMap)
     console.log(`[seo-worker-writer] calling ${MODEL_WRITER} keyword="${brief.keyword.slice(0, 60)}"`)
 
     const claudeRes = await callClaude({
@@ -326,13 +326,16 @@ function normalizeForMatch(s: string): string {
 //      roasters), which a consumer article must never link. Ties then go to
 //      the shortest name (most specific).
 // Skips ultra-generic tokens (< 4 letters, e.g. "קפה" alone).
-function bestCatalogMatch(
+// Generic over the catalog row so callers get back whatever they put in —
+// the row now carries `facts` as well as `permalink`, and narrowing the return
+// type here would silently drop it.
+function bestCatalogMatch<T extends { name: string; permalink: string; norm: string }>(
   name: string,
-  catalog: Array<{ name: string; permalink: string; norm: string }>,
-): { name: string; permalink: string } | null {
+  catalog: T[],
+): T | null {
   const q = normalizeForMatch(name)
   if (q.replace(/\s/g, '').length < 4) return null
-  let best: { row: { name: string; permalink: string }; matchScore: number; quality: number; len: number } | null = null
+  let best: { row: T; matchScore: number; quality: number; len: number } | null = null
   for (const row of catalog) {
     let matchScore = 0
     if (row.norm === q) matchScore = 3
@@ -343,11 +346,15 @@ function bestCatalogMatch(
     if (row.norm.includes('minuto'))   quality += 1   // our own roastery line
     if (row.norm.includes('פולי קפה')) quality += 1   // whole roasted beans
     if (row.norm.includes('ירוק'))     quality -= 3   // green/unroasted — wrong for a consumer post
+    // Resold third-party brands. We stock them, we do not ROAST them, so they
+    // must never be the product a Minuto article recommends. A published draft
+    // closed by pushing "Veneto Delux" as if it were ours.
+    if (/veneto|toddy/.test(row.norm))  quality -= 5
     const better = !best
       || matchScore > best.matchScore
       || (matchScore === best.matchScore && quality > best.quality)
       || (matchScore === best.matchScore && quality === best.quality && row.name.length < best.len)
-    if (better) best = { row: { name: row.name, permalink: row.permalink }, matchScore, quality, len: row.name.length }
+    if (better) best = { row, matchScore, quality, len: row.name.length }
   }
   return best ? best.row : null
 }
@@ -361,25 +368,32 @@ async function buildPermalinkMap(
   supabase: ReturnType<typeof createSupabase>,
   rawProducts: unknown,
   keyword: string,
-): Promise<Record<string, string>> {
+): Promise<{ map: Record<string, string>; facts: Record<string, string> }> {
   const items = normalizeProductItems(rawProducts)
-  if (items.length === 0) return {}
+  if (items.length === 0) return { map: {}, facts: {} }
 
   const utmCampaign = slugifyKeyword(keyword)
   const map: Record<string, string> = {}
+  const facts: Record<string, string> = {}
 
   // Catalog snapshot (name + permalink) for fuzzy matching. Only fetched if
   // at least one item needs a lookup (i.e. has no embedded permalink).
   // PostgREST caps a plain select at db-max-rows (1000) and woo_products has
   // more than that, so PAGINATE — otherwise the tail of the catalog (e.g. the
   // Colombian single-origins) is invisible and those products never resolve.
-  let catalog: Array<{ name: string; permalink: string; norm: string }> = []
-  if (items.some(i => !i.permalink)) {
+  // Facts are fetched ALWAYS, not just when a permalink lookup is needed. The
+  // writer previously received only name + URL, so every product ATTRIBUTE it
+  // stated — processing method, origin, altitude, tasting notes — was invented.
+  // A published draft described Jungle Java as anaerobic with passionfruit and
+  // mango; the catalog says washed-profile Tarrazú, Caturra/Typica, chocolate
+  // finish. The facts were in the database the whole time, unread.
+  let catalog: Array<{ name: string; permalink: string; norm: string; facts: string }> = []
+  {
     const PAGE = 1000
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await supabase
         .from('woo_products')
-        .select('name, permalink')
+        .select('name, permalink, short_description, description')
         .range(from, from + PAGE - 1)
       if (error) {
         console.warn(`[seo-worker-writer] woo_products lookup failed: ${error.message}`)
@@ -388,7 +402,12 @@ async function buildPermalinkMap(
       const rows = data ?? []
       for (const r of rows) {
         if (typeof r.permalink === 'string' && r.permalink.length > 0) {
-          catalog.push({ name: r.name as string, permalink: r.permalink, norm: normalizeForMatch(r.name as string) })
+          catalog.push({
+            name:      r.name as string,
+            permalink: r.permalink,
+            norm:      normalizeForMatch(r.name as string),
+            facts:     productFacts(r.short_description, r.description),
+          })
         }
       }
       if (rows.length < PAGE) break
@@ -396,8 +415,9 @@ async function buildPermalinkMap(
   }
 
   for (const item of items) {
-    if (item.permalink) { map[item.name] = withUtm(item.permalink, utmCampaign); continue }
     const match = bestCatalogMatch(item.name, catalog)
+    if (match?.facts) facts[item.name] = match.facts
+    if (item.permalink) { map[item.name] = withUtm(item.permalink, utmCampaign); continue }
     if (match) map[item.name] = withUtm(match.permalink, utmCampaign)
   }
 
@@ -405,7 +425,24 @@ async function buildPermalinkMap(
   if (missing.length > 0) {
     console.log(`[seo-worker-writer] no permalink for: ${missing.join(' | ')}`)
   }
-  return map
+  const factless = items.filter(i => !(i.name in facts)).map(i => i.name)
+  if (factless.length > 0) {
+    console.log(`[seo-worker-writer] NO CATALOG FACTS for: ${factless.join(' | ')} — the prompt will forbid describing them`)
+  }
+  return { map, facts }
+}
+
+// Catalog copy is WordPress HTML. Strip tags/entities and cap the length so a
+// long description cannot crowd out the brief.
+function productFacts(short: unknown, full: unknown): string {
+  const clean = (v: unknown) => String(v ?? '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const text = [clean(short), clean(full)].filter(Boolean).join(' | ')
+  return text.length > 700 ? text.slice(0, 700) + '…' : text
 }
 
 function withUtm(url: string, campaign: string): string {
@@ -475,6 +512,7 @@ function sanitizeHebrew(text: string): string {
 function buildWriterUserMessage(
   brief: TextGenerationBrief,
   permalinkMap: Record<string, string>,
+  productFactsMap: Record<string, string> = {},
 ): string {
   const keyPointsBlock = brief.key_points
     .map((kp, i) => `  ${i + 1}. ${kp}`)
@@ -486,7 +524,14 @@ function buildWriterUserMessage(
     : productNames
         .map(name => {
           const url = permalinkMap[name]
-          return url ? `  • "${name}" → ${url}` : `  • "${name}" → (no permalink in catalog — DROP this product, do not invent a URL)`
+          const f   = productFactsMap[name]
+          const head = url
+            ? `  • "${name}" → ${url}`
+            : `  • "${name}" → (no permalink in catalog — DROP this product, do not invent a URL)`
+          // The ONLY permitted source of attributes for this product.
+          return f
+            ? `${head}\n    CATALOG FACTS: ${f}`
+            : `${head}\n    CATALOG FACTS: (none on file — link the product by name only, state NO attributes)`
         })
         .join('\n')
 
