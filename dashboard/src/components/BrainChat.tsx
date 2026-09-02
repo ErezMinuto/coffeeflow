@@ -35,8 +35,16 @@ export function BrainChat() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
+  // grow the composer with its content (up to ~6 lines) instead of scrolling a single line
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [input])
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40))) }, [messages])
 
   async function send() {
@@ -96,19 +104,24 @@ export function BrainChat() {
         <div ref={endRef} />
       </div>
 
-      <div className="p-3 border-t border-surface-100 flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-          placeholder="שאלו את המוח השיווקי…"
-          disabled={loading}
-          className="flex-1 border border-surface-200 rounded-xl px-3 py-2 text-sm focus:border-brand-400 focus:outline-none disabled:opacity-60"
-        />
-        <button onClick={send} disabled={loading || !input.trim()}
-          className="px-4 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors disabled:opacity-50 cursor-pointer">
-          <Send size={16} />
-        </button>
+      <div className="p-3 border-t border-surface-100">
+        <div className="flex items-end gap-2">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            placeholder="שאלו את המוח השיווקי…"
+            rows={1}
+            disabled={loading}
+            className="flex-1 resize-none overflow-y-auto border border-surface-200 rounded-xl px-3 py-2 text-sm leading-relaxed focus:border-brand-400 focus:outline-none disabled:opacity-60"
+          />
+          <button onClick={send} disabled={loading || !input.trim()}
+            className="px-4 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors disabled:opacity-50 cursor-pointer">
+            <Send size={16} />
+          </button>
+        </div>
+        <div className="text-[10px] text-surface-400 mt-1">Enter לשליחה · Shift+Enter לשורה חדשה</div>
       </div>
     </div>
   )
