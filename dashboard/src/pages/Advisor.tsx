@@ -1212,6 +1212,7 @@ export default function AdvisorPage() {
     try { return JSON.parse(localStorage.getItem(STRATEGIST_STORAGE_KEY) ?? '[]') } catch { return [] }
   })
   const [strategistInput, setStrategistInput]     = useState('')
+  const strategistInputRef = useRef<HTMLTextAreaElement>(null)
   const [strategistLoading, setStrategistLoading] = useState(false)
   const [strategistOpen, setStrategistOpen]       = useState(true)
 
@@ -1224,6 +1225,17 @@ export default function AdvisorPage() {
     try { return JSON.parse(localStorage.getItem(chatKey) ?? '[]') } catch { return [] }
   })
   const [chatInput, setChatInput]   = useState('')
+  const chatInputRef = useRef<HTMLTextAreaElement>(null)
+
+  // composers grow with their content (up to ~6 lines) so multi-line prompts
+  // stay readable instead of scrolling sideways in a one-line field
+  function autoGrow(el: HTMLTextAreaElement | null) {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }
+  useEffect(() => { autoGrow(strategistInputRef.current) }, [strategistInput])
+  useEffect(() => { autoGrow(chatInputRef.current) }, [chatInput])
   const [chatLoading, setChatLoading] = useState(false)
   const [chatOpen, setChatOpen]     = useState(false)
 
@@ -3023,15 +3035,16 @@ export default function AdvisorPage() {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <input
-                type="text"
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={strategistInputRef}
                 value={strategistInput}
                 onChange={e => setStrategistInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendStrategistMessage(); } }}
                 placeholder="Talk to your strategist — e.g. 'Propose Campaign #2'"
+                rows={1}
                 disabled={strategistLoading}
-                className="flex-1 text-sm border border-emerald-300 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+                className="flex-1 text-sm border border-emerald-300 rounded-xl px-3 py-2 bg-white resize-none overflow-y-auto leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
               />
               <button
                 onClick={() => sendStrategistMessage()}
@@ -3050,6 +3063,7 @@ export default function AdvisorPage() {
                 </button>
               )}
             </div>
+            <p className="text-[10px] text-surface-400">Enter to send · Shift+Enter for a newline</p>
           </>
         )}
       </div>
@@ -3120,16 +3134,17 @@ export default function AdvisorPage() {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <input
-                type="text"
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={chatInputRef}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatQuestion(); } }}
                 placeholder="שאל שאלה — לדוגמה 'מה הקמפיין הכי משתלם שלי ב-Google?'"
+                rows={1}
                 disabled={chatLoading}
                 dir="rtl"
-                className="flex-1 text-sm border border-indigo-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-50"
+                className="flex-1 text-sm border border-indigo-200 rounded-xl px-3 py-2 bg-white resize-none overflow-y-auto leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-50"
               />
               <button
                 onClick={() => sendChatQuestion()}
@@ -3149,6 +3164,7 @@ export default function AdvisorPage() {
                 </button>
               )}
             </div>
+            <p className="text-[10px] text-surface-400" dir="rtl">Enter לשליחה · Shift+Enter לשורה חדשה</p>
             <p className="text-[10px] text-surface-400" dir="rtl">
               מבוסס על הנתונים של השבוע הזה ({selectedWeek}) — הסוכנים, הקמפיינים, ומחקר השוק. היסטוריה נשמרת בדפדפן.
             </p>
