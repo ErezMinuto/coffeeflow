@@ -88,6 +88,35 @@ serve(async (req) => {
       let listError: string | null = null
       try { accessible = await listAccessibleCustomers(bare) }
       catch (e: unknown) { listError = e instanceof Error ? e.message : String(e) }
+      // The shopping settings of campaigns already running — the ground truth
+      // for which Merchant Center account and feed label a new Performance Max
+      // campaign should point at.
+      let shopping: unknown[] = []
+      let shoppingError: string | null = null
+      try {
+        const ctxFull = await loadAdsContext(supabase)
+        const rows = await gaql(ctxFull, `
+          SELECT campaign.id, campaign.name, campaign.status,
+                 campaign.advertising_channel_type,
+                 campaign.shopping_setting.merchant_id,
+                 campaign.shopping_setting.feed_label
+          FROM campaign
+          WHERE campaign.advertising_channel_type IN ('SHOPPING', 'PERFORMANCE_MAX')
+            AND campaign.status != 'REMOVED'
+          ORDER BY campaign.id DESC
+        `, 'shopping_settings')
+        shopping = (rows as any[])
+          .filter((r) => r.campaign?.shoppingSetting?.merchantId)
+          .map((r) => ({
+            campaign_id: String(r.campaign.id),
+            name: r.campaign.name,
+            status: r.campaign.status,
+            channel_type: r.campaign.advertisingChannelType,
+            merchant_id: String(r.campaign.shoppingSetting.merchantId),
+            feed_label: r.campaign.shoppingSetting.feedLabel ?? null,
+          }))
+      } catch (e: unknown) { shoppingError = e instanceof Error ? e.message : String(e) }
+
       return json({
         ok: true,
         configured_customer_id: bare.customerId,
@@ -96,6 +125,8 @@ serve(async (req) => {
         accessible_customers: accessible,
         configured_customer_is_accessible: accessible.includes(bare.customerId),
         list_error: listError,
+        shopping_campaigns: shopping,
+        shopping_error: shoppingError,
       })
     }
 
@@ -119,6 +150,8 @@ serve(async (req) => {
         conversion_tracking_status: ctx.conversionTrackingStatus,
         conversion_tracking_active: ctx.conversionTrackingActive,
         merchant_id: ctx.merchantId ?? null,
+        merchant_feed_label: ctx.merchantFeedLabel,
+        merchant_ids_seen_in_account: ctx.merchantCandidates,
         merchant_center_linked: !!ctx.merchantId,
         channel_types_in_account: await accountChannelTypes(ctx),
         daily_cap_ils: dailyCap(),
@@ -620,6 +653,10 @@ interface AdsContext {
   conversionTrackingStatus: string | null
   conversionTrackingActive: boolean
   merchantId: string | null
+  // Merchant Center feed label the account's own campaigns use ('IL' here).
+  // shopping_setting is rejected without the label matching the feed.
+  merchantFeedLabel: string | null
+  merchantCandidates: string[]
 }
 
 // Credentials and ids only — no Google call beyond the token refresh. Split out
@@ -655,6 +692,8 @@ async function bareContext(supabase: SupabaseLike): Promise<AdsContext> {
     conversionTrackingStatus: null,
     conversionTrackingActive: false,
     merchantId: Deno.env.get('GOOGLE_MERCHANT_ID')?.trim() || null,
+    merchantFeedLabel: Deno.env.get('GOOGLE_MERCHANT_FEED_LABEL')?.trim() || null,
+    merchantCandidates: [],
   }
 }
 
@@ -715,15 +754,35 @@ async function loadAdsContext(supabase: SupabaseLike): Promise<AdsContext> {
   if (!ctx.merchantId) {
     try {
       const linked = await gaql(ctx, `
-        SELECT campaign.shopping_setting.merchant_id
+        SELECT campaign.id, campaign.status,
+               campaign.advertising_channel_type,
+               campaign.shopping_setting.merchant_id,
+               campaign.shopping_setting.feed_label
         FROM campaign
         WHERE campaign.advertising_channel_type IN ('SHOPPING', 'PERFORMANCE_MAX')
           AND campaign.status != 'REMOVED'
-        LIMIT 20
+        ORDER BY campaign.id DESC
       `, 'merchant_id_discovery')
-      for (const r of linked as any[]) {
-        const id = r.campaign?.shoppingSetting?.merchantId
-        if (id) { ctx.merchantId = String(id); break }
+
+      // This account carries several merchant ids accumulated over the years,
+      // most of them on long-paused campaigns whose links are dead. Prefer an
+      // ENABLED campaign, then the most recently created one (campaign ids
+      // ascend over time), so we land on the link that is actually current.
+      const candidates = (linked as any[])
+        .filter((r) => r.campaign?.shoppingSetting?.merchantId)
+        .map((r) => ({
+          id: String(r.campaign.shoppingSetting.merchantId),
+          feedLabel: r.campaign.shoppingSetting.feedLabel ?? null,
+          enabled: r.campaign.status === 'ENABLED',
+          campaignId: Number(r.campaign.id ?? 0),
+        }))
+        .sort((a, b) => (Number(b.enabled) - Number(a.enabled)) || (b.campaignId - a.campaignId))
+
+      if (candidates.length) {
+        ctx.merchantId = candidates[0].id
+        ctx.merchantFeedLabel = candidates[0].feedLabel
+        ctx.merchantCandidates = [...new Set(candidates.map((c) => c.id))]
+        console.log(`[google-ads-draft] merchant id ${ctx.merchantId} (feed ${ctx.merchantFeedLabel}) from campaign ${candidates[0].campaignId}, enabled=${candidates[0].enabled}; other ids seen: ${ctx.merchantCandidates.join(', ')}`)
       }
     } catch (e) {
       console.log('[google-ads-draft] merchant id discovery failed:', e instanceof Error ? e.message : e)
@@ -1105,7 +1164,8 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
   const merchantId = String(spec.merchant_id ?? ctx.merchantId ?? '').trim()
   if (merchantId) {
     campaign.shoppingSetting = { merchantId }
-    if (spec.feed_label) campaign.shoppingSetting.feedLabel = String(spec.feed_label)
+    const feedLabel = spec.feed_label ?? ctx.merchantFeedLabel
+    if (feedLabel) campaign.shoppingSetting.feedLabel = String(feedLabel)
   } else {
     warnings.push('no Merchant Center id (spec.merchant_id / GOOGLE_MERCHANT_ID) — building an asset-group-only PMax campaign with no product feed')
   }
