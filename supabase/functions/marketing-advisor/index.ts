@@ -3076,7 +3076,7 @@ ${postsBlock}
               description: "The ad text. Google COUNTS CHARACTERS and rejects anything over the limit — Hebrew is dense, so count before you propose.",
               properties: {
                 headlines: { type: "array", items: { type: "string" }, description: "3-15 headlines, each ≤30 characters. Required for both campaign types." },
-                descriptions: { type: "array", items: { type: "string" }, description: "2-4 descriptions (Search) or 2-5 (PMax), each ≤90 characters." },
+                descriptions: { type: "array", items: { type: "string" }, description: "2-4 descriptions (Search) or 2-5 (PMax), each ≤90 characters. FOR PMAX: at least one of them must ALSO be ≤60 characters — Google rejects an asset group with no short description." },
                 long_headlines: { type: "array", items: { type: "string" }, description: "PMAX ONLY, required. 1-5 long headlines, each ≤90 characters." },
                 business_name: { type: "string", description: "PMAX ONLY. ≤25 characters. Defaults to 'Minuto'." },
                 logo_url: { type: "string", description: "PMAX ONLY, required. PUBLIC image URL. Must be exactly 1:1, minimum 128×128." },

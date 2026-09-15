@@ -21,6 +21,7 @@ import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 //
 // Body: { action, idea_id?, spec?, validate_only?, ... }
 //   dry_run        account context + a validateOnly mutate of the real spec
+//   accounts       which customers this OAuth connection can actually reach
 //   create         the full chain
 //   insights       live per-campaign performance (GAQL)
 //   search_terms   what people actually typed — feeds negative keywords
@@ -39,10 +40,14 @@ const LANG_ENGLISH = 'languageConstants/1000'
 
 // Google's hard limits on ad text. Exceeding any of these is a mutate error,
 // so we truncate + warn rather than letting the API reject the whole batch.
+// Google requires every campaign to declare this since v24.
+const NOT_POLITICAL = 'DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING'
+
 const RSA_HEADLINE_MAX = 30
 const RSA_DESCRIPTION_MAX = 90
 const PMAX_LONG_HEADLINE_MAX = 90
 const PMAX_BUSINESS_NAME_MAX = 25
+const PMAX_SHORT_DESCRIPTION_MAX = 60
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -56,13 +61,13 @@ serve(async (req) => {
   try {
     const body = await req.json()
     const action = body.action as
-      | 'dry_run' | 'create' | 'insights' | 'search_terms'
+      | 'dry_run' | 'create' | 'insights' | 'search_terms' | 'accounts'
       | 'update_campaign' | 'update_targeting' | 'list' | 'delete' | 'spend'
     const ideaId = String(body.idea_id ?? '').trim()
     const spec = body.spec
 
     if (!action) {
-      throw new Error("'action' is required (dry_run|create|insights|search_terms|update_campaign|update_targeting|list|delete|spend)")
+      throw new Error("'action' is required (dry_run|accounts|create|insights|search_terms|update_campaign|update_targeting|list|delete|spend)")
     }
     if (action === 'create' && !ideaId) throw new Error("'idea_id' is required for create")
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
@@ -73,6 +78,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
+
+    // ── accounts ── which customers this OAuth connection can actually reach.
+    // Answered WITHOUT loading the account context, because the reason to ask
+    // is usually that the configured customer is the one being refused.
+    if (action === 'accounts') {
+      const bare = await bareContext(supabase)
+      let accessible: string[] = []
+      let listError: string | null = null
+      try { accessible = await listAccessibleCustomers(bare) }
+      catch (e: unknown) { listError = e instanceof Error ? e.message : String(e) }
+      return json({
+        ok: true,
+        configured_customer_id: bare.customerId,
+        configured_login_customer_id: bare.configuredLoginCustomerId,
+        oauth_account: bare.oauthAccountName,
+        accessible_customers: accessible,
+        configured_customer_is_accessible: accessible.includes(bare.customerId),
+        list_error: listError,
+      })
+    }
 
     const ctx = await loadAdsContext(supabase)
 
@@ -85,6 +110,9 @@ serve(async (req) => {
       const out: Record<string, unknown> = {
         ok: true,
         customer_id: ctx.customerId,
+        // Non-null means the account sits under a manager. Set it as
+        // GOOGLE_LOGIN_CUSTOMER_ID to skip the discovery round-trip.
+        login_customer_id: ctx.loginCustomerId,
         descriptive_name: ctx.descriptiveName,
         currency: ctx.currency,
         time_zone: ctx.timeZone,
@@ -458,11 +486,20 @@ serve(async (req) => {
     // Dedup — re-running the same idea_id returns the existing draft instead of
     // creating a twin. Verify it still exists in Google first, so the row
     // self-heals after the owner deletes the campaign in the UI.
-    const { data: existing } = await supabase
+    //
+    // This doubles as the bookkeeping preflight. The Google mutate is atomic but
+    // it is NOT undoable, so if the drafts table were missing we would create a
+    // real campaign and only then fail to record it — an orphan nobody can dedup
+    // against. Fail here, before anything is written.
+    const { data: existing, error: draftsErr } = await supabase
       .from('google_ad_drafts')
       .select('*')
       .eq('idea_id', ideaId)
       .maybeSingle()
+
+    if (draftsErr) {
+      throw new Error(`cannot reach the google_ad_drafts table (${draftsErr.message}) — refusing to create a campaign we could not record. Apply the 20260915_google_ad_drafts migration first.`)
+    }
 
     if (existing) {
       const stillThere = await campaignExists(ctx, String(existing.campaign_id))
@@ -571,7 +608,12 @@ interface AdsContext {
   customerId: string
   accessToken: string
   devToken: string
+  // The header we actually send. Starts null: this account is reachable
+  // directly, and naming a manager the OAuth user cannot reach is itself a
+  // permission error. Only set when direct access is refused.
   loginCustomerId: string | null
+  configuredLoginCustomerId: string | null
+  oauthAccountName: string | null
   descriptiveName: string | null
   currency: string
   timeZone: string
@@ -580,13 +622,15 @@ interface AdsContext {
   merchantId: string | null
 }
 
-async function loadAdsContext(supabase: SupabaseLike): Promise<AdsContext> {
+// Credentials and ids only — no Google call beyond the token refresh. Split out
+// so the `accounts` diagnostic can run even when the configured customer is the
+// thing being refused.
+async function bareContext(supabase: SupabaseLike): Promise<AdsContext> {
   const devToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN')
   if (!devToken) throw new Error('GOOGLE_DEVELOPER_TOKEN not set')
 
   const rawCustomerId = Deno.env.get('GOOGLE_CUSTOMER_ID')
   if (!rawCustomerId) throw new Error('GOOGLE_CUSTOMER_ID not set')
-  const customerId = rawCustomerId.replace(/-/g, '')
 
   const { data: tokenRow } = await supabase
     .from('oauth_tokens').select('*').eq('platform', 'google').single()
@@ -598,11 +642,13 @@ async function loadAdsContext(supabase: SupabaseLike): Promise<AdsContext> {
     expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
   }).eq('platform', 'google')
 
-  const ctx: AdsContext = {
-    customerId,
+  return {
+    customerId: rawCustomerId.replace(/-/g, ''),
     accessToken,
     devToken,
-    loginCustomerId: Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID')?.replace(/-/g, '') ?? null,
+    loginCustomerId: null,
+    configuredLoginCustomerId: Deno.env.get('GOOGLE_LOGIN_CUSTOMER_ID')?.replace(/-/g, '') || null,
+    oauthAccountName: (tokenRow as any).account_name ?? null,
     descriptiveName: null,
     currency: 'unknown',
     timeZone: 'Asia/Jerusalem',
@@ -610,16 +656,79 @@ async function loadAdsContext(supabase: SupabaseLike): Promise<AdsContext> {
     conversionTrackingActive: false,
     merchantId: Deno.env.get('GOOGLE_MERCHANT_ID')?.trim() || null,
   }
+}
+
+async function loadAdsContext(supabase: SupabaseLike): Promise<AdsContext> {
+  const ctx = await bareContext(supabase)
+  const customerId = ctx.customerId
 
   // Live account facts — authoritative, and cheap. The budget guard compares ₪
   // against these, so reading them from a stale sync table would be wrong.
-  const rows = await gaql(ctx, `
+  const contextQuery = `
     SELECT customer.id, customer.descriptive_name, customer.currency_code,
            customer.time_zone,
            customer.conversion_tracking_setting.conversion_tracking_status
     FROM customer
     LIMIT 1
-  `, 'customer_context')
+  `
+  // Try direct access first, then fall back through the manager candidates.
+  // An account under a manager (MCC) refuses any call that doesn't name that
+  // manager in login-customer-id — but naming a manager the OAuth user cannot
+  // reach is ALSO a permission error, so the configured id is a candidate to
+  // try rather than a value to trust.
+  let rows: any[] | null = null
+  let firstError = ''
+  const attempts: Array<string | null> = [null]
+  if (ctx.configuredLoginCustomerId) attempts.push(ctx.configuredLoginCustomerId)
+
+  for (const candidate of attempts) {
+    ctx.loginCustomerId = candidate
+    try { rows = await gaql(ctx, contextQuery, 'customer_context'); break }
+    catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (!firstError) firstError = msg
+      if (!msg.includes('USER_PERMISSION_DENIED')) throw e
+    }
+  }
+
+  // Still refused — ask Google which accounts this connection can reach and
+  // try each as the manager, so a real MCC setup works without configuration.
+  if (!rows) {
+    const discovered = (await listAccessibleCustomers(ctx))
+      .filter((id) => id !== customerId && !attempts.includes(id))
+    for (const managerId of discovered) {
+      ctx.loginCustomerId = managerId
+      try { rows = await gaql(ctx, contextQuery, 'customer_context'); break }
+      catch { /* next candidate */ }
+    }
+    if (!rows) {
+      ctx.loginCustomerId = null
+      throw new Error(`${firstError} — customer ${customerId} refused directly${ctx.configuredLoginCustomerId ? `, and via the configured manager ${ctx.configuredLoginCustomerId}` : ''}${discovered.length ? `, and via ${discovered.join(', ')}` : ''}. Check GOOGLE_CUSTOMER_ID and GOOGLE_LOGIN_CUSTOMER_ID, or re-authorise Google with a user who has access.`)
+    }
+  }
+  if (ctx.loginCustomerId) console.log(`[google-ads-draft] using manager account ${ctx.loginCustomerId} for customer ${customerId}`)
+
+  // Merchant Center id for Performance Max. When it isn't configured, read it
+  // off a Shopping or PMax campaign that is already running — the account is a
+  // better source of truth than an env var somebody has to keep in sync, and it
+  // guarantees a new PMax campaign points at the same feed as the existing ones.
+  if (!ctx.merchantId) {
+    try {
+      const linked = await gaql(ctx, `
+        SELECT campaign.shopping_setting.merchant_id
+        FROM campaign
+        WHERE campaign.advertising_channel_type IN ('SHOPPING', 'PERFORMANCE_MAX')
+          AND campaign.status != 'REMOVED'
+        LIMIT 20
+      `, 'merchant_id_discovery')
+      for (const r of linked as any[]) {
+        const id = r.campaign?.shoppingSetting?.merchantId
+        if (id) { ctx.merchantId = String(id); break }
+      }
+    } catch (e) {
+      console.log('[google-ads-draft] merchant id discovery failed:', e instanceof Error ? e.message : e)
+    }
+  }
   const c = (rows as any[])[0]?.customer ?? {}
   ctx.descriptiveName = c.descriptiveName ?? null
   ctx.currency = c.currencyCode ?? 'unknown'
@@ -721,6 +830,19 @@ function googleErrorMessage(error: any): string {
   }
   if (!parts.length) return String(error?.message ?? JSON.stringify(error)).slice(0, 500)
   return parts.join(' | ').slice(0, 900)
+}
+
+// Every customer the OAuth user can reach, as bare ids. Unlike every other
+// call this one takes no customer in the path, so it works even when the
+// configured customer is unreachable — which is exactly when we need it.
+async function listAccessibleCustomers(ctx: AdsContext): Promise<string[]> {
+  const res = await fetch(`${ADS_API}/customers:listAccessibleCustomers`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${ctx.accessToken}`, 'developer-token': ctx.devToken },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (data.error) throw new Error(`listAccessibleCustomers: ${googleErrorMessage(data.error)}`)
+  return ((data.resourceNames ?? []) as string[]).map((rn) => rn.split('/').pop() ?? '').filter(Boolean)
 }
 
 async function campaignExists(ctx: AdsContext, campaignId: string): Promise<boolean> {
@@ -832,6 +954,9 @@ function buildSearch(ctx: AdsContext, spec: any, ideaId: string): BuiltOperation
         status: 'PAUSED',
         advertisingChannelType: 'SEARCH',
         campaignBudget: `customers/${cid}/campaignBudgets/${TMP.budget}`,
+        // Required on every campaign since v24 (EU political advertising
+        // regulation). Minuto sells coffee, so this is always a flat no.
+        containsEuPoliticalAdvertising: NOT_POLITICAL,
         ...strategy,
         // Search + search partners, but never the Display network: Display on a
         // Search campaign spends the budget on low-intent placements.
@@ -968,11 +1093,13 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
     status: 'PAUSED',
     advertisingChannelType: 'PERFORMANCE_MAX',
     campaignBudget: `customers/${cid}/campaignBudgets/${TMP.budget}`,
+    containsEuPoliticalAdvertising: NOT_POLITICAL,
     ...strategy,
-    // Final-URL expansion lets Google send traffic to pages we did not pick.
-    // Default it OFF so the ad goes where the strategist said it goes.
-    urlExpansionOptOut: spec.url_expansion !== true,
   }
+  // Final-URL expansion lets Google send traffic to pages nobody picked. v24
+  // exposes no campaign field for it, so it cannot be set here — say so rather
+  // than let the owner assume the destination is pinned.
+  warnings.push('final URL expansion cannot be set through the API on this version — check "Final URL expansion" in the Google Ads UI before enabling this campaign, or it may send traffic to pages you did not choose')
   // Attaching the Merchant Center feed is what makes PMax a retail campaign
   // rather than a plain asset-group campaign.
   const merchantId = String(spec.merchant_id ?? ctx.merchantId ?? '').trim()
@@ -1021,6 +1148,13 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
   if (headlines.length < 3) throw new Error(`Performance Max needs at least 3 headlines of ≤${RSA_HEADLINE_MAX} chars — got ${headlines.length}`)
   if (!longHeadlines.length) throw new Error(`Performance Max needs at least 1 long headline of ≤${PMAX_LONG_HEADLINE_MAX} chars`)
   if (descriptions.length < 2) throw new Error(`Performance Max needs at least 2 descriptions of ≤${RSA_DESCRIPTION_MAX} chars — got ${descriptions.length}`)
+  // Undocumented in the asset-requirements table but enforced by the API: an
+  // asset group must carry at least one SHORT description. Without it Google
+  // rejects the group as incomplete, confusingly reporting NOT_ENOUGH errors
+  // for headlines too.
+  if (!descriptions.some((d) => d.length <= PMAX_SHORT_DESCRIPTION_MAX)) {
+    throw new Error(`Performance Max needs at least one SHORT description of ≤${PMAX_SHORT_DESCRIPTION_MAX} characters in addition to the longer ones. The shortest supplied is ${Math.min(...descriptions.map((d) => d.length))} chars.`)
+  }
   if (headlines.length > 15) { warnings.push(`trimmed ${headlines.length} headlines to Google's maximum of 15`); headlines.length = 15 }
   if (longHeadlines.length > 5) { warnings.push(`trimmed ${longHeadlines.length} long headlines to Google's maximum of 5`); longHeadlines.length = 5 }
   if (descriptions.length > 5) { warnings.push(`trimmed ${descriptions.length} descriptions to Google's maximum of 5`); descriptions.length = 5 }
@@ -1037,6 +1171,21 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       },
     })
   }
+  // Brand Guidelines (an account-level PMax setting) moves the business name
+  // and the square logo off the asset group and onto the CAMPAIGN. An account
+  // with it enabled rejects a campaign whose brand assets are only linked at
+  // asset-group level, so those two are linked in both places.
+  const linkCampaign = (assetTmp: number, fieldType: string) => {
+    ops.push({
+      campaignAssetOperation: {
+        create: {
+          campaign: `customers/${cid}/campaigns/${TMP.campaign}`,
+          asset: `customers/${cid}/assets/${assetTmp}`,
+          fieldType,
+        },
+      },
+    })
+  }
   const addText = (text: string, fieldType: string) => {
     const rn = tmpAsset--
     ops.push({
@@ -1045,12 +1194,13 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       },
     })
     link(rn, fieldType)
+    return rn
   }
 
   for (const h of headlines) addText(h, 'HEADLINE')
   for (const h of longHeadlines) addText(h, 'LONG_HEADLINE')
   for (const d of descriptions) addText(d, 'DESCRIPTION')
-  addText(businessName, 'BUSINESS_NAME')
+  linkCampaign(addText(businessName, 'BUSINESS_NAME'), 'BUSINESS_NAME')
 
   // ── Image assets ──
   // Google's minimum viable PMax asset set is one 1:1 logo, one 1.91:1
@@ -1091,6 +1241,7 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       },
     })
     link(rn, slot.fieldType)
+    if (slot.fieldType === 'LOGO') linkCampaign(rn, 'LOGO')
   }
   if (missing.length) {
     throw new Error(`Performance Max needs image assets Google will not auto-generate. Missing: ${missing.join('; ')}. Pass them as creative.logo_url / creative.marketing_image_url / creative.square_marketing_image_url.`)
