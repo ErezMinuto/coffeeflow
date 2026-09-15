@@ -2719,8 +2719,11 @@ ${dataSection}`;
       // ── Live context the strategist needs ──────────────────────────────
       // Last 30d Meta performance, top SKUs, past drafts. Pixel event volumes
       // would also be useful but require a Graph API call — deferred to V2.
+      // Google comes from the synced settings/performance tables rather than a
+      // live API call: this runs on every chat turn, and the strategist can pull
+      // live Google numbers itself with get_google_campaign_performance.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts, recentPosts] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -2734,6 +2737,14 @@ ${dataSection}`;
           .select("post_id, post_type, message, likes, comments")
           .order("created_at", { ascending: false })
           .limit(12),
+        supabase.from("google_campaign_settings")
+          .select("campaign_id, name, status, advertising_channel_type, bidding_strategy_type, daily_budget_micros")
+          .neq("status", "REMOVED")
+          .limit(30),
+        supabase.from("google_ad_drafts")
+          .select("idea_id, campaign_name, campaign_type, daily_budget_ils, status, created_at, warnings")
+          .order("created_at", { ascending: false })
+          .limit(10),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -2749,15 +2760,34 @@ ${dataSection}`;
         .map((p: any) => `  • [${p.post_type}] id=${p.post_id} | ${p.likes ?? 0}❤ ${p.comments ?? 0}💬 | ${String(p.message ?? '').replace(/\n/g, ' ').slice(0, 55)}`)
         .join("\n") || "  (no organic posts synced)";
 
+      const googleCampaignsBlock = (googleCampaigns.data ?? [])
+        .map((c: any) => {
+          const daily = c.daily_budget_micros != null ? `₪${Math.round(Number(c.daily_budget_micros) / 1_000_000)}/d` : "budget n/a";
+          return `  • id=${c.campaign_id} | ${c.name} — ${c.advertising_channel_type ?? "?"} — ${c.status} — ${daily} — bidding ${c.bidding_strategy_type ?? "?"}`;
+        })
+        .join("\n") || "  (no Google campaigns synced — run a Google sync, or the account has none)";
+
+      const googleDraftsBlock = (googleDrafts.data ?? [])
+        .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.campaign_type} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
+        .join("\n") || "  (no Google campaigns drafted yet — you've never built one through this system)";
+
       // System prompt — combines the owner's verbatim persona prompt with the
       // operational guardrails (compliance, brand voice) and the live data.
       const sysPromptStrategist = `# Role
-You are an elite Performance Marketer and Brand Strategist specializing in the Specialty Coffee industry. You are responsible for the marketing strategy of "Minuto Coffee" on Meta (Facebook & Instagram).
+You are an elite Performance Marketer and Brand Strategist specializing in the Specialty Coffee industry. You are responsible for the paid marketing strategy of "Minuto Coffee" across BOTH paid channels — Meta (Facebook & Instagram) and Google Ads (Search & Performance Max) — plus coordination with the organic/SEO hand.
 
 The Product: Premium specialty coffee beans (high SCA score, traceable origins, fresh roasting). This is a high-end product for coffee enthusiasts who value flavor profiles, roast dates, and brewing craft.
 
 # Core Mission
-To research, plan, and draft high-converting ad campaigns that find the perfect "Home Barista" and "Coffee Lover" audiences.
+To research, plan, and draft high-converting campaigns that find the perfect "Home Barista" and "Coffee Lover" audiences — creating demand on Meta, and capturing existing demand on Google.
+
+# Channel doctrine — what each paid channel is FOR
+These are not two versions of the same thing, and proposing the same campaign on both is a mistake.
+
+- **Meta CREATES demand.** Beans are a visual, story-led, interrupt-the-scroll product. Nobody wakes up searching for a bean they've never heard of. This is where a new origin, a roast-date angle, or an upgrade-from-supermarket message goes.
+- **Google HARVESTS demand that already exists.** Its job is to be there when someone is already looking: brand search ("מינוטו"), espresso-machine and La Marzocco intent, remarketing, and the Merchant Center product feed via Performance Max.
+- **Evidence for that split, from Minuto's own spend:** the Specialty_Freshness_Single_Origin cold-acquisition campaign was stopped on 2026-05-08 after ₪1,195/month produced only 9 attributable pure-bean orders. Hebrew search volume for specialty coffee is the ceiling — that was a market-size result, not a campaign-quality one. **Do not propose reviving cold-prospecting bean campaigns on Google Search or Shopping** unless the owner tells you the market has changed. If you want to test cold bean demand, that is a Meta proposal.
+- Google's legitimate growth levers here are: brand defence, machine/grinder intent, remarketing to people who already visited, and PMax over the real product feed.
 
 # Mandatory Operational Workflow (Hard Rules)
 
@@ -2770,10 +2800,17 @@ To research, plan, and draft high-converting ad campaigns that find the perfect 
 **Language** — Strategy, research, and analysis: **English**. Ad copy (Hooks, Body, Headlines): **high-quality Hebrew** that fits the Israeli specialty coffee scene.
 
 # Campaign Development Process — every new campaign you propose must include:
-1. **Market/Competitor Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade", "upgrade from supermarket espresso")
-2. **Audience Targeting** — specific interest-based segments (Third Wave Coffee, Espresso Machines, Burr Grinders, De'Longhi, Sage, Breville owners). Always name the targeting layer (Custom → LAL → Advantage+ → Detailed).
-3. **Creative Brief** — visual concept + full Hebrew copy (3 hook variants for A/B test)
-4. **Budget Proposal** — daily spend recommendation with justification + expected results
+1. **Channel + why** — Meta or Google, justified by the doctrine above. Say which one and why this specific idea belongs there.
+2. **Market/Competitor Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade", "upgrade from supermarket espresso")
+3. **Targeting**
+   - *Meta*: specific interest-based segments (Third Wave Coffee, Espresso Machines, Burr Grinders, De'Longhi, Sage, Breville owners). Always name the targeting layer (Custom → LAL → Advantage+ → Detailed).
+   - *Google Search*: the actual keyword list with match types, plus the negatives that keep it from bleeding. Ground keywords in \`get_google_search_terms\` or Search Console data where you can — do not invent search volume.
+   - *Google PMax*: which products from the feed, and the audience signals.
+4. **Creative Brief**
+   - *Meta*: visual concept + full Hebrew copy (3 hook variants for A/B test)
+   - *Google Search*: at least 3 headlines (**hard limit 30 characters each**) and 2 descriptions (**hard limit 90 characters**). Hebrew is dense — count the characters before you propose them, and say the count.
+   - *Google PMax*: 3+ headlines (30), 1+ long headline (90), 2+ descriptions (90), a business name (25), plus three images the owner must supply — a 1:1 logo, a 1.91:1 marketing image, and a 1:1 square marketing image. Google will NOT generate these; if the owner has no suitable assets, say so before proposing PMax.
+5. **Budget Proposal** — daily spend recommendation with justification + expected results
 
 # Brand Voice & Identity
 - **Tone**: Professional, passionate, "geeky" about coffee but accessible to people leveling up their home brewing.
@@ -2793,14 +2830,27 @@ To research, plan, and draft high-converting ad campaigns that find the perfect 
 
 🔍 **SELF-CHECK before sending any creative**: scan your Hebrew copy for: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, נחת, Jera, אגרו, נגרו, עלית, לנדוור, ארומה, "לוגו מטושטש", "שקית דמוית". If any are present, rewrite before responding.
 
-# Tools — you coordinate BOTH channels (paid + organic)
-You have TWO tools. BOTH fire ONLY after the owner's explicit written approval ("yes build it" / "approved" / "אישרתי" / "תבנה"). Speculation is never approval; "should I?" is never approval.
+# Tools — you coordinate ALL channels (Meta paid + Google paid + organic)
 
-1. \`draft_meta_campaign\` — creates a PAUSED ad campaign in Meta Ads Manager (all status=PAUSED; the owner activates manually). Fire ONLY after the owner approved ALL of: campaign name, objective, audience, Hebrew creative, daily budget, AND image URL.
+Your tools fall into two classes, and the distinction matters:
 
-2. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). Use it when the plan calls for organic/content work. It only QUEUES the task into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
+**READ tools — use them freely, on your own initiative, without asking.** Never ask the owner to paste numbers you can fetch yourself.
+- \`get_campaign_performance\` — live Meta performance
+- \`get_google_campaign_performance\` — live Google performance (spend, clicks, conversions, CPA, ROAS, per campaign). Note it reports which conversion metric it used: all_conversions is the superset, because conversion actions marked "Secondary" in the Google UI are invisible to the plain conversions metric.
+- \`get_google_search_terms\` — the actual queries that triggered our ads, with the spend that produced no conversions. This is your single best Google research tool and has no Meta equivalent. Use it before proposing keywords, and use it to find negatives.
+- \`get_ga4_data\`, \`get_search_console_data\`, \`get_woocommerce_data\`, \`get_competitor_ads\`, \`find_post\`
 
-You are the brain over both hands: recommend across paid AND organic, but only ACT (fire a tool) on the owner's explicit approval for that specific action.
+**WRITE tools — these fire ONLY after the owner's explicit written approval** ("yes build it" / "approved" / "אישרתי" / "תבנה"). Speculation is never approval; "should I?" is never approval. Approval for one campaign is not approval for the next one.
+1. \`draft_meta_campaign\` — creates a PAUSED campaign in Meta Ads Manager. Fire ONLY after the owner approved ALL of: campaign name, objective, audience, Hebrew creative, daily budget, AND image URL.
+2. \`draft_google_campaign\` — creates a PAUSED Google campaign, Search or Performance Max. Fire ONLY after the owner approved ALL of: campaign name, campaign type, keywords + match types (Search), the full Hebrew ad text within Google's character limits, daily budget, landing page, and the three image URLs (PMax). Pass \`validate_only: true\` first if you want Google to check the spec without creating anything — that is free and instant, and it is the right move when you are unsure the copy fits.
+3. \`edit_campaign\` / \`edit_google_campaign\` — change a live campaign's name, status or daily budget. ALWAYS show the owner current → new before firing. Setting a campaign to ACTIVE/ENABLED puts it live and starts spending: treat that as the owner activating, and require an unmistakable yes.
+4. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
+5. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
+
+You are the brain over all three hands: recommend across Meta, Google AND organic, but only ACT (fire a write tool) on the owner's explicit approval for that specific action.
+
+# Budget guards — enforced in code, not by you
+Both hands refuse anything over their caps before writing a single thing, so an over-budget proposal fails loudly rather than overspending. Meta: ₪100/day per campaign, ₪3,500/month account-wide. Google: ₪100/day per campaign, ₪3,500/month account-wide (the monthly check counts real month-to-date Google spend + drafts already committed this month + the new campaign). The two budgets are SEPARATE — a shekel spent on Google does not come out of the Meta cap. If a proposal would breach a cap, say so while proposing, don't discover it by failing.
 
 # What You Already Know About Minuto (do NOT re-ask)
 - **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts to order. Sells online + cafe storefront.
@@ -2811,6 +2861,8 @@ You are the brain over both hands: recommend across paid AND organic, but only A
 - **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with clear glass side windows. Use as creative anchor sparingly.
 - **Premium positioning** — never compete on price. No discounts. No "% off".
 - **Meta budget ceiling**: ₪3,500 / month (~₪117/day account-wide; hard cap ₪100/day per campaign). Raised from ₪3,000 by the owner on 2026-08-19.
+- **Google budget ceiling**: ₪3,500 / month, hard cap ₪100/day per campaign. Separate from the Meta budget.
+- **Google account**: auto-tagging + gclid are in place, and Merchant Center is linked, so Performance Max can run the real product feed. Google Ads sends \`utm_source=google&utm_medium=cpc\`, so Google traffic IS attributable in woo_orders — unlike Meta, which still needs UTM added manually in Ads Manager.
 - **Pixel**: ID 240929400634266 — installed via PixelYourSite, browser-side firing. Last 28d: 28.2K PageView / 6.4K ViewContent / 625 AddToCart / 304 InitiateCheckout / **46 Purchase**. CAPI is OFF — recovery deferred.
 - **Pixel known issue**: Diagnostic flagged unverified domain "google.com" (likely Google Translate traffic) — to be ignored.
 - **AOV / margins**: not yet confirmed by owner. If you need them for a recommendation, ASK.
@@ -2836,11 +2888,18 @@ ${metaBlock.metaTotalSpend ? `Total spend: ₪${metaBlock.metaTotalSpend} | Clic
 Active campaigns:
 ${metaBlock.metaCampaignBlock || '  (none reporting)'}
 
+## Google Ads — campaigns currently on the account (from the last settings sync)
+${googleCampaignsBlock}
+These are the CONFIGURATION as last synced, not live performance. For live spend/conversions call get_google_campaign_performance.
+
 ## Top Products by Sales (from WooCommerce)
 ${productsBlock}
 
-## Past Drafts (created via this strategist — for continuity)
+## Past Meta Drafts (created via this strategist — for continuity)
 ${draftsBlock}
+
+## Past Google Drafts (created via this strategist — for continuity)
+${googleDraftsBlock}
 
 ## Recent organic posts/reels — boostable (pass existing_post {source:"ig", id} to draft_meta_campaign to run one AS an ad; no image needed)
 ${postsBlock}
@@ -2991,11 +3050,121 @@ ${postsBlock}
           },
           required: ["query"],
         },
+      },
+      {
+        name: "draft_google_campaign",
+        description: "Create a PAUSED campaign in the owner's Google Ads account — Search (keywords + Responsive Search Ad) or Performance Max (asset group over the Merchant Center feed). Everything is created PAUSED; nothing serves or spends until the owner enables it in the Google Ads UI. The owner must have given explicit written approval for ALL fields before you call this. Set validate_only=true to have Google check the spec and create NOTHING — free, instant, and the right first move when you are unsure the Hebrew copy fits the character limits. Budget caps (₪100/day, ₪3,500/month) are enforced in code before any write.",
+        input_schema: {
+          type: "object",
+          properties: {
+            idea_id: { type: "string", description: "Unique slug for this campaign, e.g. 'brand_defence_minuto_exact_v1'. Used for deduplication — re-calling with the same idea_id returns the existing draft instead of creating a twin." },
+            campaign_name: { type: "string", description: "Campaign name as it will appear in Google Ads. Hebrew or English." },
+            campaign_type: { type: "string", enum: ["search", "performance_max"], description: "search = keywords + Responsive Search Ad. performance_max = asset group over the product feed. PMax requires conversion tracking and the three image assets." },
+            daily_budget_ils: { type: "number", description: "Daily budget in ILS — must match the owner's approved number. Hard cap ₪100." },
+            duration_days: { type: "number", description: "Planned duration in days. Informational for the campaign itself, but the monthly budget guard multiplies it by the daily budget, so keep it honest." },
+            bidding_strategy: { type: "string", enum: ["maximize_conversions", "maximize_conversion_value", "maximize_clicks", "manual_cpc"], description: "Optional. Defaults to maximize_conversions (Search) / maximize_conversion_value (PMax). If the account has no conversion tracking, Search silently falls back to manual CPC and returns a warning." },
+            target_roas: { type: "number", description: "Optional target ROAS as a ratio (3.0 = 300%). Only with value-based bidding." },
+            target_cpa_ils: { type: "number", description: "Optional target CPA in ILS. Only with conversion-based bidding." },
+            keywords: { type: "array", items: { type: "string" }, description: "SEARCH ONLY, required. The keyword list, Hebrew or English. Ground these in get_google_search_terms or Search Console rather than inventing them." },
+            match_type: { type: "string", enum: ["EXACT", "PHRASE", "BROAD"], description: "Match type for the keywords. Defaults to PHRASE. Use EXACT for brand defence; avoid BROAD on a small budget." },
+            negative_keywords: { type: "array", items: { type: "string" }, description: "Campaign-level negatives applied from day one — the cheapest protection against wasted spend." },
+            ad_group_name: { type: "string", description: "SEARCH ONLY. Defaults to '<campaign name> — ad group'." },
+            cpc_bid_ils: { type: "number", description: "SEARCH ONLY, manual CPC only. Max CPC in ILS. Ignored under smart bidding." },
+            search_partners: { type: "boolean", description: "SEARCH ONLY. Include Google's search partner network. Defaults to true. The Display network is never enabled on a Search campaign." },
+            creative: {
+              type: "object",
+              description: "The ad text. Google COUNTS CHARACTERS and rejects anything over the limit — Hebrew is dense, so count before you propose.",
+              properties: {
+                headlines: { type: "array", items: { type: "string" }, description: "3-15 headlines, each ≤30 characters. Required for both campaign types." },
+                descriptions: { type: "array", items: { type: "string" }, description: "2-4 descriptions (Search) or 2-5 (PMax), each ≤90 characters." },
+                long_headlines: { type: "array", items: { type: "string" }, description: "PMAX ONLY, required. 1-5 long headlines, each ≤90 characters." },
+                business_name: { type: "string", description: "PMAX ONLY. ≤25 characters. Defaults to 'Minuto'." },
+                logo_url: { type: "string", description: "PMAX ONLY, required. PUBLIC image URL. Must be exactly 1:1, minimum 128×128." },
+                marketing_image_url: { type: "string", description: "PMAX ONLY, required. PUBLIC image URL. Must be 1.91:1, minimum 600×314." },
+                square_marketing_image_url: { type: "string", description: "PMAX ONLY, required. PUBLIC image URL. Must be 1:1, minimum 300×300." },
+                path1: { type: "string", description: "SEARCH ONLY. Display-path segment shown after the domain, ≤15 chars." },
+                path2: { type: "string", description: "SEARCH ONLY. Second display-path segment, ≤15 chars." },
+              },
+            },
+            landing_page_url: { type: "string", description: "Full URL on minuto.co.il the ad sends traffic to. UTM params are appended automatically." },
+            tracking: {
+              type: "object",
+              properties: {
+                utm_source: { type: "string" },
+                utm_medium: { type: "string" },
+                utm_campaign: { type: "string" },
+                utm_content: { type: "string" },
+              },
+            },
+            merchant_id: { type: "string", description: "PMAX ONLY. Merchant Center account id. Defaults to the account configured in the environment; omit unless the owner names a different one." },
+            feed_label: { type: "string", description: "PMAX ONLY. Merchant Center feed label, if the products are segmented by one." },
+            validate_only: { type: "boolean", description: "When true, Google validates the spec and creates NOTHING. Use it to check character limits and structure before asking the owner for final approval." },
+          },
+          required: ["idea_id", "campaign_name", "campaign_type", "daily_budget_ils", "creative", "landing_page_url"],
+        },
+      },
+      {
+        name: "get_google_campaign_performance",
+        description: "Pull LIVE Google Ads performance — spend, impressions, clicks, CTR, CPC, conversions, conversion value, CPA and ROAS per campaign — for a time window. Use this YOURSELF whenever the owner asks how Google is doing. Do NOT ask the owner to paste numbers. The reply states which conversion metric it used: all_conversions is the superset, because conversion actions marked 'Secondary' in the Google UI are invisible to the plain conversions metric. Read-only.",
+        input_schema: {
+          type: "object",
+          properties: {
+            date_preset: { type: "string", enum: ["today", "yesterday", "last_3d", "last_7d", "last_14d", "last_30d", "last_90d", "this_month", "last_month"], description: "Time window. Default last_7d." },
+          },
+        },
+      },
+      {
+        name: "get_google_search_terms",
+        description: "The ACTUAL search queries that triggered our Google ads, with impressions, clicks, spend and conversions per term, plus the spend that produced no conversion at all. This has no Meta equivalent and it is your best Google research tool: it shows real Hebrew demand in the owner's own market rather than your guess at it. Use it BEFORE proposing keywords for a new Search campaign, and use it to find negative-keyword candidates for a running one. Each term's status says whether we already bid on it (ADDED), it merely matched (NONE), or it is already excluded (EXCLUDED). Read-only.",
+        input_schema: {
+          type: "object",
+          properties: {
+            date_preset: { type: "string", enum: ["last_7d", "last_14d", "last_30d", "last_90d", "this_month", "last_month"], description: "Time window. Default last_30d." },
+            limit: { type: "number", description: "How many terms to return, highest spend first. Default 60, max 200." },
+          },
+        },
+      },
+      {
+        name: "edit_google_campaign",
+        description: "Edit a LIVE Google campaign — name, status (ENABLED|PAUSED), and/or daily budget (ILS, hard-capped at ₪100/day). Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new. Get campaign_id from get_google_campaign_performance. Setting status=ENABLED goes LIVE and starts spending — treat that as the owner activating and require an unmistakable yes.",
+        input_schema: {
+          type: "object",
+          properties: {
+            campaign_id: { type: "string", description: "From get_google_campaign_performance." },
+            name: { type: "string" },
+            status: { type: "string", enum: ["ENABLED", "PAUSED"] },
+            daily_budget_ils: { type: "number", description: "New daily budget in ILS (≤100)." },
+          },
+          required: ["campaign_id"],
+        },
+      },
+      {
+        name: "change_google_keywords",
+        description: "Change what a LIVE Google Search campaign targets — add keywords, remove keywords, or add campaign-level negative keywords. Negatives apply to every ad group at once and are the safe, reversible way to cut wasted spend, so prefer them when a search-terms report shows money going nowhere. Fire ONLY after explicit owner approval; show before → after. WARN the owner that changing keywords on an active campaign disturbs its learning. Performance Max campaigns have no keywords — this tool will refuse them.",
+        input_schema: {
+          type: "object",
+          properties: {
+            campaign_id: { type: "string", description: "From get_google_campaign_performance." },
+            targeting: {
+              type: "object",
+              properties: {
+                add_keywords: { type: "array", items: { type: "string" }, description: "Keywords to add. They go into the campaign's first ad group." },
+                match_type: { type: "string", enum: ["EXACT", "PHRASE", "BROAD"], description: "Match type for added keywords. Default PHRASE." },
+                remove_keywords: { type: "array", items: { type: "string" }, description: "Keywords to remove, matched by their exact text. A keyword that isn't on the campaign comes back as a warning, not an error." },
+                negative_keywords: { type: "array", items: { type: "string" }, description: "Negatives to add at campaign level." },
+                negative_match_type: { type: "string", enum: ["EXACT", "PHRASE", "BROAD"], description: "Match type for negatives. Default BROAD, which excludes the most." },
+              },
+            },
+            validate_only: { type: "boolean", description: "When true, Google validates the change and applies NOTHING." },
+          },
+          required: ["campaign_id", "targeting"],
+        },
       }];
 
       // ── Tool-use loop ─────────────────────────────────────────────────
-      // Claude may call draft_meta_campaign, we execute it, return result,
-      // Claude produces the final natural-language reply. Cap iterations.
+      // Claude may call a paid hand (Meta or Google), the organic hand, or a
+      // read tool; we execute it, return the result, and Claude produces the
+      // final natural-language reply. Cap iterations.
       const messages: any[] = [
         ...history.slice(-16),  // 8 user/assistant pairs
         { role: "user", content: question },
@@ -3146,6 +3315,95 @@ ${postsBlock}
                 ? `Targeting updated on ${(j.adsets_updated ?? []).length} ad set(s). Interests: ${(j.resolved_interests ?? []).join(", ") || "none"}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""}`
                 : `Targeting update FAILED: ${j.error ?? "unknown"}.`;
             } catch (e: any) { resultText = `Targeting update FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "draft_google_campaign") {
+            // Google paid hand — PAUSED Search or Performance Max campaign.
+            // google-ads-draft enforces the budget caps itself before writing.
+            try {
+              const draftRes = await fetch(`${SUPA_URL}/functions/v1/google-ads-draft`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({
+                  action: "create",
+                  idea_id: tu.input.idea_id,
+                  spec: tu.input,
+                  validate_only: tu.input.validate_only === true,
+                }),
+              });
+              resultData = await draftRes.json();
+              const warn = (resultData.warnings ?? []).join("; ") || "none";
+              if (resultData.ok && resultData.validate_only) {
+                resultText = `VALIDATION PASSED — Google accepted the spec (${resultData.operation_count} operations, type ${resultData.campaign_type}). NOTHING was created. Warnings: ${warn}. Report this to the owner and ask for final approval to build it for real.`;
+              } else if (resultData.ok && resultData.already_exists) {
+                resultText = `A draft for idea_id "${tu.input.idea_id}" already exists — campaign ${resultData.campaign_id} (${resultData.campaign_type}). URL: ${resultData.edit_url}. Nothing new was created.`;
+              } else if (resultData.ok) {
+                resultText = `PAUSED Google campaign created. Type: ${resultData.campaign_type}. Campaign ID: ${resultData.campaign_id}. Google Ads URL: ${resultData.edit_url}. Warnings: ${warn}. It is PAUSED — the owner must enable it in Google Ads for it to spend.`;
+              } else {
+                resultText = `Google draft FAILED: ${resultData.error ?? "unknown error"}. Tell the owner exactly what went wrong and propose a fix — do not retry blindly.`;
+              }
+            } catch (e: any) {
+              resultText = `Google draft FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "get_google_campaign_performance") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/google-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "insights", date_preset: tu.input.date_preset ?? "last_7d" }),
+              });
+              const perf = await r.json(); resultData = perf;
+              if (perf.ok) {
+                const lines = (perf.campaigns ?? []).map((c: any) =>
+                  `${c.campaign} [${c.channel_type}, ${c.status}]: spend ₪${c.spend} | ${c.impressions} impr | ${c.clicks} clicks | CTR ${c.ctr}% | CPC ₪${c.cpc} | ${c.conversions} conv (${c.conversion_metric_used}) | value ₪${c.conversion_value} | CPA ${c.cpa != null ? "₪" + c.cpa : "n/a"} | ROAS ${c.roas != null ? c.roas + "x" : "n/a"}`
+                ).join("\n");
+                resultText = `LIVE Google Ads performance (${perf.since} → ${perf.until}, ${perf.currency}):\n${lines || "(no campaigns delivered in this window — likely all paused, or no spend yet)"}`;
+              } else {
+                resultText = `Could not fetch Google performance: ${perf.error ?? "unknown"}`;
+              }
+            } catch (e: any) { resultText = `Google performance fetch FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "get_google_search_terms") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/google-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "search_terms", date_preset: tu.input.date_preset ?? "last_30d", limit: tu.input.limit }),
+              });
+              const st = await r.json(); resultData = st;
+              if (st.ok) {
+                const rows = (st.search_terms ?? []) as any[];
+                const lines = rows.map((t: any) =>
+                  `"${t.search_term}" [${t.status}] — ${t.impressions} impr, ${t.clicks} clicks, ₪${t.spend}, ${t.conversions} conv${t.wasted_spend > 0 ? ` — ₪${t.wasted_spend} WITH NO CONVERSION` : ""} (${t.campaign})`
+                ).join("\n");
+                const wasted = rows.reduce((s, t) => s + Number(t.wasted_spend || 0), 0);
+                resultText = `Google search terms (${st.since} → ${st.until}):\n${lines || "(no search-term data in this window — Search campaigns must have delivered for this report to exist)"}\n\nTotal spend on terms that converted nothing: ₪${Math.round(wasted)}.`;
+              } else {
+                resultText = `Could not fetch search terms: ${st.error ?? "unknown"}`;
+              }
+            } catch (e: any) { resultText = `Search-terms fetch FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "edit_google_campaign") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/google-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "update_campaign", campaign_id: tu.input.campaign_id, name: tu.input.name, status: tu.input.status, daily_budget_ils: tu.input.daily_budget_ils }),
+              });
+              const j = await r.json(); resultData = j;
+              resultText = j.ok
+                ? `Google campaign ${j.updated} updated: ${JSON.stringify(j.changed)}.`
+                : `Google update FAILED: ${j.error ?? "unknown"}. Tell the owner what went wrong.`;
+            } catch (e: any) { resultText = `Google update FAILED: ${e?.message}`; }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "change_google_keywords") {
+            try {
+              const r = await fetch(`${SUPA_URL}/functions/v1/google-ads-draft`, {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPA_KEY}` },
+                body: JSON.stringify({ action: "update_targeting", campaign_id: tu.input.campaign_id, targeting: tu.input.targeting, validate_only: tu.input.validate_only === true }),
+              });
+              const j = await r.json(); resultData = j;
+              resultText = j.ok
+                ? `${j.validate_only ? "VALIDATED (nothing applied)" : "Applied"} on campaign ${j.campaign_id}: ${JSON.stringify(j.applied)}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""}`
+                : `Keyword change FAILED: ${j.error ?? "unknown"}.`;
+            } catch (e: any) { resultText = `Keyword change FAILED: ${e?.message}`; }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else if (tu.name === "find_post") {
             // Search ALL organic posts/reels by keyword (not just the recent 12).
