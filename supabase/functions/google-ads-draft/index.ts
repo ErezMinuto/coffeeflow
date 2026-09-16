@@ -1219,9 +1219,19 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
   if (longHeadlines.length > 5) { warnings.push(`trimmed ${longHeadlines.length} long headlines to Google's maximum of 5`); longHeadlines.length = 5 }
   if (descriptions.length > 5) { warnings.push(`trimmed ${descriptions.length} descriptions to Google's maximum of 5`); descriptions.length = 5 }
 
+  // ORDER MATTERS. Google counts the assets already present in the request
+  // when it validates the asset group at each link operation, so interleaving
+  // create-then-link pairs makes the group look empty at the first link and
+  // fails the whole mutate with NOT_ENOUGH_* for every asset type. The official
+  // sample emits every Asset operation first, then every link. These three
+  // buckets are concatenated in that order at the end.
+  const assetOps: any[] = []
+  const linkOps: any[] = []
+  const campaignAssetOps: any[] = []
+
   let tmpAsset = TMP.assetBase
   const link = (assetTmp: number, fieldType: string) => {
-    ops.push({
+    linkOps.push({
       assetGroupAssetOperation: {
         create: {
           assetGroup: `customers/${cid}/assetGroups/${TMP.assetGroup}`,
@@ -1231,12 +1241,14 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       },
     })
   }
-  // Brand Guidelines (an account-level PMax setting) moves the business name
-  // and the square logo off the asset group and onto the CAMPAIGN. An account
-  // with it enabled rejects a campaign whose brand assets are only linked at
-  // asset-group level, so those two are linked in both places.
+  // Brand Guidelines (a PMax setting, ENABLED on this account) moves the
+  // business name and the square logo off the asset group and onto the
+  // CAMPAIGN — and it is exclusive: linking them at asset-group level too is
+  // rejected with BRAND_ASSETS_NOT_LINKED_AT_CAMPAIGN_LEVEL. With it disabled
+  // the opposite holds, hence the switch rather than a constant.
+  const brandGuidelines = spec.brand_guidelines !== false
   const linkCampaign = (assetTmp: number, fieldType: string) => {
-    ops.push({
+    campaignAssetOps.push({
       campaignAssetOperation: {
         create: {
           campaign: `customers/${cid}/campaigns/${TMP.campaign}`,
@@ -1246,21 +1258,27 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       },
     })
   }
-  const addText = (text: string, fieldType: string) => {
+  const addText = (text: string, fieldType: string, skipGroupLink = false) => {
     const rn = tmpAsset--
-    ops.push({
+    assetOps.push({
       assetOperation: {
         create: { resourceName: `customers/${cid}/assets/${rn}`, textAsset: { text } },
       },
     })
-    link(rn, fieldType)
+    if (!skipGroupLink) link(rn, fieldType)
     return rn
+  }
+  // Brand assets go to exactly ONE level, whichever the Brand Guidelines
+  // setting dictates.
+  const addBrandAsset = (rn: number, fieldType: string) => {
+    if (brandGuidelines) linkCampaign(rn, fieldType)
+    else link(rn, fieldType)
   }
 
   for (const h of headlines) addText(h, 'HEADLINE')
   for (const h of longHeadlines) addText(h, 'LONG_HEADLINE')
   for (const d of descriptions) addText(d, 'DESCRIPTION')
-  linkCampaign(addText(businessName, 'BUSINESS_NAME'), 'BUSINESS_NAME')
+  addBrandAsset(addText(businessName, 'BUSINESS_NAME', brandGuidelines), 'BUSINESS_NAME')
 
   // ── Image assets ──
   // Google's minimum viable PMax asset set is one 1:1 logo, one 1.91:1
@@ -1291,7 +1309,7 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
       }
     }
     const rn = tmpAsset--
-    ops.push({
+    assetOps.push({
       assetOperation: {
         create: {
           resourceName: `customers/${cid}/assets/${rn}`,
@@ -1300,16 +1318,25 @@ async function buildPerformanceMax(ctx: AdsContext, spec: any, ideaId: string): 
         },
       },
     })
-    link(rn, slot.fieldType)
-    if (slot.fieldType === 'LOGO') linkCampaign(rn, 'LOGO')
+    if (slot.fieldType === 'LOGO') addBrandAsset(rn, 'LOGO')
+    else link(rn, slot.fieldType)
   }
   if (missing.length) {
-    throw new Error(`Performance Max needs image assets Google will not auto-generate. Missing: ${missing.join('; ')}. Pass them as creative.logo_url / creative.marketing_image_url / creative.square_marketing_image_url.`)
+    // The Google Ads help centre says a retail campaign generates the minimum
+    // asset set from the product feed. That is NOT true of the API path: a
+    // create with a Merchant Center feed attached and no marketing image was
+    // still rejected with NOT_ENOUGH_MARKETING_IMAGE_ASSET. These are hard
+    // requirements whether or not a feed is present.
+    throw new Error(`Performance Max needs image assets that Google will not generate for an API-created asset group, feed or no feed. Missing: ${missing.join('; ')}. Pass them as creative.logo_url / creative.marketing_image_url / creative.square_marketing_image_url.`)
   }
 
   // ── Listing group filter ──
   // With a Merchant Center feed attached, the asset group must say which
   // products it covers. A single root UNIT_INCLUDED node means "all products".
+  // Assets, then links, then campaign-level brand assets — see the ordering
+  // note above.
+  ops.push(...assetOps, ...linkOps, ...campaignAssetOps)
+
   if (merchantId) {
     ops.push({
       assetGroupListingGroupFilterOperation: {
