@@ -2844,8 +2844,10 @@ Your tools fall into two classes, and the distinction matters:
 1. \`draft_meta_campaign\` — creates a PAUSED campaign in Meta Ads Manager. Fire ONLY after the owner approved ALL of: campaign name, objective, audience, Hebrew creative, daily budget, AND image URL.
 2. \`draft_google_campaign\` — creates a PAUSED Google campaign, Search or Performance Max. Fire ONLY after the owner approved ALL of: campaign name, campaign type, keywords + match types (Search), the full Hebrew ad text within Google's character limits, daily budget, landing page, and the three image URLs (PMax). Pass \`validate_only: true\` first if you want Google to check the spec without creating anything — that is free and instant, and it is the right move when you are unsure the copy fits.
 3. \`edit_campaign\` / \`edit_google_campaign\` — change a live campaign's name, status or daily budget. ALWAYS show the owner current → new before firing. Setting a campaign to ACTIVE/ENABLED puts it live and starts spending: treat that as the owner activating, and require an unmistakable yes.
-4. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
-5. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
+4. **Never invent an id.** Campaign ids come from a tool result, never from your own head. A made-up number can match a real campaign you did not mean and the change will go through. If you don't have the id, fetch it. When you report a change, name the CAMPAIGN so the owner can catch a wrong target.
+
+5. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
+6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
 
 You are the brain over all three hands: recommend across Meta, Google AND organic, but only ACT (fire a write tool) on the owner's explicit approval for that specific action.
 
@@ -3130,7 +3132,7 @@ ${postsBlock}
         input_schema: {
           type: "object",
           properties: {
-            campaign_id: { type: "string", description: "From get_google_campaign_performance." },
+            campaign_id: { type: "string", description: "The NUMERIC campaign id exactly as get_google_campaign_performance returned it, or the campaign's exact name. NEVER invent or guess an id — a guessed number can land on a real but unintended campaign. If you don't have the id, call get_google_campaign_performance first." },
             name: { type: "string" },
             status: { type: "string", enum: ["ENABLED", "PAUSED"] },
             daily_budget_ils: { type: "number", description: "New daily budget in ILS (≤100)." },
@@ -3144,7 +3146,7 @@ ${postsBlock}
         input_schema: {
           type: "object",
           properties: {
-            campaign_id: { type: "string", description: "From get_google_campaign_performance." },
+            campaign_id: { type: "string", description: "The NUMERIC campaign id exactly as get_google_campaign_performance returned it, or the campaign's exact name. NEVER invent or guess an id — a guessed number can land on a real but unintended campaign. If you don't have the id, call get_google_campaign_performance first." },
             targeting: {
               type: "object",
               properties: {
@@ -3389,7 +3391,7 @@ ${postsBlock}
               });
               const j = await r.json(); resultData = j;
               resultText = j.ok
-                ? `Google campaign ${j.updated} updated: ${JSON.stringify(j.changed)}.`
+                ? `Google campaign "${j.campaign_name}" (id ${j.updated}) updated: ${JSON.stringify(j.changed)}. CONFIRM to the owner that this is the campaign they meant.`
                 : `Google update FAILED: ${j.error ?? "unknown"}. Tell the owner what went wrong.`;
             } catch (e: any) { resultText = `Google update FAILED: ${e?.message}`; }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
@@ -3401,7 +3403,7 @@ ${postsBlock}
               });
               const j = await r.json(); resultData = j;
               resultText = j.ok
-                ? `${j.validate_only ? "VALIDATED (nothing applied)" : "Applied"} on campaign ${j.campaign_id}: ${JSON.stringify(j.applied)}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""}`
+                ? `${j.validate_only ? "VALIDATED (nothing applied)" : "Applied"} on campaign "${j.campaign_name}" (id ${j.campaign_id}): ${JSON.stringify(j.applied)}.${(j.warnings ?? []).length ? " Warnings: " + j.warnings.join("; ") : ""} ALWAYS state the campaign NAME back to the owner so they can catch a wrong target.`
                 : `Keyword change FAILED: ${j.error ?? "unknown"}.`;
             } catch (e: any) { resultText = `Keyword change FAILED: ${e?.message}`; }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });

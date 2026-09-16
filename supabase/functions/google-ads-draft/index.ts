@@ -202,13 +202,13 @@ serve(async (req) => {
     // ── delete ── remove a campaign (Google cascades to its ad groups/ads).
     // Best-effort clears the matching google_ad_drafts row too.
     if (action === 'delete') {
-      const campaignId = String(body.campaign_id ?? '').trim()
-      if (!campaignId) throw new Error("'campaign_id' is required for delete")
+      const target = await resolveCampaign(ctx, body.campaign_id)
+      const campaignId = target.id
       await mutate(ctx, [{
         campaignOperation: { remove: `customers/${ctx.customerId}/campaigns/${campaignId}` },
       }], false)
       await supabase.from('google_ad_drafts').delete().eq('campaign_id', campaignId)
-      return json({ ok: true, deleted: campaignId })
+      return json({ ok: true, deleted: campaignId, campaign_name: target.name })
     }
 
     // ── spend ── authoritative account spend from Google, month-to-date and
@@ -341,8 +341,8 @@ serve(async (req) => {
     // ── update_campaign ── name / status / daily budget. The daily cap applies
     // to edits as well, so a live campaign can't be raised above it either.
     if (action === 'update_campaign') {
-      const campaignId = String(body.campaign_id ?? '').trim()
-      if (!campaignId) throw new Error("'campaign_id' is required for update_campaign")
+      const target = await resolveCampaign(ctx, body.campaign_id)
+      const campaignId = target.id
 
       const ops: any[] = []
       const changed: Record<string, unknown> = {}
@@ -390,14 +390,14 @@ serve(async (req) => {
 
       if (!ops.length) throw new Error('nothing to update — pass name, status, and/or daily_budget_ils')
       const res = await mutate(ctx, ops, false)
-      return json({ ok: true, updated: campaignId, changed, result: res })
+      return json({ ok: true, updated: campaignId, campaign_name: target.name, changed, result: res })
     }
 
     // ── update_targeting ── the Google analogue of changing a Meta audience:
     // keywords in, keywords out, negatives, and the campaign's geo/language.
     if (action === 'update_targeting') {
-      const campaignId = String(body.campaign_id ?? '').trim()
-      if (!campaignId) throw new Error("'campaign_id' is required for update_targeting")
+      const target = await resolveCampaign(ctx, body.campaign_id)
+      const campaignId = target.id
       const t = (body.targeting ?? {}) as any
       const ops: any[] = []
       const warnings: string[] = []
@@ -509,7 +509,7 @@ serve(async (req) => {
         throw new Error('nothing to change — pass add_keywords, remove_keywords, negative_keywords, geo_target_constants and/or language_constants')
       }
       const res = await mutate(ctx, ops, body.validate_only === true)
-      return json({ ok: true, campaign_id: campaignId, applied, warnings, validate_only: body.validate_only === true, result: res })
+      return json({ ok: true, campaign_id: campaignId, campaign_name: target.name, applied, warnings, validate_only: body.validate_only === true, result: res })
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -902,6 +902,42 @@ async function listAccessibleCustomers(ctx: AdsContext): Promise<string[]> {
   const data = await res.json().catch(() => ({}))
   if (data.error) throw new Error(`listAccessibleCustomers: ${googleErrorMessage(data.error)}`)
   return ((data.resourceNames ?? []) as string[]).map((rn) => rn.split('/').pop() ?? '').filter(Boolean)
+}
+
+// Resolve a campaign reference to a real {id, name}. The strategist naturally
+// reaches for the campaign NAME it just read in a performance report, and an
+// unchecked Number() on that yields NaN — which produced a malformed query and,
+// worse, invited the model to guess a numeric id instead. A guessed id can land
+// on a REAL but unintended campaign and validate clean. So: accept a name or an
+// id, verify it exists, refuse anything ambiguous, and always hand the caller
+// back the name so the campaign being changed is visible in the tool result.
+async function resolveCampaign(ctx: AdsContext, ref: string): Promise<{ id: string; name: string }> {
+  const raw = String(ref ?? '').trim()
+  if (!raw) throw new Error("'campaign_id' is required")
+
+  if (/^\d+$/.test(raw)) {
+    const rows = await gaql(ctx, `
+      SELECT campaign.id, campaign.name FROM campaign
+      WHERE campaign.id = ${raw} AND campaign.status != 'REMOVED'
+    `, 'resolve_campaign_by_id')
+    const hit = (rows as any[])[0]?.campaign
+    if (!hit) throw new Error(`no campaign with id ${raw} on this account — take the id from get_google_campaign_performance rather than guessing it`)
+    return { id: String(hit.id), name: hit.name ?? '' }
+  }
+
+  // Not numeric: treat it as a name. Exact match wins; otherwise refuse rather
+  // than picking one of several partial matches.
+  const escaped = raw.replace(/'/g, "\\'")
+  const rows = await gaql(ctx, `
+    SELECT campaign.id, campaign.name FROM campaign
+    WHERE campaign.status != 'REMOVED' AND campaign.name = '${escaped}'
+  `, 'resolve_campaign_by_name')
+  const exact = (rows as any[]).map((r) => r.campaign).filter(Boolean)
+  if (exact.length === 1) return { id: String(exact[0].id), name: exact[0].name }
+  if (exact.length > 1) {
+    throw new Error(`"${raw}" matches ${exact.length} campaigns (${exact.map((c: any) => c.id).join(', ')}) — pass the numeric campaign_id instead`)
+  }
+  throw new Error(`no campaign named "${raw}" on this account. Pass the numeric campaign_id from get_google_campaign_performance.`)
 }
 
 async function campaignExists(ctx: AdsContext, campaignId: string): Promise<boolean> {
