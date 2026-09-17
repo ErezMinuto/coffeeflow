@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Bot, Mail, Settings, TrendingUp, Sparkles, Target, X } from 'lucide-react'
+import { LayoutDashboard, Bot, Mail, Settings, TrendingUp, Sparkles, Target, Film, X } from 'lucide-react'
 import { UserButton } from '@clerk/clerk-react'
 
 // Meta Ads / Google Ads / Instagram / Google Organic are now tabs inside the
@@ -9,6 +9,7 @@ const NAV = [
   { to: '/',                icon: LayoutDashboard, label: 'סקירה כללית' },
   { to: '/plan',            icon: Target,          label: 'שיווק' },
   { to: '/admin/seo-agent', icon: Sparkles,        label: 'סוכן אורגני' },
+  { to: '/reels',           icon: Film,            label: 'רילס מוצרים' },
   { to: '/advisor',         icon: TrendingUp,      label: 'יועץ שיווק AI' },
   { to: '/analyst',         icon: Bot,             label: 'AI Analyst' },
   { to: '/marketing',       icon: Mail,            label: 'Email Generator' },
