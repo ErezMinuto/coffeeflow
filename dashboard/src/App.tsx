@@ -16,6 +16,7 @@ import AdvisorPage from './pages/Advisor'
 import UnifiedPlanPage from './pages/UnifiedPlan'
 import GoogleOrganicPage from './pages/GoogleOrganic'
 import SeoAgentPage from './pages/admin/SeoAgent'
+import ReelsPage from './pages/Reels'
 import { AppProvider } from './lib/context'
 
 // Layout wraps every page. Responsive behavior:
@@ -136,6 +137,7 @@ export default function App() {
             <Route path="/plan"            element={<Page name="תוכנית שיווק"><UnifiedPlanPage /></Page>} />
             <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
             <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
+            <Route path="/reels"           element={<Page name="רילס מוצרים"><ReelsPage /></Page>} />
             <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />
           </Routes>
         </BrowserRouter>
