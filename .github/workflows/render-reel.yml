@@ -1,0 +1,131 @@
+name: Render reel
+
+# Renders a vertical product Reel (MP4) with Remotion from a WooCommerce product.
+#
+# Why a GitHub Action: rendering needs Node + headless Chrome + ffmpeg, which neither
+# Postgres nor Supabase's Deno edge runtime provides. Supabase stays the control plane:
+# a seo_tasks row (task_type='reel_render') is the job; this workflow claims it,
+# renders, uploads to Storage and marks it completed with review_required=true.
+# Nothing is published from here — a human approves the reel in the dashboard.
+#
+# Modes:
+#   task_id  -> claim that pending reel_render task, render, upload, finalize (writes to Supabase)
+#   woo_id   -> test render only; the MP4 is attached to the run as an artifact (no Supabase writes)
+#   pull_request touching video/** -> test render of a known product as an artifact
+#
+# Trigger: Actions tab -> "Render reel" -> Run workflow, or
+#   gh workflow run render-reel.yml -f woo_id=82540
+#
+# Required GitHub Secrets (already used by fixer-agent.yml):
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (eyJ... JWT), ANTHROPIC_API_KEY
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'seo_tasks.id of a pending reel_render task (writes to Supabase)'
+        required: false
+        type: string
+      woo_id:
+        description: 'Test render for this WooCommerce product id (artifact only)'
+        required: false
+        type: string
+      badge:
+        description: 'Optional badge text for a test render, e.g. מהדורה מוגבלת'
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - 'video/**'
+      - 'scripts/reel/**'
+      - '.github/workflows/render-reel.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-reel-${{ inputs.task_id || inputs.woo_id || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TEST_WOO_ID: ${{ inputs.woo_id || (github.event_name == 'pull_request' && '82540') || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+
+      - name: Claim task
+        id: claim
+        if: inputs.task_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TASK_ID: ${{ inputs.task_id }}
+        run: bash scripts/reel/claim-task.sh
+
+      - name: Resolve product
+        id: target
+        env:
+          CLAIMED_WOO_ID: ${{ steps.claim.outputs.woo_id }}
+        run: |
+          # Values arrive via env, never inlined into the script (brief_data is DB-sourced).
+          woo_id="${CLAIMED_WOO_ID:-$TEST_WOO_ID}"
+          if ! [[ "$woo_id" =~ ^[0-9]+$ ]]; then
+            echo "Nothing to render: pass task_id or a numeric woo_id (got '${woo_id}')" >&2
+            exit 1
+          fi
+          echo "woo_id=$woo_id" >> "$GITHUB_OUTPUT"
+
+      - name: Install
+        working-directory: video
+        run: |
+          npm ci
+          npx remotion browser ensure
+
+      - name: Build facts
+        working-directory: video
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WOO_ID: ${{ steps.target.outputs.woo_id }}
+          BADGE: ${{ inputs.badge }}
+        run: |
+          # Human-confirmed facts from the dashboard (brief_data.facts) override extraction.
+          if [[ -f ../reel-brief.json ]]; then
+            BRIEF_FACTS=$(jq -c '.facts // empty' ../reel-brief.json)
+            [[ -z "$BADGE" ]] && BADGE=$(jq -r '.badge // empty' ../reel-brief.json)
+            export BRIEF_FACTS
+          fi
+          node scripts/build-facts.mjs --woo-id "$WOO_ID" ${BADGE:+--badge "$BADGE"} --out ../facts.json
+          cat ../facts.json
+
+      - name: Render
+        working-directory: video
+        run: npx remotion render src/index.jsx ProductReel ../reel.mp4 --props=../facts.json --crf 18
+
+      - name: Attach test render
+        if: inputs.task_id == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-${{ steps.target.outputs.woo_id }}
+          path: |
+            reel.mp4
+            facts.json
+          retention-days: 7
+
+      - name: Finalize task
+        if: always() && steps.claim.outputs.claimed == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TASK_ID: ${{ steps.claim.outputs.task_id }}
+        run: bash scripts/reel/finalize-task.sh

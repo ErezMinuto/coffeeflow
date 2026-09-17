@@ -28,3 +28,9 @@ Thumbs.db
 .idea/
 .vercel
 .env*
+
+# Reel renderer outputs (render-reel.yml)
+video/out/
+reel.mp4
+facts.json
+reel-brief.json
