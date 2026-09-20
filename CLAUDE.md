@@ -12,7 +12,9 @@ All AI assistants working on this project MUST follow the rules below.
 3. **Never create new bots, new edge functions, or new Supabase projects.** Work within what exists.
 4. **Before touching any edge function** — read its current code first. Do not rewrite from scratch.
 5. **If something "doesn't seem right"** — stop and ask the developer. Do not silently redesign.
-6. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
+6. **Never ask for a credential to be pasted into chat.** Everything is in Vault or the
+   local store — run `./scripts/secrets-doctor.sh`. See *Credentials* below.
+7. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
 
 ---
 
@@ -90,6 +92,83 @@ There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase E
 - `filterByUser: true` (default) — for per-user tables like `cost_settings`
 - `filterByUser: false` — for all shared org-wide tables (products, origins, roasts, operators, employees, schedules, marketing, packing_logs, etc.)
 - **Never add `filterByUser: true` to a shared business table** — it breaks multi-user access
+
+---
+
+## Credentials — never paste a secret into chat
+
+Every credential a session needs is reachable without anyone typing it into the
+conversation. Two tiers:
+
+| Tier | What | Where it lives |
+|------|------|----------------|
+| **Bootstrap** | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | configured once per environment |
+| **Everything else** | access token, LLM keys, Woo, Meta, Google, MFlow, Resend | **Supabase Vault**, fetched on demand |
+
+Canonical list of names: `scripts/secret-names.txt`. A credential is added by
+putting it in Vault (Supabase dashboard → Integrations → Vault) under exactly the
+name in that file — never by pasting it to an assistant.
+
+### Per environment
+
+**This Mac.** `./scripts/install-secrets.sh --link` creates
+`~/.config/coffeeflow/secrets.env` (chmod 600, outside the repo) and adds a block to
+`~/.zshenv` that exports it into any shell started inside the repo — including the
+shells Claude Code runs commands in.
+
+Do not copy the Supabase keys out of the dashboard by hand — `SUPABASE_ACCESS_TOKEN`
+already authorizes fetching them:
+
+```bash
+./scripts/fetch-supabase-keys.sh    # writes URL + anon + service_role into the store
+```
+
+That leaves only `SUPABASE_DB_URL` to enter manually, because a database password is
+resettable but never readable.
+
+**Cloud session (a task sent from your phone).** A cloud session sees nothing on the
+Mac, so set those same two variables in the cloud environment's own settings. That
+is the entire provisioning step; everything else comes from Vault:
+
+```bash
+. scripts/bootstrap-from-db.sh --cache   # fetch from Vault into this session
+./scripts/secrets-doctor.sh --live       # confirm what landed
+```
+
+`--cache` writes the fetched values to the ephemeral container's local store, so
+later commands in the same session need no further network calls.
+
+> To have this happen automatically at session start, add
+> `. scripts/bootstrap-from-db.sh --cache --quiet` to the second `SessionStart` hook
+> in `.claude/settings.json`, ahead of the `secrets-doctor.sh` call.
+
+### Non-secret context
+
+`public.ops_profile` holds operating facts any session should know before acting
+(prod project ref, 330g retail bag, MFlow as the single revenue source, which bot
+owns which edge function). `scripts/bootstrap-from-db.sh` prints it. Put facts there
+rather than re-explaining them each session — but **never** a credential.
+
+Schema for both: `supabase/migrations/20260920_ops_profile_and_vault_reader.sql`.
+`public.ops_get_secrets` is `service_role` only — unlike most RPCs here, it is
+unreachable with the anon key.
+
+### Rules for AI assistants
+
+- **Discover, don't ask.** `./scripts/secrets-doctor.sh` lists what is available:
+  names, lengths and a 3-character prefix, never values.
+- **Use by expansion only**: `curl -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"`.
+  Never `cat`, `echo`, `env` or `printenv` a credential.
+- **Headers, not query strings.** A token in a URL leaks into logs, retries and
+  error output.
+- **Never call `ops_get_secrets` ad hoc** — its response body *is* the secrets, and
+  it would land in the transcript. Source `scripts/bootstrap-from-db.sh` instead.
+- **A missing credential goes into Vault**, not into chat and not into a repo file.
+- `.claude/hooks/block-secret-dumps.sh` (a `PreToolUse` hook) refuses commands whose
+  effect is to print a credential. If it fires, rewrite the command — do not work
+  around it. Regression suite: `bash .claude/hooks/test-block-secret-dumps.sh`.
+- Secrets that only **edge functions** read stay in `supabase secrets set`. The Vault
+  entries are for what runs in a session's own shell.
 
 ---
 
