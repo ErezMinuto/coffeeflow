@@ -36,6 +36,7 @@ BASE="https://${PROJECT_REF}.supabase.co/rest/v1"
 # ── Defaults ───────────────────────────────────────────────────────────
 SINCE="" ; LIMIT="" ; LEVEL="" ; FN="" ; JSON=0 ; STATUS=""
 CMD="${1:-recent}" ; [ $# -gt 0 ] && shift
+case "$CMD" in -h|--help|help) CMD="help" ;; esac
 
 ARG=""
 case "$CMD" in
@@ -98,7 +99,9 @@ if not m:
     print(''); raise SystemExit
 n, unit = int(m.group(1)), m.group(2)
 delta = {'m': datetime.timedelta(minutes=n), 'h': datetime.timedelta(hours=n), 'd': datetime.timedelta(days=n)}[unit]
-print((datetime.datetime.now(datetime.timezone.utc) - delta).isoformat())
+# 'Z', not '+00:00': an unencoded '+' in a query string decodes to a space,
+# which silently corrupts every ts= filter.
+print((datetime.datetime.now(datetime.timezone.utc) - delta).isoformat().replace('+00:00', 'Z'))
 PY
 }
 
@@ -110,15 +113,22 @@ urlenc() { python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.arg
 
 # ── Renderers ──────────────────────────────────────────────────────────
 render_lines() {
-  python3 - "$JSON" <<'PY'
-import sys, json
-raw = sys.stdin.read()
+  local payload; payload="$(cat)"
+  PAYLOAD="$payload" JSONMODE="$JSON" python3 <<'PY'
+import os, sys, json
+raw = os.environ.get('PAYLOAD', '')
+if not raw.strip():
+    print("❌ empty response from PostgREST — network, or the request never left"); raise SystemExit(1)
 try: rows = json.loads(raw)
 except Exception:
     print("❌ unexpected response:", raw[:400]); raise SystemExit(1)
 if isinstance(rows, dict):
-    print("❌ query error:", rows.get('message') or rows); raise SystemExit(1)
-if sys.argv[1] == '1':
+    msg = rows.get('message') or rows
+    print("❌ query error:", msg)
+    if rows.get('code') == '42P01':
+        print("   system_logs does not exist — apply supabase/migrations/20260920_system_logs.sql")
+    raise SystemExit(1)
+if os.environ.get('JSONMODE') == '1':
     print(json.dumps(rows, indent=2, ensure_ascii=False)); raise SystemExit
 if not rows:
     print("(no matching log lines)"); raise SystemExit
@@ -143,15 +153,22 @@ PY
 }
 
 render_runs() {
-  python3 - "$JSON" <<'PY'
-import sys, json
-raw = sys.stdin.read()
+  local payload; payload="$(cat)"
+  PAYLOAD="$payload" JSONMODE="$JSON" python3 <<'PY'
+import os, sys, json
+raw = os.environ.get('PAYLOAD', '')
+if not raw.strip():
+    print("❌ empty response from PostgREST"); raise SystemExit(1)
 try: rows = json.loads(raw)
 except Exception:
     print("❌ unexpected response:", raw[:400]); raise SystemExit(1)
 if isinstance(rows, dict):
-    print("❌ query error:", rows.get('message') or rows); raise SystemExit(1)
-if sys.argv[1] == '1':
+    msg = rows.get('message') or rows
+    print("❌ query error:", msg)
+    if rows.get('code') == '42P01':
+        print("   system_log_runs does not exist — apply supabase/migrations/20260920_system_logs.sql")
+    raise SystemExit(1)
+if os.environ.get('JSONMODE') == '1':
     print(json.dumps(rows, indent=2, ensure_ascii=False)); raise SystemExit
 if not rows:
     print("(no runs recorded)"); raise SystemExit
@@ -220,9 +237,9 @@ case "$CMD" in
 
   stats)
     S="$(since_iso "${SINCE:-24h}")"
-    q "system_logs?select=fn,level&ts=gte.${S}&limit=100000" | python3 - "$S" <<'PY'
-import sys, json, collections
-raw = sys.stdin.read()
+    PAYLOAD="$(q "system_logs?select=fn,level&ts=gte.${S}&limit=100000")" SINCE_ISO="$S" python3 <<'PY'
+import os, sys, json, collections
+raw = os.environ.get('PAYLOAD', '')
 try: rows = json.loads(raw)
 except Exception:
     print("❌ unexpected response:", raw[:400]); raise SystemExit(1)
@@ -232,7 +249,7 @@ if not rows: print("(no log lines in window)"); raise SystemExit
 
 agg = collections.defaultdict(lambda: collections.Counter())
 for r in rows: agg[r.get('fn','?')][r.get('level','info')] += 1
-print(f"since {sys.argv[1][:19]} UTC\n")
+print(f"since {os.environ.get('SINCE_ISO','')[:19]} UTC\n")
 print(f"{'function':<28} {'lines':>7} {'warn':>6} {'error':>6}")
 # Worst first: the function with most errors is the one to look at.
 for fn, c in sorted(agg.items(), key=lambda kv: (-kv[1]['error'], -kv[1]['warn'], -sum(kv[1].values()))):
@@ -252,9 +269,9 @@ PY
       [ -n "$FN" ]    && F="${F}&fn=eq.${FN}"
       [ -n "$LEVEL" ] && F="${F}&level=eq.${LEVEL}"
       OUT="$(q "system_logs?${F}")"
-      NEW="$(printf '%s' "$OUT" | python3 -c "
-import sys, json
-try: rows = json.load(sys.stdin)
+      NEW="$(PAYLOAD="$OUT" python3 -c "
+import os, json
+try: rows = json.loads(os.environ.get('PAYLOAD','') or '[]')
 except Exception: raise SystemExit
 if isinstance(rows, list) and rows: print(max(r['ts'] for r in rows))
 ")"
