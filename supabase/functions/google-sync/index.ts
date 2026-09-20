@@ -21,6 +21,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,12 @@ serve(async (req) => {
 
   const syncId = (syncLogRow as any).id as string
 
+  // Correlate the two records: sync_log answers "did the sync finish?", the
+  // system log answers "which block broke and why?". Stamping the run id into
+  // sync_log.stats means one lookup gets you from the former to the latter.
+  const log = createLogger('google-sync')
+  log.info('run.start', `google sync started (${mode})`, { mode, sync_id: syncId })
+
   // Background work — wrapped in a try/catch so we ALWAYS update the row
   // (otherwise the frontend would poll forever on a crashed sync).
   // @ts-ignore — EdgeRuntime is provided by Supabase Deno runtime
@@ -197,7 +204,7 @@ serve(async (req) => {
           stats.account_settings_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] account_settings:', e.message)
+        log.error('block.account_settings.fail', 'account_settings block failed', { block: 'account_settings' }, e)
         stats.errors.push(`account_settings: ${e.message}`)
       }
 
@@ -252,7 +259,7 @@ serve(async (req) => {
           stats.campaign_settings_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] campaign_settings:', e.message)
+        log.error('block.campaign_settings.fail', 'campaign_settings block failed', { block: 'campaign_settings' }, e)
         stats.errors.push(`campaign_settings: ${e.message}`)
       }
 
@@ -289,7 +296,7 @@ serve(async (req) => {
           stats.ad_group_settings_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] ad_group_settings:', e.message)
+        log.error('block.ad_group_settings.fail', 'ad_group_settings block failed', { block: 'ad_group_settings' }, e)
         stats.errors.push(`ad_group_settings: ${e.message}`)
       }
 
@@ -326,7 +333,7 @@ serve(async (req) => {
           stats.audience_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] user_list:', e.message)
+        log.error('block.user_list.fail', 'user_list block failed', { block: 'user_list' }, e)
         stats.errors.push(`user_list: ${e.message}`)
       }
 
@@ -373,7 +380,7 @@ serve(async (req) => {
           stats.conversion_action_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] conversion_action:', e.message)
+        log.error('block.conversion_action.fail', 'conversion_action block failed', { block: 'conversion_action' }, e)
         stats.errors.push(`conversion_action: ${e.message}`)
       }
     }
@@ -448,7 +455,7 @@ serve(async (req) => {
           if (!error) stats.campaign_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] campaign_daily:', e.message)
+        log.error('block.campaign_daily.fail', 'campaign_daily block failed', { block: 'campaign_daily' }, e)
         stats.errors.push(`campaign_daily: ${e.message}`)
       }
 
@@ -501,7 +508,7 @@ serve(async (req) => {
           stats.ad_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] ad_creatives:', e.message)
+        log.error('block.ad_creatives.fail', 'ad_creatives block failed', { block: 'ad_creatives' }, e)
         stats.errors.push(`ad_creatives: ${e.message}`)
       }
 
@@ -584,7 +591,7 @@ serve(async (req) => {
           }, { onConflict: 'keyword' })
         }
       } catch (e: any) {
-        console.error('[google-sync] keywords_daily:', e.message)
+        log.error('block.keywords_daily.fail', 'keywords_daily block failed', { block: 'keywords_daily' }, e)
         stats.errors.push(`keywords_daily: ${e.message}`)
       }
 
@@ -629,7 +636,7 @@ serve(async (req) => {
           stats.search_term_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] search_terms:', e.message)
+        log.error('block.search_terms.fail', 'search_terms block failed', { block: 'search_terms' }, e)
         stats.errors.push(`search_terms: ${e.message}`)
       }
 
@@ -668,7 +675,7 @@ serve(async (req) => {
           stats.ad_group_daily_rows++
         }
       } catch (e: any) {
-        console.error('[google-sync] ad_group_daily:', e.message)
+        log.error('block.ad_group_daily.fail', 'ad_group_daily block failed', { block: 'ad_group_daily' }, e)
         stats.errors.push(`ad_group_daily: ${e.message}`)
       }
 
@@ -725,7 +732,7 @@ serve(async (req) => {
         stats.click_mapping_rows += clickLoopCount
         console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across 14 days (parallel)`)
       } catch (e: any) {
-        console.error('[google-sync] click_view:', e.message)
+        log.error('block.click_view.fail', 'click_view block failed', { block: 'click_view' }, e)
         stats.errors.push(`click_view: ${e.message}`)
       }
     }
@@ -744,17 +751,23 @@ serve(async (req) => {
         records:   totalRecords,
         error_msg: stats.errors.length ? stats.errors.join(' | ').slice(0, 500) : null,
         finished_at: new Date().toISOString(),
-        stats,
+        stats: { ...stats, run_id: log.runId },
       }).eq('id', syncId)
 
+      log.info('run.done', `${totalRecords} records across ${Object.keys(stats).length} blocks`,
+        { total_records: totalRecords, errors: stats.errors.length })
+      await log.finish(stats.errors.length ? 'partial' : 'success',
+        { total_records: totalRecords, sync_id: syncId, errors: stats.errors })
+
     } catch (err: any) {
-      console.error('[google-sync] fatal:', err.message)
+      log.error('run.fatal', 'sync aborted', { sync_id: syncId, stats }, err)
       await supabase.from('sync_log').update({
         status: 'error',
         error_msg: err.message,
         finished_at: new Date().toISOString(),
-        stats,
+        stats: { ...stats, run_id: log.runId },
       }).eq('id', syncId)
+      await log.finish('error', { sync_id: syncId })
     }
   })())
 
@@ -764,6 +777,7 @@ serve(async (req) => {
       success: true,
       status: 'running',
       sync_id: syncId,
+      run_id: log.runId,
       message: 'Sync started in background. Poll /rest/v1/sync_log?id=eq.<sync_id> for status.',
     }),
     { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

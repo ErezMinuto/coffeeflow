@@ -123,6 +123,30 @@ Functions that MUST always be deployed with `--no-verify-jwt`:
 
 ---
 
+## Debugging — read the logs first
+
+Edge functions write structured, durable logs to the `system_logs` table via
+`supabase/functions/_shared/logger.ts`. Read them with:
+
+```bash
+./scripts/logs.sh errors          # what is broken (last 24h)
+./scripts/logs.sh runs            # every invocation + outcome
+./scripts/logs.sh run <run-id>    # full trace of one invocation
+```
+
+Needs `SUPABASE_ACCESS_TOKEN` (the same token deploys use). Read-only.
+Retention is 30 days. Full guide: `docs/logging.md`.
+
+Run status `incomplete` means the run was killed mid-flight (worker timeout /
+OOM) — it never wrote a terminal line. That is a real signal, not missing data.
+
+**When adding logging to a function**: always `await log.finish(...)`, return
+`run_id` in the HTTP response, and use stable `event` keys. Note that editing
+`_shared/logger.ts` makes every importing function stale — Supabase bundles
+imports at deploy time, so they need redeploying for the change to land.
+
+---
+
 ## Clerk User Lookup
 
 - Function: `clerk-user-lookup` (edge function, `verify_jwt: false`)

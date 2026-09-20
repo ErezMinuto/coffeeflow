@@ -120,6 +120,12 @@ const EXPECTED_CRONS: Array<{
   // 20260809_purge_old_media_weekly_cron.sql). 8-day window covers the weekly
   // cadence with slack. Non-critical: a missed purge only wastes storage.
   { jobname: 'purge-old-media-weekly',              max_silence_hours: 8 * 24, required: false },
+  // Daily 03:30 UTC retention pass on system_logs (see
+  // 20260920_system_logs.sql). Non-critical: a missed purge only means the
+  // log table keeps a few extra days, never lost data. Registered here
+  // because an unregistered cron is an unwatched one — the exact reason
+  // woo-orders-sync froze for 12 days unnoticed.
+  { jobname: 'system-logs-purge-daily',             max_silence_hours: 30, required: false },
   // MFlow is the single source of revenue truth AND the thing that moves real
   // packed_stock, and NEITHER job was registered here. The revenue half had no
   // cron at all until 2026-08-25 and sat frozen for three days after its

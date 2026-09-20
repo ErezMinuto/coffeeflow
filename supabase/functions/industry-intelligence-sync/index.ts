@@ -22,6 +22,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
+import { createLogger } from '../_shared/logger.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -57,14 +58,28 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
   const startedAt = new Date().toISOString()
+  const log = createLogger('industry-intelligence-sync')
 
   // 1. Load active sources.
   const { data: sources, error: srcErr } = await supabase
     .from('industry_sources')
     .select('*')
     .eq('active', true)
-  if (srcErr) return jsonResponse({ error: `sources query failed: ${srcErr.message}` }, 500)
-  if (!sources || sources.length === 0) return jsonResponse({ ok: true, note: 'no active sources' })
+  if (srcErr) {
+    log.error('sources.query.fail', 'could not load industry_sources', undefined, srcErr)
+    await log.finish('error')
+    return jsonResponse({ error: `sources query failed: ${srcErr.message}`, run_id: log.runId }, 500)
+  }
+  if (!sources || sources.length === 0) {
+    // Not an error, but not nothing either: a run with no sources produces no
+    // articles, and without this line that looks identical to a run where
+    // every feed failed.
+    log.warn('sources.none', 'no active rows in industry_sources')
+    await log.finish('success', { sources: 0 })
+    return jsonResponse({ ok: true, note: 'no active sources', run_id: log.runId })
+  }
+
+  log.info('run.start', `polling ${sources.length} active sources`, { sources: sources.length })
 
   const stats = {
     sources_polled:   0,
@@ -82,6 +97,15 @@ serve(async (req) => {
       const rssText = await fetchWithTimeout(src.rss_url, FETCH_TIMEOUT_MS)
       const items   = parseRssMinimal(rssText).slice(0, src.max_per_run)
       stats.articles_found += items.length
+      // A feed that parses to zero items is the quiet failure mode: the fetch
+      // succeeded, so nothing throws, but the source is effectively dead
+      // (markup changed, or a WAF served a challenge page with HTTP 200).
+      if (items.length === 0) {
+        log.warn('feed.empty', `${src.name} returned no parseable items`,
+          { source: src.name, rss_url: src.rss_url, bytes: rssText.length })
+      } else {
+        log.debug('feed.ok', `${src.name}: ${items.length} items`, { source: src.name, items: items.length })
+      }
 
       for (const item of items) {
         // Dedup check — skip if URL already known.
@@ -105,7 +129,8 @@ serve(async (req) => {
           body = extractReadableText(body).slice(0, MAX_BODY_CHARS)
           stats.articles_fetched++
         } catch (e: any) {
-          console.warn(`[industry-intel] fetch ${item.link} failed: ${e?.message ?? e}`)
+          log.warn('article.fetch.fail', `could not fetch ${item.link}`,
+            { source: src.name, url: item.link }, e)
           // Still insert the row with raw_content empty so we don't keep retrying
           // the same dead link.
           body = ''
@@ -127,6 +152,8 @@ serve(async (req) => {
           .select('id')
           .single()
         if (insErr) {
+          log.error('article.insert.fail', `insert failed for ${item.link}`,
+            { source: src.name, url: item.link }, insErr)
           stats.errors.push({ source: src.name, error: `insert ${item.link}: ${insErr.message}` })
           continue
         }
@@ -152,16 +179,43 @@ serve(async (req) => {
               .eq('id', stored.id)
             stats.articles_summarized++
           } catch (e: any) {
-            console.warn(`[industry-intel] synth ${item.link} failed: ${e?.message ?? e}`)
+            log.warn('article.synth.fail', `Claude synthesis failed for ${item.link}`,
+              { source: src.name, url: item.link }, e)
           }
         }
       }
     } catch (e: any) {
+      // Where the 403s land. Previously this only grew an array that the
+      // caller discarded, which is why a fully-blocked run still read as ok.
+      log.error('source.fail', `${src.name} failed`,
+        { source: src.name, rss_url: src.rss_url }, e)
       stats.errors.push({ source: src.name, error: e?.message ?? String(e) })
     }
   }
 
-  return jsonResponse({ ok: true, started_at: startedAt, finished_at: new Date().toISOString(), stats })
+  // Grade the run rather than always claiming success.
+  //
+  // The failure this function is known for is "every feed 403s, nothing is
+  // stored, response says ok:true" — invisible until the freshness watchdog
+  // noticed days later. `degraded` and the run status make that state loud at
+  // the moment it happens: ./scripts/logs.sh errors --fn industry-intelligence-sync
+  const allSourcesFailed = stats.errors.length >= stats.sources_polled && stats.sources_polled > 0
+  const status = allSourcesFailed ? 'error' : stats.errors.length > 0 ? 'partial' : 'success'
+  const degraded = status !== 'success' || stats.articles_stored === 0
+
+  if (allSourcesFailed) {
+    log.error('run.all_sources_failed',
+      `all ${stats.sources_polled} sources failed — nothing ingested`, stats)
+  } else if (stats.articles_stored === 0) {
+    log.warn('run.nothing_stored',
+      'run completed but stored 0 articles', stats)
+  }
+
+  await log.finish(status, stats)
+  return jsonResponse({
+    ok: true, degraded, run_id: log.runId,
+    started_at: startedAt, finished_at: new Date().toISOString(), stats,
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────
