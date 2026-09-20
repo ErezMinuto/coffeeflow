@@ -12,6 +12,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
 
 const WOO_URL  = Deno.env.get("WOO_URL")                   ?? "";
 const WOO_KEY  = Deno.env.get("WOO_KEY")                   ?? "";
@@ -206,6 +207,15 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
+  const log = createLogger("woo-orders-sync");
+
+  // The whole body below is wrapped so that a throw from fetchOrders (Woo
+  // down, WOO_URL redirecting, credentials rotated) is RECORDED before it
+  // becomes a 500. Previously such a throw produced an unhandled rejection:
+  // the cron got a 5xx it ignored, nothing was written anywhere, and the
+  // table simply stopped advancing — which is how this sync sat ~6 days
+  // stale without anyone noticing.
+  try {
 
   let days = 60;
   let forceDaysBack: number | null = null;
@@ -262,7 +272,8 @@ serve(async (req) => {
     }
   }
 
-  console.log(`[woo-orders-sync] Last synced order_id=${lastSyncedId}, fetching orders after=${after}`);
+  log.info("run.start", `resuming after order #${lastSyncedId}`,
+    { last_synced_id: lastSyncedId, after, mode: countOnly ? "count_only" : forceDaysBack ? "backfill" : "incremental" });
 
   // count_only branch — fetch every page from Woo to get a true count
   // (processing + completed), no upserts, just return numbers so we can
@@ -290,8 +301,12 @@ serve(async (req) => {
       .gte("order_date", after.slice(0, 10));
     const dbIds = new Set(((dbRows ?? []) as any[]).map(r => r.woo_order_id));
     const inWooNotDb = ids.filter(id => !dbIds.has(id));
+    log.info("count_only.done", `Woo reports ${totalFromWoo} paid orders since ${after.slice(0,10)}`,
+      { woo_total: totalFromWoo, db_total: dbIds.size, missing: inWooNotDb.length });
+    await log.finish("success", { mode: "count_only", woo_total: totalFromWoo, missing: inWooNotDb.length });
     return new Response(JSON.stringify({
       after,
+      run_id: log.runId,
       woo_total_paid: totalFromWoo,
       woo_by_status: statuses,
       woo_order_ids: ids,
@@ -355,9 +370,11 @@ serve(async (req) => {
       .upsert(rows, { onConflict: "woo_order_id" });
 
     if (error) {
-      console.error(`[woo-orders-sync] Upsert error page ${page}:`, error.message);
+      log.error("orders.upsert.fail", `woo_orders upsert failed on page ${page}`,
+        { page, rows: rows.length }, error);
+      await log.finish("error", { page, new_orders: totalNew });
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false, error: error.message, run_id: log.runId }),
         { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
       );
     }
@@ -391,7 +408,11 @@ serve(async (req) => {
       const { error: itemsErr } = await supabase
         .from("woo_order_items_enriched")
         .upsert(itemRows, { onConflict: "order_id,line_index" });
-      if (itemsErr) console.error(`[woo-orders-sync] items upsert error:`, itemsErr.message);
+      // Non-fatal by design: the order itself is already stored. But it does
+      // mean the per-line revenue breakdown silently loses rows, so it is an
+      // error-level line rather than a console aside.
+      if (itemsErr) log.error("items.upsert.fail", `woo_order_items_enriched upsert failed on page ${page}`,
+        { page, item_rows: itemRows.length }, itemsErr);
     }
 
     // Split the rows into "new" (id > lastSyncedId) vs "refreshed" (already
@@ -404,17 +425,25 @@ serve(async (req) => {
     totalRefreshed += refreshedRows.length;
     totalFetched   += orders.length;
     totalUpserted  += rows.length;
-    console.log(`[woo-orders-sync] Page ${page}: ${orders.length} fetched → ${newRows.length} NEW (id>${lastSyncedId}), ${refreshedRows.length} refreshed, ${orders.length - rows.length} skipped`);
+    log.debug("page.done", `page ${page}: ${newRows.length} new, ${refreshedRows.length} refreshed`,
+      { page, fetched: orders.length, new: newRows.length, refreshed: refreshedRows.length, skipped: orders.length - rows.length });
 
     if (orders.length < 100) break; // last page
     page++;
   }
 
-  console.log(`[woo-orders-sync] Done. New: ${totalNew}, Refreshed: ${totalRefreshed}, Skipped mflow: ${totalSkipped}`);
+  const summary = {
+    new_orders: totalNew, refreshed_orders: totalRefreshed,
+    fetched: totalFetched, skipped_mflow: totalSkipped,
+    last_synced_id_before: lastSyncedId, window_after: after, pages: page,
+  };
+  log.info("run.done", `${totalNew} new, ${totalRefreshed} refreshed`, summary);
+  await log.finish("success", summary);
 
   return new Response(
     JSON.stringify({
       success: true,
+      run_id: log.runId,
       new_orders: totalNew,          // actual new orders since last sync
       refreshed_orders: totalRefreshed, // existing orders that got status/data update
       fetched: totalFetched,
@@ -424,4 +453,14 @@ serve(async (req) => {
     }),
     { headers: { ...CORS, "Content-Type": "application/json" } },
   );
+  } catch (err) {
+    // Reached when Woo itself fails. Record it, then answer with a 500 that
+    // carries the run id so the trace is one command away.
+    log.error("run.throw", "sync aborted by an unhandled error", undefined, err);
+    await log.finish("error");
+    return new Response(
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err), run_id: log.runId }),
+      { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  }
 });

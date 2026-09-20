@@ -14,6 +14,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger, type Logger } from "../_shared/logger.ts";
 
 const BOT_TOKEN      = Deno.env.get("COFFEE_BOT_TOKEN")           ?? "";
 const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")         ?? "";
@@ -309,19 +310,23 @@ async function handlePackSelect(
 async function handlePackConfirm(
   chatId: string, telegramId: string, fromName: string,
   productId: number, qty: number, messageId: number, callbackId: string,
+  log: Logger,
 ) {
   await answerCallback(callbackId, "נרשם ✓");
   // Drop the buttons so it can't be confirmed twice.
   await editMessage(chatId, messageId, "✍️ רושם את האריזה...");
   await supabase.from("coffee_bot_pending_packing").delete().eq("telegram_id", telegramId);
   const { data: allProducts } = await supabase.from("products").select("*").eq("user_id", USER_ID);
-  await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[]);
+  await handlePacking(chatId, fromName, productId, qty, (allProducts ?? []) as Product[], log);
 }
 
-async function handlePacking(chatId: string, fromName: string, productId: number, bagsCount: number, allProducts: Product[]) {
+async function handlePacking(chatId: string, fromName: string, productId: number, bagsCount: number, allProducts: Product[], log: Logger) {
   const product = allProducts.find(p => p.id === productId);
+  log.info('packing.start', `${fromName}: ${bagsCount} bags of product ${productId}`,
+    { product_id: productId, bags: bagsCount, reported_by: fromName });
 
   if (!product) {
+    log.warn('packing.unknown_product', `product ${productId} not in catalogue`, { product_id: productId });
     const list = allProducts.map(p => `• ${p.name} ${p.size}g`).join("\n");
     await send(chatId, `⚠️ לא מצאתי את המוצר במערכת\n\nמוצרים זמינים:\n${list}`);
     return;
@@ -330,6 +335,8 @@ async function handlePacking(chatId: string, fromName: string, productId: number
   const recipe: Array<{ sourceType: string; sourceId?: number; originId?: number; percentage: number }> = product.recipe ?? [];
 
   if (recipe.length === 0) {
+    log.warn('packing.no_recipe', `${product.name} has no recipe — nothing can be deducted`,
+      { product_id: product.id, product: product.name });
     await send(chatId, `❌ למוצר "${product.name}" אין מתכון מוגדר`);
     return;
   }
@@ -362,19 +369,37 @@ async function handlePacking(chatId: string, fromName: string, productId: number
   // avoid confusing negative inventory) and warn that roasted_stock looks low.
   const shortages = deductions.filter(d => d.currentStock < d.kgNeeded);
 
+  // Every write below used to discard its error. That matters more here than
+  // almost anywhere else in the system: if the deduction fails, the employee
+  // still sees "✅ נרשמה אריזה" and the inventory is quietly wrong, with no
+  // trace anywhere. (A service-role key in sb_secret_* form fails exactly this
+  // way — PostgREST accepts the request and the UPDATE does nothing.)
+  // We still do not block the reply — the bags really were packed — but the
+  // failure is now recorded and greppable.
+  const writeFailures: string[] = [];
+
   for (const d of deductions) {
     const newStock = Math.max(0, parseFloat((d.currentStock - d.kgNeeded).toFixed(3)));
-    if (d.type === "origin") {
-      await supabase.from("origins").update({ roasted_stock: newStock }).eq("id", d.id);
-    } else {
-      await supabase.from("roast_profiles").update({ roasted_stock: newStock }).eq("id", d.id);
+    const table = d.type === "origin" ? "origins" : "roast_profiles";
+    const { error: dedErr } = await supabase.from(table)
+      .update({ roasted_stock: newStock }).eq("id", d.id);
+    if (dedErr) {
+      writeFailures.push(`${table}#${d.id}`);
+      log.error('packing.deduct.fail', `could not deduct ${d.kgNeeded.toFixed(2)}kg from ${d.name}`,
+        { table, source_id: d.id, source: d.name, kg: d.kgNeeded, new_stock: newStock }, dedErr);
     }
   }
 
   const newPackedStock = (product.packed_stock ?? 0) + bagsCount;
-  await supabase.from("products").update({ packed_stock: newPackedStock }).eq("id", product.id);
+  const { error: packedErr } = await supabase.from("products")
+    .update({ packed_stock: newPackedStock }).eq("id", product.id);
+  if (packedErr) {
+    writeFailures.push(`products#${product.id}`);
+    log.error('packing.packed_stock.fail', `could not set packed_stock for ${product.name}`,
+      { product_id: product.id, new_packed_stock: newPackedStock }, packedErr);
+  }
 
-  await supabase.from("packing_logs").insert({
+  const { error: logErr } = await supabase.from("packing_logs").insert({
     user_id:          USER_ID,
     product_id:       product.id,
     product_name:     `${product.name} ${product.size}g`,
@@ -386,6 +411,20 @@ async function handlePacking(chatId: string, fromName: string, productId: number
     })),
     reported_by: fromName,
   });
+  if (logErr) {
+    writeFailures.push('packing_logs');
+    log.error('packing.log_insert.fail', 'packing_logs insert failed — this packing has no audit row',
+      { product_id: product.id, bags: bagsCount, reported_by: fromName }, logErr);
+  }
+
+  if (writeFailures.length === 0) {
+    log.info('packing.done', `recorded ${bagsCount} bags of ${product.name}`,
+      { product_id: product.id, product: product.name, bags: bagsCount,
+        new_packed_stock: newPackedStock, shortages: shortages.length });
+  } else {
+    log.error('packing.partial', `packing recorded with ${writeFailures.length} failed write(s)`,
+      { product: product.name, bags: bagsCount, failed: writeFailures });
+  }
 
   const deductionLines = deductions.map(d => `  • ${d.name}: ${d.kgNeeded.toFixed(2)} ק"ג`).join("\n");
   let msg = [
@@ -506,6 +545,7 @@ async function handleShopConsumption(
 // ── Main ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  const log = createLogger("coffee-bot");
   try {
     // ── Webhook authentication ─────────────────────────────────────────────
     // Reject any request that doesn't carry the Telegram secret token header.
@@ -557,7 +597,9 @@ serve(async (req) => {
         await handlePackConfirm(
           cbChatId, String(cbTelegramId), cbFromName,
           parseInt(c[1], 10), parseInt(c[2], 10), cbMessageId, cb.id,
+          log,
         );
+        await log.finish('success');
         return new Response("ok");
       }
 
@@ -699,9 +741,15 @@ serve(async (req) => {
       );
     }
 
+    await log.finish('success');
     return new Response("ok");
   } catch (err) {
-    console.error("coffee-bot error:", err);
+    // Telegram retries non-200s, so we still answer "ok" — but the error is
+    // no longer only a console line that ages out of the dashboard. This
+    // handler swallows everything, which is why a broken bot used to look
+    // exactly like an idle one.
+    log.error('webhook.throw', 'unhandled error while handling update', undefined, err);
+    await log.finish('error');
     return new Response("ok");
   }
 });

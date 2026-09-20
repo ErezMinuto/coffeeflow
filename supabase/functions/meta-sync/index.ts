@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
 
 // Per-environment Meta IDs come from Supabase secrets, not hardcoded.
 // If the secret isn't set the function fails fast at startup with a
@@ -18,6 +19,7 @@ serve(async (req) => {
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const startedAt = new Date().toISOString()
+  const log = createLogger('meta-sync')
   let records = 0
 
   // ── Scope control ──────────────────────────────────────────
@@ -40,6 +42,9 @@ serve(async (req) => {
      :  mode === 'all'         ? 'all'
      :  'campaigns,ig')       // default for back-compat
   const parts     = new Set(partsRaw.split(',').map(s => s.trim()).filter(Boolean))
+
+  log.info('run.start', `meta sync (${mode || 'parts'}): ${[...parts].join(', ')}`,
+    { mode: mode || null, parts: [...parts] })
   const run       = (name: string) => parts.has(name) || parts.has('all')
   // Per-stage diagnostic counters returned in the response so we don't have
   // to dig through function logs to figure out where a 0-records sync died.
@@ -238,7 +243,7 @@ serve(async (req) => {
         if (upErr) {
           stats.campaign_errors++
           stats.last_meta_error = upErr.message
-          console.error('[meta-sync] campaign upsert failed', campaign.id, dayDate, upErr.message)
+          log.error('campaign.upsert.fail', 'campaign upsert failed', { entity: 'campaign' }, upErr)
         } else {
           stats.campaign_rows++
           records++
@@ -302,7 +307,7 @@ serve(async (req) => {
         if (upErr) {
           stats.adset_errors++
           stats.last_meta_error = upErr.message
-          console.error('[meta-sync] adset upsert failed', a.id, upErr.message)
+          log.error('adset.upsert.fail', 'adset upsert failed', { entity: 'adset' }, upErr)
         } else {
           stats.adset_rows++
           records++
@@ -382,7 +387,7 @@ serve(async (req) => {
         if (upErr) {
           stats.ad_errors++
           stats.last_meta_error = upErr.message
-          console.error('[meta-sync] ad upsert failed', a.id, upErr.message)
+          log.error('ad.upsert.fail', 'ad upsert failed', { entity: 'ad' }, upErr)
         } else {
           stats.ad_rows++
           records++
@@ -420,7 +425,7 @@ serve(async (req) => {
         if (!upErr) stats.account_settings_rows = 1
       }
     } catch (e: any) {
-      console.error('[meta-sync] account_settings threw', e?.message)
+      log.error('block.account_settings.fail', 'account_settings block threw', { block: 'account_settings' }, e)
       stats.last_meta_error = `account_settings: ${e?.message}`
     }
 
@@ -460,7 +465,7 @@ serve(async (req) => {
         if (!upErr) stats.adset_daily_rows++
       }
     } catch (e: any) {
-      console.error('[meta-sync] adset_daily threw', e?.message)
+      log.error('block.adset_daily.fail', 'adset_daily block threw', { block: 'adset_daily' }, e)
       stats.last_meta_error = `adset_daily: ${e?.message}`
     }
 
@@ -497,7 +502,7 @@ serve(async (req) => {
         if (!upErr) stats.placement_daily_rows++
       }
     } catch (e: any) {
-      console.error('[meta-sync] placement_daily threw', e?.message)
+      log.error('block.placement_daily.fail', 'placement_daily block threw', { block: 'placement_daily' }, e)
       stats.last_meta_error = `placement_daily: ${e?.message}`
     }
 
@@ -532,7 +537,7 @@ serve(async (req) => {
         if (!upErr) stats.ad_daily_rows++
       }
     } catch (e: any) {
-      console.error('[meta-sync] ad_daily threw', e?.message)
+      log.error('block.ad_daily.fail', 'ad_daily block threw', { block: 'ad_daily' }, e)
       stats.last_meta_error = `ad_daily: ${e?.message}`
     }
 
@@ -658,7 +663,7 @@ serve(async (req) => {
               if (upErr) {
                 stats.ig_post_errors++
                 stats.last_meta_error = upErr.message
-                console.error('[meta-sync] post upsert failed', post.id, upErr.message)
+                log.error('post.upsert.fail', 'post upsert failed', { entity: 'post' }, upErr)
               } else {
                 stats.ig_post_rows++
                 records++
@@ -758,7 +763,7 @@ serve(async (req) => {
         }
       }
     } catch (e: any) {
-      console.error('[meta-sync] ig_comments threw', e?.message)
+      log.error('block.ig_comments.fail', 'ig_comments block threw', { block: 'ig_comments' }, e)
       stats.last_meta_error = `ig_comments: ${e?.message}`
     }
 
@@ -814,7 +819,7 @@ serve(async (req) => {
         }
       }
     } catch (e: any) {
-      console.error('[meta-sync] fb_comments threw', e?.message)
+      log.error('block.fb_comments.fail', 'fb_comments block threw', { block: 'fb_comments' }, e)
       stats.last_meta_error = `fb_comments: ${e?.message}`
     }
 
@@ -944,25 +949,45 @@ serve(async (req) => {
         }
       }
     } catch (e: any) {
-      console.error('[meta-sync] ig_dms threw', e?.message)
+      log.error('block.ig_dms.fail', 'ig_dms block threw', { block: 'ig_dms' }, e)
       stats.last_meta_error = `ig_dms: ${e?.message}`
     }
 
+    // Grade the run instead of hard-coding success.
+    //
+    // This used to write status:'success' unconditionally, so a sync where
+    // every Meta block threw was indistinguishable in sync_log from a clean
+    // one — the silent-failure pattern this table exists to end. The block
+    // errors above are already durable; this makes the VERDICT durable too.
+    const blockErrors = (stats.comment_errors ?? 0) + (stats.last_meta_error ? 1 : 0)
+    const runStatus = records === 0 ? 'error' : blockErrors > 0 ? 'partial' : 'success'
+    if (records === 0) {
+      log.error('run.no_records', 'sync finished having written zero rows', { stats })
+    }
+
     await supabase.from('sync_log').insert({
-      platform: 'meta', status: 'success', records,
+      platform: 'meta', status: runStatus, records,
+      error_msg: stats.last_meta_error ?? null,
       started_at: startedAt, finished_at: new Date().toISOString(),
+      stats: { ...stats, run_id: log.runId },
     })
 
-    return new Response(JSON.stringify({ success: true, records, parts: [...parts], stats }), {
+    log.info('run.done', `${records} records across ${[...parts].length} parts`,
+      { records, parts: [...parts], stats })
+    await log.finish(runStatus, { records })
+
+    return new Response(JSON.stringify({ success: true, run_id: log.runId, status: runStatus, records, parts: [...parts], stats }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (err) {
-    console.error('Meta sync error:', err.message)
+    log.error('run.fatal', 'meta sync aborted', undefined, err)
     await supabase.from('sync_log').insert({
       platform: 'meta', status: 'error', error_msg: err.message,
       started_at: startedAt, finished_at: new Date().toISOString(),
+      stats: { run_id: log.runId },
     })
-    return new Response(JSON.stringify({ error: err.message }), {
+    await log.finish('error')
+    return new Response(JSON.stringify({ error: err.message, run_id: log.runId }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
