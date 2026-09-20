@@ -7,6 +7,22 @@
             "type": "command",
             "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && git fetch origin 2>&1 || true",
             "statusMessage": "Syncing with team (git fetch)..."
+          },
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && [ -x scripts/secrets-doctor.sh ] && ./scripts/secrets-doctor.sh 2>&1 || true",
+            "statusMessage": "Checking available credentials..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '[ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-secret-dumps.sh\" ] && exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-secret-dumps.sh\" || exit 0'"
           }
         ]
       }
