@@ -60,6 +60,44 @@ while read -r v; do [[ -n "$v" ]] && report "$v" bootstrap; done < <(read_tier b
 echo "── from Supabase Vault ──────────────────────────────────────────────────"
 while read -r v; do [[ -n "$v" ]] && report "$v" vault; done < <(read_tier vault)
 
+# A malformed line in the store is skipped in silence, and looks exactly like a
+# credential that was never added — so say so instead.
+STORE="${COFFEEFLOW_SECRETS_FILE:-$HOME/.config/coffeeflow/secrets.env}"
+if [[ -f "$STORE" ]]; then
+  STORE="$STORE" python3 -c '
+import os, sys
+
+path = os.environ["STORE"]
+raw = open(path, "rb").read()
+problems = []
+
+if raw[:5] == b"{\\rtf":
+    problems.append("the file is RTF, not plain text — in TextEdit: Format -> Make Plain Text")
+if b"\r" in raw:
+    problems.append("the file has CRLF line endings; the parser expects LF")
+for smart in ("“", "”", "‘", "’"):
+    if smart.encode() in raw:
+        problems.append("the file contains a smart quote (%s) — retype it as a plain quote" % smart)
+        break
+
+ok = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"
+for n, line in enumerate(raw.decode("utf-8", "replace").splitlines(), 1):
+    if not line.strip() or line.lstrip().startswith("#") or "=" not in line:
+        continue
+    name = line.partition("=")[0]
+    if name != name.strip():
+        problems.append("line %d: whitespace around the name %r — skipped" % (n, name.strip()))
+    elif not name or any(c not in ok for c in name):
+        problems.append("line %d: %r is not a usable variable name — skipped" % (n, name))
+
+if problems:
+    print()
+    print("⚠  Problems in %s:" % path)
+    for p in problems:
+        print("   - %s" % p)
+'
+fi
+
 # Format trap documented in CLAUDE.md: PostgREST writes break on sb_secret_ keys.
 if [[ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" && "${SUPABASE_SERVICE_ROLE_KEY:0:3}" != "eyJ" ]]; then
   echo
