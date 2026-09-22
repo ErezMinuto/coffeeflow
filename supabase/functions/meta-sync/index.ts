@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger } from '../_shared/logger.ts'
 
 // Per-environment Meta IDs come from Supabase secrets, not hardcoded.

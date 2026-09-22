@@ -13,7 +13,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger, type Logger } from "../_shared/logger.ts";
 
 const BOT_TOKEN      = Deno.env.get("COFFEE_BOT_TOKEN")           ?? "";
