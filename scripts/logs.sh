@@ -140,7 +140,9 @@ for r in reversed(rows):                      # oldest first: reads like a story
     ts  = (r.get('ts') or '')[:19].replace('T',' ')
     run = (r.get('run_id') or '')[:8]
     ev  = r.get('event') or '-'
-    dur = f" {r['duration_ms']}ms" if r.get('duration_ms') else ''
+    # Terminal rows already say the duration in their message; appending it
+    # again just prints the number twice.
+    dur = '' if r.get('run_status') else (f" {r['duration_ms']}ms" if r.get('duration_ms') else '')
     print(f"{DIM}{ts}{R} {C.get(lvl,'')}{lvl.upper():<5}{R} {DIM}{run}{R} {r.get('fn','?'):<26} {C.get(lvl,'')}{ev}{R} — {r.get('message','')}{dur}")
     data = r.get('data')
     if data not in (None, {}, []):
