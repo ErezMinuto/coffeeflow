@@ -96,6 +96,16 @@ if problems:
         print("  - %s" % p)
     print()
 
+PREFILLED = {
+    "SUPABASE_URL", "WOO_URL", "MFLOW_BASE", "DASHBOARD_URL",
+    "SENDER_EMAIL", "ADMIN_ALERT_EMAIL", "VERTEX_LOCATION",
+}
+if entries and {n for n, _ in entries} <= PREFILLED:
+    print("This worksheet holds only the values that ship pre-filled in the")
+    print("template — nothing of your own. If you had filled it in, it has been")
+    print("overwritten (`cp` without -n will do that silently).")
+    print()
+
 if not entries:
     sys.exit("Nothing filled in. Every value line is blank.")
 
