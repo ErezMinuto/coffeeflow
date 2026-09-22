@@ -76,14 +76,50 @@
 -- Rollback: the pre-change cron.job table is snapshotted below.
 
 -- ── 0. Rollback point ──────────────────────────────────────────────────
--- Already created during the 2026-09-20 incident triage, so this is a no-op
--- there; the IF NOT EXISTS keeps the ORIGINAL pre-change snapshot rather than
--- overwriting it with a half-migrated state.
-CREATE TABLE IF NOT EXISTS public.cron_job_backup_20260920 AS
+-- This snapshot MUST NOT live in `public`.
+--
+-- cron.job rows carry the job `command`, and every one of these commands embeds
+-- a service-role `Authorization: Bearer ...` header. In the `cron` schema that
+-- is safe: PostgREST does not expose `cron`, and only a superuser can read it.
+-- Copy those rows into `public` and both protections vanish at once — PostgREST
+-- exposes `public`, Supabase's default privileges grant `anon` on new tables
+-- there, and the anon key ships inside the frontend bundle. That turns a
+-- rollback convenience into a public read of the service-role key.
+--
+-- (This is not hypothetical: the triage snapshot was first created in `public`
+-- on 2026-09-20 and tripped the "RLS Disabled in Public" advisor. The schema
+-- move below is what remediates it.)
+--
+-- So the snapshot lives in `ops`, which is not in PostgREST's exposed schema
+-- list, with the anon/authenticated grants revoked as a second layer.
+CREATE SCHEMA IF NOT EXISTS ops;
+REVOKE ALL ON SCHEMA ops FROM anon, authenticated;
+
+COMMENT ON SCHEMA ops IS
+  'Operational tables that must never be reachable through the Data API. Not in PostgREST''s exposed schemas. Anything holding credentials belongs here, never in public.';
+
+-- Relocate the 2026-09-20 triage snapshot if it is still sitting in public,
+-- then create it in ops if it never existed. Both guarded, so this is a no-op
+-- on a database where it has already been done.
+DO $backup$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_tables
+     WHERE schemaname = 'public' AND tablename = 'cron_job_backup_20260920'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.cron_job_backup_20260920 SET SCHEMA ops';
+    RAISE NOTICE 'moved cron_job_backup_20260920 out of public into ops';
+  END IF;
+END
+$backup$;
+
+CREATE TABLE IF NOT EXISTS ops.cron_job_backup_20260920 AS
   SELECT * FROM cron.job;
 
-COMMENT ON TABLE public.cron_job_backup_20260920 IS
-  'Snapshot of cron.job before 20260920_cron_worker_pressure.sql. Restore one schedule with: SELECT cron.alter_job(j.jobid, schedule := b.schedule) FROM cron.job j JOIN public.cron_job_backup_20260920 b USING (jobname) WHERE j.jobname = ...;';
+REVOKE ALL ON ops.cron_job_backup_20260920 FROM anon, authenticated;
+
+COMMENT ON TABLE ops.cron_job_backup_20260920 IS
+  'Snapshot of cron.job before 20260920_cron_worker_pressure.sql. Contains service-role headers in the command column — keep it out of public. Restore one schedule with: SELECT cron.alter_job(j.jobid, schedule := b.schedule) FROM cron.job j JOIN ops.cron_job_backup_20260920 b USING (jobname) WHERE j.jobname = ...;';
 
 -- ── 1. Collapse the high-frequency pollers, and slow them to every 5m ──
 -- Each original command is a single `SELECT net.http_post(...);` with no
