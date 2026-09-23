@@ -45,12 +45,16 @@ export interface WooProduct {
   // 'onbackorder'), NOT a numeric count. For numeric stock levels, see
   // fetchInventoryAlerts which reads the internal `products` table.
   stock_status: string | null
+  // WooCommerce categories. Selected so the brand guard can classify a SKU by
+  // category rather than by name — each off-brand class (green coffee, Veneto,
+  // Toddy) has its own dedicated category, and categories survive renames.
+  categories?: string[] | null
 }
 
 export async function fetchActiveCatalog(supabase: SupabaseClient): Promise<WooProduct[]> {
   const { data, error } = await supabase
     .from('woo_products')
-    .select('name, price, permalink, image_url, stock_status')
+    .select('name, price, permalink, image_url, stock_status, categories')
     .not('image_url', 'is', null)
     .order('name')
   if (error) throw new Error(`fetchActiveCatalog failed: ${error.message}`)
@@ -74,7 +78,7 @@ export async function fetchMinutoCoffeeCatalog(supabase: SupabaseClient): Promis
   const orFilter = MINUTO_COFFEE_CATEGORIES.map(c => `categories.cs.{"${c}"}`).join(',')
   const { data, error } = await supabase
     .from('woo_products')
-    .select('name, price, permalink, image_url, stock_status')
+    .select('name, price, permalink, image_url, stock_status, categories')
     .or(orFilter)
     .order('name')
   if (error) throw new Error(`fetchMinutoCoffeeCatalog failed: ${error.message}`)

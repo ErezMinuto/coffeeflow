@@ -30,6 +30,15 @@ import {
   checkCannibalizationForQueue,
   buildCannibalizationConflictBrief,
 } from '../seo-agent/cannibalizationCheck.ts'
+import { getRecentLearnings } from '../seo-agent/db.ts'
+import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
+import { getCalendarContext, renderCalendarBlock } from '../seo-agent/services/calendarContext.ts'
+import {
+  getActiveStoryThemeLock,
+  screenStoryScene,
+  renderStoryLockPolicy,
+  type StoryThemeLock,
+} from '../seo-agent/services/storyThemeLock.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 
 const CORS = {
@@ -329,6 +338,42 @@ serve(async (req) => {
     }).join('\n')
   }
 
+  // ── 2.35 Standing instructions + calendar ───────────────────────────────
+  // This worker queues the DAILY IG STORY, and until 2026-09-23 it read
+  // seo_learnings not at all. Every "never do X in a story" the admin recorded
+  // in chat went to the orchestrator, which does not queue the daily story —
+  // so the espresso/latte-art request of 2026-09-17 had literally no path to
+  // the code that acts on it, and French press, siphon, cezve and cupping-bowl
+  // stories kept shipping for a week. Same for the calendar: nothing here ever
+  // said what day it was.
+  //
+  // Scopes match the orchestrator's, minus the ones its own prompt owns.
+  // Everything is guarded — a failure costs context, never the step.
+  const [learnings, calendar, storyLock] = await Promise.all([
+    getRecentLearnings(supabase, {
+      scopes: ['visual_style', 'render_strategy', 'content_topic', 'other'],
+      limit: 60,
+    }).catch((e: any) => { console.warn(`[mission-worker] learnings fetch failed: ${e?.message ?? e}`); return [] }),
+    getCalendarContext().catch((e: any) => {
+      console.warn(`[mission-worker] calendar fetch failed: ${e?.message ?? e}`)
+      return null
+    }),
+    getActiveStoryThemeLock(supabase, new Date().toISOString().slice(0, 10))
+      .catch((e: any) => { console.warn(`[mission-worker] story lock fetch failed: ${e?.message ?? e}`); return null }),
+  ])
+
+  const learningsBlock = learnings.length === 0
+    ? ''
+    : `=== STANDING INSTRUCTIONS (recorded by the admin; newest first) ===\n` +
+      `These are durable rules. Honour every one of them in anything you queue. When two conflict, the NEWER one wins.\n` +
+      `They constrain HOW you execute, not WHICH subjects you may cover — brew method, season and holiday angles remain your call.\n\n` +
+      [...learnings]
+        .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+        .map(l => `  • [${(l.created_at ?? '').slice(0, 10)}] (${l.scope}) ${l.insight}`)
+        .join('\n') + '\n\n'
+
+  const calendarBlock = calendar ? `${renderCalendarBlock(calendar)}\n\n` : ''
+
   // ── 2.4 IG cadence — compute progress + idle short-circuit ──────────────
   // For the standing cadence mission, compute today's story progress + this
   // week's feed progress so we can (a) feed the LLM an explicit "still needed"
@@ -383,8 +428,20 @@ serve(async (req) => {
     // pool exhausted, looped forever picking a product. A story is NOT a product
     // feature — it's a brewing/ritual/tip/ambiance scene — so it is exempt from
     // the no-repeat-bean rule and must never be blocked by it.
+    //
+    // When a theme lock is active the SUBJECT clause is replaced wholesale.
+    // The default wording ("a brewing method, ritual, brewing tip, or
+    // café-ambiance scene") was actively steering toward the filter and
+    // immersion scenes the admin had asked to stop — the instruction and the
+    // prompt were arguing, and the prompt won every time. Everything else
+    // about the policy (product-free, exempt from the no-repeat list) is
+    // preserved verbatim: those clauses are what keep story selection from
+    // deadlocking, and the lock must not reintroduce that failure.
+    const storySubject = storyLock
+      ? renderStoryLockPolicy(storyLock)
+      : `STORY POLICY: the daily story is PRODUCT-FREE by default — a brewing method, ritual, brewing tip, or café-ambiance scene.\n`
     const storyPolicy = c.storyRemainingToday > 0
-      ? `STORY POLICY: the daily story is PRODUCT-FREE by default — a brewing method, ritual, brewing tip, or café-ambiance scene (visual aspect:"story", render_mode:"no_bag", NO product_name; post media_type:"story"). Do NOT pick a coffee for the story and do NOT consult the "featured on Instagram" list for it — that no-repeat rule is for FEED posts only. A story is therefore NEVER blocked by recently-featured beans: if a story is still needed, queue it now.\n`
+      ? `${storySubject}Mechanics: visual aspect:"story", render_mode:"no_bag", NO product_name; post media_type:"story". Do NOT pick a coffee for the story and do NOT consult the "featured on Instagram" list for it — that no-repeat rule is for FEED posts only. A story is therefore NEVER blocked by recently-featured beans: if a story is still needed, queue it now.\n`
       : ''
     // ORPHAN RECOVERY. A completed IG visual with no instagram_post is a finished
     // render waiting to be posted — committing it needs NO new render, so it works
@@ -426,6 +483,10 @@ serve(async (req) => {
   // Set of recently-featured coffees (normalized) backing the hard queue-time
   // dedup below; the prompt block keeps the model from picking them in the first place.
   const recentIgProductSet = new Set(recentIgProducts.map(normProduct))
+  // Brand classifier for the queue-time hero check. Built from the Minuto-only
+  // catalog, so anything the model names that is NOT on that list falls
+  // through to the name regex — which is exactly the case worth catching.
+  const brandIndex = buildBrandIndex(catalog.map(p => ({ name: p.name, categories: p.categories ?? null })))
 
   const catalogBlock = catalog.length === 0
     ? '(catalog unavailable this step)'
@@ -444,6 +505,8 @@ serve(async (req) => {
   const system = buildMissionSystemPrompt(inflight, isDailyIgCadence)
   const userMsg =
     `MISSION OBJECTIVE:\n${mission.objective}\n\n` +
+    calendarBlock +
+    learningsBlock +
     igCadenceBlock +
     `STEP ${mission.steps_taken + 1} of max ${mission.max_steps}.\n\n` +
     `PROGRESS NOTES SO FAR:\n${(state.progress_notes ?? []).slice(-12).map(n => `- ${n}`).join('\n') || '(none yet)'}\n\n` +
@@ -557,12 +620,42 @@ serve(async (req) => {
               feedUnitsQueuedThisStep++
             }
           }
+          // (a3) STORY THEME LOCK — the gate that makes the admin's "espresso
+          // and latte art only" actually bind. Judged on the emitted
+          // scene_brief, not on the model's intent: a rejected story comes
+          // back as a note and the mission retries on the next tick (~10 min),
+          // and since the allowed subject has unlimited variations there is no
+          // pool to exhaust, so this cannot deadlock the way product selection
+          // once did.
+          if (isStoryVisual && storyLock) {
+            const scene   = String((rawBrief as { scene_brief?: unknown }).scene_brief ?? '')
+            const verdict = screenStoryScene(scene, storyLock)
+            if (!verdict.ok) {
+              newNotes.push(
+                `(did NOT queue the story visual — ${verdict.why}. ` +
+                `Re-queue a story depicting ${storyLock.themes.join(' or ')}: an espresso pull, crema in the cup, a portafilter, ` +
+                `steaming or pouring milk, a rosetta. Vary the angle, light, cup and setting — not the subject. ` +
+                `Lock lifts ${storyLock.until}.)`,
+              )
+              console.warn(`[mission-worker] story theme lock rejected a scene: ${verdict.why}`)
+              continue
+            }
+          }
           // (b) No-repeat dedup: don't feature a coffee already featured on IG
           // within IG_PRODUCT_REPEAT_DAYS, or this step — prevents cannibalizing
           // (e.g. two Sweet Leona feed posts in a day). Only applies when a
           // product is named; bag-free lifestyle scenes (no product_name) pass.
           const productName = String((rawBrief as { product_name?: unknown }).product_name ?? '').trim()
           if (productName) {
+            // Brand guard. The catalog block already only shows Minuto's own
+            // roasts, but the model writes product_name as free text and can
+            // name something that was never on the list.
+            const heroVerdict = screenHeroProduct(productName, brandIndex)
+            if (!heroVerdict.ok) {
+              newNotes.push(`(did NOT queue IG visual — ${heroVerdict.why}. Pick a Minuto roast from the lineup above.)`)
+              console.warn(`[mission-worker] brand guard rejected hero "${productName}": ${heroVerdict.why}`)
+              continue
+            }
             const key = normProduct(productName)
             if (recentIgProductSet.has(key) || igProductsQueuedThisStep.has(key)) {
               newNotes.push(`(did NOT queue IG visual for "${productName}" — that coffee was already featured on Instagram within the last ${IG_PRODUCT_REPEAT_DAYS} days. Pick a DIFFERENT bean from the lineup so posts don't cannibalize.)`)
@@ -886,7 +979,7 @@ function buildMissionSystemPrompt(inflight: number, isDailyIgCadence = false): s
 - Each tick: do EXACTLY what "STILL NEEDED right now" lists — nothing more. If it says 0 story and no feed due, just note_progress and wait. Crucially: if no feed is due today, do NOT queue a feed (the weekly quota is on pace). Queue at most the next 1-2 sub-tasks, never a day/week at once.
 - A post is a TWO-STEP pipeline: first queue a visual_generation (set brief.destination:"ig_post", choose render_mode bag_hero with an exact product_name when featuring a coffee, else no_bag for a lifestyle scene), WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts). Set media_type:"story" on exactly the story.
 - CRITICAL — match the aspect to the format: the STORY's visual_generation MUST set aspect:"story" (9:16 full-bleed, 1080×1920). FEED posts use aspect:"feed_square" (1:1) for a single image or aspect:"feed_portrait" (4:5) for a carousel. A story rendered at feed_square/feed_portrait is WRONG — it must be aspect:"story". So: story → visual aspect:"story" + post media_type:"story"; feed → visual aspect:"feed_square"/"feed_portrait" + post media_type:"feed_image"/"feed_carousel".
-- STORY vs FEED are different formats with different rules. The daily STORY is PRODUCT-FREE by default: a brewing method, ritual, brewing tip, or café-ambiance scene (aspect:"story", render_mode:"no_bag", no product_name). It does NOT feature a specific bean and is NOT subject to the "featured on Instagram" no-repeat list — so the story is NEVER blocked by recently-used beans. Only FEED posts feature an exact coffee and must rotate to a bean not featured in the last ${IG_PRODUCT_REPEAT_DAYS} days. If you can't find an un-featured bean for a feed, that just means no feed is due — it never blocks the story.
+- STORY vs FEED are different formats with different rules. The daily STORY is PRODUCT-FREE (aspect:"story", render_mode:"no_bag", no product_name). Its SUBJECT is set by the STORY POLICY line in the IG CADENCE block below — that block is the single source of truth and may carry an active theme lock; follow it exactly rather than defaulting to any subject named here. It does NOT feature a specific bean and is NOT subject to the "featured on Instagram" no-repeat list — so the story is NEVER blocked by recently-used beans. Only FEED posts feature an exact coffee and must rotate to a bean not featured in the last ${IG_PRODUCT_REPEAT_DAYS} days. If you can't find an un-featured bean for a feed, that just means no feed is due — it never blocks the story.
 - Vary it: don't post the same product/angle every day; ground each choice in the SEARCH DEMAND + CATALOG data below, same as any content task.
 - Everything still queues for review — you never publish. The admin approves what ships.` : ''
   return `You are Minuto's autonomous MISSION EXECUTOR.${cadenceAddendum} Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.

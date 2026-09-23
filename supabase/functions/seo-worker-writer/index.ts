@@ -38,6 +38,7 @@ import {
   markTaskCompleted,
   markTaskFailed,
 } from '../seo-agent/db.ts'
+import { fetchBrandIndex, screenProductList } from '../seo-agent/services/brandGuard.ts'
 import type { TextGenerationBrief, SeoTaskRow } from '../seo-agent/types.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -111,6 +112,29 @@ serve(async (req: Request): Promise<Response> => {
         cannibalization: cannibal.conflicts,
         error:          msg,
       }, 200)
+    }
+
+    // ── 1b. BRAND GUARD — screen products_to_mention before anything is
+    // resolved or written. The Writer prompt has forbidden Veneto and green
+    // coffee since it was written, and the 2026-09-20 article shipped with two
+    // green 1kg SKUs in this exact field anyway. The resolver below also
+    // penalises them in its scoring, but a penalty only picks between candidate
+    // ROWS — an exact name match still wins and still gets linked. This drops
+    // them outright.
+    //
+    // Toddy survives here when a Minuto roast is in the list with it: cold-brew
+    // gear paired with the coffee to brew in it is exactly the content the
+    // admin asked for on 2026-09-23. Alone, it is a reseller spotlight and goes.
+    const brandIndex = await fetchBrandIndex(supabase)
+    {
+      const { kept, dropped } = screenProductList(brief.products_to_mention ?? [], brandIndex)
+      if (dropped.length > 0) {
+        console.warn(
+          `[seo-worker-writer] brand guard dropped ${dropped.length} product(s): ` +
+          dropped.map(d => `"${d.name}" (${d.why})`).join(' | '),
+        )
+        ;(brief as { products_to_mention?: unknown }).products_to_mention = kept
+      }
     }
 
     // ── 2. Resolve products_to_mention → permalink+UTM map ──────────────
@@ -346,10 +370,18 @@ function bestCatalogMatch<T extends { name: string; permalink: string; norm: str
     if (row.norm.includes('minuto'))   quality += 1   // our own roastery line
     if (row.norm.includes('פולי קפה')) quality += 1   // whole roasted beans
     if (row.norm.includes('ירוק'))     quality -= 3   // green/unroasted — wrong for a consumer post
-    // Resold third-party brands. We stock them, we do not ROAST them, so they
-    // must never be the product a Minuto article recommends. A published draft
-    // closed by pushing "Veneto Delux" as if it were ours.
-    if (/veneto|toddy/.test(row.norm))  quality -= 5
+    // Resold third-party COFFEE. We stock it, we do not ROAST it, so it must
+    // never be the product a Minuto article recommends. A published draft
+    // closed by pushing "Veneto Delux" as if it were ours. (Veneto is now also
+    // dropped outright by the brand guard before this resolver runs; the
+    // penalty stays as belt and braces for fuzzy matches.)
+    //
+    // Toddy is NOT penalised here any more. It is brewing gear, not coffee, and
+    // per the admin on 2026-09-23 it is welcome as long as it is paired with a
+    // Minuto roast — the pairing rule is enforced in screenProductList, which
+    // has the whole list in view. Penalising it here would quietly re-break
+    // "which Minuto coffee to brew in your Toddy".
+    if (/veneto/.test(row.norm))  quality -= 5
     const better = !best
       || matchScore > best.matchScore
       || (matchScore === best.matchScore && quality > best.quality)
