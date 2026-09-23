@@ -72,6 +72,7 @@ import {
 } from '../seo-agent/db.ts'
 import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson } from '../seo-agent/claude.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
+import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
@@ -167,6 +168,27 @@ serve(async (req) => {
     // must be set for bag_hero. Permanent failure — brief is malformed.
     await safeMarkFailed(supabase, task, 'bag_hero render_mode requires product_name in brief_data', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'product_name missing for bag_hero' })
+  }
+  // BRAND GUARD — last line of defence, at the point of no return. bag_hero
+  // composites the real white Minuto bag around whatever product_name says, so
+  // a reseller or green-coffee name here produces an image that misrepresents
+  // what Minuto sells. Four such renders reached completion (Veneto Delux on
+  // 2026-09-13, Veneto Premium on 09-23, a green Brazil 1kg on 09-20) despite
+  // the rule existing in prompts since May.
+  //
+  // Name-only classification on purpose: this runs per task, and pulling the
+  // full catalogue for categories on every render would cost a 1000-row select
+  // to re-derive what the planners already checked with categories in hand.
+  // The regex is verified against every real off-brand SKU (see
+  // brandGuard.test.ts). Permanent failure — a brief naming a banned product
+  // is malformed, and retrying renders it again.
+  {
+    const verdict = screenHeroProduct(brief.product_name, buildBrandIndex([]))
+    if (!verdict.ok) {
+      console.error(`[seo-worker-visual] ${workerId} BRAND GUARD blocked task ${task.id}: ${verdict.why}`)
+      await safeMarkFailed(supabase, task, `brand guard: ${verdict.why}`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brand guard blocked product_name' })
+    }
   }
 
   // ── 3. Resolve parent (only required for blog_banner attach) ─────────

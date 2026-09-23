@@ -62,6 +62,19 @@ import {
   fetchTopOrganicPosts,
   fetchTopConvertingAds,
 } from '../seo-agent/services/metaApi.ts'
+import {
+  buildBrandIndex,
+  screenProductList,
+  screenHeroProduct,
+  type BrandIndex,
+} from '../seo-agent/services/brandGuard.ts'
+import { getCalendarContext, renderCalendarBlock, type CalendarContext } from '../seo-agent/services/calendarContext.ts'
+import {
+  getActiveStoryThemeLock,
+  screenStoryScene,
+  renderStoryLockPolicy,
+  type StoryThemeLock,
+} from '../seo-agent/services/storyThemeLock.ts'
 import type {
   MetricsSnapshot,
   NewSeoTask,
@@ -162,6 +175,8 @@ serve(async (req: Request): Promise<Response> => {
       aiVisibility,
       customerSegments,
       competitorIntel,
+      calendar,
+      storyLock,
     ] = await Promise.all([
       // Housekeeping (side-effecting / strategist-input) — guarded so a
       // single failure degrades gracefully instead of killing the cycle.
@@ -186,9 +201,15 @@ serve(async (req: Request): Promise<Response> => {
       // Cross-session learnings — scopes most relevant to strategist planning.
       // Excludes brand_voice (the writer worker enforces those via its own
       // prompt) and qa_pattern (the visual worker handles those internally).
+      // Limit was 30 while 31 active learnings existed in these scopes, so the
+      // oldest was being silently dropped every cycle — and the two
+      // green-coffee rules sat at positions 26 and 30, two new learnings away
+      // from falling off the edge entirely. 120 leaves real headroom; the
+      // cheap fix for volume is superseding stale rows, not truncating live
+      // ones without telling anyone.
       getRecentLearnings(supabase, {
         scopes: ['visual_style', 'render_strategy', 'content_topic', 'other'],
-        limit: 30,
+        limit: 120,
       }),
       // Google Ads — which paid keywords convert; seed organic content for them
       fetchTopConvertingPaidKeywords(supabase, 30, 15),
@@ -220,6 +241,16 @@ serve(async (req: Request): Promise<Response> => {
       // Competitor intelligence — aggregated from existing tables (LLM
       // probe co-mentions + market_research scans). No new scrapers.
       fetchCompetitorIntelligence(supabase, 30),
+      // Where we are in the year. Until 2026-09-23 the strategist was never
+      // told the date, so "take season and holidays into account" was not
+      // something it was declining to do — it had no calendar to do it with.
+      // Fails open to date+season if the holiday API is unreachable.
+      getCalendarContext(),
+      // The orchestrator queues story visuals too (run aa0f58a7 did on
+      // 2026-09-23), so the story theme lock has to bind here as well — not
+      // only in mission-worker's daily cadence.
+      getActiveStoryThemeLock(supabase, new Date().toISOString().slice(0, 10))
+        .catch((e: any) => { console.warn(`[organic-orchestrator] story lock fetch failed: ${e?.message ?? e}`); return null }),
     ])
 
     console.log(
@@ -274,6 +305,10 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[organic-orchestrator] snapshot inserted id=${snapshotId}`)
 
     // ── 3. Build user message for the strategist ─────────────────────
+    // One classifier for the whole cycle: it shapes the catalog the
+    // strategist sees, and the same instance screens the plan it returns.
+    const brandIndex = buildBrandIndex(catalog.map(p => ({ name: p.name, categories: p.categories ?? null })))
+
     const userMessage = buildStrategistUserMessage({
       focus,
       snapshot,
@@ -296,6 +331,9 @@ serve(async (req: Request): Promise<Response> => {
       customerSegments,
       competitorIntel,
       postFollowback,
+      calendar,
+      brandIndex,
+      storyLock,
     })
 
     // ── 3b. SERP REALITY CHECK (Gemini only) ─────────────────────────
@@ -520,6 +558,112 @@ serve(async (req: Request): Promise<Response> => {
 
     if (cannibalConflictsFiled > 0) {
       console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} task(s) converted to conflict proposals`)
+    }
+
+    // ── 5b. BRAND GUARD ──────────────────────────────────────────────
+    // The plan is screened before anything is inserted. Two outcomes, chosen
+    // to match how recoverable the violation is:
+    //
+    //   • products_to_mention → SCRUBBED in place. An article that named a
+    //     green 1kg sack is still a perfectly good article without it, so the
+    //     offending entries are dropped and the task ships. (2026-09-20 shows
+    //     why this matters: that brief carried two green SKUs and the article
+    //     completed.)
+    //   • a banned bag_hero product_name → the task CANNOT be repaired, since
+    //     the scene_brief names the bag in prose. It becomes a
+    //     dynamic_experiment (brand_guard_block) so the block is visible in
+    //     the admin UI instead of vanishing, with approval_required false —
+    //     it is a record, not a decision anyone needs to make.
+    //
+    // Converting in place rather than removing keeps parent_task_index /
+    // depends_on_index valid, same reasoning as the cannibalization gate.
+    phase = 'brand_guard'
+    let brandScrubbed = 0
+    let brandBlocked  = 0
+
+    for (const et of emittedTasks) {
+      const brief = (et.brief_data ?? {}) as Record<string, unknown>
+
+      // 1. products_to_mention — scrub.
+      if (Array.isArray(brief.products_to_mention)) {
+        const { kept, dropped } = screenProductList(brief.products_to_mention, brandIndex)
+        if (dropped.length > 0) {
+          brief.products_to_mention = kept
+          brandScrubbed++
+          const why = dropped.map(d => `"${d.name}" (${d.why})`).join('; ')
+          et.rationale = `${et.rationale ?? ''}\n[brand-guard] dropped ${dropped.length} product(s): ${why}`.trim()
+          console.warn(`[organic-orchestrator] brand-guard scrubbed ${dropped.length} product(s) from a ${et.task_type} brief: ${why}`)
+        }
+      }
+
+      // 2. Story theme lock. Applies to story visuals the STRATEGIST plans;
+      // mission-worker screens its own daily story separately. Blocking one
+      // here costs nothing: the daily story is mission-worker's standing
+      // deliverable and still gets queued on its next tick.
+      if (storyLock && et.task_type === 'visual_generation') {
+        const aspect = String(brief.aspect ?? '').toLowerCase()
+        if (aspect === 'story') {
+          const verdict = screenStoryScene(brief.scene_brief, storyLock)
+          if (!verdict.ok) {
+            et.task_type    = 'dynamic_experiment'
+            et.task_subtype = 'story_theme_block'
+            et.brief_data   = {
+              description:
+                `Story theme lock blocked a story visual — ${verdict.why}. ` +
+                `Allowed subjects until ${storyLock.until}: ${storyLock.themes.join(', ')}. ` +
+                `The daily story is mission-worker's standing deliverable and is unaffected; ` +
+                `this only drops an off-theme story the strategist proposed.`,
+              approval_required: false,
+              details: {
+                conflict_subtype: 'story_theme_block',
+                lock_until:       storyLock.until,
+                lock_themes:      storyLock.themes,
+                original_brief:   brief,
+              },
+            }
+            et.rationale = `[story-theme-lock] did NOT queue — ${verdict.why}`
+            delete et.experiment_group
+            delete et.variation_label
+            brandBlocked++
+            console.warn(`[organic-orchestrator] story theme lock blocked a scene: ${verdict.why}`)
+            continue
+          }
+        }
+      }
+
+      // 3. bag_hero product_name — block.
+      const heroVerdict = screenHeroProduct(brief.product_name, brandIndex)
+      if (!heroVerdict.ok) {
+        const blockedName = String(brief.product_name ?? '')
+        const original    = { task_type: et.task_type, brief }
+        et.task_type    = 'dynamic_experiment'
+        et.task_subtype = 'brand_guard_block'
+        et.brief_data   = {
+          description:
+            `Brand guard blocked a ${original.task_type} task — ${heroVerdict.why}. ` +
+            `The scene named this product as the hero, so the brief could not be repaired automatically ` +
+            `(the bag is described in the scene prose too). Nothing was rendered. ` +
+            `If this product genuinely should be featured, fix its classification in WooCommerce ` +
+            `or lift the rule, then re-plan.`,
+          approval_required: false,
+          details: {
+            conflict_subtype: 'brand_guard_block',
+            blocked_product:  blockedName,
+            verdict:          heroVerdict.verdict,
+            original_task_type: original.task_type,
+            original_brief:     original.brief,
+          },
+        }
+        et.rationale = `[brand-guard] did NOT queue — ${heroVerdict.why}`
+        delete et.experiment_group
+        delete et.variation_label
+        brandBlocked++
+        console.warn(`[organic-orchestrator] brand-guard BLOCKED "${blockedName}": ${heroVerdict.why}`)
+      }
+    }
+
+    if (brandScrubbed > 0 || brandBlocked > 0) {
+      console.log(`[organic-orchestrator] brand guard: ${brandScrubbed} brief(s) scrubbed, ${brandBlocked} task(s) blocked`)
     }
 
     // ── 6a. Materialize experiments. Each experiment_group string from
@@ -832,10 +976,14 @@ function buildStrategistUserMessage(args: {
   customerSegments: { total_customers: number; by_segment: Array<{ segment: string; count: number; avg_total_spent_ils: number; avg_order_count: number; avg_days_since_last: number }>; new_in_last_30d: number; at_risk_count: number }
   competitorIntel:  { llm_co_mentions: Array<{ name: string; mention_count_30d: number; queries_appearing_in: number }>; recent_research: Array<{ source: string; research_date: string; summary_excerpt: string }> }
   postFollowback:  PostFollowback[]
+  calendar:        CalendarContext
+  brandIndex:      BrandIndex
+  storyLock:       StoryThemeLock | null
 }): string {
   const { focus, snapshot, recentTasks, recentIgCaptions, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
-          ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback } = args
+          ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback,
+          calendar, brandIndex, storyLock } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -893,12 +1041,27 @@ function buildStrategistUserMessage(args: {
       }).join('\n')
 
   // Catalog — just names with stock/price, for products_to_mention picking.
-  const catalogBlock = catalog.length === 0
+  //
+  // Banned SKUs are removed BEFORE the slice, not merely forbidden in prose.
+  // This list is the candidate set: while Veneto and the green 1kg sacks were
+  // in it, the strategist picked them (2026-09-09 → 09-23, six times), because
+  // a catalog that says "use EXACT names from this list" reads as permission.
+  // Equipment stays — a grinder or a machine is a perfectly good thing to link
+  // from an article, and nothing here narrows the catalog to coffee only.
+  const catalogVisible = catalog.filter(p => !brandIndex.isBanned(p.name))
+  const catalogBlock = catalogVisible.length === 0
     ? '  (catalog empty)'
-    : catalog.slice(0, 50).map(p => {
+    : catalogVisible.slice(0, 50).map(p => {
         const stock = p.stock_status ? ` ${p.stock_status}` : ''
         const price = p.price ? ` ₪${p.price}` : ''
-        return `  • ${p.name}${price}${stock}`
+        // Toddy is brewing gear Minuto resells. Allowed as a subject and as a
+        // link, but only alongside one of our roasts ("which Minuto coffee to
+        // brew in your Toddy"), never as the sole product. Enforced in the
+        // brand-guard gate; flagged here so the plan arrives correct.
+        const pairing = brandIndex.classify(p.name) === 'paired_equipment'
+          ? '  ⚠️ resold gear — only valid alongside a Minuto roast, never as the sole product'
+          : ''
+        return `  • ${p.name}${price}${stock}${pairing}`
       }).join('\n')
 
   // Inventory alerts — surface low/critical so the strategist factors them in.
@@ -915,18 +1078,32 @@ function buildStrategistUserMessage(args: {
   const learningsBlock = learnings.length === 0
     ? '  (no standing learnings yet)'
     : (() => {
+        // Dated, newest first within each scope. The block used to print the
+        // insight alone, which made conflicting rules unresolvable: a
+        // 2026-07-23 learning asking for siphon/V60/French press variety in
+        // the story rotation sat beside a 2026-09-17 learning banning exactly
+        // those, and nothing on the page said which came later.
         const grouped: Record<string, string[]> = {}
-        for (const l of learnings) {
+        for (const l of [...learnings].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))) {
           const k = l.scope || 'other'
           if (!grouped[k]) grouped[k] = []
-          grouped[k].push(`  • ${l.insight}`)
+          grouped[k].push(`  • [${(l.created_at ?? '').slice(0, 10)}] ${l.insight}`)
         }
         return Object.entries(grouped)
           .map(([scope, lines]) => `${scope}:\n${lines.join('\n')}`)
           .join('\n\n')
       })()
 
-  return `=== CURRENT CYCLE METRICS ===
+  // An active story theme lock goes near the TOP, not buried among the
+  // learnings. It is a hard constraint enforced at queue time, so a plan that
+  // ignores it simply loses those tasks.
+  const storyLockBlock = storyLock
+    ? `=== DAILY STORY THEME LOCK — ACTIVE ===\n\n${renderStoryLockPolicy(storyLock)}\n`
+    : ''
+
+  return `${renderCalendarBlock(calendar)}
+
+${storyLockBlock}=== CURRENT CYCLE METRICS ===
 
 GSC top keywords (last 30d, ranked by impressions):
 ${gscBlock}
@@ -958,6 +1135,10 @@ ${catalogBlock}
 === STANDING LEARNINGS (cross-session memory — apply unless explicitly contradicted by this cycle's data) ===
 
 These are durable rules surfaced by the admin via chat (or written by earlier strategist runs). Treat them as constraints on your plan: every brief you emit should respect them, and your self_reflection should explicitly note when a learning shaped your choices.
+
+Every line is dated and listed newest first. When two learnings contradict each other, THE NEWER ONE WINS — the admin's latest word supersedes an older preference, and you should say so in self_reflection rather than silently splitting the difference.
+
+Note on products: a separate brand guard removes off-brand SKUs from the catalog above and screens every brief you emit. Do not treat that as a topic restriction — it gates which PRODUCTS may be featured or linked, never which SUBJECTS you may cover. Any brew method, any seasonal angle, any holiday tie-in remains yours to choose.
 
 ${learningsBlock}
 
