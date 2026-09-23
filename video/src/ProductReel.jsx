@@ -1,13 +1,13 @@
 import React from 'react';
 import {AbsoluteFill, Img, Sequence, interpolate, useCurrentFrame, staticFile, Easing} from 'remotion';
-import {loadFont as loadHe} from '@remotion/google-fonts/FrankRuhlLibre';
-import {loadFont as loadEn} from '@remotion/google-fonts/CormorantGaramond';
+import {loadFont as loadHe} from '@remotion/google-fonts/Assistant';
+import {loadFont as loadEn} from '@remotion/google-fonts/DMSans';
 
-const {fontFamily: he} = loadHe('normal', {weights: ['300', '500'], subsets: ['hebrew', 'latin']});
-const {fontFamily: en} = loadEn('normal', {weights: ['300', '500'], subsets: ['latin']});
-const {fontFamily: enItalic} = loadEn('italic', {weights: ['300'], subsets: ['latin']});
+const {fontFamily: he} = loadHe('normal', {weights: ['300', '400', '600'], subsets: ['hebrew', 'latin']});
+const {fontFamily: en} = loadEn('normal', {weights: ['400', '500'], subsets: ['latin']});
 
-// Quiet, editorial product reel: one warm paper background, serif type, a single
+// Quiet, editorial product reel: one warm paper background, quiet sans type (Assistant
+// for Hebrew, DM Sans for Latin, matching the logo's geometric sans), a single
 // amber hairline, and one line of text at a time under the product. Every fact comes
 // from props (scripts/build-facts.mjs or the dashboard); chapters with no data are
 // dropped, so the reel gets shorter rather than padded.
@@ -89,7 +89,7 @@ const TopLabel = ({text, accent, runFrames}) => {
         ...s, color: accent, fontWeight: 500,
         ...(latin
           ? {fontFamily: en, fontSize: 30, letterSpacing: 12}
-          : {fontFamily: he, fontSize: 34, letterSpacing: 4, direction: 'rtl'}),
+          : {fontFamily: he, fontSize: 34, fontWeight: 600, letterSpacing: 4, direction: 'rtl'}),
       }}>
         {latin ? text.toUpperCase() : text}
       </div>
@@ -104,7 +104,7 @@ const Bottom = ({children}) => (
   </AbsoluteFill>
 );
 
-const heLine = (size, color = INK) => ({fontFamily: he, fontSize: size, fontWeight: 300, color, direction: 'rtl', lineHeight: 1.35});
+const heLine = (size, color = INK, weight = 300) => ({fontFamily: he, fontSize: size, fontWeight: weight, color, direction: 'rtl', lineHeight: 1.35});
 
 const Chapter = ({kind, p}) => {
   const frame = useCurrentFrame();
@@ -112,8 +112,8 @@ const Chapter = ({kind, p}) => {
   if (kind === 'title') {
     return (
       <Bottom><div style={s}>
-        <div style={{fontFamily: en, fontWeight: 300, fontSize: 104, color: INK, lineHeight: 1, padding: '0 60px'}}>{p.titleEn}</div>
-        {p.subtitleEn && <div style={{fontFamily: enItalic, fontStyle: 'italic', fontWeight: 300, fontSize: 62, color: MUTED, marginTop: 6}}>{p.subtitleEn}</div>}
+        <div style={{fontFamily: en, fontWeight: 500, fontSize: 96, color: INK, lineHeight: 1.05, padding: '0 60px'}}>{p.titleEn}</div>
+        {p.subtitleEn && <div style={{fontFamily: en, fontWeight: 400, fontSize: 44, color: MUTED, marginTop: 14, letterSpacing: 6, textTransform: 'uppercase'}}>{p.subtitleEn}</div>}
         {p.titleHe && <div style={{...heLine(40, MUTED), marginTop: 20}}>{p.titleHe}</div>}
       </div></Bottom>
     );
@@ -121,7 +121,7 @@ const Chapter = ({kind, p}) => {
   if (kind === 'notes') {
     return (
       <Bottom><div style={s}>
-        <div style={heLine(64)}>{p.notes.slice(0, 3).join(' · ')}</div>
+        <div style={heLine(62, INK, 400)}>{p.notes.slice(0, 3).join(' · ')}</div>
         {p.detailLine && <div style={{...heLine(38, MUTED), marginTop: 16}}>{p.detailLine}</div>}
       </div></Bottom>
     );
@@ -139,11 +139,11 @@ const Chapter = ({kind, p}) => {
       <Bottom><div style={s}>
         {headline && (
           latinHeadline
-            ? <div style={{fontFamily: en, fontWeight: 300, fontSize: 72, color: INK}}>{headline}</div>
-            : <div style={heLine(64)}>{headline}</div>
+            ? <div style={{fontFamily: en, fontWeight: 500, fontSize: 68, color: INK}}>{headline}</div>
+            : <div style={heLine(60, INK, 400)}>{headline}</div>
         )}
         {farm && producer && (
-          <div style={{fontFamily: enItalic, fontStyle: 'italic', fontWeight: 300, fontSize: 46, color: MUTED, marginTop: 2}}>
+          <div style={{fontFamily: en, fontWeight: 400, fontSize: 42, color: MUTED, marginTop: 10, letterSpacing: 2}}>
             by {producer}
           </div>
         )}
@@ -153,8 +153,8 @@ const Chapter = ({kind, p}) => {
   }
   return (
     <Bottom><div style={s}>
-      {/* Hebrew serif renders ₪ in the same weight as the numerals; Latin serif does not */}
-      <div style={{fontFamily: he, fontWeight: 300, fontSize: 104, color: INK, lineHeight: 1, direction: 'rtl'}}>{p.price} ₪</div>
+      {/* the Hebrew face renders ₪ at the same weight as the numerals; the Latin one does not */}
+      <div style={{fontFamily: he, fontWeight: 400, fontSize: 104, color: INK, lineHeight: 1, direction: 'rtl'}}>{p.price} ₪</div>
       {p.grams && <div style={{...heLine(38, MUTED), marginTop: 14}}>{p.grams} גרם</div>}
     </div></Bottom>
   );
@@ -168,7 +168,7 @@ const Outro = ({accent}) => {
     <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
       <Img src={staticFile('logo.png')} style={{width: 380, mixBlendMode: 'multiply', opacity: logo}} />
       <div style={{width: 120, height: 1.5, background: accent, margin: '34px 0 30px', opacity: text}} />
-      <div style={{fontFamily: en, fontWeight: 500, fontSize: 34, letterSpacing: 8, color: INK, opacity: text}}>MINUTO.CO.IL</div>
+      <div style={{fontFamily: en, fontWeight: 500, fontSize: 32, letterSpacing: 8, color: INK, opacity: text}}>MINUTO.CO.IL</div>
     </AbsoluteFill>
   );
 };
