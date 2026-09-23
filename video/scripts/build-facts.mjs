@@ -7,7 +7,7 @@
 // in the product text is dropped. The reel may be sparser, but it never invents a fact.
 //
 // Usage:
-//   node scripts/build-facts.mjs --woo-id 82540 [--badge "מהדורה מוגבלת"] [--out facts.json]
+//   node scripts/build-facts.mjs --woo-id 82540 [--badge "מהדורה מוגבלת"] [--format reel|story] [--out facts.json]
 // Env:
 //   ANTHROPIC_API_KEY   optional; without it, notes/origin are left empty
 //   WOO_STORE_URL       default https://www.minuto.co.il
@@ -124,6 +124,7 @@ const facts = {
   grams,
   imageUrl,
   badge: args.badge ?? null,
+  format: args.format === 'story' ? 'story' : 'reel',
   source: {wooId, permalink: product.permalink, builtAt: new Date().toISOString()},
 };
 
