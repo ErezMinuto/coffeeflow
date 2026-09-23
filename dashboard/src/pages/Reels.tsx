@@ -351,6 +351,9 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
   const name = task.brief_data.product_name ?? rd.facts?.titleEn ?? `מוצר ${task.brief_data.woo_id}`
   const kind: ReelFormat = rd.media_type ?? task.brief_data.format ?? 'reel'
   const kindLabel = kind === 'story' ? 'סטורי' : 'פוסט (Reel)'
+  const requested = task.brief_data.format
+  // A render that came back in a different format than requested must not publish quietly.
+  const formatMismatch = !!rd.video_url && !!requested && requested !== kind
   const published = !!rd.published_via_ui_at
   const rejected = !!rd.rejected_via_ui_at
   const awaitingReview = task.status === 'completed' && rd.review_required && !published && !rejected
@@ -385,6 +388,12 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
         <p className="text-xs text-red-700 bg-red-50 rounded-lg p-2">{task.error_msg ?? 'היצירה נכשלה'}</p>
       )}
 
+      {formatMismatch && (
+        <p className="text-xs text-amber-800 bg-amber-50 rounded-lg p-2">
+          הוזמן {requested === 'story' ? 'סטורי' : 'פוסט'} אבל הסרטון נוצר כ{kindLabel}. כדאי ליצור מחדש לפני פרסום.
+        </p>
+      )}
+
       {awaitingReview && kind === 'story' && (
         <p className="text-xs text-surface-400">סטורי מתפרסם בלי כיתוב, אינסטגרם מתעלם ממנו.</p>
       )}
@@ -407,7 +416,7 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
           <>
             <button
               onClick={() => onPublish(caption)}
-              disabled={busy === `publish-${task.id}`}
+              disabled={busy === `publish-${task.id}` || formatMismatch}
               className="text-sm px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 flex items-center gap-1.5"
             >
               {busy === `publish-${task.id}` ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

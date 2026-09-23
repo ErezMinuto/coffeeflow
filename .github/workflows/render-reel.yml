@@ -35,11 +35,9 @@ on:
         required: false
         type: string
       format:
-        description: 'reel (feed) or story'
+        description: 'Test renders only: reel (default) or story. A claimed task always uses its own brief_data.format.'
         required: false
-        default: reel
-        type: choice
-        options: [reel, story]
+        type: string
   pull_request:
     paths:
       - 'video/**'
@@ -106,13 +104,18 @@ jobs:
           BADGE: ${{ inputs.badge }}
           FORMAT: ${{ inputs.format }}
         run: |
-          # Human-confirmed facts from the dashboard (brief_data.facts) override extraction.
+          # A claimed task carries the choices the user made in the dashboard, so the brief
+          # WINS over the workflow inputs here. (It used to be the other way round, and the
+          # input's default of 'reel' silently overrode every story request.)
           if [[ -f ../reel-brief.json ]]; then
             BRIEF_FACTS=$(jq -c '.facts // empty' ../reel-brief.json)
-            [[ -z "$BADGE" ]] && BADGE=$(jq -r '.badge // empty' ../reel-brief.json)
-            [[ -z "$FORMAT" ]] && FORMAT=$(jq -r '.format // empty' ../reel-brief.json)
+            brief_badge=$(jq -r '.badge // empty' ../reel-brief.json)
+            brief_format=$(jq -r '.format // empty' ../reel-brief.json)
+            [[ -n "$brief_badge" ]] && BADGE="$brief_badge"
+            [[ -n "$brief_format" ]] && FORMAT="$brief_format"
             export BRIEF_FACTS
           fi
+          echo "format=${FORMAT:-reel} badge=${BADGE:-none}"
           node scripts/build-facts.mjs --woo-id "$WOO_ID" ${BADGE:+--badge "$BADGE"} ${FORMAT:+--format "$FORMAT"} --out ../facts.json
           cat ../facts.json
 
