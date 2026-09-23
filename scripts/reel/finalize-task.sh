@@ -49,7 +49,7 @@ if [[ -s reel.mp4 && -s facts.json ]]; then
          "minuto.co.il"
        ] | join("\n")) as $caption
     | {status:"completed", completed_at:(now|todateiso8601), updated_at:(now|todateiso8601),
-       result_data:{media_type:"reel", video_url:$v, caption:$caption, facts:$x,
+       result_data:{media_type:($x.format // "reel"), video_url:$v, caption:$caption, facts:$x,
                     review_required:true, render_run_url:$run}}')
   resp=$(patch_task "$payload")
   outcome="completed (${video_url})"

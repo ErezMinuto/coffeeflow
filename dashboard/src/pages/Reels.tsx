@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink } from 'lucide-react'
+import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 // Product reels: pick a coffee, render a vertical Reel, review it, publish it.
@@ -21,8 +21,9 @@ interface Product {
 interface ReelTask {
   id: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
-  brief_data: { woo_id?: number; badge?: string | null; product_name?: string; facts?: Record<string, unknown> }
+  brief_data: { woo_id?: number; badge?: string | null; product_name?: string; format?: ReelFormat; facts?: Record<string, unknown> }
   result_data: {
+    media_type?: ReelFormat
     video_url?: string
     caption?: string
     facts?: { titleEn?: string; notes?: string[]; price?: number; grams?: number | null }
@@ -37,7 +38,13 @@ interface ReelTask {
   created_at: string
 }
 
+type ReelFormat = 'reel' | 'story'
+
 const COFFEE_CATEGORY = 'פולי קפה'
+const FORMATS: Array<{id: ReelFormat; label: string; hint: string}> = [
+  {id: 'reel', label: 'פוסט (Reel)', hint: 'נשאר בפיד, עם כיתוב'},
+  {id: 'story', label: 'סטורי', hint: 'נעלם אחרי 24 שעות, בלי כיתוב'},
+]
 
 const decode = (s: string) => {
   const el = document.createElement('textarea')
@@ -52,6 +59,7 @@ export default function ReelsPage() {
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Product | null>(null)
   const [badge, setBadge] = useState('')
+  const [format, setFormat] = useState<ReelFormat>('reel')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const alive = useRef(true)
@@ -110,7 +118,7 @@ export default function ReelsPage() {
     return q ? products.filter(p => decode(p.name).toLowerCase().includes(q)) : products
   }, [products, query])
 
-  async function requestReel(product: Product, opts: { badge?: string; facts?: Record<string, unknown> } = {}) {
+  async function requestReel(product: Product, opts: { badge?: string; format?: ReelFormat; facts?: Record<string, unknown> } = {}) {
     setBusy(`create-${product.woo_id}`)
     setError(null)
     try {
@@ -122,6 +130,7 @@ export default function ReelsPage() {
           woo_id: product.woo_id,
           product_name: decode(product.name),
           badge: opts.badge?.trim() || null,
+          format: opts.format ?? 'reel',
           ...(opts.facts ? { facts: opts.facts } : {}),
           requested_via: 'dashboard',
         },
@@ -129,6 +138,7 @@ export default function ReelsPage() {
       if (e) throw e
       setPicked(null)
       setBadge('')
+      setFormat('reel')
       await loadTasks()
     } catch (e: any) {
       setError(`יצירת הרילס נכשלה: ${e?.message ?? e}`)
@@ -147,13 +157,16 @@ export default function ReelsPage() {
   async function publish(task: ReelTask, caption: string) {
     const video = task.result_data?.video_url
     if (!video) return
-    if (!window.confirm('לפרסם את הרילס עכשיו ב-@minuto_cafe? הוא יעלה לאוויר מיד.')) return
+    const kind: ReelFormat = task.result_data?.media_type ?? task.brief_data.format ?? 'reel'
+    const what = kind === 'story' ? 'הסטורי' : 'הרילס'
+    if (!window.confirm(`לפרסם את ${what} עכשיו ב-@minuto_cafe? הוא יעלה לאוויר מיד.`)) return
     setBusy(`publish-${task.id}`)
     setError(null)
     try {
       await saveResult(task, { caption })
       const { data, error: e } = await supabase.functions.invoke('meta-publish', {
-        body: { action: 'publish_now', type: 'reel', video_url: video, caption },
+        // Instagram ignores captions on stories, so only a feed reel sends one.
+        body: { action: 'publish_now', type: kind, video_url: video, caption: kind === 'story' ? undefined : caption },
       })
       if (e) throw e
       if (data && data.success === false) throw new Error(data.error ?? 'meta-publish returned success:false')
@@ -188,7 +201,11 @@ export default function ReelsPage() {
       setError('המוצר כבר לא ברשימת הקפה במלאי, אי אפשר לרנדר מחדש.')
       return
     }
-    requestReel(product, { badge: task.brief_data.badge ?? undefined, facts: task.brief_data.facts })
+    requestReel(product, {
+      badge: task.brief_data.badge ?? undefined,
+      format: task.result_data?.media_type ?? task.brief_data.format ?? 'reel',
+      facts: task.brief_data.facts,
+    })
   }
 
   return (
@@ -252,6 +269,23 @@ export default function ReelsPage() {
             <p className="text-sm text-surface-800">
               יצירת רילס ל<strong>{decode(picked.name)}</strong>
             </p>
+            <div className="flex gap-2">
+              {FORMATS.map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setFormat(f.id)}
+                  className={`flex-1 text-right px-3 py-2 rounded-lg border text-sm transition ${
+                    format === f.id ? 'border-brand-400 bg-white text-surface-900' : 'border-surface-200 bg-white/50 text-surface-500 hover:bg-white'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 font-medium">
+                    {f.id === 'story' ? <Smartphone size={14} /> : <Film size={14} />}
+                    {f.label}
+                  </span>
+                  <span className="block text-xs text-surface-400 mt-0.5">{f.hint}</span>
+                </button>
+              ))}
+            </div>
             <label className="block text-xs text-surface-500">
               תגית (לא חובה), למשל "מהדורה מוגבלת"
               <input
@@ -267,14 +301,14 @@ export default function ReelsPage() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => requestReel(picked, { badge })}
+                onClick={() => requestReel(picked, { badge, format })}
                 disabled={busy === `create-${picked.woo_id}`}
                 className="text-sm px-4 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {busy === `create-${picked.woo_id}` ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />}
-                צור רילס
+                {format === 'story' ? 'צור סטורי' : 'צור רילס'}
               </button>
-              <button onClick={() => { setPicked(null); setBadge('') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
+              <button onClick={() => { setPicked(null); setBadge(''); setFormat('reel') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
                 ביטול
               </button>
             </div>
@@ -315,6 +349,8 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
   useEffect(() => { setCaption(rd.caption ?? '') }, [rd.caption])
 
   const name = task.brief_data.product_name ?? rd.facts?.titleEn ?? `מוצר ${task.brief_data.woo_id}`
+  const kind: ReelFormat = rd.media_type ?? task.brief_data.format ?? 'reel'
+  const kindLabel = kind === 'story' ? 'סטורי' : 'פוסט (Reel)'
   const published = !!rd.published_via_ui_at
   const rejected = !!rd.rejected_via_ui_at
   const awaitingReview = task.status === 'completed' && rd.review_required && !published && !rejected
@@ -334,7 +370,7 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-surface-800 truncate">{name}</p>
-          <p className="text-xs text-surface-400">{new Date(task.created_at).toLocaleString('he-IL')}{task.brief_data.badge ? ` · ${task.brief_data.badge}` : ''}</p>
+          <p className="text-xs text-surface-400">{kindLabel} · {new Date(task.created_at).toLocaleString('he-IL')}{task.brief_data.badge ? ` · ${task.brief_data.badge}` : ''}</p>
         </div>
         <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 shrink-0 ${chip.cls}`}>
           <ChipIcon size={12} className={chip.icon === Loader2 ? 'animate-spin' : ''} /> {chip.label}
@@ -349,7 +385,11 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
         <p className="text-xs text-red-700 bg-red-50 rounded-lg p-2">{task.error_msg ?? 'היצירה נכשלה'}</p>
       )}
 
-      {awaitingReview && (
+      {awaitingReview && kind === 'story' && (
+        <p className="text-xs text-surface-400">סטורי מתפרסם בלי כיתוב, אינסטגרם מתעלם ממנו.</p>
+      )}
+
+      {awaitingReview && kind !== 'story' && (
         <label className="block text-xs text-surface-500">
           כיתוב לפוסט
           <textarea
@@ -371,7 +411,7 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
               className="text-sm px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 flex items-center gap-1.5"
             >
               {busy === `publish-${task.id}` ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              פרסם לאינסטגרם
+              {kind === 'story' ? 'פרסם כסטורי' : 'פרסם לאינסטגרם'}
             </button>
             <button onClick={onReject} disabled={!!busy} className="text-sm px-3 py-1.5 rounded-lg text-surface-600 hover:bg-surface-100 disabled:opacity-50">
               דחה

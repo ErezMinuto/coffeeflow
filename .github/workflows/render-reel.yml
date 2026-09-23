@@ -34,6 +34,12 @@ on:
         description: 'Optional badge text for a test render, e.g. מהדורה מוגבלת'
         required: false
         type: string
+      format:
+        description: 'reel (feed) or story'
+        required: false
+        default: reel
+        type: choice
+        options: [reel, story]
   pull_request:
     paths:
       - 'video/**'
@@ -98,14 +104,16 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           WOO_ID: ${{ steps.target.outputs.woo_id }}
           BADGE: ${{ inputs.badge }}
+          FORMAT: ${{ inputs.format }}
         run: |
           # Human-confirmed facts from the dashboard (brief_data.facts) override extraction.
           if [[ -f ../reel-brief.json ]]; then
             BRIEF_FACTS=$(jq -c '.facts // empty' ../reel-brief.json)
             [[ -z "$BADGE" ]] && BADGE=$(jq -r '.badge // empty' ../reel-brief.json)
+            [[ -z "$FORMAT" ]] && FORMAT=$(jq -r '.format // empty' ../reel-brief.json)
             export BRIEF_FACTS
           fi
-          node scripts/build-facts.mjs --woo-id "$WOO_ID" ${BADGE:+--badge "$BADGE"} --out ../facts.json
+          node scripts/build-facts.mjs --woo-id "$WOO_ID" ${BADGE:+--badge "$BADGE"} ${FORMAT:+--format "$FORMAT"} --out ../facts.json
           cat ../facts.json
 
       - name: Render

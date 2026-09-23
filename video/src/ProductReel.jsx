@@ -29,14 +29,22 @@ export const defaultProductProps = {
   grams: 180,
   imageUrl: 'https://www.minuto.co.il/content/uploads/2026/09/Minuto_Roastery_brisas.jpg',
   accent: '#B07A3B',
+  format: 'reel',   // 'reel' = feed Reel; 'story' = 24h story (tighter safe areas, shorter)
 };
 
 const INK = '#2A2520';
 const MUTED = '#7A6E61';   // darkened from #8C8176 to clear 3:1 on paper at these sizes
 const PAPER = '#F4EFE8';
 const FPS = 30;
-const CHAPTER = 110;   // frames per bottom chapter
-const OUTRO = 90;
+
+// A story is watched with a thumb hovering over it and is framed by IG's own chrome:
+// the profile row on top and the reply bar at the bottom cover roughly 250px each, so
+// story layouts pull inward and run shorter than a feed reel.
+const LAYOUT = {
+  reel:  {chapter: 110, outro: 90, padTop: 150, padBottom: 190, product: 860},
+  story: {chapter: 90,  outro: 60, padTop: 300, padBottom: 330, product: 760},
+};
+const layoutFor = (p) => LAYOUT[p.format === 'story' ? 'story' : 'reel'];
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'};
 const ease = Easing.bezier(0.25, 0.1, 0.25, 1);
 
@@ -51,7 +59,10 @@ const chaptersFor = (p) => {
   return list;
 };
 
-const totalFrames = (p) => chaptersFor(p).length * CHAPTER + OUTRO;
+const totalFrames = (p) => {
+  const l = layoutFor(p);
+  return chaptersFor(p).length * l.chapter + l.outro;
+};
 
 export const calculateProductMetadata = ({props}) => ({
   durationInFrames: totalFrames({...defaultProductProps, ...props}),
@@ -65,7 +76,7 @@ const soft = (frame, dur, delay = 0) => {
   return {opacity: Math.min(inn, out), transform: `translateY(${interpolate(inn, [0, 1], [14, 0])}px)`};
 };
 
-const Product = ({imageUrl, runFrames}) => {
+const Product = ({imageUrl, runFrames, width}) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 30, runFrames - 25, runFrames], [0, 1, 1, 0], {...clamp, easing: ease});
   const scale = interpolate(frame, [0, runFrames], [1.02, 1.09]);
@@ -73,20 +84,20 @@ const Product = ({imageUrl, runFrames}) => {
     <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
       {/* multiply drops the white studio background of product shots into the paper canvas */}
       <Img src={imageUrl} style={{
-        width: 860, maxHeight: 1150, objectFit: 'contain', marginTop: -40,
+        width, maxHeight: 1150, objectFit: 'contain', marginTop: -40,
         mixBlendMode: 'multiply', opacity, transform: `scale(${scale})`,
       }} />
     </AbsoluteFill>
   );
 };
 
-const TopLabel = ({text, accent, runFrames}) => {
+const TopLabel = ({text, accent, runFrames, padTop}) => {
   const frame = useCurrentFrame();
   const line = interpolate(frame, [18, 60], [0, 1], {...clamp, easing: ease});
   const s = soft(frame, runFrames, 6);
   const latin = /^[\x20-\x7E]+$/.test(text);
   return (
-    <AbsoluteFill style={{alignItems: 'center', paddingTop: 150}}>
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: padTop}}>
       <div style={{
         ...s, color: accent, fontWeight: 500,
         ...(latin
@@ -100,8 +111,8 @@ const TopLabel = ({text, accent, runFrames}) => {
   );
 };
 
-const Bottom = ({children}) => (
-  <AbsoluteFill style={{justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 190, textAlign: 'center'}}>
+const Bottom = ({padBottom, children}) => (
+  <AbsoluteFill style={{justifyContent: 'flex-end', alignItems: 'center', paddingBottom: padBottom, textAlign: 'center'}}>
     {children}
   </AbsoluteFill>
 );
@@ -110,22 +121,24 @@ const heLine = (size, color = INK, weight = 300) => ({fontFamily: he, fontSize: 
 
 const Chapter = ({kind, p}) => {
   const frame = useCurrentFrame();
-  const s = soft(frame, CHAPTER, 4);
+  const l = layoutFor(p);
+  const s = soft(frame, l.chapter, 4);
+  const Bot = ({children}) => <Bottom padBottom={l.padBottom}>{children}</Bottom>;
   if (kind === 'title') {
     return (
-      <Bottom><div style={s}>
+      <Bot><div style={s}>
         <div style={{fontFamily: en, fontWeight: 600, fontSize: 100, color: INK, lineHeight: 1.05, letterSpacing: -1, padding: '0 60px'}}>{p.titleEn}</div>
         {p.subtitleEn && <div style={{fontFamily: en, fontWeight: 500, fontSize: 34, color: MUTED, marginTop: 18, letterSpacing: 7, textTransform: 'uppercase'}}>{p.subtitleEn}</div>}
         {p.titleHe && <div style={{...heLine(36, MUTED, 400), marginTop: 22}}>{p.titleHe}</div>}
-      </div></Bottom>
+      </div></Bot>
     );
   }
   if (kind === 'notes') {
     return (
-      <Bottom><div style={s}>
+      <Bot><div style={s}>
         <div style={heLine(56, INK, 400)}>{p.notes.slice(0, 3).join(' · ')}</div>
         {p.detailLine && <div style={{...heLine(34, MUTED, 400), marginTop: 18}}>{p.detailLine}</div>}
-      </div></Bottom>
+      </div></Bot>
     );
   }
   if (kind === 'origin') {
@@ -138,7 +151,7 @@ const Chapter = ({kind, p}) => {
     const sub = headline === process ? null : process;
     const latinHeadline = headline && /^[\x20-\x7E]+$/.test(headline);
     return (
-      <Bottom><div style={s}>
+      <Bot><div style={s}>
         {headline && (
           latinHeadline
             ? <div style={{fontFamily: en, fontWeight: 600, fontSize: 72, color: INK, letterSpacing: -0.5}}>{headline}</div>
@@ -150,15 +163,15 @@ const Chapter = ({kind, p}) => {
           </div>
         )}
         {sub && <div style={{...heLine(34, MUTED, 400), marginTop: 16}}>{sub}</div>}
-      </div></Bottom>
+      </div></Bot>
     );
   }
   return (
-    <Bottom><div style={s}>
+    <Bot><div style={s}>
       {/* the Hebrew face renders ₪ at the same weight as the numerals; the Latin one does not */}
       <div style={{fontFamily: he, fontWeight: 600, fontSize: 96, color: INK, lineHeight: 1, direction: 'rtl'}}>{p.price} ₪</div>
       {p.grams && <div style={{...heLine(34, MUTED, 400), marginTop: 18}}>{p.grams} גרם</div>}
-    </div></Bottom>
+    </div></Bot>
   );
 };
 
@@ -178,18 +191,19 @@ const Outro = ({accent}) => {
 export const ProductReel = (props) => {
   const p = {...defaultProductProps, ...props};
   const accent = p.accent ?? defaultProductProps.accent;
+  const l = layoutFor(p);
   const chapters = chaptersFor(p);
-  const runFrames = chapters.length * CHAPTER;
+  const runFrames = chapters.length * l.chapter;
   return (
     <AbsoluteFill style={{background: `radial-gradient(ellipse at 50% 45%, #FAF7F2 0%, ${PAPER} 60%, #ECE5DB 100%)`}}>
-      <Sequence durationInFrames={runFrames}><Product imageUrl={p.imageUrl} runFrames={runFrames} /></Sequence>
+      <Sequence durationInFrames={runFrames}><Product imageUrl={p.imageUrl} runFrames={runFrames} width={l.product} /></Sequence>
       {/* Without a badge the top of the frame would be empty; the wordmark keeps the
           composition anchored and is true of every product. */}
       <Sequence durationInFrames={runFrames}>
-        <TopLabel text={p.badge || 'MINUTO'} accent={accent} runFrames={runFrames} />
+        <TopLabel text={p.badge || 'MINUTO'} accent={accent} runFrames={runFrames} padTop={l.padTop} />
       </Sequence>
       {chapters.map((kind, i) => (
-        <Sequence key={kind} from={i * CHAPTER} durationInFrames={CHAPTER}>
+        <Sequence key={kind} from={i * l.chapter} durationInFrames={l.chapter}>
           <Chapter kind={kind} p={p} />
         </Sequence>
       ))}
