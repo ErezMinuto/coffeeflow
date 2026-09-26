@@ -21,7 +21,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { callClaude, parseClaudeJson } from '../seo-agent/claude.ts'
+import { callClaude, parseClaudeJson, CLAUDE_DEFAULT_MODEL } from '../seo-agent/claude.ts'
 import { createLogger } from '../_shared/logger.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -359,11 +359,12 @@ Output strict JSON per the system prompt.`
 
   const res = await callClaude({
     sourceFn:    'industry-intelligence-sync',
-    model:       'claude-haiku-4-5',
+    model:       CLAUDE_DEFAULT_MODEL,
+    // One-article summary into a fixed JSON shape: no deliberation needed.
+    effort:      'low',
     system:      SYNTH_SYSTEM_PROMPT,
     messages:    [{ role: 'user', content: userMessage }],
     maxTokens:   500,
-    temperature: 0.3,
     timeoutMs:   30_000,
   })
 

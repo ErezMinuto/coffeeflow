@@ -8,8 +8,9 @@
 import { MODEL_STRATEGIST } from './claude.ts'
 
 // ── Reasoning ──────────────────────────────────────────────────────────────
-// The brain runs on Opus 4.8 (see claude.ts). 'high' effort is the default for
-// strategy work; the loop is bounded so it can't run away on cost.
+// The brain runs on MODEL_STRATEGIST (Opus 5.5 since 2026-09-26; see claude.ts).
+// 'high' effort is set explicitly for strategy work (Opus 5.5's API default is
+// only 'medium'); the loop is bounded so it can't run away on cost.
 export const STRATEGIST_MODEL = MODEL_STRATEGIST
 export const STRATEGIST_EFFORT: 'low' | 'medium' | 'high' | 'xhigh' | 'max' = 'high'
 
@@ -17,9 +18,10 @@ export const STRATEGIST_EFFORT: 'low' | 'medium' | 'high' | 'xhigh' | 'max' = 'h
 // A run that hits this without concluding is failed-safe, never looped forever.
 export const STRATEGIST_MAX_STEPS = 12
 
-// Per-step output cap. Opus 4.8 runs adaptive thinking, whose tokens count
+// Per-step output cap. The brain runs adaptive thinking, whose tokens count
 // toward output — so this must leave room for a real reasoning pass PLUS the
-// structured tool call that follows it. Generous, but still bounded so one step
+// structured tool call that follows it. (callClaude floors Opus 5.5 calls at
+// 16k, so this is effectively 16k there.) Generous, but still bounded so one step
 // can't run away on latency under the edge wall-clock (the 95s per-call timeout
 // in the runner is the harder stop).
 export const STRATEGIST_MAX_TOKENS = 12000

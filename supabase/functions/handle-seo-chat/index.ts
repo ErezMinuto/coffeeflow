@@ -2698,9 +2698,10 @@ serve(async (req: Request): Promise<Response> => {
 
       // Mirror the assistant turn back into apiMessages so the next
       // Claude call sees its own tool_use blocks (required by the API).
-      const echoBlocks: MessageContentBlock[] = []
-      if (assistantText.length > 0) echoBlocks.push({ type: 'text', text: assistantText })
-      for (const t of toolUses) echoBlocks.push(t)
+      // The raw content, not a text+tool_use rebuild: Opus 5.5 returns
+      // thinking blocks that must be passed back unchanged within the loop.
+      const echoBlocks: MessageContentBlock[] = res.content.length > 0 ? res.content : []
+      if (echoBlocks.length === 0 && assistantText.length > 0) echoBlocks.push({ type: 'text', text: assistantText })
       if (echoBlocks.length > 0) {
         apiMessages.push({
           role: 'assistant',

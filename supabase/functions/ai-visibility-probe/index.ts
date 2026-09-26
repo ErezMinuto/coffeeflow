@@ -15,7 +15,8 @@
 // experiment loop.
 //
 // Provider lineup (v1):
-//   ✓ claude-sonnet-4-6 (Anthropic) — ANTHROPIC_API_KEY already in secrets
+//   ✓ claude-opus-5-5 (Anthropic) — ANTHROPIC_API_KEY already in secrets
+//     (was claude-sonnet-4-6 until 2026-09-26; rows keep the model they ran on)
 //   ⏳ perplexity-sonar — needs PERPLEXITY_API_KEY (admin to add)
 //   ⏳ gpt-4o          — needs OPENAI_API_KEY (admin to add)
 //   ⏳ gemini-2.5-flash — needs GOOGLE_AI_API_KEY (admin to add)
@@ -24,6 +25,7 @@
 // fail the whole run because one provider is unconfigured.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { CLAUDE_MODEL, claudeBody, claudeHeaders } from '../_shared/claude.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL      = Deno.env.get('SUPABASE_URL')!
@@ -90,7 +92,7 @@ serve(async (req) => {
 
   // 2. Determine which providers are configured. Filter by body.providers if set.
   const allProviders = [
-    { name: 'claude-sonnet-4-6', enabled: !!ANTHROPIC_API_KEY, callFn: callClaude },
+    { name: CLAUDE_MODEL,        enabled: !!ANTHROPIC_API_KEY, callFn: callClaude },
     { name: 'perplexity-sonar',  enabled: !!PERPLEXITY_API_KEY, callFn: callPerplexity },
     { name: 'gpt-4o',            enabled: !!OPENAI_API_KEY, callFn: callOpenAI },
   ]
@@ -204,27 +206,25 @@ interface ProbeResult { text: string; tokens?: number; cost?: number }
 async function callClaude(prompt: string): Promise<ProbeResult> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method:  'POST',
-    headers: {
-      'x-api-key':         ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type':      'application/json',
-    },
-    body: JSON.stringify({
-      // Claude Sonnet 4.6 — same model the rest of the agent uses.
-      model:      'claude-sonnet-4-6',
-      max_tokens: 1500,
+    headers: claudeHeaders(ANTHROPIC_API_KEY),
+    // Same model the rest of the agent uses (see _shared/claude.ts).
+    body: JSON.stringify(claudeBody({
+      maxTokens: 1500,
+      // A customer-facing assistant answers at default depth; 'medium' is
+      // Opus 5.5's API default, stated so the probe doesn't drift silently.
+      effort:    'medium',
       // System prompt mimics how a customer-facing AI would behave —
       // recommendation-style, no Minuto-friendly priming.
       system:    'You are a helpful shopping assistant. When the user asks for product or brand recommendations, give concrete names and short reasons. Be specific.',
       messages:  [{ role: 'user', content: prompt }],
-    }),
+    })),
   })
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text().catch(() => '')}`)
   const json = await res.json()
   const text = (json.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n')
   const tokens = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0)
-  // Rough Sonnet 4.6 pricing: $3/$15 per million input/output.
-  const cost = ((json.usage?.input_tokens ?? 0) * 3 + (json.usage?.output_tokens ?? 0) * 15) / 1_000_000
+  // Opus 5.5 pricing: $4/$20 per million input/output.
+  const cost = ((json.usage?.input_tokens ?? 0) * 4 + (json.usage?.output_tokens ?? 0) * 20) / 1_000_000
   return { text, tokens, cost }
 }
 

@@ -13,6 +13,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger, type Logger } from "../_shared/logger.ts";
 
@@ -151,14 +152,9 @@ async function extractShopConsumption(
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "x-api-key":         ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type":      "application/json",
-    },
-    body: JSON.stringify({
-      model:      "claude-haiku-4-5",
-      max_tokens: 120,
+    headers: claudeHeaders(ANTHROPIC_KEY),
+    body: JSON.stringify(claudeBody({
+      maxTokens: 120,
       system: `אתה מזהה דיווחים על קפה קלוי שנלקח לבית הקפה.
 מקורות זמינים (מוצא ירוק):
 ${originList}
@@ -176,11 +172,11 @@ ${profileList}
 אם לא מדובר בקפה שנלקח לבית הקפה, או שאין התאמה:
   {"source_type": "origin", "source_id": 0, "grams": 0}`,
       messages: [{ role: "user", content: text }],
-    }),
+    })),
   });
 
   const json = await res.json();
-  const raw  = json.content?.[0]?.text ?? "";
+  const raw  = claudeText(json);
   try {
     const clean  = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);

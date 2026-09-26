@@ -26,6 +26,7 @@
 // The loop is capped at brief.max_research_turns (default 5).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { claudeBody, claudeHeaders } from '../_shared/claude.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -149,10 +150,10 @@ serve(async (req) => {
         const t0 = Date.now()
         const r = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: { 'x-api-key': ANT, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, system: sys,
+          headers: claudeHeaders(ANT),
+          body: JSON.stringify(claudeBody({ maxTokens: 3000, effort: 'medium', system: sys,
             tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
-            messages: [{ role: 'user', content: q }] }),
+            messages: [{ role: 'user', content: q }] })),
         })
         const j = await r.json()
         const text = (j.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
@@ -429,10 +430,12 @@ Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
     })
     console.log(`[seo-worker-research] ${workerId} turn ${turn}: ${toolUses.length} tool_use, ${assistantText.length} text chars`)
 
-    // Echo this assistant turn back into messages.
-    const echoBlocks: MessageContentBlock[] = []
-    if (assistantText.length > 0) echoBlocks.push({ type: 'text', text: assistantText })
-    for (const t of toolUses) echoBlocks.push(t)
+    // Echo this assistant turn back into messages — the raw content, not a
+    // text+tool_use rebuild. Opus 5.5 returns thinking blocks that must be
+    // passed back unchanged within a tool loop, and the server-side web_search
+    // result blocks belong to the turn too.
+    const echoBlocks: MessageContentBlock[] = res.content.length > 0 ? res.content : []
+    if (echoBlocks.length === 0 && assistantText.length > 0) echoBlocks.push({ type: 'text', text: assistantText })
     if (echoBlocks.length > 0) {
       messages.push({ role: 'assistant', content: echoBlocks.length === 1 && echoBlocks[0].type === 'text' ? echoBlocks[0].text : echoBlocks })
     }
