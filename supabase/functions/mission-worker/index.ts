@@ -39,6 +39,13 @@ import {
   renderStoryLockPolicy,
   type StoryThemeLock,
 } from '../seo-agent/services/storyThemeLock.ts'
+import {
+  SCENE_REPEAT_DAYS,
+  fetchRecentIgScenes,
+  findRepeatedScene,
+  renderRecentScenesBlock,
+  type RecentScene,
+} from '../seo-agent/services/sceneRepeat.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
 
 const CORS = {
@@ -115,6 +122,32 @@ async function fetchRecentlyFeaturedIgProducts(
   } catch (e: any) {
     console.warn(`[mission-worker] recent-IG-products fetch failed: ${e?.message ?? e}`)
     return []
+  }
+}
+
+// Why a visual can't parent another instagram_post, or null if it can. A
+// lookup failure returns null — the guard fails open rather than blocking the
+// day's post on a transient read error.
+async function checkParentAlreadyPosted(
+  supabase: ReturnType<typeof createSupabase>, parentId: string, postedThisStep: Set<string>,
+): Promise<string | null> {
+  if (postedThisStep.has(parentId)) return 'is already being posted in this step'
+  try {
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('id, status, brief_data')
+      .eq('task_type', 'instagram_post')
+      .eq('parent_task_id', parentId)
+      .neq('status', 'failed')
+      .limit(1)
+    if (error) throw new Error(error.message)
+    const prior = (data ?? [])[0] as { id: string; brief_data: Record<string, unknown> | null } | undefined
+    if (!prior) return null
+    const mt = String(prior.brief_data?.media_type ?? 'post')
+    return `already has an instagram_post (${mt}, ${prior.id})`
+  } catch (e: any) {
+    console.warn(`[mission-worker] parent-reuse check failed: ${e?.message ?? e}`)
+    return null
   }
 }
 
@@ -474,11 +507,15 @@ serve(async (req) => {
   // All guarded — a single source failing degrades the block, never the step.
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
   const igProductsSince = new Date(Date.now() - IG_PRODUCT_REPEAT_DAYS * 24 * 3600 * 1000).toISOString()
-  const [catalog, gscKeywords, recentPosts, recentIgProducts] = await Promise.all([
+  const scenesSince = new Date(Date.now() - SCENE_REPEAT_DAYS * 24 * 3600 * 1000).toISOString()
+  const [catalog, gscKeywords, recentPosts, recentIgProducts, recentIgScenes] = await Promise.all([
     fetchMinutoCoffeeCatalog(supabase).catch((e: any) => { console.warn(`[mission-worker] catalog fetch failed: ${e?.message ?? e}`); return [] as WooProduct[] }),
     fetchTopKeywords(supabase, 30, 25).catch((e: any) => { console.warn(`[mission-worker] GSC fetch failed: ${e?.message ?? e}`); return [] }),
     fetchRecentBlogPosts(supabase, ninetyDaysAgo, 40).catch((e: any) => { console.warn(`[mission-worker] blog fetch failed: ${e?.message ?? e}`); return [] }),
     fetchRecentlyFeaturedIgProducts(supabase, igProductsSince),
+    // Scenes, not just products: the product rule never covered stories, so
+    // the same espresso shot rendered day after day (2026-09-24..26).
+    isDailyIgCadence ? fetchRecentIgScenes(supabase, scenesSince) : Promise.resolve([] as RecentScene[]),
   ])
   // Set of recently-featured coffees (normalized) backing the hard queue-time
   // dedup below; the prompt block keeps the model from picking them in the first place.
@@ -508,6 +545,7 @@ serve(async (req) => {
     calendarBlock +
     learningsBlock +
     igCadenceBlock +
+    (isDailyIgCadence ? renderRecentScenesBlock(recentIgScenes) : '') +
     `STEP ${mission.steps_taken + 1} of max ${mission.max_steps}.\n\n` +
     `PROGRESS NOTES SO FAR:\n${(state.progress_notes ?? []).slice(-12).map(n => `- ${n}`).join('\n') || '(none yet)'}\n\n` +
     `SUB-TASKS YOU'VE QUEUED (${inflight} still in-flight):\n${subtaskSummary}\n\n` +
@@ -561,6 +599,11 @@ serve(async (req) => {
   // Coffees featured by an IG visual queued THIS step — folded into the no-repeat
   // dedup so one step can't queue the same bean twice.
   const igProductsQueuedThisStep = new Set<string>()
+  // Scenes queued THIS step join the history, so a step can't queue the same
+  // shot twice (e.g. the story and the feed as one scene in two aspects).
+  const scenesForRepeatCheck: RecentScene[] = [...recentIgScenes]
+  // Visuals committed to a post THIS step — one render, one post.
+  const parentsPostedThisStep = new Set<string>()
 
   for (const call of toolUses) {
     const input = (call.input ?? {}) as Record<string, unknown>
@@ -634,10 +677,30 @@ serve(async (req) => {
               newNotes.push(
                 `(did NOT queue the story visual — ${verdict.why}. ` +
                 `Re-queue a story depicting ${storyLock.themes.join(' or ')}: an espresso pull, crema in the cup, a portafilter, ` +
-                `steaming or pouring milk, a rosetta. Vary the angle, light, cup and setting — not the subject. ` +
+                `steaming or pouring milk, a rosetta. Vary the angle, light, cup and setting — not the subject — ` +
+                `and make it a different shot from every scene in RECENT IG SCENES. ` +
                 `Lock lifts ${storyLock.until}.)`,
               )
               console.warn(`[mission-worker] story theme lock rejected a scene: ${verdict.why}`)
+              continue
+            }
+          }
+          // (a4) SCENE NO-REPEAT — stories and feeds alike. Cadence only: that
+          // is the path that renders every day off a near-identical prompt.
+          const sceneText = String((rawBrief as { scene_brief?: unknown }).scene_brief ?? '').trim() ||
+            (Array.isArray((rawBrief as { slides?: unknown }).slides)
+              ? ((rawBrief as { slides: Array<{ scene_brief?: unknown }> }).slides)
+                  .map(sl => String(sl?.scene_brief ?? '').trim()).filter(Boolean).join(' / ')
+              : '')
+          if (isDailyIgCadence && sceneText) {
+            const repeat = findRepeatedScene(sceneText, scenesForRepeatCheck)
+            if (repeat) {
+              newNotes.push(
+                `(did NOT queue the ${isStoryVisual ? 'story' : 'feed'} visual — its scene is ${Math.round(repeat.similarity * 100)}% the same as ` +
+                `the ${repeat.scene.aspect || 'IG'} scene of ${repeat.scene.created_at.slice(0, 10)}: "${repeat.scene.scene_brief.slice(0, 140)}". ` +
+                `Re-queue a visibly different shot — a different main subject or action, camera angle, vessel and setting.)`,
+              )
+              console.warn(`[mission-worker] scene repeat rejected (${repeat.similarity.toFixed(2)} vs ${repeat.scene.id})`)
               continue
             }
           }
@@ -663,6 +726,9 @@ serve(async (req) => {
             }
             igProductsQueuedThisStep.add(key)
           }
+          if (sceneText) {
+            scenesForRepeatCheck.unshift({ id: '(this step)', created_at: new Date().toISOString(), aspect, scene_brief: sceneText })
+          }
         }
       }
       // parent_task_id: a TOP-LEVEL queue_subtask arg, but the model often
@@ -679,6 +745,17 @@ serve(async (req) => {
       if (task_type === 'instagram_post' && !parent_task_id) {
         newNotes.push(`(did NOT queue instagram_post — it needs parent_task_id pointing at a COMPLETED visual_generation sub-task whose media it posts. Queue the visual first, wait for it to complete, then re-queue the IG post with that sub-task's id as parent_task_id.)`)
         continue
+      }
+      // ONE RENDER, ONE POST. Nothing stopped the mission from parenting the
+      // story AND the feed post on the same visual, or re-posting yesterday's
+      // render, so the same image could ship twice.
+      if (task_type === 'instagram_post' && parent_task_id) {
+        const reuse = await checkParentAlreadyPosted(supabase, parent_task_id, parentsPostedThisStep)
+        if (reuse) {
+          newNotes.push(`(did NOT queue instagram_post — visual ${parent_task_id} ${reuse}. Each post needs its OWN freshly rendered visual; queue a new visual_generation with a different scene.)`)
+          continue
+        }
+        parentsPostedThisStep.add(parent_task_id)
       }
       // Hard cadence caps at the authoritative point — the committed POST is exactly
       // what computeIgCadence counts. STORY: ≤IG_STORY_PER_DAY/day (stops the orphan-
