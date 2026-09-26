@@ -105,9 +105,20 @@ conversation. Two tiers:
 | **Bootstrap** | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | configured once per environment |
 | **Everything else** | access token, LLM keys, Woo, Meta, Google, MFlow, Resend | **Supabase Vault**, fetched on demand |
 
-Canonical list of names: `scripts/secret-names.txt`. A credential is added by
-putting it in Vault (Supabase dashboard → Integrations → Vault) under exactly the
-name in that file — never by pasting it to an assistant.
+Canonical list of names: `scripts/secret-names.txt`.
+
+Add or rotate one with a single command — it prompts twice, hidden, and writes
+straight to Vault. The value never reaches a file, your shell history, or a
+conversation:
+
+```bash
+./scripts/set-secret.sh SUPABASE_DB_URL     # knows this one: asks for the password only
+./scripts/set-secret.sh GEMINI_API_KEY
+./scripts/set-secret.sh --list              # names only, never values
+./scripts/set-secret.sh --delete NAME
+```
+
+Never paste a credential to an assistant, and never put one in a repo file.
 
 ### Per environment
 
