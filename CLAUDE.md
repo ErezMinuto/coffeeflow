@@ -127,20 +127,28 @@ That leaves only `SUPABASE_DB_URL` to enter manually, because a database passwor
 resettable but never readable.
 
 **Cloud session (a task sent from your phone).** A cloud session sees nothing on the
-Mac, so set those same two variables in the cloud environment's own settings. That
-is the entire provisioning step; everything else comes from Vault:
+Mac, so set those same two variables (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) in
+the cloud environment's own settings (session title bar → environment → Edit). That
+is the entire provisioning step. At session start `scripts/session-start.sh` (the
+`SessionStart` hook) fetches everything else from Vault into the container's chmod-600
+store and makes every later command load it, so no one runs anything by hand:
 
 ```bash
-. scripts/bootstrap-from-db.sh --cache   # fetch from Vault into this session
 ./scripts/secrets-doctor.sh --live       # confirm what landed
 ```
 
-`--cache` writes the fetched values to the ephemeral container's local store, so
-later commands in the same session need no further network calls.
+### Deploying edge functions — one command, Mac or phone
 
-> To have this happen automatically at session start, add
-> `. scripts/bootstrap-from-db.sh --cache --quiet` to the second `SessionStart` hook
-> in `.claude/settings.json`, ahead of the `secrets-doctor.sh` call.
+```bash
+./scripts/deploy-functions.sh coffee-bot mission-worker   # named functions
+./scripts/deploy-functions.sh --shared   # everything bundling _shared/claude.ts or seo-agent/
+./scripts/deploy-functions.sh --all      # every function
+```
+
+Always deploys from the repo it lives in, applies `--no-verify-jwt` to the functions
+that need it, and uses the local `supabase` CLI or fetches the pinned one via npm (so it
+works in a cloud container too). Editing `_shared/*` or `seo-agent/*` changes every
+importing function — deploy with `--shared`.
 
 ### Non-secret context
 
