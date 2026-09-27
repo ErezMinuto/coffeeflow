@@ -30,7 +30,7 @@ const RI = {
 export default function Roasting() {
   const {
     data, originsDb, roastsDb, roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
-    getOriginById, calculateRoastedWeight, showToast
+    artisanProfilesDb, getOriginById, calculateRoastedWeight, showToast
   } = useApp();
 
   // Form mode: 'origin' (simple) | 'profile' (blend / multi-level)
@@ -53,6 +53,13 @@ export default function Roasting() {
   const [isSaving,      setIsSaving]      = useState(false);
   const savingRef = useRef(false); // synchronous in-flight lock — blocks double-submit before React re-renders
 
+  // Artisan — profiles imported from the roastery, waiting to be attached
+  const [importing,     setImporting]     = useState(false);
+  const [showStaging,   setShowStaging]   = useState(false);
+  const [attachTargets, setAttachTargets] = useState({}); // profile id -> roast id
+  const [rememberName,  setRememberName]  = useState({}); // profile id -> bool
+  const fileInputRef = useRef(null);
+
   const navigate = useNavigate();
 
   const startChecklist = () => {
@@ -72,6 +79,135 @@ export default function Roasting() {
         }
       }
     });
+  };
+
+  // ── ARTISAN ───────────────────────────────────────────────────────────────────
+  // The roaster logs a roast AFTER roasting, while Artisan's file lands the
+  // moment OFF is pressed — so a profile normally waits here for its roast,
+  // not the other way round.
+
+  const temp     = (v) => (v != null ? `${Number(v).toFixed(1)}°` : '—');
+  const normBean = (v) => (v || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+
+  const stagedProfiles = useMemo(
+    () => (data.artisanProfiles || [])
+      .filter(p => !p.roast_id)
+      .sort((a, b) => new Date(b.roasted_at) - new Date(a.roasted_at)),
+    [data.artisanProfiles]
+  );
+
+  // Roasts from the last week that no Artisan profile has claimed yet.
+  const attachableRoasts = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return data.roasts
+      .filter(r => !r.artisan_uuid && r.date && new Date(r.date).getTime() >= cutoff)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [data.roasts]);
+
+  /** Staged profiles roasted today whose bean name matches the item being recorded. */
+  const matchingStaged = useMemo(() => {
+    const item = formMode === 'origin'
+      ? data.origins.find(o => o.id === parseInt(selectedOrigin))
+      : data.roastProfiles.find(p => p.id === parseInt(selectedProfileId));
+    if (!item) return [];
+    const keys = [item.artisan_name, item.name].filter(Boolean).map(normBean);
+    const today = new Date().toDateString();
+    return stagedProfiles.filter(p =>
+      keys.includes(normBean(p.beans)) && new Date(p.roasted_at).toDateString() === today
+    );
+  }, [formMode, selectedOrigin, selectedProfileId, data.origins, data.roastProfiles, stagedProfiles]);
+
+  /** Write the readings onto the roast and mark the profile as taken. */
+  const attachProfile = async (profile, roast, remember) => {
+    // `.is('artisan_uuid', null)` makes this a compare-and-set: if the watcher's
+    // import claimed this roast first, no rows come back and we leave it alone
+    // rather than overwriting readings that are already correct.
+    const { data: claimed, error: roastErr } = await supabase.from('roasts').update({
+      charge_et: profile.charge_et, charge_bt: profile.charge_bt,
+      drop_et:   profile.drop_et,   drop_bt:   profile.drop_bt,
+      artisan_uuid: profile.artisan_uuid,
+      updated_at: new Date().toISOString(),
+    }).eq('id', roast.id).is('artisan_uuid', null).select('id');
+    if (roastErr) throw roastErr;
+    if (!claimed || claimed.length === 0) {
+      throw new Error('הקלייה הזו כבר קיבלה נתוני Artisan');
+    }
+
+    const { error: linkErr } = await supabase.from('artisan_profiles').update({
+      roast_id: roast.id, attached_at: new Date().toISOString(),
+    }).eq('id', profile.id);
+    if (linkErr) throw linkErr;
+
+    // Teach the importer this spelling so the next roast matches by itself.
+    if (remember && profile.beans) {
+      if (roast.roast_profile_id) await roastProfilesDb.update(roast.roast_profile_id, { artisan_name: profile.beans });
+      else if (roast.origin_id)   await originsDb.update(roast.origin_id, { artisan_name: profile.beans });
+    }
+  };
+
+  const attachStaged = async (profile) => {
+    const roast = data.roasts.find(r => r.id === parseInt(attachTargets[profile.id]));
+    if (!roast) { showToast('⚠️ בחר קלייה לשיוך', 'warning'); return; }
+    setIsSaving(true);
+    try {
+      await attachProfile(profile, roast, !!rememberName[profile.id]);
+      await roastsDb.refresh();
+      await artisanProfilesDb.refresh();
+      showToast(`✅ נתוני Artisan שויכו — הטענה ${temp(profile.charge_et)} · סיום ${temp(profile.drop_bt)}`);
+    } catch (err) {
+      console.error('Artisan attach failed:', err);
+      showToast(`❌ ${err.message || 'השיוך נכשל'}`, 'error');
+      await roastsDb.refresh();          // the UI was stale — resync
+      await artisanProfilesDb.refresh();
+    } finally { setIsSaving(false); }
+  };
+
+  const roastLabel = (r) => {
+    const name = r.roast_profile_id
+      ? (getProfileById(r.roast_profile_id)?.name || 'פרופיל')
+      : (getOriginById(r.origin_id)?.name || 'זן');
+    const when = r.date
+      ? new Date(r.date).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `${name} · ${r.green_weight} ק"ג · ${when}`;
+  };
+
+  /** Manual fallback for a roast the watcher missed, or an older export. */
+  const importArtisanFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      let profile;
+      try { profile = JSON.parse(await file.text()); }
+      catch {
+        showToast('❌ הקובץ אינו JSON תקין — יש לייצא מ-Artisan כ-JSON (קובץ alog. אינו נתמך)', 'error');
+        return;
+      }
+
+      const { data: res, error } = await supabase.functions.invoke('artisan-import', {
+        body: { filename: file.name, profile },
+      });
+
+      if (error) {
+        let msg = error.message;
+        try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* keep msg */ }
+        showToast(`❌ ${msg}`, 'error');
+        return;
+      }
+
+      await artisanProfilesDb.refresh();
+      await roastsDb.refresh();
+
+      if (res?.status === 'attached') showToast(`✅ שויך לקלייה — הטענה ${temp(res.charge_et)} · סיום ${temp(res.drop_bt)}`);
+      else if (res?.status === 'already_attached') showToast('ℹ️ הפרופיל כבר שויך לקלייה');
+      else { showToast('📥 הפרופיל נקלט וממתין לשיוך'); setShowStaging(true); }
+    } catch (err) {
+      console.error('Artisan import failed:', err);
+      showToast('❌ שגיאה בייבוא מ-Artisan', 'error');
+    } finally { setImporting(false); }
   };
 
   // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -123,7 +259,7 @@ export default function Roasting() {
 
     savingRef.current = true; setIsSaving(true);
     try {
-      await roastsDb.insert({
+      const newRoast = await roastsDb.insert({
         origin_id: origin.id, roast_profile_id: null,
         green_weight: weight, roasted_weight: roastedWeight,
         operator: selectedOperator, date: new Date().toISOString(), batch_number: batchNum,
@@ -133,10 +269,25 @@ export default function Roasting() {
         stock: origin.stock - weight,
         roasted_stock: (origin.roasted_stock || 0) + roastedWeight
       });
+      // The profile is normally already waiting: attach it to the row we just
+      // created. Never fatal — the roast is recorded either way, and an
+      // unattached profile stays in the staging list.
+      const staged = matchingStaged.length === 1 ? matchingStaged[0] : null;
+      if (staged && newRoast) {
+        try {
+          await attachProfile(staged, newRoast, false);
+          await artisanProfilesDb.refresh();
+        } catch (attachErr) {
+          console.error('Artisan auto-attach failed:', attachErr);
+        }
+      }
+      const artisanNote = staged
+        ? ` · Artisan: הטענה ${temp(staged.charge_et)} · סיום ${temp(staged.drop_bt)}`
+        : '';
       await roastsDb.refresh();
       await originsDb.refresh();
       setGreenWeight('15'); setSelectedOrigin(''); setSelectedOperator('');
-      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי`);
+      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג → ${roastedWeight} ק"ג קלוי${artisanNote}`);
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${origin.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording roast:', err);
@@ -200,13 +351,29 @@ export default function Roasting() {
         updated_at: new Date().toISOString()
       });
 
+      // The profile is normally already waiting: attach it to the row we just
+      // created. Never fatal — the roast is recorded either way, and an
+      // unattached profile stays in the staging list.
+      const staged = matchingStaged.length === 1 ? matchingStaged[0] : null;
+      if (staged && roastRow) {
+        try {
+          await attachProfile(staged, roastRow, false);
+          await artisanProfilesDb.refresh();
+        } catch (attachErr) {
+          console.error('Artisan auto-attach failed:', attachErr);
+        }
+      }
+      const artisanNote = staged
+        ? ` · Artisan: הטענה ${temp(staged.charge_et)} · סיום ${temp(staged.drop_bt)}`
+        : '';
+
       await roastsDb.refresh();
       await originsDb.refresh();
       await roastProfilesDb.refresh();
       await roastComponentsDb.refresh();
 
       setGreenWeight('15'); setSelectedProfileId(''); setSelectedOperator('');
-      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי`);
+      showToast(`✅ קלייה נרשמה! ${batchNum} | ${weight} ק"ג ירוק → ${roastedWeight} ק"ג קלוי${artisanNote}`);
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${profile.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording profile roast:', err);
@@ -229,7 +396,10 @@ export default function Roasting() {
       operator:         roast.operator,
       oldGreenWeight:   roast.green_weight,
       oldRoastedWeight: roast.roasted_weight,
-      isProfile:        !!roast.roast_profile_id
+      isProfile:        !!roast.roast_profile_id,
+      artisan:          roast.artisan_uuid
+        ? { charge_et: roast.charge_et, charge_bt: roast.charge_bt, drop_et: roast.drop_et, drop_bt: roast.drop_bt }
+        : null,
     });
   };
 
@@ -527,6 +697,12 @@ export default function Roasting() {
           {data.roastChecklistTemplates?.length > 0 && (
             <button onClick={startChecklist} className="rbtn forest"><Icon d={RI.check} /> צ'קליסט קלייה</button>
           )}
+          <button onClick={() => fileInputRef.current?.click()} className="rbtn ghost" disabled={importing}
+            title="ייבוא קובץ JSON שיוצא מ-Artisan">
+            <Icon d={RI.chart} /> {importing ? 'מייבא…' : 'ייבוא מ-Artisan'}
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json,application/json"
+            style={{ display: 'none' }} onChange={importArtisanFile} />
           <button onClick={() => setView('list')} className="rbtn ghost"><Icon d={RI.list} /> רשימת קלייה</button>
         </div>
       </div>
@@ -538,6 +714,52 @@ export default function Roasting() {
         <div className="rkpi"><div className="lbl">ק"ג קלוי היום</div><div className="val">{num(roastStats.roastedToday, 0)} <small>ק"ג</small></div><i className="spark" /></div>
         <div className="rkpi"><div className="lbl">קלוי השבוע</div><div className="val">{num(roastStats.roastedWeek, 0)} <small>ק"ג</small></div><i className="spark" /></div>
       </div>
+
+      {/* Artisan profiles waiting for a roast to attach to */}
+      {stagedProfiles.length > 0 && (
+        <div className="rartisan">
+          <button className="rartisan-head" onClick={() => setShowStaging(v => !v)} aria-expanded={showStaging}>
+            <Icon d={RI.fire} size={15} />
+            <span>{stagedProfiles.length} {stagedProfiles.length === 1 ? 'קלייה' : 'קליות'} מ-Artisan {stagedProfiles.length === 1 ? 'ממתינה' : 'ממתינות'} לשיוך</span>
+            <span className="rartisan-toggle">{showStaging ? 'הסתר' : 'הצג'}</span>
+          </button>
+
+          {showStaging && (
+            <div className="rartisan-list">
+              {stagedProfiles.map(prof => (
+                <div key={prof.id} className="rartisan-row">
+                  <div className="rartisan-meta">
+                    <b>{prof.beans || 'ללא שם זן'}</b>
+                    <span>{new Date(prof.roasted_at).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>הטענה {temp(prof.charge_et)} · סיום {temp(prof.drop_bt)}</span>
+                    {prof.green_kg != null && <span>{num(prof.green_kg)} ק"ג ירוק</span>}
+                  </div>
+                  <div className="rartisan-actions">
+                    <select value={attachTargets[prof.id] || ''}
+                      aria-label={`שיוך ${prof.beans || 'פרופיל'} לקלייה`}
+                      onChange={e => setAttachTargets({ ...attachTargets, [prof.id]: e.target.value })}>
+                      <option value="">שייך לקלייה…</option>
+                      {attachableRoasts.map(r => <option key={r.id} value={r.id}>{roastLabel(r)}</option>)}
+                    </select>
+                    {prof.beans && (
+                      <label className="rartisan-remember">
+                        <input type="checkbox" checked={!!rememberName[prof.id]}
+                          onChange={e => setRememberName({ ...rememberName, [prof.id]: e.target.checked })} />
+                        זכור את השם הזה
+                      </label>
+                    )}
+                    <button className="rbtn roast sm" disabled={!attachTargets[prof.id] || isSaving}
+                      onClick={() => attachStaged(prof)}>שייך</button>
+                  </div>
+                </div>
+              ))}
+              {attachableRoasts.length === 0 && (
+                <div className="rartisan-hint">אין קליות פנויות לשיוך מהשבוע האחרון — רשום את הקלייה ותשויך אוטומטית.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Two columns: record form | needs roasting */}
       <div className="roasting-cols">
@@ -653,6 +875,22 @@ export default function Roasting() {
               <input type="number" step="0.1" placeholder="למשל: 65.4" value={colorReading} onChange={e => setColorReading(e.target.value)} />
             </div>
 
+            {matchingStaged.length === 1 && (
+              <div className="rartisan-hit">
+                <Icon d={RI.chart} size={14} />
+                <span>
+                  נמצא פרופיל Artisan מהיום ({new Date(matchingStaged[0].roasted_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })})
+                  — הטענה <b>{temp(matchingStaged[0].charge_et)}</b> · סיום <b>{temp(matchingStaged[0].drop_bt)}</b>. ישויך לקלייה זו.
+                </span>
+              </div>
+            )}
+            {matchingStaged.length > 1 && (
+              <div className="rartisan-hit warn">
+                <Icon d={RI.alert} size={14} />
+                <span>{matchingStaged.length} פרופילי Artisan מהיום מתאימים לזן הזה — שייך אותם ידנית מהרשימה שלמעלה.</span>
+              </div>
+            )}
+
             <button onClick={recordRoast} disabled={isSaving} className="rbtn roast rbtn-block"><Icon d={RI.fire} /> {isSaving ? 'רושם…' : 'רשום קלייה'}</button>
           </div>
         </div>
@@ -726,7 +964,10 @@ export default function Roasting() {
                         onChange={toggleSelectAll} />
                     </th>
                     <th>פריט</th><th className="c">ירוק → קלוי</th><th className="c">מפעיל</th>
-                    <th className="c">צבע</th><th className="c">תאריך</th><th className="c">פעולות</th>
+                    <th className="c">צבע</th>
+                    <th className="c" title="טמפרטורת הטענה (ET) מ-Artisan">הטענה</th>
+                    <th className="c" title="טמפרטורת סיום (BT) מ-Artisan">סיום</th>
+                    <th className="c">תאריך</th><th className="c">פעולות</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -755,6 +996,8 @@ export default function Roasting() {
                         <td className="c rwt"><span className="g">{roast.green_weight}</span><Icon d={RI.arrow} size={14} /><span className="r">{roast.roasted_weight} ק"ג</span></td>
                         <td className="c">{roast.operator}</td>
                         <td className="c rnum">{roast.color_reading != null ? roast.color_reading : '—'}</td>
+                        <td className="c rnum">{temp(roast.charge_et)}</td>
+                        <td className="c rnum">{temp(roast.drop_bt)}</td>
                         <td className="c rnum rdate">{new Date(roast.date).toLocaleDateString('he-IL')}</td>
                         <td className="c">
                           <div className="racts">
@@ -805,6 +1048,17 @@ export default function Roasting() {
                   {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
                 </select>
               </div>
+              {editingRoast.artisan && (
+                <div className="rartisan-readings">
+                  <div className="rar-title"><Icon d={RI.chart} size={14} /> נתוני Artisan</div>
+                  <div className="rar-grid">
+                    <div><span>הטענה ET</span><b>{temp(editingRoast.artisan.charge_et)}</b></div>
+                    <div><span>הטענה BT</span><b>{temp(editingRoast.artisan.charge_bt)}</b></div>
+                    <div><span>סיום ET</span><b>{temp(editingRoast.artisan.drop_et)}</b></div>
+                    <div><span>סיום BT</span><b>{temp(editingRoast.artisan.drop_bt)}</b></div>
+                  </div>
+                </div>
+              )}
               {editingRoast.isProfile && editingRoast.greenWeight && (
                 <div className="rpreview compact">משקל קלוי משוער: <b>{calcProfileRoastedWeight(editingRoast.profileId, parseFloat(editingRoast.greenWeight))} ק"ג</b></div>
               )}
