@@ -10,8 +10,8 @@
           },
           {
             "type": "command",
-            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && [ -x scripts/secrets-doctor.sh ] && ./scripts/secrets-doctor.sh 2>&1 || true",
-            "statusMessage": "Checking available credentials..."
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && [ -x scripts/session-start.sh ] && ./scripts/session-start.sh 2>&1 || true",
+            "statusMessage": "Loading credentials from Vault..."
           }
         ]
       }
