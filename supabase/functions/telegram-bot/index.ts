@@ -11,6 +11,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
@@ -88,14 +89,9 @@ interface Extracted {
 async function extractWithClaude(text: string): Promise<Extracted | null> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "x-api-key":         ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type":      "application/json",
-    },
-    body: JSON.stringify({
-      model:      "claude-haiku-4-5",
-      max_tokens: 200,
+    headers: claudeHeaders(ANTHROPIC_KEY),
+    body: JSON.stringify(claudeBody({
+      maxTokens: 200,
       system: `אתה עוזר לחנות קפה ישראלית.
 הודעות בקבוצה הן בעברית. יש שני סוגי הודעות רלוונטיות:
 
@@ -116,11 +112,11 @@ async function extractWithClaude(text: string): Promise<Extracted | null> {
 דוגמאות לטיפול: "עדכנתי את דוד", "טיפלתי בשרה לוי", "דוד כהן טופל"
 אם שדה לא קיים — החזר מחרוזת ריקה "".`,
       messages: [{ role: "user", content: text }],
-    }),
+    })),
   });
 
   const json = await res.json();
-  const raw  = json.content?.[0]?.text ?? "";
+  const raw  = claudeText(json);
   try {
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     return JSON.parse(clean) as Extracted;

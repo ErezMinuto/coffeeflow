@@ -20,17 +20,18 @@ export { isGeminiModel }
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
-// Claude model IDs. The content-planner stack (orchestrator, writers, chat)
-// runs on Sonnet — cheap, fast, good at structured planning. The STRATEGIST
-// BRAIN runs on Opus 4.8: it reasons deeply over the whole business once a
-// week, so quality-per-decision matters far more than per-token cost.
-const MODEL_ORCHESTRATOR_DEFAULT = 'claude-sonnet-4-6'
-const MODEL_WRITER_DEFAULT      = 'claude-sonnet-4-6'
-const MODEL_CHAT_DEFAULT        = 'claude-sonnet-4-6'
-// Fable 5: chosen over Opus 4.8 after a real-snapshot backtest (found a wasting
-// ad, a bean oversell, and gated the email better; zero refusals). Refusal→Opus
-// fallback is wired in callClaude below as a seatbelt.
-const MODEL_STRATEGIST_DEFAULT  = 'claude-fable-5'
+// Claude model IDs. Every Claude slot defaults to Opus 5.5 (2026-09-26, admin
+// decision: one Claude model across the system). Slots currently pointed at
+// Gemini keep their MODEL_<SLOT> env override, which always wins over these.
+// Until then the planners ran on Sonnet 4.6, the cheap workers on Haiku 4.5,
+// and the strategist on Fable 5 (it won a real-snapshot backtest over Opus 4.8:
+// found a wasting ad, a bean oversell, gated the email better, zero refusals).
+// Rolling one slot back is `supabase secrets set MODEL_<SLOT>=<old id>`.
+export const CLAUDE_DEFAULT_MODEL = 'claude-opus-5-5'
+const MODEL_ORCHESTRATOR_DEFAULT = CLAUDE_DEFAULT_MODEL
+const MODEL_WRITER_DEFAULT      = CLAUDE_DEFAULT_MODEL
+const MODEL_CHAT_DEFAULT        = CLAUDE_DEFAULT_MODEL
+const MODEL_STRATEGIST_DEFAULT  = CLAUDE_DEFAULT_MODEL
 
 // ── PROVIDER SWITCH (Gemini migration, Wave A) ──────────────────────────────
 //
@@ -75,10 +76,10 @@ function modelSlot(slot: string, fallback: string): string {
 // parseClaudeJson and the cycle emits NOTHING. Prefer a model whose thinking can
 // be disabled (gemini-2.5-flash), or raise the cap first.
 export const MODEL_ORCHESTRATOR   = modelSlot('ORCHESTRATOR', MODEL_ORCHESTRATOR_DEFAULT)
-export const MODEL_TECHSEO        = modelSlot('TECHSEO',        'claude-sonnet-4-6')
-export const MODEL_SCOUT          = modelSlot('SCOUT',          'claude-haiku-4-5')
-export const MODEL_RESEARCH       = modelSlot('RESEARCH',       'claude-sonnet-4-6')
-export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  'claude-sonnet-4-6')
+export const MODEL_TECHSEO        = modelSlot('TECHSEO',        CLAUDE_DEFAULT_MODEL)
+export const MODEL_SCOUT          = modelSlot('SCOUT',          CLAUDE_DEFAULT_MODEL)
+export const MODEL_RESEARCH       = modelSlot('RESEARCH',       CLAUDE_DEFAULT_MODEL)
+export const MODEL_VISUAL_CRITIC  = modelSlot('VISUAL_CRITIC',  CLAUDE_DEFAULT_MODEL)
 // The admin chat is the single largest line in agent_cost_ledger — $4.03 over
 // 14 days, ~37% of all spend, more than strategist-brain and 13x the entire
 // migrated organic stack. Its output goes to the owner, not to customers, so a
@@ -92,15 +93,15 @@ export const MODEL_CHAT           = modelSlot('CHAT',           MODEL_CHAT_DEFAU
 // fetch a page, summarise it as one insight. Cheap, structured, no judgement,
 // and its output is a suggestion the admin reads. Slotted separately so it can
 // run on a cheap tier while the chat loop itself runs on a strong one.
-export const MODEL_CHAT_SYNTH     = modelSlot('CHAT_SYNTH',     'claude-haiku-4-5')
+export const MODEL_CHAT_SYNTH     = modelSlot('CHAT_SYNTH',     CLAUDE_DEFAULT_MODEL)
 // The blog WRITER — customer-facing Hebrew published to the site. Slotted last
 // of the organic tier because its output is the most public thing in the stack.
 export const MODEL_WRITER         = modelSlot('WRITER',         MODEL_WRITER_DEFAULT)
-// The BRAIN. Fable 5 was not a default — it WON a real-snapshot backtest over
-// Opus 4.8 (found a wasting ad, a bean oversell, gated the email better, zero
-// refusals). Slotting it does not overturn that; it only makes the choice
-// changeable without a deploy. Anything put here should beat Fable on the same
-// backtest first, because the brain's output drives spend decisions.
+// The BRAIN. Fable 5 WON a real-snapshot backtest over Opus 4.8 and ran here
+// until 2026-09-26, when the admin moved every Claude slot to Opus 5.5 without
+// re-running that backtest. The brain's output drives spend decisions, so if its
+// judgement slips, `supabase secrets set MODEL_STRATEGIST=claude-fable-5`
+// restores the backtested model with no deploy.
 export const MODEL_STRATEGIST     = modelSlot('STRATEGIST',     MODEL_STRATEGIST_DEFAULT)
 // Slots for the four functions that used to call Anthropic directly. Those
 // hand-rolled fetches are why they were invisible in agent_cost_ledger and
@@ -111,15 +112,24 @@ export const MODEL_STRATEGIST     = modelSlot('STRATEGIST',     MODEL_STRATEGIST
 // and the backtest is the Claude-vs-Gemini comparison that justified this
 // migration. Pointing either at Gemini would corrupt the data it exists to
 // produce, so they keep their direct calls on purpose.
-export const MODEL_ANALYST        = modelSlot('ANALYST',        'claude-sonnet-4-6')
-export const MODEL_CAMPAIGN       = modelSlot('CAMPAIGN',       'claude-sonnet-4-6')
-export const MODEL_CAMPAIGN_CHEAP = modelSlot('CAMPAIGN_CHEAP', 'claude-haiku-4-5')
+export const MODEL_ANALYST        = modelSlot('ANALYST',        CLAUDE_DEFAULT_MODEL)
+export const MODEL_CAMPAIGN       = modelSlot('CAMPAIGN',       CLAUDE_DEFAULT_MODEL)
+export const MODEL_CAMPAIGN_CHEAP = modelSlot('CAMPAIGN_CHEAP', CLAUDE_DEFAULT_MODEL)
 
-// Opus 4.7+/Fable use adaptive thinking and REJECT temperature/top_p/
+// Opus 4.7+/Opus 5.x/Fable use adaptive thinking and REJECT temperature/top_p/
 // budget_tokens (400). Detect them so callClaude omits sampling params and
-// sends thinking:adaptive instead. Sonnet/Haiku keep the temperature path.
+// sends thinking:adaptive instead. Sonnet 4.6/Haiku keep the temperature path.
 function usesAdaptiveThinking(model: string): boolean {
-  return /^claude-opus-4-(7|8)/.test(model) || model.startsWith('claude-fable')
+  return /^claude-opus-(4-(7|8)|5)/.test(model) || model.startsWith('claude-fable')
+}
+
+// Opus 5.5 thinks on EVERY call (it cannot be disabled) and the thinking counts
+// toward max_tokens. Most call sites sized max_tokens for Sonnet/Haiku with no
+// thinking, so the same cap would cut replies off mid-JSON. Floor it; a higher
+// cap costs nothing unless the model actually uses it.
+const ALWAYS_THINKING_MIN_TOKENS = 16_000
+function isOpus55(model: string): boolean {
+  return model.startsWith('claude-opus-5-5')
 }
 
 // Anthropic Messages API shapes — minimal, just what we use.
@@ -187,7 +197,7 @@ export interface CallClaudeOptions {
   system: string
   messages: ChatMessage[]
   maxTokens?: number
-  // Ignored by adaptive-thinking models (Opus 4.7+/Fable) — they reject it.
+  // Ignored by adaptive-thinking models (Opus 4.7+/Opus 5.x/Fable) — they reject it.
   temperature?: number
   // Reasoning depth vs token-spend tradeoff (GA; Opus 4.5+ / Sonnet 4.6).
   // 'high' is the strategist default; omit for the cheap Sonnet workers.
@@ -323,16 +333,29 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
   }
 
   const adaptive = usesAdaptiveThinking(model)
-  // Fable 5's safety classifiers can decline a request as stop_reason:"refusal".
-  // In an unattended weekly cron that would silently fail the run, so opt into
-  // server-side fallback: on a policy decline Anthropic transparently re-serves
-  // the SAME request on Opus 4.8 within this one call (repriced automatically).
-  // Gated to Fable — the param/header is unnecessary for other models. A refused
-  // partial is billed but discarded server-side; a pre-output decline isn't billed.
+  const opus55   = isOpus55(model)
+  // Fable 5 and Opus 5.5 run safety classifiers that can decline a request as
+  // stop_reason:"refusal". In an unattended cron that would silently fail the
+  // run, so opt into server-side fallback: on a policy decline Anthropic
+  // re-serves the SAME request on another model within this one call (repriced
+  // automatically). Fable keeps its pinned Opus 4.8 target; Opus 5.5 uses
+  // "default", which routes by refusal category. A refused partial is billed
+  // but discarded server-side; a pre-output decline isn't billed.
   const fableFallback = model.startsWith('claude-fable')
+  const betas: string[] = []
+  if (fableFallback) betas.push('server-side-fallback-2026-06-01')
+  if (opus55) {
+    betas.push('server-side-fallback-2026-07-01')
+    // Thinking blocks are bound to the exact prefix that produced them. Loops
+    // here rebuild the system prompt per invocation (strategist-brain resumes
+    // from DB), so a replayed block can sit after an edited prefix. drop_block
+    // discards such a block instead of failing the whole request with a 400.
+    betas.push('thinking-binding-controls-2026-08-01')
+  }
+  const requestedMax = opts.maxTokens ?? 8192
   const body: Record<string, unknown> = {
     model,
-    max_tokens: opts.maxTokens ?? 8192,
+    max_tokens: opus55 ? Math.max(requestedMax, ALWAYS_THINKING_MIN_TOKENS) : requestedMax,
     // System: when caching, send as a content-block array with a
     // cache_control marker on the (only) block. Otherwise send as a
     // plain string — Anthropic accepts both shapes.
@@ -341,16 +364,22 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
       : opts.system,
     messages: stripProviderFields(opts.cachePrefix ? withMessageBreakpoint(opts.messages) : opts.messages),
   }
-  if (adaptive) {
+  if (opus55) {
+    body.thinking = { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } }
+  } else if (adaptive) {
     // Adaptive thinking is the only on-mode for Opus 4.7+/Fable; Claude
     // decides how much to think per request. Sending temperature would 400.
     body.thinking = { type: 'adaptive' }
   } else if (opts.temperature != null) {
     body.temperature = opts.temperature
   }
-  // effort is opt-in, so existing Sonnet callers (no effort) are unchanged.
+  // effort is opt-in for older models. Opus 5.5 gets it explicitly: its API
+  // default is 'medium' (one below the old Opus 'high'), and effort is the only
+  // lever on how long it thinks, so state it rather than inherit it silently.
   if (opts.effort) body.output_config = { effort: opts.effort }
+  else if (opus55) body.output_config = { effort: 'medium' }
   if (fableFallback) body.fallbacks = [{ model: 'claude-opus-4-8' }]
+  else if (opus55) body.fallbacks = 'default'
   if (opts.tools && opts.tools.length > 0) {
     // Tools: when caching, attach cache_control to the LAST tool. The
     // marker caches the WHOLE prefix up to and including that block, so
@@ -378,7 +407,7 @@ export async function callClaude(opts: CallClaudeOptions): Promise<CallClaudeRes
         'x-api-key':         ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
         'content-type':      'application/json',
-        ...(fableFallback ? { 'anthropic-beta': 'server-side-fallback-2026-06-01' } : {}),
+        ...(betas.length > 0 ? { 'anthropic-beta': betas.join(',') } : {}),
       },
       body: JSON.stringify(body),
       signal: controller.signal,

@@ -11,6 +11,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BOT_TOKEN      = Deno.env.get("EMPLOYEE_BOT_TOKEN")          ?? "";
@@ -209,14 +210,9 @@ interface ParseResult {
 async function classifyMessage(text: string): Promise<ParseResult> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "x-api-key": CLAUDE_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 200,
+    headers: claudeHeaders(CLAUDE_KEY),
+    body: JSON.stringify(claudeBody({
+      maxTokens: 200,
       system: `You help a coffee shop manager with employee scheduling.
 Classify a Hebrew group chat message into one of three types and return JSON only.
 
@@ -233,10 +229,10 @@ Classify a Hebrew group chat message into one of three types and return JSON onl
 3. "other" — anything else (greetings, questions, unrelated)
    {"type":"other"}`,
       messages: [{ role: "user", content: text }],
-    }),
+    })),
   });
   const json = await res.json();
-  const raw  = json.content?.[0]?.text ?? "{}";
+  const raw  = claudeText(json) || "{}";
   try {
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);

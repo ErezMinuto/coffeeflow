@@ -15,7 +15,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callClaude as sharedCallClaude } from "../seo-agent/claude.ts";
+import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from "../_shared/marketing_intel.ts";
@@ -35,20 +35,24 @@ const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY") ?? "";
 const SERPER_KEY    = Deno.env.get("SERPER_API_KEY") ?? "";
 
-// Haiku: fast enough (15-25s), same model used by generate-campaign
-const MODEL_ADS     = "claude-sonnet-4-6";
+// Every Claude call here runs on the system-wide default (Opus 5.5 since
+// 2026-09-26; it was Sonnet 4.6 / Haiku 4.5). MODEL_ADVISOR still overrides it.
+const MODEL_ADS     = CLAUDE_DEFAULT_MODEL;
 // Strategist agents need to respond within the 150s edge function gateway
-// timeout. Sonnet 4.5 is too slow with the large prompt. Sonnet 4 is
-// fast enough and still excellent for Hebrew marketing strategy.
-// Reverted to Sonnet 4 after 4.5 consistently timed out on the strategist
-// prompts against Supabase's 150s gateway — even with 145s timeout and
-// 7000 max_tokens. Sonnet 4 is ~20% faster and fits the window.
-//
-// ⚠️ TODO before May 14, 2026 (Sonnet 4 degradation starts):
-// Split the strategist into two smaller Claude calls OR trim the research
-// block before handing to Sonnet 4.5. Leaving on `claude-sonnet-4-6`
-// is a temporary measure until then.
-const MODEL_STRATEGIST = "claude-sonnet-4-6";
+// timeout. Sonnet 4.5 consistently timed out on these prompts; see
+// ADVISOR_EFFORT below for how Opus 5.5 is kept inside the window.
+const MODEL_STRATEGIST = CLAUDE_DEFAULT_MODEL;
+
+// Opus 5.5 always thinks, and these calls live under the 150s edge gateway that
+// already timed out Sonnet 4.5 on the strategist prompts. 'low' keeps the
+// thinking short; raise it per call only after measuring the latency.
+const ADVISOR_EFFORT = "low" as const;
+
+// Opus 5.5 can open a response with a thinking block, so content[0] is not
+// necessarily text. Read the text blocks by type.
+function shimText(json: { content?: any[] }): string {
+  return (json.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => b.text).join("");
+}
 
 // ── Business Brief (injected into every agent prompt) ─────────────────────────
 const BUSINESS_BRIEF = `
@@ -797,6 +801,7 @@ async function callClaude(
   const res = await sharedCallClaude({
     sourceFn:    'marketing-advisor',
     model:       resolveAdvisorModel(model),
+    effort:      ADVISOR_EFFORT,
     system:      fullSystem,
     messages:    [{ role: 'user', content: userMessage }],
     maxTokens,
@@ -808,7 +813,7 @@ async function callClaude(
 
 // Shim for the seven call sites that hand-rolled their own Anthropic fetch.
 //
-// Returns the SAME response shape those sites already parse — json.content[0].text
+// Returns the SAME response shape those sites already parse — json.content (text read via shimText)
 // and json.usage — so none of the downstream handling changes. Same reasoning as
 // the callClaude adapter above: this is an 8,000-line function that creates
 // campaigns and moves budgets, and rewriting seven independent parse paths buys
@@ -850,6 +855,7 @@ async function anthropicShim(
   const res = await sharedCallClaude({
     sourceFn:  "marketing-advisor",
     model:     resolveAdvisorModel(reqBody.model),
+    effort:    ADVISOR_EFFORT,
     system,
     messages:  (reqBody.messages ?? []) as any,
     maxTokens: reqBody.max_tokens ?? 4000,
@@ -1377,13 +1383,13 @@ async function rewriteToCompliantCreative(
 
   try {
     const json = await anthropicShim({
-        model: "claude-sonnet-4-6",
+        model: CLAUDE_DEFAULT_MODEL,
         max_tokens: 3000,
         system: sysPrompt,
         messages: [{ role: "user", content: userMsg }],
       }, 60000);
     if (json.error) throw new Error(json.error.message ?? "rewrite error");
-    const rewritten = json.content?.[0]?.text ?? "";
+    const rewritten = shimText(json);
     return rewritten || originalAnswer;
   } catch (e: any) {
     console.error("[compliance] rewrite failed, returning original with warning:", e?.message);
@@ -1797,12 +1803,12 @@ ${existingSeeds.map(s => `- ${s}`).join("\n")}
 
   try {
     const json = await anthropicShim({
-        model: "claude-haiku-4-5",
+        model: CLAUDE_DEFAULT_MODEL,
         max_tokens: 2500,
         system: systemPrompt,
         messages: [{ role: "user", content: "הפק את 50 השאילתות עכשיו." }],
       }, 60000);
-    const raw  = json.content?.[0]?.text ?? "";
+    const raw  = shimText(json);
     const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
     return Array.isArray(parsed.queries)
@@ -5239,7 +5245,7 @@ Format: 16:9 wide landscape, photorealistic.`;
     if (!ANTHROPIC_KEY) return true;
     try {
       const json = await anthropicShim({
-          model: "claude-haiku-4-5",
+          model: CLAUDE_DEFAULT_MODEL,
           max_tokens: 50,
           messages: [{
             role: "user",
@@ -5249,7 +5255,7 @@ Format: 16:9 wide landscape, photorealistic.`;
             ],
           }],
         }, 15000);
-      const verdict = (json.content?.[0]?.text ?? "").trim().toUpperCase();
+      const verdict = (shimText(json)).trim().toUpperCase();
       console.log(`[banner-vision] verdict: ${verdict}`);
       return verdict.startsWith("OK");
     } catch (e: any) {
@@ -5442,7 +5448,7 @@ ${productLinks.map(p => `- ${p.name}: ${p.url}`).join('\n')}`
 כתוב את המאמר המלא. התחל ישירות עם # ${title} כ-H1 ראשון.`;
 
   console.log(`[blog_writer] Writing post for keyword: "${keyword}"`);
-  const { text, inputTokens, outputTokens } = await callClaude("claude-sonnet-4-6", systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
+  const { text, inputTokens, outputTokens } = await callClaude(CLAUDE_DEFAULT_MODEL, systemPrompt, userMessage, { maxTokens: 6000, timeoutMs: 135_000 });
   console.log(`[blog_writer] Done. Tokens: ${inputTokens + outputTokens}. Body length: ${text.length}`);
 
   // Body is the raw Markdown. Aggressively strip dash AI-tells. The
@@ -5753,7 +5759,7 @@ ${objective_override ? `Objective מועדף: ${objective_override}` : ""}
       // Sonnet 4 (not 4.5) + 2500 tokens → keeps worker CPU + wall time under
       // Supabase's WORKER_RESOURCE_LIMIT (546). 4.5 + 4000 tokens was hitting
       // it on larger prompts with full META_ADS_EXPERTISE injected.
-      const { text: out } = await callClaude("claude-sonnet-4-6", sysPrompt, userMsg, { maxTokens: 6000, timeoutMs: 150_000 });
+      const { text: out } = await callClaude(CLAUDE_DEFAULT_MODEL, sysPrompt, userMsg, { maxTokens: 6000, timeoutMs: 150_000 });
       const spec = parseClaudeJson(out);
 
       // Compliance sweep — flag violations so the frontend can show a warning,
@@ -6089,12 +6095,12 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       let strategicFindings: any[] = [];
       try {
         const json = await anthropicShim({
-            model: "claude-sonnet-4-6",
+            model: CLAUDE_DEFAULT_MODEL,
             max_tokens: 2000,
             system: claudeSys,
             messages: [{ role: "user", content: `נתוני הקמפיינים:\n${flatData}` }],
           }, 60000);
-        const raw = json.content?.[0]?.text ?? "";
+        const raw = shimText(json);
         const clean = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(clean);
         strategicFindings = Array.isArray(parsed.strategic_findings) ? parsed.strategic_findings : [];
@@ -7146,7 +7152,7 @@ ${JSON.stringify(conversionActionsSummary, null, 2).slice(0, 1000)}
         if (!payload.length) return { campaigns: [] };
         try {
           const { text } = await callClaude(
-            "claude-sonnet-4-6",
+            CLAUDE_DEFAULT_MODEL,
             sysPrompt,
             buildUserMsg(channel, payload),
             { maxTokens: 5500, timeoutMs: 115_000 },
@@ -7771,7 +7777,7 @@ ${dataSection}`;
       const userMsg = question || "Produce the unified marketing plan from the data. Return JSON only.";
 
       const json = await anthropicShim({
-          model: "claude-sonnet-4-6",
+          model: CLAUDE_DEFAULT_MODEL,
           max_tokens: 6000,
           system: [{ type: "text", text: sysPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userMsg }],
@@ -8129,7 +8135,7 @@ ${postsBlock}
 
       for (let iter = 0; iter < 5; iter++) {
         const json = await anthropicShim({
-            model: "claude-sonnet-4-6",
+            model: CLAUDE_DEFAULT_MODEL,
             max_tokens: 4000,
             // tools + sysPromptStrategist are both built once above the loop and
             // never mutated, so this prefix is byte-identical across all 5
@@ -8416,13 +8422,13 @@ ${researchBlock.slice(0, 3500)}
       ];
 
       const json = await anthropicShim({
-          model: "claude-sonnet-4-6",
+          model: CLAUDE_DEFAULT_MODEL,
           max_tokens: 2000,
           system: sysPromptChat,
           messages,
         }, 60000);
       if (json.error) throw new Error(json.error.message ?? "Claude error");
-      const answer = json.content?.[0]?.text ?? "";
+      const answer = shimText(json);
       const tokensUsed = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
 
       // Post-check: log violations but don't rewrite synchronously — a second

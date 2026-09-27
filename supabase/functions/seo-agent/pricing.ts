@@ -12,6 +12,7 @@
 // platform pricing.
 interface ModelPrice { input: number; output: number }
 const MODEL_PRICES: Record<string, ModelPrice> = {
+  'claude-opus-5-5':   { input: 4,  output: 20 },
   'claude-opus-4-8':   { input: 5,  output: 25 },
   'claude-opus-4-7':   { input: 5,  output: 25 },
   'claude-sonnet-4-6': { input: 3,  output: 15 },

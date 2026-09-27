@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")  ?? "";
 const JWT_SECRET        = Deno.env.get("JWT_SECRET") ?? "";
@@ -125,20 +126,18 @@ Start your response with { and end with }`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
+      headers: claudeHeaders(ANTHROPIC_API_KEY),
+      // Scheduling is a small constraint puzzle — 'medium' rather than the
+      // helper's 'low', since a wrong roster costs more than a few seconds.
+      body: JSON.stringify(claudeBody({
+        maxTokens: 1024,
+        effort:    "medium",
+        messages:  [{ role: "user", content: prompt }],
+      })),
     });
 
     const json = await res.json();
-    const raw = json.content?.[0]?.text ?? "{}";
+    const raw = claudeText(json) || "{}";
     const match = raw.match(/\{[\s\S]*\}/);
     const clean = match ? match[0] : "{}";
     const schedule = JSON.parse(clean);
