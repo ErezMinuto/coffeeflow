@@ -26,18 +26,15 @@ cd "$REPO"
 PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 CLI_VERSION="2.98.1"
 
-# CLAUDE.md: these must always be deployed with --no-verify-jwt.
-#   - the bots and webhooks, which Telegram/Clerk call without a Supabase JWT;
-#   - every function a pg_cron job calls with no Authorization header (see the
-#     cron.schedule calls in supabase/migrations). A deploy without the flag
-#     turns verify_jwt back on and the gateway 401s every tick. That is what
-#     stopped mission-worker, and with it the daily IG story, after the
-#     2026-09-27 --shared deploy.
-NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor
-  mission-worker organic-orchestrator organic-worker-instagram seo-worker-research
-  scout-tick evaluator-tick strategist-evaluator strategist-executor
-  industry-intelligence-sync ai-visibility-probe ga4-sync meta-sync stock-update"
-NO_VERIFY_JWT="$(echo $NO_VERIFY_JWT)"   # one line, single-spaced, for the match below
+# CLAUDE.md: these must always be deployed with --no-verify-jwt — the bots and
+# webhooks, which Telegram/Clerk call without a Supabase JWT.
+#
+# Everything else keeps whatever verify_jwt prod has now (below). A deploy used
+# to turn it back ON: the 2026-09-27 --shared deploy did that to ten functions
+# pg_cron called without a header, and mission-worker, and with it the daily IG
+# story, stopped. Those cron jobs now send the service-role key
+# (20260928_cron_auth_header.sql), so those functions keep verify_jwt on.
+NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor"
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
   echo "deploy-functions: SUPABASE_ACCESS_TOKEN is not set." >&2
