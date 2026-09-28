@@ -205,6 +205,15 @@ unreachable with the anon key.
 
 Functions that MUST always be deployed with `--no-verify-jwt`:
 - `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`
+- every function a pg_cron job calls without an Authorization header: `mission-worker`
+  (the daily IG story), `organic-orchestrator`, `organic-worker-instagram`,
+  `seo-worker-research`, `scout-tick`, `evaluator-tick`, `strategist-evaluator`,
+  `strategist-executor`, `industry-intelligence-sync`, `ai-visibility-probe`, `ga4-sync`,
+  `meta-sync`, `stock-update`. Deployed without the flag, the gateway 401s every tick
+  and the job silently stops (2026-09-27: no IG story the next day).
+
+`scripts/deploy-functions.sh` holds this list, and keeps `verify_jwt: false` on any
+other function that already has it.
 
 > The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 
