@@ -1,7 +1,7 @@
 -- CoffeeFlow — scheduled jobs log in, so worker functions keep verify_jwt ON.
 --
 -- WHAT WENT WRONG (2026-09-27/28)
--- Several pg_cron jobs call their edge function with no Authorization header.
+-- No pg_cron job sent an Authorization header to its edge function.
 -- That only works while the function is deployed with verify_jwt=false. The
 -- 2026-09-27 `deploy-functions.sh --shared` redeploy turned verify_jwt back on
 -- for ten of them, the gateway answered 401 to every tick, and mission-worker
@@ -35,18 +35,21 @@ BEGIN
   FOR r IN
     SELECT jobid, jobname, command
       FROM cron.job
-     WHERE command ~ 'functions/v1/(mission-worker|industry-intelligence-sync|organic-orchestrator|organic-worker-instagram|seo-worker-research|scout-tick|evaluator-tick|strategist-evaluator|strategist-executor|ai-visibility-probe)\M'
+     -- EVERY job that calls an edge function: on 2026-09-28 not one of the 39
+     -- sent a header, so each worked only while its function had verify_jwt
+     -- off. Sending the key to a function that doesn't check it is harmless.
+     WHERE command ~ 'functions/v1/'
        AND command !~* 'authorization'
   LOOP
     -- headers := jsonb_build_object(...)  →  prepend the Authorization pair
     v_new := regexp_replace(r.command,
                'headers\s*:=\s*jsonb_build_object\(\s*',
                'headers := jsonb_build_object(' || v_hdr || ', ', 'gi');
-    -- headers := '{...}'::jsonb  →  merge the Authorization pair in
+    -- headers := '{...}'::jsonb, or a bare '{...}' literal  →  merge the pair in
     IF v_new = r.command THEN
       v_new := regexp_replace(r.command,
-                 'headers\s*:=\s*(''[^'']*''::jsonb)',
-                 'headers := \1 || jsonb_build_object(' || v_hdr || ')', 'gi');
+                 'headers\s*:=\s*(''[^'']*'')(::jsonb)?',
+                 'headers := \1::jsonb || jsonb_build_object(' || v_hdr || ')', 'gi');
     END IF;
 
     IF v_new = r.command THEN
