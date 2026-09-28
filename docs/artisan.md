@@ -170,9 +170,30 @@ and `run.done`.
 ### Tests
 
 ```bash
-deno run supabase/functions/_shared/artisan_test.ts                              # the parser
-deno run --allow-net --allow-env supabase/functions/artisan-import/index_test.ts  # attach / stage / refuse
+deno run supabase/functions/_shared/artisan_test.ts                                # the parser
+deno run --allow-net --allow-env supabase/functions/artisan-import/index_test.ts    # attach / stage / refuse
+deno run supabase/functions/health-watchdog/artisan_coverage_test.ts               # the alert thresholds
 ```
+
+---
+
+## Monitoring
+
+The watcher is pushed, not scheduled — there is no cron to watch, so if the
+roastery computer reboots or Autosave gets unticked, roasts would quietly stop
+carrying temperatures and nobody would notice. `health-watchdog` therefore runs
+a **conditional** check (`supabase/functions/health-watchdog/artisan_coverage.ts`),
+not the usual `EXPECTED_FRESH_DATA` max-age — a flat age budget would fire every
+time Minuto simply doesn't roast for a few days.
+
+| Condition | Alert |
+|---|---|
+| ≥3 roasts in the last 96h and **none** carries readings | **ERROR** — the watcher is probably down |
+| ≥5 roasts in 96h and under half covered | **WARN** — profiles arrive but don't match; a bean name needs teaching |
+| Profiles unattached for over 7 days | **WARN** — readings recorded but on no roast |
+
+Under 3 roasts it stays silent: too thin to tell a dead watcher from a quiet
+week, and a watchdog that cries wolf gets muted.
 
 ---
 

@@ -25,6 +25,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { artisanCoverageFindings } from './artisan_coverage.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -176,7 +177,7 @@ const EXPECTED_FRESH_DATA: Array<{
 
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
-  category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry'
+  category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
   message:  string
   context?: Record<string, unknown>
 }
@@ -351,6 +352,43 @@ serve(async (req) => {
   // status — the chat's cancel_task writes status='failed' with a '[chat-cancel]'
   // prefix on error_msg — so every deliberate cancellation used to count against
   // this rate. Measured 2026-08-26: of all failed rows ever, 101 were
+  // ── 1c. Artisan coverage — is the roastery watcher still alive? ───────
+  // Thresholds and wording live in artisan_coverage.ts so they can be tested.
+  try {
+    const windowHours    = 96
+    const staleAfterDays = 7
+    const since       = new Date(Date.now() - windowHours * 3600 * 1000).toISOString()
+    const staleBefore = new Date(Date.now() - staleAfterDays * 24 * 3600 * 1000).toISOString()
+
+    const { data: recentRoasts, error: roastErr } = await supabase
+      .from('roasts')
+      .select('id,artisan_uuid')
+      .gte('date', since)
+
+    // A missing table/column means the integration isn't live here yet. Stay quiet.
+    if (roastErr) {
+      console.warn(`[health-watchdog] artisan coverage skipped: ${roastErr.message}`)
+    } else {
+      const { data: orphans, error: orphanErr } = await supabase
+        .from('artisan_profiles')
+        .select('id,beans,roasted_at')
+        .is('roast_id', null)
+        .lt('roasted_at', staleBefore)
+        .limit(50)
+
+      if (orphanErr) console.warn(`[health-watchdog] artisan orphan check skipped: ${orphanErr.message}`)
+
+      findings.push(...artisanCoverageFindings({
+        recentRoasts: recentRoasts ?? [],
+        orphans:      orphans ?? [],
+        windowHours,
+        staleAfterDays,
+      }))
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] artisan coverage check threw: ${e?.message ?? e}`)
+  }
+
   // '[chat-cancel]' against 80 genuine failures. MORE THAN HALF of the "failure"
   // signal was the admin triaging their own queue, which inverts the metric —
   // the more diligently you clear the queue, the unhealthier the system looks.
