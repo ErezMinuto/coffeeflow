@@ -26,7 +26,14 @@ cd "$REPO"
 PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 CLI_VERSION="2.98.1"
 
-# CLAUDE.md: these must always be deployed with --no-verify-jwt.
+# CLAUDE.md: these must always be deployed with --no-verify-jwt — the bots and
+# webhooks, which Telegram/Clerk call without a Supabase JWT.
+#
+# Everything else keeps whatever verify_jwt prod has now (below). A deploy used
+# to turn it back ON: the 2026-09-27 --shared deploy did that to ten functions
+# pg_cron called without a header, and mission-worker, and with it the daily IG
+# story, stopped. Those cron jobs now send the service-role key
+# (20260928_cron_auth_header.sql), so those functions keep verify_jwt on.
 NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor"
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
@@ -66,7 +73,18 @@ echo "Deploying ${#} function(s) to $PROJECT_REF from $(git rev-parse --abbrev-r
 for f in "$@"; do
   [ -f "supabase/functions/$f/index.ts" ] || { echo "deploy-functions: no supabase/functions/$f/index.ts" >&2; exit 1; }
   flags=()
-  case " $NO_VERIFY_JWT " in *" $f "*) flags+=(--no-verify-jwt) ;; esac
+  case " $NO_VERIFY_JWT " in
+    *" $f "*) flags+=(--no-verify-jwt) ;;
+    *)
+      # Not on the list: keep whatever prod has now. A deploy must never flip
+      # verify_jwt on for a function someone deliberately turned it off for.
+      current="$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+        "https://api.supabase.com/v1/projects/$PROJECT_REF/functions/$f" 2>/dev/null || true)"
+      if printf '%s' "$current" | grep -Eq '"verify_jwt"[[:space:]]*:[[:space:]]*false'; then
+        flags+=(--no-verify-jwt)
+      fi
+      ;;
+  esac
   echo "── $f ${flags[*]:-}"
   # ${a[@]+...} form: macOS bash 3.2 treats an empty array as unbound under set -u.
   "${CLI[@]}" functions deploy "$f" --project-ref "$PROJECT_REF" ${flags[@]+"${flags[@]}"}

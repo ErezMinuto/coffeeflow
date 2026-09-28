@@ -206,6 +206,15 @@ unreachable with the anon key.
 Functions that MUST always be deployed with `--no-verify-jwt`:
 - `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`
 
+`scripts/deploy-functions.sh` holds this list, and keeps `verify_jwt: false` on any
+other function that already has it, so a deploy never flips a function's setting.
+
+**pg_cron jobs must send an Authorization header** — read the service-role key from
+Vault (`cron_service_role_key`) in the job command, as `20260928_cron_auth_header.sql`
+does. A job without one only works while its function has `verify_jwt: false`; when a
+deploy turned it back on (2026-09-27), mission-worker 401'd every tick and the next
+day had no IG story. Don't fix that by turning verify_jwt off — add the header.
+
 > The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 
 ---
