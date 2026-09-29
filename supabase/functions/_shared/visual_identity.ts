@@ -155,9 +155,16 @@ or Linea Mini silhouette — that's wrong machine):
     chrome, not white). The main body panels are a flat charcoal-grey.
   • SIGNATURE SIDE PANEL: a curved, teardrop-shaped translucent
     PALE-BLUE GLASS side wing on each side of the machine, set into
-    the grey body — this is the Strada X's most recognizable element
-    and must appear if the side of the machine is in frame. It's
-    sky-blue / powder-blue translucent glass, not opaque, not dark.
+    the grey body — this is the Strada X's most recognizable element.
+    It is the machine's OUTER SIDE WALL: a large flat pane framed by
+    the grey body, running most of the machine's height at the far
+    left/right end. It is NOT a small shield, cover, splash guard or
+    loose panel next to a group head — nothing blue/mint/translucent
+    ever sits beside or behind the portafilter. Show it ONLY when the
+    whole side end of the machine is visible; in a close-up of a
+    group head / portafilter the side wall is OUT OF FRAME, so do not
+    draw it at all. It's sky-blue / powder-blue translucent glass,
+    not opaque, not dark.
   • TWO SATURATED BREW GROUPS: cylindrical chrome group heads
     protruding forward from the front panel, with rounded chrome top
     caps. Two of them, side by side. Naked / bottomless portafilters
@@ -177,10 +184,17 @@ or Linea Mini silhouette — that's wrong machine):
     sits on top of the body, supported by thin chrome rails — it's
     open mesh, you can see through it.
   • DRIP TRAY: stainless steel wire-mesh tray across the bottom front,
-    with a "La Marzocco" wordmark plate on the front lip (chrome
-    lettering on dark background).
+    with a small wordmark plate on the front lip. Keep that plate
+    soft / out of focus or out of frame — a sharp, misspelled wordmark
+    (e.g. "LA MAAZOCCO") instantly reads as fake.
   • FRONT PANEL: dark grey, with a small round chrome pressure gauge
     on the lower-left and a single small toggle switch nearby.
+  • ONE PART, ONE PLACE: each group head has exactly ONE portafilter
+    locked into it from below and NOTHING else attached to it. Steam
+    wands, pipes, hoses and handles never grow out of a group head or
+    a portafilter. Every part must connect to the machine body the way
+    it does on the real machine — no floating, merged, or invented
+    parts. When in doubt, crop tighter and show fewer parts.
 NEVER render a chrome / mirror-polished body, NEVER a white espresso
 machine, NEVER a Linea Mini silhouette (that's a small home machine
 with a curved chrome body — wrong). NEVER render the Strada X without
