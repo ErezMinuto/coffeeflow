@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   ASPECT_TO_RATIO,
   Aspect,
@@ -125,7 +126,7 @@ function matchesRatio(dims: { w: number; h: number } | null, ratio: string): boo
 // editor to turn e.g. a sack photo into "roast day", and it invented content
 // to get there. Instead each photo gets a one-line caption and the brief is
 // matched against
-// the captions. No fitting photo → null → caller falls back to generation.
+// the captions. No fitting photo → [] → caller falls back to generation.
 // Captions live in memory for the life of the worker (the marketing bucket
 // only accepts images/video, so there is nowhere to persist them without a
 // new table); a cold start re-captions the few folders a brief needs.
@@ -159,7 +160,7 @@ async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
   brief: string,
-): Promise<string | null> {
+): Promise<string[]> {
   try {
     // 1. Candidate files across the allowed folders.
     const paths: string[] = []
@@ -171,7 +172,7 @@ async function pickMatchingRealPhoto(
         paths.push(`upload_images/${folder}/${f.name}`)
       }
     }
-    if (paths.length === 0) return null
+    if (paths.length === 0) return []
     const urlOf = (path: string) => `${SUPABASE_URL}/storage/v1/object/public/marketing/${path}`
 
     // 2. Caption photos not seen by this worker yet, a few at a time.
@@ -193,7 +194,7 @@ async function pickMatchingRealPhoto(
 
     // 3. Match the brief against captioned candidates.
     const candidates = paths.filter(p => captionCache.has(p))
-    if (candidates.length === 0) return null
+    if (candidates.length === 0) return []
     const list = candidates.map((p, i) => `[${i}] ${captionCache.get(p)}`).join('\n')
     const out = await geminiJson([{ text: `A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:
 
@@ -202,16 +203,18 @@ ${brief}
 Library photos:
 ${list}
 
-Which photos ALREADY show the brief's main subject and setting, so that only framing, light and that small action need changing? Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
+Which photos ALREADY show the brief's main subject, setting AND viewpoint, so that only a crop, light and that small action need changing? The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
     const idx: number[] = Array.isArray(out?.matches)
       ? out.matches.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < candidates.length)
       : []
     console.log(`[visual-test] real-photo match: ${idx.length}/${candidates.length} fit → ${idx.map(i => candidates[i]).join(', ') || 'none'}`)
-    if (idx.length === 0) return null
-    return urlOf(candidates[idx[Math.floor(Math.random() * idx.length)]])
+    if (idx.length === 0) return []
+    // Up to two fitting photos in random order — the caller verifies each
+    // edit against its source and moves on to the next if it drifted.
+    return idx.map(i => urlOf(candidates[i])).sort(() => Math.random() - 0.5).slice(0, 2)
   } catch (e: any) {
     console.warn(`[visual-test] real-photo matching failed, falling back to generation: ${e?.message}`)
-    return null
+    return []
   }
 }
 
@@ -365,9 +368,9 @@ serve(async (req) => {
 
     let bagRef:     { data: string; mime: string } | null = null
     let beansRef:   { data: string; mime: string } | null = null
-    let machineRef: { data: string; mime: string } | null = null
+    let machineRef: { uri: string; mime: string } | null = null
     let machineRefUrl: string | null = null
-    let roasterRef: { data: string; mime: string } | null = null
+    let roasterRef: { uri: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
     if (useReference) {
@@ -456,17 +459,17 @@ serve(async (req) => {
       hands:   ['hands', 'machine', 'pitchers'],
       machine: ['machine', 'hands'],
     }
-    const realPhotoUrl = realPhotoCategory
+    const realPhotoUrls: string[] = realPhotoCategory
       ? await pickMatchingRealPhoto(supabase, REAL_PHOTO_FOLDERS[realPhotoCategory] ?? [realPhotoCategory], sceneBrief)
-      : null
-    // Passed to Gemini by URL (fileData), never downloaded here — see mimeOf.
-    const realPhoto    = realPhotoUrl ? { uri: realPhotoUrl, mime: mimeOf(realPhotoUrl) } : null
-    if (realPhotoCategory) console.log(`[visual-test] real-photo mode: ${realPhotoCategory} → ${realPhoto ? realPhotoUrl : 'no usable photo, falling back to generation'}`)
-    if (useStradaXReference && !realPhoto) {
+      : []
+    if (realPhotoCategory) console.log(`[visual-test] real-photo mode: ${realPhotoCategory} → ${realPhotoUrls.join(', ') || 'no fitting photo, will generate'}`)
+    // Equipment refs are passed to Gemini BY URL (fileData) — no download,
+    // so they cost nothing to prepare even when a real-photo edit wins.
+    if (useStradaXReference) {
       machineRefUrl = (await pickRandomAssetUrl(supabase, 'machine')) ?? MINUTO_ESPRESSO_MACHINE_REFERENCE_URL
-      machineRef = await fetchAsB64(machineRefUrl)
+      machineRef = { uri: machineRefUrl, mime: mimeOf(machineRefUrl) }
     }
-    if (roasterSceneRegex && !realPhoto) roasterRef = await fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)
+    if (roasterSceneRegex) roasterRef = { uri: MINUTO_ROASTER_REFERENCE_URL, mime: mimeOf(MINUTO_ROASTER_REFERENCE_URL) }
     console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : (bagUrl ? 'MISS' : 'N/A')}, beans: ${beansRef ? 'OK' : 'N/A'}, machine: ${machineRef ? `OK (${machineRefUrl})` : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
 
     // Tracks whether the brandClause should describe the bag. True both
@@ -735,9 +738,9 @@ THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machin
 Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
 
 WHAT YOU MAY DO:
-• Reframe to ${ratio}: crop toward the subject the brief is about. If the frame must be extended, extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, shelves of goods, people or equipment.
+• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT: the result must look like a crop of this exact photo, not a new photo of the same place. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
 • Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
-• Add ONLY the small in-the-moment action the brief describes, on the existing equipment and physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
+• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
 • Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
 
 SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
@@ -746,23 +749,18 @@ ${sceneBrief}`
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
     if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
-    if (machineRef) parts.push({ inlineData: { mimeType: machineRef.mime, data: machineRef.data } })
-    if (roasterRef) parts.push({ inlineData: { mimeType: roasterRef.mime, data: roasterRef.data } })
+    if (machineRef) parts.push({ fileData: { mimeType: machineRef.mime, fileUri: machineRef.uri } })
+    if (roasterRef) parts.push({ fileData: { mimeType: roasterRef.mime, fileUri: roasterRef.uri } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
-    if (realPhoto) {
-      parts.length = 0
-      parts.push({ fileData: { mimeType: realPhoto.mime, fileUri: realPhoto.uri } })
-      parts.push({ text: realPhotoPrompt })
-    }
 
-    async function callGemini(): Promise<{ b64: string; mime: string }> {
+    async function callGemini(useParts: any[] = parts): Promise<{ b64: string; mime: string }> {
       const genRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts }],
+            contents: [{ parts: useParts }],
             generationConfig: {
               responseModalities: ['IMAGE', 'TEXT'],
               // HARD aspect-ratio control. The FORMAT line in the prompt is
@@ -788,9 +786,50 @@ ${sceneBrief}`
       throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
     }
 
-    const b64ToBytes = (b64: string) => Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+    // std decoder — the old Uint8Array.from(atob(...), cb) ran a JS callback
+    // per byte, which adds up to real CPU time once real-photo mode makes
+    // several images per request (edge workers have a small CPU budget).
+    const b64ToBytes = (b64: string) => decodeBase64(b64)
+    // Enough of the file to read PNG/JPEG dimensions without decoding it all.
+    const headerDims = (b64: string) => readImageSize(decodeBase64(b64.slice(0, 87380)))
 
-    let gen        = await callGemini()
+    // REAL-PHOTO EDIT, VERIFIED. The edit model sometimes "re-shoots" the
+    // scene instead of editing it — a different machine, a new angle, an
+    // invented cup — and the result still looks like a real photo, so the
+    // downstream QA cannot tell. Compare every edit against its source; a
+    // drifted edit moves on to the next fitting photo, then to generation.
+    let realPhotoUsed: string | null = null
+    const realPhotoChecks: Array<{ photo: string; same: boolean; why: string }> = []
+    let gen: { b64: string; mime: string } | null = null
+    for (const url of realPhotoUrls) {
+      try {
+        const edit = await callGemini([
+          { fileData: { mimeType: mimeOf(url), fileUri: url } },
+          { text: realPhotoPrompt },
+        ])
+        if (!matchesRatio(headerDims(edit.b64), ratio)) {
+          realPhotoChecks.push({ photo: url, same: false, why: 'wrong aspect ratio' })
+          continue
+        }
+        const verdict = await geminiJson([
+          { fileData: { mimeType: mimeOf(url), fileUri: url } },
+          { inlineData: { mimeType: edit.mime, data: edit.b64 } },
+          { text: `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
+Is image 2 still clearly the SAME scene? Answer false if ANY of: the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
+Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
+        ])
+        const same = verdict?.same === true
+        realPhotoChecks.push({ photo: url, same, why: String(verdict?.why ?? '') })
+        console.log(`[visual-test] real-photo check ${same ? 'PASS' : 'FAIL'} (${url}): ${verdict?.why ?? ''}`)
+        if (same) { gen = edit; realPhotoUsed = url; break }
+      } catch (e: any) {
+        realPhotoChecks.push({ photo: url, same: false, why: `error: ${e?.message ?? e}` })
+        console.warn(`[visual-test] real-photo edit failed for ${url}: ${e?.message ?? e}`)
+      }
+    }
+    if (realPhotoUrls.length > 0 && !gen) console.warn('[visual-test] no real-photo edit passed the fidelity check — falling back to generation')
+
+    if (!gen) gen = await callGemini()
     let imageBytes = b64ToBytes(gen.b64)
     let dims       = readImageSize(imageBytes)
     // ASPECT GUARD — measure what actually came back and retry once if the
@@ -798,7 +837,7 @@ ${sceneBrief}`
     // pillarboxed by Instagram, and nothing downstream (not even the
     // Claude-vision QA pass) looks at dimensions, so this is the only place
     // the mistake can be caught.
-    if (!matchesRatio(dims, ratio)) {
+    if (!realPhotoUsed && !matchesRatio(dims, ratio)) {
       console.warn(`[visual-test] aspect mismatch — asked ${ratio} (${aspect}), got ${dims?.w}x${dims?.h}. Retrying once.`)
       const retry      = await callGemini()
       const retryBytes = b64ToBytes(retry.b64)
@@ -852,7 +891,8 @@ ${sceneBrief}`
       surface: surface.name,
       style_ref: styleRefUrl,
       machine_ref: machineRef ? machineRefUrl : null,
-      real_photo: realPhoto ? realPhotoUrl : null,
+      real_photo: realPhotoUsed,
+      real_photo_checks: realPhotoChecks,
       roaster_ref: roasterRef ? MINUTO_ROASTER_REFERENCE_URL : null,
       scene_brief: sceneBrief,
       bag_url: bagUrl,
