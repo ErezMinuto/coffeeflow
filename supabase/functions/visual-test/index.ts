@@ -232,7 +232,7 @@ serve(async (req) => {
     const sceneLowerForMachine = sceneBrief.toLowerCase()
     const espressoSceneRegex = /\b(espresso machine|steam wand|portafilter|group head|grouphead|naked portafilter|bottomless portafilter|la marzocco|strada|milk steaming|steaming milk|microfoam|milk frothing|frothing milk|latte art|cappuccino|flat white|latte\b|espresso shot|pulling (?:a |the |an )?shot|brew group)\b/.test(sceneLowerForMachine)
     const homeContextRegex = /\b(at home|home espresso|home setup|home barista|home brewing|home machine|kitchen counter|kitchen|on the counter|בבית|במטבח|בדירה|בית|מטבח)\b/.test(sceneLowerForMachine)
-    const cafeContextRegex = /\b(cafe|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
+    const cafeContextRegex = /\b(cafe|café|coffee shop|coffeeshop|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|professional espresso machine|commercial espresso machine|professional machine|commercial machine|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
     // Use Strada X only for commercial scenes. For home or ambiguous
     // espresso scenes we let Gemini render a generic home machine guided
     // by the EQUIPMENT-BY-BREWING-METHOD rule in visual_identity.
@@ -247,6 +247,7 @@ serve(async (req) => {
     let bagRef:     { data: string; mime: string } | null = null
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { data: string; mime: string } | null = null
+    let machineRefUrl: string | null = null
     let roasterRef: { data: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
@@ -298,20 +299,14 @@ serve(async (req) => {
           error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
         }, 400, corsHeaders)
       }
-      // All references pass as Gemini inlineData. Bag is always-on
-      // (primary subject), beans always-on (color anchor), machine
-      // conditional on a commercial-context espresso scene.
-      const [b1, b2, b3, b4] = await Promise.all([
+      // Bag is always-on (primary subject), beans always-on (color anchor).
+      // Machine / roaster refs are loaded below, OUTSIDE this block.
+      const [b1, b2] = await Promise.all([
         fetchAsB64(bagUrl),
         forbidsProps ? Promise.resolve(null) : fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
-        useStradaXReference  ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
-        roasterSceneRegex    ? fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
       ])
       bagRef     = b1
       beansRef   = b2
-      machineRef = b3
-      roasterRef = b4
-      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
 
       // FAIL-FAST when the bag was requested but its reference image could not
       // be fetched (404 / network / bad URL → fetchAsB64 returned null).
@@ -329,6 +324,19 @@ serve(async (req) => {
         }, 502, corsHeaders)
       }
     }
+    // Equipment references — loaded for EVERY render, bag or no bag.
+    // They used to live inside the use_reference block, so no_bag renders
+    // (the equipment-only shots, i.e. exactly the ones that show the
+    // machine) got NO machine reference and Gemini invented one.
+    // Prefer a real photo of Minuto's own bar from upload_images/machine/;
+    // the catalog Strada X shot is only the fallback.
+    if (useStradaXReference) {
+      machineRefUrl = (await pickRandomAssetUrl(supabase, 'machine')) ?? MINUTO_ESPRESSO_MACHINE_REFERENCE_URL
+      machineRef = await fetchAsB64(machineRefUrl)
+    }
+    if (roasterSceneRegex) roasterRef = await fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)
+    console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : (bagUrl ? 'MISS' : 'N/A')}, beans: ${beansRef ? 'OK' : 'N/A'}, machine: ${machineRef ? `OK (${machineRefUrl})` : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
+
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
     // (so Gemini knows to LEAVE the region empty for the paste).
@@ -405,7 +413,7 @@ DO NOT copy this image's composition — only the visual language. The bag from 
       refDescriptions.push(`reference image — BEAN COLOR ANCHOR. Real photo of Minuto's roasted beans showing their true color. Use this AS A COLOR ANCHOR ONLY (do not copy the composition). When you render any roasted coffee beans in the output, MATCH THE COLOR: medium chestnut brown with subtle warm/auburn undertones, matte finish.`)
     }
     if (machineRef) {
-      refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's 2-group La Marzocco Strada X. Use it as a COLOR + DETAIL anchor, NOT a full-silhouette template. When any part of the machine appears, match: slate/gunmetal MATTE body, pale-blue TRANSLUCENT GLASS teardrop side panel (only on the side glass — never on the front panel), naked portafilters with BLACK handles and small RED accent rings, chrome cool-touch steam wands curving outward from the SIDES of the body, raised stainless wire-grate cup tray on top, "La Marzocco" wordmark on the drip-tray front plate. Render PARTIAL crops only (wand + sliver of side panel, portafilter + group head fragment, cup-tray close-up) — never the full chassis. Forbidden: generic chrome Linea silhouette.`)
+      refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's own 2-group La Marzocco Strada X on its bar. THIS is the machine — every machine part you render must look like the matching part in this photo and attach to the body exactly where it does here. Match: slate/gunmetal MATTE body; the pale-blue translucent glass is the machine's large OUTER SIDE WALL at the far end — it never appears as a small panel or shield beside a group head, and is simply out of frame in group-head close-ups; grey group-head caps over chrome groups, each holding ONE portafilter with a BLACK handle; chrome steam wands rising from the TOP-SIDE of the body next to the groups (never out of a group or portafilter); stainless drip tray. Copy the machine's anatomy faithfully; the scene's framing, light and mood come from the brief. Forbidden: generic chrome Linea silhouette, invented parts, readable brand text.`)
     }
     if (roasterRef) {
       refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering compact drum roaster. Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
@@ -419,21 +427,21 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
 🎯 PRIMARY DIRECTIVE
-Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
-
+${bagRef ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).` : `Create a high-resolution, photorealistic editorial photograph at ${ratio} aspect ratio of exactly what the SCENE BRIEF describes. There is NO coffee bag in this image — do not add one. Any attached reference images are equipment references, not a bag.`}
+${bagRef ? `
 🔤 LABEL TEXT — render the LARGE elements sharp and faithful: the "Minuto" brand wordmark, the stag-head emblem, and the product name exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
-
+` : ''}
 SCENE BRIEF — interpret this as the structured elements below:
 ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
 • SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
-• FOCUS — the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness; supporting props secondary; background softly out of focus.
+• FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
@@ -526,21 +534,23 @@ Real-world physics, not arbitrary attachment:
     cropped at frame edge with enough chrome/panel showing to anchor
     the equipment). Detached floating espresso parts read as wrong.
 
-  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a third reference image of
+  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a reference image of
     Minuto's actual La Marzocco Strada X is included. Use it as a
     COLOR + DETAIL anchor, NOT as a full-silhouette template. Gemini
     cannot reliably reproduce the Strada X's full chassis shape from
     a single product photo, so the rendered scene MUST show only
     PARTIAL elements of the machine, never the full silhouette:
 
-      ✓ Steam wand curving out from a sliver of slate side panel,
-        with the pale-blue glass wing visible on that panel.
-      ✓ Naked portafilter docked into one chrome group head, plus
-        a fragment of the front panel and "La Marzocco" wordmark.
-      ✓ Tight crop on the brushed-steel cup tray with one ceramic cup,
-        a glimpse of group head behind.
-      ✓ Side-on close-up of the pale-blue translucent glass teardrop
-        wing alone, with the slate body fading into shadow.
+      ✓ Portafilter docked into one group head, cup below on the
+        drip tray — NO side glass in this crop (it's at the far end
+        of the machine, out of frame).
+      ✓ Steam wand rising from the top-side of the body into a milk
+        pitcher, a group head beside it.
+      ✓ The machine's side end: the large pale-blue glass side wall
+        framed by the slate body, with the slate body fading into
+        shadow.
+      ✓ Tight crop on the drip tray with one ceramic cup, a glimpse
+        of group head above.
 
     ✗ Forbidden: full front-on view of the entire 2-group chassis.
     ✗ Forbidden: pale blue painted across the WHOLE machine body —
@@ -551,9 +561,8 @@ Real-world physics, not arbitrary attachment:
       because we can't reliably render it whole, we crop instead.
 
     Use the reference image's COLORS (slate-grey matte body, pale-blue
-    translucent glass, black portafilter handles, RED accent ring at
-    the spout base, chrome group caps, "La Marzocco" wordmark on the
-    drip-tray plate) — not its overall shape. The shape is hard;
+    translucent glass as the side wall, black portafilter handles, grey
+    group caps) and its part-to-part anatomy. The shape is hard;
     cropping is reliable.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
 
 If the SCENE description mentions a scoop, brass scoop, wooden spoon,
@@ -690,6 +699,8 @@ text is inspiration; these are mandatory.`
       composited: composited,
       surface: surface.name,
       style_ref: styleRefUrl,
+      machine_ref: machineRef ? machineRefUrl : null,
+      roaster_ref: roasterRef ? MINUTO_ROASTER_REFERENCE_URL : null,
       scene_brief: sceneBrief,
       bag_url: bagUrl,
       bag_source: bagSource,
