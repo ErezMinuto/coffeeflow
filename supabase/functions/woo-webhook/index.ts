@@ -116,7 +116,7 @@ serve(async (req) => {
 
     // Build Telegram message
     const customerLines = matches.map((wc, i) => {
-      const phone   = wc.phone   ? ` — 📞 ${wc.phone}`   : "";
+      const phone   = wc.phone   ? ` — 📞 <code>${wc.phone}</code>`   : "";
       const product = wc.product ? `\n   📦 ${wc.product}` : "";
       return `${i + 1}. <b>${wc.customer_name}</b>${phone}${product}`;
     }).join("\n");

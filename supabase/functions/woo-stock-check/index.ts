@@ -79,7 +79,7 @@ serve(async (_req) => {
       if (!stock?.inStock) continue;
 
       const customerLines = customers.map((wc: any, i: number) => {
-        const phone = wc.phone ? ` — 📞 ${wc.phone}` : "";
+        const phone = wc.phone ? ` — 📞 <code>${wc.phone}</code>` : "";
         return `${i + 1}. <b>${wc.customer_name}</b>${phone}`;
       }).join("\n");
 

@@ -160,7 +160,7 @@ async function handleTasks(chatId: string) {
   if (!data || data.length === 0) { await reply(chatId, "✅ אין לקוחות ממתינים כרגע 🎉"); return; }
 
   const lines = data.map((wc, i) => {
-    const phone   = wc.phone   ? ` | 📞 ${wc.phone}`   : "";
+    const phone   = wc.phone   ? ` | 📞 <code>${wc.phone}</code>`   : "";
     const product = wc.product ? ` | 📦 ${wc.product}` : "";
     return `${i + 1}. <b>${wc.customer_name}</b>${phone}${product}`;
   }).join("\n");
@@ -285,7 +285,7 @@ async function handleFreeText(chatId: string, text: string, fromName: string) {
   await reply(chatId, [
     `✅ <b>נוסף לרשימת ממתינים!</b>`,
     `👤 ${customer_name}`,
-    phone   ? `📞 ${phone}`    : "",
+    phone   ? `📞 <code>${phone}</code>`    : "",
     product ? `📦 ${product}`  : "",
     sku     ? `🔢 מקט: ${sku}` : "",
   ].filter(Boolean).join("\n"));
