@@ -386,6 +386,7 @@ serve(async (req) => {
         sceneBrief:  workingSceneBrief,
         renderMode:  workingRenderMode,
         productName: brief.product_name,
+        realPhoto:   !!rendered.raw.real_photo,
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -964,6 +965,7 @@ async function renderCarouselSlideWithQA(
         sceneBrief:  guardedBrief,
         renderMode:  slideMode,
         productName: slideMode === 'bag_hero' ? productName : undefined,
+        realPhoto:   !!bg.raw.real_photo,
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -1045,7 +1047,7 @@ You are STRICT on PROMINENT label legibility. The bag's large, in-focus label el
 You are LENIENT on small fine print. The tiny descriptor / fine-print lines below the product name are intentionally rendered as SOFT, shallow-depth-of-field, out-of-focus text — that is correct real-photography behaviour, NOT a defect. Do NOT fail an image because the small fine print is blurred or unreadable-because-soft. ONLY fail fine print if it is rendered SHARP and clearly in focus yet is still garbled nonsense. (Incidental background text is always exempt — this rule is about the hero bag.)
 
 You are STRICT on PHYSICAL REALISM. Judge the image the way a professional barista scrolling Instagram would: anything that could not exist in a real photo of a real cafe is a hard FAIL, even if the brief is otherwise satisfied. Check specifically:
-  • Espresso machine anatomy — a steam wand, pipe or handle growing out of a group head or portafilter; more than one portafilter per group; parts floating, merged or attached to nothing; an invented panel, shield or cover (e.g. a translucent blue/green/white plate hanging beside the group head). Minuto's Strada X has pale-blue glass ONLY as its large outer side wall at the far end of the machine — never as a small piece next to the portafilter.
+  • Espresso machine anatomy — a steam wand, pipe or handle growing out of a group head or portafilter; more than one portafilter per group; parts floating, merged or attached to nothing; an invented panel, shield or cover (e.g. a translucent blue/green/white plate hanging beside the group head). Minuto's Strada X has clear glass ONLY as its large outer side window at the far end of the machine — never as a small piece next to the portafilter.
   • Liquid physics — coffee or milk coming from anywhere other than portafilter spouts or a hand-held pitcher; streams that miss the cup or defy gravity.
   • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
@@ -1069,11 +1071,14 @@ async function evaluateVisual(args: {
   sceneBrief:  string
   renderMode:  'no_bag' | 'bag_hero'
   productName?: string
+  realPhoto?:  boolean
 }): Promise<VisualCritique> {
   const userText = `BRIEF (render_mode=${args.renderMode}${args.productName ? `, product_name="${args.productName}"` : ''}):
 
 ${args.sceneBrief}
-
+${args.realPhoto ? `
+NOTE: this image is an EDIT of a real photograph of Minuto's own bar/roastery (reframed and relit). The equipment, people, cups and existing signage/logos are REAL — do not fail it for how the real machine looks or for real, correctly-spelled signage, menu boards or cup logos that were in the photo, and do not require equipment details the brief describes differently. DO still fail anything added by the edit that is unrealistic (e.g. an impossible liquid stream, an invented bag or product, warped/duplicated equipment at the extended edges).
+` : ''}
 Evaluate the attached image against this brief. Output strict JSON only.`
 
   const res = await callClaude({
