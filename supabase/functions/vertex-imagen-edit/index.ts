@@ -242,7 +242,7 @@ HARD RULES — your description must obey ALL of these:
 - NEVER name a real brand and NEVER show any text, numbers, logos, or written labels (machine model names like "La Marzocco Strada X" or "Coffee-Tech" describe the equipment shape for your reference — DO NOT write the model name as visible text in the photo, just render the matching shape/color).
 - ⛔ BEAN COLOR — Minuto roasts MEDIUM only, never dark. Beans must be MATTE light-cinnamon brown / pecan-shell brown — NEVER glossy, NEVER oily, NEVER dark-chocolate, NEVER black-roast. A glossy or dark bean breaks the brand.
 - ⛔ ROASTER STYLE — if the brief mentions a roaster, it is a MODERN MATTE-BLACK DRUM ROASTER (Coffee-Tech Engineering): black panels, black hopper, black drum face, small round glass viewport glowing warm amber from the flame. NEVER a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a white/cream roaster, NEVER wood-trim — modern industrial matte-black only.
-- ⛔ ESPRESSO MACHINE STYLE — if the brief mentions a Strada / Strada X / cafe bar machine, it is a 2-group LA MARZOCCO STRADA X: slate-gray body, distinctive pale-blue glass side wing. NEVER a generic chrome Linea, NEVER a vintage lever machine.
+- ⛔ ESPRESSO MACHINE STYLE — if the brief mentions a Strada / Strada X / cafe bar machine, it is a 2-group LA MARZOCCO STRADA X: slate-gray body, distinctive clear glass side window. NEVER a generic chrome Linea, NEVER a vintage lever machine.
 
 ABSOLUTELY FORBIDDEN materials/elements:
 - Surfaces: marble (any colour), white walls, white seamless paper, glossy reflective slabs, polished modern surfaces, mirror finishes, poster board, paper sheets, design boards.
@@ -578,7 +578,7 @@ async function handleNoBag(
       cafeMachineSceneRegex ? fetchRefAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
     ])
     if (roasterRef) directorRefs.push({ ...roasterRef, label: 'Minuto\'s actual Coffee-Tech compact drum roaster — two-tone matte-black lower body + brushed-stainless upper drum cover, tall stainless conical hopper, large stainless exhaust chimney rising from the upper-left, separate round shallow stainless cooling tray attached at mid-height on the right (NOT the same diameter as the drum), vertical compact silhouette. NO visible manufacturer text or badge in any output description.' })
-    if (machineRef) directorRefs.push({ ...machineRef, label: 'Minuto\'s actual 2-group La Marzocco Strada X — slate-gray body with the distinctive pale-blue glass side wing. NOT a generic chrome Linea.' })
+    if (machineRef) directorRefs.push({ ...machineRef, label: 'Minuto\'s actual 2-group La Marzocco Strada X — slate-gray body with the distinctive clear glass side window. NOT a generic chrome Linea.' })
   }
 
   // ── Scene Director (text-only, optionally vision-grounded) ───────────

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   ASPECT_TO_RATIO,
   Aspect,
@@ -119,6 +120,104 @@ function matchesRatio(dims: { w: number; h: number } | null, ratio: string): boo
   return Math.abs(dims.w / dims.h - want) <= want * 0.05
 }
 
+// ── Real-photo library matching ─────────────────────────────────────────
+// A folder like upload_images/roaster/ mixes very different shots (the main
+// roaster, a sample roaster, green-coffee sacks). A RANDOM pick forced the
+// editor to turn e.g. a sack photo into "roast day", and it invented content
+// to get there. Instead each photo gets a one-line caption and the brief is
+// matched against
+// the captions. No fitting photo → [] → caller falls back to generation.
+// Captions live in memory for the life of the worker (the marketing bucket
+// only accepts images/video, so there is nowhere to persist them without a
+// new table); a cold start re-captions the few folders a brief needs.
+const CAPTION_MODEL  = 'gemini-2.5-flash'
+const CAPTION_BATCH  = 6
+// Library photos are 3-6 MB phone shots. Loading + base64-ing a dozen of
+// them blew the edge worker's memory (WORKER_RESOURCE_LIMIT), so Gemini
+// reads them straight from their public URLs via fileData instead.
+const mimeOf = (path: string) => /\.png$/i.test(path) ? 'image/png' : /\.webp$/i.test(path) ? 'image/webp' : 'image/jpeg'
+const captionCache   = new Map<string, string>()
+
+async function geminiJson(parts: any[]): Promise<any> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${CAPTION_MODEL}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+      }),
+    },
+  )
+  if (!res.ok) throw new Error(`Gemini ${CAPTION_MODEL} ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  const j = await res.json()
+  const text = (j.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? '').join('')
+  return JSON.parse(text)
+}
+
+async function pickMatchingRealPhoto(
+  supabase: ReturnType<typeof createClient>,
+  folders: string[],
+  brief: string,
+): Promise<string[]> {
+  try {
+    // 1. Candidate files across the allowed folders.
+    const paths: string[] = []
+    for (const folder of folders) {
+      const { data } = await supabase.storage.from('marketing')
+        .list(`upload_images/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
+      for (const f of data ?? []) {
+        if (!f.name || f.name.startsWith('.') || !/\.(jpe?g|png|webp)$/i.test(f.name)) continue
+        paths.push(`upload_images/${folder}/${f.name}`)
+      }
+    }
+    if (paths.length === 0) return []
+    const urlOf = (path: string) => `${SUPABASE_URL}/storage/v1/object/public/marketing/${path}`
+
+    // 2. Caption photos not seen by this worker yet, a few at a time.
+    const missing = paths.filter(p => !captionCache.has(p))
+    for (let i = 0; i < missing.length; i += CAPTION_BATCH) {
+      await Promise.all(missing.slice(i, i + CAPTION_BATCH).map(async path => {
+        try {
+          const out = await geminiJson([
+            { fileData: { mimeType: mimeOf(path), fileUri: urlOf(path) } },
+            { text: 'Caption this photo from a specialty-coffee roastery/cafe photo library, for matching against scene briefs. One factual sentence: the main subject; which equipment exactly (e.g. 2-group espresso machine front / side, main drum roaster with round cooling tray, small tabletop sample roaster, grinder, jute sacks of GREEN unroasted coffee); whether beans are green or roasted; whether hands or people are visible and doing what; notable problems (clutter, faces). Reply as JSON {"caption": "..."}.' },
+          ])
+          if (typeof out?.caption === 'string') captionCache.set(path, out.caption)
+        } catch (e: any) {
+          console.warn(`[visual-test] caption failed for ${path}: ${e?.message}`)
+        }
+      }))
+    }
+    if (missing.length > 0) console.log(`[visual-test] captioned ${missing.filter(p => captionCache.has(p)).length}/${missing.length} library photo(s)`)
+
+    // 3. Match the brief against captioned candidates.
+    const candidates = paths.filter(p => captionCache.has(p))
+    if (candidates.length === 0) return []
+    const list = candidates.map((p, i) => `[${i}] ${captionCache.get(p)}`).join('\n')
+    const out = await geminiJson([{ text: `A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:
+
+${brief}
+
+Library photos:
+${list}
+
+Which photos ALREADY show the brief's main subject, setting AND viewpoint, so that only a crop, light and that small action need changing? The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
+    const idx: number[] = Array.isArray(out?.matches)
+      ? out.matches.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < candidates.length)
+      : []
+    console.log(`[visual-test] real-photo match: ${idx.length}/${candidates.length} fit → ${idx.map(i => candidates[i]).join(', ') || 'none'}`)
+    if (idx.length === 0) return []
+    // Up to two fitting photos in random order — the caller verifies each
+    // edit against its source and moves on to the next if it drifted.
+    return idx.map(i => urlOf(candidates[i])).sort(() => Math.random() - 0.5).slice(0, 2)
+  } catch (e: any) {
+    console.warn(`[visual-test] real-photo matching failed, falling back to generation: ${e?.message}`)
+    return []
+  }
+}
+
 const GEMINI_KEY    = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -135,6 +234,11 @@ interface VisualTestRequest {
   product_name?: string                      // text — fuzzy-matched via ILIKE against woo_products.name (same pattern as marketing-advisor enrichment)
   composite_bag?: boolean                    // no-op (kept for backward compat) — compositing was abandoned in favour of bag-as-Gemini-reference rendering
   composite_cup?: boolean                    // no-op (kept for backward compat)
+  // Real-photo mode: start from an actual photo of Minuto's bar / machine /
+  // roaster (upload_images/) and only reframe + relight it, instead of
+  // generating the equipment from scratch. Default: automatic for bagless
+  // bar/machine/barista/roaster scenes. Pass false to force generation.
+  real_photo?: boolean
 }
 
 serve(async (req) => {
@@ -232,7 +336,7 @@ serve(async (req) => {
     const sceneLowerForMachine = sceneBrief.toLowerCase()
     const espressoSceneRegex = /\b(espresso machine|steam wand|portafilter|group head|grouphead|naked portafilter|bottomless portafilter|la marzocco|strada|milk steaming|steaming milk|microfoam|milk frothing|frothing milk|latte art|cappuccino|flat white|latte\b|espresso shot|pulling (?:a |the |an )?shot|brew group)\b/.test(sceneLowerForMachine)
     const homeContextRegex = /\b(at home|home espresso|home setup|home barista|home brewing|home machine|kitchen counter|kitchen|on the counter|בבית|במטבח|בדירה|בית|מטבח)\b/.test(sceneLowerForMachine)
-    const cafeContextRegex = /\b(cafe|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
+    const cafeContextRegex = /\b(cafe|café|coffee shop|coffeeshop|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|professional espresso machine|commercial espresso machine|professional machine|commercial machine|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
     // Use Strada X only for commercial scenes. For home or ambiguous
     // espresso scenes we let Gemini render a generic home machine guided
     // by the EQUIPMENT-BY-BREWING-METHOD rule in visual_identity.
@@ -244,10 +348,29 @@ serve(async (req) => {
     // roasters with "COFFEE-TECH" text rendered as visible labels.
     const roasterSceneRegex = /\b(roaster|roastery|drum roaster|coffee-tech|cooling tray|cooler tray|roast day|roasting|מקלה|בית קלייה|בית הקלייה|מכונת קלייה|תוף קלייה|פולים יוצאים|קירור|מקרר פולים)\b/.test(sceneLowerForMachine)
 
+    // ── Real-photo mode ──────────────────────────────────────────────────
+    // Generating Minuto's machine / roaster from a reference only ever gives
+    // a LOOKALIKE — the model redraws the equipment and gets parts, colours
+    // and anatomy wrong (the owner's verdict on the best such render: "this
+    // is not our machine"). For bagless scenes set at Minuto's bar or
+    // roastery we instead EDIT a real photo from upload_images/: reframe to
+    // the target aspect, relight / colour-grade, and add at most the small
+    // action the brief asks for. The equipment pixels stay real.
+    // Bag scenes keep the generation path (the bag reference already
+    // renders faithfully there); home-kitchen scenes are not our bar.
+    const handsSceneRegex = /\b(barista|hands?|tamp(?:ing|er)?|steam(?:ing)? milk|milk steaming|frothing|microfoam|latte art|pouring milk|milk pitcher|pitcher)\b/.test(sceneLowerForMachine)
+    const realPhotoCategory: string | null =
+      (body.real_photo === false || body.use_reference !== false || homeContextRegex) ? null
+      : roasterSceneRegex                                                              ? 'roaster'
+      : (handsSceneRegex && (cafeContextRegex || /\bbarista\b/.test(sceneLowerForMachine))) ? 'hands'
+      : useStradaXReference                                                            ? 'machine'
+      : null
+
     let bagRef:     { data: string; mime: string } | null = null
     let beansRef:   { data: string; mime: string } | null = null
-    let machineRef: { data: string; mime: string } | null = null
-    let roasterRef: { data: string; mime: string } | null = null
+    let machineRef: { uri: string; mime: string } | null = null
+    let machineRefUrl: string | null = null
+    let roasterRef: { uri: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
     if (useReference) {
@@ -298,20 +421,14 @@ serve(async (req) => {
           error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
         }, 400, corsHeaders)
       }
-      // All references pass as Gemini inlineData. Bag is always-on
-      // (primary subject), beans always-on (color anchor), machine
-      // conditional on a commercial-context espresso scene.
-      const [b1, b2, b3, b4] = await Promise.all([
+      // Bag is always-on (primary subject), beans always-on (color anchor).
+      // Machine / roaster refs are loaded below, OUTSIDE this block.
+      const [b1, b2] = await Promise.all([
         fetchAsB64(bagUrl),
         forbidsProps ? Promise.resolve(null) : fetchAsB64(MINUTO_BEANS_REFERENCE_URL),
-        useStradaXReference  ? fetchAsB64(MINUTO_ESPRESSO_MACHINE_REFERENCE_URL) : Promise.resolve(null),
-        roasterSceneRegex    ? fetchAsB64(MINUTO_ROASTER_REFERENCE_URL)          : Promise.resolve(null),
       ])
       bagRef     = b1
       beansRef   = b2
-      machineRef = b3
-      roasterRef = b4
-      console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : 'MISS'}, beans: ${beansRef ? 'OK' : 'MISS'}, machine: ${machineRef ? 'OK' : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
 
       // FAIL-FAST when the bag was requested but its reference image could not
       // be fetched (404 / network / bad URL → fetchAsB64 returned null).
@@ -329,6 +446,32 @@ serve(async (req) => {
         }, 502, corsHeaders)
       }
     }
+    // Equipment references — loaded for EVERY render, bag or no bag.
+    // They used to live inside the use_reference block, so no_bag renders
+    // (the equipment-only shots, i.e. exactly the ones that show the
+    // machine) got NO machine reference and Gemini invented one.
+    // Prefer a real photo of Minuto's own bar from upload_images/machine/;
+    // the catalog Strada X shot is only the fallback.
+    // Which folders may hold a fitting photo for each category — a barista
+    // shot can live in machine/, a machine shot in hands/.
+    const REAL_PHOTO_FOLDERS: Record<string, string[]> = {
+      roaster: ['roaster'],
+      hands:   ['hands', 'machine', 'pitchers'],
+      machine: ['machine', 'hands'],
+    }
+    const realPhotoUrls: string[] = realPhotoCategory
+      ? await pickMatchingRealPhoto(supabase, REAL_PHOTO_FOLDERS[realPhotoCategory] ?? [realPhotoCategory], sceneBrief)
+      : []
+    if (realPhotoCategory) console.log(`[visual-test] real-photo mode: ${realPhotoCategory} → ${realPhotoUrls.join(', ') || 'no fitting photo, will generate'}`)
+    // Equipment refs are passed to Gemini BY URL (fileData) — no download,
+    // so they cost nothing to prepare even when a real-photo edit wins.
+    if (useStradaXReference) {
+      machineRefUrl = (await pickRandomAssetUrl(supabase, 'machine')) ?? MINUTO_ESPRESSO_MACHINE_REFERENCE_URL
+      machineRef = { uri: machineRefUrl, mime: mimeOf(machineRefUrl) }
+    }
+    if (roasterSceneRegex) roasterRef = { uri: MINUTO_ROASTER_REFERENCE_URL, mime: mimeOf(MINUTO_ROASTER_REFERENCE_URL) }
+    console.log(`[visual-test] refs loaded — bag: ${bagRef ? 'OK' : (bagUrl ? 'MISS' : 'N/A')}, beans: ${beansRef ? 'OK' : 'N/A'}, machine: ${machineRef ? `OK (${machineRefUrl})` : (useStradaXReference ? 'MISS' : 'N/A')}, roaster: ${roasterRef ? 'OK' : (roasterSceneRegex ? 'MISS' : 'N/A')}, espresso=${espressoSceneRegex}/home=${homeContextRegex}/cafe=${cafeContextRegex}/roaster=${roasterSceneRegex}`)
+
     // Tracks whether the brandClause should describe the bag. True both
     // when Gemini will render the bag (legacy) AND when we're compositing
     // (so Gemini knows to LEAVE the region empty for the paste).
@@ -405,7 +548,7 @@ DO NOT copy this image's composition — only the visual language. The bag from 
       refDescriptions.push(`reference image — BEAN COLOR ANCHOR. Real photo of Minuto's roasted beans showing their true color. Use this AS A COLOR ANCHOR ONLY (do not copy the composition). When you render any roasted coffee beans in the output, MATCH THE COLOR: medium chestnut brown with subtle warm/auburn undertones, matte finish.`)
     }
     if (machineRef) {
-      refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's 2-group La Marzocco Strada X. Use it as a COLOR + DETAIL anchor, NOT a full-silhouette template. When any part of the machine appears, match: slate/gunmetal MATTE body, pale-blue TRANSLUCENT GLASS teardrop side panel (only on the side glass — never on the front panel), naked portafilters with BLACK handles and small RED accent rings, chrome cool-touch steam wands curving outward from the SIDES of the body, raised stainless wire-grate cup tray on top, "La Marzocco" wordmark on the drip-tray front plate. Render PARTIAL crops only (wand + sliver of side panel, portafilter + group head fragment, cup-tray close-up) — never the full chassis. Forbidden: generic chrome Linea silhouette.`)
+      refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's own 2-group La Marzocco Strada X on its bar. THIS is the machine — every machine part you render must look like the matching part in this photo and attach to the body exactly where it does here. Match: slate/gunmetal MATTE body; the CLEAR (near-colourless, see-through) glass is the machine's large OUTER SIDE WALL at the far end — it never appears as a small panel or shield beside a group head, and is simply out of frame in group-head close-ups; grey group-head caps over chrome groups, each holding ONE portafilter with a BLACK handle; chrome steam wands rising from the TOP-SIDE of the body next to the groups (never out of a group or portafilter); stainless drip tray. Copy the machine's anatomy faithfully; the scene's framing, light and mood come from the brief. Forbidden: generic chrome Linea silhouette, invented parts, readable brand text.`)
     }
     if (roasterRef) {
       refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering compact drum roaster. Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
@@ -419,21 +562,21 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
 
 🎯 PRIMARY DIRECTIVE
-Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).
-
+${bagRef ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).` : `Create a high-resolution, photorealistic editorial photograph at ${ratio} aspect ratio of exactly what the SCENE BRIEF describes. There is NO coffee bag in this image — do not add one. Any attached reference images are equipment references, not a bag.`}
+${bagRef ? `
 🔤 LABEL TEXT — render the LARGE elements sharp and faithful: the "Minuto" brand wordmark, the stag-head emblem, and the product name exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
-
+` : ''}
 SCENE BRIEF — interpret this as the structured elements below:
 ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — the Minuto bag (FIRST reference image), positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
 • SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
-• FOCUS — the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness; supporting props secondary; background softly out of focus.
+• FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
@@ -526,34 +669,34 @@ Real-world physics, not arbitrary attachment:
     cropped at frame edge with enough chrome/panel showing to anchor
     the equipment). Detached floating espresso parts read as wrong.
 
-  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a third reference image of
+  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a reference image of
     Minuto's actual La Marzocco Strada X is included. Use it as a
     COLOR + DETAIL anchor, NOT as a full-silhouette template. Gemini
     cannot reliably reproduce the Strada X's full chassis shape from
     a single product photo, so the rendered scene MUST show only
     PARTIAL elements of the machine, never the full silhouette:
 
-      ✓ Steam wand curving out from a sliver of slate side panel,
-        with the pale-blue glass wing visible on that panel.
-      ✓ Naked portafilter docked into one chrome group head, plus
-        a fragment of the front panel and "La Marzocco" wordmark.
-      ✓ Tight crop on the brushed-steel cup tray with one ceramic cup,
-        a glimpse of group head behind.
-      ✓ Side-on close-up of the pale-blue translucent glass teardrop
-        wing alone, with the slate body fading into shadow.
+      ✓ Portafilter docked into one group head, cup below on the
+        drip tray — NO side glass in this crop (it's at the far end
+        of the machine, out of frame).
+      ✓ Steam wand rising from the top-side of the body into a milk
+        pitcher, a group head beside it.
+      ✓ The machine's side end: the large clear glass side window
+        framed by the slate body, with the slate body fading into
+        shadow.
+      ✓ Tight crop on the drip tray with one ceramic cup, a glimpse
+        of group head above.
 
     ✗ Forbidden: full front-on view of the entire 2-group chassis.
-    ✗ Forbidden: pale blue painted across the WHOLE machine body —
-      blue belongs ONLY on the translucent side glass, never on the
-      front panel or the main chassis.
+    ✗ Forbidden: a blue / mint tint on the machine body or glass —
+      the body is dark slate grey and the side glass is clear.
     ✗ Forbidden: generic Linea silhouette (chrome curved body, single
       group, narrow profile) — Strada X is angular and modern, but
       because we can't reliably render it whole, we crop instead.
 
-    Use the reference image's COLORS (slate-grey matte body, pale-blue
-    translucent glass, black portafilter handles, RED accent ring at
-    the spout base, chrome group caps, "La Marzocco" wordmark on the
-    drip-tray plate) — not its overall shape. The shape is hard;
+    Use the reference image's COLORS (slate-grey matte body, clear
+    see-through glass as the side wall, black portafilter handles, grey
+    group caps) and its part-to-part anatomy. The shape is hard;
     cropping is reliable.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
 
 If the SCENE description mentions a scoop, brass scoop, wooden spoon,
@@ -586,22 +729,38 @@ text is inspiration; these are mandatory.`
     // 3. Call Gemini 2.5 Flash Image. Pass references in the order the
     //    brandClause describes them — BAG, STYLE, BEANS, MACHINE — so
     //    Gemini matches the ordinal labels to the right images.
+    // Real-photo mode replaces the whole generation prompt with an EDIT
+    // instruction on the one real photo.
+    const realPhotoPrompt = `Edit the attached REAL photograph of Minuto's own coffee bar / roastery into a ${ratio} photograph for Instagram.
+
+THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machine, group heads, portafilters, steam wands, grinders, roaster, cups, counter, and people keep the same shapes, parts, positions and colours. Do NOT redraw, restyle, replace, add or remove any equipment. Do not change the machine's colours. Existing real signage, menu boards, badges and logos stay as they are — do not add new text or logos, and never re-letter, sharpen or "clean up" existing small text (badges, labels, gauges): keep it exactly as in the photo, or let it fall softly out of focus. Misspelled text is the #1 tell of an edited photo. If you cannot keep a piece of existing text letter-perfect, blur it instead. Never add a badge, label or printed text that is not in the photo.
+
+Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
+
+WHAT YOU MAY DO:
+• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT: the result must look like a crop of this exact photo, not a new photo of the same place. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
+• Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
+• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
+• Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
+
+SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
+${sceneBrief}`
     const parts: any[] = []
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
     if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
-    if (machineRef) parts.push({ inlineData: { mimeType: machineRef.mime, data: machineRef.data } })
-    if (roasterRef) parts.push({ inlineData: { mimeType: roasterRef.mime, data: roasterRef.data } })
+    if (machineRef) parts.push({ fileData: { mimeType: machineRef.mime, fileUri: machineRef.uri } })
+    if (roasterRef) parts.push({ fileData: { mimeType: roasterRef.mime, fileUri: roasterRef.uri } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
-    async function callGemini(): Promise<{ b64: string; mime: string }> {
+    async function callGemini(useParts: any[] = parts): Promise<{ b64: string; mime: string }> {
       const genRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts }],
+            contents: [{ parts: useParts }],
             generationConfig: {
               responseModalities: ['IMAGE', 'TEXT'],
               // HARD aspect-ratio control. The FORMAT line in the prompt is
@@ -627,9 +786,50 @@ text is inspiration; these are mandatory.`
       throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
     }
 
-    const b64ToBytes = (b64: string) => Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+    // std decoder — the old Uint8Array.from(atob(...), cb) ran a JS callback
+    // per byte, which adds up to real CPU time once real-photo mode makes
+    // several images per request (edge workers have a small CPU budget).
+    const b64ToBytes = (b64: string) => decodeBase64(b64)
+    // Enough of the file to read PNG/JPEG dimensions without decoding it all.
+    const headerDims = (b64: string) => readImageSize(decodeBase64(b64.slice(0, 87380)))
 
-    let gen        = await callGemini()
+    // REAL-PHOTO EDIT, VERIFIED. The edit model sometimes "re-shoots" the
+    // scene instead of editing it — a different machine, a new angle, an
+    // invented cup — and the result still looks like a real photo, so the
+    // downstream QA cannot tell. Compare every edit against its source; a
+    // drifted edit moves on to the next fitting photo, then to generation.
+    let realPhotoUsed: string | null = null
+    const realPhotoChecks: Array<{ photo: string; same: boolean; why: string }> = []
+    let gen: { b64: string; mime: string } | null = null
+    for (const url of realPhotoUrls) {
+      try {
+        const edit = await callGemini([
+          { fileData: { mimeType: mimeOf(url), fileUri: url } },
+          { text: realPhotoPrompt },
+        ])
+        if (!matchesRatio(headerDims(edit.b64), ratio)) {
+          realPhotoChecks.push({ photo: url, same: false, why: 'wrong aspect ratio' })
+          continue
+        }
+        const verdict = await geminiJson([
+          { fileData: { mimeType: mimeOf(url), fileUri: url } },
+          { inlineData: { mimeType: edit.mime, data: edit.b64 } },
+          { text: `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
+Is image 2 still clearly the SAME scene? Answer false if ANY of: the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
+Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
+        ])
+        const same = verdict?.same === true
+        realPhotoChecks.push({ photo: url, same, why: String(verdict?.why ?? '') })
+        console.log(`[visual-test] real-photo check ${same ? 'PASS' : 'FAIL'} (${url}): ${verdict?.why ?? ''}`)
+        if (same) { gen = edit; realPhotoUsed = url; break }
+      } catch (e: any) {
+        realPhotoChecks.push({ photo: url, same: false, why: `error: ${e?.message ?? e}` })
+        console.warn(`[visual-test] real-photo edit failed for ${url}: ${e?.message ?? e}`)
+      }
+    }
+    if (realPhotoUrls.length > 0 && !gen) console.warn('[visual-test] no real-photo edit passed the fidelity check — falling back to generation')
+
+    if (!gen) gen = await callGemini()
     let imageBytes = b64ToBytes(gen.b64)
     let dims       = readImageSize(imageBytes)
     // ASPECT GUARD — measure what actually came back and retry once if the
@@ -637,7 +837,7 @@ text is inspiration; these are mandatory.`
     // pillarboxed by Instagram, and nothing downstream (not even the
     // Claude-vision QA pass) looks at dimensions, so this is the only place
     // the mistake can be caught.
-    if (!matchesRatio(dims, ratio)) {
+    if (!realPhotoUsed && !matchesRatio(dims, ratio)) {
       console.warn(`[visual-test] aspect mismatch — asked ${ratio} (${aspect}), got ${dims?.w}x${dims?.h}. Retrying once.`)
       const retry      = await callGemini()
       const retryBytes = b64ToBytes(retry.b64)
@@ -690,6 +890,10 @@ text is inspiration; these are mandatory.`
       composited: composited,
       surface: surface.name,
       style_ref: styleRefUrl,
+      machine_ref: machineRef ? machineRefUrl : null,
+      real_photo: realPhotoUsed,
+      real_photo_checks: realPhotoChecks,
+      roaster_ref: roasterRef ? MINUTO_ROASTER_REFERENCE_URL : null,
       scene_brief: sceneBrief,
       bag_url: bagUrl,
       bag_source: bagSource,

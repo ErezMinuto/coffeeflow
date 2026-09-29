@@ -26,7 +26,7 @@ export const MINUTO_BEANS_REFERENCE_URL =
 // Shape + colour anchor for Minuto's actual bar machine — a 2-group
 // La Marzocco Strada X. Uploaded by the user 2026-05-10 after text-only
 // description rendered a generic chrome Linea silhouette instead of the
-// distinctive slate body + pale-blue glass side wing. Passed to Gemini
+// distinctive slate body + glass side wing. Passed to Gemini
 // as a THIRD reference image, but ONLY when the scene brief involves
 // espresso brewing or milk steaming (detected by visual-test). For
 // pour-over / beans-only / lifestyle shots we don't include it — the
@@ -153,11 +153,20 @@ these specific distinguishing features (do NOT render a generic Linea
 or Linea Mini silhouette — that's wrong machine):
   • BODY COLOR: slate / dark gunmetal grey, matte (not glossy, not
     chrome, not white). The main body panels are a flat charcoal-grey.
-  • SIGNATURE SIDE PANEL: a curved, teardrop-shaped translucent
-    PALE-BLUE GLASS side wing on each side of the machine, set into
-    the grey body — this is the Strada X's most recognizable element
-    and must appear if the side of the machine is in frame. It's
-    sky-blue / powder-blue translucent glass, not opaque, not dark.
+  • SIGNATURE SIDE PANEL: a curved, teardrop-shaped CLEAR GLASS
+    side window on each side of the machine, set into
+    the grey body — this is the Strada X's most recognizable element.
+    It is the machine's OUTER SIDE WALL: a large flat pane framed by
+    the grey body, running most of the machine's height at the far
+    left/right end. It is NOT a small shield, cover, splash guard or
+    loose panel next to a group head — no glass/blue/mint/translucent plate
+    ever sits beside or behind the portafilter. Show it ONLY when the
+    whole side end of the machine is visible; in a close-up of a
+    group head / portafilter the side wall is OUT OF FRAME, so do not
+    draw it at all. It is CLEAR, near-colourless glass (at most a
+    faint cool tint) — you can see through it to what is behind the
+    machine. NOT a blue, mint or frosted panel, and the blue never
+    spreads onto the grey body.
   • TWO SATURATED BREW GROUPS: cylindrical chrome group heads
     protruding forward from the front panel, with rounded chrome top
     caps. Two of them, side by side. Naked / bottomless portafilters
@@ -177,14 +186,21 @@ or Linea Mini silhouette — that's wrong machine):
     sits on top of the body, supported by thin chrome rails — it's
     open mesh, you can see through it.
   • DRIP TRAY: stainless steel wire-mesh tray across the bottom front,
-    with a "La Marzocco" wordmark plate on the front lip (chrome
-    lettering on dark background).
+    with a small wordmark plate on the front lip. Keep that plate
+    soft / out of focus or out of frame — a sharp, misspelled wordmark
+    (e.g. "LA MAAZOCCO") instantly reads as fake.
   • FRONT PANEL: dark grey, with a small round chrome pressure gauge
     on the lower-left and a single small toggle switch nearby.
+  • ONE PART, ONE PLACE: each group head has exactly ONE portafilter
+    locked into it from below and NOTHING else attached to it. Steam
+    wands, pipes, hoses and handles never grow out of a group head or
+    a portafilter. Every part must connect to the machine body the way
+    it does on the real machine — no floating, merged, or invented
+    parts. When in doubt, crop tighter and show fewer parts.
 NEVER render a chrome / mirror-polished body, NEVER a white espresso
 machine, NEVER a Linea Mini silhouette (that's a small home machine
 with a curved chrome body — wrong). NEVER render the Strada X without
-the pale-blue glass side panel if the side is in frame. The eagle wing
+the clear glass side window if the side is in frame. The eagle wing
 La Marzocco logo is small and lives on the drip-tray front plate, not
 splashed across the body.
 
@@ -442,8 +458,8 @@ export const SCENE_PRESETS: Record<string, string> = {
   cafe_bts:
     'A SCENE behind the bar at the Minuto cafe, documentary style. The ' +
     'LA MARZOCCO STRADA X 2-group espresso machine occupies the LEFT half ' +
-    'of the frame in profile — slate-gray body, distinctive pale-blue ' +
-    'glass side wing catching the light. A single portafilter is locked ' +
+    'of the frame in profile — slate-gray body, distinctive clear ' +
+    'glass side window catching the light. A single portafilter is locked ' +
     'into the left group head, an espresso pour mid-stream into a small ' +
     'thick-walled ceramic cup below — the amber-mahogany stream is thin ' +
     'and steady, a small puddle of crema forming. Hands and barista body ' +

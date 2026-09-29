@@ -7936,7 +7936,7 @@ You are the brain over both hands: recommend across paid AND organic, but only A
 - **Two audiences** (per owner's brief):
   - Audience 1 — Specialty enthusiasts (small, high LTV) — already buy from נחת/Jera/agro/import. Have grinder + machine. Search "ethiopia yirgacheffe", "single origin". Pitch: freshness + roastery expertise.
   - Audience 2 — Commercial bean buyers (large, growth) — currently buy Lavazza/Illy/Mauro at supermarkets. Have espresso machine. Search "פולי קפה", "קפה טרי". Pitch: upgrade vs. supermarket beans.
-- **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with pale-blue glass side wings. Use as creative anchor sparingly.
+- **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with clear glass side windows. Use as creative anchor sparingly.
 - **Premium positioning** — never compete on price. No discounts. No "% off".
 - **Meta budget ceiling**: ₪3,500 / month (~₪117/day account-wide; hard cap ₪100/day per campaign). Raised from ₪3,000 by the owner on 2026-08-19.
 - **Pixel**: ID 240929400634266 — installed via PixelYourSite, browser-side firing. Last 28d: 28.2K PageView / 6.4K ViewContent / 625 AddToCart / 304 InitiateCheckout / **46 Purchase**. CAPI is OFF — recovery deferred.
