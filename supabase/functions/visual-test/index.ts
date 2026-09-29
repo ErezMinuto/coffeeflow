@@ -130,7 +130,11 @@ function matchesRatio(dims: { w: number; h: number } | null, ratio: string): boo
 // only accepts images/video, so there is nowhere to persist them without a
 // new table); a cold start re-captions the few folders a brief needs.
 const CAPTION_MODEL  = 'gemini-2.5-flash'
-const CAPTION_BATCH  = 4          // photos are 3-6 MB each — bound memory
+const CAPTION_BATCH  = 6
+// Library photos are 3-6 MB phone shots. Loading + base64-ing a dozen of
+// them blew the edge worker's memory (WORKER_RESOURCE_LIMIT), so Gemini
+// reads them straight from their public URLs via fileData instead.
+const mimeOf = (path: string) => /\.png$/i.test(path) ? 'image/png' : /\.webp$/i.test(path) ? 'image/webp' : 'image/jpeg'
 const captionCache   = new Map<string, string>()
 
 async function geminiJson(parts: any[]): Promise<any> {
@@ -155,7 +159,6 @@ async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
   brief: string,
-  fetchAsB64: (url: string) => Promise<{ data: string; mime: string } | null>,
 ): Promise<string | null> {
   try {
     // 1. Candidate files across the allowed folders.
@@ -176,10 +179,8 @@ async function pickMatchingRealPhoto(
     for (let i = 0; i < missing.length; i += CAPTION_BATCH) {
       await Promise.all(missing.slice(i, i + CAPTION_BATCH).map(async path => {
         try {
-          const img = await fetchAsB64(urlOf(path))
-          if (!img) return
           const out = await geminiJson([
-            { inlineData: { mimeType: img.mime, data: img.data } },
+            { fileData: { mimeType: mimeOf(path), fileUri: urlOf(path) } },
             { text: 'Caption this photo from a specialty-coffee roastery/cafe photo library, for matching against scene briefs. One factual sentence: the main subject; which equipment exactly (e.g. 2-group espresso machine front / side, main drum roaster with round cooling tray, small tabletop sample roaster, grinder, jute sacks of GREEN unroasted coffee); whether beans are green or roasted; whether hands or people are visible and doing what; notable problems (clutter, faces). Reply as JSON {"caption": "..."}.' },
           ])
           if (typeof out?.caption === 'string') captionCache.set(path, out.caption)
@@ -456,9 +457,10 @@ serve(async (req) => {
       machine: ['machine', 'hands'],
     }
     const realPhotoUrl = realPhotoCategory
-      ? await pickMatchingRealPhoto(supabase, REAL_PHOTO_FOLDERS[realPhotoCategory] ?? [realPhotoCategory], sceneBrief, fetchAsB64)
+      ? await pickMatchingRealPhoto(supabase, REAL_PHOTO_FOLDERS[realPhotoCategory] ?? [realPhotoCategory], sceneBrief)
       : null
-    const realPhoto    = realPhotoUrl ? await fetchAsB64(realPhotoUrl) : null
+    // Passed to Gemini by URL (fileData), never downloaded here — see mimeOf.
+    const realPhoto    = realPhotoUrl ? { uri: realPhotoUrl, mime: mimeOf(realPhotoUrl) } : null
     if (realPhotoCategory) console.log(`[visual-test] real-photo mode: ${realPhotoCategory} → ${realPhoto ? realPhotoUrl : 'no usable photo, falling back to generation'}`)
     if (useStradaXReference && !realPhoto) {
       machineRefUrl = (await pickRandomAssetUrl(supabase, 'machine')) ?? MINUTO_ESPRESSO_MACHINE_REFERENCE_URL
@@ -749,7 +751,7 @@ ${sceneBrief}`
     parts.push({ text: `Generate an image: ${fullPrompt}` })
     if (realPhoto) {
       parts.length = 0
-      parts.push({ inlineData: { mimeType: realPhoto.mime, data: realPhoto.data } })
+      parts.push({ fileData: { mimeType: realPhoto.mime, fileUri: realPhoto.uri } })
       parts.push({ text: realPhotoPrompt })
     }
 
