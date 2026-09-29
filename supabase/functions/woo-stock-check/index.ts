@@ -12,11 +12,25 @@ const WOO_SEC   = Deno.env.get("WOO_SECRET")                ?? "";
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 const wooAuth  = btoa(`${WOO_KEY}:${WOO_SEC}`);
 
-async function sendTelegram(text: string) {
+// One "✅ <name>" button per customer — telegram-bot (same bot token, so it
+// receives the press) marks that customer handled. No numbers to type.
+function doneKeyboard(rows: any[]) {
+  return {
+    inline_keyboard: rows.map((r) => [{
+      text: `✅ ${r.customer_name}`.slice(0, 60),
+      callback_data: `done:${r.id}`,
+    }]),
+  };
+}
+
+async function sendTelegram(text: string, replyMarkup?: unknown) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: "HTML" }),
+    body: JSON.stringify({
+      chat_id: CHAT_ID, text, parse_mode: "HTML",
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
   });
 }
 
@@ -41,7 +55,10 @@ serve(async (_req) => {
     const { data: pending } = await supabase
       .from("waiting_customers")
       .select("*")
-      .eq("is_handled", false);
+      .eq("is_handled", false)
+      // Alert once per customer. Without this the hourly cron re-sent the
+      // same "back in stock" message every run until someone marked it done.
+      .is("notified_at", null);
 
     if (!pending || pending.length === 0)
       return new Response(JSON.stringify({ checked: 0, notified: 0 }));
@@ -75,8 +92,8 @@ serve(async (_req) => {
         `👥 <b>לקוחות ממתינים (${customers.length}):</b>`,
         customerLines,
         ``,
-        `✅ לסימון כטופל: <code>/done [מספר]</code>`,
-      ].join("\n"));
+        `✅ לסימון כטופל לחצו על הכפתור`,
+      ].join("\n"), doneKeyboard(customers));
 
       await supabase
         .from("waiting_customers")
