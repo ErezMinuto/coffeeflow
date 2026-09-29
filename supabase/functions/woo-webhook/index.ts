@@ -38,11 +38,25 @@ async function verifyWooSignature(req: Request, rawBody: string): Promise<boolea
   return computed === signature;
 }
 
-async function sendTelegram(text: string) {
+// One "✅ <name>" button per customer — telegram-bot (same bot token, so it
+// receives the press) marks that customer handled. No numbers to type.
+function doneKeyboard(rows: any[]) {
+  return {
+    inline_keyboard: rows.map((r) => [{
+      text: `✅ ${r.customer_name}`.slice(0, 60),
+      callback_data: `done:${r.id}`,
+    }]),
+  };
+}
+
+async function sendTelegram(text: string, replyMarkup?: unknown) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: "HTML" }),
+    body: JSON.stringify({
+      chat_id: CHAT_ID, text, parse_mode: "HTML",
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
   });
 }
 
@@ -88,10 +102,11 @@ serve(async (req) => {
 
     if (!productName) return new Response("ok");
 
-    // Load all un-notified waiting customers
+    // Load all un-notified, still-open waiting customers
     const { data: pending } = await supabase
       .from("waiting_customers")
       .select("*")
+      .eq("is_handled", false)
       .is("notified_at", null);
 
     if (!pending || pending.length === 0) return new Response("ok");
@@ -101,7 +116,7 @@ serve(async (req) => {
 
     // Build Telegram message
     const customerLines = matches.map((wc, i) => {
-      const phone   = wc.phone   ? ` — 📞 ${wc.phone}`   : "";
+      const phone   = wc.phone   ? ` — 📞 <code>${wc.phone}</code>`   : "";
       const product = wc.product ? `\n   📦 ${wc.product}` : "";
       return `${i + 1}. <b>${wc.customer_name}</b>${phone}${product}`;
     }).join("\n");
@@ -115,10 +130,10 @@ serve(async (req) => {
       `👥 <b>לקוחות ממתינים (${matches.length}):</b>`,
       customerLines,
       ``,
-      `✅ לסימון כטופל שלחו <code>/done [מספר]</code> בקבוצה`,
+      `✅ לסימון כטופל לחצו על הכפתור`,
     ].filter(l => l !== null).join("\n");
 
-    await sendTelegram(msg);
+    await sendTelegram(msg, doneKeyboard(matches));
 
     // Mark matched customers as notified
     await supabase

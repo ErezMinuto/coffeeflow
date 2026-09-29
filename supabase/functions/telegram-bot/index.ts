@@ -5,7 +5,8 @@
  *
  * Commands:
  *   /tasks          → list all pending waiting customers
- *   /done <number>  → mark customer #N as handled
+ *   /done <arg>     → mark handled by phone, /tasks position, or name
+ *   "✅ <name>" button (callback_query "done:<id>") → mark that customer handled
  *
  * Free text → Claude extracts customer name/phone/product and adds to waiting list
  */
@@ -66,13 +67,34 @@ function looksLikeInjection(text: string): boolean {
   return INJECTION_PATTERNS.some((p) => p.test(text));
 }
 
-async function reply(chatId: string | number, text: string) {
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+async function tg(method: string, payload: Record<string, unknown>) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    body: JSON.stringify(payload),
   });
 }
+
+async function reply(chatId: string | number, text: string, replyMarkup?: unknown) {
+  await tg("sendMessage", {
+    chat_id: chatId, text, parse_mode: "HTML",
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+  });
+}
+
+// One "✅ <name>" button per customer. Pressing it arrives here as a
+// callback_query with data "done:<id>" — no numbers to type.
+// woo-stock-check / woo-webhook build the same buttons on their alerts.
+function doneKeyboard(rows: { id: number; customer_name: string }[]) {
+  return {
+    inline_keyboard: rows.map((r) => [{
+      text: `✅ ${r.customer_name}`.slice(0, 60),
+      callback_data: `done:${r.id}`,
+    }]),
+  };
+}
+
+const digitsOnly = (s: string) => (s ?? "").replace(/\D/g, "");
 
 // ── Claude extractor ────────────────────────────────────────────────────────
 
@@ -138,18 +160,25 @@ async function handleTasks(chatId: string) {
   if (!data || data.length === 0) { await reply(chatId, "✅ אין לקוחות ממתינים כרגע 🎉"); return; }
 
   const lines = data.map((wc, i) => {
-    const phone   = wc.phone   ? ` | 📞 ${wc.phone}`   : "";
+    const phone   = wc.phone   ? ` | 📞 <code>${wc.phone}</code>`   : "";
     const product = wc.product ? ` | 📦 ${wc.product}` : "";
     return `${i + 1}. <b>${wc.customer_name}</b>${phone}${product}`;
   }).join("\n");
 
-  await reply(chatId, `📋 <b>לקוחות ממתינים (${data.length}):</b>\n\n${lines}\n\nלסימון כטופל: <code>/done 1</code>`);
+  await reply(
+    chatId,
+    `📋 <b>לקוחות ממתינים (${data.length}):</b>\n\n${lines}\n\nלסימון כטופל לחצו על הכפתור, או <code>/done</code> עם מספר ברשימה / טלפון / שם`,
+    doneKeyboard(data),
+  );
 }
 
+// /done accepts, in order: a phone number (7+ digits, leading 0 kept —
+// parseInt used to turn 0501234567 into list item #501234567), a position
+// in the /tasks list, or part of the customer's name.
 async function handleDone(chatId: string, text: string) {
-  const num = parseInt(text.replace(/^\/done\s*/i, "").trim());
-  if (isNaN(num) || num < 1) {
-    await reply(chatId, "❓ פורמט: /done מספר — לדוגמה: <code>/done 2</code>");
+  const arg = text.replace(/^\/done(@\w+)?\s*/i, "").trim();
+  if (!arg) {
+    await reply(chatId, "❓ לחצו על הכפתור ליד הלקוח, או: <code>/done 0501234567</code> / <code>/done 2</code> / <code>/done דוד</code>");
     return;
   }
 
@@ -158,13 +187,66 @@ async function handleDone(chatId: string, text: string) {
     .select("*")
     .eq("is_handled", false)
     .order("created_at", { ascending: false });
+  const pending = data ?? [];
 
-  const row = data?.[num - 1];
-  if (!row) { await reply(chatId, `⚠️ אין לקוח במספר ${num} — בדוק /tasks`); return; }
+  const argDigits = digitsOnly(arg);
+  let matches: any[];
+  if (argDigits.length >= 7 && argDigits.length === arg.replace(/[\s\-+]/g, "").length) {
+    // Compare on the last 9 digits so 050…, 50… and +97250… all match.
+    const tail = argDigits.slice(-9);
+    matches = pending.filter((wc) => digitsOnly(wc.phone).slice(-9) === tail);
+  } else if (/^\d+$/.test(arg)) {
+    const row = pending[parseInt(arg, 10) - 1];
+    matches = row ? [row] : [];
+  } else {
+    matches = pending.filter((wc) => (wc.customer_name ?? "").includes(arg));
+  }
 
+  if (matches.length === 0) {
+    await reply(chatId, `⚠️ לא מצאתי לקוח ממתין עבור "${arg}" — שלחו /tasks`);
+    return;
+  }
+  if (matches.length > 1) {
+    await reply(chatId, `🔎 נמצאו ${matches.length} לקוחות — בחרו:`, doneKeyboard(matches));
+    return;
+  }
+
+  const row = matches[0];
   const { error } = await supabase.from("waiting_customers").update({ is_handled: true }).eq("id", row.id);
   if (error) { await reply(chatId, "❌ שגיאה בעדכון"); return; }
   await reply(chatId, `✅ <b>${row.customer_name}</b> סומן כטופל`);
+}
+
+// A "✅ <name>" button was pressed.
+async function handleDoneButton(cq: any) {
+  const chatId = String(cq.message?.chat?.id ?? "");
+  const id     = Number(String(cq.data ?? "").slice("done:".length));
+  const answer = (text: string) => tg("answerCallbackQuery", { callback_query_id: cq.id, text });
+
+  if (chatId !== ALLOWED_CHAT || !Number.isInteger(id) || id < 1) { await answer(""); return; }
+
+  // Only flips rows still pending, so a double tap can't double-report.
+  const { data, error } = await supabase
+    .from("waiting_customers")
+    .update({ is_handled: true })
+    .eq("id", id)
+    .eq("is_handled", false)
+    .select("customer_name");
+  if (error) { await answer("❌ שגיאה בעדכון"); return; }
+
+  // Drop the pressed button so the alert shows only who is still waiting.
+  const keyboard = (cq.message?.reply_markup?.inline_keyboard ?? [])
+    .map((row: any[]) => row.filter((b) => b.callback_data !== cq.data))
+    .filter((row: any[]) => row.length > 0);
+  await tg("editMessageReplyMarkup", {
+    chat_id: chatId, message_id: cq.message.message_id,
+    reply_markup: { inline_keyboard: keyboard },
+  });
+
+  const name = data?.[0]?.customer_name;
+  if (!name) { await answer("כבר סומן כטופל"); return; }
+  await answer(`✅ ${name} סומן כטופל`);
+  await reply(chatId, `✅ <b>${name}</b> סומן כטופל ע"י ${cq.from?.first_name ?? "מישהו"}`);
 }
 
 async function handleFreeText(chatId: string, text: string, fromName: string) {
@@ -203,7 +285,7 @@ async function handleFreeText(chatId: string, text: string, fromName: string) {
   await reply(chatId, [
     `✅ <b>נוסף לרשימת ממתינים!</b>`,
     `👤 ${customer_name}`,
-    phone   ? `📞 ${phone}`    : "",
+    phone   ? `📞 <code>${phone}</code>`    : "",
     product ? `📦 ${product}`  : "",
     sku     ? `🔢 מקט: ${sku}` : "",
   ].filter(Boolean).join("\n"));
@@ -219,6 +301,12 @@ serve(async (req) => {
     }
 
     const body    = await req.json();
+
+    if (body.callback_query?.data?.startsWith("done:")) {
+      if (await checkRateLimit(body.callback_query.from?.id)) await handleDoneButton(body.callback_query);
+      return new Response("ok");
+    }
+
     const message = body.message;
     if (!message?.text) return new Response("ok");
 
