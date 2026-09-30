@@ -30,7 +30,7 @@ const RI = {
 export default function Roasting() {
   const {
     data, originsDb, roastsDb, roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb,
-    getOriginById, calculateRoastedWeight, showToast
+    artisanProfilesDb, getOriginById, calculateRoastedWeight, showToast
   } = useApp();
 
   // Form mode: 'origin' (simple) | 'profile' (blend / multi-level)
@@ -53,6 +53,11 @@ export default function Roasting() {
   const [isSaving,      setIsSaving]      = useState(false);
   const savingRef = useRef(false); // synchronous in-flight lock — blocks double-submit before React re-renders
 
+  // Artisan — profiles imported from the roastery, waiting to be attached
+  const [uploadingFor, setUploadingFor] = useState(null); // roast id with an upload in flight
+  const fileInputRef  = useRef(null);
+  const uploadTarget  = useRef(null);                     // roast the picked file belongs to
+
   const navigate = useNavigate();
 
   const startChecklist = () => {
@@ -72,6 +77,55 @@ export default function Roasting() {
         }
       }
     });
+  };
+
+  // ── ARTISAN ───────────────────────────────────────────────────────────────────
+  // The roaster records the roast as usual, then uploads Artisan's own roast
+  // file onto that record. The link is explicit, so nothing is ever inferred.
+  //
+  // .alog is what Artisan saves by default and is a Python literal, not JSON —
+  // the file is sent as raw text and read server-side.
+
+  const temp = (v) => (v != null ? `${Number(v).toFixed(1)}°` : '—');
+
+  const artisanFor = (roastId) => (data.artisanProfiles || []).find(p => p.roast_id === roastId);
+
+  const pickArtisanFile = (roast) => {
+    uploadTarget.current = roast.id;
+    fileInputRef.current?.click();
+  };
+
+  const uploadArtisanFile = async (e) => {
+    const file    = e.target.files?.[0];
+    const roastId = uploadTarget.current;
+    e.target.value = '';                    // let the same file be picked again
+    uploadTarget.current = null;
+    if (!file || !roastId) return;
+
+    setUploadingFor(roastId);
+    try {
+      const { data: res, error } = await supabase.functions.invoke('artisan-import', {
+        body: { roast_id: roastId, filename: file.name, content: await file.text() },
+      });
+
+      if (error) {
+        // functions.invoke surfaces a non-2xx as an error with the Response on
+        // .context — the readable reason is in the body, not error.message.
+        let msg = error.message;
+        try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* keep msg */ }
+        showToast(`❌ ${msg}`, 'error');
+        return;
+      }
+
+      await roastsDb.refresh();
+      await artisanProfilesDb.refresh();
+      showToast(`✅ נטען מ-Artisan — הטענה ${temp(res?.charge_et)} · סיום ${temp(res?.drop_bt)}`);
+    } catch (err) {
+      console.error('Artisan upload failed:', err);
+      showToast('❌ טעינת קובץ Artisan נכשלה', 'error');
+    } finally {
+      setUploadingFor(null);
+    }
   };
 
   // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -229,7 +283,10 @@ export default function Roasting() {
       operator:         roast.operator,
       oldGreenWeight:   roast.green_weight,
       oldRoastedWeight: roast.roasted_weight,
-      isProfile:        !!roast.roast_profile_id
+      isProfile:        !!roast.roast_profile_id,
+      artisan:          roast.artisan_uuid
+        ? { charge_et: roast.charge_et, charge_bt: roast.charge_bt, drop_et: roast.drop_et, drop_bt: roast.drop_bt }
+        : null,
     });
   };
 
@@ -527,6 +584,9 @@ export default function Roasting() {
           {data.roastChecklistTemplates?.length > 0 && (
             <button onClick={startChecklist} className="rbtn forest"><Icon d={RI.check} /> צ'קליסט קלייה</button>
           )}
+          {/* One picker for the whole table; the row button sets its target. */}
+          <input ref={fileInputRef} type="file" accept=".alog,.json"
+            style={{ display: 'none' }} onChange={uploadArtisanFile} />
           <button onClick={() => setView('list')} className="rbtn ghost"><Icon d={RI.list} /> רשימת קלייה</button>
         </div>
       </div>
@@ -726,7 +786,10 @@ export default function Roasting() {
                         onChange={toggleSelectAll} />
                     </th>
                     <th>פריט</th><th className="c">ירוק → קלוי</th><th className="c">מפעיל</th>
-                    <th className="c">צבע</th><th className="c">תאריך</th><th className="c">פעולות</th>
+                    <th className="c">צבע</th>
+                    <th className="c" title="טמפרטורת הטענה (ET) מ-Artisan">הטענה</th>
+                    <th className="c" title="טמפרטורת סיום (BT) מ-Artisan">סיום</th>
+                    <th className="c">תאריך</th><th className="c">פעולות</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -755,9 +818,19 @@ export default function Roasting() {
                         <td className="c rwt"><span className="g">{roast.green_weight}</span><Icon d={RI.arrow} size={14} /><span className="r">{roast.roasted_weight} ק"ג</span></td>
                         <td className="c">{roast.operator}</td>
                         <td className="c rnum">{roast.color_reading != null ? roast.color_reading : '—'}</td>
+                        <td className="c rnum">{temp(roast.charge_et)}</td>
+                        <td className="c rnum">{temp(roast.drop_bt)}</td>
                         <td className="c rnum rdate">{new Date(roast.date).toLocaleDateString('he-IL')}</td>
                         <td className="c">
                           <div className="racts">
+                            <button
+                              className={`rico${roast.artisan_uuid ? ' has-artisan' : ''}`}
+                              title={roast.artisan_uuid ? 'החלף קובץ Artisan' : 'טען קובץ Artisan'}
+                              aria-label={`${roast.artisan_uuid ? 'החלפת' : 'טעינת'} קובץ Artisan עבור ${name}`}
+                              disabled={uploadingFor != null}
+                              onClick={() => pickArtisanFile(roast)}>
+                              <Icon d={uploadingFor === roast.id ? RI.fire : RI.chart} />
+                            </button>
                             <button className="rico" title="עריכה" aria-label={`עריכת ${name}`} onClick={() => startEditRoast(roast)}><Icon d={RI.edit} /></button>
                             <button className="rico danger" title="מחיקה" aria-label={`מחיקת ${name}`} onClick={() => deleteRoast(roast)}><Icon d={RI.trash} /></button>
                           </div>
@@ -804,6 +877,33 @@ export default function Roasting() {
                   <option value="">בחר מפעיל...</option>
                   {data.operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
                 </select>
+              </div>
+              <div className="rartisan-readings">
+                <div className="rar-title">
+                  <Icon d={RI.chart} size={14} /> נתוני Artisan
+                  <button className="rar-load" disabled={uploadingFor != null}
+                    onClick={() => pickArtisanFile({ id: editingRoast.id })}>
+                    {uploadingFor === editingRoast.id
+                      ? 'טוען…'
+                      : (editingRoast.artisan ? 'החלף קובץ' : 'טען קובץ')}
+                  </button>
+                </div>
+
+                {editingRoast.artisan ? (
+                  <>
+                    <div className="rar-grid">
+                      <div><span>הטענה ET</span><b>{temp(editingRoast.artisan.charge_et)}</b></div>
+                      <div><span>הטענה BT</span><b>{temp(editingRoast.artisan.charge_bt)}</b></div>
+                      <div><span>סיום ET</span><b>{temp(editingRoast.artisan.drop_et)}</b></div>
+                      <div><span>סיום BT</span><b>{temp(editingRoast.artisan.drop_bt)}</b></div>
+                    </div>
+                    {artisanFor(editingRoast.id)?.filename && (
+                      <div className="rar-file">{artisanFor(editingRoast.id).filename}</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="rar-empty">עדיין לא נטען קובץ קלייה. בחר את קובץ ה-alog. ששמרת ב-Artisan.</div>
+                )}
               </div>
               {editingRoast.isProfile && editingRoast.greenWeight && (
                 <div className="rpreview compact">משקל קלוי משוער: <b>{calcProfileRoastedWeight(editingRoast.profileId, parseFloat(editingRoast.greenWeight))} ק"ג</b></div>

@@ -25,6 +25,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { artisanCoverageFindings } from './artisan_coverage.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -176,7 +177,7 @@ const EXPECTED_FRESH_DATA: Array<{
 
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
-  category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry'
+  category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
   message:  string
   context?: Record<string, unknown>
 }
@@ -343,6 +344,28 @@ serve(async (req) => {
     } catch (e: any) {
       console.warn(`[health-watchdog] freshness check threw for ${src.table}: ${e?.message ?? e}`)
     }
+  }
+
+  // ── 1c. Artisan coverage — roasts logged without their Artisan file ───
+  // A reminder, never an alarm: nothing is broken, someone has uploads to do.
+  // Thresholds and wording live in artisan_coverage.ts so they can be tested.
+  try {
+    const windowHours = 96
+    const since = new Date(Date.now() - windowHours * 3600 * 1000).toISOString()
+
+    const { data: recentRoasts, error: roastErr } = await supabase
+      .from('roasts')
+      .select('id,artisan_uuid')
+      .gte('date', since)
+
+    // A missing table/column means the integration isn't live here yet. Stay quiet.
+    if (roastErr) {
+      console.warn(`[health-watchdog] artisan coverage skipped: ${roastErr.message}`)
+    } else {
+      findings.push(...artisanCoverageFindings({ recentRoasts: recentRoasts ?? [], windowHours }))
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] artisan coverage check threw: ${e?.message ?? e}`)
   }
 
   // ── 2. Task failure rate (last 24h) ───────────────────────────────────
