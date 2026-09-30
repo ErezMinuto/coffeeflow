@@ -88,6 +88,17 @@ without files:
 Under 3 roasts it stays silent — too thin to tell a skipped upload from a quiet
 week, and a watchdog that nags gets muted.
 
+### Checking a real file without touching anything
+
+```bash
+deno run --allow-read scripts/artisan-preview.ts /path/to/roast.alog
+```
+
+Reads the file and prints exactly what would land on the roast record —
+readings, weights, batch, and the first-crack/DTR values to cross-check against
+what Artisan shows on screen. Writes nothing and needs no database, so it is
+the safe way to confirm the reader before trusting an upload.
+
 ### Tests
 
 ```bash
