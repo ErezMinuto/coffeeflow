@@ -254,7 +254,6 @@ export default function Roasting() {
         updated_at: new Date().toISOString()
       });
 
-
       await roastsDb.refresh();
       await originsDb.refresh();
       await roastProfilesDb.refresh();
