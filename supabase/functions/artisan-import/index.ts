@@ -1,79 +1,62 @@
 // ============================================================================
-// artisan-import — land an Artisan roast profile on the CoffeeFlow roast log
+// artisan-import — attach an Artisan roast file to one roast record
 // ============================================================================
 //
-// POST { filename, profile }
-//   filename  the Autosave filename, e.g. CF_2026-09-27_1432_Yirgacheffe.json
-//   profile   the parsed Artisan JSON body (getProfile() as exportJSON writes it)
+// POST { roast_id, filename, content }
+//   roast_id  the roast the file belongs to — the roaster picked it, so there
+//             is nothing to infer and nothing to guess
+//   filename  used only to pick the reader (.alog vs .json) and for the record
+//   content   the raw TEXT of the file. .alog is a Python literal, not JSON,
+//             so the browser cannot parse it — it sends the bytes as read.
 //
-// Two callers:
-//   * scripts/artisan-watch.mjs on the roastery computer  (header x-artisan-key)
-//   * the manual drop-zone on the Roasting page           (anon key, as the app)
-//
-// What it does NOT do: create a roast. Creating one moves green and roasted
-// stock, which is real inventory. A profile with no matching roast is staged
-// for the roaster to attach in one click.
+// Writes the charge/drop readings onto that roast and keeps the full profile
+// in `artisan_profiles`. Never touches weights, stock, origin or date: those
+// are the roaster's numbers, and rewriting them would move real inventory.
 //
 // Deploy:
 //   supabase functions deploy artisan-import --project-ref <ref> --no-verify-jwt
-// ============================================================================
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
-import {
-  parseProfile,
-  normaliseBeanName,
-  ArtisanParseError,
-  type ParsedProfile,
-} from "../_shared/artisan.ts";
+import { parseArtisanFile, ArtisanParseError } from "../_shared/artisan.ts";
 
-const SUPA_URL  = Deno.env.get("SUPABASE_URL")              ?? "";
-const SUPA_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ANON_KEY  = Deno.env.get("SUPABASE_ANON_KEY")         ?? "";
-const INGEST_KEY = Deno.env.get("ARTISAN_INGEST_KEY")       ?? "";
+const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
+const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")         ?? "";
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-artisan-key",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-// How far around the roast we look for the row the roaster typed in. They log
-// after roasting — often later the same shift, sometimes that evening — so the
-// window leans forward. It only gathers candidates; the local-date equality
-// below is what actually decides.
-const WINDOW_BEFORE_MS = 6  * 60 * 60 * 1000;
-const WINDOW_AFTER_MS  = 30 * 60 * 60 * 1000;
+// An .alog carries the full curve, so a long roast at a high sample rate is a
+// few MB. Well above that is not a roast profile.
+const MAX_CONTENT_CHARS = 20_000_000;
 
-/** Render an instant as a yyyy-MM-dd calendar date in the roastery's own timezone. */
-function localDate(iso: string, tzOffsetSec: number): string {
-  return new Date(new Date(iso).getTime() + tzOffsetSec * 1000).toISOString().slice(0, 10);
-}
-
+/**
+ * The app calls with its anon key (the Clerk fetch wrapper sends it as
+ * `apikey`). Every table here is already anon-writable by design — see
+ * CLAUDE.md — so this grants nothing that a direct PostgREST call would not.
+ */
 function authorised(req: Request): boolean {
-  const key = req.headers.get("x-artisan-key");
-  if (INGEST_KEY && key === INGEST_KEY) return true;
-  // The app calls with its anon key. Every table here is already anon-writable
-  // by design (see CLAUDE.md), so this grants nothing new — it just lets the
-  // browser reuse this one parser instead of shipping a second copy.
-  const auth = req.headers.get("authorization") ?? "";
-  const apikey = req.headers.get("apikey") ?? "";
-  return Boolean(ANON_KEY) && (auth === `Bearer ${ANON_KEY}` || apikey === ANON_KEY);
+  if (!ANON_KEY) return false;
+  return req.headers.get("apikey") === ANON_KEY
+      || req.headers.get("authorization") === `Bearer ${ANON_KEY}`;
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: CORS });
   if (req.method !== "POST")    return json({ ok: false, error: "POST only" }, 405);
-
-  if (!authorised(req)) return json({ ok: false, error: "unauthorised" }, 401);
+  if (!authorised(req))         return json({ ok: false, error: "unauthorised" }, 401);
 
   const log = createLogger("artisan-import");
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
-  let body: { filename?: string; profile?: unknown };
+  let body: { roast_id?: unknown; filename?: unknown; content?: unknown };
   try { body = await req.json(); }
   catch {
     log.warn("body.invalid", "request body was not JSON");
@@ -81,122 +64,84 @@ serve(async (req) => {
     return json({ ok: false, error: "Invalid JSON body", run_id: log.runId }, 400);
   }
 
+  const roastId  = Number(body.roast_id);
   const filename = typeof body.filename === "string" ? body.filename : undefined;
+  const content  = typeof body.content === "string" ? body.content : "";
 
-  // ── 1. parse + cross-check the filename against the body ─────────────────
-  let parsed: ParsedProfile;
+  if (!Number.isInteger(roastId) || roastId <= 0) {
+    await log.finish("error", { code: "bad_roast_id" });
+    return json({ ok: false, error: "roast_id is required", code: "bad_roast_id", run_id: log.runId }, 400);
+  }
+  if (!content) {
+    await log.finish("error", { code: "empty_file" });
+    return json({ ok: false, error: "the file is empty", code: "empty_file", run_id: log.runId }, 400);
+  }
+  if (content.length > MAX_CONTENT_CHARS) {
+    await log.finish("error", { code: "file_too_large" });
+    return json({ ok: false, error: "that file is too large to be a roast profile", code: "file_too_large", run_id: log.runId }, 413);
+  }
+
+  // ── read the file ────────────────────────────────────────────────────────
+  let parsed;
   try {
-    parsed = parseProfile(body.profile, filename);
+    parsed = parseArtisanFile(content, filename);
   } catch (e) {
     const code = e instanceof ArtisanParseError ? e.code : "parse_failed";
     const message = e instanceof Error ? e.message : String(e);
-    // A mismatch means Artisan is misconfigured. Say so loudly rather than
-    // storing a row that quietly describes the wrong roast.
-    log.error("profile.reject", message, { filename, code }, e);
+    log.error("file.reject", message, { filename, roast_id: roastId, code }, e);
     await log.finish("error", { code });
     return json({ ok: false, error: message, code, run_id: log.runId }, 400);
   }
 
-  log.info("profile.parsed", `${parsed.beans ?? "(bean unknown)"} @ ${parsed.roasted_at}`, {
-    filename,
+  log.info("file.parsed", `${parsed.beans ?? "(bean unknown)"} @ ${parsed.roasted_at}`, {
+    filename, roast_id: roastId,
     artisan_uuid: parsed.artisan_uuid,
-    charge_et: parsed.charge_et,
-    drop_bt: parsed.drop_bt,
+    charge_et: parsed.charge_et, drop_bt: parsed.drop_bt,
   });
 
   try {
-    const source = req.headers.get("x-artisan-key") ? "watcher" : "manual";
+    // ── the roast must exist ───────────────────────────────────────────────
+    const { data: roast, error: roastErr } = await supabase
+      .from("roasts").select("id,batch_number").eq("id", roastId).maybeSingle();
+    if (roastErr) throw new Error(`looking up roast ${roastId} failed: ${roastErr.message}`);
+    if (!roast) {
+      log.warn("roast.missing", `roast ${roastId} does not exist`);
+      await log.finish("error", { code: "roast_not_found" });
+      return json({ ok: false, error: "that roast no longer exists", code: "roast_not_found", run_id: log.runId }, 404);
+    }
 
-    // ── 2. store the profile; re-uploading the same file updates in place ──
-    const { data: upserted, error: upsertErr } = await supabase
+    // ── the same file must not land on two roasts ──────────────────────────
+    // A genuine mis-click: uploading yesterday's file onto today's roast would
+    // silently duplicate readings onto the wrong record.
+    const { data: claimedElsewhere, error: dupErr } = await supabase
       .from("artisan_profiles")
-      .upsert({ ...parsed, filename: filename ?? null, source }, { onConflict: "artisan_uuid" })
-      .select()
-      .single();
+      .select("id,roast_id")
+      .eq("artisan_uuid", parsed.artisan_uuid)
+      .neq("roast_id", roastId)
+      .maybeSingle();
+    if (dupErr) throw new Error(`duplicate check failed: ${dupErr.message}`);
+    if (claimedElsewhere) {
+      log.warn("file.duplicate", `already attached to roast ${claimedElsewhere.roast_id}`, { roast_id: roastId });
+      await log.finish("error", { code: "already_attached_elsewhere" });
+      return json({
+        ok: false,
+        error: `This Artisan file is already attached to another roast (#${claimedElsewhere.roast_id}).`,
+        code: "already_attached_elsewhere",
+        roast_id: claimedElsewhere.roast_id,
+        run_id: log.runId,
+      }, 409);
+    }
 
+    // ── store the profile (one per roast; re-uploading replaces it) ────────
+    const { data: profile, error: upsertErr } = await supabase
+      .from("artisan_profiles")
+      .upsert({ ...parsed, roast_id: roastId, filename: filename ?? null }, { onConflict: "roast_id" })
+      .select("id")
+      .single();
     if (upsertErr) throw new Error(`storing the profile failed: ${upsertErr.message}`);
 
-    const profileId: number = upserted.id;
-
-    if (upserted.roast_id) {
-      log.info("run.done", "profile was already attached", { profile_id: profileId, roast_id: upserted.roast_id });
-      await log.finish("success", { status: "already_attached" });
-      return json({
-        ok: true, status: "already_attached",
-        profile_id: profileId, roast_id: upserted.roast_id, run_id: log.runId,
-      });
-    }
-
-    // ── 3. which bean is this? ────────────────────────────────────────────
-    const beanKey = normaliseBeanName(parsed.beans);
-    let originId: number | null = null;
-    let profileRefId: number | null = null;
-
-    if (beanKey) {
-      const [{ data: origins }, { data: roastProfiles }] = await Promise.all([
-        supabase.from("origins").select("id,name,artisan_name"),
-        supabase.from("roast_profiles").select("id,name,artisan_name"),
-      ]);
-
-      // The alias the roaster taught us wins over the display name.
-      const match = <T extends { id: number; name: string | null; artisan_name: string | null }>(rows: T[] | null) =>
-        rows?.find(r => normaliseBeanName(r.artisan_name) === beanKey)
-        ?? rows?.find(r => normaliseBeanName(r.name) === beanKey)
-        ?? null;
-
-      originId     = match(origins as never)       ?.id ?? null;
-      profileRefId = match(roastProfiles as never) ?.id ?? null;
-    }
-
-    if (originId === null && profileRefId === null) {
-      log.info("match.none", `no origin or roast profile is named "${parsed.beans ?? ""}"`, { profile_id: profileId });
-      await log.finish("success", { status: "staged", reason: "unknown_bean" });
-      return json({
-        ok: true, status: "staged", reason: "unknown_bean",
-        beans: parsed.beans, profile_id: profileId, run_id: log.runId,
-      });
-    }
-
-    // ── 4. candidate roasts — same bean, same roasting day, not yet taken ──
-    const centre = new Date(parsed.roasted_at).getTime();
-    const from = new Date(centre - WINDOW_BEFORE_MS).toISOString();
-    const to   = new Date(centre + WINDOW_AFTER_MS).toISOString();
-
-    let q = supabase.from("roasts")
-      .select("id,date,origin_id,roast_profile_id,artisan_uuid,batch_number")
-      .is("artisan_uuid", null)
-      .gte("date", from)
-      .lte("date", to);
-
-    q = originId !== null ? q.eq("origin_id", originId) : q.eq("roast_profile_id", profileRefId!);
-
-    const { data: window, error: windowErr } = await q;
-    if (windowErr) throw new Error(`looking up candidate roasts failed: ${windowErr.message}`);
-
-    // Same *roasting day* in the roastery's own timezone, not in UTC.
-    const tzOffsetSec = Number((parsed.meta as Record<string, unknown>)?.roasttzoffset ?? 0) || 0;
-    const roastDay = localDate(parsed.roasted_at, tzOffsetSec);
-    const candidates = (window ?? []).filter(r => r.date && localDate(r.date, tzOffsetSec) === roastDay);
-
-    if (candidates.length !== 1) {
-      const reason = candidates.length === 0 ? "no_roast_logged_yet" : "ambiguous";
-      log.info("match.staged", `${candidates.length} candidate roasts — staging`, {
-        profile_id: profileId, reason, candidates: candidates.map(c => c.id),
-      });
-      await log.finish("success", { status: "staged", reason });
-      return json({
-        ok: true, status: "staged", reason,
-        candidates: candidates.map(c => c.id),
-        profile_id: profileId, run_id: log.runId,
-      });
-    }
-
-    // ── 5. attach ─────────────────────────────────────────────────────────
-    const roastId = candidates[0].id;
-
-    // `.is('artisan_uuid', null)` makes this a compare-and-set: if a concurrent
-    // import took this roast first, 0 rows come back and we stage instead.
-    const { data: claimed, error: claimErr } = await supabase
+    // ── put the readings on the roast ──────────────────────────────────────
+    const { error: applyErr } = await supabase
       .from("roasts")
       .update({
         charge_et: parsed.charge_et,
@@ -206,41 +151,30 @@ serve(async (req) => {
         artisan_uuid: parsed.artisan_uuid,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", roastId)
-      .is("artisan_uuid", null)
-      .select("id");
-
-    if (claimErr) throw new Error(`attaching to roast ${roastId} failed: ${claimErr.message}`);
-
-    if (!claimed || claimed.length === 0) {
-      log.warn("match.raced", `roast ${roastId} was claimed by another import — staying staged`, { profile_id: profileId });
-      await log.finish("success", { status: "staged", reason: "raced" });
-      return json({ ok: true, status: "staged", reason: "raced", profile_id: profileId, run_id: log.runId }, 200);
-    }
-
-    const { error: linkErr } = await supabase
-      .from("artisan_profiles")
-      .update({ roast_id: roastId, attached_at: new Date().toISOString() })
-      .eq("id", profileId);
-
-    if (linkErr) throw new Error(`linking profile ${profileId} to roast ${roastId} failed: ${linkErr.message}`);
+      .eq("id", roastId);
+    if (applyErr) throw new Error(`writing readings to roast ${roastId} failed: ${applyErr.message}`);
 
     log.info("run.done", `attached to roast ${roastId}`, {
-      profile_id: profileId, roast_id: roastId,
+      profile_id: profile.id, roast_id: roastId,
       charge_et: parsed.charge_et, drop_bt: parsed.drop_bt,
     });
-    await log.finish("success", { status: "attached", roast_id: roastId });
+    await log.finish("success", { roast_id: roastId });
 
     return json({
-      ok: true, status: "attached",
-      profile_id: profileId, roast_id: roastId,
-      charge_et: parsed.charge_et, drop_bt: parsed.drop_bt,
+      ok: true,
+      roast_id: roastId,
+      profile_id: profile.id,
+      beans: parsed.beans,
+      roasted_at: parsed.roasted_at,
+      charge_et: parsed.charge_et, charge_bt: parsed.charge_bt,
+      drop_et:   parsed.drop_et,   drop_bt:   parsed.drop_bt,
+      total_time_sec: parsed.total_time_sec,
       run_id: log.runId,
     });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    log.error("run.throw", "import aborted by an unhandled error", { filename }, err);
+    log.error("run.throw", "import aborted by an unhandled error", { filename, roast_id: roastId }, err);
     await log.finish("error");
     return json({ ok: false, error: message, run_id: log.runId }, 500);
   }

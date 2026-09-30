@@ -7,9 +7,9 @@
 // database, that a 0.0 sentinel is not mistaken for a reading, and — above all
 // — that a filename disagreeing with its body is rejected rather than stored.
 import {
-  parseFilename,
   parseProfile,
-  normaliseBeanName,
+  parseArtisanFile,
+  readArtisanFile,
   toKg,
   ArtisanParseError,
 } from './artisan.ts';
@@ -66,37 +66,10 @@ function fixture(over: Record<string, unknown> = {}) {
   };
 }
 
-// ── filename grammar ────────────────────────────────────────────────────────
-{
-  const p = parseFilename('CF_2026-09-27_1432_Yirgacheffe.json');
-  check('filename parses', p?.date === '2026-09-27' && p?.hhmm === '1432' && p?.beans === 'Yirgacheffe',
-    JSON.stringify(p));
-
-  check('full path is reduced to its basename',
-    parseFilename('/Users/roast/out/CF_2026-09-27_1432_Yirgacheffe.json')?.beans === 'Yirgacheffe');
-
-  check('windows path is reduced to its basename',
-    parseFilename('C:\\Artisan\\out\\CF_2026-09-27_1432_Yirgacheffe.json')?.beans === 'Yirgacheffe');
-
-  check('bean name may contain spaces',
-    parseFilename('CF_2026-09-27_1432_Ethiopia Guji natural.json')?.beans === 'Ethiopia Guji natural');
-
-  check('bean name may be Hebrew',
-    parseFilename("CF_2026-09-27_1432_אתיופיה יירגצ'ף.json")?.beans === "אתיופיה יירגצ'ף");
-
-  check('forgotten bean name still parses',
-    parseFilename('CF_2026-09-27_1432_.json')?.beans === '');
-
-  check('a file without the CF_ sentinel is ignored',
-    parseFilename('2026-09-27_1432_Yirgacheffe.json') === null);
-
-  check('an .alog is not a JSON profile',
-    parseFilename('CF_2026-09-27_1432_Yirgacheffe.alog') === null);
-}
 
 // ── happy path ──────────────────────────────────────────────────────────────
 {
-  const p = parseProfile(fixture(), 'CF_2026-09-27_1432_Yirgacheffe.json');
+  const p = parseProfile(fixture());
 
   check('uuid carried through', p.artisan_uuid === 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6');
   check('roasted_at is the absolute charge instant',
@@ -118,7 +91,7 @@ function fixture(over: Record<string, unknown> = {}) {
 
 // ── curve arrays must never reach the database ──────────────────────────────
 {
-  const p = parseProfile(fixture(), 'CF_2026-09-27_1432_Yirgacheffe.json');
+  const p = parseProfile(fixture());
   const stripped = ['timex', 'temp1', 'temp2', 'extratimex', 'computed'];
   for (const k of stripped) {
     check(`meta drops ${k}`, !(k in p.meta));
@@ -134,7 +107,6 @@ function fixture(over: Record<string, unknown> = {}) {
       mode: 'F',
       computed: { CHARGE_ET: 383, CHARGE_BT: 198.32, DROP_ET: 410.9, DROP_BT: 406.94, totaltime: 1020 },
     }),
-    'CF_2026-09-27_1432_Yirgacheffe.json',
   );
   check('°F charge ET converted to °C', f.charge_et === 195, `${f.charge_et}`);
   check('°F drop BT converted to °C', f.drop_bt === 208.3, `${f.drop_bt}`);
@@ -150,36 +122,12 @@ function fixture(over: Record<string, unknown> = {}) {
 {
   const p = parseProfile(
     fixture({ computed: { CHARGE_ET: 0.0, CHARGE_BT: 92.4, DROP_BT: 208.3, totaltime: 1020 } }),
-    'CF_2026-09-27_1432_Yirgacheffe.json',
   );
   check('missing charge ET is null, not 0', p.charge_et === null, `${p.charge_et}`);
   check('absent drop ET is null', p.drop_et === null, `${p.drop_et}`);
   check('the readings that exist survive', p.charge_bt === 92.4 && p.drop_bt === 208.3);
 }
 
-// ── the filename must agree with the body ───────────────────────────────────
-{
-  throws('a filename dated differently is rejected', 'filename_mismatch',
-    () => parseProfile(fixture(), 'CF_2026-09-26_1432_Yirgacheffe.json'));
-
-  throws('a filename timed differently is rejected', 'filename_mismatch',
-    () => parseProfile(fixture(), 'CF_2026-09-27_0900_Yirgacheffe.json'));
-
-  throws('a filename naming another bean is rejected', 'filename_mismatch',
-    () => parseProfile(fixture(), 'CF_2026-09-27_1432_Sidamo.json'));
-
-  // Artisan strips < > : " / \ | ? * from filenames, so the two legitimately
-  // differ here and the check must compare like with like.
-  const p = parseProfile(
-    fixture({ beans: 'Ethiopia/Yirgacheffe' }),
-    'CF_2026-09-27_1432_EthiopiaYirgacheffe.json',
-  );
-  check('a name the filesystem sanitised still matches', p.beans === 'Ethiopia/Yirgacheffe');
-
-  // A hand-exported file that does not follow the protocol is still importable.
-  const manual = parseProfile(fixture(), 'my-roast-export.json');
-  check('a non-protocol filename skips the cross-check', manual.beans === 'Yirgacheffe');
-}
 
 // ── refusals ────────────────────────────────────────────────────────────────
 {
@@ -189,12 +137,52 @@ function fixture(over: Record<string, unknown> = {}) {
   throws('a body with no roastepoch is refused', 'missing_roastepoch', () => parseProfile(fixture({ roastepoch: 0 })));
 }
 
-// ── bean-name normalisation (both sides of every match) ─────────────────────
+
+// ── reading the two file formats ────────────────────────────────────────────
+// Both .alog and .json are getProfile() serialised, so either carries the
+// readings. .alog is what Artisan saves by default and therefore what gets
+// uploaded in practice.
 {
-  check('case is ignored', normaliseBeanName('Yirgacheffe') === normaliseBeanName('YIRGACHEFFE'));
-  check('surrounding space is ignored', normaliseBeanName('  Yirgacheffe ') === 'yirgacheffe');
-  check('inner space is collapsed', normaliseBeanName('Ethiopia   Guji') === 'ethiopia guji');
-  check('empty and null agree', normaliseBeanName(null) === '' && normaliseBeanName('') === '');
+  const f = fixture();
+  const json = JSON.stringify(f);
+
+  // The .alog equivalent: Python repr — single quotes, True/False/None.
+  const alog = `{'roastUUID': 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 'roastisodate': '2026-09-27', ` +
+    `'roasttime': '14:32:07', 'roastepoch': ${f.roastepoch}, 'roasttzoffset': 10800, ` +
+    `'roastbatchprefix': 'MIN', 'roastbatchnr': 1042, 'title': 'Yirgacheffe', ` +
+    `'beans': "אתיופיה יירגצ'ף\nlot 42", 'operator': 'Erez', 'mode': 'C', ` +
+    `'weight': [15.0, 12.6, 'Kg'], 'timex': [0.0, 1.0], 'temp1': [195.0, 194.0], ` +
+    `'temp2': [92.4, 93.0], 'roastingnotes': None, 'flag': True, ` +
+    `'computed': {'CHARGE_ET': 195.0, 'CHARGE_BT': 92.4, 'DROP_ET': 210.5, ` +
+    `'DROP_BT': 208.3, 'totaltime': 1020.0}}`;
+
+  const fromJson = parseArtisanFile(json, 'whatever.json');
+  const fromAlog = parseArtisanFile(alog, '2026-09-27_1432.alog');
+
+  check('.json is read', fromJson.charge_et === 195 && fromJson.drop_bt === 208.3);
+  check('.alog is read', fromAlog.charge_et === 195 && fromAlog.drop_bt === 208.3,
+    `${fromAlog.charge_et} / ${fromAlog.drop_bt}`);
+  check('.alog keeps a bean name with an apostrophe',
+    fromAlog.beans === "אתיופיה יירגצ'ף", `${fromAlog.beans}`);
+  check('.alog weights convert', fromAlog.green_kg === 15 && fromAlog.roasted_kg === 12.6);
+  check('.alog batch label', fromAlog.batch_label === 'MIN1042');
+  check('.alog strips curve arrays', !('timex' in fromAlog.meta) && !('temp1' in fromAlog.meta));
+  check('.alog keeps None as null', (fromAlog.meta as any).roastingnotes === null);
+  check('.alog keeps True as true', (fromAlog.meta as any).flag === true);
+
+  // Both formats agree on every reading.
+  check('both formats yield the same readings',
+    fromJson.charge_et === fromAlog.charge_et && fromJson.charge_bt === fromAlog.charge_bt &&
+    fromJson.drop_et === fromAlog.drop_et && fromJson.drop_bt === fromAlog.drop_bt);
+
+  // An unknown extension sniffs the content rather than refusing.
+  check('an unknown extension still reads JSON', (readArtisanFile(json, 'roast.txt') as any).roastUUID === f.roastUUID);
+  check('an unknown extension still reads alog', (readArtisanFile(alog, 'roast.bak') as any).roastUUID === f.roastUUID);
+  check('no filename at all still works', (readArtisanFile(alog) as any).roastUUID === f.roastUUID);
+
+  throws('a .json that is not JSON is refused', 'bad_json', () => readArtisanFile('{oops', 'r.json'));
+  throws('an .alog that is not a literal is refused', 'bad_alog', () => readArtisanFile('{oops', 'r.alog'));
+  throws('a spreadsheet is refused, not guessed at', 'bad_alog', () => readArtisanFile('name,value\na,1', 'r.csv'));
 }
 
 console.log(failures === 0 ? '\nall good' : `\n${failures} failing`);

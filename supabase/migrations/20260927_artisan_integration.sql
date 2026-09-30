@@ -3,9 +3,9 @@
 -- ============================================================================
 --
 -- Artisan (artisan-scope.org) is the roasting software used at the roastery.
--- Its Autosave writes a JSON profile after every roast; a watcher uploads that
--- file to the `artisan-import` edge function, which lands the roast curve's
--- key temperatures on the matching row in `roasts`.
+-- The roaster records a roast in CoffeeFlow as usual, then uploads Artisan's
+-- roast file (.alog or .json) onto that record; the `artisan-import` edge
+-- function reads it and lands the roast curve's key temperatures on the row.
 --
 -- The two numbers that motivated this:
 --   charge_et  — טמפ' הטענה  (environmental/drum probe when the beans go in)
@@ -37,37 +37,27 @@ COMMENT ON COLUMN roasts.charge_et    IS 'Artisan CHARGE_ET — טמפ'' הטע�
 COMMENT ON COLUMN roasts.charge_bt    IS 'Artisan CHARGE_BT — bean temp at charge, °C';
 COMMENT ON COLUMN roasts.drop_et      IS 'Artisan DROP_ET — env temp at drop, °C';
 COMMENT ON COLUMN roasts.drop_bt      IS 'Artisan DROP_BT — טמפ'' סיום, °C';
-COMMENT ON COLUMN roasts.artisan_uuid IS 'Artisan roastUUID of the attached profile; NULL = no Artisan data';
+COMMENT ON COLUMN roasts.artisan_uuid IS 'Artisan roastUUID of the uploaded file; NULL = no Artisan file on this roast';
 
 -- One Artisan profile can only ever be attached to one roast.
 CREATE UNIQUE INDEX IF NOT EXISTS roasts_artisan_uuid_key
   ON roasts (artisan_uuid) WHERE artisan_uuid IS NOT NULL;
 
 
--- ── 2. Bean-name aliases ────────────────────────────────────────────────────
--- The roaster types the bean name into Artisan by hand, so it will not always
--- equal the CoffeeFlow name. The attach action writes the typed spelling here
--- ("זכור את השם הזה"), so the mapping teaches itself — no admin screen needed.
-
-ALTER TABLE origins        ADD COLUMN IF NOT EXISTS artisan_name TEXT;
-ALTER TABLE roast_profiles ADD COLUMN IF NOT EXISTS artisan_name TEXT;
-
-COMMENT ON COLUMN origins.artisan_name        IS 'Bean name as typed in Artisan, for import matching';
-COMMENT ON COLUMN roast_profiles.artisan_name IS 'Bean name as typed in Artisan, for import matching';
-
-
--- ── 3. artisan_profiles — every import, matched or staged ───────────────────
--- roast_id IS NULL means "staged": the file arrived but no roast row matched
--- it yet. That is the NORMAL case, because the roaster logs the roast in
--- CoffeeFlow after roasting, while the file lands the moment OFF is pressed.
+-- ── 2. artisan_profiles — the uploaded file, one per roast ─────────────────
+-- The roaster records the roast as usual, then uploads the Artisan file onto
+-- that record, so the link is always explicit — nothing is ever inferred.
 --
--- An import NEVER creates a roast row — that would move green/roasted stock.
+-- An import only ever adds readings. It never creates a roast and never
+-- rewrites weights, origin or date: those would move real stock.
 
 CREATE TABLE IF NOT EXISTS artisan_profiles (
   id             BIGSERIAL PRIMARY KEY,
 
-  artisan_uuid   TEXT NOT NULL UNIQUE,          -- Artisan roastUUID; re-upload updates in place
-  roast_id       BIGINT REFERENCES roasts(id) ON DELETE SET NULL,
+  -- One file per roast: re-uploading replaces it. UNIQUE on artisan_uuid stops
+  -- the same Artisan file being attached to two different roasts by mistake.
+  roast_id       BIGINT NOT NULL UNIQUE REFERENCES roasts(id) ON DELETE CASCADE,
+  artisan_uuid   TEXT   NOT NULL UNIQUE,
 
   roasted_at     TIMESTAMPTZ NOT NULL,          -- from Artisan roastepoch (charge time)
   beans          TEXT,                          -- bean name as typed in Artisan
@@ -87,15 +77,13 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
   computed       JSONB,                         -- Artisan's whole `computed` block
   meta           JSONB,                         -- profile body MINUS the curve arrays
 
-  source         TEXT NOT NULL DEFAULT 'watcher',  -- 'watcher' | 'manual'
-  filename       TEXT,
+  filename       TEXT,                          -- as uploaded, for the record
 
   -- Org-wide table, never filtered by user. Present only so that an insert
   -- through useSupabaseData (which always stamps user_id) cannot fail.
   user_id        TEXT,
 
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  attached_at    TIMESTAMPTZ
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE artisan_profiles ENABLE ROW LEVEL SECURITY;
@@ -117,14 +105,9 @@ DROP POLICY IF EXISTS "artisan_profiles_shared_delete" ON artisan_profiles;
 CREATE POLICY "artisan_profiles_shared_delete" ON artisan_profiles
   FOR DELETE TO anon, authenticated USING (true);
 
--- The staging list — the only query the Roasting page runs hot.
-CREATE INDEX IF NOT EXISTS artisan_profiles_staged_idx
-  ON artisan_profiles (roasted_at DESC) WHERE roast_id IS NULL;
-
-CREATE INDEX IF NOT EXISTS artisan_profiles_roast_id_idx
-  ON artisan_profiles (roast_id) WHERE roast_id IS NOT NULL;
+-- roast_id and artisan_uuid are already indexed by their UNIQUE constraints.
 
 COMMENT ON TABLE artisan_profiles IS
-  'One row per Artisan roast profile imported from the roastery. roast_id NULL = staged, waiting to be attached to a roast. Curve arrays (timex/temp1/temp2) are stripped before storage to keep the row small.';
+  'The Artisan roast file uploaded onto a roast record — one per roast, replaced on re-upload. Curve arrays (timex/temp1/temp2) are stripped before storage to keep the row small.';
 COMMENT ON COLUMN artisan_profiles.meta IS
   'Artisan profile body with timex/temp1/temp2/extratemp* removed — keeps rows ~3KB instead of ~50KB.';

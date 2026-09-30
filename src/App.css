@@ -1319,93 +1319,16 @@ tr:hover {
 @media (prefers-reduced-motion: reduce) { .att-ov, .att-drawer, .att-modal { animation: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Artisan integration — staged profiles waiting for a roast, and the readings
-   those profiles put on the roast log. Same warm-Minuto palette as the rest of
-   the roasting page.
+   Artisan integration — the roast file uploaded onto a roast record, and the
+   readings it puts on the log. Same warm-Minuto palette as the rest of the
+   roasting page.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.rartisan {
-  background: #fff;
-  border: 1px solid var(--minuto-sage);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  margin-bottom: 18px;
-  overflow: hidden;
-}
+/* Row action: filled once a roast carries an Artisan file */
+.rico.has-artisan { color: var(--minuto-medium); background: var(--minuto-cream); }
+.rico.has-artisan:hover { background: var(--minuto-sage); }
 
-.rartisan-head {
-  width: 100%;
-  display: flex; align-items: center; gap: 9px;
-  padding: 12px 16px;
-  background: var(--minuto-cream);
-  border: 0; cursor: pointer;
-  font: inherit; font-weight: 700; font-size: 13.5px;
-  color: var(--minuto-dark);
-  text-align: start;
-}
-.rartisan-head:hover { background: var(--minuto-sage); }
-.rartisan-head > span:first-of-type { flex: 1; }
-.rartisan-toggle {
-  font-size: 12px; font-weight: 600;
-  color: var(--minuto-medium);
-  background: #fff;
-  padding: 3px 10px; border-radius: 999px;
-}
-
-.rartisan-list { padding: 6px 0; }
-
-.rartisan-row {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 11px 16px;
-  border-top: 1px solid var(--minuto-cream);
-}
-.rartisan-row:first-child { border-top: 0; }
-
-.rartisan-meta {
-  flex: 1 1 240px; min-width: 0;
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  font-size: 12.5px; color: #5C6B4A;
-}
-.rartisan-meta b { font-size: 13.5px; color: var(--minuto-text); }
-
-.rartisan-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.rartisan-actions select {
-  min-width: 190px; max-width: 100%;
-  padding: 7px 10px; font-size: 12.5px;
-  border: 1px solid var(--minuto-sage); border-radius: 9px;
-  background: #fff; color: var(--minuto-text);
-}
-.rartisan-remember {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 12px; color: #5C6B4A; cursor: pointer; white-space: nowrap;
-}
-
-.rartisan-hint {
-  padding: 11px 16px;
-  font-size: 12.5px; color: #5C6B4A;
-  border-top: 1px solid var(--minuto-cream);
-}
-
-/* Pre-save hint in the record form */
-.rartisan-hit {
-  display: flex; align-items: flex-start; gap: 8px;
-  margin: 10px 0 2px;
-  padding: 10px 12px;
-  background: var(--minuto-cream);
-  border: 1px solid var(--minuto-sage);
-  border-radius: 11px;
-  font-size: 12.5px; line-height: 1.5;
-  color: var(--minuto-dark);
-}
-.rartisan-hit svg { flex: none; margin-top: 2px; }
-.rartisan-hit b { font-weight: 700; }
-.rartisan-hit.warn {
-  background: var(--o-warn-bg, #FBEFD8);
-  border-color: var(--o-warn, #C77914);
-  color: #7A4B0B;
-}
-
-/* Read-only readings block in the edit drawer */
+/* Readings block in the edit drawer */
 .rartisan-readings {
   margin-top: 4px; padding: 12px 14px;
   background: var(--minuto-bg);
@@ -1419,11 +1342,25 @@ tr:hover {
   margin-bottom: 9px;
 }
 .rar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
+.rar-load {
+  margin-inline-start: auto;
+  font-family: inherit; font-size: 11.5px; font-weight: 700;
+  color: var(--minuto-dark);
+  background: #fff;
+  border: 1px solid var(--minuto-sage); border-radius: 999px;
+  padding: 3px 11px; cursor: pointer;
+}
+.rar-load:hover:not(:disabled) { background: var(--minuto-cream); }
+.rar-load:disabled { opacity: .55; cursor: default; }
+
 .rar-grid > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .rar-grid span { font-size: 12px; color: #5C6B4A; }
 .rar-grid b { font-size: 13.5px; font-weight: 700; color: var(--minuto-text); font-variant-numeric: tabular-nums; }
 
-@media (max-width: 640px) {
-  .rartisan-actions { width: 100%; }
-  .rartisan-actions select { flex: 1 1 auto; min-width: 0; }
+.rar-file {
+  margin-top: 9px; padding-top: 8px;
+  border-top: 1px solid var(--minuto-sage);
+  font-size: 11.5px; color: #5C6B4A;
+  overflow-wrap: anywhere;
 }
+.rar-empty { font-size: 12.5px; line-height: 1.5; color: #5C6B4A; }

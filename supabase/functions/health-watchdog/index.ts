@@ -346,19 +346,12 @@ serve(async (req) => {
     }
   }
 
-  // ── 2. Task failure rate (last 24h) ───────────────────────────────────
-  //
-  // A CANCELLED TASK IS A DECISION, NOT A FAILURE. seo_tasks has no 'cancelled'
-  // status — the chat's cancel_task writes status='failed' with a '[chat-cancel]'
-  // prefix on error_msg — so every deliberate cancellation used to count against
-  // this rate. Measured 2026-08-26: of all failed rows ever, 101 were
-  // ── 1c. Artisan coverage — is the roastery watcher still alive? ───────
+  // ── 1c. Artisan coverage — roasts logged without their Artisan file ───
+  // A reminder, never an alarm: nothing is broken, someone has uploads to do.
   // Thresholds and wording live in artisan_coverage.ts so they can be tested.
   try {
-    const windowHours    = 96
-    const staleAfterDays = 7
-    const since       = new Date(Date.now() - windowHours * 3600 * 1000).toISOString()
-    const staleBefore = new Date(Date.now() - staleAfterDays * 24 * 3600 * 1000).toISOString()
+    const windowHours = 96
+    const since = new Date(Date.now() - windowHours * 3600 * 1000).toISOString()
 
     const { data: recentRoasts, error: roastErr } = await supabase
       .from('roasts')
@@ -369,26 +362,18 @@ serve(async (req) => {
     if (roastErr) {
       console.warn(`[health-watchdog] artisan coverage skipped: ${roastErr.message}`)
     } else {
-      const { data: orphans, error: orphanErr } = await supabase
-        .from('artisan_profiles')
-        .select('id,beans,roasted_at')
-        .is('roast_id', null)
-        .lt('roasted_at', staleBefore)
-        .limit(50)
-
-      if (orphanErr) console.warn(`[health-watchdog] artisan orphan check skipped: ${orphanErr.message}`)
-
-      findings.push(...artisanCoverageFindings({
-        recentRoasts: recentRoasts ?? [],
-        orphans:      orphans ?? [],
-        windowHours,
-        staleAfterDays,
-      }))
+      findings.push(...artisanCoverageFindings({ recentRoasts: recentRoasts ?? [], windowHours }))
     }
   } catch (e: any) {
     console.warn(`[health-watchdog] artisan coverage check threw: ${e?.message ?? e}`)
   }
 
+  // ── 2. Task failure rate (last 24h) ───────────────────────────────────
+  //
+  // A CANCELLED TASK IS A DECISION, NOT A FAILURE. seo_tasks has no 'cancelled'
+  // status — the chat's cancel_task writes status='failed' with a '[chat-cancel]'
+  // prefix on error_msg — so every deliberate cancellation used to count against
+  // this rate. Measured 2026-08-26: of all failed rows ever, 101 were
   // '[chat-cancel]' against 80 genuine failures. MORE THAN HALF of the "failure"
   // signal was the admin triaging their own queue, which inverts the metric —
   // the more diligently you clear the queue, the unhealthier the system looks.

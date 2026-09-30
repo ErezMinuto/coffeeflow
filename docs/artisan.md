@@ -1,7 +1,7 @@
 # Artisan → CoffeeFlow roasting log
 
-Artisan already records everything about a roast. This puts the two readings that
-matter onto the CoffeeFlow roast row, without anyone retyping them:
+Artisan already records everything about a roast. This puts the two readings
+that matter onto the CoffeeFlow roast record, without retyping them:
 
 | CoffeeFlow | Artisan | Meaning |
 |---|---|---|
@@ -9,191 +9,93 @@ matter onto the CoffeeFlow roast row, without anyone retyping them:
 | `טמפ' סיום` → `roasts.drop_bt` | `computed.DROP_BT` | bean probe at drop |
 
 All four charge/drop readings are stored (`charge_et`, `charge_bt`, `drop_et`,
-`drop_bt`) — the two above are the ones shown in the log table, the other two
-appear in the roast's edit drawer. Everything is normalised to **°C** and **kg**
-on the way in, whatever Artisan is set to.
+`drop_bt`). The two above show in the log table; the other two are in the
+roast's edit drawer. Everything is normalised to **°C** and **kg** on the way
+in, whatever Artisan is set to.
 
 ---
 
-## How it flows
+## How it works
 
-```
-Artisan, OFF pressed
-  └─ Autosave writes  <name>.alog   → the archive folder
-     and            → <name>.json   → the WATCHED folder
-          │
-          └─ scripts/artisan-watch.mjs  ──POST──▶  edge fn `artisan-import`
-                                                      │
-                            ┌─────────────────────────┴──────────────────────┐
-                            │                                                │
-                   a roast row matches                          nothing matches yet
-                            │                                                │
-              readings written onto it                     parked in `artisan_profiles`
-                                                                             │
-                                                    the roaster logs the roast in CoffeeFlow
-                                                    → it attaches itself, and the toast shows
-                                                      "Artisan: הטענה 195° · סיום 208.3°"
-```
+Nothing to install, and nothing to configure in Artisan.
 
-The second path is the normal one. The roaster logs a roast **after** roasting,
-so Artisan's file almost always arrives first and waits.
+1. Roast.
+2. Record the roast in CoffeeFlow exactly as before.
+3. In the roast log, click the **chart icon** on that row and pick the file
+   Artisan saved. The readings appear on the record.
 
-**An import never creates a roast row.** Creating one moves green and roasted
-stock — real inventory — so that stays a human action.
+The icon is filled on rows that already have a file. Clicking it again replaces
+the file — useful if the wrong one was picked, or the roast was re-saved.
 
----
+The same **טען קובץ** button is in the roast's edit drawer, alongside all four
+readings.
 
-## The naming protocol
+### Which file
 
-Artisan builds the filename from a `~` template, so the roaster types nothing
-except the bean name.
+**`.alog`** — the file Artisan saves by default. This is the one to pick.
 
-```
-CF_2026-09-27_1432_Yirgacheffe.json
-└┬┘ └────┬────┘ └┬┘ └────┬────┘
- │       │       │       └─ Artisan's Beans field, first line
- │       │       └───────── hhmm, local, at CHARGE
- │       └───────────────── yyyy-MM-dd, at CHARGE
- └───────────────────────── sentinel — the watcher ignores everything else
-```
+`.json` also works (`File ▸ Export ▸ JSON`, or the Autosave "Save also"
+option), but there is no reason to bother: both formats are the same profile
+serialised, and both carry the readings.
 
-The filename is a **cross-check, not the source of truth.** The body already
-carries `roastUUID`, `roastepoch`, `roastisodate` and `beans`. If the filename
-disagrees with the body the import is **refused with an explanation**, rather
-than storing a row that quietly describes the wrong roast.
+There is no filename convention. You are telling CoffeeFlow which record the
+file belongs to, so nothing has to be inferred from the name.
 
 ---
 
-## Setting up Artisan (once, on the roastery computer)
+## What it will not do
 
-`Config ▸ Autosave`:
-
-| Setting | Value |
-|---|---|
-| **Autosave** | ticked |
-| **Path** | where the `.alog` archive goes, e.g. `~/Artisan/profiles` |
-| **Autosave prefix** | `CF_~date_long_~time_~beans_line` |
-| **Save also** | ticked, format **JSON** |
-| **Save also** path | a folder of its own, e.g. `~/Artisan/coffeeflow` — this is the watched folder |
-
-Give the JSON its own folder. The watcher then sees only files it cares about.
-
-**Per roast:** type the bean name into `Roast Properties ▸ Beans` **before
-pressing OFF**. Artisan keeps the last value, so roasting the same bean again
-needs no retyping. Forget it and the roast still imports — it just lands in the
-staging list as "ללא שם זן" for a manual attach.
-
-### Matching the name to a CoffeeFlow origin
-
-The bean name is typed by hand, so it will not always equal the CoffeeFlow name.
-The first time a spelling comes in unrecognised, attach it from the staging list
-with **"זכור את השם הזה"** ticked. That writes `origins.artisan_name` (or
-`roast_profiles.artisan_name`) and every later roast of that bean matches by
-itself. No admin screen, no mapping table to maintain.
+- **It never creates a roast.** Recording a roast moves green and roasted
+  stock — real inventory — so that stays yours.
+- **It never rewrites your numbers.** Green weight, roasted weight, operator,
+  origin, date and batch number are untouched. Only the readings are added.
+- **It will not put one file on two roasts.** Uploading a file that is already
+  attached elsewhere is refused, naming the roast that has it — that mis-click
+  would otherwise copy one roast's readings onto another record.
 
 ---
 
-## Running the watcher
-
-Node 18 or newer, no dependencies.
-
-```bash
-export ARTISAN_WATCH_DIR="$HOME/Artisan/coffeeflow"
-export ARTISAN_INGEST_KEY="<the ARTISAN_INGEST_KEY secret>"
-export SUPABASE_URL="https://ytydgldyeygpzmlxvpvb.supabase.co"
-
-node scripts/artisan-watch.mjs
-```
-
-Check the wiring before leaving it running:
-
-```bash
-node scripts/artisan-watch.mjs --once --dry-run
-```
-
-| Variable | Default | |
-|---|---|---|
-| `ARTISAN_WATCH_DIR` | — | required |
-| `ARTISAN_INGEST_KEY` | — | required |
-| `SUPABASE_URL` | — | required (or `ARTISAN_IMPORT_URL` for the full endpoint) |
-| `ARTISAN_POLL_SECONDS` | `15` | |
-| `ARTISAN_STATE_FILE` | `~/.coffeeflow/artisan-watch-state.json` | which files were already sent |
-
-Flags: `--once` (one sweep then exit), `--dry-run` (report, send nothing).
-
-It polls rather than using filesystem events — those are unreliable on Windows
-and on network shares, and missing a roast is worse than a 15-second delay. A
-file modified in the last 5 seconds is left alone, so a half-written profile is
-never read. Uploads are idempotent: re-sending a file updates the same row.
-
-### Keeping it running
-
-macOS — `~/Library/LaunchAgents/com.minuto.artisan-watch.plist`, then
-`launchctl load` it. Linux — a `systemd --user` unit. Windows — Task Scheduler,
-"at log on". The script is a plain long-running process; anything that restarts
-it on boot will do.
-
----
-
-## Manual import
-
-For a roast the watcher missed, or a file exported by hand:
-**רישום קלייה → ייבוא מ-Artisan**, and pick the `.json`.
-
-`.alog` is **not** accepted. Despite looking similar it is a Python literal, not
-JSON (`True`, `None`, single quotes). The JSON autosave is the contract. To get
-one from an existing `.alog`: open it in Artisan, then `File ▸ Export ▸ JSON`.
-
----
-
-## Verifying / troubleshooting
+## Troubleshooting
 
 ```bash
 ./scripts/logs.sh errors          # what failed in the last 24h
-./scripts/logs.sh runs            # every import and its outcome
-./scripts/logs.sh run <run-id>    # the full trace of one import
+./scripts/logs.sh runs            # every upload and its outcome
+./scripts/logs.sh run <run-id>    # the full trace of one upload
 ```
 
-Every response carries a `run_id`. Import outcomes are logged under the events
-`profile.parsed`, `profile.reject`, `match.none`, `match.staged`, `match.raced`
-and `run.done`.
+Every response carries a `run_id`. Uploads log under `file.parsed`,
+`file.reject`, `file.duplicate`, `roast.missing` and `run.done`.
 
-| Symptom | Cause |
+| Message | Cause |
 |---|---|
-| `filename_mismatch` | The Autosave prefix is wrong. It must be exactly `CF_~date_long_~time_~beans_line`. |
-| `missing_uuid` | An `.alog` was sent, or a file that is not an Artisan export. |
-| `staged / unknown_bean` | No origin or roast profile carries that name. Attach once with "זכור את השם הזה". |
-| `staged / ambiguous` | The same bean was roasted more than once that day. Attach from the list — the import will not guess. |
-| `staged / no_roast_logged_yet` | Normal. It attaches when the roaster records the roast. |
-| Watcher says nothing at all | Filenames lack the `CF_` prefix, or **Save also** is not set to JSON. |
+| *This Artisan file is already attached to another roast* | The wrong file was picked, or the right file onto the wrong row. |
+| `missing_uuid` | The file is not an Artisan roast profile — a settings backup, or some other `.alog`-shaped file. |
+| `bad_alog` / `bad_json` | The file is truncated or corrupt. Re-save it from Artisan. |
+| `roast_not_found` | The roast was deleted in another tab while the file was being picked. |
+| Readings show `—` after a successful upload | Artisan never registered CHARGE or DROP for that roast, so it has no reading to give. |
+
+### Monitoring
+
+Because uploading is a habit rather than a process, `health-watchdog` sends a
+**reminder** (never an error — nothing is broken) when roasts are piling up
+without files:
+
+| Condition | |
+|---|---|
+| ≥3 roasts in the last 96h and **none** has a file | reminder |
+| ≥5 roasts in 96h and under half have one | reminder |
+
+Under 3 roasts it stays silent — too thin to tell a skipped upload from a quiet
+week, and a watchdog that nags gets muted.
 
 ### Tests
 
 ```bash
-deno run supabase/functions/_shared/artisan_test.ts                                # the parser
-deno run --allow-net --allow-env supabase/functions/artisan-import/index_test.ts    # attach / stage / refuse
-deno run supabase/functions/health-watchdog/artisan_coverage_test.ts               # the alert thresholds
+deno run --allow-read supabase/functions/_shared/python_literal_test.ts          # the .alog reader
+deno run supabase/functions/_shared/artisan_test.ts                              # both formats, units, refusals
+deno run --allow-net --allow-env supabase/functions/artisan-import/index_test.ts  # attach / replace / refuse
+deno run supabase/functions/health-watchdog/artisan_coverage_test.ts             # the reminder thresholds
 ```
-
----
-
-## Monitoring
-
-The watcher is pushed, not scheduled — there is no cron to watch, so if the
-roastery computer reboots or Autosave gets unticked, roasts would quietly stop
-carrying temperatures and nobody would notice. `health-watchdog` therefore runs
-a **conditional** check (`supabase/functions/health-watchdog/artisan_coverage.ts`),
-not the usual `EXPECTED_FRESH_DATA` max-age — a flat age budget would fire every
-time Minuto simply doesn't roast for a few days.
-
-| Condition | Alert |
-|---|---|
-| ≥3 roasts in the last 96h and **none** carries readings | **ERROR** — the watcher is probably down |
-| ≥5 roasts in 96h and under half covered | **WARN** — profiles arrive but don't match; a bean name needs teaching |
-| Profiles unattached for over 7 days | **WARN** — readings recorded but on no roast |
-
-Under 3 roasts it stays silent: too thin to tell a dead watcher from a quiet
-week, and a watchdog that cries wolf gets muted.
 
 ---
 
@@ -203,21 +105,30 @@ week, and a watchdog that cries wolf gets muted.
 supabase functions deploy artisan-import --project-ref ytydgldyeygpzmlxvpvb --no-verify-jwt
 ```
 
-`--no-verify-jwt` is required — the watcher authenticates with
-`x-artisan-key`, not a Supabase JWT. Then set the secret:
-
-```bash
-supabase secrets set ARTISAN_INGEST_KEY=<a long random string> --project-ref ytydgldyeygpzmlxvpvb
-```
+`health-watchdog` needs redeploying too, since the reminder lives in it. No
+secrets to set.
 
 Schema: `supabase/migrations/20260927_artisan_integration.sql` — additive only
-(new columns on `roasts`, `origins`, `roast_profiles`; the new
-`artisan_profiles` table) and safe to re-run.
+(new columns on `roasts`, the new `artisan_profiles` table) and safe to re-run.
 
-## What is not stored
+---
 
-The curve arrays (`timex`, `temp1`, `temp2`) are stripped before storage. A
-17-minute roast at 1 Hz is ~50 KB of them per roast, and prod runs on an
-instance with little headroom. `artisan_profiles.computed` keeps Artisan's whole
-computed block — phases, ROR, AUC, development time — so charting a roast later
-needs no schema change, only the curve arrays turned back on.
+## Notes for whoever maintains this
+
+**`.alog` is not JSON.** Artisan writes it with `repr(dict)` and reads it back
+with `ast.literal_eval` (`artisanlib/util.py`). It is a Python literal: single
+quotes, `True`/`False`/`None`, tuples. `supabase/functions/_shared/python_literal.ts`
+is a real tokenizer for that subset, because a regex substitution mangles any
+string containing an apostrophe — which is most Hebrew bean names
+(`אתיופיה יירגצ'ף`). Its test corpus is generated from python3's own `repr()`
+output, so the parser is checked against Python rather than against fixtures.
+
+**The readings live in `computed`.** Both save paths serialise `getProfile()`
+(`artisanlib/main.py` L13120, L17192), and `profile['computed']` is set
+unconditionally, so `.alog` and `.json` carry identical data.
+
+**Curve arrays are stripped** before storage — `timex`, `temp1`, `temp2` and
+friends are ~50 KB per roast and prod has little headroom.
+`artisan_profiles.computed` keeps Artisan's whole computed block, so surfacing
+development time, DTR, first crack or measured weight loss later needs no
+migration — only UI.

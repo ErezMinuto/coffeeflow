@@ -1,0 +1,22 @@
+{"repr": "{'roastUUID': 'a1b2c3', 'beans': 'Yirgacheffe'}", "json": {"roastUUID": "a1b2c3", "beans": "Yirgacheffe"}}
+{"repr": "{'beans': \"אתיופיה יירגצ'ף\"}", "json": {"beans": "אתיופיה יירגצ'ף"}}
+{"repr": "{'beans': 'he said \"hello\"'}", "json": {"beans": "he said \"hello\""}}
+{"repr": "{'beans': 'both \\' and \" quotes'}", "json": {"beans": "both ' and \" quotes"}}
+{"repr": "{'notes': 'line one\\nline two\\ttabbed'}", "json": {"notes": "line one\nline two\ttabbed"}}
+{"repr": "{'path': 'C:\\\\Artisan\\\\out'}", "json": {"path": "C:\\Artisan\\out"}}
+{"repr": "{'weight': [15.0, 12.6, 'Kg']}", "json": {"weight": [15.0, 12.6, "Kg"]}}
+{"repr": "{'timeindex': [120, 0, 0, 0, 780, 0, 1020, 0]}", "json": {"timeindex": [120, 0, 0, 0, 780, 0, 1020, 0]}}
+{"repr": "{'nested': {'a': {'b': {'c': [1, 2, [3, 4]]}}}}", "json": {"nested": {"a": {"b": {"c": [1, 2, [3, 4]]}}}}}
+{"repr": "{'tuple_becomes_list': (1, 2, 3)}", "json": {"tuple_becomes_list": [1, 2, 3]}}
+{"repr": "{'single_tuple': (42,)}", "json": {"single_tuple": [42]}}
+{"repr": "{'empty': {}, 'empty_list': [], 'empty_tuple': ()}", "json": {"empty": {}, "empty_list": [], "empty_tuple": []}}
+{"repr": "{'flags': [True, False, None]}", "json": {"flags": [true, false, null]}}
+{"repr": "{'floats': [1e-05, -0.0, 3.14159, 1234567.891, -25000000000.0]}", "json": {"floats": [1e-05, -0.0, 3.14159, 1234567.891, -25000000000.0]}}
+{"repr": "{'ints': [0, -5, 1042, 999999999]}", "json": {"ints": [0, -5, 1042, 999999999]}}
+{"repr": "{'mode': 'C', 'roastbatchnr': 1042, 'roastbatchprefix': 'MIN'}", "json": {"mode": "C", "roastbatchnr": 1042, "roastbatchprefix": "MIN"}}
+{"repr": "{'computed': {'CHARGE_ET': 195.0, 'CHARGE_BT': 92.4, 'DROP_ET': 210.5, 'DROP_BT': 208.3}}", "json": {"computed": {"CHARGE_ET": 195.0, "CHARGE_BT": 92.4, "DROP_ET": 210.5, "DROP_BT": 208.3}}}
+{"repr": "{'unicode': 'café ☕ 日本語'}", "json": {"unicode": "café ☕ 日本語"}}
+{"repr": "{'control': 'bell\\x07 null\\x00 esc\\x1b'}", "json": {"control": "bell\u0007 null\u0000 esc\u001b"}}
+{"repr": "{'mixed_keys': {1: 'int key', '2': 'str key'}}", "json": {"mixed_keys": {"1": "int key", "2": "str key"}}}
+{"repr": "{'deep_list': [[[['deep']]]]}", "json": {"deep_list": [[[["deep"]]]]}}
+{"repr": "{'trailing': 'ends with backslash \\\\'}", "json": {"trailing": "ends with backslash \\"}}
