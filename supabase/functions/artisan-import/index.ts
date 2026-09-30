@@ -23,7 +23,6 @@ import { parseArtisanFile, ArtisanParseError } from "../_shared/artisan.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")         ?? "";
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
@@ -38,22 +37,43 @@ const json = (body: unknown, status = 200) =>
 const MAX_CONTENT_CHARS = 20_000_000;
 
 /**
- * The app calls with its anon key (the Clerk fetch wrapper sends it as
- * `apikey`). Every table here is already anon-writable by design — see
- * CLAUDE.md — so this grants nothing that a direct PostgREST call would not.
+ * Is the caller holding a real project key?
+ *
+ * Verified by USING the key against PostgREST rather than comparing it to
+ * `SUPABASE_ANON_KEY`. That comparison silently never matches: the anon key
+ * injected into an edge function is the 46-char `sb_publishable_…` format,
+ * while the browser client sends the legacy 208-char `eyJ…` JWT. They are
+ * different strings for the same project, so string equality is wrong for
+ * any of them — and stays wrong through a key rotation.
+ *
+ * Every table here is already anon-writable by design (see CLAUDE.md), so
+ * this grants nothing a direct PostgREST call would not.
  */
-function authorised(req: Request): boolean {
-  if (!ANON_KEY) return false;
-  return req.headers.get("apikey") === ANON_KEY
-      || req.headers.get("authorization") === `Bearer ${ANON_KEY}`;
+async function authorised(req: Request): Promise<boolean> {
+  const key = req.headers.get("apikey")
+    || (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (!key || !SUPA_URL) return false;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/roasts?select=id&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: CORS });
   if (req.method !== "POST")    return json({ ok: false, error: "POST only" }, 405);
-  if (!authorised(req))         return json({ ok: false, error: "unauthorised" }, 401);
 
   const log = createLogger("artisan-import");
+
+  if (!(await authorised(req))) {
+    log.warn("auth.reject", "caller did not present a valid project key");
+    await log.finish("error", { code: "unauthorised" });
+    return json({ ok: false, error: "unauthorised", run_id: log.runId }, 401);
+  }
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
   let body: { roast_id?: unknown; filename?: unknown; content?: unknown };

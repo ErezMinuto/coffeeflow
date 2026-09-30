@@ -72,6 +72,12 @@ const db = Deno.serve({ port: PORT_DB, onListen: () => {} }, async (req) => {
   };
 
   if (req.method === 'GET') {
+    // PostgREST rejects an unknown key outright — that is what the function's
+    // auth probe relies on.
+    const key = req.headers.get('apikey') ?? '';
+    if (key && key !== 'test-anon-key' && key !== 'test-service-role') {
+      return json({ message: 'Invalid API key' }, 401);
+    }
     if (table === 'roasts')           return json(applyFilters(roasts, params));
     if (table === 'artisan_profiles') return json(applyFilters(profiles, params));
     return json([]);
