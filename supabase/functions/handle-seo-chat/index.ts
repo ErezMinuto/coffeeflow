@@ -2296,6 +2296,16 @@ function storedToApiMessages(stored: StoredMsg[]): ApiChatMessage[] {
   // IDs at the next non-tool boundary.
   let lastAssistantToolUseIds: string[] = []
 
+  // The newest-50 window usually starts mid-turn: one heavy turn writes ~10
+  // rows (user + an assistant/tool pair per loop), so the oldest rows in the
+  // window are often an assistant tool_use or a tool result whose user
+  // message fell outside it. Gemini rejects a history whose first turn is a
+  // function call ("function call turn comes immediately after a user turn")
+  // — every send in that session then failed until enough new rows pushed
+  // the window onto a user row. Start the replay at the first user row.
+  const firstUser = stored.findIndex(m => m.role === 'user')
+  stored = firstUser >= 0 ? stored.slice(firstUser) : stored
+
   // Reconcile the accumulated tool_result blocks against the
   // immediately-preceding assistant turn's tool_use ids, then flush them
   // as one user message. Enforces BIDIRECTIONAL integrity — both failure
@@ -2796,7 +2806,10 @@ serve(async (req: Request): Promise<Response> => {
       apiMessages.push({ role: 'user', content: toolResultBlocks })
     }
 
-    if (ranOutOfTime && !finalText) {
+    // A model error breaks the loop WITHOUT setting ranOutOfTime, so it must
+    // be checked on its own — otherwise the turn returns success with empty
+    // text, nothing is persisted, and the admin just sees no reply.
+    if ((ranOutOfTime || modelError) && !finalText) {
       // Hit the wall-clock budget mid-task. Whatever tool calls already ran
       // are persisted (and committed live, e.g. an FAQ write), so this is a
       // safe stopping point — the admin just continues.
