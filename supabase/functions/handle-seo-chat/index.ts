@@ -516,7 +516,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'approve_qa_attempt',
-    description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
+    description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it. Pulls the approved attempt from qa_attempts[attempt_number-1], promotes its image_url to result_data.image_url (the worker leaves the LAST attempt there, not necessarily the approved one), clears review_required, and records approved_attempt + approved_via_chat_at. For destination=blog_banner it ALSO runs the standard WP featured-image attach (same code path the worker uses on a QA pass). For destination=ig_post there is no WP step — the IG worker reads image_url off the visual task, so clearing the flag is enough (if the child instagram_post already failed on the flagged visual, follow up with repoint_ig_to_visual to reset it to pending). Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Single-image visuals only — carousels log QA per slide and are refused.',
     input_schema: {
       type: 'object',
       properties: {
@@ -2025,9 +2025,6 @@ async function executeTool(
         const attemptN = typeof input.attempt_number === 'number' ? Math.floor(input.attempt_number) : 0
         if (!task_id) return { ok: false, payload: { error: 'task_id required.' } }
         if (attemptN < 1) return { ok: false, payload: { error: 'attempt_number must be 1-based positive integer.' } }
-        if (!WP_USERNAME || !WP_APP_PASSWORD) {
-          return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured — cannot attach.' } }
-        }
         // Load + validate the task.
         const { data: task, error: tErr } = await supabase
           .from('seo_tasks')
@@ -2042,11 +2039,20 @@ async function executeTool(
         const rd = (task.result_data ?? {}) as {
           destination?: string
           qa_attempts?: Array<{ attempt: number; image_url: string }>
+          carousel?: boolean
+          carousel_slides?: Array<{ image_url?: string }>
+          image_url?: string
           wp_post_id?: number
           approved_attempt?: number
         }
-        if (rd.destination !== 'blog_banner') {
-          return { ok: false, payload: { error: `task destination is '${rd.destination}', not 'blog_banner'. IG-destination QA approval not yet supported via this tool.` } }
+        if (rd.destination !== 'blog_banner' && rd.destination !== 'ig_post') {
+          return { ok: false, payload: { error: `task destination is '${rd.destination}' — only 'blog_banner' and 'ig_post' are supported.` } }
+        }
+        // Carousels log QA per slide (result_data.slide_qa) and have no flat
+        // qa_attempts[] — there is no single attempt to promote. Those need a
+        // slide-level fix or a regen, not this tool.
+        if (rd.carousel === true || Array.isArray(rd.carousel_slides)) {
+          return { ok: false, payload: { error: 'task is a carousel — QA is logged per slide in result_data.slide_qa, so there is no single attempt to approve. Regen the carousel instead.' } }
         }
         if (rd.approved_attempt) {
           return { ok: false, payload: { error: `task already has approved_attempt=${rd.approved_attempt}. Refusing double-approval.` } }
@@ -2059,43 +2065,69 @@ async function executeTool(
         if (!target.image_url) {
           return { ok: false, payload: { error: `qa_attempts[${attemptN}] has no image_url.` } }
         }
-        if (!rd.wp_post_id) {
-          return { ok: false, payload: { error: 'task has no wp_post_id — cannot attach without a target post.' } }
+        // blog_banner needs the WP featured-image attach (the same code path
+        // the worker runs on a QA pass). ig_post has no WP post: the IG worker
+        // reads result_data.image_url off this visual task, so approval is
+        // purely promoting the chosen attempt to image_url + clearing the flag.
+        let mediaId: number | null = null
+        if (rd.destination === 'blog_banner') {
+          if (!WP_USERNAME || !WP_APP_PASSWORD) {
+            return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured — cannot attach.' } }
+          }
+          if (!rd.wp_post_id) {
+            return { ok: false, payload: { error: 'task has no wp_post_id — cannot attach without a target post.' } }
+          }
+          try {
+            mediaId = await attachFeaturedImage({
+              wpUrl:       WP_URL,
+              username:    WP_USERNAME,
+              appPassword: WP_APP_PASSWORD,
+              postId:      rd.wp_post_id,
+              imageUrl:    target.image_url,
+              titleHint:   `seo-banner-attempt-${attemptN}-task-${task_id.slice(0, 8)}`,
+            })
+          } catch (e: any) {
+            return { ok: false, payload: { error: `WP attach failed: ${e?.message ?? e}` } }
+          }
         }
-        // Attach via the shared helper (same code path the worker uses on QA pass).
-        let mediaId: number
-        try {
-          mediaId = await attachFeaturedImage({
-            wpUrl:       WP_URL,
-            username:    WP_USERNAME,
-            appPassword: WP_APP_PASSWORD,
-            postId:      rd.wp_post_id,
-            imageUrl:    target.image_url,
-            titleHint:   `seo-banner-attempt-${attemptN}-task-${task_id.slice(0, 8)}`,
-          })
-        } catch (e: any) {
-          return { ok: false, payload: { error: `WP attach failed: ${e?.message ?? e}` } }
-        }
-        // Patch result_data — clear review_required, record approval audit trail.
-        const patch = {
+        // Patch result_data — promote the approved attempt to image_url (the
+        // worker left the LAST attempt there, which may not be the approved
+        // one), clear review_required, record the approval audit trail.
+        const patch: Record<string, unknown> = {
           ...rd,
-          attached_media_id:      mediaId,
+          image_url:              target.image_url,
+          pre_approval_image_url: rd.image_url ?? null,
           review_required:        false,
           approved_attempt:       attemptN,
           approved_via_chat_at:   new Date().toISOString(),
-          attach_skipped_reason:  null,
+        }
+        if (rd.destination === 'blog_banner') {
+          patch.attached_media_id     = mediaId
+          patch.attach_skipped_reason = null
         }
         const { error: updErr } = await supabase.from('seo_tasks').update({ result_data: patch }).eq('id', task_id)
-        if (updErr) return { ok: false, payload: { error: `attach succeeded (media_id=${mediaId}) but result_data write failed: ${updErr.message}` } }
+        if (updErr) {
+          return {
+            ok: false,
+            payload: {
+              error: mediaId
+                ? `attach succeeded (media_id=${mediaId}) but result_data write failed: ${updErr.message}`
+                : `result_data write failed: ${updErr.message}`,
+            },
+          }
+        }
         return {
           ok: true,
           payload: {
             task_id,
+            destination:       rd.destination,
             attempt_approved:  attemptN,
             attached_media_id: mediaId,
-            wp_post_id:        rd.wp_post_id,
+            wp_post_id:        rd.wp_post_id ?? null,
             image_url:         target.image_url,
-            note:              `Featured image set on WP post ${rd.wp_post_id}. Task marked approved; review_required cleared.`,
+            note: rd.destination === 'blog_banner'
+              ? `Featured image set on WP post ${rd.wp_post_id}. Task marked approved; review_required cleared.`
+              : `Approved attempt ${attemptN} is now result_data.image_url; review_required cleared (no WP attach for ig_post). The instagram_post child can now use this visual — if its IG task already failed, call repoint_ig_to_visual(ig_task_id, '${task_id}') to reset it to pending.`,
           },
         }
       }
