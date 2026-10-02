@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Send, Wrench, Loader2, Bell } from 'lucide-react'
+import { Send, Wrench, Loader2, Bell, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 // Hardcoded mirror of seo-agent/briefingWriter.ts BRIEFING_SESSION_ID.
@@ -21,9 +21,10 @@ interface ChatRow {
 interface Props {
   sessionId: string
   onSwitchSession?: (sessionId: string) => void
+  onNewSession?:    () => void
 }
 
-export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
+export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession }: Props) {
   const [messages, setMessages] = useState<ChatRow[]>([])
   const [loading, setLoading]   = useState(true)
   const [draft, setDraft]       = useState('')
@@ -225,6 +226,16 @@ export default function SeoChatThread({ sessionId, onSwitchSession }: Props) {
               }}
               className="text-[10px] text-surface-500 hover:text-surface-900 underline"
             >back to chat</button>
+          )}
+          {sessionId !== BRIEFING_SESSION_ID && onNewSession && (
+            <button
+              onClick={onNewSession}
+              disabled={sending}
+              className="text-[10px] inline-flex items-center gap-1 px-2 py-1 rounded text-surface-600 hover:bg-surface-100 disabled:opacity-40"
+              title="Start a fresh chat (old history stays in the DB; learnings carry over)"
+            >
+              <Plus size={11} /> New chat
+            </button>
           )}
           <span className="text-[10px] font-mono text-surface-400" title="session id">{sessionId.slice(0, 8)}</span>
         </div>
