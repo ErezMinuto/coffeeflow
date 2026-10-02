@@ -88,7 +88,38 @@ export default function Roasting() {
 
   const temp = (v) => (v != null ? `${Number(v).toFixed(1)}°` : '—');
 
-  const artisanFor = (roastId) => (data.artisanProfiles || []).find(p => p.roast_id === roastId);
+  // Keyed lookup — this is read once per row of the log, so a linear find
+  // would be O(roasts x profiles).
+  const artisanByRoast = useMemo(() => {
+    const m = new Map();
+    for (const p of data.artisanProfiles || []) m.set(p.roast_id, p);
+    return m;
+  }, [data.artisanProfiles]);
+
+  const artisanFor = (roastId) => artisanByRoast.get(roastId) || null;
+
+  /**
+   * Development time — first crack to drop — and it as a share of the roast.
+   *
+   * Derived, not stored: Artisan gives FCs_time and DROP_time in `computed`,
+   * and deriving means every roast already uploaded gets this with no backfill.
+   * Artisan itself only computes `dtr` for its filename template, not into the
+   * profile, so the ratio is calculated here the same way it does.
+   */
+  const devOf = (roastId) => {
+    const c = artisanByRoast.get(roastId)?.computed;
+    const fcs = Number(c?.FCs_time), drop = Number(c?.DROP_time);
+    if (!Number.isFinite(fcs) || !Number.isFinite(drop) || fcs <= 0 || drop <= fcs) return null;
+    const sec = drop - fcs;
+    return { sec, dtr: (100 * sec) / drop };
+  };
+
+  const devLabel = (roastId) => {
+    const d = devOf(roastId);
+    if (!d) return '—';
+    const m = Math.floor(d.sec / 60), ss = Math.round(d.sec % 60);
+    return `${m}:${String(ss).padStart(2, '0')} · ${d.dtr.toFixed(0)}%`;
+  };
 
   const pickArtisanFile = (roast) => {
     uploadTarget.current = roast.id;
@@ -789,6 +820,7 @@ export default function Roasting() {
                     <th className="c">צבע</th>
                     <th className="c" title="טמפרטורת הטענה (ET) מ-Artisan">הטענה</th>
                     <th className="c" title="טמפרטורת סיום (BT) מ-Artisan">סיום</th>
+                    <th className="c" title="זמן פיתוח מהפיצוח הראשון עד הסיום, ואחוזו מזמן הקלייה">פיתוח</th>
                     <th className="c">תאריך</th><th className="c">פעולות</th>
                   </tr>
                 </thead>
@@ -820,6 +852,7 @@ export default function Roasting() {
                         <td className="c rnum">{roast.color_reading != null ? roast.color_reading : '—'}</td>
                         <td className="c rnum">{temp(roast.charge_et)}</td>
                         <td className="c rnum">{temp(roast.drop_bt)}</td>
+                        <td className="c rnum">{devLabel(roast.id)}</td>
                         <td className="c rnum rdate">{new Date(roast.date).toLocaleDateString('he-IL')}</td>
                         <td className="c">
                           <div className="racts">
@@ -897,6 +930,12 @@ export default function Roasting() {
                       <div><span>סיום ET</span><b>{temp(editingRoast.artisan.drop_et)}</b></div>
                       <div><span>סיום BT</span><b>{temp(editingRoast.artisan.drop_bt)}</b></div>
                     </div>
+                    {devOf(editingRoast.id) && (
+                      <div className="rar-grid" style={{ marginTop: '8px' }}>
+                        <div><span>פיצוח ראשון</span><b>{temp(artisanFor(editingRoast.id)?.computed?.FCs_BT)}</b></div>
+                        <div><span>זמן פיתוח</span><b>{devLabel(editingRoast.id)}</b></div>
+                      </div>
+                    )}
                     {artisanFor(editingRoast.id)?.filename && (
                       <div className="rar-file">{artisanFor(editingRoast.id).filename}</div>
                     )}
