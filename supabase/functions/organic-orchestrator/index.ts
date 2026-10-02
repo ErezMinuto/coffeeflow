@@ -1049,20 +1049,58 @@ function buildStrategistUserMessage(args: {
   // Equipment stays — a grinder or a machine is a perfectly good thing to link
   // from an article, and nothing here narrows the catalog to coffee only.
   const catalogVisible = catalog.filter(p => !brandIndex.isBanned(p.name))
+
+  // THE WINDOW BUG. This was `catalogVisible.slice(0, 50)` on a name-ordered
+  // catalogue of 1,231 products, which is how the strategist came to spend
+  // months unable to see a single Minuto roast:
+  //
+  //   position   6 — 1 ק״ג פולי קפה Veneto Delux
+  //   position   7 — 1 ק״ג פולי קפה Veneto Premium
+  //   positions 1-3 — three Toddy cold-brew SKUs (they start with " and ( )
+  //   positions 4-50 — granita ice-coffee powder, descaling tablets, cleaning sachets
+  //   position 917 — the FIRST Minuto roasted coffee
+  //
+  // So "it keeps featuring Veneto" was not the model ignoring a rule. Veneto
+  // was the only roasted coffee inside its candidate set, sitting at #6, while
+  // all 24 of our own roasts sat ~900 rows past the cut. Removing Veneto in the
+  // brand guard fixed the wrong half of that: on the 2026-09-23 cycle the
+  // strategist, left with no coffee at all, picked five Toddy filter SKUs for
+  // an article about digital scales.
+  //
+  // Minuto's own roasts now go in unconditionally and in full — 24 rows, the
+  // thing the entire content operation exists to sell. Equipment follows as a
+  // bounded, in-stock sample, and the count of what was omitted is stated so
+  // the strategist knows the equipment list is partial rather than complete.
+  const EQUIPMENT_SHOWN = 60
+  const roastRows = catalogVisible.filter(p => brandIndex.classify(p.name) === 'minuto_roast')
+  const otherRows = catalogVisible.filter(p => brandIndex.classify(p.name) !== 'minuto_roast')
+  // Out-of-stock gear should not be promoted in the first place, so it is the
+  // natural thing to drop when the list has to be bounded.
+  const otherInStock = otherRows.filter(p => (p.stock_status ?? 'instock') === 'instock')
+  const otherShown   = otherInStock.slice(0, EQUIPMENT_SHOWN)
+
+  const renderRow = (p: { name: string; price: number | null; stock_status: string | null }) => {
+    const stock = p.stock_status && p.stock_status !== 'instock' ? ` [${p.stock_status}]` : ''
+    const price = p.price ? ` ₪${p.price}` : ''
+    // Toddy is brewing gear Minuto resells. Allowed as a subject and as a
+    // link, but only alongside one of our roasts ("which Minuto coffee to
+    // brew in your Toddy"), never as the sole product. Enforced in the
+    // brand-guard gate; flagged here so the plan arrives correct.
+    const pairing = brandIndex.classify(p.name) === 'paired_equipment'
+      ? '  ⚠️ resold gear — only valid alongside a Minuto roast, never as the sole product'
+      : ''
+    return `  • ${p.name}${price}${stock}${pairing}`
+  }
+
   const catalogBlock = catalogVisible.length === 0
     ? '  (catalog empty)'
-    : catalogVisible.slice(0, 50).map(p => {
-        const stock = p.stock_status ? ` ${p.stock_status}` : ''
-        const price = p.price ? ` ₪${p.price}` : ''
-        // Toddy is brewing gear Minuto resells. Allowed as a subject and as a
-        // link, but only alongside one of our roasts ("which Minuto coffee to
-        // brew in your Toddy"), never as the sole product. Enforced in the
-        // brand-guard gate; flagged here so the plan arrives correct.
-        const pairing = brandIndex.classify(p.name) === 'paired_equipment'
-          ? '  ⚠️ resold gear — only valid alongside a Minuto roast, never as the sole product'
-          : ''
-        return `  • ${p.name}${price}${stock}${pairing}`
-      }).join('\n')
+    : [
+        `MINUTO'S OWN ROASTED COFFEE — all ${roastRows.length}, the only coffees valid as a hero or a featured bean:`,
+        roastRows.length ? roastRows.map(renderRow).join('\n') : '  (none resolved this cycle — do NOT substitute a reseller bean; ship the piece without a coffee)',
+        '',
+        `EQUIPMENT & ACCESSORIES — ${otherShown.length} of ${otherInStock.length} in stock (partial list; fine to link from an article, never a coffee substitute):`,
+        otherShown.map(renderRow).join('\n'),
+      ].join('\n')
 
   // Inventory alerts — surface low/critical so the strategist factors them in.
   const inventoryBlock = inventoryAlerts.length === 0
@@ -1128,7 +1166,9 @@ ${recentTasksBlock}
 
 ${blogBlock}
 
-=== PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
+=== PRODUCT CATALOG (for products_to_mention picking; use EXACT names, copied character for character) ===
+
+Two sections. The roasts are the complete list; the equipment is a sample. If an article is about gear, still anchor it to a coffee from the first section — an article that links equipment and no coffee sells someone else's product for us.
 
 ${catalogBlock}
 
