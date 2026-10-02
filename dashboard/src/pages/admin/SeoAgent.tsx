@@ -124,17 +124,10 @@ export default function SeoAgent() {
             <SeoTaskQueue />
           </div>
           <div className={`${mobilePanel === 'chat' ? 'block' : 'hidden'} lg:block h-full min-h-0 overflow-hidden`}>
-            <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} />
+            <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} />
           </div>
           <div className={`${mobilePanel === 'metrics' ? 'flex' : 'hidden'} lg:flex flex-col h-full min-h-0 overflow-hidden`}>
             <SeoMetricsPanel />
-            <div className="border-t border-surface-200 bg-white px-3 py-2 shrink-0">
-              <button
-                onClick={newSession}
-                className="text-[11px] text-surface-500 hover:text-surface-900 underline"
-                title="Start a fresh chat session (history stays in DB)"
-              >New session</button>
-            </div>
           </div>
         </div>
         </div>
