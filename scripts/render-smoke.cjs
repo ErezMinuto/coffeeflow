@@ -68,11 +68,25 @@ const roastNoArtisan = { id: 1, origin_id: 7, roast_profile_id: null, green_weig
 const roastWithArtisan = { ...roastNoArtisan, id: 2, batch_number: 'BATCH-2',
   charge_et: 196.5, charge_bt: 92.4, drop_et: 211, drop_bt: 208.9, artisan_uuid: 'abc' };
 
+// computed blocks as Artisan actually wrote them, from two of the 18 real
+// uploads: Sertao2 (the longest development) and Kenya (the shortest).
+const sertao2 = { id: 9, roast_id: 2, beans: null, filename: 'Sertao2_26-10-01_0912.alog',
+  computed: { FCs_time: 968, DROP_time: 1328, FCs_BT: 192.3, totaltime: 1328 } };
+const kenya   = { id: 10, roast_id: 3, beans: null, filename: 'Kenya_26-10-01_1130.alog',
+  computed: { FCs_time: 876, DROP_time: 944, FCs_BT: 192.0, totaltime: 944 } };
+const noEvents = { id: 11, roast_id: 4, beans: null, filename: 'x.alog', computed: {} };
+
+const roastKenya    = { ...roastWithArtisan, id: 3, batch_number: 'BATCH-3' };
+const roastNoEvents = { ...roastWithArtisan, id: 4, batch_number: 'BATCH-4' };
+
 const cases = [
   ['empty log',                      { roasts: [] }],
   ['roast with no Artisan file',     { roasts: [roastNoArtisan] }],
-  ['roast with Artisan readings',    { roasts: [roastWithArtisan], artisanProfiles: [{ id: 9, roast_id: 2, beans: "אתיופיה יירגצ'ף", filename: 'r.alog' }] }],
+  ['roast with Artisan readings',    { roasts: [roastWithArtisan], artisanProfiles: [sertao2] }],
   ['artisanProfiles undefined',      { roasts: [roastWithArtisan], artisanProfiles: undefined }],
+  ['development time (Sertao2)',     { roasts: [roastWithArtisan], artisanProfiles: [sertao2] }],
+  ['short development (Kenya)',      { roasts: [roastKenya], artisanProfiles: [kenya] }],
+  ['file present but no FC marked',  { roasts: [roastNoEvents], artisanProfiles: [noEvents] }],
 ];
 
 let bad = 0;
@@ -89,6 +103,18 @@ for (const [name, opts] of cases) {
       checks.push(['charge_et rendered as 196.5°', html.includes('196.5°')]);
       checks.push(['drop_bt rendered as 208.9°', html.includes('208.9°')]);
       checks.push(['row marked has-artisan', html.includes('has-artisan')]);
+    }
+    if (name.includes('Sertao2')) {
+      // 1328 - 968 = 360s = 6:00, and 360/1328 = 27%
+      checks.push(['development shown as 6:00 · 27%', html.includes('6:00 · 27%')]);
+    }
+    if (name.includes('Kenya')) {
+      // 944 - 876 = 68s = 1:08, and 68/944 = 7% — the outlier worth seeing
+      checks.push(['short development shown as 1:08 · 7%', html.includes('1:08 · 7%')]);
+    }
+    if (name.includes('no FC marked')) {
+      checks.push(['development falls back to a dash', html.includes('—')]);
+      checks.push(['does not invent a time', !html.includes('0:00')]);
     }
     if (name.includes('no Artisan file')) {
       checks.push(['empty readings render as —', (html.match(/—/g) || []).length >= 2]);
