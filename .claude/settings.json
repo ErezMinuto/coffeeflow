@@ -27,5 +27,10 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/deploy-functions.sh:*)"
+    ]
   }
 }
