@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone } from 'lucide-react'
+import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone, ChevronDown, VideoOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 // Product reels: pick a coffee, render a vertical Reel, review it, publish it.
@@ -112,6 +112,14 @@ export default function ReelsPage() {
       supabase.removeChannel(channel)
     }
   }, [loadTasks])
+
+  // Published/rejected reels are done with. They stay as a record, but folded away so the
+  // page shows what still needs a decision. Their video files are purged after 3 days.
+  const [active, history] = useMemo(() => {
+    const isDone = (t: ReelTask) => !!t.result_data?.published_via_ui_at || !!t.result_data?.rejected_via_ui_at
+    return [tasks.filter(t => !isDone(t)), tasks.filter(isDone)]
+  }, [tasks])
+  const [showHistory, setShowHistory] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -318,10 +326,12 @@ export default function ReelsPage() {
 
       {/* Reels */}
       <section className="space-y-4">
-        <h3 className="font-semibold text-surface-800">הרילס שלי</h3>
-        {tasks.length === 0 && !loading && <p className="text-sm text-surface-400">עוד לא נוצרו רילס.</p>}
+        <h3 className="font-semibold text-surface-800">ממתינים לטיפול</h3>
+        {active.length === 0 && !loading && (
+          <p className="text-sm text-surface-400">אין רילס שממתין לטיפול.</p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tasks.map(t => (
+          {active.map(t => (
             <ReelCard
               key={t.id}
               task={t}
@@ -332,6 +342,32 @@ export default function ReelsPage() {
             />
           ))}
         </div>
+
+        {history.length > 0 && (
+          <div className="pt-2">
+            <button
+              onClick={() => setShowHistory(v => !v)}
+              className="text-sm text-surface-500 hover:text-surface-800 flex items-center gap-1.5"
+            >
+              <ChevronDown size={14} className={showHistory ? 'rotate-180 transition' : 'transition'} />
+              היסטוריה ({history.length})
+            </button>
+            {showHistory && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {history.map(t => (
+                  <ReelCard
+                    key={t.id}
+                    task={t}
+                    busy={busy}
+                    onPublish={caption => publish(t, caption)}
+                    onReject={() => reject(t)}
+                    onRerender={() => rerender(t)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   )
@@ -346,6 +382,7 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
 }) {
   const rd = task.result_data ?? {}
   const [caption, setCaption] = useState(rd.caption ?? '')
+  const [videoGone, setVideoGone] = useState(false)
   useEffect(() => { setCaption(rd.caption ?? '') }, [rd.caption])
 
   const name = task.brief_data.product_name ?? rd.facts?.titleEn ?? `מוצר ${task.brief_data.woo_id}`
@@ -380,8 +417,21 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
         </span>
       </div>
 
-      {rd.video_url && (
-        <video src={rd.video_url} controls playsInline className="w-full max-h-[480px] rounded-xl bg-black" />
+      {rd.video_url && !videoGone && (
+        <video
+          src={rd.video_url}
+          controls
+          playsInline
+          onError={() => setVideoGone(true)}
+          className="w-full max-h-[480px] rounded-xl bg-black"
+        />
+      )}
+
+      {rd.video_url && videoGone && (
+        <p className="text-xs text-surface-500 bg-surface-50 rounded-lg p-2 flex items-center gap-1.5">
+          <VideoOff size={14} />
+          הסרטון נמחק מהאחסון אחרי הפרסום. {published ? 'העותק באינסטגרם נשאר.' : 'אפשר ליצור מחדש.'}
+        </p>
       )}
 
       {task.status === 'failed' && (
