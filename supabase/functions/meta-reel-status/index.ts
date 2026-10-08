@@ -1,21 +1,21 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { fetchReel, reelStoragePath } from '../meta-reel-generate/omni.ts'
 
 // Phase 2 — Reel video generation, step 2.
 //
-// Polls a Veo predictLongRunning operation. Three terminal states the
-// dashboard cares about:
-//   - PENDING: not done yet → caller polls again in 5s.
-//   - DONE:    Veo finished. We download the MP4 from Veo's signed URL,
-//              upload it to Supabase Storage's `marketing` bucket, and
-//              return the public URL the caller can hand to meta-publish.
-//   - ERROR:   Veo failed. Surface the message.
+// Since the 2026-10-08 move from Veo 2.0 to Gemini Omni, meta-reel-generate
+// is synchronous and already returns the finished video_url. This function
+// is kept so the generate → poll flow keeps working: given the `operation`
+// (Omni interaction id) it returns
+//   - DONE:  the public Storage URL. If the upload is somehow missing, the
+//            video is re-fetched from the interaction and re-hosted.
+//   - ERROR: anything else, including old Veo operation names, which can no
+//            longer be polled (Veo 2.0 was removed by Google).
 //
-// We do the download+upload here (server-side) instead of giving the caller
-// the Veo signed URL directly because:
-//   1. Veo's URL expires after ~1 hour, so we'd lose the asset.
-//   2. Public Storage URLs are what meta-publish (Instagram Graph API) needs
-//      — IG fetches the video itself from the URL we provide.
+// We re-host in Storage rather than hand out Google's data because public
+// Storage URLs are what meta-publish (Instagram Graph API) needs — IG fetches
+// the video itself from the URL we provide.
 
 const SUPA_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -39,87 +39,36 @@ serve(async (req) => {
     } else {
       opName = new URL(req.url).searchParams.get('operation')
     }
-    if (!opName) throw new Error("'operation' is required (the name returned by meta-reel-generate)")
+    if (!opName) throw new Error("'operation' is required (the id returned by meta-reel-generate)")
 
-    // Poll Veo. The operation name returned by predictLongRunning IS the
-    // path you GET to check status — e.g. "models/veo-2.0-generate-001/operations/abc123".
-    const opRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${opName}?key=${key}`)
-    if (!opRes.ok) {
-      const txt = await opRes.text().catch(() => '')
-      throw new Error(`operation poll ${opRes.status}: ${txt.slice(0, 300)}`)
-    }
-    const op = await opRes.json()
-
-    if (!op.done) {
-      return json({ status: 'pending', operation: opName }, 200, cors)
-    }
-    if (op.error) {
-      return json({ status: 'error', error: op.error?.message ?? JSON.stringify(op.error).slice(0, 300) }, 200, cors)
+    if (opName.startsWith('models/')) {
+      return json({ status: 'error', error: 'This is a Veo 2.0 operation; Veo 2.0 was removed by Google. Generate the reel again.' }, 200, cors)
     }
 
-    // Veo wraps the result a few different ways depending on model version.
-    // Look in all the obvious places for a video URL OR base64-encoded MP4.
-    const response = op.response ?? {}
-    let videoBytes: Uint8Array | null = null
-    let veoSignedUrl: string | null = null
-
-    // Most-common shape (Veo 2/3 longRunning): response.generateVideoResponse.generatedSamples[].video.uri
-    const samples = response.generateVideoResponse?.generatedSamples
-                 ?? response.generatedSamples
-                 ?? response.predictions
-                 ?? []
-    for (const s of samples) {
-      const v = s.video ?? s.videoFile ?? s
-      if (v?.uri) { veoSignedUrl = v.uri; break }
-      if (v?.bytesBase64Encoded) {
-        videoBytes = base64ToBytes(v.bytesBase64Encoded)
-        break
-      }
-    }
-
-    if (!videoBytes && !veoSignedUrl) {
-      return json({
-        status: 'error',
-        error:  'operation done but no video found in response',
-        debug:  JSON.stringify(response).slice(0, 800),
-      }, 200, cors)
-    }
-
-    // If Veo gave us a signed URL, fetch the bytes ourselves so we can re-host
-    // them. The signed URL needs the same API key as a query param.
-    if (!videoBytes && veoSignedUrl) {
-      const sep = veoSignedUrl.includes('?') ? '&' : '?'
-      const dl = await fetch(`${veoSignedUrl}${sep}key=${key}`)
-      if (!dl.ok) throw new Error(`download from Veo ${dl.status}`)
-      videoBytes = new Uint8Array(await dl.arrayBuffer())
-    }
-
-    // Upload to Supabase Storage.
     const supabase = createClient(SUPA_URL, SERVICE)
-    const filename = `ig-reels/reel_${Date.now()}.mp4`
-    const { error: upErr } = await supabase.storage
+    const filename = reelStoragePath(opName)
+    const slash    = filename.lastIndexOf('/')
+    const { data: existing } = await supabase.storage
       .from('marketing')
-      .upload(filename, videoBytes!, { contentType: 'video/mp4', upsert: true })
-    if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+      .list(filename.slice(0, slash), { search: filename.slice(slash + 1), limit: 1 })
+
+    let bytes: number | undefined
+    if (!existing?.length) {
+      const video = await fetchReel(key, opName)
+      const { error: upErr } = await supabase.storage
+        .from('marketing')
+        .upload(filename, video, { contentType: 'video/mp4', upsert: true })
+      if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+      bytes = video.length
+    }
     const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
 
-    return json({
-      status:    'done',
-      video_url: pub.publicUrl,
-      bytes:     videoBytes!.length,
-    }, 200, cors)
+    return json({ status: 'done', video_url: pub.publicUrl, bytes }, 200, cors)
   } catch (err: any) {
     console.error('[meta-reel-status] error:', err?.message)
     return json({ status: 'error', error: err?.message ?? String(err) }, 400, cors)
   }
 })
-
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64)
-  const out = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-  return out
-}
 
 function json(body: unknown, status: number, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })

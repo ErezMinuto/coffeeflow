@@ -1,29 +1,37 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { generateReel, reelStoragePath } from './omni.ts'
 
 // Phase 2 — Reel video generation, step 1.
 //
-// Kicks off a Veo image-to-video job: takes the still cover frame produced by
-// visual-test (or any public image URL) and an English motion prompt, returns
-// the long-running operation ID immediately. The dashboard polls
-// meta-reel-status with that ID until the MP4 is ready and uploaded to
-// Storage.
+// Image-to-video: takes the still cover frame produced by visual-test (or any
+// public image URL) and an English motion prompt, generates the clip with
+// Gemini Omni, re-hosts the MP4 in Storage and returns its public URL.
 //
-// We use Veo 2.0 because it's silent (we want to layer curated music later,
-// not Veo 3's AI-generated audio which can miss the brand vibe), stable
-// (non-preview), and cheaper (~$0.50 / 5-sec clip vs Veo 3's $2.50).
-//
-// Veo's predictLongRunning API doesn't block — it returns an operation ID in
-// ~1 second and the actual generation runs in the background for 1-5 minutes.
-// Hence the split into generate + status. Total elapsed exceeds Supabase's
-// 150s gateway timeout, which is why we can't do this in one call.
+// 2026-10-08: migrated from Veo 2.0 (veo-2.0-generate-001 now 404s — Google
+// removed it) to gemini-omni-1.1-flash. Differences that matter here:
+//   - Omni ALWAYS generates audio; there is no off switch. We keep it quiet
+//     by appending SOUND_GUARD to every prompt (Veo 2 was chosen for being
+//     silent so curated music can be layered later).
+//   - No duration parameter. Omni picks the length (~10s in testing);
+//     duration_sec is accepted for backward compatibility and ignored.
+//   - No personGeneration setting. "No people" goes in the prompt instead.
+//   - It's synchronous (~35s at 720p in testing, inside the 150s gateway
+//     limit), so this call already has the video. It still returns an
+//     `operation` (the interaction id) so the old generate → poll
+//     meta-reel-status flow keeps working; status answers 'done' at once.
 
-const VEO_MODEL = 'veo-2.0-generate-001'
+const SUPA_URL = Deno.env.get('SUPABASE_URL')!
+const SERVICE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+const SOUND_GUARD = 'Audio: soft ambient room tone only. No dialogue, no voices, no music, no extra sound effects. No people.'
 
 interface ReelGenerateRequest {
   image_url:     string                                // public URL of the still cover frame
   motion_prompt: string                                // English description of motion (e.g. "slow zoom into bag, gentle steam rising")
   aspect?:       'reel_9_16' | 'square_1_1'           // default reel_9_16
-  duration_sec?: 5 | 8                                 // Veo 2 supports 5 or 8 sec; default 5
+  duration_sec?: number                                // ignored — Omni has no duration control
+  resolution?:   '720p' | '1080p'                     // default 720p; 1080p is an upscale and slower
 }
 
 serve(async (req) => {
@@ -41,14 +49,15 @@ serve(async (req) => {
     const body = await req.json() as ReelGenerateRequest
     if (!body.image_url)     throw new Error("'image_url' is required")
     if (!body.motion_prompt) throw new Error("'motion_prompt' is required")
-    const aspect       = body.aspect ?? 'reel_9_16'
-    const durationSec  = body.duration_sec ?? 5
-    const aspectRatio  = aspect === 'square_1_1' ? '1:1' : '9:16'
+    // Omni only renders 16:9 and 9:16. Square requests get 9:16; Meta crops
+    // a vertical clip for square placements.
+    const aspectRatio = '9:16'
+    const resolution  = body.resolution === '1080p' ? '1080p' : '720p'
 
-    // Veo's image-to-video API expects the still as base64 inline. Fetch the
-    // public URL, encode chunked to dodge the call-stack overflow that bites
-    // when you spread big Uint8Array into String.fromCharCode in one go (same
-    // pattern the blog-banner uses).
+    // Omni takes the still as base64 inline. Fetch the public URL, encode
+    // chunked to dodge the call-stack overflow that bites when you spread big
+    // Uint8Array into String.fromCharCode in one go (same pattern the
+    // blog-banner uses).
     const imgRes = await fetch(body.image_url)
     if (!imgRes.ok) throw new Error(`image_url fetch ${imgRes.status}`)
     const mime = (imgRes.headers.get('content-type') ?? 'image/png').split(';')[0].trim()
@@ -57,41 +66,28 @@ serve(async (req) => {
     for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000))
     const imageB64 = btoa(bin)
 
-    // predictLongRunning is the Vertex/Veo pattern — kick off, return op id.
-    const veoRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${VEO_MODEL}:predictLongRunning?key=${key}`,
-      {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{
-            prompt: body.motion_prompt,
-            image: { bytesBase64Encoded: imageB64, mimeType: mime },
-          }],
-          parameters: {
-            aspectRatio,
-            durationSeconds: durationSec,
-            sampleCount: 1,
-            personGeneration: 'dont_allow',  // we never want generated faces in Reels
-          },
-        }),
-      },
-    )
-    if (!veoRes.ok) {
-      const errText = await veoRes.text().catch(() => '')
-      throw new Error(`Veo ${veoRes.status}: ${errText.slice(0, 400)}`)
-    }
-    const veoJson = await veoRes.json()
-    const opName: string | undefined = veoJson.name
-    if (!opName) throw new Error(`Veo returned no operation name: ${JSON.stringify(veoJson).slice(0, 300)}`)
+    const { id, video } = await generateReel(key, {
+      imageB64, mime,
+      prompt: `${body.motion_prompt.trim()}\n\n${SOUND_GUARD}`,
+      aspectRatio, resolution,
+    })
+
+    const supabase = createClient(SUPA_URL, SERVICE)
+    const filename = reelStoragePath(id)
+    const { error: upErr } = await supabase.storage
+      .from('marketing')
+      .upload(filename, video, { contentType: 'video/mp4', upsert: true })
+    if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+    const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
 
     return json({
-      operation:    opName,
-      model:        VEO_MODEL,
+      status:       'done',
+      operation:    id,
+      video_url:    pub.publicUrl,
+      bytes:        video.length,
+      model:        'gemini-omni-1.1-flash',
       aspect_ratio: aspectRatio,
-      duration_sec: durationSec,
-      // Hint for the caller: poll meta-reel-status?operation=<this> every 5s.
-      // Typical end-to-end for Veo 2 is 60-180 seconds.
+      resolution,
     }, 200, cors)
   } catch (err: any) {
     console.error('[meta-reel-generate] error:', err?.message)
