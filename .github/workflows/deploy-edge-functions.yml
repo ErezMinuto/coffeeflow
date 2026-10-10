@@ -79,9 +79,10 @@ jobs:
         with:
           version: 2.98.1
 
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
+      # The guard canonicalises code through esbuild (production serves the
+      # bundle with types erased). Pinned so the canonical form never shifts.
+      - name: Install esbuild
+        run: npm install -g esbuild@0.25.10
 
       - name: Work out what to deploy
         id: plan
