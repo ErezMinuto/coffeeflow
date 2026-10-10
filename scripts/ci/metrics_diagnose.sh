@@ -5,13 +5,13 @@ set -uo pipefail
 REF="${1:?project ref}"
 q() {
   local label="$1" sql="$2" t0 t1 code
-  t0=$(date +%s%3N)
+  rm -f out.json; t0=$(date +%s%3N)
   code=$(curl -sS -m 45 -o out.json -w '%{http_code}' -X POST \
     "https://api.supabase.com/v1/projects/$REF/database/query" \
     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
     --data "$(jq -n --arg q "$sql" '{query:$q}')")
   t1=$(date +%s%3N)
-  if [ "$code" -lt 300 ]; then r="$(jq -c '.[0]' out.json | head -c 200)"; else r="ERR $(head -c 160 out.json | tr '\n' ' ')"; fi
+  if [ "$code" = 000 ]; then r="TIMEOUT (no response within cap)"; elif [ "$code" -lt 300 ]; then r="$(jq -c '.[0]' out.json | head -c 200)"; else r="ERR $(head -c 160 out.json | tr '\n' ' ')"; fi
   printf '%-34s %6s ms  %s\n' "$label" "$((t1 - t0))" "$r"
 }
 q "rows: mflow_sell_lines"     "select count(*) n from mflow_sell_lines"
