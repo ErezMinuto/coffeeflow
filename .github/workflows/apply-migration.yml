@@ -26,6 +26,11 @@ on:
         required: false
         default: false
         type: boolean
+      diagnose_only:
+        description: 'Skip applying; only time each metrics-layer object (durations and row counts)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: apply-migration
@@ -46,7 +51,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Diagnose (durations and row counts only)
+        if: inputs.diagnose_only
+        run: |
+          case "$TARGET" in prod) REF=ytydgldyeygpzmlxvpvb ;; dev) REF=emnijrlfiuwbddjahkzn ;; esac
+          bash scripts/ci/metrics_diagnose.sh "$REF" | tee diag.txt
+          echo "::notice title=Diagnose $TARGET::$(sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g' diag.txt)"
+
       - name: Apply
+        if: ${{ !inputs.diagnose_only }}
         run: |
           set -euo pipefail
           case "$FILE" in *[!A-Za-z0-9._-]*|'') echo "::error::Bad file name"; exit 1 ;; esac
@@ -86,7 +99,7 @@ jobs:
           echo "::notice title=Applied::$FILE on $TARGET"
 
       - name: Metrics-layer checks (ratios only)
-        if: inputs.checks
+        if: inputs.checks && !inputs.diagnose_only
         run: |
           set -euo pipefail
           body="$(jq -Rs '{query: .}' < scripts/ci/metrics_checks.sql)"
