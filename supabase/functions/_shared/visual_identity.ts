@@ -37,8 +37,8 @@ export const MINUTO_ESPRESSO_MACHINE_REFERENCE_URL =
 // Shape + finish anchor for Minuto's actual roaster — a Coffee-Tech
 // Engineering compact drum roaster with a two-tone matte-black lower
 // body + brushed stainless upper drum cover, tall conical stainless
-// hopper, and a separate small round stainless cooling tray on the
-// right. Uploaded by the user 2026-05-26 after the text-only roaster
+// hopper, and a deep cylindrical stainless cooling bin on the floor
+// at the front-right. Uploaded by the user 2026-05-26 after the text-only roaster
 // description kept rendering generic "fully matte black Probat-style"
 // silhouettes with hallucinated "COFFEE-TECH" text. Passed to Gemini /
 // Imagen as a reference image whenever the scene brief mentions the
@@ -130,11 +130,11 @@ top. The silhouette is VERTICAL and compact (taller than wide), not
 the squat horizontal industrial style. A large stainless-steel
 exhaust chimney rises straight up from the top-left. A round drum
 face on the right side has a central handle wheel and a black trier
-(sampling rod). To the right of the main body, attached at mid-
-height, sits a SEPARATE round shallow stainless cooling tray (much
-smaller diameter than a commercial cooler — about hopper width) with
-a stainless rotating arm crossing it. The cooling tray rim is
-brushed stainless; its inside is perforated steel floor. Small
+(sampling rod). The COOLER is a large, deep, cylindrical brushed-stainless bin with
+tall straight sides (about as wide as the drum body), standing on
+the FLOOR at the front-right of the roaster directly below the drum
+door; fresh beans fall from the drum door into it and its internal
+stirring arms turn them. Never a shallow tray on a stand or table. Small
 yellow stencil safety labels appear on a few black panels (e.g.
 "MANUAL CRANK") but they are SMALL stencils on hardware — NEVER
 render them as large readable headline text. A small grey control
@@ -142,7 +142,7 @@ panel with a tiny LCD display sits on the front lower half.
 ⛔ MANUFACTURER BADGE PROHIBITION: there is a small "COFFEE-TECH
 ENGINEERING" badge on the real machine, BUT it MUST NOT be rendered
 as readable text in the photograph — neither on the hopper, the
-drum cover, the cooling tray rim, nor anywhere else. NO model
+drum cover, the cooler rim, nor anywhere else. NO model
 names, NO manufacturer text, NO orange/yellow logo lettering. The
 machine is identified by its silhouette and two-tone finish, not
 by branding.
@@ -460,11 +460,11 @@ export const SCENE_PRESETS: Record<string, string> = {
     'stainless drum face. A tall stainless conical hopper sits on top; a ' +
     'large stainless exhaust chimney rises straight up from the upper-left. ' +
     'The silhouette is vertical and compact (taller than wide), not a wide ' +
-    'horizontal industrial unit. To the right of the main body, attached ' +
-    'at mid-height, sits a SEPARATE round shallow stainless COOLING TRAY ' +
-    'with a perforated steel floor and a rotating stainless arm crossing ' +
-    'it — fresh light-to-medium-roasted beans (pecan-shell brown, matte, ' +
-    'NEVER dark, NEVER glossy) spread across the tray. Soft warm steam ' +
+    'horizontal industrial unit. On the floor at the front-right of the ' +
+    'roaster, directly below the drum door, stands its COOLER — a large, ' +
+    'deep, cylindrical brushed-stainless bin with tall straight sides — ' +
+    'and fresh light-to-medium-roasted beans (pecan-shell brown, matte, ' +
+    'NEVER dark, NEVER glossy) fall from the drum door into it. Soft warm steam ' +
     'rises off the bean pile — thin, low, not aggressive. The matte bean ' +
     'color is the hero. NO BAG anywhere in frame. NO visible manufacturer ' +
     'text or badge — the "COFFEE-TECH ENGINEERING" badge must NOT be ' +
@@ -516,6 +516,6 @@ export const SCENE_PRESET_SUMMARIES = {
   pour_shot:       'hand pouring from a Hario server into a ceramic cup, with a single bag soft in the background; ritual / brewing / freshness',
   origin_still:    'single bag on a lime plaster surface with scattered medium-roast beans and a ceramic cup beside; origin story / single-origin focus',
   brewing_setup:   'pour-over rig blooming with a brass kettle cropped from the edge and the single bag soft in the background; method / equipment / education',
-  roaster_bts:     'two-tone matte-black + brushed-stainless Coffee-Tech compact roaster left (vertical silhouette, stainless hopper, separate round cooling tray on the right), fresh-roasted beans on cooling tray with light steam; NO bag; NO manufacturer text; roastery BTS / roast-day / craft moments',
+  roaster_bts:     'two-tone matte-black + brushed-stainless Coffee-Tech compact roaster left (vertical silhouette, stainless hopper, deep cylindrical stainless cooling bin on the floor at front-right), fresh-roasted beans falling into the cooling bin with light steam; NO bag; NO manufacturer text; roastery BTS / roast-day / craft moments',
   cafe_bts:        'La Marzocco Strada X bar machine left, espresso pouring into ceramic cup with barista hands cropped, whole beans on bar right; NO bag; cafe BTS / espresso ritual / bar craft',
 } as const
