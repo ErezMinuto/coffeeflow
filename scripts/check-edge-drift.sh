@@ -39,12 +39,12 @@ fi
 clean=(); drift=(); missing=(); failed=()
 : > "$OUT"
 for fn in "${fns[@]}"; do
-  verdict="$(bash "$GUARD" "$fn" "$HEAD_SHA" "$HEAD_SHA" 2>"$OUT.$fn")" || true
+  verdict="$(GUARD_HISTORY=1 bash "$GUARD" "$fn" "$HEAD_SHA" "$HEAD_SHA" 2>"$OUT.$fn")" || true
   case "$verdict" in
     base|head) clean+=("$fn") ;;
     new)       missing+=("$fn") ;;
     drift)     drift+=("$fn")
-               { echo "### $fn"; grep -E '^\s+(differs|only in prod|\()' "$OUT.$fn"; echo; } >> "$OUT" ;;
+               { echo "### $fn"; grep -E '^\s+(differs|only in prod|BEHIND|PROD-ONLY|\()' "$OUT.$fn"; echo; } >> "$OUT" ;;
     *)         failed+=("$fn") ;;
   esac
   rm -f "$OUT.$fn"
