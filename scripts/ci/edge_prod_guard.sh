@@ -64,7 +64,7 @@ canon() {  # file → canonical, layout-free code on stdout
   # annotations and type-only imports gone). Running both sides through
   # esbuild's TS→JS transform erases types the same way and re-prints the code
   # in one fixed layout, with comments dropped.
-  if ! esbuild "$tmp" --loader=ts --format=esm --log-level=error > "$tmp.js" 2>"$tmp.err"; then
+  if ! esbuild --loader=ts --format=esm --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
     echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
     cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
   fi
