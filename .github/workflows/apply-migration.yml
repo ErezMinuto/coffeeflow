@@ -1,0 +1,85 @@
+name: Apply database migration
+
+# Applies one file from supabase/migrations to the dev or prod database through
+# the Supabase Management API, using the edge-deploy environment token.
+#
+# Project rule (CLAUDE.md): apply to DEV first, check it, then PROD.
+#
+# Optionally runs scripts/ci/metrics_checks.sql afterwards. That file returns
+# ratios and yes/no only: this repo is public, so run logs are public, and no
+# business amounts may ever be printed here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'Migration file name, e.g. 20261010_metrics_layer.sql'
+        required: true
+        type: string
+      target:
+        description: 'dev or prod'
+        required: true
+        type: choice
+        options: [dev, prod]
+      checks:
+        description: 'Run the metrics-layer checks afterwards'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: apply-migration
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: edge-deploy
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      FILE: ${{ inputs.file }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply
+        run: |
+          set -euo pipefail
+          case "$FILE" in *[!A-Za-z0-9._-]*|'') echo "::error::Bad file name"; exit 1 ;; esac
+          path="supabase/migrations/$FILE"
+          [ -f "$path" ] || { echo "::error::No such migration: $path"; exit 1; }
+          case "$TARGET" in
+            prod) REF=ytydgldyeygpzmlxvpvb ;;
+            dev)  REF=emnijrlfiuwbddjahkzn ;;
+            *) echo "::error::target must be dev or prod"; exit 1 ;;
+          esac
+          echo "REF=$REF" >> "$GITHUB_ENV"
+          body="$(jq -Rs '{query: .}' < "$path")"
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data "$body")
+          if [ "$code" -ge 300 ]; then
+            msg="$(head -c 1500 resp.json | tr '\n' ' ')"
+            echo "::error title=$FILE failed on $TARGET (HTTP $code)::$msg"
+            exit 1
+          fi
+          echo "::notice title=Applied::$FILE on $TARGET"
+
+      - name: Metrics-layer checks (ratios only)
+        if: inputs.checks
+        run: |
+          set -euo pipefail
+          body="$(jq -Rs '{query: .}' < scripts/ci/metrics_checks.sql)"
+          code=$(curl -sS -o chk.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data "$body")
+          if [ "$code" -ge 300 ]; then
+            echo "::error title=Checks failed (HTTP $code)::$(head -c 1500 chk.json | tr '\n' ' ')"; exit 1
+          fi
+          echo "::notice title=Metrics checks on $TARGET::$(jq -c '.[0]' chk.json)"
