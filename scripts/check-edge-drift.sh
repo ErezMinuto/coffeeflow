@@ -1,168 +1,82 @@
 #!/usr/bin/env bash
-# Diff every deployed edge function against the committed source.
+# Which deployed edge functions differ from the committed source?
 #
-# Read-only: downloads and diffs, never deploys, never writes to Supabase.
+#   SUPABASE_ACCESS_TOKEN=… bash scripts/check-edge-drift.sh          # all functions
+#   SUPABASE_ACCESS_TOKEN=… bash scripts/check-edge-drift.sh fn1 fn2  # some
 #
-# RATCHET. Functions listed in .github/edge-drift-allowlist.txt are known,
-# accepted drift — they are reported but do not fail the build, so the job is
-# green today and only fires when something NEW drifts. The list is also
-# checked in the other direction: a function that is listed but has come back
-# into sync fails the build, telling you to delete its line. That is what stops
-# the allowlist from quietly becoming a permanent excuse.
+# Read-only: downloads and compares, never deploys, never writes to Supabase.
 #
-# Local use:  SUPABASE_ACCESS_TOKEN=… bash scripts/check-edge-drift.sh
+# Each function is checked with scripts/ci/edge_prod_guard.sh against HEAD, the
+# same comparison the deploy workflow trusts: the WHOLE deployed bundle (index.ts
+# plus every _shared/ and seo-agent/ file it carries), canonicalised through
+# esbuild because production serves code with TypeScript types erased.
+#
+# The old version compared raw index.ts text and reported 100% drift on the
+# runner, because of that type erasure. Kept from it: a run where nothing at all
+# matches is rejected as a broken comparison, never reported as real drift.
+#
+# Needs: supabase CLI, esbuild, git. Exit 1 when any function drifts or could
+# not be compared.
 set -uo pipefail
 
-PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ALLOWLIST="$ROOT/.github/edge-drift-allowlist.txt"
-WORK="$(mktemp -d)"
-# The CLI leaves files the runner user cannot unlink; make them writable first
-# and swallow any failure. A failing cleanup must never decide the build result.
-cleanup() { local rc=$?; chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK" 2>/dev/null; return $rc; }
-trap cleanup EXIT
+cd "$ROOT"
+HEAD_SHA="$(git rev-parse HEAD)"
+GUARD="$ROOT/scripts/ci/edge_prod_guard.sh"
+OUT="${DRIFT_REPORT:-$(mktemp)}"
 
-# Compare the whitespace TOKEN STREAM, not raw bytes.
-#
-# A download can come back re-printed rather than as the original file: blank
-# lines dropped, an import hoisted onto the preceding `*/` line, runs of spaces
-# collapsed. That is a rendering difference, not a code change, but byte
-# comparison calls it 100% drift on every function — which is exactly what the
-# first three CI runs reported.
-#
-# Measured against a simulated re-print of ai-analyst:
-#   raw bytes            164 diff lines   (false)
-#   line-normalised        3 diff lines   (still false — cannot undo line joins)
-#   whitespace stream      equal          (correct)
-#
-# So `canon` decides in-sync/drift, and the line-normalised diff is used only to
-# report a rough magnitude for functions that genuinely differ.
-#
-# Trade-off, stated plainly: a whitespace-ONLY change between git and prod is
-# invisible here. That is the right trade — the alternative is a check that
-# cries drift on all 54 functions and gets ignored.
-canon()     { tr -s '[:space:]' ' ' < "$1"; }
-line_norm() { sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' -e '/^$/d' "$1"; }
-
-is_allowed() {
-  [ -f "$ALLOWLIST" ] || return 1
-  grep -vE '^\s*(#|$)' "$ALLOWLIST" | awk '{print $1}' | grep -qx "$1"
-}
-
-new_drift=(); known_drift=(); clean=(); missing=(); stale_allow=(); failed=()
-
-# Which slugs actually exist in the project. Without this, a transient download
-# failure is indistinguishable from "this function was never deployed" — and
-# silently filing it as the latter SUPPRESSES the drift it was meant to catch.
-# (It did exactly that on the first run here: two different totals, 17 and 9,
-# because a handful of downloads flaked and were quietly skipped.)
-# Version gate. 2.115.0 returns source re-printed from the deployed bundle
-# (blank lines stripped, imports hoisted, spaces collapsed), which makes every
-# function look drifted. Newer versions may or may not; verify before bumping,
-# by downloading one function and diffing it against its unchanged committed
-# source. Warn rather than fail, so a local run on another version still works.
-KNOWN_GOOD_CLI="2.98.1"
-CLI_VER="$(supabase --version 2>/dev/null | tr -d ' ' | tail -1)"
-if [ -n "$CLI_VER" ] && [ "$CLI_VER" != "$KNOWN_GOOD_CLI" ]; then
-  echo "⚠️  Supabase CLI is $CLI_VER, not the verified $KNOWN_GOOD_CLI."
-  echo "   If everything below reports drift, suspect the CLI re-printing source,"
-  echo "   not $CLI_VER of your code changing overnight."
+if [ "$#" -gt 0 ]; then
+  fns=("$@")
+else
+  fns=()
+  for d in supabase/functions/*/; do
+    n="$(basename "$d")"
+    case "$n" in _shared|seo-agent) continue ;; esac
+    [ -f "$d/index.ts" ] && fns+=("$n")
+  done
 fi
 
-supabase functions list --project-ref "$PROJECT_REF" > "$WORK/deployed.txt" 2>/dev/null || {
-  echo "::error::could not list deployed functions — check SUPABASE_ACCESS_TOKEN"; exit 1
-}
-is_deployed() { awk -F'|' '{print $3}' "$WORK/deployed.txt" | tr -d ' ' | grep -qx "$1"; }
-
-for dir in "$ROOT"/supabase/functions/*/; do
-  fn="$(basename "$dir")"
-  [ "$fn" = "_shared" ] && continue
-  [ -f "$dir/index.ts" ] || continue
-
-  if ! is_deployed "$fn"; then missing+=("$fn"); continue; fi
-
-  out="$WORK/$fn"; mkdir -p "$out"
-  # CRITICAL: every function bundles its OWN snapshot of seo-agent/* and
-  # _shared/*, so downloading several into one directory overwrites those
-  # files and gives a false reading. One directory each.
-  ok=0
-  for attempt in 1 2 3; do
-    if (cd "$out" && supabase functions download "$fn" --project-ref "$PROJECT_REF" >/dev/null 2>&1); then ok=1; break; fi
-    sleep $((attempt * 2))
-  done
-  live="$out/supabase/functions/$fn/index.ts"
-  if [ "$ok" -ne 1 ] || [ ! -f "$live" ]; then
-    # Deployed but unreadable after 3 tries. NEVER treat this as "no drift".
-    failed+=("$fn"); continue
-  fi
-
-  if cmp -s <(canon "$dir/index.ts") <(canon "$live"); then
-    clean+=("$fn")
-    is_allowed "$fn" && stale_allow+=("$fn")
-  else
-    p=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^>')
-    g=$(diff <(line_norm "$dir/index.ts") <(line_norm "$live") | grep -c '^<')
-    if [ "${DRIFT_DEBUG:-0}" = "1" ] && [ -z "${debugged:-}" ]; then
-      debugged=1
-      echo "── DEBUG: what is actually being compared for '$fn' ──"
-      echo "  git : $(wc -lc < "$dir/index.ts" | tr -s ' ') $(file -b "$dir/index.ts")"
-      echo "  live: $(wc -lc < "$live" | tr -s ' ') $(file -b "$live")"
-      echo "  git  line 1: $(head -1 "$dir/index.ts" | cat -A | cut -c1-90)"
-      echo "  live line 1: $(head -1 "$live"          | cat -A | cut -c1-90)"
-      echo "  cli : $(supabase --version 2>&1 | head -1)"
-      echo "  md5 : git=$(md5sum < "$dir/index.ts" | cut -c1-32) live=$(md5sum < "$live" | cut -c1-32)"
-      echo "  ── live file, lines 1-20 ──"; sed -n '1,20p' "$live" | cat -A | cut -c1-100 | sed 's/^/    /'
-      echo "  ── first normalised diff hunk (both sides) ──"; diff <(line_norm "$dir/index.ts") <(line_norm "$live") | head -20 | sed 's/^/    /'
-      echo "──────────────────────────────────────────────────────"
-    fi
-    if is_allowed "$fn"; then known_drift+=("$fn (prod-only: $p, git-only: $g)")
-    else                   new_drift+=("$fn (prod-only: $p, git-only: $g)")
-    fi
-  fi
+clean=(); drift=(); missing=(); failed=()
+: > "$OUT"
+for fn in "${fns[@]}"; do
+  verdict="$(bash "$GUARD" "$fn" "$HEAD_SHA" "$HEAD_SHA" 2>"$OUT.$fn")" || true
+  case "$verdict" in
+    base|head) clean+=("$fn") ;;
+    new)       missing+=("$fn") ;;
+    drift)     drift+=("$fn")
+               { echo "### $fn"; grep -E '^\s+(differs|only in prod|\()' "$OUT.$fn"; echo; } >> "$OUT" ;;
+    *)         failed+=("$fn") ;;
+  esac
+  rm -f "$OUT.$fn"
+  printf '  %-30s %s\n' "$fn" "${verdict:-error}"
 done
 
-echo "── in sync (${#clean[@]}) ───────────────────────────────"
-printf '  %s\n' "${clean[@]:-(none)}"
 echo
-echo "── known drift, allowlisted (${#known_drift[@]}) ────────"
-printf '  · %s\n' "${known_drift[@]:-(none)}"
-echo
-[ "${#missing[@]}" -gt 0 ] && { echo "── not deployed (${#missing[@]}) ────────────────────────"; printf '  %s\n' "${missing[@]}"; echo; }
-
-fail=0
-if [ "${#failed[@]}" -gt 0 ]; then
-  echo "── COULD NOT COMPARE (${#failed[@]}) ────────────────────"
-  printf '  ⚠️  %s — deployed but download failed 3×; drift status UNKNOWN\n' "${failed[@]}"
+echo "in sync: ${#clean[@]}   drifted: ${#drift[@]}   not deployed: ${#missing[@]}   could not compare: ${#failed[@]}"
+[ "${#missing[@]}" -gt 0 ] && echo "not deployed: ${missing[*]}"
+[ "${#failed[@]}" -gt 0 ]  && echo "could not compare (download failed): ${failed[*]}"
+if [ "${#drift[@]}" -gt 0 ]; then
   echo
-  fail=1
+  echo "DRIFTED (production differs from git @ ${HEAD_SHA:0:7}):"
+  cat "$OUT"
+  echo "prod-only code would be DELETED by a deploy from git; git-only code has"
+  echo "never run in production. Reconcile each before it is next deployed."
 fi
 
-if [ "${#stale_allow[@]}" -gt 0 ]; then
-  echo "── ALLOWLIST IS STALE (${#stale_allow[@]}) ──────────────"
-  printf '  ✅ %s — back in sync; delete its line from .github/edge-drift-allowlist.txt\n' "${stale_allow[@]}"
-  echo
-  fail=1
-fi
-
-compared=$(( ${#clean[@]} + ${#known_drift[@]} + ${#new_drift[@]} ))
+compared=$(( ${#clean[@]} + ${#drift[@]} ))
 if [ "$compared" -gt 10 ] && [ "${#clean[@]}" -eq 0 ]; then
-  echo "── RESULT REJECTED — the comparison itself is broken ────"
-  echo "  $compared functions compared, ZERO in sync. Real drift is never"
-  echo "  universal: some function always matches. Treat this as a bug in"
-  echo "  this script or its inputs, not as $compared drifted functions."
-  echo "  Re-run with DRIFT_DEBUG=1 to dump what is being compared."
+  echo
+  echo "RESULT REJECTED: $compared functions compared and none in sync. That is a broken"
+  echo "comparison, not universal drift. Investigate edge_prod_guard.sh's canon()."
   exit 1
 fi
 
-if [ "${#new_drift[@]}" -gt 0 ]; then
-  echo "── NEW DRIFT (${#new_drift[@]}) ─────────────────────────"
-  printf '  ❌ %s\n' "${new_drift[@]}"
-  echo
-  echo "prod-only lines are live code that a deploy from git would DELETE."
-  echo "git-only lines are committed work that production has never run."
-  echo "Reconcile with a three-way merge before deploying either way."
-  fail=1
-fi
+# Machine-readable lines for the workflow summary.
+{
+  echo "CLEAN=${clean[*]:-}"
+  echo "DRIFT=${drift[*]:-}"
+  echo "MISSING=${missing[*]:-}"
+  echo "FAILED=${failed[*]:-}"
+} > "$OUT.vars"
 
-[ "$fail" -eq 0 ] && echo "✅ No new drift."
-exit $fail
+[ "${#drift[@]}" -eq 0 ] && [ "${#failed[@]}" -eq 0 ]

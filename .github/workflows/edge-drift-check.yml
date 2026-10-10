@@ -2,89 +2,44 @@ name: Edge function drift check
 
 # WHY THIS EXISTS
 #
-# Edge functions are deployed by hand (`supabase functions deploy …`), so git
-# and production drift apart silently and by default. On 2026-08-21 an audit of
-# the 14 functions that bundle `seo-agent/*` found SIX of them diverged, and the
-# divergence was invisible until someone tried to deploy:
+# Until 2026-10-10 edge functions were deployed by hand, so git and production
+# drifted apart silently. On 2026-08-21 six functions had production-only code
+# (mission-worker: +480 live lines that git never had). A deploy from git
+# deletes such code.
 #
-#   mission-worker             prod +480 lines — the entire Daily IG cadence
-#                              mission existed ONLY in production
-#   seo-worker-writer          prod-only catalog/permalink matching
-#   industry-intelligence-sync prod-only Chrome UA; git still had the UA that
-#                              Perfect Daily Grind's WAF 403s
-#   seo-worker-visual          prod-only bag-slide guards
-#   organic-orchestrator       prod and git each had a DIFFERENT
-#                              anti-cannibalization implementation
-#   handle-seo-chat            git +400 lines never deployed
+# Since 2026-10-10 deploys come from CI (deploy-edge-functions.yml), whose
+# guard refuses any function that drifted. This job lists ALL drifted
+# functions at once, so they can be reconciled before someone touches them.
 #
-# Deploying any of those from git would have deleted live, working code. This
-# job makes that state visible within a day instead of at deploy time.
+# HOW IT COMPARES
+#   scripts/check-edge-drift.sh runs the deploy guard against HEAD for every
+#   function: the whole deployed bundle, canonicalised through esbuild,
+#   because production serves code with TypeScript types erased. (That erasure
+#   is why the previous text comparison reported 100% drift on the runner.)
 #
-# It is READ-ONLY: it downloads each deployed function and diffs it against the
-# committed source. It never deploys and never writes to Supabase.
+# READ-ONLY: downloads and compares, never deploys, never writes to Supabase.
 #
-# ⚠️ DOES NOT WORK IN CI — MANUAL DISPATCH ONLY, AND DO NOT TRUST THE RESULT.
-#
-# `supabase functions download` returns different bytes on the GitHub runner
-# than it does locally. Not a formatting difference — an AST RE-PRINT: blank
-# lines dropped, imports hoisted onto the preceding line, spaces collapsed, and
-# TRAILING COMMAS REMOVED. The code is semantically identical; the text is not.
-# Every function therefore compares as 100% drifted and `in sync` comes back 0.
-#
-# Ruled out, so nobody retries them: CRLF (clean LF, no BOM); CLI version
-# (pinned 2.98.1 reproduces it, and 2.115.0 locally does NOT — it is the
-# environment, not the version); whitespace normalisation (cannot undo a
-# removed trailing comma).
-#
-# The script is CORRECT when run locally — verified against the full function
-# set, where it found the real 17-of-59 drift. Run it by hand:
-#     SUPABASE_ACCESS_TOKEN=… bash scripts/check-edge-drift.sh
-#
-# Two real fixes, neither attempted yet:
-#   1. Push both sides through `deno fmt` before diffing, so the runner's
-#      re-print and the committed source converge on one canonical form.
-#   2. Stamp the git SHA into each function at deploy time and compare SHAs
-#      instead of content — which mostly stops mattering once deploys come
-#      from CI, since drift becomes structurally impossible.
-#
-# The RESULT REJECTED guard means a manual run fails loudly rather than
-# reporting 54 false findings. That guard stays regardless of the fix.
-#
-# Required: a SUPABASE_ACCESS_TOKEN secret scoped to the `edge-drift-check`
-# ENVIRONMENT — deliberately NOT a repo-level secret.
-#
-# Repo secrets are readable by every workflow in the repo, and fixer-agent.yml
-# states the rule this would have broken: "by design the agent has no credential
-# that can deploy or migrate." A Supabase access token can do both. Scoping it to
-# an environment means only a job that declares `environment: edge-drift-check`
-# can see it — this job does, fixer-agent does not.
-#
-# Setup:
-#   1. Settings → Environments → New environment → `edge-drift-check`
-#   2. Add an environment secret SUPABASE_ACCESS_TOKEN, from
-#      https://supabase.com/dashboard/account/tokens
-#
-# Note: Supabase personal access tokens are account-wide. Confirm on that page
-# whether a narrower scope is available before minting one; if not, the
-# environment scoping above is what limits the blast radius.
-#
-# Until the secret exists, this job fails with a message saying so.
+# Uses the edge-deploy environment's SUPABASE_ACCESS_TOKEN: an environment
+# secret, so fixer-agent.yml (which must never hold a credential that can
+# deploy) still cannot see it.
 
-# SCHEDULE AND PUSH TRIGGERS ARE DISABLED — the comparison does not work on
-# the runner. See the DOES-NOT-WORK-IN-CI note above. Manual only until the
-# content comparison is replaced with something that survives an AST re-print.
 on:
   workflow_dispatch:          # Actions → Edge function drift check → Run workflow
+  schedule:
+    - cron: '17 3 * * 1'      # Mondays 06:17 Israel time
 
 concurrency:
   group: edge-drift-check
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   drift:
     runs-on: ubuntu-latest
-    # Gates access to the SUPABASE_ACCESS_TOKEN secret — see the note above.
-    environment: edge-drift-check
+    timeout-minutes: 40
+    environment: edge-deploy
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ytydgldyeygpzmlxvpvb
@@ -94,21 +49,32 @@ jobs:
       - name: Fail early if the access token is missing
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN is not set. Add it under Settings → Secrets → Actions."
+            echo "::error::SUPABASE_ACCESS_TOKEN is not set in the edge-deploy environment."
             exit 1
           fi
 
-      # PINNED, and the script asserts it. CLI 2.115.0 returns source
-      # RE-PRINTED from the deployed bundle — blank lines stripped, imports
-      # hoisted onto the preceding line, runs of spaces collapsed. Every
-      # function then "differs" from its committed source and the check
-      # reports 100% drift. 2.98.1 returns the original files byte-for-byte
-      # (verified against ai-analyst: identical md5 vs git).
       - uses: supabase/setup-cli@v1
         with:
           version: 2.98.1
 
+      - name: Install esbuild
+        run: npm install -g esbuild@0.25.10
+
       - name: Compare every deployed function against this commit
-        run: bash scripts/check-edge-drift.sh
-        env:
-          DRIFT_DEBUG: '1'
+        run: |
+          set +e
+          DRIFT_REPORT="$RUNNER_TEMP/drift.md" bash scripts/check-edge-drift.sh | tee "$RUNNER_TEMP/drift.log"
+          rc=${PIPESTATUS[0]}
+          . "$RUNNER_TEMP/drift.md.vars" 2>/dev/null
+          {
+            echo "### Edge drift @ ${GITHUB_SHA:0:7}"
+            echo
+            echo "**In sync:** $(echo $CLEAN | wc -w)  **Drifted:** $(echo $DRIFT | wc -w)  **Not deployed:** $(echo $MISSING | wc -w)  **Could not compare:** $(echo $FAILED | wc -w)"
+            echo
+            [ -n "${DRIFT:-}" ] && cat "$RUNNER_TEMP/drift.md"
+            [ -n "${FAILED:-}" ] && echo "Could not compare: $FAILED"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # One annotation with the whole result, so it is readable from the run page.
+          msg="$(tail -n 200 "$RUNNER_TEMP/drift.log" | sed -n '/^in sync:/,$p' | head -c 8000 | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
+          if [ "$rc" -eq 0 ]; then echo "::notice title=No drift::$msg"; else echo "::error title=Edge drift::$msg"; fi
+          exit $rc
