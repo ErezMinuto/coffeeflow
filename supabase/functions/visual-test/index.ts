@@ -156,6 +156,37 @@ async function geminiJson(parts: any[]): Promise<any> {
   return JSON.parse(text)
 }
 
+// ── Brief rewrite ──────────────────────────────────────────────────────────
+// The image model draws what the SCENE BRIEF describes and treats the
+// "never do X" overrides at the end of the prompt as weaker. A live story
+// test (2026-10-10) proved it: with the override rules deployed, a brief
+// that said "a kettle pours hot water into a glass cup" still produced
+// exactly that. So we fix the brief itself before anything is drawn: one
+// cheap text call rewrites it into a scene that already obeys the rules.
+// Fails OPEN — on any error the original brief is used unchanged.
+const BRIEF_REWRITE_RULES = `You rewrite photo briefs for Minuto, a specialty COFFEE roastery and café, so an image model can draw them literally without breaking these rules. Keep everything in the brief that does not break a rule: subject, mood, light, setting, composition, aspect, and any product or bag it names.
+
+RULES:
+1. COFFEE ONLY. No tea, tea bags, teapots, tea leaves or infusions. Any drink is coffee: amber-brown filter coffee, espresso with crema, or a milk drink.
+2. POUR-OVER PHYSICS. A kettle never pours into a cup, glass or mug. Kettle water pours into a V60 / Chemex dripper holding a paper filter and a bed of wet coffee grounds; coffee drips into a glass server or cup BELOW the dripper. Rewrite any kettle-into-cup scene this way.
+3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
+4. THE ROASTER is Minuto's single, full-size, FLOOR-STANDING drum roaster on the roastery floor, hopper at about head height — never on a counter, table or bench. Its round, shallow stainless cooling tray is attached to the roaster's RIGHT SIDE at mid-height; fresh beans pour from the drum door on the front into that side tray, and the tray's own rotating arm stirs them. Never a bin, bucket or pedestal for the beans. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
+5. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
+6. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+
+Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
+
+async function rewriteBrief(brief: string): Promise<{ brief: string; changes: string[]; error?: string }> {
+  try {
+    const out = await geminiJson([{ text: `${BRIEF_REWRITE_RULES}\n\nBRIEF:\n${brief}` }])
+    const rewritten = typeof out?.brief === 'string' ? out.brief.trim() : ''
+    if (rewritten.length < 20) return { brief, changes: [], error: 'empty rewrite' }
+    return { brief: rewritten, changes: Array.isArray(out?.changes) ? out.changes.map(String) : [] }
+  } catch (e: any) {
+    return { brief, changes: [], error: String(e?.message ?? e) }
+  }
+}
+
 async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
@@ -239,6 +270,8 @@ interface VisualTestRequest {
   // generating the equipment from scratch. Default: automatic for bagless
   // bar/machine/barista/roaster scenes. Pass false to force generation.
   real_photo?: boolean
+  // Skip the pre-generation brief rewrite (rewriteBrief). Default: rewrite.
+  skip_rewrite?: boolean
 }
 
 serve(async (req) => {
@@ -252,10 +285,15 @@ serve(async (req) => {
 
   try {
     const body = await req.json() as VisualTestRequest
-    const sceneBrief = body.scene_brief ?? (body.preset ? SCENE_PRESETS[body.preset] : null)
-    if (!sceneBrief) {
+    const originalBrief = body.scene_brief ?? (body.preset ? SCENE_PRESETS[body.preset] : null)
+    if (!originalBrief) {
       throw new Error(`provide either 'scene_brief' or 'preset' (one of: ${Object.keys(SCENE_PRESETS).join(', ')})`)
     }
+    // Rewrite BEFORE any routing regex reads the brief, so reference picks
+    // (roaster / machine / style) see the corrected scene too.
+    const rewrite = body.skip_rewrite ? { brief: originalBrief, changes: [] as string[] } : await rewriteBrief(originalBrief)
+    const sceneBrief = rewrite.brief
+    console.log(`[visual-test] brief rewrite: ${rewrite.error ? `FAILED (${rewrite.error}) — using original` : rewrite.changes.length ? `changed — ${rewrite.changes.join('; ')}` : 'no changes'}`)
     const aspect    = body.aspect ?? 'feed_square'
     // Resolve the ratio LOUDLY. Callers pass `aspect` as a plain string at
     // runtime (seo-worker-visual forwards whatever the strategist wrote),
@@ -932,6 +970,9 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       real_photo_checks: realPhotoChecks,
       roaster_ref: roasterRef ? MINUTO_ROASTER_REFERENCE_URL : null,
       scene_brief: sceneBrief,
+      original_scene_brief: originalBrief,
+      brief_rewrite_changes: rewrite.changes,
+      brief_rewrite_error: rewrite.error ?? null,
       bag_url: bagUrl,
       bag_source: bagSource,
     }, 200, corsHeaders)
