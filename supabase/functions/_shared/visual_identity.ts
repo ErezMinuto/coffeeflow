@@ -112,8 +112,18 @@ dark/oily), steam, amber liquid, dark wood serving boards, brown
 craft-paper boxes, hand-thrown earthenware bowls and dishes.
 
 THE MINUTO COFFEE ROASTER (when a scene calls for the roastery /
-roasting machine / "the roaster"): a Coffee-Tech Engineering compact
-drum roaster (Minuto's actual machine) — TWO-TONE: matte-black lower
+roasting machine / "the roaster"): a Coffee-Tech Engineering
+FLOOR-STANDING drum roaster (Minuto's actual machine).
+⛔ SCALE + PLACEMENT: it is a full-size production machine that stands
+on the ROASTERY FLOOR on its own base — the top of the hopper is
+around adult head height. It NEVER sits on a counter, table, bar,
+shelf or workbench, and it is never miniaturised into a tabletop
+appliance. ⛔ COUNT: EXACTLY ONE roaster in the frame. Never two
+roasters, never a second smaller roaster beside or behind it. The
+small tabletop SAMPLE roaster appears ONLY when the brief explicitly
+says sample roast / sample roaster / cupping — and then it replaces
+the main roaster, never joins it.
+Finish — TWO-TONE: matte-black lower
 body and side panels, with a BRUSHED STAINLESS STEEL upper drum
 cover, stainless drum face, and a tall stainless conical hopper on
 top. The silhouette is VERTICAL and compact (taller than wide), not
@@ -140,9 +150,9 @@ NEVER render a vintage Probat copper roaster, NEVER an antique
 brass roaster, NEVER a white/cream-colored roaster, NEVER a
 wood-trim roaster, NEVER a "fully matte black" Diedrich/Loring-
 style box (Minuto's machine has the prominent brushed-stainless
-upper section — getting it all-black is wrong). NEVER render the
-roaster as a giant industrial unit — Minuto's machine is compact
-enough to fit in a small roastery. If the scene mentions a brass
+upper section — getting it all-black is wrong). Don't render it as
+a factory-hall industrial line either: it is one floor-standing
+machine in a small roastery room. If the scene mentions a brass
 kettle that's allowed (separate object); the roaster itself is
 two-tone matte-black + brushed stainless.
 
@@ -328,6 +338,18 @@ Hands enter from frame edge, never as a subject. Slight motion blur on a
 pour or pour-stream is welcome. NO faces.
 
 ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
+- ⛔ TEA of any kind — tea bags, teapots, loose tea leaves, tea
+  glasses, herbal infusions, pale yellow/green liquid in a cup.
+  Minuto is a COFFEE roastery: every drink in frame is coffee
+  (amber-brown filter coffee, espresso with crema, or a milk drink).
+- ⛔ A KETTLE POURING WATER STRAIGHT INTO A CUP OR GLASS. Kettle water
+  goes ONLY into a pour-over dripper (V60 / Chemex / Kalita) that holds
+  a paper filter and a visible bed of wet coffee grounds; the brewed
+  coffee then drips into a server or cup BELOW the dripper. Kettle →
+  cup with no dripper reads as tea and is an immediate fail.
+- ⛔ DUPLICATE EQUIPMENT — two roasters, two espresso machines, two
+  kettles, two grinders in one frame, unless the brief literally
+  asks for two.
 - ⛔ MILK (or any liquid) POURING FROM A STEAM WAND into a cup. Steam
   wands produce STEAM only. If milk is reaching a cup in the frame,
   the source must be a stainless steel milk pitcher held by a hand —
