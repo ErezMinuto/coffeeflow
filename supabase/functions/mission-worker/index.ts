@@ -354,7 +354,31 @@ serve(async (req) => {
       .in('id', queuedIds.slice(-30))
     const rows = (subs ?? []) as Array<{ id: string; task_type: string; status: string; rationale: string | null; result_data: any; error_msg: string | null }>
     inflight = rows.filter(r => r.status === 'pending' || r.status === 'processing').length
+
+    // Mark visuals that already have an instagram_post as SPENT, so the mission
+    // never queues a second post for the same image. Without this the list
+    // showed a completed visual as just "(completed)", and the model kept
+    // re-publishing it. (Rescued from production, where it ran outside git.)
+    const postedVisuals = new Map<string, string>()
+    const doneVisualIds = rows
+      .filter(r => r.task_type === 'visual_generation' && r.status === 'completed')
+      .map(r => r.id)
+    if (doneVisualIds.length > 0) {
+      const { data: posts } = await supabase
+        .from('seo_tasks')
+        .select('parent_task_id, created_at, brief_data')
+        .eq('task_type', 'instagram_post')
+        .neq('status', 'failed')
+        .in('parent_task_id', doneVisualIds)
+      for (const p of (posts ?? []) as Array<{ parent_task_id: string; created_at: string; brief_data: any }>) {
+        const mt = String(p.brief_data?.media_type ?? 'post')
+        postedVisuals.set(p.parent_task_id, `${mt} ${String(p.created_at).slice(0, 10)}`)
+      }
+    }
+
     subtaskSummary = rows.map(r => {
+      const posted = postedVisuals.get(r.id)
+      if (posted) return `- [${r.status}] ${r.task_type} (${r.id}) → ALREADY POSTED (${posted}). Spent: never queue another instagram_post for it.`
       const rd = r.result_data ?? {}
       // Surface the FAILURE REASON for failed tasks. Without this the mission
       // only saw "[failed] deep_research" with no cause, so it re-queued the
@@ -869,7 +893,9 @@ serve(async (req) => {
       }
     }
   }
-  if (res.text.trim()) newNotes.push(res.text.trim().slice(0, 400))
+  // The model's own reasoning leads this step's notes, ahead of the held-off
+  // and error lines, so the owner's email opens with what it decided.
+  if (res.text.trim()) newNotes.unshift(res.text.trim().slice(0, 400))
 
   // A standing daily cadence has no terminal "done" — never let it end itself,
   // whether via an over-eager complete_mission call or the step cap. It runs
