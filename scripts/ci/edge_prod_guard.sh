@@ -65,8 +65,10 @@ canon() {  # file → canonical, layout-free code on stdout
   # esbuild's TS→JS transform erases types the same way and re-prints the code
   # in one fixed layout. --minify-whitespace also drops the comments that sit
   # inside objects and arrays, which a plain transform keeps but production
-  # has already stripped.
-  if ! esbuild --loader=ts --format=esm --minify-whitespace --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
+  # has already stripped. --minify-syntax evens out what Deno's compiler
+  # rewrites on its own (redundant parentheses, `new Map()` → `new Map`); it
+  # only ever turns code into an equivalent form, so a real change still shows.
+  if ! esbuild --loader=ts --format=esm --minify-whitespace --minify-syntax --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
     echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
     cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
   fi
