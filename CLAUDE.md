@@ -137,7 +137,18 @@ store and makes every later command load it, so no one runs anything by hand:
 ./scripts/secrets-doctor.sh --live       # confirm what landed
 ```
 
-### Deploying edge functions — one command, Mac or phone
+### Deploying edge functions — merge to main
+
+**A merge to `main` deploys every edge function it changed**
+(`.github/workflows/deploy-edge-functions.yml`). It follows imports, so a change
+to `_shared/*` or `seo-agent/*` deploys exactly the functions that bundle it.
+Before each deploy it checks that production equals git *before* the merge; if
+production has code git doesn't, that function is refused and the run fails
+with the differing files. Reconcile it, then Actions → Deploy edge functions →
+Run workflow with the function names (and `force` once checked by hand).
+
+Do not deploy by hand after a merge — the workflow already did. The script
+below is for emergencies and for dev (`PROJECT_REF=emnijrlfiuwbddjahkzn`):
 
 ```bash
 ./scripts/deploy-functions.sh coffee-bot mission-worker   # named functions

@@ -1,0 +1,161 @@
+name: Deploy edge functions
+
+# WHY THIS EXISTS
+#
+# Edge functions used to be deployed by hand from the Mac, which is how git and
+# production drifted apart (see edge-drift-check.yml: six functions had
+# production-only code on 2026-08-21). From now on a merge to main deploys
+# what it changed, and nothing else.
+#
+# WHAT IT DEPLOYS
+#   Only functions whose bundle contains a changed file, following relative
+#   imports through _shared/ and seo-agent/ (scripts/ci/edge_affected.py).
+#   A change to _shared/visual_identity.ts deploys visual-test,
+#   vertex-imagen-edit and marketing-advisor, not all 59 functions.
+#
+# THE GUARD (scripts/ci/edge_prod_guard.sh)
+#   Before each deploy it downloads what production runs and requires it to
+#   equal git BEFORE this push. If production has code git doesn't, or git has
+#   older work that was never deployed, that function is NOT deployed and the
+#   run fails with the list of differing files. Everything else still ships.
+#   Reconcile the function by hand, then use "Run workflow" below with force.
+#
+# MANUAL RUN (Actions → Deploy edge functions → Run workflow)
+#   functions: space-separated names, e.g. "visual-test coffee-bot"
+#   force:     skip the guard. Only after you have checked the function by hand.
+#
+# SETUP (once)
+#   Settings → Environments → New environment → `edge-deploy`
+#   Add environment secret SUPABASE_ACCESS_TOKEN
+#   (https://supabase.com/dashboard/account/tokens).
+#   An environment secret, not a repo secret, so only this job can deploy:
+#   fixer-agent.yml must never hold a credential that can deploy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: 'Functions to deploy, space-separated'
+        required: true
+        type: string
+      force:
+        description: 'Skip the production guard (only after checking by hand)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-edge-functions
+  cancel-in-progress: false   # queue deploys, never kill one halfway
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: edge-deploy
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ytydgldyeygpzmlxvpvb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail early if the access token is missing
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN is not set in the edge-deploy environment. See the SETUP note at the top of this workflow."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.98.1
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Work out what to deploy
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          INPUT_FUNCTIONS: ${{ inputs.functions }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          if [ "$EVENT" = "push" ]; then
+            BASE="$BEFORE"
+            if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+              echo "::error::Cannot find the pre-push commit $BASE; deploy manually."
+              exit 1
+            fi
+            FUNCS="$(python3 scripts/ci/edge_affected.py "$BASE" "$HEAD_SHA" | tr '\n' ' ')"
+          else
+            BASE="$(git rev-parse HEAD~1)"
+            FUNCS="$INPUT_FUNCTIONS"
+            for f in $FUNCS; do
+              case "$f" in *[!a-z0-9-]*) echo "::error::Bad function name: $f"; exit 1 ;; esac
+              [ -f "supabase/functions/$f/index.ts" ] || { echo "::error::No such function: $f"; exit 1; }
+            done
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "head=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "functions=$FUNCS" >> "$GITHUB_OUTPUT"
+          echo "Deploy plan for ${HEAD_SHA:0:7} (base ${BASE:0:7}): ${FUNCS:-nothing}"
+
+      - name: Guard and deploy
+        if: steps.plan.outputs.functions != ''
+        env:
+          BASE: ${{ steps.plan.outputs.base }}
+          HEAD_SHA: ${{ steps.plan.outputs.head }}
+          FUNCS: ${{ steps.plan.outputs.functions }}
+          FORCE: ${{ inputs.force && 'true' || 'false' }}
+        run: |
+          set -uo pipefail
+          deployed=(); skipped=(); refused=(); failed=()
+          for f in $FUNCS; do
+            if [ "$FORCE" = "true" ]; then
+              verdict="forced"
+            else
+              verdict="$(bash scripts/ci/edge_prod_guard.sh "$f" "$BASE" "$HEAD_SHA" 2>"guard-$f.log")"
+            fi
+            case "$verdict" in
+              head)
+                skipped+=("$f"); echo "── $f: already live, skipping" ;;
+              base|new|forced)
+                echo "── $f: deploying ($verdict)"
+                if bash scripts/deploy-functions.sh "$f"; then deployed+=("$f"); else failed+=("$f"); fi ;;
+              *)
+                refused+=("$f")
+                echo "::error title=$f not deployed::Production differs from git. See the log below."
+                cat "guard-$f.log" ;;
+            esac
+          done
+
+          {
+            echo "### Edge deploy ${HEAD_SHA:0:7}"
+            echo
+            echo "| Function | Result |"
+            echo "|---|---|"
+            for f in "${deployed[@]}"; do echo "| \`$f\` | ✅ deployed |"; done
+            for f in "${skipped[@]}";  do echo "| \`$f\` | ⏭️ already live |"; done
+            for f in "${refused[@]}";  do echo "| \`$f\` | ⛔ refused: production differs from git |"; done
+            for f in "${failed[@]}";   do echo "| \`$f\` | ❌ deploy failed |"; done
+            if [ "${#refused[@]}" -gt 0 ]; then
+              echo
+              echo "Refused functions run code in production that this commit would delete,"
+              echo "or git holds older undeployed work. Reconcile by hand, then run this"
+              echo "workflow manually with **force** for those functions."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          [ "${#refused[@]}" -eq 0 ] && [ "${#failed[@]}" -eq 0 ]
