@@ -21,13 +21,14 @@
 # deploy from git silently deletes that. Requiring prod == base before shipping
 # head means a deploy can only ever add this push's diff.
 #
-# Comparison form: both sides go through `deno fmt`, then the whitespace token
-# stream is compared with all whitespace and trailing commas removed. The CLI on GitHub runners returns the bundle re-printed
-# (blank lines dropped, imports hoisted, trailing commas removed); deno fmt
-# normalises quotes and semicolons, and stripping whitespace plus trailing
-# commas absorbs what is left. A whitespace-only difference is invisible,
-# which is the right trade: real prod-only code always adds characters. If a re-print still slips through, the result is a false
-# "drift" — the guard fails CLOSED, never open.
+# Comparison form: production serves the bundle with TypeScript types ERASED,
+# and the CLI on GitHub runners re-prints it on top (blank lines dropped,
+# semicolons added, trailing commas removed). Both sides therefore go through
+# esbuild's TS→JS transform, which erases types and prints one fixed layout,
+# and then lose all whitespace and trailing commas. A whitespace-only
+# difference is invisible, which is the right trade: real prod-only code
+# always adds characters. Anything that still differs is reported as drift,
+# so the guard fails CLOSED, never open.
 set -uo pipefail
 
 FN="${1:?function}"; BASE="${2:?base sha}"; HEAD="${3:?head sha}"
@@ -55,17 +56,21 @@ if [ "$ok" -ne 1 ] || [ ! -f "$live/supabase/functions/$FN/index.ts" ]; then
   echo "error"; echo "guard: download of $FN failed 3x" >&2; exit 4
 fi
 
-canon() {  # file → canonical token stream on stdout
+canon() {  # file → canonical, layout-free code on stdout
   local f="$1" tmp
   tmp="$(mktemp "$WORK/canon.XXXXXX")" && mv "$tmp" "$tmp.${f##*.}" && tmp="$tmp.${f##*.}"
   cp "$f" "$tmp" 2>/dev/null || return 1
-  # --no-config: the repo's own fmt settings must not apply to a temp file.
-  deno fmt --no-config --quiet "$tmp" >/dev/null 2>"$tmp.fmterr" \
-    || echo "  (deno fmt could not parse ${f##*/}: $(head -c 200 "$tmp.fmterr" | tr '\n' ' '))" >&3
-  # unparseable → raw tokens, still compared (fails closed)
+  # Production returns the bundle with TypeScript types ERASED (type
+  # annotations and type-only imports gone). Running both sides through
+  # esbuild's TS→JS transform erases types the same way and re-prints the code
+  # in one fixed layout, with comments dropped.
+  if ! esbuild "$tmp" --loader=ts --format=esm --log-level=error > "$tmp.js" 2>"$tmp.err"; then
+    echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
+    cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
+  fi
   # Drop ALL whitespace and any comma directly before a closer: what is left is
-  # layout-free, so line-width decisions and trailing-comma style cancel out.
-  tr -d '[:space:]' < "$tmp" | sed -E 's/,([]})])/\1/g'
+  # layout-free.
+  tr -d '[:space:]' < "$tmp.js" | sed -E 's/,([]})])/\1/g'
 }
 
 # Compare every source file in the deployed bundle with git at a revision.
