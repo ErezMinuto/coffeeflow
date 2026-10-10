@@ -1,0 +1,56 @@
+name: Snapshot production edge functions
+
+# Copies what production runs for the named functions into a branch,
+# prod-snapshot/<run id>, under prod-snapshot/supabase/functions/...
+# Used to rescue production-only code into git (see edge-drift-check.yml).
+#
+# The copy is what Supabase returns: TypeScript types and comments are
+# already erased, so it is evidence to port from, never a file to deploy.
+#
+# Read-only towards Supabase. Writes only that new branch; never main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: 'Functions to snapshot, space-separated'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: edge-deploy
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ytydgldyeygpzmlxvpvb
+      ONLY: ${{ inputs.functions }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.98.1
+
+      - name: Download and push to a snapshot branch
+        run: |
+          set -euo pipefail
+          case "$ONLY" in *[!a-z0-9\ -]*) echo "::error::Bad function list"; exit 1 ;; esac
+          mkdir -p prod-snapshot
+          for fn in $ONLY; do
+            d="$RUNNER_TEMP/dl-$fn"; mkdir -p "$d"
+            (cd "$d" && supabase functions download "$fn" --project-ref "$PROJECT_REF")
+            cp -R "$d/supabase" prod-snapshot/
+          done
+          branch="prod-snapshot/${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -f prod-snapshot
+          git commit -m "Production snapshot of: $ONLY"
+          git push origin "$branch"
+          echo "::notice title=Snapshot branch::$branch"
