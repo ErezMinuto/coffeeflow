@@ -44,7 +44,7 @@ for fn in "${fns[@]}"; do
     base|head) clean+=("$fn") ;;
     new)       missing+=("$fn") ;;
     drift)     drift+=("$fn")
-               { echo "### $fn"; grep -E '^\s+(differs|only in prod|BEHIND|PROD-ONLY|canon|\()' | cut -c1-260 "$OUT.$fn"; echo; } >> "$OUT" ;;
+               { echo "### $fn"; grep -E '^\s+(differs|only in prod|BEHIND|PROD-ONLY|canon|\()' "$OUT.$fn" | cut -c1-260; echo; } >> "$OUT" ;;
     *)         failed+=("$fn") ;;
   esac
   rm -f "$OUT.$fn"
