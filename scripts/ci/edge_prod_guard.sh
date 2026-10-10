@@ -101,7 +101,6 @@ matches_rev() {
         else
           echo "    PROD-ONLY: matches none of the last $n committed versions" >&3
         fi
-        continue
       fi
       # Evidence for a human: the first differing lines, whitespace-normalised.
       # "<" is git, ">" is production.
