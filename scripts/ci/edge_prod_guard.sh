@@ -59,7 +59,10 @@ canon() {  # file → canonical token stream on stdout
   local f="$1" tmp
   tmp="$(mktemp "$WORK/canon.XXXXXX")" && mv "$tmp" "$tmp.${f##*.}" && tmp="$tmp.${f##*.}"
   cp "$f" "$tmp" 2>/dev/null || return 1
-  deno fmt --quiet "$tmp" >/dev/null 2>&1 || true   # unparseable → raw tokens, still compared
+  # --no-config: the repo's own fmt settings must not apply to a temp file.
+  deno fmt --no-config --quiet "$tmp" >/dev/null 2>"$tmp.fmterr" \
+    || echo "  (deno fmt could not parse ${f##*/}: $(head -c 200 "$tmp.fmterr" | tr '\n' ' '))" >&3
+  # unparseable → raw tokens, still compared (fails closed)
   # Drop ALL whitespace and any comma directly before a closer: what is left is
   # layout-free, so line-width decisions and trailing-comma style cancel out.
   tr -d '[:space:]' < "$tmp" | sed -E 's/,([]})])/\1/g'
@@ -79,9 +82,15 @@ matches_rev() {
       echo "  differs: $rel" >&3; g=1
       # Evidence for a human: the first differing lines, whitespace-normalised.
       # "<" is git, ">" is production.
+      cmp <(canon "$f" 3>/dev/null) <(canon "$WORK/git.${rel##*.}" 3>/dev/null) 2>&1 \
+        | sed -nE 's/.*(char|byte) ([0-9]+).*/\2/p' | while read -r at; do
+          s=$(( at > 120 ? at - 120 : 0 ))
+          echo "      canon git : $(canon "$WORK/git.${rel##*.}" 3>/dev/null | cut -c$((s+1))-$((at+120)))"
+          echo "      canon prod: $(canon "$f" 3>/dev/null | cut -c$((s+1))-$((at+120)))"
+        done >&3
       diff <(sed -E 's/[[:space:]]+/ /g;s/^ //;s/ $//;/^$/d' "$WORK/git.${rel##*.}") \
            <(sed -E 's/[[:space:]]+/ /g;s/^ //;s/ $//;/^$/d' "$f") \
-        | grep -E '^[<>]' | head -8 | cut -c1-160 | sed 's/^/      /' >&3
+        | grep -E '^[<>]' | head -4 | cut -c1-160 | sed 's/^/      /' >&3
     fi
   done < <(find "$live/supabase/functions" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' \) | sort)
   return $g
