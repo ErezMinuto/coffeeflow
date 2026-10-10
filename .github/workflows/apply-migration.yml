@@ -58,6 +58,21 @@ jobs:
             *) echo "::error::target must be dev or prod"; exit 1 ;;
           esac
           echo "REF=$REF" >> "$GITHUB_ENV"
+          # Connectivity first, so "cannot reach the database" is never mistaken
+          # for "the migration is wrong".
+          for t in 1 2 3; do
+            pc=$(curl -sS -o ping.json -w '%{http_code}' -X POST \
+              "https://api.supabase.com/v1/projects/$REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" --data '{"query":"select 1 as ok"}')
+            echo "ping $t: HTTP $pc $(head -c 200 ping.json)"
+            [ "$pc" -lt 300 ] && break
+            sleep 20
+          done
+          if [ "$pc" -ge 300 ]; then
+            echo "::error title=Cannot reach $TARGET database (HTTP $pc)::$(head -c 600 ping.json | tr '\n' ' ')"
+            exit 1
+          fi
           body="$(jq -Rs '{query: .}' < "$path")"
           code=$(curl -sS -o resp.json -w '%{http_code}' -X POST \
             "https://api.supabase.com/v1/projects/$REF/database/query" \
