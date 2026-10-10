@@ -1,0 +1,330 @@
+// Minuto SEO Agent — Supabase DB helpers.
+//
+// All reads + writes against seo_tasks / seo_metrics / chat_messages
+// funnel through here. Keeps SQL out of the orchestrator / worker /
+// chat function bodies and centralizes column-name knowledge.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+export function createSupabase() {
+  return createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
+// ── seo_tasks ────────────────────────────────────────────────────────────
+export async function insertTasks(supabase, tasks) {
+  if (tasks.length === 0) return [];
+  // Defense-in-depth: a model-authored brief_data sometimes arrives as a JSON
+  // STRING instead of an object. Inserted into the jsonb column verbatim it
+  // becomes a string scalar, so workers see no fields (e.g. no .slides) and
+  // reject the task as "brief invalid". Coerce any stringified brief_data to an
+  // object here so EVERY caller (chat, mission worker, orchestrator) is safe.
+  const normalized = tasks.map((t)=>{
+    const bd = t.brief_data;
+    if (typeof bd === 'string') {
+      try {
+        const parsed = JSON.parse(bd);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return {
+            ...t,
+            brief_data: parsed
+          };
+        }
+      } catch  {}
+    }
+    return t;
+  });
+  const { data, error } = await supabase.from('seo_tasks').insert(normalized).select();
+  if (error) throw new Error(`insertTasks failed: ${error.message}`);
+  return data ?? [];
+}
+// Worker pickup: SELECT FOR UPDATE SKIP LOCKED equivalent via an RPC
+// would be cleanest, but we can do it client-side by relying on the
+// locked_until contract. The worker UPDATEs a single pending row to
+// 'processing' + sets locked_until, returning the row. Concurrent
+// workers either get a different row or hit a unique-pickup race that
+// the optimistic check resolves.
+export async function claimNextTask(supabase, taskType, workerId, lockMinutes = 10) {
+  // Find eligible tasks of this type. Two kinds are claimable:
+  //   1. status='pending' (normal queue)
+  //   2. status='processing' with an EXPIRED locked_until — a STALE LOCK:
+  //      the previous worker was hard-killed (e.g. edge wall-clock limit)
+  //      mid-run and never released the lock or flipped status. Without
+  //      reclaiming these, a crashed task is stuck in 'processing' forever
+  //      and the worker no-ops (processed:0). Self-healing > a separate
+  //      sweeper cron.
+  const nowIso = new Date().toISOString();
+  const { data: candidates, error: selErr } = await supabase.from('seo_tasks').select('*').eq('task_type', taskType).lte('scheduled_for', nowIso).or(`status.eq.pending,and(status.eq.processing,locked_until.lt.${nowIso})`).order('scheduled_for', {
+    ascending: true
+  }).limit(5) // small batch — try a few in case of races
+  ;
+  if (selErr) throw new Error(`claimNextTask select failed: ${selErr.message}`);
+  if (!candidates || candidates.length === 0) return null;
+  // Try to atomically claim one. We update with a WHERE on the current
+  // status so two workers can't both grab the same row.
+  for (const candidate of candidates){
+    // Skip if dependencies are not all complete.
+    if (candidate.depends_on && candidate.depends_on.length > 0) {
+      const { data: deps, error: depErr } = await supabase.from('seo_tasks').select('id, status').in('id', candidate.depends_on);
+      if (depErr) continue;
+      const incomplete = (deps ?? []).filter((d)=>d.status !== 'completed');
+      if (incomplete.length > 0) continue;
+    }
+    const isStaleReclaim = candidate.status === 'processing';
+    // A stale-locked row that has already burned its attempts is a
+    // crash-looper (it keeps dying before it can mark itself failed).
+    // Give up: mark it failed permanently instead of reclaiming forever.
+    if (isStaleReclaim && candidate.attempts >= candidate.max_attempts) {
+      await supabase.from('seo_tasks').update({
+        status: 'failed',
+        error_msg: `stale lock + attempts exhausted (${candidate.attempts}/${candidate.max_attempts}) — worker repeatedly died mid-run before completing`,
+        locked_until: null
+      }).eq('id', candidate.id).eq('status', 'processing').lt('locked_until', nowIso);
+      continue;
+    }
+    const lockedUntil = new Date(Date.now() + lockMinutes * 60_000).toISOString();
+    let upd = supabase.from('seo_tasks').update({
+      status: 'processing',
+      attempts: candidate.attempts + 1,
+      locked_until: lockedUntil,
+      worker_id: workerId,
+      started_at: new Date().toISOString()
+    }).eq('id', candidate.id);
+    // Optimistic concurrency guard, scoped to what we're claiming:
+    //   - pending row: only succeed if STILL pending
+    //   - stale lock: only succeed if STILL processing AND STILL expired
+    //     (so two workers can't both reclaim, and we don't steal a row a
+    //     fresh worker just re-locked).
+    upd = isStaleReclaim ? upd.eq('status', 'processing').lt('locked_until', nowIso) : upd.eq('status', 'pending');
+    const { data: updated, error: updErr } = await upd.select().maybeSingle();
+    if (updErr) continue;
+    if (updated) return updated;
+  // Lost the race — try the next candidate.
+  }
+  return null;
+}
+export async function markTaskCompleted(supabase, taskId, resultData) {
+  const { error } = await supabase.from('seo_tasks').update({
+    status: 'completed',
+    result_data: resultData,
+    completed_at: new Date().toISOString(),
+    locked_until: null,
+    error_msg: null
+  }).eq('id', taskId);
+  if (error) throw new Error(`markTaskCompleted failed: ${error.message}`);
+}
+export async function markTaskFailed(supabase, taskId, errorMsg, permanentlyFailed) {
+  const { error } = await supabase.from('seo_tasks').update({
+    status: permanentlyFailed ? 'failed' : 'pending',
+    error_msg: errorMsg.slice(0, 2000),
+    locked_until: null
+  }).eq('id', taskId);
+  if (error) throw new Error(`markTaskFailed failed: ${error.message}`);
+}
+// Sweeper: reset rows whose locked_until is in the past back to pending.
+// Run from a separate cron every 5 min.
+export async function sweepStuckTasks(supabase) {
+  const { data, error } = await supabase.from('seo_tasks').update({
+    status: 'pending',
+    locked_until: null
+  }).eq('status', 'processing').lt('locked_until', new Date().toISOString()).select('id');
+  if (error) throw new Error(`sweepStuckTasks failed: ${error.message}`);
+  return (data ?? []).length;
+}
+// For the orchestrator's self-reflection input — last N tasks of any
+// status, newest first.
+export async function getRecentTasks(supabase, sinceIsoDate, limit = 100) {
+  const { data, error } = await supabase.from('seo_tasks').select('*').gte('created_at', sinceIsoDate).order('created_at', {
+    ascending: false
+  }).limit(limit);
+  if (error) throw new Error(`getRecentTasks failed: ${error.message}`);
+  return data ?? [];
+}
+// For the orchestrator's anti-repetition input — the last N IG captions it
+// actually shipped (task_type='instagram_post', completed), newest first. The
+// caption text lives in brief_data.caption_he (the strategist writes it
+// verbatim; the worker only publishes it). Deliberately NOT time-boxed: at
+// ~3-4 posts/week, 20 captions is ~5-6 weeks of history — deeper than the
+// 14-day getRecentTasks window — so the strategist sees enough recent openers /
+// hooks / themes to avoid repeating them.
+export async function fetchRecentIgCaptions(supabase, limit = 20) {
+  const { data, error } = await supabase.from('seo_tasks').select('created_at, brief_data').eq('task_type', 'instagram_post').eq('status', 'completed').order('created_at', {
+    ascending: false
+  }).limit(limit);
+  if (error) throw new Error(`fetchRecentIgCaptions failed: ${error.message}`);
+  return (data ?? []).map((t)=>({
+      created_at: String(t.created_at ?? ''),
+      caption_he: String(t.brief_data?.caption_he ?? '').trim()
+    })).filter((c)=>c.caption_he.length > 0);
+}
+// ── seo_metrics ──────────────────────────────────────────────────────────
+export async function insertMetrics(supabase, source, payload) {
+  const { data, error } = await supabase.from('seo_metrics').insert({
+    source,
+    metrics_payload: payload
+  }).select('id').single();
+  if (error) throw new Error(`insertMetrics failed: ${error.message}`);
+  return data.id;
+}
+export async function getRecentMetricsSnapshots(supabase, source, limit = 5) {
+  const { data, error } = await supabase.from('seo_metrics').select('logged_at, metrics_payload').eq('source', source).order('logged_at', {
+    ascending: false
+  }).limit(limit);
+  if (error) throw new Error(`getRecentMetricsSnapshots failed: ${error.message}`);
+  return data ?? [];
+}
+// ── chat_messages ───────────────────────────────────────────────────────
+export async function appendChatMessage(supabase, args) {
+  const { data, error } = await supabase.from('chat_messages').insert({
+    session_id: args.session_id,
+    role: args.role,
+    content: args.content,
+    tool_calls: args.tool_calls ?? null,
+    tool_call_id: args.tool_call_id ?? null,
+    metadata: args.metadata ?? null
+  }).select('id').single();
+  if (error) throw new Error(`appendChatMessage failed: ${error.message}`);
+  return data.id;
+}
+export async function getChatHistory(supabase, sessionId, limit = 50) {
+  // CRITICAL: must fetch the MOST-RECENT `limit` messages, not the
+  // oldest. Earlier this used `.order(..., ascending:true).limit(50)`
+  // which silently truncated the newest messages once a session
+  // exceeded 50 rows — including the user message we just persisted —
+  // causing the messages array sent to Anthropic to end on an
+  // assistant turn, and 400 with "conversation must end with user
+  // message".
+  // Fetch newest-first, then reverse client-side so the caller still
+  // sees chronological order (oldest → newest, latest user message last).
+  const { data, error } = await supabase.from('chat_messages').select('role, content, tool_calls, tool_call_id, created_at').eq('session_id', sessionId).order('created_at', {
+    ascending: false
+  }).limit(limit);
+  if (error) throw new Error(`getChatHistory failed: ${error.message}`);
+  const rows = data ?? [];
+  // Reverse to chronological order; strip created_at since callers
+  // expect the original shape.
+  return rows.reverse().map(({ created_at: _ts, ...rest })=>rest);
+}
+export async function recordLearning(supabase, learning) {
+  const { data, error } = await supabase.from('seo_learnings').insert({
+    scope: learning.scope,
+    insight: learning.insight,
+    evidence_task_ids: learning.evidence_task_ids ?? [],
+    created_by: learning.created_by
+  }).select('*').single();
+  if (error) throw new Error(`recordLearning failed: ${error.message}`);
+  return data;
+}
+// Default read path for both chat prompt + strategist prompt: active
+// (non-superseded) learnings, newest first. `scopes` filter is optional
+// — the chat agent loads everything, the orchestrator can narrow to
+// just the scopes relevant to planning.
+export async function getRecentLearnings(supabase, opts = {}) {
+  let q = supabase.from('seo_learnings').select('*').is('superseded_at', null).order('created_at', {
+    ascending: false
+  }).limit(opts.limit ?? 20);
+  if (opts.scopes && opts.scopes.length > 0) {
+    q = q.in('scope', opts.scopes);
+  }
+  const { data, error } = await q;
+  if (error) throw new Error(`getRecentLearnings failed: ${error.message}`);
+  return data ?? [];
+}
+// ── System config — tunable runtime thresholds ─────────────────────────
+// Single key-value store readable from any worker / evaluator. Functions
+// fetch overrides + fall back to their hardcoded defaults if no row.
+export async function getSystemConfig(supabase, key, fallback) {
+  const { data, error } = await supabase.from('system_config').select('value').eq('key', key).maybeSingle();
+  if (error) {
+    console.warn(`[db] getSystemConfig('${key}') failed; using fallback: ${error.message}`);
+    return fallback;
+  }
+  if (!data) return fallback;
+  // value is JSONB — could be number / string / object. Cast and trust caller.
+  return data.value;
+}
+export async function listSystemConfig(supabase) {
+  const { data, error } = await supabase.from('system_config').select('*').order('key', {
+    ascending: true
+  });
+  if (error) throw new Error(`listSystemConfig failed: ${error.message}`);
+  return data ?? [];
+}
+export async function setSystemConfig(supabase, key, value, updatedBy, reasoning) {
+  const { error } = await supabase.from('system_config').upsert({
+    key,
+    value: value,
+    updated_by: updatedBy,
+    reasoning,
+    updated_at: new Date().toISOString()
+  }, {
+    onConflict: 'key'
+  });
+  if (error) throw new Error(`setSystemConfig('${key}') failed: ${error.message}`);
+}
+export async function supersedeLearning(supabase, id, reason, supersededBy) {
+  const { error } = await supabase.from('seo_learnings').update({
+    superseded_at: new Date().toISOString(),
+    superseded_reason: reason,
+    superseded_by: supersededBy ?? null
+  }).eq('id', id).is('superseded_at', null) // don't re-supersede an already-superseded row
+  ;
+  if (error) throw new Error(`supersedeLearning failed: ${error.message}`);
+}
+export async function insertExperiment(supabase, experiment) {
+  const { data, error } = await supabase.from('seo_experiments').insert(experiment).select('*').single();
+  if (error) throw new Error(`insertExperiment failed: ${error.message}`);
+  return data;
+}
+// Find experiments due for evaluation: still in 'collecting' status AND
+// past their per-experiment min_lookback_days threshold. Each row tells
+// the evaluator how to score (primary_metric, min_sample_size, etc.).
+export async function getExperimentsDueForEvaluation(supabase, limit = 10) {
+  // Postgres can compute the cutoff per-row via the column itself.
+  // Using a raw filter: created_at + min_lookback_days * 1day <= now
+  const { data, error } = await supabase.from('seo_experiments').select('*').eq('status', 'collecting').order('created_at', {
+    ascending: true
+  }).limit(limit * 5) // pull extra; we filter in JS for the date math
+  ;
+  if (error) throw new Error(`getExperimentsDueForEvaluation failed: ${error.message}`);
+  const now = Date.now();
+  return (data ?? []).filter((e)=>{
+    const eligible = new Date(e.created_at).getTime() + e.min_lookback_days * 24 * 3600 * 1000;
+    return eligible <= now;
+  }).slice(0, limit);
+}
+export async function getExperimentVariations(supabase, experimentId) {
+  const { data, error } = await supabase.from('seo_tasks').select('*').eq('experiment_id', experimentId).order('created_at', {
+    ascending: true
+  });
+  if (error) throw new Error(`getExperimentVariations failed: ${error.message}`);
+  return data ?? [];
+}
+export async function updateExperimentStatus(supabase, id, patch) {
+  const update = {
+    status: patch.status,
+    evaluated_at: new Date().toISOString()
+  };
+  if (patch.winner_task_id !== undefined) update.winner_task_id = patch.winner_task_id;
+  if (patch.evaluation_summary !== undefined) update.evaluation_summary = patch.evaluation_summary;
+  if (patch.recorded_learning_id !== undefined) update.recorded_learning_id = patch.recorded_learning_id;
+  const { error } = await supabase.from('seo_experiments').update(update).eq('id', id);
+  if (error) throw new Error(`updateExperimentStatus failed: ${error.message}`);
+}
+// ── Cost ledger (spend observability + monthly kill-switch) ──────────────────
+// Rows are written by callClaude itself (see claude.ts logCost), so every call
+// is measured whether or not its call site remembered to log. There is
+// deliberately NO logClaudeCost helper here any more: a second write path would
+// double-count a call against the monthly ceiling.
+// Sum est_usd across the agent stack for the current calendar month (UTC). Powers
+// the kickoff kill-switch: skip + alert when month-to-date >= the ceiling.
+export async function getMonthToDateSpendUsd(supabase) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const { data, error } = await supabase.from('agent_cost_ledger').select('est_usd').gte('created_at', monthStart).limit(100000);
+  if (error) throw new Error(`getMonthToDateSpendUsd failed: ${error.message}`);
+  return (data ?? []).reduce((s, r)=>s + Number(r.est_usd ?? 0), 0);
+}
