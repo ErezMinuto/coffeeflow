@@ -77,6 +77,6 @@ jobs:
             [ -n "${FAILED:-}" ] && echo "Could not compare: $FAILED"
           } >> "$GITHUB_STEP_SUMMARY"
           # One annotation with the whole result, so it is readable from the run page.
-          msg="$(tail -n 200 "$RUNNER_TEMP/drift.log" | sed -n '/^in sync:/,$p' | head -c 8000 | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
+          msg="$(tail -n 200 "$RUNNER_TEMP/drift.log" | sed -n '/^in sync:/,$p' | head -c 60000 | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
           if [ "$rc" -eq 0 ]; then echo "::notice title=No drift::$msg"; else echo "::error title=Edge drift::$msg"; fi
           exit $rc
