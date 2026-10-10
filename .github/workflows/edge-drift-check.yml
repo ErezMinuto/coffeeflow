@@ -25,6 +25,12 @@ name: Edge function drift check
 
 on:
   workflow_dispatch:          # Actions → Edge function drift check → Run workflow
+    inputs:
+      functions:
+        description: 'Only these functions, space-separated (empty = all)'
+        required: false
+        default: ''
+        type: string
   schedule:
     - cron: '17 3 * * 1'      # Mondays 06:17 Israel time
 
@@ -63,9 +69,12 @@ jobs:
         run: npm install -g esbuild@0.25.10
 
       - name: Compare every deployed function against this commit
+        env:
+          ONLY: ${{ inputs.functions }}
         run: |
+          case "$ONLY" in *[!a-z0-9\ -]*) echo "::error::Bad function list"; exit 1 ;; esac
           set +e
-          DRIFT_REPORT="$RUNNER_TEMP/drift.md" bash scripts/check-edge-drift.sh | tee "$RUNNER_TEMP/drift.log"
+          DRIFT_REPORT="$RUNNER_TEMP/drift.md" bash scripts/check-edge-drift.sh $ONLY | tee "$RUNNER_TEMP/drift.log"
           rc=${PIPESTATUS[0]}
           . "$RUNNER_TEMP/drift.md.vars" 2>/dev/null
           {
