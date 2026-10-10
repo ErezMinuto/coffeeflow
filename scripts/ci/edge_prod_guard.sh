@@ -63,8 +63,10 @@ canon() {  # file → canonical, layout-free code on stdout
   # Production returns the bundle with TypeScript types ERASED (type
   # annotations and type-only imports gone). Running both sides through
   # esbuild's TS→JS transform erases types the same way and re-prints the code
-  # in one fixed layout, with comments dropped.
-  if ! esbuild --loader=ts --format=esm --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
+  # in one fixed layout. --minify-whitespace also drops the comments that sit
+  # inside objects and arrays, which a plain transform keeps but production
+  # has already stripped.
+  if ! esbuild --loader=ts --format=esm --minify-whitespace --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
     echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
     cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
   fi
