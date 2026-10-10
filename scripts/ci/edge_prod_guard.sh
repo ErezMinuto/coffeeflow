@@ -85,6 +85,24 @@ matches_rev() {
     git -C "$ROOT" show "$rev:$rel" > "$WORK/git.${rel##*.}"
     if ! cmp -s <(canon "$f") <(canon "$WORK/git.${rel##*.}"); then
       echo "  differs: $rel" >&3; g=1
+      if [ "${GUARD_HISTORY:-0}" = "1" ]; then
+        # Which committed version of this file is production running, if any?
+        # A match means production is merely BEHIND git (safe to deploy);
+        # no match means production carries code that is in no commit.
+        local live_c hit="" n=0 c
+        live_c="$(canon "$f" 3>/dev/null)"
+        for c in $(git -C "$ROOT" log --format=%H -n 300 "$rev" -- "$rel"); do
+          n=$((n + 1))
+          git -C "$ROOT" show "$c:$rel" > "$WORK/hist.${rel##*.}" 2>/dev/null || continue
+          if [ "$(canon "$WORK/hist.${rel##*.}" 3>/dev/null)" = "$live_c" ]; then hit="$c"; break; fi
+        done
+        if [ -n "$hit" ]; then
+          echo "    BEHIND: prod = git@${hit:0:7} ($(git -C "$ROOT" log -1 --format=%cs "$hit")), $((n - 1)) later commit(s) never deployed" >&3
+        else
+          echo "    PROD-ONLY: matches none of the last $n committed versions" >&3
+        fi
+        continue
+      fi
       # Evidence for a human: the first differing lines, whitespace-normalised.
       # "<" is git, ">" is production.
       cmp <(canon "$f" 3>/dev/null) <(canon "$WORK/git.${rel##*.}" 3>/dev/null) 2>&1 \

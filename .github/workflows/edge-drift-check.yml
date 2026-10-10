@@ -45,6 +45,8 @@ jobs:
       PROJECT_REF: ytydgldyeygpzmlxvpvb
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # history: tells "prod is behind git" from "prod-only code"
 
       - name: Fail early if the access token is missing
         run: |
