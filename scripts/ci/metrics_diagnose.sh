@@ -6,7 +6,7 @@ REF="${1:?project ref}"
 q() {
   local label="$1" sql="$2" t0 t1 code
   t0=$(date +%s%3N)
-  code=$(curl -sS -m 150 -o out.json -w '%{http_code}' -X POST \
+  code=$(curl -sS -m 45 -o out.json -w '%{http_code}' -X POST \
     "https://api.supabase.com/v1/projects/$REF/database/query" \
     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
     --data "$(jq -n --arg q "$sql" '{query:$q}')")
