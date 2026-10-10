@@ -120,13 +120,15 @@ jobs:
           FUNCS: ${{ steps.plan.outputs.functions }}
           FORCE: ${{ inputs.force && 'true' || 'false' }}
         run: |
-          set -uo pipefail
+          set +e -uo pipefail
           deployed=(); skipped=(); refused=(); failed=()
           for f in $FUNCS; do
             if [ "$FORCE" = "true" ]; then
               verdict="forced"
             else
-              verdict="$(bash scripts/ci/edge_prod_guard.sh "$f" "$BASE" "$HEAD_SHA" 2>"guard-$f.log")"
+              # The step shell runs with -e; the guard exits non-zero to refuse, which
+              # must reach the case below instead of killing the step silently.
+              verdict="$(bash scripts/ci/edge_prod_guard.sh "$f" "$BASE" "$HEAD_SHA" 2>"guard-$f.log")" || true
             fi
             case "$verdict" in
               head)
@@ -136,7 +138,9 @@ jobs:
                 if bash scripts/deploy-functions.sh "$f"; then deployed+=("$f"); else failed+=("$f"); fi ;;
               *)
                 refused+=("$f")
-                echo "::error title=$f not deployed::Production differs from git. See the log below."
+                # Annotation carries the differing files so they show on the run page.
+                msg="$(head -c 3000 "guard-$f.log" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
+                echo "::error title=$f not deployed ($verdict)::${msg:-no detail}"
                 cat "guard-$f.log" ;;
             esac
           done
