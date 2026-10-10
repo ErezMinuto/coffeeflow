@@ -551,7 +551,7 @@ DO NOT copy this image's composition — only the visual language. The bag from 
       refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's own 2-group La Marzocco Strada X on its bar. THIS is the machine — every machine part you render must look like the matching part in this photo and attach to the body exactly where it does here. Match: slate/gunmetal MATTE body; the CLEAR (near-colourless, see-through) glass is the machine's large OUTER SIDE WALL at the far end — it never appears as a small panel or shield beside a group head, and is simply out of frame in group-head close-ups; grey group-head caps over chrome groups, each holding ONE portafilter with a BLACK handle; chrome steam wands rising from the TOP-SIDE of the body next to the groups (never out of a group or portafilter); stainless drip tray. Copy the machine's anatomy faithfully; the scene's framing, light and mood come from the brief. Forbidden: generic chrome Linea silhouette, invented parts, readable brand text.`)
     }
     if (roasterRef) {
-      refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering compact drum roaster. Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
+      refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering FLOOR-STANDING drum roaster. SCALE + PLACEMENT: a full-size machine standing on the roastery FLOOR on its own base, hopper top at about adult head height — NEVER on a counter, table, bar or shelf, never shrunk into a tabletop appliance. EXACTLY ONE roaster in the frame — never a second roaster anywhere (counter, floor or background). Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
     }
 
     const ordinal = (i: number) => ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'][i] ?? `#${i + 1}`
@@ -574,7 +574,7 @@ INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 • MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
-• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.`}
+• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.${roasterRef ? ' EXCEPTION — THE ROASTER: this surface is only for small tabletop props (bag, cups, beans). The roaster is NOT a prop: it stands on the roastery FLOOR, never on this surface. If both appear, the surface is a counter or workbench in front of / beside the floor-standing roaster.' : ''}`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
 • FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
@@ -718,6 +718,29 @@ Goldilocks: NOT pale-tan/cardboard/wheat (too light, looks underroasted),
 NOT dark chocolate/espresso/black (too dark, looks french-roast),
 NOT green/sage (not roasted at all). The target is clearly medium-roasted
 coffee — chestnut brown with subtle warm undertones.
+
+☕ COFFEE ONLY — NEVER TEA. Minuto is a coffee roastery. No tea bags,
+teapots, tea leaves, tea glasses or herbal infusions anywhere. Any
+drink in frame is coffee: amber-brown filter coffee, espresso with
+crema, or a milk drink.
+
+💧 POUR-OVER PHYSICS — a kettle NEVER pours water straight into a cup
+or glass (that reads as tea and is an automatic reject). Kettle water
+goes ONLY into a pour-over dripper (V60 / Chemex / Kalita) holding a
+paper filter and a visible bed of wet, blooming coffee grounds; the
+brewed coffee drips from the dripper into a glass server or cup BELOW
+it. If the brief shows a kettle pouring, the dripper with grounds is
+in frame and is where the water lands.
+
+1️⃣ COUNT LOCK — each piece of equipment the brief names appears
+EXACTLY ONCE: one roaster, one espresso machine, one kettle, one
+grinder. Never duplicate a machine (e.g. one on a counter and another
+on the floor), even if the brief mentions it twice in different
+words.${roasterRef ? `
+
+🏭 ROASTER PLACEMENT — the roaster stands on the roastery FLOOR, full
+size, hopper at about head height. It is NEVER on a counter, table,
+bar or workbench, and there is only ONE roaster in the frame.` : ''}
 
 If the SCENE description specifies a ceramic cup but the brewing method
 implied is filter / V60 / Chemex / pour-over, render a thin clear-glass
