@@ -77,6 +77,11 @@ matches_rev() {
     git -C "$ROOT" show "$rev:$rel" > "$WORK/git.${rel##*.}"
     if ! cmp -s <(canon "$f") <(canon "$WORK/git.${rel##*.}"); then
       echo "  differs: $rel" >&3; g=1
+      # Evidence for a human: the first differing lines, whitespace-normalised.
+      # "<" is git, ">" is production.
+      diff <(sed -E 's/[[:space:]]+/ /g;s/^ //;s/ $//;/^$/d' "$WORK/git.${rel##*.}") \
+           <(sed -E 's/[[:space:]]+/ /g;s/^ //;s/ $//;/^$/d' "$f") \
+        | grep -E '^[<>]' | head -8 | cut -c1-160 | sed 's/^/      /' >&3
     fi
   done < <(find "$live/supabase/functions" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' \) | sort)
   return $g
