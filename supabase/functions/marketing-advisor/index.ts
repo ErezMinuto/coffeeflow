@@ -3065,11 +3065,15 @@ function buildMetaDataBlock(
   const totalClicks      = metaCurrentAgg.reduce((s, c) => s + c.clicks, 0);
   const totalImpressions = metaCurrentAgg.reduce((s, c) => s + c.impressions, 0);
   const totalConversions = metaCurrentAgg.reduce((s, c) => s + c.conversions, 0);
-  const overallCpa       = totalConversions > 0 ? totalSpend / totalConversions : null;
+  // CPA is per PURCHASE, like the per-campaign CPA. Dividing by the funnel
+  // `conversions` total gave an overall CPA ~12x too low.
+  const totalPurchases   = metaCurrentAgg.reduce((s, c) => s + (c.purchases ?? 0), 0);
+  const anyPurchaseData  = metaCurrentAgg.some(c => c.purchases !== null);
+  const overallCpa       = anyPurchaseData && totalPurchases > 0 ? totalSpend / totalPurchases : null;
 
   const metaCampaignBlock = metaCurrentAgg.length > 0
     ? metaCurrentAgg.map(c =>
-        `  ${c.name} | מטרה: ${c.objective ?? "—"} | סטטוס: ${c.status} | עלות: ₪${c.spend} | קליקים: ${c.clicks} | המרות: ${c.conversions} | CPA: ${c.cpa != null ? `₪${c.cpa}` : "אין"} | CTR: ${c.ctr}%`
+        `  ${c.name} | מטרה: ${c.objective ?? "—"} | סטטוס: ${c.status} | עלות: ₪${c.spend} | קליקים: ${c.clicks} | רכישות: ${c.purchases ?? "לא נמדד"} | CPA לרכישה: ${c.cpa != null ? `₪${c.cpa}` : "אין"} | אירועי משפך: ${c.conversions} | CTR: ${c.ctr}%`
       ).join("\n")
     : "  אין נתוני קמפיין מטא השבוע";
 
@@ -3083,7 +3087,10 @@ function buildMetaDataBlock(
     metaTotalSpend:       Math.round(totalSpend * 100) / 100,
     metaTotalClicks:      totalClicks,
     metaTotalImpressions: totalImpressions,
-    metaTotalConversions: totalConversions,
+    // Shown next to the per-purchase CPA everywhere, so it must count purchases.
+    // The funnel-event total stays available as metaTotalFunnelEvents.
+    metaTotalConversions: totalPurchases,
+    metaTotalFunnelEvents: totalConversions,
     metaOverallCpa:       overallCpa != null ? Math.round(overallCpa * 100) / 100 : null,
     metaCampaignBlock,
     metaPrevBlock,
@@ -3706,15 +3713,20 @@ async function fetchNewCampaigns(
     googleByCamp.set(r.campaign_id, arr);
   }
 
-  // Filter to those whose FIRST observed row is within 14d — proxy for "new"
+  // A campaign is NEW only if it has no row at all before the window. The
+  // rows above are already filtered to >= lookbackDate, so their first date
+  // can never be earlier; checking it made EVERY campaign look new, which
+  // kept the "new campaign cooldown" on permanently.
+  const googleExisting = await campaignsSeenBefore(supabase, "google_campaigns", [...googleByCamp.keys()], lookbackDate);
   for (const [cid, rows] of googleByCamp.entries()) {
     const firstDate = rows[0].date;
-    if (firstDate < lookbackDate) continue;  // existing campaign, not new
+    if (googleExisting.has(String(cid))) continue;  // existing campaign, not new
 
     const totalSpend  = rows.reduce((s: number, r: any) => s + Number(r.cost ?? 0), 0);
     const totalClicks = rows.reduce((s: number, r: any) => s + Number(r.clicks ?? 0), 0);
     const totalImps   = rows.reduce((s: number, r: any) => s + Number(r.impressions ?? 0), 0);
-    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.conversions ?? 0), 0);
+    // primary_conversions, not the legacy all_conversions column (~6x inflated).
+    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.primary_conversions ?? 0), 0);
     const daysLive    = Math.max(1, Math.floor((new Date(weekEnd).getTime() - new Date(firstDate).getTime()) / 86400000) + 1);
     const cpa         = totalConvs > 0 ? Math.round((totalSpend / totalConvs) * 100) / 100 : null;
     const ctr         = totalImps > 0 ? Math.round((totalClicks / totalImps) * 10000) / 100 : 0;
@@ -3732,7 +3744,7 @@ async function fetchNewCampaigns(
       cpa,
       ctr_pct:     ctr,
       stage:       classifyStage(daysLive, totalConvs),
-      trend_note:  trendNote(rows, "cost", "conversions"),
+      trend_note:  trendNote(rows, "cost", "primary_conversions"),
     });
   }
 
@@ -3750,14 +3762,16 @@ async function fetchNewCampaigns(
     metaByCamp.set(r.campaign_id, arr);
   }
 
+  const metaExisting = await campaignsSeenBefore(supabase, "meta_ad_campaigns", [...metaByCamp.keys()], lookbackDate);
   for (const [cid, rows] of metaByCamp.entries()) {
     const firstDate = rows[0].date;
-    if (firstDate < lookbackDate) continue;
+    if (metaExisting.has(String(cid))) continue;
 
     const totalSpend  = rows.reduce((s: number, r: any) => s + Number(r.spend ?? 0), 0);
     const totalClicks = rows.reduce((s: number, r: any) => s + Number(r.clicks ?? 0), 0);
     const totalImps   = rows.reduce((s: number, r: any) => s + Number(r.impressions ?? 0), 0);
-    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.conversions ?? 0), 0);
+    // purchases, not the funnel `conversions` column (~12x inflated).
+    const totalConvs  = rows.reduce((s: number, r: any) => s + Number(r.purchases ?? 0), 0);
     const daysLive    = Math.max(1, Math.floor((new Date(weekEnd).getTime() - new Date(firstDate).getTime()) / 86400000) + 1);
     const cpa         = totalConvs > 0 ? Math.round((totalSpend / totalConvs) * 100) / 100 : null;
     const ctr         = totalImps > 0 ? Math.round((totalClicks / totalImps) * 10000) / 100 : 0;
@@ -3775,11 +3789,27 @@ async function fetchNewCampaigns(
       cpa,
       ctr_pct:     ctr,
       stage:       classifyStage(daysLive, totalConvs),
-      trend_note:  trendNote(rows, "spend", "conversions"),
+      trend_note:  trendNote(rows, "spend", "purchases"),
     });
   }
 
   return out.sort((a, b) => a.days_live - b.days_live);
+}
+
+// Which of these campaign ids already have a row before `before`? Those are
+// existing campaigns, not new ones.
+async function campaignsSeenBefore(
+  supabase: ReturnType<typeof createClient>,
+  table: "google_campaigns" | "meta_ad_campaigns",
+  ids: string[],
+  before: string,
+): Promise<Set<string>> {
+  const seen = new Set<string>();
+  for (const id of ids) {
+    const { data } = await supabase.from(table).select("campaign_id").eq("campaign_id", id).lt("date", before).limit(1);
+    if (data && data.length > 0) seen.add(String(id));
+  }
+  return seen;
 }
 
 function classifyStage(daysLive: number, conversions: number): NewCampaignSummary["stage"] {
@@ -6366,6 +6396,19 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       for (const m of ((googleClickMappingRaw ?? []) as any[])) {
         if (m.gclid && m.campaign_id) gclidToCampaign.set(m.gclid, String(m.campaign_id));
       }
+      // The query above only has clicks from the last 14 days, so an order
+      // placed today from a click 20 days ago lost its campaign. Look up the
+      // exact gclids these orders carry, whatever the click date.
+      {
+        const missing = [...new Set(wooRows.map((o: any) => o.gclid).filter((g: any) => g && !gclidToCampaign.has(g)))] as string[];
+        for (let i = 0; i < missing.length; i += 200) {
+          const { data } = await supabase.from("google_click_mapping")
+            .select("gclid,campaign_id").in("gclid", missing.slice(i, i + 200));
+          for (const m of (data ?? []) as any[]) {
+            if (m.gclid && m.campaign_id) gclidToCampaign.set(m.gclid, String(m.campaign_id));
+          }
+        }
+      }
 
       // Normalizer for utm_campaign → campaign_name matching
       const normName = (s: string) => (s ?? "").toLowerCase().replace(/[_\s|\-]+/g, " ").trim();
@@ -6426,10 +6469,17 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
       const wooGoogleOrders = wooRows.filter(isGoogleOrder).length;
       const wooMetaOrders   = wooRows.filter(isMetaOrder).length;
-      const wooGoogleRevenue = wooRows.filter(isGoogleOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
-      const wooMetaRevenue   = wooRows.filter(isMetaOrder).reduce((s, o) => s + (Number(o.total) || 0), 0);
 
-      // Attribution function — gclid/utm first, then spend-share fallback.
+      // Google auto-tagging puts a gclid on every Google click. When almost
+      // every Google order in the window was matched to a campaign by gclid,
+      // tracking demonstrably works, so a campaign with no matched orders
+      // really had none: that is what lets PAUSE fire. Meta has no
+      // equivalent (no UTMs on its ads yet), so a Meta zero stays unknown.
+      const googleGclidMatched = wooRows.filter((o: any) => o._attribution === "gclid").length;
+      const googleZeroIsReal = wooGoogleOrders >= 3 && googleGclidMatched / wooGoogleOrders >= 0.8;
+
+      // Attribution function — gclid first, then utm_campaign. No estimate:
+      // orders that cannot be placed stay in the unattributed count.
       // Returns { orders, revenue, attribution, coffee_revenue, machine_revenue,
       //          grinder_revenue, accessory_revenue, other_revenue }.
       function attributeCampaign(
@@ -6467,15 +6517,15 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             other_revenue:     Math.round(catRev.other     * 100) / 100,
           };
         }
-        // Fallback: share of platform orders weighted by spend share
-        const platformOrders = platform === "google" ? wooGoogleOrders : wooMetaOrders;
-        const platformRevenue = platform === "google" ? wooGoogleRevenue : wooMetaRevenue;
-        const share = platformTotalSpend > 0 ? campaignSpend / platformTotalSpend : 0;
+        // No matched orders. The old spend-share estimate invented fractional
+        // orders here (and once recommended pausing the best campaign); the
+        // owner chose to show "unknown" honestly instead (2026-10-10).
+        void campaignSpend; void platformTotalSpend;
         return {
-          orders: Math.round(platformOrders * share * 100) / 100,
-          revenue: Math.round(platformRevenue * share * 100) / 100,
-          attribution: "spend_share_estimate",
-          confidence: "low",
+          orders: 0,
+          revenue: 0,
+          attribution: "none",
+          confidence: platform === "google" && googleZeroIsReal ? "high" : "low",
           coffee_revenue: 0, machine_revenue: 0, grinder_revenue: 0,
           accessory_revenue: 0, other_revenue: 0,
         };
@@ -6584,8 +6634,9 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
         // GROUND TRUTH: gclid-aware attribution + product category split.
         const real = attributeCampaign(String(cid), g.name, "google", g.totalSpend, googleTotalSpend);
+        const measured = !(real.attribution === "none" && real.confidence === "low");
         const realCpa  = real.orders > 0 ? Math.round((g.totalSpend / real.orders) * 100) / 100 : null;
-        const realRoas = g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
+        const realRoas = measured && g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
         const coffeePct = real.revenue > 0 ? Math.round((real.coffee_revenue / real.revenue) * 100) : 0;
         const machinePct = real.revenue > 0 ? Math.round((real.machine_revenue / real.revenue) * 100) : 0;
 
@@ -6703,8 +6754,9 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
 
         // GROUND TRUTH for Meta (same attribution path + product category split)
         const realM = attributeCampaign(String(m.campaign_id), m.name, "meta", m.totalSpend, metaTotalSpend);
+        const measuredM = !(realM.attribution === "none" && realM.confidence === "low");
         const realMCpa  = realM.orders > 0 ? Math.round((m.totalSpend / realM.orders) * 100) / 100 : null;
-        const realMRoas = m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
+        const realMRoas = measuredM && m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
         const mCoffeePct = realM.revenue > 0 ? Math.round((realM.coffee_revenue / realM.revenue) * 100) : 0;
         const mMachinePct = realM.revenue > 0 ? Math.round((realM.machine_revenue / realM.revenue) * 100) : 0;
 
@@ -6916,7 +6968,7 @@ ${HEBREW_COPY_RULES}
 
 **חובה**: בכל המלצה, החלטה, kill/scale threshold — השתמש רק ב-real_* שדות.
 • אם real_orders = 0 על הוצאה > ₪100 — זה FAIL, גם אם platform_reported_cpa ₪0.92.
-• אם attribution_source = "spend_share_estimate" — סמן "הערכה — UTMs שבורים".
+• אם attribution_source = "none" ו־attribution_confidence = "low" — ההכנסה של הקמפיין לא ידועה (real_roas = null). אל תמליץ להגדיל או לעצור על סמך הכנסה; סמן "לא נמדד — חסר UTM".
 
 === 🎯 ניתוח פאנל — חובה לבצע לכל קמפיין לפני שאתה כותב המלצה ===
 
