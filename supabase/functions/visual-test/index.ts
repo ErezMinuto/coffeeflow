@@ -551,7 +551,7 @@ DO NOT copy this image's composition — only the visual language. The bag from 
       refDescriptions.push(`reference image — MINUTO ESPRESSO MACHINE. Real photo of Minuto's own 2-group La Marzocco Strada X on its bar. THIS is the machine — every machine part you render must look like the matching part in this photo and attach to the body exactly where it does here. Match: slate/gunmetal MATTE body; the CLEAR (near-colourless, see-through) glass is the machine's large OUTER SIDE WALL at the far end — it never appears as a small panel or shield beside a group head, and is simply out of frame in group-head close-ups; grey group-head caps over chrome groups, each holding ONE portafilter with a BLACK handle; chrome steam wands rising from the TOP-SIDE of the body next to the groups (never out of a group or portafilter); stainless drip tray. Copy the machine's anatomy faithfully; the scene's framing, light and mood come from the brief. Forbidden: generic chrome Linea silhouette, invented parts, readable brand text.`)
     }
     if (roasterRef) {
-      refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering FLOOR-STANDING drum roaster. SCALE + PLACEMENT: a full-size machine standing on the roastery FLOOR on its own base, hopper top at about adult head height — NEVER on a counter, table, bar or shelf, never shrunk into a tabletop appliance. EXACTLY ONE roaster in the frame — never a second roaster anywhere (counter, floor or background). Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
+      refDescriptions.push(`reference image — MINUTO COFFEE ROASTER. Real photo of Minuto's actual Coffee-Tech Engineering FLOOR-STANDING drum roaster. SCALE + PLACEMENT: a full-size machine standing on the roastery FLOOR on its own base, hopper top at about adult head height — NEVER on a counter, table, bar or shelf, never shrunk into a tabletop appliance. EXACTLY ONE roaster in the frame — never a second roaster anywhere (counter, floor or background). The cooling tray is on the machine's RIGHT SIDE at mid-height, never on its front or on a pedestal; no hands or tools stirring the beans. Use it as a SHAPE + FINISH anchor — the roaster you render MUST visually match this image, not a generic Probat-style copper unit. Key features to preserve: TWO-TONE finish (matte-black lower body and side panels, BRUSHED STAINLESS STEEL upper drum cover and stainless drum face), tall stainless conical hopper sitting on top, large stainless exhaust chimney rising straight up from the upper-left, vertical compact silhouette (taller than wide, NOT a wide horizontal industrial unit), SEPARATE round shallow stainless cooling tray attached at mid-height on the RIGHT side (much smaller diameter than the drum body) with a rotating stainless arm crossing it. ⛔ NO visible manufacturer text or badge — the "COFFEE-TECH ENGINEERING" lettering on the real machine MUST NOT be rendered as readable text in the output (no readable letters on the hopper, drum cover, cooling tray rim, or anywhere). ⛔ NEVER render a vintage Probat copper roaster, NEVER an antique brass roaster, NEVER a "fully matte black" all-black Diedrich/Loring box (Minuto's machine has the prominent brushed-stainless upper section — getting it all-black is wrong).`)
     }
 
     const ordinal = (i: number) => ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'][i] ?? `#${i + 1}`
@@ -740,7 +740,21 @@ words.${roasterRef ? `
 
 🏭 ROASTER PLACEMENT — the roaster stands on the roastery FLOOR, full
 size, hopper at about head height. It is NEVER on a counter, table,
-bar or workbench, and there is only ONE roaster in the frame.` : ''}
+bar or workbench, and there is only ONE roaster in the frame.
+
+🌀 COOLING TRAY POSITION — the round, shallow stainless cooling tray
+is attached to the roaster's RIGHT SIDE at mid-height, sticking out
+sideways beside the drum face, and is much smaller than the machine
+body. It is NEVER mounted on the front of the machine, NEVER sits on
+top of the black lower body, NEVER on a separate pedestal or stand.
+Fresh beans pour from the drum door on the front into that side tray.
+The tray's own rotating stainless arm stirs the beans — nobody stirs
+them by hand.
+
+✋ NO HANDS, NO TOOLS in roaster scenes — unless the brief explicitly
+asks for a person or a hand, no hand, arm or person appears. No
+paddle, spoon, scoop, stick or rake in the beans. The machine works
+on its own.` : ''}
 
 If the SCENE description specifies a ceramic cup but the brewing method
 implied is filter / V60 / Chemex / pour-over, render a thin clear-glass
