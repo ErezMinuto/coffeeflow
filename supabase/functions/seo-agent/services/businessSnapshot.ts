@@ -35,6 +35,7 @@ import type {
   BusinessSnapshot,
   SalesSnapshot,
   SalesWindow,
+  TotalRevenueSnapshot,
   CategorySales,
   SkuSales,
   EmailPerformance,
@@ -43,6 +44,9 @@ import type {
 } from '../types.ts'
 
 // ── Sales: the north-star block ─────────────────────────────────────────────
+// business_revenue (MFlow via mx_revenue_summary) is THE north star since
+// 2026-10-10; before that this block measured web lines only (~a third of the
+// money), so the strategist graded theses on a minority slice.
 // woo_order_items_enriched has one row per order line, already category-tagged
 // ('coffee' | 'machine' | 'grinder' | 'accessory' | 'other') and date-stamped.
 // We roll it up two ways the brain needs: by category and by SKU, for the
@@ -110,6 +114,30 @@ function rollUpWindow(lines: EnrichedLine[]): {
   return { revenue_ils: Math.round(revenue), order_count: orders.size, by_category, top_skus }
 }
 
+/** Whole-business revenue (MFlow, ex-VAT) per channel from the metrics layer. */
+async function fetchBusinessRevenue(
+  supabase: SupabaseClient,
+  windowDays: number,
+): Promise<TotalRevenueSnapshot | { error: string }> {
+  const { data, error } = await supabase.rpc('mx_revenue_summary', { p_days: windowDays })
+  if (error) return { error: `mx_revenue_summary failed: ${error.message}` }
+  const rows = ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+    channel:              String(r.channel),
+    revenue_ex_vat:       Math.round(Number(r.revenue_ex_vat ?? 0)),
+    sales:                Number(r.sales ?? 0),
+    prior_revenue_ex_vat: Math.round(Number(r.prev_revenue_ex_vat ?? 0)),
+    change_pct:           r.change_pct == null ? null : Number(r.change_pct),
+  }))
+  const total = rows.find(r => r.channel === 'total')
+  if (!total) return { error: 'mx_revenue_summary returned no total row' }
+  return {
+    window_days: windowDays,
+    source: 'mflow_ex_vat',
+    total,
+    by_channel: rows.filter(r => r.channel !== 'total').sort((a, b) => b.revenue_ex_vat - a.revenue_ex_vat || a.channel.localeCompare(b.channel)),
+  }
+}
+
 export async function fetchSalesSnapshot(
   supabase: SupabaseClient,
   windowDays = DEFAULT_SALES_WINDOW_DAYS,
@@ -160,8 +188,11 @@ export async function fetchSalesSnapshot(
   const pct = (cur: number, prev: number): number | null =>
     prev > 0 ? Math.round(((cur - prev) / prev) * 1000) / 10 : null
 
+  const business_revenue = await fetchBusinessRevenue(supabase, windowDays)
+
   return {
     window_days: windowDays,
+    business_revenue,
     current: mkWindow(currentSince, current),
     prior: mkWindow(priorSince, prior),
     trend: {
