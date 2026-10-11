@@ -63,7 +63,8 @@ export default function MetaAdsPage() {
       prev.to.toISOString().split('T')[0]
     )
     const spend = rows.reduce((s: number, c: any) => s + c.spend, 0)
-    const conv = rows.reduce((s: number, c: any) => s + c.conversions, 0)
+    // Meta's own PURCHASE count, not `conversions` (every funnel event, ~12x inflated).
+    const conv = rows.reduce((s: number, c: any) => s + (c.purchases ?? 0), 0)
     const clicks = rows.reduce((s: number, c: any) => s + c.clicks, 0)
     setPrevSpend(spend)
     setPrevConversions(conv)
@@ -86,7 +87,7 @@ export default function MetaAdsPage() {
       byCampaign[r.campaign_id].spend += r.spend
       byCampaign[r.campaign_id].impressions += r.impressions
       byCampaign[r.campaign_id].clicks += r.clicks
-      byCampaign[r.campaign_id].conversions += r.conversions
+      byCampaign[r.campaign_id].conversions += (r.purchases ?? 0)
     })
     const agg = Object.values(byCampaign).map((c: any) => ({
       ...c,
@@ -101,7 +102,7 @@ export default function MetaAdsPage() {
     rows.forEach((r: any) => {
       if (!byDate[r.date]) byDate[r.date] = { date: r.date.slice(5), spend: 0, conversions: 0, clicks: 0 }
       byDate[r.date].spend += r.spend
-      byDate[r.date].conversions += r.conversions
+      byDate[r.date].conversions += (r.purchases ?? 0)
       byDate[r.date].clicks += r.clicks
     })
     const daily = Object.values(byDate).map((d: any) => ({
@@ -192,8 +193,8 @@ export default function MetaAdsPage() {
       {/* KPIs with MoM */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="הוצאות" value={formatCurrency(totalSpend)} change={spendChange} loading={loading} />
-        <KPICard label="המרות" value={formatNumber(totalConversions)} change={convChange} loading={loading} />
-        <KPICard label="עלות להמרה (CPA)" value={totalCPA !== null ? formatCurrency(totalCPA) : '—'} change={cpaChange} loading={loading} />
+        <KPICard label="רכישות (לפי מטא)" value={formatNumber(totalConversions)} change={convChange} loading={loading} />
+        <KPICard label="עלות לרכישה (CPA)" value={totalCPA !== null ? formatCurrency(totalCPA) : '—'} change={cpaChange} loading={loading} />
         <KPICard label="קליקים" value={formatNumber(totalClicks)} change={clicksChange} loading={loading} />
       </div>
       <div className="grid grid-cols-3 gap-4">
@@ -218,7 +219,7 @@ export default function MetaAdsPage() {
             </ResponsiveContainer>
           </div>
           <div className="card">
-            <h3 className="font-display font-semibold text-surface-900 mb-4">הוצאות והמרות יומיות</h3>
+            <h3 className="font-display font-semibold text-surface-900 mb-4">הוצאות ורכישות יומיות</h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0ebe3" />
@@ -226,7 +227,7 @@ export default function MetaAdsPage() {
                 <YAxis tick={{ fontSize: 10, fill: '#927561' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e3d9cc', borderRadius: 12, fontSize: 12 }} />
                 <Bar dataKey="spend" fill="#1877f2" name="הוצאות ₪" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="conversions" fill="#34d399" name="המרות" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="conversions" fill="#34d399" name="רכישות" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -242,7 +243,7 @@ export default function MetaAdsPage() {
             {(['spend', 'conversions', 'cpa'] as const).map(s => (
               <button key={s} onClick={() => setSortBy(s)}
                 className={`px-2 py-1 rounded ${sortBy === s ? 'bg-brand-100 text-brand-700 font-medium' : 'hover:bg-surface-100'}`}>
-                {s === 'spend' ? 'הוצאות' : s === 'conversions' ? 'המרות' : 'CPA'}
+                {s === 'spend' ? 'הוצאות' : s === 'conversions' ? 'רכישות' : 'CPA'}
               </button>
             ))}
           </div>
@@ -250,7 +251,7 @@ export default function MetaAdsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-surface-100 bg-surface-50">
-              {['קמפיין', 'סטטוס', 'הוצאות', 'קליקים', 'CTR', 'CPC', 'המרות', 'CPA'].map(h => (
+              {['קמפיין', 'סטטוס', 'הוצאות', 'קליקים', 'CTR', 'CPC', 'רכישות', 'CPA'].map(h => (
                 <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">{h}</th>
               ))}
             </tr>

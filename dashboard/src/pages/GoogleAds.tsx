@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { KPICard } from '../components/shared/KPICard'
 import { DateRangePicker } from '../components/shared/DateRangePicker'
-import { DateRange, GoogleCampaign } from '../lib/types'
+import { DateRange } from '../lib/types'
+import { fetchPaidSummary, PaidCampaignRow } from '../lib/metrics'
 import { getDefaultDateRange, formatCurrency, formatNumber } from '../lib/utils'
 import { AlertCircle } from 'lucide-react'
 
 export default function GoogleAdsPage() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange())
-  const [campaigns, setCampaigns] = useState<GoogleCampaign[]>([])
+  const [campaigns, setCampaigns] = useState<PaidCampaignRow[]>([])
   const [loading, setLoading] = useState(true)
   const [connected, setConnected] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [dateRange])
 
@@ -24,29 +26,32 @@ export default function GoogleAdsPage() {
     setConnected(!!token)
 
     if (token) {
-      const { data } = await supabase
-        .from('google_campaigns')
-        .select('*')
-        .gte('date', dateRange.from.toISOString().split('T')[0])
-        .lte('date', dateRange.to.toISOString().split('T')[0])
-        .order('cost', { ascending: false })
-      setCampaigns(data || [])
+      // One row per campaign from the metrics layer: spend from Google, real
+      // orders and revenue from MFlow web sales attributed by gclid / UTM.
+      // (This page used to list one row per campaign PER DAY, with Google's
+      // all_conversions count, ~6x inflated, and its own ROAS.)
+      const { rows, error } = await fetchPaidSummary(dateRange, 'google')
+      setError(error)
+      setCampaigns(rows)
     }
     setLoading(false)
   }
 
-  const totalCost = campaigns.reduce((s, c) => s + c.cost, 0)
-  const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0)
-  const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0)
-  const totalConvValue = campaigns.reduce((s, c) => s + c.conversion_value, 0)
-  const roas = totalCost > 0 ? totalConvValue / totalCost : 0
+  const attributed = campaigns.filter(c => c.campaign_id)
+  const unattributed = campaigns.find(c => !c.campaign_id)
+  const totalCost = attributed.reduce((s, c) => s + c.spend, 0)
+  const totalClicks = attributed.reduce((s, c) => s + c.clicks, 0)
+  const totalOrders = campaigns.reduce((s, c) => s + c.orders, 0)
+  const totalRevenue = campaigns.reduce((s, c) => s + c.revenue_ex_vat, 0)
+  const roas = totalCost > 0 ? totalRevenue / totalCost : 0
+  const cpa = totalOrders > 0 ? totalCost / totalOrders : null
 
   return (
     <div className="space-y-8 fade-up">
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-display font-semibold text-surface-900">Google Ads</h2>
-          <p className="text-sm text-surface-400 mt-1">{campaigns.length} קמפיינים</p>
+          <p className="text-sm text-surface-400 mt-1">{attributed.length} קמפיינים · הכנסה מ־MFlow לפני מע״מ</p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
@@ -64,11 +69,15 @@ export default function GoogleAdsPage() {
         </div>
       )}
 
+      {error && (
+        <div className="card bg-red-50 border-red-200 text-sm text-red-700">שגיאה בטעינת המדדים: {error}</div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="הוצאות" value={formatCurrency(totalCost)} loading={loading} />
-        <KPICard label="קליקים" value={totalClicks} loading={loading} />
-        <KPICard label="המרות" value={totalConversions} loading={loading} />
-        <KPICard label="ROAS" value={roas.toFixed(2)} suffix="x" loading={loading} />
+        <KPICard label="CPA אמיתי" value={cpa !== null ? formatCurrency(Math.round(cpa)) : '—'} loading={loading} />
+        <KPICard label="הזמנות אמיתיות" value={totalOrders} loading={loading} />
+        <KPICard label="ROAS אמיתי (לפני מע״מ)" value={roas.toFixed(2)} suffix="x" loading={loading} />
       </div>
 
       <div className="card overflow-hidden p-0">
@@ -81,10 +90,10 @@ export default function GoogleAdsPage() {
               <th className="text-right px-5 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">קמפיין</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">עלות</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">קליקים</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">CTR</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">CPC</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">המרות</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">הזמנות</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">הכנסה</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider">ROAS</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-surface-400 uppercase tracking-wider" title="מה שגוגל מדווח. לאבחון בלבד">המרות לפי גוגל</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-50">
@@ -99,20 +108,19 @@ export default function GoogleAdsPage() {
                 {connected ? 'אין נתונים לתקופה זו' : 'חבר את Google בהגדרות'}
               </td></tr>
             ) : (
-              campaigns.map(c => (
-                <tr key={c.id} className="hover:bg-surface-50 transition-colors">
+              [...attributed, ...(unattributed ? [unattributed] : [])].map(c => (
+                <tr key={c.campaign_id ?? 'unattributed'} className="hover:bg-surface-50 transition-colors">
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-green-500' : c.status === 'PAUSED' ? 'bg-amber-400' : 'bg-surface-300'}`} />
-                      <span className="font-medium text-surface-800">{c.name}</span>
-                    </div>
+                    <span className={`font-medium ${c.campaign_id ? 'text-surface-800' : 'text-surface-400 italic'}`}>
+                      {c.campaign_id ? c.name : 'לא משויך לקמפיין'}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-surface-700">{formatCurrency(c.cost)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{formatNumber(c.clicks)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{(c.ctr * 100).toFixed(2)}%</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{formatCurrency(c.cpc)}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{c.conversions}</td>
-                  <td className="px-4 py-3 font-mono text-surface-600">{c.roas.toFixed(2)}x</td>
+                  <td className="px-4 py-3 font-mono text-surface-700">{c.campaign_id ? formatCurrency(c.spend) : '—'}</td>
+                  <td className="px-4 py-3 font-mono text-surface-600">{c.campaign_id ? formatNumber(c.clicks) : '—'}</td>
+                  <td className="px-4 py-3 font-mono text-surface-600">{c.orders}</td>
+                  <td className="px-4 py-3 font-mono text-surface-600">{formatCurrency(Math.round(c.revenue_ex_vat))}</td>
+                  <td className="px-4 py-3 font-mono text-surface-600">{c.real_roas !== null ? `${c.real_roas.toFixed(2)}x` : '—'}</td>
+                  <td className="px-4 py-3 font-mono text-surface-400">{c.platform_purchases ?? '—'}</td>
                 </tr>
               ))
             )}
