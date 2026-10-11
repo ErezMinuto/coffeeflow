@@ -156,6 +156,10 @@ async function geminiJson(parts: any[]): Promise<any> {
   return JSON.parse(text)
 }
 
+// Prompt files saved beside each render (<image>.prompt.txt) are deleted
+// after this many days.
+const PROMPT_RETENTION_DAYS = 7
+
 // ── Brief rewrite ──────────────────────────────────────────────────────────
 // The image model draws what the SCENE BRIEF describes and treats the
 // "never do X" overrides at the end of the prompt as weaker. A live story
@@ -171,8 +175,9 @@ RULES:
 2. POUR-OVER PHYSICS. A kettle never pours into a cup, glass or mug. Kettle water pours into a V60 / Chemex dripper holding a paper filter and a bed of wet coffee grounds; coffee drips into a glass server or cup BELOW the dripper. Rewrite any kettle-into-cup scene this way.
 3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
 4. THE ROASTER is Minuto's single, full-size, FLOOR-STANDING drum roaster on the roastery floor, hopper at about head height — never on a counter, table or bench. Its cooler is a large, deep, cylindrical brushed-stainless COOLING BIN with tall straight sides (about as wide as the drum body) standing on the FLOOR at the front-right of the roaster, directly below the drum door; fresh beans fall from the drum door into it and its internal stirring arms turn them. Never a shallow tray on a stand or on a table; nobody stirs the beans by hand. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
-5. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
-6. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+5. AEROPRESS ON THE CUP. An AeroPress is supported only by the cup it brews into: its base flange RESTS DIRECTLY ON THE CUP RIM, physically touching it — never floating above the cup with a gap or a stream falling through open air.
+6. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
+7. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
 Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
 
@@ -770,6 +775,10 @@ brewed coffee drips from the dripper into a glass server or cup BELOW
 it. If the brief shows a kettle pouring, the dripper with grounds is
 in frame and is where the water lands.
 
+🧪 AEROPRESS ON THE CUP — the AeroPress is supported only by the cup:
+its base flange rests DIRECTLY ON THE CUP RIM, touching it. NEVER
+hovering above the cup with a gap or a stream falling through open air.
+
 1️⃣ COUNT LOCK — each piece of equipment the brief names appears
 EXACTLY ONCE: one roaster, one espresso machine, one kettle, one
 grinder. Never duplicate a machine (e.g. one on a counter and another
@@ -949,7 +958,47 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
 
     const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
 
+    // Save the EXACT prompt sent to the image model next to the image, same
+    // name with .prompt.txt, so a bad render can be traced by opening
+    // <image url>.prompt.txt. Best-effort: never fails the render.
+    const sentPrompt = realPhotoUsed ? realPhotoPrompt : `Generate an image: ${fullPrompt}`
+    const promptFile = filename.replace(/\.[a-z]+$/, '.prompt.txt')
+    const promptDoc = [
+      `IMAGE: ${pub.publicUrl}`,
+      `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
+      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
+      `SURFACE: ${surface.name}`,
+      ``, `── ORIGINAL BRIEF (from the agent) ──`, originalBrief,
+      ``, `── REWRITTEN BRIEF ── changes: ${rewrite.error ? `rewrite failed: ${rewrite.error}` : rewrite.changes.join('; ') || 'none'}`, sceneBrief,
+      ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
+    ].join('\n')
+    let promptUrl: string | null = null
+    try {
+      const { error: pErr } = await supabase.storage.from('marketing')
+        .upload(promptFile, new TextEncoder().encode(promptDoc), { contentType: 'text/plain; charset=utf-8', upsert: true })
+      if (!pErr) promptUrl = supabase.storage.from('marketing').getPublicUrl(promptFile).data.publicUrl
+      else console.warn(`[visual-test] prompt upload failed: ${pErr.message}`)
+    } catch (e: any) { console.warn(`[visual-test] prompt upload error: ${e?.message ?? e}`) }
+
+    // RETENTION: prompt files are kept 7 days, no more. Each render sweeps
+    // the oldest ones past that age (deletes through the Storage API, so the
+    // stored file is removed, not just its row). Best-effort, like the upload.
+    try {
+      const cutoff = Date.now() - PROMPT_RETENTION_DAYS * 86_400_000
+      const { data: old } = await supabase.storage.from('marketing').list('ig-test', {
+        limit: 100, search: '.prompt.txt', sortBy: { column: 'created_at', order: 'asc' },
+      })
+      const expired = (old ?? [])
+        .filter(f => f.name.endsWith('.prompt.txt') && f.created_at && Date.parse(f.created_at) < cutoff)
+        .map(f => `ig-test/${f.name}`)
+      if (expired.length) {
+        const { error: rmErr } = await supabase.storage.from('marketing').remove(expired)
+        console.log(`[visual-test] prompt retention: removed ${expired.length} older than ${PROMPT_RETENTION_DAYS}d${rmErr ? ` (error: ${rmErr.message})` : ''}`)
+      }
+    } catch (e: any) { console.warn(`[visual-test] prompt retention error: ${e?.message ?? e}`) }
+
     return jsonResponse({
+      prompt_url: promptUrl,
       success: true,
       url: pub.publicUrl,
       aspect,
