@@ -542,8 +542,30 @@ export interface SalesWindow {
   top_skus:            SkuSales[]
 }
 
+// THE north star: whole-business revenue from MFlow via the metrics layer
+// (mx_revenue_summary), ex-VAT, returns netted, per channel. Café and B2B are
+// most of the money; web is a minority slice.
+export interface ChannelRevenue {
+  channel:             string        // pos (café) | ecosite (web) | back_office (B2B) | other | total
+  revenue_ex_vat:      number
+  sales:               number
+  prior_revenue_ex_vat: number
+  change_pct:          number | null // null when the prior window was zero
+}
+
+export interface TotalRevenueSnapshot {
+  window_days: number
+  source:      'mflow_ex_vat'
+  total:       ChannelRevenue
+  by_channel:  ChannelRevenue[]
+}
+
 export interface SalesSnapshot {
   window_days: number
+  // North star. Grade theses and lead diagnoses on this, not on `current`.
+  business_revenue: TotalRevenueSnapshot | { error: string }
+  // WEB SHOP DETAIL ONLY (WooCommerce lines, incl. VAT): category / SKU mix of
+  // online orders. Useful for product questions; never the revenue headline.
   current:     SalesWindow
   prior:       SalesWindow  // the equal-length window immediately before `current` (for trend)
   trend: {
