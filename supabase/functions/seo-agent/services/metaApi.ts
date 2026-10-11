@@ -36,7 +36,7 @@ export async function fetchTopOrganicPosts(
     .from('meta_organic_posts')
     .select('post_id, post_type, message, created_at, reach, impressions, likes, comments, shares, saves')
     .gte('created_at', since)
-    .order('impressions', { ascending: false })
+    .order('reach', { ascending: false, nullsFirst: false })
     .limit(limit * 3)  // pull extra so engagement_rate ranking can re-rank
   if (error) throw new Error(`fetchTopOrganicPosts failed: ${error.message}`)
 
@@ -56,6 +56,10 @@ export async function fetchTopOrganicPosts(
   const enriched: OrganicPostSignal[] = rows.map(r => {
     const imp = r.impressions ?? 0
     const engagementCount = (r.likes ?? 0) + (r.comments ?? 0) + (r.shares ?? 0) + (r.saves ?? 0)
+    // Per REACH, like experimentEvaluator: IG `impressions` has read 0 on nearly
+    // every post since ~May 2026, which made this rate 0 for everything and the
+    // ranking meaningless. Impressions only as a fallback for older posts.
+    const denom = (r.reach ?? 0) > 0 ? (r.reach ?? 0) : imp
     return {
       post_id:         r.post_id,
       post_type:       r.post_type,
@@ -67,7 +71,7 @@ export async function fetchTopOrganicPosts(
       comments:        r.comments ?? 0,
       shares:          r.shares ?? 0,
       saves:           r.saves ?? 0,
-      engagement_rate: imp > 0 ? engagementCount / imp : 0,
+      engagement_rate: denom > 0 ? engagementCount / denom : 0,
     }
   })
 
@@ -75,7 +79,7 @@ export async function fetchTopOrganicPosts(
   // post outranks a viral low-engagement one — the former signals topic resonance
   // more cleanly. Tie-break on impressions.
   return enriched
-    .sort((a, b) => (b.engagement_rate - a.engagement_rate) || (b.impressions - a.impressions))
+    .sort((a, b) => (b.engagement_rate - a.engagement_rate) || (b.reach - a.reach))
     .slice(0, limit)
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchPaidSummary } from '../lib/metrics'
 import { useApp } from '../lib/context'
 import { TrendingUp, Shield, RefreshCw, AlertCircle, Loader2, Copy, Check, ChevronDown, ChevronUp, XCircle, Zap } from 'lucide-react'
 
@@ -1245,8 +1246,9 @@ export default function AdvisorPage() {
   const [auditResult, setAuditResult] = useState<any>(null)
   const [auditError, setAuditError] = useState<string | null>(null)
 
-  // Campaign KPIs fed into "Campaign monitoring" chips. Uses WooCommerce
-  // orders (ground truth) instead of platform-reported conversions — Meta &
+  // Campaign KPIs fed into "Campaign monitoring" chips, from the metrics
+  // layer since 2026-10-11. (Earlier notes below describe the old in-browser
+  // match.) Real orders instead of platform-reported conversions — Meta &
   // Google both inflate "conversions" with soft events (add-to-cart, view-
   // content, initiate-checkout). Ad spend comes from the platform tables;
   // real order count + revenue come from woo_orders matched by utm_source.
@@ -1272,127 +1274,46 @@ export default function AdvisorPage() {
     let cancelled = false
     async function load() {
       try {
+        // Metrics layer (mx_paid_summary): real web orders from MFlow, ex-VAT,
+        // attributed by gclid then utm_campaign (id or name). The same numbers
+        // the advisor backend and the strategist use. No spend-share estimate:
+        // a campaign with no attributed orders shows 0, and paid orders no
+        // campaign could claim stay out of every campaign's numbers.
         const today = new Date()
-        const start = new Date(today); start.setDate(today.getDate() - 13)
-        const startStr = start.toISOString().slice(0, 10)
-        const five = new Date(today); five.setDate(today.getDate() - 4)
-        const fiveStr = five.toISOString().slice(0, 10)
-        const [
-          { data: g, error: eg },
-          { data: m, error: em },
-          { data: woo, error: ew },
-        ] = await Promise.all([
-          supabase.from('google_campaigns').select('name,date,cost,conversions').gte('date', startStr),
-          supabase.from('meta_ad_campaigns').select('name,date,spend,conversions').gte('date', startStr),
-          supabase
-            .from('woo_orders')
-            .select('order_date,total,utm_source,utm_campaign,status')
-            .gte('order_date', startStr)
-            .in('status', ['completed', 'processing']),
+        const d14 = new Date(today); d14.setDate(today.getDate() - 13)
+        const d5 = new Date(today); d5.setDate(today.getDate() - 4)
+        const [r14, r5] = await Promise.all([
+          fetchPaidSummary({ from: d14, to: today }),
+          fetchPaidSummary({ from: d5, to: today }),
         ])
         if (cancelled) return
-        if (eg) console.warn('[advisor] google_campaigns fetch error:', eg)
-        if (em) console.warn('[advisor] meta_ad_campaigns fetch error:', em)
-        if (ew) console.warn('[advisor] woo_orders fetch error:', ew)
+        if (r14.error) console.warn('[advisor] mx_paid_summary(14) error:', r14.error)
+        if (r5.error) console.warn('[advisor] mx_paid_summary(5) error:', r5.error)
 
         const norm = (s: string) => (s ?? '').toLowerCase().replace(/[_\s|\-]+/g, ' ').trim()
-
-        // Aggregate spend per campaign (normalized name → platform + spend windows)
-        type Agg = { platform: 'google' | 'meta'; cost14: number; cost5: number; reportedConv14: number }
-        const agg: Record<string, Agg> = {}
-        for (const r of (g ?? []) as any[]) {
-          const k = norm(r.name); if (!k) continue
-          if (!agg[k]) agg[k] = { platform: 'google', cost14: 0, cost5: 0, reportedConv14: 0 }
-          agg[k].cost14 += Number(r.cost) || 0
-          agg[k].reportedConv14 += Number(r.conversions) || 0
-          if (r.date >= fiveStr) agg[k].cost5 += Number(r.cost) || 0
-        }
-        for (const r of (m ?? []) as any[]) {
-          const k = norm(r.name); if (!k) continue
-          if (!agg[k]) agg[k] = { platform: 'meta', cost14: 0, cost5: 0, reportedConv14: 0 }
-          agg[k].cost14 += Number(r.spend) || 0
-          agg[k].reportedConv14 += Number(r.conversions) || 0
-          if (r.date >= fiveStr) agg[k].cost5 += Number(r.spend) || 0
+        const five: Record<string, { orders: number; spend: number }> = {}
+        for (const r of r5.rows) {
+          if (!r.campaign_id) continue
+          five[`${r.platform}:${r.campaign_id}`] = { orders: r.orders, spend: r.spend }
         }
 
-        // Classify each Woo order to a platform + (optionally) a campaign.
-        // Returns an object with flags so a single order can feed per-campaign
-        // AND per-platform aggregates at once.
-        const orders = (woo ?? []) as any[]
-        const isGoogleOrder = (o: any) => {
-          const s = (o.utm_source ?? '').toLowerCase()
-          return s.includes('google')
-        }
-        const isMetaOrder = (o: any) => {
-          const s = (o.utm_source ?? '').toLowerCase()
-          return /facebook|\bfb\b|instagram|\big\b|meta/.test(s)
-        }
-
-        // Platform-level totals — used as fallback when per-campaign match fails
-        const platformTotals = {
-          google: { orders14: 0, revenue14: 0, orders5: 0, spend14: 0, spend5: 0 },
-          meta:   { orders14: 0, revenue14: 0, orders5: 0, spend14: 0, spend5: 0 },
-        }
-        for (const k of Object.keys(agg)) {
-          platformTotals[agg[k].platform].spend14 += agg[k].cost14
-          platformTotals[agg[k].platform].spend5  += agg[k].cost5
-        }
-        for (const o of orders) {
-          const total = Number(o.total) || 0
-          const recent = o.order_date >= fiveStr
-          if (isGoogleOrder(o)) {
-            platformTotals.google.orders14++
-            platformTotals.google.revenue14 += total
-            if (recent) platformTotals.google.orders5++
-          }
-          if (isMetaOrder(o)) {
-            platformTotals.meta.orders14++
-            platformTotals.meta.revenue14 += total
-            if (recent) platformTotals.meta.orders5++
-          }
-        }
-
-        // Per-campaign attribution — matches utm_campaign to campaign name.
-        // If zero orders match, falls back to the platform's share of orders
-        // weighted by this campaign's share of platform spend.
         const out: Record<string, CpaInfo> = {}
-        for (const [k, v] of Object.entries(agg)) {
-          const platform = v.platform
-          const wantsPlatformFilter = platform === 'google' ? isGoogleOrder : isMetaOrder
-          const campaignOrders = orders.filter(o =>
-            wantsPlatformFilter(o) && norm(o.utm_campaign ?? '') === k,
-          )
-          const hasPerCampaignMatch = campaignOrders.length > 0
-
-          let realOrders14 = 0, realOrders5 = 0, realRevenue14 = 0
-          if (hasPerCampaignMatch) {
-            for (const o of campaignOrders) {
-              realOrders14++
-              realRevenue14 += Number(o.total) || 0
-              if (o.order_date >= fiveStr) realOrders5++
-            }
-          } else {
-            // Fallback: share platform-level attribution by spend ratio
-            const pt = platformTotals[platform]
-            const share = pt.spend14 > 0 ? v.cost14 / pt.spend14 : 0
-            realOrders14  = Math.round(pt.orders14 * share * 10) / 10
-            realOrders5   = Math.round(pt.orders5 * share * 10) / 10
-            realRevenue14 = Math.round(pt.revenue14 * share * 100) / 100
-          }
-
+        for (const r of r14.rows) {
+          if (!r.campaign_id) continue
+          const k = norm(r.name); if (!k) continue
+          const f = five[`${r.platform}:${r.campaign_id}`] ?? { orders: 0, spend: 0 }
           out[k] = {
-            spend14:        Math.round(v.cost14 * 100) / 100,
-            realOrders14,
-            realRevenue14:  Math.round(realRevenue14 * 100) / 100,
-            realCpa14:      realOrders14 > 0 ? Math.round((v.cost14 / realOrders14) * 100) / 100 : null,
-            realRoas14:     v.cost14 > 0 ? Math.round((realRevenue14 / v.cost14) * 100) / 100 : null,
-            realOrders5,
-            realCpa5:       realOrders5 > 0 ? Math.round((v.cost5 / realOrders5) * 100) / 100 : null,
-            reportedCpa14:  v.reportedConv14 > 0 ? Math.round((v.cost14 / v.reportedConv14) * 100) / 100 : null,
+            spend14:       Math.round(r.spend * 100) / 100,
+            realOrders14:  r.orders,
+            realRevenue14: Math.round(r.revenue_ex_vat * 100) / 100,
+            realCpa14:     r.real_cpa,
+            realRoas14:    r.real_roas,
+            realOrders5:   f.orders,
+            realCpa5:      f.orders > 0 ? Math.round((f.spend / f.orders) * 100) / 100 : null,
+            reportedCpa14: r.platform_purchases && r.platform_purchases > 0
+              ? Math.round((r.spend / r.platform_purchases) * 100) / 100 : null,
           }
         }
-
-        console.log('[advisor] Real-orders CPA loaded. Platform totals:', platformTotals, 'campaigns:', Object.keys(out))
         setCampaignCpa(out)
       } catch (e) {
         console.warn('[advisor] CPA fetch failed:', e)

@@ -50,7 +50,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 const FALLBACK_META_SPIKE_MULTIPLIER  = 2.0
 const FALLBACK_INDUSTRY_MIN_RELEVANCE = 0.85
 // These remain hardcoded — not user-tunable (defensive lower bounds).
-const META_SPIKE_MIN_IMPRESSIONS = 100  // skip tiny-sample posts where the rate is noisy
+const META_SPIKE_MIN_IMPRESSIONS = 100  // min REACH (impressions only as fallback): skip tiny samples where the rate is noisy
 const META_LOOKBACK_DAYS         = 7
 const INDUSTRY_LOOKBACK_HOURS    = 24
 // Hard upper bound on scout output per tick — even if 5 things spiked,
@@ -170,7 +170,7 @@ async function detectMetaEngagementSpikes(
   const since = new Date(Date.now() - META_LOOKBACK_DAYS * 24 * 3600 * 1000).toISOString()
   const { data, error } = await supabase
     .from('meta_organic_posts')
-    .select('post_id, post_type, message, impressions, likes, comments, shares, saves, created_at')
+    .select('post_id, post_type, message, reach, impressions, likes, comments, shares, saves, created_at')
     .gte('created_at', since)
     .limit(200)
   if (error) {
@@ -181,6 +181,7 @@ async function detectMetaEngagementSpikes(
     post_id: string
     post_type: string | null
     message: string | null
+    reach: number | null
     impressions: number | null
     likes: number | null
     comments: number | null
@@ -189,11 +190,14 @@ async function detectMetaEngagementSpikes(
     created_at: string
   }>
 
-  // Compute engagement_rate per post (engagement / impressions). Skip
+  // Compute engagement_rate per post (engagement / REACH; impressions only as
+  // a fallback). IG impressions has read 0 on nearly every post since ~May
+  // 2026, so dividing by it — and requiring 100 of them — filtered out every
+  // post and the spike detector never fired. Skip
   // posts under MIN_IMPRESSIONS — rate noise on small samples drowns out signal.
   const enriched = rows
     .map(r => {
-      const imp = r.impressions ?? 0
+      const imp = (r.reach ?? 0) > 0 ? (r.reach ?? 0) : (r.impressions ?? 0)
       const eng = (r.likes ?? 0) + (r.comments ?? 0) + (r.shares ?? 0) + (r.saves ?? 0)
       return { ...r, eng_rate: imp > 0 ? eng / imp : 0, imp }
     })
