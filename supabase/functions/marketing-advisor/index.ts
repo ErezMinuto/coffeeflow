@@ -6478,6 +6478,42 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
       const googleGclidMatched = wooRows.filter((o: any) => o._attribution === "gclid").length;
       const googleZeroIsReal = wooGoogleOrders >= 3 && googleGclidMatched / wooGoogleOrders >= 0.8;
 
+      // Ground truth from the metrics layer (mx_paid_summary): orders and
+      // revenue per campaign from MFlow web sales (ex-VAT), attributed by
+      // gclid then utm_campaign as id or name. Same numbers the dashboard and
+      // the strategist see. If the RPC fails we fall back to the local match
+      // below (Woo totals, incl. VAT) and say so in the output.
+      const layer = new Map<string, { orders: number; revenue: number }>();
+      let layerError: string | null = null;
+      {
+        const { data, error } = await supabase.rpc("mx_paid_summary", { p_days: 14, p_end: weekEnd2 });
+        if (error) layerError = error.message;
+        for (const r of (data ?? []) as any[]) {
+          if (!r.campaign_id) continue;
+          layer.set(`${r.platform}:${r.campaign_id}`, { orders: Number(r.orders ?? 0), revenue: Number(r.revenue_ex_vat ?? 0) });
+        }
+      }
+      // Carry category revenue over to the layer's (ex-VAT) basis so the
+      // coffee/machine split stays consistent with the revenue it is a share of.
+      const onLayerBasis = (local: any, platform: "google" | "meta", campaignId: string) => {
+        if (layerError) return { ...local, revenue_basis: "woo_incl_vat_fallback" };
+        const l = layer.get(`${platform}:${campaignId}`);
+        if (!l) return { ...local, orders: local.attribution === "none" ? 0 : local.orders, revenue_basis: "mflow_ex_vat" };
+        const f = local.revenue > 0 ? l.revenue / local.revenue : 0;
+        const sc = (v: number) => Math.round(v * f * 100) / 100;
+        return {
+          ...local,
+          orders: l.orders,
+          revenue: Math.round(l.revenue * 100) / 100,
+          attribution: local.attribution === "none" && l.orders > 0 ? "metrics_layer" : local.attribution,
+          confidence: l.orders > 0 && local.confidence === "low" ? "medium" : local.confidence,
+          coffee_revenue: sc(local.coffee_revenue), machine_revenue: sc(local.machine_revenue),
+          grinder_revenue: sc(local.grinder_revenue), accessory_revenue: sc(local.accessory_revenue),
+          other_revenue: sc(local.other_revenue),
+          revenue_basis: "mflow_ex_vat",
+        };
+      };
+
       // Attribution function — gclid first, then utm_campaign. No estimate:
       // orders that cannot be placed stay in the unattributed count.
       // Returns { orders, revenue, attribution, coffee_revenue, machine_revenue,
@@ -6633,7 +6669,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const avgRankLostIS = rankLostSamples.length > 0 ? rankLostSamples.reduce((s, v) => s + v, 0) / rankLostSamples.length : null;
 
         // GROUND TRUTH: gclid-aware attribution + product category split.
-        const real = attributeCampaign(String(cid), g.name, "google", g.totalSpend, googleTotalSpend);
+        const real = onLayerBasis(attributeCampaign(String(cid), g.name, "google", g.totalSpend, googleTotalSpend), "google", String(cid));
         const measured = !(real.attribution === "none" && real.confidence === "low");
         const realCpa  = real.orders > 0 ? Math.round((g.totalSpend / real.orders) * 100) / 100 : null;
         const realRoas = measured && g.totalSpend > 0 ? Math.round((real.revenue / g.totalSpend) * 100) / 100 : null;
@@ -6692,6 +6728,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             real_cpa_ils: realCpa,
             real_roas: realRoas,
             attribution_source: real.attribution,
+            revenue_basis: real.revenue_basis,          // mflow_ex_vat (metrics layer) or woo_incl_vat_fallback
             attribution_confidence: real.confidence,        // NEW: "high" | "medium" | "low"
             // NEW: product revenue breakdown — tells the doctor which campaign
             // actually sells coffee vs machines (crucial for Minuto's strategic
@@ -6753,7 +6790,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
         const metaCpa5 = metaLast5Conv > 0 ? Math.round((metaLast5Spend / metaLast5Conv) * 100) / 100 : null;
 
         // GROUND TRUTH for Meta (same attribution path + product category split)
-        const realM = attributeCampaign(String(m.campaign_id), m.name, "meta", m.totalSpend, metaTotalSpend);
+        const realM = onLayerBasis(attributeCampaign(String(m.campaign_id), m.name, "meta", m.totalSpend, metaTotalSpend), "meta", String(m.campaign_id));
         const measuredM = !(realM.attribution === "none" && realM.confidence === "low");
         const realMCpa  = realM.orders > 0 ? Math.round((m.totalSpend / realM.orders) * 100) / 100 : null;
         const realMRoas = measuredM && m.totalSpend > 0 ? Math.round((realM.revenue / m.totalSpend) * 100) / 100 : null;
@@ -6828,6 +6865,7 @@ ${realMetaNames.length > 0 ? realMetaNames.map(n => `  - ${n}`).join("\n") : "  
             real_cpa_ils: realMCpa,
             real_roas: realMRoas,
             attribution_source: realM.attribution,
+            revenue_basis: realM.revenue_basis,          // mflow_ex_vat (metrics layer) or woo_incl_vat_fallback
             attribution_confidence: realM.confidence,
             revenue_coffee_ils:    realM.coffee_revenue,
             revenue_machine_ils:   realM.machine_revenue,
