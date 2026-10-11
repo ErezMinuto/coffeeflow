@@ -175,8 +175,9 @@ RULES:
 2. POUR-OVER PHYSICS. A kettle never pours into a cup, glass or mug. Kettle water pours into a V60 / Chemex dripper holding a paper filter and a bed of wet coffee grounds; coffee drips into a glass server or cup BELOW the dripper. Rewrite any kettle-into-cup scene this way.
 3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
 4. THE ROASTER is Minuto's single, full-size, FLOOR-STANDING drum roaster on the roastery floor, hopper at about head height — never on a counter, table or bench. Its cooler is a large, deep, cylindrical brushed-stainless COOLING BIN with tall straight sides (about as wide as the drum body) standing on the FLOOR at the front-right of the roaster, directly below the drum door; fresh beans fall from the drum door into it and its internal stirring arms turn them. Never a shallow tray on a stand or on a table; nobody stirs the beans by hand. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
-5. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
-6. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+5. AEROPRESS ANATOMY. An AeroPress is TWO nested translucent (see-through, smoky-grey or clear) plastic cylinders: the outer CHAMBER standing on the cup with its flange resting on the rim and a filter cap screwed onto its bottom, and the PLUNGER — a narrower cylinder with a rubber seal — pushed down INSIDE the chamber from the top. A hand presses the TOP OF THE PLUNGER, never the chamber's open rim. The coffee inside is visible through the plastic, and dark-brown coffee (no espresso crema) drips from the filter cap into the cup. Describe it that way whenever the brief has an AeroPress.
+6. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
+7. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
 Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
 
@@ -773,6 +774,14 @@ paper filter and a visible bed of wet, blooming coffee grounds; the
 brewed coffee drips from the dripper into a glass server or cup BELOW
 it. If the brief shows a kettle pouring, the dripper with grounds is
 in frame and is where the water lands.
+
+🧪 AEROPRESS ANATOMY — two nested TRANSLUCENT plastic cylinders. The
+outer chamber stands on the cup (flange on the rim, filter cap screwed
+on its bottom); the narrower PLUNGER with its rubber seal goes INSIDE
+the chamber from the top. A hand presses the TOP OF THE PLUNGER, never
+the open rim of the chamber — a chamber with no plunger in it is
+wrong. The brewing coffee shows through the see-through plastic. The
+result is filter-strength dark-brown coffee with no espresso crema.
 
 1️⃣ COUNT LOCK — each piece of equipment the brief names appears
 EXACTLY ONCE: one roaster, one espresso machine, one kettle, one
