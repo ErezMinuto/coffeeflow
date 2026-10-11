@@ -1,0 +1,55 @@
+name: Google Ads sync (daily)
+
+# Runs google-sync every morning so the advisor, the strategist and the
+# dashboard always see current Google spend and gclid → campaign mapping.
+#
+# WHY HERE AND NOT pg_cron: the database is a Micro instance whose background
+# worker budget is the root cause of the 2026-09-20 outage (see
+# 20260920_cron_worker_pressure.sql). A GitHub schedule costs it nothing.
+# It also uses the SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets the
+# other workflows already use, instead of a key read from Vault (the Vault
+# anon key was rejected with 401 on 2026-10-11).
+#
+# google-sync answers 202 immediately and works in the background; the result
+# is in sync_log (and the dashboard's Settings page).
+#
+# Manual run: Actions → Google Ads sync (daily) → Run workflow, optionally with
+# click_days up to 90 for a backfill.
+
+on:
+  schedule:
+    - cron: '45 2 * * *'     # 05:45 Israel, before the advisor and the morning jobs
+  workflow_dispatch:
+    inputs:
+      click_days:
+        description: 'Days of click_view to map (1-90, default 30)'
+        required: false
+        default: '30'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Start google-sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DAYS: ${{ inputs.click_days || '30' }}
+        run: |
+          set -euo pipefail
+          case "$DAYS" in ''|*[!0-9]*) echo "::error::click_days must be a number"; exit 1 ;; esac
+          [ -n "$SUPABASE_URL" ] && [ -n "$KEY" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets missing"; exit 1; }
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/google-sync?mode=performance&click_days=$DAYS" \
+            -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "HTTP $code"
+          if [ "$code" -ge 300 ]; then
+            echo "::error title=google-sync HTTP $code::$(head -c 300 resp.json | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "::notice title=google-sync started::click_days=$DAYS, sync_log id $(jq -r '.sync_id // .id // "?"' resp.json 2>/dev/null)"
