@@ -156,6 +156,10 @@ async function geminiJson(parts: any[]): Promise<any> {
   return JSON.parse(text)
 }
 
+// Prompt files saved beside each render (<image>.prompt.txt) are deleted
+// after this many days.
+const PROMPT_RETENTION_DAYS = 7
+
 // ── Brief rewrite ──────────────────────────────────────────────────────────
 // The image model draws what the SCENE BRIEF describes and treats the
 // "never do X" overrides at the end of the prompt as weaker. A live story
@@ -970,6 +974,23 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       if (!pErr) promptUrl = supabase.storage.from('marketing').getPublicUrl(promptFile).data.publicUrl
       else console.warn(`[visual-test] prompt upload failed: ${pErr.message}`)
     } catch (e: any) { console.warn(`[visual-test] prompt upload error: ${e?.message ?? e}`) }
+
+    // RETENTION: prompt files are kept 7 days, no more. Each render sweeps
+    // the oldest ones past that age (deletes through the Storage API, so the
+    // stored file is removed, not just its row). Best-effort, like the upload.
+    try {
+      const cutoff = Date.now() - PROMPT_RETENTION_DAYS * 86_400_000
+      const { data: old } = await supabase.storage.from('marketing').list('ig-test', {
+        limit: 100, search: '.prompt.txt', sortBy: { column: 'created_at', order: 'asc' },
+      })
+      const expired = (old ?? [])
+        .filter(f => f.name.endsWith('.prompt.txt') && f.created_at && Date.parse(f.created_at) < cutoff)
+        .map(f => `ig-test/${f.name}`)
+      if (expired.length) {
+        const { error: rmErr } = await supabase.storage.from('marketing').remove(expired)
+        console.log(`[visual-test] prompt retention: removed ${expired.length} older than ${PROMPT_RETENTION_DAYS}d${rmErr ? ` (error: ${rmErr.message})` : ''}`)
+      }
+    } catch (e: any) { console.warn(`[visual-test] prompt retention error: ${e?.message ?? e}`) }
 
     return jsonResponse({
       prompt_url: promptUrl,
