@@ -33,3 +33,5 @@ q "gclids found in click map" "select count(*) filter (where m.gclid is not null
 q "click map date range" "select min(click_date) first, max(click_date) last, count(*) filter (where click_date >= current_date-29) last30, min(length(gclid)) min_len, max(length(gclid)) max_len from google_click_mapping"
 q "utm_campaign looks like" "select ad_platform, count(*) filter (where utm_campaign ~ '^[0-9]+$') numeric_ids, count(*) filter (where utm_campaign ~ '[{}]') unexpanded_macros, count(*) filter (where utm_campaign is not null and utm_campaign !~ '^[0-9]+$' and utm_campaign !~ '[{}]') names from mx_web_orders where ad_platform is not null and day >= current_date-29 group by 1"
 q "google sync freshness" "select max(date) last_day, max(synced_at)::date last_sync from google_campaigns"
+q "google-sync cron"          "select jobname, schedule, active from cron.job where jobname='google-sync-daily'"
+q "last google syncs"         "select status, started_at::timestamp(0), (stats->>'click_days') click_days, (stats->>'click_mapping_rows') click_rows from sync_log where platform='google' order by started_at desc limit 1"

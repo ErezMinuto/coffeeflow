@@ -92,6 +92,10 @@ serve(async (req) => {
   const mode = (urlObj.searchParams.get('mode') ?? 'all').toLowerCase()
   const runSettings    = mode === 'settings'    || mode === 'all'
   const runPerformance = mode === 'performance' || mode === 'all'
+  // How many days of click_view (gclid → campaign) to fetch. Default 30: a
+  // machine or grinder purchase can land weeks after the click. Up to 90 (the
+  // API's click_view retention) for a one-off backfill.
+  const clickDays = Math.min(90, Math.max(1, Number(urlObj.searchParams.get('click_days') ?? 30) || 30))
 
   const startedAt = new Date().toISOString()
   const stats: Record<string, any> = {
@@ -680,7 +684,10 @@ serve(async (req) => {
       }
 
       // Click view → gclid → campaign_id mapping. THE fix for PMax attribution.
-      // click_view requires single-day segments — must query 14 days separately.
+      // click_view requires single-day segments — must query each day separately.
+      // Window: `clickDays` (default 30, max 90). Days run 10 at a time and each
+      // day is ONE batched upsert, so a 90-day backfill stays well inside the
+      // background wall clock and the Micro instance sees ~90 writes, not ~2,000.
       //
       // BEFORE: serial for-loop over 14 days, ~3-5s per day = 40-70s total.
       //         This was the single biggest contributor to the wall-clock
@@ -689,7 +696,7 @@ serve(async (req) => {
       //         total time ~= max(any one day) ≈ 5s. Order-independent
       //         since each day upserts on the unique gclid key.
       try {
-        const dayPromises = Array.from({ length: 14 }, async (_, d) => {
+        const runDay = async (d: number) => {
           const targetDate = daysAgo(d)
           const q = `
             SELECT
@@ -704,19 +711,27 @@ serve(async (req) => {
           let dayCount = 0
           try {
             const rows = await gaqlSearch(apiUrl, apiHeaders, q, `click_view_${targetDate}`)
+            const now = new Date().toISOString()
+            const batch = new Map<string, Record<string, unknown>>()
             for (const r of rows) {
               const gclid = r.clickView?.gclid
               if (!gclid) continue
-              await supabase.from('google_click_mapping').upsert({
+              batch.set(gclid, {
                 gclid,
                 campaign_id: String(r.campaign?.id ?? ''),
                 ad_group_id: String(r.adGroup?.id ?? ''),
                 click_date: r.segments.date,
                 device: r.segments?.device ?? null,
-                synced_at: new Date().toISOString(),
-              }, { onConflict: 'gclid' })
-              dayCount++
+                synced_at: now,
+              })
             }
+            const list = [...batch.values()]
+            for (let i = 0; i < list.length; i += 500) {
+              const { error } = await supabase.from('google_click_mapping')
+                .upsert(list.slice(i, i + 500), { onConflict: 'gclid' })
+              if (error) throw new Error(`upsert: ${error.message}`)
+            }
+            dayCount = list.length
           } catch (dayErr: any) {
             // Some days may have no clicks; don't abort the whole sync
             if (!dayErr.message.includes('no results')) {
@@ -724,13 +739,18 @@ serve(async (req) => {
             }
           }
           return dayCount
-        })
-        const results = await Promise.allSettled(dayPromises)
-        const clickLoopCount = results
-          .filter(r => r.status === 'fulfilled')
-          .reduce((sum, r: any) => sum + r.value, 0)
+        }
+        let clickLoopCount = 0
+        for (let start = 0; start < clickDays; start += 10) {
+          const days = Array.from({ length: Math.min(10, clickDays - start) }, (_, k) => start + k)
+          const results = await Promise.allSettled(days.map(runDay))
+          clickLoopCount += results
+            .filter(r => r.status === 'fulfilled')
+            .reduce((sum, r: any) => sum + r.value, 0)
+        }
         stats.click_mapping_rows += clickLoopCount
-        console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across 14 days (parallel)`)
+        stats.click_days = clickDays
+        console.log(`[google-sync] click_view: ${clickLoopCount} gclids mapped across ${clickDays} days`)
       } catch (e: any) {
         log.error('block.click_view.fail', 'click_view block failed', { block: 'click_view' }, e)
         stats.errors.push(`click_view: ${e.message}`)
