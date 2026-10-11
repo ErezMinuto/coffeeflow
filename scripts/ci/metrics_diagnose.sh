@@ -35,3 +35,4 @@ q "utm_campaign looks like" "select ad_platform, count(*) filter (where utm_camp
 q "google sync freshness" "select max(date) last_day, max(synced_at)::date last_sync from google_campaigns"
 q "google-sync cron"          "select jobname, schedule, active from cron.job where jobname='google-sync-daily'"
 q "last google syncs"         "select status, started_at::timestamp(0), (stats->>'click_days') click_days, (stats->>'click_mapping_rows') click_rows from sync_log where platform='google' order by started_at desc limit 1"
+q "recent pg_net replies"     "select json_agg(x) from (select id, status_code, timed_out, left(coalesce(error_msg,''),80) err, created::timestamp(0) at from net._http_response order by created desc limit 5) x"
