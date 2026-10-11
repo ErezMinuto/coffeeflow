@@ -685,6 +685,14 @@ function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> 
     visual_director_error: r.visual_director_error,
     surface:               r.surface,
     style_ref:             r.style_ref,
+    // Traceability: what the image model was actually told.
+    prompt_url:            r.prompt_url,
+    scene_brief_sent:      r.scene_brief,
+    brief_rewrite_changes: r.brief_rewrite_changes,
+    brief_rewrite_error:   r.brief_rewrite_error,
+    real_photo:            r.real_photo,
+    roaster_ref:           r.roaster_ref,
+    machine_ref:           r.machine_ref,
   }
 }
 

@@ -949,7 +949,30 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
 
     const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
 
+    // Save the EXACT prompt sent to the image model next to the image, same
+    // name with .prompt.txt, so a bad render can be traced by opening
+    // <image url>.prompt.txt. Best-effort: never fails the render.
+    const sentPrompt = realPhotoUsed ? realPhotoPrompt : `Generate an image: ${fullPrompt}`
+    const promptFile = filename.replace(/\.[a-z]+$/, '.prompt.txt')
+    const promptDoc = [
+      `IMAGE: ${pub.publicUrl}`,
+      `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
+      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
+      `SURFACE: ${surface.name}`,
+      ``, `── ORIGINAL BRIEF (from the agent) ──`, originalBrief,
+      ``, `── REWRITTEN BRIEF ── changes: ${rewrite.error ? `rewrite failed: ${rewrite.error}` : rewrite.changes.join('; ') || 'none'}`, sceneBrief,
+      ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
+    ].join('\n')
+    let promptUrl: string | null = null
+    try {
+      const { error: pErr } = await supabase.storage.from('marketing')
+        .upload(promptFile, new TextEncoder().encode(promptDoc), { contentType: 'text/plain; charset=utf-8', upsert: true })
+      if (!pErr) promptUrl = supabase.storage.from('marketing').getPublicUrl(promptFile).data.publicUrl
+      else console.warn(`[visual-test] prompt upload failed: ${pErr.message}`)
+    } catch (e: any) { console.warn(`[visual-test] prompt upload error: ${e?.message ?? e}`) }
+
     return jsonResponse({
+      prompt_url: promptUrl,
       success: true,
       url: pub.publicUrl,
       aspect,
