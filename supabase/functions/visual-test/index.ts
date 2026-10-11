@@ -175,7 +175,7 @@ RULES:
 2. POUR-OVER PHYSICS. A kettle never pours into a cup, glass or mug. Kettle water pours into a V60 / Chemex dripper holding a paper filter and a bed of wet coffee grounds; coffee drips into a glass server or cup BELOW the dripper. Rewrite any kettle-into-cup scene this way.
 3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
 4. THE ROASTER is Minuto's single, full-size, FLOOR-STANDING drum roaster on the roastery floor, hopper at about head height — never on a counter, table or bench. Its cooler is a large, deep, cylindrical brushed-stainless COOLING BIN with tall straight sides (about as wide as the drum body) standing on the FLOOR at the front-right of the roaster, directly below the drum door; fresh beans fall from the drum door into it and its internal stirring arms turn them. Never a shallow tray on a stand or on a table; nobody stirs the beans by hand. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
-5. AEROPRESS ANATOMY. An AeroPress is TWO nested translucent (see-through, smoky-grey or clear) plastic cylinders: the outer CHAMBER standing on the cup — its flange RESTS DIRECTLY ON THE CUP RIM, physically touching it, no gap, never floating above the cup — with a filter cap screwed onto its bottom (the cap sits just inside or right at the rim), and the PLUNGER — a narrower cylinder with a rubber seal — pushed down INSIDE the chamber from the top. A hand presses the TOP OF THE PLUNGER, never the chamber's open rim. The coffee inside is visible through the plastic, and dark-brown coffee (no espresso crema) collects in the cup below the cap; no long free-falling stream through open air. Describe it that way whenever the brief has an AeroPress.
+5. AEROPRESS ON THE CUP. An AeroPress is supported only by the cup it brews into: its base flange RESTS DIRECTLY ON THE CUP RIM, physically touching it — never floating above the cup with a gap or a stream falling through open air.
 6. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
 7. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
@@ -775,16 +775,9 @@ brewed coffee drips from the dripper into a glass server or cup BELOW
 it. If the brief shows a kettle pouring, the dripper with grounds is
 in frame and is where the water lands.
 
-🧪 AEROPRESS ANATOMY — two nested TRANSLUCENT plastic cylinders. The
-outer chamber STANDS ON THE CUP: its flange rests directly on the cup
-rim, touching it — NEVER hovering above the cup with a gap or a stream
-falling through open air (that is physically impossible: the AeroPress
-is supported only by the cup). Filter cap screwed on its bottom, at or
-just inside the rim; the narrower PLUNGER with its rubber seal goes INSIDE
-the chamber from the top. A hand presses the TOP OF THE PLUNGER, never
-the open rim of the chamber — a chamber with no plunger in it is
-wrong. The brewing coffee shows through the see-through plastic. The
-result is filter-strength dark-brown coffee with no espresso crema.
+🧪 AEROPRESS ON THE CUP — the AeroPress is supported only by the cup:
+its base flange rests DIRECTLY ON THE CUP RIM, touching it. NEVER
+hovering above the cup with a gap or a stream falling through open air.
 
 1️⃣ COUNT LOCK — each piece of equipment the brief names appears
 EXACTLY ONCE: one roaster, one espresso machine, one kettle, one
