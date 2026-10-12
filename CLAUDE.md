@@ -70,12 +70,12 @@ There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase E
 | Bot | Username | Edge Function | Responsibility |
 |-----|----------|---------------|----------------|
 | Minuto Coffee Alerts | @minuto_coffee_bot | `coffee-bot` | Packing reports (private messages from employees) |
-| Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group) |
+| Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group), vehicle log (private) |
 | CoffeeFlow Tasks | (tasks bot) | `telegram-bot` | Waiting customers & task management (group only) |
 
 ### Per-function rules
 - **coffee-bot**: `/stock` and free-text packing reports only. Deducts `roasted_stock`, increments `packed_stock`, logs to `packing_logs`. Uses `COFFEE_BOT_TOKEN`. No task or schedule logic.
-- **employee-bot**: Name registration, availability submissions, weekly schedule reminders only. Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
+- **employee-bot**: Name registration, availability submissions, weekly schedule reminders, and the vehicle log ("🚙 יומן רכב" menu, private chat only: take/return the shared work car → `vehicle_trips`; admin view at CoffeeFlow `/vehicle-log`; car events DM the manager only if `MANAGER_TELEGRAM_ID` is set). Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
 - **telegram-bot**: `/tasks`, `/done`, free-text customer requests in group chat only. Uses `TELEGRAM_BOT_TOKEN`. **No packing, no stock, no schedule logic.**
 
 ---
