@@ -145,42 +145,28 @@ Theme hint (use only if it fits the above — coffee-only imagery): ${safeTheme 
     let base64: string | null = null;
     let mime = "image/png";
 
-    // Try models in order: Imagen 4 -> Gemini 2.0 Flash -> Gemini 2.0 Flash Preview
+    // Try models in order: Gemini 3.1 Flash Image (preview) -> Nano Banana 2.1.
+    // Imagen 4 and the Gemini 2.0 image models used to sit here; all three
+    // were retired (404), which left this chain with no working model.
+    // imageConfig pins 16:9 — the prompt's "16:9" line alone is ignored.
+    const geminiImageAttempt = (name: string, model: string) => ({
+      name,
+      url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+      headers: { "Content-Type": "application/json" },
+      body: {
+        contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"], imageConfig: { aspectRatio: "16:9" } },
+      },
+      parse: (json: any) => {
+        for (const part of json.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
+        }
+        return null;
+      },
+    });
     const attempts = [
-      {
-        name: "Imagen 4",
-        url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
-        headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
-        body: { instances: [{ prompt: imagePrompt }], parameters: { sampleCount: 1, aspectRatio: "16:9" } },
-        parse: (json: any) => {
-          const pred = json.predictions?.[0];
-          return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
-        },
-      },
-      {
-        name: "Gemini 2.0 Flash Preview Image",
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`,
-        headers: { "Content-Type": "application/json" },
-        body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
-        parse: (json: any) => {
-          for (const part of json.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
-          }
-          return null;
-        },
-      },
-      {
-        name: "Gemini 2.0 Flash Exp",
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
-        headers: { "Content-Type": "application/json" },
-        body: { contents: [{ parts: [{ text: `Generate an image: ${imagePrompt}` }] }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
-        parse: (json: any) => {
-          for (const part of json.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
-          }
-          return null;
-        },
-      },
+      geminiImageAttempt("Gemini 3.1 Flash Image", "gemini-3.1-flash-image-preview"),
+      geminiImageAttempt("Nano Banana 2.1", "gemini-nano-banana-2.1"),
     ];
 
     for (const attempt of attempts) {

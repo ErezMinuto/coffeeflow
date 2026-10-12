@@ -5215,59 +5215,26 @@ Format: 16:9 wide landscape, photorealistic.`;
   const geminiParts: any[] = refs.map(r => ({ inlineData: { mimeType: r.mime, data: r.b64 } }));
   geminiParts.push({ text: `Generate an image: ${imagePrompt}` });
 
-  // 6. Attempts: Imagen 4 first when no refs (Imagen can't accept input
-  //    images); Gemini 2.5 Flash Image whenever refs exist.
-  const attempts: Array<{
-    name: string;
-    url: string;
-    headers: Record<string, string>;
-    body: any;
-    parse: (json: any) => { data: string; mime: string } | null;
-  }> = [];
-
-  if (refs.length === 0) {
-    attempts.push({
-      name: "Imagen 4",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
-      headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
-      body: { instances: [{ prompt: imagePrompt }], parameters: { sampleCount: 1, aspectRatio: "16:9" } },
-      parse: (json: any) => {
-        const pred = json.predictions?.[0];
-        return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
-      },
-    });
-  }
-
-  attempts.push({
-    name: "Gemini 2.5 Flash Image",
-    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
-    headers: { "Content-Type": "application/json" },
-    body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"] } },
-    parse: (json: any) => {
+  // 6. Attempts: Gemini 3.1 Flash Image (preview), then Nano Banana 2.1 as
+  //    fallback. Both take the product references. The Imagen 4 attempts
+  //    that used to bracket these were retired (404) and only wasted a call.
+  //    imageConfig pins 16:9 — the prompt's "16:9" line alone is ignored.
+  const geminiImageAttempt = (name: string, model: string) => ({
+    name,
+    url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+    headers: { "Content-Type": "application/json" } as Record<string, string>,
+    body: { contents: [{ parts: geminiParts }], generationConfig: { responseModalities: ["IMAGE", "TEXT"], imageConfig: { aspectRatio: "16:9" } } },
+    parse: (json: any): { data: string; mime: string } | null => {
       for (const part of json.candidates?.[0]?.content?.parts || []) {
         if (part.inlineData?.mimeType?.startsWith("image/")) return { data: part.inlineData.data, mime: part.inlineData.mimeType };
       }
       return null;
     },
   });
-
-  // Imagen 4 fallback when Gemini fails despite refs — strips reference
-  // language since Imagen can't use input images.
-  if (refs.length > 0) {
-    attempts.push({
-      name: "Imagen 4 (no-reference fallback)",
-      url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`,
-      headers: { "x-goog-api-key": GEMINI_KEY, "Content-Type": "application/json" },
-      body: {
-        instances: [{ prompt: `Create a high-resolution, photorealistic 16:9 horizontal landscape product photograph for a specialty coffee blog post titled "${title}". Show coffee equipment, beans, or brewing context related to "${keyword}". On ${surface.description}. Natural warm side-lighting, photorealistic. NO people, NO text, NO graphic design look.` }],
-        parameters: { sampleCount: 1, aspectRatio: "16:9" },
-      },
-      parse: (json: any) => {
-        const pred = json.predictions?.[0];
-        return pred?.bytesBase64Encoded ? { data: pred.bytesBase64Encoded, mime: pred.mimeType || "image/png" } : null;
-      },
-    });
-  }
+  const attempts = [
+    geminiImageAttempt("Gemini 3.1 Flash Image", "gemini-3.1-flash-image-preview"),
+    geminiImageAttempt("Nano Banana 2.1", "gemini-nano-banana-2.1"),
+  ];
 
   // 7. Vision check — Claude verifies the image is coffee-related and
   //    has no people. Some image models still ignore "no people" rules.
