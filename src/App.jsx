@@ -23,6 +23,7 @@ import StockAdmin              from './components/stock/StockAdmin';
 import SupplierIntake          from './components/stock/SupplierIntake';
 import ProductEditor           from './components/stock/ProductEditor';
 import CoffeeSalesReport       from './components/sales/CoffeeSalesReport';
+import VehicleLog              from './components/vehicle/VehicleLog';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
 
@@ -85,6 +86,7 @@ function AppContent() {
               <Route path="/supplier-intake" element={<SupplierIntake />} />
               <Route path="/product-editor" element={<ProductEditor />} />
               <Route path="/coffee-sales" element={<AdminRoute><CoffeeSalesReport /></AdminRoute>} />
+              <Route path="/vehicle-log"  element={<AdminRoute><VehicleLog /></AdminRoute>} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
               <Route path="/orders"           element={<PendingOrders />} />
