@@ -4,6 +4,8 @@
  * Onboarding: employees write their Hebrew name in the group → auto-registered
  * Availability: employees reply with days in the group → auto-saved
  * Manager sets roles in CoffeeFlow after registration
+ * Vehicle log: private-DM "🚙 יומן רכב" menu — take/return the shared work car
+ *   (vehicle_trips; admin view in CoffeeFlow → יומן רכב)
  *
  * ?action=onboard  → post "write your name" message to group
  * ?action=remind   → post weekly availability request to group
@@ -89,6 +91,20 @@ const ATTENDANCE_KEYBOARD = {
   keyboard: [
     [{ text: "🟢 נכנסתי" }, { text: "🔴 יצאתי" }],
     [{ text: "📊 דוח" }, { text: "🗓️ סידור" }, { text: "📅 זמינות" }],
+    [{ text: "🚙 יומן רכב" }],
+  ],
+  resize_keyboard:  true,
+  is_persistent:    true,
+};
+
+// Vehicle-log menu. Deliberately a separate keyboard (reached via "🚙 יומן רכב")
+// so car take/return can never be confused with shift in/out: different
+// screen, car icons, and every label says "הרכב".
+const VEHICLE_KEYBOARD = {
+  keyboard: [
+    [{ text: "🚗 לקחתי את הרכב" }, { text: "🅿️ החזרתי את הרכב" }],
+    [{ text: "📍 איפה הרכב?" }],
+    [{ text: "⬅️ חזרה לנוכחות" }],
   ],
   resize_keyboard:  true,
   is_persistent:    true,
@@ -513,6 +529,269 @@ async function handleConfirmOpeningFollowup() {
   return new Response(JSON.stringify({ ok: true, reminded, alerted }), { headers: corsHeaders });
 }
 
+// ── Vehicle log (יומן רכב) ────────────────────────────────────────────────────
+// Shared work car: an active employee taps "לקחתי את הרכב" / "החזרתי את הרכב"
+// in the vehicle menu, confirms, and a row in vehicle_trips opens / closes.
+// If someone takes the car while another trip is still open, that trip is
+// closed at the handover moment with end_reason='handover' and its driver is
+// told. Admins read the log on the CoffeeFlow "יומן רכב" page.
+
+// Car events go to the manager only when a dedicated manager chat is set —
+// never to the employee group (MANAGER_CHAT_ID falls back to the group).
+const VEHICLE_NOTIFY_CHAT_ID = Deno.env.get("MANAGER_TELEGRAM_ID") ?? "";
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function israelDateTimeOf(d: Date): string {
+  return new Intl.DateTimeFormat("he-IL", {
+    timeZone: "Asia/Jerusalem",
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
+}
+
+function durationHe(from: Date, to: Date): string {
+  const mins = Math.max(0, Math.round((to.getTime() - from.getTime()) / 60000));
+  const h = Math.floor(mins / 60);
+  return h ? `${h} ש׳ ${mins % 60} ד׳` : `${mins} ד׳`;
+}
+
+async function activeEmployeeByTelegram(telegramId: number | string | undefined) {
+  if (!telegramId) return null;
+  const { data } = await supabase
+    .from("employees")
+    .select("id, name")
+    .eq("telegram_id", telegramId)
+    .eq("active", true)
+    .limit(1);
+  return data?.[0] ?? null;
+}
+
+async function openVehicleTrip() {
+  const { data, error } = await supabase
+    .from("vehicle_trips")
+    .select("id, employee_id, driver_name, started_at")
+    .is("ended_at", null)
+    .maybeSingle();
+  if (error) console.error("vehicle: open-trip lookup error:", error.message);
+  return data;
+}
+
+async function notifyVehicleManager(text: string) {
+  if (!VEHICLE_NOTIFY_CHAT_ID) return;
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: VEHICLE_NOTIFY_CHAT_ID, text, parse_mode: "HTML", disable_notification: true,
+    }),
+  });
+}
+
+// Message-side: menu navigation, status, and the confirm prompt for take/return.
+// Returns a Response when the text was a vehicle command, otherwise null.
+async function handleVehicleMessage(
+  chatId: string, telegramId: number | undefined, matchText: string,
+): Promise<Response | null> {
+  const isMenu   = /^יומן\s+רכב/.test(matchText);
+  const isBack   = /^חזרה\s+לנוכחות/.test(matchText);
+  const isTake   = /^לקחתי\s+את\s+הרכב/.test(matchText);
+  const isReturn = /^החזרתי\s+את\s+הרכב/.test(matchText);
+  const isWhere  = /^איפה\s+הרכב/.test(matchText);
+  if (!isMenu && !isBack && !isTake && !isReturn && !isWhere) return null;
+
+  if (isBack) {
+    await send(chatId, "🕒 חזרה לתפריט הנוכחות.", { keyboard: ATTENDANCE_KEYBOARD });
+    return new Response("ok");
+  }
+
+  const emp = await activeEmployeeByTelegram(telegramId);
+  if (!emp) {
+    await send(chatId,
+      `שלח קודם את שמך ומספר טלפון כדי להירשם 👆\nלדוגמה: <code>ישראל ישראלי 0501234567</code>`,
+    );
+    return new Response("ok");
+  }
+
+  if (isMenu) {
+    await send(chatId,
+      `🚙 <b>יומן רכב</b>\n\n` +
+      `זה <b>לא</b> שעון הנוכחות — כאן רושמים רק את רכב העבודה.\n\n` +
+      `🚗 <b>לקחתי את הרכב</b> — כשעולים לרכב\n` +
+      `🅿️ <b>החזרתי את הרכב</b> — כשמחזירים אותו\n\n` +
+      `לסיום לחצו <b>⬅️ חזרה לנוכחות</b>.`,
+      { keyboard: VEHICLE_KEYBOARD },
+    );
+    return new Response("ok");
+  }
+
+  const open = await openVehicleTrip();
+
+  if (isWhere) {
+    if (open) {
+      await send(chatId,
+        `🚗 הרכב אצל <b>${escHtml(open.driver_name)}</b> מ-${israelDateTimeOf(new Date(open.started_at))}`,
+        { keyboard: VEHICLE_KEYBOARD });
+    } else {
+      const { data: last } = await supabase
+        .from("vehicle_trips")
+        .select("driver_name, ended_at")
+        .not("ended_at", "is", null)
+        .order("ended_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      await send(chatId,
+        last
+          ? `🅿️ הרכב פנוי. הוחזר לאחרונה ע״י ${escHtml(last.driver_name)} ב-${israelDateTimeOf(new Date(last.ended_at))}`
+          : "🅿️ הרכב פנוי.",
+        { keyboard: VEHICLE_KEYBOARD });
+    }
+    return new Response("ok");
+  }
+
+  // Take / return: early answers that need no confirmation.
+  if (isTake && open && open.employee_id === emp.id) {
+    await send(chatId,
+      `🚗 הרכב כבר רשום עליך מ-${israelDateTimeOf(new Date(open.started_at))}.`,
+      { keyboard: VEHICLE_KEYBOARD });
+    return new Response("ok");
+  }
+  if (isReturn && !open) {
+    await send(chatId, "🅿️ הרכב לא רשום כרגע על אף אחד.", { keyboard: VEHICLE_KEYBOARD });
+    return new Response("ok");
+  }
+  if (isReturn && open && open.employee_id !== emp.id) {
+    await send(chatId,
+      `הרכב רשום כרגע על <b>${escHtml(open.driver_name)}</b> מ-${israelDateTimeOf(new Date(open.started_at))}, לא עליך.`,
+      { keyboard: VEHICLE_KEYBOARD });
+    return new Response("ok");
+  }
+
+  // Confirm first (same pattern as attendance): the timestamp is when they
+  // tapped, not when they confirm.
+  const now  = new Date();
+  const kind = isTake ? "take" : "ret";
+  const question = isTake
+    ? `🚗 <b>יומן רכב</b>: לרשום ש<b>לקחת את הרכב</b> ב-${israelTimeOf(now)}?` +
+      (open ? `\n\n⚠️ הרכב רשום כרגע על ${escHtml(open.driver_name)} — הנסיעה שלו/ה תיסגר.` : "")
+    : `🅿️ <b>יומן רכב</b>: לרשום ש<b>החזרת את הרכב</b> ב-${israelTimeOf(now)}?`;
+  await send(chatId, question, {
+    inline: {
+      inline_keyboard: [[
+        { text: "✅ כן",     callback_data: `veh:${kind}:${now.getTime()}` },
+        { text: "❌ ביטול", callback_data: "veh:cancel" },
+      ]],
+    },
+  });
+  return new Response("ok");
+}
+
+// Callback-side: record a confirmed take/return.
+async function handleVehicleCallback(
+  callbackId: string, chatId: number, messageId: number, fromId: number, data: string,
+): Promise<Response> {
+  if (data === "veh:cancel") {
+    await answerCallback(callbackId, "בוטל");
+    await editMessage(chatId, messageId, "❌ בוטל — לא נרשם דבר ביומן הרכב.");
+    return new Response("ok");
+  }
+
+  const m = data.match(/^veh:(take|ret):(\d+)$/);
+  if (!m) { await answerCallback(callbackId); return new Response("ok"); }
+  const kind    = m[1];
+  const eventAt = new Date(parseInt(m[2]));
+
+  if (Date.now() - eventAt.getTime() > 5 * 60 * 1000) {
+    await answerCallback(callbackId, "פג תוקף");
+    await editMessage(chatId, messageId, "⏱️ פג תוקף הבקשה. לחצו שוב על הכפתור.");
+    return new Response("ok");
+  }
+
+  const emp = await activeEmployeeByTelegram(fromId);
+  if (!emp) {
+    await answerCallback(callbackId);
+    await editMessage(chatId, messageId, "❌ לא רשום/ה במערכת. פנו למנהל.");
+    return new Response("ok");
+  }
+
+  const open = await openVehicleTrip();
+
+  if (kind === "ret") {
+    if (!open || open.employee_id !== emp.id) {
+      await answerCallback(callbackId);
+      await editMessage(chatId, messageId,
+        open ? `הרכב רשום כרגע על ${escHtml(open.driver_name)}, לא עליך.` : "🅿️ הרכב לא רשום כרגע על אף אחד.");
+      return new Response("ok");
+    }
+    const startedAt = new Date(open.started_at);
+    const endAt = eventAt < startedAt ? new Date() : eventAt;
+    const { error } = await supabase.from("vehicle_trips")
+      .update({ ended_at: endAt.toISOString(), end_reason: "returned" })
+      .eq("id", open.id)
+      .is("ended_at", null);
+    if (error) {
+      console.error(`vehicle: return update error for ${emp.name}:`, error.message);
+      await answerCallback(callbackId, "שגיאה");
+      await editMessage(chatId, messageId, "❌ שגיאה ברישום. נסו שוב.");
+      return new Response("ok");
+    }
+    await answerCallback(callbackId, "נשמר");
+    await editMessage(chatId, messageId,
+      `🅿️ נרשם ביומן הרכב: החזרת ב-${israelTimeOf(endAt)} (הרכב היה אצלך ${durationHe(startedAt, endAt)}). תודה!`);
+    await notifyVehicleManager(`🅿️ ${escHtml(emp.name)} החזיר/ה את הרכב (${durationHe(startedAt, endAt)})`);
+    console.log(`vehicle: ${emp.name} (${emp.id}) returned trip ${open.id}`);
+    return new Response("ok");
+  }
+
+  // kind === "take"
+  if (open && open.employee_id === emp.id) {
+    await answerCallback(callbackId);
+    await editMessage(chatId, messageId,
+      `🚗 הרכב כבר רשום עליך מ-${israelDateTimeOf(new Date(open.started_at))}.`);
+    return new Response("ok");
+  }
+
+  let takeAt = eventAt;
+  if (open) {
+    // Close the forgotten trip at the handover moment.
+    const prevStart = new Date(open.started_at);
+    if (takeAt < prevStart) takeAt = new Date();
+    await supabase.from("vehicle_trips")
+      .update({ ended_at: takeAt.toISOString(), end_reason: "handover" })
+      .eq("id", open.id)
+      .is("ended_at", null);
+    if (open.employee_id) {
+      const { data: prev } = await supabase
+        .from("employees").select("telegram_id").eq("id", open.employee_id).maybeSingle();
+      if (prev?.telegram_id) {
+        await send(prev.telegram_id,
+          `⚠️ <b>יומן רכב</b>: ${escHtml(emp.name)} לקח/ה את הרכב, אז הנסיעה שלך נסגרה אוטומטית ב-${israelTimeOf(takeAt)}.\n` +
+          `בפעם הבאה לא לשכוח ללחוץ <b>🅿️ החזרתי את הרכב</b> 🙏`);
+      }
+    }
+  }
+
+  const { error } = await supabase.from("vehicle_trips").insert({
+    employee_id: emp.id, driver_name: emp.name, started_at: takeAt.toISOString(),
+  });
+  if (error) {
+    console.error(`vehicle: take insert error for ${emp.name}:`, error.message);
+    await answerCallback(callbackId, "שגיאה");
+    await editMessage(chatId, messageId, "❌ שגיאה ברישום. נסו שוב.");
+    return new Response("ok");
+  }
+  await answerCallback(callbackId, "נשמר");
+  await editMessage(chatId, messageId,
+    `🚗 נרשם ביומן הרכב: לקחת את הרכב ב-${israelTimeOf(takeAt)}. נסיעה טובה!\n` +
+    `כשמחזירים — <b>🅿️ החזרתי את הרכב</b>.`);
+  await notifyVehicleManager(
+    `🚗 ${escHtml(emp.name)} לקח/ה את הרכב` +
+    (open ? ` (${escHtml(open.driver_name)} לא סימן/ה החזרה)` : ""));
+  console.log(`vehicle: ${emp.name} (${emp.id}) took the car${open ? ` (handover from trip ${open.id})` : ""}`);
+  return new Response("ok");
+}
+
 async function handleCallback(cq: any): Promise<Response> {
   const callbackId = cq.id;
   const data       = cq.data ?? "";
@@ -523,6 +802,11 @@ async function handleCallback(cq: any): Promise<Response> {
   if (!chatId || !messageId || !fromId) {
     await answerCallback(callbackId);
     return new Response("ok");
+  }
+
+  // Vehicle log confirmations: "veh:take:<ms>", "veh:ret:<ms>", "veh:cancel".
+  if (data.startsWith("veh:")) {
+    return await handleVehicleCallback(callbackId, chatId, messageId, fromId, data);
   }
 
   // Opening-shift confirmation: "openconf:<rowId>".
@@ -691,6 +975,21 @@ async function handleWebhook(req: Request) {
       `לא בקבוצה: <a href="https://t.me/minuto_team_bot">@minuto_team_bot</a>`,
     );
     return new Response("ok");
+  }
+
+  // ── Vehicle log (יומן רכב) ─────────────────────────────────────────────
+  // Checked before attendance so car buttons never reach the shift handlers.
+  // In the group, point people at the private chat instead.
+  if (/^(?:יומן\s+רכב|לקחתי\s+את\s+הרכב|החזרתי\s+את\s+הרכב|איפה\s+הרכב|חזרה\s+לנוכחות)/.test(matchText)) {
+    if (!isPrivate) {
+      await send(chatId,
+        `${firstName || "היי"}, את יומן הרכב מעדכנים בצ'אט הפרטי איתי: ` +
+        `<a href="https://t.me/minuto_team_bot">@minuto_team_bot</a> → 🚙 יומן רכב`,
+      );
+      return new Response("ok");
+    }
+    const vehicleResponse = await handleVehicleMessage(chatId, telegramId, matchText);
+    if (vehicleResponse) return vehicleResponse;
   }
 
   // ── Attendance check-in / check-out (private DM only) ──────────────────
@@ -1131,7 +1430,8 @@ async function handleWebhook(req: Request) {
       `🤔 לא הבנתי.\n\n` +
       `🟢 שלחו <b>נכנסתי</b> בכניסה למשמרת\n` +
       `🔴 שלחו <b>יצאתי</b> בסיום\n` +
-      `📊 שלחו <b>דוח</b> כדי לראות שעות החודש`,
+      `📊 שלחו <b>דוח</b> כדי לראות שעות החודש\n` +
+      `🚙 רכב העבודה — דרך הכפתור <b>יומן רכב</b>`,
     );
   }
   return new Response("ok");

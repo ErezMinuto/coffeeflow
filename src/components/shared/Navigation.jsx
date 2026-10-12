@@ -28,6 +28,7 @@ const allNavItems = [
       { path: '/purchases',  icon: '🛒', label: 'Purchases',  adminOnly:    true },
       { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי',  adminOnly:    true },
       { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה', adminOnly: true },
+      { path: '/vehicle-log',  icon: '🚗', label: 'יומן רכב',       adminOnly: true },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
