@@ -3,16 +3,19 @@ import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 
 // ── Vehicle log (admin) ──────────────────────────────────────────────────────
-// Who had the shared work car and when, as recorded by the vehicle Telegram
-// bot (tables drivers + vehicle_trips, admin-only RLS). Two jobs:
+// Who had the shared work car and when, as recorded through employee-bot's
+// "🚙 יומן רכב" menu (table vehicle_trips, admin-only RLS). Three jobs:
 //   1. trips in a date range, with CSV export
 //   2. "who had the car at <date time>" lookup for traffic fines
+//   3. adding a trip someone didn't record (end_reason 'manual', admin RPC)
 // All times shown in Israel time; the RPCs do the local→UTC conversion.
 
 const TZ = 'Asia/Jerusalem';
 
 const isoDayIL = (d = new Date()) => d.toLocaleDateString('sv-SE', { timeZone: TZ });
 const daysAgoIL = (n) => isoDayIL(new Date(Date.now() - n * 86400000));
+// ISO instant → Israel wall-clock "YYYY-MM-DDTHH:MM", the datetime-local format
+const localIL = (iso) => new Date(iso).toLocaleString('sv-SE', { timeZone: TZ }).slice(0, 16).replace(' ', 'T');
 
 const fmt = (iso) =>
   iso
@@ -32,6 +35,7 @@ function StatusCell({ trip }) {
   if (!trip.ended_at) return <span style={pill('#DBEAFE', '#1E40AF')}>עדיין בנסיעה</span>;
   if (trip.end_reason === 'handover') return <span style={pill('#FEF3C7', '#92400E')}>⚠️ לא סימן החזרה</span>;
   if (trip.end_reason === 'admin') return <span style={pill('#F3F4F6', '#374151')}>נסגר ע״י מנהל</span>;
+  if (trip.end_reason === 'manual') return <span style={pill('#EDE9FE', '#5B21B6')}>✍️ נרשם ידנית</span>;
   return <span style={pill('#DCFCE7', '#166534')}>הוחזר</span>;
 }
 
@@ -40,7 +44,7 @@ const pill = (bg, color) => ({
 });
 
 export default function VehicleLog() {
-  const { showToast } = useApp();
+  const { showToast, employees } = useApp();
   const [from, setFrom] = useState(daysAgoIL(30));
   const [to, setTo] = useState(isoDayIL());
   const [trips, setTrips] = useState(null);
@@ -49,6 +53,11 @@ export default function VehicleLog() {
   const [at, setAt] = useState('');
   const [atResult, setAtResult] = useState(null);
   const [atLoading, setAtLoading] = useState(false);
+
+  const [man, setMan] = useState({ employeeId: '', start: '', end: '', note: '' });
+  const [saving, setSaving] = useState(false);
+  const drivers = [...(employees || [])].sort((a, b) =>
+    (b.active === true) - (a.active === true) || String(a.name).localeCompare(String(b.name), 'he'));
 
   async function load() {
     if (!from || !to) { showToast('⚠️ נא לבחור תאריך התחלה וסיום', 'warning'); return; }
@@ -82,11 +91,54 @@ export default function VehicleLog() {
     }
   }
 
+  async function addManual() {
+    const { employeeId, start, end, note } = man;
+    if (!employeeId || !start || !end) { showToast('⚠️ נא לבחור נהג/ת, שעת לקיחה ושעת החזרה', 'warning'); return; }
+    if (end <= start) { showToast('⚠️ שעת ההחזרה חייבת להיות אחרי שעת הלקיחה', 'warning'); return; }
+    setSaving(true);
+    try {
+      // Overlaps are allowed (a "handover" trip's end time is only an estimate),
+      // but the admin should see them before saving.
+      const { data: near, error: nearErr } = await supabase.rpc('vehicle_trips_between', {
+        from_day: start.slice(0, 10), to_day: end.slice(0, 10),
+      });
+      if (nearErr) throw nearErr;
+      const overlaps = (near || []).filter((t) =>
+        localIL(t.started_at) < end && (t.ended_at ? localIL(t.ended_at) : localIL(new Date().toISOString())) > start);
+      if (overlaps.length) {
+        const list = overlaps.map((t) => `• ${t.driver_name}: ${fmt(t.started_at)} → ${t.ended_at ? fmt(t.ended_at) : 'עדיין בנסיעה'}`).join('\n');
+        if (!window.confirm(`הנסיעה חופפת לנסיעות שכבר רשומות:\n${list}\n\nלשמור בכל זאת?`)) return;
+      }
+      const { error } = await supabase.rpc('vehicle_trip_add_manual', {
+        p_employee_id: Number(employeeId),
+        p_started_local: start.replace('T', ' '),
+        p_ended_local: end.replace('T', ' '),
+        p_note: note || null,
+      });
+      if (error) throw error;
+      showToast('✅ הנסיעה נוספה ליומן', 'success');
+      setMan({ employeeId: '', start: '', end: '', note: '' });
+      load();
+    } catch (e) {
+      showToast(`❌ ${e.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeManual(t) {
+    if (!window.confirm(`למחוק את הנסיעה הידנית של ${t.driver_name} (${fmt(t.started_at)})?`)) return;
+    const { error } = await supabase.rpc('vehicle_trip_delete_manual', { p_id: t.id });
+    if (error) { showToast(`❌ ${error.message}`, 'error'); return; }
+    showToast('🗑️ הנסיעה נמחקה', 'success');
+    load();
+  }
+
   function exportCsv() {
     if (!trips?.length) return;
-    const reason = (t) => (!t.ended_at ? 'בנסיעה' : t.end_reason === 'handover' ? 'לא סימן החזרה' : t.end_reason === 'admin' ? 'נסגר ע"י מנהל' : 'הוחזר');
-    const rows = [['נהג', 'לקיחה', 'החזרה', 'משך', 'סטטוס']];
-    for (const t of trips) rows.push([t.driver_name, fmt(t.started_at), fmt(t.ended_at), duration(t.started_at, t.ended_at), reason(t)]);
+    const reason = (t) => (!t.ended_at ? 'בנסיעה' : t.end_reason === 'handover' ? 'לא סימן החזרה' : t.end_reason === 'admin' ? 'נסגר ע"י מנהל' : t.end_reason === 'manual' ? 'נרשם ידנית' : 'הוחזר');
+    const rows = [['נהג', 'לקיחה', 'החזרה', 'משך', 'סטטוס', 'הערה']];
+    for (const t of trips) rows.push([t.driver_name, fmt(t.started_at), fmt(t.ended_at), duration(t.started_at, t.ended_at), reason(t), t.note || '']);
     const csv = '﻿' + rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
@@ -129,11 +181,40 @@ export default function VehicleLog() {
                     {fmt(t.started_at)} → {t.ended_at ? fmt(t.ended_at) : 'עדיין בנסיעה'}
                   </span>
                   {t.end_reason === 'handover' && <span style={{ ...pill('#FEF3C7', '#92400E'), marginInlineStart: '0.6rem' }}>⚠️ לא סימן החזרה — שעת הסיום משוערת</span>}
+                  {t.end_reason === 'manual' && <span style={{ ...pill('#EDE9FE', '#5B21B6'), marginInlineStart: '0.6rem' }}>✍️ נרשם ידנית</span>}
                 </div>
               ))}
             </div>
           )
         )}
+      </div>
+
+      {/* Manual trip: someone took the car without recording it */}
+      <div style={card}>
+        <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>✍️ הוספת נסיעה שלא נרשמה</h3>
+        <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 0 }}>
+          למקרה שמישהו לקח את הרכב בלי לסמן בבוט. הנסיעה תסומן ביומן כ״נרשם ידנית״.
+        </p>
+        <label style={label}>נהג/ת
+          <select value={man.employeeId} onChange={(e) => setMan({ ...man, employeeId: e.target.value })} style={input}>
+            <option value="">בחירה…</option>
+            {drivers.map((e) => (
+              <option key={e.id} value={e.id}>{e.name}{e.active === false ? ' (לא פעיל/ה)' : ''}</option>
+            ))}
+          </select>
+        </label>
+        <label style={label}>לקיחה
+          <input type="datetime-local" value={man.start} max={man.end || undefined} onChange={(e) => setMan({ ...man, start: e.target.value })} style={input} />
+        </label>
+        <label style={label}>החזרה
+          <input type="datetime-local" value={man.end} min={man.start || undefined} onChange={(e) => setMan({ ...man, end: e.target.value })} style={input} />
+        </label>
+        <div>
+          <label style={label}>הערה (לא חובה)
+            <input type="text" value={man.note} maxLength={200} placeholder="למשל: לפי מה שסיפר/ה" onChange={(e) => setMan({ ...man, note: e.target.value })} style={{ ...input, width: '260px' }} />
+          </label>
+          <button style={btn('#5B21B6', saving)} disabled={saving} onClick={addManual}>{saving ? 'שומר…' : 'הוספה ליומן'}</button>
+        </div>
       </div>
 
       {/* Trips table */}
@@ -163,6 +244,7 @@ export default function VehicleLog() {
                     <th style={th}>החזרה</th>
                     <th style={{ ...th, textAlign: 'center' }}>משך</th>
                     <th style={th}>סטטוס</th>
+                    <th style={th}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,7 +254,16 @@ export default function VehicleLog() {
                       <td style={td}>{fmt(t.started_at)}</td>
                       <td style={td}>{t.ended_at ? fmt(t.ended_at) : '—'}</td>
                       <td style={{ ...td, textAlign: 'center' }}>{duration(t.started_at, t.ended_at)}</td>
-                      <td style={td}><StatusCell trip={t} /></td>
+                      <td style={td}>
+                        <StatusCell trip={t} />
+                        {t.note && <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: '0.2rem' }}>{t.note}</div>}
+                      </td>
+                      <td style={{ ...td, textAlign: 'center' }}>
+                        {t.end_reason === 'manual' && (
+                          <button title="מחיקת נסיעה ידנית" onClick={() => removeManual(t)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>🗑️</button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
