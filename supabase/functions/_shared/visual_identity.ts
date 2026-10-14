@@ -112,9 +112,11 @@ THE MINUTO COFFEE ROASTER (when a scene calls for the roastery /
 roasting machine / "the roaster"): Minuto's Coffee-Tech Engineering
 production drum roaster, as in the real photo of the roastery.
 ⛔ SCALE — it is a FULL-SIZE PRODUCTION MACHINE, not a model, not a
-tabletop or countertop unit, not a miniature. Its body is about as tall
-as an adult; with its hopper and ducting it reaches the ceiling of a
-small roastery room. It stands on the roastery FLOOR, dominates the
+tabletop or countertop unit, not a miniature. REAL DIMENSIONS: the
+machine is 2.0 m tall at its highest point (taller than an adult),
+1.5 m long and 1.0 m wide; its chimney ducts run at 2.8 m, up at the
+ceiling of a small roastery room. A coffee cup or bag next to it is
+tiny by comparison. It stands on the roastery FLOOR, dominates the
 frame, and is never shown small, distant, or toy-like on a table.
 ⛔ COUNT: EXACTLY ONE roaster in the frame.
 LOOK (match the real photos): dark charcoal / gunmetal matte body; a
@@ -434,7 +436,7 @@ export const SCENE_PRESETS: Record<string, string> = {
     'A SCENE inside the Minuto roastery in the early morning, documentary ' +
     'style. Minuto\'s actual full-size Coffee-Tech production drum roaster ' +
     'stands on the roastery floor and fills the LEFT half of the frame, as ' +
-    'tall as an adult — dark charcoal matte body, black hopper on top, ' +
+    'tall as 2 m (taller than an adult), 1.5 m long and 1 m wide — dark charcoal matte body, black hopper on top, ' +
     'brushed-stainless drum face with a round sight glass and gauge, silver ' +
     'flexible ducts rising to the ceiling, a tall dark cyclone column ' +
     'beside it. Below the drum door at the front stands its COOLER — a ' +
