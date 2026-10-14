@@ -129,9 +129,7 @@ COOLER is a large, deep, cylindrical brushed-stainless bin with tall
 straight sides on a dark base, at the front of the machine below the
 drum door; fresh beans fall from the drum door into it and its
 internal stirring arms turn them. Warm, low, moody roastery light.
-⛔ MANUFACTURER BADGE: the real machine carries a "COFFEE-TECH
-ENGINEERING" plate — never render it as readable text; no model names
-or logo lettering anywhere.
+MANUFACTURER PLATE: the "COFFEE-TECH ENGINEERING" plate on the front of the hopper neck, above the bean sight window — Minuto's real machine shows it and it SHOULD appear when that part of the machine is in frame. Spell it exactly "COFFEE-TECH ENGINEERING", white letters on a dark plate, the size it is in the reference photo; if it would be too small to render sharply, let it fall softly out of focus rather than inventing letters. No other brand names, model names or invented text anywhere.
 NEVER a vintage Probat copper roaster, an antique brass roaster, a
 white/cream roaster, or a wood-trim roaster. Brass/copper items in the
 roastery are only the separate flexible bean-transfer hose.
@@ -358,8 +356,9 @@ ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
 - Softbox lighting, glossy reflections, studio lighting
 - White walls, white seamless paper, marble, glossy surfaces
 - Text, letters, words, numbers, watermarks (EXCEPT the Minuto wordmark, the
-  stag-head emblem, and the origin/blend name printed on the bag's center
-  label — those are the ONLY allowed text elements)
+  stag-head emblem, the origin/blend name printed on the bag's center
+  label, and the "COFFEE-TECH ENGINEERING" plate on the roaster — those
+  are the ONLY allowed text elements)
 - ANY printed dates, batch numbers, lot numbers, "best before" stamps,
   expiry dates, "roasted on" labels, or numerical strings on the coffee
   bag. The bag must not display any date or number anywhere. If the model
@@ -444,9 +443,9 @@ export const SCENE_PRESETS: Record<string, string> = {
     'and fresh light-to-medium-roasted beans (pecan-shell brown, matte, ' +
     'NEVER dark, NEVER glossy) fall from the drum door into it. Soft warm steam ' +
     'rises off the bean pile — thin, low, not aggressive. The matte bean ' +
-    'color is the hero. NO BAG anywhere in frame. NO visible manufacturer ' +
-    'text or badge — the "COFFEE-TECH ENGINEERING" badge must NOT be ' +
-    'rendered as readable text. Surface around the roaster: raw concrete ' +
+    'color is the hero. NO BAG anywhere in frame. The "COFFEE-TECH ' +
+    'ENGINEERING" plate on the hopper neck is shown as on the real ' +
+    'machine, spelled exactly. Surface around the roaster: raw concrete ' +
     'floor with subtle stains. Single warm tungsten work-light from the ' +
     'upper-right roastery ceiling, creating long shadows toward the ' +
     'lower-left and leaving the background in deep shadow. No people, no ' +
@@ -494,6 +493,6 @@ export const SCENE_PRESET_SUMMARIES = {
   pour_shot:       'hand pouring from a Hario server into a ceramic cup, with a single bag soft in the background; ritual / brewing / freshness',
   origin_still:    'single bag on a lime plaster surface with scattered medium-roast beans and a ceramic cup beside; origin story / single-origin focus',
   brewing_setup:   'pour-over rig blooming with a brass kettle cropped from the edge and the single bag soft in the background; method / equipment / education',
-  roaster_bts:     'full-size dark charcoal Coffee-Tech production roaster on the floor, filling the left of frame (black hopper, stainless drum face with sight glass, silver ducts to the ceiling, deep cylindrical stainless cooling bin below the drum door), fresh-roasted beans falling into the cooling bin with light steam; NO bag; NO manufacturer text; roastery BTS / roast-day / craft moments',
+  roaster_bts:     'full-size dark charcoal Coffee-Tech production roaster on the floor, filling the left of frame (black hopper, stainless drum face with sight glass, silver ducts to the ceiling, deep cylindrical stainless cooling bin below the drum door), fresh-roasted beans falling into the cooling bin with light steam; NO bag; the COFFEE-TECH ENGINEERING plate shown as on the real machine; roastery BTS / roast-day / craft moments',
   cafe_bts:        'La Marzocco Strada X bar machine left, espresso pouring into ceramic cup with barista hands cropped, whole beans on bar right; NO bag; cafe BTS / espresso ritual / bar craft',
 } as const
