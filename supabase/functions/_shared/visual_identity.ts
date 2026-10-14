@@ -34,19 +34,16 @@ export const MINUTO_BEANS_REFERENCE_URL =
 export const MINUTO_ESPRESSO_MACHINE_REFERENCE_URL =
   'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/FullSizeRender_6cabba01-90d6-4413-9e50-1f5a16e64acb.jpg.jpeg'
 
-// Shape + finish anchor for Minuto's actual roaster — a Coffee-Tech
-// Engineering compact drum roaster with a two-tone matte-black lower
-// body + brushed stainless upper drum cover, tall conical stainless
-// hopper, and a deep cylindrical stainless cooling bin on the floor
-// at the front-right. Uploaded by the user 2026-05-26 after the text-only roaster
-// description kept rendering generic "fully matte black Probat-style"
-// silhouettes with hallucinated "COFFEE-TECH" text. Passed to Gemini /
-// Imagen as a reference image whenever the scene brief mentions the
-// roaster, the roastery, roast day, the cooling tray, fresh beans
-// coming off the cooler, or BTS roastery moments. For cafe / pour-over
-// / cup-ritual scenes we don't include it.
+// Shape + finish + SCALE anchor for Minuto's actual roaster: a real photo
+// of the Coffee-Tech production roaster in the Minuto roastery (full machine,
+// hopper, sight glass, cooler, ducts). Replaced the old white-background
+// product render on 2026-10-14 — with no surroundings it gave no sense of
+// size, and renders kept shrinking the roaster into a tabletop model.
+// Uploaded by .github/workflows/upload-marketing-assets.yml from
+// assets/marketing/upload_images/roaster/. Passed as a reference whenever the
+// scene brief mentions the roaster / roastery / roast day / cooler.
 export const MINUTO_ROASTER_REFERENCE_URL =
-  'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/minuto_roaster_reference.png'
+  'https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/upload_images/roaster/minuto-roaster-13.jpg'
 
 // Five real Minuto bags with distinct colored center labels. visual-test
 // picks one at random when no per-post reference_image_url is set, so
@@ -112,49 +109,32 @@ dark/oily), steam, amber liquid, dark wood serving boards, brown
 craft-paper boxes, hand-thrown earthenware bowls and dishes.
 
 THE MINUTO COFFEE ROASTER (when a scene calls for the roastery /
-roasting machine / "the roaster"): a Coffee-Tech Engineering
-FLOOR-STANDING drum roaster (Minuto's actual machine).
-⛔ SCALE + PLACEMENT: it is a full-size production machine that stands
-on the ROASTERY FLOOR on its own base — the top of the hopper is
-around adult head height. It NEVER sits on a counter, table, bar,
-shelf or workbench, and it is never miniaturised into a tabletop
-appliance. ⛔ COUNT: EXACTLY ONE roaster in the frame. Never two
-roasters, never a second smaller roaster beside or behind it. The
-small tabletop SAMPLE roaster appears ONLY when the brief explicitly
-says sample roast / sample roaster / cupping — and then it replaces
-the main roaster, never joins it.
-Finish — TWO-TONE: matte-black lower
-body and side panels, with a BRUSHED STAINLESS STEEL upper drum
-cover, stainless drum face, and a tall stainless conical hopper on
-top. The silhouette is VERTICAL and compact (taller than wide), not
-the squat horizontal industrial style. A large stainless-steel
-exhaust chimney rises straight up from the top-left. A round drum
-face on the right side has a central handle wheel and a black trier
-(sampling rod). The COOLER is a large, deep, cylindrical brushed-stainless bin with
-tall straight sides (about as wide as the drum body), standing on
-the FLOOR at the front-right of the roaster directly below the drum
-door; fresh beans fall from the drum door into it and its internal
-stirring arms turn them. Never a shallow tray on a stand or table. Small
-yellow stencil safety labels appear on a few black panels (e.g.
-"MANUAL CRANK") but they are SMALL stencils on hardware — NEVER
-render them as large readable headline text. A small grey control
-panel with a tiny LCD display sits on the front lower half.
-⛔ MANUFACTURER BADGE PROHIBITION: there is a small "COFFEE-TECH
-ENGINEERING" badge on the real machine, BUT it MUST NOT be rendered
-as readable text in the photograph — neither on the hopper, the
-drum cover, the cooler rim, nor anywhere else. NO model
-names, NO manufacturer text, NO orange/yellow logo lettering. The
-machine is identified by its silhouette and two-tone finish, not
-by branding.
-NEVER render a vintage Probat copper roaster, NEVER an antique
-brass roaster, NEVER a white/cream-colored roaster, NEVER a
-wood-trim roaster, NEVER a "fully matte black" Diedrich/Loring-
-style box (Minuto's machine has the prominent brushed-stainless
-upper section — getting it all-black is wrong). Don't render it as
-a factory-hall industrial line either: it is one floor-standing
-machine in a small roastery room. If the scene mentions a brass
-kettle that's allowed (separate object); the roaster itself is
-two-tone matte-black + brushed stainless.
+roasting machine / "the roaster"): Minuto's Coffee-Tech Engineering
+production drum roaster, as in the real photo of the roastery.
+⛔ SCALE — it is a FULL-SIZE PRODUCTION MACHINE, not a model, not a
+tabletop or countertop unit, not a miniature. REAL DIMENSIONS: the
+machine is 2.0 m tall at its highest point (taller than an adult),
+1.5 m long and 1.0 m wide; its chimney ducts run at 2.8 m, up at the
+ceiling of a small roastery room. A coffee cup or bag next to it is
+tiny by comparison. It stands on the roastery FLOOR, dominates the
+frame, and is never shown small, distant, or toy-like on a table.
+⛔ COUNT: EXACTLY ONE roaster in the frame.
+LOOK (match the real photos): dark charcoal / gunmetal matte body; a
+large BLACK cylindrical-to-conical green-bean hopper on top; a brushed
+stainless front drum face with a round sight glass full of beans, a
+round pressure/temperature gauge, a handle wheel and a sampling trier;
+large SILVER flexible exhaust ducts rising from the machine to the
+ceiling; a tall dark cyclone/chaff column standing beside it. The
+COOLER is a large, deep, cylindrical brushed-stainless bin with tall
+straight sides on a dark base, at the front of the machine below the
+drum door; fresh beans fall from the drum door into it and its
+internal stirring arms turn them. Warm, low, moody roastery light.
+⛔ MANUFACTURER BADGE: the real machine carries a "COFFEE-TECH
+ENGINEERING" plate — never render it as readable text; no model names
+or logo lettering anywhere.
+NEVER a vintage Probat copper roaster, an antique brass roaster, a
+white/cream roaster, or a wood-trim roaster. Brass/copper items in the
+roastery are only the separate flexible bean-transfer hose.
 
 THE MINUTO ESPRESSO MACHINE (when a scene calls for an espresso
 machine, group head, portafilter docked, steam wand, or any espresso
@@ -454,15 +434,13 @@ export const SCENE_PRESETS: Record<string, string> = {
 
   roaster_bts:
     'A SCENE inside the Minuto roastery in the early morning, documentary ' +
-    'style. Minuto\'s actual Coffee-Tech Engineering compact drum roaster ' +
-    'occupies the LEFT half of the frame — TWO-TONE: matte-black lower ' +
-    'body and side panels, BRUSHED STAINLESS STEEL upper drum cover and ' +
-    'stainless drum face. A tall stainless conical hopper sits on top; a ' +
-    'large stainless exhaust chimney rises straight up from the upper-left. ' +
-    'The silhouette is vertical and compact (taller than wide), not a wide ' +
-    'horizontal industrial unit. On the floor at the front-right of the ' +
-    'roaster, directly below the drum door, stands its COOLER — a large, ' +
-    'deep, cylindrical brushed-stainless bin with tall straight sides — ' +
+    'style. Minuto\'s actual full-size Coffee-Tech production drum roaster ' +
+    'stands on the roastery floor and fills the LEFT half of the frame, as ' +
+    'tall as 2 m (taller than an adult), 1.5 m long and 1 m wide — dark charcoal matte body, black hopper on top, ' +
+    'brushed-stainless drum face with a round sight glass and gauge, silver ' +
+    'flexible ducts rising to the ceiling, a tall dark cyclone column ' +
+    'beside it. Below the drum door at the front stands its COOLER — a ' +
+    'large, deep, cylindrical brushed-stainless bin with tall straight sides — ' +
     'and fresh light-to-medium-roasted beans (pecan-shell brown, matte, ' +
     'NEVER dark, NEVER glossy) fall from the drum door into it. Soft warm steam ' +
     'rises off the bean pile — thin, low, not aggressive. The matte bean ' +
@@ -516,6 +494,6 @@ export const SCENE_PRESET_SUMMARIES = {
   pour_shot:       'hand pouring from a Hario server into a ceramic cup, with a single bag soft in the background; ritual / brewing / freshness',
   origin_still:    'single bag on a lime plaster surface with scattered medium-roast beans and a ceramic cup beside; origin story / single-origin focus',
   brewing_setup:   'pour-over rig blooming with a brass kettle cropped from the edge and the single bag soft in the background; method / equipment / education',
-  roaster_bts:     'two-tone matte-black + brushed-stainless Coffee-Tech compact roaster left (vertical silhouette, stainless hopper, deep cylindrical stainless cooling bin on the floor at front-right), fresh-roasted beans falling into the cooling bin with light steam; NO bag; NO manufacturer text; roastery BTS / roast-day / craft moments',
+  roaster_bts:     'full-size dark charcoal Coffee-Tech production roaster on the floor, filling the left of frame (black hopper, stainless drum face with sight glass, silver ducts to the ceiling, deep cylindrical stainless cooling bin below the drum door), fresh-roasted beans falling into the cooling bin with light steam; NO bag; NO manufacturer text; roastery BTS / roast-day / craft moments',
   cafe_bts:        'La Marzocco Strada X bar machine left, espresso pouring into ceramic cup with barista hands cropped, whole beans on bar right; NO bag; cafe BTS / espresso ritual / bar craft',
 } as const

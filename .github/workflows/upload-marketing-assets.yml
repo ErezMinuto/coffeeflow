@@ -1,0 +1,45 @@
+name: Upload marketing assets
+
+# Copies files committed under assets/marketing/ into the Supabase Storage
+# `marketing` bucket at the same relative path, e.g.
+#   assets/marketing/upload_images/roaster/x.jpg -> marketing/upload_images/roaster/x.jpg
+# upload_images/<category>/ is the real-photo library visual-test edits instead of
+# generating equipment from scratch, so adding photos here improves renders.
+#
+# Upload only (x-upsert) — it never deletes from Storage.
+# Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (same as render-reel / fixer-agent).
+
+on:
+  push:
+    branches: [main]
+    paths: ['assets/marketing/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload to Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY secrets missing"; exit 1; }
+          cd assets/marketing
+          n=0; fail=0
+          while IFS= read -r -d '' f; do
+            rel="${f#./}"
+            case "$rel" in *.jpg|*.jpeg) ct=image/jpeg ;; *.png) ct=image/png ;; *.webp) ct=image/webp ;; *) echo "skip $rel"; continue ;; esac
+            code=$(curl -sS -o /tmp/resp -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: $ct" -H "x-upsert: true" \
+              --data-binary @"$rel" "$SUPABASE_URL/storage/v1/object/marketing/$rel")
+            if [ "$code" = 200 ]; then echo "ok   $rel"; n=$((n+1)); else echo "FAIL $rel ($code): $(head -c 200 /tmp/resp)"; fail=1; fi
+          done < <(find . -type f -print0 | sort -z)
+          echo "uploaded $n file(s)"
+          exit $fail
