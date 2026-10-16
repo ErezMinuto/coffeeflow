@@ -86,6 +86,10 @@ interface ExperimentArmContext {
   publishedArms:  number
 }
 
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 async function notifyPostReadyForReview(args: {
   mediaType: string
   caption: string
@@ -93,6 +97,7 @@ async function notifyPostReadyForReview(args: {
   taskId: string
   qaFlagged: boolean
   arm: ExperimentArmContext | null
+  promptDoc?: string | null
 }): Promise<string> {
   if (!RESEND_KEY) return 'skipped (no RESEND_API_KEY)'
   const isStory = String(args.mediaType).toLowerCase().includes('story')
@@ -119,6 +124,10 @@ async function notifyPostReadyForReview(args: {
       <a href="${reviewUrl}" style="display:inline-block;background:#6A7D45;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-size:14px;font-weight:600;">Review &amp; publish →</a>
       <p style="margin:16px 0 0;font-size:12px;color:#999;">Nothing is published until you approve it here. Task ${args.taskId.slice(0, 8)}.</p>
     </div>
+    ${args.promptDoc ? `<div style="padding:14px 22px 20px;border-top:1px solid #e7e7e2;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#555;">Prompt the image model received</p>
+      <pre style="margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;line-height:1.45;color:#555;">${escapeHtml(args.promptDoc)}</pre>
+    </div>` : ''}
   </div>
 </body></html>`
   return await sendOwnerEmail({ subject, html })
@@ -256,6 +265,7 @@ serve(async (req) => {
     image_url?: string
     carousel_slides?: Array<{ image_url?: string }>
     review_required?: boolean
+    qa_attempts?: Array<{ image_url?: string; prompt_doc?: string }>
   }
   // AUTO-QA IS ADVISORY FOR IG, NOT A HARD GATE. The visual worker's vision-QA
   // loop sometimes rejects perfectly good images, and every IG post already
@@ -418,6 +428,8 @@ serve(async (req) => {
       taskId:    task.id,
       qaFlagged: qaFlagged,
       arm:       armContext,
+      // The prompt behind the image being reviewed (single images only).
+      promptDoc: imageUrl ? parentResult.qa_attempts?.find(a => a?.image_url === imageUrl)?.prompt_doc ?? null : null,
     })
     console.log(`[organic-worker-instagram] ${workerId} ready-for-review email → ${ADMIN_ALERT_EMAIL}: ${notifyStatus}`)
   }

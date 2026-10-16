@@ -156,9 +156,6 @@ async function geminiJson(parts: any[]): Promise<any> {
   return JSON.parse(text)
 }
 
-// Prompt files saved beside each render (<image>.prompt.txt) are deleted
-// after this many days.
-const PROMPT_RETENTION_DAYS = 7
 
 // ── Brief rewrite ──────────────────────────────────────────────────────────
 // The image model draws what the SCENE BRIEF describes and treats the
@@ -617,7 +614,7 @@ INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 • MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
-• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.${roasterRef ? ' EXCEPTION — THE ROASTER: this surface is only for small tabletop props (bag, cups, beans). The roaster is NOT a prop: it stands on the roastery FLOOR, never on this surface. If both appear, the surface is a counter or workbench in front of / beside the floor-standing roaster.' : ''}`}
+• SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.${espressoSceneRegex ? ' EXCEPTION — ESPRESSO: a cup being filled from a portafilter stands on the espresso machine\'s stainless DRIP-TRAY GRATE directly under the spouts, never on this surface or any table (an espresso machine cannot pour onto a table). This surface is only the counter around the machine.' : ''}${roasterRef ? ' EXCEPTION — THE ROASTER: this surface is only for small tabletop props (bag, cups, beans). The roaster is NOT a prop: it stands on the roastery FLOOR, never on this surface. If both appear, the surface is a counter or workbench in front of / beside the floor-standing roaster.' : ''}`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
 • FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
@@ -699,8 +696,11 @@ Real-world physics, not arbitrary attachment:
     hand entering from frame edge. A portafilter NEVER has a steam
     wand attached, NEVER floats, NEVER points downward without
     support. Espresso, when shown pouring, comes from TWO SPOUTS at
-    the bottom of the portafilter basket as twin amber streams into a
-    cup placed below.
+    the bottom of the portafilter basket — a matched, symmetric pair
+    side by side — as twin amber streams that fall close together into
+    a cup standing on the machine's stainless drip-tray grate directly
+    below. Never a cup on a table or wooden surface under a hovering
+    portafilter.
 
   • A GROUP HEAD is the chrome cylindrical fixture protruding
     horizontally from the front of an espresso machine, at chest
@@ -960,11 +960,12 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
 
     const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
 
-    // Save the EXACT prompt sent to the image model next to the image, same
-    // name with .prompt.txt, so a bad render can be traced by opening
-    // <image url>.prompt.txt. Best-effort: never fails the render.
+    // The EXACT prompt sent to the image model goes back in the response;
+    // seo-worker-visual stores it per QA attempt in seo_tasks.result_data and
+    // the IG review email shows it. (It used to be uploaded as
+    // <image>.prompt.txt, but the marketing bucket only accepts images and
+    // video, so every upload was rejected and no prompt was ever saved.)
     const sentPrompt = realPhotoUsed ? realPhotoPrompt : `Generate an image: ${fullPrompt}`
-    const promptFile = filename.replace(/\.[a-z]+$/, '.prompt.txt')
     const promptDoc = [
       `IMAGE: ${pub.publicUrl}`,
       `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
@@ -974,33 +975,8 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       ``, `── REWRITTEN BRIEF ── changes: ${rewrite.error ? `rewrite failed: ${rewrite.error}` : rewrite.changes.join('; ') || 'none'}`, sceneBrief,
       ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
     ].join('\n')
-    let promptUrl: string | null = null
-    try {
-      const { error: pErr } = await supabase.storage.from('marketing')
-        .upload(promptFile, new TextEncoder().encode(promptDoc), { contentType: 'text/plain; charset=utf-8', upsert: true })
-      if (!pErr) promptUrl = supabase.storage.from('marketing').getPublicUrl(promptFile).data.publicUrl
-      else console.warn(`[visual-test] prompt upload failed: ${pErr.message}`)
-    } catch (e: any) { console.warn(`[visual-test] prompt upload error: ${e?.message ?? e}`) }
-
-    // RETENTION: prompt files are kept 7 days, no more. Each render sweeps
-    // the oldest ones past that age (deletes through the Storage API, so the
-    // stored file is removed, not just its row). Best-effort, like the upload.
-    try {
-      const cutoff = Date.now() - PROMPT_RETENTION_DAYS * 86_400_000
-      const { data: old } = await supabase.storage.from('marketing').list('ig-test', {
-        limit: 100, search: '.prompt.txt', sortBy: { column: 'created_at', order: 'asc' },
-      })
-      const expired = (old ?? [])
-        .filter(f => f.name.endsWith('.prompt.txt') && f.created_at && Date.parse(f.created_at) < cutoff)
-        .map(f => `ig-test/${f.name}`)
-      if (expired.length) {
-        const { error: rmErr } = await supabase.storage.from('marketing').remove(expired)
-        console.log(`[visual-test] prompt retention: removed ${expired.length} older than ${PROMPT_RETENTION_DAYS}d${rmErr ? ` (error: ${rmErr.message})` : ''}`)
-      }
-    } catch (e: any) { console.warn(`[visual-test] prompt retention error: ${e?.message ?? e}`) }
-
     return jsonResponse({
-      prompt_url: promptUrl,
+      prompt_doc: promptDoc,
       success: true,
       url: pub.publicUrl,
       aspect,

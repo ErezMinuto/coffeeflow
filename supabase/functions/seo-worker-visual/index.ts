@@ -301,6 +301,9 @@ serve(async (req) => {
     render_mode: 'no_bag' | 'bag_hero'
     scene_brief: string
     critique: VisualCritique
+    // Exact prompt the image model got (from visual-test), so a bad image
+    // can be traced. Shown in the IG review email for the chosen attempt.
+    prompt_doc?: string
   }> = []
   let qaPassed = false
   let lastCritique: VisualCritique | null = null
@@ -404,6 +407,7 @@ serve(async (req) => {
       render_mode: workingRenderMode,
       scene_brief: workingSceneBrief,
       critique,
+      prompt_doc:  typeof rendered.raw.prompt_doc === 'string' ? rendered.raw.prompt_doc : undefined,
     })
     lastCritique = critique
 
@@ -685,8 +689,7 @@ function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> 
     visual_director_error: r.visual_director_error,
     surface:               r.surface,
     style_ref:             r.style_ref,
-    // Traceability: what the image model was actually told.
-    prompt_url:            r.prompt_url,
+    // Traceability: the full prompt is kept per attempt in qa_attempts[].prompt_doc.
     scene_brief_sent:      r.scene_brief,
     brief_rewrite_changes: r.brief_rewrite_changes,
     brief_rewrite_error:   r.brief_rewrite_error,
@@ -939,7 +942,7 @@ async function renderCarouselSlideWithQA(
   console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} mode=${slideMode}`)
 
   const MAX_SLIDE_QA_ATTEMPTS = 3
-  const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique }> = []
+  const attempts: Array<{ attempt: number; image_url: string; scene_brief: string; critique: VisualCritique; prompt_doc?: string }> = []
   let bgUrl = ''
   let passed = false
 
@@ -979,7 +982,7 @@ async function renderCarouselSlideWithQA(
       console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
       critique = { passes: true, missing: [], issues: [], suggested_adjustment: '' } as VisualCritique
     }
-    attempts.push({ attempt: a, image_url: bgUrl, scene_brief: baseBrief, critique })
+    attempts.push({ attempt: a, image_url: bgUrl, scene_brief: baseBrief, critique, prompt_doc: typeof bg.raw.prompt_doc === 'string' ? bg.raw.prompt_doc : undefined })
     console.log(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} qa-attempt ${a}/${MAX_SLIDE_QA_ATTEMPTS} ${critique.passes ? 'PASSED' : `FAILED missing=${JSON.stringify(critique.missing)} issues=${JSON.stringify(critique.issues)}`}`)
     if (critique.passes) { passed = true; break }
   }
