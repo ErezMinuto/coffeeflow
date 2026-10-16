@@ -16,7 +16,7 @@
 // contradictions, and the brief now wins on light, framing and the cup.
 
 export interface Scene {
-  espresso:    boolean   // shot, portafilter, group head, espresso machine
+  espresso:    boolean   // a shot being made: portafilter, group head, pour from the machine
   milk:        boolean   // steaming, pitcher, latte / cappuccino / flat white
   pourOver:    boolean   // V60 / Chemex / Kalita / dripper / kettle / filter
   aeropress:   boolean
@@ -27,8 +27,8 @@ export interface Scene {
   roaster:     boolean
   bag:         boolean   // a Minuto bag is in the render
   drink:       boolean   // any drink in a cup
-  cafe:        boolean   // Minuto's bar → Strada X
-  home:        boolean   // home kitchen → home machine
+  cafe:        boolean   // brief names Minuto's bar / a café
+  home:        boolean   // brief is explicitly at home → home machine; otherwise Minuto's Strada X
   machineRef:  boolean   // a photo of Minuto's machine is attached
 }
 
@@ -41,7 +41,10 @@ export function detectScene(brief: string, flags: {
   // clause up to the next punctuation mark.
   const b = brief.toLowerCase().replace(/\b(?:no|without|never|not|avoid|zero)\b[^.,;:!?]*/g, ' ')
   const has = (re: RegExp) => re.test(b)
-  const espresso = flags.espresso || has(/\b(espresso|portafilter|group ?head|crema|ristretto|doppio|lungo|pulling (?:a |the )?shot|shot (?:being )?pulled|tamp(?:ing|er)?)\b/)
+  // An espresso being MADE (machine in frame). A finished cup of espresso on
+  // a table is just a drink — it must not be forced onto a machine.
+  const espresso = has(/\b(portafilter|group ?head|espresso machine|brew group|tamp(?:ing|er)?|extraction|pulling (?:a |the |an )?shot|(?:being|is|was) pulled)\b/)
+    || has(/\bespresso\b[^.]*\b(?:pour(?:s|ing)?|pulled|stream(?:s|ing)?|extract(?:ed|ing|ion)?|dripping)\b/)
   const milk = has(/\b(milk|steam wand|steaming|latte|cappuccino|flat white|cortado|macchiato|microfoam|pitcher|froth(?:ing|ed)?)\b/)
   const pourOver = has(/\b(pour[- ]?over|v60|chemex|kalita|dripper|filter coffee|drip coffee|bloom(?:ing)?|gooseneck|kettle|hario)\b/)
   const aeropress = has(/\baero ?press\b/)
@@ -65,7 +68,7 @@ export function sectionNames(s: Scene): string[] {
   return [
     'style',
     s.roaster && 'roaster',
-    s.espresso && (s.cafe && !s.home ? 'espresso: Minuto Strada X' : 'espresso: home machine'),
+    s.espresso && (s.home ? 'espresso: home machine' : 'espresso: Minuto Strada X'),
     s.drink && 'cup',
     (s.espresso || s.pourOver || s.aeropress || s.frenchPress || s.moka) && 'brewing method',
     s.milk && 'milk',
@@ -137,8 +140,8 @@ two-group (not a generic Linea / Linea Mini):
   • Every part connects to the body as on the real machine — no floating,
     merged or invented parts. When in doubt, crop tighter.`
 
-const ESPRESSO_HOME = `THE ESPRESSO MACHINE — a HOME espresso machine (Minuto's audience brews at
-home): chrome or matte-black body, a SINGLE group head with a chrome
+const ESPRESSO_HOME = `THE ESPRESSO MACHINE — a HOME espresso machine (the brief is set at home):
+chrome or matte-black body, a SINGLE group head with a chrome
 portafilter, water tank at the back, on a kitchen counter, smaller than a
 café machine (e.g. Gaggia Classic, Rancilio Silvia, Breville Bambino). Not a
 moka pot, not a stovetop brewer.`
@@ -215,7 +218,9 @@ export function identityFor(s: Scene): string {
   const parts: string[] = [STYLE]
   if (s.roaster) parts.push(ROASTER)
   if (s.espresso) {
-    parts.push(s.cafe && !s.home ? ESPRESSO_STRADA : ESPRESSO_HOME)
+    // Minuto's own bar machine by default; a home machine only when the brief
+    // is explicitly set at home.
+    parts.push(s.home ? ESPRESSO_HOME : ESPRESSO_STRADA)
     parts.push(ESPRESSO_ANATOMY)
   }
   if (s.drink) parts.push(CUP)

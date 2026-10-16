@@ -375,12 +375,15 @@ serve(async (req) => {
     // explicitly cafe/bar/roastery context.
     const sceneLowerForMachine = sceneBrief.toLowerCase()
     const espressoSceneRegex = /\b(espresso machine|steam wand|portafilter|group head|grouphead|naked portafilter|bottomless portafilter|la marzocco|strada|milk steaming|steaming milk|microfoam|milk frothing|frothing milk|latte art|cappuccino|flat white|latte\b|espresso shot|pulling (?:a |the |an )?shot|brew group)\b/.test(sceneLowerForMachine)
-    const homeContextRegex = /\b(at home|home espresso|home setup|home barista|home brewing|home machine|kitchen counter|kitchen|on the counter|בבית|במטבח|בדירה|בית|מטבח)\b/.test(sceneLowerForMachine)
+    // No bare "on the counter" (Minuto's bar has one) and no bare בית, which
+    // also matches בבית הקפה ("at the café").
+    const homeContextRegex = /\b(at home|home espresso|home setup|home barista|home brewing|home machine|kitchen counter|kitchen|במטבח|בדירה|מטבח)\b/.test(sceneLowerForMachine)
     const cafeContextRegex = /\b(cafe|café|coffee shop|coffeeshop|bar|roastery|behind the bar|on the bar|in the shop|at the cafe|barista at work|professional espresso machine|commercial espresso machine|professional machine|commercial machine|במינוטו|בבית הקפה|במאפיה|בקפה)\b/.test(sceneLowerForMachine)
-    // Use Strada X only for commercial scenes. For home or ambiguous
-    // espresso scenes we let Gemini render a generic home machine guided
-    // by the EQUIPMENT-BY-BREWING-METHOD rule in visual_identity.
-    const useStradaXReference = espressoSceneRegex && cafeContextRegex && !homeContextRegex
+    // Espresso scenes are at Minuto's bar with Minuto's own Strada X by
+    // default (owner's call, 2026-10-16) — real photos of it in real-photo
+    // mode, its photo as the reference otherwise. Only a brief explicitly
+    // set at home gets a home machine.
+    const useStradaXReference = espressoSceneRegex && !homeContextRegex
     // Roaster reference — attach Minuto's actual Coffee-Tech machine photo
     // when the brief mentions the roaster, the roastery, the cooling tray,
     // roast-day moments, or fresh beans coming off the cooler. Without
@@ -402,7 +405,7 @@ serve(async (req) => {
     const realPhotoCategory: string | null =
       (body.real_photo === false || body.use_reference !== false || homeContextRegex) ? null
       : roasterSceneRegex                                                              ? 'roaster'
-      : (handsSceneRegex && (cafeContextRegex || /\bbarista\b/.test(sceneLowerForMachine))) ? 'hands'
+      : (handsSceneRegex && (cafeContextRegex || espressoSceneRegex || /\bbarista\b/.test(sceneLowerForMachine))) ? 'hands'
       : useStradaXReference                                                            ? 'machine'
       : null
 
