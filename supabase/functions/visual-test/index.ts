@@ -723,6 +723,8 @@ WHAT YOU MAY DO:
 • Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
 • Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
 • Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
+• ORDER TICKETS / RECEIPTS (the paper slips hanging under the drip tray) show customers' names: crop them out of the frame, or if that is impossible, blur them until no text is readable. Never leave them sharp.
+• THE "LA MARZOCCO" WORDMARK (the drip tray's front plate, and the red logo on the white cups): leave it EXACTLY as photographed only if that part of the photo is left untouched. If your edit would redraw, relight or extend that area, crop it out of the frame or blur it until no letters can be read — never re-letter it, and never add it where the photo does not show it.
 
 SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
 ${sceneBrief}`

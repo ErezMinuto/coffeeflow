@@ -135,8 +135,10 @@ two-group (not a generic Linea / Linea Mini):
     holding exactly ONE portafilter with a BLACK handle.
   • STEAM WANDS: thin chrome wands rising from the top-side of the body
     next to the groups — never out of a group head or a portafilter.
-  • DRIP TRAY: stainless wire grate across the bottom front; keep its small
-    wordmark plate soft or out of frame (a sharp misspelling reads as fake).
+  • DRIP TRAY: stainless wire grate across the bottom front. Its front plate
+    carries the "La Marzocco" wordmark — do NOT render it: keep that plate
+    out of frame, or blank / blurred so no letters can be read. No "La
+    Marzocco" logo on cups either.
   • Every part connects to the body as on the real machine — no floating,
     merged or invented parts. When in doubt, crop tighter.`
 
