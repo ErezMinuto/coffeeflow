@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   ASPECT_TO_RATIO,
@@ -7,7 +8,6 @@ import {
   MINUTO_BEANS_REFERENCE_URL,
   MINUTO_ESPRESSO_MACHINE_REFERENCE_URL,
   MINUTO_ROASTER_REFERENCE_URL,
-  MINUTO_VISUAL_IDENTITY,
   SCENE_PRESETS,
 } from '../_shared/visual_identity.ts'
 // pickFallbackBagUrl intentionally NOT imported — caller must specify
@@ -599,7 +599,12 @@ DO NOT copy this image's composition — only the visual language. The bag from 
       ? `\n\nREFERENCE IMAGES (${refDescriptions.length} attached, read each carefully):\n\n${refDescriptions.map((d, i) => `${ordinal(i)} ${d}`).join('\n\n')}`
       : ''
 
-    const fullPrompt = `${MINUTO_VISUAL_IDENTITY}
+    // Only the rule sections this scene needs (see scene_rules.ts).
+    const scene = detectScene(sceneBrief, {
+      bag: !!bagRef, beansRef: !!beansRef, roaster: !!roasterRef, machineRef: !!machineRef,
+      espresso: espressoSceneRegex, cafe: cafeContextRegex, home: homeContextRegex,
+    })
+    const fullPrompt = `${identityFor(scene)}
 
 🎯 PRIMARY DIRECTIVE
 ${bagRef ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).` : `Create a high-resolution, photorealistic editorial photograph at ${ratio} aspect ratio of exactly what the SCENE BRIEF describes. There is NO coffee bag in this image — do not add one. Any attached reference images are equipment references, not a bag.`}
@@ -611,13 +616,13 @@ ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${!bagRef && !forbidsProps ? 'as the SCENE BRIEF frames it; otherwise in the lower-right or upper-right third' : forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
-• LIGHTING & SHADOWS — ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
+• LIGHTING & SHADOWS — as the SCENE BRIEF describes it, if it does. Otherwise ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
 • SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.${espressoSceneRegex ? ' EXCEPTION — ESPRESSO: a cup being filled from a portafilter stands on the espresso machine\'s stainless DRIP-TRAY GRATE directly under the spouts, never on this surface or any table (an espresso machine cannot pour onto a table). This surface is only the counter around the machine.' : ''}${roasterRef ? ' EXCEPTION — THE ROASTER: this surface is only for small tabletop props (bag, cups, beans). The roaster is NOT a prop: it stands on the roastery FLOOR, never on this surface. If both appear, the surface is a counter or workbench in front of / beside the floor-standing roaster.' : ''}`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
 • FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
-• COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'asymmetric, anchored in lower-right or upper-right third, never centered hero. At least 30% intentional negative space.'}${referencesBlock}
+• COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'the framing the SCENE BRIEF asks for (close-up, top-down, eye-level…); otherwise asymmetric, anchored in the lower-right or upper-right third, at least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
 
@@ -646,73 +651,8 @@ brewing contexts). If the brief says "steam wand frothing milk in a
 pitcher", show exactly that. If the brief says "digital scale reading
 150ml", show exactly that. The named subject MUST be the rendered
 subject — every time.
-
-🔧 EQUIPMENT ANATOMY — espresso parts must connect correctly.
-Real-world physics, not arbitrary attachment:
-
-  • A STEAM WAND is a thin chrome tube tipped with a small steam tip.
-    It attaches to the SIDE of an espresso machine's body, angled
-    downward into a milk pitcher. A steam wand NEVER comes out of a
-    portafilter, NEVER comes out of a group head, NEVER floats in the
-    air, NEVER grows from a milk pitcher's body. If a steam wand is
-    in frame, the espresso machine's chrome body or side panel MUST
-    also be in frame (at minimum: the side of the machine where the
-    wand attaches, even if cropped). The wand enters the milk pitcher
-    from above, not from below — its tip is submerged just below the
-    milk surface to create microfoam.
-
-  • ⛔⛔⛔ A STEAM WAND DOES NOT POUR LIQUID. A steam wand outputs
-    INVISIBLE PRESSURIZED STEAM — not milk, not coffee, not water, not
-    any visible falling stream. NO white stream falls from the wand
-    tip. NO liquid arc connects the wand tip to a cup. NO milk drops
-    from a wand. If you find yourself rendering a chrome wand with a
-    white stream falling from its tip into a cup BELOW it — STOP, that
-    is wrong, redraw. The wand tip in a steaming-milk scene is
-    SUBMERGED INSIDE a stainless steel pitcher (you see the wand
-    disappear into the pitcher from above); if the wand tip is exposed
-    in frame it is IDLE, dry, with at most a faint wisp of pale vapor.
-    This is the single most common AI-coffee failure mode and an
-    automatic image reject — explicitly do not generate it.
-
-  • ⛔⛔⛔ MILK SOURCE LOCK — if milk appears in a cup in the frame,
-    or a stream of milk is mid-air entering a cup, the SOURCE of that
-    milk MUST be a STAINLESS STEEL MILK PITCHER held by a HAND. The
-    pitcher is a small metal jug with a pointed pour spout and a
-    handle, gripped by fingers entering from a frame edge. The milk
-    stream flows from the pitcher's pointed spout to the cup. The
-    source is NEVER a steam wand, NEVER a milk carton, NEVER a bottle,
-    NEVER a faucet, NEVER an unspecified void. If a cappuccino, latte,
-    flat white, or macchiato is the finished drink in the cup, the
-    milk is already integrated with latte art on top — there is no
-    active pour at all. Active milk pours come from a hand-held
-    stainless pitcher, period.
-
-  • A PORTAFILTER is a metal basket holder with a horizontal handle
-    (usually black or wood). The basket end either: (a) locks UPWARD
-    into the underside of an espresso machine's group head — chrome
-    cylindrical fixture protruding from the front of the machine — OR
-    (b) sits on a counter/tamping mat with the handle extending
-    horizontally and a hand gripping it, OR (c) is held mid-air by a
-    hand entering from frame edge. A portafilter NEVER has a steam
-    wand attached, NEVER floats, NEVER points downward without
-    support. Espresso, when shown pouring, comes from TWO SPOUTS at
-    the bottom of the portafilter basket — a matched, symmetric pair
-    side by side — as twin amber streams that fall close together into
-    a cup standing on the machine's stainless drip-tray grate directly
-    below. Never a cup on a table or wooden surface under a hovering
-    portafilter.
-
-  • A GROUP HEAD is the chrome cylindrical fixture protruding
-    horizontally from the front of an espresso machine, at chest
-    height. The portafilter locks into it from below. Steam wands do
-    not come out of group heads — they come out of the machine's side.
-
-  • If the brief implies espresso brewing or milk steaming, the
-    espresso machine body should be visible in frame (or at least
-    cropped at frame edge with enough chrome/panel showing to anchor
-    the equipment). Detached floating espresso parts read as wrong.
-
-  • ${machineRef ? `STRADA X PARTIAL-REVEAL RULE: a reference image of
+${machineRef ? `
+🔧 STRADA X PARTIAL-REVEAL RULE: a reference image of
     Minuto's actual La Marzocco Strada X is included. Use it as a
     COLOR + DETAIL anchor, NOT as a full-silhouette template. Gemini
     cannot reliably reproduce the Strada X's full chassis shape from
@@ -740,50 +680,7 @@ Real-world physics, not arbitrary attachment:
     Use the reference image's COLORS (slate-grey matte body, clear
     see-through glass as the side wall, black portafilter handles, grey
     group caps) and its part-to-part anatomy. The shape is hard;
-    cropping is reliable.` : 'No machine reference image is included for this scene (the scene does not call for an espresso machine).'}
-
-If the SCENE description mentions a scoop, brass scoop, wooden spoon,
-espresso spoon, measuring scoop, or any other utensil, IGNORE that
-portion of the description and omit the utensil entirely. Loose beans
-go directly on the surface or in a small ceramic dish — never in a
-scoop. EXCEPTION: a brass gooseneck kettle is allowed ONLY when the
-SCENE brief is about pour-over / V60 / Chemex / drip / filter brewing.
-For any other context — espresso, milk frothing, latte/cappuccino,
-grinding, packaging, beans-only stills — do NOT introduce a brass
-gooseneck kettle.
-
-If the SCENE description mentions dark roasted, dark beans,
-dark-roasted, glossy beans, oily beans, OR raw green beans / unroasted
-beans / pale tan beans / cardboard-colored beans, IGNORE that portion.
-Render beans as MEDIUM ROAST — pecan brown / roasted hazelnut shell /
-medium walnut / lighter milk chocolate. Matte, dry, never glossy.
-Goldilocks: NOT pale-tan/cardboard/wheat (too light, looks underroasted),
-NOT dark chocolate/espresso/black (too dark, looks french-roast),
-NOT green/sage (not roasted at all). The target is clearly medium-roasted
-coffee — chestnut brown with subtle warm undertones.
-
-☕ COFFEE ONLY — NEVER TEA. Minuto is a coffee roastery. No tea bags,
-teapots, tea leaves, tea glasses or herbal infusions anywhere. Any
-drink in frame is coffee: amber-brown filter coffee, espresso with
-crema, or a milk drink.
-
-💧 POUR-OVER PHYSICS — a kettle NEVER pours water straight into a cup
-or glass (that reads as tea and is an automatic reject). Kettle water
-goes ONLY into a pour-over dripper (V60 / Chemex / Kalita) holding a
-paper filter and a visible bed of wet, blooming coffee grounds; the
-brewed coffee drips from the dripper into a glass server or cup BELOW
-it. If the brief shows a kettle pouring, the dripper with grounds is
-in frame and is where the water lands.
-
-🧪 AEROPRESS ON THE CUP — the AeroPress is supported only by the cup:
-its base flange rests DIRECTLY ON THE CUP RIM, touching it. NEVER
-hovering above the cup with a gap or a stream falling through open air.
-
-1️⃣ COUNT LOCK — each piece of equipment the brief names appears
-EXACTLY ONCE: one roaster, one espresso machine, one kettle, one
-grinder. Never duplicate a machine (e.g. one on a counter and another
-on the floor), even if the brief mentions it twice in different
-words.${roasterRef ? `
+    cropping is reliable.` : ''}${roasterRef ? `
 
 🏭 ROASTER SCALE + PLACEMENT — the roaster is a FULL-SIZE production
 machine on the roastery FLOOR: 2.0 m tall (taller than an adult),
@@ -803,10 +700,6 @@ cooler.
 asks for a person or a hand, no hand, arm or person appears. No
 paddle, spoon, scoop, stick or rake in the beans. The machine works
 on its own.` : ''}
-
-If the SCENE description specifies a ceramic cup but the brewing method
-implied is filter / V60 / Chemex / pour-over, render a thin clear-glass
-cup instead. Espresso/cappuccino keeps the small unglazed ceramic cup.
 
 These rules WIN over anything in the SCENE description. The prior
 text is inspiration; these are mandatory.`
@@ -971,6 +864,7 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
       `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
       `SURFACE: ${surface.name}`,
+      `RULE SECTIONS: ${sectionNames(scene).join(', ')}`,
       ``, `── ORIGINAL BRIEF (from the agent) ──`, originalBrief,
       ``, `── REWRITTEN BRIEF ── changes: ${rewrite.error ? `rewrite failed: ${rewrite.error}` : rewrite.changes.join('; ') || 'none'}`, sceneBrief,
       ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
