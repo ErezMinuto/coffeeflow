@@ -1,10 +1,13 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import {
+  buildOutboundMessages,
   formatCatalog,
   hmacSha256Hex,
   maskWaId,
   parseEchoes,
+  parseBotReply,
   parseInbound,
+  sanitizeButtons,
   parseWaIdList,
   splitForWhatsApp,
   toGeminiContents,
@@ -152,4 +155,54 @@ Deno.test('parseWaIdList: normalises formatting, drops junk', () => {
   const s = parseWaIdList(' +972-54-123 4567 , 972500000000,, 123 ')
   assertEquals([...s].sort(), ['972500000000', '972541234567'])
   assertEquals(parseWaIdList(undefined).size, 0)
+})
+
+Deno.test('parseBotReply: JSON with buttons, plain-text fallback', () => {
+  const r = parseBotReply('{"text":"איזה טעם?","buttons":["חזק ושוקולדי","מתקתק ואגוזי","פירותי וקליל"]}')
+  assertEquals(r.text, 'איזה טעם?')
+  assertEquals(r.buttons.length, 3)
+  assertEquals(parseBotReply('שלום').buttons, [])
+  assertEquals(parseBotReply('שלום').text, 'שלום')
+  assertEquals(parseBotReply('{"buttons":["x"]}').buttons, [])   // no text → treated as plain text
+})
+
+Deno.test('sanitizeButtons: max 3, max 20 chars, unique, non-empty', () => {
+  const b = sanitizeButtons(['a', ' a ', '', 'x'.repeat(30), 'c', 'd', 5])
+  assertEquals(b, ['a', 'x'.repeat(20), 'c'])
+  assertEquals(sanitizeButtons('nope'), [])
+})
+
+Deno.test('buildOutboundMessages: interactive when buttons fit, text otherwise', () => {
+  const [m] = buildOutboundMessages('972541234567', { text: 'איך מכינים?', buttons: ['פינג׳אן', 'בוץ'] })
+  assertEquals((m.body as any).type, 'interactive')
+  assertEquals((m.body as any).interactive.action.buttons[1].reply, { id: 'opt2', title: 'בוץ' })
+  const [t] = buildOutboundMessages('972541234567', { text: 'המלצה', buttons: [] })
+  assertEquals((t.body as any).type, 'text')
+  // Body over the 1024 interactive limit: buttons dropped, text still sent.
+  const long = buildOutboundMessages('1', { text: 'x '.repeat(700), buttons: ['a'] })
+  assert(long.every(x => (x.body as any).type === 'text'))
+})
+
+Deno.test('parseBotReply: link only if it is a catalog permalink (encoded or decoded)', () => {
+  const enc = 'https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-sertao/'
+  const ok = parseBotReply(JSON.stringify({ text: 'הבחירה: Sertão\nאפשר להזמין בכפתור למטה', link: 'https://minuto.co.il/product/פולי-sertao' }), [enc])
+  assertEquals(ok.link, enc)
+  assertEquals(ok.rejectedLink, undefined)
+  const bad = parseBotReply(JSON.stringify({ text: 'x', link: 'https://minuto.co.il/product/made-up' }), [enc])
+  assertEquals(bad.link, null)
+  assertEquals(bad.rejectedLink, 'https://minuto.co.il/product/made-up')
+  // URL echoed inside the text is removed when it goes out as a button.
+  const inText = parseBotReply(JSON.stringify({ text: `כאן: ${enc}`, link: enc }), [enc])
+  assert(!inText.text.includes('minuto.co.il'))
+})
+
+Deno.test('buildOutboundMessages: link → cta_url button, buttons suppressed', () => {
+  const [m] = buildOutboundMessages('1', { text: 'הבחירה: Sertão', buttons: ['a'], link: 'https://minuto.co.il/p/x' })
+  const b = m.body as any
+  assertEquals(b.interactive.type, 'cta_url')
+  assertEquals(b.interactive.action.parameters, { display_text: 'להזמנה באתר', url: 'https://minuto.co.il/p/x' })
+  assert('להזמנה באתר'.length <= 20)
+  // Too long for an interactive body: the link is appended as text instead.
+  const long = buildOutboundMessages('1', { text: 'x '.repeat(700), buttons: [], link: 'https://minuto.co.il/p/x' })
+  assert(long.at(-1)!.text.endsWith('https://minuto.co.il/p/x'))
 })

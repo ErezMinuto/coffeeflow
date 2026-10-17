@@ -34,17 +34,19 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger, type Logger } from '../_shared/logger.ts'
 import {
+  buildOutboundMessages,
   formatCatalog,
   isOffBrand,
   maskWaId,
   MINUTO_COFFEE_CATEGORIES,
+  parseBotReply,
   parseInbound,
-  splitForWhatsApp,
   toGeminiContents,
   verifyHandshake,
   verifyMetaSignature,
   parseEchoes,
   parseWaIdList,
+  type BotReply,
   type CatalogProduct,
   type EchoMessage,
   type InboundMessage,
@@ -237,7 +239,7 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
 
   if (await humanOwnsSafe(sb, m.waId, log)) return false
 
-  if (!m.text) return await send(sb, m.waId, UNSUPPORTED_TYPE_REPLY, log)
+  if (!m.text) return await send(sb, m.waId, { text: UNSUPPORTED_TYPE_REPLY, buttons: [] }, log)
 
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
   const { count } = await sb
@@ -249,13 +251,17 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
     return false
   }
 
-  let reply: string
+  let reply: BotReply
   try {
     const [history, catalog] = await Promise.all([loadHistory(sb, m.waId), loadCatalog(sb)])
-    reply = await askGemini(buildSystemPrompt(formatCatalog(catalog)), history, log)
+    const links = catalog.map(p => p.permalink).filter((u): u is string => !!u)
+    reply = await askGemini(buildSystemPrompt(formatCatalog(catalog)), history, log, links)
+    if (reply.rejectedLink) {
+      log.warn('reply.bad_link', 'model offered a link that is not in the catalog; not sent', { who, link: reply.rejectedLink.slice(0, 300) })
+    }
   } catch (err) {
     log.error('reply.fail', 'could not generate a reply', { who }, err)
-    reply = ERROR_REPLY
+    reply = { text: ERROR_REPLY, buttons: [] }
   }
   // A team member may have jumped in while Gemini was writing.
   if (await humanOwnsSafe(sb, m.waId, log)) return false
@@ -298,10 +304,24 @@ async function loadCatalog(sb: SupabaseClient): Promise<CatalogProduct[]> {
   return ((data ?? []) as CatalogProduct[]).filter(p => !isOffBrand(p.name))
 }
 
-async function askGemini(system: string, history: StoredMessage[], log: Logger): Promise<string> {
+async function askGemini(system: string, history: StoredMessage[], log: Logger, allowedLinks: string[]): Promise<BotReply> {
   const contents = toGeminiContents(history)
   if (!contents.length) throw new Error('empty conversation')
-  const generationConfig: Record<string, unknown> = { temperature: 0.6, maxOutputTokens: 1024 }
+  const generationConfig: Record<string, unknown> = {
+    temperature: 0.6,
+    maxOutputTokens: 1024,
+    // Structured answer: the message plus up to 3 reply-button labels.
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: 'OBJECT',
+      properties: {
+        text: { type: 'STRING' },
+        buttons: { type: 'ARRAY', items: { type: 'STRING' } },
+        link: { type: 'STRING' },
+      },
+      required: ['text'],
+    },
+  }
   // 2.5 models think by default and spend the output budget on it; a chat
   // reply needs no thinking and should come back fast.
   if (MODEL.startsWith('gemini-2.5')) generationConfig.thinkingConfig = { thinkingBudget: 0 }
@@ -320,22 +340,16 @@ async function askGemini(system: string, history: StoredMessage[], log: Logger):
     model: MODEL, ms: Date.now() - started, finish: cand?.finishReason, usage: body?.usageMetadata,
   })
   if (!text) throw new Error(`gemini returned no text (finish=${cand?.finishReason})`)
-  return text
+  return parseBotReply(text, allowedLinks)
 }
 
-async function send(sb: SupabaseClient, waId: string, text: string, log: Logger): Promise<boolean> {
+async function send(sb: SupabaseClient, waId: string, reply: BotReply, log: Logger): Promise<boolean> {
   let sent = false
-  for (const chunk of splitForWhatsApp(text)) {
+  for (const msg of buildOutboundMessages(waId, reply)) {
     const res = await fetch(`${GRAPH_BASE}/${PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ACCESS_TOKEN}` },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: waId,
-        type: 'text',
-        text: { body: chunk, preview_url: true },
-      }),
+      body: JSON.stringify(msg.body),
     })
     const body = await res.json().catch(() => ({}))
     if (!res.ok) {
@@ -343,17 +357,22 @@ async function send(sb: SupabaseClient, waId: string, text: string, log: Logger)
       return sent
     }
     sent = true
+    // The offered buttons are kept in the stored text so the model sees, on
+    // the next turn, which options the customer was choosing between.
+    const stored = msg.buttons.length ? `${msg.text}\n[כפתורים: ${msg.buttons.join(' | ')}]`
+      : msg.link ? `${msg.text}\n[כפתור קישור: ${msg.link}]`
+      : msg.text
     const { error } = await sb.from('whatsapp_messages').insert({
       wa_message_id: body?.messages?.[0]?.id ?? `out-${crypto.randomUUID()}`,
       wa_id: waId,
       direction: 'out',
-      msg_type: 'text',
-      body: chunk,
+      msg_type: msg.buttons.length || msg.link ? 'interactive' : 'text',
+      body: stored,
       run_id: log.runId,
     })
     if (error) log.warn('db.out', 'reply sent but not stored', { who: maskWaId(waId) }, error)
   }
-  if (sent) log.info('msg.out', 'reply sent', { who: maskWaId(waId), chars: text.length })
+  if (sent) log.info('msg.out', 'reply sent', { who: maskWaId(waId), chars: reply.text.length, buttons: reply.buttons.length, link: !!reply.link })
   return sent
 }
 
