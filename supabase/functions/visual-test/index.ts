@@ -63,13 +63,13 @@ async function pickRandomAssetUrl(
 // surfaces (concrete, dark walnut) but mix in oak and stainless steel
 // for variety per the user's request.
 const SURFACES: Array<{ name: string; description: string; weight: number }> = [
-  { name: 'raw concrete',            description: 'raw imperfect concrete with subtle texture and minor stains, grey-tan tones, slightly worn',         weight: 22 },
-  { name: 'weathered dark walnut',   description: 'weathered dark walnut wood with rich visible grain, deep brown chocolate tones, slightly rustic',    weight: 20 },
+  { name: 'raw concrete',            description: 'smooth poured concrete with a fine even grain, grey-tan tones, clean and unblemished',         weight: 22 },
+  { name: 'weathered dark walnut',   description: 'fine-sanded dark walnut with smooth even grain, deep brown chocolate tones, softly polished',    weight: 20 },
   { name: 'light grained oak',       description: 'premium light-grained oak wood, warm honey-amber tones, clear visible wood grain, slight matte sheen', weight: 20 },
   { name: 'brushed stainless steel', description: 'brushed stainless steel surface, cool silver-grey tones, subtle reflective sheen, cafe-bar feel',    weight: 14 },
-  { name: 'raw lime plaster',        description: 'raw lime plaster surface with subtle texture, off-white to cream tones, soft matte finish',          weight: 12 },
-  { name: 'hand-thrown earthenware', description: 'large hand-thrown earthenware platter as surface, deep brown-grey with visible kiln marks',           weight:  7 },
-  { name: 'aged copper',             description: 'aged patina copper surface, warm orange-brown with subtle greenish oxidation, vintage feel',         weight:  5 },
+  { name: 'raw lime plaster',        description: 'smooth lime plaster with a fine even matte finish, off-white to cream tones, unblemished',          weight: 12 },
+  { name: 'hand-thrown earthenware', description: 'large hand-thrown earthenware platter as surface, deep brown-grey with a smooth unglazed matte finish',           weight:  7 },
+  { name: 'aged copper',             description: 'brushed copper surface, warm orange-brown tones, even soft matte finish',         weight:  5 },
 ]
 
 function pickSurface(): { name: string; description: string } {
