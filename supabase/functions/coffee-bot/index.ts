@@ -16,6 +16,7 @@ import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger, type Logger } from "../_shared/logger.ts";
+import { addPacked, deductRoasted } from "./stock.ts";
 
 const BOT_TOKEN      = Deno.env.get("COFFEE_BOT_TOKEN")           ?? "";
 const USER_ID        = Deno.env.get("COFFEEFLOW_USER_ID")         ?? "";
@@ -363,7 +364,8 @@ async function handlePacking(chatId: string, fromName: string, productId: number
   // shortage is the roaster forgetting to update roasted_stock, so the data —
   // not the packing — is what's wrong. Deduct what we can (floored at 0 to
   // avoid confusing negative inventory) and warn that roasted_stock looks low.
-  const shortages = deductions.filter(d => d.currentStock < d.kgNeeded);
+  // Shortages are judged on the stock the database saw at the moment of the
+  // deduction (filled in below), not on the earlier read.
 
   // Every write below used to discard its error. That matters more here than
   // almost anywhere else in the system: if the deduction fails, the employee
@@ -374,25 +376,27 @@ async function handlePacking(chatId: string, fromName: string, productId: number
   // failure is now recorded and greppable.
   const writeFailures: string[] = [];
 
+  // Deltas are applied in the database (stock.ts) so two reports for the same
+  // source at the same time both count.
   for (const d of deductions) {
-    const newStock = Math.max(0, parseFloat((d.currentStock - d.kgNeeded).toFixed(3)));
     const table = d.type === "origin" ? "origins" : "roast_profiles";
-    const { error: dedErr } = await supabase.from(table)
-      .update({ roasted_stock: newStock }).eq("id", d.id);
-    if (dedErr) {
+    const { result, error: dedErr } = await deductRoasted(supabase, d.type, d.id, d.kgNeeded);
+    if (result) {
+      d.currentStock = result.before;
+    } else {
       writeFailures.push(`${table}#${d.id}`);
       log.error('packing.deduct.fail', `could not deduct ${d.kgNeeded.toFixed(2)}kg from ${d.name}`,
-        { table, source_id: d.id, source: d.name, kg: d.kgNeeded, new_stock: newStock }, dedErr);
+        { table, source_id: d.id, source: d.name, kg: d.kgNeeded }, dedErr);
     }
   }
+  const shortages = deductions.filter(d => d.currentStock < d.kgNeeded);
 
-  const newPackedStock = (product.packed_stock ?? 0) + bagsCount;
-  const { error: packedErr } = await supabase.from("products")
-    .update({ packed_stock: newPackedStock }).eq("id", product.id);
-  if (packedErr) {
+  const { result: packed, error: packedErr } = await addPacked(supabase, product.id, bagsCount);
+  const newPackedStock = packed ? packed.after : (product.packed_stock ?? 0) + bagsCount;
+  if (!packed) {
     writeFailures.push(`products#${product.id}`);
-    log.error('packing.packed_stock.fail', `could not set packed_stock for ${product.name}`,
-      { product_id: product.id, new_packed_stock: newPackedStock }, packedErr);
+    log.error('packing.packed_stock.fail', `could not add ${bagsCount} to packed_stock for ${product.name}`,
+      { product_id: product.id, bags: bagsCount }, packedErr);
   }
 
   const { error: logErr } = await supabase.from("packing_logs").insert({
@@ -484,6 +488,7 @@ async function handleShopConsumption(
   grams:      number,
   origins:    Origin[],
   profiles:   RoastProfile[],
+  log:        Logger,
 ) {
   const source = sourceType === "origin"
     ? origins.find(o  => o.id === sourceId)
@@ -500,20 +505,28 @@ async function handleShopConsumption(
     ? (source as Origin).critical_stock
     : (source as RoastProfile).min_stock;
 
+  const notEnough = (haveKg: number) => send(chatId,
+    `⛔ <b>אין מספיק מלאי קלוי:</b>\n\n` +
+    `• ${source.name}: יש ${haveKg.toFixed(2)} ק"ג, צריך ${kgNeeded.toFixed(3)} ק"ג`
+  );
+
   if (currentKg < kgNeeded) {
-    await send(chatId,
-      `⛔ <b>אין מספיק מלאי קלוי:</b>\n\n` +
-      `• ${source.name}: יש ${currentKg.toFixed(2)} ק"ג, צריך ${kgNeeded.toFixed(3)} ק"ג`
-    );
+    await notEnough(currentKg);
     return;
   }
 
-  const newStock = parseFloat((currentKg - kgNeeded).toFixed(3));
-  if (sourceType === "origin") {
-    await supabase.from("origins").update({ roasted_stock: newStock }).eq("id", sourceId);
-  } else {
-    await supabase.from("roast_profiles").update({ roasted_stock: newStock }).eq("id", sourceId);
+  // The check above uses an earlier read; the database re-checks under a row
+  // lock and refuses if another deduction got there first.
+  const { result, error: dedErr } = await deductRoasted(supabase, sourceType, sourceId, kgNeeded, true);
+  if (result && !result.applied) {
+    await notEnough(result.before);
+    return;
   }
+  if (dedErr) {
+    log.error('shop.deduct.fail', `could not deduct ${kgNeeded.toFixed(3)}kg from ${source.name}`,
+      { source_type: sourceType, source_id: sourceId, grams }, dedErr);
+  }
+  const newStock = result ? result.after : parseFloat((currentKg - kgNeeded).toFixed(3));
 
   await supabase.from("shop_consumption_logs").insert({
     user_id:     USER_ID,
@@ -672,7 +685,7 @@ serve(async (req) => {
           await handleShopConsumption(
             chatId, fromName,
             shop.sourceType, shop.sourceId, shop.grams,
-            (origins ?? []) as Origin[], (profiles ?? []) as RoastProfile[],
+            (origins ?? []) as Origin[], (profiles ?? []) as RoastProfile[], log,
           );
         } else {
           await send(chatId,

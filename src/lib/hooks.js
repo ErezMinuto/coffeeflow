@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabase';
 import { useUser } from '@clerk/clerk-react';
 
@@ -8,6 +8,10 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Every fetch takes a number; only the most recent one may write state.
+  // Realtime events, refreshAll() and the refresh after a write can overlap,
+  // and an older paginated fetch finishing last used to overwrite newer data.
+  const fetchSeq = useRef(0);
 
   useEffect(() => {
     if (!user) {
@@ -36,6 +40,8 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
   }, [user, table]);
 
   const fetchData = async () => {
+    const seq = ++fetchSeq.current;
+    const isLatest = () => seq === fetchSeq.current;
     try {
       setLoading(true);
       // Paginate to fetch all rows (Supabase default max is 1000 per request)
@@ -50,17 +56,20 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
           .range(from, from + PAGE - 1);
 
         if (error) throw error;
+        if (!isLatest()) return; // a newer fetch has started; let it win
         if (!result || result.length === 0) break;
         allRows = allRows.concat(result);
         if (result.length < PAGE) break; // last page
         from += PAGE;
       }
+      if (!isLatest()) return;
       setData(allRows);
     } catch (err) {
+      if (!isLatest()) return;
       console.error(`Error fetching ${table}:`, err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (isLatest()) setLoading(false);
     }
   };
 
@@ -73,6 +82,7 @@ export const useSupabaseData = (table, { filterByUser = true } = {}) => {
         .single();
 
       if (error) throw error;
+      await fetchData(); // Refresh local state immediately after insert, like update/remove
       return result;
     } catch (err) {
       console.error(`Error inserting ${table}:`, err);
@@ -164,6 +174,18 @@ export const useCostSettings = () => {
           .select()
           .single();
 
+        if (insertError && insertError.code === '23505') {
+          // Another mount created the row first (cost_settings has
+          // UNIQUE(user_id)); use that row instead of failing.
+          const { data: existing, error: refetchError } = await supabase
+            .from('cost_settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          if (refetchError) throw refetchError;
+          setSettings(existing);
+          return;
+        }
         if (insertError) throw insertError;
         setSettings(newData);
       } else if (error) {
