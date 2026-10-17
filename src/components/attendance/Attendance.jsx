@@ -482,7 +482,7 @@ export default function Attendance() {
     setExportBusy(true);
     try {
       const { data: result, error } = await supabase.functions.invoke('attendance-export', {
-        body: { year_month: ym },
+        body: { year_month: ym, mode: 'send' },
       });
       if (error) throw error;
       if (!result?.ok) throw new Error(result?.error || 'unknown');

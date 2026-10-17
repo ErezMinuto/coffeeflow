@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 
 // Creates a PAUSED ad campaign in Meta Ads Manager from a build_meta_campaign
@@ -31,6 +32,10 @@ const CORS = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST')    return json({ error: 'POST only' }, 405)
+  // verify_jwt is off and this acts on the live Meta ad account with stored
+  // credentials. Callers: marketing-advisor (service role) and the dashboard
+  // (a signed-in admin's Clerk token). Nobody else.
+  if (!(await hasRole(req, ['admin']))) return forbidden(CORS)
 
   // Track a created campaign so we can roll it back if a later step in the
   // chain fails — otherwise a failed ad-set/creative leaves an orphan shell.
