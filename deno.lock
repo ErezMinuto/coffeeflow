@@ -102,6 +102,7 @@
     "https://esm.sh/@supabase/storage-js@2.101.0/denonext/storage-js.mjs": "afdf4c9d0e2fec40735c06414113e0fc9776cf71b1a2c4d262ce827abea3eff7",
     "https://esm.sh/@supabase/supabase-js@2.101.0": "a6c343bdb28042c7ae01e4e3f5ae0ced86b69edada6c739538fc7eab3bf09144",
     "https://esm.sh/@supabase/supabase-js@2.101.0/denonext/supabase-js.mjs": "776ad923916e10cfd3add3f6887fcd9e6cd20211a0bd3c7adb405762fd5fb1f4",
+    "https://esm.sh/@supabase/supabase-js@2.116.0": "a38014743786a06c7dbf095a99e9ef3b38c0ec16bff076fc7cd403991192b34e",
     "https://esm.sh/iceberg-js@0.8.1/denonext/iceberg-js.mjs": "d839d81a2e3966500ca2cdd0c1cb458e9608bacfc91f7bb67a69b2e878dcdb4f",
     "https://esm.sh/iceberg-js@0.8.1?target=denonext": "58c849d7fe2bf4eca4a84eb501e83c161a7d8c34ca1bec15a962b3bec3062633",
     "https://esm.sh/tslib@2.8.1/denonext/tslib.mjs": "c38da5dd6da6281964435002ce204cd586634fe3bdfb24a0ee116f48cf3292e9"
@@ -115,8 +116,7 @@
         "npm:react-dom@^18.2.0",
         "npm:react-router-dom@^6.22.0",
         "npm:react-scripts@5.0.1",
-        "npm:react@^18.2.0",
-        "npm:xlsx@~0.18.5"
+        "npm:react@^18.2.0"
       ]
     }
   }

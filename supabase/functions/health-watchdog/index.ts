@@ -102,16 +102,19 @@ const EXPECTED_CRONS: Array<{
   { jobname: 'evaluator-tick-daily',                max_silence_hours: 36, required: true  },
   { jobname: 'scout-tick-daily',                    max_silence_hours: 36, required: false },
   { jobname: 'ai-visibility-probe-weekly',          max_silence_hours: 8 * 24, required: false },
-  { jobname: 'seo-worker-writer-tick',              max_silence_hours: 1,  required: true  },
-  { jobname: 'seo-worker-visual-tick',              max_silence_hours: 1,  required: true  },
-  { jobname: 'organic-worker-instagram-tick',       max_silence_hours: 1,  required: true  },
+  // The queue pollers run inside two dispatcher jobs, not as jobs of their own
+  // (20260920_cron_worker_pressure.sql): one fork per tick instead of seven.
+  // -a fires organic-worker-instagram, seo-worker-visual, seo-worker-writer,
+  // strategist-brain-advance and strategist-executor; -b fires
+  // seo-worker-research and seo-worker-techseo. Both run every 5 minutes.
+  { jobname: 'cf-dispatch-workers-a',               max_silence_hours: 1,  required: true  },
   // Added 2026-06-21 after woo-orders-sync silently froze for 12 days: its
   // cron was never registered, so nothing was watching it. These are the
   // remaining business-critical schedules that feed customer-facing flows.
   { jobname: 'woo-orders-sync-daily',               max_silence_hours: 30, required: true  },  // feeds welcome emails + revenue
   { jobname: 'email-automation-first-purchase-daily', max_silence_hours: 30, required: true },
   { jobname: 'woo-products-enrich-tick',            max_silence_hours: 30, required: false },
-  { jobname: 'seo-worker-research-tick',            max_silence_hours: 1,  required: true  },
+  { jobname: 'cf-dispatch-workers-b',               max_silence_hours: 1,  required: true  },
   { jobname: 'mission-worker-tick',                 max_silence_hours: 1,  required: false },
   // Weekly Wed 18:00 IDT employee availability reminder (see
   // 20260624_employee_availability_reminder_weekly_cron.sql). 8-day window
