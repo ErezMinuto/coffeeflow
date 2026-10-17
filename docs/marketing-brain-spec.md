@@ -56,7 +56,7 @@ A single, conversational marketing strategist that plans and coordinates **organ
 
 - **Brain** = a conversational agent holding the unified organic+paid+sales context **plus** the learnings store, with tools for each hand. Talks freely; fires tools only on explicit approval.
 - **Hands** = the *existing* agents. The brain delegates; it does not reimplement them.
-- **Google** is a write-side hand as of 2026-09-15 (`google-ads-draft`): PAUSED Search and Performance Max campaigns, live insights, the search-terms report, budget/status edits and keyword changes — the same shape as the Meta hand, behind the same approval gate and its own ₪100/day + ₪3,500/month caps. The 2026-05-08 decision that Google *harvests* demand rather than creating it still stands, and is written into the brain's prompt as channel doctrine: no cold-prospecting bean campaigns on Google.
+- **Google** is a write-side hand as of 2026-09-15 (`google-ads-draft`): PAUSED Search and Performance Max campaigns, live insights, the search-terms report, budget edits, pausing and keyword changes (never activation: the owner turns campaigns on in Google Ads / Ads Manager) — the same shape as the Meta hand, behind the same approval gate and its own ₪100/day + ₪3,500/month caps. The 2026-05-08 decision that Google *harvests* demand rather than creating it still stands, and is written into the brain's prompt as channel doctrine: no cold-prospecting bean campaigns on Google.
 
 ---
 

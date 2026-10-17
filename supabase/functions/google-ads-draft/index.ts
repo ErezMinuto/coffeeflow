@@ -364,7 +364,9 @@ serve(async (req) => {
       }
       if (body.status != null) {
         const st = String(body.status).toUpperCase()
-        if (!['ENABLED', 'PAUSED'].includes(st)) throw new Error('status must be ENABLED or PAUSED')
+        // Going live is the owner's act, done in Google Ads, never through this
+        // API. Pausing stays open so a campaign can always be stopped from here.
+        if (st !== 'PAUSED') throw new Error('status can only be set to PAUSED here — the owner activates campaigns in Google Ads')
         campaignUpdate.status = st
         campaignFields.push('status')
         changed.status = st

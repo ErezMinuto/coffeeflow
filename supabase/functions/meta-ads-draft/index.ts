@@ -151,7 +151,7 @@ serve(async (req) => {
       return json({ ok: true, date_preset: preset, campaigns: rows })
     }
 
-    // ── update_campaign ── edit a campaign's name / status / daily budget.
+    // ── update_campaign ── edit a campaign's name / daily budget, or pause it.
     // Budget cap applies to edits too (can't raise a live campaign over it).
     if (action === 'update_campaign') {
       const campaignId = String(body.campaign_id ?? '').trim()
@@ -160,7 +160,9 @@ serve(async (req) => {
       if (body.name != null) fields.name = String(body.name).slice(0, 400)
       if (body.status != null) {
         const st = String(body.status).toUpperCase()
-        if (!['ACTIVE', 'PAUSED'].includes(st)) throw new Error("status must be ACTIVE or PAUSED")
+        // Going live is the owner's act, done in Ads Manager, never through this
+        // API. Pausing stays open so a campaign can always be stopped from here.
+        if (st !== 'PAUSED') throw new Error("status can only be set to PAUSED here — the owner activates campaigns in Ads Manager")
         fields.status = st
       }
       if (body.daily_budget_ils != null) {
