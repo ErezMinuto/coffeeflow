@@ -18,6 +18,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPA_URL  = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -89,6 +90,8 @@ ${lines}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, so the caller is checked here. Posts to the team Telegram group. Only the green-stock-alert-daily cron calls it.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS);
 
   let body: any = {};
   try { body = await req.json(); } catch { /* cron calls with empty body */ }

@@ -3,15 +3,15 @@
  * Looks up Clerk users by email OR by user_id (or bulk by user_ids array).
  *
  * Requires:
- *   - Valid Clerk JWT in Authorization header (authenticated users only)
- *   - CLERK_SECRET_KEY + SUPABASE_JWT_SECRET set in Edge Function secrets
+ *   - An admin's Clerk token (or the service role) in Authorization
+ *   - CLERK_SECRET_KEY set in Edge Function secrets
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLERK_SECRET = Deno.env.get("CLERK_SECRET_KEY")           ?? "";
-const JWT_SECRET   = Deno.env.get("JWT_SECRET")        ?? "";
 const SUPA_URL     = Deno.env.get("SUPABASE_URL")               ?? "";
 const SUPA_KEY     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")  ?? "";
 
@@ -21,37 +21,6 @@ const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// ── JWT verification ──────────────────────────────────────────────────────────
-async function verifyJWT(token: string): Promise<string | null> {
-  try {
-    const [headerB64, payloadB64, sigB64] = token.split(".");
-    if (!headerB64 || !payloadB64 || !sigB64) return null;
-
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"],
-    );
-
-    const data      = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
-    const signature = Uint8Array.from(
-      atob(sigB64.replace(/-/g, "+").replace(/_/g, "/")),
-      c => c.charCodeAt(0),
-    );
-    const valid = await crypto.subtle.verify("HMAC", key, signature, data);
-    if (!valid) return null;
-
-    const payload = JSON.parse(atob(payloadB64));
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-
-    return payload.sub ?? null;
-  } catch {
-    return null;
-  }
-}
 
 function formatUser(u: any) {
   return {
@@ -63,8 +32,8 @@ function formatUser(u: any) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-
-  // Auth guard temporarily disabled — JWT signing mismatch between Clerk and PostgREST
+  // verify_jwt is off, so the caller is checked here. Returns users' emails and names. Only the admin Settings page calls it.
+  if (!(await hasRole(req, ["admin"]))) return forbidden(CORS);
 
   try {
     const body = await req.json();

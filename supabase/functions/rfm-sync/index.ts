@@ -19,6 +19,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -68,6 +69,8 @@ function quintileScore(sortedValues: number[], value: number, inverted = false):
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, so the caller is checked here. Rebuilds the rfm_* contact groups. Only auto-sync.yml (service key) calls it.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS);
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
   const startedAt = new Date().toISOString();

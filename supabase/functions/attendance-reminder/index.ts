@@ -17,6 +17,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const BOT_TOKEN = Deno.env.get("EMPLOYEE_BOT_TOKEN")        ?? "";
@@ -248,6 +249,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  // verify_jwt is off, so the caller is checked here. Sends Telegram DMs to employees. Only the attendance-reminder cron calls it.
+  if (!(await isServiceCaller(req))) return unauthorized(corsHeaders);
   try {
     const result = await run();
     console.log("attendance-reminder:", JSON.stringify(result));

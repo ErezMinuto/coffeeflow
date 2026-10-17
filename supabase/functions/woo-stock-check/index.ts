@@ -1,5 +1,6 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
 const CHAT_ID   = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
@@ -50,7 +51,10 @@ function extractSku(productText: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-serve(async (_req) => {
+serve(async (req) => {
+  // verify_jwt is off, so the caller is checked here. Only the
+  // coffeeflow-stock-check cron calls this; it alerts the team group.
+  if (!(await isServiceCaller(req))) return unauthorized();
   try {
     const { data: pending } = await supabase
       .from("waiting_customers")

@@ -25,6 +25,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 
 const URL    = Deno.env.get("SUPABASE_URL")              ?? "";
 const KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -132,6 +133,8 @@ async function removeBatch(headers: HeadersInit, paths: string[]): Promise<void>
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, so the caller is checked here. Deletes Storage objects. Only the purge-old-media-weekly cron calls it.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS);
 
   if (!URL || !KEY) {
     return new Response(JSON.stringify({ error: "Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY" }),

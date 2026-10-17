@@ -19,6 +19,7 @@
 // property.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getGoogleAccessToken } from '../_shared/vertex_auth.ts'
 
@@ -57,6 +58,9 @@ interface SyncBody {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // verify_jwt is off, so the caller is checked here. Only the ga4-sync-* crons call this; the diagnostic mode reveals the service
+  // account, so it is gated too.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   let body: SyncBody = {}

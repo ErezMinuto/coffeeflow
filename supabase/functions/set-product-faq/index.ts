@@ -18,6 +18,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 
 const WOO_URL = (Deno.env.get("WOO_URL") || "").replace(/\/+$/, "");
 const WOO_KEY = Deno.env.get("WOO_KEY") || "";
@@ -55,6 +56,9 @@ function validateFaq(input: unknown): FaqItem[] | null {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  // verify_jwt is off, so the caller is checked here. Writes live FAQ on any WooCommerce product. Only generate-product-faq (with
+  // the service key) or an operator with the service key calls it.
+  if (!(await isServiceCaller(req))) return unauthorized(cors);
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   if (!WOO_URL || !WOO_KEY || !WOO_SEC) {

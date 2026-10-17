@@ -24,6 +24,7 @@
 //     don't show up in CoffeeFlow (stock search, marketing).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
@@ -67,6 +68,8 @@ function stripHtml(html: string): string {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // verify_jwt is off, so the caller is checked here. Only the woo-products-enrich-tick cron calls this.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS)
   if (req.method !== 'POST')    return j({ error: 'POST only' }, 405)
 
   if (!WOO_KEY || !WOO_SECRET) return j({ error: 'WOO_KEY / WOO_SECRET not configured' }, 500)

@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // Publishes content to the Minuto Instagram Business account via the IG Graph API.
@@ -56,6 +57,9 @@ serve(async (req) => {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  // verify_jwt is off, so the caller is checked here. Publishes to @minuto_cafe. Callers: an admin from the dashboard, or
+  // organic-worker-instagram / handle-seo-chat with the service key.
+  if (!(await hasRole(req, ['admin']))) return forbidden(corsHeaders)
   if (req.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405, corsHeaders)
 
   try {
