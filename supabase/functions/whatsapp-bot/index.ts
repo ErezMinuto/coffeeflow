@@ -27,7 +27,9 @@
 //
 // Secrets (supabase secrets set, never in chat): WHATSAPP_APP_SECRET,
 // WHATSAPP_VERIFY_TOKEN, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID,
-// GEMINI_API_KEY. Optional: WHATSAPP_MODEL (default gemini-2.5-flash).
+// GEMINI_API_KEY. Optional: WHATSAPP_MODEL (default gemini-2.5-flash),
+// WHATSAPP_TEST_WA_IDS (comma-separated phone numbers treated as ad leads, for
+// testing from a staff phone and for Meta's App Review screencast).
 
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger, type Logger } from '../_shared/logger.ts'
@@ -42,6 +44,7 @@ import {
   verifyHandshake,
   verifyMetaSignature,
   parseEchoes,
+  parseWaIdList,
   type CatalogProduct,
   type EchoMessage,
   type InboundMessage,
@@ -67,6 +70,8 @@ const GRAPH_BASE       = Deno.env.get('WHATSAPP_GRAPH_BASE') || 'https://graph.f
 const HISTORY_LIMIT    = 30      // messages of context per reply
 const HISTORY_DAYS     = 7       // an older conversation starts fresh
 const LEAD_DAYS        = 7       // an ad click makes a chat the bot's for this long
+// Phones the bot treats as leads without an ad click. Keep it to staff phones.
+const TEST_WA_IDS      = parseWaIdList(Deno.env.get('WHATSAPP_TEST_WA_IDS'))
 const DAILY_REPLY_CAP  = 40      // per customer; bounds Gemini spend if someone loops the bot
 
 // Customer-facing fallbacks. Gender-inclusive, no em dashes.
@@ -194,7 +199,7 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
 
   // Shared number: only ad leads are the bot's. Anyone else is left to the
   // team in the app, and their message is not stored.
-  if (!m.referral) {
+  if (!m.referral && !TEST_WA_IDS.has(m.waId)) {
     try {
       if (!(await isLead(sb, m.waId))) {
         log.debug('msg.not_lead', 'not an ad lead, leaving it to the team', { who })

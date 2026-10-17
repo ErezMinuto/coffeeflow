@@ -150,6 +150,15 @@ function nonEmpty(v: unknown): string | null {
   return s === '' ? null : s
 }
 
+/** WHATSAPP_TEST_WA_IDS → set of WhatsApp ids. Meta's wa_id is digits only, so
+ *  "+972-54-123 4567" and "972541234567" both match. Entries too short to be a
+ *  phone number are dropped rather than matching something by accident. */
+export function parseWaIdList(raw: string | undefined | null): Set<string> {
+  return new Set(
+    (raw ?? '').split(',').map(x => x.replace(/\D/g, '')).filter(x => x.length >= 8),
+  )
+}
+
 /** Logs must not hold a customer's full phone number. */
 export function maskWaId(waId: string): string {
   return waId.length <= 4 ? '****' : `${'*'.repeat(waId.length - 4)}${waId.slice(-4)}`
