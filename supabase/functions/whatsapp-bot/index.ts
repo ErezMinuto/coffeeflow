@@ -12,6 +12,14 @@
 // Unsigned or wrongly signed POSTs get 401 before anything else runs, and an
 // unset WHATSAPP_APP_SECRET refuses everything (fails closed).
 //
+// SHARED NUMBER (coexistence). The number also runs the WhatsApp Business app
+// on the shop's phone, so regulars, suppliers and B2B write to it too. The bot
+// therefore answers ONLY ad leads: a chat whose first message carried a
+// click-to-WhatsApp `referral` within the last LEAD_DAYS. Other chats are not
+// answered and not stored. And the moment a team member replies to a lead
+// from the app (an smb_message_echoes webhook), the chat is the human's: the
+// bot never replies there again.
+//
 // TIMING. Meta retries a webhook that does not answer 200 promptly, so the
 // handler acknowledges at once and replies in EdgeRuntime.waitUntil. Retries
 // that still arrive are dropped by the unique wa_message_id in
@@ -33,7 +41,9 @@ import {
   toGeminiContents,
   verifyHandshake,
   verifyMetaSignature,
+  parseEchoes,
   type CatalogProduct,
+  type EchoMessage,
   type InboundMessage,
   type StoredMessage,
 } from './lib.ts'
@@ -56,6 +66,7 @@ const GRAPH_BASE       = Deno.env.get('WHATSAPP_GRAPH_BASE') || 'https://graph.f
 
 const HISTORY_LIMIT    = 30      // messages of context per reply
 const HISTORY_DAYS     = 7       // an older conversation starts fresh
+const LEAD_DAYS        = 7       // an ad click makes a chat the bot's for this long
 const DAILY_REPLY_CAP  = 40      // per customer; bounds Gemini spend if someone loops the bot
 
 // Customer-facing fallbacks. Gender-inclusive, no em dashes.
@@ -87,17 +98,20 @@ Deno.serve(async (req) => {
   catch { return new Response('bad json', { status: 400 }) }
 
   // Ignore traffic for any other number on the same WhatsApp Business Account.
-  const messages = parseInbound(payload).filter(m => !PHONE_NUMBER_ID || m.phoneNumberId === PHONE_NUMBER_ID)
-  if (!messages.length) return json({ ok: true, messages: 0 })   // status callbacks, other numbers
+  const ours = (id: string) => !PHONE_NUMBER_ID || id === PHONE_NUMBER_ID
+  const messages = parseInbound(payload).filter(m => ours(m.phoneNumberId))
+  const echoes = parseEchoes(payload).filter(e => ours(e.phoneNumberId))
+  // Status callbacks, history sync, contact sync, other numbers: nothing to do.
+  if (!messages.length && !echoes.length) return json({ ok: true, messages: 0 })
 
   const log = createLogger(FN)
-  const work = handleMessages(messages, log)
+  const work = handleMessages(messages, echoes, log)
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(work)
   else await work   // local `deno run`: no waitUntil, finish before answering
-  return json({ ok: true, messages: messages.length, run_id: log.runId })
+  return json({ ok: true, messages: messages.length, echoes: echoes.length, run_id: log.runId })
 })
 
-async function handleMessages(messages: InboundMessage[], log: Logger): Promise<void> {
+async function handleMessages(messages: InboundMessage[], echoes: EchoMessage[], log: Logger): Promise<void> {
   try {
     if (!ACCESS_TOKEN || !PHONE_NUMBER_ID || !GEMINI_API_KEY) {
       log.error('config.missing', 'whatsapp-bot is missing secrets', {
@@ -107,20 +121,90 @@ async function handleMessages(messages: InboundMessage[], log: Logger): Promise<
       return
     }
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE)
+    // Echoes first: a team reply in the same batch must silence the bot.
+    let takeovers = 0
+    for (const e of echoes) {
+      if (await handleEcho(sb, e, log)) takeovers++
+    }
     let replied = 0
     for (const m of messages) {
       if (await handleOne(sb, m, log)) replied++
     }
-    await log.finish('success', { received: messages.length, replied })
+    await log.finish('success', { received: messages.length, replied, echoes: echoes.length, takeovers })
   } catch (err) {
     log.error('run.fail', 'unhandled error', {}, err)
     await log.finish('error')
   }
 }
 
+/** A team member wrote to a customer from the Business app. If that customer
+ *  is a lead, record it: from then on the chat is the human's. Echoes in any
+ *  other chat are none of the bot's business and are not stored. Returns true
+ *  when this echo took a lead over. */
+async function handleEcho(sb: SupabaseClient, e: EchoMessage, log: Logger): Promise<boolean> {
+  const who = maskWaId(e.waId)
+  const { count, error } = await sb
+    .from('whatsapp_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('wa_id', e.waId)
+  if (error) { log.error('db.echo', 'could not check echo chat', { who }, error); return false }
+  if (!count) return false
+
+  // ignoreDuplicates: a message the bot itself sent is already stored under
+  // this id, so if Meta ever echoes an API send it cannot trigger a takeover.
+  const { data, error: insErr } = await sb
+    .from('whatsapp_messages')
+    .upsert({
+      wa_message_id: e.waMessageId,
+      wa_id: e.waId,
+      direction: 'human',
+      msg_type: e.type,
+      body: e.text,
+      run_id: log.runId,
+    }, { onConflict: 'wa_message_id', ignoreDuplicates: true })
+    .select('id')
+  if (insErr) { log.error('db.echo', 'could not record team reply', { who }, insErr); return false }
+  if (!data?.length) return false
+  log.info('chat.takeover', 'team replied from the app, bot is now silent in this chat', { who })
+  return true
+}
+
+async function isLead(sb: SupabaseClient, waId: string): Promise<boolean> {
+  const since = new Date(Date.now() - LEAD_DAYS * 24 * 3600 * 1000).toISOString()
+  const { count, error } = await sb
+    .from('whatsapp_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('wa_id', waId).eq('direction', 'in').not('referral', 'is', null).gte('created_at', since)
+  if (error) throw new Error(`lead check: ${error.message}`)
+  return (count ?? 0) > 0
+}
+
+async function humanOwns(sb: SupabaseClient, waId: string): Promise<boolean> {
+  const { count, error } = await sb
+    .from('whatsapp_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('wa_id', waId).eq('direction', 'human')
+  if (error) throw new Error(`takeover check: ${error.message}`)
+  return (count ?? 0) > 0
+}
+
 /** Returns true when a reply was sent. */
 async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Promise<boolean> {
   const who = maskWaId(m.waId)
+
+  // Shared number: only ad leads are the bot's. Anyone else is left to the
+  // team in the app, and their message is not stored.
+  if (!m.referral) {
+    try {
+      if (!(await isLead(sb, m.waId))) {
+        log.debug('msg.not_lead', 'not an ad lead, leaving it to the team', { who })
+        return false
+      }
+    } catch (err) {
+      log.error('db.lead', 'lead check failed, not replying', { who }, err)
+      return false
+    }
+  }
 
   // Claim the message. The unique index makes this the dedup for Meta retries.
   const { data: claimed, error: claimErr } = await sb
@@ -146,6 +230,8 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
   }
   log.info('msg.in', 'inbound message', { who, type: m.type, from_ad: !!m.referral })
 
+  if (await humanOwnsSafe(sb, m.waId, log)) return false
+
   if (!m.text) return await send(sb, m.waId, UNSUPPORTED_TYPE_REPLY, log)
 
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
@@ -166,7 +252,20 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
     log.error('reply.fail', 'could not generate a reply', { who }, err)
     reply = ERROR_REPLY
   }
+  // A team member may have jumped in while Gemini was writing.
+  if (await humanOwnsSafe(sb, m.waId, log)) return false
   return await send(sb, m.waId, reply, log)
+}
+
+/** Fails toward silence: if the check itself errors, the bot does not reply. */
+async function humanOwnsSafe(sb: SupabaseClient, waId: string, log: Logger): Promise<boolean> {
+  try {
+    if (!(await humanOwns(sb, waId))) return false
+    log.info('msg.human_owned', 'team has taken this chat, bot stays silent', { who: maskWaId(waId) })
+  } catch (err) {
+    log.error('db.takeover', 'takeover check failed, not replying', { who: maskWaId(waId) }, err)
+  }
+  return true
 }
 
 async function loadHistory(sb: SupabaseClient, waId: string): Promise<StoredMessage[]> {
