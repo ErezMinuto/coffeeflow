@@ -19,7 +19,8 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -671,6 +672,9 @@ async function handleMflowGet(body: any) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: CORS });
   if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
+  // Called only by pg_cron. verify_jwt is off, so this is the only check
+  // between the internet and a service-role client that moves packed_stock.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS);
 
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
