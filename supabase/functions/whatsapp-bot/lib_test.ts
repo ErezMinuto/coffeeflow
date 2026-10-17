@@ -182,3 +182,27 @@ Deno.test('buildOutboundMessages: interactive when buttons fit, text otherwise',
   const long = buildOutboundMessages('1', { text: 'x '.repeat(700), buttons: ['a'] })
   assert(long.every(x => (x.body as any).type === 'text'))
 })
+
+Deno.test('parseBotReply: link only if it is a catalog permalink (encoded or decoded)', () => {
+  const enc = 'https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-sertao/'
+  const ok = parseBotReply(JSON.stringify({ text: 'הבחירה: Sertão\nאפשר להזמין בכפתור למטה', link: 'https://minuto.co.il/product/פולי-sertao' }), [enc])
+  assertEquals(ok.link, enc)
+  assertEquals(ok.rejectedLink, undefined)
+  const bad = parseBotReply(JSON.stringify({ text: 'x', link: 'https://minuto.co.il/product/made-up' }), [enc])
+  assertEquals(bad.link, null)
+  assertEquals(bad.rejectedLink, 'https://minuto.co.il/product/made-up')
+  // URL echoed inside the text is removed when it goes out as a button.
+  const inText = parseBotReply(JSON.stringify({ text: `כאן: ${enc}`, link: enc }), [enc])
+  assert(!inText.text.includes('minuto.co.il'))
+})
+
+Deno.test('buildOutboundMessages: link → cta_url button, buttons suppressed', () => {
+  const [m] = buildOutboundMessages('1', { text: 'הבחירה: Sertão', buttons: ['a'], link: 'https://minuto.co.il/p/x' })
+  const b = m.body as any
+  assertEquals(b.interactive.type, 'cta_url')
+  assertEquals(b.interactive.action.parameters, { display_text: 'להזמנה באתר', url: 'https://minuto.co.il/p/x' })
+  assert('להזמנה באתר'.length <= 20)
+  // Too long for an interactive body: the link is appended as text instead.
+  const long = buildOutboundMessages('1', { text: 'x '.repeat(700), buttons: [], link: 'https://minuto.co.il/p/x' })
+  assert(long.at(-1)!.text.endsWith('https://minuto.co.il/p/x'))
+})

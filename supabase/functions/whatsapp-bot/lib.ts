@@ -242,9 +242,24 @@ export const MAX_BUTTONS = 3
 export const MAX_BUTTON_TITLE = 20
 export const MAX_INTERACTIVE_BODY = 1024
 
+// The product link goes out as a "cta_url" button instead of a long,
+// percent-encoded URL in the text. Display text is capped at 20 characters.
+export const LINK_BUTTON_TEXT = 'להזמנה באתר'
+
 export interface BotReply {
   text: string
   buttons: string[]
+  link?: string | null          // a catalog permalink, sent as a link button
+  rejectedLink?: string         // what the model offered that is NOT in the catalog (logged, never sent)
+}
+
+/** Comparable form of a URL: no scheme, no www, decoded, lowercase, no
+ *  trailing slash. Catalog permalinks are percent-encoded Hebrew slugs and
+ *  the model may echo them back either encoded or decoded. */
+export function normalizeUrl(u: string): string {
+  let x = u.trim()
+  try { x = decodeURI(x) } catch { /* keep as is */ }
+  return x.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '')
 }
 
 /** Cleans the model's button labels into something the Cloud API accepts:
@@ -263,30 +278,70 @@ export function sanitizeButtons(raw: unknown): string[] {
 /** The model answers {"text": "...", "buttons": ["..."]}. Anything that is not
  *  that shape is treated as plain text, so a malformed answer still reaches
  *  the customer as a message instead of failing the reply. */
-export function parseBotReply(raw: string): BotReply {
+export function parseBotReply(raw: string, allowedLinks: string[] = []): BotReply {
   const trimmed = raw.trim()
   try {
     const j = JSON.parse(trimmed)
     if (j && typeof j === 'object' && typeof j.text === 'string' && j.text.trim()) {
-      return { text: j.text.trim(), buttons: sanitizeButtons(j.buttons) }
+      const reply: BotReply = { text: j.text.trim(), buttons: sanitizeButtons(j.buttons), link: null }
+      const offered = typeof j.link === 'string' ? j.link.trim() : ''
+      if (offered) {
+        // Only a link that IS a catalog permalink may be sent: the model can
+        // never point a customer at an address it made up.
+        const match = allowedLinks.find(a => normalizeUrl(a) === normalizeUrl(offered))
+        if (match) {
+          reply.link = match
+          reply.buttons = []            // one interactive element per message
+          reply.text = reply.text.split(offered).join('').split(match).join('').replace(/[ \t]+\n/g, '\n').trim()
+        } else {
+          reply.rejectedLink = offered
+        }
+      }
+      return reply
     }
   } catch { /* plain text */ }
-  return { text: trimmed, buttons: [] }
+  return { text: trimmed, buttons: [], link: null }
 }
 
 /** Cloud API message bodies for one reply. Long text goes out as plain
  *  messages first; the buttons ride on the last part when it fits the
  *  1024-character interactive limit, and are dropped otherwise. */
-export function buildOutboundMessages(waId: string, reply: BotReply): { body: Record<string, unknown>; text: string; buttons: string[] }[] {
+export function buildOutboundMessages(waId: string, reply: BotReply): { body: Record<string, unknown>; text: string; buttons: string[]; link: string | null }[] {
   const parts = splitForWhatsApp(reply.text)
   const last = parts[parts.length - 1]
-  const withButtons = reply.buttons.length > 0 && last !== undefined && last.length <= MAX_INTERACTIVE_BODY
+  const fits = last !== undefined && last.length <= MAX_INTERACTIVE_BODY
+  const withLink = !!reply.link && fits
+  const withButtons = !withLink && reply.buttons.length > 0 && fits
   return parts.map((part, i) => {
     const base = { messaging_product: 'whatsapp', recipient_type: 'individual', to: waId }
-    if (withButtons && i === parts.length - 1) {
+    const isLast = i === parts.length - 1
+    if (withLink && isLast) {
+      return {
+        text: part,
+        buttons: [],
+        link: reply.link!,
+        body: {
+          ...base,
+          type: 'interactive',
+          interactive: {
+            type: 'cta_url',
+            body: { text: part },
+            action: { name: 'cta_url', parameters: { display_text: LINK_BUTTON_TEXT, url: reply.link } },
+          },
+        },
+      }
+    }
+    // A link that cannot ride as a button (body too long) is appended as text
+    // so the customer still gets it.
+    if (reply.link && !withLink && isLast) {
+      const withUrl = `${part}\n${reply.link}`
+      return { text: withUrl, buttons: [], link: null, body: { ...base, type: 'text', text: { body: withUrl, preview_url: true } } }
+    }
+    if (withButtons && isLast) {
       return {
         text: part,
         buttons: reply.buttons,
+        link: null,
         body: {
           ...base,
           type: 'interactive',
@@ -298,7 +353,7 @@ export function buildOutboundMessages(waId: string, reply: BotReply): { body: Re
         },
       }
     }
-    return { text: part, buttons: [], body: { ...base, type: 'text', text: { body: part, preview_url: true } } }
+    return { text: part, buttons: [], link: null, body: { ...base, type: 'text', text: { body: part, preview_url: true } } }
   })
 }
 

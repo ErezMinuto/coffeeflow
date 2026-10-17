@@ -254,7 +254,11 @@ async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Pr
   let reply: BotReply
   try {
     const [history, catalog] = await Promise.all([loadHistory(sb, m.waId), loadCatalog(sb)])
-    reply = await askGemini(buildSystemPrompt(formatCatalog(catalog)), history, log)
+    const links = catalog.map(p => p.permalink).filter((u): u is string => !!u)
+    reply = await askGemini(buildSystemPrompt(formatCatalog(catalog)), history, log, links)
+    if (reply.rejectedLink) {
+      log.warn('reply.bad_link', 'model offered a link that is not in the catalog; not sent', { who, link: reply.rejectedLink.slice(0, 300) })
+    }
   } catch (err) {
     log.error('reply.fail', 'could not generate a reply', { who }, err)
     reply = { text: ERROR_REPLY, buttons: [] }
@@ -300,7 +304,7 @@ async function loadCatalog(sb: SupabaseClient): Promise<CatalogProduct[]> {
   return ((data ?? []) as CatalogProduct[]).filter(p => !isOffBrand(p.name))
 }
 
-async function askGemini(system: string, history: StoredMessage[], log: Logger): Promise<BotReply> {
+async function askGemini(system: string, history: StoredMessage[], log: Logger, allowedLinks: string[]): Promise<BotReply> {
   const contents = toGeminiContents(history)
   if (!contents.length) throw new Error('empty conversation')
   const generationConfig: Record<string, unknown> = {
@@ -313,6 +317,7 @@ async function askGemini(system: string, history: StoredMessage[], log: Logger):
       properties: {
         text: { type: 'STRING' },
         buttons: { type: 'ARRAY', items: { type: 'STRING' } },
+        link: { type: 'STRING' },
       },
       required: ['text'],
     },
@@ -335,7 +340,7 @@ async function askGemini(system: string, history: StoredMessage[], log: Logger):
     model: MODEL, ms: Date.now() - started, finish: cand?.finishReason, usage: body?.usageMetadata,
   })
   if (!text) throw new Error(`gemini returned no text (finish=${cand?.finishReason})`)
-  return parseBotReply(text)
+  return parseBotReply(text, allowedLinks)
 }
 
 async function send(sb: SupabaseClient, waId: string, reply: BotReply, log: Logger): Promise<boolean> {
@@ -354,18 +359,20 @@ async function send(sb: SupabaseClient, waId: string, reply: BotReply, log: Logg
     sent = true
     // The offered buttons are kept in the stored text so the model sees, on
     // the next turn, which options the customer was choosing between.
-    const stored = msg.buttons.length ? `${msg.text}\n[כפתורים: ${msg.buttons.join(' | ')}]` : msg.text
+    const stored = msg.buttons.length ? `${msg.text}\n[כפתורים: ${msg.buttons.join(' | ')}]`
+      : msg.link ? `${msg.text}\n[כפתור קישור: ${msg.link}]`
+      : msg.text
     const { error } = await sb.from('whatsapp_messages').insert({
       wa_message_id: body?.messages?.[0]?.id ?? `out-${crypto.randomUUID()}`,
       wa_id: waId,
       direction: 'out',
-      msg_type: msg.buttons.length ? 'interactive' : 'text',
+      msg_type: msg.buttons.length || msg.link ? 'interactive' : 'text',
       body: stored,
       run_id: log.runId,
     })
     if (error) log.warn('db.out', 'reply sent but not stored', { who: maskWaId(waId) }, error)
   }
-  if (sent) log.info('msg.out', 'reply sent', { who: maskWaId(waId), chars: reply.text.length, buttons: reply.buttons.length })
+  if (sent) log.info('msg.out', 'reply sent', { who: maskWaId(waId), chars: reply.text.length, buttons: reply.buttons.length, link: !!reply.link })
   return sent
 }
 
