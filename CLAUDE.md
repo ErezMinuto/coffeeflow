@@ -225,8 +225,16 @@ unreachable with the anon key.
 /opt/homebrew/bin/supabase functions deploy <function-name> --project-ref ytydgldyeygpzmlxvpvb --no-verify-jwt
 ```
 
-Functions that MUST always be deployed with `--no-verify-jwt`:
-- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`, `whatsapp-bot`, `meta-ads-draft`, `attendance-export`, `resend-webhook` (Resend signs with Svix, sends no JWT)
+Functions that MUST always be deployed with `--no-verify-jwt`. The source of truth is `NO_VERIFY_JWT` in
+`scripts/deploy-functions.sh`, which the auto-deploy uses:
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `whatsapp-bot`, `resend-webhook` (Svix), `woo-webhook` (HMAC),
+  `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`, `meta-ads-draft`, `attendance-export`, `artisan-import`,
+  `attendance-reminder`, `blog-publish`, `email-automation-scheduler`, `export-to-sheets`, `forms-submit`, `ga4-sync`,
+  `generate-campaign`, `google-exchange-token`, `google-search-sync`, `meta-exchange-token`, `meta-publish`, `meta-sync`,
+  `purge-old-media`, `rfm-sync`, `set-post-faq`, `visual-overlay`, `woo-orders-sync`, `woo-products-enrich`, `woo-stock-check`
+
+`deploy-functions.sh` refuses to deploy a function that runs with `verify_jwt=false` in prod but is missing from
+that list, so a forgotten entry fails the deploy instead of silently 401ing the function's callers.
 
 `--no-verify-jwt` turns off the gateway's check, so each of these must check its own caller in code:
 `_shared/service_caller.ts` (service role only) or `_shared/role_caller.ts` (service role, or a signed-in

@@ -26,8 +26,26 @@ cd "$REPO"
 PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 CLI_VERSION="2.98.1"
 
-# CLAUDE.md: these must always be deployed with --no-verify-jwt.
-NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor whatsapp-bot google-ads-draft meta-ads-draft attendance-export resend-webhook"
+# CLAUDE.md: these must always be deployed with --no-verify-jwt. Each one checks
+# its own caller in code. This list mirrors every function that runs with
+# verify_jwt=false in prod (2026-10-17); a deploy without the flag turns the
+# gateway's JWT check back on, which rejects callers that send no Supabase JWT
+# (Telegram, Resend, WooCommerce webhooks, Clerk tokens from the dashboard).
+NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor whatsapp-bot \
+google-ads-draft meta-ads-draft attendance-export resend-webhook woo-webhook \
+artisan-import attendance-reminder blog-publish email-automation-scheduler export-to-sheets \
+forms-submit ga4-sync generate-campaign google-exchange-token google-search-sync \
+meta-exchange-token meta-publish meta-sync purge-old-media rfm-sync set-post-faq \
+visual-overlay woo-orders-sync woo-products-enrich woo-stock-check"
+NO_VERIFY_JWT="$(echo $NO_VERIFY_JWT)"   # squash the line breaks to single spaces
+
+# Prod's current verify_jwt for a function: "true", "false", or "" (not deployed
+# or the API could not be reached).
+prod_verify_jwt() {
+  curl -s --max-time 20 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+    "https://api.supabase.com/v1/projects/$PROJECT_REF/functions/$1" 2>/dev/null \
+    | grep -oE '"verify_jwt"[[:space:]]*:[[:space:]]*(true|false)' | grep -oE 'true|false' | head -1
+}
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
   echo "deploy-functions: SUPABASE_ACCESS_TOKEN is not set." >&2
@@ -66,7 +84,18 @@ echo "Deploying ${#} function(s) to $PROJECT_REF from $(git rev-parse --abbrev-r
 for f in "$@"; do
   [ -f "supabase/functions/$f/index.ts" ] || { echo "deploy-functions: no supabase/functions/$f/index.ts" >&2; exit 1; }
   flags=()
-  case " $NO_VERIFY_JWT " in *" $f "*) flags+=(--no-verify-jwt) ;; esac
+  case " $NO_VERIFY_JWT " in
+    *" $f "*) flags+=(--no-verify-jwt) ;;
+    *)
+      # Never flip a function from verify_jwt=false to true by accident: that
+      # 401s every caller the function was built for. Add it to NO_VERIFY_JWT
+      # (if false is right) or change prod on purpose first.
+      if [ "$(prod_verify_jwt "$f")" = false ]; then
+        echo "deploy-functions: $f runs with verify_jwt=false in $PROJECT_REF but is not in NO_VERIFY_JWT." >&2
+        echo "  Deploying it would turn the gateway JWT check on. Refusing." >&2
+        exit 1
+      fi ;;
+  esac
   echo "── $f ${flags[*]:-}"
   # ${a[@]+...} form: macOS bash 3.2 treats an empty array as unbound under set -u.
   "${CLI[@]}" functions deploy "$f" --project-ref "$PROJECT_REF" ${flags[@]+"${flags[@]}"}
