@@ -19,6 +19,7 @@
 // to pick up via cron-polled SELECT FOR UPDATE SKIP LOCKED.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
 import {
@@ -99,6 +100,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
+  // Called only by pg_cron. The gateway's JWT check accepts the public anon
+  // key, and each run is a multi-minute, paid strategist cycle — refuse
+  // anyone who isn't the service role before any of it starts.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
 
   // Parse trigger (manual vs cron). Both are accepted; the body is
   // informational only. orchestrator_run_id is generated server-side.
