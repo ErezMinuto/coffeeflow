@@ -4,7 +4,7 @@ import { KPICard } from '../components/shared/KPICard'
 import { DateRangePicker } from '../components/shared/DateRangePicker'
 import { DateRange } from '../lib/types'
 import { getDefaultDateRange, formatCurrency, formatNumber } from '../lib/utils'
-import { subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar
@@ -14,11 +14,6 @@ const STATUS_COLORS: Record<string, string> = {
   ACTIVE: 'badge-success',
   PAUSED: 'badge-warning',
   ARCHIVED: 'bg-surface-100 text-surface-400',
-}
-
-function getThisMonthRange(): DateRange {
-  const now = new Date()
-  return { from: startOfMonth(now), to: now }
 }
 
 function getPrevMonthRange(): DateRange {

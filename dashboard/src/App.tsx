@@ -1,18 +1,14 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
 import { SignIn, useUser } from '@clerk/clerk-react'
 import { Sidebar } from './components/shared/Sidebar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
-import OverviewPage from './pages/Overview'
 import MetaOrganicPage from './pages/MetaOrganic'
 import MetaAdsPage from './pages/MetaAds'
-import GoogleAdsPage from './pages/GoogleAds'
 import SettingsPage from './pages/Settings'
 import { MetaCallback, GoogleCallback } from './pages/OAuthCallback'
-import AIAnalystPage from './pages/AIAnalyst'
 import MarketingPage from './pages/Marketing'
-import AdvisorPage from './pages/Advisor'
 import UnifiedPlanPage from './pages/UnifiedPlan'
 import GoogleOrganicPage from './pages/GoogleOrganic'
 import SeoAgentPage from './pages/admin/SeoAgent'
@@ -127,15 +123,15 @@ export default function App() {
                 subapp later without ripping out shared chrome. */}
             <Route path="/admin/seo-agent" element={<SeoAgentPage />} />
 
-            {/* Main app — each route isolated by its own ErrorBoundary */}
-            <Route path="/"                element={<Page name="סקירה כללית"><OverviewPage /></Page>} />
+            {/* Main app — each route isolated by its own ErrorBoundary.
+                /plan is the home page; /advisor still redirects there because
+                older advisor emails link to it. */}
+            <Route path="/"                element={<Navigate to="/plan" replace />} />
+            <Route path="/advisor"         element={<Navigate to="/plan" replace />} />
             <Route path="/meta"            element={<Page name="Meta אורגני"><MetaOrganicPage /></Page>} />
             <Route path="/ads"             element={<Page name="Meta Ads"><MetaAdsPage /></Page>} />
-            <Route path="/google"          element={<Page name="Google Ads"><GoogleAdsPage /></Page>} />
             <Route path="/google-organic"  element={<Page name="Google אורגני"><GoogleOrganicPage /></Page>} />
-            <Route path="/advisor"         element={<Page name="יועץ שיווק"><AdvisorPage /></Page>} />
             <Route path="/plan"            element={<Page name="תוכנית שיווק"><UnifiedPlanPage /></Page>} />
-            <Route path="/analyst"         element={<Page name="אנליסט AI"><AIAnalystPage /></Page>} />
             <Route path="/marketing"       element={<Page name="Marketing"><MarketingPage /></Page>} />
             <Route path="/reels"           element={<Page name="רילס מוצרים"><ReelsPage /></Page>} />
             <Route path="/settings"        element={<Page name="הגדרות"><SettingsPage /></Page>} />

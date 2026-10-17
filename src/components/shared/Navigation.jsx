@@ -6,12 +6,6 @@ import { useApp } from '../../lib/context';
 const allNavItems = [
   { path: '/dashboard', icon: '📊', label: 'Dashboard' },
   {
-    label: 'מלאי', icon: '📦', children: [
-      { path: '/supplier-intake', icon: '📥', label: 'קליטת סחורה' },
-      { path: '/product-editor',  icon: '💰', label: 'עדכון מחיר ומלאי' },
-    ],
-  },
-  {
     label: 'Production', icon: '☕', children: [
       { path: '/origins',   icon: '🌱', label: 'Origins'   },
       { path: '/roasting',  icon: '🔥', label: 'Roasting'  },
@@ -25,9 +19,6 @@ const allNavItems = [
       { path: '/tasks',      icon: '📋', label: 'Tasks',      adminOnly:    true },
       { path: '/schedule',   icon: '📅', label: 'Schedule',   scheduleOnly: true },
       { path: '/attendance', icon: '⏱️', label: 'Attendance', scheduleOnly: true },
-      { path: '/purchases',  icon: '🛒', label: 'Purchases',  adminOnly:    true },
-      { path: '/stock-admin', icon: '📦', label: 'עדכון מלאי',  adminOnly:    true },
-      { path: '/coffee-sales', icon: '📈', label: 'דוח מכירות קפה', adminOnly: true },
       { path: '/vehicle-log',  icon: '🚗', label: 'יומן רכב',       adminOnly: true },
     ],
   },

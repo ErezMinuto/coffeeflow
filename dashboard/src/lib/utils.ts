@@ -26,18 +26,6 @@ export function getDefaultDateRange(): DateRange {
   }
 }
 
-export function getPreviousPeriod(range: DateRange): DateRange {
-  const days = Math.round((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
-  return {
-    from: subDays(range.from, days),
-    to: subDays(range.to, days),
-  }
-}
-
-export function formatAPIDate(date: Date): string {
-  return format(date, 'yyyy-MM-dd')
-}
-
 // Meta OAuth URL
 export function getMetaAuthUrl(): string {
   // Facebook Login for Business (FLB) uses a pre-created Configuration that

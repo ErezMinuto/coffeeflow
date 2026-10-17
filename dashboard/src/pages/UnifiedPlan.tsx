@@ -8,8 +8,8 @@ import {
 } from 'lucide-react'
 import { DraftCampaignDrawer } from '../components/DraftCampaignDrawer'
 import { BrainChat } from '../components/BrainChat'
+import { NeedsYou } from '../components/shared/NeedsYou'
 import MetaAdsPage from './MetaAds'
-import GoogleAdsPage from './GoogleAds'
 import MetaOrganicPage from './MetaOrganic'
 import GoogleOrganicPage from './GoogleOrganic'
 
@@ -298,14 +298,13 @@ function PlanTab() {
 }
 
 // ── Marketing cockpit ─────────────────────────────────────────────────────────
-// One page consolidating the Meta + Google marketing views. The unified plan is
+// One page consolidating the marketing views. The unified plan is
 // the default tab; the per-channel analytics tabs embed the existing page
 // components verbatim (no rewrite) so parity is immediate and reversible.
 const COCKPIT_TABS = [
   { id: 'brain',    label: 'מוח שיווקי' },
   { id: 'plan',     label: 'תוכנית' },
   { id: 'meta',     label: 'Meta Ads' },
-  { id: 'google',   label: 'Google Ads' },
   { id: 'ig',       label: 'אינסטגרם' },
   { id: 'gorganic', label: 'Google אורגני' },
 ] as const
@@ -315,6 +314,7 @@ export default function UnifiedPlanPage() {
   const [tab, setTab] = useState<CockpitTab>('brain')
   return (
     <div className="space-y-5">
+      <NeedsYou />
       <div className="flex gap-1 border-b border-surface-200 overflow-x-auto">
         {COCKPIT_TABS.map((t) => (
           <button
@@ -331,7 +331,6 @@ export default function UnifiedPlanPage() {
       {tab === 'brain'    && <BrainChat />}
       {tab === 'plan'     && <PlanTab />}
       {tab === 'meta'     && <MetaAdsPage />}
-      {tab === 'google'   && <GoogleAdsPage />}
       {tab === 'ig'       && <MetaOrganicPage />}
       {tab === 'gorganic' && <GoogleOrganicPage />}
     </div>

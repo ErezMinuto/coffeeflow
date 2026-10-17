@@ -11,7 +11,6 @@ import Origins                 from './components/origins/Origins';
 import Roasting                from './components/roasting/Roasting';
 import Products                from './components/products/Products';
 import Packaging               from './components/packaging/Packaging';
-import Purchases               from './components/purchases/Purchases';
 import Settings                from './components/settings/Settings';
 import Tasks                   from './components/tasks/Tasks';
 import Schedule                from './components/schedule/Schedule';
@@ -19,10 +18,6 @@ import Attendance              from './components/attendance/Attendance';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
 import PendingOrders           from './components/orders/PendingOrders';
-import StockAdmin              from './components/stock/StockAdmin';
-import SupplierIntake          from './components/stock/SupplierIntake';
-import ProductEditor           from './components/stock/ProductEditor';
-import CoffeeSalesReport       from './components/sales/CoffeeSalesReport';
 import VehicleLog              from './components/vehicle/VehicleLog';
 
 // ── Inner content (rendered only when signed in) ──────────────────────────────
@@ -78,14 +73,9 @@ function AppContent() {
               <Route path="/roasting"   element={<Roasting />} />
               <Route path="/products"   element={<Products />} />
               <Route path="/packaging"  element={<Packaging />} />
-              <Route path="/purchases"  element={<AdminRoute><Purchases /></AdminRoute>} />
               <Route path="/tasks"      element={<AdminRoute><Tasks /></AdminRoute>} />
               <Route path="/schedule"   element={<ScheduleRoute><Schedule /></ScheduleRoute>} />
               <Route path="/attendance" element={<ScheduleRoute><Attendance /></ScheduleRoute>} />
-              <Route path="/stock-admin" element={<AdminRoute><StockAdmin /></AdminRoute>} />
-              <Route path="/supplier-intake" element={<SupplierIntake />} />
-              <Route path="/product-editor" element={<ProductEditor />} />
-              <Route path="/coffee-sales" element={<AdminRoute><CoffeeSalesReport /></AdminRoute>} />
               <Route path="/vehicle-log"  element={<AdminRoute><VehicleLog /></AdminRoute>} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />

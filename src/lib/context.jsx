@@ -76,9 +76,6 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (!user) { setRoleLoading(false); return; }
     const fetchRole = async () => {
-      const email    = user.primaryEmailAddress?.emailAddress || '';
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
-
       // get_role_for_user is SECURITY DEFINER — safe to call with anon key.
       // It looks up the role by user_id without relying on JWT verification.
       const { data: role } = await supabase.rpc('get_role_for_user', {
@@ -108,8 +105,6 @@ export const AppProvider = ({ children }) => {
   const availabilityDb            = useSupabaseData('availability_submissions',  { filterByUser: false });
   const schedulesDb               = useSupabaseData('schedules',                 { filterByUser: false });
   const assignmentsDb             = useSupabaseData('schedule_assignments',      { filterByUser: false });
-  const marketingContactsDb       = useSupabaseData('marketing_contacts',        { filterByUser: false });
-  const campaignsDb               = useSupabaseData('campaigns',                 { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
   const pendingOrdersDb           = useSupabaseData('pending_orders',            { filterByUser: false });
   const artisanProfilesDb         = useSupabaseData('artisan_profiles',          { filterByUser: false });
@@ -129,8 +124,6 @@ export const AppProvider = ({ children }) => {
     availability:            availabilityDb.data            || [],
     schedules:               schedulesDb.data               || [],
     assignments:             assignmentsDb.data             || [],
-    marketingContacts:       marketingContactsDb.data       || [],
-    campaigns:               campaignsDb.data               || [],
     packingLogs:                  packingLogsDb.data                 || [],
     pendingOrders:                pendingOrdersDb.data               || [],
     artisanProfiles:              artisanProfilesDb.data             || [],
@@ -165,8 +158,6 @@ export const AppProvider = ({ children }) => {
     availabilityDb.refresh();
     schedulesDb.refresh();
     assignmentsDb.refresh();
-    marketingContactsDb.refresh();
-    campaignsDb.refresh();
     packingLogsDb.refresh();
     pendingOrdersDb.refresh();
     artisanProfilesDb.refresh();
@@ -174,7 +165,7 @@ export const AppProvider = ({ children }) => {
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-    employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, pendingOrdersDb, artisanProfilesDb,
+    employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, artisanProfilesDb,
     roastChecklistTemplatesDb,
   ]);
 
@@ -185,7 +176,7 @@ export const AppProvider = ({ children }) => {
       isAdmin, canSchedule, userRole, roleLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-      employeesDb, availabilityDb, schedulesDb, assignmentsDb, marketingContactsDb, campaignsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
+      employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
       artisanProfilesDb,
       costSettings, updateCostSettings,
       showToast, toasts,
