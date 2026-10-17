@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
+import {
+  claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
+  parseAction, releaseClaim, syncDraftBudget,
+} from './guards.ts'
 
 // Creates a PAUSED Google Ads campaign from a draft_google_campaign spec —
 // the Google twin of meta-ads-draft. The owner reviews + activates manually
@@ -30,6 +34,9 @@ import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 //   list / delete / spend
 //
 // Returns: { ok, campaign_id, edit_url, warnings: string[] }
+//
+// Callers must present the service-role key (see isServiceCaller). verify_jwt
+// is off, so without that check anyone could edit, enable or delete campaigns.
 
 const ADS_API = 'https://googleads.googleapis.com/v24'
 
@@ -58,17 +65,18 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
 
+  const authorized = await isServiceCaller(req, {
+    supabaseUrl: Deno.env.get('SUPABASE_URL') ?? '',
+    serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  })
+  if (!authorized) return json({ ok: false, error: 'unauthorized — this function only accepts the service-role key' }, 401)
+
   try {
     const body = await req.json()
-    const action = body.action as
-      | 'dry_run' | 'create' | 'insights' | 'search_terms' | 'accounts'
-      | 'update_campaign' | 'update_targeting' | 'list' | 'delete' | 'spend'
+    const action = parseAction(body.action)
     const ideaId = String(body.idea_id ?? '').trim()
     const spec = body.spec
 
-    if (!action) {
-      throw new Error("'action' is required (dry_run|accounts|create|insights|search_terms|update_campaign|update_targeting|list|delete|spend)")
-    }
     if (action === 'create' && !ideaId) throw new Error("'idea_id' is required for create")
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
@@ -390,7 +398,12 @@ serve(async (req) => {
 
       if (!ops.length) throw new Error('nothing to update — pass name, status, and/or daily_budget_ils')
       const res = await mutate(ctx, ops, false)
-      return json({ ok: true, updated: campaignId, campaign_name: target.name, changed, result: res })
+      const warnings: string[] = []
+      if (changed.daily_budget_ils != null) {
+        const syncWarning = await syncDraftBudget(supabase, campaignId, Number(changed.daily_budget_ils))
+        if (syncWarning) warnings.push(syncWarning)
+      }
+      return json({ ok: true, updated: campaignId, campaign_name: target.name, changed, warnings, result: res })
     }
 
     // ── update_targeting ── the Google analogue of changing a Meta audience:
@@ -534,6 +547,12 @@ serve(async (req) => {
       throw new Error(`cannot reach the google_ad_drafts table (${draftsErr.message}) — refusing to create a campaign we could not record. Apply the 20260915_google_ad_drafts migration first.`)
     }
 
+    // Another request holds this idea_id and hasn't recorded its campaign yet.
+    if (existing && isClaim(existing)) {
+      const conflict = claimConflict(existing)
+      return json(conflict.body, conflict.status)
+    }
+
     if (existing) {
       const stillThere = await campaignExists(ctx, String(existing.campaign_id))
       if (stillThere) {
@@ -575,10 +594,48 @@ serve(async (req) => {
       )
     }
 
-    const built = await buildOperations(ctx, spec, ideaId)
     const validateOnly = body.validate_only === true
 
-    const result = await mutate(ctx, built.operations, validateOnly)
+    // Reserve the idea_id before anything reaches Google. The lookup above is
+    // only a fast path — two requests can both pass it, so the unique
+    // constraint is what actually decides which one creates the campaign.
+    let claimId: number | null = null
+    if (!validateOnly) {
+      const claim = await claimIdea(supabase, {
+        idea_id: ideaId,
+        customer_id: ctx.customerId,
+        campaign_name: spec.campaign_name,
+        daily_budget_ils: reqDaily,
+        spec,
+      })
+      if (claim.kind === 'taken') {
+        if (isClaim(claim.row)) {
+          const conflict = claimConflict(claim.row)
+          return json(conflict.body, conflict.status)
+        }
+        return json({
+          ok: true,
+          already_exists: true,
+          campaign_id: claim.row.campaign_id,
+          campaign_type: claim.row.campaign_type,
+          edit_url: adsUiUrl(ctx.customerId, String(claim.row.campaign_id)),
+          warnings: claim.row.warnings ?? [],
+        })
+      }
+      claimId = claim.id
+    }
+
+    let built: Awaited<ReturnType<typeof buildOperations>>
+    let result: any
+    try {
+      built = await buildOperations(ctx, spec, ideaId)
+      result = await mutate(ctx, built.operations, validateOnly)
+    } catch (e) {
+      // The mutate is atomic, so a failure here created nothing — free the
+      // idea_id for a retry.
+      if (claimId != null) await releaseClaim(supabase, claimId)
+      throw e
+    }
 
     if (validateOnly) {
       return json({
@@ -592,26 +649,31 @@ serve(async (req) => {
     }
 
     // Resource names come back in mutate order; pull the ids we care about.
+    // From here on the campaign exists in Google, so the claim is never
+    // released: a row stuck at CREATING is the trail to the orphan.
     const created = collectCreatedIds(result)
     if (!created.campaignId) {
-      throw new Error(`mutate succeeded but returned no campaign resource name: ${JSON.stringify(result).slice(0, 400)}`)
+      throw new Error(`mutate succeeded but returned no campaign resource name — google_ad_drafts row ${claimId} left at CREATING: ${JSON.stringify(result).slice(0, 400)}`)
     }
 
-    await supabase.from('google_ad_drafts').insert({
-      idea_id: ideaId,
-      customer_id: ctx.customerId,
+    const recordError = await finalizeClaim(supabase, claimId!, {
       campaign_id: created.campaignId,
       budget_id: created.budgetId,
       ad_group_id: created.adGroupId,
       ad_id: created.adId,
       asset_group_id: created.assetGroupId,
-      campaign_name: spec.campaign_name,
-      campaign_type: built.campaignType,
-      daily_budget_ils: reqDaily,
-      spec,
-      warnings: built.warnings,
-      status: 'PAUSED',
+      campaign_type: built!.campaignType,
+      warnings: built!.warnings,
     })
+    if (recordError) {
+      return json({
+        ok: false,
+        error: `campaign ${created.campaignId} was created (PAUSED) in Google Ads but could not be recorded in google_ad_drafts (${recordError}). ` +
+          `It is not tracked for dedup or the monthly cap — fix the row before creating more.`,
+        campaign_id: created.campaignId,
+        edit_url: adsUiUrl(ctx.customerId, created.campaignId),
+      }, 500)
+    }
 
     return json({
       ok: true,
@@ -969,25 +1031,6 @@ async function accountSpend(ctx: AdsContext, since: string, until: string): Prom
   let micros = 0
   for (const r of rows as any[]) micros += Number(r.metrics?.costMicros ?? 0)
   return microsToIls(micros) ?? 0
-}
-
-// Planned spend already committed by drafts created this calendar month —
-// daily_budget_ils × duration_days across google_ad_drafts. Deleted drafts are
-// gone from the table, so they drop out on their own.
-async function committedThisMonth(supabase: SupabaseLike): Promise<number> {
-  const now = new Date()
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
-  const { data } = await supabase
-    .from('google_ad_drafts')
-    .select('daily_budget_ils, spec, created_at')
-    .gte('created_at', monthStart)
-  let sum = 0
-  for (const row of (data ?? []) as any[]) {
-    const daily = Number(row.daily_budget_ils ?? 0)
-    const duration = Math.max(1, Number(row?.spec?.duration_days ?? 14))
-    sum += daily * duration
-  }
-  return sum
 }
 
 // ── Operation builders ───────────────────────────────────────────────────────
