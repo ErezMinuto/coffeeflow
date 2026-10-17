@@ -21,9 +21,11 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 
 const ANTHROPIC_KEY  = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const SUPA_URL       = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const WOO_URL        = (Deno.env.get("WOO_URL") || "").replace(/\/+$/, "");
 
 const MODEL = "claude-sonnet-4-6";
@@ -280,7 +282,8 @@ async function callAnthropic(prompt: string): Promise<FaqItem[]> {
 async function writeViaSetFaq(productId: number, faq: FaqItem[]): Promise<{ success: boolean; product_name?: string; faq_count?: number; error?: string }> {
   const res = await fetch(`${SUPA_URL}/functions/v1/set-product-faq`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // set-product-faq accepts the service role only.
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY },
     body: JSON.stringify({ product_id: productId, faq }),
   });
   const data = await res.json().catch(() => ({}));
@@ -292,6 +295,8 @@ async function writeViaSetFaq(productId: number, faq: FaqItem[]): Promise<{ succ
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  // verify_jwt is off, so the caller is checked here. Spends an LLM call and writes live product FAQ. Operator tool: service key only.
+  if (!(await isServiceCaller(req))) return unauthorized(cors);
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   if (!ANTHROPIC_KEY) return json(500, { error: "ANTHROPIC_API_KEY not configured" });

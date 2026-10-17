@@ -30,6 +30,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
@@ -1012,6 +1013,9 @@ async function processAutomation(
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // verify_jwt is off, so the caller is checked here. Sends email, mints Woo coupons and previews customer data.
+  // Callers: the daily cron (service key) and an admin from the dashboard.
+  if (!(await hasRole(req, ['admin']))) return forbidden(CORS)
 
   const supabase = createClient(SUPA_URL, SUPA_KEY)
 

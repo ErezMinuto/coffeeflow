@@ -13,6 +13,8 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { isServiceCaller } from "../_shared/service_caller.ts";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -1447,8 +1449,15 @@ serve(async (req) => {
   try {
     const action = new URL(req.url).searchParams.get("action") ?? req.headers.get("x-action");
 
-    // Action endpoints (onboard/remind/publish) — protected by CORS origin
+    // Action endpoints. verify_jwt is off and CORS is not auth, so the caller
+    // is checked here. remind and publish come from the Schedule page (admins
+    // and schedule managers) and remind also from cron; the rest only from
+    // cron (service key).
     if (action) {
+      const allowed = action === "remind" || action === "publish"
+        ? await hasRole(req, ["admin", "schedule_manager"])
+        : await isServiceCaller(req);
+      if (!allowed) return forbidden(corsHeaders);
       if (action === "onboard") return await handleOnboard();
       if (action === "remind")  return await handleRemind();
       if (action === "publish") return await handlePublish(req);
@@ -1475,14 +1484,16 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      return new Response(JSON.stringify({ ok: false, error: `unknown action: ${action}` }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Telegram webhook — verify X-Telegram-Bot-Api-Secret-Token header
-    if (WEBHOOK_SECRET) {
-      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
-      if (tgSecret !== WEBHOOK_SECRET) {
-        return new Response("Unauthorized", { status: 401 });
-      }
+    // Telegram webhook — verify X-Telegram-Bot-Api-Secret-Token header.
+    // Fails closed: with no secret configured nothing is accepted.
+    const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+    if (!WEBHOOK_SECRET || tgSecret !== WEBHOOK_SECRET) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
     return await handleWebhook(req);

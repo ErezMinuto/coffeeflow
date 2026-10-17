@@ -15,6 +15,7 @@
 //   - One render pass — fetch image, build SVG, render PNG, upload.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resvg, initWasm } from 'https://esm.sh/@resvg/resvg-wasm@2.6.2'
 
@@ -109,6 +110,9 @@ serve(async (req) => {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  // verify_jwt is off, so the caller is checked here. Fetches any image_url and uploads to the public bucket. Only seo-worker-visual
+  // calls it, with the service key.
+  if (!(await isServiceCaller(req))) return unauthorized(cors)
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405, cors)
 
   try {

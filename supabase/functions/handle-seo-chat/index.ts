@@ -71,12 +71,9 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-// Env for the publish_ig_post tool — calls meta-publish via the local
-// Supabase URL with the function-invoke anon key.
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
-// Workers, set-post-faq and blog-publish accept only the service role, so the
-// calls this chat makes to them carry it.
+// Workers, set-post-faq, blog-publish and meta-publish accept the service role
+// (meta-publish also an admin), so the calls this chat makes to them carry it.
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 // WP credentials for the approve_qa_attempt tool. Same env vars
 // seo-worker-visual + blog-publish use — single source of truth.
@@ -1860,7 +1857,7 @@ async function executeTool(
         // Tell meta-publish to flip the prepared container live.
         const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-publish`, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
           body:    JSON.stringify({ action: 'publish', creation_id: r.ig_creation_id }),
         })
         const json = await res.json().catch(() => ({})) as Record<string, unknown>

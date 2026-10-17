@@ -14,6 +14,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS = {
@@ -39,6 +40,8 @@ async function refreshGoogleToken(refreshToken: string): Promise<string> {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // verify_jwt is off, so the caller is checked here. Callers: an admin from dashboard Settings and auto-sync.yml (service key).
+  if (!(await hasRole(req, ['admin']))) return forbidden(CORS)
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,

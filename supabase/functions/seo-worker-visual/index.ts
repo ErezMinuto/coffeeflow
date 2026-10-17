@@ -1011,9 +1011,10 @@ async function overlaySlide(args: {
   heading:  string
   body?:    string
 }): Promise<string> {
+  // visual-overlay accepts the service role only.
   const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-overlay`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
     body: JSON.stringify({
       image_url:    args.imageUrl,
       overlay_text: args.heading,

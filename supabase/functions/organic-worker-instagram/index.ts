@@ -47,7 +47,8 @@ import { sendOwnerEmail } from '../_shared/email.ts'
 import { namesResellerBrand } from '../seo-agent/services/brandGuard.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+// meta-publish accepts an admin or the service role.
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // "Post ready for review" admin alert (email via Resend). Fires once per post
 // the moment it's staged for review, so the admin learns about it without
@@ -357,7 +358,7 @@ serve(async (req) => {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/meta-publish`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
       body: JSON.stringify(metaBody),
     })
     const json = await res.json().catch(() => ({})) as Record<string, unknown>

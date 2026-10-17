@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGIN = Deno.env.get("COFFEEFLOW_ORIGIN") ?? "https://coffeeflow-thaf.vercel.app";
@@ -99,6 +100,9 @@ async function driveRequest(token: string, method: string, path: string, body?: 
 // ── Main ──────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // verify_jwt is off, so the caller is checked here. Wipes and rewrites the shared schedule sheet. Only the Schedule page calls
+  // it, which is open to admins and schedule managers.
+  if (!(await hasRole(req, ["admin", "schedule_manager"]))) return forbidden(corsHeaders);
 
   try {
     const { schedule_id, week_start } = await req.json();

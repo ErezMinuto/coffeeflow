@@ -11,6 +11,7 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
 
@@ -205,6 +206,8 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, so the caller is checked here. Callers: woo-orders-sync-daily (service key) and an admin from dashboard Settings.
+  if (!(await hasRole(req, ["admin"]))) return forbidden(CORS);
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
   const log = createLogger("woo-orders-sync");

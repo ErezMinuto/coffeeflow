@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
@@ -8,6 +9,9 @@ serve(async (req) => {
   }
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  // verify_jwt is off, so the caller is checked here. Replaces the stored Meta token, so only an admin finishing the OAuth
+  // flow in the dashboard may call it.
+  if (!(await hasRole(req, ['admin']))) return forbidden(corsHeaders)
 
   try {
     const body = await req.json()
