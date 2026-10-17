@@ -3,6 +3,7 @@ import {
   formatCatalog,
   hmacSha256Hex,
   maskWaId,
+  parseEchoes,
   parseInbound,
   splitForWhatsApp,
   toGeminiContents,
@@ -121,4 +122,27 @@ Deno.test('splitForWhatsApp: respects the 4096 limit and loses nothing', () => {
 
 Deno.test('maskWaId keeps only the last four digits', () => {
   assertEquals(maskWaId('972541234567'), '********4567')
+})
+
+Deno.test('parseEchoes: team replies from the Business app, other fields ignored', () => {
+  const payload = {
+    object: 'whatsapp_business_account',
+    entry: [{ id: 'W', changes: [
+      { field: 'smb_message_echoes', value: {
+        metadata: { phone_number_id: 'PNID' },
+        message_echoes: [
+          { from: '972500000000', to: '972541234567', id: 'wamid.e1', timestamp: '1', type: 'text', text: { body: 'היי, כאן ארז' } },
+          { from: '972500000000', to: '972541234567', id: 'wamid.e2', type: 'image', image: { id: 'm' } },
+        ],
+      } },
+      { field: 'messages', value: { metadata: { phone_number_id: 'PNID' }, messages: [{ from: '1', id: 'x', type: 'text', text: { body: 'hi' } }] } },
+      { field: 'history', value: { history: [] } },
+    ] }],
+  }
+  const e = parseEchoes(payload)
+  assertEquals(e.length, 2)
+  assertEquals(e[0].waId, '972541234567')
+  assertEquals(e[0].text, 'היי, כאן ארז')
+  assertEquals(e[1].text, null)
+  assertEquals(parseInbound(payload).length, 1)   // echoes never look like customer messages
 })

@@ -98,6 +98,44 @@ export function parseInbound(payload: unknown): InboundMessage[] {
   return out
 }
 
+// ── Coexistence: messages the team sends from the WhatsApp Business app ─────
+// The number is shared between this bot and the Business app on the shop's
+// phone. Meta reports what a person types in the app as `smb_message_echoes`
+// (from = our number, to = the customer). index.ts treats any echo in a lead's
+// chat as a human taking over, and the bot stays silent there for good.
+
+export interface EchoMessage {
+  waMessageId: string
+  waId: string             // the CUSTOMER the team member wrote to
+  phoneNumberId: string
+  type: string
+  text: string | null
+}
+
+export function parseEchoes(payload: unknown): EchoMessage[] {
+  const out: EchoMessage[] = []
+  const p = payload as any
+  if (p?.object !== 'whatsapp_business_account' || !Array.isArray(p.entry)) return out
+  for (const entry of p.entry) {
+    for (const change of entry?.changes ?? []) {
+      if (change?.field !== 'smb_message_echoes') continue
+      const value = change.value ?? {}
+      const phoneNumberId = String(value.metadata?.phone_number_id ?? '')
+      for (const msg of value.message_echoes ?? []) {
+        if (!msg?.id || !msg?.to) continue
+        out.push({
+          waMessageId: String(msg.id),
+          waId: String(msg.to),
+          phoneNumberId,
+          type: String(msg.type ?? 'unknown'),
+          text: extractText(msg),
+        })
+      }
+    }
+  }
+  return out
+}
+
 function extractText(msg: any): string | null {
   switch (msg.type) {
     case 'text':        return nonEmpty(msg.text?.body)
@@ -120,7 +158,7 @@ export function maskWaId(waId: string): string {
 // ── Conversation → Gemini ───────────────────────────────────────────────────
 
 export interface StoredMessage {
-  direction: 'in' | 'out'
+  direction: 'in' | 'out' | 'human'   // human = a team member writing from the Business app
   body: string
 }
 
