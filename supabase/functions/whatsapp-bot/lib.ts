@@ -235,6 +235,73 @@ export function formatCatalog(products: CatalogProduct[]): string {
 
 // ── Outbound ────────────────────────────────────────────────────────────────
 
+// WhatsApp reply buttons: at most 3 per message, each title at most 20
+// characters, and the message body at most 1024 characters. Sent inside an
+// open customer conversation they need no template.
+export const MAX_BUTTONS = 3
+export const MAX_BUTTON_TITLE = 20
+export const MAX_INTERACTIVE_BODY = 1024
+
+export interface BotReply {
+  text: string
+  buttons: string[]
+}
+
+/** Cleans the model's button labels into something the Cloud API accepts:
+ *  trimmed, non-empty, unique, at most 3, each cut to 20 characters. */
+export function sanitizeButtons(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const b of raw) {
+    const t = typeof b === 'string' ? b.replace(/\s+/g, ' ').trim().slice(0, MAX_BUTTON_TITLE).trim() : ''
+    if (t && !out.includes(t)) out.push(t)
+    if (out.length === MAX_BUTTONS) break
+  }
+  return out
+}
+
+/** The model answers {"text": "...", "buttons": ["..."]}. Anything that is not
+ *  that shape is treated as plain text, so a malformed answer still reaches
+ *  the customer as a message instead of failing the reply. */
+export function parseBotReply(raw: string): BotReply {
+  const trimmed = raw.trim()
+  try {
+    const j = JSON.parse(trimmed)
+    if (j && typeof j === 'object' && typeof j.text === 'string' && j.text.trim()) {
+      return { text: j.text.trim(), buttons: sanitizeButtons(j.buttons) }
+    }
+  } catch { /* plain text */ }
+  return { text: trimmed, buttons: [] }
+}
+
+/** Cloud API message bodies for one reply. Long text goes out as plain
+ *  messages first; the buttons ride on the last part when it fits the
+ *  1024-character interactive limit, and are dropped otherwise. */
+export function buildOutboundMessages(waId: string, reply: BotReply): { body: Record<string, unknown>; text: string; buttons: string[] }[] {
+  const parts = splitForWhatsApp(reply.text)
+  const last = parts[parts.length - 1]
+  const withButtons = reply.buttons.length > 0 && last !== undefined && last.length <= MAX_INTERACTIVE_BODY
+  return parts.map((part, i) => {
+    const base = { messaging_product: 'whatsapp', recipient_type: 'individual', to: waId }
+    if (withButtons && i === parts.length - 1) {
+      return {
+        text: part,
+        buttons: reply.buttons,
+        body: {
+          ...base,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: part },
+            action: { buttons: reply.buttons.map((title, n) => ({ type: 'reply', reply: { id: `opt${n + 1}`, title } })) },
+          },
+        },
+      }
+    }
+    return { text: part, buttons: [], body: { ...base, type: 'text', text: { body: part, preview_url: true } } }
+  })
+}
+
 const WA_TEXT_LIMIT = 4096
 
 /** WhatsApp rejects text bodies over 4096 characters. Split on paragraph,
