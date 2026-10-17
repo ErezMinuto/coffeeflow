@@ -1,7 +1,7 @@
 /**
  * Dashboard App Context
- * Loads marketing + product data from CoffeeFlow Supabase for use
- * in the Marketing (email generator) and AI Analyst pages.
+ * Loads email-marketing data (contacts, campaigns, groups) from CoffeeFlow
+ * Supabase for the Marketing (email generator) page.
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabase'
