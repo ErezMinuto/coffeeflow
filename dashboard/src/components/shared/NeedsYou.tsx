@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
 // "Needs You" — one consolidated view of everything awaiting the owner's
-// decision, pinned to the top of the Overview home page. The autonomous agents
+// decision, pinned to the top of the /plan home page. The autonomous agents
 // draft/propose silently into different admin surfaces; this surfaces them all
 // in one place so nothing rots unseen. Quiet when nothing is pending.
 
@@ -21,7 +21,7 @@ async function countRows(build: () => any): Promise<number> {
     const { count } = await build()
     return count ?? 0
   } catch {
-    return 0 // a missing table / RLS hiccup should never break the home page
+    return 0 // a missing table / RLS hiccup should never break the page
   }
 }
 

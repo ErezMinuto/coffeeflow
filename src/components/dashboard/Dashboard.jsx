@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../lib/context';
 
 export default function Dashboard() {
-  const { data, showToast } = useApp();
+  const { data } = useApp();
   const navigate = useNavigate();
 
   const lowStockOrigins   = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);

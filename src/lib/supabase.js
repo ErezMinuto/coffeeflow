@@ -75,5 +75,3 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Legacy export kept for backwards compat — no longer used.
-export const getCurrentUserId = (user) => (user ? user.id : null);

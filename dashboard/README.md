@@ -1,6 +1,6 @@
 # Minuto Marketing Dashboard
 
-מערכת מעקב שיווקית לMinuto Coffee — Meta (Instagram אורגני + Ads) ו-Google Ads.
+מערכת מעקב שיווקית לMinuto Coffee — Meta (Instagram אורגני + Ads) ו-Google אורגני.
 
 ## Setup
 
@@ -15,11 +15,8 @@ cp .env.example .env.local
 # Fill in your values
 ```
 
-### 3. Supabase — run migration
-```bash
-# In Supabase dashboard → SQL Editor
-# Run: supabase/migrations/001_initial.sql
-```
+### 3. Supabase
+Schema lives in the repo-root `supabase/migrations/`; the dashboard has no project of its own.
 
 ### 4. Deploy Edge Functions
 ```bash
@@ -47,29 +44,20 @@ npm run dev
 
 ```
 src/
-├── components/
-│   └── shared/        # KPICard, Sidebar, DateRangePicker, ConnectionStatus
+├── components/        # BrainChat, DraftCampaignDrawer
+│   └── shared/        # Sidebar, KPICard, DateRangePicker, NeedsYou, ErrorBoundary
 ├── pages/
-│   ├── Overview.tsx   # Main dashboard
-│   ├── MetaOrganic.tsx
-│   ├── MetaAds.tsx
-│   ├── GoogleAds.tsx
+│   ├── UnifiedPlan.tsx   # /plan — home page (marketing cockpit)
+│   ├── MetaOrganic.tsx / MetaAds.tsx / GoogleOrganic.tsx  # tabs inside /plan
+│   ├── Marketing.jsx     # /marketing — email
+│   ├── Reels.tsx
 │   ├── Settings.tsx
-│   └── OAuthCallback.tsx
+│   ├── OAuthCallback.tsx
+│   └── admin/            # /admin/seo-agent
 └── lib/
-    ├── supabase.ts
-    ├── types.ts
-    └── utils.ts
-
-supabase/
-├── functions/
-│   ├── meta-exchange-token/
-│   ├── meta-sync/
-│   ├── google-exchange-token/
-│   └── google-sync/
-└── migrations/
-    └── 001_initial.sql
 ```
+
+Edge functions and migrations live in the repo-root `supabase/`.
 
 ## Connection Flow
 

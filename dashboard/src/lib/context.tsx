@@ -1,7 +1,7 @@
 /**
  * Dashboard App Context
- * Loads marketing + product data from CoffeeFlow Supabase for use
- * in the Marketing (email generator) and AI Analyst pages.
+ * Loads email-marketing data (contacts, campaigns, groups) from CoffeeFlow
+ * Supabase for the Marketing (email generator) page.
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabase'
@@ -15,11 +15,8 @@ interface TableDb {
 
 interface AppContextValue {
   data: {
-    products: any[]
     marketingContacts: any[]
     campaigns: any[]
-    packingLogs: any[]
-    pendingOrders: any[]
     contactGroups: any[]
     contactGroupMembers: any[]
   }
@@ -29,7 +26,6 @@ interface AppContextValue {
   contactGroupsDb: TableDb
   contactGroupMembersDb: TableDb
   showToast: (msg: string, type?: string) => void
-  refreshAll: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -95,11 +91,8 @@ function useTable(table: string) {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null)
 
-  const productsDb        = useTable('products')
   const marketingContactsDb = useTable('marketing_contacts')
   const campaignsDb       = useTable('campaigns')
-  const packingLogsDb     = useTable('packing_logs')
-  const pendingOrdersDb   = useTable('pending_orders')
   const contactGroupsDb       = useTable('contact_groups')
   const contactGroupMembersDb = useTable('contact_group_members')
 
@@ -108,25 +101,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToast(null), 3500)
   }
 
-  const refreshAll = async () => {
-    await Promise.all([
-      productsDb.refresh(),
-      marketingContactsDb.refresh(),
-      campaignsDb.refresh(),
-      packingLogsDb.refresh(),
-      pendingOrdersDb.refresh(),
-      contactGroupsDb.refresh(),
-      contactGroupMembersDb.refresh(),
-    ])
-  }
-
   const value: AppContextValue = {
     data: {
-      products:            productsDb.data,
       marketingContacts:   marketingContactsDb.data,
       campaigns:           campaignsDb.data,
-      packingLogs:         packingLogsDb.data,
-      pendingOrders:       pendingOrdersDb.data,
       contactGroups:       contactGroupsDb.data,
       contactGroupMembers: contactGroupMembersDb.data,
     },
@@ -146,7 +124,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     contactGroupsDb,
     contactGroupMembersDb,
     showToast,
-    refreshAll,
   }
 
   return (
