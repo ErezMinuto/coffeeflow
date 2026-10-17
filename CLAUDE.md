@@ -70,13 +70,13 @@ There are exactly **3 Telegram bots + 1 WhatsApp bot**. Each bot has **one** ded
 | Bot | Username | Edge Function | Responsibility |
 |-----|----------|---------------|----------------|
 | Minuto Coffee Alerts | @minuto_coffee_bot | `coffee-bot` | Packing reports (private messages from employees) |
-| Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group) |
+| Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group), vehicle log (private) |
 | CoffeeFlow Tasks | (tasks bot) | `telegram-bot` | Waiting customers & task management (group only) |
 | Minuto WhatsApp Advisor | (WhatsApp Business number) | `whatsapp-bot` | Customer-facing coffee advisor for click-to-WhatsApp ad leads |
 
 ### Per-function rules
 - **coffee-bot**: `/stock` and free-text packing reports only. Deducts `roasted_stock`, increments `packed_stock`, logs to `packing_logs`. Uses `COFFEE_BOT_TOKEN`. No task or schedule logic.
-- **employee-bot**: Name registration, availability submissions, weekly schedule reminders only. Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
+- **employee-bot**: Name registration, availability submissions, weekly schedule reminders, and the vehicle log ("🚙 יומן רכב" menu, private chat only: take/return the shared work car → `vehicle_trips`; admin view at CoffeeFlow `/vehicle-log`; car events DM the manager only if `MANAGER_TELEGRAM_ID` is set). Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
 - **telegram-bot**: `/tasks`, `/done`, free-text customer requests in group chat only. Uses `TELEGRAM_BOT_TOKEN`. **No packing, no stock, no schedule logic.**
 - **whatsapp-bot**: Customer-facing coffee advisor for click-to-WhatsApp ad leads: asks taste preferences, recommends Minuto roasted coffee from the live catalog (Gemini). Uses `WHATSAPP_*` secrets. Verifies Meta's `X-Hub-Signature-256` on every POST (deployed `--no-verify-jwt`, so the HMAC is its only auth). The number is shared with the WhatsApp Business app (coexistence): the bot answers only click-to-WhatsApp ad leads, and goes silent for good in a chat once a team member replies from the app. No packing, stock, schedule or task logic.
 
