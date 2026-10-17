@@ -7,7 +7,9 @@ interface Msg { role: 'user' | 'assistant'; content: string; tools?: ToolCall[] 
 
 const STORAGE_KEY = 'marketing_brain_chat'
 
-// Renders the outcome of a tool the brain fired (paid draft / organic queue).
+// Renders the outcome of a tool the brain fired (Meta draft / Google draft /
+// organic queue). Read-only tools render nothing — their result is already in
+// the brain's own reply.
 function ToolChip({ t }: { t: ToolCall }) {
   const r = t.result
   if (t.name === 'draft_meta_campaign' && r?.ok && r?.edit_url) {
@@ -16,6 +18,23 @@ function ToolChip({ t }: { t: ToolCall }) {
          className="mt-2 inline-flex items-center gap-1.5 badge bg-white text-brand-700 border border-brand-100">
         <Megaphone size={12} /> טיוטה מושהית · פתח ב-Ads Manager <ExternalLink size={11} />
       </a>
+    )
+  }
+  // validate_only runs return ok without a campaign — Google checked the spec
+  // and built nothing, so there is no link to offer.
+  if (t.name === 'draft_google_campaign' && r?.ok && r?.edit_url) {
+    return (
+      <a href={r.edit_url} target="_blank" rel="noopener noreferrer"
+         className="mt-2 inline-flex items-center gap-1.5 badge bg-white text-blue-700 border border-blue-100">
+        <Megaphone size={12} /> קמפיין גוגל מושהה · פתח ב-Google Ads <ExternalLink size={11} />
+      </a>
+    )
+  }
+  if (t.name === 'draft_google_campaign' && r?.ok && r?.validate_only) {
+    return (
+      <span className="mt-2 inline-flex items-center gap-1.5 badge bg-white text-blue-700 border border-blue-100">
+        <CheckCircle2 size={12} /> גוגל אישרה את המפרט · לא נוצר כלום
+      </span>
     )
   }
   if (t.name === 'queue_organic_task') {

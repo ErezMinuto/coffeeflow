@@ -201,6 +201,11 @@ unreachable with the anon key.
 | `COFFEEFLOW_USER_ID` | all functions |
 | `ANTHROPIC_API_KEY` | coffee-bot, telegram-bot |
 | `CLERK_SECRET_KEY` | clerk-user-lookup |
+| `GOOGLE_DEVELOPER_TOKEN` | google-sync, google-ads-draft |
+| `GOOGLE_CUSTOMER_ID` | google-sync, google-ads-draft |
+| `GOOGLE_MERCHANT_ID` | google-ads-draft (Performance Max product feed) |
+| `GOOGLE_MAX_DAILY_BUDGET_ILS` | google-ads-draft (default 100) |
+| `GOOGLE_MONTHLY_BUDGET_ILS` | google-ads-draft (default 3500) |
 | `SUPABASE_SERVICE_ROLE_KEY` | all functions (auto-injected) |
 
 **Critical**: Use the JWT-format service role key (starts with `eyJ`). The `sb_secret_*` format breaks PostgREST UPDATE/INSERT.
@@ -215,7 +220,7 @@ unreachable with the anon key.
 ```
 
 Functions that MUST always be deployed with `--no-verify-jwt`:
-- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`
 
 > The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 

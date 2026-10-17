@@ -8,7 +8,7 @@ A single, conversational marketing strategist that plans and coordinates **organ
 
 ## 1. Mission & principles
 
-**Mission:** help Minuto sell more **specialty beans at healthy margin** by running organic (SEO/content) and paid (Meta, later Google) as *one* plan instead of two silos.
+**Mission:** help Minuto sell more **specialty beans at healthy margin** by running organic (SEO/content) and paid (Meta + Google) as *one* plan instead of two silos.
 
 **Non-negotiable principles** (these govern every phase):
 
@@ -49,14 +49,14 @@ A single, conversational marketing strategist that plans and coordinates **organ
                           proposes; acts only on your OK
               ┌───────────────────────┼───────────────────────┐
         PAID hand                ORGANIC hand              (read-only)
-   meta-ads-draft            SEO / organic-orchestr.      Google Ads recs
+   meta-ads-draft            SEO / organic-orchestr.
    → PAUSED campaign         → queue content/IG           (no auto-create)
    (budget-capped)
 ```
 
 - **Brain** = a conversational agent holding the unified organic+paid+sales context **plus** the learnings store, with tools for each hand. Talks freely; fires tools only on explicit approval.
 - **Hands** = the *existing* agents. The brain delegates; it does not reimplement them.
-- **Google** stays **recommendation-only** for now (no auto-create), consistent with the current decision.
+- **Google** is a write-side hand as of 2026-09-15 (`google-ads-draft`): PAUSED Search and Performance Max campaigns, live insights, the search-terms report, budget/status edits and keyword changes — the same shape as the Meta hand, behind the same approval gate and its own ₪100/day + ₪3,500/month caps. The 2026-05-08 decision that Google *harvests* demand rather than creating it still stands, and is written into the brain's prompt as channel doctrine: no cold-prospecting bean campaigns on Google.
 
 ---
 
@@ -133,7 +133,7 @@ Each phase is independently shippable and verified before the next. Order matter
 1. **Learnings store:** new `marketing_learnings` table, or extend `seo_learnings` with a `channel` column? *(Lean: extend, to keep one loop.)*
 2. **Autonomy level:** approve-each-action, or standing approval within pre-set limits (e.g., "auto-draft PAUSED anything ≤ ₪50/day, I still activate")? *(Lean: approve-each until trust is earned.)*
 3. **Chat home:** a panel on `/plan`, or a dedicated route? *(Lean: panel on `/plan`.)*
-4. **Google paid:** stay recommendation-only, or bring write-side in later? *(Lean: recommendation-only for now.)*
+4. ~~**Google paid:** stay recommendation-only, or bring write-side in later?~~ **Resolved 2026-09-15** — write-side shipped as `google-ads-draft` (Search + Performance Max), wired into the brain as `draft_google_campaign` / `get_google_campaign_performance` / `get_google_search_terms` / `edit_google_campaign` / `change_google_keywords`.
 
 ---
 
