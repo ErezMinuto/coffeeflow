@@ -364,7 +364,9 @@ serve(async (req) => {
       }
       if (body.status != null) {
         const st = String(body.status).toUpperCase()
-        if (!['ENABLED', 'PAUSED'].includes(st)) throw new Error('status must be ENABLED or PAUSED')
+        // Going live is the owner's act, done in Google Ads, never through this
+        // API. Pausing stays open so a campaign can always be stopped from here.
+        if (st !== 'PAUSED') throw new Error('status can only be set to PAUSED here — the owner activates campaigns in Google Ads')
         campaignUpdate.status = st
         campaignFields.push('status')
         changed.status = st
@@ -381,12 +383,30 @@ serve(async (req) => {
         }
         // The budget is its own resource — look up which one this campaign uses.
         const budgetRows = await gaql(ctx, `
-          SELECT campaign.id, campaign_budget.resource_name
+          SELECT campaign.id, campaign_budget.resource_name, campaign_budget.amount_micros
           FROM campaign
           WHERE campaign.id = ${Number(campaignId)}
         `, 'campaign_budget_lookup')
         const budgetResource = (budgetRows as any[])[0]?.campaignBudget?.resourceName
         if (!budgetResource) throw new Error(`no budget found for campaign ${campaignId}`)
+        // Monthly cap, on raises only — lowering a budget must always work, even
+        // when the month is already at the cap. The extra exposure is the raise
+        // for each day left in the month, the same sum create checks.
+        const current = Number((budgetRows as any[])[0]?.campaignBudget?.amountMicros ?? 0) / 1_000_000
+        if (req > current) {
+          if (ctx.currency !== 'ILS') {
+            throw new Error(`account currency is ${ctx.currency}, but the budget caps are expressed in ILS — refusing to raise a budget against caps that don't apply`)
+          }
+          const mtdSpend = await accountSpend(ctx, ...monthToDateRange(ctx.timeZone))
+          const committed = await committedThisMonth(supabase)
+          const extra = (req - current) * daysLeftInMonth(ctx.timeZone)
+          const projected = mtdSpend + committed + extra
+          if (projected > monthlyCap()) {
+            throw new Error(
+              `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committed)} + this raise ₪${round2(extra)} = ₪${round2(projected)} > cap ₪${monthlyCap()} (GOOGLE_MONTHLY_BUDGET_ILS)`,
+            )
+          }
+        }
         ops.push({
           campaignBudgetOperation: {
             update: { resourceName: budgetResource, amountMicros: ilsToMicros(req) },
@@ -989,7 +1009,8 @@ async function resolveCampaign(ctx: AdsContext, ref: string): Promise<{ id: stri
 
   // Not numeric: treat it as a name. Exact match wins; otherwise refuse rather
   // than picking one of several partial matches.
-  const escaped = raw.replace(/'/g, "\\'")
+  // Backslashes first: a name ending in \ would otherwise escape the closing quote.
+  const escaped = raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
   const rows = await gaql(ctx, `
     SELECT campaign.id, campaign.name FROM campaign
     WHERE campaign.status != 'REMOVED' AND campaign.name = '${escaped}'
@@ -1636,6 +1657,13 @@ function monthToDateRange(timeZone: string): [string, string] {
   const today = todayInZone(timeZone)
   const first = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
   return [iso(first), iso(today)]
+}
+
+// Days from today to the end of the month, today included, in the account's zone.
+function daysLeftInMonth(timeZone: string): number {
+  const today = todayInZone(timeZone)
+  const lastDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).getUTCDate()
+  return lastDay - today.getUTCDate() + 1
 }
 
 function lastMonthRange(timeZone: string): [string, string] {

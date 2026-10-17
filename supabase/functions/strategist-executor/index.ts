@@ -15,6 +15,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -189,6 +190,9 @@ async function draftRec(supabase: SupabaseClient, rec: RecommendationRow): Promi
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // Only cron (and other functions) run this. The gateway's verify_jwt still
+  // admits the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS)
   const supabase = createSupabase()
   const workerId = `exec-${crypto.randomUUID().slice(0, 8)}`
   try {

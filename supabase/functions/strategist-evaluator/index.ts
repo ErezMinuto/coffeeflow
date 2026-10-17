@@ -17,6 +17,7 @@ import { THESIS_EVALUATOR_SYSTEM_PROMPT } from '../seo-agent/prompts/thesisEvalu
 import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot.ts'
 import { STRATEGIST_MODEL, STRATEGIST_EFFORT, estimateUsd } from '../seo-agent/strategistConfig.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
@@ -169,6 +170,9 @@ async function evaluate(supabase: SupabaseClient): Promise<Response> {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // Only cron (and other functions) run this. The gateway's verify_jwt still
+  // admits the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS)
   const supabase = createSupabase()
   try {
     return await evaluate(supabase)

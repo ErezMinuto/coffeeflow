@@ -14,6 +14,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
@@ -1992,6 +1993,10 @@ function withCors(handler: (req: Request) => Promise<Response>) {
 
 serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, and the brain chat can edit live ad campaigns through
+  // the ad hands, so the caller is checked here: an admin from the dashboard,
+  // or the service role (cron, and this function's own self-invoke).
+  if (!(await hasRole(req, ["admin"]))) return forbidden(CORS);
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
@@ -2843,7 +2848,7 @@ Your tools fall into two classes, and the distinction matters:
 **WRITE tools — these fire ONLY after the owner's explicit written approval** ("yes build it" / "approved" / "אישרתי" / "תבנה"). Speculation is never approval; "should I?" is never approval. Approval for one campaign is not approval for the next one.
 1. \`draft_meta_campaign\` — creates a PAUSED campaign in Meta Ads Manager. Fire ONLY after the owner approved ALL of: campaign name, objective, audience, Hebrew creative, daily budget, AND image URL.
 2. \`draft_google_campaign\` — creates a PAUSED Google campaign, Search or Performance Max. Fire ONLY after the owner approved ALL of: campaign name, campaign type, keywords + match types (Search), the full Hebrew ad text within Google's character limits, daily budget, landing page, and the three image URLs (PMax). Pass \`validate_only: true\` first if you want Google to check the spec without creating anything — that is free and instant, and it is the right move when you are unsure the copy fits.
-3. \`edit_campaign\` / \`edit_google_campaign\` — change a live campaign's name, status or daily budget. ALWAYS show the owner current → new before firing. Setting a campaign to ACTIVE/ENABLED puts it live and starts spending: treat that as the owner activating, and require an unmistakable yes.
+3. \`edit_campaign\` / \`edit_google_campaign\` — change a campaign's name or daily budget, or pause it. ALWAYS show the owner current → new before firing. You can NEVER turn a campaign on: the owner activates campaigns themselves in Ads Manager / Google Ads, and the tools refuse ACTIVE/ENABLED. When a campaign is ready, tell the owner it is ready to activate there.
 4. **Never invent an id.** Campaign ids come from a tool result, never from your own head. A made-up number can match a real campaign you did not mean and the change will go through. If you don't have the id, fetch it. When you report a change, name the CAMPAIGN so the owner can catch a wrong target.
 
 5. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
@@ -2993,13 +2998,13 @@ ${postsBlock}
         },
       }, {
         name: "edit_campaign",
-        description: "Edit a LIVE campaign — name, status (ACTIVE|PAUSED), and/or daily budget (ILS, hard-capped at ₪100/day). Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new (before/after). Get campaign_id from get_campaign_performance. Setting status=ACTIVE goes LIVE and starts spending — treat that as the owner activating; require an unmistakable yes.",
+        description: "Edit a campaign — name, daily budget (ILS, hard-capped at ₪100/day), or pause it (status=PAUSED). It cannot activate a campaign: the owner does that in Ads Manager. Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new (before/after). Get campaign_id from get_campaign_performance.",
         input_schema: {
           type: "object",
           properties: {
             campaign_id: { type: "string", description: "From get_campaign_performance." },
             name: { type: "string" },
-            status: { type: "string", enum: ["ACTIVE", "PAUSED"] },
+            status: { type: "string", enum: ["PAUSED"] },
             daily_budget_ils: { type: "number", description: "New daily budget in ILS (≤100)." },
           },
           required: ["campaign_id"],
@@ -3128,13 +3133,13 @@ ${postsBlock}
       },
       {
         name: "edit_google_campaign",
-        description: "Edit a LIVE Google campaign — name, status (ENABLED|PAUSED), and/or daily budget (ILS, hard-capped at ₪100/day). Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new. Get campaign_id from get_google_campaign_performance. Setting status=ENABLED goes LIVE and starts spending — treat that as the owner activating and require an unmistakable yes.",
+        description: "Edit a Google campaign — name, daily budget (ILS, hard-capped at ₪100/day), or pause it (status=PAUSED). It cannot activate a campaign: the owner does that in Google Ads. Fire ONLY after explicit owner approval for the exact change. FIRST show the owner current → new. Get campaign_id from get_google_campaign_performance.",
         input_schema: {
           type: "object",
           properties: {
             campaign_id: { type: "string", description: "The NUMERIC campaign id exactly as get_google_campaign_performance returned it, or the campaign's exact name. NEVER invent or guess an id — a guessed number can land on a real but unintended campaign. If you don't have the id, call get_google_campaign_performance first." },
             name: { type: "string" },
-            status: { type: "string", enum: ["ENABLED", "PAUSED"] },
+            status: { type: "string", enum: ["PAUSED"] },
             daily_budget_ils: { type: "number", description: "New daily budget in ILS (≤100)." },
           },
           required: ["campaign_id"],
