@@ -11,32 +11,39 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // main app (src/lib/supabase.js): every Supabase request carries the signed-in
 // user's Clerk JWT from the `supabase` JWT template, so the database sees
 // role=authenticated and auth.jwt()->>'sub' = their Clerk user_id instead of a
-// bare anon key. That is what lets anon access be removed from tables later
-// without locking the dashboard out.
+// bare anon key. Tables can then be limited to admins (is_admin()) without
+// locking the dashboard out.
 let getClerkToken: (() => Promise<string | null>) | null = null
 
-export function setClerkTokenGetter(fn: (() => Promise<string | null>) | null): void {
-  getClerkToken = fn
-}
-
-async function fetchWithClerkAuth(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(init.headers)
-  // apikey stays the anon key: it identifies the project to the gateway and is
-  // separate from Authorization.
-  if (!headers.has('apikey')) headers.set('apikey', supabaseAnonKey)
+// The client's `accessToken` option, rather than a custom fetch: it covers
+// REST, functions and storage AND realtime. Realtime keeps its own socket and
+// never goes through fetch, so with a fetch wrapper its subscriptions stayed
+// anon — and would go silent once anon lost access to the tables. Realtime
+// calls this again on every heartbeat, so the token stays fresh.
+async function currentToken(): Promise<string> {
   if (getClerkToken) {
     try {
       const token = await getClerkToken()
-      if (token) headers.set('Authorization', `Bearer ${token}`)
+      if (token) return token
     } catch (err) {
-      // No token (signed out, template missing): fall back to the anon key,
-      // which is how every request went out before this change.
       console.warn('[supabase] Clerk token unavailable, falling back to anon:', (err as Error)?.message)
     }
   }
-  return fetch(input, { ...init, headers })
+  // Signed out or no template: the anon key, exactly as before.
+  return supabaseAnonKey
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: { fetch: fetchWithClerkAuth },
+  accessToken: currentToken,
 })
+
+export function setClerkTokenGetter(fn: (() => Promise<string | null>) | null): void {
+  const wasSignedIn = getClerkToken != null
+  getClerkToken = fn
+  // Realtime took its first token when the client was created, before anyone
+  // signed in. Hand it the user's token now rather than waiting for the next
+  // heartbeat. Only on sign-in / sign-out: AuthGate calls this every render.
+  if ((fn != null) !== wasSignedIn) {
+    supabase.realtime.setAuth().catch((e) => console.warn('[supabase] realtime auth refresh failed:', e))
+  }
+}
