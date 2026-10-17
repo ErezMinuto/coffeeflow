@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../lib/context';
 
 // ── Inline SVG icons (Lucide-style) — no emoji as icons ───────────────────────
@@ -45,6 +46,7 @@ export default function Origins() {
   const [sortBy, setSortBy]           = useState('name');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'low' | 'out'
   const [openMenuId, setOpenMenuId]   = useState(null);
+  const [menuPos, setMenuPos]         = useState(null); // {top,left} in viewport px
   const [bannerOpen, setBannerOpen]   = useState(true);
 
   // drawer: { mode: 'in' | 'out' | 'add' | 'edit' } | null
@@ -54,6 +56,57 @@ export default function Origins() {
   const [editingOrigin, setEditingOrigin] = useState(null);
   const [stockEntry, setStockEntry]   = useState({ originId: '', quantity: '', notes: '' });
   const [stockOut, setStockOut]       = useState({ originId: '', quantity: '', notes: '' });
+
+  // ── Kebab menu: rendered in a portal with fixed coords ──────────────────────
+  // The table lives in an `overflow-x: auto` scroller, which makes overflow-y
+  // `auto` too — an absolutely positioned menu on the last row gets clipped and
+  // becomes unreachable. Position it against the viewport instead, flipping it
+  // above the button when there is no room below.
+  const menuBtnRef = useRef(null);
+  const menuRef    = useRef(null);
+
+  const closeMenu = useCallback(() => {
+    menuBtnRef.current = null;
+    setOpenMenuId(null);
+    setMenuPos(null);
+  }, []);
+
+  const toggleMenu = (id, el) => {
+    if (openMenuId === id) { closeMenu(); return; }
+    menuBtnRef.current = el;
+    setMenuPos(null);          // measured on the next layout pass
+    setOpenMenuId(id);
+  };
+
+  const placeMenu = useCallback(() => {
+    const btn = menuBtnRef.current, menu = menuRef.current;
+    if (!btn || !menu) return;
+    const EDGE = 8, GAP = 6;
+    const b = btn.getBoundingClientRect();
+    const { width: mw, height: mh } = menu.getBoundingClientRect();
+    let top = b.bottom + GAP;
+    if (top + mh > window.innerHeight - EDGE) top = Math.max(EDGE, b.top - GAP - mh);
+    // match the old `inset-inline-end: 0`: the menu's inline-end edge sits on the
+    // button's, so it grows rightward in RTL and leftward in LTR
+    const rtl = getComputedStyle(btn).direction === 'rtl';
+    const raw = rtl ? b.left : b.right - mw;
+    const left = Math.min(Math.max(EDGE, raw), Math.max(EDGE, window.innerWidth - mw - EDGE));
+    setMenuPos({ top, left });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (openMenuId === null) return;
+    placeMenu();
+    const onKey = (e) => { if (e.key === 'Escape') closeMenu(); };
+    window.addEventListener('resize', placeMenu);
+    window.addEventListener('scroll', placeMenu, true);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('resize', placeMenu);
+      window.removeEventListener('scroll', placeMenu, true);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [openMenuId, placeMenu, closeMenu]);
 
   const closeDrawer = () => setDrawer(null);
 
@@ -87,7 +140,7 @@ export default function Origins() {
       stock: origin.stock, roastedStock: origin.roasted_stock || 0, minStock: origin.min_stock || 10,
       dailyAverage: origin.daily_average || 0, notes: origin.notes || '',
     });
-    setOpenMenuId(null);
+    closeMenu();
     setDrawer({ mode: 'edit' });
   };
 
@@ -116,7 +169,7 @@ export default function Origins() {
   };
 
   const deleteOrigin = async (origin) => {
-    setOpenMenuId(null);
+    closeMenu();
     const roastsCount = data.roasts.filter(r => r.origin_id === origin.id).length;
     if (roastsCount > 0) {
       if (!window.confirm(`⚠️ לזן זה יש ${roastsCount} קליות. האם למחוק בכל זאת?`)) return;
@@ -131,7 +184,7 @@ export default function Origins() {
   };
 
   const duplicateOrigin = async (origin) => {
-    setOpenMenuId(null);
+    closeMenu();
     try {
       await originsDb.insert({
         name: origin.name + ' (עותק)', weight_loss: origin.weight_loss, cost_per_kg: origin.cost_per_kg,
@@ -148,7 +201,7 @@ export default function Origins() {
   // ── STOCK IN / OUT ────────────────────────────────────────────────────────────
   const openStockIn = (originId = '') => {
     setStockEntry({ originId: originId ? String(originId) : '', quantity: '', notes: '' });
-    setOpenMenuId(null);
+    closeMenu();
     setDrawer({ mode: 'in' });
   };
 
@@ -160,7 +213,7 @@ export default function Origins() {
       quantity = (15 * yieldPercent).toFixed(1);
     }
     setStockOut({ originId: originId ? String(originId) : '', quantity, notes: '' });
-    setOpenMenuId(null);
+    closeMenu();
     setDrawer({ mode: 'out' });
   };
 
@@ -386,17 +439,8 @@ export default function Origins() {
                         <span className="odivider" />
                         <div className="okebab">
                           <button className="oico" title="עוד פעולות" aria-label={`עוד פעולות ל${origin.name}`}
-                            onClick={() => setOpenMenuId(openMenuId === origin.id ? null : origin.id)}><Icon d={I.dots} /></button>
-                          {openMenuId === origin.id && (
-                            <>
-                              <div className="omenu-backdrop" onClick={() => setOpenMenuId(null)} />
-                              <div className="omenu">
-                                <button onClick={() => openEdit(origin)}><Icon d={I.edit} size={15} /> עריכה</button>
-                                <button onClick={() => duplicateOrigin(origin)}><Icon d={I.dup} size={15} /> שכפול</button>
-                                <button className="del" onClick={() => deleteOrigin(origin)}><Icon d={I.trash} size={15} /> מחיקה</button>
-                              </div>
-                            </>
-                          )}
+                            aria-haspopup="menu" aria-expanded={openMenuId === origin.id}
+                            onClick={(e) => toggleMenu(origin.id, e.currentTarget)}><Icon d={I.dots} /></button>
                         </div>
                       </div>
                     </td>
@@ -412,6 +456,24 @@ export default function Origins() {
           </div>
         )}
       </div>
+
+      {/* Kebab menu — portalled to <body> so no scroll container can clip it */}
+      {openMenuId !== null && (() => {
+        const origin = getOriginById(openMenuId);
+        if (!origin) return null;
+        return createPortal(
+          <div className="omenu-portal">
+            <div className="omenu-backdrop" onClick={closeMenu} />
+            <div className="omenu" role="menu" ref={menuRef}
+              style={{ top: menuPos ? menuPos.top : 0, left: menuPos ? menuPos.left : 0, visibility: menuPos ? 'visible' : 'hidden' }}>
+              <button role="menuitem" onClick={() => openEdit(origin)}><Icon d={I.edit} size={15} /> עריכה</button>
+              <button role="menuitem" onClick={() => duplicateOrigin(origin)}><Icon d={I.dup} size={15} /> שכפול</button>
+              <button role="menuitem" className="del" onClick={() => deleteOrigin(origin)}><Icon d={I.trash} size={15} /> מחיקה</button>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
 
       {/* Drawer */}
       {drawer && (
