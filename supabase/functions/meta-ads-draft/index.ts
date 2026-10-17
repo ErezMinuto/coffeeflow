@@ -168,11 +168,39 @@ serve(async (req) => {
         const req = Number(body.daily_budget_ils)
         if (!(req > 0)) throw new Error("daily_budget_ils must be a positive number")
         if (req > cap) throw new Error(`daily budget ₪${req} exceeds per-campaign cap ₪${cap} (META_MAX_DAILY_BUDGET_ILS)`)
+        // Monthly cap, on raises only — lowering a budget must always work, even
+        // when the month is already at the cap. The extra exposure is the raise
+        // for each day left in the month. A campaign whose budget sits on its ad
+        // sets reports no daily_budget here, so the whole new budget is counted.
+        const current = await campaignDailyBudgetIls(ctx, campaignId)
+        if (req > current) {
+          const monthlyCap = Number(Deno.env.get('META_MONTHLY_BUDGET_ILS') ?? 3000)
+          const mtdSpend = await accountSpend(ctx, 'this_month')
+          const committed = await committedThisMonth(supabase)
+          const extra = (req - current) * daysLeftInMonthUtc()
+          const projected = mtdSpend + committed + extra
+          if (projected > monthlyCap) {
+            throw new Error(
+              `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committed)} + this raise ₪${round2(extra)} = ₪${round2(projected)} > cap ₪${monthlyCap} (META_MONTHLY_BUDGET_ILS)`,
+            )
+          }
+        }
         fields.daily_budget = String(Math.round(req * 100))
       }
       if (Object.keys(fields).length === 0) throw new Error("nothing to update — pass name, status, and/or daily_budget_ils")
       const res = await graphPost(`${GRAPH}/${campaignId}`, ctx.userToken, fields)
-      return json({ ok: true, updated: campaignId, fields, result: res })
+      // committedThisMonth() reads daily_budget_ils from meta_ad_drafts, so the
+      // new budget is written back or the cap keeps counting the old one.
+      // Campaigns this function never created have no row; that is a no-op.
+      const warnings: string[] = []
+      if (fields.daily_budget) {
+        const { error } = await supabase
+          .from('meta_ad_drafts')
+          .update({ daily_budget_ils: Number(body.daily_budget_ils) })
+          .eq('campaign_id', campaignId)
+        if (error) warnings.push(`Meta budget updated, but meta_ad_drafts was not (${error.message}) — the monthly cap still counts the old budget for campaign ${campaignId}`)
+      }
+      return json({ ok: true, updated: campaignId, fields, warnings, result: res })
     }
 
     // ── update_targeting ── rebuild targeting + apply it to every ad set on a
@@ -437,7 +465,11 @@ serve(async (req) => {
     const adId = ad.id
 
     // ── Persist ────────────────────────────────────────────────────────────
-    await supabase.from('meta_ad_drafts').insert({
+    // The campaign already exists in Meta, so a failed insert must not read as a
+    // failed create: the caller would retry and build a duplicate. Report
+    // success with a warning instead — but without this row, a repeat call for
+    // the same idea is not de-duplicated and the monthly cap misses this budget.
+    const { error: recordErr } = await supabase.from('meta_ad_drafts').insert({
       idea_id:          ideaId,
       ad_account_id:    ctx.adAccountId,
       campaign_id:      campaignId,
@@ -451,6 +483,10 @@ serve(async (req) => {
       warnings,
       status:           'PAUSED',
     })
+    if (recordErr) {
+      console.error(`[meta-ads-draft] campaign ${campaignId} created but not recorded:`, recordErr.message)
+      warnings.push(`campaign ${campaignId} was created in Meta but NOT recorded in meta_ad_drafts (${recordErr.message}) — do not retry this idea; the monthly cap does not count this campaign's budget until the row is added`)
+    }
 
     return json({
       ok: true,
@@ -567,6 +603,24 @@ async function accountSpend(ctx: AdsContext, preset: string): Promise<number> {
   const j = await r.json()
   if (j.error) throw new Error(`insights ${preset}: ${j.error.message}`)
   return Number(j.data?.[0]?.spend ?? 0)
+}
+
+// A campaign's own daily budget in ILS (Meta returns minor units). 0 when the
+// budget lives on the ad sets instead.
+async function campaignDailyBudgetIls(ctx: AdsContext, campaignId: string): Promise<number> {
+  const url = `${GRAPH}/${campaignId}?fields=daily_budget&access_token=${ctx.userToken}`
+  const r = await fetch(url)
+  const j = await r.json()
+  if (j.error) throw new Error(`campaign ${campaignId}: ${j.error.message}`)
+  return Number(j.daily_budget ?? 0) / 100
+}
+
+// Days from today to the end of the month, today included. UTC, the same
+// calendar committedThisMonth() uses.
+function daysLeftInMonthUtc(): number {
+  const now = new Date()
+  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()
+  return lastDay - now.getUTCDate() + 1
 }
 
 // Planned spend already committed by drafts created this calendar month —

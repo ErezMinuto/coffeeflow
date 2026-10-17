@@ -348,12 +348,18 @@ async function handleRecordThesis(
     rationale?: string
     success_metric: string
     metric_baseline?: number
-    check_date?: string
+    check_date: string
     evidence_snapshot?: Record<string, unknown>
   },
 ): Promise<unknown> {
   if (!input.thesis || !input.lever || !input.success_metric) {
     return { error: 'thesis, lever, and success_metric are required' }
+  }
+  // The evaluator only grades theses that have a check_date, so one without it
+  // would sit in memory forever, never judged. The baseline stays optional: if
+  // it isn't known, null is the honest value, not a guessed number.
+  if (!/^\d{4}-\d{2}-\d{2}/.test(input.check_date ?? '') || Number.isNaN(Date.parse(input.check_date))) {
+    return { error: 'check_date is required — an ISO date (YYYY-MM-DD) when this thesis will be graded' }
   }
   const { data, error } = await supabase
     .from('strategic_theses')
@@ -594,7 +600,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   },
   {
     name: 'record_thesis',
-    description: 'Record a durable, revenue-graded belief about what moves Minuto (your long-term memory). Must name a falsifiable success_metric, its baseline now, and a check_date when reality will judge it. Do not duplicate a thesis you already hold.',
+    description: 'Record a durable, revenue-graded belief about what moves Minuto (your long-term memory). Must name a falsifiable success_metric and a check_date when reality will judge it, plus the metric baseline now when the data shows it. Do not duplicate a thesis you already hold.',
     input_schema: {
       type: 'object',
       properties: {
@@ -602,11 +608,11 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
         lever: { type: 'string', description: 'reach|retention|aov|reactivation|conversion|... (your call)' },
         rationale: { type: 'string' },
         success_metric: { type: 'string', description: 'the measurable proxy this will be judged on' },
-        metric_baseline: { type: 'number', description: 'the metric\'s value right now' },
+        metric_baseline: { type: 'number', description: 'the metric\'s value right now — omit it if the data does not show it; never estimate' },
         check_date: { type: 'string', description: 'ISO date to score it against revenue' },
         evidence_snapshot: { type: 'object', description: 'the cited data slice supporting it' },
       },
-      required: ['thesis', 'lever', 'success_metric'],
+      required: ['thesis', 'lever', 'success_metric', 'check_date'],
     },
   },
   {

@@ -30,6 +30,7 @@ import {
 } from '../seo-agent/strategistConfig.ts'
 import { BRAIN_TOOLS, dispatchTool, type ToolContext } from './tools.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
@@ -315,6 +316,9 @@ async function advance(supabase: SupabaseClient, workerId: string): Promise<Resp
 // ─────────────────────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // Only cron (and other functions) run this. The gateway's verify_jwt still
+  // admits the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS)
   const url = new URL(req.url)
   let mode = url.searchParams.get('mode') ?? ''
   let trigger = url.searchParams.get('trigger') ?? 'cron'

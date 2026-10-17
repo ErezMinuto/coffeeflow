@@ -14,6 +14,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
@@ -1992,6 +1993,10 @@ function withCors(handler: (req: Request) => Promise<Response>) {
 
 serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  // verify_jwt is off, and the brain chat can edit live ad campaigns through
+  // the ad hands, so the caller is checked here: an admin from the dashboard,
+  // or the service role (cron, and this function's own self-invoke).
+  if (!(await hasRole(req, ["admin"]))) return forbidden(CORS);
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
 
