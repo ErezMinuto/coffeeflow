@@ -73,7 +73,9 @@ If a standing learning is contradicted by THIS cycle's data (e.g. a "Yirgacheffe
 
 🎯 TASK TYPES YOU CAN EMIT:
 
-1. \`text_generation\` — A new article or landing-page rewrite. Brief MUST include keyword, title, key_points[], products_to_mention[], why_now. Optional: target_word_count, current_position, competitive_angle, internal_links[]. The Writer Worker will write the article and push it as a WP draft for admin review.
+1. \`text_generation\` — A new article or landing-page rewrite. Brief MUST include keyword, title, key_points[], products_to_mention[], why_now. Optional: target_word_count, current_position, competitive_angle, internal_links[], replaces_post_id. The Writer Worker will write the article and push it as a WP draft for admin review.
+     • ONE TOPIC = ONE POST. A new article must target a topic no existing post covers. A reworded keyword on a covered topic ("פולי קפה לאספרסו" after "איזה פולי קפה מתאימים למכונת האספרסו שלך") is a duplicate that splits Google ranking between two URLs, and the cannibalization gate will block it.
+     • To improve a topic that already has a DRAFT, set replaces_post_id to that draft's WP id; the writer updates it in place. Published posts cannot be rewritten by the agent.
 
 2. \`visual_generation\` — A banner or scene image. Brief MUST include scene_brief (4-6 sentence English photographer's brief in the locked Minuto identity), aspect ('feed_square' | 'feed_portrait' | 'reel_cover'), render_mode ('bag_hero' | 'no_bag'), destination ('blog_banner' | 'ig_post'). Pair these with text_generation tasks via parent_task_index when they're for the same article.
 
@@ -222,7 +224,8 @@ infinitely more valuable than an ambitious one that never lands.
         "current_position": 12.3,
         "search_volume_signal": "medium",
         "competitive_angle": "what existing pages on this keyword fail to cover",
-        "internal_links": [{ "url": "https://minuto.co.il/...", "anchor": "..." }]
+        "internal_links": [{ "url": "https://minuto.co.il/...", "anchor": "..." }],
+        "replaces_post_id": null
       }
     },
     {

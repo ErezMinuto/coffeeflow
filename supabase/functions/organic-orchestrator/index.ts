@@ -550,8 +550,9 @@ serve(async (req: Request): Promise<Response> => {
       const keyword = briefStr(et.brief_data, 'keyword')
       const title   = briefStr(et.brief_data, 'title')
       if (!keyword) return
+      const rp = Number((et.brief_data as Record<string, unknown> | null)?.replaces_post_id)
       let gate
-      try { gate = await checkCannibalizationForQueue(keyword, title) }
+      try { gate = await checkCannibalizationForQueue(keyword, title, rp > 0 ? [rp] : []) }
       catch (e: any) {
         console.warn(`[organic-orchestrator] cannibalization check threw for "${keyword}" (fail-open): ${e?.message ?? e}`)
         return
