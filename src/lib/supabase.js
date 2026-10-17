@@ -20,58 +20,43 @@ if (!supabaseUrl || !supabaseAnonKey) {
 let _getClerkToken = null;
 
 export const setClerkTokenGetter = (fn) => {
+  const wasSet = _getClerkToken != null;
   _getClerkToken = fn;
+  // Realtime took its first token when the client was created, before sign-in.
+  // Re-auth it as soon as a getter exists rather than at the next heartbeat.
+  if (!wasSet && fn) {
+    supabase.realtime.setAuth().catch((e) => console.warn('[supabase] realtime auth refresh failed:', e));
+  }
 };
 
 /**
- * Custom fetch that injects the current Clerk JWT on every Supabase request.
+ * The client's `accessToken` option, not a custom fetch: it covers REST,
+ * functions and storage AND realtime. Realtime keeps its own websocket and
+ * never goes through fetch, so with a fetch wrapper every useSupabaseData
+ * subscription joined as anon — and would go silent once anon loses access to
+ * the staff tables. Realtime re-reads this on every heartbeat.
  *
- * Without this, every request goes out with just the anon key, `auth.jwt()`
- * is NULL server-side, and all admin-gated RLS policies silently reject —
- * e.g. is_admin() returns false even for a user whose `user_roles` row has
- * role='admin'. That's the bug that broke employee approval, schedule
- * publishing, and anything else behind public.is_admin().
- *
- * We always send the anon key as `apikey` (required by PostgREST's role
- * resolution). If a Clerk token is available, we replace the default
- * anon-key Authorization with the Clerk JWT so Supabase can parse
- * `auth.jwt()->>'sub'` server-side.
+ * With no token (signed out, template missing) it returns the anon key, which
+ * is exactly how requests went out before a token existed.
  */
-async function fetchWithClerkAuth(input, init = {}) {
-  const headers = new Headers(init.headers || {});
-  // apikey header is what PostgREST uses to resolve the role (anon).
-  // Don't remove it — it's separate from Authorization.
-  if (!headers.has('apikey')) headers.set('apikey', supabaseAnonKey);
-
+async function currentToken() {
   if (_getClerkToken) {
     try {
       const token = await _getClerkToken();
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
+      if (token) return token;
     } catch (err) {
-      // If token fetch fails (e.g. user logged out), fall back to anon —
-      // most reads still work; admin writes will be rejected and surface.
       console.warn('[supabase] Clerk token fetch failed, falling back to anon:', err?.message);
     }
   }
-
-  return fetch(input, { ...init, headers });
+  return supabaseAnonKey;
 }
 
 /**
- * Supabase client using the anon key + Clerk JWT injected on every request.
- * Security is enforced by RLS policies that read `auth.jwt() ->> 'sub'`.
- * Clerk is the sole auth provider — Supabase's own session is disabled.
+ * Supabase client using the anon key + the Clerk JWT on every request,
+ * realtime included. Security is enforced by RLS policies that read
+ * `auth.jwt() ->> 'sub'`. Clerk is the sole auth provider.
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-  },
-  global: {
-    fetch: fetchWithClerkAuth,
-  },
+  accessToken: currentToken,
 });
 
