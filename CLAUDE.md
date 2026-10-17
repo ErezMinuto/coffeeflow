@@ -226,7 +226,11 @@ unreachable with the anon key.
 ```
 
 Functions that MUST always be deployed with `--no-verify-jwt`:
-- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`, `whatsapp-bot`
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`, `whatsapp-bot`, `meta-ads-draft`, `attendance-export`
+
+`--no-verify-jwt` turns off the gateway's check, so each of these must check its own caller in code:
+`_shared/service_caller.ts` (service role only) or `_shared/role_caller.ts` (service role, or a signed-in
+user's Clerk token with the right role). The gateway's check is not a substitute: it accepts the public anon key.
 
 > The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 

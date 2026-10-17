@@ -13,7 +13,8 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import * as XLSX        from "https://esm.sh/xlsx@0.18.5";
 
 const SUPA_URL    = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -346,17 +347,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  // Employees' attendance records. Same people the Attendance page admits
+  // (canSchedule = admin or schedule_manager), plus the service role.
+  if (!(await hasRole(req, ["admin", "schedule_manager"]))) return forbidden(corsHeaders);
+
   try {
     let yearMonth = lastMonthYM();
-    let mode = "send";
-    if (req.method === "POST") {
-      try {
-        const body = await req.json();
-        if (typeof body?.year_month === "string" && /^\d{4}-\d{2}$/.test(body.year_month)) {
-          yearMonth = body.year_month;
-        }
-        if (body?.mode === "download") mode = "download";
-      } catch { /* empty body OK */ }
+    // The mode must be stated. An empty or unrecognised body used to fall
+    // through to emailing the workbook to the accountant.
+    let mode: "send" | "download" | null = null;
+    try {
+      const body = await req.json();
+      if (typeof body?.year_month === "string" && /^\d{4}-\d{2}$/.test(body.year_month)) {
+        yearMonth = body.year_month;
+      }
+      if (body?.mode === "send" || body?.mode === "download") mode = body.mode;
+    } catch { /* handled below: no mode */ }
+    if (!mode) {
+      return new Response(JSON.stringify({ ok: false, error: "'mode' is required: \"send\" (email the accountant) or \"download\"" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     // Download mode returns the XLSX as base64 for the browser to save locally;
     // send mode emails it to the configured accountant.
