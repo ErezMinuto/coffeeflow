@@ -1,7 +1,11 @@
 // Boot test for the caller gates on functions that run with verify_jwt=false.
 //
-//   deno run --allow-net --allow-env --allow-read supabase/functions/_shared/gate_boot_test.ts <function>
 //   bash scripts/ci/gate-boot-tests.sh            # every function in GATES, one process each
+//   bash scripts/ci/gate-boot-tests.sh <function>
+//
+// Run it through the script, not `deno run` by hand: the script gives the
+// test an empty environment and a localhost-only network, so the functions it
+// boots can never see or send the real secrets a local shell may carry.
 //
 // Boots the real function with every outbound request recorded, then sends it
 // requests from each kind of caller. A refused caller must get 401/403 AND the
@@ -69,7 +73,7 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   'google-exchange-token': { cases: adm({ code: 'x', redirect_uri: 'https://example.test' }) },
   'meta-exchange-token': { cases: adm({ code: 'x', redirect_uri: 'https://example.test' }) },
   'clerk-user-lookup': { cases: adm({ email: 'someone@example.test' }) },
-  'meta-sync': { cases: adm({}) },
+  'meta-sync': { cases: adm({}), env: { META_AD_ACCOUNT_ID: 'act_test' } },
   'woo-orders-sync': { cases: adm({ count_only: true, days_back: 1 }) },
   'google-search-sync': { cases: adm({}) },
   'export-to-sheets': { cases: [{ name: 'POST', body: { schedule_id: 1, week_start: '2026-10-18' }, allow: SCHEDULERS }] },
@@ -149,6 +153,7 @@ if (import.meta.main) {
       const method = c.method ?? 'POST'
       const res = await realFetch(`http://localhost:8000/${c.path ?? ''}`, {
         method,
+        redirect: 'manual', // the unsubscribe link redirects to the site; don't follow it out
         headers: { 'Content-Type': 'application/json', ...HEADERS[who], ...c.headers },
         body: method === 'GET' ? undefined : JSON.stringify(c.body ?? {}),
       })
