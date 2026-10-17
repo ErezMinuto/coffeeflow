@@ -11,7 +11,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const SUPA_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY              = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -187,18 +187,14 @@ serve(async (req) => {
     // 5. Update campaign aggregate stats
     const statCol = STAT_COLUMN[eventType];
     if (statCol && campaignId) {
-      // Fetch current value and increment
-      const { data: campaign } = await supabase
-        .from("campaigns")
-        .select(statCol)
-        .eq("id", campaignId)
-        .single();
-
-      if (campaign) {
-        await supabase
-          .from("campaigns")
-          .update({ [statCol]: (campaign[statCol] || 0) + 1 })
-          .eq("id", campaignId);
+      // Incremented in the database: a read-then-write here lost counts when
+      // Resend delivered two events for the same campaign at once.
+      const { error: statErr } = await supabase.rpc("increment_campaign_stat", {
+        p_campaign_id: campaignId,
+        p_column: statCol,
+      });
+      if (statErr) {
+        console.error("Stat increment error:", statErr.message);
       }
     }
 
