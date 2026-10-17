@@ -5,6 +5,7 @@ import {
   maskWaId,
   parseEchoes,
   parseInbound,
+  parseWaIdList,
   splitForWhatsApp,
   toGeminiContents,
   verifyHandshake,
@@ -145,4 +146,10 @@ Deno.test('parseEchoes: team replies from the Business app, other fields ignored
   assertEquals(e[0].text, 'היי, כאן ארז')
   assertEquals(e[1].text, null)
   assertEquals(parseInbound(payload).length, 1)   // echoes never look like customer messages
+})
+
+Deno.test('parseWaIdList: normalises formatting, drops junk', () => {
+  const s = parseWaIdList(' +972-54-123 4567 , 972500000000,, 123 ')
+  assertEquals([...s].sort(), ['972500000000', '972541234567'])
+  assertEquals(parseWaIdList(undefined).size, 0)
 })
