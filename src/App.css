@@ -663,7 +663,8 @@ tr:hover {
    All rules scoped under .origins-page. Semantic status colors are kept separate
    from the Minuto brand green so "needs attention" reads at a glance.
    ═══════════════════════════════════════════════════════════════════════════════ */
-.origins-page {
+.origins-page,
+.omenu-portal {
   --o-forest: var(--minuto-dark);
   --o-green:  var(--minuto-medium);
   --o-sage:   var(--minuto-light);
@@ -798,7 +799,7 @@ tr:hover {
 .origins-page .oico:hover { background: var(--o-cream); color: var(--o-forest); border-color: var(--o-border-2); }
 .okebab { position: relative; }
 .omenu-backdrop { position: fixed; inset: 0; z-index: 30; }
-.omenu { position: absolute; inset-inline-end: 0; top: 36px; background: var(--o-surface); border: 1px solid var(--o-border-2); border-radius: 10px; box-shadow: var(--shadow-hover); padding: 5px; min-width: 150px; z-index: 40; }
+.omenu { position: fixed; background: var(--o-surface); border: 1px solid var(--o-border-2); border-radius: 10px; box-shadow: var(--shadow-hover); padding: 5px; min-width: 150px; z-index: 40; }
 .omenu button { display: flex; align-items: center; gap: 9px; width: 100%; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--minuto-text); background: transparent; border: none; padding: 8px 10px; border-radius: 7px; cursor: pointer; text-align: right; }
 .omenu button svg { color: var(--o-mut); }
 .omenu button:hover { background: var(--o-surface-2); }
@@ -1341,7 +1342,6 @@ tr:hover {
   color: var(--minuto-medium);
   margin-bottom: 9px;
 }
-.rar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
 .rar-load {
   margin-inline-start: auto;
   font-family: inherit; font-size: 11.5px; font-weight: 700;
@@ -1353,6 +1353,7 @@ tr:hover {
 .rar-load:hover:not(:disabled) { background: var(--minuto-cream); }
 .rar-load:disabled { opacity: .55; cursor: default; }
 
+.rar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
 .rar-grid > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .rar-grid span { font-size: 12px; color: #5C6B4A; }
 .rar-grid b { font-size: 13.5px; font-weight: 700; color: var(--minuto-text); font-variant-numeric: tabular-nums; }
