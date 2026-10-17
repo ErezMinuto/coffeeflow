@@ -102,6 +102,19 @@ export function classifyByName(name: string): BrandVerdict {
   return 'neutral'
 }
 
+// ── Captions ─────────────────────────────────────────────────────────────
+// Prose stays open (see the note on topic freedom): green coffee may be
+// mentioned educationally, and Toddy is fine next to a Minuto roast. The one
+// thing a caption must never do is name the reseller brand, which competes
+// with our own roast. Matched as a whole word, with the Hebrew one-letter
+// prefixes (ו ה ב ל מ ש כ), so "קונטור" or "ונטוס" never trip it.
+const RE_RESELLER_WORD = /\bveneto\b|(?:^|[^֐-׿])[והבלמשכ]?ונטו(?=$|[^֐-׿])/i
+
+/** True when the text names Veneto, the reseller brand Minuto never promotes. */
+export function namesResellerBrand(text: string | null | undefined): boolean {
+  return RE_RESELLER_WORD.test(String(text ?? ''))
+}
+
 export interface BrandIndexEntry { name: string; categories: string[] | null }
 
 // A classifier bound to the live catalog. Build once per run and reuse — it

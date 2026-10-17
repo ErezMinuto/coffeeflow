@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { marked } from 'https://esm.sh/marked@12.0.0'
 
 // Push an AI-drafted blog post to WordPress as a DRAFT (status='draft').
@@ -42,6 +43,9 @@ serve(async (req) => {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  // It creates posts on the live site, and honours status:'publish' from the body,
+  // so only another function may call it (the writer worker sends the service key).
+  if (!(await isServiceCaller(req))) return unauthorized(corsHeaders)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405, corsHeaders)
 
   if (!WP_USERNAME || !WP_APP_PASSWORD) {

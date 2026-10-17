@@ -15,6 +15,7 @@
 // a mission runs hands-off WITHOUT ever publishing live without the admin.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import {
   callClaude,
@@ -299,6 +300,9 @@ const TOOLS: ToolDefinition[] = [
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS)
   if (req.method !== 'POST')    return json({ error: 'POST only' }, 405)
 
   const workerId = `mission-${crypto.randomUUID().slice(0, 8)}`

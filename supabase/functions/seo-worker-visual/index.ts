@@ -63,6 +63,7 @@
 // and the QA ladder no longer degrades them to bagless images.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -109,6 +110,9 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const workerId = `visual-${crypto.randomUUID().slice(0, 8)}`

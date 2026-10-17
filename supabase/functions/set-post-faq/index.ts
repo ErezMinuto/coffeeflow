@@ -26,6 +26,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 
 const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
 const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''
@@ -80,6 +81,9 @@ async function resolvePostIdFromUrl(url: string): Promise<number | null> {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
+  // It writes FAQ blocks onto the live site, so only another function may call it
+  // (the admin chat sends the service key).
+  if (!(await isServiceCaller(req))) return unauthorized(cors)
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
 
   if (!WP_USERNAME || !WP_APP_PASSWORD) {

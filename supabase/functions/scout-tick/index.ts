@@ -24,6 +24,7 @@
 //   6. VoC pattern spike (new pattern with frequency ≥3 in 24h)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callClaude, MODEL_SCOUT, parseClaudeJson } from '../seo-agent/claude.ts'
 import { getSystemConfig } from '../seo-agent/db.ts'
@@ -66,6 +67,9 @@ interface UrgentSignal {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)

@@ -25,6 +25,7 @@
 // fail the whole run because one provider is unconfigured.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { CLAUDE_MODEL, claudeBody, claudeHeaders } from '../_shared/claude.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -73,6 +74,9 @@ const MAX_RESPONSE_CHARS = 8000
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   // Body params (all optional for cron use):
