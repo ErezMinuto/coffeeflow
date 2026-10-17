@@ -29,6 +29,7 @@
 //     and is iterated in a dedicated prompt-tuning session.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { WRITER_SYSTEM_PROMPT } from '../seo-agent/prompts/writer.ts'
 import { callClaude, parseClaudeJson, MODEL_WRITER } from '../seo-agent/claude.ts'
 import { checkKeywordCannibalization } from '../seo-agent/cannibalizationCheck.ts'
@@ -43,6 +44,8 @@ import type { TextGenerationBrief, SeoTaskRow } from '../seo-agent/types.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+// blog-publish accepts only the service role.
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -59,6 +62,9 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const workerId = `writer-${crypto.randomUUID().slice(0, 8)}`
@@ -203,8 +209,8 @@ serve(async (req: Request): Promise<Response> => {
       method:  'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${ANON_KEY}`,
-        apikey: ANON_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
       },
       body: JSON.stringify({
         title:            title,
@@ -228,22 +234,33 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ── 8. Mark completed ───────────────────────────────────────────────
-    await markTaskCompleted(supabase, task.id, {
-      wp_post_id: pubJson.id,
-      edit_url:   pubJson.edit_url,
-      link:       pubJson.link,
-      status:     pubJson.status,
-      title,
-      slug,
-      keyword:    brief.keyword,
-      warnings:   pubJson.warnings,
-      tokens: {
-        input:      claudeRes.inputTokens,
-        output:     claudeRes.outputTokens,
-        cache_read: claudeRes.cacheReadTokens,
-      },
-      completed_at: new Date().toISOString(),
-    })
+    // The draft now exists in WordPress. If recording that fails, the generic
+    // catch below would mark the task retryable, and the retry would be blocked
+    // by the cannibalization check against its OWN draft, reported as a
+    // conflict. Fail it permanently instead, naming the draft that was made.
+    try {
+      await markTaskCompleted(supabase, task.id, {
+        wp_post_id: pubJson.id,
+        edit_url:   pubJson.edit_url,
+        link:       pubJson.link,
+        status:     pubJson.status,
+        title,
+        slug,
+        keyword:    brief.keyword,
+        warnings:   pubJson.warnings,
+        tokens: {
+          input:      claudeRes.inputTokens,
+          output:     claudeRes.outputTokens,
+          cache_read: claudeRes.cacheReadTokens,
+        },
+        completed_at: new Date().toISOString(),
+      })
+    } catch (markErr: any) {
+      const msg = `draft ${pubJson.id} was created in WordPress (${pubJson.edit_url ?? pubJson.link ?? 'no url'}) but the task could not be marked completed: ${markErr?.message ?? markErr}. Do not re-queue; review the draft.`
+      console.error(`[seo-worker-writer] ✗ task=${task.id} ${msg}`)
+      try { await markTaskFailed(supabase, task.id, msg, true) } catch { /* lock expiry is the last resort */ }
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, wp_post_id: pubJson.id, failed: true, permanent: true, error: msg }, 200)
+    }
 
     console.log(`[seo-worker-writer] ✓ task=${task.id} wp_id=${pubJson.id} edit_url=${pubJson.edit_url}`)
     return jsonResponse({

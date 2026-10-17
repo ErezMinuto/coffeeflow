@@ -35,6 +35,7 @@
 //    the writer + visual workers). attempts>=max_attempts flips to 'failed'.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -43,6 +44,7 @@ import {
 } from '../seo-agent/db.ts'
 import type { SeoTaskRow, InstagramPostBrief } from '../seo-agent/types.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { namesResellerBrand } from '../seo-agent/services/brandGuard.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -169,6 +171,9 @@ async function fetchExperimentArmContext(
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const workerId = `ig-${crypto.randomUUID().slice(0, 8)}`
@@ -206,6 +211,13 @@ serve(async (req) => {
   if (!caption_he) {
     await safeMarkFailed(supabase, task, 'caption_he is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption_he missing' })
+  }
+  // Brand rule in code, not only in the prompt: the planners screen products,
+  // but the caption is free text written later, so it is checked here before
+  // anything reaches Meta. Narrow on purpose (see namesResellerBrand).
+  if (namesResellerBrand(caption_he) || hashtags.some((h) => namesResellerBrand(String(h)))) {
+    await safeMarkFailed(supabase, task, 'brand guard: the caption or hashtags name Veneto, a reseller brand Minuto never promotes', true)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brand guard blocked caption' })
   }
   // Worker handles feed_image (regular post), story (9:16 ephemeral), and
   // feed_carousel (multi-slide — the paired visual task renders the slides).

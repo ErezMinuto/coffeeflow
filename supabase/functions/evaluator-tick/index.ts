@@ -17,6 +17,7 @@
 // same write path. This is a thin wrapper.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
@@ -38,6 +39,9 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)

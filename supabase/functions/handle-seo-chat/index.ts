@@ -21,6 +21,7 @@
 //     messages array.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
 import {
   callClaude,
@@ -74,6 +75,9 @@ function jsonResponse(body: unknown, status = 200): Response {
 // Supabase URL with the function-invoke anon key.
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+// Workers, set-post-faq and blog-publish accept only the service role, so the
+// calls this chat makes to them carry it.
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 // WP credentials for the approve_qa_attempt tool. Same env vars
 // seo-worker-visual + blog-publish use — single source of truth.
 const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
@@ -158,7 +162,7 @@ async function nudgeWorker(workerKey: keyof typeof WORKER_REGISTRY, opts?: { awa
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/${reg.url_path}`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
       body:    '{}',
       signal:  ctrl.signal,
     })
@@ -1092,7 +1096,7 @@ async function executeTool(
         }
         const res = await fetch(`${SUPABASE_URL}/functions/v1/set-post-faq`, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
           body:    JSON.stringify({ post_url: post_url || undefined, post_id, faq: faqInput }),
         })
         const json = await res.json().catch(() => ({})) as Record<string, unknown>
@@ -1147,7 +1151,7 @@ async function executeTool(
         // Write live via set-post-faq (same path as the manual tool).
         const res = await fetch(`${SUPABASE_URL}/functions/v1/set-post-faq`, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
           body:    JSON.stringify({ post_id: rd.target_post_id, post_url: rd.target_post_url, faq }),
         })
         const wj = await res.json().catch(() => ({})) as Record<string, unknown>
@@ -2519,6 +2523,10 @@ function groupLearningsForPrompt(rows: LearningRow[]): string {
 // ── HTTP entry point ───────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
+  // The admin chat's tools publish to Instagram, write FAQs to the live site,
+  // change system_config and dispatch the fixer, so only an admin may drive it.
+  // The gateway's verify_jwt alone still admits the public anon key.
+  if (req.method !== 'OPTIONS' && !(await hasRole(req, ['admin']))) return forbidden(CORS_HEADERS)
   // ── Gemini probe (READ-ONLY diagnostic) ───────────────────────────────────
   // Flipping MODEL_CHAT to Gemini produced success:true with a fallback reply,
   // zero tokens and NO cost-ledger row — i.e. the call threw before logCost.

@@ -11,6 +11,7 @@ import {
   buildBrandIndex,
   screenProductList,
   screenHeroProduct,
+  namesResellerBrand,
   type BrandIndexEntry,
 } from './brandGuard.ts'
 
@@ -195,4 +196,19 @@ Deno.test('a missing product_name is left to the worker to validate', () => {
   const idx = buildBrandIndex(CATALOG)
   assertEquals(screenHeroProduct('', idx).ok, true)
   assertEquals(screenHeroProduct(undefined, idx).ok, true)
+})
+
+Deno.test('a caption naming Veneto is caught, in Hebrew or Latin', () => {
+  assert(namesResellerBrand('פולי קפה ונטו במבצע'))
+  assert(namesResellerBrand('נסו את Veneto Delux'))
+  assert(namesResellerBrand('בונטו יש טעם אחר'))
+  assert(namesResellerBrand('VENETO.'))
+})
+
+Deno.test('a caption mentioning green coffee, green apple or Toddy is left alone', () => {
+  assertEquals(namesResellerBrand('מה ההבדל בין קפה ירוק לקלוי? תפוח ירוק בסיומת'), false)
+  assertEquals(namesResellerBrand('קולד ברו בטודי עם האתיופי שלנו'), false)
+  assertEquals(namesResellerBrand('קונטור של טעם, ונטוס הוא לא מילה'), false)
+  assertEquals(namesResellerBrand(''), false)
+  assertEquals(namesResellerBrand(undefined), false)
 })

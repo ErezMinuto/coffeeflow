@@ -18,6 +18,7 @@
 // is the authoring half; the admin is the gate.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -54,6 +55,9 @@ OUTPUT: strict JSON only, no preamble:
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  // Only cron and other functions run this. The gateway's verify_jwt still admits
+  // the public anon key, so the caller is checked here.
+  if (!(await isServiceCaller(req))) return unauthorized(CORS_HEADERS)
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
   const workerId = `techseo-${crypto.randomUUID().slice(0, 8)}`
