@@ -85,18 +85,25 @@ COMPOSITION RULES — STRICTLY ENFORCED:
   shadow, blurred wall, etc.).
 - Asymmetric balance — heavy element on one side, breathing space on the
   other. Like a Wabi-sabi still-life painting.
-- Subject occupies a SCENE — it is one element among several considered
-  objects. Never an isolated hero shot. Never a centered floating product.
+- Subject occupies a RESTRAINED SCENE — at most one or two supporting
+  objects, and only when they earn their place (a cup the drink implies, a
+  few loose beans). When in doubt, leave it out: an uncluttered frame with
+  the product and quiet empty surface is the preferred result, not a
+  fallback. Never a centered floating product.
 
 PALETTE: Earth tones ONLY. Deep brown, raw concrete grey, dusty olive,
 cream, tan, warm amber, charcoal black. No saturated reds, blues, yellows,
 or greens. The only allowed splash of saturated color is whatever appears
 on the Minuto bag's center label, kept small in the frame.
 
-SURFACE: Textured natural materials only. Raw concrete with visible
-imperfections, weathered dark walnut or oak, unglazed ceramic with kiln
-marks, raw lime plaster, hand-thrown earthenware. NEVER glossy white
-modern, NEVER marble, NEVER seamless paper backdrops, NEVER white walls.
+SURFACE: Textured natural materials only, kept CALM AND EVEN. Smooth
+poured concrete, fine-sanded walnut or oak, unglazed ceramic, smooth lime
+plaster, hand-thrown earthenware. The texture must read as a quiet matte
+grain at normal viewing distance — NOT cracks, chips, pitting, gouges,
+heavy trowel marks, kiln scarring, stains or rubble. Think a calm plaster
+wall, not a demolition site. The surface is a backdrop, never a subject
+competing with the product. NEVER glossy white modern, NEVER marble,
+NEVER seamless paper backdrops, NEVER white walls.
 
 SUBJECT VOCABULARY: Coffee bags (sized as an element, not the hero),
 small unglazed ceramic cups with raw edges (for espresso/cappuccino),
@@ -355,6 +362,15 @@ ABSOLUTELY FORBIDDEN — image fails if it contains any of these:
 - Saturated colors outside the bag's small label
 - Softbox lighting, glossy reflections, studio lighting
 - White walls, white seamless paper, marble, glossy surfaces
+- Damaged or distressed SURFACES AND BACKGROUNDS — cracks, chips, pitting,
+  gouges, crumbling edges, rubble, heavy stains, rust, peeling paint, deep
+  trowel scarring. Texture is a quiet matte grain, never visible damage.
+  (This applies to surfaces and backdrops ONLY. It does NOT apply to the
+  coffee beans themselves — the bean's centre crease from roasting is a
+  required detail and must still be rendered.)
+- Cluttered or busy frames — more than two supporting objects beside the
+  primary subject, scattered debris, stacked or overlapping props, or any
+  background element detailed enough to pull the eye off the product.
 - Text, letters, words, numbers, watermarks (EXCEPT the Minuto wordmark, the
   stag-head emblem, the origin/blend name printed on the bag's center
   label, and the "COFFEE-TECH ENGINEERING" plate on the roaster — those
@@ -397,7 +413,7 @@ export const SCENE_PRESETS: Record<string, string> = {
     'from the upper-left edge holding a TALL CYLINDRICAL HARIO RANGE SERVER ' +
     '(straight glass walls, flat horizontal handle, much larger than a milk ' +
     'pitcher), tilted forward, pouring a thin amber stream into a small ' +
-    'unglazed ceramic cup with raw edges sitting on a dark weathered walnut ' +
+    'unglazed ceramic cup with raw edges sitting on a smooth dark walnut ' +
     'table. Visible soft steam curls upward. The right half of the frame is ' +
     'mostly negative space — deep shadow, with a single Minuto coffee bag ' +
     'in the lower-right third, soft and slightly out of focus. Single hard ' +
@@ -406,7 +422,7 @@ export const SCENE_PRESETS: Record<string, string> = {
 
   origin_still:
     'A SCENE around a single Minuto coffee bag positioned in the upper-right ' +
-    'third of the frame, standing on a raw lime plaster surface. The bag is ' +
+    'third of the frame, standing on a smooth lime plaster surface. The bag is ' +
     'side-lit hard from the right, casting a long sharp shadow that extends ' +
     'fully across to the left edge of the frame — the shadow is part of the ' +
     'composition, not an accident. In the lower-left third: a small pile of ' +
@@ -417,7 +433,7 @@ export const SCENE_PRESETS: Record<string, string> = {
     'Almost monochromatic earth palette. Kodak Portra grain.',
 
   brewing_setup:
-    'A SCENE on a weathered dark walnut counter at morning. The pour-over ' +
+    'A SCENE on a smooth dark walnut counter at morning. The pour-over ' +
     'rig sits in the LEFT half of the frame: a porcelain V60 dripper on top ' +
     'of a TALL CYLINDRICAL HARIO GLASS SERVER (straight walls, flat handle), ' +
     'fresh coffee blooming at the start of the bloom — visible bubbles. A ' +
