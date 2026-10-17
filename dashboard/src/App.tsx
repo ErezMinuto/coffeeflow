@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
-import { SignIn, useUser } from '@clerk/clerk-react'
+import { SignIn, useAuth, useUser } from '@clerk/clerk-react'
+import { setClerkTokenGetter } from './lib/supabase'
 import { Sidebar } from './components/shared/Sidebar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import MetaOrganicPage from './pages/MetaOrganic'
@@ -79,6 +80,16 @@ function Page({ name, children }: { name: string; children: React.ReactNode }) {
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser()
+  const { getToken } = useAuth()
+
+  // Set during render, not in an effect: children's effects run before this
+  // component's, so an effect would let the first data fetches go out without
+  // the user's token. Assigning a module variable is idempotent and safe here.
+  setClerkTokenGetter(
+    isLoaded && isSignedIn
+      ? async () => (await getToken({ template: 'supabase' })) ?? null
+      : null,
+  )
 
   if (!isLoaded) {
     return (
