@@ -27,7 +27,7 @@ PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
 CLI_VERSION="2.98.1"
 
 # CLAUDE.md: these must always be deployed with --no-verify-jwt.
-NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor"
+NO_VERIFY_JWT="coffee-bot employee-bot telegram-bot clerk-user-lookup marketing-advisor whatsapp-bot"
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
   echo "deploy-functions: SUPABASE_ACCESS_TOKEN is not set." >&2

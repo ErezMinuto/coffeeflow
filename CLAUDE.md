@@ -64,7 +64,7 @@ This applies all migrations and seeds test data.
 
 ## Bot Architecture — DO NOT CHANGE
 
-There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase Edge Function.
+There are exactly **3 Telegram bots + 1 WhatsApp bot**. Each bot has **one** dedicated Supabase Edge Function.
 **Never merge responsibilities. Never create new bots. Never move logic between functions.**
 
 | Bot | Username | Edge Function | Responsibility |
@@ -72,11 +72,13 @@ There are exactly **3 Telegram bots**. Each bot has **one** dedicated Supabase E
 | Minuto Coffee Alerts | @minuto_coffee_bot | `coffee-bot` | Packing reports (private messages from employees) |
 | Minuto Team Bot | @minuto_team_bot | `employee-bot` | Work schedules & availability (private + group) |
 | CoffeeFlow Tasks | (tasks bot) | `telegram-bot` | Waiting customers & task management (group only) |
+| Minuto WhatsApp Advisor | (WhatsApp Business number) | `whatsapp-bot` | Customer-facing coffee advisor for click-to-WhatsApp ad leads |
 
 ### Per-function rules
 - **coffee-bot**: `/stock` and free-text packing reports only. Deducts `roasted_stock`, increments `packed_stock`, logs to `packing_logs`. Uses `COFFEE_BOT_TOKEN`. No task or schedule logic.
 - **employee-bot**: Name registration, availability submissions, weekly schedule reminders only. Uses `TELEGRAM_BOT_TOKEN`. No packing or task logic.
 - **telegram-bot**: `/tasks`, `/done`, free-text customer requests in group chat only. Uses `TELEGRAM_BOT_TOKEN`. **No packing, no stock, no schedule logic.**
+- **whatsapp-bot**: Customer-facing coffee advisor for click-to-WhatsApp ad leads: asks taste preferences, recommends Minuto roasted coffee from the live catalog (Gemini). Uses `WHATSAPP_*` secrets. Verifies Meta's `X-Hub-Signature-256` on every POST (deployed `--no-verify-jwt`, so the HMAC is its only auth). No packing, stock, schedule or task logic.
 
 ---
 
@@ -206,6 +208,10 @@ unreachable with the anon key.
 | `GOOGLE_MERCHANT_ID` | google-ads-draft (Performance Max product feed) |
 | `GOOGLE_MAX_DAILY_BUDGET_ILS` | google-ads-draft (default 100) |
 | `GOOGLE_MONTHLY_BUDGET_ILS` | google-ads-draft (default 3500) |
+| `WHATSAPP_APP_SECRET` | whatsapp-bot (Meta app secret, verifies X-Hub-Signature-256) |
+| `WHATSAPP_VERIFY_TOKEN` | whatsapp-bot (webhook GET handshake, any random string) |
+| `WHATSAPP_ACCESS_TOKEN` | whatsapp-bot (system-user token with whatsapp_business_messaging) |
+| `WHATSAPP_PHONE_NUMBER_ID` | whatsapp-bot (sending number's Cloud API id) |
 | `SUPABASE_SERVICE_ROLE_KEY` | all functions (auto-injected) |
 
 **Critical**: Use the JWT-format service role key (starts with `eyJ`). The `sb_secret_*` format breaks PostgREST UPDATE/INSERT.
@@ -220,7 +226,7 @@ unreachable with the anon key.
 ```
 
 Functions that MUST always be deployed with `--no-verify-jwt`:
-- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`
+- `coffee-bot`, `employee-bot`, `telegram-bot`, `clerk-user-lookup`, `marketing-advisor`, `google-ads-draft`, `whatsapp-bot`
 
 > The `--no-verify-jwt` flag replaces the old curl PATCH workaround. No post-deploy patching needed.
 

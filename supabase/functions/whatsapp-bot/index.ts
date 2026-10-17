@@ -1,0 +1,258 @@
+// Minuto WhatsApp Advisor — Meta WhatsApp Cloud API webhook.
+//
+// Customers arrive from a click-to-WhatsApp ad for black/Turkish coffee. The
+// bot asks about their taste and recommends Minuto roasted coffee from the
+// live catalog, using Gemini. CLAUDE.md "Bot Architecture" fixes its scope:
+// no packing, stock, schedule or task logic lives here.
+//
+//   GET  ?hub.mode=subscribe&hub.verify_token=…&hub.challenge=…  → handshake
+//   POST (Meta-signed)                                            → messages
+//
+// AUTH. Deployed --no-verify-jwt, so verifyMetaSignature is the only gate.
+// Unsigned or wrongly signed POSTs get 401 before anything else runs, and an
+// unset WHATSAPP_APP_SECRET refuses everything (fails closed).
+//
+// TIMING. Meta retries a webhook that does not answer 200 promptly, so the
+// handler acknowledges at once and replies in EdgeRuntime.waitUntil. Retries
+// that still arrive are dropped by the unique wa_message_id in
+// whatsapp_messages: a message is answered at most once.
+//
+// Secrets (supabase secrets set, never in chat): WHATSAPP_APP_SECRET,
+// WHATSAPP_VERIFY_TOKEN, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID,
+// GEMINI_API_KEY. Optional: WHATSAPP_MODEL (default gemini-2.5-flash).
+
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { createLogger, type Logger } from '../_shared/logger.ts'
+import {
+  formatCatalog,
+  isOffBrand,
+  maskWaId,
+  MINUTO_COFFEE_CATEGORIES,
+  parseInbound,
+  splitForWhatsApp,
+  toGeminiContents,
+  verifyHandshake,
+  verifyMetaSignature,
+  type CatalogProduct,
+  type InboundMessage,
+  type StoredMessage,
+} from './lib.ts'
+import { buildSystemPrompt } from './prompt.ts'
+
+const FN = 'whatsapp-bot'
+
+const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') ?? ''
+const SERVICE_ROLE     = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const APP_SECRET       = Deno.env.get('WHATSAPP_APP_SECRET') ?? ''
+const VERIFY_TOKEN     = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? ''
+const ACCESS_TOKEN     = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? ''
+const PHONE_NUMBER_ID  = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? ''
+const GEMINI_API_KEY   = Deno.env.get('GEMINI_API_KEY') ?? ''
+// Verified against the live model list on 2026-10-17. Ids are not guessable
+// from marketing names (see seo-agent/claude.ts), so check before overriding.
+const MODEL            = Deno.env.get('WHATSAPP_MODEL')?.trim() || 'gemini-2.5-flash'
+// Overridable only so the local end-to-end harness can stand in for Meta.
+const GRAPH_BASE       = Deno.env.get('WHATSAPP_GRAPH_BASE') || 'https://graph.facebook.com/v23.0'
+
+const HISTORY_LIMIT    = 30      // messages of context per reply
+const HISTORY_DAYS     = 7       // an older conversation starts fresh
+const DAILY_REPLY_CAP  = 40      // per customer; bounds Gemini spend if someone loops the bot
+
+// Customer-facing fallbacks. Gender-inclusive, no em dashes.
+const UNSUPPORTED_TYPE_REPLY = 'כרגע אפשר לענות כאן רק על הודעות טקסט. אפשר לכתוב לנו במילים?'
+const ERROR_REPLY = 'סליחה, משהו השתבש אצלנו. אפשר לנסות שוב בעוד רגע.'
+
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url)
+
+  if (req.method === 'GET') {
+    const challenge = verifyHandshake(url.searchParams, VERIFY_TOKEN)
+    return challenge === null
+      ? new Response('forbidden', { status: 403 })
+      : new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } })
+  }
+
+  if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
+
+  // Raw bytes first: the signature is over exactly what Meta sent.
+  const raw = new Uint8Array(await req.arrayBuffer())
+  if (!(await verifyMetaSignature(APP_SECRET, req.headers.get('x-hub-signature-256'), raw))) {
+    return new Response('invalid signature', { status: 401 })
+  }
+
+  let payload: unknown
+  try { payload = JSON.parse(new TextDecoder().decode(raw)) }
+  catch { return new Response('bad json', { status: 400 }) }
+
+  // Ignore traffic for any other number on the same WhatsApp Business Account.
+  const messages = parseInbound(payload).filter(m => !PHONE_NUMBER_ID || m.phoneNumberId === PHONE_NUMBER_ID)
+  if (!messages.length) return json({ ok: true, messages: 0 })   // status callbacks, other numbers
+
+  const log = createLogger(FN)
+  const work = handleMessages(messages, log)
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(work)
+  else await work   // local `deno run`: no waitUntil, finish before answering
+  return json({ ok: true, messages: messages.length, run_id: log.runId })
+})
+
+async function handleMessages(messages: InboundMessage[], log: Logger): Promise<void> {
+  try {
+    if (!ACCESS_TOKEN || !PHONE_NUMBER_ID || !GEMINI_API_KEY) {
+      log.error('config.missing', 'whatsapp-bot is missing secrets', {
+        access_token: !!ACCESS_TOKEN, phone_number_id: !!PHONE_NUMBER_ID, gemini: !!GEMINI_API_KEY,
+      })
+      await log.finish('error')
+      return
+    }
+    const sb = createClient(SUPABASE_URL, SERVICE_ROLE)
+    let replied = 0
+    for (const m of messages) {
+      if (await handleOne(sb, m, log)) replied++
+    }
+    await log.finish('success', { received: messages.length, replied })
+  } catch (err) {
+    log.error('run.fail', 'unhandled error', {}, err)
+    await log.finish('error')
+  }
+}
+
+/** Returns true when a reply was sent. */
+async function handleOne(sb: SupabaseClient, m: InboundMessage, log: Logger): Promise<boolean> {
+  const who = maskWaId(m.waId)
+
+  // Claim the message. The unique index makes this the dedup for Meta retries.
+  const { data: claimed, error: claimErr } = await sb
+    .from('whatsapp_messages')
+    .upsert({
+      wa_message_id: m.waMessageId,
+      wa_id: m.waId,
+      direction: 'in',
+      msg_type: m.type,
+      body: m.text,
+      profile_name: m.profileName,
+      referral: m.referral,
+      run_id: log.runId,
+    }, { onConflict: 'wa_message_id', ignoreDuplicates: true })
+    .select('id')
+  if (claimErr) {
+    log.error('db.claim', 'could not store inbound message', { who }, claimErr)
+    return false
+  }
+  if (!claimed?.length) {
+    log.info('msg.duplicate', 'already handled, skipping', { who, wa_message_id: m.waMessageId })
+    return false
+  }
+  log.info('msg.in', 'inbound message', { who, type: m.type, from_ad: !!m.referral })
+
+  if (!m.text) return await send(sb, m.waId, UNSUPPORTED_TYPE_REPLY, log)
+
+  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  const { count } = await sb
+    .from('whatsapp_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('wa_id', m.waId).eq('direction', 'out').gte('created_at', since)
+  if ((count ?? 0) >= DAILY_REPLY_CAP) {
+    log.warn('msg.capped', 'daily reply cap reached, not replying', { who, count })
+    return false
+  }
+
+  let reply: string
+  try {
+    const [history, catalog] = await Promise.all([loadHistory(sb, m.waId), loadCatalog(sb)])
+    reply = await askGemini(buildSystemPrompt(formatCatalog(catalog)), history, log)
+  } catch (err) {
+    log.error('reply.fail', 'could not generate a reply', { who }, err)
+    reply = ERROR_REPLY
+  }
+  return await send(sb, m.waId, reply, log)
+}
+
+async function loadHistory(sb: SupabaseClient, waId: string): Promise<StoredMessage[]> {
+  const since = new Date(Date.now() - HISTORY_DAYS * 24 * 3600 * 1000).toISOString()
+  const { data, error } = await sb
+    .from('whatsapp_messages')
+    .select('direction, body')
+    .eq('wa_id', waId)
+    .gte('created_at', since)
+    .not('body', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(HISTORY_LIMIT)
+  if (error) throw new Error(`history: ${error.message}`)
+  return ((data ?? []) as StoredMessage[]).reverse()
+}
+
+async function loadCatalog(sb: SupabaseClient): Promise<CatalogProduct[]> {
+  const orFilter = MINUTO_COFFEE_CATEGORIES.map(c => `categories.cs.{"${c}"}`).join(',')
+  const { data, error } = await sb
+    .from('woo_products')
+    .select('name, price, permalink, stock_status, short_description, description')
+    .or(orFilter)
+    .order('name')
+  if (error) throw new Error(`catalog: ${error.message}`)
+  return ((data ?? []) as CatalogProduct[]).filter(p => !isOffBrand(p.name))
+}
+
+async function askGemini(system: string, history: StoredMessage[], log: Logger): Promise<string> {
+  const contents = toGeminiContents(history)
+  if (!contents.length) throw new Error('empty conversation')
+  const generationConfig: Record<string, unknown> = { temperature: 0.6, maxOutputTokens: 1024 }
+  // 2.5 models think by default and spend the output budget on it; a chat
+  // reply needs no thinking and should come back fast.
+  if (MODEL.startsWith('gemini-2.5')) generationConfig.thinkingConfig = { thinkingBudget: 0 }
+
+  const started = Date.now()
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(`gemini ${res.status}: ${JSON.stringify(body).slice(0, 500)}`)
+  const cand = body?.candidates?.[0]
+  const text = (cand?.content?.parts ?? []).map((p: any) => p?.text ?? '').join('').trim()
+  log.info('gemini.done', 'reply generated', {
+    model: MODEL, ms: Date.now() - started, finish: cand?.finishReason, usage: body?.usageMetadata,
+  })
+  if (!text) throw new Error(`gemini returned no text (finish=${cand?.finishReason})`)
+  return text
+}
+
+async function send(sb: SupabaseClient, waId: string, text: string, log: Logger): Promise<boolean> {
+  let sent = false
+  for (const chunk of splitForWhatsApp(text)) {
+    const res = await fetch(`${GRAPH_BASE}/${PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: waId,
+        type: 'text',
+        text: { body: chunk, preview_url: true },
+      }),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      log.error('wa.send', 'Cloud API rejected the reply', { who: maskWaId(waId), status: res.status, error: body?.error })
+      return sent
+    }
+    sent = true
+    const { error } = await sb.from('whatsapp_messages').insert({
+      wa_message_id: body?.messages?.[0]?.id ?? `out-${crypto.randomUUID()}`,
+      wa_id: waId,
+      direction: 'out',
+      msg_type: 'text',
+      body: chunk,
+      run_id: log.runId,
+    })
+    if (error) log.warn('db.out', 'reply sent but not stored', { who: maskWaId(waId) }, error)
+  }
+  if (sent) log.info('msg.out', 'reply sent', { who: maskWaId(waId), chars: text.length })
+  return sent
+}
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+}
