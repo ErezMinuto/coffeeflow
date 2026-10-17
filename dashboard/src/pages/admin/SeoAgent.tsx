@@ -5,17 +5,43 @@ import SeoTaskQueue from './SeoTaskQueue'
 import SeoChatThread from './SeoChatThread'
 import SeoMetricsPanel from './SeoMetricsPanel'
 import StrategicBriefPanel from './StrategicBriefPanel'
+import { supabase } from '../../lib/supabase'
 
 const SESSION_STORAGE_KEY = 'seo_agent_session_id'
+// Hardcoded mirror of seo-agent/briefingWriter.ts BRIEFING_SESSION_ID. That
+// feed is written BY the agent, so it never counts as a conversation the
+// admin started.
+const BRIEFING_SESSION_ID = 'briefings-system'
 
-function loadOrCreateSessionId(): string {
+function readCachedSessionId(): string | null {
+  try { return localStorage.getItem(SESSION_STORAGE_KEY) } catch { return null }
+}
+
+function cacheSessionId(id: string): void {
+  try { localStorage.setItem(SESSION_STORAGE_KEY, id) } catch { /* localStorage may be disabled */ }
+}
+
+// The conversation itself has always lived in chat_messages — but WHICH
+// session is "current" used to live only in this browser's localStorage. So a
+// laptop and a phone each minted their own UUID, rendered different threads,
+// and the agent (which loads history by session_id) had no memory of anything
+// said on the other device.
+//
+// Resolve the current session from the DB instead: the session of the most
+// recent non-briefing message, which is the same answer on every device.
+// localStorage is now only a fallback for when that query can't run.
+async function resolveSessionId(): Promise<string> {
   try {
-    const existing = localStorage.getItem(SESSION_STORAGE_KEY)
-    if (existing) return existing
-  } catch { /* localStorage may be disabled */ }
-  const fresh = crypto.randomUUID()
-  try { localStorage.setItem(SESSION_STORAGE_KEY, fresh) } catch { /* noop */ }
-  return fresh
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('session_id')
+      .neq('session_id', BRIEFING_SESSION_ID)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!error && data?.session_id) return data.session_id
+  } catch { /* offline — fall through to the local fallback */ }
+  return readCachedSessionId() ?? crypto.randomUUID()
 }
 
 type MobilePanel = 'tasks' | 'chat' | 'metrics'
@@ -37,13 +63,44 @@ export default function SeoAgent() {
   )
 
   useEffect(() => {
-    setSessionId(loadOrCreateSessionId())
+    let cancelled = false
+    async function adopt() {
+      const id = await resolveSessionId()
+      if (cancelled) return
+      cacheSessionId(id)
+      // Don't yank the view away from someone reading the briefings feed —
+      // "back to chat" reads the cache we just refreshed, so they land on the
+      // resolved session when they ask for it.
+      setSessionId(prev => (prev === BRIEFING_SESSION_ID ? prev : id))
+    }
+    adopt()
+    // Re-resolve when the tab returns to the foreground. Phones suspend
+    // background tabs, so without this you come back to a thread the laptop
+    // has since moved on from.
+    function onVisible() { if (document.visibilityState === 'visible') adopt() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
   }, [])
 
-  function newSession() {
+  async function newSession() {
     const fresh = crypto.randomUUID()
-    try { localStorage.setItem(SESSION_STORAGE_KEY, fresh) } catch { /* noop */ }
+    cacheSessionId(fresh)
     setSessionId(fresh)
+    // Write a marker row so the fresh session becomes the most-recent one in
+    // chat_messages — that is what makes the other devices follow us into it
+    // instead of resolving back to the thread we just left. handle-seo-chat
+    // skips role='system' rows when it rebuilds the model's history, so this
+    // costs the agent nothing.
+    await supabase.from('chat_messages').insert({
+      session_id: fresh,
+      role:       'system',
+      content:    'New session started.',
+    })
   }
 
   if (!sessionId) {
