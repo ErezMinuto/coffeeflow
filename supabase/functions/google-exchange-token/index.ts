@@ -14,7 +14,6 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    console.log('Received body:', JSON.stringify(body))
     const { code, redirect_uri } = body
 
     // Exchange code for tokens
@@ -31,7 +30,6 @@ serve(async (req) => {
     })
 
     const data = await res.json()
-    console.log('Token response:', JSON.stringify(data))
     if (data.error) throw new Error(data.error_description || data.error)
 
     const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString()

@@ -26,6 +26,24 @@ export function getDefaultDateRange(): DateRange {
   }
 }
 
+// OAuth `state`: a random value stored in this tab before the redirect and checked by the callback page, so a code
+// from a flow this tab did not start (a link someone else built) is refused instead of overwriting the stored token.
+const oauthStateKey = (platform: string) => `oauth_state_${platform}`
+
+function newOAuthState(platform: string): string {
+  const state = crypto.randomUUID()
+  sessionStorage.setItem(oauthStateKey(platform), state)
+  return state
+}
+
+// Returns true once per started flow: the stored value is removed on the first check.
+export function consumeOAuthState(platform: string, received: string | null): boolean {
+  const key = oauthStateKey(platform)
+  const expected = sessionStorage.getItem(key)
+  sessionStorage.removeItem(key)
+  return !!expected && !!received && expected === received
+}
+
 // Meta OAuth URL
 export function getMetaAuthUrl(): string {
   // Facebook Login for Business (FLB) uses a pre-created Configuration that
@@ -41,7 +59,7 @@ export function getMetaAuthUrl(): string {
     redirect_uri:  `${window.location.origin}/auth/meta/callback`,
     config_id:     '1481857106803912',
     response_type: 'code',
-    state:         crypto.randomUUID(),
+    state:         newOAuthState('meta'),
   })
   return `https://www.facebook.com/v18.0/dialog/oauth?${params}`
 }
@@ -55,7 +73,7 @@ export function getGoogleAuthUrl(): string {
     response_type: 'code',
     access_type: 'offline',
     prompt: 'consent',
-    state: crypto.randomUUID(),
+    state: newOAuthState('google'),
   })
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`
 }
