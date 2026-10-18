@@ -71,7 +71,7 @@ import {
   markTaskFailed,
   insertTasks,
 } from '../seo-agent/db.ts'
-import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson } from '../seo-agent/claude.ts'
+import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson, type MessageContentBlock } from '../seo-agent/claude.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
@@ -394,6 +394,7 @@ serve(async (req) => {
         renderMode:  workingRenderMode,
         productName: brief.product_name,
         realPhoto:   !!rendered.raw.real_photo,
+        ...critiqueContext(rendered.raw),
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -981,6 +982,7 @@ async function renderCarouselSlideWithQA(
         renderMode:  slideMode,
         productName: slideMode === 'bag_hero' ? productName : undefined,
         realPhoto:   !!bg.raw.real_photo,
+        ...critiqueContext(bg.raw),
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -1058,19 +1060,21 @@ const VISUAL_EVAL_SYSTEM_PROMPT = `You are a strict visual QA agent for Minuto's
 
 You are STRICT on subject completeness. If the brief named multiple concrete subjects (e.g. "espresso machine" AND "coffee bag"), all of them must appear in frame. Missing a named subject is a hard FAIL even if the image is otherwise beautiful.
 
-You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish".
+You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish". The real bag's lockup is the stag-head emblem, the "MINUTO" wordmark and the line "Café Roastery" directly beneath it: all three are correct and must never be flagged.
 
 You are LENIENT on small fine print. The tiny descriptor / fine-print lines below the product name are intentionally rendered as SOFT, shallow-depth-of-field, out-of-focus text — that is correct real-photography behaviour, NOT a defect. Do NOT fail an image because the small fine print is blurred or unreadable-because-soft. ONLY fail fine print if it is rendered SHARP and clearly in focus yet is still garbled nonsense. (Incidental background text is always exempt — this rule is about the hero bag.)
 
 You are STRICT on PHYSICAL REALISM. Judge the image the way a professional barista scrolling Instagram would: anything that could not exist in a real photo of a real cafe is a hard FAIL, even if the brief is otherwise satisfied. Check specifically:
   • Espresso machine anatomy — a steam wand, pipe or handle growing out of a group head or portafilter; more than one portafilter per group; parts floating, merged or attached to nothing; an invented panel, shield or cover (e.g. a translucent blue/green/white plate hanging beside the group head). Minuto's Strada X has clear glass ONLY as its large outer side window at the far end of the machine — never as a small piece next to the portafilter.
   • Liquid physics — coffee or milk coming from anywhere other than portafilter spouts or a hand-held pitcher; streams that miss the cup or defy gravity.
-  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object.
+  • Espresso context — a portafilter is only ever locked into an espresso machine's group head. Espresso pouring from a portafilter with no machine body around it, a portafilter hovering over a table, or a cup being filled from a portafilter while it stands on a table or counter instead of the machine's drip-tray grate, is a hard FAIL (even if the brief asked for the cup "on a wood surface").
+  • Support and gravity — every object rests on something or is held. A kettle, pitcher, portafilter, grinder, scoop or other tool floating in mid-air, or pouring with nothing holding it, is a hard FAIL. A tool being operated must be held the way a person would hold it: a hand-grinder crank turned while the grinder body is not gripped by the other hand, a kettle pouring with no hand on the handle.
+  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object, or a disembodied hand or forearm that enters the frame at an angle no attached arm could reach from (e.g. a flat hand sliding in from the top edge). Hands must look like a real person standing just out of frame.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
   • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt.
 Name each defect concretely in "issues" (what and where), so the next render can avoid it.
 
-You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine.
+You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine. When the message starts with a SURFACE OVERRIDE, the surface material is out of scope: never fail or list an issue because the surface is not the material the brief names.
 
 Output STRICT JSON (no markdown fences, no preamble):
 {
@@ -1088,40 +1092,44 @@ async function evaluateVisual(args: {
   renderMode:  'no_bag' | 'bag_hero'
   productName?: string
   realPhoto?:  boolean
+  // The real bag photo the renderer was given (visual-test's bag_url). When
+  // present the label is judged against THIS, not against productName:
+  // productName is the WooCommerce catalog title ("פולי קפה טרי 100% ערביקה
+  // - Minuto Dark Chocolate"), which is not what the bag prints ("Dark
+  // Chocolate"). Comparing to the title failed correct bags.
+  bagRefUrl?:  string
+  // The surface visual-test chose (pickSurface), which deliberately overrides
+  // any surface the brief names — so the brief's surface must not be judged.
+  surface?:    string
 }): Promise<VisualCritique> {
-  const userText = `BRIEF (render_mode=${args.renderMode}${args.productName ? `, product_name="${args.productName}"` : ''}):
+  const bagRef = args.renderMode === 'bag_hero' && args.bagRefUrl ? args.bagRefUrl : undefined
+  const userText = `${args.surface ? `SURFACE OVERRIDE: the renderer was ordered to place this scene on ${args.surface}, replacing any surface, table or counter material the brief below names. Ignore the brief's surface material completely: a surface that differs from the brief is CORRECT, never an issue and never missing.
+
+` : ''}BRIEF (render_mode=${args.renderMode}${args.productName ? `, product_name="${args.productName}"` : ''}):
 
 ${args.sceneBrief}
-${args.realPhoto ? `
+${args.renderMode === 'bag_hero' && args.productName ? `
+NOTE ON THE PRODUCT NAME: product_name above is the online-store catalog title, NOT the text printed on the bag. The real bag prints a shorter name (e.g. the catalog title "פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate" is printed on the bag as just "Dark Chocolate"). Never fail the bag because it does not show the full catalog title.${bagRef ? ' The SECOND attached image is a photo of the REAL bag: judge the rendered label against THAT photo. Text that appears on the real bag is correct; fail only text that is garbled, misspelled, or not on the real bag.' : ''}
+` : ''}${args.realPhoto ? `
 NOTE: this image is an EDIT of a real photograph of Minuto's own bar/roastery (reframed and relit). The equipment, people, cups and existing signage/logos are REAL — do not fail it for how the real machine looks or for real, correctly-spelled signage, menu boards or cup logos that were in the photo, and do not require equipment details the brief describes differently. DO still fail anything added by the edit that is unrealistic (e.g. an impossible liquid stream, an invented bag or product, warped/duplicated equipment at the extended edges).
 ` : ''}
-Evaluate the attached image against this brief. Output strict JSON only.`
+Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output strict JSON only.`
 
-  const res = await callClaude({
-    sourceFn: 'seo-worker-visual',
-    // SELF-CRITIQUE BLIND SPOT — watch this one. The image is GENERATED by
-    // Gemini (vertex-imagen-edit / visual-test, both already 100% Gemini).
-    // Today a different vendor judges it, which is a large part of why this
-    // loop catches anything at all. Pointing this slot at Gemini makes the
-    // same family both author and grader. Before trusting a quality jump,
-    // compare the first-attempt passes:true rate against the Claude baseline:
-    // a sharp rise is at least as likely to mean a lenient judge as a better
-    // image, and 11 visual_style/render_strategy learnings came from this loop.
-    model:  MODEL_VISUAL_CRITIC,
-    system: VISUAL_EVAL_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'url', url: args.imageUrl } },
-          { type: 'text',  text: userText },
-        ],
-      },
-    ],
-    maxTokens:   600,
-    temperature: 0.0,
-    timeoutMs:   60_000,
-  })
+  const content = (withRef: boolean) => [
+    { type: 'image' as const, source: { type: 'url' as const, url: args.imageUrl } },
+    ...(withRef && bagRef ? [{ type: 'image' as const, source: { type: 'url' as const, url: bagRef } }] : []),
+    { type: 'text' as const, text: withRef ? userText : userText.replace(/ The SECOND attached image[^\n]*/, '') },
+  ]
+  let res: Awaited<ReturnType<typeof callClaude>>
+  try {
+    res = await critic(content(true))
+  } catch (e) {
+    // A reference the API cannot fetch must not turn into "eval threw →
+    // treated as pass" upstream: retry once judging the render alone.
+    if (!bagRef) throw e
+    console.warn(`[seo-worker-visual] eval with bag reference failed, retrying without it: ${e instanceof Error ? e.message : String(e)}`)
+    res = await critic(content(false))
+  }
 
   const parsed = parseClaudeJson<{
     passes?: unknown
@@ -1135,6 +1143,37 @@ Evaluate the attached image against this brief. Output strict JSON only.`
     missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
     issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
     suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+  }
+}
+
+function critic(content: MessageContentBlock[]) {
+  return callClaude({
+    sourceFn: 'seo-worker-visual',
+    // SELF-CRITIQUE BLIND SPOT — watch this one. The image is GENERATED by
+    // Gemini (vertex-imagen-edit / visual-test, both already 100% Gemini).
+    // Today a different vendor judges it, which is a large part of why this
+    // loop catches anything at all. Pointing this slot at Gemini makes the
+    // same family both author and grader. Before trusting a quality jump,
+    // compare the first-attempt passes:true rate against the Claude baseline:
+    // a sharp rise is at least as likely to mean a lenient judge as a better
+    // image, and 11 visual_style/render_strategy learnings came from this loop.
+    model:  MODEL_VISUAL_CRITIC,
+    system: VISUAL_EVAL_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content }],
+    maxTokens:   600,
+    temperature: 0.0,
+    timeoutMs:   60_000,
+  })
+}
+
+// What the renderer actually used, from visual-test's response, so the critic
+// judges the image against that rather than against brief text the renderer
+// was told to override. The surface is only passed when visual-test says it
+// overrode the brief (not for studio/props-free briefs, not for real photos).
+function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string } {
+  return {
+    bagRefUrl: raw.used_reference === true && typeof raw.bag_url === 'string' ? raw.bag_url : undefined,
+    surface:   raw.surface_overrides_brief === true && !raw.real_photo && typeof raw.surface === 'string' ? raw.surface : undefined,
   }
 }
 

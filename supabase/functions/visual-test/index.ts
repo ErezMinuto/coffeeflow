@@ -173,8 +173,9 @@ RULES:
 3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
 4. THE ROASTER is Minuto's single, FULL-SIZE production drum roaster standing on the roastery floor, 2.0 m tall (taller than an adult), 1.5 m long and 1.0 m wide, with silver chimney ducts at 2.8 m by the ceiling — never a small model, miniature or tabletop unit, never on a counter, table or bench, and never small or distant in the frame; describe it as large and dominant. Its cooler is a large, deep, cylindrical brushed-stainless COOLING BIN with tall straight sides (about as wide as the drum body) standing on the FLOOR at the front-right of the roaster, directly below the drum door; fresh beans fall from the drum door into it and its internal stirring arms turn them. Never a shallow tray on a stand or on a table; nobody stirs the beans by hand. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
 5. AEROPRESS ON THE CUP. An AeroPress is supported only by the cup it brews into: its base flange RESTS DIRECTLY ON THE CUP RIM, physically touching it — never floating above the cup with a gap or a stream falling through open air.
-6. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
-7. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+6. HANDS ONLY FOR AN ACTION. No people, faces or bodies. Keep or add ONE natural hand (or a pair) only when the brief asks for a person, hand or barista, or when the scene shows a tool being actively used: a kettle pouring, a pitcher pouring milk, tamping, cranking a hand grinder, pressing an AeroPress. The hand belongs to a person standing just out of frame and holds the tool properly (a pouring kettle by its handle; a hand grinder's body gripped in one hand while the other turns the crank). If the brief shows the action but no hand, either add that hand or rewrite the scene as the moment just after the action with the tool set down, never a tool floating or pouring on its own. Otherwise no hands. No spoons, scoops, paddles or stirring tools anywhere.
+7. ESPRESSO ON THE MACHINE. Espresso pouring from a portafilter is only ever under the espresso machine: the portafilter locked into the group head, the cup on the machine's stainless drip-tray grate. If the brief puts a shot being pulled onto a table, counter or wooden surface, move the cup onto the drip tray and keep the brief's surface only as the counter around the machine. A finished espresso with no pour may stand anywhere.
+8. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
 Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
 
@@ -889,6 +890,9 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       composited_cup: cupComposited,
       composited: composited,
       surface: surface.name,
+      // false when the brief forbids props and its own surface is used verbatim;
+      // seo-worker-visual's critic only discounts the brief's surface when true.
+      surface_overrides_brief: !forbidsProps,
       style_ref: styleRefUrl,
       machine_ref: machineRef ? machineRefUrl : null,
       real_photo: realPhotoUsed,
