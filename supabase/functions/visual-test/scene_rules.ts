@@ -185,7 +185,11 @@ hand, its base flange resting DIRECTLY on the cup rim — never hovering above
 the cup with a gap. The cup or carafe under it STANDS ON THE SURFACE on its
 own — nobody holds its handle. Pressing takes at most TWO hands of ONE
 person: one palm on the plunger top, optionally the other hand steadying
-the chamber. No third hand anywhere (not on the cup, not at a frame edge).`,
+the chamber. No third hand anywhere (not on the cup, not at a frame edge).
+Show it BREWING, never as an empty prop: dark coffee and wet grounds in the
+chamber, the plunger seal partway down inside it, and coffee already in the
+cup below. The printed logo and numbered scale face AWAY from the camera —
+no lettering or numbers in frame.`,
   frenchPress: `FRENCH PRESS: a glass-and-chrome plunger pot.`,
   moka: `MOKA POT: an aluminium octagonal stovetop moka pot (only because the brief
 asks for one), COMPLETE: bottom water chamber, top collecting chamber with
@@ -219,6 +223,7 @@ function forbidden(s: Scene): string {
     `- Duplicate equipment (two machines, two roasters, two kettles, two grinders) unless the brief asks for two.`,
     `- More than two hands, or hands from more than one person.`,
     s.moka ? `- A moka pot with its lid open, missing or detached, or coffee visible in an uncovered top chamber.` : '',
+    s.aeropress ? `- An empty AeroPress or an empty cup under it; visible AeroPress lettering or scale numbers.` : '',
     s.milk || s.espresso ? `- Any liquid falling from a steam wand.` : '',
     s.espresso ? `- A moka pot or stovetop brewer for espresso.` : '',
     s.pourOver ? `- A kettle pouring straight into a cup or glass.` : `- A kettle (only pour-over scenes have one).`,

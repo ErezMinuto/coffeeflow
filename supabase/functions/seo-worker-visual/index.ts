@@ -1067,6 +1067,7 @@ You are STRICT on PHYSICAL REALISM. Judge the image the way a professional baris
   • Liquid physics — coffee or milk coming from anywhere other than portafilter spouts or a hand-held pitcher; streams that miss the cup or defy gravity.
   • Hands — COUNT THEM: more than two hands, or hands that cannot belong to one person (arms from opposite edges, a third hand on a cup or at a frame edge), is a hard FAIL. Also wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object.
   • Equipment completeness — brewing gear missing a part it always has when in use: a moka pot with its lid open, missing or detached (coffee visible from above in an open top chamber); an AeroPress without its plunger in the chamber; a portafilter without a handle.
+  • Brewing shown as brewing — a brewer presented as in use but EMPTY (an empty AeroPress chamber over an empty cup, a dry dripper over an empty server) is a hard FAIL: real brewing shows coffee in the brewer and in the cup.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
   • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt.
 Name each defect concretely in "issues" (what and where), so the next render can avoid it.
