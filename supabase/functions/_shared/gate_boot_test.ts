@@ -17,9 +17,9 @@
 // key may list Auth users, PostgREST rejects a token whose signature it doesn't
 // recognise, and get_role_for_user answers from a user_roles table.
 
-const URL_ = 'http://backend.test'
-const SERVICE = 'test-service-role'
-const ANON = 'test-anon-key'
+export const URL_ = 'http://backend.test'
+export const SERVICE = 'test-service-role'
+export const ANON = 'test-anon-key'
 const ROLES: Record<string, string> = { user_admin: 'admin', user_sched: 'schedule_manager', user_emp: 'employee' }
 
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
@@ -32,7 +32,7 @@ const FORGED_ADMIN = jwt({ sub: 'user_admin', role: 'authenticated' }, 'forged')
 const ANON_JWT = jwt({ role: 'anon' })
 
 type Caller = 'none' | 'anon' | 'madeup' | 'forged_admin' | 'employee' | 'stranger' | 'schedule_manager' | 'admin' | 'service'
-const HEADERS: Record<Caller, Record<string, string>> = {
+export const HEADERS: Record<Caller, Record<string, string>> = {
   none: {},
   anon: { Authorization: `Bearer ${ANON_JWT}`, apikey: ANON },
   madeup: { Authorization: 'Bearer nope' },
@@ -120,7 +120,7 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   },
 }
 
-const fake: typeof fetch = async (input, init) => {
+export const fake: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   const h = new Headers(init?.headers)
   if (url.startsWith(`${URL_}/auth/v1/admin/users`)) {
