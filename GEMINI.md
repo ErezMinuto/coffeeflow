@@ -36,9 +36,9 @@ git rev-parse HEAD origin/main
 ```
 
 - If `HEAD` is not `origin/main` (or not `origin/<branch>` for a PR you were asked
-  to review), **stop**. Do not review stale code. Tell the user to run
-  `./scripts/gemini-workspace.sh` (or `./scripts/gemini-workspace.sh <branch>`)
-  from their checkout and restart you in `~/Downloads/CoffeeFlow-gemini`.
+  to review), **stop**. Do not review stale code. Tell the user to quit and
+  restart you with `~/Downloads/CoffeeFlow-gemini/scripts/gemini.sh` (it
+  refreshes to the latest main first; `GEMINI_REF=<branch>` for a PR).
 - If `git status --short` shows any changes, stop and say so: this checkout
   must stay untouched.
 - To look at another branch without switching, use `git show origin/<branch>:<path>`
