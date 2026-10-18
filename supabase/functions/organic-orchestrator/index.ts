@@ -676,9 +676,30 @@ serve(async (req: Request): Promise<Response> => {
     // then stamped onto every task that referenced the same group.
     phase = 'emit_tasks'
     const experimentIdByGroup = new Map<string, string>()
+    // The cannibalization / brand / story-theme guards above strip
+    // experiment_group from tasks they block, so a group can arrive here
+    // with fewer than two variations left. Materializing it anyway produced
+    // experiments with 0–1 tasks that the evaluator can only close as
+    // inconclusive — no learning, and the loop looks stalled. Skip those and
+    // untag a lone survivor so it ships as an ordinary task.
+    const variationsByGroup = new Map<string, number>()
+    for (const et of emittedTasks) {
+      if (et.experiment_group) variationsByGroup.set(et.experiment_group, (variationsByGroup.get(et.experiment_group) ?? 0) + 1)
+    }
     for (const exp of emittedExperiments) {
       if (!exp.experiment_group || !exp.hypothesis || !exp.task_type || !exp.primary_metric) {
         console.warn(`[organic-orchestrator] skipping malformed experiment: ${JSON.stringify(exp).slice(0, 200)}`)
+        continue
+      }
+      const variationCount = variationsByGroup.get(exp.experiment_group) ?? 0
+      if (variationCount < 2) {
+        console.warn(`[organic-orchestrator] skipping experiment "${exp.experiment_group}": only ${variationCount} variation(s) left after guards`)
+        for (const et of emittedTasks) {
+          if (et.experiment_group === exp.experiment_group) {
+            delete et.experiment_group
+            delete et.variation_label
+          }
+        }
         continue
       }
       try {
