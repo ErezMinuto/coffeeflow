@@ -358,7 +358,7 @@ async function handlePublish(req: Request) {
 // worked, or the opening slot is empty.
 async function resolveOpening(
   dateStr: string,
-): Promise<{ schedule_id: string; day_code: string; employee_name: string } | null> {
+): Promise<{ schedule_id: number; day_code: string; employee_name: string } | null> {
   const dayCode = dayCodeOf(dateStr);
   if (dayCode === "sat") return null; // coffee shop closed Saturday
 
