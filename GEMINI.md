@@ -25,9 +25,30 @@ find problems and report them. Claude Code and the developers do the fixing.
 Read-only commands are fine: `git diff`, `git log`, `git show`, `grep`, reading files,
 `./scripts/logs.sh`, running tests.
 
+## Before every review: are you looking at the right code?
+
+Run these (read-only) first and put the answer at the top of your report:
+
+```bash
+git fetch --quiet origin
+git log -1 --format='%h %s (%cr)'
+git rev-parse HEAD origin/main
+```
+
+- If `HEAD` is not `origin/main` (or not `origin/<branch>` for a PR you were asked
+  to review), **stop**. Do not review stale code. Tell the user to quit and
+  restart you with `~/Downloads/CoffeeFlow-gemini/scripts/gemini.sh` (it
+  refreshes to the latest main first; `GEMINI_REF=<branch>` for a PR).
+- If `git status --short` shows any changes, stop and say so: this checkout
+  must stay untouched.
+- To look at another branch without switching, use `git show origin/<branch>:<path>`
+  and `git diff origin/main...origin/<branch>`. Never `git checkout`.
+- Copying files elsewhere (e.g. `/tmp`) to run them breaks relative imports and
+  is outside these rules. Run tests in place, through `scripts/ci/*.sh`.
+
 ## How to review
 
-1. Compare the branch with `main`: `git diff main...HEAD` (or the branch named in the request).
+1. Compare with `origin/main`: `git diff origin/main...origin/<branch>` for a PR, or read the files at `HEAD` for main.
 2. Read the surrounding code before claiming a bug. Quote the line that proves it.
 3. Check behaviour, not style. Skip nitpicks unless asked.
 4. If unsure, say "not sure" and why. Never guess or invent facts.
