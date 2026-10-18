@@ -68,6 +68,11 @@ jobs:
       - name: Install esbuild
         run: npm install -g esbuild@0.25.10
 
+      # If esbuild's output ever shifts, every deploy would be refused (or,
+      # worse, a real difference hidden). Prove the canonical form first.
+      - name: Self-test the guard's canonical form
+        run: bash scripts/ci/edge_canon_test.sh
+
       - name: Compare every deployed function against this commit
         env:
           ONLY: ${{ inputs.functions }}
