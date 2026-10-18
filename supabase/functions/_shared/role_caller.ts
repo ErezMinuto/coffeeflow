@@ -54,6 +54,34 @@ export async function hasRole(
   return role === 'service' || (role != null && roles.includes(role))
 }
 
+// True when the caller is the service role or someone the team has given a
+// role (a user_roles row). Use this instead of hasRole([..., 'employee']):
+// get_role_for_user answers 'employee' for ANY signed-in Clerk user, and
+// Clerk sign-up is open. Asked WITH the caller's token, like callerRole.
+export async function isStaff(
+  req: Request,
+  opts: Parameters<typeof callerRole>[1] = {},
+): Promise<boolean> {
+  const supabaseUrl = opts.supabaseUrl ?? Deno.env.get('SUPABASE_URL') ?? ''
+  const doFetch = opts.fetchFn ?? fetch
+  if (await isServiceCaller(req, { supabaseUrl, serviceKey: opts.serviceKey, fetchFn: doFetch })) return true
+
+  const token = (req.headers.get('authorization') ?? '').match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
+  if (!token || !jwtSub(token) || !supabaseUrl) return false
+  const apikey = req.headers.get('apikey')?.trim() || opts.anonKey || Deno.env.get('SUPABASE_ANON_KEY') || ''
+  try {
+    const res = await doFetch(`${supabaseUrl}/rest/v1/rpc/is_staff`, {
+      method: 'POST',
+      headers: { apikey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    if (!res.ok) { await res.body?.cancel(); return false }
+    return (await res.json()) === true
+  } catch {
+    return false
+  }
+}
+
 export function forbidden(headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify({ ok: false, error: 'forbidden — sign in with an account allowed to do this' }), {
     status: 403,

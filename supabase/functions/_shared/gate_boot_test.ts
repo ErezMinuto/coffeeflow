@@ -77,6 +77,7 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   'woo-orders-sync': { cases: adm({ count_only: true, days_back: 1 }) },
   'google-search-sync': { cases: adm({}) },
   'export-to-sheets': { cases: [{ name: 'POST', body: { schedule_id: 1, week_start: '2026-10-18' }, allow: SCHEDULERS }] },
+  'artisan-import': { cases: [{ name: 'POST', body: { roast_id: 1, filename: 'a.alog', content: '{}' }, allow: ['employee', ...SCHEDULERS] }] },
   'generate-campaign': {
     env: { RESEND_AUDIENCE_ID: 'test-audience' },
     cases: [
@@ -131,6 +132,12 @@ const fake: typeof fetch = async (input, init) => {
     const { p_user_id } = JSON.parse(String(init?.body ?? '{}'))
     return new Response(JSON.stringify(ROLES[p_user_id] ?? 'employee'), { status: 200 })
   }
+  if (url === `${URL_}/rest/v1/rpc/is_staff`) {
+    const token = (h.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+    if (!token.endsWith('.valid-signature')) return new Response('{"message":"JWSError"}', { status: 401 })
+    const sub = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub
+    return new Response(JSON.stringify(typeof sub === 'string' && sub in ROLES), { status: 200 })
+  }
   return new Response('not faked', { status: 599 })
 }
 
@@ -157,7 +164,7 @@ if (import.meta.main) {
   globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     if (url.startsWith('http://localhost:8000')) return realFetch(input, init)
-    if (url.startsWith(`${URL_}/auth/v1/admin/users`) || url === `${URL_}/rest/v1/rpc/get_role_for_user`) return fake(input, init)
+    if (url.startsWith(`${URL_}/auth/v1/admin/users`) || url === `${URL_}/rest/v1/rpc/get_role_for_user` || url === `${URL_}/rest/v1/rpc/is_staff`) return fake(input, init)
     outbound.push(url.replace(/\?.*/, ''))
     return new Response(JSON.stringify({ error: 'blocked by test' }), { status: 503 })
   }) as typeof fetch
