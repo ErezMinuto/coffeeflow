@@ -15,7 +15,7 @@
 // fetchers already own. ADDS only what the strategist needs and nothing else had:
 // sales-by-category/SKU trend, and email-campaign performance.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 import {
   fetchCustomerSegmentSummary,

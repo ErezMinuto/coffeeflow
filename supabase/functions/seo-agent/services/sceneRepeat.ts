@@ -19,7 +19,7 @@
 // that the house style alone never reads as a repeat.
 //
 // Type-only import (erased at runtime), as in storyThemeLock.ts.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 /** How far back a scene counts as "recent". */
 export const SCENE_REPEAT_DAYS = 7

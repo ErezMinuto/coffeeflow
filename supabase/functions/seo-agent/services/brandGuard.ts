@@ -51,7 +51,7 @@
 
 // Type-only: erased at runtime, so this module stays importable by unit tests
 // that have no Supabase env.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 export type BrandVerdict =
   | 'minuto_roast'

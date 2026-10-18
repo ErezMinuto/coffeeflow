@@ -18,7 +18,7 @@ import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot
 import { STRATEGIST_MODEL, STRATEGIST_EFFORT, estimateUsd } from '../seo-agent/strategistConfig.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
 const BATCH = 5                       // theses graded per invocation

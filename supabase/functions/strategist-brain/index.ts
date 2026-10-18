@@ -31,7 +31,7 @@ import {
 import { BRAIN_TOOLS, dispatchTool, type ToolContext } from './tools.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
 const LOCK_MINUTES = 5

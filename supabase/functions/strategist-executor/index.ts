@@ -17,7 +17,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

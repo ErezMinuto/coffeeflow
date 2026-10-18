@@ -9,7 +9,7 @@
 // sync, this is where we'd add a live API call (using the existing
 // google-search-sync function as a template).
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 export interface GscKeywordRow {
   keyword: string
