@@ -5,6 +5,7 @@ import {
   claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
   parseAction, releaseClaim, syncDraftBudget,
 } from './guards.ts'
+import { adCopyBrandViolation } from '../seo-agent/services/brandGuard.ts'
 
 // Creates a PAUSED Google Ads campaign from a draft_google_campaign spec —
 // the Google twin of meta-ads-draft. The owner reviews + activates manually
@@ -81,6 +82,13 @@ serve(async (req) => {
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
     }
+    // Brand rule in code: no Veneto / green coffee in a paid ad or in the
+    // keywords it buys. Checked before anything is read or created.
+    // (Negative keywords are exempt: excluding Veneto is the point.)
+    const brandHit = action === 'create'
+      ? adCopyBrandViolation(spec)
+      : action === 'update_targeting' ? adCopyBrandViolation(body.targeting?.add_keywords, 'targeting.add_keywords') : null
+    if (brandHit) throw new Error(`brand guard: ${brandHit.path} ${brandHit.why} ("${brandHit.text}"). Rewrite it around a Minuto roast.`)
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,

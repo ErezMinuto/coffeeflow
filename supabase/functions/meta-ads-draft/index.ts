@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
+import { adCopyBrandViolation } from '../seo-agent/services/brandGuard.ts'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 
 // Creates a PAUSED ad campaign in Meta Ads Manager from a build_meta_campaign
@@ -53,6 +54,12 @@ serve(async (req) => {
     if (action === 'create' && !ideaId) throw new Error("'idea_id' is required for create")
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
+    }
+    // Brand rule in code: no Veneto / green coffee in a paid ad. Checked before
+    // anything is read or created.
+    if (action === 'create') {
+      const hit = adCopyBrandViolation(spec)
+      if (hit) throw new Error(`brand guard: ${hit.path} ${hit.why} ("${hit.text}"). Rewrite the ad around a Minuto roast.`)
     }
 
     const supabase = createClient(
