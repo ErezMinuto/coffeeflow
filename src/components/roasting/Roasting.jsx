@@ -225,7 +225,7 @@ export default function Roasting() {
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${origin.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording roast:', err);
-      showToast('❌ שגיאה ברישום קלייה', 'error');
+      showToast(`❌ שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
     } finally {
       savingRef.current = false; setIsSaving(false);
     }
@@ -295,7 +295,7 @@ export default function Roasting() {
       await notifyTeamIfWaiting({ waitingCustomers: data.waitingCustomers, roastLabel: `${profile.name} (${roastedWeight} ק"ג)`, showToast });
     } catch (err) {
       console.error('Error recording profile roast:', err);
-      showToast('❌ שגיאה ברישום קלייה', 'error');
+      showToast(`❌ שגיאה ברישום קלייה: ${err?.message || err}`, 'error');
     } finally {
       savingRef.current = false; setIsSaving(false);
     }
