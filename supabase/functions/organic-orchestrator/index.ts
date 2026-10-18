@@ -31,6 +31,7 @@ import {
   getRecentMetricsSnapshots,
   getRecentLearnings,
   insertExperiment,
+  getRecentCannibalizationConflicts,
 } from '../seo-agent/db.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
 import {
@@ -38,6 +39,14 @@ import {
   buildCannibalizationConflictBrief,
   type CannibalConflict,
 } from '../seo-agent/cannibalizationCheck.ts'
+import {
+  collectBlockedKeywords,
+  renderBlockedKeywordsBlock,
+  buildRepickPrompt,
+  parseRepick,
+  screenRepick,
+  type BlockedKeyword,
+} from '../seo-agent/blogTopicRepick.ts'
 import { collectPostFollowback, type PostFollowback } from '../seo-agent/postPerformanceFollowback.ts'
 import { writeBriefing, buildOrchestratorCycleBriefing } from '../seo-agent/briefingWriter.ts'
 import {
@@ -123,6 +132,7 @@ serve(async (req: Request): Promise<Response> => {
   // the HTTP response body.
   const runCycle = async (): Promise<void> => {
    let phase = 'init'
+   const cycleStartedAt = Date.now()
    try {
     const supabase = createSupabase()
 
@@ -155,6 +165,7 @@ serve(async (req: Request): Promise<Response> => {
     phase = 'gather'
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
     const sixtyDaysAgo    = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
+    const ninetyDaysAgo   = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
 
     const [
       wpDetectorSummary,
@@ -182,6 +193,7 @@ serve(async (req: Request): Promise<Response> => {
       competitorIntel,
       calendar,
       storyLock,
+      priorConflicts,
     ] = await Promise.all([
       // Housekeeping (side-effecting / strategist-input) — guarded so a
       // single failure degrades gracefully instead of killing the cycle.
@@ -256,7 +268,14 @@ serve(async (req: Request): Promise<Response> => {
       // only in mission-worker's daily cadence.
       getActiveStoryThemeLock(supabase, new Date().toISOString().slice(0, 10))
         .catch((e: any) => { console.warn(`[organic-orchestrator] story lock fetch failed: ${e?.message ?? e}`); return null }),
+      // Blog keywords the cannibalization gate already refused. Without this
+      // the strategist re-proposed them cycle after cycle (10-07 → 10-18: four
+      // blocked articles, none written). Non-fatal: an empty list only means
+      // planning runs as it did before.
+      getRecentCannibalizationConflicts(supabase, ninetyDaysAgo, 60)
+        .catch((e: any) => { console.warn(`[organic-orchestrator] conflict history fetch failed: ${e?.message ?? e}`); return [] }),
     ])
+    const blockedKeywords: BlockedKeyword[] = collectBlockedKeywords(priorConflicts)
 
     console.log(
       `[organic-orchestrator] sources — gsc:${gscKeywords.length} ` +
@@ -268,7 +287,8 @@ serve(async (req: Request): Promise<Response> => {
       `organicPosts:${organicPosts.length} paidAds:${paidAds.length} ` +
       `voc:${vocInsights.length} kwOps:${keywordOpportunities.length} ` +
       `research:${marketResearch.length} ga4Pages:${ga4LandingPages.length} ` +
-      `wpDetector(newly_live:${wpDetectorSummary.newly_live}) followback:${postFollowback.length}`,
+      `wpDetector(newly_live:${wpDetectorSummary.newly_live}) followback:${postFollowback.length} ` +
+      `blockedKw:${blockedKeywords.length}`,
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
@@ -339,6 +359,7 @@ serve(async (req: Request): Promise<Response> => {
       calendar,
       brandIndex,
       storyLock,
+      blockedKeywords,
     })
 
     // ── 3b. SERP REALITY CHECK (Gemini only) ─────────────────────────
@@ -487,6 +508,15 @@ serve(async (req: Request): Promise<Response> => {
     // pending-approvals queue rather than vanishing from the plan silently.
     phase = 'cannibalization_gate'
     let cannibalConflictsFiled = 0
+    // Every blog task this run's gate refused, with its brief as the
+    // strategist wrote it — the input to the re-pick below.
+    const blockedThisRun: Array<{
+      et:        (typeof emittedTasks)[number]
+      keyword:   string
+      title:     string
+      conflicts: CannibalConflict[]
+      brief:     unknown
+    }> = []
 
     const normKw   = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
     const briefStr = (b: unknown, k: string) =>
@@ -499,6 +529,7 @@ serve(async (req: Request): Promise<Response> => {
       conflicts: CannibalConflict[],
       why: string,
     ) => {
+      blockedThisRun.push({ et, keyword, title, conflicts, brief: et.brief_data })
       et.task_type    = 'dynamic_experiment'
       et.task_subtype = 'cannibalization_conflict'
       et.brief_data   = buildCannibalizationConflictBrief({ keyword, title, conflicts })
@@ -563,6 +594,112 @@ serve(async (req: Request): Promise<Response> => {
 
     if (cannibalConflictsFiled > 0) {
       console.log(`[organic-orchestrator] cannibalization gate: ${cannibalConflictsFiled} task(s) converted to conflict proposals`)
+    }
+
+    // ── 5b-REPICK. Replace a blocked article instead of losing the slot ──
+    // Before this, a blocked article simply vanished from the cycle's output
+    // and nothing told the strategist why, so the next cycle picked the same
+    // ground again. Now each blocked task gets ONE small follow-up call for a
+    // different topic. The replacement passes the same two checks (local,
+    // then WP) before it is accepted; on any failure the conflict proposal
+    // stays exactly as before.
+    //
+    // On success the replacement takes the blocked task's slot, so a banner
+    // visual pointing at it via parent_task_index now illustrates the new
+    // article. The conflict is still recorded, appended to the end of the plan
+    // (no index shifts), with approval_required false: the plan has already
+    // moved on, so there is nothing left for the admin to approve.
+    //
+    // Bounded: at most 2 calls, in parallel, 45s each, skipped entirely once
+    // the cycle is past 4 minutes so it cannot push the run into the wall clock.
+    phase = 'blog_repick'
+    let repicked = 0
+    const REPICK_MAX = 2
+    if (blockedThisRun.length > 0 && Date.now() - cycleStartedAt < 240_000) {
+      const forbidden = new Set<string>([
+        ...blockedKeywords.map(b => b.keyword),
+        ...blockedThisRun.map(b => b.keyword),
+        ...queuedTitleByKw.keys(),
+        ...seenKw,
+      ])
+      const catalogNames = catalog.filter(p => !brandIndex.isBanned(p.name)).map(p => p.name)
+      const appended: typeof emittedTasks = []
+
+      await Promise.all(blockedThisRun.slice(0, REPICK_MAX).map(async (b) => {
+        const label = `"${b.keyword}"`
+        try {
+          const res = await callClaude({
+            sourceFn: 'organic-orchestrator',
+            model:    MODEL_ORCHESTRATOR,
+            // Not STRATEGIST_SYSTEM_PROMPT: its output contract is a whole plan,
+            // and this call must return one article brief.
+            system:   'You are the content strategist for Minuto, an Israeli specialty-coffee roastery. '
+                    + 'You pick blog topics that drive bean sales and that no existing post on the site already covers. '
+                    + 'Reply with strict JSON only.',
+            messages: [{ role: 'user', content: buildRepickPrompt({
+              rejected:       [{ keyword: b.keyword, title: b.title, overlaps: b.conflicts.map(c => c.title), brief: b.brief }],
+              blocked:        [...blockedKeywords, ...blockedThisRun.map(x => ({
+                                keyword: x.keyword, blocked_at: 'this cycle', overlaps: x.conflicts.map(c => c.title).slice(0, 4),
+                              }))],
+              queuedKeywords: [...queuedTitleByKw.keys()],
+              recentTitles:   blogPosts.map(p => p.title),
+              gscKeywords:    gscKeywords.map(k => k.keyword),
+              opportunities:  keywordOpportunities.map(k => k.keyword),
+              catalogNames,
+            }) }],
+            maxTokens:   1500,
+            temperature: 0.7,
+            timeoutMs:   45_000,
+          })
+          const topic = parseRepick(parseClaudeJson(res.text))
+          if (!topic) { console.warn(`[organic-orchestrator] repick for ${label}: unusable reply`); return }
+
+          const localWhy = screenRepick(topic, forbidden)
+          if (localWhy) { console.warn(`[organic-orchestrator] repick for ${label} → "${topic.keyword}" rejected: ${localWhy}`); return }
+
+          const gate = await checkCannibalizationForQueue(topic.keyword, topic.title)
+          if (gate.checked && gate.conflicts.length > 0) {
+            console.warn(`[organic-orchestrator] repick for ${label} → "${topic.keyword}" rejected: ${gate.conflicts.length} existing post(s) overlap`)
+            return
+          }
+          // Two parallel re-picks could land on the same keyword.
+          if (screenRepick(topic, forbidden)) return
+          forbidden.add(topic.keyword)
+
+          // Keep the conflict on record, as information rather than a decision.
+          const record = buildCannibalizationConflictBrief({ keyword: b.keyword, title: b.title, conflicts: b.conflicts })
+          record.approval_required = false
+          record.description += ` A replacement article on "${topic.keyword}" was queued instead.`
+          appended.push({
+            task_type:    'dynamic_experiment',
+            task_subtype: 'cannibalization_conflict',
+            brief_data:   record,
+            rationale:    b.et.rationale,
+          })
+
+          const { banner_scene_brief, ...brief } = topic
+          b.et.task_type  = 'text_generation'
+          delete b.et.task_subtype
+          b.et.brief_data = { ...(b.brief as Record<string, unknown>), ...brief }
+          b.et.rationale  = `[cannibalization-gate] "${b.keyword}" overlapped ${b.conflicts.length} existing post(s); `
+                          + `re-picked "${topic.keyword}" — ${topic.why_now}`
+          if (banner_scene_brief) {
+            const slot = emittedTasks.indexOf(b.et)
+            for (const v of emittedTasks) {
+              const vb = v.brief_data as unknown as Record<string, unknown>
+              if (v.task_type === 'visual_generation' && v.parent_task_index === slot && vb?.destination === 'blog_banner') {
+                vb.scene_brief = banner_scene_brief
+              }
+            }
+          }
+          repicked++
+          console.log(`[organic-orchestrator] repick for ${label} → queued "${topic.keyword}"`)
+        } catch (e: any) {
+          console.warn(`[organic-orchestrator] repick for ${label} failed (non-fatal, conflict proposal kept): ${e?.message ?? e}`)
+        }
+      }))
+      emittedTasks.push(...appended)
+      console.log(`[organic-orchestrator] blog repick: ${repicked}/${Math.min(blockedThisRun.length, REPICK_MAX)} blocked article(s) replaced`)
     }
 
     // ── 5b. BRAND GUARD ──────────────────────────────────────────────
@@ -984,11 +1121,12 @@ function buildStrategistUserMessage(args: {
   calendar:        CalendarContext
   brandIndex:      BrandIndex
   storyLock:       StoryThemeLock | null
+  blockedKeywords: BlockedKeyword[]
 }): string {
   const { focus, snapshot, recentTasks, recentIgCaptions, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
           ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback,
-          calendar, brandIndex, storyLock } = args
+          calendar, brandIndex, storyLock, blockedKeywords } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -1132,6 +1270,12 @@ ${recentTasksBlock}
 === PUBLISHED BLOG POSTS (LAST 60 DAYS) — FORBIDDEN AS NEW ARTICLE TOPICS ===
 
 ${blogBlock}
+
+=== BLOG KEYWORDS ALREADY BLOCKED AS DUPLICATES (LAST 90 DAYS) — DO NOT PROPOSE AGAIN ===
+
+The site has many posts older than the 60-day list above. Before any article is queued it is checked against EVERY post on the site, and these keywords were refused because existing posts already cover them. Proposing one of them, or a close paraphrase, gets blocked again and the cycle ends with no article. Pick a keyword none of these posts covers; a narrower long-tail keyword is usually how to find one.
+
+${renderBlockedKeywordsBlock(blockedKeywords)}
 
 === PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
 

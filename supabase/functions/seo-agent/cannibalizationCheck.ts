@@ -100,6 +100,9 @@ function normalize(s: string): string {
     .trim()
 }
 
+// Exported so blogTopicRepick compares keywords the same way this gate does.
+export const normalizeForMatch = normalize
+
 // Normalize → split → drop stop-words and 1-char tokens (bare Hebrew
 // prefixes, stray digits). Returns the meaningful comparison tokens.
 function tokens(s: string): string[] {
