@@ -99,6 +99,24 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
       { name: 'Telegram webhook, no secret configured', body: { message: { chat: { id: 1 }, text: 'hi' } }, allow: [] },
     ],
   },
+  // The other two bots are Telegram webhooks only: with no secret configured
+  // every update must be refused, whatever the caller sends.
+  'coffee-bot': {
+    env: { COFFEE_BOT_WEBHOOK_SECRET: '' },
+    preflight: false,
+    cases: [
+      { name: 'Telegram update, no secret configured', body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/stock' } }, allow: [] },
+      { name: 'Telegram update with a made-up secret', headers: { 'x-telegram-bot-api-secret-token': 'guess' }, body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/stock' } }, allow: [] },
+    ],
+  },
+  'telegram-bot': {
+    env: { TASKS_BOT_WEBHOOK_SECRET: '' },
+    preflight: false,
+    cases: [
+      { name: 'Telegram update, no secret configured', body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/tasks' } }, allow: [] },
+      { name: 'Telegram update with a made-up secret', headers: { 'x-telegram-bot-api-secret-token': 'guess' }, body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/tasks' } }, allow: [] },
+    ],
+  },
 }
 
 const fake: typeof fetch = async (input, init) => {

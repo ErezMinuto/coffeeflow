@@ -4,7 +4,7 @@
 // funnel through here. Keeps SQL out of the orchestrator / worker /
 // chat function bodies and centralizes column-name knowledge.
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import type {
   NewSeoTask,
   SeoTaskRow,

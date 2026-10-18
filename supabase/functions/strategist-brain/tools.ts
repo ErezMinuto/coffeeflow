@@ -12,7 +12,7 @@
 // Phase 1 is THINKING ONLY: nothing here publishes content, sends a campaign,
 // or spends. Every tool touches only the strategist's own tables or reads.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from '../_shared/marketing_intel.ts'

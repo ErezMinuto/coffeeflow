@@ -20,7 +20,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { getGoogleAccessToken } from '../_shared/vertex_auth.ts'
 
 // GA4 Data API requires this narrow scope — cloud-platform alone returns

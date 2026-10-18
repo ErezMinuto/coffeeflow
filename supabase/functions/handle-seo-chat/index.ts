@@ -56,7 +56,7 @@ import type {
   NewSeoTask,
   SeoTaskRow,
 } from '../seo-agent/types.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',

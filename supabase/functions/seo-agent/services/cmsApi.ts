@@ -9,7 +9,7 @@
 // will push new drafts to WordPress via the existing blog-publish edge
 // function — that's a separate concern handled there, not here.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 // ── Published blog posts (avoid duplicate recommendations) ───────────────
 

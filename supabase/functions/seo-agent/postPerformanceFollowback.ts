@@ -17,7 +17,7 @@
 //
 // Lives in seo-agent/ so the chat handler could reuse it as a tool too.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import type { SeoTaskRow } from './types.ts'
 
 export interface PostFollowback {

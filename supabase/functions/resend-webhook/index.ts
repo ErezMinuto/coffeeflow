@@ -12,6 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { constantTimeEqual } from "../_shared/constant_time.ts";
 
 const SUPA_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY              = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -50,7 +51,7 @@ async function verifyResendSignature(req: Request, rawBody: string): Promise<boo
 
   // svix-signature header may contain multiple "v1,<base64>" signatures
   const received = svixSig.split(" ").map(s => s.replace(/^v1,/, ""));
-  return received.some(r => r === computed);
+  return received.some(r => constantTimeEqual(r, computed));
 }
 
 // Map ALL Resend event types to our stored types
