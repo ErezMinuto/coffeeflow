@@ -21,10 +21,10 @@
 #   3. ./scripts/logs.sh run <id>         → read the whole trace, in order
 #
 # ── Auth ───────────────────────────────────────────────────────────────
-# Needs SUPABASE_ACCESS_TOKEN (the sbp_… management token you already export
-# for deploys); the anon key is resolved from it automatically and cached for
-# the shell session. Reading is anon-safe — system_logs grants SELECT to anon.
-# Set SUPABASE_ANON_KEY yourself to skip the lookup.
+# Reads with the service-role key (system_logs is admin-read since 20261018c):
+# SUPABASE_SERVICE_ROLE_KEY from your secret store, or, with only
+# SUPABASE_ACCESS_TOKEN set, the eyJ service_role key looked up from it and
+# cached for the shell session. GETs only.
 #
 # Read-only. This script never writes to or deletes from the database.
 
@@ -58,21 +58,23 @@ done
 
 if [ "$CMD" = "help" ]; then sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ; fi
 
-# ── Resolve the anon key ───────────────────────────────────────────────
-# Cached in the session temp dir so repeated calls do not hit the management
-# API every time. Mode 600 — it is a credential, even if a low-privilege one.
-KEY="${SUPABASE_ANON_KEY:-}"
-CACHE="${TMPDIR:-/tmp}/.coffeeflow-anon-${PROJECT_REF}"
+# ── Resolve the key ────────────────────────────────────────────────────
+# system_logs is admin-read since 20261018c (the anon key no longer reads it),
+# so this script reads with the SERVICE-ROLE key: the one in your secret store
+# (scripts/load-secrets.sh), or the legacy eyJ service_role key looked up with
+# SUPABASE_ACCESS_TOKEN. It only ever sends GETs. Cached in the session temp
+# dir, mode 600. Never printed.
+KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
+CACHE="${TMPDIR:-/tmp}/.coffeeflow-logs-${PROJECT_REF}"
 if [ -z "$KEY" ] && [ -r "$CACHE" ]; then KEY="$(cat "$CACHE" 2>/dev/null)"; fi
 if [ -z "$KEY" ]; then
   if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
-    echo "❌ Need SUPABASE_ANON_KEY, or SUPABASE_ACCESS_TOKEN to look it up." >&2
-    echo "   export SUPABASE_ACCESS_TOKEN=sbp_…   (same token deploys use)" >&2
+    echo "❌ Need SUPABASE_SERVICE_ROLE_KEY, or SUPABASE_ACCESS_TOKEN to look it up." >&2
+    echo "   . scripts/load-secrets.sh   (or ./scripts/secrets-doctor.sh to see what is set)" >&2
     exit 1
   fi
-  # Must be the key literally named 'anon' AND in JWT (eyJ) form. The project
-  # also returns sb_publishable_*/sb_secret_* keys, and those do not assign the
-  # PostgREST role correctly here — picking one silently yields empty results.
+  # Must be the key named 'service_role' AND in JWT (eyJ) form: sb_secret_*
+  # keys do not assign the PostgREST role correctly (see CLAUDE.md).
   KEY="$(curl -s "https://api.supabase.com/v1/projects/${PROJECT_REF}/api-keys" \
         -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
       | python3 -c "
@@ -81,10 +83,10 @@ try: keys = json.load(sys.stdin)
 except Exception: sys.exit()
 if not isinstance(keys, list): sys.exit()
 for k in keys:
-    if k.get('name') == 'anon' and str(k.get('api_key','')).startswith('eyJ'):
+    if k.get('name') == 'service_role' and str(k.get('api_key','')).startswith('eyJ'):
         print(k['api_key']); break
 ")"
-  if [ -z "$KEY" ]; then echo "❌ Could not resolve the anon key — is SUPABASE_ACCESS_TOKEN valid?" >&2 ; exit 1 ; fi
+  if [ -z "$KEY" ]; then echo "❌ Could not resolve the service-role key — is SUPABASE_ACCESS_TOKEN valid?" >&2 ; exit 1 ; fi
   (umask 077 && printf '%s' "$KEY" > "$CACHE") 2>/dev/null
 fi
 
