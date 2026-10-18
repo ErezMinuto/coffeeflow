@@ -182,10 +182,22 @@ dripper — a kettle never pours straight into a cup. A brass gooseneck kettle
 may appear, partly cropped at a frame edge.`,
   aeropress: `AEROPRESS: the actual translucent plastic AeroPress chamber, pressed down by
 hand, its base flange resting DIRECTLY on the cup rim — never hovering above
-the cup with a gap.`,
+the cup with a gap. The cup or carafe under it STANDS ON THE SURFACE on its
+own — nobody holds its handle. Pressing takes at most TWO hands of ONE
+person: one palm on the plunger top, optionally the other hand steadying
+the chamber. No third hand anywhere (not on the cup, not at a frame edge).
+Show it BREWING, never as an empty prop: dark coffee and wet grounds in the
+chamber, the plunger seal partway down inside it, and coffee already in the
+cup below. The printed logo and numbered scale face AWAY from the camera —
+no lettering or numbers in frame.`,
   frenchPress: `FRENCH PRESS: a glass-and-chrome plunger pot.`,
   moka: `MOKA POT: an aluminium octagonal stovetop moka pot (only because the brief
-asks for one).`,
+asks for one), COMPLETE: bottom water chamber, top collecting chamber with
+its HINGED LID CLOSED on top (lid knob and hinge by the handle visible),
+pouring spout, and the black handle. The coffee rises inside, under the
+closed lid — it is never visible from above. Never an open-top pot, a
+missing or detached lid, or brewed coffee showing in an uncovered top
+chamber.`,
   espressoNotMoka: `ESPRESSO means an ESPRESSO MACHINE with a portafilter — never a moka pot,
 stovetop brewer, Bialetti or AeroPress.`,
 }
@@ -198,13 +210,20 @@ unless the brief is explicitly about green coffee. Loose beans lie directly
 on the surface or in a small ceramic dish.`
 
 const HANDS = `HANDS: only when the brief asks for them or the action needs one (holding a
-pitcher, pouring, tamping). Hands enter from a frame edge. No faces.`
+pitcher, pouring, tamping). Hands enter from a frame edge. No faces.
+COUNT THE HANDS: at most TWO, both belonging to ONE person (one left, one
+right, arms entering from the same side of the frame). Never a third hand,
+never a second person's hand, never a hand holding an object that would
+stand on its own (a cup under a brewer stands on the surface).`
 
 function forbidden(s: Scene): string {
   const lines = [
     `- Tea of any kind — every drink in frame is coffee.`,
     `- Spoons, scoops or any utensil.`,
     `- Duplicate equipment (two machines, two roasters, two kettles, two grinders) unless the brief asks for two.`,
+    `- More than two hands, or hands from more than one person.`,
+    s.moka ? `- A moka pot with its lid open, missing or detached, or coffee visible in an uncovered top chamber.` : '',
+    s.aeropress ? `- An empty AeroPress or an empty cup under it; visible AeroPress lettering or scale numbers.` : '',
     s.milk || s.espresso ? `- Any liquid falling from a steam wand.` : '',
     s.espresso ? `- A moka pot or stovetop brewer for espresso.` : '',
     s.pourOver ? `- A kettle pouring straight into a cup or glass.` : `- A kettle (only pour-over scenes have one).`,
