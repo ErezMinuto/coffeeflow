@@ -198,7 +198,12 @@ unless the brief is explicitly about green coffee. Loose beans lie directly
 on the surface or in a small ceramic dish.`
 
 const HANDS = `HANDS: only when the brief asks for them or the action needs one (holding a
-pitcher, pouring, tamping). Hands enter from a frame edge. No faces.`
+pitcher, pouring, tamping, cranking a grinder). A hand belongs to a person
+standing just out of frame: its forearm enters from the side or bottom edge
+at a natural angle, never a flat hand sliding in from the top. A tool in use
+is HELD — a pouring kettle by its handle, a hand grinder's body gripped by
+one hand while the other turns the crank. Nothing floats or pours on its own.
+No faces.`
 
 function forbidden(s: Scene): string {
   const lines = [
