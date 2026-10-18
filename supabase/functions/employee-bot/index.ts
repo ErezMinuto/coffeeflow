@@ -16,7 +16,7 @@ import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller } from "../_shared/service_caller.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const BOT_TOKEN      = Deno.env.get("EMPLOYEE_BOT_TOKEN")          ?? "";
 const GROUP_ID       = Deno.env.get("EMPLOYEE_GROUP_CHAT_ID")      ?? "";

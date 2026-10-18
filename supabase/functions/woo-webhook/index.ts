@@ -7,7 +7,8 @@
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { constantTimeEqual } from "../_shared/constant_time.ts";
 
 const BOT_TOKEN        = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
 const CHAT_ID          = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
@@ -35,7 +36,7 @@ async function verifyWooSignature(req: Request, rawBody: string): Promise<boolea
 
   const sigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
   const computed = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
-  return computed === signature;
+  return constantTimeEqual(computed, signature);
 }
 
 // One "✅ <name>" button per customer — telegram-bot (same bot token, so it

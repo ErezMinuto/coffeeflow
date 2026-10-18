@@ -32,7 +32,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { unsubscribeUrl } from '../_shared/unsubscribe_token.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
 const SUPA_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

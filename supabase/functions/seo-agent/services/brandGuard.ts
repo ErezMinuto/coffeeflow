@@ -51,7 +51,7 @@
 
 // Type-only: erased at runtime, so this module stays importable by unit tests
 // that have no Supabase env.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 export type BrandVerdict =
   | 'minuto_roast'
@@ -113,6 +113,44 @@ const RE_RESELLER_WORD = /\bveneto\b|(?:^|[^֐-׿])[והבלמשכ]?ונטו(?=$
 /** True when the text names Veneto, the reseller brand Minuto never promotes. */
 export function namesResellerBrand(text: string | null | undefined): boolean {
   return RE_RESELLER_WORD.test(String(text ?? ''))
+}
+
+// ── Paid ads ─────────────────────────────────────────────────────────────
+// An ad is a promotion, not an article, so it is held to the product rule
+// rather than the prose rule: no Veneto and no green coffee anywhere in what
+// the ad says, buys or links to. Every string in the spec is checked (name,
+// copy, keywords, landing URL) except negative keywords, where naming Veneto
+// is exactly what keeps our money off that demand.
+// The campaign is created PAUSED either way, but this is the gate the draft
+// has to physically pass before it reaches Ads Manager.
+export function adCopyBrandViolation(
+  value: unknown,
+  path = 'spec',
+): { path: string; text: string; why: string } | null {
+  if (typeof value === 'string') {
+    if (namesResellerBrand(value)) {
+      return { path, text: value.slice(0, 120), why: 'names Veneto, a reseller brand Minuto never promotes' }
+    }
+    if (RE_GREEN.test(value)) {
+      return { path, text: value.slice(0, 120), why: 'promotes green/unroasted coffee' }
+    }
+    return null
+  }
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const hit = adCopyBrandViolation(value[i], `${path}[${i}]`)
+      if (hit) return hit
+    }
+    return null
+  }
+  if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (/^negative_keywords?$/i.test(k)) continue
+      const hit = adCopyBrandViolation(v, `${path}.${k}`)
+      if (hit) return hit
+    }
+  }
+  return null
 }
 
 export interface BrandIndexEntry { name: string; categories: string[] | null }

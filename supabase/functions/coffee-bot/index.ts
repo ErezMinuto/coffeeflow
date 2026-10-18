@@ -14,6 +14,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
+import { constantTimeEqual } from "../_shared/constant_time.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger, type Logger } from "../_shared/logger.ts";
 import { addPacked, deductRoasted } from "./stock.ts";
@@ -561,11 +562,10 @@ serve(async (req) => {
     // This is set when the webhook is registered via Telegram's setWebhook
     // API with ?secret_token=... and echoed back on every update. Without
     // this check, anyone on the internet could forge Telegram updates.
-    if (WEBHOOK_SECRET) {
-      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
-      if (tgSecret !== WEBHOOK_SECRET) {
-        return new Response("Unauthorized", { status: 401 });
-      }
+    // Fails closed: with no secret configured nothing is accepted.
+    const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+    if (!WEBHOOK_SECRET || !constantTimeEqual(tgSecret, WEBHOOK_SECRET)) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();

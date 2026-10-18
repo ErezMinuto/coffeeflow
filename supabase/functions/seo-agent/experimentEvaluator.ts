@@ -30,7 +30,7 @@
 // and making the eval logic unit-testable + reusable from the chat handler
 // (admin can ask "evaluate experiments now" via tool).
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import {
   getExperimentsDueForEvaluation,
   getExperimentVariations,
