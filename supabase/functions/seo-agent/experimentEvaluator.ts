@@ -117,16 +117,29 @@ async function evaluateOne(
     return { outcome: 'inconclusive', skipReason: 'fewer-than-2-variations' }
   }
 
-  // Make sure every variation has completed (so result_data has the artifact ID).
-  const incomplete = variations.filter(v => v.status !== 'completed')
-  if (incomplete.length > 0) {
+  // A failed variation is terminal — it will never complete — so waiting on
+  // it parks the experiment in 'collecting' forever (some sat there for
+  // months, retried every tick). Once nothing is still in flight, score what
+  // completed; with fewer than two completed there is nothing to compare.
+  const inFlight  = variations.filter(v => v.status === 'pending' || v.status === 'processing')
+  const completed = variations.filter(v => v.status === 'completed')
+  if (inFlight.length === 0 && completed.length < 2) {
+    await updateExperimentStatus(supabase, exp.id, {
+      status: 'inconclusive',
+      evaluation_summary: { reason: `only ${completed.length}/${variations.length} variation(s) completed (rest failed); need ≥2 to compare` },
+    })
+    return { outcome: 'inconclusive', skipReason: 'variations-failed' }
+  }
+
+  // Make sure every live variation has completed (so result_data has the artifact ID).
+  if (inFlight.length > 0) {
     // Don't change status — keep 'collecting' so the next cron tick retries
     // once the missing variations finish. The 'evaluating' lock auto-expires
     // when this function returns and no one writes back. Actually we DID set
     // 'evaluating' above. Set it back to 'collecting' so retry works.
     await updateExperimentStatus(supabase, exp.id, {
       status: 'collecting',
-      evaluation_summary: { reason: `${incomplete.length}/${variations.length} variation(s) not yet completed — retrying next cycle` },
+      evaluation_summary: { reason: `${inFlight.length}/${variations.length} variation(s) not yet completed — retrying next cycle` },
     } as any)  // 'collecting' isn't in the narrow type; cast for retry-only path
     return { outcome: 'skipped', skipReason: 'variations-incomplete' }
   }
@@ -134,7 +147,7 @@ async function evaluateOne(
   // Fetch performance per variation. Metric source depends on task_type.
   const performance = await fetchPerformancePerVariation(
     supabase,
-    variations,
+    completed,
     exp.task_type,
     exp.primary_metric,
   )

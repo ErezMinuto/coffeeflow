@@ -462,11 +462,15 @@ serve(async (req) => {
       .gte('created_at', fourteenAgo)
       .limit(1)
     if ((orchLearnings ?? []).length === 0) {
-      // How many experiments have matured past their own min_lookback_days?
-      // (Same per-row date math the evaluator uses in getExperimentsDueForEvaluation.)
+      // How many experiments are still 'collecting' past their own
+      // min_lookback_days? (Same per-row date math the evaluator uses in
+      // getExperimentsDueForEvaluation.) Only those are the evaluator's
+      // unfinished work — counting already-closed (inconclusive/evaluated)
+      // experiments made this fire forever on history alone.
       const { data: exps } = await supabase
         .from('seo_experiments')
         .select('id, created_at, min_lookback_days, status')
+        .eq('status', 'collecting')
         .limit(500)
       const now = Date.now()
       const matured = (exps ?? []).filter(e => {
@@ -481,7 +485,7 @@ serve(async (req) => {
         findings.push({
           severity: 'WARN',
           category: 'no_learnings',
-          message:  `No autonomous learnings written by orchestrator in last 14 days, despite ${matured.length} experiment(s) matured past min_lookback_days — experiment loop may be stalled`,
+          message:  `No autonomous learnings written by orchestrator in last 14 days, while ${matured.length} experiment(s) are still collecting past min_lookback_days — experiment loop may be stalled`,
           context:  { matured_experiments: matured.length },
         })
       }
