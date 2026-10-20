@@ -37,11 +37,22 @@ export const BAG_REFERENCES: Record<number, BagReference> = {
     views:      ['bag-references/dark-chocolate/three-quarter-left.png', 'bag-references/dark-chocolate/three-quarter-right.png'],
     label_text: ['Dark Chocolate'],
   },
-  // Velvet Star, photographed 2026-10-20 (IMG_6824 front; front views only were shot).
+  // Velvet Star, photographed 2026-10-20 (IMG_6824 front, IMG_6826 right / IMG_6827 left three-quarter).
   64855: {
     front:      'bag-references/velvet-star/front.png',
-    views:      [],
+    views:      ['bag-references/velvet-star/three-quarter-right.png', 'bag-references/velvet-star/three-quarter-left.png'],
     label_text: ['Velvet Star'],
+  },
+  // Guatemala Antigua (roasted), photographed 2026-10-20 (IMG_6831 front).
+  // The printed label has a typo, "Guatemala Aantigua". Erez: "should be
+  // Antigua", so the front photo was retouched to read "Antigua" and the
+  // label check expects that. Front only: in the three-quarter shots the name
+  // is too small and slanted to retouch cleanly, and they would teach the
+  // typo. (65111 is green coffee and is never featured, so it has no entry.)
+  65179: {
+    front:      'bag-references/guatemala-antigua/front.png',
+    views:      [],
+    label_text: ['Guatemala Antigua'],
   },
 }
 

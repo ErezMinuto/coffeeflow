@@ -77,7 +77,18 @@ Deno.test('Dark Chocolate and Velvet Star carry the names their labels print', (
   assertEquals(bagReferenceFor(64860)!.label_text, ['Dark Chocolate'])
   assertEquals(bagReferenceFor(64860)!.views.length, 2)
   assertEquals(bagReferenceFor(64855)!.label_text, ['Velvet Star'])
-  assertEquals(bagReferenceFor(64855)!.views, [])
+  assertEquals(bagReferenceFor(64855)!.views.length, 2)
+})
+
+Deno.test('Guatemala Antigua expects the corrected name, and the misprint "Aantigua" is flagged', () => {
+  const exp = [...BAG_LOCKUP_TEXT, ...bagReferenceFor(65179)!.label_text]
+  assertEquals(bagReferenceFor(65179)!.label_text, ['Guatemala Antigua'])
+  assert(checkLabelText(label('MINUTO', 'Café Roastery', 'Guatemala Antigua'), exp).ok)
+  assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Guatemala Aantigua'), exp).ok)
+})
+
+Deno.test('green coffee (65111) never gets a bag reference', () => {
+  assertEquals(bagReferenceFor(65111), null)
 })
 
 Deno.test('a label truncated to the store title\'s "Dark Choco" is flagged', () => {
