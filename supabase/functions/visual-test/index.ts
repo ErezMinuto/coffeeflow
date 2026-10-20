@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
+import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   ASPECT_TO_RATIO,
@@ -266,6 +267,10 @@ interface VisualTestRequest {
   reference_image_url?: string               // direct URL to a bag photo
   product_id?: number                        // woo_id (numeric WooCommerce product ID); resolved against woo_products.image_url
   product_name?: string                      // text — fuzzy-matched via ILIKE against woo_products.name (same pattern as marketing-advisor enrichment)
+  // Extra photos of the SAME bag from other angles (e.g. a three-quarter view
+  // showing the gusset). Shape/depth reference only; the primary bag image
+  // stays the authority for the label. Max 2.
+  bag_view_urls?: string[]
   composite_bag?: boolean                    // no-op (kept for backward compat) — compositing was abandoned in favour of bag-as-Gemini-reference rendering
   composite_cup?: boolean                    // no-op (kept for backward compat)
   // Real-photo mode: start from an actual photo of Minuto's bar / machine /
@@ -411,12 +416,15 @@ serve(async (req) => {
       : null
 
     let bagRef:     { data: string; mime: string } | null = null
+    let bagViews:   Array<{ data: string; mime: string }> = []
+    let realBag:    BagReference | null = null
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { uri: string; mime: string } | null = null
     let machineRefUrl: string | null = null
     let roasterRef: { uri: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
+    let bagWooId:   number | null = null
     if (useReference) {
       // Resolve which specific bag image to use. Random pool fallback was
       // removed 2026-05-16 — caller MUST pass one of reference_image_url,
@@ -428,7 +436,7 @@ serve(async (req) => {
       } else if (typeof body.product_id === 'number' && Number.isFinite(body.product_id)) {
         const { data, error } = await supabase
           .from('woo_products')
-          .select('name, image_url')
+          .select('woo_id, name, image_url')
           .eq('woo_id', body.product_id)
           .not('image_url', 'is', null)
           .limit(1)
@@ -440,13 +448,14 @@ serve(async (req) => {
           return jsonResponse({ error: `no woo_products row with woo_id=${body.product_id}, or that row has no image_url` }, 400, corsHeaders)
         }
         bagUrl = data.image_url as string
+        bagWooId = data.woo_id as number
         bagSource = 'product_id'
         console.log(`[visual-test] resolved product_id=${body.product_id} → "${data.name}" → ${bagUrl}`)
       } else if (body.product_name && body.product_name.trim().length >= 2) {
         const needle = body.product_name.trim()
         const { data, error } = await supabase
           .from('woo_products')
-          .select('name, image_url')
+          .select('woo_id, name, image_url')
           .ilike('name', `%${needle}%`)
           .not('image_url', 'is', null)
           .limit(1)
@@ -458,12 +467,21 @@ serve(async (req) => {
           return jsonResponse({ error: `no woo_products name match for "${needle}" with a non-null image_url` }, 400, corsHeaders)
         }
         bagUrl = data.image_url as string
+        bagWooId = data.woo_id as number
         bagSource = 'product_name'
         console.log(`[visual-test] resolved product_name="${needle}" → "${data.name}" → ${bagUrl}`)
       } else {
         return jsonResponse({
           error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
         }, 400, corsHeaders)
+      }
+      // Real photos of this bag, when it has them (_shared/bag_references.ts),
+      // replace the store image; every other bag renders exactly as before.
+      // A direct reference_image_url is the caller's explicit choice and wins.
+      realBag = bagSource === 'reference_image_url' ? null : bagReferenceFor(bagWooId)
+      if (realBag) {
+        console.log(`[visual-test] real bag photos for woo_id=${bagWooId} replace the store image ${bagUrl}`)
+        bagUrl = storagePublicUrl(SUPABASE_URL, realBag.front)
       }
       // Bag is always-on (primary subject), beans always-on (color anchor).
       // Machine / roaster refs are loaded below, OUTSIDE this block.
@@ -473,6 +491,10 @@ serve(async (req) => {
       ])
       bagRef     = b1
       beansRef   = b2
+      const viewUrls = (Array.isArray(body.bag_view_urls) ? body.bag_view_urls : realBag ? realBag.views.map(v => storagePublicUrl(SUPABASE_URL, v)) : [])
+        .filter(u => typeof u === 'string' && u).slice(0, 2)
+      bagViews = (await Promise.all(viewUrls.map(fetchAsB64))).filter((v): v is { data: string; mime: string } => !!v)
+      if (viewUrls.length) console.log(`[visual-test] extra bag views: ${bagViews.length}/${viewUrls.length} loaded`)
 
       // FAIL-FAST when the bag was requested but its reference image could not
       // be fetched (404 / network / bad URL → fetchAsB64 returned null).
@@ -579,6 +601,9 @@ ${bagDownplayed
   ? '\nThe SCENE brief downplays the bag — keep it minor or omit it entirely.'
   : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene.'}
 Hard constraints (just in case the model is tempted to deviate): no invented label artwork, no added date stamps or batch numbers on the bag, no color changes.`)
+    }
+    for (const _ of bagViews) {
+      refDescriptions.push(`reference image — the SAME MINUTO BAG from another angle. Use it for the bag's 3D shape only: its flat box bottom, side gussets, depth and how the front label sits on the bag. It is the same physical bag as the FIRST image; render ONE bag, never a second one. The FIRST image stays the authority for the label artwork and text.`)
     }
     if (styleRef) {
       refDescriptions.push(`reference image — STYLE ANCHOR. Real photo from Minuto's library showing the actual surface, lighting, prop styling, and atmosphere we want to match. Use this image as a visual reference for:
@@ -731,6 +756,7 @@ SCENE BRIEF (use it for framing, mood and the small action — ignore any equipm
 ${sceneBrief}`
     const parts: any[] = []
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
+    for (const v of bagViews) parts.push({ inlineData: { mimeType: v.mime, data: v.data } })
     if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
     if (machineRef) parts.push({ fileData: { mimeType: machineRef.mime, fileUri: machineRef.uri } })
@@ -868,7 +894,7 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
     const promptDoc = [
       `IMAGE: ${pub.publicUrl}`,
       `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
-      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
+      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, bagViews.length && `${bagViews.length} extra bag view(s)`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
       `SURFACE: ${surface.name}`,
       `RULE SECTIONS: ${sectionNames(scene).join(', ')}`,
       ``, `── ORIGINAL BRIEF (from the agent) ──`, originalBrief,
@@ -904,6 +930,10 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       brief_rewrite_error: rewrite.error ?? null,
       bag_url: bagUrl,
       bag_source: bagSource,
+      // Real-bag photo set in use (null = store image) and what its label
+      // prints; seo-worker-visual spell-checks the rendered label against it.
+      bag_reference: realBag ? { woo_id: bagWooId, views: bagViews.length } : null,
+      bag_label_text: realBag?.label_text ?? null,
     }, 200, corsHeaders)
 
   } catch (err: any) {

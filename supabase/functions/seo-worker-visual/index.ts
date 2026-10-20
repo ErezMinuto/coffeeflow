@@ -73,6 +73,8 @@ import {
 } from '../seo-agent/db.ts'
 import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson, type MessageContentBlock } from '../seo-agent/claude.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
+import { checkLabelText, LABEL_TRANSCRIBE_PROMPT, type LabelTranscript } from '../_shared/bag_label_check.ts'
+import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 
@@ -1062,6 +1064,8 @@ You are STRICT on subject completeness. If the brief named multiple concrete sub
 
 You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish". The real bag's lockup is the stag-head emblem, the "MINUTO" wordmark and the line "Café Roastery" directly beneath it: all three are correct and must never be flagged.
 
+BAG COLOUR: when a photo of the real bag is attached, the rendered bag's body must be the same colour as in that photo. A white bag rendered clearly beige, cream, kraft, yellowed or grey is a FAIL; add an issue like "bag colour drifted from white to beige". Warm or cool light falling on a white bag, and its shadows, are not a colour change.
+
 You are LENIENT on small fine print. The tiny descriptor / fine-print lines below the product name are intentionally rendered as SOFT, shallow-depth-of-field, out-of-focus text — that is correct real-photography behaviour, NOT a defect. Do NOT fail an image because the small fine print is blurred or unreadable-because-soft. ONLY fail fine print if it is rendered SHARP and clearly in focus yet is still garbled nonsense. (Incidental background text is always exempt — this rule is about the hero bag.)
 
 You are LENIENT on soft background props. Objects that are clearly out of focus in the background (blurred shelves, canisters, ceramics, windowsill items, wall décor) are set dressing, not what the brief's "no X" exclusions are about: do not fail an image or list an issue for them. The brief's exclusions apply in full to everything in focus: the subject, the props beside it and the surface it stands on. Even when soft, these still FAIL: any coffee bag, packaging or brand logo in a no_bag render; a second machine, roaster, kettle or grinder; tea; anything physically impossible.
@@ -1103,6 +1107,9 @@ async function evaluateVisual(args: {
   // The surface visual-test chose (pickSurface), which deliberately overrides
   // any surface the brief names — so the brief's surface must not be judged.
   surface?:    string
+  // What the real bag's label prints (visual-test's bag_label_text), when the
+  // bag has real photos. The Minuto lockup is always checked on bag renders.
+  labelText?:  string[]
 }): Promise<VisualCritique> {
   const bagRef = args.renderMode === 'bag_hero' && args.bagRefUrl ? args.bagRefUrl : undefined
   const userText = `${args.surface ? `SURFACE OVERRIDE: the renderer was ordered to place this scene on ${args.surface}, replacing any surface, table or counter material the brief below names. Ignore the brief's surface material completely: a surface that differs from the brief is CORRECT, never an issue and never missing.
@@ -1140,11 +1147,43 @@ Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output 
     suggested_adjustment?: unknown
   }>(res.text)
 
-  return {
+  const critique: VisualCritique = {
     passes:               parsed.passes === true,
     missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
     issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
     suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+  }
+  // Only worth a call when the critic passed: a failed attempt retries anyway.
+  if (critique.passes && args.renderMode === 'bag_hero' && !args.realPhoto) await applyLabelCheck(critique, args.imageUrl, [...BAG_LOCKUP_TEXT, ...(args.labelText ?? [])])
+  return critique
+}
+
+// Spell-check the rendered label (see _shared/bag_label_check.ts). A near miss
+// fails the attempt so the QA loop re-renders it; text the model cannot read
+// is skipped. Fails open: if the transcription call errors, the critic's
+// verdict stands.
+async function applyLabelCheck(critique: VisualCritique, imageUrl: string, expected: string[]): Promise<void> {
+  try {
+    const res = await callClaude({
+      sourceFn:    'seo-worker-visual',
+      model:       MODEL_VISUAL_CRITIC,
+      system:      LABEL_TRANSCRIBE_PROMPT,
+      messages:    [{ role: 'user', content: [
+        { type: 'image', source: { type: 'url', url: imageUrl } },
+        { type: 'text', text: 'Transcribe the bag label. Output strict JSON only.' },
+      ] }],
+      maxTokens:   300,
+      temperature: 0.0,
+      timeoutMs:   60_000,
+    })
+    const t = parseClaudeJson<Partial<LabelTranscript>>(res.text)
+    const check = checkLabelText({ bag_visible: t.bag_visible === true, lines: Array.isArray(t.lines) ? t.lines.map(String) : [] }, expected)
+    if (check.ok) return
+    critique.passes = false
+    for (const m of check.misspelled) critique.issues.push(`bag label misspelled: reads "${m.found}" instead of "${m.expected}"`)
+    if (!critique.suggested_adjustment) critique.suggested_adjustment = `Render the bag label exactly as in the reference: ${check.misspelled.map(m => `"${m.expected}"`).join(', ')}.`
+  } catch (e) {
+    console.warn(`[seo-worker-visual] label check failed, keeping the critic's verdict: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -1172,8 +1211,9 @@ function critic(content: MessageContentBlock[]) {
 // judges the image against that rather than against brief text the renderer
 // was told to override. The surface is only passed when visual-test says it
 // overrode the brief (not for studio/props-free briefs, not for real photos).
-function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string } {
+function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string; labelText?: string[] } {
   return {
+    labelText: Array.isArray(raw.bag_label_text) ? raw.bag_label_text.map(String) : undefined,
     bagRefUrl: raw.used_reference === true && typeof raw.bag_url === 'string' ? raw.bag_url : undefined,
     surface:   raw.surface_overrides_brief === true && !raw.real_photo && typeof raw.surface === 'string' ? raw.surface : undefined,
   }
