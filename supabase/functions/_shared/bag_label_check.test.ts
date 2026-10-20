@@ -87,8 +87,39 @@ Deno.test('Guatemala Antigua expects the corrected name, and the misprint "Aanti
   assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Guatemala Aantigua'), exp).ok)
 })
 
-Deno.test('green coffee (65111) never gets a bag reference', () => {
+Deno.test('green coffee (65111 Antigua, 65110 Kenya) never gets a bag reference', () => {
   assertEquals(bagReferenceFor(65111), null)
+  assertEquals(bagReferenceFor(65110), null)
+})
+
+Deno.test('both roasted Mount Kenya rows share the same photos', () => {
+  assertEquals(bagReferenceFor(65135), bagReferenceFor(65463))
+  assertEquals(bagReferenceFor(65135)!.label_text, ['Mount Kenya AA+'])
+})
+
+Deno.test('Jungle Java, Guji- Ethiopia and Aristo carry their printed names', () => {
+  assertEquals(bagReferenceFor(65431)!.label_text, ['Jungle Java'])
+  assertEquals(bagReferenceFor(65169)!.label_text, ['Guji- Ethiopia'])
+  assertEquals(bagReferenceFor(64702)!.label_text, ['Aristo'])
+  assertEquals(bagReferenceFor(64702)!.views.length, 1)
+})
+
+// "Guji- Ethiopia" is the real print; hyphen and spacing variants are not misspellings.
+for (const drawn of ['Guji- Ethiopia', 'Guji - Ethiopia', 'Guji-Ethiopia', 'Guji Ethiopia', 'GUJI–ETHIOPIA']) {
+  Deno.test(`"${drawn}" passes for the Guji- Ethiopia label`, () => {
+    assert(checkLabelText(label('MINUTO', 'Café Roastery', drawn), [...BAG_LOCKUP_TEXT, 'Guji- Ethiopia']).ok)
+  })
+}
+
+Deno.test('"Guji- Ethiopa" is still flagged', () => {
+  assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Guji- Ethiopa'), [...BAG_LOCKUP_TEXT, 'Guji- Ethiopia']).ok)
+})
+
+Deno.test('"Mount Kenya AA+" passes with or without the plus; "Mount Kenia AA+" is flagged', () => {
+  const exp = [...BAG_LOCKUP_TEXT, 'Mount Kenya AA+']
+  assert(checkLabelText(label('MINUTO', 'Café Roastery', 'Mount Kenya AA+'), exp).ok)
+  assert(checkLabelText(label('MINUTO', 'Café Roastery', 'Mount Kenya AA'), exp).ok)
+  assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Mount Kenia AA+'), exp).ok)
 })
 
 Deno.test('a label truncated to the store title\'s "Dark Choco" is flagged', () => {
