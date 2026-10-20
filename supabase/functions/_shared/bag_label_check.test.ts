@@ -73,6 +73,23 @@ Deno.test('Daye Bensa (woo 78450) has a front photo, one extra view and its prin
   assertEquals(ref.label_text, ['Daye Bensa'])
 })
 
+Deno.test('Dark Chocolate and Velvet Star carry the names their labels print', () => {
+  assertEquals(bagReferenceFor(64860)!.label_text, ['Dark Chocolate'])
+  assertEquals(bagReferenceFor(64860)!.views.length, 2)
+  assertEquals(bagReferenceFor(64855)!.label_text, ['Velvet Star'])
+  assertEquals(bagReferenceFor(64855)!.views, [])
+})
+
+Deno.test('a label truncated to the store title\'s "Dark Choco" is flagged', () => {
+  // The real label prints "Dark Chocolate"; a render copying the shortened
+  // store title is mislabelled.
+  assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Dark Choco'), [...BAG_LOCKUP_TEXT, 'Dark Chocolate']).ok)
+})
+
+Deno.test('"Velvet Stor" is flagged', () => {
+  assert(!checkLabelText(label('MINUTO', 'Café Roastery', 'Velvet Stor'), [...BAG_LOCKUP_TEXT, 'Velvet Star']).ok)
+})
+
 Deno.test('a bag with no entry keeps the store image', () => {
   assertEquals(bagReferenceFor(65180), null)
   assertEquals(bagReferenceFor(undefined), null)

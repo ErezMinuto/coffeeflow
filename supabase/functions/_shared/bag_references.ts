@@ -31,6 +31,18 @@ export const BAG_REFERENCES: Record<number, BagReference> = {
     views:      ['bag-references/daye-bensa/three-quarter-left.png'],
     label_text: ['Daye Bensa'],
   },
+  // Dark Chocolate, photographed 2026-10-20 (IMG_6822 front, IMG_6820 left / IMG_6821 right three-quarter).
+  64860: {
+    front:      'bag-references/dark-chocolate/front.png',
+    views:      ['bag-references/dark-chocolate/three-quarter-left.png', 'bag-references/dark-chocolate/three-quarter-right.png'],
+    label_text: ['Dark Chocolate'],
+  },
+  // Velvet Star, photographed 2026-10-20 (IMG_6824 front; front views only were shot).
+  64855: {
+    front:      'bag-references/velvet-star/front.png',
+    views:      [],
+    label_text: ['Velvet Star'],
+  },
 }
 
 // The lockup printed on every Minuto bag, checked even when a bag has no entry.
