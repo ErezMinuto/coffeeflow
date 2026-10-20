@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone } from 'lucide-react'
+import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 // Product reels: pick a coffee, render a vertical Reel, review it, publish it.
@@ -195,6 +195,27 @@ export default function ReelsPage() {
     }
   }
 
+  async function remove(task: ReelTask) {
+    const published = !!task.result_data?.published_via_ui_at
+    const msg = published
+      ? 'למחוק את הרילס מהרשימה? הפוסט שכבר עלה לאינסטגרם לא יימחק משם.'
+      : 'למחוק את הרילס? אי אפשר לבטל את זה.'
+    if (!window.confirm(msg)) return
+    setBusy(`delete-${task.id}`)
+    setError(null)
+    try {
+      // .select() so an RLS-filtered delete (0 rows) surfaces instead of passing silently.
+      const { data, error: e } = await supabase.from('seo_tasks').delete().eq('id', task.id).select('id')
+      if (e) throw e
+      if (!data?.length) throw new Error('אין הרשאה למחוק את הרילס הזה')
+      setTasks(ts => ts.filter(t => t.id !== task.id))
+    } catch (e: any) {
+      setError(`המחיקה נכשלה: ${e?.message ?? e}`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   function rerender(task: ReelTask) {
     const product = products.find(p => p.woo_id === task.brief_data.woo_id)
     if (!product) {
@@ -329,6 +350,7 @@ export default function ReelsPage() {
               onPublish={caption => publish(t, caption)}
               onReject={() => reject(t)}
               onRerender={() => rerender(t)}
+              onDelete={() => remove(t)}
             />
           ))}
         </div>
@@ -337,12 +359,13 @@ export default function ReelsPage() {
   )
 }
 
-function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
+function ReelCard({ task, busy, onPublish, onReject, onRerender, onDelete }: {
   task: ReelTask
   busy: string | null
   onPublish: (caption: string) => void
   onReject: () => void
   onRerender: () => void
+  onDelete: () => void
 }) {
   const rd = task.result_data ?? {}
   const [caption, setCaption] = useState(rd.caption ?? '')
@@ -436,6 +459,16 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
           <a href={rd.ig_permalink} target="_blank" rel="noreferrer" className="text-sm px-3 py-1.5 rounded-lg text-brand-700 hover:bg-brand-50 flex items-center gap-1.5">
             <ExternalLink size={14} /> צפייה באינסטגרם
           </a>
+        )}
+        {/* Not while rendering: the workflow would finish into a row that no longer exists. */}
+        {task.status !== 'processing' && (
+          <button
+            onClick={onDelete}
+            disabled={!!busy}
+            className="text-sm px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 flex items-center gap-1.5 ms-auto"
+          >
+            {busy === `delete-${task.id}` ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} מחק
+          </button>
         )}
       </div>
     </div>
