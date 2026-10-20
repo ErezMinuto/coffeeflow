@@ -42,8 +42,8 @@ type ReelFormat = 'reel' | 'story'
 
 const COFFEE_CATEGORY = 'פולי קפה'
 const FORMATS: Array<{id: ReelFormat; label: string; hint: string}> = [
-  {id: 'reel', label: 'פוסט (Reel)', hint: 'נשאר בפיד, עם כיתוב'},
   {id: 'story', label: 'סטורי', hint: 'נעלם אחרי 24 שעות, בלי כיתוב'},
+  {id: 'reel', label: 'פוסט (Reel)', hint: 'נשאר בפיד, עם כיתוב'},
 ]
 
 const decode = (s: string) => {
@@ -59,7 +59,7 @@ export default function ReelsPage() {
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Product | null>(null)
   const [badge, setBadge] = useState('')
-  const [format, setFormat] = useState<ReelFormat>('reel')
+  const [format, setFormat] = useState<ReelFormat>('story')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const alive = useRef(true)
@@ -130,7 +130,7 @@ export default function ReelsPage() {
           woo_id: product.woo_id,
           product_name: decode(product.name),
           badge: opts.badge?.trim() || null,
-          format: opts.format ?? 'reel',
+          format: opts.format ?? 'story',
           ...(opts.facts ? { facts: opts.facts } : {}),
           requested_via: 'dashboard',
         },
@@ -138,7 +138,7 @@ export default function ReelsPage() {
       if (e) throw e
       setPicked(null)
       setBadge('')
-      setFormat('reel')
+      setFormat('story')
       await loadTasks()
     } catch (e: any) {
       setError(`יצירת הרילס נכשלה: ${e?.message ?? e}`)
@@ -329,7 +329,7 @@ export default function ReelsPage() {
                 {busy === `create-${picked.woo_id}` ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />}
                 {format === 'story' ? 'צור סטורי' : 'צור רילס'}
               </button>
-              <button onClick={() => { setPicked(null); setBadge(''); setFormat('reel') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
+              <button onClick={() => { setPicked(null); setBadge(''); setFormat('story') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
                 ביטול
               </button>
             </div>
