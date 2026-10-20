@@ -1,0 +1,23 @@
+# Every table or view a migration creates in public must GRANT service_role in
+# the same file: from 2026-10-30 Supabase stops granting new public tables to
+# the API roles. No secrets, no network: it only reads the migration files.
+name: Migration grants check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/ci/migration_grants_check.py'
+      - '.github/workflows/migration-grants-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  grants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check new public tables are granted
+        run: python3 scripts/ci/migration_grants_check.py

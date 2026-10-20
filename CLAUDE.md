@@ -283,6 +283,33 @@ imports at deploy time, so they need redeploying for the change to land.
 - **All other tables**: Org-wide shared data. Do NOT filter by `user_id` on reads.
 - **get_role_for_user(p_user_id)**: SECURITY DEFINER RPC — safe to call with anon key. Returns `admin` or `employee`.
 
+### New tables need explicit grants (since 2026-10-30)
+
+Supabase no longer grants the API roles on new tables in `public`. A table created
+without a GRANT is unreachable through supabase-js/PostgREST — **even for the service
+role**, so the edge function that owns it fails with "permission denied". Existing
+tables keep their grants. Rebuilding the schema from migrations (a new project, a
+preview branch, `supabase db reset`, `scripts/setup-dev-db.sh` on an empty DB) gives
+older tables that never had a GRANT none either.
+
+In the same migration that creates the table (or view or materialized view):
+
+```sql
+grant select, insert, update, delete on public.<table> to service_role;   -- always
+grant select, insert, update, delete on public.<table> to authenticated;  -- only if the app reads it with a Clerk token
+-- anon: only for data that is deliberately public. The anon key ships in the
+-- frontend bundles; see 20261018c_medium_tier_anon_lockdown.sql.
+```
+
+A `serial`/`bigserial` column also needs `grant usage on sequence public.<table>_<col>_seq`
+for every role that inserts; `generated ... as identity` does not. RLS still applies on
+top of the grant for `authenticated` and `anon`.
+
+CI (`.github/workflows/migration-grants-check.yml`, `scripts/ci/migration_grants_check.py`)
+fails a PR whose migration creates a public table or view without a GRANT to
+`service_role`. A grant it cannot read (built with `format()` in a DO block) is declared
+with a comment: `-- grants-checked: <table> <why>`.
+
 ---
 
 ## Known Issues & Decisions
