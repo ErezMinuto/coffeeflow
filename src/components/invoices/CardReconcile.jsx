@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
-import { parseCardStatement, reconcileCard } from '../../lib/cardStatement';
+import { parseCardStatement, reconcileCard, reconcileCardLedger } from '../../lib/cardStatement';
 
-// ── Credit-card statements: every charge needs an invoice (admin + bookkeeper)
+// ── Credit-card statements (admin + bookkeeper) ─────────────────────────────
 // Upload the card's monthly statement (Leumi "פרוט עסקאות לכרטיס", .xls); the
-// lines are stored in statement_imports / statement_lines and matched against
-// supplier_invoices here on every view. Rules: src/lib/cardStatement.js.
+// lines are stored in statement_imports / statement_lines and checked here on
+// every view, two ways:
+//   • against the bookkeeper's ledgers that cover the purchase dates — was
+//     every charge booked?
+//   • against supplier_invoices — is there an invoice file for every charge?
+// Rules: src/lib/cardStatement.js.
 
 const money = (v) => (v == null || v === '' ? '—' : Number(v).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const dateIL = (d) => (d ? d.split('-').reverse().join('/') : '—');
@@ -43,14 +47,37 @@ export default function CardReconcile({ month }) {
       }));
       const dates = rows.map((l) => l.txn_date).filter(Boolean).sort();
       let invoices = [];
+      let ledger = null;
       if (dates.length) {
+        const first = dates[0], last = dates[dates.length - 1];
         const { data, error: iErr } = await supabase.from('supplier_invoices').select('*')
-          .gte('invoice_date', shiftDays(dates[0], -10)).lte('invoice_date', shiftDays(dates[dates.length - 1], 7))
+          .gte('invoice_date', shiftDays(first, -10)).lte('invoice_date', shiftDays(last, 7))
           .range(0, 9999);
         if (iErr) throw iErr;
         invoices = data || [];
+
+        // The bookkeeper's ledgers covering these purchases: a September statement
+        // holds August purchases too, so it may need two. Newest import per period.
+        const { data: limps, error: liErr } = await supabase.from('ledger_imports').select('*')
+          .lte('period_from', last).gte('period_to', first).order('created_at', { ascending: false });
+        if (liErr) throw liErr;
+        const seen = new Set();
+        const ledgers = (limps || []).filter((i) => {
+          const k = `${i.period_from}|${i.period_to}`;
+          if (seen.has(k)) return false;
+          seen.add(k); return true;
+        });
+        if (ledgers.length) {
+          const { data: ll, error: llErr } = await supabase.from('ledger_lines').select('*')
+            .in('import_id', ledgers.map((i) => i.id)).range(0, 19999);
+          if (llErr) throw llErr;
+          ledger = reconcileCardLedger(rows, (ll || []).map((l) => ({ ...l, amount: Number(l.amount) })),
+            ledgers.map((i) => ({ from: i.period_from, to: i.period_to })));
+        } else {
+          ledger = reconcileCardLedger(rows, [], []);
+        }
       }
-      setState({ loading: false, imports, result: reconcileCard(invoices, rows) });
+      setState({ loading: false, imports, result: reconcileCard(invoices, rows), ledger });
     } catch (e) {
       setState({ loading: false, imports: [], result: null });
       showToast(`❌ ${e.message}`, 'error');
@@ -110,14 +137,20 @@ export default function CardReconcile({ month }) {
     load();
   }
 
-  const { imports, result, loading } = state;
+  const { imports, result, loading, ledger } = state;
   const missing = result ? [...result.missing].sort((a, b) => Math.abs(b.txn_amount) - Math.abs(a.txn_amount)) : [];
   const missingSum = missing.reduce((s, l) => s + l.txn_amount, 0);
+  const unbooked = ledger ? [...ledger.notBooked].sort((a, b) => Math.abs(b.txn_amount) - Math.abs(a.txn_amount)) : [];
+  const unbookedSum = unbooked.reduce((s, l) => s + l.txn_amount, 0);
+  const uncheckedMonths = ledger
+    ? [...new Set(ledger.outside.map((c) => c.txn_date?.slice(0, 7)).filter(Boolean))].sort()
+      .map((ym) => `${ym.slice(5, 7)}/${ym.slice(0, 4)}`)
+    : [];
 
   return (
     <div style={card}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>💳 כרטיסי אשראי מול חשבוניות</h3>
+        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>💳 כרטיסי אשראי מול הנהלת חשבונות וחשבוניות</h3>
         <button style={btn('#3D4A2E', busy)} disabled={busy} onClick={() => fileRef.current?.click()}>
           {busy ? 'מייבא…' : '⬆️ העלאת פירוט כרטיס'}
         </button>
@@ -143,6 +176,46 @@ export default function CardReconcile({ month }) {
             ))}
           </div>
 
+          {/* 1. Was every charge booked by the bookkeeper? */}
+          {ledger && (
+            <div style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '0.8rem 0.9rem', marginTop: '0.8rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.5rem' }}>📒 האם כל חיוב נקלט בהנהלת החשבונות?</div>
+              {ledger.booked.length + ledger.notBooked.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={chip('#DCFCE7', '#166534')}>✅ {ledger.booked.length} נקלטו</span>
+                  <span style={chip(unbooked.length ? '#FEE2E2' : '#F3F4F6', unbooked.length ? '#991B1B' : '#6B7280')}>
+                    ❌ {unbooked.length} לא נמצאו בכרטסת{unbooked.length ? ` · ₪${money(unbookedSum)}` : ''}
+                  </span>
+                </div>
+              )}
+              {uncheckedMonths.length > 0 && (
+                <p style={{ fontSize: '0.82rem', color: '#92400E', margin: '0.5rem 0 0' }}>
+                  {ledger.outside.length} חיובים מחודשים שלא הועלתה להם כרטסת ({uncheckedMonths.join(', ')}), ולכן לא נבדקו. העלו את הכרטסת של {uncheckedMonths.join(' ושל ')} בחלק ״התאמה מול הנהלת חשבונות״ בחודש המתאים.
+                </p>
+              )}
+              {unbooked.length > 0 && (
+                <div style={{ overflowX: 'auto', marginTop: '0.6rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
+                    <thead><tr>
+                      <th style={th}>תאריך</th><th style={th}>בית עסק</th><th style={th}>כרטיס</th><th style={{ ...th, textAlign: 'left' }}>סכום</th>
+                    </tr></thead>
+                    <tbody>
+                      {unbooked.map((l) => (
+                        <tr key={l.id}>
+                          <td style={td}>{dateIL(l.txn_date)}</td>
+                          <td style={{ ...td, fontWeight: 600 }}>{l.merchant}</td>
+                          <td style={{ ...td, color: '#6B7280' }}>{l.card}</td>
+                          <td style={num}>{money(l.txn_amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 2. Is there an invoice file for every charge? */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
             <span style={chip('#DCFCE7', '#166534')}>✅ {result.matches.length} עם חשבונית</span>
             <span style={chip(missing.length ? '#FEE2E2' : '#F3F4F6', missing.length ? '#991B1B' : '#6B7280')}>
