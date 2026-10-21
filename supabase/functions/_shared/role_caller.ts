@@ -90,7 +90,7 @@ export function forbidden(headers: Record<string, string> = {}): Response {
 }
 
 // Reads the claim only; whether the token is genuine is decided by PostgREST.
-function jwtSub(token: string): string | null {
+export function jwtSub(token: string): string | null {
   try {
     const part = token.split('.')[1]
     if (!part) return null
