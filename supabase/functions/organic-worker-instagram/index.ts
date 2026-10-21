@@ -259,7 +259,7 @@ serve(async (req) => {
     // Visual worker hasn't finished. Release back to pending without
     // counting an attempt — visual generation has its own QA loop that
     // can take 2-3 min, and we shouldn't burn a retry slot waiting.
-    await releaseForParentNotReady(
+    const retryInMinutes = await releaseForParentNotReady(
       supabase,
       task,
       `parent visual task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
@@ -271,6 +271,7 @@ serve(async (req) => {
       ok:        false,
       retry:     true,
       reason:    'parent_not_ready',
+      retry_in_minutes: retryInMinutes,
     })
   }
 
@@ -557,21 +558,42 @@ async function releaseForParentNotReady(
   supabase: ReturnType<typeof createSupabase>,
   task: SeoTaskRow,
   reason: string,
-): Promise<void> {
+): Promise<number> {
+  // scheduled_for MUST move forward. claimNextTask takes the oldest
+  // scheduled_for first and this worker claims one task per tick, so a task
+  // released with its old scheduled_for is claimed again on the very next
+  // tick. One post whose parent never completes (e.g. a visual waiting on a
+  // dynamic_experiment the admin hasn't approved) then blocks every newer
+  // post forever — that froze all IG staging from 2026-10-18. Same backoff
+  // as seo-worker-visual's parent-not-ready deferral.
   const restoredAttempts = Math.max(0, (task.attempts ?? 1) - 1)
+  const backoffMinutes   = parentWaitBackoffMinutes(task)
+  const nextScheduledFor = new Date(Date.now() + backoffMinutes * 60_000).toISOString()
   try {
     const { error } = await supabase
       .from('seo_tasks')
       .update({
-        status:       'pending',
-        attempts:     restoredAttempts,
-        worker_id:    null,
-        locked_until: null,
-        error_msg:    `[deferred] ${reason}`,
+        status:        'pending',
+        attempts:      restoredAttempts,
+        worker_id:     null,
+        locked_until:  null,
+        scheduled_for: nextScheduledFor,
+        error_msg:     `[deferred ${backoffMinutes}m] ${reason}`,
       })
       .eq('id', task.id)
     if (error) throw error
   } catch (e: any) {
     console.error(`[organic-worker-instagram] release-without-attempt failed: ${e?.message ?? e}`)
   }
+  return backoffMinutes
+}
+
+// Recheck a fresh post soon (its visual usually lands within a few ticks),
+// but stop re-polling one that has been waiting for hours.
+function parentWaitBackoffMinutes(task: SeoTaskRow): number {
+  const createdMs = Date.parse(task.created_at ?? '')
+  const waitedMs  = Number.isFinite(createdMs) ? Date.now() - createdMs : 0
+  if (waitedMs < 30 * 60_000)      return 5
+  if (waitedMs < 4 * 60 * 60_000)  return 15
+  return 30
 }
