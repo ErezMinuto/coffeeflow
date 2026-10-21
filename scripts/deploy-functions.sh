@@ -37,7 +37,7 @@ artisan-import attendance-reminder blog-publish email-automation-scheduler expor
 forms-submit ga4-sync generate-campaign google-exchange-token google-search-sync \
 meta-exchange-token meta-publish meta-sync purge-old-media rfm-sync set-post-faq \
 visual-overlay woo-orders-sync woo-products-enrich woo-stock-check \
-generate-product-faq set-product-faq update-product-description green-stock-alert"
+generate-product-faq set-product-faq update-product-description green-stock-alert supplier-invoices"
 NO_VERIFY_JWT="$(echo $NO_VERIFY_JWT)"   # squash the line breaks to single spaces
 
 # Prod's current verify_jwt for a function: "true", "false", or "" (not deployed
