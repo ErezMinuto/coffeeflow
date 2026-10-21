@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import {
   prepareInvoiceFile, blobToBase64, invoiceWarnings, invoiceFileName, DOC_TYPE_LABELS,
 } from '../../lib/invoiceFiles';
+import LedgerReconcile from './LedgerReconcile';
 
 // ── Supplier invoices (חשבוניות ספקים) ──────────────────────────────────────
 // Staff photograph / upload every invoice for a payment Minuto made to a
@@ -256,6 +257,7 @@ export default function SupplierInvoices() {
   const [loading, setLoading] = useState(false);
   const [openId, setOpenId] = useState(null);
   const [zipping, setZipping] = useState(null);   // "3/40" while building
+  const [booked, setBooked] = useState(() => new Set());   // invoice ids matched in the bookkeeper's ledger
 
   async function load() {
     setLoading(true);
@@ -315,11 +317,11 @@ export default function SupplierInvoices() {
         zipNames.set(inv.id, name);
         setZipping(`${i + 1}/${rows.length}`);
       }
-      const header = ['תאריך', 'ספק', 'ח.פ', 'מספר חשבונית', 'סוג', 'לפני מע"מ', 'מע"מ', 'סה"כ כולל מע"מ', 'מספר הקצאה', 'סטטוס', 'הועלה ע"י', 'קובץ'];
+      const header = ['תאריך', 'ספק', 'ח.פ', 'מספר חשבונית', 'סוג', 'לפני מע"מ', 'מע"מ', 'סה"כ כולל מע"מ', 'מספר הקצאה', 'סטטוס', 'נקלט בהנה"ח', 'הועלה ע"י', 'קובץ'];
       const lines = rows.map((r) => [
         dateIL(r.invoice_date), r.supplier_name, r.supplier_tax_id, r.invoice_number, DOC_TYPE_LABELS[r.doc_type] || r.doc_type,
         r.amount_before_vat, r.vat_amount, r.total_incl_vat, r.allocation_number,
-        r.status === 'confirmed' ? 'אושר' : 'ממתין לבדיקה', r.uploaded_by_name, zipNames.get(r.id),
+        r.status === 'confirmed' ? 'אושר' : 'ממתין לבדיקה', booked.has(r.id) ? 'כן' : '', r.uploaded_by_name, zipNames.get(r.id),
       ]);
       lines.push(['', 'סה"כ', '', '', '', sum('amount_before_vat').toFixed(2), sum('vat_amount').toFixed(2), sum('total_incl_vat').toFixed(2)]);
       const csv = '﻿' + [header, ...lines].map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -396,6 +398,7 @@ export default function SupplierInvoices() {
                           {r.status === 'confirmed'
                             ? <span style={pill('#DCFCE7', '#166534')}>אושר</span>
                             : <span style={pill('#FEF3C7', '#92400E')}>ממתין לבדיקה</span>}
+                          {seesAll && booked.has(r.id) && <span title="נמצאה בכרטסת הנהלת החשבונות" style={{ ...pill('#EFF6FF', '#1E40AF'), marginInlineStart: '0.3rem' }}>📒 נקלט</span>}
                           {invoiceWarnings(r).length > 0 && <span title={invoiceWarnings(r).join('\n')} style={{ marginInlineStart: '0.3rem' }}>⚠️</span>}
                         </td>
                         <td style={{ ...td, color: '#6B7280' }}>{r.uploaded_by_name || ''}</td>
@@ -426,6 +429,8 @@ export default function SupplierInvoices() {
           </div>
         )}
       </div>
+
+      {seesAll && <LedgerReconcile month={month} onBooked={setBooked} />}
     </div>
   );
 }
