@@ -5,6 +5,7 @@ import {
   prepareInvoiceFile, blobToBase64, invoiceWarnings, invoiceFileName, DOC_TYPE_LABELS,
 } from '../../lib/invoiceFiles';
 import LedgerReconcile from './LedgerReconcile';
+import CardReconcile from './CardReconcile';
 
 // ── Supplier invoices (חשבוניות ספקים) ──────────────────────────────────────
 // Staff photograph / upload every invoice for a payment Minuto made to a
@@ -431,6 +432,7 @@ export default function SupplierInvoices() {
       </div>
 
       {seesAll && <LedgerReconcile month={month} onBooked={setBooked} />}
+      {seesAll && <CardReconcile month={month} />}
     </div>
   );
 }
