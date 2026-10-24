@@ -160,7 +160,13 @@ serve(async (req: Request): Promise<Response> => {
       model:       MODEL_WRITER,
       system:      WRITER_SYSTEM_PROMPT,
       messages:    [{ role: 'user', content: userMessage }],
-      maxTokens:   8192,
+      // MODEL_WRITER is gemini-3.1-pro-preview, which cannot run without
+      // thinking, and its thinking tokens come out of this same budget. At 8192
+      // it thought for ~7,850 tokens and had ~340 left for the article, so every
+      // reply was cut off mid-sentence (finishReason MAX_TOKENS) and failed as
+      // "unparseable JSON" (10-21 and 10-24). Measured at 32768: same ~7,800
+      // thinking, a full ~3,000-token article, 82s.
+      maxTokens:   32768,
       temperature: 0.6,
       // Long-form Hebrew generation regularly runs past callClaude's 110s
       // default, which fires the AbortController mid-stream → every task
@@ -185,7 +191,11 @@ serve(async (req: Request): Promise<Response> => {
     try {
       draft = parseClaudeJson<WriterOutput>(claudeRes.text)
     } catch (e: any) {
-      throw new Error(`writer returned unparseable JSON: ${e?.message ?? e} — raw: ${claudeRes.text.slice(0, 400)}`)
+      // Name truncation plainly; "unparseable JSON" alone hid it for two runs.
+      const cut = claudeRes.stop_reason === 'max_tokens'
+        ? ` (reply hit maxTokens after ${claudeRes.outputTokens} output tokens — truncated, not malformed)`
+        : ''
+      throw new Error(`writer returned unparseable JSON${cut}: ${e?.message ?? e} — raw: ${claudeRes.text.slice(0, 400)}`)
     }
     if (!draft.title?.trim() || !draft.body?.trim()) {
       throw new Error(`writer output missing title or body — raw: ${JSON.stringify(draft).slice(0, 400)}`)
