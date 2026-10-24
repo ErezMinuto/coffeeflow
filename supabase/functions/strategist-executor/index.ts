@@ -17,6 +17,8 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { claimRecs, finishRec, sweepStaleDrafting } from './ledger.ts'
+import { checkBlogProducts } from '../_shared/blog_products.ts'
+import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
@@ -54,9 +56,14 @@ function blogBrief(rec: RecommendationRow): TextGenerationBrief {
 }
 
 async function draftBlog(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
+  // Re-checked here: the catalog can change between the brief and the approval.
+  const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+  const chk = checkBlogProducts(rec.action_params?.products, lineup)
+  if (!chk.ok) throw new Error(`content_blog products: ${chk.error}`)
+  const brief = { ...blogBrief(rec), products_to_mention: chk.products }
   const task: NewSeoTask = {
     task_type:           'text_generation',
-    brief_data:          blogBrief(rec),
+    brief_data:          brief,
     rationale:           `[strategist] ${rec.title}`,
     orchestrator_run_id: runIdOf(rec),
   }
