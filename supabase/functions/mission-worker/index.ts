@@ -17,6 +17,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
+import { updateIfOwned } from './ownership.ts'
 import {
   callClaude,
   MODEL_ORCHESTRATOR,
@@ -468,13 +469,13 @@ serve(async (req) => {
     // 2026-06-23 story (cap hit + story visual ready + no post).
     if ((c.dayQuotaMet || c.visualCapHit) && inflight === 0 && actionableOrphans.length === 0) {
       const why = c.dayQuotaMet ? "today's cadence met" : `render cap hit (${c.igVisualsToday}/${IG_VISUAL_DAILY_CAP})`
-      await supabase.from('agent_missions').update({
+      await updateIfOwned(supabase, mission.id, workerId, {
         steps_taken:  mission.steps_taken + 1,
         last_step_at: new Date().toISOString(),
         updated_at:   new Date().toISOString(),
         locked_until: null,
         worker_id:    null,
-      }).eq('id', mission.id)
+      })
       console.log(`[mission-worker] ${workerId} IG-cadence ${why} (story ${c.storiesToday}/${IG_STORY_PER_DAY} today, feed ${c.feedsThisWeek}/${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} wk, ${c.igVisualsToday} renders) — idle tick, no Claude call`)
       return json({ processed: 1, worker_id: workerId, mission_id: mission.id, ok: true, idle: true, cadence: c })
     }
@@ -598,7 +599,7 @@ serve(async (req) => {
   } catch (e: any) {
     // Don't crash → unlock so the next tick retries. (Self-heal would also
     // catch it, but unlocking cleanly is tidier.)
-    await supabase.from('agent_missions').update({ locked_until: null, worker_id: null, updated_at: new Date().toISOString() }).eq('id', mission.id)
+    await updateIfOwned(supabase, mission.id, workerId, { locked_until: null, worker_id: null, updated_at: new Date().toISOString() })
     return json({ processed: 1, mission_id: mission.id, ok: false, error: `reasoning step failed: ${e?.message ?? e}` }, 500)
   }
 
@@ -633,7 +634,22 @@ serve(async (req) => {
   // Visuals committed to a post THIS step — one render, one post.
   const parentsPostedThisStep = new Set<string>()
 
+  // CHECKPOINT after every queued task. The queued ids used to be persisted only
+  // at the end of the step, so a crash (or the edge wall-clock) after queuing
+  // lost them and the next step queued the same tasks again. Each checkpoint is
+  // fenced on this worker + status='active': when it is rejected the mission
+  // was cancelled or reclaimed mid-step, so stop queuing and write nothing more.
+  let lostMission = false
+  const checkpoint = async (): Promise<void> => {
+    const ok = await updateIfOwned(supabase, mission!.id, workerId, {
+      state:      { ...state, queued_task_ids: [...queuedIds, ...newTaskIds].slice(-100) },
+      updated_at: new Date().toISOString(),
+    })
+    if (!ok) lostMission = true
+  }
+
   for (const call of toolUses) {
+    if (lostMission) break
     const input = (call.input ?? {}) as Record<string, unknown>
     if (call.name === 'note_progress') {
       const note = String(input.note ?? '').trim()
@@ -841,7 +857,7 @@ serve(async (req) => {
               rationale:    `[mission ${mission.id.slice(0, 8)}] cannibalization: "${kw}" overlaps ${gate.conflicts.length} existing post(s) — queued for admin dedupe instead of a duplicate article`,
               orchestrator_run_id: crypto.randomUUID(),
             }])
-            if (inserted[0]?.id) newTaskIds.push(inserted[0].id)
+            if (inserted[0]?.id) { newTaskIds.push(inserted[0].id); await checkpoint() }
           } catch (e: any) {
             newNotes.push(`(cannibalization conflict on "${kw}" but failed to file experiment: ${e?.message ?? e})`)
           }
@@ -859,7 +875,7 @@ serve(async (req) => {
           orchestrator_run_id: runId,
         }])
         const textId = inserted[0]?.id
-        if (textId) newTaskIds.push(textId)
+        if (textId) { newTaskIds.push(textId); await checkpoint() }
         if (textId && task_type === 'visual_generation' &&
             String((norm.brief as { destination?: unknown }).destination ?? '').toLowerCase() === 'ig_post') {
           igVisualsQueuedThisStep++
@@ -877,7 +893,7 @@ serve(async (req) => {
         // visual worker waits for the text task's wp_post_id, then attaches the
         // render as the WP featured image. bag_hero when the article features a
         // real Minuto product (products_to_mention), else no_bag editorial.
-        if (textId && task_type === 'text_generation') {
+        if (textId && task_type === 'text_generation' && !lostMission) {
           try {
             const visualBrief = buildBannerBrief(norm.brief)
             const insVisual = await insertTasks(supabase, [{
@@ -887,7 +903,7 @@ serve(async (req) => {
               parent_task_id:      textId,
               orchestrator_run_id: runId,
             }])
-            if (insVisual[0]?.id) newTaskIds.push(insVisual[0].id)
+            if (insVisual[0]?.id) { newTaskIds.push(insVisual[0].id); await checkpoint() }
           } catch (e: any) {
             newNotes.push(`(article queued but banner pairing failed: ${e?.message ?? e})`)
           }
@@ -932,7 +948,13 @@ serve(async (req) => {
     patch.result_summary = completed ? completionSummary
       : `Stopped at the ${mission.max_steps}-step safety cap without an explicit completion.`
   }
-  await supabase.from('agent_missions').update(patch).eq('id', mission.id)
+  // Fenced: a mission cancelled or reclaimed mid-step keeps its own status and
+  // state. Its queued ids are already checkpointed above.
+  const persisted = !lostMission && await updateIfOwned(supabase, mission.id, workerId, patch)
+  if (!persisted) {
+    console.warn(`[mission-worker] ${workerId} mission ${mission.id} was cancelled or reclaimed mid-step; step result not written (queued ${newTaskIds.length})`)
+    return json({ processed: 1, worker_id: workerId, mission_id: mission.id, ok: false, lost_mission: true, queued_now: newTaskIds.length })
+  }
 
   // ── 6. Briefing — on completion, or when work was queued this step ──
   try {
