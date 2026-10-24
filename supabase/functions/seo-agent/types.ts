@@ -679,7 +679,7 @@ export interface BriefRecommendation {
   success_metric: SuccessMetric
 }
 
-export type RecStatus = 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed'
+export type RecStatus = 'proposed' | 'approved' | 'drafting' | 'drafted' | 'dismissed' | 'failed'
 
 /** A strategic_recommendations row (the execution ledger). */
 export interface RecommendationRow {

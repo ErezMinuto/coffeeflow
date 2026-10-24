@@ -107,7 +107,7 @@ serve(async (req) => {
     if (pageRes.ok) {
       const html = await pageRes.text()
       if (html.includes('data-source="minuto-product-faq"')) {
-        await markTaskCompleted(supabase, task.id, {
+        await markTaskCompleted(supabase, task, {
           subtype: 'faq_injection',
           target_post_id: postId,
           target_post_url: briefPostUrl || null,
@@ -208,7 +208,7 @@ serve(async (req) => {
 
   // ── 5. Store the PROPOSAL — no live write. review_required gates it. ─
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       subtype:          'faq_injection',
       target_post_id:   postId,
       target_post_url:  briefPostUrl || null,
@@ -307,6 +307,6 @@ function extractPostIdFromHtml(html: string): number | null {
 }
 
 async function safeMarkFailed(supabase: ReturnType<typeof createSupabase>, task: SeoTaskRow, msg: string, permanent: boolean): Promise<void> {
-  try { await markTaskFailed(supabase, task.id, msg, permanent) }
+  try { await markTaskFailed(supabase, task, msg, permanent) }
   catch (e: any) { console.error(`[seo-worker-techseo] markTaskFailed write failed: ${e?.message ?? e}`) }
 }

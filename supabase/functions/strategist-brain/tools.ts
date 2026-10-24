@@ -19,6 +19,8 @@ import {
 import type { ToolDefinition } from '../seo-agent/claude.ts'
 import type { BriefRecommendation } from '../seo-agent/types.ts'
 import { appendChatMessage } from '../seo-agent/db.ts'
+import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
+import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
 
 export type BrainToolDefinition = ToolDefinition
@@ -445,6 +447,27 @@ async function handleConcludeBrief(
   if (!input.summary || !Array.isArray(input.diagnosis)) {
     return { result: { error: 'summary and diagnosis[] are required' } }
   }
+
+  // Blog recommendations must name real catalog products before anything is
+  // written — the writer links them and the banner shows products[0]. Refusing
+  // here (with the lineup) lets the Brain fix and re-call conclude_brief.
+  const recsIn = input.recommendations ?? []
+  if (recsIn.some(r => r.action_type === 'content_blog')) {
+    const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+    const problems: string[] = []
+    for (const [i, r] of recsIn.entries()) {
+      if (r.action_type !== 'content_blog') continue
+      const chk = checkBlogProducts(r.action_params?.products, lineup)
+      if (!chk.ok) problems.push(`recommendations[${i}] "${r.title}": ${chk.error}`)
+      else r.action_params = { ...r.action_params, products: chk.products }
+    }
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — content_blog products must be exact Minuto coffee lineup names. ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        minuto_coffee_lineup: lineup,
+      } }
+    }
+  }
   const { data: brief, error } = await supabase
     .from('strategic_briefs')
     .insert({
@@ -650,7 +673,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
               title: { type: 'string' },
               rationale: { type: 'string' },
               action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, or none (pure advice)' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now}. content_ig: {caption_he, hashtags[], media_type(feed_image|story), scene_brief, render_mode(bag_hero+product_name|no_bag), aspect(feed_square|story)}' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he, hashtags[], media_type(feed_image|story), scene_brief, render_mode(bag_hero+product_name|no_bag), aspect(feed_square|story)}' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',

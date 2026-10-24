@@ -19,6 +19,7 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { remindOnce, telegramSend } from "./remind.ts";
 
 const BOT_TOKEN = Deno.env.get("EMPLOYEE_BOT_TOKEN")        ?? "";
 const SUPA_URL  = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -52,13 +53,7 @@ const POSITION_TIMES: Record<string, PositionConfig> = {
 
 const DAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-async function send(chatId: number | string, text: string) {
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
-  });
-}
+const send = (chatId: number | string, text: string) => telegramSend(BOT_TOKEN, chatId, text);
 
 // Israel-local date+time helpers (avoid TZ drift between server UTC and shop time).
 function israelParts(now = new Date()): { date: string; dayCode: string; hhmm: string } {
@@ -123,10 +118,13 @@ interface RunStats {
   pinged_in: number;
   pinged_out: number;
   skipped: number;
+  // Telegram rejected the DM or the claim could not be written; the claim was
+  // released, so the next run retries.
+  failed: number;
 }
 
 async function run(): Promise<RunStats> {
-  const stats: RunStats = { checked: 0, pinged_in: 0, pinged_out: 0, skipped: 0 };
+  const stats: RunStats = { checked: 0, pinged_in: 0, pinged_out: 0, skipped: 0, failed: 0 };
 
   const now = new Date();
   const { date: today, dayCode, hhmm: nowHHMM } = israelParts(now);
@@ -176,6 +174,12 @@ async function run(): Promise<RunStats> {
     (alreadyPinged ?? []).map(r => `${r.employee_id}:${r.position}:${r.reminder_type}`),
   );
 
+  const tally = (r: Awaited<ReturnType<typeof remindOnce>>, type: "in" | "out") => {
+    if (r.outcome === "sent") { if (type === "in") stats.pinged_in++; else stats.pinged_out++; }
+    else if (r.outcome === "already_sent") stats.skipped++;
+    else { stats.failed++; console.error(`attendance-reminder ${type} ${r.outcome}: ${r.detail}`); }
+  };
+
   for (const a of assignments) {
     if (!a.employee_name) { stats.skipped++; continue; }
 
@@ -214,15 +218,13 @@ async function run(): Promise<RunStats> {
     if (wantInPing
         && !hasIn
         && !pingedSet.has(`${emp.id}:${a.position}:in`)) {
-      await send(emp.telegram_id,
-        `👋 שלום ${emp.name}!\nהמשמרת התחילה ב-${times.start} ואין החתמת כניסה.\n` +
-        `אם הגעת — שלח <b>נכנסתי</b> כדי לרשום את הכניסה.`,
-      );
-      await supabase.from("attendance_reminders_sent").insert({
-        employee_id: emp.id, shift_date: today,
-        position: a.position, reminder_type: "in",
-      });
-      stats.pinged_in++;
+      const r = await remindOnce(supabase,
+        { employee_id: emp.id, shift_date: today, position: a.position, reminder_type: "in" },
+        () => send(emp.telegram_id,
+          `👋 שלום ${emp.name}!\nהמשמרת התחילה ב-${times.start} ואין החתמת כניסה.\n` +
+          `אם הגעת — שלח <b>נכנסתי</b> כדי לרשום את הכניסה.`,
+        ));
+      tally(r, "in");
     }
 
     // Check-out reminder — only if they checked in but haven't checked out.
@@ -230,15 +232,13 @@ async function run(): Promise<RunStats> {
         && hasIn
         && !hasOut
         && !pingedSet.has(`${emp.id}:${a.position}:out`)) {
-      await send(emp.telegram_id,
-        `👋 שלום ${emp.name}!\nהמשמרת הסתיימה ב-${times.end} ואין החתמת יציאה.\n` +
-        `שלח <b>יצאתי</b> כדי לסגור את המשמרת.`,
-      );
-      await supabase.from("attendance_reminders_sent").insert({
-        employee_id: emp.id, shift_date: today,
-        position: a.position, reminder_type: "out",
-      });
-      stats.pinged_out++;
+      const r = await remindOnce(supabase,
+        { employee_id: emp.id, shift_date: today, position: a.position, reminder_type: "out" },
+        () => send(emp.telegram_id,
+          `👋 שלום ${emp.name}!\nהמשמרת הסתיימה ב-${times.end} ואין החתמת יציאה.\n` +
+          `שלח <b>יצאתי</b> כדי לסגור את המשמרת.`,
+        ));
+      tally(r, "out");
     }
   }
 
