@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 import {
-  claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
+  capAfterClaim, claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
   parseAction, releaseClaim, syncDraftBudget,
 } from './guards.ts'
 import { adCopyBrandViolation } from '../seo-agent/services/brandGuard.ts'
@@ -613,16 +613,19 @@ serve(async (req) => {
       throw new Error(`daily budget ₪${reqDaily} exceeds per-campaign cap ₪${dailyCap()} (GOOGLE_MAX_DAILY_BUDGET_ILS)`)
     }
     const mtdSpend = await accountSpend(ctx, ...monthToDateRange(ctx.timeZone))
-    const committed = await committedThisMonth(supabase)
     const newPlanned = reqDaily * reqDuration
-    const projected = mtdSpend + committed + newPlanned
-    if (projected > monthlyCap()) {
-      throw new Error(
-        `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committed)} + this campaign ₪${round2(newPlanned)} = ₪${round2(projected)} > cap ₪${monthlyCap()} (GOOGLE_MONTHLY_BUDGET_ILS)`,
-      )
-    }
+    const capError = (committedOthers: number, projected: number) => new Error(
+      `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committedOthers)} + this campaign ₪${round2(newPlanned)} = ₪${round2(projected)} > cap ₪${monthlyCap()} (GOOGLE_MONTHLY_BUDGET_ILS)`,
+    )
 
     const validateOnly = body.validate_only === true
+    // Fast refusal before claiming. Not the real guard: two concurrent creates
+    // can both pass it. The decisive check runs after the claim, below.
+    {
+      const committed = await committedThisMonth(supabase)
+      const projected = mtdSpend + committed + newPlanned
+      if (projected > monthlyCap()) throw capError(committed, projected)
+    }
 
     // Reserve the idea_id before anything reaches Google. The lookup above is
     // only a fast path — two requests can both pass it, so the unique
@@ -651,6 +654,16 @@ serve(async (req) => {
         })
       }
       claimId = claim.id
+
+      // Decisive cap check, now that this campaign's claim row counts toward
+      // committed spend (see capAfterClaim).
+      let cap: Awaited<ReturnType<typeof capAfterClaim>>
+      try { cap = await capAfterClaim(supabase, mtdSpend, monthlyCap()) }
+      catch (e) { await releaseClaim(supabase, claimId); throw e }
+      if (!cap.ok) {
+        await releaseClaim(supabase, claimId)
+        throw capError(cap.committed - newPlanned, cap.projected)
+      }
     }
 
     let built: Awaited<ReturnType<typeof buildOperations>>

@@ -223,6 +223,35 @@ const claimRow = { idea_id: 'idea-42', customer_id: '123', campaign_name: 'Beans
   check('a failed write-back comes back as a warning', typeof failed === 'string' && /monthly cap/.test(failed!), String(failed));
 }
 
+// ── monthly cap under concurrency (different ideas) ─────────────────────────
+// Each create is ₪100/day × 14 = ₪1400 against a ₪2000 cap: one fits, two don't.
+// The old order (cap check, then claim) let both pass.
+{
+  const createUnderCap = async (idea: string) => {
+    const c = await G.claimIdea(supabase, { ...claimRow, idea_id: idea, daily_budget_ils: 100 });
+    if (c.kind !== 'claimed') return 'taken';
+    const cap = await G.capAfterClaim(supabase, 0, 2000);
+    if (!cap.ok) { await G.releaseClaim(supabase, c.id); return 'over_cap'; }
+    return 'created';
+  };
+  for (let round = 0; round < 10; round++) {
+    reset();
+    const outcomes = await Promise.all([createUnderCap('idea-a'), createUnderCap('idea-b')]);
+    const created = outcomes.filter(o => o === 'created').length;
+    if (created > 1) { check('two concurrent creates for different ideas never both pass the cap', false, outcomes.join(',')); break; }
+    if (round === 9) check('two concurrent creates for different ideas never both pass the cap', true);
+  }
+  reset();
+  check('a create that fits is allowed', await createUnderCap('idea-c') === 'created');
+  check('…and the next one that does not fit is refused and leaves no claim',
+    await createUnderCap('idea-d') === 'over_cap' && drafts.length === 1);
+
+  const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+  const create = src.slice(src.indexOf('// create\n'));
+  check('index.ts runs the decisive cap check after the claim',
+    create.indexOf('claimIdea(') > 0 && create.indexOf('capAfterClaim(') > create.indexOf('claimIdea('));
+}
+
 console.log(failures === 0 ? '\nall good' : `\n${failures} failing`);
 await db.shutdown();
 Deno.exit(failures === 0 ? 0 : 1);
