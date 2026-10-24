@@ -517,7 +517,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'approve_qa_attempt',
-    description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". Only works for blog_banner destination today; IG-destination QA approval is a separate flow.',
+    description: 'Override the QA loop for a visual_generation task that got capped (result_data.review_required=true) — the admin has reviewed a specific attempt and approved it for attach. Pulls the image_url from qa_attempts[attempt_number-1], runs the standard WP featured-image attach flow (same code path the worker uses on a QA pass), and patches result_data to clear review_required + record approved_attempt + approved_via_chat_at. Use ONLY when the admin says something like "attempt N is fine" or "approve attempt N of <task_id>". blog_banner: attaches the attempt as the WP featured image. ig_post: points the visual\'s image_url at that attempt so pending instagram_post tasks stage it (posts already staged on Meta keep their old image — the result says which). Carousels are not supported.',
     input_schema: {
       type: 'object',
       properties: {
@@ -2026,13 +2026,10 @@ async function executeTool(
         const attemptN = typeof input.attempt_number === 'number' ? Math.floor(input.attempt_number) : 0
         if (!task_id) return { ok: false, payload: { error: 'task_id required.' } }
         if (attemptN < 1) return { ok: false, payload: { error: 'attempt_number must be 1-based positive integer.' } }
-        if (!WP_USERNAME || !WP_APP_PASSWORD) {
-          return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured — cannot attach.' } }
-        }
         // Load + validate the task.
         const { data: task, error: tErr } = await supabase
           .from('seo_tasks')
-          .select('id, task_type, parent_task_id, result_data')
+          .select('id, task_type, status, parent_task_id, result_data')
           .eq('id', task_id)
           .maybeSingle()
         if (tErr) return { ok: false, payload: { error: tErr.message } }
@@ -2045,9 +2042,11 @@ async function executeTool(
           qa_attempts?: Array<{ attempt: number; image_url: string }>
           wp_post_id?: number
           approved_attempt?: number
+          image_url?: string
+          carousel_slides?: unknown[]
         }
-        if (rd.destination !== 'blog_banner') {
-          return { ok: false, payload: { error: `task destination is '${rd.destination}', not 'blog_banner'. IG-destination QA approval not yet supported via this tool.` } }
+        if (rd.destination !== 'blog_banner' && rd.destination !== 'ig_post') {
+          return { ok: false, payload: { error: `task destination is '${rd.destination}' — only blog_banner and ig_post are supported.` } }
         }
         if (rd.approved_attempt) {
           return { ok: false, payload: { error: `task already has approved_attempt=${rd.approved_attempt}. Refusing double-approval.` } }
@@ -2059,6 +2058,60 @@ async function executeTool(
         }
         if (!target.image_url) {
           return { ok: false, payload: { error: `qa_attempts[${attemptN}] has no image_url.` } }
+        }
+        // IG destination: nothing to attach. The IG worker reads the parent's
+        // result_data.image_url when it stages the post, so approving an
+        // attempt means pointing image_url at that attempt and clearing the
+        // QA flag. A QA-capped visual already defaults to its LAST attempt.
+        if (rd.destination === 'ig_post') {
+          if (task.status !== 'completed') {
+            return { ok: false, payload: { error: `task status is '${task.status}' — the visual worker has not finished; nothing to approve yet.` } }
+          }
+          if (Array.isArray(rd.carousel_slides) && rd.carousel_slides.length > 0) {
+            return { ok: false, payload: { error: 'this is a carousel visual — per-slide QA approval is not supported by this tool.' } }
+          }
+          const igPatch = {
+            ...rd,
+            image_url:               target.image_url,
+            pre_approval_image_url:  rd.image_url ?? null,
+            qa_passed:               true,
+            review_required:         false,
+            approved_attempt:        attemptN,
+            approved_via_chat_at:    new Date().toISOString(),
+          }
+          const { error: igErr } = await supabase.from('seo_tasks').update({ result_data: igPatch }).eq('id', task_id)
+          if (igErr) return { ok: false, payload: { error: `result_data write failed: ${igErr.message}` } }
+          // A post already staged on Meta was prepared with the OLD image —
+          // changing the parent doesn't touch it. Say so instead of implying
+          // the swap reached it.
+          const { data: igChildren } = await supabase
+            .from('seo_tasks')
+            .select('id, status')
+            .eq('task_type', 'instagram_post')
+            .eq('parent_task_id', task_id)
+          const children = (igChildren ?? []) as Array<{ id: string; status: string }>
+          const staged = children.filter(c => c.status === 'completed').map(c => c.id)
+          const waiting = children.filter(c => c.status === 'pending' || c.status === 'processing').map(c => c.id)
+          return {
+            ok: true,
+            payload: {
+              task_id,
+              destination:      'ig_post',
+              approved_attempt: attemptN,
+              image_url:        target.image_url,
+              image_changed:    target.image_url !== rd.image_url,
+              ig_posts_waiting: waiting,
+              ig_posts_already_staged_with_previous_image: staged,
+              note: staged.length > 0 && target.image_url !== rd.image_url
+                ? `Approved. ${staged.length} IG post(s) were already staged with the previous image and are unchanged — queue a new instagram_post on this visual to use attempt ${attemptN}.`
+                : waiting.length > 0
+                  ? `Approved. ${waiting.length} pending IG post(s) will use this image when the IG worker stages them.`
+                  : `Approved. No IG post references this visual yet — queue_task('instagram_post', parent_task_id='${task_id}') to stage one.`,
+            },
+          }
+        }
+        if (!WP_USERNAME || !WP_APP_PASSWORD) {
+          return { ok: false, payload: { error: 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured — cannot attach.' } }
         }
         if (!rd.wp_post_id) {
           return { ok: false, payload: { error: 'task has no wp_post_id — cannot attach without a target post.' } }
@@ -2609,6 +2662,8 @@ serve(async (req: Request): Promise<Response> => {
     const loopStartedAt = Date.now()
     let ranOutOfTime = false
   let modelError: string | null = null
+    // What ran this turn, for a readable fallback when the loop cap hits.
+    const turnToolLog: Array<{ name: string; ok: boolean; result: string }> = []
 
     while (loops < MAX_TOOL_LOOPS) {
       // Wall-clock guard: never start a Claude call that could push us past
@@ -2801,6 +2856,7 @@ serve(async (req: Request): Promise<Response> => {
         } catch (persistErr: any) {
           console.error(`[handle-seo-chat] appendChatMessage(tool) failed for ${call.id}:`, persistErr?.message ?? persistErr)
         }
+        turnToolLog.push({ name: call.name, ok: !isError, result: contentStr })
         toolResultBlocks.push({
           type:        'tool_result',
           tool_use_id: call.id,
@@ -2827,10 +2883,49 @@ serve(async (req: Request): Promise<Response> => {
         content:    finalText,
       })
     } else if (loops >= MAX_TOOL_LOOPS && !finalText) {
-      finalText = `(stopped after ${MAX_TOOL_LOOPS} tool-use loops — please rephrase your request.)`
+      // Out of tool rounds. Rather than a bare "please rephrase", give the
+      // model one last call to report what it found, told not to use tools.
+      // Any tool_use it emits anyway is dropped (never executed or persisted,
+      // so no orphan tool_use lands in history). If that call can't run or
+      // returns nothing, fall back to a plain list of what ran this turn.
+      const remainingMs = CHAT_LOOP_BUDGET_MS - (Date.now() - loopStartedAt)
+      let wrapUpFromModel = false
+      if (remainingMs >= MIN_CALL_BUDGET_MS) {
+        try {
+          const lastUser = apiMessages[apiMessages.length - 1]
+          const stopNote: MessageContentBlock = {
+            type: 'text',
+            text: `[system] Tool budget for this turn is used up (${MAX_TOOL_LOOPS} rounds). Do NOT call any tools. In 1-3 plain sentences tell Erez the current state of what he asked about, based only on the tool results above, and ask how he wants to proceed.`,
+          }
+          const wrapUpMessages = lastUser && lastUser.role === 'user' && Array.isArray(lastUser.content)
+            ? [...apiMessages.slice(0, -1), { ...lastUser, content: [...lastUser.content, stopNote] }]
+            : [...apiMessages, { role: 'user' as const, content: [stopNote] }]
+          const wrap = await callClaude({
+            sourceFn:    'handle-seo-chat',
+            model:       MODEL_CHAT,
+            system:      systemPrompt,
+            messages:    wrapUpMessages,
+            tools:       TOOL_DEFINITIONS,
+            maxTokens:   isGeminiModel(MODEL_CHAT) ? MAX_OUTPUT_TOKENS_CHAT_THINKING : MAX_OUTPUT_TOKENS_CHAT,
+            temperature: 0.3,
+            cachePrefix: true,
+            timeoutMs:   Math.min(60_000, remainingMs - 5_000),
+          })
+          finalText = (wrap.text ?? '').trim()
+          if (finalText) wrapUpFromModel = true
+        } catch (wrapErr: any) {
+          console.warn(`[handle-seo-chat] loop-cap wrap-up call failed: ${wrapErr?.message ?? wrapErr}`)
+        }
+      }
+      if (!finalText) {
+        const lines = turnToolLog.slice(-6).map(t => `• ${t.name} ${t.ok ? '✓' : '✗'} ${t.result.replace(/\s+/g, ' ').slice(0, 160)}`)
+        finalText = `(I used all ${MAX_TOOL_LOOPS} tool rounds without reaching an answer. Last steps:\n${lines.join('\n')}\nTell me which of these to follow up on.)`
+      }
+      // A model-written answer is a real assistant turn (replayed as context
+      // next time); the fallback list stays a system notice.
       await appendChatMessage(supabase, {
         session_id: sessionId,
-        role:       'system',
+        role:       wrapUpFromModel ? 'assistant' : 'system',
         content:    finalText,
       })
     }
