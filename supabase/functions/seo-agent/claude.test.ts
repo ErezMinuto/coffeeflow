@@ -9,7 +9,7 @@
 // must never emit an empty text block (a 400 from the API).
 
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { withMessageBreakpoint, type ChatMessage } from './claude.ts'
+import { withMessageBreakpoint, parseClaudeJson, type ChatMessage } from './claude.ts'
 
 Deno.test('single message is left alone — nothing to reuse on a one-shot call', () => {
   const one: ChatMessage[] = [{ role: 'user', content: 'hi' }]
@@ -54,4 +54,34 @@ Deno.test('skips blank trailing content rather than emitting an empty text block
 
   const noBlocks: ChatMessage[] = [{ role: 'user', content: 'q' }, { role: 'assistant', content: [] }]
   assertEquals(withMessageBreakpoint(noBlocks), noBlocks)
+})
+
+// parseClaudeJson — the writer on 2026-10-21 printed a self-check list
+// holding a markdown link before its JSON; the old parser tried the link.
+Deno.test('parseClaudeJson skips a markdown link in prose before the JSON', () => {
+  const text = [
+    '*   *H1:* פולי קפה ערביקה: לא רק טעם',
+    '*   Product 1: [פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate](https://www.minuto.co.il/product/x)',
+    '',
+    '{"title": "t", "slug": "s", "meta_description": "m", "body": "<p>[not a link] {x}</p>"}',
+  ].join('\n')
+  assertEquals(parseClaudeJson(text), { title: 't', slug: 's', meta_description: 'm', body: '<p>[not a link] {x}</p>' })
+})
+
+Deno.test('parseClaudeJson still reads fenced and bare JSON', () => {
+  assertEquals(parseClaudeJson('Here it is:\n```json\n{"a": 1}\n```'), { a: 1 })
+  assertEquals(parseClaudeJson('[1, 2]'), [1, 2])
+})
+
+Deno.test('parseClaudeJson falls back to the whole text when the fence holds no JSON', () => {
+  assertEquals(parseClaudeJson('```\nnot json\n```\n{"ok": true}'), { ok: true })
+})
+
+Deno.test('parseClaudeJson still throws when nothing parses', () => {
+  let threw = false
+  try { parseClaudeJson('no json here') } catch { threw = true }
+  assert(threw)
+  threw = false
+  try { parseClaudeJson('{"truncated": "mid') } catch { threw = true }
+  assert(threw)
 })
