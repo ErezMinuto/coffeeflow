@@ -1276,6 +1276,20 @@ ${directives.map(d => `- ${d}`).join('\n')}`
 // This is line-by-line scrubbing — leaves the rest of the brief intact
 // so the photographer's intent (lighting, palette, mood) survives.
 // ─────────────────────────────────────────────────────────────────────────
+// Forbidden-list lines for the no_bag escalation tail, derived from the brief.
+// Negations are dropped first so "no beans" does not read as a bean scene.
+function noBagTail(brief: string): string[] {
+  const positive = brief.toLowerCase().replace(/\b(?:no|without|never|not|avoid|zero)\b[^.,;:!?]*/g, ' ')
+  const showsBeans = /\b(beans?|roasted coffee|cooling (?:tray|bin)|cooler)\b/.test(positive)
+  const showsHands = /\b(hands?|arms?|barista|person|holding|held|pour(?:s|ing)?|tamp(?:s|ing|er)?|crank(?:s|ing)?|turning the (?:handle|crank)|grinding|stirr(?:ing)?|press(?:es|ing)? (?:down|the plunger)|plung(?:e|ing))\b/.test(positive)
+  return [
+    '- No coffee bag, no packaging, no pouch, no sachet, no bean container of any kind',
+    showsBeans ? '' : '- No loose coffee beans scattered on the surface',
+    showsHands ? '' : '- No human hands or arms in frame',
+    '- No coffee-product branding text anywhere',
+  ].filter(Boolean)
+}
+
 function stripConflictingTerms(brief: string, mode: 'no_bag' | 'bag_hero'): string {
   if (mode === 'no_bag') {
     // Two-part fix for Gemini's bag-bias:
@@ -1290,14 +1304,17 @@ function stripConflictingTerms(brief: string, mode: 'no_bag' | 'bag_hero'): stri
       .filter(sentence => !/\b(bag|bags|pouch|pouches|packaging|sachet|package of (?:beans|coffee))\b/i.test(sentence))
       .join(' ')
       .trim() || brief
+    // The tail used to be written for one espresso brief: it ended "show ONLY
+    // the espresso machine and the pull" and banned beans and hands for every
+    // no_bag brief. Attempt 3 of a V60, AeroPress, kettle or bean macro then
+    // asked for an espresso machine and forbade its own subject (6 of 7
+    // attempt-3 renders 2026-09-24..10-24). Only the bag ban is universal;
+    // beans and hands are banned only when the brief does not show them.
     return `${stripped}
 
 DO NOT INCLUDE ANY OF THESE — they are forbidden in this render:
-- No coffee bag, no packaging, no pouch, no sachet, no bean container of any kind
-- No loose coffee beans scattered on the surface
-- No human hands or arms in frame
-- No coffee-product branding text anywhere
-The image must show ONLY the espresso machine and the pull (cup + crema), nothing else.`
+${noBagTail(stripped).join('\n')}
+The image must show ONLY what the brief above describes, nothing else.`
   }
   // bag_hero: Vertex needs single-subject focus. Keep sentences that
   // mention the bag/coffee, drop sentences naming co-subjects (machines,
