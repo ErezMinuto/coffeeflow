@@ -125,6 +125,7 @@
         "npm:@clerk/clerk-react@^4.30.0",
         "npm:@supabase/supabase-js@^2.39.0",
         "npm:ajv@^8.18.0",
+        "npm:jszip@^3.10.1",
         "npm:react-dom@^18.2.0",
         "npm:react-router-dom@^6.22.0",
         "npm:react-scripts@5.0.1",
