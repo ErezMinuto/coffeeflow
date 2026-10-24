@@ -266,6 +266,24 @@ OOM) — it never wrote a terminal line. That is a real signal, not missing data
 `_shared/logger.ts` makes every importing function stale — Supabase bundles
 imports at deploy time, so they need redeploying for the change to land.
 
+### QA & automated bug detection
+
+```bash
+./scripts/qa-scan.sh --quick      # git sync, CI guards, failing seo_tasks, crashes (24h)
+./scripts/qa-scan.sh --db         # + rolled-back access/counter dry-runs on prod
+```
+
+- **PR guard**: `.github/workflows/qa-review.yml` runs `scripts/ci/qa_review.py` on
+  every PR into `main` (NO_VERIFY_JWT kept, supabase-js `@2.116.0`, `filterByUser:
+  false` on shared tables, no credential leaks, no hard-coded prompt overrides) and
+  posts one sticky comment. A false positive is silenced per line with
+  `qa-allow: <check> — reason`. Self-test: `bash scripts/ci/qa_review_test.sh`.
+- **Runtime sentinel**: `health-watchdog` also reports visual-QA spikes, SEO-chat
+  runaway loops and edge crashes (`runtime_sentinel.ts`). A bug that REPEATS is
+  filed into `strategist_signals` as an `open` bug_report (`watchdog:<key>:<date>`,
+  deduped) — approving it hands it to `fixer-agent.yml`. Handled refusals
+  (`finish('error', { code })`) are never filed.
+
 ---
 
 ## Clerk User Lookup
