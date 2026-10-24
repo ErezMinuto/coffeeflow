@@ -203,6 +203,14 @@ standing just out of frame: its forearm enters from the side or bottom edge
 at a natural angle, never a flat hand sliding in from the top. A tool in use
 is HELD — a pouring kettle by its handle, a hand grinder's body gripped by
 one hand while the other turns the crank. Nothing floats or pours on its own.
+TWO HANDS are the LEFT and RIGHT hand of ONE person in front of the camera:
+both forearms come up from the BOTTOM edge, the left arm from the
+bottom-left and the right arm from the bottom-right, a natural shoulder
+width apart. Never two arms side by side from the same edge, never two
+copies of the same hand. Hand grinder: the LEFT hand wraps around the
+grinder body, the RIGHT hand turns the crank knob on top. If two hands
+cannot be framed naturally, show ONE hand on the crank and the grinder
+standing firmly on the surface.
 No faces.`
 
 function forbidden(s: Scene): string {
