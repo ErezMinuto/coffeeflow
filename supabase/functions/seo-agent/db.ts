@@ -212,6 +212,26 @@ export async function getRecentTasks(
   return (data ?? []) as SeoTaskRow[]
 }
 
+// Blog keywords the cannibalization gate refused, any status. Wider than the
+// 14-day getRecentTasks window on purpose: a keyword the site already covers
+// stays covered, and the strategist kept re-proposing ones blocked weeks ago.
+export async function getRecentCannibalizationConflicts(
+  supabase: SupabaseClient,
+  sinceIsoDate: string,
+  limit = 60,
+): Promise<Array<{ created_at: string; brief_data: unknown }>> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('created_at, brief_data')
+    .eq('task_type', 'dynamic_experiment')
+    .eq('task_subtype', 'cannibalization_conflict')
+    .gte('created_at', sinceIsoDate)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(`getRecentCannibalizationConflicts failed: ${error.message}`)
+  return (data ?? []) as Array<{ created_at: string; brief_data: unknown }>
+}
+
 // For the orchestrator's anti-repetition input — the last N IG captions it
 // actually shipped (task_type='instagram_post', completed), newest first. The
 // caption text lives in brief_data.caption_he (the strategist writes it
