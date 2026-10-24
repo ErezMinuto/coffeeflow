@@ -538,7 +538,7 @@ serve(async (req) => {
   // is unusable.
   const finalRenderFunction = 'visual-test'  // both bag + no_bag render via Gemini now
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       image_url:           imageUrl,
       render_function:     finalRenderFunction,
       render_mode:         finalRenderMode,
@@ -607,7 +607,7 @@ async function safeMarkFailed(
   permanent: boolean,
 ): Promise<void> {
   try {
-    await markTaskFailed(supabase, task.id, msg, permanent)
+    await markTaskFailed(supabase, task, msg, permanent)
   } catch (e: any) {
     console.error(`[seo-worker-visual] markTaskFailed write failed: ${e?.message ?? e}`)
   }
@@ -876,7 +876,7 @@ async function handleCarousel(
   }
 
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       carousel:        true,
       carousel_slides: renderedSlides,
       slide_count:     renderedSlides.length,

@@ -147,39 +147,61 @@ export async function claimNextTask(
   return null
 }
 
+// Workers pass the claimed TASK ROW: the write is then fenced on
+// status='processing' AND the worker_id that claimed it, so a task cancelled
+// (or reclaimed by another worker after a lock expiry) while this worker was
+// still running is never overwritten — not flipped to 'completed', and not
+// resurrected to 'pending' by a retryable failure. Returns false when the fence
+// rejected the write (the row is left as it is).
+//
+// A bare task id is an unfenced admin write (the chat's cancel_task).
+type TaskRef = string | Pick<SeoTaskRow, 'id' | 'worker_id'>
+
+async function fencedTaskUpdate(
+  supabase: SupabaseClient,
+  ref: TaskRef,
+  patch: Record<string, unknown>,
+  what: string,
+): Promise<boolean> {
+  let q = supabase.from('seo_tasks').update(patch).eq('id', typeof ref === 'string' ? ref : ref.id)
+  if (typeof ref !== 'string') {
+    q = q.eq('status', 'processing')
+    q = ref.worker_id ? q.eq('worker_id', ref.worker_id) : q.is('worker_id', null)
+  }
+  const { data, error } = await q.select('id')
+  if (error) throw new Error(`${what} failed: ${error.message}`)
+  if (typeof ref !== 'string' && (data ?? []).length === 0) {
+    console.warn(`[seo-agent] ${what} skipped for task ${ref.id}: no longer processing under worker ${ref.worker_id} (cancelled or reclaimed)`)
+    return false
+  }
+  return true
+}
+
 export async function markTaskCompleted(
   supabase: SupabaseClient,
-  taskId: string,
+  task: TaskRef,
   resultData: Record<string, unknown>,
-): Promise<void> {
-  const { error } = await supabase
-    .from('seo_tasks')
-    .update({
-      status:       'completed',
-      result_data:  resultData,
-      completed_at: new Date().toISOString(),
-      locked_until: null,
-      error_msg:    null,
-    })
-    .eq('id', taskId)
-  if (error) throw new Error(`markTaskCompleted failed: ${error.message}`)
+): Promise<boolean> {
+  return await fencedTaskUpdate(supabase, task, {
+    status:       'completed',
+    result_data:  resultData,
+    completed_at: new Date().toISOString(),
+    locked_until: null,
+    error_msg:    null,
+  }, 'markTaskCompleted')
 }
 
 export async function markTaskFailed(
   supabase: SupabaseClient,
-  taskId: string,
+  task: TaskRef,
   errorMsg: string,
   permanentlyFailed: boolean,
-): Promise<void> {
-  const { error } = await supabase
-    .from('seo_tasks')
-    .update({
-      status:       permanentlyFailed ? 'failed' : 'pending',
-      error_msg:    errorMsg.slice(0, 2000),
-      locked_until: null,
-    })
-    .eq('id', taskId)
-  if (error) throw new Error(`markTaskFailed failed: ${error.message}`)
+): Promise<boolean> {
+  return await fencedTaskUpdate(supabase, task, {
+    status:       permanentlyFailed ? 'failed' : 'pending',
+    error_msg:    errorMsg.slice(0, 2000),
+    locked_until: null,
+  }, 'markTaskFailed')
 }
 
 // Sweeper: reset rows whose locked_until is in the past back to pending.
