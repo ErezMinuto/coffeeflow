@@ -1,32 +1,38 @@
-// Minuto SEO Agent — pre-flight keyword-cannibalization check.
+// Minuto SEO Agent — keyword-cannibalization check.
 //
-// Before a text_generation task actually drafts an article, we ask the
-// WP REST API whether an existing post (ANY status: draft, publish,
-// pending, future, private) already covers the same keyword/topic.
-// Publishing a second near-duplicate splits ranking signals between two
-// URLs (cannibalization) — so if a conflict exists the writer worker
-// FAILS the task and surfaces the conflicting post(s) to the admin,
-// instead of silently drafting a duplicate.
-//
-// This module now covers BOTH halves of the belt-and-suspenders check:
-//
-//   • checkKeywordCannibalization() — the PIPELINE-LAYER half. The writer
-//     worker calls it at claim time; on a conflict it fails the task and
-//     hands the admin the conflicting URLs.
+// Before a text_generation task is queued, and again before the writer
+// drafts it, we check whether an existing post (ANY status: draft, publish,
+// pending, future, private) already covers the same topic. A second
+// near-duplicate splits ranking signals between two URLs (cannibalization),
+// so on a conflict the article is NOT written; the conflict is surfaced to
+// the admin instead.
 //
 //   • checkCannibalizationForQueue() + buildCannibalizationConflictBrief()
-//     — the PRE-QUEUE gate. The mission worker and orchestrator call it
-//     immediately BEFORE queuing a text_generation task. On a conflict
-//     they DON'T queue the task at all; instead they insert a
-//     dynamic_experiment (subtype: cannibalization_conflict) with
-//     approval_required so the conflict surfaces in Erez's pending-
-//     approvals queue rather than as a silently-failed task. The gate
-//     uses a token-intersection ratio (Hebrew stop-words stripped) so it
-//     catches paraphrased/reordered titles the exact/contains check
-//     might miss.
+//     — the PRE-QUEUE gate (mission worker + orchestrator). On a conflict
+//     they file a dynamic_experiment (cannibalization_conflict,
+//     approval_required) instead of the text_generation task.
 //
-// Uses the same WP Application Password env vars as blog-publish,
-// wpPublishDetector, and the visual worker's featured-image attach:
+//   • checkKeywordCannibalization() — the WRITER gate, at claim time. It is
+//     the one chokepoint every blog task passes through, whichever path
+//     queued it, so it applies the SAME matcher as the pre-queue gate.
+//
+// How matching works, and why (2026-10-12 rewrite):
+//
+//   The old version asked WP's `?search=` for candidates. WP search ANDs
+//   every word, so one extra word in the new keyword ("מומלצת", "תהליכי")
+//   hid the very post it should have found — "פולי קפה למכונת אספרסו ביתית"
+//   never returned the near-identical #80764, and 7 duplicate pairs went
+//   live. It then compared exact tokens, so Hebrew prefixes broke matches
+//   ("למכונת" ≠ "מכונת", "מברזיל" ≠ "ברזיל").
+//
+//   Now: fetch the WHOLE post index once (a few hundred titles), and score
+//   locally. Tokens match when they are equal after stripping up to two
+//   Hebrew prefix letters (ו ה ב כ ל מ ש). Each token is weighted by how
+//   rare it is across the existing titles (IDF), so generic words that
+//   appear everywhere ("קפה", "פולי", "מדריך") barely count and topic words
+//   ("קפאין", "טחינה", "ברזיל") decide the match.
+//
+// Uses the same WP Application Password env vars as blog-publish:
 // WP_BLOG_POST_USER_NAME + WP_BLOG_POST_PASS. WOO_URL for the base URL.
 
 import type { DynamicExperimentBrief } from './types.ts'
@@ -35,37 +41,36 @@ const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').
 const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''
 const WP_APP_PASSWORD = Deno.env.get('WP_BLOG_POST_PASS') ?? ''
 
-// Similarity threshold — configurable so we can tighten/loosen without a
-// redeploy. Values:
-//   'title_contains' (DEFAULT) — a returned post conflicts when its title
-//        contains the keyword, the keyword contains its title, or either
-//        title contains the other. Broad on purpose: catches paraphrased
-//        titles (criterion 5: "avoid false negatives on paraphrased titles").
-//   'keyword_exact' — a returned post conflicts only when its normalized
-//        title EQUALS the normalized keyword. Narrow; fewer false positives.
-const MATCH_MODE = (Deno.env.get('SEO_CANNIBAL_MATCH') ?? 'title_contains').trim() as
-  | 'title_contains'
-  | 'keyword_exact'
-
-// Pre-queue gate threshold: the minimum share of the KEYWORD's tokens that
-// must also appear in a candidate post's title (or slug) for that post to
-// count as a cannibalization conflict. Default 0.6 per the signal's spec —
-// tunable via env without a redeploy. Clamped to (0, 1].
-const TOKEN_OVERLAP_MIN = (() => {
+// Minimum IDF-weighted share of the new article's topic that an existing
+// post must cover to count as a conflict. Tunable via env without a
+// redeploy. Clamped to (0, 1]. Default chosen against the live blog
+// history — see cannibalizationCheck_test.ts.
+const OVERLAP_MIN = (() => {
   const raw = Number(Deno.env.get('SEO_CANNIBAL_TOKEN_OVERLAP') ?? '')
   return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.6
 })()
 
-// Common Hebrew (+ a few English) stop-words stripped before the token
-// overlap is computed, so filler words don't dilute the ratio. Kept small
-// and high-frequency on purpose — this is a similarity heuristic, not a
-// linguistic parser.
+// Keyword overlap required before the intended TITLE is weighed at all.
+const TITLE_GATE = 0.35
+
+// Function words that carry no topic. Generic DOMAIN words ("קפה",
+// "מדריך") are deliberately NOT listed — IDF already discounts them, and
+// a hand list would drift out of date as the blog grows.
 const STOPWORDS = new Set([
   'של', 'את', 'על', 'לפי', 'עם', 'גם', 'כל', 'או', 'כי', 'זה', 'זו', 'אלה',
   'הוא', 'היא', 'הם', 'הן', 'יש', 'אין', 'מה', 'מי', 'לא', 'כן', 'אני', 'אתה',
-  'אנחנו', 'אך', 'רק', 'עד', 'אם', 'כמו',
-  'the', 'a', 'an', 'to', 'for', 'of', 'and', 'or', 'in', 'on', 'with',
+  'אנחנו', 'אך', 'רק', 'עד', 'אם', 'כמו', 'איך', 'למה', 'איזה', 'איזו', 'מתי',
+  'ולמה', 'שלך', 'שלכם', 'לך', 'לכם', 'יותר', 'הכי', 'בין', 'אחרי', 'לפני',
+  'the', 'a', 'an', 'to', 'for', 'of', 'and', 'or', 'in', 'on', 'with', 'vs',
+  // SEO intent modifiers. They never change WHICH topic a page is about
+  // ("מטחנת קפה ידנית מומלצת" is the manual-grinder topic), but they are
+  // rare in titles, so IDF would otherwise make them the heaviest token.
+  'מומלץ', 'מומלצת', 'מומלצים', 'מומלצות', 'הטוב', 'הטובה', 'הטובים', 'ביותר',
+  'מדריך', 'המדריך', 'המלא', 'המלאה', 'מקיף', 'חדש', 'חדשה', 'best', 'guide',
+  '2024', '2025', '2026', '2027',
 ])
+
+const HEB_PREFIXES = new Set(['ו', 'ה', 'ב', 'כ', 'ל', 'מ', 'ש'])
 
 export interface CannibalConflict {
   id:     number
@@ -73,6 +78,9 @@ export interface CannibalConflict {
   status: string
   link:   string
   slug?:  string
+  // Overlap score that triggered the conflict (0..1). Absent on synthetic
+  // conflicts (in-plan / already-queued) that the orchestrator builds.
+  score?: number
 }
 
 export interface CannibalizationResult {
@@ -86,162 +94,236 @@ export interface CannibalizationResult {
   reason?:   string
 }
 
-// Case-insensitive, Hebrew+English-safe normalization: lowercase, strip
-// Hebrew niqqud, replace punctuation/quotes with spaces, collapse
-// whitespace. Mirrors the writer worker's slugifyKeyword niqqud strip so
-// "קפֶה" and "קפה" compare equal.
+// Lowercase, strip Hebrew niqqud, punctuation → space, collapse whitespace.
 function normalize(s: string): string {
   return (s ?? '')
     .toLowerCase()
     .replace(/[֑-ׇ]/g, '')          // strip Hebrew niqqud/te'amim
-    .replace(/["'“”‘’׳״]/g, ' ')     // quotes/gershayim → space
-    .replace(/[^\p{L}\p{N}]+/gu, ' ') // any non-letter/number → space
+    .replace(/["'“”‘’׳״]/g, '')      // quotes/gershayim are part of the word (גוג'י, ע"י)
+    .replace(/[^\p{L}\p{N}]+/gu, ' ') // any other non-letter/number → space
     .replace(/\s+/g, ' ')
     .trim()
 }
 
-// Normalize → split → drop stop-words and 1-char tokens (bare Hebrew
-// prefixes, stray digits). Returns the meaningful comparison tokens.
+// Meaningful comparison tokens: stop-words and 1-char tokens dropped.
 function tokens(s: string): string[] {
   return normalize(s)
     .split(' ')
     .filter(t => t.length >= 2 && !STOPWORDS.has(t))
 }
 
-// Fraction of the KEYWORD's tokens that also appear in `candidate`.
-// Asymmetric on purpose: "does the existing post cover (most of) what this
-// keyword is about?" A short keyword fully contained in a longer title
-// scores 1.0; an unrelated title scores ~0.
-function tokenOverlapRatio(keyword: string, candidate: string): number {
-  const kw = tokens(keyword)
-  if (kw.length === 0) return 0
-  const cand = new Set(tokens(candidate))
-  let hits = 0
-  for (const t of kw) if (cand.has(t)) hits++
-  return hits / kw.length
+// Hebrew inflection endings: plural (ות/ים), construct/feminine (ת/ה).
+// "שיטה" / "שיטת" / "שיטות" all reduce to "שיט".
+const HEB_SUFFIXES = ['יות', 'ות', 'ים', 'ת', 'ה']
+
+function stripSuffix(t: string): string {
+  for (const suf of HEB_SUFFIXES) {
+    if (t.endsWith(suf) && t.length - suf.length >= 3) return t.slice(0, -suf.length)
+  }
+  return t
 }
 
-// Decide whether one existing post title conflicts with our brief
-// (title_contains / keyword_exact modes — used by the writer worker's
-// claim-time check).
-function titleConflicts(existingTitle: string, keyword: string, targetTitle: string): boolean {
-  const t  = normalize(existingTitle)
-  const kw = normalize(keyword)
-  if (!t || !kw) return false
+// A token plus its forms with up to two leading Hebrew prefix letters
+// stripped ("למכונת" → "מכונת", "והקפה" → "קפה"), each also with its
+// inflection ending stripped. A stem must keep at least 3 letters so short
+// words aren't reduced to noise. Two tokens match when their variant sets
+// intersect.
+function variants(t: string): string[] {
+  const out = new Set([t, stripSuffix(t)])
+  let cur = t
+  for (let i = 0; i < 2; i++) {
+    if (cur.length - 1 < 3 || !HEB_PREFIXES.has(cur[0])) break
+    cur = cur.slice(1)
+    out.add(cur)
+    out.add(stripSuffix(cur))
+  }
+  return [...out]
+}
 
-  if (MATCH_MODE === 'keyword_exact') {
-    return t === kw
+// WP slugs come back percent-encoded ("%d7%a7%d7%a4%d7%94-..."); decode so
+// Hebrew slugs compare as words. Falls back to the raw slug on bad input.
+function decodeSlug(slug: string): string {
+  try { return decodeURIComponent(slug) } catch { return slug }
+}
+
+export interface IndexedPost {
+  id:     number
+  title:  string
+  status: string
+  link:   string
+  slug:   string
+}
+
+// Pure scorer over a post index. Exported for tests.
+export function buildMatcher(posts: IndexedPost[]) {
+  // Per-post variant sets for title and slug.
+  const docs = posts.map((p) => {
+    const titleVars = new Set(tokens(p.title).flatMap(variants))
+    const slugVars  = new Set(tokens(decodeSlug(p.slug).replace(/-/g, ' ')).flatMap(variants))
+    return { post: p, titleVars, slugVars }
+  })
+
+  // Document frequency per variant, over titles. A token's df is the
+  // number of titles that contain ANY of its variants.
+  const df = new Map<string, number>()
+  for (const d of docs) for (const v of d.titleVars) df.set(v, (df.get(v) ?? 0) + 1)
+  const N = Math.max(docs.length, 1)
+  const idf = (t: string): number => {
+    let f = 0
+    for (const v of variants(t)) f = Math.max(f, df.get(v) ?? 0)
+    return Math.log((N + 1) / (f + 1)) + 0.1
   }
 
-  // title_contains (default, broad):
-  const tt = normalize(targetTitle)
-  return (
-    t.includes(kw) ||
-    kw.includes(t) ||
-    (tt.length > 0 && (t.includes(tt) || tt.includes(t)))
-  )
+  const covers = (vars: Set<string>, t: string) => variants(t).some(v => vars.has(v))
+
+  // IDF-weighted share of `text`'s tokens that the existing post covers.
+  const coverage = (text: string, vars: Set<string>): number => {
+    const toks = [...new Set(tokens(text))]
+    if (toks.length === 0) return 0
+    let hit = 0, total = 0
+    for (const t of toks) {
+      const w = idf(t)
+      total += w
+      if (covers(vars, t)) hit += w
+    }
+    return total > 0 ? hit / total : 0
+  }
+
+  return {
+    // Score each post against a new article (keyword + intended title).
+    // The keyword is the topic; the title adds the angle. Coverage is
+    // measured against the existing post's title AND slug (slugs often
+    // keep the original keyword after a title is re-hooked).
+    //
+    // The title only counts once the keyword already partly overlaps.
+    // Otherwise two different topics written from the same title template
+    // ("Clever Dripper: איזה פולי קפה יעשו לך..." vs "AeroPress: איזה פולי
+    // קפה יעשו לך...") would collide on the template words alone.
+    score(keyword: string, title: string): Array<{ post: IndexedPost; score: number }> {
+      return docs.map((d) => {
+        const both   = new Set([...d.titleVars, ...d.slugVars])
+        const kwCov  = coverage(keyword, both)
+        const ttlCov = title && kwCov >= TITLE_GATE ? coverage(title, both) : 0
+        return { post: d.post, score: Math.max(kwCov, ttlCov) }
+      })
+    },
+  }
 }
 
-// Query WP for posts overlapping `keyword` across every status. Returns
-// the raw candidate posts (title HTML stripped). Never throws — infra
-// failures resolve to {checked:false} and callers fail open. This is the
-// single WP round-trip both public entry points share, so a text_generation
-// task incurs at most ONE extra API call at its queuing site.
-async function fetchCandidatePosts(
+// Pure conflict finder. Exported for tests.
+export function findConflicts(
   keyword: string,
-): Promise<{ posts: CannibalConflict[]; checked: boolean; reason?: string }> {
-  const kw = (keyword ?? '').trim()
-  if (!kw) return { posts: [], checked: false, reason: 'empty keyword' }
+  title: string,
+  posts: IndexedPost[],
+  opts: { threshold?: number; excludeIds?: number[] } = {},
+): CannibalConflict[] {
+  const threshold = opts.threshold ?? OVERLAP_MIN
+  const exclude   = new Set(opts.excludeIds ?? [])
+  return buildMatcher(posts)
+    .score(keyword, title)
+    .filter(r => !exclude.has(r.post.id) && r.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(r => ({ ...r.post, score: Math.round(r.score * 100) / 100 }))
+}
 
+// Every post on the site (all non-trash statuses), paged. Cached for the
+// life of the worker so a plan with several articles costs one fetch.
+let indexCache: { at: number; posts: IndexedPost[] } | null = null
+const INDEX_TTL_MS = 5 * 60_000
+
+async function fetchPostIndex(): Promise<{ posts: IndexedPost[]; checked: boolean; reason?: string }> {
+  if (indexCache && Date.now() - indexCache.at < INDEX_TTL_MS) {
+    return { posts: indexCache.posts, checked: true }
+  }
   if (!WP_USERNAME || !WP_APP_PASSWORD) {
     console.warn('[cannibalization] WP credentials missing; skipping (fail-open)')
     return { posts: [], checked: false, reason: 'WP credentials missing' }
   }
-
   const auth = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
-  // context=edit + explicit status list surfaces drafts/pending/future/
-  // private (an anon GET only sees 'publish'). WP accepts a comma-joined
-  // status list on the collection endpoint.
-  const params = new URLSearchParams({
-    search:   kw,
-    status:   'publish,draft,pending,future,private',
-    per_page: '20',
-    _fields:  'id,title,slug,status,link',
-    context:  'edit',
-    orderby:  'relevance',
-  })
+  const stripHtml = (s: unknown) => typeof s === 'string'
+    ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#8211;|&#8212;/g, ' ').replace(/\s+/g, ' ').trim()
+    : ''
 
-  let arr: unknown
+  const posts: IndexedPost[] = []
   try {
-    const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts?${params.toString()}`, {
-      headers: { Authorization: auth },
-    })
-    if (!r.ok) {
-      const body = await r.text().catch(() => '')
-      console.warn(`[cannibalization] WP search HTTP ${r.status}: ${body.slice(0, 200)} (fail-open)`)
-      return { posts: [], checked: false, reason: `WP search HTTP ${r.status}` }
+    for (let page = 1; page <= 20; page++) {
+      // context=edit + explicit status list surfaces drafts/pending/future/
+      // private (an anon GET only sees 'publish'). Trash is excluded, so a
+      // post the admin deletes stops blocking its topic.
+      const params = new URLSearchParams({
+        status:   'publish,draft,pending,future,private',
+        per_page: '100',
+        page:     String(page),
+        _fields:  'id,title,slug,status,link',
+        context:  'edit',
+      })
+      const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts?${params.toString()}`, {
+        headers: { Authorization: auth },
+      })
+      if (r.status === 400 && page > 1) break   // WP: page past the end
+      if (!r.ok) {
+        const body = await r.text().catch(() => '')
+        console.warn(`[cannibalization] WP index HTTP ${r.status}: ${body.slice(0, 200)} (fail-open)`)
+        return { posts: [], checked: false, reason: `WP index HTTP ${r.status}` }
+      }
+      const arr = await r.json() as Array<{ id?: number; title?: { raw?: string; rendered?: string }; slug?: string; status?: string; link?: string }>
+      for (const p of Array.isArray(arr) ? arr : []) {
+        if (typeof p.id !== 'number') continue
+        posts.push({
+          id:     p.id,
+          title:  stripHtml(p.title?.raw ?? p.title?.rendered ?? ''),
+          status: String(p.status ?? 'unknown'),
+          link:   String(p.link ?? ''),
+          slug:   String(p.slug ?? ''),
+        })
+      }
+      const totalPages = Number(r.headers.get('x-wp-totalpages') ?? '1')
+      if (!Array.isArray(arr) || arr.length < 100 || page >= totalPages) break
     }
-    arr = await r.json()
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    console.warn(`[cannibalization] WP search threw: ${msg} (fail-open)`)
+    console.warn(`[cannibalization] WP index threw: ${msg} (fail-open)`)
     return { posts: [], checked: false, reason: msg }
   }
 
-  const stripHtml = (s: unknown) => typeof s === 'string'
-    ? s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
-    : ''
-
-  const posts: CannibalConflict[] = (Array.isArray(arr) ? arr : [])
-    .map((p) => {
-      const post = p as { id?: number; title?: { rendered?: string; raw?: string }; slug?: string; status?: string; link?: string }
-      return {
-        id:     typeof post.id === 'number' ? post.id : 0,
-        title:  stripHtml(post.title?.raw ?? post.title?.rendered ?? ''),
-        status: String(post.status ?? 'unknown'),
-        link:   String(post.link ?? ''),
-        slug:   String(post.slug ?? ''),
-      }
-    })
-    .filter((c) => c.id > 0)
-
+  indexCache = { at: Date.now(), posts }
   return { posts, checked: true }
 }
 
-// PIPELINE-LAYER check (writer worker, claim time). Fetches candidates and
-// filters by the configured title-similarity threshold. Returns the
-// surviving conflicts (may be empty). Never throws.
-export async function checkKeywordCannibalization(
+async function check(
   keyword: string,
   title: string,
+  excludeIds: number[] = [],
 ): Promise<CannibalizationResult> {
-  const { posts, checked, reason } = await fetchCandidatePosts(keyword)
+  if (!(keyword ?? '').trim() && !(title ?? '').trim()) {
+    return { conflicts: [], checked: false, reason: 'empty keyword' }
+  }
+  const { posts, checked, reason } = await fetchPostIndex()
   if (!checked) return { conflicts: [], checked: false, reason }
-  const conflicts = posts.filter((c) => titleConflicts(c.title, keyword, title))
-  return { conflicts, checked: true }
+  return { conflicts: findConflicts(keyword, title, posts, { excludeIds }), checked: true }
+}
+
+// WRITER gate (claim time). Same matcher as the pre-queue gate so a task
+// queued by a path that skipped the pre-queue gate is still caught here.
+// `excludeIds` lets a rewrite brief ignore the post it is replacing.
+// Never throws — callers fail open on checked=false.
+export function checkKeywordCannibalization(
+  keyword: string,
+  title: string,
+  excludeIds: number[] = [],
+): Promise<CannibalizationResult> {
+  return check(keyword, title, excludeIds)
 }
 
 // PRE-QUEUE gate (mission worker + orchestrator, BEFORE queuing a
-// text_generation task). Same WP round-trip as above, but matches by a
-// token-intersection ratio: a candidate conflicts when ≥ TOKEN_OVERLAP_MIN
-// of the keyword's meaningful tokens also appear in the post's title OR
-// slug. Catches reordered/paraphrased titles the substring check misses.
-// Never throws — callers fail open (queue anyway) when checked=false.
-export async function checkCannibalizationForQueue(
+// text_generation task). Never throws — callers fail open on checked=false.
+export function checkCannibalizationForQueue(
   keyword: string,
   title: string,
+  excludeIds: number[] = [],
 ): Promise<CannibalizationResult> {
-  const { posts, checked, reason } = await fetchCandidatePosts(keyword)
-  if (!checked) return { conflicts: [], checked: false, reason }
-  const conflicts = posts.filter((c) => {
-    const titleRatio = tokenOverlapRatio(keyword, c.title)
-    const slugRatio  = tokenOverlapRatio(keyword, c.slug ?? '')
-    // The intended article title is also weighed so a keyword-light brief
-    // with a descriptive title still gets caught.
-    const fromTitle  = title ? tokenOverlapRatio(title, c.title) : 0
-    return Math.max(titleRatio, slugRatio, fromTitle) >= TOKEN_OVERLAP_MIN
-  })
-  return { conflicts, checked: true }
+  return check(keyword, title, excludeIds)
 }
 
 // Pick which remediation to recommend. A LIVE (published) conflict is the

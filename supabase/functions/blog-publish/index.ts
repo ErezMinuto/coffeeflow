@@ -19,6 +19,7 @@ import { marked } from 'https://esm.sh/marked@12.0.0'
 //     excerpt?:            string            // Short blurb (meta description)
 //     featured_image_url?: string            // Optional hero image; we fetch + upload to /media first
 //     status?:             'draft' | 'pending' | 'publish'  // Default 'draft' (we never auto-publish from here)
+//     id?:                 number            // Rewrite this draft in place (refused with 409 if it is live)
 //   }
 //
 // Response: { ok, id, link, edit_url, status, featured_media?, warnings? }
@@ -35,6 +36,10 @@ interface BlogPublishRequest {
   excerpt?:            string
   featured_image_url?: string
   status?:             'draft' | 'pending' | 'publish'
+  // Update this existing post instead of creating a new one. Only a
+  // draft/pending post may be overwritten; a live post is refused so an
+  // agent rewrite never changes the public site without review.
+  id?:                 number
 }
 
 serve(async (req) => {
@@ -116,6 +121,25 @@ serve(async (req) => {
   const auth     = 'Basic ' + btoa(`${WP_USERNAME}:${WP_APP_PASSWORD}`)
   const warnings: string[] = []
 
+  // ── Optional: rewrite an existing post in place ───────────────────────
+  // Checked before any media upload so a refused rewrite leaves nothing
+  // behind in the media library.
+  const targetId = Number(body.id) > 0 ? Number(body.id) : undefined
+  if (targetId) {
+    const r = await fetch(`${WP_URL}/wp-json/wp/v2/posts/${targetId}?context=edit&_fields=id,status`, {
+      headers: { Authorization: auth },
+    })
+    if (!r.ok) {
+      return jsonResponse({ error: `rewrite target #${targetId} not readable: WP ${r.status}` }, r.status === 404 ? 404 : 502, corsHeaders)
+    }
+    const target = await r.json() as { status?: string }
+    if (target.status !== 'draft' && target.status !== 'pending') {
+      return jsonResponse({
+        error: `rewrite target #${targetId} is '${target.status}', not a draft — refusing to overwrite it. Edit it in WP admin instead.`,
+      }, 409, corsHeaders)
+    }
+  }
+
   // ── Optional: upload featured image to /wp/v2/media ───────────────────
   // WP REST requires the image be uploaded as a media object FIRST and
   // referenced by its numeric ID on the post. We fetch the URL the
@@ -139,7 +163,7 @@ serve(async (req) => {
   // theme's existing RTL CSS.
   const contentHtml = marked.parse(body.content_markdown, { async: false }) as string
 
-  // ── Create the post ───────────────────────────────────────────────────
+  // ── Create the post (or update the rewrite target) ────────────────────
   const postBody: Record<string, unknown> = {
     title:   body.title.trim(),
     content: contentHtml,
@@ -149,7 +173,7 @@ serve(async (req) => {
   if (body.excerpt?.trim()) postBody.excerpt = body.excerpt.trim()
   if (featuredMedia)        postBody.featured_media = featuredMedia
 
-  const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts`, {
+  const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts${targetId ? `/${targetId}` : ''}`, {
     method:  'POST',
     headers: { Authorization: auth, 'Content-Type': 'application/json' },
     body:    JSON.stringify(postBody),

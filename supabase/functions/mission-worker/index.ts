@@ -829,8 +829,9 @@ serve(async (req) => {
       if (task_type === 'text_generation') {
         const kw = String((norm.brief as Record<string, unknown>).keyword ?? '')
         const ti = String((norm.brief as Record<string, unknown>).title ?? '')
+        const rp = Number((norm.brief as Record<string, unknown>).replaces_post_id)
         let gate
-        try { gate = await checkCannibalizationForQueue(kw, ti) }
+        try { gate = await checkCannibalizationForQueue(kw, ti, rp > 0 ? [rp] : []) }
         catch (e: any) { gate = { conflicts: [], checked: false, reason: e?.message ?? String(e) } }
         if (gate.checked && gate.conflicts.length > 0) {
           try {
@@ -1109,7 +1110,7 @@ OPERATING RULES:
 
 BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the task_type, or the sub-task FAILS validation and is wasted. Required (✱) and optional fields:
 - deep_research → { question✱ (a specific researchable question), scope ("channel_discovery"|"geo_llmo"|"content_topic"|"other"), expected_output ("analysis") }
-- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT names copied from the MINUTO COFFEE LINEUP block — when set, the auto-paired banner shows that real bag, so never invent a name or use anything off the list) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
+- text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT names copied from the MINUTO COFFEE LINEUP block — when set, the auto-paired banner shows that real bag, so never invent a name or use anything off the list), replaces_post_id (WP id of an existing DRAFT this article rewrites — the writer then updates that draft instead of creating a second post on the same topic; never set it to a published post) }. ONE TOPIC = ONE POST: a new article must target a topic no existing post covers. Improving a covered topic is a rewrite of that post (replaces_post_id), never a new article with a reworded keyword. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
 - visual_generation → { scene_brief✱ (one concrete scene to render), aspect ("feed_square"|"feed_portrait"|"reel_cover"|"story" — use "story" for a 9:16 IG story), render_mode ("bag_hero"|"no_bag" — bag_hero composites the real Minuto bag and REQUIRES product_name set to an exact Minuto product; no_bag is a bag-free editorial scene and must NOT mention any bag/pouch/packaging), product_name (exact Minuto product name, required when render_mode="bag_hero"), destination ("blog_banner"|"ig_post") } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }. (Blog articles get a banner auto-paired — only queue this for IG visuals or standalone scenes.)
 - instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he✱, hashtags (array), media_type } — never queue this before the visual exists.
 - technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
