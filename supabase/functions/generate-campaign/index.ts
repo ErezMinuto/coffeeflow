@@ -13,6 +13,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { checkUnsubscribeToken, normalizeEmail, unsubscribeUrl } from "../_shared/unsubscribe_token.ts";
 import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
@@ -92,9 +93,9 @@ function formatPrice(raw: string): string {
     : num.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function generateUnsubscribeUrl(email: string): string {
-  const token = btoa(`${email}:${Date.now()}`);
-  return `${UNSUBSCRIBE_BASE}?action=unsubscribe&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+// HMAC-signed per address (_shared/unsubscribe_token.ts); the GET handler below verifies it.
+function generateUnsubscribeUrl(email: string): Promise<string> {
+  return unsubscribeUrl(UNSUBSCRIBE_BASE, email);
 }
 
 // ── Gemini Imagen -Generate Banner Image ───────────────────────────────────
@@ -1576,8 +1577,8 @@ async function handleSendCampaign(p: SendCampaignPayload) {
 
     // Build a per-recipient payload so each email gets its own unique
     // unsubscribe URL (HMAC-signed per address) and UTM tag.
-    const batchPayload = chunk.map(r => {
-      const unsubUrl = generateUnsubscribeUrl(r.email);
+    const batchPayload = await Promise.all(chunk.map(async r => {
+      const unsubUrl = await generateUnsubscribeUrl(r.email);
       const personalizedHtml = campaign.html_content
         .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubUrl)
         .replace(/\{\{UTM_CAMPAIGN\}\}/g, utmCampaignTag)
@@ -1589,7 +1590,7 @@ async function handleSendCampaign(p: SendCampaignPayload) {
         html:    personalizedHtml,
         headers: { "List-Unsubscribe": `<${unsubUrl}>` },
       };
-    });
+    }));
 
     let res: Response | null = null;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -1773,7 +1774,18 @@ async function handleUnsubscribe(url: URL): Promise<Response> {
     return redirectTo(`${UNSUBSCRIBE_REDIRECT_BASE}?status=invalid`);
   }
 
-  const normalized = email.toLowerCase().trim();
+  const normalized = normalizeEmail(email);
+
+  // The link is public, so the token is the only proof the address came from one of our emails.
+  const check = await checkUnsubscribeToken(normalized, token);
+  if (check === "invalid") {
+    // Logged with the address so a real person whose link failed can still be removed by hand.
+    console.warn("handleUnsubscribe: refused token for", normalized);
+    return redirectTo(`${UNSUBSCRIBE_REDIRECT_BASE}?status=invalid`);
+  }
+  if (check === "legacy") {
+    console.warn("handleUnsubscribe: accepted legacy (unsigned) token for", normalized);
+  }
 
   // 1. Resend is the source of truth for the list — unsubscribe there first.
   const resendResult = await unsubscribeInResend(normalized);

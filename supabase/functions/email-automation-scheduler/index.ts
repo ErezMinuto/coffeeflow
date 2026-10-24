@@ -31,6 +31,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
+import { unsubscribeUrl } from '../_shared/unsubscribe_token.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
@@ -178,14 +179,12 @@ async function fetchSampleCartItems(): Promise<CartItem[]> {
 }
 
 /**
- * Same shape as generate-campaign's unsubscribe URL — base64-encoded
- * `email:timestamp` token. Lets the existing /generate-campaign
- * ?action=unsubscribe handler process opt-outs from automation emails
- * without us needing to duplicate the unsubscribe flow here.
+ * Same signed link as generate-campaign's (_shared/unsubscribe_token.ts). Lets
+ * the existing /generate-campaign ?action=unsubscribe handler process opt-outs
+ * from automation emails without duplicating the unsubscribe flow here.
  */
-function generateUnsubscribeUrl(email: string): string {
-  const token = btoa(`${email}:${Date.now()}`)
-  return `${UNSUBSCRIBE_BASE}?action=unsubscribe&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
+function generateUnsubscribeUrl(email: string): Promise<string> {
+  return unsubscribeUrl(UNSUBSCRIBE_BASE, email)
 }
 
 /**
@@ -974,7 +973,7 @@ async function processAutomation(
   // is empty string when no coupon was created (template should not
   // reference it in that case; if it does, renders as empty).
   const firstName = (candidate.customer_name ?? 'חבר/ה').trim()
-  const unsubscribeUrl = generateUnsubscribeUrl(candidate.customer_email)
+  const unsubscribeUrl = await generateUnsubscribeUrl(candidate.customer_email)
   const vars = {
     first_name: firstName,
     coupon_code: couponCode ?? '',
@@ -1061,7 +1060,7 @@ serve(async (req) => {
           categoryIds,
         )
       }
-      const unsubscribeUrl = generateUnsubscribeUrl(testTo)
+      const unsubscribeUrl = await generateUnsubscribeUrl(testTo)
       // For abandoned_cart_* previews, show a REAL pending order's items
       // (names + images) so the test matches what a customer would receive.
       // Fall back to a static sample if there's no pending order / WC fails.
@@ -1135,7 +1134,7 @@ serve(async (req) => {
     const previews: any[] = []
     for (const c of candidates) {
       const firstName = (c.customer_name ?? 'חבר/ה').trim()
-      const unsubscribeUrl = generateUnsubscribeUrl(c.customer_email)
+      const unsubscribeUrl = await generateUnsubscribeUrl(c.customer_email)
       const vars = {
         first_name: firstName,
         coupon_code: '',  // review never mints a real coupon
