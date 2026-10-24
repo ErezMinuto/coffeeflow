@@ -1075,15 +1075,18 @@ You are STRICT on PHYSICAL REALISM. Judge the image the way a professional baris
   • Liquid physics — coffee or milk coming from anywhere other than portafilter spouts or a hand-held pitcher; streams that miss the cup or defy gravity.
   • Espresso context — a portafilter is only ever locked into an espresso machine's group head. Espresso pouring from a portafilter with no machine body around it, a portafilter hovering over a table, or a cup being filled from a portafilter while it stands on a table or counter instead of the machine's drip-tray grate, is a hard FAIL (even if the brief asked for the cup "on a wood surface").
   • Support and gravity — every object rests on something or is held. A kettle, pitcher, portafilter, grinder, scoop or other tool floating in mid-air, or pouring with nothing holding it, is a hard FAIL. A tool being operated must be held the way a person would hold it: a hand-grinder crank turned while the grinder body is not gripped by the other hand, a kettle pouring with no hand on the handle.
-  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object, or a disembodied hand or forearm that enters the frame at an angle no attached arm could reach from (e.g. a flat hand sliding in from the top edge). Hands must look like a real person standing just out of frame.
+  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object, or a disembodied hand or forearm that enters the frame at an angle no attached arm could reach from (e.g. a flat hand sliding in from the top edge). Hands must look like a real person standing just out of frame. Two hands must be one person's LEFT and RIGHT hand: two forearms entering side by side from the SAME edge, two left or two right hands, or arms whose angles could not meet at one pair of shoulders is a hard FAIL.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
   • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt.
 Name each defect concretely in "issues" (what and where), so the next render can avoid it.
 
 You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine. When the message starts with a SURFACE OVERRIDE, the surface material is out of scope: never fail or list an issue because the surface is not the material the brief names.
 
+HANDS CHECK — whenever any hand is visible, do this BEFORE deciding: for each hand, say whether it is a LEFT or RIGHT hand (find the thumb: on a hand seen from the back, a right hand's thumb is on its left side and a left hand's on its right side, measured along the direction the fingers point), which frame edge its forearm enters from, and whether both hands could belong to one person. Write this in "hands_check". Two hands of the same side, or two forearms side by side from the same edge, is a hard FAIL.
+
 Output STRICT JSON (no markdown fences, no preamble):
 {
+  "hands_check": "per-hand LEFT/RIGHT + entry edge + one-person verdict, or 'no hands'",
   "passes": true | false,
   "missing": ["concrete subject from the brief that didn't appear", "..."],
   "issues": ["other quality problems — gibberish text, wrong product, weird artifacts, etc.", "..."],
@@ -1203,7 +1206,10 @@ function critic(content: MessageContentBlock[]) {
     messages: [{ role: 'user', content }],
     maxTokens:   600,
     temperature: 0.0,
-    timeoutMs:   60_000,
+    // Opus 5.5 always thinks, and the HANDS CHECK makes it reason before the
+    // verdict: 60 s aborted real calls, and an aborted eval counts as a PASS
+    // upstream. 120 s keeps a 3-attempt loop inside the worker's wall clock.
+    timeoutMs:   120_000,
   })
 }
 
