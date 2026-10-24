@@ -6,6 +6,7 @@ import {
 } from '../../lib/invoiceFiles';
 import LedgerReconcile from './LedgerReconcile';
 import CardReconcile from './CardReconcile';
+import BankReconcile from './BankReconcile';
 
 // ── Supplier invoices (חשבוניות ספקים) ──────────────────────────────────────
 // Staff photograph / upload every invoice for a payment Minuto made to a
@@ -50,6 +51,50 @@ async function openFile(inv, showToast) {
   window.open(data.signedUrl, '_blank', 'noopener');
 }
 
+// The DB refuses a second CONFIRMED invoice with the same supplier + number
+// + type (migration 20261022_invoice_duplicates); say so in words.
+const dbError = (e) => (e?.code === '23505'
+  ? 'כבר קיימת חשבונית מאושרת מאותו ספק עם אותו מספר. זו כנראה כפילות, אפשר למחוק את ההעלאה הזו'
+  : e?.message);
+
+/** Read cleanly with nothing to look at: safe to approve in one click. */
+function readyToApprove(inv) {
+  return !!inv && inv.status === 'pending_review' && inv.extraction?.ok !== false
+    && !inv.possible_duplicate_of && invoiceWarnings(inv).length === 0;
+}
+
+/** Confirm several invoices; one failing (e.g. a duplicate) does not stop the rest. */
+async function approveMany(invoices) {
+  const ok = [], failed = [];
+  for (const inv of invoices) {
+    const { data, error } = await supabase.from('supplier_invoices')
+      .update({ status: 'confirmed' }).eq('id', inv.id).select('*');
+    if (error || !data?.length) failed.push({ inv, message: error ? dbError(error) : 'אין הרשאה' });
+    else ok.push(data[0]);
+  }
+  return { ok, failed };
+}
+
+const UPLOADABLE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', pdf: 'application/pdf' };
+
+/** Files as dropped or picked; a .zip is opened and its images / PDFs taken out. */
+async function expandFiles(files) {
+  const out = [], skipped = [];
+  for (const f of files) {
+    if (!/\.zip$/i.test(f.name) && !/zip/.test(f.type)) { out.push(f); continue; }
+    const { default: JSZip } = await import('jszip');
+    const zip = await JSZip.loadAsync(f);
+    for (const entry of Object.values(zip.files)) {
+      const base = entry.name.split('/').pop();
+      if (entry.dir || !base || base.startsWith('.') || entry.name.includes('__MACOSX')) continue;
+      const mime = UPLOADABLE[base.split('.').pop().toLowerCase()];
+      if (!mime) { skipped.push(base); continue; }
+      out.push(new File([await entry.async('blob')], base, { type: mime }));
+    }
+  }
+  return { files: out, skipped };
+}
+
 // ── One invoice's fields, editable ──────────────────────────────────────────
 function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted, onClose }) {
   const { showToast } = useApp();
@@ -73,7 +118,7 @@ function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted
         ...(confirm ? { status: 'confirmed' } : {}),
       };
       const { data, error } = await supabase.from('supplier_invoices').update(patch).eq('id', invoice.id).select('*');
-      if (error) throw error;
+      if (error) throw new Error(dbError(error));
       if (!data?.length) throw new Error('אין הרשאה לעדכן את החשבונית הזו');
       showToast(confirm ? '✅ החשבונית אושרה' : '✅ נשמר');
       onSaved(data[0]);
@@ -120,6 +165,11 @@ function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted
           אם זו אותה חשבונית, מחקו את ההעלאה הזו.
         </div>
       )}
+      {!duplicates?.length && invoice.possible_duplicate_of && (
+        <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.88rem', marginBottom: '0.75rem' }}>
+          ⚠️ נראה שחשבונית זהה כבר קיימת במערכת (אותו ספק ומספר, או אותו ספק, תאריך וסכום). אם זו אותה חשבונית, מחקו את ההעלאה הזו.
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.6rem' }}>
         {field('שם הספק', 'supplier_name')}
@@ -159,61 +209,133 @@ function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted
 }
 
 // ── Upload ──────────────────────────────────────────────────────────────────
+// Pick, photograph or drop files (a .zip is opened). Three upload at a time:
+// more and a phone on shop Wi-Fi starts failing; fewer and 100 invoices take
+// 8 minutes. Each lands as pending_review; the clean ones are approved in one
+// click, the rest are checked one by one.
+const PARALLEL = 3;
+
 function Uploader({ onUploaded }) {
   const { showToast, isAdmin } = useApp();
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
   const [queue, setQueue] = useState([]);   // { key, name, state, message?, invoice?, duplicates? }
+  const [progress, setProgress] = useState({ total: 0, done: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const patch = (key, p) => setQueue((q) => q.map((it) => (it.key === key ? { ...it, ...p } : it)));
 
-  async function handleFiles(e) {
-    const files = Array.from(e.target.files || []);
-    e.target.value = '';
-    if (!files.length) return;
-    const items = files.map((file, i) => ({ key: `${Date.now()}-${i}`, name: file.name, file, state: 'waiting' }));
-    setQueue((q) => [...items, ...q]);
-
-    // One at a time: a phone on shop Wi-Fi uploading 10 photos at once fails.
-    for (const it of items) {
-      patch(it.key, { state: 'working' });
-      try {
-        const { blob, mime } = await prepareInvoiceFile(it.file);
-        const data = await blobToBase64(blob);
-        const { data: res, error } = await supabase.functions.invoke('supplier-invoices', {
-          body: { action: 'ingest', filename: it.name, mime, data },
-        });
-        if (error) {
-          const b = await fnError(error);
-          patch(it.key, { state: 'error', message: b.error });
-          continue;
-        }
+  async function processOne(it) {
+    patch(it.key, { state: 'working' });
+    try {
+      const { blob, mime } = await prepareInvoiceFile(it.file);
+      const data = await blobToBase64(blob);
+      const { data: res, error } = await supabase.functions.invoke('supplier-invoices', {
+        body: { action: 'ingest', filename: it.name, mime, data },
+      });
+      if (error) {
+        const b = await fnError(error);
+        patch(it.key, { state: 'error', message: b.error, file: undefined });
+      } else {
         patch(it.key, { state: 'review', invoice: res.invoice, duplicates: res.possible_duplicates, file: undefined });
         onUploaded(res.invoice);
-      } catch (err) {
-        patch(it.key, { state: 'error', message: err.message });
       }
+    } catch (err) {
+      patch(it.key, { state: 'error', message: err.message, file: undefined });
+    } finally {
+      setProgress((p) => ({ ...p, done: p.done + 1 }));
     }
   }
 
+  async function addFiles(list) {
+    let files = Array.from(list || []);
+    if (!files.length) return;
+    try {
+      const { files: expanded, skipped } = await expandFiles(files);
+      if (skipped.length) showToast(`⚠️ ${skipped.length} קבצים ב-ZIP דולגו (לא תמונה / PDF)`, 'warning');
+      files = expanded;
+    } catch (e) {
+      showToast(`❌ לא הצלחנו לפתוח את קובץ ה-ZIP: ${e.message}`, 'error');
+      return;
+    }
+    if (!files.length) return;
+    const stamp = Date.now();
+    const items = files.map((file, i) => ({ key: `${stamp}-${i}`, name: file.name, file, state: 'waiting' }));
+    setQueue((q) => [...items, ...q]);
+    setProgress((p) => (p.done >= p.total ? { total: items.length, done: 0 } : { ...p, total: p.total + items.length }));
+    let next = 0;
+    const worker = async () => { while (next < items.length) await processOne(items[next++]); };
+    await Promise.all(Array.from({ length: Math.min(PARALLEL, items.length) }, worker));
+  }
+
+  const onPick = (e) => { const f = e.target.files; addFiles(f).finally(() => { e.target.value = ''; }); };
+  const onDrop = (e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer?.files); };
+
   const done = (key, inv) => { patch(key, { state: 'done', invoice: inv }); onUploaded(inv); };
   const dropped = (key) => setQueue((q) => q.filter((it) => it.key !== key));
-  const waiting = queue.filter((it) => it.state === 'review').length;
+  const inReview = queue.filter((it) => it.state === 'review');
+  const ready = inReview.filter((it) => readyToApprove(it.invoice));
+  const errors = queue.filter((it) => it.state === 'error').length;
+  const running = progress.done < progress.total;
+
+  async function approveReady() {
+    setApproving(true);
+    try {
+      const { ok, failed } = await approveMany(ready.map((it) => it.invoice));
+      const keyOf = new Map(ready.map((it) => [it.invoice.id, it.key]));
+      ok.forEach((inv) => done(keyOf.get(inv.id), inv));
+      failed.forEach(({ inv, message }) => patch(keyOf.get(inv.id), { invoice: { ...inv, possible_duplicate_of: inv.possible_duplicate_of || 'db' }, approveError: message }));
+      showToast(failed.length ? `⚠️ אושרו ${ok.length}, ${failed.length} לא אושרו (כנראה כפילות)` : `✅ אושרו ${ok.length} חשבוניות`, failed.length ? 'warning' : 'success');
+    } finally {
+      setApproving(false);
+    }
+  }
 
   return (
-    <div style={card}>
-      <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>📤 העלאת חשבונית</h3>
+    <div
+      style={{ ...card, outline: dragging ? '3px dashed #556B3A' : 'none', background: dragging ? '#F4F7EE' : card.background }}
+      onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
+      onDrop={onDrop}
+    >
+      <h3 style={{ marginTop: 0, fontSize: '1.05rem' }}>📤 העלאת חשבוניות</h3>
       <p style={{ color: '#6B7280', fontSize: '0.88rem', marginTop: 0 }}>
-        צלמו או העלו כל חשבונית / קבלה מספק. אפשר כמה קבצים יחד. המערכת קוראת את הפרטים, ואתם בודקים ומאשרים.
+        צלמו, בחרו קבצים, או גררו לכאן קבצים / ZIP. אפשר הרבה יחד. המערכת קוראת את הפרטים ובודקת כפילויות, ואתם מאשרים.
       </p>
       <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
         <button style={btn('#3D4A2E', false)} onClick={() => cameraRef.current?.click()}>📷 צילום חשבונית</button>
-        <button style={btn('#556B3A', false)} onClick={() => fileRef.current?.click()}>📁 בחירת קבצים (תמונה / PDF)</button>
+        <button style={btn('#556B3A', false)} onClick={() => fileRef.current?.click()}>📁 בחירת קבצים (תמונה / PDF / ZIP)</button>
       </div>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFiles} style={{ display: 'none' }} />
-      <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple onChange={handleFiles} style={{ display: 'none' }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onPick} style={{ display: 'none' }} />
+      <input ref={fileRef} type="file" accept="image/*,application/pdf,.zip,application/zip" multiple onChange={onPick} style={{ display: 'none' }} />
 
-      {waiting > 0 && <p style={{ color: '#92400E', fontWeight: 600, fontSize: '0.9rem' }}>{waiting} ממתינות לבדיקה ואישור ⬇️</p>}
+      {progress.total > 0 && (
+        <div style={{ marginTop: '0.9rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151', marginBottom: '0.3rem' }}>
+            <span>{running ? `מעלה וקורא… ${progress.done} מתוך ${progress.total}` : `הסתיים: ${progress.total} קבצים`}</span>
+            {errors > 0 && <span style={{ color: '#991B1B' }}>{errors} נכשלו</span>}
+          </div>
+          <div style={{ height: '8px', background: '#E5E7EB', borderRadius: '999px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.round((progress.done / progress.total) * 100)}%`, height: '100%', background: '#556B3A', transition: 'width 0.3s' }} />
+          </div>
+          {running && <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '0.3rem 0 0' }}>נא לא לסגור את הדף עד הסיום.</p>}
+        </div>
+      )}
+
+      {inReview.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.9rem' }}>
+          <span style={{ color: '#92400E', fontWeight: 600, fontSize: '0.9rem' }}>{inReview.length} ממתינות לאישור</span>
+          {ready.length > 0 && (
+            <button style={btn('#16A34A', approving)} disabled={approving} onClick={approveReady}>
+              {approving ? 'מאשר…' : `✓ אישור כל ה-${ready.length} שנקראו בלי בעיות`}
+            </button>
+          )}
+          {inReview.length > ready.length && (
+            <span style={{ fontSize: '0.82rem', color: '#6B7280' }}>{inReview.length - ready.length} צריכות בדיקה ידנית (אזהרה / כפילות / לא נקראו)</span>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
         {queue.map((it) => (
@@ -231,15 +353,27 @@ function Uploader({ onUploaded }) {
                 ✅ {it.invoice?.supplier_name || it.name} #{it.invoice?.invoice_number || ''}: אושרה
               </div>
             )}
-            {it.state === 'review' && (
-              <InvoiceForm
-                invoice={it.invoice}
-                duplicates={it.duplicates}
-                canEdit
-                isAdmin={isAdmin}
-                onSaved={(inv) => (inv.status === 'confirmed' ? done(it.key, inv) : (patch(it.key, { invoice: inv }), onUploaded(inv)))}
-                onDeleted={(id) => { dropped(it.key); onUploaded({ id, _deleted: true }); showToast('🗑️ ההעלאה בוטלה'); }}
-              />
+            {it.state === 'review' && readyToApprove(it.invoice) && (
+              <div style={{ fontSize: '0.88rem', color: '#374151', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={pill('#DCFCE7', '#166534')}>מוכנה לאישור</span>
+                <strong>{it.invoice.supplier_name}</strong> #{it.invoice.invoice_number} · {dateIL(it.invoice.invoice_date)} · ₪{money(it.invoice.total_incl_vat)}
+                <button onClick={() => patch(it.key, { expanded: !it.expanded })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#556B3A', fontWeight: 600 }}>
+                  {it.expanded ? 'סגירה' : 'בדיקה / עריכה'}
+                </button>
+              </div>
+            )}
+            {it.state === 'review' && (!readyToApprove(it.invoice) || it.expanded) && (
+              <>
+                {it.approveError && <div style={{ color: '#991B1B', fontSize: '0.85rem', marginBottom: '0.3rem' }}>❌ {it.approveError}</div>}
+                <InvoiceForm
+                  invoice={it.invoice}
+                  duplicates={it.duplicates}
+                  canEdit
+                  isAdmin={isAdmin}
+                  onSaved={(inv) => (inv.status === 'confirmed' ? done(it.key, inv) : (patch(it.key, { invoice: inv }), onUploaded(inv)))}
+                  onDeleted={(id) => { dropped(it.key); onUploaded({ id, _deleted: true }); showToast('🗑️ ההעלאה בוטלה'); }}
+                />
+              </>
             )}
           </div>
         ))}
@@ -341,6 +475,19 @@ export default function SupplierInvoices() {
   }
 
   const canEditRow = (r) => isAdmin || (!isBookkeeper && r.uploaded_by === user?.id && r.status === 'pending_review');
+  const readyRows = (rows || []).filter((r) => canEditRow(r) && readyToApprove(r));
+  const [approvingAll, setApprovingAll] = useState(false);
+
+  async function approveAllReady() {
+    setApprovingAll(true);
+    try {
+      const { ok, failed } = await approveMany(readyRows);
+      ok.forEach(upsertRow);
+      showToast(failed.length ? `⚠️ אושרו ${ok.length}, ${failed.length} לא אושרו: ${failed[0].message}` : `✅ אושרו ${ok.length} חשבוניות`, failed.length ? 'warning' : 'success');
+    } finally {
+      setApprovingAll(false);
+    }
+  }
 
   return (
     <div style={{ direction: 'rtl', paddingBottom: '3rem' }}>
@@ -367,6 +514,11 @@ export default function SupplierInvoices() {
             <p style={{ color: '#6B7280', fontSize: '0.85rem', marginTop: 0 }}>
               {rows.length} חשבוניות · לפני מע״מ ₪{money(sum('amount_before_vat'))} · כולל מע״מ ₪{money(sum('total_incl_vat'))}
               {pending > 0 && <span style={{ ...pill('#FEF3C7', '#92400E'), marginInlineStart: '0.5rem' }}>{pending} ממתינות לאישור</span>}
+              {readyRows.length > 0 && (
+                <button style={{ ...btn('#16A34A', approvingAll), padding: '0.3rem 0.8rem', fontSize: '0.82rem', marginInlineStart: '0.5rem' }} disabled={approvingAll} onClick={approveAllReady}>
+                  {approvingAll ? 'מאשר…' : `✓ אישור ${readyRows.length} שנקראו בלי בעיות`}
+                </button>
+              )}
             </p>
             {rows.length === 0 ? (
               <p style={{ color: '#6B7280' }}>אין חשבוניות בחודש הזה.</p>
@@ -399,6 +551,7 @@ export default function SupplierInvoices() {
                           {r.status === 'confirmed'
                             ? <span style={pill('#DCFCE7', '#166534')}>אושר</span>
                             : <span style={pill('#FEF3C7', '#92400E')}>ממתין לבדיקה</span>}
+                          {r.possible_duplicate_of && <span title="נראה שחשבונית זהה כבר קיימת במערכת" style={{ ...pill('#FEE2E2', '#991B1B'), marginInlineStart: '0.3rem' }}>⚠️ כפילות?</span>}
                           {seesAll && booked.has(r.id) && <span title="נמצאה בכרטסת הנהלת החשבונות" style={{ ...pill('#EFF6FF', '#1E40AF'), marginInlineStart: '0.3rem' }}>📒 נקלט</span>}
                           {invoiceWarnings(r).length > 0 && <span title={invoiceWarnings(r).join('\n')} style={{ marginInlineStart: '0.3rem' }}>⚠️</span>}
                         </td>
@@ -433,6 +586,7 @@ export default function SupplierInvoices() {
 
       {seesAll && <LedgerReconcile month={month} onBooked={setBooked} />}
       {seesAll && <CardReconcile month={month} />}
+      {seesAll && <BankReconcile month={month} />}
     </div>
   );
 }
