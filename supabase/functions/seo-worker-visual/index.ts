@@ -77,6 +77,7 @@ import { checkLabelText, LABEL_TRANSCRIBE_PROMPT, type LabelTranscript } from '.
 import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
+import { noBagTail } from './no_bag_tail.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
 // asks Claude to rewrite the scene_brief based on the qa_attempts history,
@@ -1290,14 +1291,9 @@ function stripConflictingTerms(brief: string, mode: 'no_bag' | 'bag_hero'): stri
       .filter(sentence => !/\b(bag|bags|pouch|pouches|packaging|sachet|package of (?:beans|coffee))\b/i.test(sentence))
       .join(' ')
       .trim() || brief
-    return `${stripped}
-
-DO NOT INCLUDE ANY OF THESE — they are forbidden in this render:
-- No coffee bag, no packaging, no pouch, no sachet, no bean container of any kind
-- No loose coffee beans scattered on the surface
-- No human hands or arms in frame
-- No coffee-product branding text anywhere
-The image must show ONLY the espresso machine and the pull (cup + crema), nothing else.`
+    // Only the bag ban is unconditional — see no_bag_tail.ts for the bug the
+    // old fixed tail caused (an espresso machine forced into every brief).
+    return `${stripped}\n\n${noBagTail(stripped)}`
   }
   // bag_hero: Vertex needs single-subject focus. Keep sentences that
   // mention the bag/coffee, drop sentences naming co-subjects (machines,
