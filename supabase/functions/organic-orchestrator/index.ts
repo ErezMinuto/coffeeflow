@@ -19,6 +19,7 @@
 // to pick up via cron-polled SELECT FOR UPDATE SKIP LOCKED.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
@@ -154,7 +155,6 @@ serve(async (req: Request): Promise<Response> => {
     console.log('[organic-orchestrator] gathering all sources + housekeeping in parallel…')
     phase = 'gather'
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
-    const sixtyDaysAgo    = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
 
     const [
       wpDetectorSummary,
@@ -182,6 +182,7 @@ serve(async (req: Request): Promise<Response> => {
       competitorIntel,
       calendar,
       storyLock,
+      blockedKeywords,
     ] = await Promise.all([
       // Housekeeping (side-effecting / strategist-input) — guarded so a
       // single failure degrades gracefully instead of killing the cycle.
@@ -194,7 +195,11 @@ serve(async (req: Request): Promise<Response> => {
         return [] as PostFollowback[]
       }),
       fetchTopKeywords(supabase, 30, 30),
-      fetchRecentBlogPosts(supabase, sixtyDaysAgo, 100),
+      // ALL published posts, not the last 60 days. The cannibalization gate
+      // checks the whole site, so a 60-day forbidden list (7 of 49 posts on
+      // 2026-10-20) let the strategist pick head keywords that older posts
+      // already own — and every blog task of 10-07…10-18 was then blocked.
+      fetchRecentBlogPosts(supabase, '1970-01-01', 300),
       fetchActiveCatalog(supabase),
       fetchInventoryAlerts(supabase),
       getRecentTasks(supabase, fourteenDaysAgo, 100),
@@ -256,6 +261,12 @@ serve(async (req: Request): Promise<Response> => {
       // only in mission-worker's daily cadence.
       getActiveStoryThemeLock(supabase, new Date().toISOString().slice(0, 10))
         .catch((e: any) => { console.warn(`[organic-orchestrator] story lock fetch failed: ${e?.message ?? e}`); return null }),
+      // Every keyword the cannibalization gate has ever refused. The 14-day
+      // recent-tasks window forgets a block before the next attempt, so the
+      // strategist re-picked "פולי קפה איכותיים" and "פולי קפה ערביקה" run
+      // after run. Fails open to an empty list.
+      fetchBlockedBlogKeywords(supabase)
+        .catch((e: any) => { console.warn(`[organic-orchestrator] blocked-keyword fetch failed: ${e?.message ?? e}`); return [] as BlockedKeyword[] }),
     ])
 
     console.log(
@@ -339,6 +350,7 @@ serve(async (req: Request): Promise<Response> => {
       calendar,
       brandIndex,
       storyLock,
+      blockedKeywords,
     })
 
     // ── 3b. SERP REALITY CHECK (Gemini only) ─────────────────────────
@@ -975,6 +987,52 @@ serve(async (req: Request): Promise<Response> => {
   }, 202)
 })
 
+// ── Blocked blog keywords ──────────────────────────────────────────────
+// The cannibalization gate files each refusal as a dynamic_experiment with
+// subtype cannibalization_conflict; brief_data.details.intended_keyword is
+// what was refused. All time and any status — a cancelled conflict means the
+// admin agreed it overlaps, which is still a reason not to pick it.
+
+interface BlockedKeyword {
+  keyword:           string
+  times:             number
+  last_blocked:      string
+  overlapping_posts: number
+}
+
+async function fetchBlockedBlogKeywords(supabase: SupabaseClient): Promise<BlockedKeyword[]> {
+  const { data, error } = await supabase
+    .from('seo_tasks')
+    .select('brief_data, created_at')
+    .eq('task_type', 'dynamic_experiment')
+    .eq('task_subtype', 'cannibalization_conflict')
+    .order('created_at', { ascending: false })
+    .limit(500)
+  if (error) throw new Error(`fetchBlockedBlogKeywords failed: ${error.message}`)
+
+  const byKeyword = new Map<string, BlockedKeyword>()
+  for (const row of (data ?? []) as Array<{ brief_data: any; created_at: string }>) {
+    const details = row.brief_data?.details ?? {}
+    const keyword = String(details.intended_keyword ?? '').trim()
+    if (!keyword) continue
+    const overlaps = Array.isArray(details.conflicting_posts) ? details.conflicting_posts.length : 0
+    const existing = byKeyword.get(keyword)
+    if (existing) {
+      existing.times++
+      existing.overlapping_posts = Math.max(existing.overlapping_posts, overlaps)
+    } else {
+      // Rows are newest-first, so the first sighting carries the latest date.
+      byKeyword.set(keyword, {
+        keyword,
+        times:             1,
+        last_blocked:      row.created_at.slice(0, 10),
+        overlapping_posts: overlaps,
+      })
+    }
+  }
+  return [...byKeyword.values()]
+}
+
 // ── User-message construction ──────────────────────────────────────────
 // Kept in this file (not in seo-agent/) so iterating on the orchestrator
 // doesn't require touching the shared module. If this grows past ~100
@@ -1005,11 +1063,12 @@ function buildStrategistUserMessage(args: {
   calendar:        CalendarContext
   brandIndex:      BrandIndex
   storyLock:       StoryThemeLock | null
+  blockedKeywords: BlockedKeyword[]
 }): string {
   const { focus, snapshot, recentTasks, recentIgCaptions, blogPosts, catalog, inventoryAlerts, learnings,
           paidKeywords, searchTerms, organicPosts, paidAds, vocInsights, keywordOpportunities, marketResearch,
           ga4LandingPages, industryInsights, aiVisibility, customerSegments, competitorIntel, postFollowback,
-          calendar, brandIndex, storyLock } = args
+          calendar, brandIndex, storyLock, blockedKeywords } = args
 
   const focusBlock = focus
     ? `\n=== FOCUS DIRECTIVE FROM ADMIN ===\n${focus}\n(Treat this as a strong hint, not an override. Anti-recycling rules still apply.)\n`
@@ -1060,11 +1119,19 @@ function buildStrategistUserMessage(args: {
 
   // Published blog posts — the forbidden-topics list.
   const blogBlock = blogPosts.length === 0
-    ? '  (no published posts in last 60 days)'
-    : blogPosts.slice(0, 50).map(p => {
+    ? '  (no published posts)'
+    : blogPosts.map(p => {
         const when = p.published_at ? new Date(p.published_at).toISOString().split('T')[0] : ''
         return `  • ${p.title}${when ? ` (${when})` : ''}`
       }).join('\n')
+
+  // Keywords the cannibalization gate already refused — a picked keyword
+  // that lands here is a wasted blog slot, not a new article.
+  const blockedBlock = blockedKeywords.length === 0
+    ? '  (none)'
+    : blockedKeywords.map(b =>
+        `  • "${b.keyword}" — blocked ${b.times}×, last ${b.last_blocked}, overlaps ${b.overlapping_posts} existing post(s)`,
+      ).join('\n')
 
   // Catalog — just names with stock/price, for products_to_mention picking.
   //
@@ -1150,9 +1217,15 @@ You MUST read every entry below before proposing new tasks. Anything you propose
 
 ${recentTasksBlock}
 
-=== PUBLISHED BLOG POSTS (LAST 60 DAYS) — FORBIDDEN AS NEW ARTICLE TOPICS ===
+=== PUBLISHED BLOG POSTS (ALL TIME) — FORBIDDEN AS NEW ARTICLE TOPICS ===
 
 ${blogBlock}
+
+=== KEYWORDS ALREADY BLOCKED AS CANNIBALIZATION — DO NOT PICK AGAIN ===
+
+A blog task whose target_keyword is one of these, or a close variant (same head term, plural/singular, added "best"/"guide"/"Israel"), is dropped before it is written and no article ships. Pick a narrower long-tail keyword that no post above already answers, or plan no article this cycle.
+
+${blockedBlock}
 
 === PRODUCT CATALOG (for products_to_mention picking; use EXACT names) ===
 
