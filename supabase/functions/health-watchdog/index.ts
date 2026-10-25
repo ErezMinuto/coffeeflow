@@ -18,6 +18,10 @@
 //   4. seo_tasks "stuck" — claimed (status=processing) past locked_until + 30min
 //   5. No experiment learning written in N cycles (signal that the loop isn't producing rules)
 //   6. WP/Meta/Anthropic API errors detected in recent task error_msgs
+//   7. Runtime sentinel (runtime_sentinel.ts): visual QA spikes, SEO-chat
+//      runaway loops, edge crashes / killed runs from system_logs. Repeating
+//      bugs are filed into strategist_signals as 'open' bug_reports for the
+//      fixer agent (bug_signals.ts) — a human still approves each one.
 //
 // Outputs SILENT-OK when everything is healthy (no spammy daily "all
 // good" tasks).
@@ -26,6 +30,12 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { artisanCoverageFindings } from './artisan_coverage.ts'
+import {
+  chatLoopFindings, edgeCrashFindings, visualQaFindings,
+  CRASH_WINDOW_HOURS, VISUAL_WINDOW_HOURS,
+  type BugSignalDraft, type ChatRow, type FailedVisualTask, type LogErrorLine, type LogRun, type SentinelFinding,
+} from './runtime_sentinel.ts'
+import { fileBugSignals } from './bug_signals.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -181,6 +191,7 @@ const EXPECTED_FRESH_DATA: Array<{
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
   category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
+            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk'
   message:  string
   context?: Record<string, unknown>
 }
@@ -584,11 +595,98 @@ serve(async (req) => {
     console.warn(`[health-watchdog] token-expiry check threw: ${e?.message ?? e}`)
   }
 
+  // ── 5c. Runtime sentinel — bugs that look healthy from the outside ───
+  // Detection is pure (runtime_sentinel.ts); this block only fetches rows.
+  // Each check is isolated so one failing query can't blind the others.
+  const bugDrafts: BugSignalDraft[] = []
+  const addSentinel = (fs: SentinelFinding[]) => {
+    for (const { signal, ...f } of fs) {
+      findings.push(f)
+      if (signal) bugDrafts.push(signal)
+    }
+  }
+
+  // 5c-i. Visual QA loop failure spike — tasks that exhausted every QA attempt.
+  try {
+    const since = new Date(Date.now() - VISUAL_WINDOW_HOURS * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('id, updated_at, qa_last_critique:result_data->qa_last_critique, slide_qa:result_data->slide_qa')
+      .eq('task_type', 'visual_generation')
+      .eq('result_data->>review_required', 'true')
+      .gte('updated_at', since)
+      .limit(200)
+    if (error) console.warn(`[health-watchdog] visual QA scan failed: ${error.message}`)
+    else addSentinel(visualQaFindings((data ?? []) as FailedVisualTask[]))
+  } catch (e: any) {
+    console.warn(`[health-watchdog] visual QA scan threw: ${e?.message ?? e}`)
+  }
+
+  // 5c-ii. SEO chat runaway loops. 7 days, because a repeat across days is
+  // the signal; the 24h counts are derived from the same rows.
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('session_id, role, content, created_at')
+      .gte('created_at', since)
+      .or('role.eq.system,content.like.*parent_not_ready*')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error) console.warn(`[health-watchdog] chat loop scan failed: ${error.message}`)
+    else addSentinel(chatLoopFindings((data ?? []) as ChatRow[]))
+  } catch (e: any) {
+    console.warn(`[health-watchdog] chat loop scan threw: ${e?.message ?? e}`)
+  }
+
+  // 5c-iii. Edge crashes + killed runs + near-timeouts, from system_logs.
+  try {
+    const since = new Date(Date.now() - CRASH_WINDOW_HOURS * 3600 * 1000).toISOString()
+    const { data: runs, error } = await supabase
+      .from('system_log_runs')
+      .select('run_id, fn, started_at, duration_ms, status')
+      .gte('started_at', since)
+      .neq('status', 'success')
+      .limit(500)
+    // Slow-but-successful runs for the timeout-risk WARN.
+    const { data: slowRuns } = await supabase
+      .from('system_log_runs')
+      .select('run_id, fn, started_at, duration_ms, status')
+      .gte('started_at', since)
+      .eq('status', 'success')
+      .gte('duration_ms', 100_000)
+      .limit(100)
+    if (error) {
+      console.warn(`[health-watchdog] system_logs scan failed: ${error.message}`)
+    } else {
+      const errorRunIds = (runs ?? []).filter(r => r.status === 'error').map(r => r.run_id).slice(0, 200)
+      let lines: LogErrorLine[] = []
+      if (errorRunIds.length > 0) {
+        const { data: l, error: lErr } = await supabase
+          .from('system_logs')
+          .select('run_id, event, message, data, error_name, error_stack, run_status')
+          .in('run_id', errorRunIds)
+          .eq('level', 'error')
+          .limit(1000)
+        if (lErr) console.warn(`[health-watchdog] system_logs error lines failed: ${lErr.message}`)
+        lines = (l ?? []) as LogErrorLine[]
+      }
+      addSentinel(edgeCrashFindings([...(runs ?? []), ...(slowRuns ?? [])] as LogRun[], lines))
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] system_logs scan threw: ${e?.message ?? e}`)
+  }
+
   // ── 6. Emit findings → ONE consolidated dynamic_experiment task ──────
   if (findings.length === 0) {
     console.log('[health-watchdog] all healthy, no task created')
     return jsonResponse({ ok: true, healthy: true, findings_count: 0 })
   }
+
+  // Repeating, concrete bugs → strategist_signals for the fixer agent.
+  // Deduped (bug_signals.ts); never throws, so it can't block the email.
+  const signals = bugDrafts.length > 0 ? await fileBugSignals(supabase, bugDrafts) : []
+  for (const s of signals) console.log(`[health-watchdog] bug signal ${s.key}: ${s.filed ? `filed ${s.signal_id}` : 'skipped'} (${s.reason})`)
 
   const errCount  = findings.filter(f => f.severity === 'ERROR').length
   const warnCount = findings.filter(f => f.severity === 'WARN').length
@@ -620,7 +718,7 @@ serve(async (req) => {
 
   if (error) {
     console.error(`[health-watchdog] task insert failed: ${error.message}`)
-    return jsonResponse({ ok: false, error: error.message, email_status: emailStatus, findings }, 500)
+    return jsonResponse({ ok: false, error: error.message, email_status: emailStatus, findings, signals }, 500)
   }
-  return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings })
+  return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings, signals })
 })
