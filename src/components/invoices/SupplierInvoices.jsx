@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
 import {
-  prepareInvoiceFile, blobToBase64, invoiceWarnings, invoiceFileName, DOC_TYPE_LABELS,
+  prepareInvoiceFile, blobToBase64, invoiceWarnings, DOC_TYPE_LABELS,
 } from '../../lib/invoiceFiles';
+import { buildInvoiceZip, saveBlob } from '../../lib/invoiceZip';
+import DeliveryPanel from './DeliveryPanel';
 import LedgerReconcile from './LedgerReconcile';
 import CardReconcile from './CardReconcile';
 import BankReconcile from './BankReconcile';
@@ -432,40 +434,16 @@ export default function SupplierInvoices() {
   const sum = (k) => (rows || []).reduce((s, r) => s + (Number(r[k]) || 0), 0);
   const pending = (rows || []).filter((r) => r.status === 'pending_review').length;
 
+  // A month by invoice date, for looking things up. What the bookkeeper is
+  // SENT goes through the delivery package (DeliveryPanel), not this.
   async function downloadZip() {
     if (!rows?.length) return;
-    if (pending && !window.confirm(`${pending} חשבוניות עדיין לא אושרו. להוריד בכל זאת? (הן יסומנו בקובץ הסיכום)`)) return;
     setZipping(`0/${rows.length}`);
     try {
-      const { default: JSZip } = await import('jszip');
-      const zip = new JSZip();
-      const used = new Set();
-      const failed = [];
-      const zipNames = new Map();
-      for (let i = 0; i < rows.length; i++) {
-        const inv = rows[i];
-        let name = invoiceFileName(inv);
-        for (let n = 2; used.has(name); n++) name = invoiceFileName(inv).replace(/(\.[^.]+)$/, `_${n}$1`);
-        used.add(name);
-        const { data, error } = await supabase.storage.from(BUCKET).download(inv.file_path);
-        if (error) failed.push(name); else zip.file(name, data);
-        zipNames.set(inv.id, name);
-        setZipping(`${i + 1}/${rows.length}`);
-      }
-      const header = ['תאריך', 'ספק', 'ח.פ', 'מספר חשבונית', 'סוג', 'לפני מע"מ', 'מע"מ', 'סה"כ כולל מע"מ', 'מספר הקצאה', 'סטטוס', 'נקלט בהנה"ח', 'הועלה ע"י', 'קובץ'];
-      const lines = rows.map((r) => [
-        dateIL(r.invoice_date), r.supplier_name, r.supplier_tax_id, r.invoice_number, DOC_TYPE_LABELS[r.doc_type] || r.doc_type,
-        r.amount_before_vat, r.vat_amount, r.total_incl_vat, r.allocation_number,
-        r.status === 'confirmed' ? 'אושר' : 'ממתין לבדיקה', booked.has(r.id) ? 'כן' : '', r.uploaded_by_name, zipNames.get(r.id),
-      ]);
-      lines.push(['', 'סה"כ', '', '', '', sum('amount_before_vat').toFixed(2), sum('vat_amount').toFixed(2), sum('total_incl_vat').toFixed(2)]);
-      const csv = '﻿' + [header, ...lines].map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
-      zip.file(`סיכום_${month}.csv`, csv);
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `חשבוניות-ספקים_${month}.zip`; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      const { blob, failed } = await buildInvoiceZip(rows, {
+        indexName: `סיכום_${month}.csv`, booked, onProgress: (d, t) => setZipping(`${d}/${t}`),
+      });
+      saveBlob(blob, `חשבוניות-ספקים_${month}.zip`);
       showToast(failed.length ? `⚠️ ${failed.length} קבצים לא ירדו: ${failed.join(', ')}` : `✅ ירדו ${rows.length} חשבוניות`, failed.length ? 'warning' : 'success');
     } catch (e) {
       showToast(`❌ ${e.message}`, 'error');
@@ -494,6 +472,7 @@ export default function SupplierInvoices() {
       <h2 style={{ textAlign: 'center', marginTop: '1.25rem' }}>חשבוניות ספקים</h2>
 
       {!isBookkeeper && <Uploader onUploaded={upsertRow} />}
+      {seesAll && <DeliveryPanel onDelivered={load} />}
 
       <div style={card}>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -501,8 +480,8 @@ export default function SupplierInvoices() {
             <input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} style={{ ...input, width: 'auto' }} />
           </label>
           {seesAll && rows?.length > 0 && (
-            <button style={btn('#3D4A2E', !!zipping)} disabled={!!zipping} onClick={downloadZip}>
-              {zipping ? `מכין ZIP… ${zipping}` : `⬇️ הורדת כל החודש (${rows.length})`}
+            <button style={btn('#6B7280', !!zipping)} disabled={!!zipping} onClick={downloadZip}>
+              {zipping ? `מכין ZIP… ${zipping}` : `⬇️ הורדת החודש לעיון (${rows.length})`}
             </button>
           )}
         </div>
@@ -551,6 +530,7 @@ export default function SupplierInvoices() {
                           {r.status === 'confirmed'
                             ? <span style={pill('#DCFCE7', '#166534')}>אושר</span>
                             : <span style={pill('#FEF3C7', '#92400E')}>ממתין לבדיקה</span>}
+                          {seesAll && r.delivery_id && <span title="נשלחה לרו״ח בחבילה" style={{ ...pill('#F3F4F6', '#374151'), marginInlineStart: '0.3rem' }}>📦 נשלח</span>}
                           {r.possible_duplicate_of && <span title="נראה שחשבונית זהה כבר קיימת במערכת" style={{ ...pill('#FEE2E2', '#991B1B'), marginInlineStart: '0.3rem' }}>⚠️ כפילות?</span>}
                           {seesAll && booked.has(r.id) && <span title="נמצאה בכרטסת הנהלת החשבונות" style={{ ...pill('#EFF6FF', '#1E40AF'), marginInlineStart: '0.3rem' }}>📒 נקלט</span>}
                           {invoiceWarnings(r).length > 0 && <span title={invoiceWarnings(r).join('\n')} style={{ marginInlineStart: '0.3rem' }}>⚠️</span>}
