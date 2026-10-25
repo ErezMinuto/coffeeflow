@@ -39,6 +39,15 @@ const chain = pickBestEffortAttempt([
 ]);
 check('82937 chain picks 07fcf2e1 a3', chain?.task === '07fcf2e1' && chain?.attempt === 3, JSON.stringify(chain));
 
+check('a packaging violation is never picked, even with the fewest issues',
+  pickBestEffortAttempt([
+    { ...att(1, 0, 0), critique: { missing: [], issues: [], packaging_violation: true } },
+    att(2, 0, 4),
+  ])?.attempt === 2);
+
+check('only packaging violations → null',
+  pickBestEffortAttempt([{ ...att(1, 0, 1), critique: { missing: [], issues: ['open bag'], packaging_violation: true } }]) === null);
+
 check('draft and pending are attachable', BEST_EFFORT_POST_STATUSES.has('draft') && BEST_EFFORT_POST_STATUSES.has('pending'));
 check('publish / future / private are not',
   !['publish', 'future', 'private'].some(s => BEST_EFFORT_POST_STATUSES.has(s)));

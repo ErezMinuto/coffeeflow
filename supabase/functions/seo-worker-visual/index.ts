@@ -479,6 +479,7 @@ serve(async (req) => {
         originalBrief: brief,
         qaAttempts,
         renderMode:    renderMode,
+        container:     renderResponse.product_container === 'jar' ? 'jar' : 'bag',
       })
       const newTask: NewSeoTask = {
         task_type:           'visual_generation',
@@ -755,6 +756,7 @@ function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> 
     used_reference:        r.used_reference,
     bag_source:            r.bag_source,
     bag_url:               r.bag_url,
+    product_container:     r.product_container,
     visual_director_model: r.visual_director_model,
     visual_director_error: r.visual_director_error,
     surface:               r.surface,
@@ -1121,6 +1123,10 @@ export interface VisualCritique {
   // reliably: of the 9 attempts for post 82937 on 2026-10-25, 6 were failed
   // over it and 3 over nothing else. So it's recorded for the reviewer instead.
   minor_issues?: string[]
+  // An open / spilling bag, or a special edition drawn as a bag instead of
+  // its jar (Erez, 2026-10-25). Always a fail, and the best-effort fallback
+  // never picks such an attempt.
+  packaging_violation?: boolean
   // One-sentence concrete suggestion for the next render's scene_brief.
   // Tail of the prompt: generative models weight the last lines more,
   // so this gets appended verbatim on the next attempt.
@@ -1137,6 +1143,11 @@ The bag label has TWO tiers. Judge them differently.
 TIER 1, the IDENTITY (STRICT): the "MINUTO" wordmark, the line "Café Roastery" directly beneath it, and the product name (the largest line of text after the wordmark, e.g. "Brazil Sertão", "Dark Chocolate"). These MUST be correct. If any of them is garbled, scrambled, misspelled, replaced by invented wording or another brand, or drawn in malformed glyphs (Latin OR Hebrew), that is a hard FAIL: a fabricated brand or product name misrepresents the product. Add a specific "issues" entry like "bag product name reads 'Brasil Sertoa'". The stag-head emblem is also tier 1, but only for being PRESENT and RECOGNISABLY A STAG HEAD: fail it only when it is missing, replaced by a different logo, or no longer reads as a stag head at all. A stag whose antlers or line-work are simplified, fuzzy or imperfect is tier 2. When the tier-1 elements are correct, the bag is correctly identified.
 
 TIER 2, the FINE PRINT (NEVER A FAIL): everything on the label smaller than the product name. That is the descriptor / tasting-note lines, the address, the URL, weight, roast date, footer lines, any text inside the flag or origin band, plus the small graphic details: the exact shape of the flag (a missing diamond, a wrong stripe), the precise colour of the band, ornaments. Image models cannot render this reliably at this size, and on a blog banner it is a few pixels tall. Do NOT fail an image for it, whether it is soft OR sharp, readable or garbled, and do NOT put it in "issues" or "missing". Nor fail the bag for being in sharper focus than the brief asked, which only makes the fine print show. Record what you saw in "minor_issues" instead (e.g. "descriptor lines under the product name are garbled", "URL reads minute.co.il") so a human reviewer can see it. (Incidental background text is always exempt and needs no note.)
+
+PACKAGING (STRICT, set "packaging_violation": true for either):
+  • A Minuto coffee bag must be CLOSED and SEALED: standing or lying intact with its top shut. An open bag, a bag with its mouth open, a torn bag, or beans spilling or pouring out of a bag is a hard FAIL. Loose beans BESIDE or IN FRONT OF a closed bag are fine.
+  • When the message says the product is a SPECIAL EDITION in a JAR, it must appear as the amber glass jar with a black lid and white label. Showing it in a bag, pouch or packet (for example its name on a white Minuto bag) is a hard FAIL. An open jar spilling beans is a FAIL too.
+Name the defect in "issues" as well.
 
 BAG COLOUR: when a photo of the real bag is attached, the rendered bag's body must be the same colour as in that photo. A white bag rendered clearly beige, cream, kraft, yellowed or grey is a FAIL; add an issue like "bag colour drifted from white to beige". Warm or cool light falling on a white bag, and its shadows, are not a colour change.
 
@@ -1162,11 +1173,12 @@ Output STRICT JSON (no markdown fences, no preamble):
   "passes": true | false,
   "missing": ["concrete subject from the brief that didn't appear", "..."],
   "issues": ["blocking quality problems — wrong tier-1 label text, wrong product, physics defects, etc.", "..."],
+  "packaging_violation": true | false,
   "minor_issues": ["non-blocking notes — tier-2 fine print, small graphic details, ambiguous soft background shapes", "..."],
   "suggested_adjustment": "one sentence telling the next render exactly what to include / fix"
 }
 
-"passes" depends ONLY on "missing" and "issues": if both are empty, passes=true, whatever "minor_issues" holds. If passes=true, suggested_adjustment should be an empty string.`
+"passes" depends ONLY on "missing", "issues" and "packaging_violation": if both lists are empty and packaging_violation is false, passes=true, whatever "minor_issues" holds. If passes=true, suggested_adjustment should be an empty string.`
 
 async function evaluateVisual(args: {
   imageUrl:    string
@@ -1186,6 +1198,8 @@ async function evaluateVisual(args: {
   // What the real bag's label prints (visual-test's bag_label_text), when the
   // bag has real photos. The Minuto lockup is always checked on bag renders.
   labelText?:  string[]
+  // visual-test's product_container: 'jar' for special editions.
+  container?:  'bag' | 'jar'
 }): Promise<VisualCritique> {
   const bagRef = args.renderMode === 'bag_hero' && args.bagRefUrl ? args.bagRefUrl : undefined
   const userText = `${args.surface ? `SURFACE OVERRIDE: the renderer was ordered to place this scene on ${args.surface}, replacing any surface, table or counter material the brief below names. Ignore the brief's surface material completely: a surface that differs from the brief is CORRECT, never an issue and never missing.
@@ -1195,6 +1209,8 @@ async function evaluateVisual(args: {
 ${args.sceneBrief}
 ${args.renderMode === 'bag_hero' && args.productName ? `
 NOTE ON THE PRODUCT NAME: product_name above is the online-store catalog title, NOT the text printed on the bag. The real bag prints a shorter name (e.g. the catalog title "פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate" is printed on the bag as just "Dark Chocolate"). Never fail the bag because it does not show the full catalog title.${bagRef ? ' The SECOND attached image is a photo of the REAL bag: judge the rendered label against THAT photo. Text that appears on the real bag is correct; fail only text that is garbled, misspelled, or not on the real bag.' : ''}
+` : ''}${args.renderMode === 'bag_hero' && args.container === 'jar' ? `
+SPECIAL EDITION: this product ships in an amber glass JAR with a black lid and a white label, never in a bag. The rendered product must be that jar${bagRef ? ' (the SECOND attached image is its store photo)' : ''}. A bag or pouch is a packaging_violation. For the label tiers, tier 1 is the product name on the jar label; a jar has no MINUTO / Café Roastery lockup to check.
 ` : ''}${args.realPhoto ? `
 NOTE: this image is an EDIT of a real photograph of Minuto's own bar/roastery (reframed and relit). The equipment, people, cups and existing signage/logos are REAL — do not fail it for how the real machine looks or for real, correctly-spelled signage, menu boards or cup logos that were in the photo, and do not require equipment details the brief describes differently. DO still fail anything added by the edit that is unrealistic (e.g. an impossible liquid stream, an invented bag or product, warped/duplicated equipment at the extended edges).
 ` : ''}
@@ -1221,24 +1237,29 @@ Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output 
     missing?: unknown
     issues?: unknown
     minor_issues?: unknown
+    packaging_violation?: unknown
     suggested_adjustment?: unknown
   }>(res.text)
 
   const missing      = Array.isArray(parsed.missing)      ? parsed.missing.map(String)      : []
   const issues       = Array.isArray(parsed.issues)       ? parsed.issues.map(String)       : []
   const minorIssues  = Array.isArray(parsed.minor_issues) ? parsed.minor_issues.map(String) : []
+  const packagingViolation = parsed.packaging_violation === true
   const critique: VisualCritique = {
     // A fail whose only reasons are minor_issues is a pass: the prompt says
     // they never block, so a "false" with nothing blocking is the critic
     // contradicting itself. A bare false with no reasons at all stands.
-    passes:               parsed.passes === true || (missing.length === 0 && issues.length === 0 && minorIssues.length > 0),
+    // A packaging violation always fails.
+    passes:               !packagingViolation && (parsed.passes === true || (missing.length === 0 && issues.length === 0 && minorIssues.length > 0)),
     missing,
     issues,
     minor_issues:         minorIssues,
+    packaging_violation:  packagingViolation,
     suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
   }
   // Only worth a call when the critic passed: a failed attempt retries anyway.
-  if (critique.passes && args.renderMode === 'bag_hero' && !args.realPhoto) await applyLabelCheck(critique, args.imageUrl, [...BAG_LOCKUP_TEXT, ...(args.labelText ?? [])])
+  // A jar label has no MINUTO lockup, and its name is not in BAG_REFERENCES.
+  if (critique.passes && args.renderMode === 'bag_hero' && !args.realPhoto && args.container !== 'jar') await applyLabelCheck(critique, args.imageUrl, [...BAG_LOCKUP_TEXT, ...(args.labelText ?? [])])
   return critique
 }
 
@@ -1298,8 +1319,9 @@ function critic(content: MessageContentBlock[]) {
 // judges the image against that rather than against brief text the renderer
 // was told to override. The surface is only passed when visual-test says it
 // overrode the brief (not for studio/props-free briefs, not for real photos).
-function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string; labelText?: string[] } {
+function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string; labelText?: string[]; container?: 'bag' | 'jar' } {
   return {
+    container: raw.product_container === 'jar' || raw.product_container === 'bag' ? raw.product_container : undefined,
     labelText: Array.isArray(raw.bag_label_text) ? raw.bag_label_text.map(String) : undefined,
     bagRefUrl: raw.used_reference === true && typeof raw.bag_url === 'string' ? raw.bag_url : undefined,
     surface:   raw.surface_overrides_brief === true && !raw.real_photo && typeof raw.surface === 'string' ? raw.surface : undefined,
@@ -1427,6 +1449,8 @@ Common rewrite patterns that work:
   • Persistent hallucination of forbidden objects: rewrite the scene around a structurally simpler subject the model handles well.
   • Anything else: ask yourself "what is the simplest version of this brief that gets at the user's actual intent?" and write that.
 
+PACKAGING, in every rewrite: a Minuto bag is CLOSED and SEALED, never open, torn or spilling beans (loose beans sit beside it). If PRODUCT CONTAINER is jar, the product is a special edition: write it as a glass jar, lid on, never a bag.
+
 You output one rewritten brief + a 1-sentence rationale explaining the structural change you made.
 
 STRICT JSON (no markdown fences):
@@ -1440,6 +1464,7 @@ async function regenerateVisualBrief(args: {
   originalBrief:  VisualGenerationBrief
   qaAttempts:     Array<{ attempt: number; image_url: string; render_mode: 'no_bag' | 'bag_hero'; scene_brief: string; critique: VisualCritique }>
   renderMode:     'no_bag' | 'bag_hero'
+  container:      'bag' | 'jar'
 }): Promise<{ scene_brief: string; render_mode: 'no_bag' | 'bag_hero'; rationale: string }> {
   const attemptsLog = args.qaAttempts.map(a => {
     const missing = a.critique.missing.length > 0 ? `missing=${JSON.stringify(a.critique.missing)}` : 'no-missing'
@@ -1451,6 +1476,7 @@ async function regenerateVisualBrief(args: {
   scene_brief: ${args.originalBrief.scene_brief}
   render_mode: ${args.renderMode}
   product_name: ${args.originalBrief.product_name ?? '(none)'}
+  product container: ${args.originalBrief.product_name ? args.container : '(no product)'}
   aspect: ${args.originalBrief.aspect ?? 'feed_square'}
   destination: ${args.originalBrief.destination ?? '?'}
 
