@@ -108,7 +108,7 @@ serve(async (req: Request): Promise<Response> => {
       const msg = `cannibalization blocked: ${cannibal.conflicts.length} existing post(s) overlap keyword "${brief.keyword}" — ${list}. Dedupe/redirect/rewrite in place before re-queuing.`
       console.warn(`[seo-worker-writer] ✗ task=${task.id} ${msg}`)
       // Permanent regardless of attempts — a retry would hit the same conflict.
-      await markTaskFailed(supabase, task.id, msg, true)
+      await markTaskFailed(supabase, task, msg, true)
       return jsonResponse({
         processed:      0,
         worker_id:      workerId,
@@ -239,7 +239,7 @@ serve(async (req: Request): Promise<Response> => {
     // by the cannibalization check against its OWN draft, reported as a
     // conflict. Fail it permanently instead, naming the draft that was made.
     try {
-      await markTaskCompleted(supabase, task.id, {
+      await markTaskCompleted(supabase, task, {
         wp_post_id: pubJson.id,
         edit_url:   pubJson.edit_url,
         link:       pubJson.link,
@@ -258,7 +258,7 @@ serve(async (req: Request): Promise<Response> => {
     } catch (markErr: any) {
       const msg = `draft ${pubJson.id} was created in WordPress (${pubJson.edit_url ?? pubJson.link ?? 'no url'}) but the task could not be marked completed: ${markErr?.message ?? markErr}. Do not re-queue; review the draft.`
       console.error(`[seo-worker-writer] ✗ task=${task.id} ${msg}`)
-      try { await markTaskFailed(supabase, task.id, msg, true) } catch { /* lock expiry is the last resort */ }
+      try { await markTaskFailed(supabase, task, msg, true) } catch { /* lock expiry is the last resort */ }
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, wp_post_id: pubJson.id, failed: true, permanent: true, error: msg }, 200)
     }
 
@@ -279,7 +279,7 @@ serve(async (req: Request): Promise<Response> => {
     // current value is the count INCLUDING this attempt.
     const permanentlyFailed = task.attempts >= task.max_attempts
     try {
-      await markTaskFailed(supabase, task.id, msg, permanentlyFailed)
+      await markTaskFailed(supabase, task, msg, permanentlyFailed)
     } catch (markErr: any) {
       console.error(`[seo-worker-writer] markTaskFailed also threw: ${markErr?.message ?? markErr}`)
     }

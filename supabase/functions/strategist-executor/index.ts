@@ -16,6 +16,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { claimRecs, finishRec, sweepStaleDrafting } from './ledger.ts'
+import { checkBlogProducts } from '../_shared/blog_products.ts'
+import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
@@ -23,7 +26,6 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const COFFEEFLOW_USER_ID = Deno.env.get('COFFEEFLOW_USER_ID') ?? ''
 
-const LOCK_MINUTES = 5
 const BATCH = 5
 
 const CORS = {
@@ -37,33 +39,6 @@ function json(body: unknown, status = 200): Response {
 
 // All three action types now draft (Phase 2b). 'none' is pure advice — skipped.
 const SUPPORTED: RecommendationRow['action_type'][] = ['content_blog', 'content_ig', 'email_campaign']
-
-async function claimRecs(supabase: SupabaseClient, workerId: string): Promise<RecommendationRow[]> {
-  const nowMs = Date.now()
-  const { data, error } = await supabase
-    .from('strategic_recommendations')
-    .select('*')
-    .eq('status', 'approved')
-    .in('action_type', SUPPORTED)
-    .order('created_at', { ascending: true })
-    .limit(BATCH * 2)
-  if (error) throw new Error(`claimRecs select failed: ${error.message}`)
-  const claimed: RecommendationRow[] = []
-  for (const r of (data ?? []) as RecommendationRow[]) {
-    if (r.locked_until && new Date(r.locked_until).getTime() > nowMs) continue
-    const lockedUntil = new Date(nowMs + LOCK_MINUTES * 60_000).toISOString()
-    let q = supabase
-      .from('strategic_recommendations')
-      .update({ locked_until: lockedUntil, worker_id: workerId, updated_at: new Date().toISOString() })
-      .eq('id', r.id)
-      .eq('status', 'approved')
-    q = r.locked_until === null ? q.is('locked_until', null) : q.eq('locked_until', r.locked_until)
-    const { data: got } = await q.select('*').maybeSingle()
-    if (got) claimed.push(got as RecommendationRow)
-    if (claimed.length >= BATCH) break
-  }
-  return claimed
-}
 
 const runIdOf = (rec: RecommendationRow) => rec.run_id ?? rec.id
 
@@ -81,9 +56,14 @@ function blogBrief(rec: RecommendationRow): TextGenerationBrief {
 }
 
 async function draftBlog(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
+  // Re-checked here: the catalog can change between the brief and the approval.
+  const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+  const chk = checkBlogProducts(rec.action_params?.products, lineup)
+  if (!chk.ok) throw new Error(`content_blog products: ${chk.error}`)
+  const brief = { ...blogBrief(rec), products_to_mention: chk.products }
   const task: NewSeoTask = {
     task_type:           'text_generation',
-    brief_data:          blogBrief(rec),
+    brief_data:          brief,
     rationale:           `[strategist] ${rec.title}`,
     orchestrator_run_id: runIdOf(rec),
   }
@@ -164,28 +144,29 @@ async function draftEmail(rec: RecommendationRow): Promise<string> {
   return `campaign:${id}`
 }
 
-async function draftRec(supabase: SupabaseClient, rec: RecommendationRow): Promise<{ id: string; status: string; draft_ref?: string; error?: string }> {
+async function draftRec(supabase: SupabaseClient, rec: RecommendationRow, workerId: string): Promise<{ id: string; status: string; draft_ref?: string; error?: string }> {
+  let draftRef: string
   try {
-    let draftRef: string
     switch (rec.action_type) {
       case 'content_blog':   draftRef = await draftBlog(supabase, rec); break
       case 'content_ig':     draftRef = await draftIg(supabase, rec); break
       case 'email_campaign': draftRef = await draftEmail(rec); break
       default:               throw new Error(`action_type ${rec.action_type} not executable`)
     }
-    await supabase
-      .from('strategic_recommendations')
-      .update({ status: 'drafted', draft_ref: draftRef, draft_error: null, locked_until: null, updated_at: new Date().toISOString() })
-      .eq('id', rec.id)
-    return { id: rec.id, status: 'drafted', draft_ref: draftRef }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    await supabase
-      .from('strategic_recommendations')
-      .update({ status: 'failed', draft_error: msg.slice(0, 1000), locked_until: null, updated_at: new Date().toISOString() })
-      .eq('id', rec.id)
+    const notRecorded = await finishRec(supabase, rec.id, workerId, { status: 'failed', draft_error: msg.slice(0, 1000) })
+    if (notRecorded) console.error(`[strategist-executor] ${rec.id} failed (${msg}) but the failure was not recorded: ${notRecorded}`)
     return { id: rec.id, status: 'failed', error: msg }
   }
+  // The draft exists now. If recording it fails the row stays 'drafting' (never
+  // re-claimed) and the sweep later flags it, so it is not drafted twice.
+  const notRecorded = await finishRec(supabase, rec.id, workerId, { status: 'drafted', draft_ref: draftRef, draft_error: null })
+  if (notRecorded) {
+    console.error(`[strategist-executor] ${rec.id} drafted as ${draftRef} but not recorded: ${notRecorded}`)
+    return { id: rec.id, status: 'drafted_unrecorded', draft_ref: draftRef, error: notRecorded }
+  }
+  return { id: rec.id, status: 'drafted', draft_ref: draftRef }
 }
 
 serve(async (req) => {
@@ -196,11 +177,19 @@ serve(async (req) => {
   const supabase = createSupabase()
   const workerId = `exec-${crypto.randomUUID().slice(0, 8)}`
   try {
-    const recs = await claimRecs(supabase, workerId)
-    if (recs.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft' })
+    const swept = await sweepStaleDrafting(supabase)
+    const recs = await claimRecs(supabase, workerId, SUPPORTED, BATCH)
+    if (recs.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft', swept_stale: swept || undefined })
     const results = []
-    for (const rec of recs) results.push(await draftRec(supabase, rec))
-    return json({ ok: true, drafted: results.filter(r => r.status === 'drafted').length, failed: results.filter(r => r.status === 'failed').length, results })
+    for (const rec of recs) results.push(await draftRec(supabase, rec, workerId))
+    return json({
+      ok: true,
+      drafted: results.filter(r => r.status === 'drafted').length,
+      failed: results.filter(r => r.status === 'failed').length,
+      unrecorded: results.filter(r => r.status === 'drafted_unrecorded').length || undefined,
+      swept_stale: swept || undefined,
+      results,
+    })
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
   }

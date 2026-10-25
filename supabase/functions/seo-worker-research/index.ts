@@ -574,7 +574,7 @@ Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
 
   // ── Persist result ─────────────────────────────────────────────────
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       question,
       scope,
       expected_output:        expectedOut,
@@ -836,7 +836,7 @@ async function safeMarkFailed(
   permanent: boolean,
 ): Promise<void> {
   try {
-    await markTaskFailed(supabase, task.id, msg, permanent)
+    await markTaskFailed(supabase, task, msg, permanent)
   } catch (e: any) {
     console.error(`[seo-worker-research] markTaskFailed write failed: ${e?.message ?? e}`)
   }

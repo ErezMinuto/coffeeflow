@@ -8,12 +8,19 @@
  * it only fetches orders newer than the latest order_date already stored.
  *
  * POST body (optional): { "days": 180 }  — override lookback window
+ *
+ * After the woo_orders sync, a customer pass (customer_pass.ts) refreshes
+ * customer_orders + customers for customer messaging. It never fails this
+ * sync. One-time history load: {"customer_backfill": {"start_page": 1, "pages": 10}}
+ * — walks every order, returns next_page; repeat until done. Skips woo_orders.
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
+import { categorizeProduct } from "./customer_orders.ts";
+import { syncCustomerOrders } from "./customer_pass.ts";
 
 const WOO_URL  = Deno.env.get("WOO_URL")                   ?? "";
 const WOO_KEY  = Deno.env.get("WOO_KEY")                   ?? "";
@@ -49,22 +56,35 @@ interface WooOrder {
   line_items:     WooLineItem[];
   billing:        { email?: string };
   meta_data:      WooMeta[];
+  created_via?:   string;     // checkout | subscription | rest-api (MFlow) | admin
   customer_note?: string;     // checkout note — gold for VoC mining ("הזמנתי בשביל אבא...")
 }
 
-// Orders created by mflow (B2B invoicing) have source_type = "Advanced Purchase Tracking (APT)"
-// Regular website orders have source_type = "Tag" or "API"
-// We skip mflow orders entirely — they are not real customer orders.
-const MFLOW_TRACKING_TYPE = "Advanced Purchase Tracking (APT)";
-
+// Orders MFlow (POS / B2B / phone sales) pushes into Woo over the REST API
+// are not web checkouts, so we skip them. Marker: created_via = "rest-api"
+// with order_source = "mflow". Measured 2026-10-25 over every stored order:
+// all REST-API orders carry order_source=mflow, no checkout does except one.
+// NOT a marker: traking_type = "Advanced Purchase Tracking (APT)". That is
+// PixelYourSite's server-side purchase event (it sits next to
+// _pys_advance_purchase_event_fired) and is on real subscription renewals
+// and card-paid checkouts too. The older _wc_order_attribution_source_type
+// check is kept so nothing it already excluded comes back.
 function getTrackingType(meta: WooMeta[]): string | null {
   const m = meta.find(m => m.key === "_wc_order_attribution_source_type");
   return m?.value ? String(m.value) : null;
 }
 
-function isMflowOrder(meta: WooMeta[]): boolean {
-  const t = getTrackingType(meta);
-  return t !== null && t.toLowerCase().includes("advanced purchase tracking");
+function mflowMarkers(o: WooOrder): string {
+  const source = o.meta_data?.find(m => m.key === "order_source")?.value;
+  return `created_via=${o.created_via ?? "?"} order_source=${source ?? "-"} source_type=${getTrackingType(o.meta_data ?? []) ?? "-"}`;
+}
+
+function isMflowOrder(o: WooOrder): boolean {
+  const meta = o.meta_data ?? [];
+  const legacy = getTrackingType(meta);
+  if (legacy && legacy.toLowerCase().includes("advanced purchase tracking")) return true;
+  const source = meta.find(m => m.key === "order_source")?.value;
+  return o.created_via === "rest-api" && String(source ?? "").toLowerCase() === "mflow";
 }
 
 // Extract UTM params from order meta_data
@@ -133,55 +153,6 @@ function extractGclid(meta: WooMeta[]): string | null {
   return null;
 }
 
-// Classify a product name into a category Minuto cares about. Used to enrich
-// order line items so the doctor can say "this campaign drives 80% machines,
-// 20% coffee" — critical for the strategic goal of shifting from 45% machine
-// revenue toward more coffee. Rules are pattern-based and tuned to the
-// current catalog. Order matters: check most-specific patterns first.
-function categorizeProduct(name: string, sku: string): string {
-  const n = (name ?? '').toLowerCase();
-  const s = (sku ?? '').toLowerCase();
-  const text = `${n} ${s}`;
-
-  // Grinders first — "ECM" appears in both grinders and machines, so we need
-  // to match the specific grinder models before the generic "machine" brands
-  const grinderPatterns = [
-    /mahlk[oö]nig/i, /mazzer/i, /eureka/i, /fiorenzato/i, /\bbaratza\b/i,
-    /comandante/i, /1zpresso/i, /timemore/i, /\bwilfa\b/i,
-    /מטחנ/, /\bgrinder\b/i,
-  ];
-  if (grinderPatterns.some(p => p.test(text))) return 'grinder';
-
-  // Espresso machines (boutique Italian brands + generic "מכונה" Hebrew)
-  const machinePatterns = [
-    /la\s*marzocco/i, /\becm\b/i, /profitec/i, /\brocket\b/i, /\blelit\b/i,
-    /gaggia/i, /rancilio/i, /nuova\s*simonelli/i, /slayer/i, /linea/i,
-    /מכונת אספרסו/, /מכונת קפה/, /\bespresso\s*machine\b/i,
-  ];
-  if (machinePatterns.some(p => p.test(text))) return 'machine';
-
-  // Coffee beans — the broadest class. Match origin names, blend/single-
-  // origin terminology, and Hebrew terms for coffee beans.
-  const coffeePatterns = [
-    /\bbeans?\b/i, /\bblend\b/i, /\bsingle\s*origin\b/i, /\bespresso\b/i,
-    /yirgacheffe|sidamo|guji|ethiopia|kenya|colombia|brazil|costa\s*rica|panama|guatemala/i,
-    /פול(?!\w)/, /בלנד/, /ספשלטי/, /אתיופיה|קולומביה|ברזיל|קניה|גואטמלה/,
-    /קפה טרי|פולי קפה/,
-  ];
-  if (coffeePatterns.some(p => p.test(text))) return 'coffee';
-
-  // Accessories — brewing gear, cleaning, scales, etc.
-  const accessoryPatterns = [
-    /\bfilter\b/i, /\bcleaner\b/i, /\bscale\b/i, /\btamper\b/i, /\bportafilter\b/i,
-    /\bkettle\b/i, /\bv60\b/i, /\bchemex\b/i, /\baeropress\b/i,
-    /\bmoka\s*pot\b/i, /\bfrench\s*press\b/i,
-    /פילטר|מאזניים|טמפר|דוכס|קומקום|מסננת/,
-  ];
-  if (accessoryPatterns.some(p => p.test(text))) return 'accessory';
-
-  return 'other';
-}
-
 async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
   // Owner's preference: only sync paid orders — processing (paid, awaiting
   // shipment) and completed (paid + shipped). Pending/on-hold/failed are
@@ -193,7 +164,7 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
     status: "completed,processing",
     orderby: "date",
     order: "asc",
-    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note",
+    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note,created_via",
   });
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params}`;
   const res  = await fetch(url, { headers: { Authorization: `Basic ${wooAuth}` } });
@@ -223,6 +194,7 @@ serve(async (req) => {
   let days = 60;
   let forceDaysBack: number | null = null;
   let countOnly = false;
+  let customerBackfill: { start_page?: number; pages?: number } | null = null;
   try {
     const b = await req.json();
     days = b.days ?? 60;
@@ -235,7 +207,15 @@ serve(async (req) => {
     // a gap (e.g. while the cron was failing) — call with {"days_back":10}
     // to re-scan the last 10 days and upsert anything missing.
     if (typeof b.days_back === "number" && b.days_back > 0) forceDaysBack = b.days_back;
+    if (b.customer_backfill) customerBackfill = typeof b.customer_backfill === "object" ? b.customer_backfill : {};
   } catch { /* use default */ }
+
+  if (customerBackfill) {
+    const customers = await syncCustomerOrders(supabase, log, { wooUrl: WOO_URL, wooAuth, backfill: customerBackfill });
+    await log.finish("error" in customers ? "error" : "success", customers);
+    return new Response(JSON.stringify({ success: !("error" in customers), run_id: log.runId, customers }),
+      { status: "error" in customers ? 500 : 200, headers: { ...CORS, "Content-Type": "application/json" } });
+  }
 
   // Find the highest woo_order_id already stored. Using ID instead of
   // order_date eliminates the gap bug where:
@@ -332,8 +312,8 @@ serve(async (req) => {
     const rows = orders
       .filter((o: WooOrder) => {
         const meta = o.meta_data ?? [];
-        if (isMflowOrder(meta)) {
-          console.log(`[woo-orders-sync] Skipping mflow order #${o.id} (tracking: ${getTrackingType(meta)})`);
+        if (isMflowOrder(o)) {
+          console.log(`[woo-orders-sync] Skipping mflow order #${o.id} (${mflowMarkers(o)})`);
           totalSkipped++;
           return false;
         }
@@ -435,13 +415,17 @@ serve(async (req) => {
     page++;
   }
 
+  const customers = await syncCustomerOrders(supabase, log, { wooUrl: WOO_URL, wooAuth });
+
   const summary = {
     new_orders: totalNew, refreshed_orders: totalRefreshed,
     fetched: totalFetched, skipped_mflow: totalSkipped,
     last_synced_id_before: lastSyncedId, window_after: after, pages: page,
+    customers,
   };
   log.info("run.done", `${totalNew} new, ${totalRefreshed} refreshed`, summary);
-  await log.finish("success", summary);
+  // A failed customer pass leaves woo_orders fine, so the run is "partial".
+  await log.finish("error" in customers ? "partial" : "success", summary);
 
   return new Response(
     JSON.stringify({
@@ -453,6 +437,7 @@ serve(async (req) => {
       skipped_mflow: totalSkipped,
       last_synced_id_before: lastSyncedId,
       window_after: after,
+      customers,
     }),
     { headers: { ...CORS, "Content-Type": "application/json" } },
   );

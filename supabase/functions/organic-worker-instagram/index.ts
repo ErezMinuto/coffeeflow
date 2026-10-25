@@ -397,7 +397,7 @@ serve(async (req) => {
   const reviewRequired = action === 'prepare'
 
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       image_url:       imageUrl ?? null,
       carousel_children: carouselChildren ? carouselChildren.map(c => c.image_url) : null,
       caption:         finalCaption,
@@ -548,7 +548,7 @@ async function safeMarkFailed(
   permanent: boolean,
 ): Promise<void> {
   try {
-    await markTaskFailed(supabase, task.id, msg, permanent)
+    await markTaskFailed(supabase, task, msg, permanent)
   } catch (e: any) {
     console.error(`[organic-worker-instagram] markTaskFailed write failed: ${e?.message ?? e}`)
   }

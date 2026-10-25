@@ -20,6 +20,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { acquireLease, releaseLease } from '../_shared/job_lease.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
 import {
@@ -97,6 +98,11 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
+// Longer than any cycle can live (the edge runtime kills background work well
+// before this), short enough that a killed run frees the next cron tick.
+const ORCHESTRATOR_LEASE = 'organic-orchestrator'
+const ORCHESTRATOR_LEASE_TTL_S = 15 * 60
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
@@ -113,6 +119,21 @@ serve(async (req: Request): Promise<Response> => {
   const focus   = body.focus   ?? ''
   const runId   = crypto.randomUUID()
   console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
+
+  // One cycle at a time. Overlapping runs (a manual run during the cron, or a
+  // cron tick while a slow cycle is still going) planned from the same queue
+  // state and inserted duplicate task batches. The lease outlives this request
+  // (the cycle runs in the background) and expires on its own if the run is
+  // killed. Fails closed: no lease, no cycle.
+  const lease = await acquireLease(createSupabase(), ORCHESTRATOR_LEASE, runId, ORCHESTRATOR_LEASE_TTL_S)
+  if (!lease.held) {
+    if (lease.error) {
+      console.error(`[organic-orchestrator] run=${runId} could not take the run lease: ${lease.error}`)
+      return jsonResponse({ accepted: false, error: `run lease unavailable: ${lease.error}` }, 500)
+    }
+    console.log(`[organic-orchestrator] run=${runId} skipped: another cycle is still running`)
+    return jsonResponse({ accepted: false, skipped: 'another orchestrator cycle is still running', trigger }, 409)
+  }
 
   // The full cycle (10 data sources + a ~2min strategist call + experiment
   // eval + followback + FAQ scan + briefing) exceeds the edge gateway's
@@ -960,12 +981,13 @@ serve(async (req: Request): Promise<Response> => {
   // Kick off the cycle in the background and return immediately so the
   // edge gateway's 150s idle timeout never fires. waitUntil keeps the
   // isolate alive until runCycle settles.
+  const runAndRelease = () => runCycle().finally(() => releaseLease(createSupabase(), ORCHESTRATOR_LEASE, runId))
   // @ts-ignore — EdgeRuntime is injected by the Supabase edge runtime.
   if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
     // @ts-ignore
-    EdgeRuntime.waitUntil(runCycle())
+    EdgeRuntime.waitUntil(runAndRelease())
   } else {
-    runCycle()  // local/dev fallback (no EdgeRuntime)
+    runAndRelease()  // local/dev fallback (no EdgeRuntime)
   }
   return jsonResponse({
     accepted: true,

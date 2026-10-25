@@ -163,10 +163,12 @@ export async function finalizeClaim(supabase: SupabaseLike, id: number, fields: 
 export async function committedThisMonth(supabase: SupabaseLike): Promise<number> {
   const now = new Date()
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('google_ad_drafts')
     .select('daily_budget_ils, spec, created_at')
     .gte('created_at', monthStart)
+  // A failed read must not count as "nothing committed" and wave a create through.
+  if (error) throw new Error(`cannot read committed budget from google_ad_drafts (${error.message})`)
   let sum = 0
   for (const row of (data ?? []) as any[]) {
     const daily = Number(row.daily_budget_ils ?? 0)
@@ -188,4 +190,22 @@ export async function syncDraftBudget(supabase: SupabaseLike, campaignId: string
   return error
     ? `Google budget updated, but google_ad_drafts was not (${error.message}) — the monthly cap still counts the old budget for campaign ${campaignId}`
     : null
+}
+
+// The monthly cap, checked AFTER this request's claim row exists. The claim row
+// carries daily_budget_ils + spec, so committedThisMonth() already counts this
+// campaign AND every other create that has claimed but not yet finished.
+//
+// Checking before the claim (as create used to) let two concurrent creates for
+// DIFFERENT ideas each see the other's spend missing and both pass. Claim-first,
+// the later of any two always sees both rows: at worst both refuse, never both
+// pass. The caller releases its claim when this says no.
+export async function capAfterClaim(
+  supabase: SupabaseLike,
+  mtdSpend: number,
+  cap: number,
+): Promise<{ ok: boolean; committed: number; projected: number }> {
+  const committed = await committedThisMonth(supabase)
+  const projected = mtdSpend + committed
+  return { ok: projected <= cap, committed, projected }
 }
