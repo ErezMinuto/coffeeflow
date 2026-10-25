@@ -34,7 +34,7 @@ UPDATE email_automation_templates SET body_html_template = $$<!DOCTYPE html>
     <tr><td style="padding:36px 40px 8px; text-align:right;">
       <h1 style="margin:0 0 20px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:right;">תודה {{ first_name }}</h1>
       <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">היי {{ first_name }},</p>
-      <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">תודה שהזמנת ממינוטו, ותודה שהצטרפת לרשימת הדיוור שלנו. במינוטו אנחנו קולים פולים טריים בכל בוקר ברחובות, ובוחרים את הציוד שאנחנו מוכרים בקפידה כדי לשרת אותם.</p>
+      <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">תודה שהזמנת ממינוטו, ותודה שהצטרפת לרשימת הדיוור שלנו. במינוטו אנחנו קולים פולים טריים בכל שבוע ברחובות, ובוחרים את הציוד שאנחנו מוכרים בקפידה כדי לשרת אותם.</p>
       <p style="margin:0; font-size:16px; line-height:1.75; color:#333333;">כתודה על ההצטרפות לרשימת הדיוור, הכנו לך קופון 10% הנחה על פולי קפה ספשלטי, להזמנה הבאה:</p>
     </td></tr>
     <tr><td style="padding:20px 40px 4px; text-align:right;">
@@ -247,7 +247,7 @@ BEGIN
   SELECT string_agg(t.trigger_type, ', ') INTO stale
   FROM email_automation_templates t
   JOIN (VALUES
-    ('first_purchase', 'e2a21e3d3632a82313a153204c53012a'),
+    ('first_purchase', 'a3c3129c81683aebe88f70bb735d5a28'),
     ('abandoned_cart_1', '91ed3a3098376580f53d9aae4d96ca7a'),
     ('abandoned_cart_2', '65decb55bcd2c980d55076dc45dac7ac'),
     ('first_purchase_invite', '9bfe44af7c8ecf10d4ffd167927d728f')
