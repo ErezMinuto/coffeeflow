@@ -72,12 +72,13 @@ import {
   insertTasks,
 } from '../seo-agent/db.ts'
 import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson, type MessageContentBlock } from '../seo-agent/claude.ts'
-import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
+import { attachFeaturedImage, fetchPostStatus } from '../seo-agent/wpMediaAttach.ts'
 import { checkLabelText, LABEL_TRANSCRIBE_PROMPT, type LabelTranscript } from '../_shared/bag_label_check.ts'
 import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 import { noBagTail } from './no_bag_tail.ts'
+import { BEST_EFFORT_POST_STATUSES, pickBestEffortAttempt } from './best_effort.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
 // asks Claude to rewrite the scene_brief based on the qa_attempts history,
@@ -448,6 +449,12 @@ serve(async (req) => {
   let attachedMediaId:  number | null = null
   let attachError:      string | null = null
   let attachSkippedReason: string | null = null
+  // 'qa_pass' = the normal path. 'best_effort' = QA and every brief regen
+  // failed, so the least-bad attempt of the whole regen chain went onto the
+  // still-DRAFT post for the reviewer (see best_effort.ts). review_required
+  // stays true either way for a best-effort attach.
+  let attachMode: 'qa_pass' | 'best_effort' | null = null
+  let bestEffortPick: { task_id: string; attempt: number; image_url: string } | null = null
 
   // ── 4b. BRIEF-REGENERATION ESCALATION ─────────────────────────────────
   // Before falling back to HITL, give the brief itself one rewrite chance.
@@ -504,28 +511,59 @@ serve(async (req) => {
   }
 
   if (destination === 'blog_banner' && parentWpPostId) {
-    if (reviewRequired) {
-      attachSkippedReason = regenQueuedTaskId
-        ? `QA capped after ${qaAttempts.length} attempts; brief regenerated as task ${regenQueuedTaskId} (regen ${currentRegenCount + 1}/${MAX_BRIEF_REGENS}) — current task not attached, retry awaiting worker`
-        : `QA capped after ${qaAttempts.length} attempts, brief-regen ${currentRegenCount >= MAX_BRIEF_REGENS ? 'cap reached' : 'failed'} — HITL required`
+    if (reviewRequired && regenQueuedTaskId) {
+      // A rewritten brief is already queued; its task attaches (or falls
+      // back to best-effort) when it finishes.
+      attachSkippedReason = `QA capped after ${qaAttempts.length} attempts; brief regenerated as task ${regenQueuedTaskId} (regen ${currentRegenCount + 1}/${MAX_BRIEF_REGENS}) — current task not attached, retry awaiting worker`
       console.warn(`[seo-worker-visual] ${workerId} ${attachSkippedReason}`)
     } else if (!WP_USERNAME || !WP_APP_PASSWORD) {
       attachError = 'WP_BLOG_POST_USER_NAME / WP_BLOG_POST_PASS not configured'
       console.warn(`[seo-worker-visual] ${workerId} ${attachError}`)
     } else {
-      try {
-        attachedMediaId = await attachFeaturedImage({
-          wpUrl:       WP_URL,
-          username:    WP_USERNAME,
-          appPassword: WP_APP_PASSWORD,
-          postId:      parentWpPostId,
-          imageUrl,
-          titleHint:   (renderResponse.scene_brief as string)?.slice(0, 60) ?? 'seo banner',
-        })
-        console.log(`[seo-worker-visual] ${workerId} attached media_id=${attachedMediaId} to post_id=${parentWpPostId}`)
-      } catch (e: any) {
-        attachError = e?.message ?? String(e)
-        console.warn(`[seo-worker-visual] ${workerId} attach failed: ${attachError}`)
+      const wp = { wpUrl: WP_URL, username: WP_USERNAME, appPassword: WP_APP_PASSWORD, postId: parentWpPostId }
+      let attachUrl: string | null = imageUrl
+      if (reviewRequired) {
+        // End of the line: QA failed and no regen is coming. Attach the
+        // least-bad attempt of the whole regen chain, but only while the post
+        // is still a draft a human must approve.
+        attachUrl = null
+        const capNote = `QA capped after ${qaAttempts.length} attempts, brief-regen ${currentRegenCount >= MAX_BRIEF_REGENS ? 'cap reached' : 'failed'}`
+        try {
+          const postStatus = await fetchPostStatus(wp)
+          if (!BEST_EFFORT_POST_STATUSES.has(postStatus)) {
+            attachSkippedReason = `${capNote}; post ${parentWpPostId} is '${postStatus}', not a draft — best-effort attach refused, HITL required`
+          } else {
+            const chain = [
+              ...await loadRegenChainAttempts(supabase, task),
+              ...qaAttempts.map(a => ({ ...a, task_id: task.id })),
+            ]
+            const pick = pickBestEffortAttempt(chain)
+            if (!pick) {
+              attachSkippedReason = `${capNote}; no attempt with an image to fall back on — HITL required`
+            } else {
+              attachUrl = pick.image_url
+              bestEffortPick = { task_id: pick.task_id, attempt: pick.attempt, image_url: pick.image_url }
+              console.warn(`[seo-worker-visual] ${workerId} ${capNote}; best-effort attaching task ${pick.task_id.slice(0, 8)} attempt ${pick.attempt} to draft ${parentWpPostId}`)
+            }
+          }
+        } catch (e: any) {
+          attachSkippedReason = `${capNote}; best-effort attach skipped, post status unknown (${e?.message ?? e}) — HITL required`
+        }
+        if (attachSkippedReason) console.warn(`[seo-worker-visual] ${workerId} ${attachSkippedReason}`)
+      }
+      if (attachUrl) {
+        try {
+          attachedMediaId = await attachFeaturedImage({
+            ...wp,
+            imageUrl:    attachUrl,
+            titleHint:   (renderResponse.scene_brief as string)?.slice(0, 60) ?? 'seo banner',
+          })
+          attachMode = reviewRequired ? 'best_effort' : 'qa_pass'
+          console.log(`[seo-worker-visual] ${workerId} attached media_id=${attachedMediaId} to post_id=${parentWpPostId} (${attachMode})`)
+        } catch (e: any) {
+          attachError = e?.message ?? String(e)
+          console.warn(`[seo-worker-visual] ${workerId} attach failed: ${attachError}`)
+        }
       }
     }
   }
@@ -552,6 +590,8 @@ serve(async (req) => {
       attached_media_id:   attachedMediaId,
       attach_error:        attachError,
       attach_skipped_reason: attachSkippedReason,
+      attach_mode:         attachMode,
+      best_effort_pick:    bestEffortPick,
       render_response:     pickRenderSummary(renderResponse),
       qa_passed:           qaPassed,
       review_required:     reviewRequired,
@@ -590,6 +630,8 @@ serve(async (req) => {
     attached_media_id:   attachedMediaId,
     attach_error:        attachError,
     attach_skipped_reason: attachSkippedReason,
+    attach_mode:         attachMode,
+    best_effort_pick:    bestEffortPick,
     qa_passed:           qaPassed,
     review_required:     reviewRequired,
     qa_attempt_count:    qaAttempts.length,
@@ -598,6 +640,26 @@ serve(async (req) => {
 
 // attachFeaturedImage lifted to seo-agent/wpMediaAttach.ts so the chat
 // handler's approve_qa_attempt tool can reuse the same code path.
+
+// The QA attempts of the tasks this one was regenerated from, oldest first,
+// each tagged with its task id. Follows brief_data._regenerated_from, which
+// brief-regen sets; at most MAX_BRIEF_REGENS hops. A lookup error just ends
+// the walk: the fallback then picks from fewer attempts, never fails the task.
+async function loadRegenChainAttempts(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+): Promise<Array<{ task_id: string; attempt: number; image_url: string; critique: VisualCritique }>> {
+  const out: Array<{ task_id: string; attempt: number; image_url: string; critique: VisualCritique }> = []
+  let fromId = (task.brief_data as { _regenerated_from?: string })._regenerated_from
+  for (let hop = 0; fromId && hop < MAX_BRIEF_REGENS; hop++) {
+    const { data, error } = await supabase.from('seo_tasks').select('id, brief_data, result_data').eq('id', fromId).maybeSingle()
+    if (error || !data) break
+    const attempts = ((data.result_data ?? {}) as { qa_attempts?: Array<{ attempt: number; image_url: string; critique: VisualCritique }> }).qa_attempts ?? []
+    out.unshift(...attempts.filter(a => a?.critique).map(a => ({ ...a, task_id: data.id as string })))
+    fromId = (data.brief_data as { _regenerated_from?: string } | null)?._regenerated_from
+  }
+  return out
+}
 
 // markTaskFailed throws on its own DB errors; swallow so the HTTP
 // response we already prepared still flushes cleanly.
@@ -1050,8 +1112,15 @@ export interface VisualCritique {
   // e.g. ["Cafelat Robot espresso machine"] when the brief asked for the
   // machine + a bag and only the bag rendered.
   missing: string[]
-  // Other quality issues — text gibberish, wrong product, weird artifacts.
+  // Blocking quality issues — wrong wordmark/product name, wrong product,
+  // physics defects. Any entry here fails the attempt.
   issues: string[]
+  // Non-blocking notes the critic saw but must not fail on: the bag's fine
+  // print (descriptor lines, address, URL), small flag/emblem details, soft
+  // ambiguous background shapes. Image models can't render bag micro-text
+  // reliably: of the 9 attempts for post 82937 on 2026-10-25, 6 were failed
+  // over it and 3 over nothing else. So it's recorded for the reviewer instead.
+  minor_issues?: string[]
   // One-sentence concrete suggestion for the next render's scene_brief.
   // Tail of the prompt: generative models weight the last lines more,
   // so this gets appended verbatim on the next attempt.
@@ -1063,13 +1132,15 @@ const VISUAL_EVAL_SYSTEM_PROMPT = `You are a strict visual QA agent for Minuto's
 
 You are STRICT on subject completeness. If the brief named multiple concrete subjects (e.g. "espresso machine" AND "coffee bag"), all of them must appear in frame. Missing a named subject is a hard FAIL even if the image is otherwise beautiful.
 
-You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish". The real bag's lockup is the stag-head emblem, the "MINUTO" wordmark and the line "Café Roastery" directly beneath it: all three are correct and must never be flagged.
+The bag label has TWO tiers. Judge them differently.
+
+TIER 1, the IDENTITY (STRICT): the "MINUTO" wordmark, the line "Café Roastery" directly beneath it, and the product name (the largest line of text after the wordmark, e.g. "Brazil Sertão", "Dark Chocolate"). These MUST be correct. If any of them is garbled, scrambled, misspelled, replaced by invented wording or another brand, or drawn in malformed glyphs (Latin OR Hebrew), that is a hard FAIL: a fabricated brand or product name misrepresents the product. Add a specific "issues" entry like "bag product name reads 'Brasil Sertoa'". The stag-head emblem is also tier 1, but only for being PRESENT and RECOGNISABLY A STAG HEAD: fail it only when it is missing, replaced by a different logo, or no longer reads as a stag head at all. A stag whose antlers or line-work are simplified, fuzzy or imperfect is tier 2. When the tier-1 elements are correct, the bag is correctly identified.
+
+TIER 2, the FINE PRINT (NEVER A FAIL): everything on the label smaller than the product name. That is the descriptor / tasting-note lines, the address, the URL, weight, roast date, footer lines, any text inside the flag or origin band, plus the small graphic details: the exact shape of the flag (a missing diamond, a wrong stripe), the precise colour of the band, ornaments. Image models cannot render this reliably at this size, and on a blog banner it is a few pixels tall. Do NOT fail an image for it, whether it is soft OR sharp, readable or garbled, and do NOT put it in "issues" or "missing". Nor fail the bag for being in sharper focus than the brief asked, which only makes the fine print show. Record what you saw in "minor_issues" instead (e.g. "descriptor lines under the product name are garbled", "URL reads minute.co.il") so a human reviewer can see it. (Incidental background text is always exempt and needs no note.)
 
 BAG COLOUR: when a photo of the real bag is attached, the rendered bag's body must be the same colour as in that photo. A white bag rendered clearly beige, cream, kraft, yellowed or grey is a FAIL; add an issue like "bag colour drifted from white to beige". Warm or cool light falling on a white bag, and its shadows, are not a colour change.
 
-You are LENIENT on small fine print. The tiny descriptor / fine-print lines below the product name are intentionally rendered as SOFT, shallow-depth-of-field, out-of-focus text — that is correct real-photography behaviour, NOT a defect. Do NOT fail an image because the small fine print is blurred or unreadable-because-soft. ONLY fail fine print if it is rendered SHARP and clearly in focus yet is still garbled nonsense. (Incidental background text is always exempt — this rule is about the hero bag.)
-
-You are LENIENT on soft background props. Objects that are clearly out of focus in the background (blurred shelves, canisters, ceramics, windowsill items, wall décor) are set dressing, not what the brief's "no X" exclusions are about: do not fail an image or list an issue for them. The brief's exclusions apply in full to everything in focus: the subject, the props beside it and the surface it stands on. Even when soft, these still FAIL: any coffee bag, packaging or brand logo in a no_bag render; a second machine, roaster, kettle or grinder; tea; anything physically impossible.
+You are LENIENT on soft background props. Objects that are clearly out of focus in the background (blurred shelves, canisters, ceramics, windowsill items, wall décor) are set dressing, not what the brief's "no X" exclusions are about: do not fail an image or list an issue for them. The brief's exclusions apply in full to everything in focus: the subject, the props beside it and the surface it stands on. Even when soft, these still FAIL: any coffee bag, packaging or brand logo in a no_bag render; a second machine, roaster, kettle or grinder that is clearly identifiable as one; tea; anything physically impossible. A soft, dark or ambiguous shape that only "might be" an appliance is set dressing: note it in "minor_issues", do not fail.
 
 You are STRICT on PHYSICAL REALISM. Judge the image the way a professional barista scrolling Instagram would: anything that could not exist in a real photo of a real cafe is a hard FAIL, even if the brief is otherwise satisfied. Check specifically:
   • Espresso machine anatomy — a steam wand, pipe or handle growing out of a group head or portafilter; more than one portafilter per group; parts floating, merged or attached to nothing; an invented panel, shield or cover (e.g. a translucent blue/green/white plate hanging beside the group head). Minuto's Strada X has clear glass ONLY as its large outer side window at the far end of the machine — never as a small piece next to the portafilter.
@@ -1078,7 +1149,7 @@ You are STRICT on PHYSICAL REALISM. Judge the image the way a professional baris
   • Support and gravity — every object rests on something or is held. A kettle, pitcher, portafilter, grinder, scoop or other tool floating in mid-air, or pouring with nothing holding it, is a hard FAIL. A tool being operated must be held the way a person would hold it: a hand-grinder crank turned while the grinder body is not gripped by the other hand, a kettle pouring with no hand on the handle.
   • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object, or a disembodied hand or forearm that enters the frame at an angle no attached arm could reach from (e.g. a flat hand sliding in from the top edge). Hands must look like a real person standing just out of frame. Two hands must be one person's LEFT and RIGHT hand: two forearms entering side by side from the SAME edge, two left or two right hands, or arms whose angles could not meet at one pair of shoulders is a hard FAIL.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
-  • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt.
+  • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt. Text on the hero bag follows the two label tiers above, not this rule.
 Name each defect concretely in "issues" (what and where), so the next render can avoid it.
 
 You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine. When the message starts with a SURFACE OVERRIDE, the surface material is out of scope: never fail or list an issue because the surface is not the material the brief names.
@@ -1090,11 +1161,12 @@ Output STRICT JSON (no markdown fences, no preamble):
   "hands_check": "per-hand LEFT/RIGHT + entry edge + one-person verdict, or 'no hands'",
   "passes": true | false,
   "missing": ["concrete subject from the brief that didn't appear", "..."],
-  "issues": ["other quality problems — gibberish text, wrong product, weird artifacts, etc.", "..."],
+  "issues": ["blocking quality problems — wrong tier-1 label text, wrong product, physics defects, etc.", "..."],
+  "minor_issues": ["non-blocking notes — tier-2 fine print, small graphic details, ambiguous soft background shapes", "..."],
   "suggested_adjustment": "one sentence telling the next render exactly what to include / fix"
 }
 
-If passes=true, missing and issues should both be empty arrays and suggested_adjustment should be an empty string.`
+"passes" depends ONLY on "missing" and "issues": if both are empty, passes=true, whatever "minor_issues" holds. If passes=true, suggested_adjustment should be an empty string.`
 
 async function evaluateVisual(args: {
   imageUrl:    string
@@ -1148,13 +1220,21 @@ Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output 
     passes?: unknown
     missing?: unknown
     issues?: unknown
+    minor_issues?: unknown
     suggested_adjustment?: unknown
   }>(res.text)
 
+  const missing      = Array.isArray(parsed.missing)      ? parsed.missing.map(String)      : []
+  const issues       = Array.isArray(parsed.issues)       ? parsed.issues.map(String)       : []
+  const minorIssues  = Array.isArray(parsed.minor_issues) ? parsed.minor_issues.map(String) : []
   const critique: VisualCritique = {
-    passes:               parsed.passes === true,
-    missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
-    issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
+    // A fail whose only reasons are minor_issues is a pass: the prompt says
+    // they never block, so a "false" with nothing blocking is the critic
+    // contradicting itself. A bare false with no reasons at all stands.
+    passes:               parsed.passes === true || (missing.length === 0 && issues.length === 0 && minorIssues.length > 0),
+    missing,
+    issues,
+    minor_issues:         minorIssues,
     suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
   }
   // Only worth a call when the critic passed: a failed attempt retries anyway.
