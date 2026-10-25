@@ -85,6 +85,12 @@ export function invoiceWarnings(inv) {
   if (!inv.supplier_name) w.push('חסר שם ספק');
   if (!inv.invoice_number) w.push('חסר מספר חשבונית');
   if (!inv.invoice_date) w.push('חסר תאריך');
+  else {
+    const days = (Date.now() - Date.parse(inv.invoice_date)) / 86400000;
+    if (!(inv.invoice_date >= '2000-01-01')) w.push('התאריך לא תקין. בדקו את השנה');
+    else if (days > 183) w.push('התאריך לפני יותר מחצי שנה. בדקו את השנה (אולי 25 במקום 26?)');
+    else if (days < -7) w.push('התאריך בעתיד. בדקו את התאריך');
+  }
   if (total == null) w.push('חסר סכום כולל מע״מ');
   if (before != null && vat != null && total != null && Math.abs(before + vat - total) > 1) {
     w.push('הסכומים לא מסתכמים: לפני מע״מ + מע״מ ≠ סה״כ');

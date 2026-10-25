@@ -18,6 +18,9 @@ check('DD/MM/YYYY is day-first', toDate('03/10/2026') === '2026-10-03', String(t
 check('DD.MM.YY expands the year', toDate('3.10.26') === '2026-10-03', String(toDate('3.10.26')))
 check('impossible date → null', toDate('31/02/2026') === null)
 check('words → null', toDate('yesterday') === null)
+check('year 0006 → null (misread)', toDate('0006-10-05') === null)
+check('year 1999 → null', toDate('05/10/1999') === null)
+check('two years ahead → null', toDate(`05/10/${new Date().getUTCFullYear() + 2}`) === null)
 
 check('₪ and thousands separator stripped', toAmount('₪1,234.50') === 1234.5)
 check('number kept', toAmount(99.999) === 100)
