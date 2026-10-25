@@ -109,6 +109,7 @@ function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted
   async function save(confirm) {
     setBusy(true);
     try {
+      if (f.invoice_date && !(f.invoice_date >= '2000-01-01')) throw new Error('התאריך לא תקין. בדקו את השנה');
       const num = (v) => (v === '' || v == null ? null : Number(v));
       const patch = {
         ...Object.fromEntries(EDITABLE.map((k) => [k, f[k] === '' ? null : f[k]])),
@@ -183,7 +184,7 @@ function InvoiceForm({ invoice, duplicates, canEdit, isAdmin, onSaved, onDeleted
             {Object.entries(DOC_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </label>
-        {field('תאריך', 'invoice_date', { type: 'date' })}
+        {field('תאריך', 'invoice_date', { type: 'date', min: '2000-01-01', max: `${new Date().getFullYear() + 1}-12-31` })}
         {field('לפני מע״מ', 'amount_before_vat', { type: 'number', step: '0.01', inputMode: 'decimal' })}
         {field('מע״מ', 'vat_amount', { type: 'number', step: '0.01', inputMode: 'decimal' })}
         {field('סה״כ כולל מע״מ', 'total_incl_vat', { type: 'number', step: '0.01', inputMode: 'decimal' })}

@@ -34,7 +34,14 @@ export default function DeliveryPanel({ onDelivered }) {
         supabase.from('invoice_deliveries').select('*').order('created_at', { ascending: false }).limit(24),
       ]);
       if (e1 || e2 || e3) throw e1 || e2 || e3;
-      setState({ loading: false, undelivered: undelivered || [], pending: pending || 0, deliveries: deliveries || [] });
+      // An impossible date (year 0006) cannot be written any more (constraint
+      // 20261025b), so marking it sent would fail the whole package: hold it
+      // back until someone fixes the date from its file.
+      const bad = (undelivered || []).filter((r) => r.invoice_date && r.invoice_date < '2000-01-01');
+      setState({
+        loading: false, pending: pending || 0, deliveries: deliveries || [], badDates: bad,
+        undelivered: (undelivered || []).filter((r) => !bad.includes(r)),
+      });
     } catch (e) {
       setState({ loading: false, error: e.message });
     }
@@ -111,6 +118,11 @@ export default function DeliveryPanel({ onDelivered }) {
             {busy ? `מכין חבילה… ${busy}` : `📦 הורדת חבילה חדשה (${rows.length})`}
           </button>
         </>
+      )}
+      {state.badDates.length > 0 && (
+        <p style={{ fontSize: '0.84rem', color: '#991B1B', margin: '0.7rem 0 0' }}>
+          ⚠️ {state.badDates.length} חשבוניות עם תאריך לא תקין ({state.badDates.map((r) => `${r.supplier_name || ''} #${r.invoice_number || ''}`).join(', ')}) לא ייכנסו לחבילה עד שהתאריך יתוקן.
+        </p>
       )}
       {state.pending > 0 && (
         <p style={{ fontSize: '0.84rem', color: '#92400E', margin: '0.7rem 0 0' }}>
