@@ -146,8 +146,8 @@ export function findCheckinCandidates(
 
 // Neutral wording on purpose: Google bans asking only happy customers.
 function reviewBlock(url: string): string {
-  return `<tr><td align="center" style="padding:28px 40px 4px;">
-      <p style="margin:0 0 18px; font-size:15px; line-height:1.75; color:#333333; text-align:center;">נשמח גם לשמוע את דעתך בגוגל. כל ביקורת עוזרת לנו להשתפר, ולאנשים נוספים להכיר את בית הקלייה.</p>
+  return `<tr><td align="right" style="padding:28px 40px 4px; text-align:right;">
+      <p style="margin:0 0 18px; font-size:15px; line-height:1.75; color:#333333; text-align:right;">נשמח גם לשמוע את דעתך בגוגל. כל ביקורת עוזרת לנו להשתפר, ולאנשים נוספים להכיר את בית הקלייה.</p>
       <a href="${escapeAttr(url)}" style="display:inline-block; background:#FFFFFF; color:#3C4A2C; text-decoration:none; font-size:15px; font-weight:700; padding:12px 32px; border:1px solid #3C4A2C; border-radius:4px;">לכתיבת ביקורת בגוגל</a>
     </td></tr>`
 }
@@ -164,7 +164,7 @@ function productBlock(d: RetentionData, order: OrderRow): string {
   const p = bean ? d.products.get(bean.product_id!) : undefined
   if (!p?.image_url || NOT_PROMOTED.test(p.name)) return ''
   return `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;">
-      <img src="${escapeAttr(p.image_url)}" alt="${escapeAttr(p.name)}" width="220" style="display:block; width:220px; max-width:220px; height:auto; border:0;">
+      <img src="${escapeAttr(p.image_url)}" alt="${escapeAttr(p.name)}" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;">
     </td></tr>`
 }
 

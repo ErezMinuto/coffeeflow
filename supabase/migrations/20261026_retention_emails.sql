@@ -83,10 +83,10 @@ INSERT INTO email_automation_templates (
     </td></tr>
     {{ product_block_html }}
     <tr><td style="padding:36px 40px 8px; text-align:right;">
-      <h1 style="margin:0 0 20px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:center;">איך היה הקפה?</h1>
+      <h1 style="margin:0 0 20px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:right;">איך היה הקפה?</h1>
       <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">היי {{ first_name }},</p>
       <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">הפולים מההזמנה הראשונה שלך כבר אצלך כמה ימים, ורצינו לשמוע איך הם בכוס.</p>
-      <p style="margin:0; font-size:16px; line-height:1.75; color:#333333;">יצא לך טעים? משהו לא הסתדר בטחינה או בחליטה? אפשר פשוט להשיב למייל הזה. הוא מגיע ישירות אלינו בבית הקלייה, ואנחנו עונים לכל הודעה.</p>
+      <p style="margin:0; font-size:16px; line-height:1.75; color:#333333;">יצא לך טעים? משהו לא הסתדר בטחינה או בחליטה? <strong style="color:#3C4A2C;">אפשר פשוט להשיב למייל הזה.</strong> הוא מגיע ישירות אלינו בבית הקלייה, ואנחנו עונים לכל הודעה.</p>
     </td></tr>
     {{ review_block_html }}
     <tr><td style="padding:8px 40px 36px; text-align:right; font-size:16px; line-height:1.75;">
@@ -95,12 +95,12 @@ INSERT INTO email_automation_templates (
     </td></tr>
   </table>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
-    <tr><td align="center" style="padding:24px 32px 8px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.8; color:#7F7F7F;">
+    <tr><td align="center" style="padding:24px 32px 8px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:13px; line-height:1.8; color:#555555;">
       מינוטו קפה בע״מ · בית קלייה ספשלטי · אחד העם 22, רחובות<br>
-      <a href="mailto:info@minuto.co.il" style="color:#7F7F7F;">info@minuto.co.il</a> · <a href="https://www.minuto.co.il" style="color:#7F7F7F;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#7F7F7F;">Instagram</a>
+      <a href="mailto:info@minuto.co.il" style="color:#555555;">info@minuto.co.il</a> · <a href="https://www.minuto.co.il" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
     </td></tr>
-    <tr><td align="center" style="padding:4px 32px 24px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:11px; line-height:1.8; color:#9A9A9A;">
-      קיבלת את המייל הזה כי הזמנת ממינוטו לראשונה. <a href="{{ unsubscribe_url }}" style="color:#9A9A9A;">להסרה מרשימת הדיוור</a>
+    <tr><td align="center" style="padding:4px 32px 24px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.8; color:#666666;">
+      קיבלת את המייל הזה כי הזמנת ממינוטו לראשונה. <a href="{{ unsubscribe_url }}" style="color:#666666;">להסרה מרשימת הדיוור</a>
     </td></tr>
   </table>
 </td></tr>
@@ -144,25 +144,25 @@ UPDATE email_automation_templates t SET
     </td></tr>
     {{ product_block_html }}
     <tr><td style="padding:36px 40px 8px; text-align:right;">
-      <h1 style="margin:0 0 20px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:center;">הגיע הזמן לשקית חדשה?</h1>
+      <h1 style="margin:0 0 20px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:right;">הגיע הזמן לשקית חדשה?</h1>
       <p style="margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;">היי {{ first_name }},</p>
       <p style="margin:0; font-size:16px; line-height:1.75; color:#333333;">לפי הקצב שבו הזמנת עד עכשיו, השקית האחרונה כנראה מתקרבת לסוף. כדאי להזמין כמה ימים מראש, כדי שהפולים הבאים יגיעו טריים מהקלייה לפני שהקודמים נגמרים.</p>
     </td></tr>
-    <tr><td align="center" style="padding:12px 40px 20px;">
+    <tr><td align="right" style="padding:12px 40px 20px; text-align:right;">
       <a href="{{ shop_url }}" style="display:inline-block; background:#3C4A2C; color:#FFFFFF; text-decoration:none; font-size:16px; font-weight:700; padding:14px 40px; border-radius:4px;">להזמנה חוזרת</a>
     </td></tr>
     <tr><td style="padding:8px 40px 36px; text-align:right; font-size:16px; line-height:1.75;">
-      <p style="margin:0; font-size:14px; line-height:1.75; color:#7F7F7F;">כבר הזמנת? אפשר להתעלם מהמייל הזה.</p>
+      <p style="margin:0; font-size:14px; line-height:1.75; color:#666666;">כבר הזמנת? אפשר להתעלם מהמייל הזה.</p>
       <p style="margin:28px 0 0; color:#333333;">צוות מינוטו</p>
     </td></tr>
   </table>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
-    <tr><td align="center" style="padding:24px 32px 8px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.8; color:#7F7F7F;">
+    <tr><td align="center" style="padding:24px 32px 8px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:13px; line-height:1.8; color:#555555;">
       מינוטו קפה בע״מ · בית קלייה ספשלטי · אחד העם 22, רחובות<br>
-      <a href="mailto:info@minuto.co.il" style="color:#7F7F7F;">info@minuto.co.il</a> · <a href="https://www.minuto.co.il" style="color:#7F7F7F;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#7F7F7F;">Instagram</a>
+      <a href="mailto:info@minuto.co.il" style="color:#555555;">info@minuto.co.il</a> · <a href="https://www.minuto.co.il" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
     </td></tr>
-    <tr><td align="center" style="padding:4px 32px 24px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:11px; line-height:1.8; color:#9A9A9A;">
-      קיבלת את המייל הזה כי אישרת לקבל ממינוטו עדכונים ותזכורות.<br><a href="{{ stop_reminders_url }}" style="color:#9A9A9A;">להפסקת תזכורות ההזמנה</a> · <a href="{{ unsubscribe_url }}" style="color:#9A9A9A;">להסרה מכל המיילים השיווקיים</a>
+    <tr><td align="center" style="padding:4px 32px 24px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.8; color:#666666;">
+      קיבלת את המייל הזה כי אישרת לקבל ממינוטו עדכונים ותזכורות.<br><a href="{{ stop_reminders_url }}" style="color:#666666;">להפסקת תזכורות ההזמנה</a> · <a href="{{ unsubscribe_url }}" style="color:#666666;">להסרה מכל המיילים השיווקיים</a>
     </td></tr>
   </table>
 </td></tr>
