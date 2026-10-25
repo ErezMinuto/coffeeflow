@@ -1,7 +1,7 @@
 /**
  * Eligibility rules for the two retention emails (owner's rules, 2026-10-25):
  *
- *   coffee_checkin   customers with exactly ONE paid web order get one
+ *   coffee_checkin   customers whose only paid web order included beans get one
  *                    "how was your coffee?" email (+ Google review link when
  *                    enabled), once in their lifetime, N days after the order
  *                    was completed. Everyone qualifies: no reward, no filter
@@ -63,7 +63,9 @@ export function checkinOrder(orders: CustomerOrder[], now: number, rule: Checkin
   const paid = paidOrders(orders);
   if (paid.length !== 1) return null;
   const o = paid[0];
-  if (!o.date_completed || !o.email_norm) return null;
+  // Only bean orders: "how was your coffee?" means nothing to someone whose
+  // one order was a grinder or a filter.
+  if (!o.has_beans || !o.date_completed || !o.email_norm) return null;
   const age = (now - Date.parse(o.date_completed)) / DAY_MS;
   return age >= rule.delay_days && age <= rule.delay_days + rule.window_days ? o : null;
 }

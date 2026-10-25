@@ -1150,12 +1150,16 @@ async function findRetentionCandidates(_supabase: any, tmpl: AutomationTemplate,
 /** Placeholder values so a test send of a retention email renders fully. */
 function sampleRetentionVars(tmpl: AutomationTemplate): Record<string, string> {
   const s = tmpl.settings ?? {}
+  const product = `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;"><img src="https://www.minuto.co.il/content/uploads/2025/03/ARISTO.png" alt="Aristo" width="220" style="display:block; width:220px; max-width:220px; height:auto; border:0;"></td></tr>`
   if (tmpl.trigger_type === 'coffee_checkin') {
     const on = s.review_link_enabled === true && typeof s.review_url === 'string'
-    return { review_block_html: on ? `<p style="margin:0 0 16px; text-align:center;"><a href="${s.review_url}">לכתיבת ביקורת בגוגל</a></p>` : '' }
+    return {
+      product_block_html: product,
+      review_block_html: on ? `<tr><td align="center" style="padding:28px 40px 4px;"><a href="${s.review_url}" style="display:inline-block; color:#3C4A2C; font-weight:700; padding:12px 32px; border:1px solid #3C4A2C; border-radius:4px; text-decoration:none;">לכתיבת ביקורת בגוגל</a></td></tr>` : '',
+    }
   }
   if (tmpl.trigger_type === 'refill_reminder') {
-    return { stop_reminders_url: `${SELF_URL}?action=stop_reminders&c=test&t=test`, shop_url: 'https://www.minuto.co.il/shop/?utm_source=email&utm_medium=automation&utm_campaign=refill_reminder' }
+    return { product_block_html: product, stop_reminders_url: `${SELF_URL}?action=stop_reminders&c=test&t=test`, shop_url: 'https://www.minuto.co.il/shop/?utm_source=email&utm_medium=automation&utm_campaign=refill_reminder' }
   }
   return {}
 }

@@ -15,7 +15,7 @@ const o = (p: any) => ({
 function data(over: Partial<RetentionData> = {}): RetentionData {
   return {
     now: NOW, orders: new Map(), emails: new Map(), consent: new Map(), prefs: new Map(),
-    lastSent: new Map(), sentKeys: new Set(), products: new Map([[7, { permalink: "https://www.minuto.co.il/p/aristo/", name: "Aristo" }]]),
+    lastSent: new Map(), sentKeys: new Set(), products: new Map([[7, { permalink: "https://www.minuto.co.il/p/aristo/", name: "Aristo", image_url: "https://img/aristo.png" }]]),
     ...over,
   };
 }
@@ -64,7 +64,22 @@ Deno.test("reminder: checkout consent counts; resold coffee links to the shop, n
   os[2].lines = [{ product_id: 9, is_bean: true, name: "Veneto" }];
   const d = data({ orders: new Map([["c1", os]]), emails: new Map([["c1", ["a@b.com"]]]),
     consent: new Map([["c1", [{ at: ago(20), granted: true }]]]),
-    products: new Map([[9, { permalink: "https://www.minuto.co.il/p/veneto/", name: "1 ק״ג פולי קפה Veneto Delux" }]]) });
+    products: new Map([[9, { permalink: "https://www.minuto.co.il/p/veneto/", name: "1 ק״ג פולי קפה Veneto Delux", image_url: "https://img/veneto.png" }]]) });
   const [c] = await findReminderCandidates(d, {}, REM_OPTS);
   assert(c.extra_vars.shop_url.startsWith("https://www.minuto.co.il/shop/?"));
+});
+
+Deno.test("product photo: the coffee they bought; never Veneto in a reminder; none without an image", async () => {
+  const base = { orders: new Map([["c1", [o({ date_completed: ago(10) })]]]), emails: new Map([["c1", ["a@b.com"]]]) };
+  const [c] = findCheckinCandidates(data(base), CHECKIN, unsub);
+  assert(c.extra_vars.product_block_html.includes('src="https://img/aristo.png"'));
+  const noImg = data({ ...base, products: new Map([[7, { permalink: "https://p/", name: "Aristo", image_url: null }]]) });
+  assertEquals(findCheckinCandidates(noImg, CHECKIN, unsub)[0].extra_vars.product_block_html, "");
+  const veneto = data({ orders: new Map([["c1", [o({ date_completed: ago(10), lines: [{ product_id: 9, is_bean: true, name: "Veneto" }] })]]]), emails: new Map([["c1", ["a@b.com"]]]),
+    products: new Map([[9, { permalink: "https://p/veneto/", name: "1 ק״ג פולי קפה Veneto Delux", image_url: "https://img/veneto.png" }]]) });
+  assertEquals(findCheckinCandidates(veneto, CHECKIN, unsub)[0].extra_vars.product_block_html, "");   // still asked, never pictured
+  const os = regular(); os[2].lines = [{ product_id: 9, is_bean: true, name: "Veneto" }];
+  const d = data({ orders: new Map([["c1", os]]), emails: new Map([["c1", ["a@b.com"]]]), consent: new Map([["c1", [{ at: ago(90), granted: true }]]]),
+    products: new Map([[9, { permalink: "https://p/veneto/", name: "Veneto Delux", image_url: "https://img/veneto.png" }]]) });
+  assertEquals((await findReminderCandidates(d, {}, REM_OPTS))[0].extra_vars.product_block_html, "");
 });

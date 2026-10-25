@@ -55,7 +55,7 @@ export interface RetentionData {
   prefs: Map<string, ReminderPref[]>        // root customer id → stop / resume
   lastSent: Map<string, string>             // email → latest automated send
   sentKeys: Set<string>                     // `${trigger}::${email}::${order}` and `${trigger}::${email}`
-  products: Map<number, { permalink: string; name: string }>
+  products: Map<number, { permalink: string; name: string; image_url: string | null }>
 }
 
 export async function loadRetentionData(db: Db): Promise<RetentionData> {
@@ -68,7 +68,7 @@ export async function loadRetentionData(db: Db): Promise<RetentionData> {
     fetchAll<{ id: number; customer_id: string; action: 'stop' | 'resume'; created_at: string }>(db, 'messaging_reminder_prefs', 'id, customer_id, action, created_at'),
     fetchAll<{ id: string; trigger_type: string; customer_email: string; woo_order_id: number | null; status: string; sent_at: string | null; created_at: string }>(
       db, 'email_automations', 'id, trigger_type, customer_email, woo_order_id, status, sent_at, created_at'),
-    fetchAll<{ woo_id: number; permalink: string; name: string }>(db, 'woo_products', 'woo_id, permalink, name'),
+    fetchAll<{ woo_id: number; permalink: string; name: string; image_url: string | null }>(db, 'woo_products', 'woo_id, permalink, name, image_url'),
   ])
 
   // Merged customers point at their survivor; follow the chain to the root.
@@ -106,7 +106,7 @@ export async function loadRetentionData(db: Db): Promise<RetentionData> {
     if (s.status === 'sent' && s.sent_at && (!lastSent.get(e) || s.sent_at > lastSent.get(e)!)) lastSent.set(e, s.sent_at)
   }
 
-  const productMap = new Map(products.map(p => [p.woo_id, { permalink: p.permalink, name: p.name }]))
+  const productMap = new Map(products.map(p => [p.woo_id, { permalink: p.permalink, name: p.name, image_url: p.image_url }]))
   return { now: Date.now(), orders, emails, consent, prefs, lastSent, sentKeys, products: productMap }
 }
 
@@ -133,7 +133,10 @@ export function findCheckinCandidates(
     out.push({
       customer_email: o.email_norm!, customer_name: o.first_name, woo_order_id: o.woo_order_id,
       order_date: o.date_created.slice(0, 10), customer_id: id,
-      extra_vars: { review_block_html: reviewOn ? reviewBlock(reviewUrl) : '' },
+      extra_vars: {
+        review_block_html: reviewOn ? reviewBlock(reviewUrl) : '',
+        product_block_html: productBlock(d, o as OrderRow),
+      },
       list_unsubscribe_url: unsubscribeUrlFor(o.email_norm!),
       detail: { completed: o.date_completed, review_link: reviewOn },
     })
@@ -143,8 +146,26 @@ export function findCheckinCandidates(
 
 // Neutral wording on purpose: Google bans asking only happy customers.
 function reviewBlock(url: string): string {
-  return `<p style="margin:0 0 16px;">נשמח גם לשמוע את דעתך בגוגל. כל ביקורת עוזרת לנו להשתפר, ולאנשים נוספים להכיר את בית הקלייה.</p>
-      <p style="margin:0 0 16px; text-align:center;"><a href="${url}" style="display:inline-block; background:#3D4A2E; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:8px; font-weight:bold;">לכתיבת ביקורת בגוגל</a></p>`
+  return `<tr><td align="center" style="padding:28px 40px 4px;">
+      <p style="margin:0 0 18px; font-size:15px; line-height:1.75; color:#333333; text-align:center;">נשמח גם לשמוע את דעתך בגוגל. כל ביקורת עוזרת לנו להשתפר, ולאנשים נוספים להכיר את בית הקלייה.</p>
+      <a href="${escapeAttr(url)}" style="display:inline-block; background:#FFFFFF; color:#3C4A2C; text-decoration:none; font-size:15px; font-weight:700; padding:12px 32px; border:1px solid #3C4A2C; border-radius:4px;">לכתיבת ביקורת בגוגל</a>
+    </td></tr>`
+}
+
+const escapeAttr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/**
+ * Photo of the coffee this customer bought, on a pale sage panel. Empty when
+ * the product has no image (the email still reads fine without it).
+ * Resold / green coffee (Veneto…) is never pictured, in any email (brand rules).
+ */
+function productBlock(d: RetentionData, order: OrderRow): string {
+  const bean = (order.lines ?? []).find(l => l.is_bean && l.product_id && d.products.get(l.product_id)?.image_url)
+  const p = bean ? d.products.get(bean.product_id!) : undefined
+  if (!p?.image_url || NOT_PROMOTED.test(p.name)) return ''
+  return `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;">
+      <img src="${escapeAttr(p.image_url)}" alt="${escapeAttr(p.name)}" width="220" style="display:block; width:220px; max-width:220px; height:auto; border:0;">
+    </td></tr>`
 }
 
 // ── refill_reminder ─────────────────────────────────────────────────────────
@@ -180,7 +201,10 @@ export async function findReminderCandidates(
     out.push({
       customer_email: email, customer_name: latest.first_name ?? last.first_name,
       woo_order_id: last.woo_order_id, order_date: last.date_created.slice(0, 10), customer_id: id,
-      extra_vars: { stop_reminders_url: stopUrl, shop_url: shopUrl(d, last as OrderRow) },
+      extra_vars: {
+        stop_reminders_url: stopUrl, shop_url: shopUrl(d, last as OrderRow),
+        product_block_html: productBlock(d, last as OrderRow),
+      },
       // Gmail/Outlook "unsubscribe" button: one-click POST stops these reminders.
       list_unsubscribe_url: stopUrl,
       detail: { cadence_days: Math.round(due.cadence_days * 10) / 10, due: new Date(due.due_at).toISOString().slice(0, 10) },

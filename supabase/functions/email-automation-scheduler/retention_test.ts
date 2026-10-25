@@ -28,6 +28,7 @@ Deno.test("checkin: exactly one paid order, 9–14 days after completion", () =>
   assertEquals(checkinOrder([order({ date_completed: ago(8) })], NOW, CHECKIN), null);   // too early
   assertEquals(checkinOrder([order({ date_completed: ago(15) })], NOW, CHECKIN), null);  // backlog: never
   assertEquals(checkinOrder([order({ date_completed: null, status: "processing" })], NOW, CHECKIN), null);
+  assertEquals(checkinOrder([order({ date_completed: ago(10), has_beans: false })], NOW, CHECKIN), null); // equipment only
 });
 
 Deno.test("checkin: a second order, refunds and cancellations", () => {
