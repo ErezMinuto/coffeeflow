@@ -8,12 +8,19 @@
  * it only fetches orders newer than the latest order_date already stored.
  *
  * POST body (optional): { "days": 180 }  — override lookback window
+ *
+ * After the woo_orders sync, a customer pass (customer_pass.ts) refreshes
+ * customer_orders + customers for customer messaging. It never fails this
+ * sync. One-time history load: {"customer_backfill": {"start_page": 1, "pages": 10}}
+ * — walks every order, returns next_page; repeat until done. Skips woo_orders.
  */
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
+import { categorizeProduct } from "./customer_orders.ts";
+import { syncCustomerOrders } from "./customer_pass.ts";
 
 const WOO_URL  = Deno.env.get("WOO_URL")                   ?? "";
 const WOO_KEY  = Deno.env.get("WOO_KEY")                   ?? "";
@@ -133,55 +140,6 @@ function extractGclid(meta: WooMeta[]): string | null {
   return null;
 }
 
-// Classify a product name into a category Minuto cares about. Used to enrich
-// order line items so the doctor can say "this campaign drives 80% machines,
-// 20% coffee" — critical for the strategic goal of shifting from 45% machine
-// revenue toward more coffee. Rules are pattern-based and tuned to the
-// current catalog. Order matters: check most-specific patterns first.
-function categorizeProduct(name: string, sku: string): string {
-  const n = (name ?? '').toLowerCase();
-  const s = (sku ?? '').toLowerCase();
-  const text = `${n} ${s}`;
-
-  // Grinders first — "ECM" appears in both grinders and machines, so we need
-  // to match the specific grinder models before the generic "machine" brands
-  const grinderPatterns = [
-    /mahlk[oö]nig/i, /mazzer/i, /eureka/i, /fiorenzato/i, /\bbaratza\b/i,
-    /comandante/i, /1zpresso/i, /timemore/i, /\bwilfa\b/i,
-    /מטחנ/, /\bgrinder\b/i,
-  ];
-  if (grinderPatterns.some(p => p.test(text))) return 'grinder';
-
-  // Espresso machines (boutique Italian brands + generic "מכונה" Hebrew)
-  const machinePatterns = [
-    /la\s*marzocco/i, /\becm\b/i, /profitec/i, /\brocket\b/i, /\blelit\b/i,
-    /gaggia/i, /rancilio/i, /nuova\s*simonelli/i, /slayer/i, /linea/i,
-    /מכונת אספרסו/, /מכונת קפה/, /\bespresso\s*machine\b/i,
-  ];
-  if (machinePatterns.some(p => p.test(text))) return 'machine';
-
-  // Coffee beans — the broadest class. Match origin names, blend/single-
-  // origin terminology, and Hebrew terms for coffee beans.
-  const coffeePatterns = [
-    /\bbeans?\b/i, /\bblend\b/i, /\bsingle\s*origin\b/i, /\bespresso\b/i,
-    /yirgacheffe|sidamo|guji|ethiopia|kenya|colombia|brazil|costa\s*rica|panama|guatemala/i,
-    /פול(?!\w)/, /בלנד/, /ספשלטי/, /אתיופיה|קולומביה|ברזיל|קניה|גואטמלה/,
-    /קפה טרי|פולי קפה/,
-  ];
-  if (coffeePatterns.some(p => p.test(text))) return 'coffee';
-
-  // Accessories — brewing gear, cleaning, scales, etc.
-  const accessoryPatterns = [
-    /\bfilter\b/i, /\bcleaner\b/i, /\bscale\b/i, /\btamper\b/i, /\bportafilter\b/i,
-    /\bkettle\b/i, /\bv60\b/i, /\bchemex\b/i, /\baeropress\b/i,
-    /\bmoka\s*pot\b/i, /\bfrench\s*press\b/i,
-    /פילטר|מאזניים|טמפר|דוכס|קומקום|מסננת/,
-  ];
-  if (accessoryPatterns.some(p => p.test(text))) return 'accessory';
-
-  return 'other';
-}
-
 async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
   // Owner's preference: only sync paid orders — processing (paid, awaiting
   // shipment) and completed (paid + shipped). Pending/on-hold/failed are
@@ -223,6 +181,7 @@ serve(async (req) => {
   let days = 60;
   let forceDaysBack: number | null = null;
   let countOnly = false;
+  let customerBackfill: { start_page?: number; pages?: number } | null = null;
   try {
     const b = await req.json();
     days = b.days ?? 60;
@@ -235,7 +194,15 @@ serve(async (req) => {
     // a gap (e.g. while the cron was failing) — call with {"days_back":10}
     // to re-scan the last 10 days and upsert anything missing.
     if (typeof b.days_back === "number" && b.days_back > 0) forceDaysBack = b.days_back;
+    if (b.customer_backfill) customerBackfill = typeof b.customer_backfill === "object" ? b.customer_backfill : {};
   } catch { /* use default */ }
+
+  if (customerBackfill) {
+    const customers = await syncCustomerOrders(supabase, log, { wooUrl: WOO_URL, wooAuth, backfill: customerBackfill });
+    await log.finish("error" in customers ? "error" : "success", customers);
+    return new Response(JSON.stringify({ success: !("error" in customers), run_id: log.runId, customers }),
+      { status: "error" in customers ? 500 : 200, headers: { ...CORS, "Content-Type": "application/json" } });
+  }
 
   // Find the highest woo_order_id already stored. Using ID instead of
   // order_date eliminates the gap bug where:
@@ -435,13 +402,17 @@ serve(async (req) => {
     page++;
   }
 
+  const customers = await syncCustomerOrders(supabase, log, { wooUrl: WOO_URL, wooAuth });
+
   const summary = {
     new_orders: totalNew, refreshed_orders: totalRefreshed,
     fetched: totalFetched, skipped_mflow: totalSkipped,
     last_synced_id_before: lastSyncedId, window_after: after, pages: page,
+    customers,
   };
   log.info("run.done", `${totalNew} new, ${totalRefreshed} refreshed`, summary);
-  await log.finish("success", summary);
+  // A failed customer pass leaves woo_orders fine, so the run is "partial".
+  await log.finish("error" in customers ? "partial" : "success", summary);
 
   return new Response(
     JSON.stringify({
@@ -453,6 +424,7 @@ serve(async (req) => {
       skipped_mflow: totalSkipped,
       last_synced_id_before: lastSyncedId,
       window_after: after,
+      customers,
     }),
     { headers: { ...CORS, "Content-Type": "application/json" } },
   );

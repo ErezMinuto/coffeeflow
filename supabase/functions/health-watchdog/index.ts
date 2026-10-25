@@ -174,6 +174,9 @@ const EXPECTED_FRESH_DATA: Array<{
   // store sees 3-9 orders every single day, so 60h has effectively no false
   // positives yet still catches a freeze within ~2.5 days.
   { table: 'woo_orders',         column: 'order_date',    max_age_hours: 60, required: true,  label: 'WooCommerce orders (feeds welcome emails)' },
+  // date_modified (Woo's own clock) for the same reason as order_date above.
+  // Not required until customer messaging sends live (step 4 flips it).
+  { table: 'customer_orders',    column: 'date_modified', max_age_hours: 60, required: false, label: 'Customer orders (feeds customer messaging)' },
   { table: 'ga4_pages_daily',    column: 'synced_at',     max_age_hours: 40, required: true,  label: 'GA4 analytics' },
   { table: 'meta_ad_daily',      column: 'synced_at',     max_age_hours: 40, required: true,  label: 'Meta ad insights' },
   { table: 'meta_organic_posts', column: 'synced_at',     max_age_hours: 48, required: false, label: 'Meta organic posts' },
