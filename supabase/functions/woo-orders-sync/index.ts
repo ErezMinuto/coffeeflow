@@ -56,22 +56,35 @@ interface WooOrder {
   line_items:     WooLineItem[];
   billing:        { email?: string };
   meta_data:      WooMeta[];
+  created_via?:   string;     // checkout | subscription | rest-api (MFlow) | admin
   customer_note?: string;     // checkout note — gold for VoC mining ("הזמנתי בשביל אבא...")
 }
 
-// Orders created by mflow (B2B invoicing) have source_type = "Advanced Purchase Tracking (APT)"
-// Regular website orders have source_type = "Tag" or "API"
-// We skip mflow orders entirely — they are not real customer orders.
-const MFLOW_TRACKING_TYPE = "Advanced Purchase Tracking (APT)";
-
+// Orders MFlow (POS / B2B / phone sales) pushes into Woo over the REST API
+// are not web checkouts, so we skip them. Marker: created_via = "rest-api"
+// with order_source = "mflow". Measured 2026-10-25 over every stored order:
+// all REST-API orders carry order_source=mflow, no checkout does except one.
+// NOT a marker: traking_type = "Advanced Purchase Tracking (APT)". That is
+// PixelYourSite's server-side purchase event (it sits next to
+// _pys_advance_purchase_event_fired) and is on real subscription renewals
+// and card-paid checkouts too. The older _wc_order_attribution_source_type
+// check is kept so nothing it already excluded comes back.
 function getTrackingType(meta: WooMeta[]): string | null {
   const m = meta.find(m => m.key === "_wc_order_attribution_source_type");
   return m?.value ? String(m.value) : null;
 }
 
-function isMflowOrder(meta: WooMeta[]): boolean {
-  const t = getTrackingType(meta);
-  return t !== null && t.toLowerCase().includes("advanced purchase tracking");
+function mflowMarkers(o: WooOrder): string {
+  const source = o.meta_data?.find(m => m.key === "order_source")?.value;
+  return `created_via=${o.created_via ?? "?"} order_source=${source ?? "-"} source_type=${getTrackingType(o.meta_data ?? []) ?? "-"}`;
+}
+
+function isMflowOrder(o: WooOrder): boolean {
+  const meta = o.meta_data ?? [];
+  const legacy = getTrackingType(meta);
+  if (legacy && legacy.toLowerCase().includes("advanced purchase tracking")) return true;
+  const source = meta.find(m => m.key === "order_source")?.value;
+  return o.created_via === "rest-api" && String(source ?? "").toLowerCase() === "mflow";
 }
 
 // Extract UTM params from order meta_data
@@ -151,7 +164,7 @@ async function fetchOrders(after: string, page: number): Promise<WooOrder[]> {
     status: "completed,processing",
     orderby: "date",
     order: "asc",
-    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note",
+    _fields: "id,date_created,status,total,currency,line_items,billing,meta_data,customer_note,created_via",
   });
   const url = `${WOO_URL}/wp-json/wc/v3/orders?${params}`;
   const res  = await fetch(url, { headers: { Authorization: `Basic ${wooAuth}` } });
@@ -299,8 +312,8 @@ serve(async (req) => {
     const rows = orders
       .filter((o: WooOrder) => {
         const meta = o.meta_data ?? [];
-        if (isMflowOrder(meta)) {
-          console.log(`[woo-orders-sync] Skipping mflow order #${o.id} (tracking: ${getTrackingType(meta)})`);
+        if (isMflowOrder(o)) {
+          console.log(`[woo-orders-sync] Skipping mflow order #${o.id} (${mflowMarkers(o)})`);
           totalSkipped++;
           return false;
         }
