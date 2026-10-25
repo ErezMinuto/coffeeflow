@@ -20,7 +20,7 @@ async function insert(pg: PGlite, rows: Record<string, unknown>[]) {
   }
 }
 const resolve = async (pg: PGlite) => (await pg.query<{ r: any }>(`SELECT messaging_resolve_customers() r`)).rows[0].r;
-const live = async (pg: PGlite) => (await pg.query<any>(`SELECT * FROM customers WHERE merged_into IS NULL ORDER BY created_at`)).rows;
+const live = async (pg: PGlite) => (await pg.query<any>(`SELECT * FROM customers WHERE merged_into IS NULL ORDER BY seq`)).rows;
 
 Deno.test("guest + account orders by the same phone become one customer", async () => {
   const pg = await db();

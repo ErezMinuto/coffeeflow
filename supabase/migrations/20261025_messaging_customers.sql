@@ -26,13 +26,14 @@
 -- ────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS customers (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  seq               bigint GENERATED ALWAYS AS IDENTITY, -- creation order; the lowest survives a merge
   phone_e164        text,                         -- preferred mobile: the latest order's
   phones            text[] NOT NULL DEFAULT '{}', -- every normalized phone seen
   emails            text[] NOT NULL DEFAULT '{}', -- every normalized email seen
   woo_customer_ids  int[]  NOT NULL DEFAULT '{}', -- Woo account ids (guests have none)
   first_name        text,
   merged_into       uuid REFERENCES customers(id),
-  created_at        timestamptz NOT NULL DEFAULT clock_timestamp(), -- not now(): one resolver run creates many, and the oldest must win a merge
+  created_at        timestamptz NOT NULL DEFAULT clock_timestamp(),
   updated_at        timestamptz NOT NULL DEFAULT now()
 );
 
@@ -132,7 +133,7 @@ BEGIN
       CONTINUE;
     END IF;
 
-    SELECT array_agg(c.id ORDER BY c.created_at, c.id) INTO v_ids
+    SELECT array_agg(c.id ORDER BY c.seq) INTO v_ids
       FROM customers c
      WHERE c.merged_into IS NULL
        AND (   (v_phone IS NOT NULL AND v_phone = ANY (c.phones))
