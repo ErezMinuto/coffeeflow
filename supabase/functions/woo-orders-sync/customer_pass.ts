@@ -71,7 +71,7 @@ export async function syncCustomerOrders(supabase: any, log: Logger, opts: Custo
       const orders: WooOrderFull[] = await woo(opts, `orders?${params}`);
 
       const web = orders.filter(o => {
-        if (isMflowOrder(o.meta_data)) { skippedMflow++; return false; }
+        if (isMflowOrder(o)) { skippedMflow++; return false; }
         return true;
       });
 

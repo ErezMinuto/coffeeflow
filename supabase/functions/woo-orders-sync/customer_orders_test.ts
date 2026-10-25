@@ -120,12 +120,17 @@ Deno.test("isBeanLine: capsules and bean accessories are not beans", () => {
   assertEquals(isBeanLine("coffee", "HARIO דריפ נירוסטה רשת כפולה 02"), false);
 });
 
-Deno.test("isMflowOrder: both marker keys", () => {
-  assertEquals(isMflowOrder([{ key: "order_source", value: "mflow" }]), true);
-  assertEquals(isMflowOrder([{ key: "traking_type", value: "Advanced Purchase Tracking (APT)" }]), true);
-  assertEquals(isMflowOrder([{ key: "_wc_order_attribution_source_type", value: "Advanced Purchase Tracking (APT)" }]), true);
-  assertEquals(isMflowOrder([{ key: "_wc_order_attribution_source_type", value: "utm" }]), false);
-  assertEquals(isMflowOrder(undefined), false);
+Deno.test("isMflowOrder: needs rest-api AND order_source=mflow", () => {
+  const src = { key: "order_source", value: "mflow" };
+  const apt = { key: "traking_type", value: "Advanced Purchase Tracking (APT)" };
+  assertEquals(isMflowOrder({ created_via: "rest-api", meta_data: [src, apt] }), true);
+  assertEquals(isMflowOrder({ created_via: "rest-api", meta_data: [src] }), true);
+  // PixelYourSite writes APT on real renewals and card checkouts
+  assertEquals(isMflowOrder({ created_via: "subscription", meta_data: [apt] }), false);
+  assertEquals(isMflowOrder({ created_via: "checkout", meta_data: [apt, { key: "_wc_order_attribution_source_type", value: "Advanced Purchase Tracking (APT)" }] }), false);
+  // a real checkout that also carries order_source=mflow
+  assertEquals(isMflowOrder({ created_via: "checkout", meta_data: [src] }), false);
+  assertEquals(isMflowOrder({}), false);
 });
 
 Deno.test("gramsFromProductAttributes: single size only", () => {

@@ -72,17 +72,16 @@ export function isBeanLine(category: string, name: string): boolean {
 
 // MFlow (POS / B2B invoicing) pushes its documents into Woo through the REST
 // API. They are not web checkouts and their buyers never see the web store's
-// checkout, so they are not messaging customers. Two marker keys exist:
-// _wc_order_attribution_source_type (older) and traking_type + order_source
-// (what the MFlow ERP plugin writes today).
-export function isMflowOrder(meta: { key: string; value: unknown }[] | undefined): boolean {
-  for (const m of meta ?? []) {
-    const v = String(m.value ?? '').toLowerCase();
-    if ((m.key === '_wc_order_attribution_source_type' || m.key === 'traking_type') &&
-        v.includes('advanced purchase tracking')) return true;
-    if (m.key === 'order_source' && v === 'mflow') return true;
-  }
-  return false;
+// checkout, so they are not messaging customers.
+//
+// The reliable marker is BOTH created_via=rest-api AND order_source=mflow.
+// Neither alone works: traking_type / _wc_order_attribution_source_type
+// "Advanced Purchase Tracking (APT)" is written by PixelYourSite and sits on
+// real subscription renewals and card checkouts, and at least one real
+// checkout also carries order_source=mflow.
+export function isMflowOrder(o: { created_via?: string; meta_data?: { key: string; value: unknown }[] }): boolean {
+  return o.created_via === 'rest-api' &&
+    (o.meta_data ?? []).some(m => m.key === 'order_source' && String(m.value ?? '').toLowerCase() === 'mflow');
 }
 
 // ── Identity normalization ──────────────────────────────────────────────────
