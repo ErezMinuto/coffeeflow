@@ -32,6 +32,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { constantTimeEqual } from '../_shared/constant_time.ts'
+import { findCheckinCandidates, findReminderCandidates, loadRetentionData, type RetentionData } from './retention_data.ts'
+import { stopToken } from './retention.ts'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
 const SUPA_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -53,6 +56,11 @@ const DEFAULT_LOGO_URL = Deno.env.get('MINUTO_LOGO_URL') ?? 'https://www.minuto.
 // Empty = no copy. Set/clear via `supabase secrets set AUTOMATION_BCC=...`
 // without a code change, so it's trivial to turn off once trust is built.
 const AUTOMATION_BCC = (Deno.env.get('AUTOMATION_BCC') ?? '').trim()
+// This function's own URL: the reminder emails' "stop reminders" link lands here.
+const SELF_URL = `${SUPA_URL}/functions/v1/email-automation-scheduler`
+// Supabase sandboxes HTML returned from functions, so the stop link does its
+// work and then 302s to a static page (same pattern as generate-campaign).
+const REMINDERS_STOPPED_URL = Deno.env.get('REMINDERS_STOPPED_URL') ?? 'https://coffeeflow-neon.vercel.app/reminders-stopped.html'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -77,6 +85,7 @@ interface AutomationTemplate {
   // Cache miss (empty IDs array) triggers re-resolution from slugs.
   coupon_product_category_slugs: string[]
   coupon_product_category_ids: number[]
+  settings?: Record<string, unknown>  // per-trigger knobs (coffee_checkin, refill_reminder)
 }
 
 interface CartItem {
@@ -92,6 +101,11 @@ interface FirstOrderCandidate {
   woo_order_id: number
   order_date: string  // YYYY-MM-DD
   cart_items?: CartItem[]  // abandoned_cart only — line items from the pending WC order
+  // coffee_checkin / refill_reminder (retention_data.ts):
+  customer_id?: string
+  extra_vars?: Record<string, string>   // extra {{ }} values for the template
+  list_unsubscribe_url?: string         // overrides the List-Unsubscribe header target
+  detail?: Record<string, unknown>      // dry-run explanation (cadence, due date…)
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -537,135 +551,6 @@ async function findFirstPurchaseCandidates(
 }
 
 /**
- * Find customers due for a refill reminder.
- *
- * Cadence model:
- *   • 1 coffee order  → cadence = template.delay_days (default 21)
- *   • 2+ coffee orders → cadence = avg interval between coffee orders
- *
- * Eligibility window: days_since_last_coffee_order between cadence and
- * (cadence + max_lookback_days - delay_days), giving up to ~14 days of
- * grace if cron skips a day.
- *
- * Sanity bounds: skip cadence < 7 days (probably wholesale or test
- * orders) or > 90 days (probably abandoned, win-back territory).
- *
- * Coffee filter: only orders with at least one woo_order_items_enriched
- * row whose product_category = 'coffee' count. Equipment-only orders
- * don't trigger refill.
- *
- * Per-cycle dedup: handled by the unique index in the DB —
- * uniq_automation_per_customer_per_order on
- * (trigger_type, customer_email, woo_order_id). Same customer can get
- * multiple reminders over their lifetime, one per coffee order.
- */
-async function findRefillCandidates(
-  supabase: any, delayDays: number, maxLookbackDays: number
-): Promise<FirstOrderCandidate[]> {
-  // Pull all paid orders for customers with at least one coffee item.
-  // Joining woo_orders → woo_order_items_enriched in code rather than
-  // SQL because supabase-js doesn't expose joins through the REST
-  // endpoint cleanly. Two queries → in-memory join.
-
-  const { data: coffeeItemRows, error: itemsErr } = await supabase
-    .from('woo_order_items_enriched')
-    .select('order_id')
-    .eq('product_category', 'coffee')
-  if (itemsErr) throw new Error(`coffee items query: ${itemsErr.message}`)
-
-  const coffeeOrderIds = new Set<number>()
-  for (const r of (coffeeItemRows ?? [])) coffeeOrderIds.add(r.order_id)
-
-  if (coffeeOrderIds.size === 0) return []
-
-  // woo_orders has no customer_name column (verified — billing.first_name
-  // isn't synced from WC, only billing.email). Greeting falls back to
-  // "חבר/ה" via the standard fallback in processAutomation.
-  const { data: ordersRaw, error: ordersErr } = await supabase
-    .from('woo_orders')
-    .select('woo_order_id, customer_email, order_date, status')
-    .in('status', ['completed', 'processing'])
-    .not('customer_email', 'is', null)
-    .order('order_date', { ascending: true })
-  if (ordersErr) throw new Error(`woo_orders query: ${ordersErr.message}`)
-
-  // Group by email; keep only orders that contain coffee.
-  const byEmail = new Map<string, Array<{ id: number; date: string; name: string | null }>>()
-  for (const o of (ordersRaw ?? [])) {
-    if (!coffeeOrderIds.has(o.woo_order_id)) continue
-    const email = (o.customer_email ?? '').toLowerCase().trim()
-    if (!email) continue
-    if (!byEmail.has(email)) byEmail.set(email, [])
-    byEmail.get(email)!.push({
-      id: o.woo_order_id,
-      date: o.order_date,
-      // billing_first_name isn't on woo_orders; the column doesn't exist
-      // on the table per the schema. Customer name will be NULL until a
-      // future sync brings it in. Greeting falls back to "חבר/ה".
-      name: null,
-    })
-  }
-
-  // Pre-fetch all refill_reminder rows so we can filter (trigger, email,
-  // order_id) tuples without per-candidate roundtrips. Cheap because the
-  // table is small.
-  const { data: existingRefills } = await supabase
-    .from('email_automations')
-    .select('customer_email, woo_order_id')
-    .eq('trigger_type', 'refill_reminder')
-  const alreadyReminded = new Set<string>()
-  for (const r of (existingRefills ?? [])) {
-    alreadyReminded.add(`${r.customer_email}::${r.woo_order_id}`)
-  }
-
-  // Marketing-consent gate: only customers who explicitly opted into
-  // our list qualify. Same rule as first_purchase. See fetchOptedInEmails.
-  const optedIn = await fetchOptedInEmails(supabase)
-
-  const today = Date.now()
-  const candidates: FirstOrderCandidate[] = []
-
-  for (const [email, orders] of byEmail.entries()) {
-    if (orders.length === 0) continue
-    if (!optedIn.has(email)) continue
-
-    // Compute cadence in days.
-    let cadenceDays: number
-    if (orders.length === 1) {
-      cadenceDays = delayDays  // first-time customer default (e.g. 21)
-    } else {
-      const earliest = new Date(orders[0].date).getTime()
-      const latest = new Date(orders[orders.length - 1].date).getTime()
-      cadenceDays = ((latest - earliest) / 86400_000) / (orders.length - 1)
-    }
-
-    // Sanity bounds.
-    if (cadenceDays < 7 || cadenceDays > 90) continue
-
-    const lastOrder = orders[orders.length - 1]
-    const daysSince = (today - new Date(lastOrder.date).getTime()) / 86400_000
-
-    // Eligibility window: cadence ≤ daysSince ≤ cadence + grace.
-    // Using maxLookbackDays - delayDays as grace gives 14 by default
-    // (35 - 21 = 14). Floor of cadence is the lower bound.
-    const lower = Math.floor(cadenceDays)
-    const upper = lower + Math.max(maxLookbackDays - delayDays, 7)
-    if (daysSince < lower || daysSince > upper) continue
-
-    // Already reminded for this specific last order? Skip.
-    if (alreadyReminded.has(`${email}::${lastOrder.id}`)) continue
-
-    candidates.push({
-      customer_email: email,
-      customer_name: null,
-      woo_order_id: lastOrder.id,
-      order_date: lastOrder.date,
-    })
-  }
-  return candidates
-}
-
-/**
  * Find customers who abandoned a checkout — placed a WooCommerce order but
  * never completed payment (status='pending'). Used by both abandoned_cart_1
  * (day-1 reminder) and abandoned_cart_2 (day-4 follow-up). Pass
@@ -905,7 +790,7 @@ async function processAutomation(
   supabase: any,
   template: AutomationTemplate,
   candidate: FirstOrderCandidate,
-): Promise<{ status: string; error?: string; coupon?: string; resend_id?: string }> {
+): Promise<{ status: string; error?: string; coupon?: string | null; resend_id?: string }> {
   // INSERT-as-lock pattern. Previously we did "check if row exists, then
   // do work, then insert" which has a race window: two concurrent runs
   // both pass the check, both send, only one wins the insert. Owner
@@ -983,11 +868,13 @@ async function processAutomation(
     unsubscribe_url: unsubscribeUrl,
     logo_url: DEFAULT_LOGO_URL,
     cart_items_html: renderCartItemsHtml(candidate.cart_items ?? []),
+    ...(candidate.extra_vars ?? {}),
   }
   const subject = renderTemplate(template.subject_template, vars)
   const html    = renderTemplate(template.body_html_template, vars)
 
-  const sendResult = await sendEmail(candidate.customer_email, subject, html, unsubscribeUrl, AUTOMATION_BCC || undefined)
+  const sendResult = await sendEmail(candidate.customer_email, subject, html,
+    candidate.list_unsubscribe_url ?? unsubscribeUrl, AUTOMATION_BCC || undefined)
 
   if (!sendResult.ok) {
     await supabase.from('email_automations').update({
@@ -1013,6 +900,17 @@ async function processAutomation(
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+
+  // The customer's own "stop reminders" link (GET from the email footer, or
+  // one-click POST from the mail client's unsubscribe button). Public on
+  // purpose; the HMAC token is the authorization: it is signed with the
+  // service-role key, so only this function can mint one, and it only ever
+  // STOPS reminders for the one customer it names.
+  const reqUrl = new URL(req.url)
+  if (reqUrl.searchParams.get('action') === 'stop_reminders') {
+    return handleStopReminders(req, reqUrl)
+  }
+
   // verify_jwt is off, so the caller is checked here. Sends email, mints Woo coupons and previews customer data.
   // Callers: the daily cron (service key) and an admin from the dashboard.
   if (!(await hasRole(req, ['admin']))) return forbidden(CORS)
@@ -1021,6 +919,11 @@ serve(async (req) => {
 
   let body: any = {}
   try { body = await req.json() } catch { /* default empty */ }
+
+  // Dashboard: look up / stop / resume one customer's reorder reminders.
+  if (body.action === 'reminder_status' || body.action === 'set_reminders') {
+    return handleReminderAdmin(supabase, body)
+  }
 
   const dryRun  = body.dry_run === true
   const testTo  = typeof body.test_send === 'string' ? body.test_send : null
@@ -1083,6 +986,7 @@ serve(async (req) => {
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
         cart_items_html: renderCartItemsHtml(sampleCart),
+        ...sampleRetentionVars(tmpl),
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
@@ -1117,8 +1021,8 @@ serve(async (req) => {
     try {
       if (testTrigger === 'first_purchase') {
         candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
-      } else if (testTrigger === 'refill_reminder') {
-        candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+      } else if (testTrigger === 'refill_reminder' || testTrigger === 'coffee_checkin') {
+        candidates = await findRetentionCandidates(supabase, tmpl, await loadRetentionData(supabase))
       } else if (testTrigger === 'abandoned_cart_1') {
         candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
       } else if (testTrigger === 'abandoned_cart_2') {
@@ -1144,6 +1048,7 @@ serve(async (req) => {
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
         cart_items_html: renderCartItemsHtml(c.cart_items ?? []),
+        ...(c.extra_vars ?? {}),
       }
       const baseSubject = renderTemplate(tmpl.subject_template, vars)
       const subject = `[תצוגה → ${c.customer_email} · הזמנה ${c.woo_order_id}] ${baseSubject}`
@@ -1186,13 +1091,20 @@ serve(async (req) => {
   }
 
   const summary: Record<string, any> = { dryRun, runs: [] }
+  let retention: RetentionData | null = null   // loaded once, shared by both retention triggers
 
   for (const tmpl of (templates ?? []) as AutomationTemplate[]) {
     let candidates: FirstOrderCandidate[] = []
     if (tmpl.trigger_type === 'first_purchase') {
       candidates = await findFirstPurchaseCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
-    } else if (tmpl.trigger_type === 'refill_reminder') {
-      candidates = await findRefillCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days)
+    } else if (tmpl.trigger_type === 'refill_reminder' || tmpl.trigger_type === 'coffee_checkin') {
+      try {
+        retention ??= await loadRetentionData(supabase)
+        candidates = await findRetentionCandidates(supabase, tmpl, retention)
+      } catch (e: any) {
+        summary.runs.push({ trigger: tmpl.trigger_type, error: `candidates: ${e.message}` })
+        continue
+      }
     } else if (tmpl.trigger_type === 'abandoned_cart_1') {
       candidates = await findAbandonedCartCandidates(supabase, tmpl.delay_days, tmpl.max_lookback_days, null, tmpl.not_before_date ?? null)
     } else if (tmpl.trigger_type === 'abandoned_cart_2') {
@@ -1208,6 +1120,8 @@ serve(async (req) => {
         enabled: tmpl.enabled,  // surface so owner can tell which triggers would actually fire vs preview-only
         candidates_count: candidates.length,
         candidates_sample: candidates.slice(0, 5).map(c => c.customer_email),
+        // retention triggers: why each would be sent (cadence, due date…)
+        ...(candidates.some(c => c.detail) ? { candidates_detail: candidates.slice(0, 20).map(c => ({ email: c.customer_email, order: c.woo_order_id, ...c.detail })) } : {}),
       })
       continue
     }
@@ -1225,3 +1139,94 @@ serve(async (req) => {
   return new Response(JSON.stringify(summary, null, 2),
     { headers: { ...CORS, 'Content-Type': 'application/json' } })
 })
+
+// ── Retention triggers (coffee_checkin, refill_reminder) ────────────────────
+
+async function findRetentionCandidates(_supabase: any, tmpl: AutomationTemplate, d: RetentionData): Promise<FirstOrderCandidate[]> {
+  if (tmpl.trigger_type === 'coffee_checkin') return findCheckinCandidates(d, tmpl, generateUnsubscribeUrl)
+  return await findReminderCandidates(d, tmpl, { stopBase: SELF_URL, signingKey: SUPA_KEY, unsubscribeUrlFor: generateUnsubscribeUrl })
+}
+
+/** Placeholder values so a test send of a retention email renders fully. */
+function sampleRetentionVars(tmpl: AutomationTemplate): Record<string, string> {
+  const s = tmpl.settings ?? {}
+  const product = `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;"><img src="https://www.minuto.co.il/content/uploads/2025/03/ARISTO.png" alt="Aristo" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;"></td></tr>`
+  if (tmpl.trigger_type === 'coffee_checkin') {
+    const on = s.review_link_enabled === true && typeof s.review_url === 'string'
+    return {
+      product_block_html: product,
+      review_block_html: on ? `<tr><td align="right" style="padding:28px 40px 4px; text-align:right;"><a href="${s.review_url}" style="display:inline-block; color:#3C4A2C; font-weight:700; padding:12px 32px; border:1px solid #3C4A2C; border-radius:4px; text-decoration:none;">לכתיבת ביקורת בגוגל</a></td></tr>` : '',
+    }
+  }
+  if (tmpl.trigger_type === 'refill_reminder') {
+    return { product_block_html: product, stop_reminders_url: `${SELF_URL}?action=stop_reminders&c=test&t=test`, shop_url: 'https://www.minuto.co.il/shop/?utm_source=email&utm_medium=automation&utm_campaign=refill_reminder' }
+  }
+  return {}
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+async function handleStopReminders(req: Request, url: URL): Promise<Response> {
+  const oneClick = req.method === 'POST'
+  const c = url.searchParams.get('c') ?? ''
+  const t = url.searchParams.get('t') ?? ''
+  const done = (status: string) => oneClick
+    ? new Response(status === 'ok' ? 'ok' : 'invalid', { status: status === 'ok' ? 200 : 400 })
+    : new Response(null, { status: 302, headers: { Location: `${REMINDERS_STOPPED_URL}?status=${status}` } })
+
+  if (!UUID_RE.test(c) || !t || !constantTimeEqual(t, await stopToken(SUPA_KEY, c))) return done('invalid')
+
+  const supabase = createClient(SUPA_URL, SUPA_KEY)
+  // Follow merges so the stop lands on the customer the scheduler reads.
+  let id = c
+  for (let i = 0; i < 10; i++) {
+    const { data } = await supabase.from('customers').select('merged_into').eq('id', id).maybeSingle()
+    if (!data) return done(i === 0 ? 'invalid' : 'ok')
+    if (!data.merged_into) break
+    id = data.merged_into
+  }
+  const { data: last } = await supabase.from('messaging_reminder_prefs')
+    .select('action').eq('customer_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+  if (last?.action !== 'stop') {
+    const { error } = await supabase.from('messaging_reminder_prefs')
+      .insert({ customer_id: id, action: 'stop', source: oneClick ? 'one_click' : 'email_link' })
+    if (error) { console.error('stop_reminders insert:', error.message); return done('error') }
+  }
+  return done('ok')
+}
+
+/**
+ * Admin-only (the gate above already ran): find a customer by any of their
+ * emails, report their reminder state, and stop / resume reminders. Answers
+ * with counts and flags only; the dashboard already knows the email it asked.
+ */
+async function handleReminderAdmin(supabase: any, body: any): Promise<Response> {
+  const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
+  const email = String(body.email ?? '').trim().toLowerCase()
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'email required' }, 400)
+
+  const { data: rows, error } = await supabase.from('customers').select('id').contains('emails', [email]).is('merged_into', null).limit(2)
+  if (error) return json({ error: error.message }, 500)
+  if (!rows?.length) return json({ found: false })
+  const id = rows[0].id
+
+  if (body.action === 'set_reminders') {
+    const action = body.stop === false ? 'resume' : 'stop'
+    const actor = typeof body.actor === 'string' ? body.actor.slice(0, 200) : null
+    const { error: insErr } = await supabase.from('messaging_reminder_prefs').insert({ customer_id: id, action, source: 'dashboard', actor })
+    if (insErr) return json({ error: insErr.message }, 500)
+  }
+
+  const [{ data: prefs }, { data: orders }, { data: sent }] = await Promise.all([
+    supabase.from('messaging_reminder_prefs').select('action, source, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(5),
+    supabase.from('customer_orders').select('status').eq('customer_id', id),
+    supabase.from('email_automations').select('sent_at').eq('trigger_type', 'refill_reminder').eq('customer_email', email).eq('status', 'sent').order('sent_at', { ascending: false }).limit(1),
+  ])
+  return json({
+    found: true,
+    paid_orders: (orders ?? []).filter((o: any) => o.status === 'completed' || o.status === 'processing').length,
+    reminders_stopped: prefs?.[0]?.action === 'stop',
+    history: prefs ?? [],
+    last_reminder_at: sent?.[0]?.sent_at ?? null,
+  })
+}

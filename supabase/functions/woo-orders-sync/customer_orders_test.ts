@@ -1,7 +1,7 @@
 // deno test supabase/functions/woo-orders-sync/customer_orders_test.ts
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import {
-  buildCustomerOrderRow, gramsFromProductAttributes, isBeanLine, isMflowOrder,
+  buildCustomerOrderRow, checkoutConsent, gramsFromProductAttributes, isBeanLine, isMflowOrder,
   normalizeEmail, normalizePhone, parseGrams, productIdsNeedingGrams,
 } from "./customer_orders.ts";
 
@@ -151,4 +151,13 @@ Deno.test("buildCustomerOrderRow: capsules don't count as beans", () => {
   const r = buildCustomerOrderRow({ ...base, line_items: [{ name: "קפסולות קימבו נאפולי לנספרסו - Nespresso espresso", quantity: 3 }] });
   assertEquals(r.has_beans, false);
   assertEquals(r.bean_grams, 0);
+});
+
+Deno.test("checkoutConsent: ticked, unticked, absent", () => {
+  assertEquals(checkoutConsent([{ key: "_minuto_marketing_consent", value: "yes" }, { key: "_minuto_consent_version", value: "2026-10-a" }, { key: "_minuto_consent_at", value: "2026-10-26T08:00:00+00:00" }]),
+    { marketing_consent: true, consent_text_version: "2026-10-a", consent_at: "2026-10-26T08:00:00+00:00" });
+  assertEquals(checkoutConsent([{ key: "_minuto_marketing_consent", value: "no" }]).marketing_consent, false);
+  assertEquals(checkoutConsent([]).marketing_consent, null);
+  assertEquals(checkoutConsent([{ key: "_minuto_marketing_consent", value: "maybe" }]).marketing_consent, null);
+  assertEquals(buildCustomerOrderRow({ ...base, meta_data: [{ key: "_minuto_marketing_consent", value: "yes" }] }).marketing_consent, true);
 });
