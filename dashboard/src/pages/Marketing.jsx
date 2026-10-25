@@ -1446,7 +1446,7 @@ function AutomationsTab({ data, user, showToast }) {
   // Live triggers backed by email_automation_templates rows. Each renders
   // its own self-contained EmailAutomationCard (toggle / test-send / dry-run
   // / history / editor), keyed by trigger_type.
-  const LIVE_TRIGGERS = ['first_purchase', 'refill_reminder', 'abandoned_cart_1', 'abandoned_cart_2'];
+  const LIVE_TRIGGERS = ['first_purchase', 'coffee_checkin', 'refill_reminder', 'abandoned_cart_1', 'abandoned_cart_2'];
 
   return (
     <div className="section">
@@ -1464,6 +1464,8 @@ function AutomationsTab({ data, user, showToast }) {
           <EmailAutomationCard key={tt} trigger={tt} showToast={showToast} />
         ))}
       </div>
+
+      <ReminderStopPanel showToast={showToast} />
 
       <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem', color: '#3D4A2E', fontSize: '1.05rem' }}>בקרוב</h3>
       <div style={{ display: 'grid', gap: '12px' }}>
@@ -1537,9 +1539,13 @@ const AUTOMATION_META = {
     icon: '☕',
     blurb: (t) => `נשלח ${t.delay_days} ימים אחרי ההזמנה הראשונה — רק ללקוחות שהזמנתם הראשונה הייתה ב-${t.max_lookback_days} הימים האחרונים.`,
   },
+  coffee_checkin: {
+    icon: '💬',
+    blurb: (t) => `לקוחות עם הזמנה אחת בלבד: מייל "איך היה הקפה?" פעם אחת, ${t.delay_days} ימים אחרי שההזמנה הושלמה. ללא קופון. ${t.settings?.review_link_enabled ? 'כולל קישור לביקורת בגוגל.' : 'קישור הביקורת בגוגל כבוי (הביקורות בפרופיל מושהות).'}`,
+  },
   refill_reminder: {
     icon: '🔄',
-    blurb: (t) => `תזכורת חידוש — נשלח ${t.delay_days} ימים אחרי הזמנת קפה. קונים חוזרים מקבלים לפי קצב הצריכה האישי שלהם.`,
+    blurb: (t) => `לקוחות עם ${t.settings?.min_orders ?? 3} הזמנות ומעלה, שאישרו דיוור: תזכורת לפי הקצב האישי (חציון הזמן בין הזמנות × ${t.settings?.cadence_factor ?? 0.85}). אחת לכל מחזור, עם קישור להפסקת תזכורות.`,
   },
   abandoned_cart_1: {
     icon: '🛒',
@@ -3014,6 +3020,79 @@ function HistoryTab({ data, user, showToast, onDuplicate, onEdit }) {
         </div>
       ) : (
         <div className="empty-state">אין קמפיינים עדיין. צור את הקמפיין הראשון!</div>
+      )}
+    </div>
+  );
+}
+
+
+// ── Stop / resume reorder reminders for one customer ───────────────────────
+// Customers' own data lives in service-role-only tables, so the lookup goes
+// through email-automation-scheduler (admin-gated) rather than the table API.
+function ReminderStopPanel({ showToast }) {
+  const { user: clerkUser } = useUser();
+  const actor = clerkUser?.primaryEmailAddress?.emailAddress ?? null;
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const call = async (body) => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('email-automation-scheduler', { body });
+      if (error || data?.error) throw new Error(data?.error ?? error.message);
+      setStatus(data);
+      return data;
+    } catch (e) {
+      showToast(`❌ שגיאה: ${e.message}`, 'error');
+      return null;
+    } finally { setBusy(false); }
+  };
+
+  const lookup = () => {
+    const e = email.trim().toLowerCase();
+    if (!e.includes('@')) { showToast('❌ כתובת מייל לא תקינה', 'error'); return; }
+    call({ action: 'reminder_status', email: e });
+  };
+  const setStopped = async (stop) => {
+    const d = await call({ action: 'set_reminders', email: email.trim().toLowerCase(), stop, actor });
+    if (d) showToast(stop ? '⏸️ התזכורות ללקוח הופסקו' : '▶️ התזכורות ללקוח חודשו');
+  };
+
+  return (
+    <div className="form-card" style={{ marginTop: '1.5rem' }}>
+      <h3 style={{ margin: '0 0 4px', color: '#3D4A2E' }}>⏸️ הפסקת תזכורות ללקוח</h3>
+      <p style={{ margin: '0 0 12px', color: '#666', fontSize: '0.9rem' }}>
+        מחפשים לפי כל כתובת מייל של הלקוח. הפסקה כאן זהה ללחיצה של הלקוח על "להפסקת תזכורות" במייל.
+      </p>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <input type="email" value={email} onChange={e => { setEmail(e.target.value); setStatus(null); }}
+          placeholder="customer@example.com" dir="ltr" style={{ flex: '1 1 220px' }}
+          onKeyDown={e => { if (e.key === 'Enter') lookup(); }} />
+        <button className="btn-small" onClick={lookup} disabled={busy}>חיפוש</button>
+      </div>
+      {status && !status.found && (
+        <p style={{ margin: '12px 0 0', color: '#92400E' }}>לא נמצא לקוח עם הכתובת הזו.</p>
+      )}
+      {status?.found && (
+        <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>{status.paid_orders} הזמנות</span>
+          <span style={{
+            padding: '2px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600,
+            background: status.reminders_stopped ? '#FEE2E2' : '#DCFCE7',
+            color: status.reminders_stopped ? '#991B1B' : '#166534',
+          }}>
+            {status.reminders_stopped ? 'תזכורות מופסקות' : 'תזכורות פעילות'}
+          </span>
+          {status.last_reminder_at && (
+            <span style={{ color: '#666', fontSize: '0.85rem' }}>
+              תזכורת אחרונה: {new Date(status.last_reminder_at).toLocaleDateString('he-IL')}
+            </span>
+          )}
+          <button className="btn-small" disabled={busy} onClick={() => setStopped(!status.reminders_stopped)}>
+            {status.reminders_stopped ? 'חידוש תזכורות' : 'הפסקת תזכורות'}
+          </button>
+        </div>
       )}
     </div>
   );

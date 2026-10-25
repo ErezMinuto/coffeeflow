@@ -238,6 +238,23 @@ export function productIdsNeedingGrams(o: WooOrderFull): number[] {
  *   keyed by product id. Simple products (e.g. Sweet Leona, "200 גר") keep
  *   their size there rather than on the order line.
  */
+/**
+ * The checkout marketing-consent checkbox (docs/wordpress/minuto-marketing-
+ * consent.php) stores _minuto_marketing_consent = "yes" | "no" plus the
+ * wording version and time. Orders from before the snippet have none → null.
+ */
+export function checkoutConsent(meta: { key: string; value: unknown }[] | undefined) {
+  const get = (k: string) => meta?.find(m => m.key === k)?.value;
+  const v = String(get('_minuto_marketing_consent') ?? '').toLowerCase();
+  if (v !== 'yes' && v !== 'no') return { marketing_consent: null, consent_text_version: null, consent_at: null };
+  const at = String(get('_minuto_consent_at') ?? '');
+  return {
+    marketing_consent: v === 'yes',
+    consent_text_version: String(get('_minuto_consent_version') ?? '') || null,
+    consent_at: /^\d{4}-\d{2}-\d{2}T/.test(at) ? at : null,
+  };
+}
+
 export function buildCustomerOrderRow(o: WooOrderFull, productGrams?: Map<number, number | null>) {
   const phone = normalizePhone(o.billing?.phone);
   const lines = (o.line_items ?? []).map(li => {
@@ -283,6 +300,7 @@ export function buildCustomerOrderRow(o: WooOrderFull, productGrams?: Map<number
     has_beans:          coffeeLines.length > 0,
     bean_grams:         coffeeLines.length ? coffeeGrams : 0,
     lines,
+    ...checkoutConsent(o.meta_data),
     synced_at:          new Date().toISOString(),
   };
 }
