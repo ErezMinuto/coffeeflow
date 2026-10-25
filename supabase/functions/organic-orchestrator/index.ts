@@ -68,8 +68,10 @@ import {
   buildBrandIndex,
   screenProductList,
   screenHeroProduct,
+  repairForBannedHero,
   type BrandIndex,
 } from '../seo-agent/services/brandGuard.ts'
+import { dropDependentsOfRefused } from '../seo-agent/planCascade.ts'
 import { getCalendarContext, renderCalendarBlock, type CalendarContext } from '../seo-agent/services/calendarContext.ts'
 import {
   getActiveStoryThemeLock,
@@ -476,7 +478,10 @@ serve(async (req: Request): Promise<Response> => {
       } catch { /* best-effort */ }
       return
     }
-    const emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
+    let   emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
+    // What the strategist asked for, before any gate converts a task into a
+    // proposal. The dependents cascade below diffs against this.
+    const plannedTaskTypes   = emittedTasks.map(et => et.task_type)
     const emittedExperiments = Array.isArray(plan.experiments) ? plan.experiments : []
     console.log(
       `[organic-orchestrator] plan parsed — ` +
@@ -657,8 +662,21 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // 3. bag_hero product_name — block.
+      // 3. bag_hero product_name — repair to no_bag when the scene never
+      // describes a bag, otherwise block.
       const heroVerdict = screenHeroProduct(brief.product_name, brandIndex)
+      if (!heroVerdict.ok && et.task_type === 'visual_generation') {
+        const repair = repairForBannedHero(brief)
+        if (repair.action === 'no_bag') {
+          const droppedName = String(brief.product_name ?? '')
+          delete brief.product_name
+          brief.render_mode = 'no_bag'
+          brandScrubbed++
+          et.rationale = `${et.rationale ?? ''}\n[brand-guard] rendered as no_bag — ${heroVerdict.why}; the scene shows no bag, so it stands without one`.trim()
+          console.warn(`[organic-orchestrator] brand-guard repaired a visual to no_bag (dropped "${droppedName}"): ${heroVerdict.why}`)
+          continue
+        }
+      }
       if (!heroVerdict.ok) {
         const blockedName = String(brief.product_name ?? '')
         const original    = { task_type: et.task_type, brief }
@@ -690,6 +708,48 @@ serve(async (req: Request): Promise<Response> => {
 
     if (brandScrubbed > 0 || brandBlocked > 0) {
       console.log(`[organic-orchestrator] brand guard: ${brandScrubbed} brief(s) scrubbed, ${brandBlocked} task(s) blocked`)
+    }
+
+    // ── 5c. DEPENDENTS OF REFUSED TASKS ───────────────────────────────
+    // A gate above refused a task by converting it into a proposal. Anything
+    // wired to it (the blog_banner of a refused article, the IG post of a
+    // blocked visual) would ship as an orphan: approving the proposal never
+    // produces the article, so the banner has nothing to attach to. Those
+    // orphans sat 'pending' for weeks, and the ten that carried Veneto were
+    // the 2026-09-23 brand-guard failures. Drop them here and list them on
+    // the proposal so the admin still sees what was planned.
+    phase = 'dependents_cascade'
+    {
+      const refused = new Set<number>()
+      emittedTasks.forEach((et, i) => {
+        if (plannedTaskTypes[i] !== 'dynamic_experiment' && et.task_type === 'dynamic_experiment') refused.add(i)
+      })
+      if (refused.size > 0) {
+        const { kept, dropped } = dropDependentsOfRefused(emittedTasks, refused)
+        for (const d of dropped) {
+          const parent  = emittedTasks[d.refusedIndex]
+          const pb      = (parent.brief_data ?? {}) as Record<string, unknown>
+          const details = (pb.details ?? (pb.details = {})) as Record<string, unknown>
+          const list    = (Array.isArray(details.dropped_dependents) ? details.dropped_dependents : []) as unknown[]
+          const db      = (d.task.brief_data ?? {}) as Record<string, unknown>
+          list.push({
+            task_type:    d.task.task_type,
+            destination:  db.destination ?? null,
+            render_mode:  db.render_mode ?? null,
+            product_name: db.product_name ?? null,
+            rationale:    d.task.rationale ?? '',
+          })
+          details.dropped_dependents = list
+          console.warn(
+            `[organic-orchestrator] dropped ${d.task.task_type} #${d.originalIndex}: ` +
+            `it depends on #${d.refusedIndex}, which became ${parent.task_subtype ?? 'a proposal'}`,
+          )
+        }
+        if (dropped.length > 0) {
+          console.log(`[organic-orchestrator] dependents cascade: dropped ${dropped.length} task(s) wired to ${refused.size} refused task(s)`)
+        }
+        emittedTasks = kept
+      }
     }
 
     // ── 6a. Materialize experiments. Each experiment_group string from
