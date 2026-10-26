@@ -28,17 +28,25 @@ export function storeStock(product, reserved) {
 export const COVER_DAYS    = 7;
 export const LOOKBACK_DAYS = 28;
 
-// soldByProduct: {product_id: bags sold in the store over LOOKBACK_DAYS}
-// (store_bags_sold RPC: café + website, B2B excluded).
-// Target = enough bags for COVER_DAYS of store sales, never below the product's
-// own min_packed_stock. Returns only products that need packing.
-export function packingList(products, reserved, soldByProduct) {
+// storeSold / b2bSold: {product_id: bags sold over LOOKBACK_DAYS}
+// (store_bags_sold = café + website; b2b_bags_sold = MFlow back_office).
+//
+// target    — COVER_DAYS of store sales, never below min_packed_stock.
+// b2bTarget — COVER_DAYS of average B2B sales. B2B has no weekly pattern, so
+//             this is a rough forecast; bags already allocated count toward it,
+//             and a big allocation above the forecast is covered in full.
+// toPack    = target + max(b2bTarget, allocated) − packed_stock. packed_stock
+//             includes allocated bags, so store surplus can cover expected B2B.
+export function packingList(products, reserved, storeSold, b2bSold = {}) {
+  const forDays = (sold, id) => Math.ceil(Math.max(0, sold[id] || 0) / LOOKBACK_DAYS * COVER_DAYS);
   return products
     .map(p => {
-      const perDay = Math.max(0, soldByProduct[p.id] || 0) / LOOKBACK_DAYS;
-      const target = Math.max(Math.ceil(perDay * COVER_DAYS), p.min_packed_stock ?? 0);
-      const stock  = storeStock(p, reserved);
-      return { product: p, stock, target, toPack: target - stock };
+      const target    = Math.max(forDays(storeSold, p.id), p.min_packed_stock ?? 0);
+      const b2bTarget = forDays(b2bSold, p.id);
+      const allocated = reserved[p.id] || 0;
+      const stock     = storeStock(p, reserved);
+      const toPack    = target + Math.max(b2bTarget, allocated) - (p.packed_stock ?? 0);
+      return { product: p, stock, target, b2bTarget, allocated, toPack };
     })
     .filter(r => r.toPack > 0)
     .sort((a, b) => b.toPack - a.toPack);

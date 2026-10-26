@@ -10,7 +10,7 @@ const PHONE_KEY = 'packing_whatsapp_number';
 // "What do we pack for the store?" — bags needed so store stock (packed minus
 // B2B allocations) covers COVER_DAYS of café + website sales, then sent as a
 // WhatsApp message. Demand comes from the store_bags_sold RPC (MFlow lines,
-// B2B excluded), averaged over LOOKBACK_DAYS.
+// B2B excluded) plus a B2B forecast (b2b_bags_sold), averaged over LOOKBACK_DAYS.
 export default function PackingList() {
   const { data, appSettingsDb, showToast } = useApp();
 
@@ -24,10 +24,14 @@ export default function PackingList() {
   const build = async () => {
     setLoading(true);
     try {
-      const { data: sold, error } = await supabase.rpc('store_bags_sold', { p_days: LOOKBACK_DAYS });
-      if (error) throw error;
-      const soldByProduct = Object.fromEntries((sold || []).map(r => [r.product_id, Number(r.bags) || 0]));
-      setRows(packingList(data.products, reservedBagsByProduct(data.bagAllocations), soldByProduct));
+      const [store, b2b] = await Promise.all([
+        supabase.rpc('store_bags_sold', { p_days: LOOKBACK_DAYS }),
+        supabase.rpc('b2b_bags_sold',   { p_days: LOOKBACK_DAYS }),
+      ]);
+      if (store.error) throw store.error;
+      if (b2b.error)   throw b2b.error;
+      const byProduct = rows => Object.fromEntries((rows || []).map(r => [r.product_id, Number(r.bags) || 0]));
+      setRows(packingList(data.products, reservedBagsByProduct(data.bagAllocations), byProduct(store.data), byProduct(b2b.data)));
     } catch (err) {
       console.error('store_bags_sold', err);
       showToast('❌ לא הצלחנו לטעון את נתוני המכירות', 'error');
@@ -52,7 +56,7 @@ export default function PackingList() {
     `📦 רשימת אריזה למלאי החנות (${COVER_DAYS} ימים)`,
     new Date().toLocaleDateString('he-IL'),
     '',
-    ...rows.map(r => `• ${r.product.name} ${r.product.size}g: ${r.toPack} שקיות`),
+    ...rows.map(r => `• ${r.product.name} ${r.product.size}g: ${r.toPack} שקיות${r.b2bTarget > 0 || r.allocated > 0 ? ' (כולל B2B)' : ''}`),
     '',
     `סה"כ: ${rows.reduce((s, r) => s + r.toPack, 0)} שקיות`,
   ].join('\n');
@@ -71,7 +75,7 @@ export default function PackingList() {
         <div>
           <h3 style={{ margin: 0 }}>📝 מה לארוז לחנות</h3>
           <div style={{ fontSize: '12px', color: '#6B7280', marginTop: 4 }}>
-            מלאי ל-{COVER_DAYS} ימים לפי מכירות החנות והאתר ב-{LOOKBACK_DAYS} הימים האחרונים (בלי B2B)
+            מלאי ל-{COVER_DAYS} ימים לפי ממוצע המכירות ב-{LOOKBACK_DAYS} הימים האחרונים: חנות ואתר, ובנפרד צפי B2B
           </div>
         </div>
         <button onClick={build} disabled={loading} style={primaryBtn}>
@@ -82,13 +86,13 @@ export default function PackingList() {
       {rows && (
         <div style={{ marginTop: '1rem' }}>
           {rows.length === 0 ? (
-            <div style={{ color: '#059669', fontWeight: 600 }}>✓ יש מספיק שקיות לחנות ל-{COVER_DAYS} ימים</div>
+            <div style={{ color: '#059669', fontWeight: 600 }}>✓ יש מספיק שקיות ל-{COVER_DAYS} ימים</div>
           ) : (
             <>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ color: '#6B7280', textAlign: 'right' }}>
-                    <th style={th}>מוצר</th><th style={th}>בחנות</th><th style={th}>יעד</th><th style={th}>לארוז</th>
+                    <th style={th}>מוצר</th><th style={th}>בחנות</th><th style={th}>יעד חנות</th><th style={th}>צפי B2B</th><th style={th}>לארוז</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -97,6 +101,7 @@ export default function PackingList() {
                       <td style={{ ...td, overflowWrap: 'anywhere' }}>{r.product.name} {r.product.size}g</td>
                       <td style={td}>{r.stock}</td>
                       <td style={td}>{r.target}</td>
+                      <td style={td}>{r.b2bTarget}{r.allocated > 0 && <span style={{ color: '#9CA3AF' }}> ({r.allocated} מוקצות)</span>}</td>
                       <td style={{ ...td, fontWeight: 700, color: '#6b3a1f' }}>{r.toPack}</td>
                     </tr>
                   ))}
