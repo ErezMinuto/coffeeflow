@@ -10,8 +10,8 @@ export default function Dashboard() {
   const lowStockOrigins   = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
   const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
 
-  // Bags packed for a customer's ready order are not store stock (see reservedStock.js).
-  const reserved          = reservedBagsByProduct(data.pendingOrders);
+  // Bags allocated to a B2B customer are not store stock (see reservedStock.js).
+  const reserved          = reservedBagsByProduct(data.bagAllocations);
   const outOfPackedStock  = data.products.filter(p => storeStock(p, reserved) === 0 && (p.min_packed_stock ?? 0) > 0);
   const lowPackedStock    = data.products.filter(p => storeStock(p, reserved) > 0 && (p.min_packed_stock ?? 0) > 0 && storeStock(p, reserved) <= p.min_packed_stock);
 
