@@ -83,7 +83,7 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
 
 export default function Products() {
   const { data, productsDb, calculateProductCost, showToast } = useApp();
-  const reserved = reservedBagsByProduct(data.pendingOrders);
+  const reserved = reservedBagsByProduct(data.bagAllocations);
 
   const [editingProduct,    setEditingProduct]    = useState(null);
   const [addingProduct,     setAddingProduct]     = useState(false);
@@ -351,7 +351,7 @@ export default function Products() {
                           {product.packed_stock ?? 0}
                         </span>
                         {(reserved[product.id] || 0) > 0 && (
-                          <span style={{ fontSize: '11px', color: '#6B3A1F' }}>({reserved[product.id]} שמורות)</span>
+                          <span style={{ fontSize: '11px', color: '#6B3A1F' }}>({reserved[product.id]} מוקצות)</span>
                         )}
                         <button
                           onClick={() => { setAdjustingStockId(product.id); setAdjustValue(String(product.packed_stock ?? 0)); }}
