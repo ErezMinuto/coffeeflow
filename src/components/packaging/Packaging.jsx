@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,8 @@ export default function Packaging() {
   const {
     data, originsDb, roastProfilesDb, productsDb, packingLogsDb, showToast
   } = useApp();
+
+  const reserved = reservedBagsByProduct(data.pendingOrders);
 
   const [packProductId, setPackProductId] = useState('');
   const [packBags,      setPackBags]      = useState('');
@@ -214,7 +217,9 @@ export default function Packaging() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
           {data.products.map(product => {
-            const stock    = product.packed_stock ?? 0;
+            // Bags packed for a customer's ready order are not store stock.
+            const reservedBags = reserved[product.id] || 0;
+            const stock    = storeStock(product, reserved);
             const minStock = product.min_packed_stock ?? 0;
             const isEmpty  = stock === 0;
             const isLow    = !isEmpty && minStock > 0 && stock <= minStock;
@@ -236,7 +241,12 @@ export default function Packaging() {
                 <div style={{ fontSize: '32px', fontWeight: 'bold', color, lineHeight: 1 }}>
                   {stock}
                 </div>
-                <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות</div>
+                <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות לחנות</div>
+                {reservedBags > 0 && (
+                  <div style={{ fontSize: '11px', color: '#6B3A1F', marginTop: '4px' }}>
+                    🏷️ +{reservedBags} שמורות ללקוחות
+                  </div>
+                )}
                 {minStock > 0 && (
                   <div style={{ fontSize: '11px', color, marginTop: '6px', fontWeight: '500' }}>
                     {isEmpty ? '❌ אזל מהמלאי' : isLow ? `⚠️ מינימום: ${minStock}` : `✓ מינימום: ${minStock}`}

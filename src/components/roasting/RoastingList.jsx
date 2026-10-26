@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
@@ -172,10 +173,11 @@ export default function RoastingList({
   // Otherwise the system keeps recommending roasting an origin even when
   // that origin is already living inside dozens of packed bags.
 
+  const reserved = reservedBagsByProduct(data.pendingOrders);
   const packedKgByOrigin  = {};
   const packedKgByProfile = {};
   for (const product of (data.products || [])) {
-    const bags    = product.packed_stock || 0;
+    const bags    = storeStock(product, reserved); // customer-reserved bags don't cover future demand
     const sizeKg  = (product.size || 0) / 1000;
     const recipe  = Array.isArray(product.recipe) ? product.recipe : [];
     if (bags <= 0 || sizeKg <= 0 || recipe.length === 0) continue;

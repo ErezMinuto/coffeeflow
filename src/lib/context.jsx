@@ -107,6 +107,7 @@ export const AppProvider = ({ children }) => {
   const assignmentsDb             = useSupabaseData('schedule_assignments',      { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
   const pendingOrdersDb           = useSupabaseData('pending_orders',            { filterByUser: false });
+  const b2bCustomersDb            = useSupabaseData('b2b_customers',             { filterByUser: false });
   const artisanProfilesDb         = useSupabaseData('artisan_profiles',          { filterByUser: false });
   const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
@@ -126,6 +127,7 @@ export const AppProvider = ({ children }) => {
     assignments:             assignmentsDb.data             || [],
     packingLogs:                  packingLogsDb.data                 || [],
     pendingOrders:                pendingOrdersDb.data               || [],
+    b2bCustomers:                 b2bCustomersDb.data                || [],
     artisanProfiles:              artisanProfilesDb.data             || [],
     roastChecklistTemplates:      roastChecklistTemplatesDb.data     || [],
     costSettings:                 costSettings                       || {}
@@ -160,13 +162,14 @@ export const AppProvider = ({ children }) => {
     assignmentsDb.refresh();
     packingLogsDb.refresh();
     pendingOrdersDb.refresh();
+    b2bCustomersDb.refresh();
     artisanProfilesDb.refresh();
     roastChecklistTemplatesDb.refresh();
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
     employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, artisanProfilesDb,
-    roastChecklistTemplatesDb,
+    roastChecklistTemplatesDb, b2bCustomersDb,
   ]);
 
   return (
@@ -177,7 +180,7 @@ export const AppProvider = ({ children }) => {
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
-      artisanProfilesDb,
+      artisanProfilesDb, b2bCustomersDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,
