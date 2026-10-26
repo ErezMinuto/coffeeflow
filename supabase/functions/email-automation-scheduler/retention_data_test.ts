@@ -69,6 +69,23 @@ Deno.test("reminder: checkout consent counts; resold coffee links to the shop, n
   assert(c.extra_vars.shop_url.startsWith("https://www.minuto.co.il/shop/?"));
 });
 
+Deno.test("product photo: every Minuto bag in the order, side by side, Veneto left out", () => {
+  const lines = [
+    { product_id: 7, is_bean: true, name: "Aristo" }, { product_id: 8, is_bean: true, name: "Fazenda" },
+    { product_id: 7, is_bean: true, name: "Aristo" }, { product_id: 9, is_bean: true, name: "Veneto" },
+  ]
+  const d = data({ orders: new Map([["c1", [o({ date_completed: ago(10), lines })]]]), emails: new Map([["c1", ["a@b.com"]]]),
+    products: new Map([
+      [7, { permalink: "https://p/aristo/", name: "Aristo", image_url: "https://img/aristo.png" }],
+      [8, { permalink: "https://p/fazenda/", name: "Fazenda Sertão", image_url: "https://img/fazenda.png" }],
+      [9, { permalink: "https://p/veneto/", name: "1 ק״ג פולי קפה Veneto Delux", image_url: "https://img/veneto.png" }],
+    ]) });
+  const html = findCheckinCandidates(d, CHECKIN, unsub)[0].extra_vars.product_block_html;
+  assert(html.includes('src="https://img/aristo.png"') && html.includes('src="https://img/fazenda.png"'));
+  assert(!html.includes("veneto"));
+  assertEquals(html.match(/<img /g)?.length, 2);
+});
+
 Deno.test("product photo: the coffee they bought; never Veneto in a reminder; none without an image", async () => {
   const base = { orders: new Map([["c1", [o({ date_completed: ago(10) })]]]), emails: new Map([["c1", ["a@b.com"]]]) };
   const [c] = findCheckinCandidates(data(base), CHECKIN, unsub);
