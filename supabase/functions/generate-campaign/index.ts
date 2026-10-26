@@ -339,6 +339,10 @@ function buildCampaignHtml(params: {
     .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/, "")
     .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/, "")
     .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
+    // The subject may carry one emoji for the inbox; the clean in-email
+    // headline shows none.
+    .replace(/\p{Extended_Pictographic}\uFE0F?/gu, "")
+    .replace(/\s{2,}/g, " ")
     .trim();
 
   // Append UTM parameters to minuto.co.il links only.
@@ -357,48 +361,38 @@ function buildCampaignHtml(params: {
     return `${rawUrl}${sep}utm_source=email&utm_medium=email&utm_campaign={{UTM_CAMPAIGN}}&utm_content=${encodeURIComponent(content)}__{{UTM_GROUP}}`;
   };
 
+  // Clean house design (approved 2026-10-25, same as the automation emails):
+  // white card on #F7F7F7, hairlines, #3C4A2C headings and buttons, no
+  // gradients, shadows, rounded cards or emoji.
+  const FONT = "'Heebo', Arial, Helvetica, sans-serif";
+
   // Build a single product card cell — fixed dimensions, no description, consistent height
   const buildProductCell = (p: any) => {
     const productUrl = addUtms(p.permalink || ctaUrl, `product_${p.woo_id || "unknown"}`);
     const hasDiscount = p.sale_price && p.regular_price && p.sale_price !== p.regular_price;
     const priceHtml = hasDiscount
-      ? `<span style="text-decoration:line-through;color:#B0A898;font-size:12px;">₪${formatPrice(p.regular_price!)}</span>&nbsp;
-         <span style="color:#C4543A;font-weight:800;font-size:16px;">₪${formatPrice(p.sale_price!)}</span>`
-      : p.price ? `<span style="color:#3D4A2E;font-weight:800;font-size:16px;">₪${formatPrice(p.price)}</span>` : "";
+      ? `<span style="text-decoration:line-through;color:#999999;font-size:13px;">₪${formatPrice(p.regular_price!)}</span>&nbsp;
+         <span style="color:#3C4A2C;font-weight:700;font-size:16px;">₪${formatPrice(p.sale_price!)}</span>`
+      : p.price ? `<span style="color:#3C4A2C;font-weight:700;font-size:16px;">₪${formatPrice(p.price)}</span>` : "";
 
     // Truncate name to ~40 chars to keep cards uniform
     const shortName = p.name && p.name.length > 40 ? p.name.slice(0, 38) + "..." : (p.name || "");
 
-    return `<td valign="top" width="50%" style="padding:6px;">
-  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;border-radius:12px;border:1px solid #EAE6DF;">
-    <tr><td style="padding:0;background:#FAFAF7;">
+    return `<td valign="top" width="50%" style="padding:8px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;">
+    <tr><td align="center" style="padding:0 0 12px;">
       <a href="${escapeHtml(productUrl)}" style="text-decoration:none;display:block;">
-        ${p.image_url ? `
-        <!--[if mso]>
-        <img src="${escapeHtml(p.image_url)}" width="260" height="200" alt="${escapeHtml(shortName)}" style="display:block;width:260px;height:200px;border:0;" />
-        <![endif]-->
-        <!--[if !mso]><!-->
-        <div style="width:100%;height:200px;background:url('${escapeHtml(p.image_url)}') center center/contain no-repeat #FAFAF7;font-size:0;line-height:0;">
-          &nbsp;
-        </div>
-        <!--<![endif]-->` : `
-        <div style="width:100%;height:200px;background:#F5F0EB;text-align:center;line-height:200px;">
-          <span style="font-size:48px;">☕</span>
-        </div>`}
+        ${p.image_url
+          ? `<img class="product-img" src="${escapeHtml(p.image_url)}" width="220" alt="${escapeHtml(shortName)}" style="display:block;width:100%;max-width:220px;height:auto;margin:0 auto;border:0;" />`
+          : `<div style="width:100%;height:180px;background:#F7F7F7;font-size:0;line-height:0;">&nbsp;</div>`}
       </a>
     </td></tr>
-    <tr><td style="padding:14px 12px;direction:rtl;text-align:right;">
-      <a href="${escapeHtml(productUrl)}" style="font-size:13px;font-weight:700;color:#2C3522;text-decoration:none;display:block;margin-bottom:8px;line-height:1.3;min-height:34px;">
+    <tr><td style="padding:0 4px;direction:rtl;text-align:right;font-family:${FONT};">
+      <a href="${escapeHtml(productUrl)}" style="font-size:15px;font-weight:700;color:#333333;text-decoration:none;display:block;margin-bottom:6px;line-height:1.4;min-height:42px;">
         ${escapeHtml(shortName)}
       </a>
       ${priceHtml ? `<div style="margin-bottom:12px;">${priceHtml}</div>` : ""}
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="background:#3D4A2E;border-radius:8px;">
-          <a href="${escapeHtml(productUrl)}" style="display:inline-block;padding:8px 18px;color:white;text-decoration:none;font-size:12px;font-weight:600;">
-            לרכישה &larr;
-          </a>
-        </td></tr>
-      </table>
+      <a href="${escapeHtml(productUrl)}" style="display:inline-block;padding:8px 20px;color:#3C4A2C;border:1px solid #3C4A2C;border-radius:4px;text-decoration:none;font-size:14px;font-weight:700;">לרכישה</a>
     </td></tr>
   </table>
 </td>`;
@@ -419,7 +413,7 @@ function buildCampaignHtml(params: {
         // Last product alone — center it with empty cells on each side
         rows += '<tr>';
         rows += '<td width="25%" style="padding:0;">&nbsp;</td>';
-        rows += buildProductCell(products[i]).replace('width="50%"', 'width="50%"');
+        rows += buildProductCell(products[i]);
         rows += '<td width="25%" style="padding:0;">&nbsp;</td>';
         rows += '</tr>';
       }
@@ -433,193 +427,118 @@ function buildCampaignHtml(params: {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
   <title>${escapeHtml(subject)}</title>
   <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
   <!--<![endif]-->
   <style>
-    body { font-family: 'Heebo', 'Segoe UI', Arial, Helvetica, sans-serif; }
-    /* Constrain product images to their container */
-    .product-grid img { max-width: 100%; height: auto; }
-    .product-grid table { table-layout: fixed; }
+    body { font-family: ${FONT}; }
+    .product-table { table-layout: fixed; }
     @media only screen and (max-width: 620px) {
-      .email-container { width: 100% !important; }
-      .fluid { width: 100% !important; max-width: 100% !important; height: auto !important; }
-      .stack { display: block !important; width: 100% !important; max-width: 100% !important; }
-      .product-table td { display: block !important; width: 100% !important; }
-      .product-grid table { width: 100% !important; max-width: 100% !important; }
-      .product-grid img { width: 100% !important; max-width: 100% !important; }
-      .product-grid td { width: 100% !important; max-width: 100% !important; }
-      .content-pad { padding-left: 20px !important; padding-right: 20px !important; }
-      .banner-img { height: auto !important; max-height: 220px !important; }
+      .content-pad { padding-left: 24px !important; padding-right: 24px !important; }
+      .product-table td { display: block !important; width: 100% !important; max-width: 100% !important; }
+      .product-table td[width="25%"] { display: none !important; }
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background:#F5F0EB;font-family:'Heebo','Segoe UI',Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background:#F7F7F7;font-family:${FONT};color:#333333;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
   ${preheader ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${escapeHtml(preheader)}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>` : ""}
 
-  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F0EB;">
-    <tr><td align="center" style="padding:32px 16px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F7F7F7;">
+    <tr><td align="center" style="padding:32px 12px;">
 
-      <!-- Top accent line -->
-      <table class="email-container" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;">
-        <tr><td style="height:4px;background:linear-gradient(90deg,#3D4A2E,#7C9A5E,#3D4A2E);border-radius:4px 4px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
-      </table>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#FFFFFF;">
 
-      <table class="email-container" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#FFFFFF;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.05);">
-
-        <!-- Logo Bar -->
+        <!-- Logo -->
         <tr>
-          <td style="padding:24px 36px;text-align:center;">
-            <a href="${SITE_URL}" style="text-decoration:none;">
-              <img src="${LOGO_URL}" width="130" height="54" alt="Minuto" style="display:inline-block;height:54px;width:auto;" />
-            </a>
+          <td align="center" style="padding:28px 32px 22px;border-bottom:1px solid #E6E6E6;">
+            <a href="${SITE_URL}"><img src="${LOGO_URL}" width="132" alt="Minuto Café Roastery" style="display:block;width:132px;max-width:132px;height:auto;border:0;" /></a>
           </td>
         </tr>
 
         ${bannerUrl ? `
-        <!-- Banner with text overlay -->
+        <!-- Banner -->
         <tr>
           <td style="padding:0;">
-            <!--[if gte mso 9]>
-            <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:280px;">
-              <v:fill type="frame" src="${escapeHtml(bannerUrl)}" />
-              <v:textbox inset="0,0,0,0">
-            <![endif]-->
-            <div style="background:url('${escapeHtml(bannerUrl)}') center/cover no-repeat;height:280px;display:table;width:100%;">
-              <div style="display:table-cell;vertical-align:end;padding:0;">
-                <div style="background:linear-gradient(0deg,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.25) 60%,transparent 100%);padding:60px 36px 28px;direction:rtl;text-align:right;">
-                  <h1 style="margin:0 0 4px;color:#FFFFFF;font-size:26px;font-weight:800;line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,0.4);">
-                    ${escapeHtml(bannerSubject)}
-                  </h1>
-                  ${preheader ? `<p style="margin:0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:400;text-shadow:0 1px 2px rgba(0,0,0,0.3);">${escapeHtml(preheader)}</p>` : ""}
-                </div>
-              </div>
-            </div>
-            <!--[if gte mso 9]>
-              </v:textbox>
-            </v:rect>
-            <![endif]-->
+            <img class="banner-img" src="${escapeHtml(bannerUrl)}" width="560" alt="" style="display:block;width:100%;max-width:560px;height:auto;border:0;" />
           </td>
-        </tr>` : `
-        <!-- Gradient Header (fallback — no banner) -->
+        </tr>` : ""}
+
+        <!-- Headline -->
         <tr>
-          <td style="background:linear-gradient(135deg,#2C3522 0%,#4A6332 40%,#6B8F4A 100%);padding:48px 36px;direction:rtl;text-align:right;">
-            <h1 style="margin:0 0 4px;color:white;font-size:26px;font-weight:800;line-height:1.3;">
-              ${escapeHtml(bannerSubject)}
-            </h1>
-            ${preheader ? `<p style="margin:0;color:rgba(255,255,255,0.8);font-size:14px;">${escapeHtml(preheader)}</p>` : ""}
+          <td class="content-pad" style="padding:36px 40px 0;direction:rtl;text-align:right;">
+            <h1 style="margin:0;font-family:${FONT};font-size:26px;line-height:1.3;font-weight:700;color:#3C4A2C;text-align:right;">${escapeHtml(bannerSubject)}</h1>
+            ${preheader ? `<p style="margin:10px 0 0;font-size:16px;line-height:1.6;color:#555555;">${escapeHtml(preheader)}</p>` : ""}
           </td>
-        </tr>`}
+        </tr>
 
         ${greeting ? `
         <!-- Greeting -->
         <tr>
-          <td class="content-pad" style="padding:28px 36px 0;font-size:20px;font-weight:700;color:#2C3522;direction:rtl;text-align:right;">
+          <td class="content-pad" style="padding:24px 40px 0;font-size:16px;line-height:1.75;color:#333333;direction:rtl;text-align:right;">
             ${escapeHtml(greeting)}
           </td>
         </tr>` : ""}
 
         <!-- Body Content -->
         <tr>
-          <td class="content-pad" style="padding:${greeting ? '12px' : '28px'} 36px 32px;font-size:16px;line-height:2;color:#4A4A42;direction:rtl;text-align:right;">
-            ${body.replace(/\n\n/g, '</p><p style="margin:0 0 18px;">').replace(/\n/g, "<br>")}
+          <td class="content-pad" style="padding:${greeting ? '12px' : '24px'} 40px 20px;font-size:16px;line-height:1.75;color:#333333;direction:rtl;text-align:right;">
+            ${body.replace(/\n\n/g, '</p><p style="margin:0 0 16px;">').replace(/\n/g, "<br>")}
           </td>
         </tr>
 
         ${ctaText ? `
         <!-- Primary CTA Button -->
         <tr>
-          <td style="padding:0 36px 36px;text-align:center;">
-            <table cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:#3D4A2E;border-radius:10px;">
-                <a href="${escapeHtml(addUtms(ctaUrl, "cta_button"))}" style="display:inline-block;padding:16px 48px;color:white;text-decoration:none;font-size:16px;font-weight:700;letter-spacing:0.3px;">
-                  ${escapeHtml(ctaText)} &larr;
-                </a>
-              </td></tr>
-            </table>
+          <td class="content-pad" align="right" style="padding:4px 40px 36px;text-align:right;">
+            <a href="${escapeHtml(addUtms(ctaUrl, "cta_button"))}" style="display:inline-block;background:#3C4A2C;color:#FFFFFF;text-decoration:none;font-size:16px;font-weight:700;padding:14px 40px;border-radius:4px;">${escapeHtml(ctaText)}</a>
           </td>
         </tr>` : ""}
 
         ${products.length > 0 ? `
         <!-- Products Section -->
         <tr>
-          <td style="padding:0;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAF8F5;">
-              <!-- Section divider -->
-              <tr>
-                <td class="content-pad" style="padding:32px 36px 4px;direction:rtl;text-align:right;">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                    <tr>
-                      <td style="width:4px;background:#7C9A5E;border-radius:2px;font-size:0;">&nbsp;</td>
-                      <td style="padding-right:14px;">
-                        <h2 style="margin:0;font-size:20px;color:#2C3522;font-weight:800;">מוצרים שיעניינו אותך</h2>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-
-              <!-- Product Grid (table-based 2-col) -->
-              <tr>
-                <td style="padding:12px 20px 24px;">
-                  <table class="product-table" cellpadding="0" cellspacing="0" border="0" width="100%" style="table-layout:fixed;">
-                    ${productRowsHtml}
-                  </table>
-                </td>
-              </tr>
+          <td class="content-pad" style="padding:28px 40px 4px;border-top:1px solid #E6E6E6;direction:rtl;text-align:right;">
+            <h2 style="margin:0;font-family:${FONT};font-size:20px;line-height:1.3;font-weight:700;color:#3C4A2C;">מוצרים שיעניינו אותך</h2>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 32px 28px;">
+            <table class="product-table" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="table-layout:fixed;">
+              ${productRowsHtml}
             </table>
           </td>
         </tr>` : ""}
 
-        <!-- Footer -->
-        <tr>
-          <td style="background:#2C3522;padding:36px 36px 28px;text-align:center;">
-            <img src="${LOGO_URL}" width="90" height="37" alt="Minuto" style="display:inline-block;height:37px;width:auto;margin-bottom:16px;filter:brightness(10);" />
-            <p style="margin:0 0 2px;font-size:14px;color:rgba(255,255,255,0.85);font-weight:600;">Minuto Caf&eacute; &amp; Roastery</p>
-            <p style="margin:0 0 20px;font-size:12px;color:rgba(255,255,255,0.5);">קפה טרי בקלייה מקומית</p>
-            <div style="margin:0 auto;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">
-              <a href="${SITE_URL}" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:12px;margin:0 10px;">לאתר</a>
-              <span style="color:rgba(255,255,255,0.2);">|</span>
-              <a href="https://www.instagram.com/minuto_coffee/" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:12px;margin:0 10px;">Instagram</a>
-              <span style="color:rgba(255,255,255,0.2);">|</span>
-              <a href="${escapeHtml(unsubscribeUrl)}" style="color:rgba(255,255,255,0.4);text-decoration:underline;font-size:11px;margin:0 10px;">להסרה מרשימת התפוצה</a>
-            </div>
-            <!-- Legal disclaimer -->
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);direction:rtl;text-align:center;">
-              ${promoDeadline ? `<p style="margin:0 0 8px;font-size:11px;color:rgba(255,255,255,0.45);line-height:1.7;font-weight:600;">
-                המבצע עד ה־${new Date(promoDeadline).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" })} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח
-              </p>` : ""}
-              <p style="margin:0 0 6px;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.7;">
-                הפניה אליך נעשית בדיוור ישיר בעקבות הרשמתך לקפה מינוטו.
-              </p>
-              <p style="margin:0 0 6px;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.7;">
-                הודעת דואר זו נשלחה מכתובת דואר אלקטרוני שאינה נבדקת.
-                אין באפשרותנו להגיב על תשובות שנשלחות לכתובת דואר אלקטרוני זאת.
-                אנו מכבדים את פרטיותך, כנדרש עפ&quot;י דין.
-              </p>
-              <p style="margin:0 0 6px;font-size:10px;color:rgba(255,255,255,0.35);line-height:1.7;">
-                להסרה מרשימת הדיוור
-                <a href="${escapeHtml(unsubscribeUrl)}" style="color:rgba(255,255,255,0.5);text-decoration:underline;">לחץ/י כאן</a>.
-              </p>
-              <p style="margin:0 0 2px;font-size:10px;color:rgba(255,255,255,0.25);line-height:1.5;">
-                Please do not reply to this mail
-              </p>
-              <p style="margin:0 0 2px;font-size:9px;color:rgba(255,255,255,0.2);">
-                ט.ל.ח
-              </p>
-              <p style="margin:0;font-size:9px;color:rgba(255,255,255,0.2);">
-                מינוטו קפה | אחד העם 22 רחובות, שפלה 7626101
-              </p>
-            </div>
-          </td>
-        </tr>
-
       </table>
 
-      <!-- Bottom accent line -->
-      <table class="email-container" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;">
-        <tr><td style="height:4px;background:linear-gradient(90deg,#3D4A2E,#7C9A5E,#3D4A2E);border-radius:0 0 4px 4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <!-- Footer -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;">
+        <tr>
+          <td align="center" style="padding:24px 32px 8px;font-family:${FONT};font-size:13px;line-height:1.8;color:#555555;">
+            מינוטו קפה בע״מ · בית קלייה ספשלטי · אחד העם 22, רחובות 7626101<br>
+            <a href="${SITE_URL}" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:4px 32px 24px;font-family:${FONT};font-size:12px;line-height:1.8;color:#666666;direction:rtl;">
+            ${promoDeadline ? `<p style="margin:0 0 8px;font-weight:700;color:#555555;">
+              המבצע עד ה־${new Date(promoDeadline).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" })} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח
+            </p>` : ""}
+            <p style="margin:0 0 6px;">הפניה אליך נעשית בדיוור ישיר בעקבות הרשמתך לקפה מינוטו.</p>
+            <p style="margin:0 0 6px;">
+              הודעת דואר זו נשלחה מכתובת דואר אלקטרוני שאינה נבדקת.
+              אין באפשרותנו להגיב על תשובות שנשלחות לכתובת דואר אלקטרוני זאת.
+              אנו מכבדים את פרטיותך, כנדרש עפ&quot;י דין.
+            </p>
+            <p style="margin:0 0 6px;">
+              להסרה מרשימת הדיוור
+              <a href="${escapeHtml(unsubscribeUrl)}" style="color:#666666;">לחץ/י כאן</a>.
+            </p>
+            <p style="margin:0;">Please do not reply to this mail · ט.ל.ח</p>
+          </td>
+        </tr>
       </table>
 
     </td></tr>
@@ -1254,7 +1173,10 @@ interface UpdateDraftPayload {
 // (banner_url isn't stored as a column, so we recover it from html_content)
 function extractBannerUrl(html: string | null | undefined): string | null {
   if (!html) return null;
-  // Matches the generated: background:url('...') or <v:fill src="...">
+  // Current layout: <img class="banner-img" src="...">. Older drafts:
+  // background:url('...') or <v:fill src="...">.
+  const m0 = html.match(/<img class="banner-img" src="([^"]+)"/);
+  if (m0) return m0[1].replace(/&amp;/g, "&");
   const m1 = html.match(/background:url\('([^']+)'\)/);
   if (m1) return m1[1];
   const m2 = html.match(/<v:fill[^>]*src="([^"]+)"/);

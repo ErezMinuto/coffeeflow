@@ -145,29 +145,29 @@ function mapLineItems(raw: any): CartItem[] {
  * and refill_reminder never set cart_items, so they're unaffected.
  *
  * Each row: product thumbnail (right, RTL start) · name · qty + line total
- * (left). Thumbnail falls back to a neutral box when the line item has no
- * image so the columns stay aligned. Inline styles + table layout for
- * email-client compatibility (no flexbox/grid).
+ * (left), rows split by hairlines, in the clean house style (white, #E6E6E6
+ * hairlines, #3C4A2C heading; no tinted box, no rounded corners). Thumbnail
+ * falls back to a neutral square when the line item has no image so the
+ * columns stay aligned. Inline styles + table layout for email-client
+ * compatibility (no flexbox/grid).
  */
 function renderCartItemsHtml(items: CartItem[]): string {
   if (!items || items.length === 0) return ''
   const rows = items.map(it => {
     const thumb = it.image_url
-      ? `<img src="${escapeHtml(it.image_url)}" width="52" height="52" alt="" style="display: block; width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #e0d8c8;" />`
-      : `<div style="width: 52px; height: 52px; border-radius: 8px; background: #e9e3d6;"></div>`
+      ? `<img src="${escapeHtml(it.image_url)}" width="56" height="56" alt="" style="display:block; width:56px; height:56px; object-fit:cover; border:1px solid #E6E6E6;" />`
+      : `<div style="width:56px; height:56px; background:#F7F7F7; border:1px solid #E6E6E6;"></div>`
     return `
-          <tr>
-            <td width="52" style="padding: 8px 0;" valign="middle">${thumb}</td>
-            <td style="padding: 8px 12px; color: #2a2a2a; font-size: 15px;" valign="middle">${escapeHtml(it.name)}</td>
-            <td style="padding: 8px 0; color: #6a6a6a; font-size: 14px; white-space: nowrap;" align="left" valign="middle">× ${it.quantity}${it.total ? ` &middot; ₪${escapeHtml(it.total)}` : ''}</td>
-          </tr>`
+            <tr>
+              <td width="58" style="padding:12px 0; border-top:1px solid #E6E6E6;" valign="middle">${thumb}</td>
+              <td style="padding:12px 14px; border-top:1px solid #E6E6E6; color:#333333; font-size:15px; line-height:1.5; text-align:right;" valign="middle">${escapeHtml(it.name)}</td>
+              <td style="padding:12px 0; border-top:1px solid #E6E6E6; color:#555555; font-size:14px; white-space:nowrap;" align="left" valign="middle">× ${it.quantity}${it.total ? ` &middot; ₪${escapeHtml(it.total)}` : ''}</td>
+            </tr>`
   }).join('')
   return `
-        <div style="margin: 8px 0 24px; padding: 16px 20px; background: #f6f3ee; border-radius: 8px;">
-          <p style="margin: 0 0 10px; font-weight: bold; color: #3D4A2E; font-size: 15px;">מה שחיכה בעגלה</p>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${rows}
-          </table>
-        </div>`
+      <p style="margin:12px 0 8px; font-family:'Heebo', Arial, Helvetica, sans-serif; font-size:16px; font-weight:700; color:#3C4A2C; text-align:right;">מה שחיכה בעגלה</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 12px; border-bottom:1px solid #E6E6E6; font-family:'Heebo', Arial, Helvetica, sans-serif;">${rows}
+      </table>`
 }
 
 /**
