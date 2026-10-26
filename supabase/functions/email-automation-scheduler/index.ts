@@ -33,7 +33,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { constantTimeEqual } from '../_shared/constant_time.ts'
-import { findCheckinCandidates, findReminderCandidates, loadRetentionData, type RetentionData } from './retention_data.ts'
+import { findCheckinCandidates, findReminderCandidates, loadRetentionData, sampleProductBlock, type RetentionData } from './retention_data.ts'
 import { stopToken } from './retention.ts'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
@@ -986,7 +986,7 @@ serve(async (req) => {
         unsubscribe_url: unsubscribeUrl,
         logo_url: DEFAULT_LOGO_URL,
         cart_items_html: renderCartItemsHtml(sampleCart),
-        ...sampleRetentionVars(tmpl),
+        ...(await sampleRetentionVars(supabase, tmpl)),
       }
       const subject = renderTemplate(tmpl.subject_template, vars)
       const html    = renderTemplate(tmpl.body_html_template, vars)
@@ -1148,9 +1148,13 @@ async function findRetentionCandidates(_supabase: any, tmpl: AutomationTemplate,
 }
 
 /** Placeholder values so a test send of a retention email renders fully. */
-function sampleRetentionVars(tmpl: AutomationTemplate): Record<string, string> {
+// Test sends picture a real recent order's bags (falls back to Aristo only if
+// that lookup finds nothing), so the preview matches what customers get.
+async function sampleRetentionVars(supabase: any, tmpl: AutomationTemplate): Promise<Record<string, string>> {
   const s = tmpl.settings ?? {}
-  const product = `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;"><img src="https://www.minuto.co.il/content/uploads/2025/03/ARISTO.png" alt="Aristo" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;"></td></tr>`
+  if (tmpl.trigger_type !== 'coffee_checkin' && tmpl.trigger_type !== 'refill_reminder') return {}
+  const product = (await sampleProductBlock(supabase).catch(() => '')) ||
+    `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;"><img src="https://www.minuto.co.il/content/uploads/2025/03/ARISTO.png" alt="Aristo" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;"></td></tr>`
   if (tmpl.trigger_type === 'coffee_checkin') {
     const on = s.review_link_enabled === true && typeof s.review_url === 'string'
     return {

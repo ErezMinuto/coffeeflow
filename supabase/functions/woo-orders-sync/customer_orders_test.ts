@@ -1,7 +1,7 @@
 // deno test supabase/functions/woo-orders-sync/customer_orders_test.ts
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import {
-  buildCustomerOrderRow, checkoutConsent, gramsFromProductAttributes, isBeanLine, isMflowOrder,
+  buildCustomerOrderRow, categorizeProduct, checkoutConsent, gramsFromProductAttributes, isBeanLine, isMflowOrder,
   normalizeEmail, normalizePhone, parseGrams, productIdsNeedingGrams,
 } from "./customer_orders.ts";
 
@@ -109,6 +109,23 @@ Deno.test("buildCustomerOrderRow: one unknown bag size makes the total unknown",
   });
   assertEquals(r.delivery_method, "none");
   assertEquals(r.bean_grams, null);
+});
+
+Deno.test("categorizeProduct: the whole-bean option 'יש לי מטחנה' is not a grinder", () => {
+  const bag = "פולי קפה טרי ספשלטי קפה מינוטו אריסטו  - Minuto Specialty Coffee - 330-גר, לא לטחון, יש לי מטחנה - פולים שלמים";
+  assertEquals(categorizeProduct(bag, ""), "coffee");
+  assertEquals(isBeanLine(categorizeProduct(bag, ""), bag), true);
+  assertEquals(categorizeProduct("מטחנת קפה ידנית מקצועית Oak8 Gen2", ""), "grinder");
+  assertEquals(categorizeProduct("Mahlkönig X64 SD – מטחנת קפה ביתית סינגל דוז", ""), "grinder");
+});
+
+Deno.test("buildCustomerOrderRow: a whole-bean order has beans", () => {
+  const r = buildCustomerOrderRow({
+    ...base,
+    line_items: [{ name: "פולי קפה ברזיל Fazenda Sertão חד זני - 330-גר, לא לטחון, יש לי מטחנה - פולים שלמים", quantity: 2 }],
+  });
+  assertEquals(r.has_beans, true);
+  assertEquals(r.bean_grams, 660);
 });
 
 Deno.test("isBeanLine: capsules and bean accessories are not beans", () => {

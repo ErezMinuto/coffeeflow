@@ -107,6 +107,9 @@ export const AppProvider = ({ children }) => {
   const assignmentsDb             = useSupabaseData('schedule_assignments',      { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
   const pendingOrdersDb           = useSupabaseData('pending_orders',            { filterByUser: false });
+  const b2bCustomersDb            = useSupabaseData('b2b_customers',             { filterByUser: false });
+  const bagAllocationsDb          = useSupabaseData('bag_allocations',           { filterByUser: false });
+  const appSettingsDb             = useSupabaseData('app_settings',              { filterByUser: false });
   const artisanProfilesDb         = useSupabaseData('artisan_profiles',          { filterByUser: false });
   const roastChecklistTemplatesDb = useSupabaseData('roast_checklist_templates');
   const { settings: costSettings, updateSettings: updateCostSettings } = useCostSettings();
@@ -126,6 +129,9 @@ export const AppProvider = ({ children }) => {
     assignments:             assignmentsDb.data             || [],
     packingLogs:                  packingLogsDb.data                 || [],
     pendingOrders:                pendingOrdersDb.data               || [],
+    b2bCustomers:                 b2bCustomersDb.data                || [],
+    bagAllocations:               bagAllocationsDb.data              || [],
+    appSettings:                  appSettingsDb.data                 || [],
     artisanProfiles:              artisanProfilesDb.data             || [],
     roastChecklistTemplates:      roastChecklistTemplatesDb.data     || [],
     costSettings:                 costSettings                       || {}
@@ -160,13 +166,16 @@ export const AppProvider = ({ children }) => {
     assignmentsDb.refresh();
     packingLogsDb.refresh();
     pendingOrdersDb.refresh();
+    b2bCustomersDb.refresh();
+    bagAllocationsDb.refresh();
+    appSettingsDb.refresh();
     artisanProfilesDb.refresh();
     roastChecklistTemplatesDb.refresh();
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
     employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, artisanProfilesDb,
-    roastChecklistTemplatesDb,
+    roastChecklistTemplatesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
   ]);
 
   return (
@@ -177,7 +186,7 @@ export const AppProvider = ({ children }) => {
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
       employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
-      artisanProfilesDb,
+      artisanProfilesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
       calculateProductCost, calculateRoastedWeight, getOriginById, blendedWeightLoss,

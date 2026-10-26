@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ function RecipeForm({ recipe, onChange, origins, roastProfiles }) {
 
 export default function Products() {
   const { data, productsDb, calculateProductCost, showToast } = useApp();
+  const reserved = reservedBagsByProduct(data.bagAllocations);
 
   const [editingProduct,    setEditingProduct]    = useState(null);
   const [addingProduct,     setAddingProduct]     = useState(false);
@@ -342,12 +344,15 @@ export default function Products() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{
                           fontWeight: 'bold', fontSize: '14px',
-                          color: (product.packed_stock ?? 0) === 0 ? '#DC2626'
-                               : (product.min_packed_stock > 0 && (product.packed_stock ?? 0) <= product.min_packed_stock) ? '#D97706'
+                          color: storeStock(product, reserved) === 0 ? '#DC2626'
+                               : (product.min_packed_stock > 0 && storeStock(product, reserved) <= product.min_packed_stock) ? '#D97706'
                                : '#059669'
                         }}>
                           {product.packed_stock ?? 0}
                         </span>
+                        {(reserved[product.id] || 0) > 0 && (
+                          <span style={{ fontSize: '11px', color: '#6B3A1F' }}>({reserved[product.id]} מוקצות)</span>
+                        )}
                         <button
                           onClick={() => { setAdjustingStockId(product.id); setAdjustValue(String(product.packed_stock ?? 0)); }}
                           style={{ fontSize: '11px', padding: '1px 6px', background: 'transparent', border: '1px solid #D4A574', borderRadius: '4px', cursor: 'pointer', color: '#6F4E37' }}

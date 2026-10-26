@@ -124,6 +124,9 @@ const EXPECTED_CRONS: Array<{
   { jobname: 'woo-orders-sync-daily',               max_silence_hours: 30, required: true  },  // feeds welcome emails + revenue
   { jobname: 'email-automation-first-purchase-daily', max_silence_hours: 30, required: true },
   { jobname: 'woo-products-enrich-tick',            max_silence_hours: 30, required: false },
+  // rfm-sync ran from a GitHub schedule that was switched off on 2026-04-21;
+  // customer_rfm then sat frozen for six months under the strategist brain.
+  { jobname: 'rfm-sync-daily',                      max_silence_hours: 30, required: true  },
   { jobname: 'cf-dispatch-workers-b',               max_silence_hours: 1,  required: true  },
   { jobname: 'mission-worker-tick',                 max_silence_hours: 1,  required: false },
   // Weekly Wed 18:00 IDT employee availability reminder (see
@@ -177,6 +180,7 @@ const EXPECTED_FRESH_DATA: Array<{
   // date_modified (Woo's own clock) for the same reason as order_date above.
   // Not required until customer messaging sends live (step 4 flips it).
   { table: 'customer_orders',    column: 'date_modified', max_age_hours: 60, required: false, label: 'Customer orders (feeds customer messaging)' },
+  { table: 'customer_rfm',       column: 'updated_at',    max_age_hours: 36, required: true,  label: 'Customer RFM segments (strategist brain + marketing groups)' },
   { table: 'ga4_pages_daily',    column: 'synced_at',     max_age_hours: 40, required: true,  label: 'GA4 analytics' },
   { table: 'meta_ad_daily',      column: 'synced_at',     max_age_hours: 40, required: true,  label: 'Meta ad insights' },
   { table: 'meta_organic_posts', column: 'synced_at',     max_age_hours: 48, required: false, label: 'Meta organic posts' },

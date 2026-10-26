@@ -29,6 +29,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
 import { callerRole, isStaff, jwtSub } from "../_shared/role_caller.ts";
 import { extractInvoice } from "./extract.ts";
+import { duplicateReason } from "./duplicates.ts";
 
 const SUPA_URL      = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -211,21 +212,36 @@ serve(async (req) => {
       throw new Error(`saving the invoice failed: ${insErr.message}`);
     }
 
-    // ── the same invoice from another photo ────────────────────────────────
-    let possible_duplicates: unknown[] = [];
-    if (row.supplier_tax_id && row.invoice_number) {
-      const { data: dups } = await supabase
-        .from("supplier_invoices")
-        .select("id,supplier_name,invoice_number,invoice_date,total_incl_vat,uploaded_by_name,created_at")
-        .eq("supplier_tax_id", row.supplier_tax_id)
-        .eq("invoice_number", row.invoice_number)
-        .eq("doc_type", row.doc_type)
-        .neq("id", row.id);
-      possible_duplicates = dups ?? [];
+    // ── the same invoice from another photo / another uploader ─────────────
+    // Candidates: this supplier's invoices (by ע.מ, else by the exact name the
+    // AI read); duplicates.ts decides. All uploaders' rows — this runs as the
+    // service role, so two employees uploading the same paper are caught.
+    let possible_duplicates: Array<Record<string, unknown>> = [];
+    let invoice = row;
+    if (row.supplier_tax_id || row.supplier_name) {
+      const q = supabase.from("supplier_invoices")
+        .select("id,supplier_name,supplier_tax_id,invoice_number,doc_type,invoice_date,total_incl_vat,status,uploaded_by_name,created_at")
+        .neq("id", row.id).order("created_at").limit(200);
+      const { data: cands, error: dErr } = row.supplier_tax_id
+        ? await q.eq("supplier_tax_id", row.supplier_tax_id)
+        : await q.is("supplier_tax_id", null).eq("supplier_name", row.supplier_name);
+      if (dErr) log.warn("dup.lookup_failed", dErr.message);
+      possible_duplicates = (cands ?? [])
+        .map((c) => ({ ...c, reason: duplicateReason(row, c) }))
+        .filter((c) => c.reason);
+      if (possible_duplicates.length) {
+        const { data: marked, error: mErr } = await supabase.from("supplier_invoices")
+          .update({ possible_duplicate_of: possible_duplicates[0].id }).eq("id", row.id).select("*").single();
+        if (mErr) log.warn("dup.mark_failed", mErr.message);
+        else invoice = marked;
+        log.info("dup.found", `${possible_duplicates.length} earlier upload(s) look the same`, {
+          id: row.id, of: possible_duplicates.map((d) => d.id), reason: possible_duplicates[0].reason,
+        });
+      }
     }
 
     await log.finish(extraction.ok ? "success" : "partial", { id: row.id, duplicates: possible_duplicates.length });
-    return json({ ok: true, invoice: row, extracted: extraction.ok === true, possible_duplicates, run_id: log.runId });
+    return json({ ok: true, invoice, extracted: extraction.ok === true, possible_duplicates, run_id: log.runId });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
