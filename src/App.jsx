@@ -17,7 +17,6 @@ import Schedule                from './components/schedule/Schedule';
 import Attendance              from './components/attendance/Attendance';
 import ChecklistEditor         from './components/checklist/ChecklistEditor';
 import RoastChecklist          from './components/checklist/RoastChecklist';
-import PendingOrders           from './components/orders/PendingOrders';
 import VehicleLog              from './components/vehicle/VehicleLog';
 import SupplierInvoices        from './components/invoices/SupplierInvoices';
 
@@ -94,7 +93,6 @@ function AppContent() {
               <Route path="/invoices"   element={<SupplierInvoices />} />
 
               <Route path="/settings"          element={<AdminRoute><Settings /></AdminRoute>} />
-              <Route path="/orders"           element={<PendingOrders />} />
               <Route path="/checklist"        element={<RoastChecklist />} />
               <Route path="/checklist-editor" element={<SagieOnlyRoute><ChecklistEditor /></SagieOnlyRoute>} />
               <Route path="*"                 element={<Navigate to="/dashboard" replace />} />

@@ -106,7 +106,6 @@ export const AppProvider = ({ children }) => {
   const schedulesDb               = useSupabaseData('schedules',                 { filterByUser: false });
   const assignmentsDb             = useSupabaseData('schedule_assignments',      { filterByUser: false });
   const packingLogsDb             = useSupabaseData('packing_logs',              { filterByUser: false });
-  const pendingOrdersDb           = useSupabaseData('pending_orders',            { filterByUser: false });
   const b2bCustomersDb            = useSupabaseData('b2b_customers',             { filterByUser: false });
   const bagAllocationsDb          = useSupabaseData('bag_allocations',           { filterByUser: false });
   const appSettingsDb             = useSupabaseData('app_settings',              { filterByUser: false });
@@ -128,7 +127,6 @@ export const AppProvider = ({ children }) => {
     schedules:               schedulesDb.data               || [],
     assignments:             assignmentsDb.data             || [],
     packingLogs:                  packingLogsDb.data                 || [],
-    pendingOrders:                pendingOrdersDb.data               || [],
     b2bCustomers:                 b2bCustomersDb.data                || [],
     bagAllocations:               bagAllocationsDb.data              || [],
     appSettings:                  appSettingsDb.data                 || [],
@@ -165,7 +163,6 @@ export const AppProvider = ({ children }) => {
     schedulesDb.refresh();
     assignmentsDb.refresh();
     packingLogsDb.refresh();
-    pendingOrdersDb.refresh();
     b2bCustomersDb.refresh();
     bagAllocationsDb.refresh();
     appSettingsDb.refresh();
@@ -174,7 +171,7 @@ export const AppProvider = ({ children }) => {
   }, [
     originsDb, productsDb, roastsDb, operatorsDb,
     roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-    employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, artisanProfilesDb,
+    employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, artisanProfilesDb,
     roastChecklistTemplatesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
   ]);
 
@@ -185,7 +182,7 @@ export const AppProvider = ({ children }) => {
       isAdmin, canSchedule, userRole, roleLoading,
       originsDb, productsDb, roastsDb, operatorsDb,
       roastProfilesDb, roastProfileIngredientsDb, roastComponentsDb, waitingCustomersDb,
-      employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, pendingOrdersDb, roastChecklistTemplatesDb,
+      employeesDb, availabilityDb, schedulesDb, assignmentsDb, packingLogsDb, roastChecklistTemplatesDb,
       artisanProfilesDb, b2bCustomersDb, bagAllocationsDb, appSettingsDb,
       costSettings, updateCostSettings,
       showToast, toasts,
