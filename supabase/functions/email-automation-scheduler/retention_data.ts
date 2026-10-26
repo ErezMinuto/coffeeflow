@@ -155,17 +155,52 @@ function reviewBlock(url: string): string {
 const escapeAttr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /**
- * Photo of the coffee this customer bought, on a pale sage panel. Empty when
- * the product has no image (the email still reads fine without it).
- * Resold / green coffee (Veneto…) is never pictured, in any email (brand rules).
+ * Photos of the coffee this customer bought (each distinct Minuto bag in the
+ * order, up to 3, side by side). Empty when none has an image (the email still
+ * reads fine without it). Resold / green coffee (Veneto…) is never pictured,
+ * in any email (brand rules).
  */
-function productBlock(d: RetentionData, order: OrderRow): string {
-  const bean = (order.lines ?? []).find(l => l.is_bean && l.product_id && d.products.get(l.product_id)?.image_url)
-  const p = bean ? d.products.get(bean.product_id!) : undefined
-  if (!p?.image_url || NOT_PROMOTED.test(p.name)) return ''
-  return `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;">
-      <img src="${escapeAttr(p.image_url)}" alt="${escapeAttr(p.name)}" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;">
+function productBlock(d: Pick<RetentionData, 'products'>, order: Pick<OrderRow, 'lines'>): string {
+  const seen = new Set<number>()
+  const bags: { name: string; image_url: string }[] = []
+  for (const l of order.lines ?? []) {
+    if (!l.is_bean || !l.product_id || seen.has(l.product_id)) continue
+    seen.add(l.product_id)
+    const p = d.products.get(l.product_id)
+    if (p?.image_url && !NOT_PROMOTED.test(p.name)) bags.push({ name: p.name, image_url: p.image_url })
+  }
+  if (bags.length === 0) return ''
+  const shown = bags.slice(0, 3)
+  if (shown.length === 1) {
+    return `<tr><td align="center" style="background:#FFFFFF; padding:28px 32px 8px;">
+      <img src="${escapeAttr(shown[0].image_url)}" alt="${escapeAttr(shown[0].name)}" width="270" style="display:block; width:270px; max-width:100%; height:auto; border:0;">
     </td></tr>`
+  }
+  const w = shown.length === 2 ? 220 : 160
+  const cells = shown.map(b => `<td align="center" valign="bottom" style="padding:0 6px;">
+          <img src="${escapeAttr(b.image_url)}" alt="${escapeAttr(b.name)}" width="${w}" style="display:block; width:${w}px; max-width:100%; height:auto; border:0;">
+        </td>`).join('')
+  return `<tr><td align="center" style="background:#FFFFFF; padding:28px 20px 8px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>${cells}</tr></table>
+    </td></tr>`
+}
+
+/**
+ * Bags for a test send: the most recent web order with two or more pictured
+ * Minuto bags (else one), so the preview shows real coffee, not a fixed sample.
+ */
+export async function sampleProductBlock(db: Db): Promise<string> {
+  const { data: recent, error } = await db.from('customer_orders')
+    .select('woo_order_id, lines')
+    .eq('status', 'completed').eq('has_beans', true)
+    .order('date_created', { ascending: false }).limit(100)
+  if (error || !recent?.length) return ''
+  const ids = [...new Set((recent as Pick<OrderRow, 'lines'>[]).flatMap(o => (o.lines ?? []).map(l => l.product_id).filter((x): x is number => !!x)))]
+  const { data: prods } = await db.from('woo_products').select('woo_id, permalink, name, image_url').in('woo_id', ids)
+  const products = new Map(((prods ?? []) as { woo_id: number; permalink: string; name: string; image_url: string | null }[])
+    .map(p => [p.woo_id, { permalink: p.permalink, name: p.name, image_url: p.image_url }]))
+  const blocks = (recent as Pick<OrderRow, 'lines'>[]).map(o => productBlock({ products }, o)).filter(Boolean)
+  return blocks.find(b => b.includes('<table')) ?? blocks[0] ?? ''
 }
 
 // ── refill_reminder ─────────────────────────────────────────────────────────
