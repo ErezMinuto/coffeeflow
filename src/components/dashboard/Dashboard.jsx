@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../lib/context';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 export default function Dashboard() {
   const { data } = useApp();
@@ -9,8 +10,10 @@ export default function Dashboard() {
   const lowStockOrigins   = data.origins.filter(o => (o.stock || 0) < (o.min_stock || 10) && (o.stock || 0) > 0);
   const outOfStockOrigins = data.origins.filter(o => (o.stock || 0) === 0);
 
-  const outOfPackedStock  = data.products.filter(p => (p.packed_stock ?? 0) === 0 && (p.min_packed_stock ?? 0) > 0);
-  const lowPackedStock    = data.products.filter(p => (p.packed_stock ?? 0) > 0 && (p.min_packed_stock ?? 0) > 0 && (p.packed_stock ?? 0) <= p.min_packed_stock);
+  // Bags packed for a customer's ready order are not store stock (see reservedStock.js).
+  const reserved          = reservedBagsByProduct(data.pendingOrders);
+  const outOfPackedStock  = data.products.filter(p => storeStock(p, reserved) === 0 && (p.min_packed_stock ?? 0) > 0);
+  const lowPackedStock    = data.products.filter(p => storeStock(p, reserved) > 0 && (p.min_packed_stock ?? 0) > 0 && storeStock(p, reserved) <= p.min_packed_stock);
 
   return (
     <div className="page">
@@ -39,7 +42,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {lowPackedStock.map(p => (
                   <span key={p.id} style={{ background: 'white', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#D97706' }}>
-                    {p.name} {p.size}g: {p.packed_stock} שקיות
+                    {p.name} {p.size}g: {storeStock(p, reserved)} שקיות
                   </span>
                 ))}
               </div>

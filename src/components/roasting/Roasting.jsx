@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { blendedWeightLoss } from '../../lib/utils';
 import { notifyTeamIfWaiting } from '../../lib/telegram';
 import RoastingList from './RoastingList';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
 
 const ROAST_LEVEL_LABELS = { none: '', light: 'לייט', medium: 'מדיום' };
 
@@ -543,9 +544,10 @@ export default function Roasting() {
 
   // ── WHAT NEEDS ROASTING (mirrors RoastingList: roasted_stock + packed bags vs daily×10) ──
   const needsRoasting = useMemo(() => {
+    const reserved = reservedBagsByProduct(data.pendingOrders);
     const packedByOrigin = {}, packedByProfile = {};
     for (const product of (data.products || [])) {
-      const bags = product.packed_stock || 0;
+      const bags = storeStock(product, reserved); // customer-reserved bags don't cover future demand
       const sizeKg = (product.size || 0) / 1000;
       const recipe = Array.isArray(product.recipe) ? product.recipe : [];
       if (bags <= 0 || sizeKg <= 0 || recipe.length === 0) continue;
@@ -568,7 +570,7 @@ export default function Roasting() {
       return { kind: 'profile', id: p.id, name: p.name, level: p.roast_level, needed: critical - available, roasted: p.roasted_stock || 0, critical };
     }).filter(x => x.needed > 0);
     return [...originsNeeded, ...profilesNeeded].sort((a, b) => b.needed - a.needed);
-  }, [data.origins, data.roastProfiles, data.products]);
+  }, [data.origins, data.roastProfiles, data.products, data.pendingOrders]);
 
   const roastNow = (item) => {
     if (item.kind === 'profile') { setFormMode('profile'); setSelectedProfileId(String(item.id)); }

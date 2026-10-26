@@ -204,9 +204,22 @@ ${profileList}
 async function handleStock(chatId: string) {
   const { data: products } = await supabase
     .from("products")
-    .select("name, size, packed_stock")
+    .select("id, name, size, packed_stock")
     .eq("user_id", USER_ID)
     .order("name");
+
+  // Bags packed for a customer's 'ready' order are on the shelf but not store
+  // stock — same rule as the app (src/lib/reservedStock.js). Fail open: if this
+  // read errors, show raw packed stock rather than no answer at all.
+  const { data: readyOrders } = await supabase
+    .from("pending_orders")
+    .select("product_id, quantity_bags")
+    .eq("status", "ready")
+    .not("product_id", "is", null);
+  const reserved = new Map<number, number>();
+  for (const o of readyOrders ?? []) {
+    reserved.set(o.product_id, (reserved.get(o.product_id) ?? 0) + (o.quantity_bags ?? 0));
+  }
 
   if (!products || products.length === 0) {
     await send(chatId, "📦 אין מוצרים מוגדרים");
@@ -214,9 +227,11 @@ async function handleStock(chatId: string) {
   }
 
   const lines = products.map(p => {
-    const stock = p.packed_stock ?? 0;
+    const held  = reserved.get(p.id) ?? 0;
+    const stock = Math.max(0, (p.packed_stock ?? 0) - held);
     const icon  = stock === 0 ? "🔴" : stock < 10 ? "🟡" : "🟢";
-    return `${icon} ${p.name} ${p.size}g: <b>${stock}</b> שקיות`;
+    const note  = held > 0 ? ` (+${held} שמורות ללקוחות)` : "";
+    return `${icon} ${p.name} ${p.size}g: <b>${stock}</b> שקיות${note}`;
   }).join("\n");
 
   await send(chatId, `📦 <b>מלאי שקיות ארוזות:</b>\n\n${lines}`);
