@@ -119,15 +119,22 @@ async function drilldownSegmentDetail(
   input: { segment: string },
 ): Promise<unknown> {
   if (!input.segment) return { error: 'segment is required' }
-  const { data, error } = await supabase
-    .from('customer_rfm')
-    .select('total_spent_ils, order_count, days_since_last')
-    .eq('segment', input.segment)
-    .limit(10000)
-  if (error) return { error: error.message }
-  const rows = (data ?? []) as Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null }>
+  // Paged: PostgREST caps a response at 1000 rows.
+  const rows: Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('customer_rfm')
+      .select('total_spent_ils, order_count, days_since_last, bean_grams')
+      .eq('segment', input.segment)
+      .order('email')
+      .range(from, from + 999)
+    if (error) return { error: error.message }
+    rows.push(...((data ?? []) as typeof rows))
+    if (!data || data.length < 1000) break
+  }
   if (rows.length === 0) return { segment: input.segment, count: 0 }
   const spends = rows.map(r => Number(r.total_spent_ils ?? 0)).sort((a, b) => a - b)
+  const grams = rows.map(r => Number(r.bean_grams ?? 0)).sort((a, b) => a - b)
   const orders = rows.map(r => Number(r.order_count ?? 0))
   const recency = rows.map(r => Number(r.days_since_last ?? 0))
   const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0)
@@ -137,6 +144,8 @@ async function drilldownSegmentDetail(
     count: rows.length,
     total_spent_ils: Math.round(sum(spends)),
     median_spent_ils: Math.round(median(spends)),
+    spend_note: 'total_spent_ils counts only orders since Jan 2026 (woo_orders); order_count, recency and bean grams cover the full history from 2023',
+    median_bean_grams: median(grams),
     avg_order_count: Math.round((sum(orders) / rows.length) * 10) / 10,
     median_days_since_last: median([...recency].sort((a, b) => a - b)),
     repeat_buyer_share: Math.round((orders.filter(o => o > 1).length / rows.length) * 100) / 100,

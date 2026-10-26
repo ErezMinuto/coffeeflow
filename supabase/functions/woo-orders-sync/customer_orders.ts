@@ -19,7 +19,10 @@
 // revenue toward more coffee. Rules are pattern-based and tuned to the
 // current catalog. Order matters: check most-specific patterns first.
 export function categorizeProduct(name: string, sku: string): string {
-  const n = (name ?? '').toLowerCase();
+  // Woo appends the chosen variation to the line name, and the whole-bean
+  // option reads "לא לטחון, יש לי מטחנה" ("don't grind, I have a grinder").
+  // Left in, /מטחנ/ filed every whole-bean bag as a grinder (is_bean=false).
+  const n = (name ?? '').toLowerCase().replace(/יש\s*לי\s*מטחנה/g, '');
   const s = (sku ?? '').toLowerCase();
   const text = `${n} ${s}`;
 
