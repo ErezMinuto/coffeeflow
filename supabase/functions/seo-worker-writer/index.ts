@@ -16,7 +16,8 @@
 //   5. Substitute any PERMALINK placeholders the writer emitted verbatim
 //   6. Strip Hebrew AI-tells (em-dash → comma etc.) — same regex as the
 //      organic blog writer in marketing-advisor (kept in sync intentionally)
-//   7. POST blog-publish with status='draft'
+//   7. POST blog-publish with status='draft' (or update the target post
+//      in place when the brief sets replaces_post_id)
 //   8. markTaskCompleted with {wp_post_id, edit_url, link}
 //   9. On failure: markTaskFailed (permanent if attempts >= max_attempts)
 //
@@ -100,12 +101,17 @@ serve(async (req: Request): Promise<Response> => {
     // duplicate-topic conflict) and hand the admin the conflicting URLs
     // so they can dedupe/redirect instead of splitting ranking signals.
     // Fails open: a WP outage (checked=false) never blocks writing.
-    const cannibal = await checkKeywordCannibalization(brief.keyword, brief.title)
+    const replacesId = Number(brief.replaces_post_id) > 0 ? Number(brief.replaces_post_id) : undefined
+    const cannibal = await checkKeywordCannibalization(
+      brief.keyword,
+      brief.title,
+      replacesId ? [replacesId] : [],
+    )
     if (cannibal.checked && cannibal.conflicts.length > 0) {
       const list = cannibal.conflicts
         .map(c => `#${c.id} "${c.title}" [${c.status}] ${c.link}`)
         .join(' ; ')
-      const msg = `cannibalization blocked: ${cannibal.conflicts.length} existing post(s) overlap keyword "${brief.keyword}" — ${list}. Dedupe/redirect/rewrite in place before re-queuing.`
+      const msg = `cannibalization blocked: ${cannibal.conflicts.length} existing post(s) overlap keyword "${brief.keyword}" — ${list}. Dedupe/redirect, or re-queue with replaces_post_id to rewrite a draft in place.`
       console.warn(`[seo-worker-writer] ✗ task=${task.id} ${msg}`)
       // Permanent regardless of attempts — a retry would hit the same conflict.
       await markTaskFailed(supabase, task, msg, true)
@@ -218,6 +224,9 @@ serve(async (req: Request): Promise<Response> => {
         slug,
         excerpt:          metaDescription,
         status:           'draft',
+        // A rewrite updates its target post rather than adding a second
+        // URL on the same topic.
+        ...(replacesId ? { id: replacesId } : {}),
       }),
     })
     const pubJson = await pubRes.json().catch(() => ({})) as {

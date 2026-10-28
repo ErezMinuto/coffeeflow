@@ -72,6 +72,11 @@ export interface TextGenerationBrief {
   // Internal links to weave in (URL → anchor text). Used to strengthen
   // topic clusters on minuto.co.il/blog.
   internal_links?: Array<{ url: string; anchor: string }>
+  // WP post id this article REWRITES. The writer updates that post in
+  // place instead of creating a second one on the same topic, and the
+  // cannibalization gates ignore it. Only a draft/pending post can be
+  // rewritten this way: blog-publish refuses to overwrite a live post.
+  replaces_post_id?: number
 }
 
 export interface VisualGenerationBrief {
