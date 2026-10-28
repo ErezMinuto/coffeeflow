@@ -118,3 +118,27 @@ About 50 photos exist today (12 roaster, 13 machine, 7 hands, 8 cups, 7 brewing,
   - `scripts/image-pipeline.sh report` gives approval rate by prompt version and scene type.
   - `scripts/image-pipeline.sh golden` builds `golden_set.json`: 35 briefs, of which 11 rejected, 7 reported bad, 17 published.
 - **Baseline (layered-v1, Aug 1 – Oct 28):** 151 posts; 66 published, 11 rejected, **74 never reviewed**. The high approval rate among decided posts hides that half were never looked at, and the daily bad images reported in chat.
+
+## Phase 1 status (2026-10-28): shot library built, flag OFF
+
+**What's built:**
+- **Shot library:** `supabase/functions/_shared/shot_library.ts`, with 7 shots, all enabled. Each shot has its prompt or edit brief, a yes/no QA checklist, and a router prompt that maps an old free-form brief onto the menu.
+- **Real-photo shots, published as photographed:** bag hero, bag with drink, bar moment and roastery. There's no image-model edit; that rotated, re-staged and invented things in testing. `scripts/image-library-prep.sh` prepares the library offline:
+  - a subject-aware crop to 9:16, 4:5 and 1:1 (the bag always stays whole);
+  - the owner-approved house look: a warm grade, a little contrast, light sharpening, no blur;
+  - a blur patch over each car licence plate.
+
+  The output lives in `marketing/upload_images_ready/`. Exclusions are in `library_exclude.txt` (readable order tickets, green coffee, bad crops). Bag photos are chosen by product file name (`bag_scenes/<slug>_*.jpg`); the 14 photos from the owner's shoot cover 7 products, and the others fall back to their packshot.
+- **Generated shots:** brew ritual, finished drink and beans close-up. Each uses ONE real reference photo (the equipment, cup or beans) and a short positive prompt for a still scene. Pours and hands come only from real photos.
+- **Worker:**
+  - `seo-worker-visual`'s `handleShot` handles `ig_post` visuals that name a `shot_type`, or every `ig_post` visual when `SHOT_LIBRARY_ENABLED=true`.
+  - QA is one pass of the shot's checklist, and an eval that can't run counts as a fail.
+  - Photos used in the last 21 days are skipped.
+
+**Golden set (35 real briefs):** 28 pass and 7 are flagged for real defects. None fail to render. All 7 previously reported-bad briefs now produce clean images. Review page: https://claude.ai/artifact/WydvDwiwqp763ngxgjrrJ6
+
+**Next (Phase 1b / 2):**
+1. Deploy `visual-test` and `seo-worker-visual`. With the flag still off, nothing changes for briefs without a `shot_type`.
+2. Update the planner prompts (mission-worker IG cadence, organic-orchestrator, strategist-executor, chat) so they write the caption first, then pick a `shot_type` and slots from `plannerShotMenu()`.
+3. Set `SHOT_LIBRARY_ENABLED=true`, watch the first days of posts, and compare `./scripts/image-pipeline.sh report` by `prompt_version`.
+4. Owner shoot, still open: V60/AeroPress/grinder with hands, latte pour, beans in hand, cooling bin. After uploading, run `./scripts/image-library-prep.sh <folder>`.
