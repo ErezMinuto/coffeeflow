@@ -78,6 +78,10 @@ import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
 import { noBagTail } from './no_bag_tail.ts'
+import {
+  SHOTS, isShotType, normalizeShotChoice, shotChecklist, shotRouterPrompt,
+  type ShotDef, type ShotSlots,
+} from '../_shared/shot_library.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
 // asks Claude to rewrite the scene_brief based on the qa_attempts history,
@@ -88,6 +92,14 @@ import { noBagTail } from './no_bag_tail.ts'
 // strategist-emitted task: original + 2 regens = 9 image-generation
 // attempts max before genuine HITL.
 const MAX_BRIEF_REGENS = 2
+
+// SHOT LIBRARY ROLLOUT (docs/image-pipeline/plan.md). When the secret
+// SHOT_LIBRARY_ENABLED=true, every ig_post visual is rendered from the shot
+// library (handleShot). Off: only briefs that already name a shot_type take
+// that path; everything else keeps the legacy free-form pipeline.
+const SHOT_LIBRARY_ENABLED = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
+const SHOT_ROUTER_MODEL    = 'claude-haiku-4-5'
+const MAX_SHOT_ATTEMPTS    = 2
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -155,6 +167,11 @@ serve(async (req) => {
   // unvetted carousel as ready. Handled and returned inside handleCarousel.
   if (Array.isArray(brief?.slides) && brief.slides.length > 0) {
     return await handleCarousel(supabase, task, brief, workerId)
+  }
+
+  // ── 2c. SHOT LIBRARY FORK ─────────────────────────────────────────────
+  if (brief && (brief.destination ?? 'blog_banner') === 'ig_post' && (isShotType(brief.shot_type) || SHOT_LIBRARY_ENABLED)) {
+    return await handleShot(supabase, task, brief, workerId)
   }
 
   if (!brief || typeof brief.scene_brief !== 'string' || !brief.scene_brief.trim()) {
@@ -598,6 +615,158 @@ serve(async (req) => {
 
 // attachFeaturedImage lifted to seo-agent/wpMediaAttach.ts so the chat
 // handler's approve_qa_attempt tool can reuse the same code path.
+
+// ─────────────────────────────────────────────────────────────────────────
+// SHOT LIBRARY PATH. An Instagram visual is one of the fixed shots in
+// _shared/shot_library.ts. A brief that names shot_type uses it; a legacy
+// free-form brief is ROUTED onto the menu (with the post's caption when the
+// paired instagram_post already exists), so an unrenderable idea ("a bean
+// dropped into water") becomes the nearest real shot instead of an AI
+// invention. QA is one pass of the shot's yes/no checklist (owner: keep it
+// light); a failed or unrenderable shot is flagged for review, never
+// re-imagined.
+// ─────────────────────────────────────────────────────────────────────────
+async function childCaption(supabase: ReturnType<typeof createSupabase>, taskId: string): Promise<string | undefined> {
+  const { data } = await supabase.from('seo_tasks')
+    .select('brief_data').eq('parent_task_id', taskId).eq('task_type', 'instagram_post').limit(1)
+  const cap = (data?.[0]?.brief_data as Record<string, unknown> | undefined)?.caption_he
+  return typeof cap === 'string' && cap.trim() ? cap : undefined
+}
+
+async function routeShot(sceneBrief: string, caption: string | undefined, productName: string | undefined): Promise<Record<string, unknown>> {
+  const res = await callClaude({
+    sourceFn: 'seo-worker-visual',
+    model: SHOT_ROUTER_MODEL,
+    system: 'You map Instagram post ideas onto a fixed photo menu. Reply with strict JSON only.',
+    messages: [{ role: 'user', content: shotRouterPrompt(sceneBrief, caption, productName) }],
+    maxTokens: 300, temperature: 0, timeoutMs: 60_000,
+  })
+  return parseClaudeJson<Record<string, unknown>>(res.text)
+}
+
+const SHOT_QA_SYSTEM_PROMPT = `You are the visual QA for Minuto, a specialty coffee roastery, checking an Instagram image before the owner reviews it.
+First describe in one or two sentences exactly what the image shows. Then answer every numbered question about what is VISIBLE: "yes" or "no", with a short reason. Answer "no" when you are not sure. Count hands and check what each object rests on before answering those questions.
+Reply with strict JSON only: {"description": "...", "answers": [{"n": 1, "answer": "yes" | "no", "why": "..."}]}`
+
+async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, sourcePhoto: string | null): Promise<VisualCritique> {
+  const questions = shotChecklist(shot, slots)
+  const compareBag = shot.needs_product && sourcePhoto
+  const content: MessageContentBlock[] = [
+    { type: 'image', source: { type: 'url', url: imageUrl } },
+    ...(compareBag ? [{ type: 'image' as const, source: { type: 'url' as const, url: sourcePhoto! } }] : []),
+    { type: 'text', text: `${compareBag ? 'The SECOND image is the real bag; compare the label in the first image against it.\n\n' : ''}Questions:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}` },
+  ]
+  const ask = () => callClaude({
+    sourceFn: 'seo-worker-visual', model: MODEL_VISUAL_CRITIC, system: SHOT_QA_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content }], maxTokens: 900, temperature: 0, timeoutMs: 120_000,
+  })
+  let res: Awaited<ReturnType<typeof callClaude>>
+  try { res = await ask() } catch { res = await ask() }   // one retry; a second failure throws
+  const parsed = parseClaudeJson<{ description?: unknown; answers?: Array<{ n?: unknown; answer?: unknown; why?: unknown }> }>(res.text)
+  const answers = Array.isArray(parsed.answers) ? parsed.answers : []
+  const failed = questions
+    .map((q, i) => ({ q, a: answers.find(x => Number(x?.n) === i + 1) }))
+    .filter(({ a }) => String(a?.answer ?? '').toLowerCase() !== 'yes')
+  return {
+    passes: failed.length === 0,
+    missing: [],
+    issues: failed.map(({ q, a }) => `${q} → ${a ? `no: ${String(a.why ?? '')}` : 'not answered'}`),
+    suggested_adjustment: '',
+    description: typeof parsed.description === 'string' ? parsed.description : undefined,
+  } as VisualCritique
+}
+
+async function handleShot(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  brief: VisualGenerationBrief,
+  workerId: string,
+): Promise<Response> {
+  const aspect = brief.aspect ?? 'story'
+  const product = brief.shot_slots?.product_name ?? brief.product_name
+  let routedBy: 'brief' | 'router' = 'brief'
+  let routerWhy: string | undefined
+  let choice: { shot: ShotDef; slots: ShotSlots }
+  if (isShotType(brief.shot_type)) {
+    choice = normalizeShotChoice({ shot_type: brief.shot_type, moment: brief.shot_slots?.moment, drink: brief.shot_slots?.drink }, product)
+  } else {
+    routedBy = 'router'
+    let routed: Record<string, unknown> = {}
+    try {
+      routed = await routeShot(brief.scene_brief ?? '', await childCaption(supabase, task.id), brief.render_mode === 'bag_hero' ? product : undefined)
+    } catch (e: any) {
+      console.warn(`[seo-worker-visual] ${workerId} shot router failed, using default shot: ${e?.message ?? e}`)
+    }
+    routerWhy = typeof routed.why === 'string' ? routed.why : undefined
+    choice = normalizeShotChoice(routed, brief.render_mode === 'bag_hero' ? product : undefined)
+  }
+  const { shot, slots } = choice
+  console.log(`[seo-worker-visual] ${workerId} shot=${shot.id} ${JSON.stringify(slots)} (by ${routedBy}${routerWhy ? `: ${routerWhy}` : ''})`)
+
+  if (slots.product_name) {
+    const verdict = screenHeroProduct(slots.product_name, buildBrandIndex([]))
+    if (!verdict.ok) {
+      await safeMarkFailed(supabase, task, `brand guard: ${verdict.why}`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brand guard blocked product_name' })
+    }
+  }
+
+  const qaAttempts: Array<Record<string, unknown>> = []
+  let imageUrl: string | null = null
+  let raw: Record<string, unknown> = {}
+  let lastCritique: VisualCritique | null = null
+  let qaPassed = false
+  for (let a = 1; a <= MAX_SHOT_ATTEMPTS && !qaPassed; a++) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect }),
+    })
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>
+    if (!res.ok || typeof json.url !== 'string') {
+      qaAttempts.push({ attempt: a, render_error: String(json.error ?? `HTTP ${res.status}`), real_photo_checks: json.real_photo_checks })
+      continue
+    }
+    imageUrl = json.url; raw = json
+    let critique: VisualCritique
+    try {
+      critique = await evaluateShot(imageUrl, shot, slots, typeof json.real_photo === 'string' ? json.real_photo : null)
+    } catch (e: any) {
+      // Unlike the legacy path, an unanswerable QA does NOT count as a pass.
+      critique = { passes: false, missing: [], issues: [`QA could not run: ${e?.message ?? e}`], suggested_adjustment: '' } as VisualCritique
+    }
+    qaAttempts.push({ attempt: a, image_url: imageUrl, shot_type: shot.id, critique, prompt_doc: typeof json.prompt_doc === 'string' ? json.prompt_doc : undefined })
+    lastCritique = critique
+    qaPassed = critique.passes
+    console.log(`[seo-worker-visual] ${workerId} shot attempt ${a}/${MAX_SHOT_ATTEMPTS} ${qaPassed ? 'PASSED' : `FAILED ${JSON.stringify(critique.issues)}`}`)
+  }
+
+  if (!imageUrl) {
+    const permanently = task.attempts >= task.max_attempts
+    await safeMarkFailed(supabase, task, `shot ${shot.id}: no image rendered (${JSON.stringify(qaAttempts).slice(0, 400)})`, permanently)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, shot_type: shot.id, error: 'shot render failed', permanent: permanently }, 500)
+  }
+
+  const reviewRequired = !qaPassed
+  await markTaskCompleted(supabase, task, {
+    image_url:        imageUrl,
+    render_function:  'visual-test',
+    render_mode:      shot.needs_product ? 'bag_hero' : 'no_bag',
+    original_render_mode: brief.render_mode,
+    destination:      'ig_post',
+    aspect,
+    shot_type:        shot.id,
+    shot_slots:       slots,
+    shot_routed_by:   routedBy,
+    shot_router_why:  routerWhy,
+    render_response:  { ...pickRenderSummary(raw), shot_type: raw.shot_type, shot_slots: raw.shot_slots, reference_photo: raw.reference_photo },
+    qa_passed:        qaPassed,
+    review_required:  reviewRequired,
+    qa_attempts:      qaAttempts,
+    qa_last_critique: lastCritique,
+  })
+  return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, image_url: imageUrl, shot_type: shot.id, routed_by: routedBy, qa_passed: qaPassed, review_required: reviewRequired })
+}
 
 // markTaskFailed throws on its own DB errors; swallow so the HTTP
 // response we already prepared still flushes cleanly.

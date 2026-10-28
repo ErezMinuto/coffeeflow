@@ -107,7 +107,11 @@ export interface VisualGenerationBrief {
     heading: string
     // Optional Hebrew supporting line(s) under the heading.
     body?: string
-  }>
+  }>  // SHOT LIBRARY (docs/image-pipeline/plan.md, _shared/shot_library.ts).
+  // For ig_post visuals: which fixed shot to render and its slots. When set,
+  // scene_brief is only context; seo-worker-visual renders the shot.
+  shot_type?: import('../_shared/shot_library.ts').ShotType
+  shot_slots?: import('../_shared/shot_library.ts').ShotSlots
 }
 
 export interface DeepResearchBrief {
