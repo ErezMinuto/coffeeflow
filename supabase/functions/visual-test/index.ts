@@ -330,10 +330,12 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.`
 // in imageConfig (the hard contract; prompt text is only a suggestion).
 async function callGeminiImage(useParts: any[], ratio: string): Promise<{ b64: string; mime: string }> {
   const genRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // Key in a header, never the URL: a URL leaks into logs, retries and
+      // error output (CLAUDE.md credentials rule; QA review 2026-10-28).
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
       body: JSON.stringify({
         contents: [{ parts: useParts }],
         generationConfig: {
