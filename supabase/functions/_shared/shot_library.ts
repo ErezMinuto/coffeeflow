@@ -81,7 +81,11 @@ export const SHOTS: Record<ShotType, ShotDef> = {
   brew_ritual: {
     id: 'brew_ritual', label: 'Brew ritual',
     use_for: 'home brewing equipment Minuto uses and sells: Chemex, dripper, AeroPress, moka pot, server',
-    source: 'real_photo', folders: ['brewing'],
+    // Generated AROUND a real photo of Minuto's own equipment (owner,
+    // 2026-10-28): the photo anchors what the Chemex/dripper looks like, the
+    // prompt sets a clean, still scene. Still on purpose — pours and hands
+    // come from real photos only (that is where floating drippers came from).
+    source: 'generated', folders: ['brewing'],
     moments: ['a Chemex', 'a pour-over dripper', 'an AeroPress', 'a moka pot', 'a glass server'],
     needs_product: false, enabled: true,
   },
@@ -197,6 +201,18 @@ export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: strin
       `The cup stands alone on its saucer on a clean, warm wooden counter in soft morning window light, with gentle shadows and shallow depth of field. ` +
       `Natural film grain, calm and minimal.`
   }
+  if (shot.id === 'brew_ritual') {
+    const scene: Record<string, string> = {
+      'a Chemex': 'freshly brewed coffee in the glass carafe and a damp paper filter of coffee grounds in its top',
+      'a pour-over dripper': 'the dripper sitting on a glass server of freshly brewed coffee, a damp paper filter of grounds inside it',
+      'an AeroPress': 'the AeroPress standing on a cup of freshly brewed coffee',
+      'a moka pot': 'a thin wisp of steam rising from its spout, a small cup of coffee beside it',
+      'a glass server': 'the server filled with freshly brewed amber coffee',
+    }
+    return `A ${frame} editorial photograph of ${moment}, exactly the one in the reference photo, standing on a clean, warm wooden counter, ` +
+      `${scene[moment] ?? 'freshly brewed coffee inside'}. The counter is otherwise bare. Soft morning window light, gentle shadows, shallow depth of field, ` +
+      `calm and minimal, natural film grain.`
+  }
   // beans_closeup
   return `A ${frame} close-up editorial photograph of freshly roasted, medium-brown coffee beans, ${moment}, like the beans in the reference photo. ` +
     `Matte, dry beans with visible centre creases, warm side light, soft shadows, shallow depth of field. ` +
@@ -231,8 +247,13 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
         'Is the roaster a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
         'Are any beans shown roasted (brown), not green?']
     case 'brew_ritual':
-      return [photo, ground, text, hands,
-        `Is ${resolveMoment(shot, slots.moment)} or other coffee brewing equipment the main subject?`]
+      return [photo, ground, text,
+        `Is ${resolveMoment(shot, slots.moment)} the main subject, shown whole?`,
+        'Is the scene still: no hands, and nothing being poured from a kettle?',
+        'Is the counter clean (no cables, plugs or clutter)?',
+        // Real makers' marks are fine (AEROPRESS, Bialetti); the failure is a
+        // logo copied onto a different product (Bialetti on a dripper).
+        'If a brand name appears, is it the real maker\'s mark on that same product (e.g. AEROPRESS on an AeroPress, Bialetti on a moka pot), not a logo copied onto a different item? (n/a if none)']
     case 'finished_drink':
       return [photo, ground, text,
         `Does the drink look like a ${slots.drink ?? 'coffee drink'} in a single cup (close variants, e.g. a latte for a cappuccino, are fine)?`,
