@@ -11,8 +11,12 @@
 #       rejected, every image the owner reported as bad, and a spread of
 #       published posts, each with the brief that produced it. Re-render this
 #       set old-vs-new before shipping any prompt, model or judge change.
+#       Each image still in storage is COPIED to marketing/golden/ (a prefix
+#       purge-old-media never touches) and the manifest points at the copy;
+#       ig-test/ is purged after 4 days.
 #
-# Read-only against the database. Needs SUPABASE_URL and
+# Read-only against the database; `golden` writes only new copies under
+# marketing/golden/ (never overwrites, never deletes). Needs SUPABASE_URL and
 # SUPABASE_SERVICE_ROLE_KEY (scripts/secrets-doctor.sh shows what is set).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -39,6 +43,30 @@ HDRS = {"apikey": KEY, "Authorization": f"Bearer {KEY}"}
 def get(path):
     req = urllib.request.Request(f"{BASE}/rest/v1/{path}", headers=HDRS)
     return json.load(urllib.request.urlopen(req, timeout=90))
+
+def preserve(url):
+    """Copy a marketing-bucket image to golden/ once; return the golden URL."""
+    marker = "/object/public/marketing/"
+    if not url or marker not in url:
+        return None
+    src = urllib.parse.unquote(url.split(marker, 1)[1].split("?")[0])
+    if src.startswith("golden/"):
+        return url
+    dst = "golden/" + src.replace("/", "__")
+    public = f"{BASE}/storage/v1/object/public/marketing/{dst}"
+    if alive(public):
+        return public
+    if not alive(url):
+        return None
+    body = json.dumps({"bucketId": "marketing", "sourceKey": src, "destinationKey": dst}).encode()
+    req = urllib.request.Request(f"{BASE}/storage/v1/object/copy", data=body, method="POST",
+                                 headers={**HDRS, "Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=60)
+        return public
+    except Exception as e:
+        print(f"  could not preserve {src}: {e}", file=sys.stderr)
+        return None
 
 def alive(url):
     try:
@@ -132,8 +160,8 @@ def entry(task_id, brief, rr, verdict_, reason, image_url, source):
         "product_name": brief.get("product_name"),
         "scene_brief": brief.get("scene_brief"),
         "slides": brief.get("slides"),
-        "image_url": image_url,
-        "image_available": bool(image_url) and alive(image_url),
+        "original_image_url": image_url,
+        "image_url": preserve(image_url),
     }
 
 # 1. Everything the owner rejected in the review UI.
@@ -183,5 +211,5 @@ with open(out, "w") as f:
     json.dump({"note": "Built by scripts/image-pipeline.sh golden. Re-render these briefs old-vs-new before shipping a prompt, model or judge change.",
                "entries": entries}, f, ensure_ascii=False, indent=1)
 c = collections.Counter(e["verdict"] for e in entries)
-print(f"wrote {out}: {len(entries)} entries {dict(c)}; images still available: {sum(e['image_available'] for e in entries)}")
+print(f"wrote {out}: {len(entries)} entries {dict(c)}; images preserved in golden/: {sum(1 for e in entries if e['image_url'])}")
 PY
