@@ -1,7 +1,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, SHOTS, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotMenu, resolveMoment,
-  shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt,
+  ENABLED_SHOTS, REFERENCE_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
 // Real woo_products names (2026-10-28). Several house blends are Hebrew-only.
@@ -81,4 +81,92 @@ Deno.test('router prompt carries the menu, caption and product', () => {
   const p = shotRouterPrompt('a single bean dropped into a glass of water', 'קפה טרי מהקלייה', 'Guji')
   assert(p.includes('bar_moment') && p.includes('קפה טרי מהקלייה') && p.includes('Guji'))
   assertEquals(resolveMoment(SHOTS.brew_ritual, 'an aeropress'), 'an AeroPress')
+})
+
+// ── Planner picks (Phase 1b) ─────────────────────────────────────────────────
+
+const CAPTION = 'בוקר של אספרסו: קרמה עבה, שוט קצר ומדויק. מה אתם שותים הבוקר?'
+
+Deno.test('planner pick, flag on: shot_type + slots set, scene_brief filled, render_mode follows', () => {
+  const { brief, picked, note } = applyPlannedShot({
+    caption_he: CAPTION, shot_type: 'bar_moment', shot_slots: { moment: 'Pulling an espresso shot' },
+    aspect: 'story', destination: 'ig_post',
+  }, { enabled: true })
+  assert(picked)
+  assertEquals(note, undefined)
+  assertEquals(brief.shot_type, 'bar_moment')
+  assertEquals(brief.shot_slots, { moment: 'pulling an espresso shot' })
+  assertEquals(brief.render_mode, 'no_bag')
+  assertEquals(brief.planned_shot, undefined)
+  assert(String(brief.scene_brief).includes('espresso'))
+})
+
+Deno.test('planner pick, flag off: kept as planned_shot so the worker stays on the legacy path', () => {
+  const { brief } = applyPlannedShot({
+    caption_he: CAPTION, shot_type: 'bag_hero', shot_slots: { product_name: 'Kenya AA+', moment: 'the bag in daylight' },
+    scene_brief: 'The Kenya bag on the counter in morning light.', destination: 'ig_post',
+  }, { enabled: false })
+  assertEquals(brief.shot_type, undefined)
+  assertEquals(brief.shot_slots, undefined)
+  assertEquals(brief.planned_shot, { shot_type: 'bag_hero', shot_slots: { product_name: 'Kenya AA+', moment: 'the bag in daylight' } })
+  assertEquals(brief.render_mode, 'bag_hero')
+  assertEquals(brief.product_name, 'Kenya AA+')
+  assertEquals(brief.scene_brief, 'The Kenya bag on the counter in morning light.')
+})
+
+Deno.test('planner pick: bad picks are repaired with a note', () => {
+  const unknown = applyPlannedShot({ shot_type: 'leaf_with_dew' }, { enabled: true })
+  assertEquals(unknown.brief.shot_type, 'finished_drink')
+  assert(unknown.note?.includes('not on the menu'))
+  const noProduct = applyPlannedShot({ shot_type: 'bag_with_drink' }, { enabled: true })
+  assertEquals(noProduct.brief.shot_type, 'finished_drink')
+  assert(noProduct.note?.includes('needs shot_slots.product_name'))
+  const badMoment = applyPlannedShot({ shot_type: 'roastery', shot_slots: { moment: 'a roaster on the counter' } }, { enabled: true })
+  assertEquals((badMoment.brief.shot_slots as { moment: string }).moment, 'the roaster at work')
+  assert(badMoment.note?.includes('not one of roastery'))
+})
+
+Deno.test('planner pick: no shot_type leaves a legacy brief alone, caption is carried over', () => {
+  const { brief, picked } = applyPlannedShot({ scene_brief: 'x', render_mode: 'no_bag' }, { enabled: true, caption: CAPTION })
+  assert(!picked)
+  assertEquals(brief, { scene_brief: 'x', render_mode: 'no_bag', caption_he: CAPTION })
+  // A caption the brief already has wins.
+  assertEquals(applyPlannedShot({ caption_he: 'own' }, { enabled: true, caption: CAPTION }).brief.caption_he, 'own')
+})
+
+Deno.test('scene summary never names a bag for a non-bag shot, and varies by moment', () => {
+  for (const shot of ENABLED_SHOTS.filter(s => !s.needs_product)) {
+    for (const moment of shot.moments) {
+      const text = shotSceneSummary(shot, { moment, drink: 'latte' }).toLowerCase()
+      assert(!/\bbag\b|pouch|packag/.test(text), `${shot.id}/${moment}: ${text}`)
+    }
+  }
+  assert(shotSceneSummary(SHOTS.bar_moment, { moment: 'steaming milk' }) !== shotSceneSummary(SHOTS.bar_moment, { moment: 'pouring latte art' }))
+})
+
+Deno.test('planner instructions: caption first, the menu, and scene_brief per flag', () => {
+  const on = plannerShotInstructions()
+  assert(on.indexOf('caption_he') < on.indexOf('shot_type'))
+  assert(on.includes(plannerShotMenu()))
+  assert(on.includes('scene_brief is optional'))
+  assert(plannerShotInstructions({ legacyScene: true }).includes('3-4 English sentences'))
+})
+
+Deno.test('roastery: generated around the real roaster, every moment short and positive, plain wall', () => {
+  assertEquals(SHOTS.roastery.source, 'generated')
+  for (const moment of SHOTS.roastery.moments) {
+    const p = shotGeneratePrompt(SHOTS.roastery, { moment }, '9:16')
+    assert(p.split(/\s+/).length <= 70, `${moment}: ${p.split(/\s+/).length} words`)
+    assert(!/\b(no|never|don't|do not|forbidden|override)\b/i.test(p), p)
+    assert(p.includes('plain, dark charcoal roastery wall'), p)
+    assert(p.includes('reference photo'), p)
+  }
+  assert(shotChecklist(SHOTS.roastery, {}).some(q => q.includes('doors, signs')))
+})
+
+Deno.test('reference subject follows the roaster moment; excluded photos are listed', () => {
+  assert(referenceSubject(SHOTS.roastery, { moment: 'fresh beans dropping into the cooling bin' }).includes('falling'))
+  assert(referenceSubject(SHOTS.roastery, { moment: 'a close-up of the roaster' }).includes('close-up'))
+  assert(referenceSubject(SHOTS.roastery, {}).includes('whole main drum roaster'))
+  assert(REFERENCE_EXCLUDE.has('roaster/IMG_5172.jpg'))
 })
