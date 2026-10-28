@@ -1085,8 +1085,13 @@ You are LENIENT on stylistic interpretation. The brief specifies a mood / palett
 
 HANDS CHECK — whenever any hand is visible, do this BEFORE deciding: for each hand, say whether it is a LEFT or RIGHT hand (find the thumb: on a hand seen from the back, a right hand's thumb is on its left side and a left hand's on its right side, measured along the direction the fingers point), which frame edge its forearm enters from, and whether both hands could belong to one person. Write this in "hands_check". Two hands of the same side, or two forearms side by side from the same edge, is a hard FAIL.
 
+CONTACT CHECK — do this BEFORE deciding, for every object that is not lying flat on the surface (dripper, AeroPress, cup on a saucer, kettle, pitcher, portafilter, grinder): name what it physically rests on or what holds it, and whether the two are visibly TOUCHING. A visible gap between an object and its support (e.g. a pour-over dripper or AeroPress hovering above the mug with coffee falling through open air between them), or an object resting on nothing, is a hard FAIL. A pour-over dripper's base must sit directly ON the rim of the mug or server. Write this in "contact_check".
+
+EQUIPMENT IDENTITY — if the brief names a specific tool (gooseneck kettle, V60, Chemex, AeroPress, French press, hand grinder), the image must show THAT tool, recognisably. A milk pitcher or stovetop pot standing in for a "gooseneck kettle" is a hard FAIL.
+
 Output STRICT JSON (no markdown fences, no preamble):
 {
+  "contact_check": "each raised object → what it rests on / who holds it → touching yes/no",
   "hands_check": "per-hand LEFT/RIGHT + entry edge + one-person verdict, or 'no hands'",
   "passes": true | false,
   "missing": ["concrete subject from the brief that didn't appear", "..."],
@@ -1133,29 +1138,53 @@ Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output 
     ...(withRef && bagRef ? [{ type: 'image' as const, source: { type: 'url' as const, url: bagRef } }] : []),
     { type: 'text' as const, text: withRef ? userText : userText.replace(/ The SECOND attached image[^\n]*/, '') },
   ]
-  let res: Awaited<ReturnType<typeof callClaude>>
-  try {
-    res = await critic(content(true))
-  } catch (e) {
-    // A reference the API cannot fetch must not turn into "eval threw →
-    // treated as pass" upstream: retry once judging the render alone.
-    if (!bagRef) throw e
-    console.warn(`[seo-worker-visual] eval with bag reference failed, retrying without it: ${e instanceof Error ? e.message : String(e)}`)
-    res = await critic(content(false))
+  const judgeOnce = async (): Promise<VisualCritique> => {
+    let res: Awaited<ReturnType<typeof callClaude>>
+    try {
+      res = await critic(content(true))
+    } catch (e) {
+      // A reference the API cannot fetch must not turn into "eval threw →
+      // treated as pass" upstream: retry once judging the render alone.
+      if (!bagRef) throw e
+      console.warn(`[seo-worker-visual] eval with bag reference failed, retrying without it: ${e instanceof Error ? e.message : String(e)}`)
+      res = await critic(content(false))
+    }
+
+    const parsed = parseClaudeJson<{
+      passes?: unknown
+      missing?: unknown
+      issues?: unknown
+      suggested_adjustment?: unknown
+    }>(res.text)
+
+    return {
+      passes:               parsed.passes === true,
+      missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
+      issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
+      suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+    }
+  }
+  // A failed call is retried once: upstream, an eval that throws counts as a
+  // PASS, so a single stalled request must not wave an image through.
+  const judge = async (): Promise<VisualCritique> => {
+    try { return await judgeOnce() } catch (e) {
+      console.warn(`[seo-worker-visual] eval failed, retrying once: ${e instanceof Error ? e.message : String(e)}`)
+      return await judgeOnce()
+    }
   }
 
-  const parsed = parseClaudeJson<{
-    passes?: unknown
-    missing?: unknown
-    issues?: unknown
-    suggested_adjustment?: unknown
-  }>(res.text)
-
-  const critique: VisualCritique = {
-    passes:               parsed.passes === true,
-    missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
-    issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
-    suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+  let critique = await judge()
+  // SECOND LOOK on a pass. Physical-contact defects (a dripper hovering over
+  // the mug, two left hands) were caught on some runs and passed on others for
+  // the SAME image (dripper 0a6e5d89: 2 fails, 1 pass). An image ships only if
+  // two independent looks both pass it. Costs one extra call per passed image;
+  // a failed second call keeps the first verdict.
+  if (critique.passes) {
+    const second = await judge().catch(() => null)
+    if (second && !second.passes) {
+      console.log(`[seo-worker-visual] second look failed an image the first look passed`)
+      critique = second
+    }
   }
   // Only worth a call when the critic passed: a failed attempt retries anyway.
   if (critique.passes && args.renderMode === 'bag_hero' && !args.realPhoto) await applyLabelCheck(critique, args.imageUrl, [...BAG_LOCKUP_TEXT, ...(args.labelText ?? [])])
