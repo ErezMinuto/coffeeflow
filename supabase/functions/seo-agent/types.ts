@@ -112,6 +112,16 @@ export interface VisualGenerationBrief {
   // scene_brief is only context; seo-worker-visual renders the shot.
   shot_type?: import('../_shared/shot_library.ts').ShotType
   shot_slots?: import('../_shared/shot_library.ts').ShotSlots
+  // Caption first (Phase 1b): the Hebrew caption the shot was picked for, the
+  // same one the paired instagram_post publishes.
+  caption_he?: string
+  // The planner's pick while SHOT_LIBRARY_ENABLED is off. Recorded only:
+  // seo-worker-visual renders any brief naming shot_type through the library,
+  // so the pick waits here until the owner turns the flag on.
+  planned_shot?: {
+    shot_type:  import('../_shared/shot_library.ts').ShotType
+    shot_slots: import('../_shared/shot_library.ts').ShotSlots
+  }
 }
 
 export interface DeepResearchBrief {

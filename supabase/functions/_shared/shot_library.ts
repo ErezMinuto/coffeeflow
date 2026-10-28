@@ -314,3 +314,110 @@ export function normalizeShotChoice(
     },
   }
 }
+
+// ── Planner picks (Phase 1b) ─────────────────────────────────────────────────
+// Every planner that writes an Instagram visual (mission-worker, the organic
+// strategist, strategist-executor, chat) writes the Hebrew caption FIRST, then
+// picks a shot from the menu for it (owner, 2026-10-28). One wording for all
+// of them so the rules can't drift apart.
+//
+// legacyScene: while SHOT_LIBRARY_ENABLED is off the legacy renderer still
+// draws scene_brief, so planners keep writing one, describing the picked shot.
+export function plannerShotInstructions(opts: { legacyScene?: boolean } = {}): string {
+  const sceneRule = opts.legacyScene
+    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer. Describe the picked shot only, never a different scene.`
+    : `scene_brief is optional: at most one sentence of context, never a new scene.`
+  return `INSTAGRAM IMAGES: CAPTION FIRST, THEN A SHOT FROM THE MENU.
+1. Write the Hebrew caption (caption_he) first. The caption decides what the post is about.
+2. Then pick the ONE shot below that shows what that caption talks about, and fill its slots. Never describe a new scene: the image pipeline can only make these shots.
+
+SHOT MENU (shot_type: what it shows. moments):
+${plannerShotMenu()}
+
+An Instagram visual's brief (destination "ig_post") carries, in this order: caption_he (the same caption the post will publish), shot_type, shot_slots { moment (copy one of that shot's moments verbatim), product_name (exact Minuto product name, bag shots only), drink (finished_drink only, e.g. "cappuccino") }. ${sceneRule}
+- Bag shots (bag_hero, bag_with_drink) only when the post features one specific Minuto coffee. They use real photos of that bag.
+- Hands, pours and the espresso machine come only from real photos: pick bar_moment (or roastery for roasting). brew_ritual, finished_drink and beans_closeup are still scenes with no hands and nothing pouring.
+- Carousels (a slides[] array) keep their per-slide scene_brief for now.`
+}
+
+// One plain English line for a picked shot. Used as scene_brief when the
+// planner left it empty: the legacy renderer (flag off) and the story-lock /
+// no-repeat guards read scene_brief. Never mentions a bag for a non-bag shot,
+// so a legacy no_bag render can't be told to draw one.
+export function shotSceneSummary(shot: ShotDef, slots: ShotSlots): string {
+  const moment = resolveMoment(shot, slots.moment)
+  const what = shot.needs_product
+    ? `the Minuto ${slots.product_name ?? ''} coffee bag, ${moment}`.replace(/\s+/g, ' ')
+    : shot.id === 'finished_drink'
+      ? `a ${slots.drink ?? 'cappuccino'} in a Minuto cup, ${moment}, still life`
+      : moment
+  // Label + moment only: use_for is the same text for every pick of a shot,
+  // and the no-repeat guard would read it as the same scene every day.
+  return `${shot.label}: ${what}.`
+}
+
+// Validate a planner's shot pick on an IG visual brief and make the brief
+// consistent with it. Returns a copy; never throws.
+//   • caption: the post's caption, copied onto the brief when it has none
+//     (caption first: the visual carries the caption it was picked for).
+//   • A brief with no shot_type is returned as is (legacy free-form brief).
+//   • An unknown shot, or a bag shot with no product, falls back the same way
+//     normalizeShotChoice does; `note` says what changed.
+//   • render_mode / product_name follow the shot, and scene_brief is filled
+//     from the shot when empty, so the legacy pipeline still renders it.
+//   • enabled=false (SHOT_LIBRARY_ENABLED off): the pick is kept as
+//     planned_shot and shot_type/shot_slots are removed, because
+//     seo-worker-visual renders ANY brief that names a shot_type through the
+//     library. Planners deploy on merge; the library only goes live when the
+//     owner sets the flag.
+export function applyPlannedShot(
+  raw: Record<string, unknown>,
+  opts: { enabled: boolean; caption?: string },
+): { brief: Record<string, unknown>; picked: boolean; note?: string } {
+  const b: Record<string, unknown> = { ...raw }
+  const caption = (opts.caption ?? '').trim()
+  if (caption && !(typeof b.caption_he === 'string' && b.caption_he.trim())) b.caption_he = caption
+  const asked = typeof b.shot_type === 'string' ? b.shot_type.trim() : ''
+  if (!asked) {
+    delete b.shot_type
+    delete b.shot_slots
+    return { brief: b, picked: false }
+  }
+  const rawSlots = (b.shot_slots && typeof b.shot_slots === 'object' && !Array.isArray(b.shot_slots))
+    ? b.shot_slots as Record<string, unknown> : {}
+  const str = (v: unknown) => typeof v === 'string' && v.trim() ? v.trim() : undefined
+  const product = str(rawSlots.product_name) ?? str(b.product_name)
+  const moment  = str(rawSlots.moment) ?? str(b.moment)
+  const drink   = str(rawSlots.drink) ?? str(b.drink)
+  const { shot, slots } = normalizeShotChoice({ shot_type: asked, moment, drink }, product)
+
+  let note: string | undefined
+  if (shot.id !== asked) {
+    note = isShotType(asked) && SHOTS[asked].needs_product && !product
+      ? `shot "${asked}" needs shot_slots.product_name; used "${shot.id}" instead`
+      : `shot_type "${asked}" is not on the menu; used "${shot.id}" instead`
+  } else if (moment && slots.moment?.toLowerCase() !== moment.toLowerCase()) {
+    note = `moment "${moment}" is not one of ${shot.id}'s moments; used "${slots.moment}"`
+  }
+
+  const cleanSlots: ShotSlots = {}
+  if (slots.product_name) cleanSlots.product_name = slots.product_name
+  if (slots.moment)       cleanSlots.moment = slots.moment
+  if (slots.drink)        cleanSlots.drink = slots.drink
+
+  b.render_mode = shot.needs_product ? 'bag_hero' : 'no_bag'
+  if (shot.needs_product) b.product_name = slots.product_name
+  if (!str(b.scene_brief)) b.scene_brief = shotSceneSummary(shot, cleanSlots)
+  delete b.moment
+  delete b.drink
+  if (opts.enabled) {
+    b.shot_type  = shot.id
+    b.shot_slots = cleanSlots
+  } else {
+    delete b.shot_type
+    delete b.shot_slots
+    b.planned_shot = { shot_type: shot.id, shot_slots: cleanSlots }
+  }
+  return { brief: b, picked: true, note }
+}
+
