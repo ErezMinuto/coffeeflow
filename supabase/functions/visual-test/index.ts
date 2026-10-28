@@ -2,9 +2,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
-import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  SHOTS, isShotType, packshotFor, shotEditBrief, shotGeneratePrompt,
+  SHOTS, isBagSceneOf, isShotType, packshotFor, shotEditBrief, shotGeneratePrompt,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
 import {
@@ -199,16 +199,19 @@ async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
   brief: string,
+  root = 'upload_images',
+  exclude: Set<string> = new Set(),
 ): Promise<string[]> {
   try {
     // 1. Candidate files across the allowed folders.
     const paths: string[] = []
     for (const folder of folders) {
       const { data } = await supabase.storage.from('marketing')
-        .list(`upload_images/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
+        .list(`${root}/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
       for (const f of data ?? []) {
         if (!f.name || f.name.startsWith('.') || !/\.(jpe?g|png|webp)$/i.test(f.name)) continue
-        paths.push(`upload_images/${folder}/${f.name}`)
+        if (exclude.has(`${folder}/${f.name}`)) continue
+        paths.push(`${root}/${folder}/${f.name}`)
       }
     }
     if (paths.length === 0) return []
@@ -289,6 +292,9 @@ interface VisualTestRequest {
   // still-life prompt — and scene_brief/preset/use_reference are ignored.
   shot_type?: ShotType
   shot_slots?: ShotSlots
+  // "<folder>/<file>" library photos used recently; real-photo shots skip
+  // them while other photos remain (seo-worker-visual passes the last 21 days).
+  exclude_photos?: string[]
 }
 
 
@@ -366,14 +372,15 @@ async function callGeminiImage(useParts: any[], ratio: string): Promise<{ b64: s
 // FAILS (so the worker can flag it) rather than falling back to generation.
 async function randomLibraryPhotos(
   supabase: ReturnType<typeof createClient>, folders: string[], n: number,
+  root = 'upload_images', exclude: Set<string> = new Set(),
 ): Promise<string[]> {
   const urls: string[] = []
   for (const folder of folders) {
     const { data } = await supabase.storage.from('marketing')
-      .list(`upload_images/${folder}`, { limit: 200 })
+      .list(`${root}/${folder}`, { limit: 200 })
     for (const f of data ?? []) {
-      if (f.name && !f.name.startsWith('.') && /\.(jpe?g|png|webp)$/i.test(f.name)) {
-        urls.push(`${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${folder}/${f.name}`)
+      if (f.name && !f.name.startsWith('.') && /\.(jpe?g|png|webp)$/i.test(f.name) && !exclude.has(`${folder}/${f.name}`)) {
+        urls.push(`${SUPABASE_URL}/storage/v1/object/public/marketing/${root}/${folder}/${f.name}`)
       }
     }
   }
@@ -400,48 +407,42 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
   const checks: Array<{ photo: string; same: boolean; why: string }> = []
 
   if (shot.source === 'real_photo') {
+    // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
+    // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
+    // into upload_images_ready/<ratio>/. No image model touches it — an edit
+    // pass rotated, re-staged or added hands to real photos in testing.
+    const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
+    const exclude = new Set(body.exclude_photos ?? [])
     const brief = shotEditBrief(shot, slots)
-    // Candidates: photos of this exact scene from the shot's folders. Bag shots
-    // use the owner's bag photos first, then the product's own packshot.
-    let candidates: string[] = []
+    let pick: string | undefined
     if (shot.needs_product) {
-      const sceneFolders = shot.folders.filter(f => f !== 'coffee_bags')
-      if (sceneFolders.length) candidates = await pickMatchingRealPhoto(supabase, sceneFolders, `${brief} The bag is ${slots.product_name}.`)
+      // The product's own bag photos (bag_scenes/<slug>_*.jpg), chosen by
+      // file name, rotating away from recently used ones; then the product's
+      // studio packshot. A bag_with_drink shot needs a real scene photo (the
+      // packshot has no drink), so it degrades to the packshot as a bag_hero.
+      const { data: scenes } = await supabase.storage.from('marketing').list(`${readyRoot}/bag_scenes`, { limit: 500 })
+      const mine = (scenes ?? []).map(f => f.name).filter(n => n && isBagSceneOf(n, slots.product_name))
+      const fresh = mine.filter(n => !exclude.has(`bag_scenes/${n}`))
+      const choice = (fresh.length ? fresh : mine).sort(() => Math.random() - 0.5)[0]
+      if (choice) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/bag_scenes/${choice}`
       const pack = packshotFor(slots.product_name)
-      if (pack) candidates.push(libUrl(pack))
-      if (candidates.length === 0) throw new Error(`no real photo or packshot for product "${slots.product_name}"`)
+      if (!pick && pack) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/${pack.replace(/\.[a-z]+$/i, '.jpg')}`
+      if (!pick) throw new Error(`no prepared photo or packshot for product "${slots.product_name}"`)
     } else {
-      candidates = await pickMatchingRealPhoto(supabase, shot.folders, brief)
-      // Every photo in the shot's folders is on-topic by construction, so an
-      // empty caption match falls back to any of them, never to generation.
-      if (candidates.length === 0) candidates = await randomLibraryPhotos(supabase, shot.folders, 2)
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, brief, readyRoot, exclude))[0]
+        // Every photo in the shot's folders is on-topic by construction.
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, exclude))[0]
+        // All used recently: allow a repeat rather than fail.
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot))[0]
     }
-    for (const url of candidates.slice(0, 3)) {
-      const isPackshot = url.includes('/upload_images/coffee_bags/')
-      sentPrompt = isPackshot
-        ? `Reframe the attached studio photo of a Minuto coffee bag into a ${ratio} image by extending its plain light studio background evenly around it. The bag stays exactly as photographed: same shape, same printed label, same text, same size relative to the frame or slightly smaller. Soft, even studio light.`
-        : realPhotoEditPrompt(ratio, brief)
-      try {
-        const edit = await callGeminiImage([{ fileData: { mimeType: mimeOf(url), fileUri: url } }, { text: sentPrompt }], ratio)
-        if (!matchesRatio(readImageSize(decodeBase64(edit.b64.slice(0, 87380))), ratio)) {
-          checks.push({ photo: url, same: false, why: 'wrong aspect ratio' }); continue
-        }
-        const verdict = await geminiJson([
-          { fileData: { mimeType: mimeOf(url), fileUri: url } },
-          { inlineData: { mimeType: edit.mime, data: edit.b64 } },
-          { text: SAME_SCENE_PROMPT },
-        ])
-        const same = verdict?.same === true
-        checks.push({ photo: url, same, why: String(verdict?.why ?? '') })
-        console.log(`[visual-test] shot ${shot.id} same-scene ${same ? 'PASS' : 'FAIL'} (${url}): ${verdict?.why ?? ''}`)
-        if (same) { gen = edit; sourcePhoto = url; break }
-      } catch (e: any) {
-        checks.push({ photo: url, same: false, why: `error: ${e?.message ?? e}` })
-      }
+    if (!pick) {
+      return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
     }
-    if (!gen) {
-      return jsonResponse({ success: false, error: `no edit of a real ${shot.id} photo passed the same-scene check`, shot_type: shot.id, real_photo_checks: checks, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
-    }
+    const res = await fetch(pick)
+    if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
+    gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
+    sourcePhoto = pick
+    sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
   } else {
     sentPrompt = shotGeneratePrompt(shot, slots, ratio)
     const refs = await pickMatchingRealPhoto(supabase, shot.folders, sentPrompt)
@@ -449,7 +450,9 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     const parts: any[] = []
     if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
     parts.push({ text: sentPrompt })
-    gen = await callGeminiImage(parts, ratio)
+    // One retry when the model answers with text instead of an image, or with
+    // the wrong shape.
+    try { gen = await callGeminiImage(parts, ratio) } catch { gen = await callGeminiImage(parts, ratio) }
     if (!matchesRatio(readImageSize(decodeBase64(gen.b64)), ratio)) gen = await callGeminiImage(parts, ratio)
   }
 
@@ -464,7 +467,7 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     `IMAGE: ${pub.publicUrl}`,
     `PROMPT VERSION: ${SHOT_PROMPT_VERSION}`,
     `SHOT: ${shot.id} ${JSON.stringify(slots)}`,
-    `MODEL: gemini-3.1-flash-image-preview (${sourcePhoto ? `real-photo edit of ${sourcePhoto}` : `generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`})`,
+    `MODEL: ${sourcePhoto ? `none: real photo ${sourcePhoto}` : `gemini-3.1-flash-image-preview generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`}`,
     ``, `── PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
   ].join('\n')
   return jsonResponse({

@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, SHOTS, normalizeShotChoice, packshotFor, plannerShotMenu, resolveMoment,
+  ENABLED_SHOTS, SHOTS, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotMenu, resolveMoment,
   shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt,
 } from './shot_library.ts'
 
@@ -31,17 +31,23 @@ Deno.test('unknown or missing product has no packshot', () => {
   assertEquals(packshotFor(undefined), null)
 })
 
-Deno.test('disabled shots never reach planners', () => {
-  assert(!SHOTS.bag_with_drink.enabled)
-  assert(!plannerShotMenu().includes('bag_with_drink'))
-  assert(ENABLED_SHOTS.every(s => s.enabled))
+Deno.test('planner menu lists exactly the enabled shots', () => {
+  for (const s of Object.values(SHOTS)) assertEquals(plannerShotMenu().includes(`- ${s.id}:`), s.enabled, s.id)
+})
+
+Deno.test('bag scene photos are matched to their product by file name', () => {
+  assert(isBagSceneOf('dark_chocolate_window.jpg', 'פולי קפה טרי 100% ערביקה  - Minuto Dark Chocolate'))
+  assert(isBagSceneOf('guatemala_antigua_counter.jpg', 'Minuto GUATEMALA ANTIGUA Specialty Coffee'))
+  assert(!isBagSceneOf('guji_window.jpg', 'Minuto Dark Chocolate'))
+  assert(!isBagSceneOf('dark_chocolate_window.jpg', undefined))
 })
 
 Deno.test('router choice: unknown shot falls back, bag without product falls back', () => {
   assertEquals(normalizeShotChoice({ shot_type: 'leaf_on_table' }).shot.id, 'finished_drink')
   assertEquals(normalizeShotChoice({ shot_type: 'leaf_on_table' }, 'Dark Chocolate').shot.id, 'bag_hero')
   assertEquals(normalizeShotChoice({ shot_type: 'bag_hero' }).shot.id, 'finished_drink')
-  assertEquals(normalizeShotChoice({ shot_type: 'bag_with_drink' }, 'Guji').shot.id, 'bag_hero')
+  assertEquals(normalizeShotChoice({ shot_type: 'bag_with_drink' }, 'Guji').shot.id, 'bag_with_drink')
+  assertEquals(normalizeShotChoice({ shot_type: 'bag_with_drink' }).shot.id, 'finished_drink')
 })
 
 Deno.test('router choice keeps valid moments and fills defaults', () => {

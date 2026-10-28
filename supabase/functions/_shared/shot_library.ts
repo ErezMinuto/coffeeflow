@@ -104,7 +104,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     use_for: 'a Minuto bag next to a finished cup, pairing a product with how it tastes',
     source: 'real_photo', folders: ['bag_scenes'],
     moments: ['the bag beside a cup'],
-    needs_product: true, enabled: false,   // enabled after the owner's shoot
+    needs_product: true, enabled: true,    // owner's bag shoot 2026-10-28 (every photo has an espresso)
   },
 }
 
@@ -124,28 +124,40 @@ export function resolveMoment(shot: ShotDef, moment?: string): string {
 // ── Packshots ────────────────────────────────────────────────────────────────
 // Studio packshots in upload_images/coffee_bags/, keyed by file. Aliases match
 // woo_products names, which are often Hebrew-only for house blends.
-export const PACKSHOTS: Array<{ file: string; aliases: string[] }> = [
-  { file: 'ARISTO.png',            aliases: ['aristo', 'אריסטו'] },
-  { file: 'BRAZIL.png',            aliases: ['brazil', 'sertão', 'sertao', 'ברזיל'] },
-  { file: 'Dark_CHOCO.png',        aliases: ['dark chocolate'] },
-  { file: 'Daye_BENSA.png',        aliases: ['daye bensa', 'דיי בנסה'] },
-  { file: 'DECAFF.png',            aliases: ['decaf', 'נטול קפאין'] },
-  { file: 'GUATEMALA_antigua.png', aliases: ['guatemala', 'antigua', 'אנטיגואה'] },
-  { file: 'GUJI.png',              aliases: ['guji', "גוג'י"] },
-  { file: 'INTENSO.png',           aliases: ['intenso', 'אינטנסו'] },
-  { file: 'JUNGLE_JAVA.png',       aliases: ['jungle java'] },
-  { file: 'Kenya_AA+.png',         aliases: ['kenya', 'קניה'] },
-  { file: 'PRESTIGE.png',          aliases: ['prestige', "פרסטיז'", 'פרסטיז'] },
-  { file: 'STAR_VELVET.png',       aliases: ['velvet star', 'star velvet'] },
-  { file: 'TRIESTe.png',           aliases: ['triest', 'trieste', 'טריאסט'] },
-  { file: 'yirgachffe.png',        aliases: ['yirgacheffe', 'yirgacheffee', 'יירגשף'] },
+// `slug` names the product's real bag photos in upload_images/bag_scenes/
+// (<slug>_window.jpg, <slug>_counter.jpg, …), so a bag shot always shows
+// the right bag without asking a model which bag is in the photo.
+export const PACKSHOTS: Array<{ file: string; slug: string; aliases: string[] }> = [
+  { file: 'ARISTO.png',            slug: 'aristo',            aliases: ['aristo', 'אריסטו'] },
+  { file: 'BRAZIL.png',            slug: 'brazil',            aliases: ['brazil', 'sertão', 'sertao', 'ברזיל'] },
+  { file: 'Dark_CHOCO.png',        slug: 'dark_chocolate',    aliases: ['dark chocolate'] },
+  { file: 'Daye_BENSA.png',        slug: 'daye_bensa',        aliases: ['daye bensa', 'דיי בנסה'] },
+  { file: 'DECAFF.png',            slug: 'decaf',             aliases: ['decaf', 'נטול קפאין'] },
+  { file: 'GUATEMALA_antigua.png', slug: 'guatemala_antigua', aliases: ['guatemala', 'antigua', 'אנטיגואה'] },
+  { file: 'GUJI.png',              slug: 'guji',              aliases: ['guji', "גוג'י"] },
+  { file: 'INTENSO.png',           slug: 'intenso',           aliases: ['intenso', 'אינטנסו'] },
+  { file: 'JUNGLE_JAVA.png',       slug: 'jungle_java',       aliases: ['jungle java'] },
+  { file: 'Kenya_AA+.png',         slug: 'kenya',             aliases: ['kenya', 'קניה'] },
+  { file: 'PRESTIGE.png',          slug: 'prestige',          aliases: ['prestige', "פרסטיז'", 'פרסטיז'] },
+  { file: 'STAR_VELVET.png',       slug: 'velvet_star',       aliases: ['velvet star', 'star velvet'] },
+  { file: 'TRIESTe.png',           slug: 'triest',            aliases: ['triest', 'trieste', 'טריאסט'] },
+  { file: 'yirgachffe.png',        slug: 'yirgacheffe',       aliases: ['yirgacheffe', 'yirgacheffee', 'יירגשף'] },
 ]
 
-export function packshotFor(productName: string | undefined): string | null {
+function productEntry(productName: string | undefined) {
   const n = (productName ?? '').toLowerCase()
-  if (!n) return null
-  const hit = PACKSHOTS.find(p => p.aliases.some(a => n.includes(a)))
+  return n ? PACKSHOTS.find(p => p.aliases.some(a => n.includes(a))) ?? null : null
+}
+
+export function packshotFor(productName: string | undefined): string | null {
+  const hit = productEntry(productName)
   return hit ? `coffee_bags/${hit.file}` : null
+}
+
+// True when a bag_scenes file name is a photo of this product's bag.
+export function isBagSceneOf(fileName: string, productName: string | undefined): boolean {
+  const hit = productEntry(productName)
+  return !!hit && fileName.toLowerCase().startsWith(`${hit.slug}_`)
 }
 
 // ── Prompts ──────────────────────────────────────────────────────────────────
@@ -195,40 +207,40 @@ export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: strin
 // Atomic yes/no questions the critic answers. Each must be answered YES for
 // the image to pass. Only questions the shot can actually fail on.
 export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
-  const common = [
-    'Does the image look like a real photograph (not a render or illustration)?',
-    'Is every object resting on a surface or held by a hand, with nothing floating?',
-    'Is there no garbled or misspelled sharp text anywhere?',
-  ]
-  const hands = 'If hands appear, are there at most two, belonging to one person (one left, one right), each with five normal fingers?'
+  // Every question is phrased so that "yes" is good; "n/a" is allowed when a
+  // conditional question does not apply (the critic counts it as a pass).
+  const photo  = 'Does the image look like a real photograph (not a render or illustration)?'
+  const ground = 'Is every object resting on a surface or held by a hand, with nothing floating?'
+  const text   = 'Is all sharp, readable text in the image correctly spelled? (n/a if there is none)'
+  const hands  = 'If hands appear, are there at most two, belonging to one person (one left, one right), each with five normal fingers? (n/a if no hands)'
   switch (shot.id) {
     case 'bag_hero':
     case 'bag_with_drink':
-      return [...common,
+      // Packshots are studio images by design, so no "real photograph" question.
+      return [ground, text,
         'Is exactly one Minuto coffee bag the main subject?',
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
         ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
     case 'bar_moment':
-      return [...common, hands,
-        'Is the espresso machine a real two-group machine with every part attached (no floating or duplicated portafilters or steam wands)?',
-        'If coffee or milk is flowing, does it come from a portafilter spout or a hand-held pitcher and land in a cup?',
-        'If a cup is being filled, does it stand on the drip tray or is it held?']
+      return [photo, ground, text, hands,
+        'Is the espresso machine shown with every part attached (no floating or duplicated portafilters or steam wands)? (n/a if no machine is visible)',
+        'If coffee or milk is flowing, does it come from a portafilter spout or a hand-held pitcher into a cup or pitcher? (n/a if nothing is flowing)',
+        'Is the image free of readable customer names or order tickets?']
     case 'roastery':
-      return [...common,
-        'Is the roaster a full-size floor-standing drum roaster (not a small or tabletop machine)?',
-        'Is there exactly one roaster?']
+      return [photo, ground, text,
+        'Is the roaster a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
+        'Are any beans shown roasted (brown), not green?']
     case 'brew_ritual':
-      return [...common, hands,
-        `Does the image show ${resolveMoment(shot, slots.moment)} as the main subject?`,
-        'If there is a dripper or AeroPress, does it sit directly on the rim of a cup or server?']
+      return [photo, ground, text, hands,
+        `Is ${resolveMoment(shot, slots.moment)} or other coffee brewing equipment the main subject?`]
     case 'finished_drink':
-      return [...common,
-        `Is the drink a ${slots.drink ?? 'coffee drink'} in a single cup?`,
-        'Are there no hands, bags, spoons or extra cups in the image?']
+      return [photo, ground, text,
+        `Does the drink look like a ${slots.drink ?? 'coffee drink'} in a single cup (close variants, e.g. a latte for a cappuccino, are fine)?`,
+        'Is the image free of hands and coffee bags?']
     case 'beans_closeup':
-      return [...common,
+      return [photo, ground, text,
         'Are the beans roasted medium brown (not green, not black and oily)?',
-        'Are there no hands, bags or cups in the image?']
+        'Is the image free of hands and coffee bags?']
   }
 }
 

@@ -633,6 +633,24 @@ async function childCaption(supabase: ReturnType<typeof createSupabase>, taskId:
   return typeof cap === 'string' && cap.trim() ? cap : undefined
 }
 
+// Library photos ("<folder>/<file>") published by shot tasks in the last 21
+// days, so a real-photo shot rotates through the library instead of
+// repeating yesterday's photo ("same images as yesterday").
+async function recentShotPhotos(supabase: ReturnType<typeof createSupabase>): Promise<string[]> {
+  const since = new Date(Date.now() - 21 * 86_400_000).toISOString()
+  const { data } = await supabase.from('seo_tasks')
+    .select('result_data->render_response->>real_photo')
+    .eq('task_type', 'visual_generation').gte('created_at', since)
+    .not('result_data->>shot_type', 'is', null).limit(500)
+  const out: string[] = []
+  for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+    const url = String(row.real_photo ?? '')
+    const m = url.match(/\/upload_images_ready\/[^/]+\/(.+)$/)
+    if (m) out.push(decodeURIComponent(m[1]))
+  }
+  return out
+}
+
 async function routeShot(sceneBrief: string, caption: string | undefined, productName: string | undefined): Promise<Record<string, unknown>> {
   const res = await callClaude({
     sourceFn: 'seo-worker-visual',
@@ -645,8 +663,8 @@ async function routeShot(sceneBrief: string, caption: string | undefined, produc
 }
 
 const SHOT_QA_SYSTEM_PROMPT = `You are the visual QA for Minuto, a specialty coffee roastery, checking an Instagram image before the owner reviews it.
-First describe in one or two sentences exactly what the image shows. Then answer every numbered question about what is VISIBLE: "yes" or "no", with a short reason. Answer "no" when you are not sure. Count hands and check what each object rests on before answering those questions.
-Reply with strict JSON only: {"description": "...", "answers": [{"n": 1, "answer": "yes" | "no", "why": "..."}]}`
+First describe in one or two sentences exactly what the image shows. Then answer every numbered question about what is VISIBLE: "yes" (good), "no" (a problem), or "n/a" when the question's condition does not apply (e.g. it asks about hands and there are none). Answer "no" when you are not sure. Count hands and check what each object rests on before answering those questions.
+Reply with strict JSON only: {"description": "...", "answers": [{"n": 1, "answer": "yes" | "no" | "n/a", "why": "..."}]}`
 
 async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, sourcePhoto: string | null): Promise<VisualCritique> {
   const questions = shotChecklist(shot, slots)
@@ -666,7 +684,7 @@ async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, s
   const answers = Array.isArray(parsed.answers) ? parsed.answers : []
   const failed = questions
     .map((q, i) => ({ q, a: answers.find(x => Number(x?.n) === i + 1) }))
-    .filter(({ a }) => String(a?.answer ?? '').toLowerCase() !== 'yes')
+    .filter(({ a }) => !['yes', 'n/a'].includes(String(a?.answer ?? '').toLowerCase()))
   return {
     passes: failed.length === 0,
     missing: [],
@@ -711,6 +729,7 @@ async function handleShot(
     }
   }
 
+  const recent = await recentShotPhotos(supabase).catch(() => [] as string[])
   const qaAttempts: Array<Record<string, unknown>> = []
   let imageUrl: string | null = null
   let raw: Record<string, unknown> = {}
@@ -720,7 +739,7 @@ async function handleShot(
     const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
-      body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect }),
+      body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect, exclude_photos: recent }),
     })
     const json = await res.json().catch(() => ({})) as Record<string, unknown>
     if (!res.ok || typeof json.url !== 'string') {
