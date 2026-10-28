@@ -4,8 +4,8 @@
  *   coffee_checkin   customers whose only paid web order included beans get one
  *                    "how was your coffee?" email (+ Google review link when
  *                    enabled), once in their lifetime, N days after the order
- *                    was completed. Everyone qualifies: no reward, no filter
- *                    by satisfaction (Google policy). An unsubscribe opts out.
+ *                    was completed. Marketing consent required (owner's
+ *                    call, 2026-10-28); no reward, no filter by satisfaction.
  *   2 orders         nothing new (WooCommerce's own order emails).
  *   refill_reminder  customers with 3+ paid web orders get a reorder reminder
  *                    timed to their own rhythm: median gap between bean
