@@ -680,6 +680,7 @@ function parentWaitBackoffMinutes(task: SeoTaskRow): number {
 // debugging without bloating the result_data JSONB.
 function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> {
   return {
+    prompt_version:        r.prompt_version ?? 'layered-v1',
     aspect:                r.aspect,
     ratio:                 r.ratio,
     // Actual rendered pixel dimensions + whether they match the requested
