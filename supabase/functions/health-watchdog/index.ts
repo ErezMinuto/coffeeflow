@@ -143,6 +143,10 @@ const EXPECTED_CRONS: Array<{
   // because an unregistered cron is an unwatched one — the exact reason
   // woo-orders-sync froze for 12 days unnoticed.
   { jobname: 'system-logs-purge-daily',             max_silence_hours: 30, required: false },
+  // Daily 03:50 UTC: packing_logs keeps 10 days (see
+  // 20261028_packing_logs_retention.sql). Non-critical: a missed run only
+  // leaves older packing rows around a little longer.
+  { jobname: 'packing-logs-purge-daily',            max_silence_hours: 30, required: false },
   // MFlow is the single source of revenue truth AND the thing that moves real
   // packed_stock, and NEITHER job was registered here. The revenue half had no
   // cron at all until 2026-08-25 and sat frozen for three days after its
