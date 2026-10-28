@@ -902,6 +902,7 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
     ].join('\n')
     return jsonResponse({
+      prompt_version: PROMPT_VERSION,
       prompt_doc: promptDoc,
       success: true,
       url: pub.publicUrl,
@@ -941,6 +942,12 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
     return jsonResponse({ error: err?.message ?? String(err) }, 500, corsHeaders)
   }
 })
+
+// Which prompt architecture built this image. Every render result carries it so
+// approval rates can be compared per version (scripts/image-approval-report.sh).
+// Bump it whenever the prompt assembly changes; the shot-library rebuild will
+// be "shot-library-v1".
+const PROMPT_VERSION = 'layered-v1'
 
 function jsonResponse(body: unknown, status: number, cors: Record<string,string>) {
   return new Response(JSON.stringify(body), {

@@ -40,10 +40,14 @@ const CORS = {
 // window are deleted; newer ones are kept. keepDays:0 means delete everything
 // under that prefix. Conservative windows (chosen 2026-08-09) — err toward
 // keeping history since deletes against prod storage are irreversible.
-const TARGETS: Array<{ prefix: string; keepDays: number; keepAwaitingReview?: boolean }> = [
+const TARGETS: Array<{ prefix: string; keepDays: number; keepAwaitingReview?: boolean; keepReviewed?: boolean }> = [
   { prefix: "vertex-test", keepDays: 0  }, // pure test renders — no keepers
-  { prefix: "ig-test",     keepDays: 4  }, // pre-publish previews; published copy lives on IG
-  { prefix: "ig-overlay",  keepDays: 7  }, // story overlays; may be pending review a few days
+  // Pre-publish previews. Renders behind a post the owner PUBLISHED or REJECTED
+  // are kept forever: they are the image-pipeline golden set (owner verdicts on
+  // real outputs), and IG's copy can't be fetched back (Graph v23 media GET
+  // fails). About 2 files a day.
+  { prefix: "ig-test",     keepDays: 4, keepReviewed: true },
+  { prefix: "ig-overlay",  keepDays: 7, keepReviewed: true }, // story/carousel overlays; reviewed ones kept (golden set)
   { prefix: "banners",     keepDays: 14 }, // WP sideloads its own copy after publish
   // Product reels are ~2MB each and IG keeps its own copy once published, so the
   // Storage copy is only needed while a human is reviewing it in /reels. Anything
@@ -68,6 +72,29 @@ async function awaitingReviewPaths(headers: HeadersInit): Promise<Set<string>> {
     const rd = row?.result_data ?? {};
     const reviewed = rd.published_via_ui_at || rd.rejected_via_ui_at;
     if (rd.review_required === true && !reviewed) keep.add(`ig-reels/reel_${row.id}.mp4`);
+  }
+  return keep;
+}
+
+// ig-test/ and ig-overlay/ renders behind an instagram_post the owner published or rejected.
+// Fail safe like awaitingReviewPaths: an unreadable list throws, so this run
+// deletes nothing rather than possibly deleting a golden image.
+async function reviewedIgPaths(headers: HeadersInit): Promise<Set<string>> {
+  const keep = new Set<string>();
+  const res = await fetch(
+    `${URL}/rest/v1/seo_tasks?task_type=eq.instagram_post&or=(result_data->>ig_media_id.not.is.null,result_data->>rejected_via_ui_at.not.is.null,result_data->>published_via_ui_at.not.is.null)&select=result_data`,
+    { headers },
+  );
+  if (!res.ok) throw new Error(`reviewed IG lookup failed: ${res.status} ${await res.text()}`);
+  const marker = `/object/public/${BUCKET}/`;
+  for (const row of await res.json()) {
+    const rd = row?.result_data ?? {};
+    const urls = [rd.image_url, ...(Array.isArray(rd.carousel_children) ? rd.carousel_children : [])]
+    for (const u of urls) {
+      if (typeof u !== "string") continue;
+      const i = u.indexOf(marker);
+      if (i >= 0) keep.add(decodeURIComponent(u.slice(i + marker.length).split("?")[0]));
+    }
   }
   return keep;
 }
@@ -157,12 +184,14 @@ serve(async (req) => {
   const toDelete: StorageObject[] = [];
   try {
     const protectedPaths = await awaitingReviewPaths(headers);
+    const reviewedPaths  = await reviewedIgPaths(headers);
 
     for (const t of TARGETS) {
       const all    = await listAll(headers, t.prefix);
       const cutoff = now - t.keepDays * 24 * 60 * 60 * 1000;
       const aged   = t.keepDays === 0 ? all : all.filter((o) => new Date(o.created).getTime() < cutoff);
-      const old    = t.keepAwaitingReview ? aged.filter((o) => !protectedPaths.has(o.path)) : aged;
+      const notAwaiting = t.keepAwaitingReview ? aged.filter((o) => !protectedPaths.has(o.path)) : aged;
+      const old    = t.keepReviewed ? notAwaiting.filter((o) => !reviewedPaths.has(o.path)) : notAwaiting;
       const bytes  = old.reduce((s, o) => s + o.size, 0);
       perPrefix.push({
         prefix:    t.prefix,
@@ -170,7 +199,8 @@ serve(async (req) => {
         total:     all.length,
         toDelete:  old.length,
         keeping:   all.length - old.length,
-        awaitingReview: t.keepAwaitingReview ? aged.length - old.length : undefined,
+        awaitingReview: t.keepAwaitingReview ? aged.length - notAwaiting.length : undefined,
+        reviewedKept:   t.keepReviewed ? notAwaiting.length - old.length : undefined,
         deleteMB:  +(bytes / 1048576).toFixed(1),
       });
       toDelete.push(...old);
