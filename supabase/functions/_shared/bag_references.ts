@@ -91,6 +91,25 @@ export const BAG_REFERENCES: Record<number, BagReference> = {
 // The lockup printed on every Minuto bag, checked even when a bag has no entry.
 export const BAG_LOCKUP_TEXT = ['MINUTO', 'Café Roastery']
 
+// Special editions that ship in an amber glass JAR with a black lid and a
+// white label, never in the white Minuto bag. Erez, 2026-10-25: Roastery
+// Brisas "comes in a jar as all of our special edition coffee comes, and we
+// need them to show in a jar". WooCommerce has no special-edition category,
+// so this list is the source of truth. Each entry's store image is a photo of
+// its jar, checked 2026-10-25. Add a new special edition here when it lists.
+export const JAR_PRODUCTS: ReadonlySet<number> = new Set([
+  82540,  // Aji Bourbon Anaerobic - Roastery Brisas
+  80501,  // Sweet Leona (Colombia, Luz Helena)
+  80779,  // Tropical Honey (Colombia, La Pradera), out of stock
+  82471,  // Tropical Honey (Colombia, La Pradera), relisted
+  64690,  // Tolima Peaks (black jar), out of stock
+  64704,  // Benesa Desita (Ethiopia, natural)
+])
+
+export function isJarProduct(wooId: number | null | undefined): boolean {
+  return typeof wooId === 'number' && JAR_PRODUCTS.has(wooId)
+}
+
 export function bagReferenceFor(wooId: number | null | undefined): BagReference | null {
   return typeof wooId === 'number' ? BAG_REFERENCES[wooId] ?? null : null
 }

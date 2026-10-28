@@ -73,3 +73,26 @@ export async function attachFeaturedImage(args: {
   }
   return mediaId
 }
+
+// A post's WordPress status ('draft', 'pending', 'publish', 'future', ...).
+// context=edit needs the same Application Password, and is the only context
+// that returns non-public posts at all.
+export async function fetchPostStatus(args: {
+  wpUrl:        string
+  username:     string
+  appPassword:  string
+  postId:       number
+}): Promise<string> {
+  const auth = 'Basic ' + btoa(`${args.username}:${args.appPassword}`)
+  const res = await fetch(
+    `${args.wpUrl}/wp-json/wp/v2/posts/${encodeURIComponent(String(args.postId))}?context=edit&_fields=status`,
+    { headers: { Authorization: auth } },
+  )
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`WP post status ${res.status}: ${errText.slice(0, 300)}`)
+  }
+  const json = await res.json() as { status?: unknown }
+  if (typeof json.status !== 'string') throw new Error(`WP post returned no status: ${JSON.stringify(json).slice(0, 200)}`)
+  return json.status
+}

@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
-import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
+import { bagReferenceFor, isJarProduct, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   ASPECT_TO_RATIO,
@@ -176,7 +176,8 @@ RULES:
 5. AEROPRESS ON THE CUP. An AeroPress is supported only by the cup it brews into: its base flange RESTS DIRECTLY ON THE CUP RIM, physically touching it — never floating above the cup with a gap or a stream falling through open air.
 6. HANDS ONLY FOR AN ACTION. No people, faces or bodies. Keep or add ONE natural hand (or a pair) only when the brief asks for a person, hand or barista, or when the scene shows a tool being actively used: a kettle pouring, a pitcher pouring milk, tamping, cranking a hand grinder, pressing an AeroPress. The hand belongs to a person standing just out of frame and holds the tool properly (a pouring kettle by its handle; a hand grinder's body gripped in one hand while the other turns the crank). If the brief shows the action but no hand, either add that hand or rewrite the scene as the moment just after the action with the tool set down, never a tool floating or pouring on its own. Otherwise no hands. No spoons, scoops, paddles or stirring tools anywhere.
 7. ESPRESSO ON THE MACHINE. Espresso pouring from a portafilter is only ever under the espresso machine: the portafilter locked into the group head, the cup on the machine's stainless drip-tray grate. If the brief puts a shot being pulled onto a table, counter or wooden surface, move the cup onto the drip tray and keep the brief's surface only as the counter around the machine. A finished espresso with no pour may stand anywhere.
-8. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+8. SEALED BAG. A Minuto coffee bag is always CLOSED and SEALED: standing upright or lying flat, top folded or zipped shut. Never an open bag, a bag with its mouth open, a torn bag, or beans spilling or pouring out of a bag. Beans may sit loose BESIDE or IN FRONT OF the closed bag. Rewrite any open or spilling bag this way.
+9. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
 Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
 
@@ -300,7 +301,7 @@ serve(async (req) => {
     // Rewrite BEFORE any routing regex reads the brief, so reference picks
     // (roaster / machine / style) see the corrected scene too.
     const rewrite = body.skip_rewrite ? { brief: originalBrief, changes: [] as string[] } : await rewriteBrief(originalBrief)
-    const sceneBrief = rewrite.brief
+    let sceneBrief = rewrite.brief
     console.log(`[visual-test] brief rewrite: ${rewrite.error ? `FAILED (${rewrite.error}) — using original` : rewrite.changes.length ? `changed — ${rewrite.changes.join('; ')}` : 'no changes'}`)
     const aspect    = body.aspect ?? 'feed_square'
     // Resolve the ratio LOUDLY. Callers pass `aspect` as a plain string at
@@ -425,6 +426,10 @@ serve(async (req) => {
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
     let bagWooId:   number | null = null
+    // Special editions come in an amber glass jar, not the white bag
+    // (_shared/bag_references.ts JAR_PRODUCTS). The reference image is then a
+    // jar photo, and every "bag" in this prompt means that jar.
+    let isJar = false
     if (useReference) {
       // Resolve which specific bag image to use. Random pool fallback was
       // removed 2026-05-16 — caller MUST pass one of reference_image_url,
@@ -479,6 +484,16 @@ serve(async (req) => {
       // replace the store image; every other bag renders exactly as before.
       // A direct reference_image_url is the caller's explicit choice and wins.
       realBag = bagSource === 'reference_image_url' ? null : bagReferenceFor(bagWooId)
+      isJar = isJarProduct(bagWooId)
+      if (isJar) {
+        realBag = null
+        // The brief usually says "bag" (the strategist assumes one). Left in,
+        // the model draws a bag and pastes the jar label on it, as it did for
+        // Roastery Brisas on 2026-10-21.
+        sceneBrief = sceneBrief
+          .replace(/\b(?:coffee |minuto |branded |retail )*(?:bag|pouch|packet|package)(s?)\b/gi, (_m, plural) => `Minuto glass jar${plural}`)
+        console.log(`[visual-test] woo_id=${bagWooId} is a special edition — rendering its JAR, brief now: ${sceneBrief.slice(0, 160)}`)
+      }
       if (realBag) {
         console.log(`[visual-test] real bag photos for woo_id=${bagWooId} replace the store image ${bagUrl}`)
         bagUrl = storagePublicUrl(SUPABASE_URL, realBag.front)
@@ -595,12 +610,18 @@ serve(async (req) => {
     // the actual Minuto aesthetic. Beans and machine come after as
     // color/detail anchors when relevant.
     const refDescriptions: string[] = []
-    if (bagRef) {
+    if (bagRef && isJar) {
+      refDescriptions.push(`reference image — the MINUTO SPECIAL-EDITION JAR. This product ships in an amber glass JAR with a black screw lid and a white wrap-around label, exactly as in this attached image. It IS the jar to render: copy its glass colour, lid, proportions and label faithfully. It is NOT a bag: never render a bag, pouch, packet or box for it, and never move its label onto a bag.
+${bagDownplayed
+  ? '\nThe SCENE brief downplays the product — keep the jar minor or omit it entirely.'
+  : '\nThe jar is the HERO subject of the photograph unless the brief specifies an equipment-led scene.'}
+Hard constraints: the jar is CLOSED with its black lid on; beans may sit beside it. No invented label artwork, no added date stamps or batch numbers, no colour changes.`)
+    } else if (bagRef) {
       refDescriptions.push(`reference image — the MINUTO BAG. The bag in this attached image IS the bag to render. Treat it as the source of truth: look at the image and copy it faithfully — do NOT redesign, recolor, restyle, or re-imagine it based on prompt text. The reference is the authority, the prompt is just context.
 ${bagDownplayed
   ? '\nThe SCENE brief downplays the bag — keep it minor or omit it entirely.'
   : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene.'}
-Hard constraints (just in case the model is tempted to deviate): no invented label artwork, no added date stamps or batch numbers on the bag, no color changes.`)
+Hard constraints (just in case the model is tempted to deviate): the bag is CLOSED and SEALED, never open or spilling beans; no invented label artwork, no added date stamps or batch numbers on the bag, no color changes.`)
     }
     for (const _ of bagViews) {
       refDescriptions.push(`reference image — the SAME MINUTO BAG from another angle. Use it for the bag's 3D shape only: its flat box bottom, side gussets, depth and how the front label sits on the bag. It is the same physical bag as the FIRST image; render ONE bag, never a second one. The FIRST image stays the authority for the label artwork and text.`)
@@ -611,7 +632,7 @@ Hard constraints (just in case the model is tempted to deviate): no invented lab
    ✓ Light direction, color temperature, and shadow quality
    ✓ Cup shape, prop styling, and arrangement language
    ✓ Overall photographic mood
-DO NOT copy this image's composition — only the visual language. The bag from the FIRST reference image is still the main subject; this STYLE ANCHOR informs the supporting elements.`)
+DO NOT copy this image's composition — only the visual language. The ${isJar ? 'jar' : 'bag'} from the FIRST reference image is still the main subject; this STYLE ANCHOR informs the supporting elements.`)
     }
     if (beansRef) {
       refDescriptions.push(`reference image — BEAN COLOR ANCHOR. Real photo of Minuto's roasted beans showing their true color. Use this AS A COLOR ANCHOR ONLY (do not copy the composition). When you render any roasted coffee beans in the output, MATCH THE COLOR: medium chestnut brown with subtle warm/auburn undertones, matte finish.`)
@@ -636,21 +657,21 @@ DO NOT copy this image's composition — only the visual language. The bag from 
     const fullPrompt = `${identityFor(scene)}
 
 🎯 PRIMARY DIRECTIVE
-${bagRef ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).` : `Create a high-resolution, photorealistic editorial photograph at ${ratio} aspect ratio of exactly what the SCENE BRIEF describes. There is NO coffee bag in this image — do not add one. Any attached reference images are equipment references, not a bag.`}
+${bagRef && isJar ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto special-edition coffee JAR from the FIRST attached reference image as the hero subject: an amber glass jar with a black lid and a white label, closed. There is NO coffee bag in this image: wherever this prompt or the brief says "bag", it means this jar.` : bagRef ? `Create a high-resolution, photorealistic lifestyle product photograph at ${ratio} aspect ratio, featuring the Minuto coffee bag from the FIRST attached reference image as the hero subject. The bag in the output must be identifiable as the same specific Minuto product (same color, same label artwork, same proportions, same wordmark placement).` : `Create a high-resolution, photorealistic editorial photograph at ${ratio} aspect ratio of exactly what the SCENE BRIEF describes. There is NO coffee bag in this image — do not add one. Any attached reference images are equipment references, not a bag.`}
 ${bagRef ? `
-🔤 LABEL TEXT — render the LARGE elements sharp and faithful: the "Minuto" brand wordmark, the stag-head emblem, and the product name exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
+🔤 LABEL TEXT — render the LARGE elements sharp and faithful: ${isJar ? 'the product name on the jar label' : 'the "Minuto" brand wordmark, the stag-head emblem, and the product name'} exactly as in the reference. The SMALL fine-print / descriptor lines below the product name are TOO SMALL to reproduce legibly — render them as a soft, naturally out-of-focus suggestion of text (shallow depth of field falling off across the lower label), NEVER as sharp characters. Do NOT invent, scramble, or hallucinate sharp lettering there: soft indistinct fine print reads as real photography; sharp gibberish glyphs (especially Hebrew) do not. When in doubt, let the fine print dissolve into focus blur rather than spelling out fake words.
 ` : ''}
 SCENE BRIEF — interpret this as the structured elements below:
 ${sceneBrief}
 
 INTERPRET THE BRIEF AS A STRUCTURED PHOTOGRAPH:
 
-• MAIN SUBJECT — ${bagRef ? 'the Minuto bag (FIRST reference image)' : 'the subject the SCENE BRIEF names'}, positioned ${!bagRef && !forbidsProps ? 'as the SCENE BRIEF frames it; otherwise in the lower-right or upper-right third' : forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
+• MAIN SUBJECT — ${bagRef ? (isJar ? 'the Minuto special-edition glass jar, lid on (FIRST reference image)' : 'the Minuto bag, closed and sealed (FIRST reference image)') : 'the subject the SCENE BRIEF names'}, positioned ${!bagRef && !forbidsProps ? 'as the SCENE BRIEF frames it; otherwise in the lower-right or upper-right third' : forbidsProps ? 'exactly as the SCENE BRIEF specifies — centered and filling the frame if the brief asks for that' : 'per the brief or per the Minuto identity composition rules (lower-right or upper-right third, never centered)'}.
 • SUPPORTING PROPS — ${forbidsProps ? 'NONE beyond what the SCENE BRIEF explicitly names. Do NOT add cups, beans, glassware, brewing gear, hands, or any decorative element the brief did not ask for. If the brief says the subject stands alone, render it alone on an empty surface.' : 'cups, beans, brewing equipment, hands, milk pitchers, etc. as the brief describes. Where a STYLE ANCHOR reference is included, match its visual language for prop styling.'}
 • LIGHTING & SHADOWS — as the SCENE BRIEF describes it, if it does. Otherwise ONE warm directional light from upper-right of frame. Hard, contrasty side-shadows fall diagonally toward lower-left. Deep shadow occupies a meaningful part of the frame.
 • SURFACE — ${forbidsProps ? 'use the surface described in the SCENE BRIEF exactly as written (e.g. a seamless white studio sweep). Do NOT substitute a different material.' : `**${surface.description}**. Uniform across the entire frame. THIS SURFACE IS AUTHORITATIVE — it overrides any surface mentioned in the SCENE BRIEF above. The bag, cups, beans, and all props rest on THIS specific surface, nothing else.${espressoSceneRegex ? ' EXCEPTION — ESPRESSO: a cup being filled from a portafilter stands on the espresso machine\'s stainless DRIP-TRAY GRATE directly under the spouts, never on this surface or any table (an espresso machine cannot pour onto a table). This surface is only the counter around the machine.' : ''}${roasterRef ? ' EXCEPTION — THE ROASTER: this surface is only for small tabletop props (bag, cups, beans). The roaster is NOT a prop: it stands on the roastery FLOOR, never on this surface. If both appear, the surface is a counter or workbench in front of / beside the floor-standing roaster.' : ''}`}
 • ATMOSPHERE — tranquil, considered, photo-essay feel. Earth-tone palette only (deep brown, raw concrete grey, dusty olive, cream, tan, warm amber, charcoal). Slight Kodak Portra 400 film grain.
-• FOCUS — ${bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
+• FOCUS — ${bagRef && isJar ? "the Minuto jar is dominant; the product name on its label is the SHARP focal point while the small fine print falls into gentle shallow-DoF softness" : bagRef ? "the Minuto bag is dominant; its wordmark, emblem, and product name are the SHARP focal point while the small fine-print descriptor lines fall into gentle shallow-DoF softness" : 'the brief\'s subject is the sharp focal point'}; supporting props secondary; background softly out of focus.
 • COMPOSITION — ${forbidsProps ? 'follow the SCENE BRIEF. A centered, symmetric studio composition is correct when the brief asks for it. Keep generous negative space around the subject.' : 'the framing the SCENE BRIEF asks for (close-up, top-down, eye-level…); otherwise asymmetric, anchored in the lower-right or upper-right third, at least 30% intentional negative space.'}${referencesBlock}
 
 FORMAT: ${ratio} aspect ratio, photorealistic, high resolution.
@@ -666,7 +687,15 @@ unless the brief explicitly calls for a hand holding something. If the
 brief says "no props", "no other props", or "nothing else on the
 surface", then render ONLY the bag on the named surface: empty surface,
 nothing else in frame. Extra invented props are an automatic reject.
-
+${bagRef ? (isJar ? `
+🫙 JAR, NOT BAG: this product is a special edition sold ONLY in the
+amber glass jar from the FIRST reference image. Render that jar, lid
+closed. Never a bag, pouch or packet, whatever the brief calls it.
+` : `
+🔒 SEALED BAG: the Minuto bag is CLOSED and SEALED, top shut, standing
+or lying intact. Never open, torn, tipped over, or with beans spilling
+or pouring out of it. Loose beans may only sit beside or in front of it.
+`) : ''}
 🔒 SUBJECT-LOCK: when the SCENE brief names specific equipment — steam
 wand, portafilter, espresso machine group head, thermometer, milk
 pitcher (with or without thermometer probe), digital scale, measuring
@@ -935,6 +964,9 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       // prints; seo-worker-visual spell-checks the rendered label against it.
       bag_reference: realBag ? { woo_id: bagWooId, views: bagViews.length } : null,
       bag_label_text: realBag?.label_text ?? null,
+      // 'jar' for special editions (JAR_PRODUCTS); seo-worker-visual's critic
+      // then fails any bag and skips the bag-lockup spell check.
+      product_container: bagInScene ? (isJar ? 'jar' : 'bag') : null,
     }, 200, corsHeaders)
 
   } catch (err: any) {

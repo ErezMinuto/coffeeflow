@@ -1078,7 +1078,7 @@ function buildBannerBrief(textBrief: Record<string, unknown>): Record<string, un
     return {
       scene_brief:
         `Editorial product banner for a Minuto specialty-coffee blog article about "${topic}". ` +
-        `A single Minuto coffee bag is the hero, standing upright and in sharp focus on a warm natural surface (pale wood or stone). ` +
+        `A single Minuto coffee bag is the hero, closed and sealed, standing upright and in sharp focus on a warm natural surface (pale wood or stone). ` +
         `Soft daylight rakes from one side, shallow depth of field, a few scattered light-cinnamon roasted beans, minimal uncluttered props. ` +
         `Premium, calm, magazine-quality still life with generous negative space. No text, no logos other than what is on the bag.`,
       aspect:      'feed_square',
