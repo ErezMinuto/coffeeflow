@@ -23,6 +23,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
+import { applyPlannedShot } from '../_shared/shot_library.ts'
 import {
   callClaude,
   parseClaudeJson,
@@ -956,6 +957,31 @@ async function executeTool(
         if (task_type === 'instagram_post' && !parent_task_id) {
           return { ok: false, payload: { error: 'instagram_post requires parent_task_id (the visual_generation task whose image will be posted). Pass parent_task_id when calling queue_task.' } }
         }
+        // CAPTION FIRST, THEN A SHOT (docs/image-pipeline/plan.md, owner
+        // 2026-10-28). An IG visual carries the caption it is for and a shot
+        // from the menu; carousels keep their slides. Flag off: the pick is
+        // kept as planned_shot and the legacy renderer draws scene_brief.
+        let shotNote: string | undefined
+        if (task_type === 'visual_generation' &&
+            String(brief_data.destination ?? '').toLowerCase() === 'ig_post' &&
+            !(Array.isArray(brief_data.slides) && brief_data.slides.length > 0)) {
+          const caption = typeof brief_data.caption_he === 'string' ? brief_data.caption_he.trim() : ''
+          const shot    = typeof brief_data.shot_type === 'string' ? brief_data.shot_type.trim() : ''
+          if (!caption || !shot) {
+            return { ok: false, payload: { error: 'An Instagram visual needs caption_he (the Hebrew caption, written FIRST) and then shot_type + shot_slots from the SHOT MENU in your instructions. Write the caption, pick the shot for it, and queue again.' } }
+          }
+          const picked = applyPlannedShot(brief_data, { enabled: Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true' })
+          brief_data = picked.brief
+          shotNote = picked.note
+        }
+        // The post publishes the caption its visual was picked for unless it
+        // brings its own.
+        if (task_type === 'instagram_post' && parent_task_id &&
+            !(typeof brief_data.caption_he === 'string' && brief_data.caption_he.trim())) {
+          const { data: parentRow } = await supabase.from('seo_tasks').select('brief_data').eq('id', parent_task_id).maybeSingle()
+          const cap = (parentRow?.brief_data as Record<string, unknown> | null)?.caption_he
+          if (typeof cap === 'string' && cap.trim()) brief_data = { ...brief_data, caption_he: cap.trim() }
+        }
         const newTask: NewSeoTask = {
           task_type,
           brief_data: brief_data as AnyBrief,
@@ -977,7 +1003,7 @@ async function executeTool(
           const workerKey = TASK_TYPE_TO_WORKER[task_type]
           if (workerKey) nudge = await nudgeWorker(workerKey)
         }
-        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on, worker_nudged: nudge } }
+        return { ok: true, payload: { task_id: row?.id ?? null, status: row?.status ?? 'pending', parent_task_id, depends_on, worker_nudged: nudge, ...(shotNote ? { shot_note: shotNote } : {}) } }
       }
 
       case 'repoint_ig_to_visual': {

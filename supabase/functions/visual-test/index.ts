@@ -2,7 +2,11 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
-import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import {
+  REFERENCE_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  type ShotSlots, type ShotType,
+} from '../_shared/shot_library.ts'
 import {
   ASPECT_TO_RATIO,
   Aspect,
@@ -195,16 +199,19 @@ async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
   brief: string,
+  root = 'upload_images',
+  exclude: ReadonlySet<string> = new Set(),
 ): Promise<string[]> {
   try {
     // 1. Candidate files across the allowed folders.
     const paths: string[] = []
     for (const folder of folders) {
       const { data } = await supabase.storage.from('marketing')
-        .list(`upload_images/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
+        .list(`${root}/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
       for (const f of data ?? []) {
         if (!f.name || f.name.startsWith('.') || !/\.(jpe?g|png|webp)$/i.test(f.name)) continue
-        paths.push(`upload_images/${folder}/${f.name}`)
+        if (exclude.has(`${folder}/${f.name}`)) continue
+        paths.push(`${root}/${folder}/${f.name}`)
       }
     }
     if (paths.length === 0) return []
@@ -280,7 +287,215 @@ interface VisualTestRequest {
   real_photo?: boolean
   // Skip the pre-generation brief rewrite (rewriteBrief). Default: rewrite.
   skip_rewrite?: boolean
+  // SHOT LIBRARY (docs/image-pipeline/plan.md). When set, the render comes
+  // from _shared/shot_library.ts — a real-photo edit or a short positive
+  // still-life prompt — and scene_brief/preset/use_reference are ignored.
+  shot_type?: ShotType
+  shot_slots?: ShotSlots
+  // "<folder>/<file>" library photos used recently; real-photo shots skip
+  // them while other photos remain (seo-worker-visual passes the last 21 days).
+  exclude_photos?: string[]
 }
+
+
+// The real-photo EDIT prompt: what may change (crop, light, one small action)
+// and what may not (the equipment, people, text). Shared by the legacy path and
+// the shot library.
+function realPhotoEditPrompt(ratio: string, sceneBrief: string): string {
+  return `Edit the attached REAL photograph of Minuto's own coffee bar / roastery into a ${ratio} photograph for Instagram.
+
+THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machine, group heads, portafilters, steam wands, grinders, roaster, cups, counter, and people keep the same shapes, parts, positions and colours. Do NOT redraw, restyle, replace, add or remove any equipment. Do not change the machine's colours. Existing real signage, menu boards, badges and logos stay as they are — do not add new text or logos, and never re-letter, sharpen or "clean up" existing small text (badges, labels, gauges): keep it exactly as in the photo, or let it fall softly out of focus. Misspelled text is the #1 tell of an edited photo. If you cannot keep a piece of existing text letter-perfect, blur it instead. Never add a badge, label or printed text that is not in the photo.
+
+Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
+
+WHAT YOU MAY DO:
+• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT, SAME UPRIGHT ORIENTATION: the result must look like a crop of this exact photo, not a new photo of the same place. Never rotate or tilt the photo to fill the new frame; crop it. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
+• Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
+• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
+• Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
+• ORDER TICKETS / RECEIPTS (the paper slips hanging under the drip tray) show customers' names: crop them out of the frame, or if that is impossible, blur them until no text is readable. Never leave them sharp.
+• THE "LA MARZOCCO" WORDMARK (the drip tray's front plate, and the red logo on the white cups): leave it EXACTLY as photographed only if that part of the photo is left untouched. If your edit would redraw, relight or extend that area, crop it out of the frame or blur it until no letters can be read — never re-letter it, and never add it where the photo does not show it.
+
+SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
+${sceneBrief}`
+}
+
+// Is an edit still the SAME real scene? Answered by the caption model with
+// the source photo and the edit attached.
+const SAME_SCENE_PROMPT = `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
+Is image 2 still clearly the SAME scene? Answer false if ANY of: image 2 is rotated or tilted compared with image 1 (e.g. turned 90° to fill a vertical frame); the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
+Reply as JSON {"same": true|false, "why": "one short sentence"}.`
+
+// One image call to gemini-3.1-flash-image-preview with the aspect ratio set
+// in imageConfig (the hard contract; prompt text is only a suggestion).
+async function callGeminiImage(useParts: any[], ratio: string): Promise<{ b64: string; mime: string }> {
+  const genRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent`,
+    {
+      method: 'POST',
+      // Key in a header, never the URL: a URL leaks into logs, retries and
+      // error output (CLAUDE.md credentials rule; QA review 2026-10-28).
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
+      body: JSON.stringify({
+        contents: [{ parts: useParts }],
+        generationConfig: {
+          responseModalities: ['IMAGE', 'TEXT'],
+          // HARD aspect-ratio control. The FORMAT line in the prompt is
+          // only a suggestion — Gemini routinely ignores prose framing
+          // instructions and returns its own default shape. imageConfig
+          // is the contract, and it is what keeps a 'story' render at
+          // 9:16 instead of whatever the model felt like.
+          imageConfig: { aspectRatio: ratio },
+        },
+      }),
+    },
+  )
+  if (!genRes.ok) {
+    const errText = await genRes.text().catch(() => '')
+    throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
+  }
+  const genJson = await genRes.json()
+  for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.mimeType?.startsWith('image/')) {
+      return { b64: part.inlineData.data as string, mime: part.inlineData.mimeType as string }
+    }
+  }
+  throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
+}
+
+// ── SHOT LIBRARY RENDER ────────────────────────────────────────────────────
+// docs/image-pipeline/plan.md. Instagram images come from a fixed menu of
+// shots (_shared/shot_library.ts) instead of free-form scenes:
+//   real_photo → edit one of Minuto's own photos (crop, relight, at most a
+//                small action), verified to still be the same scene.
+//   generated  → a short positive still-life prompt + ONE real reference photo.
+// No brief rewrite, no surface override, no forbidden lists, no bag
+// generation. A real-photo shot with no edit passing the same-scene check
+// FAILS (so the worker can flag it) rather than falling back to generation.
+async function randomLibraryPhotos(
+  supabase: ReturnType<typeof createClient>, folders: string[], n: number,
+  root = 'upload_images', exclude: ReadonlySet<string> = new Set(),
+): Promise<string[]> {
+  const urls: string[] = []
+  for (const folder of folders) {
+    const { data } = await supabase.storage.from('marketing')
+      .list(`${root}/${folder}`, { limit: 200 })
+    for (const f of data ?? []) {
+      if (f.name && !f.name.startsWith('.') && /\.(jpe?g|png|webp)$/i.test(f.name) && !exclude.has(`${folder}/${f.name}`)) {
+        urls.push(`${SUPABASE_URL}/storage/v1/object/public/marketing/${root}/${folder}/${f.name}`)
+      }
+    }
+  }
+  return urls.sort(() => Math.random() - 0.5).slice(0, n)
+}
+
+async function renderShot(body: VisualTestRequest, cors: Record<string, string>): Promise<Response> {
+  const shot  = SHOTS[body.shot_type as ShotType]
+  const slots: ShotSlots = { ...(body.shot_slots ?? {}) }
+  slots.product_name = slots.product_name ?? body.product_name
+  if (!shot.enabled) throw new Error(`shot "${shot.id}" is not enabled yet`)
+  if (shot.needs_product && !slots.product_name) throw new Error(`shot "${shot.id}" needs shot_slots.product_name`)
+  const aspect = body.aspect ?? 'story'
+  const ratio: string = ASPECT_TO_RATIO[aspect] ?? '9:16'
+  // Cast: the helpers' parameter type and createClient's return type disagree
+  // on supabase-js generics (the same 3 pre-existing errors in this file).
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE) as unknown as ReturnType<typeof createClient>
+  const libUrl = (path: string) => `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${path}`
+
+  let gen: { b64: string; mime: string } | null = null
+  let sentPrompt = ''
+  let sourcePhoto: string | null = null
+  let referencePhoto: string | null = null
+  const checks: Array<{ photo: string; same: boolean; why: string }> = []
+
+  if (shot.source === 'real_photo') {
+    // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
+    // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
+    // into upload_images_ready/<ratio>/. No image model touches it — an edit
+    // pass rotated, re-staged or added hands to real photos in testing.
+    const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
+    const exclude = new Set(body.exclude_photos ?? [])
+    const brief = shotEditBrief(shot, slots)
+    let pick: string | undefined
+    if (shot.needs_product) {
+      // The product's own bag photos (bag_scenes/<slug>_*.jpg), chosen by
+      // file name, rotating away from recently used ones; then the product's
+      // studio packshot. A bag_with_drink shot needs a real scene photo (the
+      // packshot has no drink), so it degrades to the packshot as a bag_hero.
+      const { data: scenes } = await supabase.storage.from('marketing').list(`${readyRoot}/bag_scenes`, { limit: 500 })
+      const mine = (scenes ?? []).map(f => f.name).filter(n => n && isBagSceneOf(n, slots.product_name))
+      const fresh = mine.filter(n => !exclude.has(`bag_scenes/${n}`))
+      const choice = (fresh.length ? fresh : mine).sort(() => Math.random() - 0.5)[0]
+      if (choice) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/bag_scenes/${choice}`
+      const pack = packshotFor(slots.product_name)
+      if (!pick && pack) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/${pack.replace(/\.[a-z]+$/i, '.jpg')}`
+      if (!pick) throw new Error(`no prepared photo or packshot for product "${slots.product_name}"`)
+    } else {
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, brief, readyRoot, exclude))[0]
+        // Every photo in the shot's folders is on-topic by construction.
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, exclude))[0]
+        // All used recently: allow a repeat rather than fail.
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot))[0]
+    }
+    if (!pick) {
+      return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
+    }
+    const res = await fetch(pick)
+    if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
+    gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
+    sourcePhoto = pick
+    sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
+  } else {
+    sentPrompt = shotGeneratePrompt(shot, slots, ratio)
+    // Match the reference on the subject (and the roaster's moment) alone.
+    // Matching on the whole scene prompt picked the moka-pot photo for "a
+    // pour-over dripper", and the model then printed "Bialetti" on it.
+    const subject = referenceSubject(shot, slots)
+    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', REFERENCE_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', REFERENCE_EXCLUDE))[0] ?? null
+    const parts: any[] = []
+    if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
+    parts.push({ text: sentPrompt })
+    // One retry when the model answers with text instead of an image, or with
+    // the wrong shape.
+    try { gen = await callGeminiImage(parts, ratio) } catch { gen = await callGeminiImage(parts, ratio) }
+    if (!matchesRatio(readImageSize(decodeBase64(gen.b64)), ratio)) gen = await callGeminiImage(parts, ratio)
+  }
+
+  const bytes = decodeBase64(gen.b64)
+  const dims  = readImageSize(bytes)
+  const ext   = gen.mime.includes('jpeg') ? 'jpg' : 'png'
+  const filename = `ig-test/shot_${shot.id}_${aspect}_${Date.now()}.${ext}`
+  const { error: upErr } = await supabase.storage.from('marketing').upload(filename, bytes, { contentType: gen.mime, upsert: true })
+  if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+  const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
+  const promptDoc = [
+    `IMAGE: ${pub.publicUrl}`,
+    `PROMPT VERSION: ${SHOT_PROMPT_VERSION}`,
+    `SHOT: ${shot.id} ${JSON.stringify(slots)}`,
+    `MODEL: ${sourcePhoto ? `none: real photo ${sourcePhoto}` : `gemini-3.1-flash-image-preview generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`}`,
+    ``, `── PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
+  ].join('\n')
+  return jsonResponse({
+    success: true,
+    prompt_version: SHOT_PROMPT_VERSION,
+    prompt_doc: promptDoc,
+    shot_type: shot.id,
+    shot_slots: slots,
+    url: pub.publicUrl,
+    aspect, ratio,
+    width: dims?.w ?? null, height: dims?.h ?? null,
+    aspect_ok: matchesRatio(dims, ratio),
+    bytes: bytes.length,
+    real_photo: sourcePhoto,
+    real_photo_checks: checks,
+    reference_photo: referencePhoto,
+    used_reference: shot.needs_product,
+    scene_brief: sourcePhoto ? shotEditBrief(shot, slots) : sentPrompt,
+  }, 200, cors)
+}
+
+const SHOT_PROMPT_VERSION = 'shot-library-v1'
 
 serve(async (req) => {
   const corsHeaders = {
@@ -293,6 +508,10 @@ serve(async (req) => {
 
   try {
     const body = await req.json() as VisualTestRequest
+    if (body.shot_type !== undefined) {
+      if (!isShotType(body.shot_type)) throw new Error(`unknown shot_type "${body.shot_type}"`)
+      return await renderShot(body, corsHeaders)
+    }
     const originalBrief = body.scene_brief ?? (body.preset ? SCENE_PRESETS[body.preset] : null)
     if (!originalBrief) {
       throw new Error(`provide either 'scene_brief' or 'preset' (one of: ${Object.keys(SCENE_PRESETS).join(', ')})`)
@@ -738,22 +957,7 @@ text is inspiration; these are mandatory.`
     //    Gemini matches the ordinal labels to the right images.
     // Real-photo mode replaces the whole generation prompt with an EDIT
     // instruction on the one real photo.
-    const realPhotoPrompt = `Edit the attached REAL photograph of Minuto's own coffee bar / roastery into a ${ratio} photograph for Instagram.
-
-THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machine, group heads, portafilters, steam wands, grinders, roaster, cups, counter, and people keep the same shapes, parts, positions and colours. Do NOT redraw, restyle, replace, add or remove any equipment. Do not change the machine's colours. Existing real signage, menu boards, badges and logos stay as they are — do not add new text or logos, and never re-letter, sharpen or "clean up" existing small text (badges, labels, gauges): keep it exactly as in the photo, or let it fall softly out of focus. Misspelled text is the #1 tell of an edited photo. If you cannot keep a piece of existing text letter-perfect, blur it instead. Never add a badge, label or printed text that is not in the photo.
-
-Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
-
-WHAT YOU MAY DO:
-• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT: the result must look like a crop of this exact photo, not a new photo of the same place. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
-• Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
-• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
-• Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
-• ORDER TICKETS / RECEIPTS (the paper slips hanging under the drip tray) show customers' names: crop them out of the frame, or if that is impossible, blur them until no text is readable. Never leave them sharp.
-• THE "LA MARZOCCO" WORDMARK (the drip tray's front plate, and the red logo on the white cups): leave it EXACTLY as photographed only if that part of the photo is left untouched. If your edit would redraw, relight or extend that area, crop it out of the frame or blur it until no letters can be read — never re-letter it, and never add it where the photo does not show it.
-
-SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
-${sceneBrief}`
+    const realPhotoPrompt = realPhotoEditPrompt(ratio, sceneBrief)
     const parts: any[] = []
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
     for (const v of bagViews) parts.push({ inlineData: { mimeType: v.mime, data: v.data } })
@@ -763,38 +967,7 @@ ${sceneBrief}`
     if (roasterRef) parts.push({ fileData: { mimeType: roasterRef.mime, fileUri: roasterRef.uri } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
-    async function callGemini(useParts: any[] = parts): Promise<{ b64: string; mime: string }> {
-      const genRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: useParts }],
-            generationConfig: {
-              responseModalities: ['IMAGE', 'TEXT'],
-              // HARD aspect-ratio control. The FORMAT line in the prompt is
-              // only a suggestion — Gemini routinely ignores prose framing
-              // instructions and returns its own default shape. imageConfig
-              // is the contract, and it is what keeps a 'story' render at
-              // 9:16 instead of whatever the model felt like.
-              imageConfig: { aspectRatio: ratio },
-            },
-          }),
-        },
-      )
-      if (!genRes.ok) {
-        const errText = await genRes.text().catch(() => '')
-        throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
-      }
-      const genJson = await genRes.json()
-      for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
-        if (part.inlineData?.mimeType?.startsWith('image/')) {
-          return { b64: part.inlineData.data as string, mime: part.inlineData.mimeType as string }
-        }
-      }
-      throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
-    }
+    const callGemini = (useParts: any[] = parts) => callGeminiImage(useParts, ratio)
 
     // std decoder — the old Uint8Array.from(atob(...), cb) ran a JS callback
     // per byte, which adds up to real CPU time once real-photo mode makes
@@ -824,9 +997,7 @@ ${sceneBrief}`
         const verdict = await geminiJson([
           { fileData: { mimeType: mimeOf(url), fileUri: url } },
           { inlineData: { mimeType: edit.mime, data: edit.b64 } },
-          { text: `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
-Is image 2 still clearly the SAME scene? Answer false if ANY of: the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
-Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
+          { text: SAME_SCENE_PROMPT },
         ])
         const same = verdict?.same === true
         realPhotoChecks.push({ photo: url, same, why: String(verdict?.why ?? '') })
