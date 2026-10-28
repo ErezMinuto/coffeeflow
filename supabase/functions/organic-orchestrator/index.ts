@@ -22,6 +22,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { acquireLease, releaseLease } from '../_shared/job_lease.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
+import { applyPlannedShot } from '../_shared/shot_library.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
 import {
   createSupabase,
@@ -603,6 +604,33 @@ serve(async (req: Request): Promise<Response> => {
     //
     // Converting in place rather than removing keeps parent_task_index /
     // depends_on_index valid, same reasoning as the cannibalization gate.
+    // ── 5a. CAPTION FIRST, THEN A SHOT (docs/image-pipeline/plan.md) ────
+    // An IG visual and its instagram_post share one caption: the visual
+    // carries the caption its shot was picked for, the post publishes it.
+    // Whichever side the strategist wrote it on is copied to the other. The
+    // shot pick is validated here, before the story-lock guard reads the
+    // scene_brief it fills in. Flag off: the pick is kept as planned_shot.
+    phase = 'shot_pick'
+    const shotLibraryOn = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
+    emittedTasks.forEach((et, idx) => {
+      if (et.task_type !== 'visual_generation') return
+      const brief = (et.brief_data ?? {}) as Record<string, unknown>
+      if (String(brief.destination ?? '').toLowerCase() !== 'ig_post') return
+      if (Array.isArray(brief.slides) && brief.slides.length > 0) return
+      const post = emittedTasks.find(t => t.task_type === 'instagram_post' && t.parent_task_index === idx)
+      const postBrief = (post?.brief_data ?? null) as Record<string, unknown> | null
+      const postCaption = typeof postBrief?.caption_he === 'string' ? postBrief.caption_he : undefined
+      const picked = applyPlannedShot(brief, { enabled: shotLibraryOn, caption: postCaption })
+      et.brief_data = picked.brief
+      if (picked.note) {
+        et.rationale = `${et.rationale ?? ''}\n[shot] ${picked.note}`.trim()
+        console.warn(`[organic-orchestrator] shot pick repaired: ${picked.note}`)
+      }
+      if (postBrief && !postCaption && typeof picked.brief.caption_he === 'string') {
+        postBrief.caption_he = picked.brief.caption_he
+      }
+    })
+
     phase = 'brand_guard'
     let brandScrubbed = 0
     let brandBlocked  = 0

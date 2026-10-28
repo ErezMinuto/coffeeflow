@@ -1,0 +1,12 @@
+# Real-photo library exclusions, read by scripts/image-library-prep.sh.
+# Format: <ratio or *>  <folder>/<original file name>   # reason
+# A listed photo is never prepared, and its prepared copy is removed, so the
+# shot library can never publish it. Originals in upload_images/ are untouched.
+
+*     machine/espresso_bar_2026-10-16_02.jpg   # readable order tickets (customer orders) under the drip tray
+*     machine/espresso_bar_2026-10-16_04.jpg   # readable order tickets
+*     machine/espresso_bar_2026-10-16_05.jpg   # readable order tickets
+*     roaster/IMG_5172.jpg                     # restroom door and sign behind the roaster (owner, 2026-10-28)
+*     roaster/IMG_5188.jpg                     # sack of GREEN coffee: never a featured subject (brand rule)
+9x16  brewing/IMG_5173.jpg                     # vertical crop cuts the dripper in half
+9x16  brewing/IMG_5184.jpg                     # vertical crop cuts the dripper off at the bottom

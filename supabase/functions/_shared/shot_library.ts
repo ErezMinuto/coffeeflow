@@ -1,0 +1,470 @@
+// ============================================================================
+// SHOT LIBRARY — the only scenes the Instagram image pipeline may render.
+// ============================================================================
+//
+// docs/image-pipeline/plan.md (approved 2026-10-28). Free-form scene briefs
+// asked the image model to invent pours, hands and contact it cannot draw
+// (floating V60, two left hands, a portafilter pouring onto a table) and
+// "concept" scenes that read as off brand (a leaf on a table, a bean dropped
+// into water). Each shot here is a scene the pipeline can make reliably:
+//
+//   • real_photo — a photo from Minuto's own library (marketing/upload_images/
+//     <folder>/), lightly EDITED: reframed, relit, at most a small action.
+//     Hands, machines, pours and the roaster are real, so their physics are.
+//   • generated  — a static still life (no hands, nothing pouring), rendered
+//     from ONE real reference photo and a short positive prompt (owner rule:
+//     ~50 words, no negative lists, no overrides).
+//
+// The bag is NEVER generated (owner decision: real bag photos only). Bag shots
+// use real photos of the bag (upload_images/bag_scenes/, from the owner's
+// shoot) or, until those exist, the product's studio packshot on its own
+// plain background.
+//
+// Pure module: no I/O, so planners, the renderer (visual-test) and the critic
+// (seo-worker-visual) share one definition. Tests: shot_library_test.ts.
+
+export type ShotType =
+  | 'bag_hero'
+  | 'bar_moment'
+  | 'roastery'
+  | 'brew_ritual'
+  | 'finished_drink'
+  | 'beans_closeup'
+  | 'bag_with_drink'
+
+export interface ShotSlots {
+  // Required for bag shots: the WooCommerce product (Hebrew or English name).
+  product_name?: string
+  // Which moment of the shot, from the shot's `moments` list.
+  moment?: string
+  // finished_drink only.
+  drink?: string
+}
+
+export interface ShotDef {
+  id:          ShotType
+  label:       string
+  // One line for the planner menu: what the shot shows and when to use it.
+  use_for:     string
+  source:      'real_photo' | 'generated'
+  // Library folders under marketing/upload_images/ that feed the shot, in
+  // preference order.
+  folders:     string[]
+  moments:     string[]
+  needs_product: boolean
+  // False until the owner's shoot fills the folder; planners never see it.
+  enabled:     boolean
+}
+
+export const SHOTS: Record<ShotType, ShotDef> = {
+  bag_hero: {
+    id: 'bag_hero', label: 'Bag hero',
+    use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post',
+    source: 'real_photo', folders: ['bag_scenes', 'coffee_bags'],
+    moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light'],
+    needs_product: true, enabled: true,
+  },
+  bar_moment: {
+    id: 'bar_moment', label: 'Bar moment',
+    use_for: "a real moment at Minuto's espresso bar: steaming milk, pouring latte art, pulling a shot, serving a cup",
+    source: 'real_photo', folders: ['hands', 'machine', 'pitchers'],
+    moments: ['steaming milk', 'pouring latte art', 'pulling an espresso shot', 'serving a cappuccino', 'the espresso bar'],
+    needs_product: false, enabled: true,
+  },
+  roastery: {
+    id: 'roastery', label: 'Roastery',
+    use_for: "Minuto's own drum roaster: roast day, fresh beans dropping into the cooler, behind the scenes",
+    // Generated AROUND a real photo of the roaster (owner, 2026-10-28): the
+    // photo that matches the moment anchors the machine, the prompt sets a
+    // clean, plain roastery wall behind it. Published as photographed, the
+    // real photos carried whatever was behind the roaster (a restroom door).
+    source: 'generated', folders: ['roaster'],
+    moments: ['the roaster at work', 'fresh beans dropping into the cooling bin', 'a close-up of the roaster'],
+    needs_product: false, enabled: true,
+  },
+  brew_ritual: {
+    id: 'brew_ritual', label: 'Brew ritual',
+    use_for: 'home brewing equipment Minuto uses and sells: Chemex, dripper, AeroPress, moka pot, server',
+    // Generated AROUND a real photo of Minuto's own equipment (owner,
+    // 2026-10-28): the photo anchors what the Chemex/dripper looks like, the
+    // prompt sets a clean, still scene. Still on purpose — pours and hands
+    // come from real photos only (that is where floating drippers came from).
+    source: 'generated', folders: ['brewing'],
+    moments: ['a Chemex', 'a pour-over dripper', 'an AeroPress', 'a moka pot', 'a glass server'],
+    needs_product: false, enabled: true,
+  },
+  finished_drink: {
+    id: 'finished_drink', label: 'Finished drink',
+    use_for: 'a finished coffee drink in a Minuto cup, still life, no hands: espresso, cappuccino, latte, filter coffee',
+    source: 'generated', folders: ['cups'],
+    moments: ['eye level', 'top down'],
+    needs_product: false, enabled: true,
+  },
+  beans_closeup: {
+    id: 'beans_closeup', label: 'Beans close-up',
+    use_for: 'freshly roasted Minuto beans up close: a roast, an origin, freshness',
+    source: 'generated', folders: ['beans'],
+    moments: ['beans in a cupping tray', 'beans in a small ceramic dish', 'a handful of beans on wood'],
+    needs_product: false, enabled: true,
+  },
+  bag_with_drink: {
+    id: 'bag_with_drink', label: 'Bag and drink',
+    use_for: 'a Minuto bag next to a finished cup, pairing a product with how it tastes',
+    source: 'real_photo', folders: ['bag_scenes'],
+    moments: ['the bag beside a cup'],
+    needs_product: true, enabled: true,    // owner's bag shoot 2026-10-28 (every photo has an espresso)
+  },
+}
+
+export const ENABLED_SHOTS = (Object.values(SHOTS) as ShotDef[]).filter(s => s.enabled)
+
+// Library originals a generated shot must never use as its reference, as
+// <folder>/<file>. docs/image-pipeline/library_exclude.txt covers the
+// prepared (published-as-photographed) copies; generated shots read the
+// originals in upload_images/, so their exclusions live here.
+export const REFERENCE_EXCLUDE: ReadonlySet<string> = new Set([
+  'roaster/IMG_5172.jpg',   // restroom door and sign behind the roaster (owner, 2026-10-28)
+  'roaster/IMG_5188.jpg',   // sack of GREEN coffee: never a featured subject (brand rule)
+  'roaster/IMG_5189.jpg',   // the small tabletop sample roaster, not the drum roaster
+])
+
+// What the reference photo must show, matched against the library captions.
+// On the subject (and, for the roaster, the moment) alone: matching on the
+// whole prompt picked the moka-pot photo for "a pour-over dripper".
+export function referenceSubject(shot: ShotDef, slots: ShotSlots): string {
+  const moment = resolveMoment(shot, slots.moment)
+  switch (shot.id) {
+    case 'brew_ritual':
+      return `A photo showing ${moment} (that exact kind of brewer, nothing else).`
+    case 'finished_drink':
+      return 'A clean photo of a single coffee cup.'
+    case 'roastery':
+      return moment === 'fresh beans dropping into the cooling bin'
+        ? 'A photo of roasted coffee beans falling from the main drum roaster into its round cooling bin.'
+        : moment === 'a close-up of the roaster'
+          ? "A close-up photo of the main drum roaster's front: the drum door, sight glass and gauge."
+          : 'A photo of the whole main drum roaster with its round cooling bin.'
+    default:
+      return 'A clean photo of roasted coffee beans.'
+  }
+}
+
+export function isShotType(v: unknown): v is ShotType {
+  return typeof v === 'string' && v in SHOTS
+}
+
+// The moment to use: the requested one when it is on the shot's list
+// (case-insensitive), else the shot's first moment.
+export function resolveMoment(shot: ShotDef, moment?: string): string {
+  const m = (moment ?? '').trim().toLowerCase()
+  return shot.moments.find(x => x.toLowerCase() === m) ?? shot.moments[0]
+}
+
+// ── Packshots ────────────────────────────────────────────────────────────────
+// Studio packshots in upload_images/coffee_bags/, keyed by file. Aliases match
+// woo_products names, which are often Hebrew-only for house blends.
+// `slug` names the product's real bag photos in upload_images/bag_scenes/
+// (<slug>_window.jpg, <slug>_counter.jpg, …), so a bag shot always shows
+// the right bag without asking a model which bag is in the photo.
+export const PACKSHOTS: Array<{ file: string; slug: string; aliases: string[] }> = [
+  { file: 'ARISTO.png',            slug: 'aristo',            aliases: ['aristo', 'אריסטו'] },
+  { file: 'BRAZIL.png',            slug: 'brazil',            aliases: ['brazil', 'sertão', 'sertao', 'ברזיל'] },
+  { file: 'Dark_CHOCO.png',        slug: 'dark_chocolate',    aliases: ['dark chocolate'] },
+  { file: 'Daye_BENSA.png',        slug: 'daye_bensa',        aliases: ['daye bensa', 'דיי בנסה'] },
+  { file: 'DECAFF.png',            slug: 'decaf',             aliases: ['decaf', 'נטול קפאין'] },
+  { file: 'GUATEMALA_antigua.png', slug: 'guatemala_antigua', aliases: ['guatemala', 'antigua', 'אנטיגואה'] },
+  { file: 'GUJI.png',              slug: 'guji',              aliases: ['guji', "גוג'י"] },
+  { file: 'INTENSO.png',           slug: 'intenso',           aliases: ['intenso', 'אינטנסו'] },
+  { file: 'JUNGLE_JAVA.png',       slug: 'jungle_java',       aliases: ['jungle java'] },
+  { file: 'Kenya_AA+.png',         slug: 'kenya',             aliases: ['kenya', 'קניה'] },
+  { file: 'PRESTIGE.png',          slug: 'prestige',          aliases: ['prestige', "פרסטיז'", 'פרסטיז'] },
+  { file: 'STAR_VELVET.png',       slug: 'velvet_star',       aliases: ['velvet star', 'star velvet'] },
+  { file: 'TRIESTe.png',           slug: 'triest',            aliases: ['triest', 'trieste', 'טריאסט'] },
+  { file: 'yirgachffe.png',        slug: 'yirgacheffe',       aliases: ['yirgacheffe', 'yirgacheffee', 'יירגשף'] },
+]
+
+function productEntry(productName: string | undefined) {
+  const n = (productName ?? '').toLowerCase()
+  return n ? PACKSHOTS.find(p => p.aliases.some(a => n.includes(a))) ?? null : null
+}
+
+export function packshotFor(productName: string | undefined): string | null {
+  const hit = productEntry(productName)
+  return hit ? `coffee_bags/${hit.file}` : null
+}
+
+// True when a bag_scenes file name is a photo of this product's bag.
+export function isBagSceneOf(fileName: string, productName: string | undefined): boolean {
+  const hit = productEntry(productName)
+  return !!hit && fileName.toLowerCase().startsWith(`${hit.slug}_`)
+}
+
+// ── Prompts ──────────────────────────────────────────────────────────────────
+
+const RATIO_WORDS: Record<string, string> = {
+  '9:16': 'vertical 9:16', '4:5': 'vertical 4:5', '1:1': 'square', '16:9': 'wide 16:9',
+}
+
+// What a real-photo edit should show. The edit prompt in visual-test supplies
+// the preservation rules; this is the short "scene" part it is given.
+export function shotEditBrief(shot: ShotDef, slots: ShotSlots): string {
+  const moment = resolveMoment(shot, slots.moment)
+  switch (shot.id) {
+    case 'bag_hero':
+    case 'bag_with_drink':
+      return `The Minuto coffee bag, ${moment}. The bag and its printed label stay exactly as photographed. Warm, calm, natural light.`
+    case 'bar_moment':
+      return `Minuto's espresso bar: ${moment}. Keep the real barista hands, machine and cups exactly as photographed. Warm morning light.`
+    case 'roastery':
+      return `Minuto's roastery: ${moment}. Keep the real roaster exactly as photographed. Warm, moody light.`
+    case 'brew_ritual':
+      return `${moment[0].toUpperCase()}${moment.slice(1)} on Minuto's counter. Keep the equipment exactly as photographed. Soft daylight.`
+    default:
+      return moment
+  }
+}
+
+// Generated still lifes: one positive scene, about 50 words, written for the
+// image model with ONE reference photo attached (a real Minuto cup or beans).
+export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): string {
+  const frame = RATIO_WORDS[ratio] ?? ratio
+  const moment = resolveMoment(shot, slots.moment)
+  if (shot.id === 'finished_drink') {
+    const drink = (slots.drink ?? 'cappuccino').trim()
+    const view = moment === 'top down' ? 'seen from directly above' : 'seen at eye level'
+    return `A ${frame} editorial photograph of a freshly made ${drink} in the cup from the reference photo, ${view}. ` +
+      `The cup stands alone on its saucer on a clean, warm wooden counter in soft morning window light, with gentle shadows and shallow depth of field. ` +
+      `Natural film grain, calm and minimal.`
+  }
+  if (shot.id === 'brew_ritual') {
+    const scene: Record<string, string> = {
+      'a Chemex': 'freshly brewed coffee in the glass carafe and a damp paper filter of coffee grounds in its top',
+      'a pour-over dripper': 'the dripper sitting on a glass server of freshly brewed coffee, a damp paper filter of grounds inside it',
+      'an AeroPress': 'the AeroPress standing on a cup of freshly brewed coffee',
+      'a moka pot': 'a thin wisp of steam rising from its spout, a small cup of coffee beside it',
+      'a glass server': 'the server filled with freshly brewed amber coffee',
+    }
+    return `A ${frame} editorial photograph of ${moment}, exactly the one in the reference photo, standing on a clean, warm wooden counter, ` +
+      `${scene[moment] ?? 'freshly brewed coffee inside'}. The counter is otherwise bare. Soft morning window light, gentle shadows, shallow depth of field, ` +
+      `calm and minimal, natural film grain.`
+  }
+  if (shot.id === 'roastery') {
+    // The wall line is what keeps the real photo's background out (a
+    // restroom door), phrased as what IS there (owner: positive prompts).
+    const wall = 'Behind it is only a plain, dark charcoal roastery wall with warm amber light falling across it.'
+    const scene: Record<string, string> = {
+      'the roaster at work': `the drum roaster from the reference photo, exactly as it is, from the same angle, its sight glass and round cooling bin full of freshly roasted medium-brown coffee beans. ${wall}`,
+      'fresh beans dropping into the cooling bin': `the moment in the reference photo: freshly roasted, evenly medium-brown coffee beans falling from the drum roaster into its round cooling bin, the roaster exactly as it is. ${wall}`,
+      'a close-up of the roaster': `a close-up of the front of the drum roaster from the reference photo, exactly as it is: the drum door, gauge and sight glass, the glass full of freshly roasted medium-brown beans. ${wall}`,
+    }
+    return `A ${frame} editorial photograph of ${scene[moment]} Warm, moody light, shallow depth of field, natural film grain.`
+  }
+  // beans_closeup
+  return `A ${frame} close-up editorial photograph of freshly roasted, medium-brown coffee beans, ${moment}, like the beans in the reference photo. ` +
+    `Matte, dry beans with visible centre creases, warm side light, soft shadows, shallow depth of field. ` +
+    `Natural film grain, calm and minimal.`
+}
+
+// ── QA checklist ─────────────────────────────────────────────────────────────
+// Atomic yes/no questions the critic answers. Each must be answered YES for
+// the image to pass. Only questions the shot can actually fail on.
+export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
+  // Every question is phrased so that "yes" is good; "n/a" is allowed when a
+  // conditional question does not apply (the critic counts it as a pass).
+  const photo  = 'Does the image look like a real photograph (not a render or illustration)?'
+  const ground = 'Is every object resting on a surface or held by a hand, with nothing floating?'
+  const text   = 'Is all sharp, readable text in the image correctly spelled? (n/a if there is none)'
+  const hands  = 'If hands appear, are there at most two, belonging to one person (one left, one right), each with five normal fingers? (n/a if no hands)'
+  switch (shot.id) {
+    case 'bag_hero':
+    case 'bag_with_drink':
+      // Packshots are studio images by design, so no "real photograph" question.
+      return [ground, text,
+        'Is exactly one Minuto coffee bag the main subject?',
+        `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
+        ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
+    case 'bar_moment':
+      return [photo, ground, text, hands,
+        'Is the espresso machine shown with every part attached (no floating or duplicated portafilters or steam wands)? (n/a if no machine is visible)',
+        'If coffee or milk is flowing, does it come from a portafilter spout or a hand-held pitcher into a cup or pitcher? (n/a if nothing is flowing)',
+        'Is the image free of readable customer names or order tickets?']
+    case 'roastery':
+      return [photo, ground, text,
+        'Is there exactly one roaster, a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
+        'Are any beans shown roasted (brown), not green or pale?',
+        'Is the background only a plain roastery wall, free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
+    case 'brew_ritual':
+      return [photo, ground, text,
+        `Is ${resolveMoment(shot, slots.moment)} the main subject, shown whole?`,
+        'Is the scene still: no hands, and nothing being poured from a kettle?',
+        'Is the counter clean (no cables, plugs or clutter)?',
+        // Real makers' marks are fine (AEROPRESS, Bialetti); the failure is a
+        // logo copied onto a different product (Bialetti on a dripper).
+        'If a brand name appears, is it the real maker\'s mark on that same product (e.g. AEROPRESS on an AeroPress, Bialetti on a moka pot), not a logo copied onto a different item? (n/a if none)']
+    case 'finished_drink':
+      return [photo, ground, text,
+        `Does the drink look like a ${slots.drink ?? 'coffee drink'} in a single cup (close variants, e.g. a latte for a cappuccino, are fine)?`,
+        'Is the image free of hands and coffee bags?']
+    case 'beans_closeup':
+      return [photo, ground, text,
+        'Are the beans roasted medium brown (not green, not black and oily)?',
+        'Is the image free of hands and coffee bags?']
+  }
+}
+
+// ── Planner menu and router ──────────────────────────────────────────────────
+
+// The shot menu for planner prompts. Planners write the caption FIRST, then
+// pick the shot that shows what the caption talks about.
+export function plannerShotMenu(): string {
+  return ENABLED_SHOTS.map(s =>
+    `- ${s.id}: ${s.use_for}. moments: ${s.moments.map(m => `"${m}"`).join(', ')}` +
+    (s.needs_product ? '. needs product_name' : '') +
+    (s.id === 'finished_drink' ? '. needs drink' : '')
+  ).join('\n')
+}
+
+// Prompt for mapping a legacy free-form brief (and, when known, the post's
+// caption) onto the menu. The answer is always a shot from the menu.
+export function shotRouterPrompt(sceneBrief: string, caption?: string, productName?: string): string {
+  return `You choose the photo for a Minuto specialty-coffee Instagram post. Pick the ONE shot from this menu that best shows what the post is about. Never invent a scene outside the menu.
+
+MENU:
+${plannerShotMenu()}
+
+${caption ? `POST CAPTION (Hebrew, the post's real subject):\n${caption}\n\n` : ''}OLD SCENE IDEA (may be unrealistic; use only its subject):
+${sceneBrief}
+${productName ? `\nPRODUCT: ${productName}` : ''}
+
+Rules: a bag shot only when a product is named. Hands, pours or machines → bar_moment. Roasting → roastery. Brewing equipment → brew_ritual. A drink with no action → finished_drink. Beans, origin, freshness, plants or farms → beans_closeup.
+Reply as JSON {"shot_type": "<id>", "moment": "<one of that shot's moments>", "drink": "<only for finished_drink>", "why": "<short>"}.`
+}
+
+// Validate a router or planner answer into a usable shot + slots. Unknown or
+// disabled shots fall back to the safest generic shot.
+export function normalizeShotChoice(
+  raw: Record<string, unknown> | null | undefined,
+  productName?: string,
+): { shot: ShotDef; slots: ShotSlots } {
+  let id = raw?.shot_type
+  if (!isShotType(id) || !SHOTS[id].enabled) id = productName ? 'bag_hero' : 'finished_drink'
+  let shot = SHOTS[id as ShotType]
+  if (shot.needs_product && !productName) shot = SHOTS.finished_drink
+  return {
+    shot,
+    slots: {
+      product_name: shot.needs_product ? productName : undefined,
+      moment: resolveMoment(shot, typeof raw?.moment === 'string' ? raw.moment : undefined),
+      drink: shot.id === 'finished_drink'
+        ? (typeof raw?.drink === 'string' && raw.drink.trim() ? raw.drink.trim() : 'cappuccino')
+        : undefined,
+    },
+  }
+}
+
+// ── Planner picks (Phase 1b) ─────────────────────────────────────────────────
+// Every planner that writes an Instagram visual (mission-worker, the organic
+// strategist, strategist-executor, chat) writes the Hebrew caption FIRST, then
+// picks a shot from the menu for it (owner, 2026-10-28). One wording for all
+// of them so the rules can't drift apart.
+//
+// legacyScene: while SHOT_LIBRARY_ENABLED is off the legacy renderer still
+// draws scene_brief, so planners keep writing one, describing the picked shot.
+export function plannerShotInstructions(opts: { legacyScene?: boolean } = {}): string {
+  const sceneRule = opts.legacyScene
+    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer. Describe the picked shot only, never a different scene.`
+    : `scene_brief is optional: at most one sentence of context, never a new scene.`
+  return `INSTAGRAM IMAGES: CAPTION FIRST, THEN A SHOT FROM THE MENU.
+1. Write the Hebrew caption (caption_he) first. The caption decides what the post is about.
+2. Then pick the ONE shot below that shows what that caption talks about, and fill its slots. Never describe a new scene: the image pipeline can only make these shots.
+
+SHOT MENU (shot_type: what it shows. moments):
+${plannerShotMenu()}
+
+An Instagram visual's brief (destination "ig_post") carries, in this order: caption_he (the same caption the post will publish), shot_type, shot_slots { moment (copy one of that shot's moments verbatim), product_name (exact Minuto product name, bag shots only), drink (finished_drink only, e.g. "cappuccino") }. ${sceneRule}
+- Bag shots (bag_hero, bag_with_drink) only when the post features one specific Minuto coffee. They use real photos of that bag.
+- Hands, pours and the espresso machine come only from real photos: pick bar_moment (or roastery for roasting). brew_ritual, finished_drink and beans_closeup are still scenes with no hands and nothing pouring.
+- Carousels (a slides[] array) keep their per-slide scene_brief for now.`
+}
+
+// One plain English line for a picked shot. Used as scene_brief when the
+// planner left it empty: the legacy renderer (flag off) and the story-lock /
+// no-repeat guards read scene_brief. Never mentions a bag for a non-bag shot,
+// so a legacy no_bag render can't be told to draw one.
+export function shotSceneSummary(shot: ShotDef, slots: ShotSlots): string {
+  const moment = resolveMoment(shot, slots.moment)
+  const what = shot.needs_product
+    ? `the Minuto ${slots.product_name ?? ''} coffee bag, ${moment}`.replace(/\s+/g, ' ')
+    : shot.id === 'finished_drink'
+      ? `a ${slots.drink ?? 'cappuccino'} in a Minuto cup, ${moment}, still life`
+      : moment
+  // Label + moment only: use_for is the same text for every pick of a shot,
+  // and the no-repeat guard would read it as the same scene every day.
+  return `${shot.label}: ${what}.`
+}
+
+// Validate a planner's shot pick on an IG visual brief and make the brief
+// consistent with it. Returns a copy; never throws.
+//   • caption: the post's caption, copied onto the brief when it has none
+//     (caption first: the visual carries the caption it was picked for).
+//   • A brief with no shot_type is returned as is (legacy free-form brief).
+//   • An unknown shot, or a bag shot with no product, falls back the same way
+//     normalizeShotChoice does; `note` says what changed.
+//   • render_mode / product_name follow the shot, and scene_brief is filled
+//     from the shot when empty, so the legacy pipeline still renders it.
+//   • enabled=false (SHOT_LIBRARY_ENABLED off): the pick is kept as
+//     planned_shot and shot_type/shot_slots are removed, because
+//     seo-worker-visual renders ANY brief that names a shot_type through the
+//     library. Planners deploy on merge; the library only goes live when the
+//     owner sets the flag.
+export function applyPlannedShot(
+  raw: Record<string, unknown>,
+  opts: { enabled: boolean; caption?: string },
+): { brief: Record<string, unknown>; picked: boolean; note?: string } {
+  const b: Record<string, unknown> = { ...raw }
+  const caption = (opts.caption ?? '').trim()
+  if (caption && !(typeof b.caption_he === 'string' && b.caption_he.trim())) b.caption_he = caption
+  const asked = typeof b.shot_type === 'string' ? b.shot_type.trim() : ''
+  if (!asked) {
+    delete b.shot_type
+    delete b.shot_slots
+    return { brief: b, picked: false }
+  }
+  const rawSlots = (b.shot_slots && typeof b.shot_slots === 'object' && !Array.isArray(b.shot_slots))
+    ? b.shot_slots as Record<string, unknown> : {}
+  const str = (v: unknown) => typeof v === 'string' && v.trim() ? v.trim() : undefined
+  const product = str(rawSlots.product_name) ?? str(b.product_name)
+  const moment  = str(rawSlots.moment) ?? str(b.moment)
+  const drink   = str(rawSlots.drink) ?? str(b.drink)
+  const { shot, slots } = normalizeShotChoice({ shot_type: asked, moment, drink }, product)
+
+  let note: string | undefined
+  if (shot.id !== asked) {
+    note = isShotType(asked) && SHOTS[asked].needs_product && !product
+      ? `shot "${asked}" needs shot_slots.product_name; used "${shot.id}" instead`
+      : `shot_type "${asked}" is not on the menu; used "${shot.id}" instead`
+  } else if (moment && slots.moment?.toLowerCase() !== moment.toLowerCase()) {
+    note = `moment "${moment}" is not one of ${shot.id}'s moments; used "${slots.moment}"`
+  }
+
+  const cleanSlots: ShotSlots = {}
+  if (slots.product_name) cleanSlots.product_name = slots.product_name
+  if (slots.moment)       cleanSlots.moment = slots.moment
+  if (slots.drink)        cleanSlots.drink = slots.drink
+
+  b.render_mode = shot.needs_product ? 'bag_hero' : 'no_bag'
+  if (shot.needs_product) b.product_name = slots.product_name
+  if (!str(b.scene_brief)) b.scene_brief = shotSceneSummary(shot, cleanSlots)
+  delete b.moment
+  delete b.drink
+  if (opts.enabled) {
+    b.shot_type  = shot.id
+    b.shot_slots = cleanSlots
+  } else {
+    delete b.shot_type
+    delete b.shot_slots
+    b.planned_shot = { shot_type: shot.id, shot_slots: cleanSlots }
+  }
+  return { brief: b, picked: true, note }
+}
+
