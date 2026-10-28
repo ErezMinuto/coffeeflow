@@ -10,7 +10,7 @@
  */
 import {
   checkinOrder, type ConsentEvent, type CustomerOrder, emailedRecently, hasMarketingConsent,
-  hasUnsubscribed, inSendWindow, paidOrders, reminderDue, type ReminderPref, type ReminderRule,
+  inSendWindow, paidOrders, reminderDue, type ReminderPref, type ReminderRule,
   remindersStopped, stopToken,
 } from './retention.ts'
 
@@ -127,7 +127,11 @@ export function findCheckinCandidates(
     const o = checkinOrder(os, d.now, rule)
     if (!o) continue
     const es = d.emails.get(id) ?? []
-    if (hasUnsubscribed(d.consent.get(id) ?? [])) continue                  // asked us to stop
+    // Marketing consent required (owner, 2026-10-28: "be on the safe side").
+    // A no-offer feedback ask is likely not advertising under §30A, but that
+    // rests on one small-claims ruling; consent covers it either way. Also
+    // excludes anyone who unsubscribed (latest consent event wins).
+    if (!hasMarketingConsent(d.consent.get(id) ?? [])) continue
     if (es.some(e => d.sentKeys.has(`coffee_checkin::${e}`))) continue        // once per customer, ever
     if (recentlyEmailedAny(d, es)) continue                                   // 4-day rule
     out.push({
