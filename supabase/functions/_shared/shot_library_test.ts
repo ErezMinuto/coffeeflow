@@ -1,7 +1,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
-  plannerShotMenu, resolveMoment, shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
+  ENABLED_SHOTS, REFERENCE_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
 // Real woo_products names (2026-10-28). Several house blends are Hebrew-only.
@@ -150,4 +150,23 @@ Deno.test('planner instructions: caption first, the menu, and scene_brief per fl
   assert(on.includes(plannerShotMenu()))
   assert(on.includes('scene_brief is optional'))
   assert(plannerShotInstructions({ legacyScene: true }).includes('3-4 English sentences'))
+})
+
+Deno.test('roastery: generated around the real roaster, every moment short and positive, plain wall', () => {
+  assertEquals(SHOTS.roastery.source, 'generated')
+  for (const moment of SHOTS.roastery.moments) {
+    const p = shotGeneratePrompt(SHOTS.roastery, { moment }, '9:16')
+    assert(p.split(/\s+/).length <= 70, `${moment}: ${p.split(/\s+/).length} words`)
+    assert(!/\b(no|never|don't|do not|forbidden|override)\b/i.test(p), p)
+    assert(p.includes('plain, dark charcoal roastery wall'), p)
+    assert(p.includes('reference photo'), p)
+  }
+  assert(shotChecklist(SHOTS.roastery, {}).some(q => q.includes('doors, signs')))
+})
+
+Deno.test('reference subject follows the roaster moment; excluded photos are listed', () => {
+  assert(referenceSubject(SHOTS.roastery, { moment: 'fresh beans dropping into the cooling bin' }).includes('falling'))
+  assert(referenceSubject(SHOTS.roastery, { moment: 'a close-up of the roaster' }).includes('close-up'))
+  assert(referenceSubject(SHOTS.roastery, {}).includes('whole main drum roaster'))
+  assert(REFERENCE_EXCLUDE.has('roaster/IMG_5172.jpg'))
 })

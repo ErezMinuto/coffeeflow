@@ -4,7 +4,7 @@ import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  SHOTS, isBagSceneOf, isShotType, packshotFor, resolveMoment, shotEditBrief, shotGeneratePrompt,
+  REFERENCE_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
 import {
@@ -200,7 +200,7 @@ async function pickMatchingRealPhoto(
   folders: string[],
   brief: string,
   root = 'upload_images',
-  exclude: Set<string> = new Set(),
+  exclude: ReadonlySet<string> = new Set(),
 ): Promise<string[]> {
   try {
     // 1. Candidate files across the allowed folders.
@@ -374,7 +374,7 @@ async function callGeminiImage(useParts: any[], ratio: string): Promise<{ b64: s
 // FAILS (so the worker can flag it) rather than falling back to generation.
 async function randomLibraryPhotos(
   supabase: ReturnType<typeof createClient>, folders: string[], n: number,
-  root = 'upload_images', exclude: Set<string> = new Set(),
+  root = 'upload_images', exclude: ReadonlySet<string> = new Set(),
 ): Promise<string[]> {
   const urls: string[] = []
   for (const folder of folders) {
@@ -447,14 +447,12 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
   } else {
     sentPrompt = shotGeneratePrompt(shot, slots, ratio)
-    // Match the reference on the SUBJECT alone. Matching on the whole scene
-    // prompt picked the moka-pot photo for "a pour-over dripper", and the
-    // model then printed "Bialetti" on the dripper.
-    const subject = shot.id === 'brew_ritual' ? `A photo showing ${resolveMoment(shot, slots.moment)} (that exact kind of brewer, nothing else).`
-      : shot.id === 'finished_drink' ? 'A clean photo of a single coffee cup.'
-      : 'A clean photo of roasted coffee beans.'
-    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject)
-    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1))[0] ?? null
+    // Match the reference on the subject (and the roaster's moment) alone.
+    // Matching on the whole scene prompt picked the moka-pot photo for "a
+    // pour-over dripper", and the model then printed "Bialetti" on it.
+    const subject = referenceSubject(shot, slots)
+    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', REFERENCE_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', REFERENCE_EXCLUDE))[0] ?? null
     const parts: any[] = []
     if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
     parts.push({ text: sentPrompt })
