@@ -10,3 +10,10 @@
 *     roaster/IMG_5188.jpg                     # sack of GREEN coffee: never a featured subject (brand rule)
 9x16  brewing/IMG_5173.jpg                     # vertical crop cuts the dripper in half
 9x16  brewing/IMG_5184.jpg                     # vertical crop cuts the dripper off at the bottom
+*     bag_scenes/aristo_window.jpg                     # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/dark_chocolate_window.jpg             # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/guatemala_antigua_window.jpg          # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/guji_window.jpg                       # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/jungle_java_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/velvet_star_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     bag_scenes/yirgacheffe_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
