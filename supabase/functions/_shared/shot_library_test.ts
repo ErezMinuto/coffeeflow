@@ -1,7 +1,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
   ENABLED_SHOTS, REFERENCE_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
-  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
+  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
 // Real woo_products names (2026-10-28). Several house blends are Hebrew-only.
@@ -169,4 +169,12 @@ Deno.test('reference subject follows the roaster moment; excluded photos are lis
   assert(referenceSubject(SHOTS.roastery, { moment: 'a close-up of the roaster' }).includes('close-up'))
   assert(referenceSubject(SHOTS.roastery, {}).includes('whole main drum roaster'))
   assert(REFERENCE_EXCLUDE.has('roaster/IMG_5172.jpg'))
+})
+
+Deno.test('roastery: falling beans use a real photo, the still moments are generated', () => {
+  assert(shotUsesRealPhoto(SHOTS.roastery, { moment: 'fresh beans dropping into the cooling bin' }))
+  assert(!shotUsesRealPhoto(SHOTS.roastery, { moment: 'the roaster at work' }))
+  assert(!shotUsesRealPhoto(SHOTS.roastery, { moment: 'a close-up of the roaster' }))
+  assert(shotUsesRealPhoto(SHOTS.bar_moment, {}))
+  assert(!shotUsesRealPhoto(SHOTS.finished_drink, {}))
 })
