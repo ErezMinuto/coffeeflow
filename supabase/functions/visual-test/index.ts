@@ -4,7 +4,7 @@ import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  REFERENCE_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  PHOTO_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
   shotUsesRealPhoto,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
@@ -415,7 +415,7 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     // into upload_images_ready/<ratio>/. No image model touches it — an edit
     // pass rotated, re-staged or added hands to real photos in testing.
     const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
-    const exclude = new Set([...(body.exclude_photos ?? []), ...REFERENCE_EXCLUDE])
+    const exclude = new Set([...(body.exclude_photos ?? []), ...PHOTO_EXCLUDE])
     const brief = shotEditBrief(shot, slots)
     let pick: string | undefined
     if (shot.needs_product) {
@@ -424,7 +424,8 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
       // studio packshot. A bag_with_drink shot needs a real scene photo (the
       // packshot has no drink), so it degrades to the packshot as a bag_hero.
       const { data: scenes } = await supabase.storage.from('marketing').list(`${readyRoot}/bag_scenes`, { limit: 500 })
-      const mine = (scenes ?? []).map(f => f.name).filter(n => n && isBagSceneOf(n, slots.product_name))
+      const mine = (scenes ?? []).map(f => f.name)
+        .filter(n => n && isBagSceneOf(n, slots.product_name) && !PHOTO_EXCLUDE.has(`bag_scenes/${n}`))
       const fresh = mine.filter(n => !exclude.has(`bag_scenes/${n}`))
       const choice = (fresh.length ? fresh : mine).sort(() => Math.random() - 0.5)[0]
       if (choice) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/bag_scenes/${choice}`
@@ -461,8 +462,8 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     // Matching on the whole scene prompt picked the moka-pot photo for "a
     // pour-over dripper", and the model then printed "Bialetti" on it.
     const subject = referenceSubject(shot, slots)
-    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', REFERENCE_EXCLUDE)
-    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', REFERENCE_EXCLUDE))[0] ?? null
+    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', PHOTO_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', PHOTO_EXCLUDE))[0] ?? null
     const parts: any[] = []
     if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
     parts.push({ text: sentPrompt })

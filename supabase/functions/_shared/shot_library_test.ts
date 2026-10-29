@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, REFERENCE_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
@@ -168,7 +168,7 @@ Deno.test('reference subject follows the roaster moment; excluded photos are lis
   assert(referenceSubject(SHOTS.roastery, { moment: 'fresh beans dropping into the cooling bin' }).includes('falling'))
   assert(referenceSubject(SHOTS.roastery, { moment: 'a close-up of the roaster' }).includes('close-up'))
   assert(referenceSubject(SHOTS.roastery, {}).includes('whole main drum roaster'))
-  assert(REFERENCE_EXCLUDE.has('roaster/IMG_5172.jpg'))
+  assert(PHOTO_EXCLUDE.has('roaster/IMG_5172.jpg'))
 })
 
 Deno.test('roastery: falling beans use a real photo, the still moments are generated', () => {
@@ -177,4 +177,11 @@ Deno.test('roastery: falling beans use a real photo, the still moments are gener
   assert(!shotUsesRealPhoto(SHOTS.roastery, { moment: 'a close-up of the roaster' }))
   assert(shotUsesRealPhoto(SHOTS.bar_moment, {}))
   assert(!shotUsesRealPhoto(SHOTS.finished_drink, {}))
+})
+
+Deno.test('bags use the counter photos only: every window photo is excluded', () => {
+  for (const slug of ['aristo', 'dark_chocolate', 'guatemala_antigua', 'guji', 'jungle_java', 'velvet_star', 'yirgacheffe']) {
+    assert(PHOTO_EXCLUDE.has(`bag_scenes/${slug}_window.jpg`), slug)
+    assert(!PHOTO_EXCLUDE.has(`bag_scenes/${slug}_counter.jpg`), slug)
+  }
 })

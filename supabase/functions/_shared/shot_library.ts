@@ -123,14 +123,19 @@ export const SHOTS: Record<ShotType, ShotDef> = {
 
 export const ENABLED_SHOTS = (Object.values(SHOTS) as ShotDef[]).filter(s => s.enabled)
 
-// Library originals a generated shot must never use as its reference, as
-// <folder>/<file>. docs/image-pipeline/library_exclude.txt covers the
-// prepared (published-as-photographed) copies; generated shots read the
-// originals in upload_images/, so their exclusions live here.
-export const REFERENCE_EXCLUDE: ReadonlySet<string> = new Set([
+// Library photos the pipeline must never use, as <folder>/<file>: neither
+// published as photographed nor as a generated shot's reference. Applied at
+// render time, so a prepared copy still in storage can't ship either;
+// docs/image-pipeline/library_exclude.txt lists the same photos for the prep
+// script.
+export const PHOTO_EXCLUDE: ReadonlySet<string> = new Set([
   'roaster/IMG_5172.jpg',   // restroom door and sign behind the roaster (owner, 2026-10-28)
   'roaster/IMG_5188.jpg',   // sack of GREEN coffee: never a featured subject (brand rule)
   'roaster/IMG_5189.jpg',   // the small tabletop sample roaster, not the drum roaster
+  // Bag "window" photos: the street behind the bag (parked cars, passers-by).
+  // Owner, 2026-10-29: bags use the counter photos only.
+  ...['aristo', 'dark_chocolate', 'guatemala_antigua', 'guji', 'jungle_java', 'velvet_star', 'yirgacheffe']
+    .map(slug => `bag_scenes/${slug}_window.jpg`),
 ])
 
 // What the reference photo must show, matched against the library captions.
