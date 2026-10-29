@@ -5,6 +5,7 @@ import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   REFERENCE_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  shotUsesRealPhoto,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
 import {
@@ -408,13 +409,13 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
   let referencePhoto: string | null = null
   const checks: Array<{ photo: string; same: boolean; why: string }> = []
 
-  if (shot.source === 'real_photo') {
+  if (shotUsesRealPhoto(shot, slots)) {
     // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
     // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
     // into upload_images_ready/<ratio>/. No image model touches it — an edit
     // pass rotated, re-staged or added hands to real photos in testing.
     const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
-    const exclude = new Set(body.exclude_photos ?? [])
+    const exclude = new Set([...(body.exclude_photos ?? []), ...REFERENCE_EXCLUDE])
     const brief = shotEditBrief(shot, slots)
     let pick: string | undefined
     if (shot.needs_product) {
@@ -430,6 +431,12 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
       const pack = packshotFor(slots.product_name)
       if (!pick && pack) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/${pack.replace(/\.[a-z]+$/i, '.jpg')}`
       if (!pick) throw new Error(`no prepared photo or packshot for product "${slots.product_name}"`)
+    } else if (shot.source === 'generated') {
+      // A real moment of a generated shot: only a photo that shows that
+      // moment. None → the shot's first (still) moment is generated below,
+      // never a random photo (that is how the restroom photo shipped).
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, referenceSubject(shot, slots), readyRoot, exclude))[0]
+      if (!pick) slots.moment = shot.moments[0]
     } else {
       pick = (await pickMatchingRealPhoto(supabase, shot.folders, brief, readyRoot, exclude))[0]
         // Every photo in the shot's folders is on-topic by construction.
@@ -437,15 +444,18 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
         // All used recently: allow a repeat rather than fail.
         ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot))[0]
     }
-    if (!pick) {
+    if (!pick && shot.source !== 'generated') {
       return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
     }
-    const res = await fetch(pick)
-    if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
-    gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
-    sourcePhoto = pick
-    sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
-  } else {
+    if (pick) {
+      const res = await fetch(pick)
+      if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
+      gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
+      sourcePhoto = pick
+      sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
+    }
+  }
+  if (!gen) {
     sentPrompt = shotGeneratePrompt(shot, slots, ratio)
     // Match the reference on the subject (and the roaster's moment) alone.
     // Matching on the whole scene prompt picked the moka-pot photo for "a

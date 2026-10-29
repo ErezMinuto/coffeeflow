@@ -54,6 +54,10 @@ export interface ShotDef {
   needs_product: boolean
   // False until the owner's shoot fills the folder; planners never see it.
   enabled:     boolean
+  // Moments of a generated shot that are shown with a real photo instead,
+  // as photographed: motion the image model draws badly (owner, 2026-10-28:
+  // generated falling beans "not natural"). Matched by referenceSubject.
+  real_moments?: string[]
 }
 
 export const SHOTS: Record<ShotType, ShotDef> = {
@@ -80,6 +84,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     // real photos carried whatever was behind the roaster (a restroom door).
     source: 'generated', folders: ['roaster'],
     moments: ['the roaster at work', 'fresh beans dropping into the cooling bin', 'a close-up of the roaster'],
+    real_moments: ['fresh beans dropping into the cooling bin'],
     needs_product: false, enabled: true,
   },
   brew_ritual: {
@@ -140,13 +145,19 @@ export function referenceSubject(shot: ShotDef, slots: ShotSlots): string {
       return 'A clean photo of a single coffee cup.'
     case 'roastery':
       return moment === 'fresh beans dropping into the cooling bin'
-        ? 'A photo of roasted coffee beans falling from the main drum roaster into its round cooling bin.'
+        ? 'A photo of freshly roasted coffee beans caught falling down a steel chute onto a pile of beans.'
         : moment === 'a close-up of the roaster'
           ? "A close-up photo of the main drum roaster's front: the drum door, sight glass and gauge."
           : 'A photo of the whole main drum roaster with its round cooling bin.'
     default:
       return 'A clean photo of roasted coffee beans.'
   }
+}
+
+// True when this pick is a real photo published as photographed: a
+// real_photo shot, or one of a generated shot's real_moments.
+export function shotUsesRealPhoto(shot: ShotDef, slots: ShotSlots): boolean {
+  return shot.source === 'real_photo' || (shot.real_moments ?? []).includes(resolveMoment(shot, slots.moment))
 }
 
 export function isShotType(v: unknown): v is ShotType {
@@ -292,7 +303,7 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
       return [photo, ground, text,
         'Is there exactly one roaster, a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
         'Are any beans shown roasted (brown), not green or pale?',
-        'Is the background only a plain roastery wall, free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
+        'Is the background free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
     case 'brew_ritual':
       return [photo, ground, text,
         `Is ${resolveMoment(shot, slots.moment)} the main subject, shown whole?`,
