@@ -171,6 +171,14 @@ add_filter('rocket_delay_js_exclusions', function ($excluded) {
     return $excluded;
 });
 
+// WP Rocket's minified copy lives under its own path and can outlive a plugin
+// update, which leaves visitors on the old rules. Keep it on the plugin's own,
+// versioned files. Paths here are regular expressions, per WP Rocket's filter.
+add_filter('rocket_exclude_js', function ($excluded) {
+    $excluded[] = wp_make_link_relative(plugins_url('assets/', __FILE__)) . '(.*).js';
+    return $excluded;
+});
+
 add_action('rest_api_init', function () {
     if (!class_exists('WooCommerce')) return;
     register_rest_route('minuto-quiz/v1', '/catalog', [
