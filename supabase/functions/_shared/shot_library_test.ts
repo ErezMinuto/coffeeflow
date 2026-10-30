@@ -141,7 +141,7 @@ Deno.test('scene summary never names a bag for a non-bag shot, and varies by mom
       assert(!/\bbag\b|pouch|packag/.test(text), `${shot.id}/${moment}: ${text}`)
     }
   }
-  assert(shotSceneSummary(SHOTS.bar_moment, { moment: 'steaming milk' }) !== shotSceneSummary(SHOTS.bar_moment, { moment: 'pouring latte art' }))
+  assert(shotSceneSummary(SHOTS.bar_moment, { moment: 'steaming milk' }) !== shotSceneSummary(SHOTS.bar_moment, { moment: 'pulling an espresso shot' }))
 })
 
 Deno.test('planner instructions: caption first, the menu, and scene_brief per flag', () => {
@@ -184,4 +184,12 @@ Deno.test('bags use the counter photos only: every window photo is excluded', ()
     assert(PHOTO_EXCLUDE.has(`bag_scenes/${slug}_window.jpg`), slug)
     assert(!PHOTO_EXCLUDE.has(`bag_scenes/${slug}_counter.jpg`), slug)
   }
+})
+
+Deno.test('bar moment: every moment has its own photo subject, and no hand-anatomy question', () => {
+  const subjects = SHOTS.bar_moment.moments.map(moment => referenceSubject(SHOTS.bar_moment, { moment }))
+  assertEquals(new Set(subjects).size, SHOTS.bar_moment.moments.length)
+  assert(!SHOTS.bar_moment.moments.some(m => m.includes('latte art')))
+  assert(!shotChecklist(SHOTS.bar_moment, {}).some(q => q.includes('fingers')))
+  assert(PHOTO_EXCLUDE.has('hands/IMG_5190.jpg'))
 })

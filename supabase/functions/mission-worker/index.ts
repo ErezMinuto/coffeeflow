@@ -767,7 +767,7 @@ serve(async (req) => {
             if (!verdict.ok) {
               newNotes.push(
                 `(did NOT queue the story visual — ${verdict.why}. ` +
-                `Re-queue a story depicting ${storyLock.themes.join(' or ')}: shot_type bar_moment (an espresso pull, steaming milk, pouring latte art) ` +
+                `Re-queue a story depicting ${storyLock.themes.join(' or ')}: shot_type bar_moment (an espresso pull, steaming milk) ` +
                 `or finished_drink (an espresso or a latte-art cup). Vary the moment and the cup — not the subject — ` +
                 `and make it a different shot from every scene in RECENT IG SCENES. ` +
                 `Lock lifts ${storyLock.until}.)`,
