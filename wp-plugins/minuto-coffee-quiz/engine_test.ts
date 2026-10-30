@@ -208,3 +208,10 @@ Deno.test("asked for light: flavor doesn't hide a light jar, and non-light jars 
   assert(!r({ light: true }, withJar({ light: false, flavor: "chocolate" })).includes("extra_1"));
   assert(!r({ light: true, strength: "very_strong" }, withJar()).includes("extra_1"));
 });
+
+Deno.test("a limited named coffee further down the list still takes the third place", () => {
+  const s2 = { ...stock, extras: [{ key: "aji", flavor: "fruity", milk: true, brews: ["filter"], limited: true, light: true }] };
+  assertEquals(r({ light: true, taste: "chocolate" }, s2), ["kenya_l", "bensa_l", "aji"]);
+  assertEquals(r({ light: true, taste: "floral" }, s2), ["kenya_l", "leona", "aji"]);
+  assertEquals(r({ light: true, taste: "fruity" }, s2), ["kenya_l", "aji", "bensa_l"]);       // already placed: stays
+});

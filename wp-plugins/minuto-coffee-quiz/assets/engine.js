@@ -107,7 +107,7 @@
   function withExtras(picks, a, extras) {
     var fits = (extras || []).filter(function (x) { return extraFits(x, a); });
     var limited = fits.filter(function (x) { return x.limited; })[0];
-    var out = picks.slice();
+    var out = picks.slice(0, MAX);
     if (limited && out.indexOf(limited.key) === -1) {
       out = out.slice(0, MAX - 1).concat(limited.key);
     }
