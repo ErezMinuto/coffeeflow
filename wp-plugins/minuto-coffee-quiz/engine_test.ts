@@ -81,9 +81,19 @@ Deno.test("alternative milk: never fruity, unless light is asked for", () => {
   assertEquals(r({ milk: "alt", light: true })[0], "kenya_l");
 });
 
-Deno.test("light roast: Kenya first, Guji first for natural; new light coffees join", () => {
+Deno.test("natural process shows only natural coffees, Guji first", () => {
+  assertEquals(r({ natural: true }), ["guji", "sertao", "dark"]);
+  assertEquals(r({ natural: true, milk: "alt" }), ["sertao", "dark"]);
+});
+
+Deno.test("washed and honey coffees are never in the natural result", () => {
+  for (const k of ["kenya_l", "kenya_m", "aji", "leona", "bensa_l", "bensa_m", "yirgacheffe"]) {
+    assert(!r({ natural: true }).includes(k), k);
+  }
+});
+
+Deno.test("light roast: Kenya first; new light coffees join", () => {
   assertEquals(r({ light: true })[0], "kenya_l");
-  assertEquals(r({ natural: true })[0], "guji");
   const s = { all: ["kenya_l", "new_light"], light: ["kenya_l", "new_light"] };
   assertEquals(r({ light: true }, s), ["kenya_l", "new_light"]);
 });

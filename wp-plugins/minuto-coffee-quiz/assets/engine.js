@@ -26,13 +26,13 @@
   var ALT_MILK = ['sertao', 'jungle', 'velvet'];
   var NO_SOUR = ['jungle', 'velvet'];
   var LIGHT_ORDER = ['kenya_l', 'guji', 'aji', 'leona', 'bensa_l'];
+  // Natural process only. Kenya, Aji (anaerobic washed) and Leona (honey) are not.
+  var NATURAL = ['guji', 'sertao', 'dark'];
   var MAX = 3;
 
-  function lightList(a, light) {
-    var first = a.natural ? 'guji' : 'kenya_l';
-    var known = LIGHT_ORDER.filter(function (k) { return k !== first; });
-    var extra = (light || []).filter(function (k) { return k !== first && known.indexOf(k) === -1; });
-    return [first].concat(known, extra);
+  function lightList(light) {
+    var extra = (light || []).filter(function (k) { return LIGHT_ORDER.indexOf(k) === -1; });
+    return LIGHT_ORDER.concat(extra);
   }
 
   // What the brew method and strength alone call for.
@@ -60,7 +60,7 @@
       default:                               // filter, and French press / cold brew
         if (veryStrong) return ['dark', 'aristo'].concat(ROBUSTA);
         if (strong) return ['jungle', 'velvet'];
-        if (a.taste === 'fruity') return lightList(a, light);
+        if (a.taste === 'fruity') return lightList(light);
         if (a.taste === 'floral') return ['leona', 'yirgacheffe', 'velvet'];
         if (a.taste === 'chocolate') return ['jungle', 'velvet', 'antigua'];
         return ['kenya_l', 'jungle', 'velvet'];
@@ -81,8 +81,11 @@
 
     if (a.decaf) {
       picks = pick(['decaf']);
-    } else if (a.light || a.natural) {
-      picks = pick(lightList(a, light));     // an explicit ask beats the milk rules
+    } else if (a.natural) {
+      // Alternative milk still rules out the fruity one.
+      picks = pick(NATURAL).filter(function (k) { return a.milk !== 'alt' || FRUITY.indexOf(k) === -1; });
+    } else if (a.light) {
+      picks = pick(lightList(light));        // an explicit ask beats the milk rules
     } else if (a.milk === 'alt' || a.noSour) {
       picks = pick(a.strength === 'very_strong' ? ['aristo', 'dark'] : (a.noSour ? NO_SOUR : ALT_MILK));
     } else if (a.milk === 'cow' && a.strength !== 'very_strong') {
