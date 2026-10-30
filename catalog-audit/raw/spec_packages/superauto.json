@@ -1,0 +1,1007 @@
+{
+ "findings": [
+  {
+   "product_id": "76352",
+   "product_name": "מכונת קפה JURA W8",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-we/",
+   "field": "name",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מכונת קפה JURA W8",
+   "problem": "Title says 'W8', but all copy is for the Jura WE8. Product 64790 is the same WE8 at 8000 vs 8400 here, so the same machine has two prices.",
+   "suggested_fix": "לאחד עם מוצר 64790 או לתקן שם ומחיר; לאמת את המחיר הנכון ל-WE8",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65102",
+   "product_name": "מכונת קפה מליטה בריסטה טי סמארט Melitta® Barista T Smart",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99-%d7%a1%d7%9e%d7%90%d7%a8%d7%98-melitta-barista-t-smart/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "problem": "Short description opens with a promo condition ('subject to purchase of 5 kg Minuto specialty beans') with no context; reads as if the machine or price is conditional.",
+   "suggested_fix": "להסיר את השורה, או אם המבצע בתוקף לנסח במפורש את ההטבה ואת תנאיה",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67337",
+   "product_name": "מכונת קפה גאג'יה מג׳נטה פלוס Gaggia Magenta Plus",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-magenta-plus/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו ישירות ממסורת גגיה",
+   "problem": "A promo condition ('subject to buying 5 kg of Minuto beans') is spliced into the middle of a feature sentence; it reads as if the machine or its price is conditional, and is absent from the description.",
+   "suggested_fix": "להסיר את 'מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו' או, אם המבצע בתוקף, להציגו כשורה נפרדת וברורה עם תנאי המבצע",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64864",
+   "product_name": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqualo/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+   "problem": "Title calls an Eco Klear product 'Aqua Clean' (a Philips trademark) and says 4 filters, while the permalink says 3 ('3-פילטר...'). Description also borrows Philips' patented-flow claims.",
+   "suggested_fix": "לאמת את כמות הפילטרים באריזה ולשנות ל\"4 פילטרי מים Eco Klear תואמי AquaClean למכונות פיליפס/סאיקו\".",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65088",
+   "product_name": "מכונת קפה סימנס Siemens EQ 6 Plus series 700 TE657313RW",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-700-te657313rw/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "בשילוב עם לחץ מים של 15 בר",
+   "problem": "Pump pressure is given as 15 bar in one line and 19 bar ('לחץ משאבה של 19 בר') in another.",
+   "suggested_fix": "לאחד לערך אחד לאחר אימות מול מפרט Siemens",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "65112",
+   "product_name": "מכונת קפה גאג'יה Gaggia Cadorna Prestige",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-gaggia-cadorna-prestige/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "עד 14 משקאות ... גלו את 10 המשקאות הזמינים",
+   "problem": "Drink count contradicts itself: heading says up to 14 drinks, the text and short description say 10, and the list that follows has 13 items.",
+   "suggested_fix": "לאחד את מספר המשקאות בכל הטקסטים (כותרת, תיאור קצר ורשימה) לאחר אימות מול דף היצרן של Cadorna Prestige",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "65181",
+   "product_name": "מסלול קפה לשנה מכונת קפה סימנס Siemens EQ 6 Plus series TE655203RW",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%9c%d7%95%d7%9c-%d7%a7%d7%a4%d7%94-%d7%9c%d7%a9%d7%a0%d7%94-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-te655203rw/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "בשילוב עם לחץ מים של 15 בר",
+   "problem": "Pump pressure is given as 15 bar in one line and 19 bar ('לחץ משאבה של 19 בר') in another.",
+   "suggested_fix": "לאחד לערך אחד לאחר אימות מול מפרט Siemens",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "65439",
+   "product_name": "טבליות הסרת אבנית למכונות קפה Jura",
+   "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "כמות: 36, 9",
+   "problem": "The 9-tablet product has both 36 and 9 as quantity values, and its title omits the count.",
+   "suggested_fix": "להגדיר כמות: 9 ולשנות כותרת ל\"9 טבליות הסרת אבנית למכונות קפה Jura\".",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67257",
+   "product_name": "מכונת קפה גאג'יה מג׳נטה פרסטיז׳ Gaggia Magenta Prestige",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96%d7%b3-gaggia-magenta-prestige/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",
+   "problem": "Claims 12 drinks but the list (in both short and long description) names only 11.",
+   "suggested_fix": "להשלים את המשקה החסר ברשימה לפי מפרט היצרן או לתקן את המספר כך שיתאים לרשימה",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67274",
+   "product_name": "מכונת אספרסו ניבונה Nivona NICR 790",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-790/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "מידות - רוחב 24, גובה 58, עומק 34",
+   "problem": "Dimensions differ from identical siblings NICR 795/796 (רוחב 24, גובה 34, עומק 46). A 58 cm height is implausible; the values look swapped or mistyped.",
+   "suggested_fix": "מידות - רוחב 24, גובה 34, עומק 46 (לאמת מול היצרן)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67328",
+   "product_name": "מכונת קפה גאג'יה אנימה קלאס Gaggia Anima Class",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%90%d7%a0%d7%99%d7%9e%d7%94-%d7%a7%d7%9c%d7%90%d7%a1-gaggia-anima-class/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "הנאה מ- 6 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו",
+   "problem": "Description says 6 drinks in one line and 5 drinks in three others (and the short description says 5).",
+   "suggested_fix": "הנאה מ- 5 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו (לאחר אימות מול מפרט Anima Class)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67330",
+   "product_name": "מכונת קפה מליטה Melitta® Caffeo CI Touch",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-ci-touch/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים - אספרסו, קפה קרם, קפוצ'ינו ולאטה",
+   "problem": "Says 10 classic drinks but lists 4, then adds '6 more' (copy adapted from Passione OT where it reads 4 + 6 = 10).",
+   "suggested_fix": "'תוכלו להכין 4 ממשקאות הקפה הקלאסיים - אספרסו, קפה קרם, קפוצ'ינו ולאטה מקיאטו בלחיצת כפתור אחת' (לאמת מול מפרט CI Touch)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67618",
+   "product_name": "Melitta Solo Silver מכונת קפה אוטומטית מליטה סולו כסף",
+   "permalink": "https://www.minuto.co.il/product/melitta-solo-silver-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-%d7%9b%d7%a1%d7%a3/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: אדום, כסף",
+   "problem": "Product is the Silver model, but the colour attribute also lists red, so red shows up as an option.",
+   "suggested_fix": "להשאיר בצבע המוצר רק 'כסף'",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "81804",
+   "product_name": "36 טבליות הסרת אבנית למכונות קפה Jura",
+   "permalink": "https://www.minuto.co.il/product/36-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "כמות: 36, 9",
+   "problem": "The 36-tablet product has both 36 and 9 as quantity values.",
+   "suggested_fix": "להגדיר כמות: 36 בלבד.",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64957",
+   "product_name": "3 פילטר מים אקווה קלין למכונות פיליפס Saeco Aqua Clean",
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqua-c/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן",
+   "problem": "Philips' 5,000-cup claim is 'without descaling' when the AquaClean filter is replaced as prompted (about 8 filters), not 5,000 cups from one filter.",
+   "suggested_fix": "\"תוכלו ליהנות מעד 5000 כוסות ללא צורך בהסרת אבנית, בהחלפת המסנן בכל פעם שהמכונה מתריעה\".",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65029",
+   "product_name": "מכונת קפה מליטה Melitta® Caffeo Passione Silver",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-passione-silver/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה",
+   "problem": "Describes a companion app, but the Caffeo Passione has no app connectivity (that is a Barista T/TS Smart feature); likely copied.",
+   "suggested_fix": "לאמת מול היצרן; אם אין אפליקציה – למחוק את הפסקה",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67225",
+   "product_name": "מכונת אספרסו ניבונה Nivona CafeRomatica 550",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-550/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "ממשק מסך צבעוני האינטואיטיבי שלו",
+   "problem": "The CafeRomatica 550 has a plain-text display, not a colour screen (colour TFT comes on the 6/7/8 series). The description is generic AI copy.",
+   "suggested_fix": "לאמת סוג תצוגה מול דף היצרן; אם אינה צבעונית – \"תצוגת טקסט ברורה\"",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67299",
+   "product_name": "מכונת קפה מליטה נירוסטה Melitta® Caffeo Passione",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-melitta-caffeo-passione/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה",
+   "problem": "Describes a companion app, but the Caffeo Passione has no app connectivity (that is a Barista T/TS Smart feature); likely copied.",
+   "suggested_fix": "לאמת מול היצרן; אם אין אפליקציה – למחוק את הפסקה",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67330",
+   "product_name": "מכונת קפה מליטה Melitta® Caffeo CI Touch",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-ci-touch/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "מיכל מים 1.2 ליטר",
+   "problem": "Water tank and dimensions are identical to the compact Passione listings; the CI Touch is a larger machine (water tank about 1.8 L).",
+   "suggested_fix": "לאמת את נפח מיכל המים והמידות מול דף היצרן של Melitta CI Touch",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "76545",
+   "product_name": "מכונת קפה JURA J10",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-j10/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "הכנת מעל 42 סוגי משקאות",
+   "problem": "42+ specialties looks too high for the Jura J10 and should be checked against Jura's spec.",
+   "suggested_fix": "לאמת את מספר המשקאות מול דף היצרן של Jura J10",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65088",
+   "product_name": "מכונת קפה סימנס Siemens EQ 6 Plus series 700 TE657313RW",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-700-te657313rw/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "*מסלול קפה לשנה מתנה :1 ק\"ג פולי קפה איטלקי מדי חודש. (סה\"כ 12 ק\"ג)",
+   "problem": "Gift promo (12 kg VARANINI beans) is hard-coded in the copy; check whether still valid. Also '1 kg monthly' vs 'in three shipments' is unclear.",
+   "suggested_fix": "לאמת שהמבצע בתוקף; אם לא – להסיר משם המוצר ומהתיאורים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65181",
+   "product_name": "מסלול קפה לשנה מכונת קפה סימנס Siemens EQ 6 Plus series TE655203RW",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%9c%d7%95%d7%9c-%d7%a7%d7%a4%d7%94-%d7%9c%d7%a9%d7%a0%d7%94-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-te655203rw/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "*מסלול קפה לשנה מתנה :1 ק\"ג פולי קפה איטלקי מדי חודש. (סה\"כ 12 ק\"ג)",
+   "problem": "Gift promo (12 kg VARANINI beans) is hard-coded in the copy; check whether still valid. Also '1 kg monthly' vs 'in three shipments' is unclear.",
+   "suggested_fix": "לאמת שהמבצע בתוקף; אם לא – להסיר משם המוצר ומהתיאורים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67274",
+   "product_name": "מכונת אספרסו ניבונה Nivona NICR 790",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-790/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+   "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67275",
+   "product_name": "מכונת אספרסו ניבונה Nivona NICR 795",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-795/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+   "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67296",
+   "product_name": "מכונת קפה אוטומטית מליטה בריסטה טיאס סמארט Melitta® Barista TS Smart Black שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99%d7%90%d7%a1-%d7%a1/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+   "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64929",
+   "product_name": "מכונת קפה אוטומטית Jura E8 - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e-8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: לבן, שחור",
+   "problem": "Single-colour product (title gives one colour) lists both white and black in the colour attribute.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (81455: שחור; 64929: לבן)",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64933",
+   "product_name": "טבליות ניקוי Jura לניקוי שומנים",
+   "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%a7%d7%95%d7%99-jura-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "טבלית הניקוי התלת-פאזית ... שלב 1: ניקוי ... שלב 2: טיפול",
+   "problem": "Copy calls it a three-phase tablet but describes only two phases (the protect phase is missing).",
+   "suggested_fix": "להוסיף \"שלב 3: הגנה\" עם תיאור קצר, או לתקן ל\"דו-שלבית\".",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67154",
+   "product_name": "מכונת קפה גאג'יה קדורנה פלוס Gaggia Cadorna Plus",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%93%d7%95%d7%a8%d7%a0%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-cadorna-plus/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "גאג'יה קדורנה בריסטה פלוס",
+   "problem": "Description calls the machine 'Cadorna Barista Plus' while the title and SKU name are 'Cadorna Plus'.",
+   "suggested_fix": "לאחד את שם הדגם בכותרת ובתיאור (Gaggia Cadorna Barista Plus) לאחר אימות מול היבואן",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67243",
+   "product_name": "מטחנת קפה Melitta Molino",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-melitta-molino/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Colour attribute set (red/bronze/stainless) appears copied across unrelated grinders (Molino, Emilio, Calibra, WPM) and is not mentioned in the copy.",
+   "suggested_fix": "לאמת את הצבעים הזמינים בפועל ולהסיר צבעים שאינם קיימים",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "68281",
+   "product_name": "מטחנת קפה מליטה קליברה - Melitta Calibra",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%9c%d7%99%d7%91%d7%a8%d7%94-melitta-calibra/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Copied colour attribute set; Calibra colours not stated in copy.",
+   "suggested_fix": "לאמת את הצבעים הזמינים ולעדכן",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "81455",
+   "product_name": "מכונת קפה אוטומטית Jura E8 - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e8-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: לבן, שחור",
+   "problem": "Single-colour product (title gives one colour) lists both white and black in the colour attribute.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (81455: שחור; 64929: לבן)",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "65469",
+   "product_name": "מכונת קפה Jura E6 - להנאה מושלמת מקפוצ'ינו בלחיצת כפתור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-e6-%d7%9c%d7%94%d7%a0%d7%90%d7%94-%d7%9e%d7%95%d7%a9%d7%9c%d7%9e%d7%aa-%d7%9e%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%91%d7%9c%d7%97/",
+   "field": "short_description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "החיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה",
+   "problem": "Copy implies built-in Wi-Fi. On Jura E-line, app connectivity needs an optional Smart Connect / Wi-Fi Connect dongle.",
+   "suggested_fix": "\"אפשרות לחיבור לאפליקציית J.O.E. (באמצעות משדר אופציונלי)\" – לאמת מול היצרן",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "80374",
+   "product_name": "פילטר מים למכונת דלונגי - DeLonghi water filter",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%93%d7%9c%d7%95%d7%a0%d7%92%d7%99-delonghi-water-filter/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "הפילטר מתאים לכל סדרת: ECAM EC680 ו-EC800 .",
+   "problem": "Garbled compatibility line mixing ECAM with EC680/EC800 models, plus the ESAM exclusion; title typo 'דלוגי' in description heading.",
+   "suggested_fix": "לאמת את רשימת התאימות מול DeLonghi DLSC002 ולתקן: דלונגי",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65446",
+   "product_name": "מכונת קפה Jura C9 - מכונת קפה קומפקטית עם טעם מושלם",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-c8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%9e%d7%a4%d7%a7%d7%98%d7%99%d7%aa-%d7%a2%d7%9d-%d7%98%d7%a2%d7%9d/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "problem": "Title and description are Jura C9 with 17 drinks; short says C8 with 6 drinks (slug also c8).",
+   "suggested_fix": "לאמת את הדגם ולהתאים: 'Jura C9 ... 17 סוגי משקאות' או לשנות כותרת ותיאור ל-C8.",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  }
+ ],
+ "products": [
+  {
+   "id": 64864,
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqualo/",
+   "name": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+   "short_description": "<ul>\n<li>פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :סדרת האינקנטו, סדרת האינטליה דה-לקס.</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<h3>4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear.</h3>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>Eco Klear יעזור לשמור על טעם הקפה לאורך זמן ולמנוע היווצרות אבנית הגורמת לסתימות, בזכות תכונות חדשניות כמו טכנולוגיית החלפת יונים, זרימת המים המוגנת בפטנט והפילטר המיקרו נקבובי.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>Eco Klear מבטיח שרק מים טהורים ומסוננים זורמים למכונת הקפה האוטומטית שלך וזה מצמצם את הצורך בניקוי המכונה.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"product-short-desc grid_6 omega\">\n<p>פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו: סדרת האינקנטו, סדרת האינטליה דה-לקס.</p>\n<p> </p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": " פילטר מים אקווה קלין למכונות פיליפס | מינוטו קפה ואביזרים",
+    "rank_math_description": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 64929,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e-8/",
+   "name": "מכונת קפה אוטומטית Jura E8 - לבן",
+   "short_description": "<p>הדור האחרון של דגם מכונת הקפה המצליח ביותר של JURA מתגאה בעיצוב מחודש ובמגוון יתרונות שנמצאו בעבר רק במחלקת הפרימיום. מטחנת ארומה מקצועית מספקת תוצאת טחינה ללא רבב, תהליכי חליטה חדישים מאפשרים לניחוחות הקפה להתפתח במלואו ומשקאות קפה טרנדיים טובים מתמיד הודות לקצף החלב החלק והאוורירי. ה-E8 החדשנית מציעה 17 משקאות שונים &#8211; מאספרסו ארומטי ועד קורטאדו אופנתי.  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה אוטומטית Jura E8</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הדור האחרון של דגם מכונת הקפה המצליח ביותר של JURA מתגאה בעיצוב מחודש ובמגוון יתרונות שנמצאו בעבר רק במחלקת הפרימיום.<br />מטחנת ארומה מקצועית מספקת תוצאת טחינה ללא רבב, תהליכי חליטה חדישים מאפשרים לניחוחות הקפה להתפתח במלואו ומשקאות קפה טרנדיים טובים מתמיד הודות לקצף החלב החלק והאוורירי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-E8 החדשנית מציעה 17 משקאות שונים - מאספרסו ארומטי ועד קורטאדו אופנתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לייצר גם חליטות ארוכות ומתונות כמו קפה בריסטה ו-lungo בריסטה בסטנדרט בריסטה מקצועי הודות למערכת נוזלים חדשה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מי שאוהב את הקפה שלו יותר אינטנסיבי יכול להגביר את הקפוצ'ינו, המקיאטו הפלאט ווייט או הלאטה שלו באמצעות פונקציית Extra Shot.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם מערכת הנוזלים האופטימלית, אפילו ניקוי מערכת החלב מתבצע אוטומטית בלחיצת כפתור - פונקציה נוספת של E8 שתהיה מוכרת ממוצרי השורה העליונה של JURA.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, כעת היא מתהדרת בטיפול אינטואיטיבי אף יותר יחד עם תפעול קל להפליא.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איכות קפה מהשורה הראשונה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנת ארומה מקצועית מבטיחה 12.2%* יותר ארומה ואיכות טחינה גבוהה באופן עקבי כך שהטעמים יתגלו לשלמות לאורך כל חיי השירות של המטחנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהליך מיצוי הדופק (P.E.P.®) מבטיח טעם מקסימלי למשקאות קצרים, בעוד שחימום מוקדם מושכל מבטיח את הטמפרטורה האידיאלית כבר מהכוס הראשונה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תפעול קל וצג מהודר</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צג צבעוני בגודל 2.8 אינץ', שישה כפתורים ותפיסת הפעלה חדשה לחלוטין הכוללת בינה מלאכותית מאפשרים טיפול פשוט. אלגוריתם אינטליגנטי מזהה העדפות אישיות ומתאים את מסך ההתחלה כך ששתיים או ארבע המשקאות המועדפות על המשתמשים יוצגו תמיד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגדרות המוצר ומיקומן על ניתן המסך ניתנות לשינוי בהתאם להעדפות האישיות ולהציג או להסתיר את שמות המוצרים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל המידע הרלוונטי לגבי מכונת הקפה וכן הוראות טיפול ממתינות מוצגים בבירור בקוקפיט דרך התצוגה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ניקוי מערכת חלב בנגיעה אחת</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהליך ניקוי מערכת החלב המתוחכם מתרחש אוטומטית בלחיצת כפתור ומסתיים תוך זמן קצר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גם מגש הטפטוף עומד בסטנדרטים הארגונומיים הגבוהים ביותר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב שלו מונע שפיכת מים וניתן להסיר אותו בנוחות ביד אחת בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב הרמוני</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונות הקפה של JURA מתאפיינות בעיצוב אופייני נקי ואקספרסיבי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומרים איכותיים ואומנות מדויקת מדגישים את איכות הפרימיום של ה-E8 המודרנית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב של המכונה הוא העדות לאיכותו, הפונקציונליות והעמידות שלו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פרטים כמו מיכל המים המחורץ או סורג הכוס האיכותי המצופה כרום משלימים בצורה מושלמת את העיצוב הנקי וההרמוני של ה-E8.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קיבולת מיכל מים: 1.9 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הספק: 1450 W.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לבחור מבין המשקאות האהובים עליך:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ריסטרטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אספרסו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אספרסו דופיו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פלאט ווייט</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פלאט ווייט מחוזק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפוצ׳ינו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קורטאדו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפוצ׳ינו מחוזק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>לאטה מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלב מוקצף</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ועוד. פעולתו בלחיצת כפתור היא לא כל מה שמייחד את המכונה המהודרת הזו.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל המים הוא הנגיש ביותר שתמצאו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יש לה מטחנה קונית מובנית שמתמלאת בקלות בחלק העליון של המכונה, בתוספת פתח אופציונלי לפולי קפה טחונים מראש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים 1.9 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי קפה -280 גר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הספק 1450 וואט</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משקל 9.6 קג</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מערכת מים חכמה - מזהה באיזו מחסנית מסנן CLEARLY Smart נמצאת בשימוש ומתאימה את ההגדרות באופן אוטומטי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב של 28 ס\"מ בלבד, גובה 38.1 ועומק של 44.6 ס\"מ</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה אוטומטית Jura E8, לבן. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 14,
+     "variation": true
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "Jura"
+     ],
+     "id": 18,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 64933,
+   "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%a7%d7%95%d7%99-jura-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d/",
+   "name": "טבליות ניקוי Jura לניקוי שומנים",
+   "short_description": "<ul>\n<li>לאיכות הקפה המושלמת בכל פעם, חשוב לטפל נכון במכונת הקפה שלך ולהקפיד על כמה כללי היגיינה פשוטים בכל הנוגע לחלב, קפה ומים.כדי להקל ככל האפשר את הטיפול במכונה שלך, לכל מכונת קפה של JURA יש יחידת חליטה נטולת תחזוקה שמנקה את עצמה בלחיצת כפתור.<br />\nטבליות ניקוי מקוריות של JURA, שנוסו ונבדקו מיליוני פעמים, עוברות אופטימיזציה ומשופרת ללא הרף על ידי צוות המעבדה של Jura.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">טבליות ניקוי Jura לניקוי שומנים</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>לאיכות הקפה המושלמת בכל פעם, חשוב לטפל נכון במכונת הקפה שלך ולהקפיד על כמה כללי היגיינה פשוטים בכל הנוגע לחלב, קפה ומים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כדי להקל ככל האפשר את הטיפול במכונה שלך, לכל מכונת קפה של JURA יש יחידת חליטה נטולת תחזוקה שמנקה את עצמה בלחיצת כפתור.<br />\nטבליות ניקוי מקוריות של JURA, שנוסו ונבדקו מיליוני פעמים, עוברות אופטימיזציה ומשופרת ללא הרף על ידי צוות המעבדה של Jura.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טבלית הניקוי התלת-פאזית החדשה היא התוצאה החדשנית של מחקר אינטנסיבי ומציעה כעת תוצאות טובות אף יותר, הודות לשלב הגנה נוסף המעניק הגנה מתמשכת מפני מרבצי מינרלים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם זאת, הטאבלטים עדיין קלים לשימוש באותה מידה.<br />\nכיצד פועלת פעולת הניקוי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכנית הניקוי מתחילה בלחיצת כפתור.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שלב 1: ניקוי<br />\nיחידת החליטה ומסננת החליטה נשטפים היטב במים חמים ב-80 מעלות צלזיוס. הנוסחה העוצמתית של טבליות הניקוי מסירה ביעילות עקבות של שומן קפה ושמן שיכולים לשנות את טעם ואיכות הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שלב 2: טיפול<br />\nבשלב השני, שלב הטיפול, חומרים פעילים מיוחדים מהווים מחסום הגנה על משטחי הרכיבים, המונעים הצטברות שאריות קפה ושומנים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התוצאה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם טבליות הניקוי התלת-פאזיות החדשניות תוכלו לנקות, לטפל ולהגן על מכונת הקפה האוטומטית של JURA הכל בפעולת ניקיון אחת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התוצאה היא ניקיון היגייני, חיי שירות ארוכים יותר - והקפה המושלם, כוס אחר כוס.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "לאיכות הקפה המושלמת בכל פעם, חשוב לטפל נכון במכונת הקפה שלך ולהקפיד על כמה כללי היגיינה פשוטים בכל הנוגע לחלב, קפה ומים"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64957,
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqua-c/",
+   "name": "3 פילטר מים אקווה קלין למכונות פיליפס Saeco Aqua Clean",
+   "short_description": "<ul>\n<li>פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :סדרת האינקנטו, סדרת האינטליה דה-לקס.</li>\n<li>עד 5000 כוסות</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<h3>3 פילטר מים למכונות קפה פיליפס סאקו - אקווה קלין -הדור החדש.</h3>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>AquaClean יעזור לשמור על טעם הקפה לאורך זמן ולמנוע היווצרות אבנית הגורמת לסתימות, בזכות תכונות חדשניות כמו טכנולוגיית החלפת יונים, זרימת המים המוגנת בפטנט והפילטר המיקרו נקבובי.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>AquaClean מבטיח שרק מים טהורים ומסוננים זורמים למכונת הקפה האוטומטית שלך וזה מצמצם את הצורך בניקוי המכונה. בעזרת AquaClean תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"product-short-desc grid_6 omega\">\n<p>פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :</p>\n<p>סדרת האינקנטו, סדרת האינטליה דה-לקס.</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "3 פילטר מים אקווה קלין למכונות פיליפס Saeco Aqua Clean. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 65029,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-passione-silver/",
+   "name": "מכונת קפה מליטה  Melitta® Caffeo Passione Silver",
+   "short_description": "<ul>\n<li>עונג צרוף להנאה מקפה טרי.<br />\nמכונה שהיא חוויית קפה טרי בגודל קומפקטי: Melitta® Caffeo® Passione® החדש עם מערכת הארומה המיוחדת Melitta® Best.ניתן להכין מגוון של סוגי משקאות באמצעות Auto Cappuccinatore האוטומטי תוכלו להכין בהצלחה את כל סוגי הקפה עם חלב.</li>\n<li>שליטה על חוזק הקפה</li>\n<li>שליטה על גודל/כמות המשקה</li>\n<li>הקצפת חלב או חימום ללא הקצפה</li>\n<li>מים חמים</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מליטה Melitta® Caffeo Passione Silver</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה אטום שומר טריות Aromasafe® על מיכל פולי הקפה פירושו שהטעמים והארומות המגוונים של פולי הקפה מוגנים אפילו יותר. העובדה שרק כמות פולי הקפה שאתם צריכים נטחנה טריה ואז הקפה הטחון נחלט &nbsp;מיד. המטחנה פועלת עד שהיא ריקה בכל פעם כדי למנוע ערבוב סוגים שונים של פולי קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפוצ'ינאטור אוטומטי: הכל יכול לחלב מוקצף ועוד. האוטו קפוצ'ינאטור האוטומטי מבטיח חלב מוקצף מושלם. אבל יכול גם לעשות יותר: הוא יכול לחמם חלב ללא הקצפה או לחמם מים כלומר לקקאו טעים או מדי פעם כוס תה ספונטנית..</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פיות מזיגת הקפה מתכווננות לגובה כדי לאפשר התאמה מושלמת לכוסות בגובה שונה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן להכין אספרסו קצר או כפול או קפה גדול</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שליטה על גודל הכוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה- Caffeo® Passione® מציין באופן אוטומטי בתצוגה מתי יש לנקות את המכונה או לבצע ניקוי אבנית. תוכנית הניקוי או הסרת האבנית פשוטה לביצוע ..</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניקוי ותחזוקה קלה של יחידת החליטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מצויד במצב חיסכון באנרגיה הניתן לתכנות, תכונת כיבוי אוטומטית לתכנות ומתג 0 וואט לכיבוי ידני, ל- Caffeo® Passione® יש חבילת חיסכון באנרגיה מעודכנת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה, כמו גם תכונות שירות רבות. בנוסף למידע על הקפה המושלם, הוראות שלב אחר שלב מאוירות מעבירות אותך בתוכניות התחזוקה. האפליקציה גם מעניקה לך עזרה בהבנת המצב התפקודי של מכונת הקפה שלך בעזרת כלי האבחון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב 25.3 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עומק 38 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה 39 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים 1.2 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קדמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה melitta caffeo passione silver | מינוטו חנות קפה ואביזרים ",
+    "rank_math_description": "\"Melitta Caffeo Passione Silver - אספרסו איכותי ומעוצב. מציעה טחינה מדויקת ומערכת חליטה מתקדמת. ה-Melitta Caffeo Passione Silver כוללת מקציף חלב וחיסכון חשמל\n\""
+   },
+   "attributes": []
+  },
+  {
+   "id": 65088,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-700-te657313rw/",
+   "name": "מכונת קפה סימנס Siemens EQ 6 Plus series 700 TE657313RW",
+   "short_description": "<p>&nbsp;</p>\n<ul>\n<li>*מסלול קפה לשנה מתנה :1 ק&quot;ג פולי קפה איטלקי מדי חודש. (סה&quot;כ 12 ק&quot;ג) בשלושה משלוחים.לבחירה ממבחר תערובות הקפה של VARANINI (חמש תערובות שונות).24 חודשי אחריות בבית הלקוח.</li>\n<li></li>\n<li>OneTouch כל סוגי הקפה בלחיצת כפתור אחת &#8211; אספרסו, קפוצ'ינו או לאטה מקיאטו</li>\n<li>תצוגה דיגיטלית צבעונית &#8211; ניתן לבחור את סוג הקפה שלך בקלות ובלחיצה אחת.</li>\n<li>שנתיים אחריות</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה סימנס Siemens EQ 6 Plus series 700 TE657313RW</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>מכינה 2 משקאות במזיגה אחת (אפילו קפוצ'ינו) - כולל את האפשרות לבחור כל משקה בנפרד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת חימום ייחודית   SensoFlow - אספרסו מושלם בכל הכנה בזכות טמפרטורת בישול מדויקת של פולי הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>AromaDouble Shot  - באמצעות טחינה ובישול כפולים של פולי הקפה בשילוב עם לחץ מים של 15 בר , ניתן להינות מקפה חזק במיוחד במרירות מופחתת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>OneTouch כל סוגי הקפה בלחיצת כפתור אחת - אספרסו, קפוצ'ינו או לאטה מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תצוגה דיגיטלית צבעונית - ניתן לבחור את סוג הקפה שלך בקלות ובלחיצה אחת.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת חיישני מובנת המתריעה על הצורך במילוי המים /קפה או ריקון מגש טפטוף / פסולת הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תפריט עשיר לבחירת משקאות: אספרסו , קפוצ'ינו , לאטה , מקיאטו , קרמה , אמריקנו , קורטדו ועוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יכולת שליטה בכמות הקפה בדרגות חוזק שונות + אפשרות לדאבל שוט קפה - המבצעת טחינה כפולה בכדי לא לפגוע באיכות המשקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן להגדיר את טמפרטורת המשקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תצוגה דיגיטלית צבעונית - תפריט מאויר הממחיש בתמונה את המשקה אותו תרצו להכין</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פריט אישי - ניתן לתכנת ולשמור 2 משקאות בהתאמה אישית שישמרו בתפריט המועדפים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות להתאים את גודל הכוס לאורך המשקה שתבחרו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יחידת הקפה והחלב מתכווננות עד לאורך של 14 ס\"מ , כך שניתן להכין קפוצ'ינו ארוך במיוחד (או שניים בו זמנית)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן להתאים את היחס בין קפה לחלב בכל משקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים בעל קיבולת של 1.7 ליטר מים , נשלף בקלות לניקיון / מילוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מנגנון שאיבת חלב למטרת הקצפה , מתאים לכל כלי או אפילו ישירות מקרטון החלב</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מדריך מלא למשתמש כולל פתרון בעיות בזמן אמת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מטחנת קפה קראמית בעלת מספר רמות שונות לטחינת הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות להקצפת חלב בנפרד , חלב חם או מזיגת מים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>זמן התחממות מופחת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>לחץ משאבה של 19 בר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות לשימוש בקפה טחון בפתח נפרד המיועד לכך</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חסכונית בחשמל ובעלת יכולת כיבוי אוטומטית הניתנת לכיוון בין 15 דקות ל8 שעות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מחויבות ל15,000 כוסות קפה בשימוש ביתי (בשימוש שאינו מסחרי בלבד ל - 24 חודשים ממועד הרכישה)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יחידת החליטה נשלפת בקלות לניקוי תחת מי ברז</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת שטיפה אוטומטית בהפעלה וכיבוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניקוי אוטומטי באמצעות אדים של מערכת החלב לאחר כל הכנת משקה חלב</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>רכיבי מערכת הקצפת החלב מתנתקים בקלות לשטיפה בברז / מדיח כלים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מגש איסוף נוזלים ופסולת הקפה נשלפים בקלות לניקוי וריקון</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תכניות אוטומטיות להסרת אבנית , שומני הקפה וניקוי- קיימת גם תכנית משולבת להסרת אבנית וניקוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>התראה על גבי הצג בצורך לניקוי אבנית / החלפת פילטר מים/ הסרה של אבנית / ניקיון המכונה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל פולי הקפה בעל קיבולת של כ-300 גרם פולים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תא אחסון לכבל החשמל (כבל באורך של מטר)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יכולת כיוון רמת הטחינה של הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נעילת בטיחות מפני ילדים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות לתצוגה בשפות שונות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אחריות: 24 חודשים ע\"י היבואן bsh</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "Siemens EQ 6 Plus series 700 TE657313RW | מינוטו קפה ואביזרים",
+    "rank_math_description": "מכונת קפה מקצועית מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - מכונת קפה | TE657313RW"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65102,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99-%d7%a1%d7%9e%d7%90%d7%a8%d7%98-melitta-barista-t-smart/",
+   "name": "מכונת קפה מליטה בריסטה טי סמארט Melitta® Barista T Smart",
+   "short_description": "<ul>\n<li><strong>מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו</strong></li>\n<li>ניתן לשלוט על כמויות ותהליכי הכנה ע&quot;י האפליקציה MELITTA®<i> </i></li>\n<li>עד 18 משקאות קפה עם הכמות הנכונה של פולי קפה.לפי מתכון או פרי יצירתך.<i> </i></li>\n<li>מסך <span class=\"caps\">TFT</span> קל וברור לקריאה. פאנל הפעלה עם חיישני מגע, קל לקבוע את הכמות והחוזק.<i> </i></li>\n<li>מצב הכנה של שתי כוסות משקה קפה בו בזמן.<i> </i></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מליטה בריסטה טי סמארט Melitta® Barista T Smart</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list {\"className\":\"list\"} --></p>\n<ul class=\"wp-block-list list\"><!-- wp:list-item --></p>\n<li>ניתן לשלוט על כמויות ותהליכי הכנה ע\"י האפליקציה MELITTA®<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עד 18 משקאות קפה עם הכמות הנכונה של פולי קפה.לפי מתכון או פרי יצירתך.<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מסך <span class=\"caps\">TFT</span> קל וברור לקריאה. פאנל הפעלה עם חיישני מגע, קל לקבוע את הכמות והחוזק.<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מצב הכנה של שתי כוסות משקה קפה בו בזמן.<i> </i></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - מליטה. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65112,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-gaggia-cadorna-prestige/",
+   "name": "מכונת קפה גאג'יה Gaggia Cadorna Prestige",
+   "short_description": "<ul>\n<li>מכונה אוטומטית לחלוטין, עבור חובבי קפה</li>\n<li>!עיצוב מרשים, בשילוב עם גוף נירוסטה איכותית,</li>\n<li>מכונה זו בנויה לשרת את בעלייה שנים רבות</li>\n<li><strong>10 סוגי קפה</strong></li>\n<li><b>4 פרופילי משתמש</b> שונים לזיכרון כל המשקאות, המותאמים אישית לפי העדפותיך.</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<h3>מכונת קפה גאג'יה Gaggia Cadorna Prestige</h3>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונה אוטומטית לחלוטין, עבור חובבי קפה !</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב מרשים, איכותית,</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונה זו בנויה לשרת את בעלייה שנים רבות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><b>עד 14 משקאות</b><b></b></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התכוננו לחוויית הבריסטה האולטימטיבית בבית: גלו את 10 המשקאות הזמינים, והכל בהישג ידכם! נסו את המשקאות ותטעמו בית קפה איטלקי: ריסטרטו, אספרסו, אספרסו ארוך, קפה, קפה אמריקנו, קפוצ'ינו וקפוצ'ינו ענק, café au lait, קפה קורטדו café cortado, לאטה מקיאטו, לאטה מקיאטו ענק, חלב מוקצף, מים חמים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><b>ממשק משתמש חדש</b><b></b></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טכנולוגיה מתקדמת הפכה לפשוטה יותר בזכות מסך תצוגה רחב שיש בו את כל ההגדרות במבט אחד. זה מותאם לצרכים שלך, קל, אינטואיטיבי ומפורט לחלוטין, והוא מדריך אותך דרך פונקציות התאמה אישית, בישול משקאות קפה ופונקציות ניקוי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><b>4 פרופילי משתמש</b>&nbsp;שונים לזיכרון כל המשקאות, המותאמים אישית לפי העדפותיך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>איך אתם אוהבים את הקפה שלכם? חזק, חלש, יותר חליטה או אולי יותר מים או בכלל עם חלב...מממ ומה עם הארומה? מעכשיו אין צורך לריב עם&nbsp;<b>Gaggia CADORNA PRESTIGE</b><b>&nbsp;</b>ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות, המותאמים לטעמך האישי לכל המשקאות בנפרד. ובכל שימוש תוכלו למצוא אותם בקלות כמו שתכנתם את הפרופיל.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:shortcode --></p>\n<p><!-- /wp:shortcode --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קדמה קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות: 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה gaggia cadorna prestige | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": " מכונת קפה גאג’יה Gaggia Cadorna Prestige עם ממשק המשתמש החדש. ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות, המותאמים לטעם האישי בכל משקה בנפרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65181,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%9c%d7%95%d7%9c-%d7%a7%d7%a4%d7%94-%d7%9c%d7%a9%d7%a0%d7%94-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-te655203rw/",
+   "name": "מסלול קפה לשנה מכונת קפה סימנס Siemens EQ 6 Plus series TE655203RW",
+   "short_description": "<p>&nbsp;</p>\n<ul>\n<li>*מסלול קפה לשנה מתנה :1 ק&quot;ג פולי קפה איטלקי מדי חודש. (סה&quot;כ 12 ק&quot;ג) בשלושה משלוחים.לבחירה ממבחר תערובות הקפה של VARANINI (חמש תערובות שונות).24 חודשי אחריות בבית הלקוח.</li>\n<li></li>\n<li>OneTouch כל סוגי הקפה בלחיצת כפתור אחת &#8211; אספרסו, קפוצ'ינו או לאטה מקיאטו</li>\n<li>תצוגה דיגיטלית צבעונית &#8211; ניתן לבחור את סוג הקפה שלך בקלות ובלחיצה אחת.</li>\n<li>שנתיים אחריות</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה סימנס Siemens EQ 6 Plus series TE655203RW</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>*מסלול קפה לשנה מתנה :1 ק\"ג פולי קפה איטלקי מדי חודש. (סה\"כ 12 ק\"ג) בשלושה משלוחים.לבחירה ממבחר תערובות הקפה של VARANINI (חמש תערובות שונות).\n<p>24 חודשי אחריות בבית הלקוח.</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מכינה 2 משקאות במזיגה אחת (אפילו קפיצ'ינו) - כולל את האפשרו לבחור כל משקה בנפרד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת חימום ייחודית   SensoFlow - אספרסו מושלם בכל הכנה בזכות טמפרטורת בישול מדויקת של פולי הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>AromaDouble Shot  - באמצעות טחינה ובישול כפולים של פולי הקפה בשילוב עם לחץ מים של 15 בר , ניתן להינות מקפה חזק במיוחד במרירות מופחתת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>OneTouch כל סוגי הקפה בלחיצת כפתור אחת - אספרסו, קפוצ'ינו או לאטה מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תצוגה דיגיטלית צבעונית - ניתן לבחור את סוג הקפה שלך בקלות ובלחיצה אחת.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת חיישני מובנת המתריעה על הצורך במילוי המים /קפה או ריקון מגש טפטוף / פסולת הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תפריט עשיר לבחירת משקאות: אספרסו , קפוצ'ינו , לאטה , מקיאטו , קרמה , אמריקנו , קורטדו ועוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יכולת שליטה בכמות הקפה בדרגות חוזק שונות + אפשרות לדאבל שוט קפה - המבצעת טחינה כפולה בכדי לא לפגוע באיכות המשקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן להגדיר את טמפרטורת המשקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תצוגה דיגיטלית צבעונית - תפריט מאויר הממחיש בתמונה את המשקה אותו תרצו להכין</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פריט אישי - ניתן לתכנת ולשמור 2 משקאות בהתאמה אישית שישמרו בתפריט המועדפים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות להתאים את גודל הכוס לאורך המשקה שתבחרו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יחידת הקפה והחלב מתכווננות עד לאורך של 14 ס\"מ , כך שניתן להכין קפוצ'ינו ארוך במיוחד (או שניים בו זמנית)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן להתאים את היחס בין קפה לחלב בכל משקה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים בעל קיבולת של 1.7 ליטר מים , נשלף בקלות לניקיון / מילוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מנגנון שאיבת חלב למטרת הקצפה , מתאים לכל כלי או אפילו ישירות מקרטון החלב</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מדריך מלא למשתמש כולל פתרון בעיות בזמן אמת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מטחנת קפה קראמית בעלת מספר רמות שונות לטחינת הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות להקצפת חלב בנפרד , חלב חם או מזיגת מים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>זמן התחממות מופחת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>לחץ משאבה של 19 בר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות לשימוש בקפה טחון בפתח נפרד המיועד לכך</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חסכונית בחשמל ובעלת יכולת כיבוי אוטומטית הניתנת לכיוון בין 15 דקות ל8 שעות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מחויבות ל15,000 כוסות קפה בשימוש ביתי (בשימוש שאינו מסחרי בלבד ל - 24 חודשים ממועד הרכישה)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יחידת החליטה נשלפת בקלות לניקוי תחת מי ברז</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת שטיפה אוטומטית בהפעלה וכיבוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניקוי אוטומטי באמצעות אדים של מערכת החלב לאחר כל הכנת משקה חלב</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>רכיבי מערכת הקצפת החלב מתנתקים בקלות לשטיפה בברז / מדיח כלים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מגש איסוף נוזלים ופסולת הקפה נשלפים בקלות לניקוי וריקון</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תכניות אוטומטיות להסרת אבנית , שומני הקפה וניקוי- קיימת גם תכנית משולבת להסרת אבנית וניקוי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>התראה על גבי הצג בצורך לניקוי אבנית / החלפת פילטר מים/ הסרה של אבנית / ניקיון המכונה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל פולי הקפה בעל קיבולת של כ-300 גרם פולים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תא אחסון לכבל החשמל (כבל באורך של מטר)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יכולת כיוון רמת הטחינה של הקפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נעילת בטיחות מפני ילדים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות לתצוגה בשפות שונות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אחריות: 24 חודשים ע\"י היבואן bsh</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "Siemens EQ 6 Plus series TE655203RW | מינוטו קפה ואביזרים",
+    "rank_math_description": "מכונת קפה מקצועית מסלול לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65439,
+   "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/",
+   "name": "טבליות הסרת אבנית למכונות קפה Jura",
+   "short_description": "<p>שמור על הטעם המושלם של הקפה שלך למשך זמן רב.</p>\n<p>9 טבליות JURA מנקות ביעילות ומגינות על מכונת הקפה שלך.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">טבליות הסרת אבנית למכונות קפה Jura</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>\"שמרו על הטעם המושלם של הקפה שלכם!\"</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אבנית פוגעת בטעם הקפה שלכם?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טבליות ההסרת אבנית הדו-שלבית של JURA מסירות בקלות את כל שאריות האבנית ומגינות על מכונת הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהנו מטעם קפה טרי ומושלם בכל פעם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רכשו עכשיו באתר מינוטו קפה טבליות להסרת אבנית למכונת קפה Jura ותהנו מטעם קפה טרי ואיכותי.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "טבליות הסרת אבנית למכונות קפה Jura. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "36",
+      "9"
+     ],
+     "id": 17,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 65469,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-e6-%d7%9c%d7%94%d7%a0%d7%90%d7%94-%d7%9e%d7%95%d7%a9%d7%9c%d7%9e%d7%aa-%d7%9e%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%91%d7%9c%d7%97/",
+   "name": "מכונת קפה Jura E6 - להנאה מושלמת מקפוצ'ינו בלחיצת כפתור",
+   "short_description": "<p><strong>Jura E6 – הקפה המושלם בלחיצת כפתור מכונת הקפה Jura E6 משלבת טכנולוגיה מתקדמת עם עיצוב אלגנטי.</strong></p>\n<p>11 משקאות, כולל אספרסו, קפוצ'ינו וקפה בריסטה, בלחיצת כפתור.</p>\n<p>עם מטחנת הארומה המקצועית ותצוגת צבע אינטואיטיבית, ההכנה הופכת פשוטה ומדויקת.</p>\n<p>פונקציית Cappuccino מבטיחה קצף חלב רך ומושלם, בעוד שהחיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<p><strong>Jura E6 - להנאה מושלמת מקפוצ'ינו בלחיצת כפתור, והרבה יותר מזה</strong></p>\n<p><strong>חוויה מושלמת של קפה בכל יום</strong><br />\nה-E6 מבית יורָה מציע לכם קפוצ'ינו מושלם בלחיצת כפתור. מעבר למשקאות הקפה הקלאסיים, תוכלו ליהנות מהקפוצ'ינו המועדף בזכות פונקציית ה-Easy Cappuccino, המאפשרת הכנה פשוטה ומדויקת.</p>\n<p><strong>ארומה מקצועית בכל כוס</strong><br />\nמטחנת הארומה המקצועית (Professional Aroma Grinder) מבטיחה תוצאה עקבית ואיכותית יותר של טחינה, המגדילה את הארומה בכ-12.2% בהשוואה למטחנות מסורתיות. המטחנה שומרת על ביצועיה לאורך כל חיי המוצר ומאפשרת חוויית קפה שאין שנייה לה.</p>\n<p><strong>קפוצ'ינו ללא פשרות</strong><br />\nפונקציית ה-Easy Cappuccino, בשילוב עם פיית החלב המיועדת במיוחד לקפוצ'ינו, יוצרת קצף חלב רך ועדין שמשלים באופן מושלם את הקפה שלכם. פתרון אידיאלי לחובבי הקפוצ'ינו.</p>\n<p><strong>תפעול פשוט ונוח</strong><br />\nתצוגת הצבע בגודל 2.8 אינץ' ושישה כפתורים ממוקמים בצורה נוחה מאפשרים שימוש אינטואיטיבי וקליל. ה-E6 כולל גם אפשרות לחיבור לאפליקציית J.O.E.®, המאפשרת להכין משקאות, לשמור העדפות אישיות ולשלוח הזמנות קפה ישירות למכונה מהסמארטפון שלכם.</p>\n<p><strong>עיצוב על-זמני</strong><br />\nהעיצוב האלגנטי של ה-E6 משקף את הטכנולוגיה המתקדמת שמסתתרת בתוכו. עם קווים נקיים ואביזרי כרום יוקרתיים, ה-E6 משתלב בהרמוניה בכל מטבח. הן במבחר המשקאות והן בעיצובו, הדגם מתמקד במהות האמיתית – כוס הקפה המושלמת.</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה jura e6 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "Jura E6 קפה מושלם בלחיצת כפתור. מכונת הקפה Jura E6 משלבת טכנולוגיה מתקדמת עם עיצוב אלגנטי. להכנת 11 משקאות, כולל אספרסו, קפוצ’ינו וקפה בריסטה, בלחיצת כפתור."
+   },
+   "attributes": []
+  },
+  {
+   "id": 67154,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%93%d7%95%d7%a8%d7%a0%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-cadorna-plus/",
+   "name": "מכונת קפה גאג'יה קדורנה פלוס Gaggia Cadorna Plus",
+   "short_description": "<p data-sourcepos=\"3:1-3:38\"><strong>מכונת קפה אוטומטית עם מטחנה קרמית,</strong></p>\n<p data-sourcepos=\"5:1-5:53\"><strong>6 משקאות זמינים, ממשק משתמש חדש, 4 פרופילי משתמש.</strong></p>\n<p data-sourcepos=\"7:1-7:51\"><strong>מוט הקצפה מקצועי, טחינה מדויקת, תכונות מתקדמות.</strong></p>\n<p data-sourcepos=\"9:1-9:43\"><strong>הזמינו עכשיו ותיהנו מחוויית קפה מושלמת!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:69\">גאג'יה קדורנה בריסטה פלוס: תהנו מחוויית קפה איטלקית משובחת בביתכם!</h2>\n<p data-sourcepos=\"3:1-3:25\"><strong>100% מצוינות איטלקית:</strong></p>\n<ul data-sourcepos=\"5:1-7:0\">\n<li data-sourcepos=\"5:1-5:22\">מיוצר בגאווה באיטליה</li>\n<li data-sourcepos=\"6:1-7:0\">אחריות לאיכות פרמיום ותשוקה בלתי פוסקת לייצור אספרסו</li>\n</ul>\n<p data-sourcepos=\"8:1-8:38\"><strong>הכינו את כל המשקאות האהובים עליכם:</strong></p>\n<ul data-sourcepos=\"10:1-13:0\">\n<li data-sourcepos=\"10:1-10:79\">6 משקאות זמינים: אספרסו, אספרסו ארוך, ריסטרטו, קפה אמריקנו קצר/ארוך, מים חמים</li>\n<li data-sourcepos=\"11:1-11:44\">ממשק משתמש חדש עם מסך תצוגה רחב וקל לתפעול</li>\n<li data-sourcepos=\"12:1-13:0\">4 פרופילי משתמש לשמירת ההעדפות האישיות שלכם</li>\n</ul>\n<p data-sourcepos=\"14:1-14:28\"><strong>הפוך למאסטר בריסטה בבית:</strong></p>\n<ul data-sourcepos=\"16:1-19:0\">\n<li data-sourcepos=\"16:1-16:27\">מוט הקצפה מקצועי מנירוסטה</li>\n<li data-sourcepos=\"17:1-17:43\">100% מטחנה קרמית עם 10 הגדרות טחינה שונות</li>\n<li data-sourcepos=\"18:1-19:0\">תכונת OPTIAROMA להתאמת עוצמת הארומה</li>\n</ul>\n<p data-sourcepos=\"20:1-20:33\"><strong>טכנולוגיה מתקדמת וקלות שימוש:</strong></p>\n<ul data-sourcepos=\"22:1-27:0\">\n<li data-sourcepos=\"22:1-22:38\">מכסה ארומה לשמירה על טריות פולי הקפה</li>\n<li data-sourcepos=\"23:1-23:47\">טרום חליטה להפקת אספרסו בעל גוף וטעם ייחודיים</li>\n<li data-sourcepos=\"24:1-24:35\">יחידת חליטה ניתנת להסרה לניקוי קל</li>\n<li data-sourcepos=\"25:1-25:30\">אפשרות לשימוש בקפה טחון מראש</li>\n<li data-sourcepos=\"26:1-27:0\">חימום דוד מהיר</li>\n</ul>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:39\">מפרט טכני</h2>\n<p data-sourcepos=\"3:1-3:15\"><strong>גוף המכונה:</strong></p>\n<ul data-sourcepos=\"5:1-8:0\">\n<li data-sourcepos=\"5:1-5:20\">חומר: ABS (פלסטיק)</li>\n<li data-sourcepos=\"6:1-6:22\">מתח הפעלה: 230V 50HZ</li>\n<li data-sourcepos=\"7:1-8:0\">הספק: 1900W</li>\n</ul>\n<p data-sourcepos=\"9:1-9:17\"><strong>מערכת החליטה:</strong></p>\n<ul data-sourcepos=\"11:1-16:0\">\n<li data-sourcepos=\"11:1-11:19\">לחץ משאבה: 15 BAR</li>\n<li data-sourcepos=\"12:1-12:14\">דוד: נירוסטה</li>\n<li data-sourcepos=\"13:1-13:20\">מיכל מים: 1.5 ליטר</li>\n<li data-sourcepos=\"14:1-14:24\">מיכל פולי קפה: 300 גרם</li>\n<li data-sourcepos=\"15:1-16:0\">משקל: 9 ק”ג</li>\n</ul>\n<p data-sourcepos=\"17:1-17:13\"><strong>פונקציות:</strong></p>\n<ul data-sourcepos=\"19:1-30:0\">\n<li data-sourcepos=\"19:1-19:79\">6 משקאות זמינים: אספרסו, אספרסו ארוך, ריסטרטו, קפה אמריקנו קצר/ארוך, מים חמים</li>\n<li data-sourcepos=\"20:1-20:33\">ממשק משתמש חדש עם מסך תצוגה רחב</li>\n<li data-sourcepos=\"21:1-21:17\">4 פרופילי משתמש</li>\n<li data-sourcepos=\"22:1-22:27\">מוט הקצפה מקצועי מנירוסטה</li>\n<li data-sourcepos=\"23:1-23:43\">100% מטחנה קרמית עם 10 הגדרות טחינה שונות</li>\n<li data-sourcepos=\"24:1-24:37\">תכונת OPTIAROMA להתאמת עוצמת הארומה</li>\n<li data-sourcepos=\"25:1-25:12\">מכסה ארומה</li>\n<li data-sourcepos=\"26:1-26:12\">טרום חליטה</li>\n<li data-sourcepos=\"27:1-27:25\">יחידת חליטה ניתנת להסרה</li>\n<li data-sourcepos=\"28:1-28:30\">אפשרות לשימוש בקפה טחון מראש</li>\n<li data-sourcepos=\"29:1-30:0\">חימום דוד מהיר</li>\n</ul>\n<p data-sourcepos=\"31:1-31:10\"><strong>מידות:</strong></p>\n<ul data-sourcepos=\"33:1-36:0\">\n<li data-sourcepos=\"33:1-33:14\">רוחב: 26 ס\"מ</li>\n<li data-sourcepos=\"34:1-34:14\">גובה: 38 ס\"מ</li>\n<li data-sourcepos=\"35:1-36:0\">עומק: 44 ס\"מ</li>\n</ul>\n</div>\n<p data-sourcepos=\"28:1-28:74\"><strong>הזמינו עכשיו ממינוטו קפה את גאג'יה קדורנה בריסטה פלוס ותיהנו מהקפה המושלם בכל יום!</strong></p>\n<p data-sourcepos=\"43:1-43:61\">\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה gaggia cadorna plus | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת הקפה Gaggia Cadorna Plus מביאה את בית הקפה האיטלקי לביתכם. ה-Gaggia Cadorna Plus מציעה ממשק מתקדם, מקציף חלב מקצועי וקלות תחזוקה לחוויית קפה מושלמת."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Gaggia"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67225,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-550/",
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 550",
+   "short_description": "<div class=\"product-short-desc grid_6 omega \">\n<p>יפה, פשוטה ואיכותית. בשחור עם חזית בצבע כסף,</p>\n<p>פעולה פשוטה</p>\n<p>מערכת ארומטיקה עם לחץ משאבה של 15 בר</p>\n<p>מיכל מים גדול במיוחד (2.2 ליטר)</p>\n<p>מטחנה קונית שקטה עשויה פלדה מוקשה</p>\n<p>יחידת חליטה נשלפת לניקוי היגייני</p>\n<p>טמפרטורת הקפה ניתנת לבחירה בשלוש דרגות</p>\n</div>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו ניבונה Nivona CafeRomatica 550</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מציגים את מכונת הקפה Nivona 550, תוספת אלגנטית ומסוגננת למטבח של כל חובב קפה. עם התכונות המתקדמות והעיצוב האינטואיטיבי, מכונה זו מספקת חווית קפה שאין כמותה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 550 מצויידת במערכת חליטה עוצמתית החולטת טעם מקסימלי מכל פול, מייצרת קפה עשיר ומלא עם קרמה מושלמת בכל פעם. מיכל המים בעל קיבולת גדולה ומיכל פולי הקפה הופכים אותו לאידיאלי להגשת כוסות קפה מרובות ללא צורך במילוי תכוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחד המאפיינים הבולטים של ה-Nivona 550 הוא ממשק מסך צבעוני האינטואיטיבי שלו, המאפשר שליטה קלה ומדויקת על תהליך החליטה. ניתן לבחור מתוך מגוון הגדרות הניתנות להתאמה אישית, כולל טמפרטורה, חוזק ונפח, כדי ליצור את כוס הקפה המושלמת בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 550 כולל גם מקציף חלב משולב, המאפשר ליצור בקלות מגוון רחב של משקאות על בסיס חלב, כגון לאטה, קפוצ'ינו ועוד. יחד עם פונקציות הניקוי והסרת אבנית אוטומטיות , התחזוקה היא קלה, מה שמבטיח שהמכונה תישאר במצב מעולה במשך שנים רבות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 550 עשויה מחומרים איכותיים ומעוצבת תוך מחשבה על צורה ותפקוד, היא מכונת קפה שבאמת בולטת. אז למה להסתפק במשהו פחות משלמות? הזמינו עוד היום את Nivona 550 שלכם והתחילו ליהנות מחוויית הקפה האולטימטיבית מהנוחות של הבית שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>לחץ משאבה - 15 בר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>טמפרטורת קפה מתכווננת - 3 רמות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פיית קפה מתכווננת - 14 ס\"מ</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נפח מיכל מים - 2.2 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>גודל מיכל פולי הקפה - 250 גרם</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מידות בס\"מ: רוחב=24 ; גובה=34 ; עומק=46</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>הספק - 1455W</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל (כולל אריזה) - 10KG</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יבואן קופמה</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>24 חודשי אחריות</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה nivona caferomatica 550 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "\"Nivona Caferomatica 550 - קפה איכותי בלחיצת כפתור. כוללת מטחנה מתכווננת ומקציף חלב מקצועי. ה-Nivona Caferomatica 550 מציעה זיכרון הגדרות אישי ומצב חיסכון.\r\n\""
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Nivona"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67243,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-melitta-molino/",
+   "name": "מטחנת קפה Melitta Molino",
+   "short_description": "<div class=\"item-name\">\n<p><strong>התאמת טחינה עם 17 הגדרות</strong></p>\n<p><strong>הגדרות כמות קפה עבור 2 &#8211; 14 כוסות</strong></p>\n<p><strong>מיכל פולי קפה המכיל 200 גרם</strong></p>\n<p><strong>סכיני דיסק שטוחים מפלדה</strong></p>\n<p><strong>כיבוי אוטומטי</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div>\n<h1>מטחנת קפה Melitta Molino</h1>\n<p>Melitta Molino היא מטחנת קפה אוטומטית למתחילים.</p>\n<p>קומפקטית ומאפשרת לטחון קפה לשיטות חליטה שונות בלחיצת כפתור.</p>\n<p><strong>התאמת טחינה עם 17 הגדרות</strong></p>\n<p>ה-Melitta Molino® מאפשרת לך להגדיר את דרגת הטחינה האישית שלך עם סך של 17 רמות טחינה שונות.</p>\n<p>הגדרות הטחינה עוברות מ-1 (עדין מאוד) ל-17 (גס מאוד), בהתאם לשיטת החליטה. טבעת ההתאמה ממוקמת בצד המטחנה.</p>\n<p><strong>הגדרות כמות קפה עבור 2 - 14 כוסות</strong></p>\n<p>המתג הסיבובי להגדרת מספר הכוסות מקל על בחירת הכמות הנכונה של הקפה הטחון - בין 2 ל-14 כוסות קפה.</p>\n<p><strong>מיכל פולי קפה המכיל 200 גרם</strong></p>\n<p>מיכל פולי קפה Melitta Molino בעל מכסה נשלף וקל למילוי עם מקסימום 200 גרם פולי קפה.</p>\n<p><strong>סכיני דיסק שטוחים מפלדה</strong></p>\n<p>סכיני פלדה שטוחים הופכים את הטחינה למהירה וקלה.</p>\n<p>חלקו העליון של הסכינים ניתן להסרה, מה שהופך את הניקוי לנוח.</p>\n<p><strong>כיבוי אוטומטי</strong></p>\n<p>הטחינה מתחילה בלחיצת כפתור. ברגע שהטחינה מסתיימת, ה-Melitta Molino נכבה אוטומטית.</p>\n<p><strong>קלה לניקוי</strong></p>\n<p>הודות לחלקים הניתנים להסרה (דיסק טחינה נשלף, מיכל שאריות קפה נשלף, ומכסה של מיכל פולי נשלף) ה-Melitta Molino מהירה וקלה לניקוי לאחר השימוש.</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>אחריות 12 חודשים ע\"י היבואן קדמה בע\"מ</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - Melitta. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67257,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96%d7%b3-gaggia-magenta-prestige/",
+   "name": "מכונת קפה גאג'יה מג׳נטה פרסטיז׳ Gaggia Magenta Prestige",
+   "short_description": "<p><strong>עד 12 משקאות בלחיצת כפתור</strong></p>\n<p>גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, אספרסו לונגו, קפה, אמריקנו, קפוצ'ינו, קפה או לייט, חלב מוקצף, Flat White, לאטה מקיאטו ומים חמים.</p>\n<p><strong>מטחנת קפה עם סכינים קרמיות מתכווננות</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<h3>מכונת קפה גאג'יה מג׳נטה פרסטיז׳ Gaggia Magenta Prestige</h3>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עד 12 משקאות בלחיצת כפתור</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, אספרסו לונגו, קפה, אמריקנו, קפוצ'ינו, קפה או לייט, חלב מוקצף, Flat White, לאטה מקיאטו ומים חמים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מטחנת קפה עם סכינים קרמיות מתכווננות&nbsp;</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנה קרמית עמידה ממצה את המהות הטהורה ביותר מפולי הקפה, ומונעות התחממות יתר של הקפה. חומר זה מבטיח עמידות לאורך זמן, שקט ותוצאה טובה ביותר בכוס שלך. בחר בין 5 רמות טחינה להתאמה אישית של האספרסו שלך, מהטחינה הטובה ביותר לארומה חזקה, ועד לגס ביותר לקפה עדין יותר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מכסה ארומה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי הקפה מצויד במכסה אטום לשמירת הארומה, עוזר לשמר את הארומה של תערובת הקפה האהובה עליכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ממשק חדש עם כפתורים גדולים ונוחים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ממשק המשתמש הרחב עם תצוגה בצבע מלא וכפתורים מבטיח יותר שליטה ונראות לחוויית משתמש משופרת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכנת משקאות נעשית סופר פשוטה וכל הליכי הניקוי מונחים צעד אחר צעד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קנקן חלב משולב</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קנקן החלב המשולב מקציף את החלב פעמיים ומסיר את כל הבועות כדי לקבל קצף מושלם, תמיד בטמפרטורה הנכונה, בנגיעה אחת בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, מחזור הניקוי האוטומטי והאפשרות לאחסן את הקנקן במקרר הופכים אותו להיגייני ויעיל.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>OPTIAROMA</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונה זו מעניקה לך את האפשרות הייחודית להתאים את עוצמת הארומה וליצור משקאות מבוססי קפה מותאמים על ידי בחירת כמות הקפה הטחון לכוס מבין 5 אפשרויות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>חימום מהיר</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הדוד Quick Heat מבטיח משקאות חמים מהכוס הראשונה ללא המתנה. סודו טמון בגופו עשוי אלומיניום קל ונירוסטה, שיכולים להגיע במהירות לטמפרטורות חמות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>אפשרות קפה טחון</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף לאופציית פולי הקפה, פיתרון קל לחלוט תערובות קפה טחון שונות, גם תערובות ללא קפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קדמה קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות: 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מידות מוצר (א X ג X ע)<br />\n22.4 X 35.7 X 43.5 ס\"מ<br />\nמשקל המוצר<br />\n7.7 ק\"ג<br />\nגוף<br />\nABS שחור מט<br />\nחֲזִית<br />\nABS שחור מט<br />\nמגש טפטוף<br />\nABS שחור מט + נירוסטה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה gaggia magenta prestige | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת קפה Gaggia Magenta Prestige יכולה להכין עד 12 משקאות בלחיצת כפתור. ל Gaggia Magenta Prestige יש מטחנת קפה עם סכינים מתכווננות, וממשק חדש ונוח"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Gaggia"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67274,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-790/",
+   "name": "מכונת אספרסו ניבונה Nivona NICR 790",
+   "short_description": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n<p>קפוצ'ינו בלחיצת כפתור. פשוט, מהיר ועכשיו בעיצוב חדש.</p>\n<p>סדרת 7 מקבלת ארבעה דגמים חדשים. חומר איכותי פוגש אסתטיקה.</p>\n<p>לאוהבי הלאטה והלאטה מקיאטו.</p>\n<p>בנוסף למערכת איזון ארומה, מערכת ההקצפה החדשה של ניבונה פועלת כעת גם במכונות קפה אוטומטיות, לקפוצ'ינו בסגנון בריסטה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו ניבונה Nivona NICR 790</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפוצ'ינו בלחיצת כפתור. פשוט, מהיר ועכשיו בעיצוב חדש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סדרת 7 מקבלת ארבעה דגמים חדשים. חומר איכותי פוגש אסתטיקה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לאוהבי הלאטה והלאטה מקיאטו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף למערכת איזון ארומה, מערכת ההקצפה החדשה של ניבונה פועלת כעת גם במכונות קפה אוטומטיות,&nbsp;לקפוצ'ינו בסגנון בריסטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>5 מתכוני \"הקפה שלי\".<br />\n5 מתכונים הניתנים לתכנות והגדרה אישית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כמות קפה מתכווננת<br />\nכ-20 מ\"ל עד כ-240 מ\"ל<br />\nפיית קפה מתכווננת -&nbsp;14 ס\"מ<br />\nחוזק קפה מתכוונן -&nbsp;5 רמות חוזק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טמפרטורת קפה מתכווננת. -&nbsp;3 רמות טמפרטורה<br />\nדרגת טחינה מתכווננת<br />\nאפשרי<br />\nארומה&nbsp;בריסטה בקופסה (מערכת איזון ארומה)<br />\nתוכניות ניקוי אוטומטיות - שומנים ואבנית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חיבור בלוטות' אפשרי עם אפליקציה<br />\nמסנן מים טריים של CLARIS<br />\nקפוצ'ינו-סיסטמס<br />\nCAPPUCCINO CONNAISEUR , ONETOUCH-SPUMATOREplus<br />\nהכנת קפה -&nbsp;שתי כוסות קפה/אספרסו בו זמנית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תאורת כוסות<br />\nתצוגת TFT<br />\nECO-Modus<br />\nפעולה שקטה במיוחד<br />\nמטחנת קפה קונית עשויה פלדה מוקשחת<br />\nפונקציית מים חמים עבור תה (רמות) -&nbsp;3 רמות חום<br />\nתא אבקה לקפה טחון מראש<br />\nלחץ משאבה&nbsp;עד 15 בר<br />\nיחידת חליטה נשלפת<br />\nפונקציית שטיפה עבור ONETOUCH SPUMATORE</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מידות - רוחב 24, גובה 58, עומק 34</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>24 חודשי אחריות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קופמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה nivona nicr 790 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "\"Nivona NICR 790 משדרגת את חוויית הקפה בביתכם. מציעה מסך TFT צבעוני ו-5 פרופילים אישיים. ה-Nivona NICR 790 כוללת מקציף חלב אוטומטי ושליטה בלחיצה.\r\n\""
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Nivona"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67275,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-795/",
+   "name": "מכונת אספרסו ניבונה Nivona NICR 795",
+   "short_description": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n<p>קפוצ'ינו בלחיצת כפתור. פשוט, מהיר ועכשיו בעיצוב חדש.</p>\n<p>סדרת 7 מקבלת ארבעה דגמים חדשים. חומר איכותי פוגש אסתטיקה.</p>\n<p>לאוהבי הלאטה והלאטה מקיאטו.</p>\n<p>בנוסף למערכת איזון ארומה, מערכת ההקצפה החדשה של ניבונה פועלת כעת גם במכונות קפה אוטומטיות, לקפוצ'ינו בסגנון בריסטה.</p>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו ניבונה Nivona NICR 795</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפוצ'ינו בלחיצת כפתור. פשוט, מהיר ועכשיו בעיצוב חדש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סדרת 7 מקבלת ארבעה דגמים חדשים. חומר איכותי פוגש אסתטיקה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לאוהבי הלאטה והלאטה מקיאטו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף למערכת איזון ארומה, מערכת ההקצפה החדשה של ניבונה פועלת כעת גם במכונות קפה אוטומטיות,&nbsp;לקפוצ'ינו בסגנון בריסטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>5 מתכוני \"הקפה שלי\".<br />\n5 מתכונים הניתנים לתכנות והגדרה אישית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כמות קפה מתכווננת<br />\nכ-20 מ\"ל עד כ-240 מ\"ל<br />\nפיית קפה מתכווננת -&nbsp;14 ס\"מ<br />\nחוזק קפה מתכוונן -&nbsp;5 רמות חוזק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טמפרטורת קפה מתכווננת. -&nbsp;3 רמות טמפרטורה<br />\nדרגת טחינה מתכווננת<br />\nאפשרי<br />\nארומה&nbsp;בריסטה בקופסה (מערכת איזון ארומה)<br />\nתוכניות ניקוי אוטומטיות - שומנים ואבנית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חיבור בלוטות' אפשרי עם אפליקציה<br />\nמסנן מים טריים של CLARIS<br />\nקפוצ'ינו-סיסטמס<br />\nCAPPUCCINO CONNAISEUR , ONETOUCH-SPUMATOREplus<br />\nהכנת קפה -&nbsp;שתי כוסות קפה/אספרסו בו זמנית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תאורת כוסות<br />\nתצוגת TFT<br />\nECO-Modus<br />\nפעולה שקטה במיוחד<br />\nמטחנת קפה קונית עשויה פלדה מוקשחת<br />\nפונקציית מים חמים עבור תה (רמות) -&nbsp;3 רמות חום<br />\nתא אבקה לקפה טחון מראש<br />\nלחץ משאבה&nbsp;עד 15 בר<br />\nיחידת חליטה נשלפת<br />\nפונקציית שטיפה עבור ONETOUCH SPUMATORE</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מידות - רוחב 24, גובה 34, עומק 46</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>24 חודשי אחריות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קופמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - 795. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Nivona"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67296,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99%d7%90%d7%a1-%d7%a1/",
+   "name": "מכונת קפה אוטומטית מליטה בריסטה טיאס סמארט Melitta® Barista TS Smart Black שחור",
+   "short_description": "<p><strong>מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n<ul>\n<li><strong>מכונת הקפה האוטומטית הראשונה בעולם שזכתה בחותמת האישור של השקט, ערובה להכנת קפה שקטה ונעימה.</strong> <strong>הסוד שלה: טכנולוגיה חדישה במטחנה השקטה.</strong></li>\n<li>ניתן לשלוט על כמויות ותהליכי הכנה ע&quot;י האפליקציה MELITTA®<i> </i></li>\n<li>עד 21 משקאות קפה עם הכמות הנכונה של פולי קפה.לפי מתכון או פרי יצירתך.<i> </i></li>\n<li>בחירת אוטומטית שבוחרת את סוג הקפה הנכון מתוך מיכל הפולים הדו-תאיים. והכל ניתן לשליטה באמצעות הטלפון הנייד שלך!</li>\n<li>מצב הכנה של שתי כוסות משקה קפה בו בזמן.<i> </i></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה אוטומטית מליטה בריסטה טיאס סמארט Melitta® Barista TS Smart Black שחורה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list {\"className\":\"list\"} --></p>\n<ul class=\"wp-block-list list\"><!-- wp:list-item --></p>\n<li><strong>מכונת הקפה האוטומטית הראשונה בעולם שזכתה בחותמת האישור של השקט, ערובה להכנת קפה שקטה ונעימה.</strong>\n<p><strong>הסוד שלה: טכנולוגיה חדישה במטחנה השקטה.</strong></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן לשלוט על כמויות ותהליכי הכנה ע\"י האפליקציה MELITTA®<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עד 21 משקאות קפה עם הכמות הנכונה של פולי קפה.לפי מתכון או פרי יצירתך.<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מסך <span class=\"caps\">TFT</span> קל וברור לקריאה. פאנל הפעלה עם חיישני מגע, קל לקבוע את הכמות והחוזק.<i> </i></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<div class=\"col-xs-12 open\">בחירת אוטומטית שבוחרת את סוג הקפה הנכון מתוך מיכל הפולים הדו-תאיים. והכל ניתן לשליטה באמצעות הטלפון הנייד שלך!</div>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מצב הכנה של שתי כוסות משקה קפה בו בזמן.<i> </i></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>12 חודשי אחריות על ידי יבואן רשמי קדמה קפה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה melitta barista t smart | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת קפה Melitta Barista T Smart היא מכונת קפה ביתית המכינה עד 18 משקאות קפה. ל melitta barista t smart יש פאנל הפעלה עם חיישני מגע ומצב הכנה של שתי כוסות קפה"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Melitta"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67299,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-melitta-caffeo-passione/",
+   "name": "מכונת קפה מליטה נירוסטה Melitta® Caffeo Passione",
+   "short_description": "<ul>\n<li>עונג צרוף להנאה מקפה טרי.<br />\nמכונה שהיא חוויית קפה טרי בגודל קומפקטי: Melitta® Caffeo® Passione® החדש עם מערכת הארומה המיוחדת Melitta® Best.ניתן להכין מגוון של סוגי משקאות באמצעות Auto Cappuccinatore האוטומטי תוכלו להכין בהצלחה את כל סוגי הקפה עם חלב.</li>\n<li>שליטה על חוזק הקפה</li>\n<li>שליטה על גודל/כמות המשקה</li>\n<li>הקצפת חלב או חימום ללא הקצפה</li>\n<li>מים חמים</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מליטה נירוסטה Melitta® Caffeo Passione</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה אטום שומר טריות Aromasafe® על מיכל פולי הקפה פירושו שהטעמים והארומות המגוונים של פולי הקפה מוגנים אפילו יותר. העובדה שרק כמות פולי הקפה שאתם צריכים נטחנה טריה ואז הקפה הטחון נחלט &nbsp;מיד. המטחנה פועלת עד שהיא ריקה בכל פעם כדי למנוע ערבוב סוגים שונים של פולי קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפוצ'ינאטור אוטומטי: הכל יכול לחלב מוקצף ועוד. האוטו קפוצ'ינאטור האוטומטי מבטיח חלב מוקצף מושלם. אבל יכול גם לעשות יותר: הוא יכול לחמם חלב ללא הקצפה או לחמם מים כלומר לקקאו טעים או מדי פעם כוס תה ספונטנית..</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פיות מזיגת הקפה מתכווננות לגובה כדי לאפשר התאמה מושלמת לכוסות בגובה שונה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן להכין אספרסו קצר או כפול או קפה גדול</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שליטה על גודל הכוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה- Caffeo® Passione® מציין באופן אוטומטי בתצוגה מתי יש לנקות את המכונה או לבצע ניקוי אבנית. תוכנית הניקוי או הסרת האבנית פשוטה לביצוע ..</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניקוי ותחזוקה קלה של יחידת החליטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מצויד במצב חיסכון באנרגיה הניתן לתכנות, תכונת כיבוי אוטומטית לתכנות ומתג 0 וואט לכיבוי ידני, ל- Caffeo® Passione® יש חבילת חיסכון באנרגיה מעודכנת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה, כמו גם תכונות שירות רבות. בנוסף למידע על הקפה המושלם, הוראות שלב אחר שלב מאוירות מעבירות אותך בתוכניות התחזוקה. האפליקציה גם מעניקה לך עזרה בהבנת המצב התפקודי של מכונת הקפה שלך בעזרת כלי האבחון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב 25.3 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עומק 38 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה 39 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים 1.2 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קדמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה melitta caffeo passione | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "\"מכונת הקפה Melitta Caffeo Passione מציעה חוויית קפה מדויקת ואיכותית. ה-Melitta Caffeo Passione משלבת טחינה כפולה וומערכת חלב מובנית לקפה מושלם בכל פעם.\n\""
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Melitta"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67328,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%90%d7%a0%d7%99%d7%9e%d7%94-%d7%a7%d7%9c%d7%90%d7%a1-gaggia-anima-class/",
+   "name": "מכונת קפה גאג'יה אנימה קלאס Gaggia Anima Class",
+   "short_description": "<p><strong>מכונת One Touch </strong></p>\n<p>5 משקאות קפה בלחיצת כפתור.<br />\n5 דרגות חוזק קפה לבחירה.<br />\n3 דרגות טמפרטורת משקה לבחירה.<br />\nיחידת חלב נשלפת ללא שימוש בצינורות, המכונה הקלה ביותר לנקיון ותחזוקה.</p>\n<p>תוצרת איטליה</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<h3>מכונת קפה גאג'יה אנימה קלאס Gaggia Anima Class</h3>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הגיע הזמן להנות ממשקאות קפה איכותיים כגון קפוצ’ינו או לאטה מקיאטו בלחיצת כפתור, מחלב ומפולי קפה טריים. ניתן לכוון ולהתאים את כל&nbsp; המשקאות, כולל אספרסו, קפה ואמריקנו<span dir=\"ltr\">,</span>&nbsp;בעוצמה, בטמפרטורה ובכמות המשקה בכוס.</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span title=\"are customizable in strength, temperature and volume.\">ניתנים להתאמה חוזק, טמפרטורה ונפח</span><span dir=\"ltr\">.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span title=\"A variety of coffees cust\"><strong>מגוון התאמות וכיוונים כדי להגיע לקפה בטעם שלכם.</strong></span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>הנאה מ- 5 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלב מוקצף חלק ועדין ממיכל החלב הצמוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן לכוון את עוצמת הארומה, 5 דרגות עוצמה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניתן לכוון את עובי הטחינה, 5 דרגות עובי.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><span title=\"A variety of coffees cust\"><strong>שימוש&nbsp;קל&nbsp;וללא מאמץ התורם להנאה&nbsp;היומיומית</strong></span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\">הנאה מ- 6 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו</span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>גוף וטעם ייחודיים לכל אספרסו הודות לפונקציה חליטה מוקדמת, שמשמעותה הפסקה של כמה שניות בין החליטה הראשונה של מים חמים לחליטה בפועל.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\"><strong>מפרט טכני:</strong></span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\">הנאה מ- 5 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו</span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">קיבולת מיכל הפסולת: 15 מנות</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">גובה כוס מקסמלי: 150 מ”מ</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">צבע &amp; גימור: שחור אפור עם ניקל</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">כיוון הוצאת מיכל הפסולת: גישה מהחזיתית</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">כיוון הוצאת מיכל המים: גישה מהחלק העליון כלפי מעלה</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">ממדי המוצר: רוחב=221, גובה=340, עומק=430 מ”מ</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">קיבולת מיכל פולי הקפה: 250 גרם</span></span></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><span title=\"A variety of coffees cust\"><span lang=\"iw\" xml:lang=\"iw\">תכולת מיכל המים: 1.8 L</span></span></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>מה קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות: 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה gaggia anima class | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת הקפה Gaggia Anima Class - שילוב מושלם של מסורת איטלקית וטכנולוגיה מתקדמת. ה-Gaggia Anima Class מציעה מערכת חליטה מקצועית ומקציף חלב אוטומטי"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Gaggia"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67330,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-ci-touch/",
+   "name": "מכונת קפה מליטה  Melitta® Caffeo CI Touch",
+   "short_description": "<ul>\n<li><strong>מכונת הקפה האוטומטית הראשונה בעולם שזכתה בחותמת האישור של השקט, ערובה להכנת קפה שקטה ונעימה.</strong> <strong>הסוד שלה: טכנולוגיה חדישה במטחנה השקטה.</strong></li>\n<li>לאטה מקיאטו, קרם קפה, קפוצ'ינו, אספרסו, ריסטרטו, לונגו ועוד ועוד &#8211; עכשיו תוכלו לקבל את כל סוגי הקפה, חלב מוקצף ומים חמים בלחיצת כפתור. כל שעליכם לעשות הוא לבחור מבין 10 משקאות הקפה מוגדרות מראש וליהנות מקפה טעים וארומתי.</li>\n<li>Melitta® CI Touch® מציגה קפה ארומטי בעל גוף מלא ועשיר, עיצוב אלגנטי ומידות קופמקטיות, יש מקום בשבילה בכל מטבח.</li>\n<li>ה- Melitta® CI Touch® מרשימה בנוחות השימוש האינטואיטיבית שלה ובעובדה שהיא היגיינית וקלה לניקוי.</li>\n<li>שליטה על חוזק הקפה</li>\n<li>שליטה על גודל/כמות המשקה</li>\n<li>הקצפת חלב</li>\n<li>מים חמים</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מליטה Melitta® Caffeo CI Touch</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div class=\"text\">CI Touch®<br />\nMelitta® CI Touch® היא כישרון כולל בקרב מכונות קפה One Touch. ניתן להכין מגוון משקאות קפה בנגיעה אחת בלבד. פונקציות בלעדיות כגון מיכל פולי קפה כפול עם אפשרות לשימוש בשני סוגים של פולים, המאפשרת לך לבחור תמיד את הסוג הנכון של פולי הקפה, עיצוב אלגנטי, מטחנה מופחתת רעש.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>\n<p><strong>מכונת הקפה האוטומטית הראשונה בעולם שזכתה בחותמת האישור של השקט, ערובה להכנת קפה שקטה ונעימה.</strong><br />\n<strong>הסוד שלה: טכנולוגיה חדישה במטחנה השקטה.</strong></p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מכסה אטום שומר טריות Aromasafe® על מיכל פולי הקפה פירושו שהטעמים והארומות המגוונים של פולי הקפה מוגנים אפילו יותר. העובדה שרק כמות פולי הקפה שאתם צריכים נטחנה טריה ואז הקפה הטחון נחלט  מיד. המטחנה פועלת עד שהיא ריקה בכל פעם כדי למנוע ערבוב סוגים שונים של פולי קפה</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>\n<p>כדי להכין באופן מושלם את משקאות הקפה השונים, יש צורך בסוגים שונים של פולי קפה כדי להבטיח את חווית הטעם הטובה ביותר. לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית בשם (בחירה ידנית), אשר בהתאם למתכון והטעם האישי מאפשר לכם לבחור פולי קפה עדינים או פולי אספרסו ארומטיים חזקים למשל. מכסה Aromasafe® והמיכל הכהה מסייעים גם בשימור הטעם של פולי הקפה. מצנח הקפה הטחון המשולב מעניק לך גם את האפשרות להשתמש בקפה שכבר טחון.</p>\n<p>פיות מזיגת הקפה מתכווננות לגובה כדי לאפשר התאמה מושלמת לכוסות בגובה שונה.</p>\n<p>בין אם אתם רוצים אחד מהמשקאות המתוכנתים של קפה, חלב חם, חלב מוקצף או מים חמים - מוזגים את המשקה האהוב עליכם בנגיעה אחת בלבד.</p>\n<p>ניתן להכין אספרסו קצר או כפול או קפה גדול.</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים - אספרסו, קפה קרם, קפוצ'ינו ולאטה בלחיצת כפתור אחת. באמצעות תכונת המתכונים תוכלו ליצור 6 משקאות קפה נוספים: ריסטרטו, לונגו, אמריקנו, אספרסו מקיאטו, קפה לאטה, קפה או לייט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אתם לא רוצים לשנות את העדפות הקפה האישיות שלכם בכל פעם שאתה מכין קפה? אין בעיה! בעזרת התכונה \"זיכרון הקפה שלי\" תוכלו להרכיב לעצמכם משקה מותאם אישית ולשמור את המשקה בזכרון המכונה. Melitta® CI Touch® שומרת את הגדרות ההעדפה לעד 4 אנשים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div>\n<p>שליטה על גודל הכוס</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>עבור משקאות הקפה שהוכנו לפי סדר המרכיבים הנכון, בהתאם למתכונים המקוריים של איטליה: אז לאטה מקיאטו אספרסו מוסף רק לאחר החלב הקצף והחלב. לקפוצ'ינו את האספרסו שופכים לפני החלב המוקצף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תצוגת מגע TFT</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ברזולוציה גבוהה מאפשרת הפעלה אינטואיטיבית לנוחות שימוש מרבית. ההוראות המסבירות את עצמן צעד אחר צעד מדפדפות בתפריט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מצב מזיגה כפולה<br />\nבמצב מזיגה כפולה תוכלו להכין שתי כוסות של משקאות קפה רבים, כולל משקאות עם חלב בו זמנית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פיות המזיגה- All-in-One עם שתי חרירי הקפה, אחד לחלב ולקצף חלב, ואחד למים חמים מאפשר לך להכין את המשקה המועדף עליך מבלי להזיז את הכוס. תאורת ה- LED הנעימה מראה את הקפה המועדף עליכם באור הטוב ביותר. גובה מתכוונן ל -135 מ\"מ, אפילו ספלי לאטה מקיאטו גבוהים יש מספיק מקום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כמו גם התוכנית המשולבת לניקוי יסודי של מערכת החלב, ניקוי קיטור קל פירושו שתוכלו לנקות במהירות ובגיהות בין הזמנים: חלקים במגע עם חלב מנוקים במים חמים ואדים - אם אתם מעדיפים אחרי כל כוס קפה או ניקוי יזום באמצעות התפריט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div>\n<p>ה- Caffeo® CI Touch® מציין באופן אוטומטי בתצוגה מתי יש לנקות את המכונה או לבצע ניקוי אבנית. תוכנית הניקוי או הסרת האבנית פשוטה לביצוע ..</p>\n<p>ניקוי ותחזוקה קלה של יחידת החליטה</p>\n<p>מצויד במצב חיסכון באנרגיה הניתן לתכנות, תכונת כיבוי אוטומטית לתכנות ומתג 0 וואט לכיבוי ידני, ל- Caffeo® Ci touc® יש חבילת חיסכון באנרגיה מעודכנת.</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>מידות ללא מיכל הקצפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב 25.3 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עומק 38 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה 39 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים 1.2 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן קדמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה melitta caffeo ci touch | מינוטו חנות קפה ואביזרים ",
+    "rank_math_description": "\"Melitta Caffeo CI Touch - שיא הנוחות והטעם בכוס אחת. עם מערכת חלב אוטומטית ותפריט מגע אינטואיטיבי, ה-Melitta Caffeo CI Touch כוללת זיכרון פרופילים\n\"\""
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Melitta"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67337,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-magenta-plus/",
+   "name": "מכונת קפה גאג'יה מג׳נטה פלוס Gaggia Magenta Plus",
+   "short_description": "<h3><strong>שרביט הקצפה מקצועי להקצפת חלב</strong></h3>\n<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong> ישירות ממסורת גגיה, באמצעות שרביט הקיטור המקצועית מנירוסטה תוכלו להכין משקאות מבוססי חלב ברמת בריסטה האותנטיים. הודות לצורתו, אתם יכול להשתמש בסוגים שונים של קנקני חלב והקצפת החלב תהיה קלה ומקצועית. ממשק המשתמש הרחב עם תצוגת צבע מלא וכפתורים מגע מבטיח יותר שליטה ונראות לחוויית משתמש משופרת. הכנת משקאות נעשית סופר פשוטה וכל הליכי הניקיון מונחים צעד אחר צעד. עד 5 משקאות במגע של כפתור.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<h2><strong>מכונת קפה גאג'יה Gaggia Magenta Plus</strong></h2>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>שרביט הקצפה מקצועי להקצפת חלב</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>ישירות ממסורת גגיה, באמצעות שרביט הקיטור המקצועית מנירוסטה תוכלו להכין משקאות מבוססי חלב ברמת בריסטה האותנטיים. הודות לצורתו, אתם יכול להשתמש בסוגים שונים של קנקני חלב והקצפת החלב תהיה קלה ומקצועית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ממשק המשתמש הרחב עם תצוגת צבע מלא וכפתורים מגע מבטיח יותר שליטה ונראות לחוויית משתמש משופרת. הכנת משקאות נעשית סופר פשוטה וכל הליכי הניקיון מונחים צעד אחר צעד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עד 5 משקאות במגע של כפתור.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>מגש אספרסו מפלדת אל חלד</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מבטיח את הגובה הנכון כדי לקבל אספרסו ללא דופי בכל עת, עם שכבת קרמה מושלמת ואחידה וללא התזת טיפות בזמן חליטת הקפה. סגור בתוך מגש הטפטוף, ניתן לחלץ אותו במחווה פשוטה ולהניח אותו בגובה הנכון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גלה את 5 המשקאות הזמינים: אספרסו, אספרסו לונגו, קפה, אמריקנו ומים חמים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>מטחנת קפה עם סכינים קרמיות מתכווננות&nbsp;</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנה קרמית עמידה ממצה את המהות הטהורה ביותר מפולי הקפה, ומונעות התחממות יתר של הקפה. חומר זה מבטיח עמידות לאורך זמן, שקט ותוצאה טובה ביותר בכוס שלך. בחר בין 5 רמות טחינה להתאמה אישית של האספרסו שלך, מהטחינה הטובה ביותר לארומה חזקה, ועד לגס ביותר לקפה עדין יותר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>מכסה ארומה</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי הקפה מצויד במכסה אטום לשמירת הארומה, עוזר לשמר את הארומה של תערובת הקפה האהובה עליכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>כפתור לשליטה על חוזק הקפה</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>OPTIAROMA</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונה זו מעניקה לכם אפשרות ייחודית להתאים את עוצמת הארומה וליצור משקאות מותאמים על בסיס קפה על ידי בחירת כמות הקפה הטחון לכוס מבין 5 דרגות חוזק.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>חימום מהיר</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הדוד Quick Heat מבטיח משקאות חמים מהכוס הראשונה ללא המתנה. סודו טמון בגופו עשוי אלומיניום קל ונירוסטה, שיכולים להגיע במהירות לטמפרטורות חמות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>אפשרות קפה טחון</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף לאופציית פולי הקפה, פיתרון קל לחלוט תערובות קפה טחון שונות, גם תערובות ללא קפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>יבואן קדמה קפה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>אחריות: 12 חודשים</strong></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה gaggia magenta plus | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת קפה גאג’יה Gaggia Magenta Plus עם מגש אספרסו מפלדת אל חלד, מטחנת קפה עם סכינים קרמיות מתכווננות. ה gaggia magenta plus מכינה עד 5 משקאות במגע של כפתור."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Gaggia"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67618,
+   "permalink": "https://www.minuto.co.il/product/melitta-solo-silver-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-%d7%9b%d7%a1%d7%a3/",
+   "name": "Melitta Solo Silver מכונת קפה אוטומטית מליטה סולו כסף",
+   "short_description": "<ul>\n<li><span class=\"a-list-item\"><span class=\"\">כפתורי שתייה ניתנים לתכנות &#8211; ניתן להגדיר מראש כל כפתור משקה למתכון המועדף עליכם, </span></span></li>\n<li><span class=\"a-list-item\">מיכל מים עם גישה קדמית &#8211; ניתן למלא מים במיכל המכונה מבלי להזיז את המכונה.</span></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Melitta Solo Silver מכונת קפה אוטומטית מליטה סולו כסף</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנה אינטגרלית משולבת</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שלוש טמפרטורות חליטה, שלוש דרגות חוזק קפה בכל כמות עם ווסת הזרימה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פיית מזיגה מתכווננת לגובה, מגש חימום כוסות אפשרות לשתי כוסות, מיכל מים נשלף, קל להזזה, רוחב 20 ס\"מ בלבד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קלה לניקוי ותחזוקה, רכיבים ומשטחים קלים לניקוי. נורות LED חסכוניות באנרגיה, כיבוי ומצבי המתנה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>24 חודשי אחריות על ידי יבואן רשמי המילטון</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה אוטומטית מליטה סולו כסף | מינוטו קפה ואביזרים",
+    "rank_math_description": "מכונת קפה מקצועית Melitta לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן בעיצוב כסוף קלאסי"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "כסף"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 68281,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%9c%d7%99%d7%91%d7%a8%d7%94-melitta-calibra/",
+   "name": "מטחנת קפה מליטה קליברה  -  Melitta Calibra",
+   "short_description": "<ul>\n<li>מטחנת קפה קליברה עם משקל קפה משולבמטחנת הקפה Melitta® Calibra® משתמשת בסכינים קוניות מפלדה לקבלת תוצאות מדויקות ואחידות. מושלם לכל סוגי הקפה, מטחנת הקפה של Calibra® כוללת 39 רמות טחינה משתנות &#8211; מעדין מאוד ועד גס ומכילה עד 375 גרם פולי קפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>מטחנת קפה קליברה עם משקל קפה משולב</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנת הקפה Melitta® Calibra® משתמשת בסכינים קוניות מפלדה לקבלת תוצאות מדויקות ואחידות. מושלם לכל סוגי הקפה, מטחנת הקפה של Calibra® כוללת 39 רמות טחינה משתנות - מעדין מאוד ועד גס ומכילה עד 375 גרם פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טחינת רמות 1 - 5 מספקת תוצאה עדינה יותר המושלמת למכונות אספרסו ולמקינטה, ואילו רמות טחינה 6 - 26 מיועדות לטחינת קפה לפילטר. טחינת רמות 27-39 יוצרת את השטח הגס המושלם לקפיטייר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במטחנת הקליברה קיימים שלושה מצבי טחינה מתכווננים:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מספר כוסות - טוחנים את הכמות הנכונה של קפה לכוס קפה אחת או יותר;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משקל - טוחן קפה לפי גרמים מדויקת אם כמות הקפה הנדרשת ידועה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידני - מווסת את כמות הקפה הטחונה לאורך פרק זמן מסוים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - מליטה. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 76352,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-we/",
+   "name": "מכונת קפה JURA W8",
+   "short_description": "<p>הכירו את מכונת הקפה Jura WE8 &#8211; שפרו את חווית הקפה שלכם! התפנקו עם כוס הקפה המושלמת בכל בוקר עם מכונת הקפה החדישה Jura WE8. מכונת הקפה המהודרת והמסוגננת הזו מתוכננת בדיוק ותחכום מביאה את חווית בית הקפה ישירות למטבח. בין אם אתה חובבי קפה או פשוט מחפשים ליהנות מחליטה עשירה וטעימה, ה-Jura WE8 נועד לספק את כל הצרכים שלכם. מיכל מים בעל קיבולת של 3 ליטר, מיכל פולים בנפח 500 גרם ומיכל שאריות קפה בקיבולת של 25 מנות הופכים את מכונת הקפה המקצועית והאלגנטית הזו לפתרון האידיאלי עבור מקומות בהם צורכים כ- 30 עד 60 ספלי קפה ביום.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p><strong>מכונת קפה JURA WE8</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את מכונת הקפה Jura WE8 - שפרו את חווית הקפה שלכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התפנקו עם כוס הקפה המושלמת בכל בוקר עם מכונת הקפה החדישה Jura WE8. מכונת הקפה המהודרת והמסוגננת הזו מתוכננת בדיוק ותחכום מביאה את חווית בית הקפה ישירות למטבח. בין אם אתם חובבי קפה או פשוט מחפשים ליהנות מחליטה עשירה וטעימה, ה-Jura WE8 נועד לספק את כל הצרכים שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>טכנולוגיית חליטה ללא תחרות:</strong><br />עם טכנולוגיית חליטה מתקדמת, ה-Jura WE8 מספקת מיצוי קפה יוצא דופן עם כל כוס. מצוידת במשאבת לחץ חזקה של 15 בר ומערכת חימום Thermoblock, מכונה זו מבטיחה שטמפרטורת המים תישאר עקבית לאורך תהליך החליטה. תגידו שלום לקפה מר או פושר - ה-WE8 מבטיחה מיצוי טעמים, בקרת טמפרטורה אופטימלית וכוס קפה טעימה וארומטית בכל פעם מחדש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מגוון רחב של משקאות קפה:</strong><br />עם Jura WE8, העדפות הקפה שלך נמצאות במרחק נגיעה. תצוגת -TFT צבעונית, קלה לשימוש מאפשרים לך לנווט בתפריט מגוון של משקאות קפה ללא מאמץ. מאספרסו קלאסי ועד מקיאטו לאטה קטיפתי או קפוצ'ינו מוקצף, מכונת קפה זו מאפשרת לכם להתפנק עם מגוון משקאות המותאמים לטעם האישי שלכם. בנוסף, ההגדרות הניתנות לתכנות מאפשרות להתאים את העוצמה, הווליום והטמפרטורה כדי להתאים להעדפותיכם האישיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>נוחות בנגיעה אחת:</strong><br />שפרו את שגרת הבוקר שלכם עם ההפעלה הנוחה של Jura WE8 בנגיעה אחת. הכינו את משקה הקפה האהוב עליכם בלחיצת כפתור, ותנו למכונה לעשות את השאר. מקציף החלב המקצועי המשולב יוצר קצף חלב חלק כמשי עבור לאטה וקפוצ'ינו, ומוסיף נופך של אלגנטיות ליצירות הקפה שלך. תהנו מהנוחות של בית קפה ממש בהישג יד מבלי לעזוב את הבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עיצוב אלגנטי ואומנות איכותית:</strong><br />Jura WE8 לא רק מספקת ביצועים יוצאי דופן אלא גם מוסיפה נופך של אלגנטיות למטבח . עם הקווים המלוטשים , חומרי הפרימיום וגימור שחור פסנתר מתוחכם, מכונת קפה זו משדרת סגנון נצחי ותחכום מודרני.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגודל הקומפקטי שלה מבטיח שהיא תשתלב בצורה חלקה בכל חלל מטבח, מה שהופך אותה לתוספת מושלמת למשטח השיש שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תחזוקה פשוטה:</strong><br />שמירה על Jura WE8 שלך במצב מעולה היא פשוטה. המכונה כוללת תוכנית ניקוי ושטיפה משולבת, המבטיחה תחזוקה ללא טרחה. בנוסף, מערכת המים החכמה מזהה את קשיות המים ומנחה אתכם מתי הגיע הזמן להסיר אבנית או להחליף את סנן המים מה שמבטיח את אורך החיים של המכונה שלכם ואת איכות הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אמצו את אומנות חליטת הקפה עם מכונת הקפה Jura WE8. בשילוב טכנולוגיה מתקדמת, תפעול ידידותי למשתמש ועיצוב אלגנטי, מכונת קפה יוצאת דופן זו הופכת את טקס הקפה היומי שלכם לחוויה מענגת. התחילו את הבוקר שלכם והשביעו את תאוות הקפה שלכם עם Jura WE8.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו את מכונת הקפה שלכם עוד היום ממינוטו קפה והתחילו ליהנות מכוס הקפה המושלמת בלחיצת כפתור.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "למכונת הקפה JURA W8 יש טכניקות חליטה מתקדמות, אפשרות להכין מגוון רחב של משקאות קפה, תחזוקה פשוטה ועיצוב אלגנטי. קפה מעולם אחר",
+    "rank_math_title": "מכונת קפה JURA W8 - אוטומטית מקצועית לעסקים | %sitename%"
+   },
+   "attributes": []
+  },
+  {
+   "id": 76545,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-j10/",
+   "name": "מכונת קפה JURA J10",
+   "short_description": "<h3 class=\"\" data-start=\"54\" data-end=\"94\">Jura J10 – מכונת קפה אוטומטית מתקדמת</h3>\n<p class=\"\" data-start=\"96\" data-end=\"310\">מכונת הקפה Jura J10 מביאה אליכם הביתה חוויית קפה מקצועית עם מגוון משקאות חמים וקרים, טכנולוגיית Sweet Foam להוספת סירופים, וממשק מגע אינטואיטיבי. אידיאלית למי שמחפש שילוב מושלם בין חדשנות, נוחות וטעם מושלם בכל כוס.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה JURA J10</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph {\"className\":\"\"} --></p>\n<p><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">מכונת הקפה האוטומטית Jura J10 מציעה חוויית קפה מתקדמת וחדשנית, המשלבת טכנולוגיות מתקדמות עם עיצוב אלגנטי.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph {\"className\":\"\"} --></p>\n<p><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">ה-Jura J10 היא מכונת קפה אוטומטית מתקדמת, המיועדת לחובבי קפה המחפשים איכות, נוחות וחדשנות.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph {\"className\":\"\"} --></p>\n<p><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">המכונה מציעה מגוון רחב של משקאות חמים וקרים, כולל אפשרות להוספת סירופ ישירות לקצף החלב, ליצירת משקאות מותאמים אישית.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3,\"className\":\"\"} --></p>\n<h3 class=\"wp-block-heading\"> מפרט טכני</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"241\" data-end=\"301\"><strong data-start=\"241\" data-end=\"260\">קיבולת מיכל מים</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">1.9 ליטר</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"304\" data-end=\"366\"><strong data-start=\"304\" data-end=\"325\">קיבולת מיכל פולים</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">280 גרם</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"369\" data-end=\"423\"><strong data-start=\"369\" data-end=\"382\">לחץ משאבה</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">15 בר</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"426\" data-end=\"497\"><strong data-start=\"426\" data-end=\"456\">מידות (רוחב x גובה x עומק)</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">31.8 x 34.8 x 44.6 ס\"מ</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"500\" data-end=\"549\"><strong data-start=\"500\" data-end=\"508\">משקל</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">10.4 ק\"ג</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"552\" data-end=\"613\"><strong data-start=\"552\" data-end=\"572\">טכנולוגיית טחינה</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">P.A.G.2+ עם בקרת ארומה</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"616\" data-end=\"668\"><strong data-start=\"616\" data-end=\"627\">מסך מגע</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">צבעוני ואינטואיטיבי</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"671\" data-end=\"725\"><strong data-start=\"671\" data-end=\"684\">מערכת חלב</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">ניקוי אוטומטי בלחיצה אחת</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"728\" data-end=\"821\"><strong data-start=\"728\" data-end=\"741\">חיישן כוס</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">Coffee Eye לזיהוי מיקום הכוס</span></p>\n</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תכונות עיקריות</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"853\" data-end=\"910\"><strong data-start=\"853\" data-end=\"869\">מגוון משקאות</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">הכנת מעל 42 סוגי משקאות, כולל אספרסו, לאטה, מקיאטו, קפוצ'ינו, קפה קר ועוד.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"913\" data-end=\"979\"><strong data-start=\"913\" data-end=\"938\">טכנולוגיית Sweet Foam</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">הוספת סירופ ישירות לקצף החלב, ליצירת משקאות בטעמים מותאמים אישית.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"982\" data-end=\"1038\"><strong data-start=\"982\" data-end=\"997\">הכנת קפה קר</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">טכנולוגיית Cold Extraction להכנת קפה קר בלחץ גבוה, ללא צורך בהמתנה ממושכת.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1041\" data-end=\"1105\"><strong data-start=\"1041\" data-end=\"1064\">חוויית משתמש מתקדמת</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">מסך מגע צבעוני עם ממשק אינטואיטיבי, כולל הוראות שימוש ברורות.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1108\" data-end=\"1202\"><strong data-start=\"1108\" data-end=\"1122\">תחזוקה קלה</strong>: <span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">מערכת ניקוי אוטומטית למערכת החלב, לשמירה על היגיינה ונוחות.</span></p>\n</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading {\"level\":3,\"className\":\"\"} --></p>\n<h3 class=\"wp-block-heading\"> יתרונות</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1227\" data-end=\"1266\"><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\"><strong data-start=\"0\" data-end=\"15\" data-is-only-node=\"\">התאמה אישית</strong>: אפשרות להתאמת טמפרטורת החלב, כמות הקצף, עוצמת הקפה ועוד.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1269\" data-end=\"1308\"><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\"><strong data-start=\"0\" data-end=\"16\" data-is-only-node=\"\">עיצוב יוקרתי</strong>: גימור Piano Black עם קווים נקיים ומודרניים.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1311\" data-end=\"1350\"><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\"><strong data-start=\"0\" data-end=\"15\" data-is-only-node=\"\">חיסכון בזמן</strong>: הכנת משקאות בלחיצת כפתור, ללא צורך בהתערבות נוספת.</span></p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p class=\"\" data-start=\"1353\" data-end=\"1431\"><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\"><strong data-start=\"0\" data-end=\"18\" data-is-only-node=\"\">איכות שוויצרית</strong>: ייצור ברמה הגבוהה ביותר, עם דגש על איכות ועמידות.</span></p>\n</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph {\"className\":\"\"} --></p>\n<p><span class=\"relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem] transition-colors duration-100 ease-in-out\">מכונת הקפה Jura J10 היא הבחירה המושלמת למי שמחפש לשדרג את חוויית הקפה הביתית לרמה הגבוהה ביותר, עם שילוב של טכנולוגיה מתקדמת, נוחות שימוש וטעמים עשירים.</span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "למכונת הקפה JURA WE8 יש טכניקות חליטה מתקדמות, אפשרות להכין מגוון רחב של משקאות קפה, תחזוקה פשוטה ועיצוב אלגנטי. שפרו את חווית הקפה שלכם",
+    "rank_math_title": "Jura J10: מכונת אספרסו אוטומטית יורה בעיצוב פרימיום | %sitename%"
+   },
+   "attributes": []
+  },
+  {
+   "id": 80374,
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%93%d7%9c%d7%95%d7%a0%d7%92%d7%99-delonghi-water-filter/",
+   "name": "פילטר מים למכונת דלונגי - DeLonghi water filter",
+   "short_description": "<ul>\n<li>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה</li>\n<li>יכול לעזור להאריך את חייה של מכונת הקפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">פילטר מים למכונת דלוגי - DeLonghi water filter</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפילטר המוביל והמומלץ ביותר למכונות קפה אוטומטיות של דלונג'י.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפילטר מותאם כמעט לכל מכונות הקפה האוטומטיות של דלונג'י.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסייע לשפר את הטעם והארומה של הקפה שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לעזור להאריך את חייה של מכונת הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מהיר וקל להתקנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לקבלת תוצאות אופטימליות אנו ממליצים להחליף את מסנן המים באופן קבוע (לפחות כל 2 חודשים.)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפילטר מתאים לכל סדרת: ECAM EC680 ו-EC800 .</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הערה: מסנן המים מכונת קפה לא יתאים מכונות עם מספרי דגם מתחילים עם 'ESAM'</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {},
+   "attributes": []
+  },
+  {
+   "id": 81455,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e8-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "מכונת קפה אוטומטית Jura E8 - שחור",
+   "short_description": "<p>הדור האחרון של דגם מכונת הקפה המצליח ביותר של JURA מתגאה בעיצוב מחודש ובמגוון יתרונות שנמצאו בעבר רק במחלקת הפרימיום. מטחנת ארומה מקצועית מספקת תוצאת טחינה ללא רבב, תהליכי חליטה חדישים מאפשרים לניחוחות הקפה להתפתח במלואו ומשקאות קפה טרנדיים טובים מתמיד הודות לקצף החלב החלק והאוורירי. ה-E8 החדשנית מציעה 17 משקאות שונים &#8211; מאספרסו ארומטי ועד קורטאדו אופנתי.  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה אוטומטית Jura E8</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הדור האחרון של דגם מכונת הקפה המצליח ביותר של JURA מתגאה בעיצוב מחודש ובמגוון יתרונות שנמצאו בעבר רק במחלקת הפרימיום.<br />מטחנת ארומה מקצועית מספקת תוצאת טחינה ללא רבב, תהליכי חליטה חדישים מאפשרים לניחוחות הקפה להתפתח במלואו ומשקאות קפה טרנדיים טובים מתמיד הודות לקצף החלב החלק והאוורירי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-E8 החדשנית מציעה 17 משקאות שונים - מאספרסו ארומטי ועד קורטאדו אופנתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לייצר גם חליטות ארוכות ומתונות כמו קפה בריסטה ו-lungo בריסטה בסטנדרט בריסטה מקצועי הודות למערכת נוזלים חדשה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מי שאוהב את הקפה שלו יותר אינטנסיבי יכול להגביר את הקפוצ'ינו, המקיאטו הפלאט ווייט או הלאטה שלו באמצעות פונקציית Extra Shot.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם מערכת הנוזלים האופטימלית, אפילו ניקוי מערכת החלב מתבצע אוטומטית בלחיצת כפתור - פונקציה נוספת של E8 שתהיה מוכרת ממוצרי השורה העליונה של JURA.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, כעת היא מתהדרת בטיפול אינטואיטיבי אף יותר יחד עם תפעול קל להפליא.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איכות קפה מהשורה הראשונה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנת ארומה מקצועית מבטיחה 12.2%* יותר ארומה ואיכות טחינה גבוהה באופן עקבי כך שהטעמים יתגלו לשלמות לאורך כל חיי השירות של המטחנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהליך מיצוי הדופק (P.E.P.®) מבטיח טעם מקסימלי למשקאות קצרים, בעוד שחימום מוקדם מושכל מבטיח את הטמפרטורה האידיאלית כבר מהכוס הראשונה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תפעול קל וצג מהודר</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צג צבעוני בגודל 2.8 אינץ', שישה כפתורים ותפיסת הפעלה חדשה לחלוטין הכוללת בינה מלאכותית מאפשרים טיפול פשוט. אלגוריתם אינטליגנטי מזהה העדפות אישיות ומתאים את מסך ההתחלה כך ששתיים או ארבע המשקאות המועדפות על המשתמשים יוצגו תמיד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגדרות המוצר ומיקומן על ניתן המסך ניתנות לשינוי בהתאם להעדפות האישיות ולהציג או להסתיר את שמות המוצרים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל המידע הרלוונטי לגבי מכונת הקפה וכן הוראות טיפול ממתינות מוצגים בבירור בקוקפיט דרך התצוגה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ניקוי מערכת חלב בנגיעה אחת</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהליך ניקוי מערכת החלב המתוחכם מתרחש אוטומטית בלחיצת כפתור ומסתיים תוך זמן קצר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גם מגש הטפטוף עומד בסטנדרטים הארגונומיים הגבוהים ביותר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב שלו מונע שפיכת מים וניתן להסיר אותו בנוחות ביד אחת בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב הרמוני</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונות הקפה של JURA מתאפיינות בעיצוב אופייני נקי ואקספרסיבי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומרים איכותיים ואומנות מדויקת מדגישים את איכות הפרימיום של ה-E8 המודרנית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב של המכונה הוא העדות לאיכותו, הפונקציונליות והעמידות שלו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פרטים כמו מיכל המים המחורץ או סורג הכוס האיכותי המצופה כרום משלימים בצורה מושלמת את העיצוב הנקי וההרמוני של ה-E8.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קיבולת מיכל מים: 1.9 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הספק: 1450 W.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לבחור מבין המשקאות האהובים עליך:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ריסטרטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אספרסו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אספרסו דופיו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פלאט ווייט</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פלאט ווייט מחוזק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפוצ׳ינו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קורטאדו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפוצ׳ינו מחוזק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>לאטה מקיאטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלב מוקצף</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ועוד. פעולתו בלחיצת כפתור היא לא כל מה שמייחד את המכונה המהודרת הזו.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל המים הוא הנגיש ביותר שתמצאו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יש לה מטחנה קונית מובנית שמתמלאת בקלות בחלק העליון של המכונה, בתוספת פתח אופציונלי לפולי קפה טחונים מראש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים 1.9 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי קפה -280 גר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הספק 1450 וואט</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משקל 9.6 קג</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מערכת מים חכמה - מזהה באיזו מחסנית מסנן CLEARLY Smart נמצאת בשימוש ומתאימה את ההגדרות באופן אוטומטי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב של 28 ס\"מ בלבד, גובה 38.1 ועומק של 44.6 ס\"מ</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה אוטומטית Jura E8, שחור. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 14,
+     "variation": true
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "Jura"
+     ],
+     "id": 18,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 81804,
+   "permalink": "https://www.minuto.co.il/product/36-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/",
+   "name": "36 טבליות הסרת אבנית למכונות קפה Jura",
+   "short_description": "<p>שמור על הטעם המושלם של הקפה שלך למשך זמן רב.</p>\n<p>36 טבליות JURA מנקות ביעילות ומגינות על מכונת הקפה שלך.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">טבליות הסרת אבנית למכונות קפה Jura</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>\"שמרו על הטעם המושלם של הקפה שלכם!\"</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אבנית פוגעת בטעם הקפה שלכם?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טבליות ההסרת אבנית הדו-שלבית של JURA מסירות בקלות את כל שאריות האבנית ומגינות על מכונת הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהנו מטעם קפה טרי ומושלם בכל פעם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רכשו עכשיו באתר מינוטו קפה טבליות להסרת אבנית למכונת קפה Jura ותהנו מטעם קפה טרי ואיכותי.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "36 טבליות הסרת אבנית למכונות קפה Jura. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "36",
+      "9"
+     ],
+     "id": 17,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 65446,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-c8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%9e%d7%a4%d7%a7%d7%98%d7%99%d7%aa-%d7%a2%d7%9d-%d7%98%d7%a2%d7%9d/",
+   "name": "מכונת קפה Jura C9 - מכונת קפה קומפקטית עם טעם מושלם",
+   "short_description": "<ul>\n<li data-sourcepos=\"11:3-11:109\">\n<p data-sourcepos=\"5:1-5:55\">Jura C8 היא מכונת קפה אוטומטית קומפקטית המשלבת ביצועים גבוהים עם עיצוב יוקרתי.</p>\n</li>\n<li data-sourcepos=\"11:3-11:109\">\n<p data-sourcepos=\"5:1-5:55\">היא מאפשרת הכנה של 6 סוגי משקאות, כולל אספרסו, קפה, קפוצ'ינו ולאטה מקיאטו, עם שליטה אישית בעוצמה, טחינה וכמות חלב.</p>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h3><strong>Jura C9 - מכונת קפה קומפקטית עם טעם מושלם</strong></h3>\n<h3 data-path-to-node=\"4\">שני עולמות של עונג במכשיר קומפקטי אחד</h3>\n<p data-path-to-node=\"5\">מכונת ה-C9 מרשימה עם יכולות חליטה חמה (Hot Brew) לצד חליטה קלה (Light Brew), ומפיקה שילוב טעמים עשיר ומלא או קליל ואוורירי ישירות לכוס שלכם. הודות למטחנת ה-Professional Aroma Grinder, שלושה תהליכי חליטה שונים ויחידת חליטה בגודל מלא, ה-C9 שולטת ביד רמה בהכנת 17 משקאות קפה שונים.</p>\n<p data-path-to-node=\"6\">מגוון המשקאות כולל את הקלאסיקות האהובות, לצד משקאות טרנדיים מיוחדים כמו פלאט וייט (Flat White), קורטאדו (Cortado) ואספרסו מקיאטו. בנוסף, המכונה מציעה חוויית שתייה מושלמת ומוכנה מייד עם משקאות קפה קלים, מעודנים וארומטיים (Light Brew).</p>\n<h3 data-path-to-node=\"8\">מאפיינים בולטים ותכונות ייחודיות</h3>\n<ul data-path-to-node=\"9\">\n<li>\n<p data-path-to-node=\"9,0,0\"><b data-path-to-node=\"9,0,0\" data-index-in-node=\"0\">שני עולמות של טעם:</b> שילוב בין חליטה קלאסית וחמה לבין חליטה קלה ועדינה.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,1,0\"><b data-path-to-node=\"9,1,0\" data-index-in-node=\"0\">מטחנת Professional Aroma Grinder:</b> טחינה מדויקת השומרת על הארומה המקסימלית של הפולים.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,2,0\"><b data-path-to-node=\"9,2,0\" data-index-in-node=\"0\">17 סוגי משקאות:</b> מגוון רחב בלחיצת כפתור (כולל משקאות חלב ומשקאות מיוחדים).</p>\n</li>\n</ul>\n<h3 data-path-to-node=\"11\">מפרט טכני</h3>\n<p data-path-to-node=\"12\"><b data-path-to-node=\"12\" data-index-in-node=\"0\">הכנת משקאות ואינטליגנציה</b></p>\n<ul data-path-to-node=\"13\">\n<li>\n<p data-path-to-node=\"13,0,0\"><b data-path-to-node=\"13,0,0\" data-index-in-node=\"0\">מגוון משקאות:</b> 17 סוגי משקאות קפה שונים (כולל אספרסו, קפוצ'ינו, פלאט וייט, קורטאדו, מקיאטו ומשקאות בטכנולוגיית Light Brew החדשנית לחליטה מעודנת).</p>\n</li>\n<li>\n<p data-path-to-node=\"13,1,0\"><b data-path-to-node=\"13,1,0\" data-index-in-node=\"0\">תהליך חליטה בפעימות (P.E.P.®):</b> טכנולוגיה הממקסמת את זמן המיצוי עבור משקאות קצרים (כמו אספרסו), ומבטיחה ארומה עשירה במיוחד.</p>\n</li>\n<li>\n<p data-path-to-node=\"13,2,0\"><b data-path-to-node=\"13,2,0\" data-index-in-node=\"0\">יחידת חליטה משתנה:</b> קיבולת מגוונת של 5 עד 16 גרם קפה, המאפשרת להתאים את חוזק המשקה באופן מושלם.</p>\n</li>\n<li>\n<p data-path-to-node=\"13,3,0\"><b data-path-to-node=\"13,3,0\" data-index-in-node=\"0\">מערכת חימום:</b> תרמובלוק (Thermoblock) מהיר, המקצר את זמן ההמתנה בין כוס לכוס.</p>\n</li>\n</ul>\n<p data-path-to-node=\"14\"><b data-path-to-node=\"14\" data-index-in-node=\"0\">אפשרויות התאמה אישית (הגדרות מתכונים)</b></p>\n<ul data-path-to-node=\"15\">\n<li>\n<p data-path-to-node=\"15,0,0\"><b data-path-to-node=\"15,0,0\" data-index-in-node=\"0\">עוצמת הקפה:</b> 10 רמות חוזק הניתנות לתכנות לכל משקה.</p>\n</li>\n<li>\n<p data-path-to-node=\"15,1,0\"><b data-path-to-node=\"15,1,0\" data-index-in-node=\"0\">טמפרטורת החליטה:</b> 3 רמות טמפרטורה לבחירה.</p>\n</li>\n<li>\n<p data-path-to-node=\"15,2,0\"><b data-path-to-node=\"15,2,0\" data-index-in-node=\"0\">רמות טחינה:</b> מטחנת ה-Professional Aroma Grinder (P.A.G.) כוללת 7 רמות טחינה שונות לשמירה מקסימלית על טריות הפולים.</p>\n</li>\n<li>\n<p data-path-to-node=\"15,3,0\"><b data-path-to-node=\"15,3,0\" data-index-in-node=\"0\">כמויות מים וחלב:</b> כמות המים, החלב וקצף החלב ניתנת לתכנות והתאמה אישית לפי גודל הכוס שלכם.</p>\n</li>\n</ul>\n<p data-path-to-node=\"16\"><b data-path-to-node=\"16\" data-index-in-node=\"0\">קיבולת ומידות</b></p>\n<ul data-path-to-node=\"17\">\n<li>\n<p data-path-to-node=\"17,0,0\"><b data-path-to-node=\"17,0,0\" data-index-in-node=\"0\">קיבולת מיכל המים:</b> 1.6 ליטר.</p>\n</li>\n<li>\n<p data-path-to-node=\"17,1,0\"><b data-path-to-node=\"17,1,0\" data-index-in-node=\"0\">קיבולת מיכל פולי הקפה:</b> 200 גרם (כולל מכסה ייעודי לשמירה על טריות וארומת הפולים).</p>\n</li>\n<li>\n<p data-path-to-node=\"17,2,0\"><b data-path-to-node=\"17,2,0\" data-index-in-node=\"0\">מיכל שאריות קפה (בוץ):</b> מתאים לכ-16 מנות (חליטות) לפני שנדרש ריקון.</p>\n</li>\n<li>\n<p data-path-to-node=\"17,3,0\"><b data-path-to-node=\"17,3,0\" data-index-in-node=\"0\">פיית מזיגה כפולה מתכווננת:</b> ניתן לכוונן את גובה פיית הקפה והחלב בין 75 ל-115 מ\"מ כדי להתאים לכוסות שונות ולמנוע השתבצויות.</p>\n</li>\n<li>\n<p data-path-to-node=\"17,4,0\"><b data-path-to-node=\"17,4,0\" data-index-in-node=\"0\">מידות המכונה (רוחב × גובה × עומק):</b> 26 × 32.5 × 43.7 ס\"מ.</p>\n</li>\n<li>\n<p data-path-to-node=\"17,5,0\"><b data-path-to-node=\"17,5,0\" data-index-in-node=\"0\">משקל המכונה:</b> כ-9.5 ק\"ג.</p>\n</li>\n</ul>\n<p data-path-to-node=\"18\"><b data-path-to-node=\"18\" data-index-in-node=\"0\">היגיינה ותחזוקה</b></p>\n<ul data-path-to-node=\"19\">\n<li>\n<p data-path-to-node=\"19,0,0\"><b data-path-to-node=\"19,0,0\" data-index-in-node=\"0\">מערכת סינון מים:</b> תאימות לסנן CLARIS Smart+ הכולל זיהוי אוטומטי (RFID) ומבטיח מים נקיים ללא צורך בהסרת אבנית תכופה.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,1,0\"><b data-path-to-node=\"19,1,0\" data-index-in-node=\"0\">תוכניות ניקוי מובנות:</b> שטיפה, ניקוי והסרת אבנית מבוצעים באופן אוטומטי בלחיצת כפתור.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,2,0\"><b data-path-to-node=\"19,2,0\" data-index-in-node=\"0\">ניקוי מערכת החלב:</b> תוכנית ניקוי מהירה ואוטומטית לחלוטין (One-Touch) לשמירה על היגיינה מקסימלית של צינוריות החלב.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,3,0\"><b data-path-to-node=\"19,3,0\" data-index-in-node=\"0\">מגש ניקוז מבוקר:</b> המכונה מתריעה כאשר מגש השאריות מלא או חסר.</p>\n</li>\n</ul>\n<p data-path-to-node=\"20\"><b data-path-to-node=\"20\" data-index-in-node=\"0\">נתונים חשמליים</b></p>\n<ul data-path-to-node=\"21\">\n<li>\n<p data-path-to-node=\"21,0,0\"><b data-path-to-node=\"21,0,0\" data-index-in-node=\"0\">הספק / מתח:</b> 1450 וואט / 230 וולט.</p>\n</li>\n<li>\n<p data-path-to-node=\"21,1,0\"><b data-path-to-node=\"21,1,0\" data-index-in-node=\"0\">צריכת אנרגיה במצב המתנה (Stand-by):</b> חסכונית במיוחד, פחות מ-0.5 וואט.<i data-path-to-node=\"21,2,0\" data-index-in-node=\"123\"> </i></p>\n</li>\n</ul>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה jura ena 8 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת קפה אוטומטית Jura ENA 8 - היא מכונת הקפה החדשה לספל יחיד. קטנה, פשוטה - פריט חובה לכל חובבי הקפה. ה- 8 ENA מכינה שלל משקאות קפה מפולי קפה שהרגע נטחנו. "
+   },
+   "attributes": []
+  }
+ ]
+}

@@ -1,0 +1,272 @@
+{
+ "edits": [
+  {
+   "product_id": 67207,
+   "target": "name",
+   "old": "16/18 גרם",
+   "new": "18/20 גרם",
+   "finding": "פילטר IMS 2 מנות 16/18 גרם B702TH26.5M",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82018,
+   "target": "meta:rank_math_description",
+   "old": "מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה",
+   "new": "מסדרת Competition של IMS עם קיבולת של 16-18 גרם קפה",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82021,
+   "target": "name",
+   "old": "18-21g",
+   "new": "18-20g",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82021,
+   "target": "short_description",
+   "old": "עם קיבולת של 18-21 גרם קפה.",
+   "new": "עם קיבולת של 18-20 גרם קפה.",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82021,
+   "target": "description",
+   "old": "IMS Competition 18-21g (דגם B702TH26.5M)",
+   "new": "IMS Competition 18-20g (דגם B702TH26.5M)",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82021,
+   "target": "description",
+   "old": "מנה כפולה – כ-18 עד 21 גרם (בהתאם לדרגת הקלייה ורמת הטחינה)",
+   "new": "מנה כפולה – 18-20 גרם בקלייה כהה, 19-21 גרם בקלייה בינונית, 22-24 גרם בקלייה בהירה (בהתאם גם לרמת הטחינה)",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82021,
+   "target": "meta:rank_math_description",
+   "old": "מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה",
+   "new": "מסדרת Competition של IMS עם קיבולת של 18-20 גרם קפה",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 82023,
+   "target": "meta:rank_math_description",
+   "old": "מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה",
+   "new": "מסדרת Competition של IMS למנה בודדת",
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf",
+   "variation_id": null
+  },
+  {
+   "product_id": 67641,
+   "target": "name",
+   "old": "Gaggaia",
+   "new": "Gaggia",
+   "finding": "מותג: ECM",
+   "source": "https://www.gaggia.com/",
+   "variation_id": null
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 76629,
+   "finding": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+   "reason": "needs a decision (which product is physically sold). Official IMS data: title code B62.52TFH23.5BB is the Breville/Sage 54 mm basket (tamper 53/53.4, h 23.5 mm, 14-17/15.5-18/17.5-20 g) - title '16-18 ברוויל' roughly matches it (medium 15.5-18). But short, description and meta describe a 58 mm Big Bang basket, code B702TFH23.5BB, while their numbers (h 25.5 mm, 21-23 g) are actually B702TFH25.5BB; and inner Ø60 is wrong (official body Ø59 internal / 54 for B62.5). Confirm the stocked item, then rewrite either the title or the whole spec block from the values in sources."
+  },
+  {
+   "product_id": 82023,
+   "finding": "IMS basket spec check vs imsfiltri.com (requested by owner)",
+   "reason": "official source ambiguous for this code: 'B702TH26.5E' is not in the IMS Competition catalogue (B702 = 2-cup). The closest single-dose baskets are B701TH24.5N (7.5-9.5 g dark, h 24.5) and B701TH26.5E/N (8.5-10.5 g dark, h 26.5); neither is 7-9 g. Check the code printed on the basket, then fix title/short/description from sources. Only the meta's wrong 'Big Bang 18-21 g' claim is edited."
+  },
+  {
+   "product_id": 64799,
+   "finding": "חומר: פלדת אל חלד",
+   "reason": "no official source found (ILSA has no reachable official site - ilsa.it is a parked domain); material needs checking on the physical product"
+  },
+  {
+   "product_id": 65471,
+   "finding": "חומר: פלדת אל חלד\n ידית נירוסטה איכותית",
+   "reason": "no official source found (ILSA has no reachable official site); material needs checking on the physical product"
+  },
+  {
+   "product_id": 64978,
+   "finding": "ידית עץ שחור מוקשח ואיכותית",
+   "reason": "no official source (unbranded tamper, no manufacturer); handle wood needs checking on the product"
+  },
+  {
+   "product_id": 65411,
+   "finding": "ידית עץ שחור מוקשח ואיכותית",
+   "reason": "no official source (unbranded tamper, no manufacturer); handle wood needs checking on the product"
+  },
+  {
+   "product_id": 78244,
+   "finding": "ידית עץ שחור מוקשח ואיכותית",
+   "reason": "no official source (unbranded tamper, no manufacturer); handle wood needs checking on the product"
+  },
+  {
+   "product_id": 67641,
+   "finding": "מותג: ECM",
+   "reason": "brand attribute ECM is a store-wide attribute (not an editable target here); remove it in WooCommerce. Name typo Gaggaia->Gaggia is planned as an edit."
+  },
+  {
+   "product_id": 68274,
+   "finding": "דוחסן דו שימושי 52/57 מ\"מ ... ובצד השני 58 מ\"מ",
+   "reason": "no official source (unbranded plastic tamper); the large-side diameter (57 or 58) needs measuring"
+  },
+  {
+   "product_id": 68276,
+   "finding": "ושסתום פריקת לחץ  לשם ניקוי שטיפה הפוכה",
+   "reason": "no official source (unbranded blind basket); wording fix is copy-editing, not a spec correction from an official page"
+  },
+  {
+   "product_id": 79401,
+   "finding": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+   "reason": "no official source (unbranded knock box); size naming / permalink is a business decision"
+  },
+  {
+   "product_id": 77141,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "store-wide attribute (colour), not an editable target here"
+  },
+  {
+   "product_id": 79401,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "store-wide attribute (colour), not an editable target here"
+  },
+  {
+   "product_id": 67176,
+   "finding": "צבע מוצר: אדום, אפור, שחור",
+   "reason": "store-wide attribute (colour), not an editable target here"
+  },
+  {
+   "product_id": 67222,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "store-wide attribute (colour), not an editable target here"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 67207,
+   "spec": "B702TH26.5M capacity (dark/medium/light)",
+   "value": "18/20 g / 19/21 g / 22/24 g",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67207,
+   "spec": "B702TH26.5M height",
+   "value": "26.5 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67207,
+   "spec": "B702TH M series border / tamper / holes",
+   "value": "border Ø70 mm (B70), tamper 58/58.4 mm, body Ø59 mm internal, 641 holes M pattern in Ø44 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67207,
+   "spec": "hole diameter (Competition series)",
+   "value": "0.30 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82018,
+   "spec": "B702TH24.5M capacity (dark/medium/light)",
+   "value": "16/18 g / 17/19 g / 20/22.5 g",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82018,
+   "spec": "B702TH24.5M height",
+   "value": "24.5 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82018,
+   "spec": "B702TH24.5M border / tamper",
+   "value": "Ø70 mm (B70), tamper 58/58.4 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82018,
+   "spec": "series",
+   "value": "Competition Series (B702TH..M, rounded internal corner, M perforation) - not Big Bang (Big Bang codes are TFH..BB)",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82021,
+   "spec": "B702TH26.5M capacity (dark/medium/light)",
+   "value": "18/20 g / 19/21 g / 22/24 g",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82021,
+   "spec": "B702TH26.5M height",
+   "value": "26.5 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82021,
+   "spec": "B702TH26.5M border / tamper",
+   "value": "Ø70 mm (B70), tamper 58/58.4 mm",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82021,
+   "spec": "series",
+   "value": "Competition Series - not Big Bang",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82023,
+   "spec": "B702TH26.5E",
+   "value": "code not listed in the IMS Competition catalogue; B702 = 2-cup. Single-dose B70 models: B701TH24.5N h24.5 7.5/9.5-8/10-9.5/12 g; B701TH26.5E/N h26.5 8.5/10.5-9/11-10.5/13 g",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 82023,
+   "spec": "Big Bang line codes",
+   "value": "TFH..BB (e.g. B702TFH21.5BB-27.5BB); max 585 holes in Ø49 mm, ridgeless",
+   "url": "https://www.imsfiltri.com/line-big-bang.html"
+  },
+  {
+   "product_id": 76629,
+   "spec": "B62.52TFH23.5BB",
+   "value": "Breville/Sage B62.5: border Ø62.5 mm, tamper 53/53.4 mm, body Ø54 mm internal, ridgeless, 497 BB holes in Ø44 mm, h 23.5 mm, 14/17 g dark, 15.5/18 g medium, 17.5/20 g light",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "spec": "B702TFH23.5BB",
+   "value": "58 mm (B70): border Ø70 mm, tamper 58/58.4, body Ø59 mm internal, ridgeless, 585 BB holes in Ø49 mm, h 23.5 mm, 17/19 g dark, 18/20 g medium, 19/21 g light",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "spec": "B702TFH25.5BB",
+   "value": "h 25.5 mm, 20/22.5 g dark, 21/23 g medium, 21.5/24 g light",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67641,
+   "spec": "brand name",
+   "value": "Gaggia",
+   "url": "https://www.gaggia.com/"
+  }
+ ]
+}

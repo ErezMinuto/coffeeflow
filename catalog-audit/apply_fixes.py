@@ -6,6 +6,7 @@ import base64, csv, glob, json, os, re, sys, time, urllib.request, urllib.parse
 D = os.path.dirname(os.path.abspath(__file__))
 APPLY = '--apply' in sys.argv
 ONLY = {int(a.split('=')[1]) for a in sys.argv if a.startswith('--only=')}
+PLANS = [a.split('=',1)[1] for a in sys.argv if a.startswith('--plans=')]   # e.g. --plans=owner_decisions,spec_*
 BASE = os.environ['WOO_URL'].rstrip('/') + '/wp-json/wc/v3'
 AUTH = 'Basic ' + base64.b64encode(f"{os.environ['WOO_KEY']}:{os.environ['WOO_SECRET']}".encode()).decode()
 
@@ -23,7 +24,8 @@ def call(method, path, body=None):
 
 tags = lambda s: re.findall(r'<[^>]+>', s)
 edits = []
-for f in sorted(g for g in glob.glob(f'{D}/raw/fix_plans/*.json') if not g.endswith('hold.json')):
+import fnmatch
+for f in sorted(g for g in glob.glob(f'{D}/raw/fix_plans/*.json') if not g.endswith('hold.json') and (not PLANS or any(fnmatch.fnmatch(os.path.basename(g)[:-5], p) for p in ','.join(PLANS).split(',')))):
     for e in json.load(open(f))['edits']: e['_plan'] = os.path.basename(f); edits.append(e)
 
 live = {}   # (product_id, variation_id) -> current object
@@ -60,7 +62,7 @@ for e in edits:
             attrs = w.get('attributes') or json.loads(json.dumps(obj['attributes']))
             a = next((a for a in attrs if a['name'] == name), None)
             if vid: status, why = 'rejected', 'variation attributes not supported'
-            elif a and (a.get('id') or a.get('variation')): status, why = 'skipped', 'global or variation attribute: change by hand'
+            elif a and (a.get('variation') or (a.get('id') and not e.get('allow_global'))): status, why = 'skipped', 'global or variation attribute: change by hand'
             elif not a or e['old'] not in a['options']: status, why = 'rejected', 'old option not found'
             elif e['new'] in a['options']: status, why = 'rejected', 'new option already present'
             else:
@@ -76,7 +78,7 @@ for e in edits:
     except Exception as ex: status, why = 'error', str(ex)[:200]
     report.append(dict(product_id=pid, variation_id=vid or '', target=t, status=status, reason=why, old=e['old'][:200], new=e['new'][:200], finding=e.get('finding', '')[:150], plan=e['_plan']))
 
-os.makedirs(f'{D}/backup/per-product', exist_ok=True)
+os.makedirs(f'{D}/backup/per-product-round2', exist_ok=True)
 applied = 0
 for (pid, vid), w in work.items():
     if not w or (ONLY and pid not in ONLY): continue
@@ -86,7 +88,7 @@ for (pid, vid), w in work.items():
         else: body[t] = v
     if not APPLY: continue
     obj = live[(pid, vid)]
-    json.dump(obj, open(f"{D}/backup/per-product/{pid}{'-' + str(vid) if vid else ''}.json", 'w'), ensure_ascii=False)
+    json.dump(obj, open(f"{D}/backup/per-product-round2/{pid}{'-' + str(vid) if vid else ''}.json", 'w'), ensure_ascii=False)
     try:
         res = call('PUT', f'/products/{pid}' + (f'/variations/{vid}' if vid else ''), body)
         ok = all((res.get(t) == v) if not t.startswith(('meta:', 'attributes')) else True for t, v in w.items())
@@ -98,7 +100,7 @@ for (pid, vid), w in work.items():
             if r['product_id'] == pid and (r['variation_id'] or None) == vid and r['status'] == 'ok': r['status'], r['reason'] = 'error', str(ex)[:200]
     time.sleep(0.3)
 
-with open(f'{D}/fix_report.csv', 'w', newline='', encoding='utf-8-sig') as f:
+with open(f'{D}/' + ('fix_report.csv' if not PLANS else 'fix_report_' + '_'.join(PLANS).replace('*','').replace(',','_') + '.csv'), 'w', newline='', encoding='utf-8-sig') as f:
     wr = csv.DictWriter(f, fieldnames=list(report[0].keys()) if report else ['status']); wr.writeheader(); wr.writerows(report)
 from collections import Counter
 print('APPLY' if APPLY else 'DRY RUN', Counter(r['status'] for r in report), 'products written:', applied)

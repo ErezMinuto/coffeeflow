@@ -1,0 +1,18 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+76294,,description,applied,,6 טבליות ניקוי להסרת שומני קפה,8 טבליות ניקוי להסרת שומני קפה,8 × 2 g vs 6 × 3.4 g,owner_decisions.json
+76294,,description,applied,,כל טבליה במשקל שלושה נקודה ארבעה גרם,כל טבליה במשקל 2 גרם,8 × 2 g vs 6 × 3.4 g,owner_decisions.json
+67208,,description,applied,,מארז ה- 20 נארז,מארז ה- 50 נארז,50 vs 20 per pack,owner_decisions.json
+79990,,name,applied,,(114mmx114mm),(140mmx150mm),114 mm vs 14 cm,owner_decisions.json
+65140,,set:catalog_visibility,applied,,visible,hidden,CafeLat tamper: hide (owner decision),owner_decisions.json
+64894,,description,applied,,השתמש ב- CHEMEX® מסנני חצי ירח לא מקופלים FP-2,השתמשו במסנני CHEMEX® ל-6–10 כוסות (FS-100 / FC-100),FP-2 filters on the 6-cup,owner_decisions.json
+67395,,short_description,applied,,<p>16 קפסולות</p>,<p>36 קפסולות</p>,16 capsules at the 36-pack price,owner_decisions.json
+82928,,attribute:חוזק,applied,,4,8,strength 4 vs 8,owner_decisions.json
+64923,,description,applied,,הספק -  2450 W,הספק -  1450 W,2450 W,owner_decisions.json
+81458,,description,applied,,הספק -  2450 W,הספק -  1450 W,2450 W,owner_decisions.json
+81462,,description,applied,,הספק -  2450 W,הספק -  1450 W,2450 W,owner_decisions.json
+64677,,short_description,applied,,<strong>קיבולת דוד קפה:</strong> 0.8 ליטר,<strong>דוד:</strong> דוד יחיד 1.8 ליטר עם מחליף חום מנירוסטה AISI316L,two boilers listed,owner_decisions.json
+64677,,short_description,applied,,<strong>קיבולת דוד מים חמים:</strong> 1.5 ליטר,<strong>מיכל מים:</strong> 2.5 ליטר,two boilers listed,owner_decisions.json
+64677,,short_description,applied,,<strong>משקל:</strong> 26.5 ק&quot;ג,<strong>משקל:</strong> 18.3 ק&quot;ג,26.5 kg,owner_decisions.json
+64678,,short_description,applied,,<strong>קיבולת דוד קפה:</strong> 0.8 ליטר,<strong>דוד:</strong> דוד יחיד 1.8 ליטר עם מחליף חום מנירוסטה AISI316L,two boilers listed,owner_decisions.json
+64678,,short_description,applied,,<strong>קיבולת דוד מים חמים:</strong> 1.5 ליטר,<strong>מיכל מים:</strong> 2.5 ליטר,two boilers listed,owner_decisions.json
+64678,,short_description,applied,,<strong>משקל:</strong> 26.5 ק&quot;ג,<strong>משקל:</strong> 18.3 ק&quot;ג,26.5 kg,owner_decisions.json

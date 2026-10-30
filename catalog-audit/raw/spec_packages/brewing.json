@@ -1,0 +1,1098 @@
+{
+ "findings": [
+  {
+   "product_id": "65152",
+   "product_name": "פלנג'ר 3 כוסות (0.35) - Jinmeilai Chambord",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%9c%d7%a0%d7%92%d7%a8-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-0-35-jinmeilai-chambord/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מיוצר על ידי המותג האיטלקי Forever",
+   "problem": "Title names the brand Jinmeilai (Chambord style), but short and description say it is made by the Italian brand Forever; copy-paste from another plunger.",
+   "suggested_fix": "פלנג׳ר Jinmeilai בסגנון Chambord – לאמת את שם המותג ולהסיר את האזכור של Forever",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "81503",
+   "product_name": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%95%d7%95%d7%a8%d7%98%d7%a7%d7%a1-%d7%93%d7%99%d7%a0%d7%9e%d7%99/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+   "problem": "Title names the 'Dynamic' variant, but short and long descriptions are word-for-word identical to the 'High-velocity' sibling (78245) and never mention what distinguishes Dynamic.",
+   "suggested_fix": "להוסיף לתיאור את ההבדל בין דגם Dynamic לדגם High-velocity (צורת פיה/זרימה), או לאחד את שני המוצרים אם מדובר באותו כד",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64980",
+   "product_name": "סטיקים לבדיקת מים - 3 יח",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "כמות: 12 יח, 3 יח",
+   "problem": "3-stick pack lists both 12 and 3 as quantity.",
+   "suggested_fix": "להגדיר כמות: 3 יח בלבד.",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64999",
+   "product_name": "מכונת קפה פסקל עם מקציף Pascale Coffee & Tea Silver OT",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%a1%d7%a7%d7%9c-%d7%a2%d7%9d-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-pascale-coffee-tea-silver-ot/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע לבן",
+   "problem": "Product is titled 'Silver OT' but short and description say white colour.",
+   "suggested_fix": "לתקן את הצבע ל'כסוף' או לאמת את צבע המוצר בפועל",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65100",
+   "product_name": "HARIO פילטר בבקבוק 300 מ״ל לקפה בחליטה קרה Cold Brew צבע ירוק",
+   "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-300-%d7%9e%d7%b4%d7%9c-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-cold-brew-%d7%a6%d7%91/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע חום ירוק",
+   "problem": "Title says green but short description says 'brown green'.",
+   "suggested_fix": "צבע ירוק",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65162",
+   "product_name": "Hario Coffee Canister – מיכל אחסון לקפה 300 גרם",
+   "permalink": "https://www.minuto.co.il/product/hario-coffee-canister-%d7%9e%d7%99%d7%9b%d7%9c-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94-300-%d7%92%d7%a8%d7%9d/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "מיכל אחסון לקפה 300 מל",
+   "problem": "Title says 300 g capacity, description says 300 ml and then 'fits 300-350 g'; 300 ml would hold far less than 300 g of beans.",
+   "suggested_fix": "לאמת את קיבולת המיכל (מ\"ל וגרם פולים) ולאחד בין הכותרת לתיאור",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65388",
+   "product_name": "מכונת אספרסו ניידת לרכב אמיליו",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%99%d7%93%d7%aa-%d7%9c%d7%a8%d7%9b%d7%91-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "קפסולות, פולי קפה,  ניידת, ניקוי קל, 12V!",
+   "problem": "Short description says the machine takes coffee beans. The description says it takes ground coffee, and a 12V car espresso maker has no grinder.",
+   "suggested_fix": "קפסולות נספרסו ודולצ'ה גוסטו, קפה טחון, ניידת, ניקוי קל, 12V!",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "80246",
+   "product_name": "קנקן תה Hario Clear Teapot 700mL - FNC-70",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-hario-v60-drip-assist-%d7%90%d7%91%d7%99%d7%96%d7%a8-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7-%d7%9c%d7%a4%d7%99%d7%9c%d7%98%d7%a8/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "נפח: 450 מ\"ל / 700 מ\"ל",
+   "problem": "Product is the 700 ml FNC-70 teapot but short description lists 450/700 ml as if both sizes were offered.",
+   "suggested_fix": "נפח: 700 מ\"ל",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "81452",
+   "product_name": "סטיקים לבדיקת מים - 12 יח",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d-12-%d7%99%d7%97/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "כמות: 12 יח, 3 יח",
+   "problem": "12-stick pack lists both 12 and 3 as quantity.",
+   "suggested_fix": "להגדיר כמות: 12 יח בלבד.",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "82888",
+   "product_name": "50 גר אבקת אובה טהורה פרימיום – ALATA UBE",
+   "permalink": "https://www.minuto.co.il/product/100-%d7%92%d7%a8-%d7%90%d7%91%d7%a7%d7%aa-%d7%90%d7%95%d7%91%d7%94-%d7%98%d7%94%d7%95%d7%a8%d7%94-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d-alata-ube/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "50 גר אבקת אובה טהורה פרימיום",
+   "problem": "Name says 50 g while the permalink says 100 g; pack size should be confirmed.",
+   "suggested_fix": "לאמת את משקל האריזה ולעדכן את הכותרת/הקישור בהתאם",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "64745",
+   "product_name": "משקל קפה Acia Lunar - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "משקל כיול של 0.1 גרם",
+   "problem": "A 0.1 g calibration weight is not plausible; 0.1 g is the scale's readability. Lunar ships with a 100 g calibration weight.",
+   "suggested_fix": "לאמת מול תכולת האריזה (משקולת כיול 100 גרם) ולתקן",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65225",
+   "product_name": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/",
+   "field": "name",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+   "problem": "Ceramic dripper is labelled VD-01R, which is the plastic model code (ceramic is VDC-01); title copied from plastic sibling.",
+   "suggested_fix": "לאמת את דגם הקרמיקה (VDC-01) ולתקן את הכותרת",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65232",
+   "product_name": "רנצ'יליו סילביה Rancillio Silvia",
+   "permalink": "https://www.minuto.co.il/product/%d7%a8%d7%a0%d7%a6%d7%99%d7%9c%d7%99%d7%95-%d7%a1%d7%99%d7%9c%d7%91%d7%99%d7%94-rancillio-silvia/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "problem": "Dimension labels are scrambled: Rancilio Silvia is about 235 mm wide, 290 mm deep, 340 mm high.",
+   "suggested_fix": "רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "78749",
+   "product_name": "רנצ'יליו סילביה Rancillio Silvia צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%a8%d7%a0%d7%a6%d7%99%d7%9c%d7%99%d7%95-%d7%a1%d7%99%d7%9c%d7%91%d7%99%d7%94-rancillio-silvia-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "problem": "Dimension labels are scrambled: Rancilio Silvia is about 235 mm wide, 290 mm deep, 340 mm high.",
+   "suggested_fix": "רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "81077",
+   "product_name": "משקל קפה Acia Lunar - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "משקל כיול של 0.1 גרם",
+   "problem": "A 0.1 g calibration weight is not plausible; 0.1 g is the scale's readability. Lunar ships with a 100 g calibration weight.",
+   "suggested_fix": "לאמת מול תכולת האריזה (משקולת כיול 100 גרם) ולתקן",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "82864",
+   "product_name": "ממברנה Pro 100 אוסמוזה הפוכה RO100S Aquaphor",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9e%d7%91%d7%a8%d7%a0%d7%94-pro-100-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-ro100s-aquaphor/",
+   "field": "short_description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "מתאימה לדגמי RO-101S, RO-100S ו-RO-102S",
+   "problem": "Compatibility list includes RO-101S (Morion), yet the catalog's own RO-50S membrane (64687) is sold as the Morion RO-101 membrane; the 100 GPD Pro membrane may not fit RO-101S.",
+   "suggested_fix": "לאמת מול Aquaphor לאילו מערכות מתאימה ממברנת Pro 100 ולתקן את רשימת הדגמים.",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65123",
+   "product_name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "AIRSCAPE כ- 1 ק״ג קפה צבע שחור | 229",
+   "problem": "Black 1 kg Airscape is 229 while the white and grey 1 kg versions are 259.",
+   "suggested_fix": "לאמת את מחיר ה-1 ק\"ג השחור מול שאר הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65178",
+   "product_name": "HARIO פילטר בבקבוק לקפה בחליטה קרה בהשרייה Cold Brew צבע מוקה",
+   "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-2/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "167 (צבע מוקה) vs 174 (חום שוקולד, 65149)",
+   "problem": "Mocha and chocolate-brown versions of the same 650 ml Filter-in Bottle have different prices.",
+   "suggested_fix": "לאמת ולהשוות את המחיר בין צבעי הבקבוק 650 מ\"ל",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65213",
+   "product_name": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "Hario V60 Server 450 ml ... 90 (360 ml sibling 154)",
+   "problem": "The 450 ml server costs 90 while the 360 ml sibling costs 154 and 600 ml costs 160-168; permalink of this product also says 360 ml.",
+   "suggested_fix": "לאמת את המחיר והנפח של הקנקן מול הספק",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "81073",
+   "product_name": "כד הקצפה 600 מל בריסטה סוואג אולטרה שארפ 2.0 - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-%d7%a9%d7%97%d7%95/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "600 מל ... 159 (350 מל גם 159)",
+   "problem": "Ultra Sharp 2.0 600 ml (also 81069) costs the same 159 as the 350 ml versions; confirm price per size.",
+   "suggested_fix": "לאמת את מחיר כד 600 מ\"ל מול 350 מ\"ל",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "77389",
+   "product_name": "Coffee Server 500 ml - קנקן מזיגה לקפה פילטר",
+   "permalink": "https://www.minuto.co.il/product/coffee-server-500-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "low",
+   "current_text": "בנפח של 500 מ\"ל – אידיאלי לשתיים-שלוש מנות קפה",
+   "problem": "Serving-size phrase copied unchanged from the 300 ml version.",
+   "suggested_fix": "בנפח של 500 מ\"ל – אידיאלי לשלוש-ארבע מנות קפה",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64743",
+   "product_name": "משקל קפה Acia Pearl s - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע: לבן, שחור",
+   "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64745",
+   "product_name": "משקל קפה Acia Lunar - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "משטח: ציפוי אלומיניום אנודייז (כסף שחור)",
+   "problem": "White Lunar page copies the black model's finish ('silver black').",
+   "suggested_fix": "לעדכן את הגימור לגרסה הלבנה",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64745",
+   "product_name": "משקל קפה Acia Lunar - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע: לבן, שחור",
+   "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65156",
+   "product_name": "נייר הריו לקפה פילטר הריו 2 כוס - Hario",
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%99%d7%99%d7%a8-%d7%94%d7%a8%d7%99%d7%95-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%94%d7%a8%d7%99%d7%95-2-%d7%9b%d7%95%d7%a1-hario/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "כל פילטר מסנן כוס אחת בכל פעם",
+   "problem": "2-cup (size 02) filters described as filtering one cup at a time.",
+   "suggested_fix": "להסיר את המשפט או לכתוב: מתאים לדריפר V60 בגודל 02 (1-4 כוסות)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67200",
+   "product_name": "\"Toddy® Cold Brew System",
+   "permalink": "https://www.minuto.co.il/product/toddy-cold-brew-system/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)",
+   "problem": "Text says the felt filter goes into the brewing container with the coffee, while the contents list says the coffee sits in paper filters and the reusable filters are for the finished product.",
+   "suggested_fix": "לאמת את תכולת הערכה ואופן השימוש בפילטרים מול Toddy",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67651",
+   "product_name": "כוס מדידה שוקלת לקפה Subscale Digital Coffee Dosing Cup",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%93%d7%99%d7%93%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9c%d7%a7%d7%a4%d7%94-subscale-digital-coffee-dosing-cup/",
+   "field": "categories",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "משקלים לקפה Acia | מותג: Subminimal",
+   "problem": "Subscale is a Subminimal product but it is filed under the Acaia ('Acia') scales brand category.",
+   "suggested_fix": "להעביר לקטגוריית משקלים לקפה כללית / Subminimal ולהסיר מקטגוריית Acaia",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "81077",
+   "product_name": "משקל קפה Acia Lunar - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע: לבן, שחור",
+   "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "81089",
+   "product_name": "משקל קפה Acia Pearl s - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע: לבן, שחור",
+   "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+   "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64911",
+   "product_name": "משקל ייעודי לקפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "משקל סופר רגיש, עם דיוק של עד 1 גר׳",
+   "problem": "1 g resolution contradicts 'super sensitive'; coffee timer scales are usually 0.1 g. Check the actual resolution.",
+   "suggested_fix": "לאמת את רזולוציית המשקל (0.1 גרם או 1 גרם) מול המפרט",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65058",
+   "product_name": "מקינטה ביאלטי מוקה 9 כוסות לאספרסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-9-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "הוקמה בשנת 1933",
+   "problem": "Bialetti was founded in 1919 (1933 is the year of the Moka Express); contradicts the Tuttocrema pages that say 1919.",
+   "suggested_fix": "הוקמה בשנת 1919",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65211",
+   "product_name": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה",
+   "permalink": "https://www.minuto.co.il/product/leaf-tea-pot-pure-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "למזיגת עד כ-4 כוסות",
+   "problem": "A 360 ml teapot is unlikely to serve about 4 cups.",
+   "suggested_fix": "לאמת מול היצרן (כ-2 כוסות)",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "64692",
+   "product_name": "קופסת אחסון קפה AIRSCAPE Copper כ- 500 גרם קפה צבע נחושת",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-copper-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a0%d7%97%d7%95%d7%a9%d7%aa/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "65120: 210 ₪ · 78557: 215 ₪ · 65122: 215 ₪ · 64694: 215 ₪ · 64693: 215 ₪ · 65436: 219 ₪ · 64692: 219 ₪",
+   "problem": "Same model in another colour/finish is priced differently (210–219 ₪). May be a deliberate finish premium or a stale price.",
+   "suggested_fix": "לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "64991",
+   "product_name": "מקינטה ביאלטי בריקה 4 כוסות + קפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "מקינטה ביאלטי בריקה 4 כוסות + קפה | 290",
+   "problem": "Bundle of Brikka 4 + 330 g specialty coffee costs 290, only 35 ILS more than the Brikka 4 alone (255); check the bundle price or included coffee.",
+   "suggested_fix": "לאמת את מחיר המארז מול מחיר הבריקה 4 (255) ומחיר שקית 330 גרם",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65101",
+   "product_name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע אפור",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "65123: 229 ₪ · 65121: 259 ₪ · 65101: 259 ₪",
+   "problem": "Same model in another colour/finish is priced differently (229–259 ₪). May be a deliberate finish premium or a stale price.",
+   "suggested_fix": "לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65120",
+   "product_name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "AIRSCAPE כ- 500 גרם קפה צבע שחור | 210",
+   "problem": "500 g colour versions vary unexpectedly: black 210, red/yellow/white/green 215, copper/turquoise 219.",
+   "suggested_fix": "לאמת ולהאחיד את מחירי ה-500 גרם בצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65121",
+   "product_name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "65123: 229 ₪ · 65121: 259 ₪ · 65101: 259 ₪",
+   "problem": "Same model in another colour/finish is priced differently (229–259 ₪). May be a deliberate finish premium or a stale price.",
+   "suggested_fix": "לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65436",
+   "product_name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע טורקיז",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "65120: 210 ₪ · 78557: 215 ₪ · 65122: 215 ₪ · 64694: 215 ₪ · 64693: 215 ₪ · 65436: 219 ₪ · 64692: 219 ₪",
+   "problem": "Same model in another colour/finish is priced differently (210–219 ₪). May be a deliberate finish premium or a stale price.",
+   "suggested_fix": "לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "81083",
+   "product_name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/hario-polaris-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-%d7%97%d7%9b%d7%9d-%d7%9c%d7%93%d7%99%d7%95%d7%a7-%d7%9e%d7%95%d7%a9%d7%9c%d7%9d/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "SKU: 4977642027104",
+   "problem": "Black Polaris SKU fails the EAN-13 check digit, unlike the white sibling 4977642027107.",
+   "suggested_fix": "לאמת את הברקוד של הדגם השחור מול האריזה",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "82537",
+   "product_name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע ירוק עשן",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-fellow-stagg-ekg-pour-over-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%a2%d7%a9%d7%9f/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "995 (white/generic variants 950)",
+   "problem": "Same kettle model is 995 in green vs 950 in white and the generic listing; confirm the colour surcharge is intended.",
+   "suggested_fix": "לאמת את המחיר מול וריאנט הלבן (950 ₪)",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  }
+ ],
+ "products": [
+  {
+   "id": 64692,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-copper-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a0%d7%97%d7%95%d7%a9%d7%aa/",
+   "name": "קופסת אחסון קפה AIRSCAPE Copper כ- 500 גרם קפה צבע נחושת",
+   "short_description": "<ul>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל מזון נירוסטה</li>\n<li>מכיל כ-500 גר קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע נחושת</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 500 גר פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן בגימור נחושת מיוחד. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64743,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s/",
+   "name": "משקל קפה Acaia Pearl s - לבן",
+   "short_description": "<p>הכירו את Acaia Pearl Model S &#8211; משקל חכם בדרגה מקצועית עבור חווית חליטת קפה אולטימטיבית.</p>\n<p>השיגו עקביות ותובנות ללא תחרות כדי ליצור את ספל הקפה המושלם הזה.</p>\n",
+   "description": "<h3>משקל קפה Acaia Pearl s</h3>\n<p>הכירו את Acaia Pearl Model S - משקל חכם בדרגה מקצועית עבור חווית חליטת קפה אולטימטיבית.</p>\n<p>השיגו עקביות ותובנות ללא תחרות כדי ליצור את ספל הקפה המושלם הזה.</p>\n<p>מה חדש?<br />\nמצבי חליטה מרובים: התאמת החליטה שלך במדויק.<br />\nתצוגת קצב זרימה בזמן אמת: פוקחים עין על כל טיפה.<br />\nמדריך חליטה אינטראקטיבי: הוראות שלב אחר שלב למתכונים האהובים עליך.<br />\nהתראות קוליות: קבלו עדכונים על ההתקדמות החליטה תוך כדי בזמן הכנת האספרסו.<br />\nמצב ספירה לאחור: מעל 30 מנגינות לבחירתך כדי לאותת שהקפה שלך מוכן.</p>\n<p>הרימו את רמת הקפה שלכם לשלב הבא עם Acaia Pearl Model S. שלמות בכל מזיגה.</p>\n<p>&nbsp;</p>\n<h4><strong>נתונים טכניים</strong></h4>\n<p>דגם: PS003 / PS004<br />\nמשקל מוצר: 620 גרם ± 5 גרם<br />\nמידות המוצר: ר: 160 מ\"מ, א: 160 מ\"מ, ג: 32 מ\"מ<br />\nקיבולת מרבית: 3000 גרם / 105.82 אונקיות<br />\nקיבולת מינימלית: 0.1 גרם<br />\nיחידות מדידה: g/oz<br />\nקריאה: 0.1 גרם<br />\nיכולת חזרה: 0.1 גרם<br />\nליניאריות: 1 ד<br />\nמגבלת אינדיקציה: 3090 גרם<br />\nספק כוח: 5 V / 500 mA</p>\n<p>סוללה: ליתיום-יון נטענת 3.7 V 2200 mAh<br />\nחיי סוללה: עד 16 ~ 40 שעות<br />\nתצוגה: LED מטריצת נקודות<br />\nחומר: PC<br />\nקישוריות: Bluetooth 5.0<br />\nאחריות: 1 שנה<br />\nבתוך החבילה:</p>\n<p>משקל קפה של Acaia Pearl Model S x 1<br />\nתחתית עמידה בחום (עגולה) x 1<br />\nכבל מטען USB Type-C x 1</p>\n<p>&nbsp;</p>\n<p>הזמינו עוד היום  משקל קפה Acaia Pearl Model S ותחוו נירוונה בקפה.</p>\n",
+   "meta": {
+    "rank_math_description": "משקל קפה Acia Pearl s, לבן. משקל קפה עם מידע על דיוק, תכונות ותפעול. פרטים ואפשרויות רכישה באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 64745,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/",
+   "name": "משקל קפה Acaia Lunar - לבן",
+   "short_description": "<p>מעוניינים לעבור למגרש של המקצוענים? שדרגו את תהליך החליטה שלכם עם משקל Acaia Lunar &#8211; המפתח שלכם לחליטה מדויקת. מעוצב עבור עקביות, הוא מהיר, מגיב ומדויק, מה שהופך אותו לחובה עבור הגדרות מסחריות וחיבור בקלות למכונות אספרסו.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">משקל קפה Acaia Lunar</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעוניינים לעבור למגרש של המקצוענים?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את תהליך החליטה שלכם עם משקל מקצועי Acaia Lunar - המפתח שלכם לחליטה מדויקת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעוצב עבור עקביות, הוא מהיר, מגיב ומדויק, מה שהופך אותו לחובה עבור הגדרות מסחריות וחיבור בקלות למכונות אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התאימו אישית את החליטה שלכם בקלות, השתמשו במצבים אוטומטיים ותיהנה מהנוחות של תכונת ה-Tare Save.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משוב בזמן אמת ממחוון קצב הזרימה מבטיח מנות אספרסו ללא דופי בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל משקל לונאר כולל משטח עמיד בחום ומשקל כיול של 0.1 גרם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף, תהנו משקט נפשי עם אחריות יצרן ל-12 חודשים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מוכנים לקחת את האספרסו לשלב הבא? גלו את ה-Acaia Lunar היום ותחלטו קפה בדיוק מושלם כמו שלא היה מעולם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":4} --></p>\n<h4 class=\"wp-block-heading\"><strong>מפרט טכני</strong></h4>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>דֶגֶם<br />משקל המוצר 265 גרם ± 5 גרם<br />מידות המוצר: רוחב: 105 מ\"מ א: 105 מ\"מ ג: 15 מ\"מ<br />קיבולת מקסימלית: 2000 גרם<br />משקל מינימום: 0.1 גרם<br />יחידות מדידה: גרם<br />קריאות: 0.1 גרם / 0.01 גרם<br />ספק כוח: 5 V / 500 mA<br />סוללה: ליתיום-יון נטענת 3.7 V 1100 mAh<br />חיי סוללה: 30-40 שעות<br />חומרים: אלומיניום, אקריליק<br />משטח: ציפוי אלומיניום אנודייז (כסף שחור)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קישוריות: בלוטות' 5.0<br />בתוך החבילה<br />משקלה קפה Acaia Lunar Coffee<br />כרית עמידה בחום<br />2 רצועת מגן מונעת החלקה<br />2 רצועת מגן להפחתת חיכוך<br />כבל מטען USB Type-C</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אז למה אתם מחכים? <a href=\"https://www.minuto.co.il/%D7%90%D7%91%D7%99%D7%96%D7%A8%D7%99-%D7%A7%D7%A4%D7%94/%D7%9E%D7%A9%D7%A7%D7%9C%D7%99%D7%9D-%D7%9C%D7%A7%D7%A4%D7%94/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/\">הזמינו עוד היום את משקל הקפה המקצועי Acaia Lunar</a> מאתר מינוטו קפה ותוכלו גם אתם לדייק את החליטות שלכם כמו מקצוענים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "משקל קפה Acia Lunar, לבן. משקל קפה עם מידע על דיוק, תכונות ותפעול. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "משקל קפה Acaia Lunar | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 64911,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94/",
+   "name": "משקל ייעודי לקפה",
+   "short_description": "<p>משקל לפילטר וחליטה קרה משקל הקפה הינו משקל סופר רגיש, עם דיוק של עד 1 גר׳ מצוייד בטיימר , עם כפתורי מגע לשליטה נוחה למדידת זמני חליטה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1,\"className\":\"product_title entry-title\"} --></p>\n<h1 class=\"wp-block-heading product_title entry-title\"> משקל ייעודי לקפה</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div class=\"woocommerce-product-details__short-description\">\n<p>חובה למי שמעוניין לשתות קפה ייחודי ולהקפיד על פרטים הקטנים בהכנה.</p>\n<p>משקל הקפה הינו משקל סופר רגיש, עם דיוק של עד 1 גר׳</p>\n<p>מצוייד בטיימר , עם כפתורי מגע לשליטה נוחה למדידת זמני חליטה.</p>\n<p>משקל לפילטר וחליטה קרה</p>\n<p>משקל נטען</p>\n<p>מכיל 1 משקל</p>\n<p>1 משטח גומי</p>\n<p>1 כבל טעינה</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "משקל קפה מקצועי לדיוק מושלם. חיוני לחליטה עקבית וביצועים אופטימליים - מבצע מיוחד. איכות מעולה ועמידות לאורך זמן",
+    "rank_math_title": "משקל ייעודי לקפה Digital Coffee Scale - דיוק מושלם | %sitename%"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64980,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d/",
+   "name": "סטיקים לבדיקת מים - 3 יח",
+   "short_description": "<p>סטיקים לבדיקת קשיות המים</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">סטיקים לבדיקת מים</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>סטיקים לבדיקת קשיות המים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "סטיקים לבדיקת מים, 3 יח. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו.",
+    "rank_math_title": "סטיקים לבדיקת מים | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "12 יח",
+      "3 יח"
+     ],
+     "id": 17,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 64991,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "name": "מקינטה ביאלטי בריקה 4 כוסות + קפה",
+   "short_description": "<p>330 גר ספשלטי קפה מקינטה ביאלטי בריקה 4 כוסות מקינטה להכנת אספרסו של חברת ביאלטי מקינטה משמשת לבישול קפה אספרסו על הגז. <br />בתהליך פשוט של חימום המים והקפה מקבל קפה אספרסו איטלקי, עם ארומה וטעם שלא הולכים לאיבוד.  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מקינטה ביאלטי בריקה 4 כוסות + קפה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>במקינטה בריקה הדור החדש 2020  עם שסתום לחץ \"חכם\" המים עוברים דרך הקפה בלחץ אופטימלי לייצור קרמה עשירה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרונות הבריקה הדור החדש:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כמות הקפה עלה מ-120 ל-140 מ\"ל.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקרמה עלתה מ-30 ל-35 מ\"ל.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הטמפרטורה עולה מ-65 ל-70 מעלות צלסיוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הוידאו המצורף מדגים את תהליך יצירת הקרמה עם הבריקה הדור החדש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>להכנת 2-4 כוסות קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חברת ביאלטי הנה אחת החברות המובילות בתחום הקפה באיטליה. הקומה בשנת 1933</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מקינטה ביאלטי בריקה 4 כוסות + קפה. מקינטה עם מידע על מספר הכוסות, החומר וההתאמה לכיריים. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 64999,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%a1%d7%a7%d7%9c-%d7%a2%d7%9d-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-pascale-coffee-tea-silver-ot/",
+   "name": "מכונת קפה פסקל עם מקציף Pascale Coffee &amp; Tea Silver OT",
+   "short_description": "<ul>\n<li>מכונת קפה קטנה וקומפקטית בעלת עיצוב מינימליסטילוח <span class=\"caps\">LED</span> עם מקשי מגעת</li>\n<li>הליך חליטה מוקדמת של קפה – תהליך זה מבטיח כי הקפה הטחון נרטב באופן שווה לפני פעולת הבישול.</li>\n<li>מקציף חלב אינטגרלי &#8211; One Touch</li>\n<li>צבע לבן</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"col-xs-12\">\n<h1>מכונת קפה Pascale Coffee &amp; Tea Silver</h1>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"col-xs-12 open\">\n<ul>\n<li class=\"first\">מכונת קפה קטנה וקומפקטית בעלת עיצוב מינימליסטי</li>\n<li>מידות - רוחב 18 ס\"מ | גובה 32 ס\"מ | אורך 39.5 ס\"מ</li>\n<li>לוח LED עם מקשי מגע</li>\n<li>תהליך טרום בישול קפה - תהליך זה מבטיח כי הקפה הטחון נרטב באופן שווה לפני פעולת הבישול. רק אז המים זורמים דרך כל הקפה הטחון ומכונת הקפה שלך יכולה לחלוט את מלוא הטעם העשיר המאוזן והטעים של האספרסו לכוס קפה.</li>\n<li>קלה לתפעול וידידותית למשתמש - מיכל מים/מגש טפטוף/יחידת החליטה/פח עודפי קפה - נשלפים לניקוי קל מהיר.</li>\n<li>הכנת קפה/תה בנגיעת כפתור אחד.</li>\n<li>פונקציית כיבוי אוטומטי לחיסכון בחשמל.</li>\n<li>תכנית ניקוי אבנית אוטומטית - מכונה מודיעה מתי יש צורך בניקוי אבנית (מחוון הסרת האבנית).</li>\n<li>מטחנת נירוסטה מובנית בעלת 5 רמות טחינה שונות.</li>\n<li>פונקציה לזיכרון אורך המשקה.</li>\n<li></li>\n<li>נתונים טכניים -&nbsp;צבע לבן |&nbsp;מיל מים: 1.1 ליטר |&nbsp;מיכל פולי קפה: 160 גרם</li>\n<li></li>\n<li>לחץ משאבה: 19 בר |&nbsp;משקל: 8 ק\"ג |&nbsp;הספק: 1235W-1470W |&nbsp;מתח: 220V-240V</li>\n</ul>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה פסקל ומקציף Tea Silver OT | מינוטו קפה ואביזרים",
+    "rank_math_description": "מכונת קפה מקצועית מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - פסקל. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65058,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-9-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/",
+   "name": "מקינטה  ביאלטי מוקה 9 כוסות לאספרסו",
+   "short_description": "<h3>מקינטה משמשת לבישול קפה אספרסו על הגז. בתהליך פשוט של חימום המים והקפה מקבל קפה אספרסו איטלקי, עם ארומה וטעם שלא הולכים לאיבוד.</h3>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מקינטה ביאלטי מוקה 9 כוסות לאספרסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקינטה להכנת אספרסו של חברת ביאלטי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקינטה משמשת לבישול קפה אספרסו על הגז. בתהליך פשוט של חימום המים והקפה מקבל קפה אספרסו איטלקי, עם ארומה וטעם שלא הולכים לאיבוד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>להכנת 9 כוסות קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חברת ביאלטי הנה אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1933</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לאספרסו - בנפח 9 כוסות, בטחינה לאספרסו"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65100,
+   "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-300-%d7%9e%d7%b4%d7%9c-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-cold-brew-%d7%a6%d7%91/",
+   "name": "HARIO פילטר בבקבוק 300 מ״ל לקפה בחליטה קרה Cold Brew צבע ירוק",
+   "short_description": "<p>בקבוק הריו לחליטה קרה</p>\n<p>צבע חום ירוק</p>\n<p>קיבולת  300 מ&quot;ל</p>\n<p>בקבוק זכוכית: זכוכית עמיד בחום</p>\n<p>זרבובית בקבוק נשלפת, פקק: גומי סיליקון</p>\n",
+   "description": "<h1 class=\"product_title entry-title\">HARIO פילטר בבקבוק לקפה קר בהשרייה Cold Brew</h1>\n<div class=\"woocommerce-product-details__short-description\">\n<p><strong>Filter in Coffee Bottle </strong>  בקבוק HARIO למיצוי קפה קר היינו מכשיר פשוט להכנת קפה קר בהשריה ארוכה המאפשר לנו ליהנות מקפה קר בעל טעמים מורכבים- מתוקים בחומציות נמוכה. בשל היציבות בטמפרטורת המיצוי לאורך כל ההשריה, טעמי הקפה \"נלכדים\" במשקה ולכן מרגע שנוציא את סנן הקפה נעצור את תהליך המיצוי והקפה הקר ישמר את טעמיו. שיטת מיצוי זאת מדגישה את טעמי המקור של הזנים, לכן מומלץ להשתמש בקפה חד זני לצורך הכנת המשקה ולגוון מפעם לפעם על מנת ליהנות מעולם טעמים עשיר.</p>\n<p><strong><u>טיפ:</u></strong> על ידי שינוי פרמטרים כגון זמן ההשריה ,כמות הקפה ביחס למים נוכל לשלוט על טעם וחוזק הקפה.</p>\n</div>\n",
+   "meta": {
+    "rank_math_description": "בקבוק הריו לחליטה קרה צבע חום ירוק קיבולת 300 מל בקבוק זכוכית: זכוכית עמיד בחום זרבובית בקבוק נשלפת, פקק: גומי סיליקון"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65101,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8/",
+   "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע אפור",
+   "short_description": "<ul>\n<li>צבע אפור</li>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל נירוסטה</li>\n<li>מכיל כ-1 ק״ג קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע אפור</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 1 ק״ג פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן - בנפח 1 קג. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65120,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע שחור",
+   "short_description": "<ul>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל מזון נירוסטה</li>\n<li>מכיל כ-500 גר קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 500 גר קפה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 500 גר פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן בגימור שחור מודרני - בשחור מודרני, בנפח 500 גרם"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65121,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/",
+   "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע לבן",
+   "short_description": "<ul>\n<li>צבע לבן</li>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל נירוסטה</li>\n<li>מכיל כ-1 ק״ג קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע לבן</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 1 ק״ג פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן בצבע לבן אלגנטי - בלבן אלגנטי, בנפח 1 קג"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65123,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע שחור",
+   "short_description": "<ul>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל מזון נירוסטה</li>\n<li>מכיל כ-1 ק״ג קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 1 ק״ג פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן בגימור שחור מודרני - בשחור מודרני, בנפח 1 קג"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65152,
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%9c%d7%a0%d7%92%d7%a8-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-0-35-jinmeilai-chambord/",
+   "name": "פלנג'ר 3 כוסות (0.35) - Jinmeilai Chambord",
+   "short_description": "<p><span style=\"color: #302620;font-family: 'Noto Sans Hebrew', Arial;font-size: 14px;text-align: right\">איכות גבוהה של פרנץ' פרס- פלאנג'ר של המותג האיטלקי Forever .</span><br style=\"margin: 0px;padding: 0px;font-family: 'Noto Sans Hebrew', Arial;color: #302620;font-size: 14px;text-align: right\" /><span style=\"color: #302620;font-family: 'Noto Sans Hebrew', Arial;font-size: 14px;text-align: right\">מראה קלאסי בעיצוב זכוכית ונירוסטה – מושלם וקל להכנת קפה פילטר וחליטות תה תוך זמן קצר.</span></p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3,\"align\":\"right\"} --></p>\n<h3 class=\"wp-block-heading\">פלנג'ר 3 כוסות (0.35) - Jinmeilai Chambord</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פלנג׳ר קל מאוד לשימוש ה(French press) מיוצר על ידי המותג האיטלקי Forever. השיטה הפשוטה מכולן, תוצאות מצוינות במאמץ מינימלי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכשירי בישול כאלה מאפשרים לנו להשתמש בקפה טחון גס, אשר מוציא טעם קפה מעט שונה ממכונות אספרסו הפועלות בלחץ גבוה. פשוט לשפוך מים רותחים על הקפה במיכל זכוכית זה ואחרי 2 - 3 דקות חלקיקי קפה הם ירדו למטה לתחתית המיכל עם הבוכנה (ומכאן השם \"פלאנג׳ר בוכנת קפה\"). הנוזל הנותר נקי מגרגירי הקפה ומוכן ללהגשה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מאפיינים:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוס זכוכית איכותי משולב באלמנטים נירוסטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית האחיזה היא שימושית ועמידה בפני חום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל לשימוש: ניתן לעשות כמה כוסות קפה ללא כל מאמץ (נהדר עבור אורחים)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - בנפח 3 כוסות | פלנגר כוסות"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65156,
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%99%d7%99%d7%a8-%d7%94%d7%a8%d7%99%d7%95-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%94%d7%a8%d7%99%d7%95-2-%d7%9b%d7%95%d7%a1-hario/",
+   "name": "נייר הריו לקפה פילטר הריו 2 כוס - Hario",
+   "short_description": "<ul>\n<li>מכיל 100 פילטרים נייר חד פעמיים בגודל 2 כוס בצבע לבן</li>\n<li>מסנני נייר אלה מייצרים כוס קפה איכותית וארומטית, ללא משקעים</li>\n<li>תוצרת הריו יפן</li>\n</ul>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>ניירות לקפה פילטר בצורת קונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל פילטר מסנן כוס אחת בכל פעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכיל 100 פילטרים נייר חד פעמיים בגודל 2 כוס בצבע לבן</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנני נייר אלה מייצרים כוס קפה איכותית וארומטית, ללא משקעים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוצרת הריו יפן</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - נייר"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65162,
+   "permalink": "https://www.minuto.co.il/product/hario-coffee-canister-%d7%9e%d7%99%d7%9b%d7%9c-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94-300-%d7%92%d7%a8%d7%9d/",
+   "name": "Hario Coffee Canister – מיכל אחסון לקפה 300 גרם",
+   "short_description": "<ul>\n<li>אידיאלי לאחסון קפה או תה.</li>\n<li>מתאים לאחסון של כ-300 גרם קפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario Coffee Canister – מיכל אחסון לקפה 300 מל</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את מיכל פולי הקפה HARIO 300 מ\"ל, הפתרון המושלם לאחסון פולי הקפה הטריים הקלויים שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל זה מעוצב מזכוכית איכותית, ומיועד לשמור על פולי הקפה טריים ומלאי טעם. הקופסה האטומה מבטיחה שפולי הקפהישארו טריים למשך זמן רב יותר, בעוד שהזכוכית חוסמת UV מגינה עליהם מפני אור מזיק.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי הקפה HARIO 300 מ\"ל הוא לא רק פרקטי, אלא הוא גם מסוגנן. עיצוב הזכוכית האלגנטי ייראה נהדר על כל דלפק במטבח, והזכוכית השקופה מאפשרת לראות את התוכן בפנים. למיכל קיבולת של 300 מ\"ל, מה שהופך אותו לגודל האידיאלי לאחסון פולי הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל זה מושלם עבור חובבי קפה שמעריכים את החשיבות של שמירה על טריות פולי הקפה שלהם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולי הקפה HARIO 300 מ\"ל הוא אביזר חיוני שיעזור להפיק את המרב מהקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו עכשיו ועשו את הצעד הראשון לקראת ליהנות מכוס קפה טרי וטעים בכל בוקר!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span style=\"font-size: 14.4px\">ניתן להכניס בין 300-350 ג' בהתאם לגודל הפולים.</span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן - בנפח 300 גרם. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65178,
+   "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-2/",
+   "name": "HARIO פילטר בבקבוק לקפה בחליטה קרה בהשרייה Cold Brew צבע מוקה",
+   "short_description": "<p>בקבוק הריו לחליטה קרה</p>\n<p>צבע מוקה</p>\n<p>קיבולת 5 כוסות / נפח מבושל 650 מ&quot;ל</p>\n<p>בקבוק זכוכית: זכוכית עמיד בחום</p>\n<p>זרבובית בקבוק נשלפת, פקק: גומי סיליקון</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1,\"className\":\"product_title entry-title\"} --></p>\n<h1 class=\"wp-block-heading product_title entry-title\">HARIO פילטר בבקבוק לקפה קר בהשרייה Cold Brew</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div class=\"woocommerce-product-details__short-description\">\n<p><strong>Filter in Coffee Bottle </strong>&nbsp; בקבוק HARIO למיצוי קפה קר היינו מכשיר פשוט להכנת קפה קר בהשריה ארוכה המאפשר לנו ליהנות מקפה קר בעל טעמים מורכבים- מתוקים בחומציות נמוכה. בשל היציבות בטמפרטורת המיצוי לאורך כל ההשריה, טעמי הקפה \"נלכדים\" במשקה ולכן מרגע שנוציא את סנן הקפה נעצור את תהליך המיצוי והקפה הקר ישמר את טעמיו. שיטת מיצוי זאת מדגישה את טעמי המקור של הזנים, לכן מומלץ להשתמש בקפה חד זני לצורך הכנת המשקה ולגוון מפעם לפעם על מנת ליהנות מעולם טעמים עשיר.</p>\n<p><strong><u>טיפ:</u></strong> על ידי שינוי פרמטרים כגון זמן ההשריה ,כמות הקפה ביחס למים נוכל לשלוט על טעם וחוזק הקפה.</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "בקבוק הריו לחליטה קרה צבע מוקה קיבולת 5 כוסות / נפח מבושל 650 מל בקבוק זכוכית: זכוכית עמיד בחום זרבובית בקבוק נשלפת, פקק: גומי סיליקון"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65211,
+   "permalink": "https://www.minuto.co.il/product/leaf-tea-pot-pure-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94/",
+   "name": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Leaf tea pot Pure 360 ml - קנקן לחליטת תה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>זכוכית עמידה בחום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסננת עשויה נירוסטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה מזכוכית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>למזיגת עד כ-4 כוסות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית זכוכית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65213,
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/",
+   "name": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פירוש השם \"האריו\" מיפנית הוא \"מלך הזכוכית\" ומטרתו ליצור חוויית מזיגה מקצועית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל ופשוט לשימוש ולניקיון</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיוצר ביפן</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65225,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/",
+   "name": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+   "short_description": "<p>&nbsp;</p>\n<p>מעמד קרמיקה לקפה פילטר 1 כוס</p>\n<p>מבית המותג Hario מוכר היטב ברחבי העולם.</p>\n<p>מעמד איכותי, קל לשימוש, נוח לנשיאה &#8211; לשימוש בטיולים</p>\n<p>שיטת בישול פילטר מאפשרת לך להכין בכל מקום את הקפה האידיאלי שלך ולהבטיח קפה איכותי גם כאשר אתם מטיילים בטבע / מלון או סתם מחוץ לבית</p>\n<p>הקפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום הקפה</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>מעמד קרמיקה לקפה פילטר 1 כוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מבית המותג Hario מוכר היטב ברחבי העולם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מדוע צורת החרוט? מסנן נייר בצורת חרוט מוסיף עומק לשכבת הקפה, כך שהמים זורמים למרכז, ומאריכים את כמות הזמן שהיא נמצאת במגע עם הקפה הטחון.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - V60"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65232,
+   "permalink": "https://www.minuto.co.il/product/%d7%a8%d7%a0%d7%a6%d7%99%d7%9c%d7%99%d7%95-%d7%a1%d7%99%d7%9c%d7%91%d7%99%d7%94-rancillio-silvia/",
+   "name": "רנצ'יליו סילביה Rancilio Silvia",
+   "short_description": "<ul>\n<li>שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי</li>\n<li>המכונה המדוברת ביותר בקרב מומחי הקפה והבריסטות בעולם כולו</li>\n<li> </li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">רנצ'יליו סילביה Rancillio Silvia</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ערכה מושלמת של חברת רנצ'יליו - מכונת אספרסו סילביה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li> </li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>המכונה: Rancilio Silvia - רנצ'יליו סילביה:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונת קפה עם דוד יחיד, עשויה פלדת אל חלד (נירוסטה) המסוגלת להפיק את הקפה המושלם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונת אספרסו מקצועית לבית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המבנה החיצוני של המכונה, ומגש הטפטוף עשויים מנירוסטה מוברשת איכותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המסגרת התומכת ביחידת החליטה עשויה ברזל איכותי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ההפעלה והבקרה הן מהפשוטות ביותר שיש - 3 כפתורים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יחידת החליטה עשויה  מפליז מצופה כרום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ראש החליטה מבטיח חלוקה שווה של חום ומים המספקת סביבת חליטה מעולה וכתוצאה מכך מתקבל מיצוי אספרסו איכותי ומאד עקבי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית הפילטר של הסילביה היא ידית מקצועית המסוגלת לעבודה מאומצת של אלפי כוסות קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הידית עשויה מפליז מצופה בכרום שתפקידו לשמור על יציבות הטמפרטורה לאורך כל תהליך החליטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הידית תוכננה בצורה אגרונומית המאפשרת אחיזה נוחה. (המכונה מגיעה עם 2 פילטרים, אחד לשוט יחיד ואחד לכפול.)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>דוד בנפח של 330 מיליליטר העשוי מפליז השומר על יציבות טמפרטורה ומאפשר להכין אספרסו אחרי אספרסו ללא הפסקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לסילביה יש שלושה תרמוסטטים מובנים במכונה - אחד מפקח על טמפרטורת האספרסו, השני על טמפרטורת הקיטור והשלישי תרמוסטט בטיחות, להגנה מפני התחממות יתר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צינור ההקצפה מנירוסטה עם קצה מחורר חדיש המסיע להקצפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מוט הקצפה עשוי מבידוד כפול המונע כוויה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפקת מים חמים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל המים הקרים (2 ליטר) נשלף בקלות למילוי או לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגש הטפטוף עשוי מפלדת אל חלד ונשלף בקלות לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגש לחימום כוסות - ת<span dir=\"rtl\">נאי הכרחי לאספרסו מושלם</span>.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span dir=\"rtl\"><strong>תוספות ואבזרים</strong> - הסילביה</span> <span dir=\"rtl\">מגיעה עם:</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ידית קפה ל\"שוט\" בודד עם יציאה אחת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ידית קפה כפולה עם שתי יציאות להכנת שתי כוסות קפה ביחד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>כפית מדידה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מברשת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>דוחסן מקצועי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מידות<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"> </h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"> </h1>\n<p><!-- /wp:heading --></p>\n",
+   "meta": {
+    "rank_math_description": "שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי המכונה המדוברת ביותר בקרב מומחי הקפה והבריסטות בעולם כולו - זמין במלאי"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65388,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%99%d7%93%d7%aa-%d7%9c%d7%a8%d7%9b%d7%91-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/",
+   "name": "מכונת אספרסו ניידת לרכב אמיליו",
+   "short_description": "<ul>\n<li>\n<h3 data-sourcepos=\"1:1-1:57\">מכונת אספרסו ניידת לרכב 3in1 &#8211; אספרסו מושלם בכל מקום!</h3>\n<p data-sourcepos=\"3:1-3:51\"><strong>קפסולות, פולי קפה,  ניידת, ניקוי קל, 12V!</strong></p>\n<p data-sourcepos=\"5:1-5:48\"><strong>הזמינו עכשיו ממינוטו קפה מכונת קפה לרכב ותיהנו מאספרסו איכותי בכל מקום!</strong></p>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">מכונת אספרסו ניידת לרכב 3in1 - תיהנו מאספרסו טעים בכל מקום!</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>חולמים על אספרסו איכותי גם בדרכים?</strong> המכונה הניידת הזאת בשבילכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מכונת אספרסו זו תואמת:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>קפסולות נספרסו מקוריות (Nespresso OriginalLine Capsule)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קפסולות דולצ׳ה גוסטו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פולי קפה טחון</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קומפקטית וניידת:</strong> המכונה קלה משקל ובעלת גודל נוח לנשיאה, כך שתוכלו ליהנות מאספרסו טעים בבית, במשרד וברכב!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פעולה פשוטה בלחיצה אחת:</strong> הפעילו את המכונה בקלות ובמהירות באמצעות לחיצה אחת על הכפתור.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ניקוי קל:</strong> ניקוי המכונה פשוט ומהיר הודות לחלקים מתפרקים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עיצוב ללא סוללות:</strong> המכונה פועלת באמצעות חיבור למצת הרכב (12V) כך שתוכלו לחסוך בעלויות סוללות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תכונות עיקריות:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>תואמת קפסולות נספרסו מקוריות, קפסולות תואמות אחרות ופולי קפה טחון</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קומפקטית וניידת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פעולה פשוטה בלחיצה אחת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ניקוי קל עם פונקציית ניקוי אוטומטית</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עיצוב ללא סוללות - פועלת באמצעות חיבור למצת הרכב (12V)</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הזמינו עכשיו ממינוטו קפה מכונת אספרסו לרכב ותיהנו מאספרסו איכותי בכל מקום!</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"></h3>\n<p><!-- /wp:heading --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת אספרסו ניידת לרכב אמיליו. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 65436,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96/",
+   "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע טורקיז",
+   "short_description": "<ul>\n<li>מיכל לאחסון קפה  איירסקייפ &#8211; מכסה אטום אוויר מוגן בפטנט ושומר על טריות המזון עם שסתום CO2 חד כיווני, מיכל מזון נירוסטה</li>\n<li>מכיל כ-500 גר קפה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע טורקיז</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה גורמה מקורי של איירסקייפ עם מכסה בוכנת פטנט מסיר ונועל אוויר ולחות. השסתום החד כיווני משחרר CO2 לשמירה והגנה על טריות וטעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה המסיר את כל האוויר במכל ויוצר חלל חסר אוויר; מאריך את חיי הקפה. צליל ה\"סוווש\" בסגירת המכסה מאפשר לך לדעת שהוא עובד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל אחסון קפה איירסקייפ עשוי פלדת אל חלד, רכיבים ללא BPA בגימור צבע חיצוני עמיד. מספר צבעים זמינים להוספת צבע למטבח שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל איירסקייפ מכיל כ- 500 גר פולי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במיכל רגיל, האוויר הכלוא יחד עם הקפה, מכיל גם חמצן ולחות הפוגעים בטריותו ואיכותו של הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* הערה - אין לאחסן קפה טחון או כל חומר אבקתי בתפזורת. אם רוצים לאחסן קפה טחון או חומר אבקתי יש לאחסן אותו כשהוא ארוז בתוך שקית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קופסת אחסון Airscape עם מכסה אטום ושסתום CO2. שומרת על טריות הקפה לאורך זמן - בנפח 500 גרם. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 67200,
+   "permalink": "https://www.minuto.co.il/product/toddy-cold-brew-system/",
+   "name": "Toddy® Cold Brew System",
+   "short_description": "<p>הכירו את מערכת ה-Toddy® Cold Brew &#8211; הדרך האולטימטיבית ליהנות מקפה קר טעים וחלק! עם העיצוב הקל לשימוש והחומרים האיכותיים, מערכת זו תשנה את הדרך בה אתם נהנים מקפה.</p>\n<p>מערכת החליטה הקרה של Toddy® היא חלוצת החליטות הקרות של החברה, והחליטה מוציאה תרכיז נוזלי חלק ועשיר המשמש להכנת קפה קר ללא מרירות או חמיצות שאין כמוהו.</p>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3,\"className\":\"product_title entry-title\"} --></p>\n<h3 class=\"wp-block-heading product_title entry-title\">Toddy® Cold Brew System – מערכת ביתית להשרייה קרה של קפה/תה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את מערכת ה-Toddy® Cold Brew - הדרך האולטימטיבית ליהנות מקפה קר טעים וחלק! עם העיצוב הקל לשימוש והחומרים האיכותיים, מערכת זו תשנה את הדרך בה אתם נהנים מקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מערכת ה-Toddy® Cold Brew מגיעה עם מיכל חליטה עמיד, העשוי מפלסטיק איכותי מאושר מזון. המיכל נועד להכיל עד 12 כוסות מים - כ -2 ליטר, מה שמאפשר להכין מספר מנות של קפה קר בו זמנית. מיכל החליטה כולל גם מכסה הדוק כדי לסייע במניעת דליפה ונזילות בזמן שהקפה נחלט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המערכת מגיעה גם עם פילטר לבד לשימוש חוזר המתאים היטב לתוך מיכל ההשרייה. מסנן זה עשוי מתערובת ייחודית של סיבים טבעיים וסינתטיים, הפועלים יחד כדי ללכוד אפילו את גרגירי הקפה והמשקעים הקטנים ביותר, וכתוצאה מכך לחלוט קפה חלק ונקי בטעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כדי להשתמש במערכת ה-Toddy® Cold Brew, פשוט הוסיפו את הקפה האהוב עליכם למסנן הלבד, שפכו מים קרים לתוך מיכל הבישול והניחו לו לשבת 12-24 שעות. התוצאה היא קפה עשיר ובעל גוף שהוא פחות חומצי מקפה מבושל חם מסורתי, מה שהופך אותו למושלם לבעלי קיבה רגישה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לאחר סיום הכנת הקפה, יש להסיר את המסנן ולהשליך את שאריות הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לשמור את הקפה במקרר עד שבועיים, מה שהופך אותו לדרך נוחה וחסכונית ליהנות מקפה מבושל קר בבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בסך הכל, מערכת ה-Toddy® Cold Brew היא פריט חובה לכל חובב קפה שמעוניין ליהנות מקפה טעים וחלק בבית. עם העיצוב הקל לשימוש והחומרים האיכותיים שלה, מערכת זו תהפוך למרכיב עיקרי בשגרת הבוקר שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החבילה כוללת:<br />\nמיכל חליטה עם ידית<br />\nמכסה מיכל חליטה מסיליקון<br />\nקנקן זכוכית עם מכסה<br />\nפילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)<br />\nפקק סיליקון<br />\nנייר פילטר X3 (הקפה יושב בתוכו)</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "toddy cold brew system | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "Toddy Cold Brew System - מערכת מקצועית להכנת קפה קר בבית. ה-Toddy Cold Brew System מציע חליטה קרה המפיקה קפה חלק, מרוכז ודל בחומציות, מושלם לימי הקיץ החמים.\n"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Toddy"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67651,
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%93%d7%99%d7%93%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9c%d7%a7%d7%a4%d7%94-subscale-digital-coffee-dosing-cup/",
+   "name": "כוס מדידה שוקלת לקפה Subscale Digital Coffee Dosing Cup",
+   "short_description": "<p><strong>Subscale – כוס מדידה דיגיטלית לקפה</strong><br />\nפשטו את שגרת הקפה עם Subscale, כוס מדידה דיגיטלית בעיצוב מינימליסטי עם מסך LED נסתר.</p>\n<p>נטענת ב-USB-C, עמידה למים, ותומכת במדידה מדויקת בגרמים או אונקיות.</p>\n<p>מושלמת לשקילת פולי קפה ולכל שיטת הכנה!</p>\n",
+   "description": "<p><strong>Subscale – כוס מדידה שוקלת דיגיטלית לקפה</strong></p>\n<p>הפכו את שגרת הקפה שלכם לפשוטה ומהנה יותר עם Subscale, כוס המדידה הדיגיטלית שמגדירה מחדש את חוויית הקפה. בעיצוב מינימליסטי ומסך LED נסתר המופעל במגע קל, Subscale משלבת דיוק של מאזניים עם הנוחות של כוס בעיצוב יוקרתי.</p>\n<p><strong>תכונות עיקריות:</strong></p>\n<ul>\n<li><strong>עיצוב ייחודי:</strong> גימור שחור מט עם מתג הפעלה/כיבוי נגיעה כמעט בלתי נראה.</li>\n<li><strong>מסך LED קסום:</strong> תצוגה נעלמת שמופעלת רק כשצריך.</li>\n<li><strong>פרקטי ונוח לשימוש:</strong> נטען ב-USB-C, בעל עמידות למים בתקן IPX-4, ומתאים לכל שיטת הכנת קפה.</li>\n<li><strong>מעבר יחידות:</strong> מאפשר מדידה בגרמים או באונקיות בלחיצה כפולה.</li>\n<li><strong>דיוק מתמשך:</strong> ניתן לכיול כדי להבטיח מדידה מדויקת לאורך שנים.</li>\n</ul>\n<p><strong>יתרונות:</strong></p>\n<ul>\n<li>מפשט את שגרת הקפה על ידי שילוב כוס ומאזניים בתהליך אחד.</li>\n<li>אידיאלי לשקילת פולי קפה מדויקת והעברה ישירה לטחינה.</li>\n<li>עמיד לנוזלים – מתאים לשימוש עם קפה חם או קר, רטוב או יבש, עד 100 מעלות צלזיוס לשעתיים.</li>\n</ul>\n<p><strong>פרטים טכניים:</strong></p>\n<ul>\n<li>קיבולת סוללה: 400mAh</li>\n<li>כיבוי אוטומטי: לאחר 30 שניות ללא שימוש או 60 שניות במגע עם פולי קפה.</li>\n<li>גוף עשוי טריטן בטוח למזון וקל לניקוי.</li>\n<li>מתאים לשטיפה תחת מים זורמים אך לא לצלילה מלאה.</li>\n</ul>\n<p>&nbsp;</p>\n",
+   "meta": {
+    "rank_math_title": "כוס מדידה שוקלת לקפה | מינוטו קפה ואביזרים",
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - כוס מדידה. מתאים למדיח כלים ולמיקרוגל"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Subminimal"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 77389,
+   "permalink": "https://www.minuto.co.il/product/coffee-server-500-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/",
+   "name": "Coffee Server 500 ml - קנקן מזיגה לקפה פילטר",
+   "short_description": "<p>קנקן הגשה מעוצב מזכוכית שקופה בנפח 500 מ&quot;ל, בעיצוב נקי ואלגנטי. אידיאלי לחליטות &quot;pour over&quot; ולהגשת קפה איכותית. עשוי זכוכית עמידה לחום, מתאים לשימוש יומיומי ולמדיח כלים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>Glass Coffee Server – 500ml Cloud Design</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגשה אלגנטית ומדויקת לכל כוס. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קנקן קפה בעיצוב ענני, עשוי זכוכית עמידה לחום, מושלם לחליטת \"pour over\" והגשת קפה בסטייל. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתאים לשימוש יומיומי בבית או בבית הקפה, עם עיצוב קומפקטי בנפח של 500 מ\"ל – אידיאלי לשתיים-שלוש מנות קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נפח: 500 מ\"ל</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עשוי זכוכית בורוסיליקט עמידה בחום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב מודרני ונוח לאחיזה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל לניקוי - מתאים גם למדיח כלים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קנקן הגשה מעוצב מזכוכית שקופה בנפח 500 מל, בעיצוב נקי ואלגנטי. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": []
+  },
+  {
+   "id": 78749,
+   "permalink": "https://www.minuto.co.il/product/%d7%a8%d7%a0%d7%a6%d7%99%d7%9c%d7%99%d7%95-%d7%a1%d7%99%d7%9c%d7%91%d7%99%d7%94-rancillio-silvia-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "רנצ'יליו סילביה Rancilio Silvia צבע שחור",
+   "short_description": "<ul>\n<li>שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי</li>\n<li>המכונה המדוברת ביותר בקרב מומחי הקפה והבריסטות בעולם כולו</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">רנצ'יליו סילביה Rancillio Silvia צבע שחור</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ערכה מושלמת של חברת רנצ'יליו - מכונת אספרסו סילביה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li> </li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>המכונה: Rancilio Silvia - רנצ'יליו סילביה:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונת קפה עם דוד יחיד, עשויה פלדת אל חלד (נירוסטה) המסוגלת להפיק את הקפה המושלם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונת אספרסו מקצועית לבית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המבנה החיצוני של המכונה, ומגש הטפטוף עשויים מנירוסטה מוברשת איכותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המסגרת התומכת ביחידת החליטה עשויה ברזל איכותי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ההפעלה והבקרה הן מהפשוטות ביותר שיש - 3 כפתורים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יחידת החליטה עשויה  מפליז מצופה כרום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ראש החליטה מבטיח חלוקה שווה של חום ומים המספקת סביבת חליטה מעולה וכתוצאה מכך מתקבל מיצוי אספרסו איכותי ומאד עקבי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית הפילטר של הסילביה היא ידית מקצועית המסוגלת לעבודה מאומצת של אלפי כוסות קפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הידית עשויה מפליז מצופה בכרום שתפקידו לשמור על יציבות הטמפרטורה לאורך כל תהליך החליטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הידית תוכננה בצורה אגרונומית המאפשרת אחיזה נוחה. (המכונה מגיעה עם 2 פילטרים, אחד לשוט יחיד ואחד לכפול.)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>דוד בנפח של 330 מיליליטר העשוי מפליז השומר על יציבות טמפרטורה ומאפשר להכין אספרסו אחרי אספרסו ללא הפסקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לסילביה יש שלושה תרמוסטטים מובנים במכונה - אחד מפקח על טמפרטורת האספרסו, השני על טמפרטורת הקיטור והשלישי תרמוסטט בטיחות, להגנה מפני התחממות יתר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צינור ההקצפה מנירוסטה עם קצה מחורר חדיש המסיע להקצפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מוט הקצפה עשוי מבידוד כפול המונע כוויה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפקת מים חמים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל המים הקרים (2 ליטר) נשלף בקלות למילוי או לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגש הטפטוף עשוי מפלדת אל חלד ונשלף בקלות לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגש לחימום כוסות - ת<span dir=\"rtl\">נאי הכרחי לאספרסו מושלם</span>.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span dir=\"rtl\"><strong>תוספות ואבזרים</strong> - הסילביה</span> <span dir=\"rtl\">מגיעה עם:</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ידית קפה ל\"שוט\" בודד עם יציאה אחת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ידית קפה כפולה עם שתי יציאות להכנת שתי כוסות קפה ביחד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>כפית מדידה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מברשת</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>דוחסן מקצועי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מידות<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"> </h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"> </h1>\n<p><!-- /wp:heading --></p>\n",
+   "meta": {
+    "rank_math_description": "שילוב מושלם של תכנון הנדסי ובקרת איכות בעיצוב וייצור איטלקי המכונה המדוברת ביותר בקרב מומחי הקפה והבריסטות בעולם כולו בגימור שחור מודרני"
+   },
+   "attributes": []
+  },
+  {
+   "id": 80246,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-hario-v60-drip-assist-%d7%90%d7%91%d7%99%d7%96%d7%a8-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7-%d7%9c%d7%a4%d7%99%d7%9c%d7%98%d7%a8/",
+   "name": "קנקן תה Hario Clear Teapot 700mL - FNC-70",
+   "short_description": "<p data-path-to-node=\"10,0\"><b data-path-to-node=\"10,0\" data-index-in-node=\"0\">השילוב המושלם בין עיצוב יפני לפרקטיקה.</b> קנקן התה השקוף של Hario מאפשר לכם לחלוט ולמזוג תה בקלות בזכות פילטר חכם המובנה ישירות במכסה. עשוי זכוכית עמידה בחום (Heatproof) למראה צלול ויוקרתי שמתאים לכל שולחן.</p>\n<ul data-path-to-node=\"10,1\">\n<li>\n<p data-path-to-node=\"10,1,0,0\"><b data-path-to-node=\"10,1,0,0\" data-index-in-node=\"0\">נפח:</b> 450 מ&quot;ל / 700 מ&quot;ל</p>\n</li>\n<li>\n<p data-path-to-node=\"10,1,1,0\"><b data-path-to-node=\"10,1,1,0\" data-index-in-node=\"0\">מנגנון:</b> מזיגה ללא צורך בהסרת המכסה</p>\n</li>\n<li>\n<p data-path-to-node=\"10,1,2,0\"><b data-path-to-node=\"10,1,2,0\" data-index-in-node=\"0\">תוצרת:</b> Hario יפן</p>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 data-path-to-node=\"3\"><b data-path-to-node=\"3\" data-index-in-node=\"0\">קנקן תה מעוצב Hario Clear Teapot – מינימליזם יפני בכל חליטה</b></h3>\n<p data-path-to-node=\"4\">שדרגו את טקס התה היומי שלכם עם הקנקן השקוף של Hario. העיצוב הנקי והחכם מאפשר לכם ליהנות לא רק מהטעם, אלא גם מהמראה המרהיב של עלי התה נפתחים במים.</p>\n<p data-path-to-node=\"5\"><b data-path-to-node=\"5\" data-index-in-node=\"0\">למה אתם תאהבו אותו?</b></p>\n<ul data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">מזיגה ללא מאמץ:</b> פילטר מובנה וייחודי בתוך המכסה מאפשר לכם למזוג את התה ישירות לכוס מבלי להסיר את המכסה או להשתמש במסננת חיצונית.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">זכוכית עמידה בחום:</b> מיוצר מזכוכית ה-Heatproof המפורסמת של Hario יפן – עמידה, צלולה ואיכותית.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">נוחות מקסימלית:</b> קל מאוד לניקוי, בעל ידית אחיזה נוחה ופייה שמונעת טפטופים.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,3,0\"><b data-path-to-node=\"6,3,0\" data-index-in-node=\"0\">עיצוב \"הכל שקוף\":</b> מאפשר שליטה מלאה בחוזק החליטה לפי צבע המשקה.</p>\n</li>\n</ul>\n<p data-path-to-node=\"7\"><b data-path-to-node=\"7\" data-index-in-node=\"0\">מפרט טכני:</b></p>\n<ul data-path-to-node=\"8\">\n<li>\n<p data-path-to-node=\"8,0,0\"><b data-path-to-node=\"8,0,0\" data-index-in-node=\"0\">חומרים:</b> זכוכית עמידה בחום, סיליקון ושרף איכותי (BPA Free).</p>\n</li>\n<li>\n<p data-path-to-node=\"8,1,0\"><b data-path-to-node=\"8,1,0\" data-index-in-node=\"0\">נפח:</b> 700 מ\"ל (מתאים ל-3-4 כוסות).</p>\n</li>\n<li>\n<p data-path-to-node=\"8,2,0\"><b data-path-to-node=\"8,2,0\" data-index-in-node=\"0\">מיוצר ביפן:</b> איכות ללא פשרות מבית מותג הקפה והתה המוביל בעולם.</p>\n</li>\n</ul>\n<ul class=\"wp-block-list\"><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": " %title% %sep% %sitename%",
+    "rank_math_description": "שדרגו את הדיוק בחליטה עם סט Hario V60 Drip Assist. אביזר המבטיח פיזור מים אחיד ושליטה מלאה בקצב הזרימה, לקבלת קפה פילטר עקבי וטעים בכל פעם מחדש"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Hario"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 81073,
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-%d7%a9%d7%97%d7%95/",
+   "name": "כד הקצפה 600 מל בריסטה סוואג אולטרה שארפ 2.0 - שחור",
+   "short_description": "<p><strong data-start=\"102\" data-end=\"137\">בריסטה סוואג אולטרה שארפ 2.0 – הכד החד בעולם</strong><br data-start=\"137\" data-end=\"140\" />כד הקצפה מקצועי עם פיה חדה במיוחד ליצירת קווים עדינים ולאטה ארט מדויק.</p>\n<p>כולל ריתוך לייזר מלא לעמידות מושלמת ואחריות לכל החיים על חיבור הידית.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>אולטרה שארפ 2.0 – הכד החד בעולם</strong><br />האולטרה שארפ 2.0 הוא הדור הבא של כדי ההקצפה, שפותח במיוחד לבריסטות שמחפשים דיוק מקסימלי ושליטה מוחלטת במזיגה.</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>ריתוך לייזר מלא</strong> – חיבור הידית לגוף נעשה בטכנולוגיית לייזר מתקדמת, כך שהידית לעולם לא תתנתק. בנוסף, המבנה הנקי מונע הצטברות לכלוך ושאריות חלב. הכד מגיע עם אחריות לכל החיים על החיבור – אם הידית נפרדה, תקבלו חדש ללא עלות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>פיה חדה במיוחד</strong> – הפיה של האולטרה שארפ 2.0 היא החדה ביותר בעולם בייצור מסחרי, ומאפשרת יצירת קווים דקיקים, פרטים עדינים וצורות מורכבות במיוחד בלאטה ארט.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>סט אופטימלי</strong> – האולטרה שארפ מגיע בשני נפחים שונים, אך עם אותה פיה בדיוק. כך תוכלו לעבור בקלות בין הגדלים מבלי לשנות את סגנון המזיגה – יתרון ייחודי שאין באף כד אחר בייצור מסחרי.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>אמינות מוכחת</strong> – מעל 20,000 לקוחות מרוצים ברחבי העולם כבר בחרו באולטרה שארפ.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>נפח</strong> - 600 מ״ל</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><em>האולטרה שארפ 2.0 – הכד האולטימטיבי למי שלא מתפשר על דיוק, איכות ועיצוב.</em></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כד הקצפה בריסטה סוואג אולטרה שארפ 2.0, שחור. אביזר להקצפת חלב עם מידע על הדגם, השימוש וההתאמה. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "נחושת",
+      "שחור",
+      "מולטיקולור"
+     ],
+     "id": 14,
+     "variation": true
+    },
+    {
+     "name": "גודל",
+     "options": [
+      "350 מל",
+      "600 מל"
+     ],
+     "id": 16,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 81077,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "משקל קפה Acaia Lunar - שחור",
+   "short_description": "<p>מעוניינים לעבור למגרש של המקצוענים? שדרגו את תהליך החליטה שלכם עם משקל Acaia Lunar &#8211; המפתח שלכם לחליטה מדויקת. מעוצב עבור עקביות, הוא מהיר, מגיב ומדויק, מה שהופך אותו לחובה עבור הגדרות מסחריות וחיבור בקלות למכונות אספרסו.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">משקל קפה Acaia Lunar</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעוניינים לעבור למגרש של המקצוענים?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את תהליך החליטה שלכם עם משקל מקצועי Acaia Lunar - המפתח שלכם לחליטה מדויקת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעוצב עבור עקביות, הוא מהיר, מגיב ומדויק, מה שהופך אותו לחובה עבור הגדרות מסחריות וחיבור בקלות למכונות אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התאימו אישית את החליטה שלכם בקלות, השתמשו במצבים אוטומטיים ותיהנה מהנוחות של תכונת ה-Tare Save.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משוב בזמן אמת ממחוון קצב הזרימה מבטיח מנות אספרסו ללא דופי בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל משקל לונאר כולל משטח עמיד בחום ומשקל כיול של 0.1 גרם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף, תהנו משקט נפשי עם אחריות יצרן ל-12 חודשים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מוכנים לקחת את האספרסו לשלב הבא? גלו את ה-Acaia Lunar היום ותחלטו קפה בדיוק מושלם כמו שלא היה מעולם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":4} --></p>\n<h4 class=\"wp-block-heading\"><strong>מפרט טכני</strong></h4>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>דֶגֶם<br />משקל המוצר 265 גרם ± 5 גרם<br />מידות המוצר: רוחב: 105 מ\"מ א: 105 מ\"מ ג: 15 מ\"מ<br />קיבולת מקסימלית: 2000 גרם<br />משקל מינימום: 0.1 גרם<br />יחידות מדידה: גרם<br />קריאות: 0.1 גרם / 0.01 גרם<br />ספק כוח: 5 V / 500 mA<br />סוללה: ליתיום-יון נטענת 3.7 V 1100 mAh<br />חיי סוללה: 30-40 שעות<br />חומרים: אלומיניום, אקריליק<br />משטח: ציפוי אלומיניום אנודייז (כסף שחור)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קישוריות: בלוטות' 5.0<br />בתוך החבילה<br />משקלה קפה Acaia Lunar Coffee<br />כרית עמידה בחום<br />2 רצועת מגן מונעת החלקה<br />2 רצועת מגן להפחתת חיכוך<br />כבל מטען USB Type-C</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אז למה אתם מחכים? <a href=\"https://www.minuto.co.il/%D7%90%D7%91%D7%99%D7%96%D7%A8%D7%99-%D7%A7%D7%A4%D7%94/%D7%9E%D7%A9%D7%A7%D7%9C%D7%99%D7%9D-%D7%9C%D7%A7%D7%A4%D7%94/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/\">הזמינו עוד היום את משקל הקפה המקצועי Acaia Lunar</a> מאתר מינוטו קפה ותוכלו גם אתם לדייק את החליטות שלכם כמו מקצוענים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "משקל קפה Acia Lunar, שחור. משקל קפה עם מידע על דיוק, תכונות ותפעול. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "משקל קפה Acaia Lunar שחור | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 81083,
+   "permalink": "https://www.minuto.co.il/product/hario-polaris-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-%d7%97%d7%9b%d7%9d-%d7%9c%d7%93%d7%99%d7%95%d7%a7-%d7%9e%d7%95%d7%a9%d7%9c%d7%9d/",
+   "name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע שחור",
+   "short_description": "<p>המשקל החכם Hario Polaris מעניק שליטה מדויקת בהכנת הקפה.<br data-start=\"144\" data-end=\"147\" />הוא מחשב אוטומטית את יחס הקפה למים ומציג בזמן אמת את התקדמות המזיגה באחוזים.<br data-start=\"223\" data-end=\"226\" />דיוק יפני, שימוש אינטואיטיבי ותוצאה עקבית בכל חליטה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1,\"className\":\"product_title entry-title\"} --></p>\n<h3 data-start=\"170\" data-end=\"209\">Hario POLARIS – משקל קפה חכם ומדויק</h3>\n<p data-start=\"211\" data-end=\"407\">משקל הקפה POLARIS של Hario Japan נוצר עבור מי שמחפש שליטה אמיתית בתהליך החליטה. הוא מחשב עבורך את יחס הקפה למים ומציג בזמן אמת את התקדמות המזיגה באחוזים. התוצאה היא קפה מדויק, מאוזן ועקבי בכל פעם.</p>\n<p data-start=\"409\" data-end=\"629\">המשקל מאפשר לקבוע יחס חליטה ישירות עליו, למשל 1:15 ומחשב אוטומטית את כמות המים הנדרשת לפי כמות הקפה. <br />תצוגת האחוזים מראה כמה מים כבר נוספו וכמה נשארו, כך שאין צורך לחשב או לנחש, גם אם משנים את כמות הקפה, היחס נשמר בדיוק.</p>\n<p data-start=\"631\" data-end=\"757\">זהו כלי אידיאלי לכל מי שאוהב דיוק, בין אם אתה מכין קפה בבית או עובד כבריסטה. <br />השימוש אינטואיטיבי, הקריאה ברורה והתגובה מהירה.</p>\n<p data-start=\"759\" data-end=\"902\">דוגמה לחליטה מדויקת: יחס 1:15, טחינה בינונית-גסה, טמפרטורת מים של 88 - 93 מעלות לפי רמת הקלייה, ומזיגה הדרגתית בחמישה שלבים שווים עד סיום המזיגה.</p>\n<p data-start=\"904\" data-end=\"1125\">מפרט:<br data-start=\"909\" data-end=\"912\" />דגם CST-2000-B או CST-2000-W<br data-start=\"940\" data-end=\"943\" />טווח שקילה 0.1 עד 2000 גרם<br data-start=\"969\" data-end=\"972\" />מידות 127 על 165 על 27 מ\"מ<br data-start=\"998\" data-end=\"1001\" />משקל כולל אריזה כ - 437 גרם<br data-start=\"1026\" data-end=\"1029\" />חומרים: גוף עשוי ABS ואקריליק, בסיס סיליקון נגד החלקה<br data-start=\"1082\" data-end=\"1085\" />תוצרת סין, עיצוב ופיתוח של Hario Japan</p>\n<p data-start=\"1127\" data-end=\"1243\">ה-Polaris מתאים במיוחד לשיטות מזיגה ידניות כמו V60, Chemex או Kalita ולכל מי שמעריך דיוק, יציבות ואחידות בטעם הקפה.</p>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "משקל קפה Hario POLARIS חכם | מינוטו",
+    "rank_math_description": "Hario POLARIS, משקל קפה חכם לדיוק מושלם. משקל קפה עם מידע על דיוק, תכונות ותפעול. פרטים ואפשרויות רכישה באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 81089,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "משקל קפה Acaia Pearl s - שחור",
+   "short_description": "<p>הכירו את Acaia Pearl Model S &#8211; משקל חכם בדרגה מקצועית עבור חווית חליטת קפה אולטימטיבית.</p>\n<p>השיגו עקביות ותובנות ללא תחרות כדי ליצור את ספל הקפה המושלם הזה.</p>\n",
+   "description": "<h3>משקל קפה Acaia Pearl s</h3>\n<p>הכירו את Acaia Pearl Model S - משקל חכם בדרגה מקצועית עבור חווית חליטת קפה אולטימטיבית.</p>\n<p>השיגו עקביות ותובנות ללא תחרות כדי ליצור את ספל הקפה המושלם הזה.</p>\n<p>מה חדש?<br />\nמצבי חליטה מרובים: התאמת החליטה שלך במדויק.<br />\nתצוגת קצב זרימה בזמן אמת: פוקחים עין על כל טיפה.<br />\nמדריך חליטה אינטראקטיבי: הוראות שלב אחר שלב למתכונים האהובים עליך.<br />\nהתראות קוליות: קבלו עדכונים על ההתקדמות החליטה תוך כדי בזמן הכנת האספרסו.<br />\nמצב ספירה לאחור: מעל 30 מנגינות לבחירתך כדי לאותת שהקפה שלך מוכן.</p>\n<p>הרימו את רמת הקפה שלכם לשלב הבא עם Acaia Pearl Model S. שלמות בכל מזיגה.</p>\n<p>&nbsp;</p>\n<h4><strong>נתונים טכניים</strong></h4>\n<p>דגם: PS003 / PS004<br />\nמשקל מוצר: 620 גרם ± 5 גרם<br />\nמידות המוצר: ר: 160 מ\"מ, א: 160 מ\"מ, ג: 32 מ\"מ<br />\nקיבולת מרבית: 3000 גרם / 105.82 אונקיות<br />\nקיבולת מינימלית: 0.1 גרם<br />\nיחידות מדידה: g/oz<br />\nקריאה: 0.1 גרם<br />\nיכולת חזרה: 0.1 גרם<br />\nליניאריות: 1 ד<br />\nמגבלת אינדיקציה: 3090 גרם<br />\nספק כוח: 5 V / 500 mA</p>\n<p>סוללה: ליתיום-יון נטענת 3.7 V 2200 mAh<br />\nחיי סוללה: עד 16 ~ 40 שעות<br />\nתצוגה: LED מטריצת נקודות<br />\nחומר: PC<br />\nקישוריות: Bluetooth 5.0<br />\nאחריות: 1 שנה<br />\nבתוך החבילה:</p>\n<p>משקל קפה של Acaia Pearl Model S x 1<br />\nתחתית עמידה בחום (עגולה) x 1<br />\nכבל מטען USB Type-C x 1</p>\n<p>&nbsp;</p>\n<p>הזמינו עוד היום  משקל קפה Acaia Pearl Model S ותחוו נירוונה בקפה.</p>\n",
+   "meta": {
+    "rank_math_description": "משקל קפה Acia Pearl s, שחור. משקל קפה עם מידע על דיוק, תכונות ותפעול. פרטים ואפשרויות רכישה באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 81452,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d-12-%d7%99%d7%97/",
+   "name": "סטיקים לבדיקת מים - 12 יח",
+   "short_description": "<p>סטיקים לבדיקת קשיות המים</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">סטיקים לבדיקת מים</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>סטיקים לבדיקת קשיות המים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "סטיקים לבדיקת מים, 12 יח. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו.",
+    "rank_math_title": "סטיקים לבדיקת מים, 12 יחידות | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "12 יח",
+      "3 יח"
+     ],
+     "id": 17,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 81503,
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%95%d7%95%d7%a8%d7%98%d7%a7%d7%a1-%d7%93%d7%99%d7%a0%d7%9e%d7%99/",
+   "name": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+   "short_description": "<ul>\n<li style=\"list-style-type: none;\">\n<ul>\n<li><strong data-start=\"30\" data-end=\"65\">וורטקס – כד הקצפה מושלם 500 מ״ל</strong></li>\n<li>כד ההקצפה שעוצב במיוחד ליצירת מיקרו־קצף חלק ואחיד</li>\n<li>ברמה של בית קפה מקצועי. בזכות עיצוב חדשני ודיוק במזיגה</li>\n<li>הוורטקס מושלם להכנת לאטה ארט ולהקצפה איכותית גם במכונות ביתיות.</li>\n</ul>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">וורטקס – כד הקצפה מושלם 500 מ״ל</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את <em>וורטקס</em>, כד ההקצפה שנועד להעניק לכם שליטה מלאה ותוצאות ברמת בריסטה – גם בבית.<br />כל יחידה נצבעת ידנית, מה שהופך כל כד לייחודי, עם טאצ׳ אישי ויוקרתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">למה לבחור בוורטקס?</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>מיקרו-קצף מושלם</strong> – העיצוב ההנדסי המיוחד מייצר תנועת זרימה אופטימלית, כך שהחלב מוקצף באופן שווה ומתחמם בצורה אחידה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>תוצאה מקצועית בבית</strong> – מפרק בועות גדולות ומעניק קצף קרמי, אידיאלי להכנת לאטה ארט מרשים.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיצוב חדשני</strong> – קווים מודרניים ומראה מרהיב שהופכים את הכד לפריט עיצובי בעמדת הקפה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>דיוק במזיגה</strong> – פיה שעוצבה במיוחד על ידי אסף רויך, לנוחות מקסימלית ולשליטה בציור לאטה ארט.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">פרטים נוספים</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>נפח: 500 מ״ל - אידיאלי להכנת 1–2 מנות קפוצ׳ינו או לאטה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>למעלה מ־20,000 לקוחות מרוצים מכל העולם.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>✨ <em>וורטקס – הדרך להפוך כל כוס קפה לחוויה ברמה של בית קפה אמיתי.</em></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כד הקצפה בריסטה סוואג וורטקס Dynamic. אביזר להקצפת חלב עם מידע על הדגם, השימוש וההתאמה. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 82537,
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-fellow-stagg-ekg-pour-over-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%a2%d7%a9%d7%9f/",
+   "name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע ירוק עשן",
+   "short_description": "<p data-start=\"37\" data-end=\"218\">קומקום חשמלי Stagg EKG בצבע ירוק עשן בעיצוב יוקרתי ומתקדם עם שליטה מדויקת בטמפרטורה.</p>\n<p data-start=\"37\" data-end=\"218\">חימום מהיר ונפח של 0.9 ליטר.</p>\n<p data-start=\"37\" data-end=\"218\">מושלם לחליטות קפה pour over לכל הרמות &#8211; ממקצוענים ועד מתחילים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קומקום חשמלי Fellow Stagg EKG | Pour Over</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוויית חליטת קפה מושלמת מתחילה בשליטה מדויקת בטמפרטורה ובחימום מהיר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקומקום החשמלי Stagg EKG, בנפח של 0.9 ליטר, מציע לכם כלי ברמה מקצועית עם עיצוב מרהיב ומודרני המתאים בדיוק לצרכים שלכם, בין אם אתם מומחים בקפה או רק מתחילים את המסע לעבר הספל המושלם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"370\" data-end=\"391\">מאפיינים עיקריים:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שליטה מדויקת בטמפרטורה: טווח רחב של 57°C עד 100°C להתאמה מלאה לכל סוגי החליטות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חימום מהיר: הספק חזק של 1,200 ואט מבטיח שהמים יגיעו לטמפרטורה הרצויה במהירות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עיצוב ייחודי: מבנה מפלדת אל-חלד 304 בשילוב ידית עץ אגוז יוקרתי (בדגמים המתאימים).</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נוחות מקסימלית: כבל באורך 76 ס”מ, תקע EU המתאים לשימוש בישראל.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נפח אידיאלי: 0.9 ליטר עם משקל כולל של 1.274 ק”ג (כולל בסיס).</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מגוון צבעים לבחירה: ירוק מט עם ידית עץ אגוז, כחול כהה עם ידית עץ אגוז, לבן ושחור.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוויית חליטת הקפה שלכם עומדת להשתדרג לרמה חדשה. עם Stagg EKG, אתם נהנים מעיצוב מרהיב, טכנולוגיה מתקדמת ושליטה מוחלטת בתהליך ההכנה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע לבן. אביזר לחליטת קפה עם מידע על החומר, ההתאמה ואופן השימוש. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 82864,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9e%d7%91%d7%a8%d7%a0%d7%94-pro-100-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-ro100s-aquaphor/",
+   "name": "ממברנה Pro 100 אוסמוזה הפוכה RO100S Aquaphor",
+   "short_description": "<p>ממברנת אוסמוזה הפוכה מתקדמת מבית אקוואפור לסינון מקיף של מזהמים, חיידקים,</p>\n<p>וירוסים ואבנית. הממברנה פועלת בקצב ייצור של 15.6 ליטר לשעה ומאפשרת החלפה פשוטה והיגיינית.</p>\n<p>מתאימה לדגמי RO-101S, RO-100S ו-RO-102S.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:81\">ממברנה Pro 100 אוסמוזה הפוכה RO100S Aquaphor</h2>\n<p><span class=\"rnc2Gd\" data-ast-node-id=\"1\">ממברנת האוסמוזה ההפוכה של אקוואפור מעניקה לכם מים נקיים ובטוחים ברמה הגבוהה ביותר. </span></div>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\"><span class=\"rnc2Gd\" data-ast-node-id=\"1\">המערכת מתקדמת מבצעת סינון עמוק ויסודי של כל סוגי המזהמים, החל מחיידקים ווירוסים ועד לציסטות, לצד הפחתת קשיות המים והגנה מלאה וארוכת טווח מפני הצטברות אבנית.</span></p>\n<div class=\"gWqWw rnc2Gd\"> </div>\n<p><span class=\"rnc2Gd\" data-ast-node-id=\"2\">בנוסף לביצועים מרשימים של קצב ייצור העומד על 15.6 ליטר בשעה, הממברנה מתוכננת עם דגש על נוחות והיגיינה, ומבטיחה הגנה מפני זיהומים בזמן החלפת המסנן. </span></div>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\"><span class=\"rnc2Gd\" data-ast-node-id=\"2\">דגם זה מתאים באופן מושלם למערכות הבאות: RO-101S, RO-100S, RO-102S.</span></div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "השיגו מים ברמת טיהור מקסימלית עם ממברנת אוסמוזה הפוכה Morion RO-101 החדשה. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": []
+  },
+  {
+   "id": 82888,
+   "permalink": "https://www.minuto.co.il/product/100-%d7%92%d7%a8-%d7%90%d7%91%d7%a7%d7%aa-%d7%90%d7%95%d7%91%d7%94-%d7%98%d7%94%d7%95%d7%a8%d7%94-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d-alata-ube/",
+   "name": "50 גר אבקת אובה טהורה פרימיום – ALATA UBE",
+   "short_description": "",
+   "description": "<blockquote class=\"\" data-path-to-node=\"4\">\n<p data-path-to-node=\"2\"><b data-path-to-node=\"2\" data-index-in-node=\"0\">אבקת אובה טהורה פרימיום – ALATA UBE<br />\n</b></p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"5,0,0\">חומר הגלם הטרנדי בעולם עכשיו אצלכם: 100% שורש יאם סגול טהור, בלי צבעי מאכל סינתטיים</span><span data-path-to-node=\"5,0,2\">.</span></p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"8,0\">הכירו את הטרנד העולמי שכובש את בתי הקפה והקולינריה המובילים בעולם, ועכשיו זמין בישראל</span><span data-path-to-node=\"8,2\">. אבקת האובה של <b data-path-to-node=\"8,2\" data-index-in-node=\"16\">ALATA</b> עשויה מ-100% שורש יאם סגול (Purple Yam) טבעי ואיכותי, ללא צבעי מאכל סינתטיים, ללא חומרים משמרים וללא תוספת סוכר</span><span data-path-to-node=\"8,4\">.</span></p>\n<p>&nbsp;</p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"9,0\">האבקה מעניקה צבע סגול עמוק ומהפנט יחד עם טעם עדין, מתקתק ואגוזי שמשתלב בקלות ובאחידות בכל סוגי החלב, המשקאות (חמים או קר, כולל לאטה ושייקים), הגלידות, המאפים והקינוחים שלכם</span><span data-path-to-node=\"9,2\">.</span></p>\n<p data-path-to-node=\"10\"><b data-path-to-node=\"10\" data-index-in-node=\"0\">יתרונות בולטים:</b></p>\n<ul data-path-to-node=\"11\">\n<li>\n<p id=\"p-rc_e1d6f16342428130-52\" data-path-to-node=\"11,0,0\"><span data-path-to-node=\"11,0,0,0\"><b data-path-to-node=\"11,0,0,0\" data-index-in-node=\"0\">100% טבעי וטהור:</b> חומר גלם ברמת פרימיום (Clean Label), טבעוני וללא גלוטן</span><span data-path-to-node=\"11,0,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-53\" data-path-to-node=\"11,1,0\"><span data-path-to-node=\"11,1,0,0\"><b data-path-to-node=\"11,1,0,0\" data-index-in-node=\"0\">עשיר בנוגדי חמצון:</b> מכיל פיגמנטים טבעיים ממשפחת האנתוציאנינים, לצד סיבים תזונתיים וויטמינים (A ו-C)</span><span data-path-to-node=\"11,1,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-54\" data-path-to-node=\"11,2,0\"><span data-path-to-node=\"11,2,0,0\"><b data-path-to-node=\"11,2,0,0\" data-index-in-node=\"0\">עקביות ונוחות בעבודה:</b> אבקה יבשה עם חיי מדף ארוכים של 24 חודשים, המבטיחה תוצאה אחידה בטעם ובצבע לאורך זמן</span><span data-path-to-node=\"11,2,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-55\" data-path-to-node=\"11,3,0\"><span data-path-to-node=\"11,3,0,0\"><b data-path-to-node=\"11,3,0,0\" data-index-in-node=\"0\">ורסטיליות קולינרית:</b> מתאים למסעדות, בתי קפה, קונדיטוריות ולשימוש ביתי</span><span data-path-to-node=\"11,3,0,2\">.</span></p>\n</li>\n</ul>\n<p data-path-to-node=\"2\">\n</blockquote>\n",
+   "meta": {},
+   "attributes": []
+  }
+ ]
+}

@@ -1,0 +1,165 @@
+{
+ "edits": [
+  {
+   "product_id": 76294,
+   "variation_id": null,
+   "target": "description",
+   "old": "6 טבליות ניקוי להסרת שומני קפה",
+   "new": "8 טבליות ניקוי להסרת שומני קפה",
+   "finding": "8 × 2 g vs 6 × 3.4 g",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 76294,
+   "variation_id": null,
+   "target": "description",
+   "old": "כל טבליה במשקל שלושה נקודה ארבעה גרם",
+   "new": "כל טבליה במשקל 2 גרם",
+   "finding": "8 × 2 g vs 6 × 3.4 g",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67208,
+   "variation_id": null,
+   "target": "description",
+   "old": "מארז ה- 20 נארז",
+   "new": "מארז ה- 50 נארז",
+   "finding": "50 vs 20 per pack",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 79990,
+   "variation_id": null,
+   "target": "name",
+   "old": "(114mmx114mm)",
+   "new": "(140mmx150mm)",
+   "finding": "114 mm vs 14 cm",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 65140,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "CafeLat tamper: hide (owner decision)",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64894,
+   "variation_id": null,
+   "target": "description",
+   "old": "השתמש ב- CHEMEX® מסנני חצי ירח לא מקופלים FP-2",
+   "new": "השתמשו במסנני CHEMEX® ל-6–10 כוסות (FS-100 / FC-100)",
+   "finding": "FP-2 filters on the 6-cup",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67395,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>16 קפסולות</p>",
+   "new": "<p>36 קפסולות</p>",
+   "finding": "16 capsules at the 36-pack price",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 82928,
+   "variation_id": null,
+   "target": "attribute:חוזק",
+   "old": "4",
+   "new": "8",
+   "finding": "strength 4 vs 8",
+   "source": "owner decision",
+   "allow_global": true
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק -  2450 W",
+   "new": "הספק -  1450 W",
+   "finding": "2450 W",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק -  2450 W",
+   "new": "הספק -  1450 W",
+   "finding": "2450 W",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 81462,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק -  2450 W",
+   "new": "הספק -  1450 W",
+   "finding": "2450 W",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64677,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>קיבולת דוד קפה:</strong> 0.8 ליטר",
+   "new": "<strong>דוד:</strong> דוד יחיד 1.8 ליטר עם מחליף חום מנירוסטה AISI316L",
+   "finding": "two boilers listed",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  },
+  {
+   "product_id": 64677,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>קיבולת דוד מים חמים:</strong> 1.5 ליטר",
+   "new": "<strong>מיכל מים:</strong> 2.5 ליטר",
+   "finding": "two boilers listed",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  },
+  {
+   "product_id": 64677,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>משקל:</strong> 26.5 ק&quot;ג",
+   "new": "<strong>משקל:</strong> 18.3 ק&quot;ג",
+   "finding": "26.5 kg",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  },
+  {
+   "product_id": 64678,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>קיבולת דוד קפה:</strong> 0.8 ליטר",
+   "new": "<strong>דוד:</strong> דוד יחיד 1.8 ליטר עם מחליף חום מנירוסטה AISI316L",
+   "finding": "two boilers listed",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  },
+  {
+   "product_id": 64678,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>קיבולת דוד מים חמים:</strong> 1.5 ליטר",
+   "new": "<strong>מיכל מים:</strong> 2.5 ליטר",
+   "finding": "two boilers listed",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  },
+  {
+   "product_id": 64678,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>משקל:</strong> 26.5 ק&quot;ג",
+   "new": "<strong>משקל:</strong> 18.3 ק&quot;ג",
+   "finding": "26.5 kg",
+   "source": "https://www.lelit.com/product/marax3-pl62x3/"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 67650,
+   "finding": "Technika VI dual boiler",
+   "reason": "matches official: ECM Technika VI is a dual-boiler machine (ecm.de/en/products/technika-vi/)"
+  }
+ ]
+}

@@ -1,0 +1,764 @@
+{
+ "findings": [
+  {
+   "product_id": "67367",
+   "product_name": "מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה - Eureka",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-%d7%a2%d7%9d-%d7%a6%d7%92-specialita-%d7%90%d7%95%d7%a8%d7%99%d7%a7-2/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "problem": "Short description describes a doser grinder with a plastic body and metal dosing unit; the Mignon Specialita is a doserless on-demand grinder with a timer (as the description says).",
+   "suggested_fix": "להחליף בתיאור קצר של Specialita: 'מטחנה ביתית on demand עם צג מגע, טיימר ודיסקיות שטוחות 55 מ\"מ'",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64857",
+   "product_name": "מטחנת קפה FIORENZATO AllGround - שחור רוז גולד",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "high",
+   "current_text": "מקור חשמל: 110-120v - 60Hz",
+   "problem": "Electrical spec is the US 110-120V/60Hz version (RPM also quoted at 60Hz); Israeli units run on 220-240V/50Hz.",
+   "suggested_fix": "לאמת מול היבואן ולתקן ל: מקור חשמל: 220-240V - 50Hz, ולעדכן את הסל\"ד בהתאם",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64936",
+   "product_name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood Virginia Walnut",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-comandante-mk4-nb-premiu-2/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+   "problem": "Premium Wood model, but the text describes the powder-coated steel body of the standard C40.",
+   "suggested_fix": "להחליף בתיאור ציפוי העץ של דגם Premium Wood, לאמת מול היצרן",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64937",
+   "product_name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ ענבר נוזלי Comandante MK4 NB Premium Wood Liquid Amber",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-%d7%a2%d7%a0%d7%91%d7%a8/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+   "problem": "Premium Wood model, but the text describes the powder-coated steel body of the standard C40.",
+   "suggested_fix": "להחליף בתיאור ציפוי העץ של דגם Premium Wood, לאמת מול היצרן",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67319",
+   "product_name": "מטחנת קפה מקצועית אלקטרונית עם מסך מגע Ceado E37J",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%90%d7%9c%d7%a7%d7%98%d7%a8%d7%95%d7%a0%d7%99%d7%aa-%d7%a2%d7%9d-%d7%9e%d7%a1%d7%9a-%d7%9e%d7%92%d7%a2-c/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "סכינים מיוחדות למינון יחיד.",
+   "problem": "E37J is an on-demand doser-less grinder; 'special burrs for single dosing' is copied from the E5SD/E37SD single-dose models.",
+   "suggested_fix": "להסיר את המשפט או להחליף בתיאור המתאים ל-E37J",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65064",
+   "product_name": "מטחנת קפה מקצועית Compak I3 PRO",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-compak-e5-od/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "מטחנת קפה מקצועית Compak I3 PRO",
+   "problem": "Title says Compak I3 PRO but the permalink is compak-e5-od and specs (58 mm burrs, 1370 rpm, on-demand) match the Compak E5 OD.",
+   "suggested_fix": "לאמת את הדגם בפועל ולאחד שם, כתובת ומפרט",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "65065",
+   "product_name": "מטחנת K-3 Touch של COMPAK אלומיניום מלוטש",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-k-3-touch-%d7%a9%d7%9c-compak-%d7%90%d7%9c%d7%95%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%9e%d7%9c%d7%95%d7%98%d7%a9/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "ניתן לקבל באלומיניום מוברש בתוספת 200 ש\"ח.",
+   "problem": "Title says polished aluminium, text says black or brushed aluminium for +200 ILS, short adds +50 ILS for mini hopper; hard-coded surcharges not reflected in price/variations. Also 'דיספנסר' vs 'ללא מחלק מנות'.",
+   "suggested_fix": "לאחד את הגימור בכותרת ובתיאור ולהסיר תוספות מחיר קשיחות מהטקסט (או להגדיר אותן כווריאציות)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67165",
+   "product_name": "מטחנה קפה מקצועית מיגנון classico אוריקה - Eureka",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-classico-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "אפשרויות טחינה: ידני .",
+   "problem": "Text says the grind time is adjustable but the spec says manual only; title says 'classico', description 'classic'. Text is identical to the cheaper Manuale listing.",
+   "suggested_fix": "לאמת מול Eureka (ל-Mignon Classico יש טיימר) ולתקן ל'ידני וטיימר'; לאחד את השם ל-Classico",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67366",
+   "product_name": "מטחנה קפה מקצועית מיגנון MANUALE אוריקה - Eureka",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-manuale-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "במטחנה מאפשרת כיוון זמן הטחינה",
+   "problem": "The Mignon Manuale has no grind timer (push-button on demand), and the spec in the same text says 'אפשרויות טחינה: ידני'; copy shared with the Classico listing.",
+   "suggested_fix": "להסיר את הטענה על כיוון זמן הטחינה ולתאר הפעלה ידנית בלחיצה (לאמת מול Eureka)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67653",
+   "product_name": "מטחנת קפה - Single Dose DF54",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df54/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע: לבן, שחור",
+   "problem": "Colour attribute offers white and black, but the description says black only.",
+   "suggested_fix": "צבע: שחור בלבד (או לעדכן את התיאור אם קיים גם לבן)",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "68264",
+   "product_name": "מטחנת קפה מקצועית WPM ZD-12 GRAEF",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "WPM ZD-12 GRAEF",
+   "problem": "Title combines two different brands (WPM and Graef).",
+   "suggested_fix": "לאמת את המותג ולהשאיר שם אחד, למשל: מטחנת קפה מקצועית WPM ZD-12",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "68264",
+   "product_name": "מטחנת קפה מקצועית WPM ZD-12 GRAEF",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע: אדום, ברונז, נירוסטה",
+   "problem": "Colour attribute contradicts description 'צבע: לבן-שחור'.",
+   "suggested_fix": "צבע: לבן-שחור",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67262",
+   "product_name": "מטחנת קפה מקצועית דיגיטלית Ceado e6p",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%93%d7%99%d7%92%d7%99%d7%98%d7%9c%d7%99%d7%aa-ceado-e6p/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "משקל נטו 13.2 ק״ג",
+   "problem": "Net weight (13.2 kg) is higher than gross weight (8.7 kg), impossible; 'כיוון רמת הטחינה' heading has no text.",
+   "suggested_fix": "לאמת משקלים מול היצרן ולתקן; להשלים או להסיר את הכותרת",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64942",
+   "product_name": "מטחנת קפה ידנית מקצועית Oak8 Gen2",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-oak8-gen2/",
+   "field": "categories",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "מקינטה ביאלטי - Bialetti",
+   "problem": "Oak8 hand grinder is categorised under Bialetti moka pots.",
+   "suggested_fix": "להסיר את הקטגוריה 'מקינטה ביאלטי - Bialetti'",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "81200",
+   "product_name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - כרום",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9b%d7%a8%d7%95%d7%9d/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "medium",
+   "current_text": "81235: 4950 ₪ · 81192: 4950 ₪ · 67147: 4950 ₪ · 81208: 4990 ₪ · 81200: 5200 ₪",
+   "problem": "Same model in another colour/finish is priced differently (4950–5200 ₪). May be a deliberate finish premium or a stale price.",
+   "suggested_fix": "לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67151",
+   "product_name": "מטחנת קפה אמיליו",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Same copied colour attribute set as Melitta grinders; colours not mentioned in copy.",
+   "suggested_fix": "לאמת את הצבעים הזמינים ולעדכן",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67213",
+   "product_name": "Mahlkonig E65S מטחנת קפה ביתית",
+   "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "Mahlkonig E65S מטחנת קפה ביתית",
+   "problem": "Title says home grinder while the description says it is 'the perfect choice for cafés and restaurants'.",
+   "suggested_fix": "Mahlkonig E65S מטחנת קפה מקצועית",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67286",
+   "product_name": "מטחנת קפה - Single Dose DF64E - לבן",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df64e/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "אחריות: 24 חודשים ע\"י קרמה פלוס",
+   "problem": "Warranty/importer differs from sibling DF54 (12 months by קדמה); 'קרמה פלוס' may be a typo for קדמה.",
+   "suggested_fix": "לאמת את תקופת האחריות ושם היבואן מול DF54 ולאחד",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "67637",
+   "product_name": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-gbw-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "problem": "Commercial café grinder labelled 'home grinder' in the title; also duplicated word 'מטחנת קפה קפה'.",
+   "suggested_fix": "Mahlkonig E65S GbW מטחנת קפה מקצועית; לתקן 'קפה קפה'",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67653",
+   "product_name": "מטחנת קפה - Single Dose DF54",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df54/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "מותג: DF64",
+   "problem": "Brand attribute says DF64 on the DF54 product.",
+   "suggested_fix": "מותג: DF54 (או DF)",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "64779",
+   "product_name": "מטחנת קפה ידנית Comandante C40 MK4 Nitro Blade Cooper",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-comandante-c40-mk4-nitro-blade-cooper/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "1199.0000",
+   "problem": "Copper colour variant is cheaper than the black C40 MK4 (1249); special colours are normally priced at or above black.",
+   "suggested_fix": "לאמת את המחיר מול המחירון של היבואן",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "64937",
+   "product_name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ ענבר נוזלי Comandante MK4 NB Premium Wood Liquid Amber",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-%d7%a2%d7%a0%d7%91%d7%a8/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "1390.0000",
+   "problem": "Premium Wood Liquid Amber is 1390 while the sibling Premium Wood Virginia Walnut is 1299; same model, different finish.",
+   "suggested_fix": "לאמת שהפרש המחיר בין גימורי העץ מכוון",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  },
+  {
+   "product_id": "64942",
+   "product_name": "מטחנת קפה ידנית מקצועית Oak8 Gen2",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-oak8-gen2/",
+   "field": "sku",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "SKU: 123456",
+   "problem": "Placeholder SKU value.",
+   "suggested_fix": "להזין מק\"ט/ברקוד אמיתי",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "68264",
+   "product_name": "מטחנת קפה מקצועית WPM ZD-12 GRAEF",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/",
+   "field": "short_description",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "רק אצלנו במלאי",
+   "problem": "Claims exclusive stock while product is out of stock; warranty also stated twice.",
+   "suggested_fix": "להסיר 'רק אצלנו במלאי' ואת שורת האחריות הכפולה",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "81208",
+   "product_name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - ירוק",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%99%d7%a8%d7%95%d7%a7/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "PRICE: 4990",
+   "problem": "Green AllGround Sense is 4990 while white, light blue and the base listing are 4950 with identical specs; looks like an odd 40 ILS difference.",
+   "suggested_fix": "לאמת את מחיר הצבע הירוק מול שאר הצבעים",
+   "confidence": "verify",
+   "status": "left for later",
+   "status_note": "needs checking: verify"
+  }
+ ],
+ "products": [
+  {
+   "id": 64779,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-comandante-c40-mk4-nitro-blade-cooper/",
+   "name": "מטחנת קפה ידנית Comandante C40 MK4 Nitro Blade Copper",
+   "short_description": "<p>מטחנה ידנית מקצועית, מדוייקת וקומפקטית</p>\n<p><strong>סדרת הצבעים הטבעיים המיוחדים. צבע זה כהומאז' ליסודות הטבע העוצמתיים – הרי נחושת. גוף הפלדה מצופה באבקה מיוחדת שנשרפת בתנור בחום גבוהה. מעניקה אחיזה ועמידות מקסימלית יחד עם יופי ייחודי.</strong></p>\n<ul class=\"a-unordered-list a-vertical a-spacing-mini\">\n<li><span class=\"a-list-item\">רמת טחינה מתכווננת </span></li>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג’ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת.</li>\n<li><span class=\"a-list-item\">ידית מטחנת מעוצבת ארגונומית לטחינה קלה וחלקה, ומפחיתה רעש.</span></li>\n</ul>\n",
+   "description": "<h1 class=\"product_title entry-title\">מטחנת קפה ידנית קומנדנטה Comandante C40 MK4 Nitro Blade Copper</h1>\n<p>&nbsp;</p>\n<p><strong>סדרת הצבעים הטבעיים המיוחדים. צבע זה כהומאז' ליסודות הטבע העוצמתיים – הרי נחושת. גוף הפלדה מצופה באבקה מיוחדת שנשרפת בתנור בחום גבוהה. מעניקה אחיזה ועמידות מקסימלית יחד עם יופי ייחודי.</strong></p>\n<p>המטחנות הידניות של Comandante תוכננו לשימוש בעבור צרכני ספשלטי קפה.</p>\n<p>הנדסה איכותית עשויה עם החומרים הטובים ביותר.</p>\n<div class=\"celwidget\">\n<div class=\"a-section a-spacing-medium a-spacing-top-small\">דגם C40 מגיע עם שיפורים רבים בגיאומטריה והמבנה של ה-Nitro Blade Burr כדי לקבל את ביצועי הטחינה ואת חלוקת החלקיקים שעבדה הכי טוב עם חליטת פולי ערביקה ספשלטי טחונים.ייצור להב Nitro הוא משימה הנדסית רצינית הדורשת כלים ומכונות מיוחדות, אומנות מעולה וניסיון רב.קשה מאוד לעבוד איתה פלדת אל חלד מרטנסיטית עתירת חנקן אבל בסיום, הלהב קשיח, עמיד מאוד בפני שחיקה ובעל מידה גבוהה של שימור הלהבים.</div>\n</div>\n<div></div>\n<div class=\"celwidget\"><strong>עיצוב</strong></div>\n<div class=\"celwidget\">\n<p>נבנה עבור חובבי קפה אמיתיים ואוהבי קפה ספשלטי, ה-C40 הוא מטחנת קפה ידנית בעלת ביצועים גבוהים וחזקה עם עיצוב סט מתקדם. הבחירה בחומר המתכתי ללהבים היא תוצאה של מחקר ופיתוח ארוך ומסור. עיצוב ברור משולב עם ביצועים גבוהים.</p>\n<ul>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג'ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת. לא במקרה זו המטחנה המועדפת על אלופי הקפה בעולם כולו (World Brewers Cup champions).</li>\n<li>הדגם החדש MK4 מגיע עם צנצנת זכוכית שחורה ובנוסף מיכל זכוכית פולימרית שקופה. שניהם קלים במיוחד לניקוי, עמידים ביותר ומאחסנים עד 40 גר' קפה.</li>\n<li>הגודל והעמידות הופכים את הקומנדנטה למטחנה המושלמת לשימוש ביתי או לחובבי טיולים. שלא רוצים להתפשר על קפה מושלם בכל מקום.</li>\n<li>בנוסף לסכינים – גם גוף המטחנה, הציר הראשי, הידית והמיסבים הכדוריים עשויים פלדת אל חלד. המטחנה כולה \"נקייה\" מאלומיניום.</li>\n<li>גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.</li>\n</ul>\n<div class=\"a-section a-spacing-medium a-spacing-top-small\"></div>\n</div>\n<div class=\"celwidget\"></div>\n<div class=\"celwidget\"></div>\n",
+   "meta": {
+    "rank_math_title": "Comandante C40 MK4 Nitro Blade Cooper - מינוטו קפה ואביזרים",
+    "rank_math_description": "מטחנת קפה ידנית Comandante C40 MK4 Nitro Blade Cooper. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 64857,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground/",
+   "name": "מטחנת קפה FIORENZATO AllGround - שחור רוז גולד",
+   "short_description": "<p data-sourcepos=\"3:1-3:62\"><strong>טחנו פולי קפה טריים בקלות ובמקצועיות עם מטחנת ה-AllGround!</strong></p>\n<p data-sourcepos=\"5:1-5:17\"><strong>המטחנה כוללת:</strong></p>\n<ul data-sourcepos=\"7:1-10:0\">\n<li data-sourcepos=\"7:1-7:80\"><strong>מסך מגע אינטואיטיבי:</strong> קל לשימוש ומתאים לטחינה עבור אספרסו, מוקה וקפה פילטר.</li>\n<li data-sourcepos=\"8:1-8:88\"><strong>סכיני טחינה חזקים:</strong> עשויים מפלדת M340 מצופה טיטניום, עמידים פי 5 מסכינים סטנדרטיים.</li>\n<li data-sourcepos=\"9:1-10:0\"><strong>עיצוב מודרני:</strong> שיתאים לכל מטבח.</li>\n</ul>\n<p data-sourcepos=\"11:1-11:53\"><strong>הזמינו עכשיו ותיהנו מטחינה טרייה ומושלמת בכל פעם!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<h2 data-sourcepos=\"1:1-1:52\">FIORENZATO AllGround מטחנת קפה ביתית לכל מטרה</h2>\n<p data-sourcepos=\"3:1-3:79\"><strong>טחנו פולי קפה בצורה פשוטה, מקצועית ובבטחון עם מטחנת הקפה הביתית AllGround!</strong></p>\n<p data-sourcepos=\"5:1-5:153\"><strong>למתחילים או לחובבי קפה מושבעים,</strong> מטחנת ה-AllGround מאפשרת טחינה מדויקת עבור מגוון שיטות חליטה, מאספרסו ועד קפה פילטר, באמצעות מסך מגע קל ואינטואיטיבי.</p>\n<p data-sourcepos=\"7:1-7:183\"><strong>סכיני הטחינה החזקים מפלדת M340 מצופים בציפוי שחור ייחודי הכולל טיטניום, אלומיניום, פחמן וחנקן.</strong></p>\n<p data-sourcepos=\"7:1-7:183\">ציפוי זה מבטיח עמידות יוצאת דופן, המחזיקה פי 5 יותר מסכינים סטנדרטיים (נבדק במעבדה).</p>\n<p data-sourcepos=\"9:1-9:80\"><strong>עם עיצוב מודרני וממשק מרהיב, מטחנת ה-AllGround תהפוך לכלי האהוב עליכם במטבח!</strong></p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:27\">מסך מגע חכם ואינטואיטיבי</h2>\n<p data-sourcepos=\"3:1-3:161\">מטחנת ה-AllGround כוללת מסך מגע מתקדם בטכנולוגיית IPS אשר מבטיח תגובה מהירה ונוחה לשימוש. המסך משנה צבע בהתאם לסוג הטחינה הנבחר ומציג אייקונים ברורים להתייחסות.</p>\n<p data-sourcepos=\"5:1-5:20\">תהנו מהתכונות הבאות:</p>\n<ul data-sourcepos=\"7:1-9:66\">\n<li data-sourcepos=\"7:1-7:103\"><strong>אספרסו:</strong> מסך אדום עם סמל פילטר - טחינה עבור מנה יחידה, כפולה וטחינה ידנית - כולל תצוגת זמן הטחינה.</li>\n<li data-sourcepos=\"8:1-8:65\"><strong>מוקה:</strong> מסך כחול עם סמל של קנקן מוקה - כולל תצוגת זמן הטחינה.</li>\n<li data-sourcepos=\"9:1-9:66\"><strong>פילטר:</strong> מסך ירוק עם סמל של קפה פילטר - כולל תצוגת זמן הטחינה.</li>\n</ul>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">מפרט טכני:</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>כללי:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>הספק: 250 וואט</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מקור חשמל: 110-120v - 60Hz</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל: 9 ק\"ג (20 פאונד)</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מערכת טחינה:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>סוג סכינים: שטוחים, Dark-T</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קוטר סכינים: Ø 64 מ\"מ</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>סל\"ד סכינים: 1600 סל\"ד (60 הרץ)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אורך חיי סכינים: 1400 ק\"ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קיבולת פולי קפה: 250 גרם (0.5 פאונד)</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>כוונון והתאמה:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>כיוון דרגת טחינה: טבעת מיקרומטרית - רציף</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>כיוון מינון: לפי שניות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מזלג: מתכוונן, עם תמיכה</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מידות:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>רוחב x עומק x גובה: 169 x 240 x 442 מ\"מ</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<p data-sourcepos=\"13:1-13:53\"><strong>הזמינו עכשיו ממינוטו קפה מטחנת קפה FIORENZATO AllGround ותיהנו מטחינה טרייה ומושלמת בכל פעם!</strong></p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת Fiorenzato AllGround Sense - מטחנה שוקלת מקצועית לדיוק מושלם. אידיאלית לבית ולבית קפה - משלוח מהיר"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ירוק",
+      "כרום",
+      "כרום בשילוב עץ",
+      "לבן",
+      "לבן עם עץ",
+      "שחור",
+      "שחור רוז גולד",
+      "תכלת"
+     ],
+     "id": 14,
+     "variation": true
+    }
+   ]
+  },
+  {
+   "id": 64936,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-comandante-mk4-nb-premiu-2/",
+   "name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood Virginia Walnut",
+   "short_description": "<p>מטחנה ידנית מקצועית מדוייקת וקומפקטית</p>\n<ul class=\"a-unordered-list a-vertical a-spacing-mini\">\n<li><span class=\"a-list-item\">רמת טחינה מתכווננת </span></li>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג'ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת.</li>\n<li><span class=\"a-list-item\">ידית מטחנת מעוצבת ארגונומית לטחינה קלה וחלקה, ומפחיתה רעש.</span></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood Virginia Walnut</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>המטחנות הידניות של Comandante תוכננו לשימוש בעבור צרכני ספשלטי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הנדסה איכותית עשויה עם החומרים הטובים ביותר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\">\n<div class=\"a-section a-spacing-medium a-spacing-top-small\">דגם C40 מגיע עם שיפורים רבים בגיאומטריה והמבנה של ה-Nitro Blade Burr כדי לקבל את ביצועי הטחינה ואת חלוקת החלקיקים שעבדה הכי טוב עם חליטת פולי ערביקה ספשלטי טחונים.ייצור להב Nitro הוא משימה הנדסית רצינית הדורשת כלים ומכונות מיוחדות, אומנות מעולה וניסיון רב.קשה מאוד לעבוד איתה פלדת אל חלד מרטנסיטית עתירת חנקן אבל בסיום, הלהב קשיח, עמיד מאוד בפני שחיקה ובעל מידה גבוהה של שימור הלהבים.</div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\"><strong>עיצוב</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\">\n<p>נבנה עבור חובבי קפה אמיתיים ואוהבי קפה ספשלטי, ה-C40 הוא מטחנת קפה ידנית בעלת ביצועים גבוהים וחזקה עם עיצוב סט מתקדם. הבחירה בחומר המתכתי ללהבים היא תוצאה של מחקר ופיתוח ארוך ומסור. עיצוב ברור משולב עם ביצועים גבוהים.</p>\n<ul>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג'ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת. לא במקרה זו המטחנה המועדפת על אלופי הקפה בעולם כולו (World Brewers Cup champions).</li>\n<li>הדגם החדש MK4 מגיע עם צנצנת זכוכית שחורה ובנוסף מיכל זכוכית פולימרית שקופה. שניהם קלים במיוחד לניקוי, עמידים ביותר ומאחסנים עד 40 גר' קפה.</li>\n<li>הגודל והעמידות הופכים את הקומנדנטה למטחנה המושלמת לשימוש ביתי או לחובבי טיולים. שלא רוצים להתפשר על קפה מושלם בכל מקום.</li>\n<li>בנוסף לסכינים – גם גוף המטחנה, הציר הראשי, הידית והמיסבים הכדוריים עשויים פלדת אל חלד. המטחנה כולה \"נקייה\" מאלומיניום.</li>\n<li>גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.</li>\n</ul>\n<div class=\"a-section a-spacing-medium a-spacing-top-small\"> </div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\"> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\"> </div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood Virginia Walnut. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו.",
+    "rank_math_title": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB | %sitename%"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64937,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-%d7%a2%d7%a0%d7%91%d7%a8/",
+   "name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ ענבר נוזלי Comandante MK4 NB Premium Wood Liquid Amber",
+   "short_description": "<p>מטחנה ידנית מקצועית מדוייקת וקומפקטית</p>\n<ul class=\"a-unordered-list a-vertical a-spacing-mini\">\n<li><span class=\"a-list-item\">רמת טחינה מתכווננת </span></li>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג'ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת.</li>\n<li><span class=\"a-list-item\">ידית מטחנת מעוצבת ארגונומית לטחינה קלה וחלקה, ומפחיתה רעש.</span></li>\n</ul>\n",
+   "description": "<h3 dir=\"rtl\">מטחנת קפה ידנית קומנדנטה ציפוי עץ ענבר נוזלי Comandante MK4 NB Premium Wood Liquid Amber</h3>\n<p>המטחנות הידניות של Comandante תוכננו לשימוש בעבור צרכני ספשלטי קפה.</p>\n<p>הנדסה איכותית עשויה עם החומרים הטובים ביותר.</p>\n<div class=\"celwidget\">\n<div class=\"a-section a-spacing-medium a-spacing-top-small\">דגם C40 מגיע עם שיפורים רבים בגיאומטריה והמבנה של ה-Nitro Blade Burr כדי לקבל את ביצועי הטחינה ואת חלוקת החלקיקים שעבדה הכי טוב עם חליטת פולי ערביקה ספשלטי טחונים.ייצור להב Nitro הוא משימה הנדסית רצינית הדורשת כלים ומכונות מיוחדות, אומנות מעולה וניסיון רב.קשה מאוד לעבוד איתה פלדת אל חלד מרטנסיטית עתירת חנקן אבל בסיום, הלהב קשיח, עמיד מאוד בפני שחיקה ובעל מידה גבוהה של שימור הלהבים.</div>\n</div>\n<div></div>\n<div class=\"celwidget\"><strong>עיצוב</strong></div>\n<div class=\"celwidget\">\n<p>נבנה עבור חובבי קפה אמיתיים ואוהבי קפה ספשלטי, ה-C40 הוא מטחנת קפה ידנית בעלת ביצועים גבוהים וחזקה עם עיצוב סט מתקדם. הבחירה בחומר המתכתי ללהבים היא תוצאה של מחקר ופיתוח ארוך ומסור. עיצוב ברור משולב עם ביצועים גבוהים.</p>\n<ul>\n<li>המטחנה מאפשרת טחינה מדוייקת לכל שיטת הכנה – טורקי, אספרסו, פילטר, פלנג'ר וקולד ברו. והכל ברמת דיוק ואיכות טחינה בלתי מתפשרת. לא במקרה זו המטחנה המועדפת על אלופי הקפה בעולם כולו (World Brewers Cup champions).</li>\n<li>הדגם החדש MK4 מגיע עם צנצנת זכוכית שחורה ובנוסף מיכל זכוכית פולימרית שקופה. שניהם קלים במיוחד לניקוי, עמידים ביותר ומאחסנים עד 40 גר' קפה.</li>\n<li>הגודל והעמידות הופכים את הקומנדנטה למטחנה המושלמת לשימוש ביתי או לחובבי טיולים. שלא רוצים להתפשר על קפה מושלם בכל מקום.</li>\n<li>בנוסף לסכינים – גם גוף המטחנה, הציר הראשי, הידית והמיסבים הכדוריים עשויים פלדת אל חלד. המטחנה כולה \"נקייה\" מאלומיניום.</li>\n<li>גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.</li>\n</ul>\n<div class=\"a-section a-spacing-medium a-spacing-top-small\"></div>\n</div>\n<div class=\"celwidget\"></div>\n<div class=\"celwidget\"></div>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה ידנית קומנדנטה ציפוי עץ איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - MK4. מושלמת לשימוש יומיומי וקבוע",
+    "rank_math_title": "מטחנת קפה ידנית קומנדנטה ציפוי עץ | %sitename%"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64942,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-oak8-gen2/",
+   "name": "מטחנת קפה ידנית מקצועית Oak8 Gen2",
+   "short_description": "<p>מטחנה קטנה, מדוייקת וקומפקטית</p>\n<ul class=\"a-unordered-list a-vertical a-spacing-mini\">\n<li><span class=\"a-list-item\">רמת טחינה מתכווננת &#8211; בורר טחינה מובנה מתכוונן עם מעל 24 רמות טחינה שונות. </span></li>\n<li><span class=\"a-list-item\">בורר טחינה בעל מיסב כפול עם נעילה למניעת שינוי הטחינה,סכינים קוניות 38 מ&quot;מ מפלדת אל-חלד בציפוי טיטניום . </span></li>\n<li><span class=\"a-list-item\">ידית מטחנת מעוצבת ארגונומית לטחינה קלה וחלקה, ומפחיתה רעש.</span></li>\n<li>זמן טחינה כ &#8211; 20 שנ׳ ל-10 גר קפה בטחינה לפילטר</li>\n<li> </li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מטחנת קפה ידנית מקצועית Oak8 Gen2</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנת קפה ידנית OAK8 היא מטחנת קפה ידנית ברמה מקצועית אשר נועדה לספק לכם חווית קפה מותאמת מושלמת בכל פעם. מטחנה זו כוללת סכינים קוניות מפלדת אל-חלד וציפוי טיטניום עוצמתית בקוטר 38 מ\"מ, ומסוגלת לטחון פולי קפה לכל רמת טחינה רצויה, מאספרסו עדין ועד לפרנץ פרס או קולד ברו גס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם העיצוב הארגונומי והתפעול הידני הקל לשימוש, מטחנת הקפה הידנית OAK8 Gen2</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>היא המלווה המושלם לאוהבי קפה בדרכים. בין אם אתה במשרד, בבית או בטיול קמפינג, מטחנת קפה ניידת זו ניתנת להובלה בקלות לכל מקום שאתה צריך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם קיבולת של עד 38 גרם של פולי קפה, מטחנת הקפה הידנית OAK8 מאפשרת לך להכין מספר כוסות קפה בבת אחת, וחוסכת לך זמן ומאמץ. בנוסף, יעילות הטחינה המהירה יותר שלה מבטיחה שתוכלו לטחון במהירות את פולי הקפה שלכם מבלי לוותר על איכות או טעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בין אם אתם מעדיפים לאטה חלק וקרמי או פרנץ פרס נועז וחזק, מטחנת הקפה הידנית OAK8 Gen2 מספקת תוצאות יוצאות דופן בכל פעם. אז למה להסתפק במשהו פחות מכוס הקפה המושלמת? השקיעו היום במטחנת הקפה הידנית של OAK8 Gen2 וקחו את חווית הקפה שלכם לשלב הבא.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div class=\"a-section a-spacing-medium a-spacing-top-small\"> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\">\n<div class=\"a-section a-spacing-medium a-spacing-top-small\">\n<ul class=\"a-unordered-list a-vertical a-spacing-mini\">\n<li><span class=\"a-list-item\">רמת טחינה מתכווננת - בורר טחינה מובנה מתכוונן עם מעל 24 רמות טחינה שונות. </span></li>\n<li><span class=\"a-list-item\">בורר טחינה בעל מיסב כפול עם נעילה למניעת שינוי הטחינה,סכינים קוניות 38 מ\"מ מפלדת אל-חלד וציפוי טיטניום. </span></li>\n<li><span class=\"a-list-item\">ידית מטחנת מעוצבת ארגונומית לטחינה קלה וחלקה, ומפחיתה רעש. </span></li>\n<li><span class=\"a-list-item\">קלה לניקוי ופירוק, אין צורך בכלים! משטח סגסוגת האלומיניום ימנע הידבקות של קפה טחון.</span></li>\n<li><span class=\"a-list-item\">האריזה מגיעה עם מברשת ניקוי.</span></li>\n<li>המטחנה קומפקטית וקלה - רק 500 גר כולל ידית</li>\n<li>זמן טחינה כ - 20 שנ ל-10 גר קפה בטחינה לפילטר</li>\n</ul>\n</div>\n<div class=\"a-section a-spacing-medium a-spacing-top-small\">\n<p><span class=\"a-list-item\">אחריות לשנה</span></p>\n<p>מידות:</p>\n<p>גובה 15.8 סמ</p>\n<p>קוטר 5 סמ</p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\"> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"celwidget\">\n<h3 dir=\"rtl\"><a href=\"https://www.minuto.co.il/content/uploads/2025/11/Grinder_instructions_OAK8.pdf\" target=\"_blank\" rel=\"noopener\">מדריך למשתמש והוראות הפעלה למטחנת הקפה הידנית OAK</a></h3>\n<h3 dir=\"rtl\"> </h3>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - מטחנת קפה | Oak8. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65064,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-compak-e5-od/",
+   "name": "מטחנת קפה מקצועית Compak I3 PRO",
+   "short_description": "<div class=\"item-name\">\n<h3><span style=\"color: #555555;font-size: 14.399998664855957px\">מטחנה מקצועית מיועדת לטחינה on demand (ללא מחלק מנות) לשימוש ביתי או של קפה נטול קפאין בבתי קפה.</span></h3>\n</div>\n<p class=\"product-short-desc grid_6 omega \">אפשרות טחינה ל-1 או 2 כוסות או פעולה רציפה.</p>\n<p>תוספת למיכל מיני 50 ש&quot;ח.</p>\n",
+   "description": "<div class=\"item-name\">\n<h3>מטחנת קפה מקצועית Compak I3 Pro</h3>\n</div>\n<div dir=\"rtl\">ניתן בלחיצה אחת לטחון מנה בודדת או מנה כפולהן לפי דרישה מסך בקרת מגע מנוע עם מאוורר למניעת התחממות מחזיק פילטר פורטה בגובה מתכוונן אוניברסלי</div>\n<div dir=\"rtl\">&nbsp;</div>\n<div class=\"item-name\">\n<div dir=\"rtl\">מטחנה מקצועית מיועדת לטחינה on demand (ללא מחלק מנות) לבריסטה ביתי מקצועי או לבתי קפה.</div>\n<div dir=\"rtl\">* הספק מנוע חשמלי 550 וואט.</div>\n<div dir=\"rtl\">*&nbsp;גוף מכלולים ודיספנסר מיציקת אלומיניום&nbsp;.</div>\n<div dir=\"rtl\">* כושר טחינה כ-2.5 גר בשניה.</div>\n<div dir=\"rtl\">* סיבובים לדקה : 1370.</div>\n<div dir=\"rtl\">* קוטר דיסקיות :&nbsp;58 מ&quot;מ.</div>\n<div dir=\"rtl\">* יכולת כיוון המטחנה לטחינה של קפה עדין (קפה טורקי) עד גס מאוד (קפה פילטר).</div>\n<div dir=\"rtl\">* תכולת מיכל פולי&nbsp;הקפה (הפעמון) &nbsp;800 גרם.</div>\n<div dir=\"rtl\">*<span class=\"hps\">כיוון טחינה Stepless micrometrical&nbsp;.</span></div>\n<div dir=\"rtl\">* משקל המטחנה&nbsp;6.1 ק&quot;ג.</div>\n<div dir=\"rtl\">* מידות עXרXג&nbsp;: 950x165x360</div>\n<div dir=\"rtl\">* ארץ יצור: ספרד.</div>\n<div dir=\"rtl\">*&nbsp;המטחנה בצבע שחור</div>\n<div dir=\"rtl\">* למטחנה יש את תווי התקן- ETL, CE, GS, NSF</div>\n<div dir=\"rtl\">* אחריות&nbsp;12&nbsp;חודשים ע&quot;י היבואן קפה רות .</div>\n<div dir=\"rtl\">&nbsp;</div>\n</div>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה מקצועית Compak I3 PRO. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": []
+  },
+  {
+   "id": 65065,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-k-3-touch-%d7%a9%d7%9c-compak-%d7%90%d7%9c%d7%95%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%9e%d7%9c%d7%95%d7%98%d7%a9/",
+   "name": "מטחנת K-3 Touch של COMPAK אלומיניום מלוטש",
+   "short_description": "<div class=\"item-name\">\n<h3><span style=\"color: #555555;font-size: 14.399998664855957px\">מטחנה מקצועית מיועדת לטחינה on demand (ללא מחלק מנות) לשימוש ביתי או של קפה נטול קפאין בבתי קפה.</span></h3>\n</div>\n<p class=\"product-short-desc grid_6 omega \">אפשרות טחינה ל-1 או 2 כוסות או פעולה רציפה.</p>\n<p>תוספת למיכל מיני 50 ש&quot;ח.</p>\n",
+   "description": "<div class=\"item-name\">\n<h3>מטחנה מקצועית  K-3 Touch  של COMPAK אלומיניום מלוטש</h3>\n<div dir=\"rtl\"></div>\n<div dir=\"rtl\">\n<p>מטחנה מקצועית מיועדת לטחינה on demand (ללא מחלק מנות) לשימוש ביתי או של קפה נטול קפאין לבתי קפה.</p>\n<p>אפשרות טחינה ל-1 או 2 כוסות או פעולה רציפה.</p>\n<p>ניתן לקבל באלומיניום מוברש בתוספת 200 ש\"ח.</p>\n</div>\n<div dir=\"rtl\"></div>\n<div dir=\"rtl\">* הספק מנוע חשמלי 250 וואט.</div>\n<div dir=\"rtl\">* גוף מכלולים ודיספנסר מיציקת אלומיניום .</div>\n<div dir=\"rtl\">* כושר טחינה 5-7 ק\"ג בשעה.</div>\n<div dir=\"rtl\">* סיבובים לדקה : 1400.</div>\n<div dir=\"rtl\">* קוטר דיסקיות : 58 מ\"מ.</div>\n<div dir=\"rtl\">* יכולת כיוון המטחנה לטחינה של קפה עדין (קפה טורקי) עד גס מאוד (קפה פילטר).</div>\n<div dir=\"rtl\">* תכולת מיכל פולי הקפה (הפעמון)  500 גרם.</div>\n<div dir=\"rtl\">*<span class=\"hps\">כיוון טחינה Stepless micrometrical .</span> <span class=\"hps\"> </span></div>\n<div dir=\"rtl\">* משקל המטחנה 5.5 ק\"ג.</div>\n<div dir=\"rtl\">* מידות עXרXג : 420x165x305</div>\n<div dir=\"rtl\">* ארץ יצור: ספרד.</div>\n<div dir=\"rtl\">* המטחנה בצבע שחור,  או אלומיניום מוברש.</div>\n<div dir=\"rtl\">* מגיע עם מיכל פולים 500 גרם אופציה לקבל עם פעמון מיני..</div>\n<div dir=\"rtl\">* למטחנה יש את תווי התקן- ETL, CE, GS, NSF</div>\n<div dir=\"rtl\">* אחריות 12 חודשים ע\"י היבואן קפה רות .</div>\n<div dir=\"rtl\"></div>\n</div>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - מטחנת K-3. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": []
+  },
+  {
+   "id": 67151,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/",
+   "name": "מטחנת קפה אמיליו",
+   "short_description": "<ul>\n<li>\n<div class=\"item-name\">\n<p data-sourcepos=\"3:1-3:81\"><strong>הכינו קפה טרי וטעים בבית עם מטחנת הקפה אמיליו .</strong></p>\n<ul data-sourcepos=\"5:1-12:0\">\n<li data-sourcepos=\"5:1-5:25\">31 הגדרות טחינה מדויקות</li>\n<li data-sourcepos=\"6:1-6:22\">טחינה אחידה ואיכותית</li>\n<li data-sourcepos=\"7:1-7:12\">שקטה ביותר</li>\n<li data-sourcepos=\"8:1-8:32\">סכינים קוניות מנירוסטה 40 מ&quot;מ</li>\n<li data-sourcepos=\"9:1-9:20\">ממשק הפעלה ויזואלי</li>\n<li data-sourcepos=\"10:1-10:21\">תצוגת בקרה דיגיטלית</li>\n<li data-sourcepos=\"11:1-12:0\">קל לניקוי</li>\n</ul>\n<p data-sourcepos=\"13:1-13:66\"><strong>להזמנת מטחנת הקפה אמיליו, בקרו באתר מינוטו קפה:</strong> www.minuto.co.il</p>\n</div>\n</li>\n</ul>\n",
+   "description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:57\">מטחנת קפה אמיליו: טחינה מדויקת וקלה לכל כוס קפה מושלמת</h2>\n<p data-sourcepos=\"3:1-3:235\"><strong>הכירו את מטחנת הקפה אמיליו, שותפה מושלמת לחובבי הקפה המושבעים.</strong>עם 31 הגדרות טחינה מדויקות, טחינה אחידה ואיכותית וסכינים חרוטיים מנירוסטה 40 מ\"מ, אמיליו מבטיחה לכם את הטחינה המושלמת לכל סוג של פולי קפה.</p>\n<p data-sourcepos=\"5:1-5:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"7:1-12:0\">\n<li data-sourcepos=\"7:1-7:119\"><strong>31 הגדרות טחינה מדויקות:</strong> התאימו את הטחינה לטעמכם האישי ולסוג הקפה שאתם טוחנים, בין אם אספרסו, פילטר או קפה טורקי.</li>\n<li data-sourcepos=\"8:1-8:120\"><strong>טחינה אחידה ואיכותית:</strong> סכינים חרוטיים מנירוסטה 40 מ\"מ מבטיחים טחינה אחידה ואיכותית שתביא למיצוי מושלם של טעמי הקפה.</li>\n<li data-sourcepos=\"9:1-9:128\"><strong>שקטה ביותר:</strong> טכנולוגיה חדשנית הופכת את אמיליו למטחנת קפה שקטה במיוחד, כך שתוכלו ליהנות מקפה טרי בכל שעה בלי להפריע לאף אחד.</li>\n<li data-sourcepos=\"10:1-10:81\"><strong>ממשק הפעלה ויזואלי:</strong> קל לשימוש ולתפעול, עם תצוגת בקרה דיגיטלית וטיימר מובנה.</li>\n<li data-sourcepos=\"11:1-12:0\"><strong>קל לניקוי:</strong> ניתן לפרק את המטחנה בקלות לניקוי יסודי.</li>\n</ul>\n<p data-sourcepos=\"13:1-13:79\"><strong>עם מטחנת הקפה אמיליו, תוכלו ליהנות מקפה טרי וטעים בכל פעם</strong></p>\n<p data-sourcepos=\"15:1-15:66\"><strong>להזמנת מטחנת הקפה אמיליו, בקרו באתר מינוטו קפה:</strong> www.minuto.co.il</p>\n<ul data-sourcepos=\"19:1-21:62\">\n<li data-sourcepos=\"21:1-21:62\"></li>\n</ul>\n</div>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - אמיליו. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67165,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-classico-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/",
+   "name": "מטחנה קפה מקצועית מיגנון classico אוריקה - Eureka",
+   "short_description": "<div class=\"item-name\">\n<p>מטחנת קפה מקצועית ביתית אשר מגיעה לטחינה המושלמת לכל צורת חליטה!</p>\n<p>במטחנה מאפשרת כיוון זמן הטחינה ומתקן להחזקת ידית החליטה (portafilter), ובכך מאפשרת לטחון את הכמות המדויקת הרצויה ללא מאמץ כלל!</p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"item-name\">\n<h3>מטחנה קפה מקצועית מיגנון classic אוריקה - Eureka</h3>\n</div>\n<div class=\"product-short-desc grid_6 omega\">\n<p>מטחנת קפה מקצועית ביתית אשר מגיעה לטחינה המושלמת לכל צורת חליטה!</p>\n<p>במטחנה מאפשרת כיוון זמן הטחינה ומתקן להחזקת ידית החליטה (portafilter), ובכך מאפשרת לטחון את הכמות המדויקת הרצויה ללא מאמץ כלל!מטחנה מהירה בעלת דיסקיות שטוחות בקוטר 50 מ\"מ</p>\n<p>אפשרויות טחינה: ידני .</p>\n<p>מיכל פולים: 300 גרם</p>\n<p>מידות: גובה: 35 ס\"מ רוחב: 12 ס\"מ עומק: 18 ס\"מ</p>\n<p>משקל: 5.6 ק\"ג</p>\n<p>צבע: שחור מט.</p>\n</div>\n<h3></h3>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנה קפה מקצועית מיגנון classico אוריקה, Eureka. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Eureka"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67213,
+   "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/",
+   "name": "Mahlkonig E65S מטחנת קפה ביתית",
+   "short_description": "<p>ה-E65S הוא הסינרגיה המושלמת של טכנולוגיית טחינת אספרסו פרימיום מוכחת ותכונות חלוציות, שנועדו לענות על הדרישות המודרניות של אנשי מקצוע בתחום הקפה ברחבי העולם.</p>\n<p>קוטר סכינים: 65 מ&quot;מ<br />\nקיבולת טחינה ממוצעת*: 4-7 גרם/שניה</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<h3>Mahlkonig E65S מטחנת קפה ביתית</h3>\n<p>ה-E65S הוא הסינרגיה המושלמת של טכנולוגיית טחינת אספרסו פרימיום מוכחת ותכונות חלוציות, שנועדו לענות על הדרישות המודרניות של אנשי מקצוע בתחום הקפה ברחבי העולם.</p>\n<p>\"מלך המטחנות\" צייד את הדגם החדש בכפתור לחיצה רב תכליתי, תפריט אייקונים חדשני והגדרות קבועות מראש לעד 6 מתכונים הניתנים לתכנות בנפרד.</p>\n<p>הגוף הדק המודרני עם עיצוב רב-צבעים חדשני כולל רכיבים וציפויים מהשורה הראשונה למראה ותחושה יוקרתיים.</p>\n<p>אבל העיצוב שלו משמח יותר מסתם העין: ה-E65S מייצר את הטחינה הנעימה והשקטה ביותר, בעוד שהמבנה הכולל שלו חזק ומוכן היטב לעמוד בעומסי עבודה גבוהים.</p>\n<p>הבחירה המושלמת לבתי קפה ומסעדות.</p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>220-240 וולט // 50/60 הרץ // 1~ // 440 וואט<br />\nמהירות סרק: 1700 סל\"ד (60 הרץ)<br />\nקוטר סכינים: 65 מ\"מ<br />\nחומר סכינים: פלדה מיוחדת<br />\nקיבולת טחינה ממוצעת*: 4-7 גרם/שניה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:shortcode --></p>\n<p><!-- /wp:shortcode --></p>\n<p><!-- wp:paragraph --></p>\n<p>קיבולת מיכל קפה: כ - 1200 גרם<br />\nמידות &nbsp;: 19.5 רוחב, 58.3 גובה, 28.3 עומק ס\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משקל מטחנה: 11.2 ק\"ג</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות יבואן לשנה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Mahlkonig E65S מטחנת קפה ביתית. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Mahlkönig"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67262,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%93%d7%99%d7%92%d7%99%d7%98%d7%9c%d7%99%d7%aa-ceado-e6p/",
+   "name": "מטחנת קפה מקצועית דיגיטלית Ceado e6p",
+   "short_description": "<ul>\n<li>מעבדת Ceado מציגה<br />\nOpalglide ™, חוד החנית</p>\n<div>בעלת מסך מגע להגדרת זמן טחינה למנה בודדת או למנה כפולה</div>\n<div>שיטה ייחודית המבטיחה בכל מצב של לחץ עבודה מרחק קבוע בין הסכינים, ומאפשרת לשמור על עקביות הטחינה הנבחרת.</div>\n<p>קוטר סכינים 64</li>\n<li>\n<div></div>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מטחנת קפה מקצועית דיגיטלית Ceado e6p</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div>בעלת מסך מגע להגדרת זמן טחינה למנה בודדת או למנה כפולה</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>שיטה ייחודית המבטיחה בכל מצב של לחץ עבודה מרחק קבוע בין הסכינים, ומאפשרת לשמור על עקביות הטחינה הנבחרת.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מעבדת Ceado מציגה<br />\nOpalglide ™, חוד החנית<br />\nהלהבים של Opalglide ™ מבטיחים טיפול מעודן יותר בפולי קפה, למניעת תופעת התעלות וממזערים את החיכוך תוך שיפור הזרימה היוצאת.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>\n<div></div>\n<div>קוטר סכינים 64</div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>עיצוב</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>עיצוב בולט וייחודי המורכב מטכנולוגיות ה- Ceado יוצאות הדופן המוקדשות לטחינת קפה מקצועית.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>כיוון רמת הטחינה</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>קיבולת מיכל - 600 גר</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מנוע 300W</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>משקל נטו 13.2 ק״ג</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>משקל ברוטו 8.7 ק״ג ברוטו</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>\n<ul>\n<li>178 x 212 x &nbsp;גובה 440 ממ</li>\n<li>סל״ד 1650</li>\n</ul>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>אחריות 12 חודשים ע\"י היבואן דדה</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה מקצועית דיגיטלית Ceado e6p. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Ceado"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67286,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df64e/",
+   "name": "מטחנת קפה - Single Dose DF64E - לבן",
+   "short_description": "<ul>\n<li>מטחנת הקפה DF64 היא מטחנה חדישה למנה יחידה (או כפי שרוב חובבי הקפה משתמשים במושג Single dose)</li>\n<li>המטחנה מגיעה עם סכינים טיטניום שטוחות בקוטר של 64 מ&quot;מ</li>\n<li>מגיעה עם מיכל לפולי קפה</li>\n<li>אפשרות לטחינה on demand</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מטחנת קפה - Single Dose DF64</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנת הקפה DF64 היא מטחנה חדישה למנה יחידה (או כפי שרוב חובבי הקפה משתמשים במושג Single dose).</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המטחנה מגיעה עם סכינים טיטניום שטוחות בקוטר של 64 מ\"מ המספקים טחינה רכה כמעט ללא גושים עם שארית (Retention) מינימלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מטחנות מנה יחידה הפכו בשנים האחרונות לנחשקות מאוד ע\"י חובבי הקפה בעולם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגוון המטחנות למנה בודדת בעולם מאד מצומצם ובדרך כלל מחירם גבוהה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פה אנו מקבלים מטחנה מעולה עם ביצועים מדהימים במחיר מעולה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אפשר בשקט להגדיר מטחנה זו כאחת מהמטחנות הטובות בשוק.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div><span class=\"warranty_title\">אחריות: </span><span class=\"warranty_value\">24 חודשים ע\"י קרמה פלוס</span></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"item_delivery_time\"> </div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - מטחנת קפה | DF64E"
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": true
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "DF64"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67319,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%90%d7%9c%d7%a7%d7%98%d7%a8%d7%95%d7%a0%d7%99%d7%aa-%d7%a2%d7%9d-%d7%9e%d7%a1%d7%9a-%d7%9e%d7%92%d7%a2-c/",
+   "name": "מטחנת קפה מקצועית אלקטרונית עם מסך מגע Ceado E37J",
+   "short_description": "<ul>\n<li>מעבדת Ceado מציגה<br />\nOpalglide ™, חוד החנית<br />\nסכינים מיוחדות למינון יחיד.</li>\n<li>קוטר סכינים 64</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מטחנת קפה מקצועית Ceado דגם E37J</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מעבדת Ceado מציגה<br />\nOpalglide ™, חוד החנית<br />\nהלהבים של Opalglide ™ מבטיחים טיפול מעודן יותר בפולי קפה, למניעת תופעת התעלות וממזערים את החיכוך תוך שיפור הזרימה היוצאת.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>התינוק של משפחת E37!</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>עיצוב</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>עיצוב בולט וייחודי המורכב מטכנולוגיות ה- Ceado יוצאות הדופן המוקדשות לטחינת קפה מקצועית.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>כיוון רמת הטחינה</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>כיוון ללא צעדים(stepless) להתאמת רמת הטחינה באופן מושלם ובמהירות</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>מסך מגע</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>תצוגת מסך המגע משפרת את העיצוב האלגנטי של משפחת E37. אין לחצנים נוספים ללחוץ עליהם: עם מגע פשוט תוכלו להגיע לאן שאתם צריכים , באופן טבעי ומיידי.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div><strong>הפעלה ללא צורך בהחזקת הידית</strong></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מעמד הפורטפילטר הסטנדרטי, המתאים גם לדגמים ללא בוטמלס / נייקד, פירושה שניתן לטחון את מנות הקפה ישירות לתוך המסנן, ולהשאיר את הידיים של הבריסטה פנויות.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>קוטר סכינים 64</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>מנוע 300W</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>משקל נטו 9.5 ק״ג</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>משקל ברוטו 11.4 ק״ג ברוטו</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>\n<ul>\n<li>212x309x432 מ\"מ</li>\n<li>סל״ד 1650</li>\n</ul>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>אחריות 12 חודשים ע\"י היבואן דדה</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה מקצועית אלקטרונית עם מסך מגע Ceado E37J. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Ceado"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67366,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-manuale-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/",
+   "name": "מטחנה קפה מקצועית מיגנון MANUALE אוריקה - Eureka",
+   "short_description": "<div class=\"item-name\">\n<p>מטחנת קפה מקצועית ביתית אשר מגיעה לטחינה המושלמת לכל צורת חליטה!</p>\n<p>במטחנה מאפשרת כיוון זמן הטחינה ומתקן להחזקת ידית החליטה (portafilter), ובכך מאפשרת לטחון את הכמות המדויקת הרצויה ללא מאמץ כלל!</p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"item-name\">\n<h3>מטחנה קפה מקצועית מיגנון MANUALE אוריקה - Eureka</h3>\n</div>\n<div class=\"product-short-desc grid_6 omega\">\n<p>מטחנת קפה מקצועית ביתית אשר מגיעה לטחינה המושלמת לכל צורת חליטה!</p>\n<p>במטחנה מאפשרת כיוון זמן הטחינה ומתקן להחזקת ידית החליטה (portafilter), ובכך מאפשרת לטחון את הכמות המדויקת הרצויה ללא מאמץ כלל!מטחנה מהירה בעלת דיסקיות שטוחות בקוטר 50 מ\"מ</p>\n<p>אפשרויות טחינה: ידני .</p>\n<p>מיכל פולים: 300 גרם</p>\n<p>מידות: גובה: 35 ס\"מ רוחב: 12 ס\"מ עומק: 18 ס\"מ</p>\n<p>משקל: 5.6 ק\"ג</p>\n<p>צבע: שחור מט.</p>\n</div>\n<h3></h3>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנה קפה מקצועית מיגנון MANUALE אוריקה, Eureka. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Eureka"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67367,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-%d7%a2%d7%9d-%d7%a6%d7%92-specialita-%d7%90%d7%95%d7%a8%d7%99%d7%a7-2/",
+   "name": "מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה - Eureka",
+   "short_description": "<div class=\"item-name\">\n<h3><span style=\"color: #555555;font-size: 14.399998664855957px\">מטחנה מקצועית מיועדת לטחינה עם מחלק מנות לשימוש ביתי או של קפה נטול קפאין בבתי קפה.</span></h3>\n</div>\n<div>מידות קטנות</div>\n<div> </div>\n<div>איכותית ומקצועית</div>\n<div> </div>\n<div>גוף פלסטי מעכב בעירה</div>\n<div> </div>\n<div>יחידת מינון מתכת</div>\n<div> </div>\n<div>ניתן לשנות/לכוונן את המינונים</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<h3>מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה - Eureka</h3>\n</div>\n<div class=\"product-short-desc grid_6 omega\">\n<p>מטחנת קפה מקצועית ביתית אשר מגיעה לטחינה המושלמת לכל צורת חליטה!</p>\n<p>במטחנה מאפשרת כיוון זמן הטחינה ומתקן להחזקת ידית החליטה (portafilter), ובכך מאפשרת לטחון את הכמות המדויקת הרצויה ללא מאמץ כלל!מטחנה מהירה בעלת דיסקיות שטוחות בקוטר 55 מ\"מ</p>\n<p>אפשרויות טחינה: ידני וטיימר.</p>\n<p>מיכל פולים: 300 גרם</p>\n<p>מידות: גובה: 35 ס\"מ רוחב: 12 ס\"מ עומק: 18 ס\"מ</p>\n<p>משקל: 5.6 ק\"ג</p>\n<p>ניתן לקבל בצבעים: כרום, צהוב, כתום, כחול.</p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה, Eureka. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Eureka"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67637,
+   "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-gbw-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/",
+   "name": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "short_description": "<p data-sourcepos=\"5:1-5:4\"><strong>E65S GbW &#8211; המהפכה החדשה של טחינת קפה</strong></p>\n<p data-sourcepos=\"7:1-7:30\">מטחנת קפה קפה מהפכנית המציעה שליטה ללא תחרות.</p>\n<p data-sourcepos=\"7:1-7:30\">עם טכנולוגיית שקלול בזמן אמת וזיהוי מדויק של מרחק הסכינים, המאפשרת להגדיר את דרגת הטחינה בצורה מדויקת ביותר.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<h3 data-sourcepos=\"11:1-12:160\">Mahlkonig E65S GbW מטחנת קפה ביתית</h3>\n<p data-sourcepos=\"11:1-12:160\">מטחנת הקפה קפה E65S GbW היא פריצת דרך בתחום טחינת הקפה.</p>\n<p data-sourcepos=\"11:1-12:160\">המטחנה מציגה טכנולוגיות חדשניות המאפשרות שליטה חסרת תקדים על תהליך הטחינה, ומבטיחה דיוק ואיכות ללא פשרות.</p>\n<p data-sourcepos=\"14:1-14:21\"><strong>טכנולוגיה חדשנית:</strong></p>\n<ul data-sourcepos=\"15:1-15:105\">\n<li data-sourcepos=\"15:1-15:105\"><strong>Grind-by-Weight:</strong> טכנולוגיה פורצת דרך המאפשרת שקלול בזמן אמת של הקפה הטחון, ומבטיחה דיוק מדהים בכל מנה.</li>\n<li data-sourcepos=\"16:1-16:116\"><strong>Disc Distance Detection (DDD):</strong> זיהוי מדויק של מרחק הסכינים, המאפשר להגדיר את דרגת הטחינה בצורה מדויקת ביותר.</li>\n<li data-sourcepos=\"17:1-18:0\"><strong>זיהוי אוטומטי של פילטר:</strong> המכונה מזהה אוטומטית את הפילטר, בוחרת את הגדרות הטחינה המתאימות ומתחילה את תהליך הטחינה.</li>\n</ul>\n<p data-sourcepos=\"19:1-19:12\"><strong>יתרונות:</strong></p>\n<ul data-sourcepos=\"20:1-20:69\">\n<li data-sourcepos=\"20:1-20:69\"><strong>שליטה ללא תחרות:</strong> קבעו את כמות הקפה המדויקת שתרצו לטחון בכל מנה.</li>\n<li data-sourcepos=\"21:1-21:67\"><strong>דיוק מדהים:</strong> הטכנולוגיה המתקדמת מבטיחה דיוק יוצא דופן בכל מנה.</li>\n<li data-sourcepos=\"22:1-22:64\"><strong>חיסכון בזמן:</strong> הזיהוי האוטומטי של הפילטר חוסך זמן יקר לבריסטה.</li>\n<li data-sourcepos=\"23:1-24:0\"><strong>איכות קפה יוצאת דופן:</strong> השליטה המדויקת בטחינה מאפשרת להפיק את הטעם המיטבי מכל פולי קפה.</li>\n</ul>\n<p data-sourcepos=\"25:1-25:14\"><strong>מפרט טכני:</strong></p>\n<ul data-sourcepos=\"26:1-26:34\">\n<li data-sourcepos=\"26:1-26:34\">מתח: 220-240 V // 50/60 Hz // 1~ // 440 W</li>\n<li data-sourcepos=\"27:1-27:52\">מהירות: 1400 סל\"ד (50 הרץ); 1700 סל\"ד (60 הרץ)</li>\n<li data-sourcepos=\"28:1-28:21\">קוטר סכינים: 65 מ\"מ</li>\n<li data-sourcepos=\"29:1-29:26\">סכינים מפלדה מיוחדת</li>\n<li data-sourcepos=\"30:1-30:29\">קיבולת פולי קפה: כ-1200 גרם</li>\n<li data-sourcepos=\"31:1-31:29\">מידות: 19.5 x 62 x 28.3 ס\"מ</li>\n<li data-sourcepos=\"32:1-33:0\">משקל נטו: 12.2 ק\"ג</li>\n</ul>\n<p data-sourcepos=\"34:1-34:12\"><strong>ה-E65S GbW היא הבחירה המושלמת עבור כל מי שמחפש את הטוב ביותר בתחום טחינת הקפה. </strong></p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:shortcode --></p>\n<p><!-- /wp:shortcode --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עם השליטה המדויקת, האיכות יוצאת הדופן והעיצוב האלגנטי, זו המכונה שתעלה את הקפה שלך לרמה חדשה.</strong></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Mahlkonig E65S GBW מטחנת קפה ביתית. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Mahlkönig"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67653,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df54/",
+   "name": "מטחנת קפה - Single Dose DF54",
+   "short_description": "<ul>\n<li>מטחנת DF54 היא מטחנה שטוחת סכינים (Flat Burr) קומפקטית ואיכותית, המיועדת לטחינה אחידה ומדויקת במגוון שיטות הכנה, כולל אספרסו וקפה פילטר.</li>\n<li>עם סכינים מותאמות אישית בגודל 54 מ&quot;מ, מנוע 150W, וג'נרטור פלזמה לביטול סטטיות, DF54 מספקת טחינה מקצועית עם מינימום גושים ושאריות.</li>\n<li>אידיאלית לחובבי קפה שמחפשים ביצועים מעולים בעיצוב חסכוני במקום.</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"flex max-w-full flex-col flex-grow\">\n<div class=\"min-h-8 text-message flex w-full flex-col items-end gap-2 whitespace-normal break-words [.text-message+&amp;]:mt-5\" dir=\"auto\" data-message-author-role=\"assistant\" data-message-id=\"9875c3c8-7cb1-4cd1-b99f-112a75495ed1\" data-message-model-slug=\"gpt-4o\">\n<div class=\"flex w-full flex-col gap-1 empty:hidden first:pt-[3px]\">\n<div class=\"markdown prose w-full break-words dark:prose-invert dark\">\n<h3><strong>מטחנת קפה DF54 Single Dose</strong></h3>\n<p>מטחנת הקפה DF54 היא מטחנה שטוחת סכינים (Flat Burr) ברמת כניסה, המשלבת את התכונות המובילות של DF64 II בעיצוב קומפקטי יותר.</p>\n<p>ה-DF54 תוכננה במיוחד כדי לספק טחינת קפה באיכות הגבוהה ביותר בשוק בטווח מחירים זה.</p>\n<p>אנו בטוחים שה-DF54 מציבה סטנדרט חדש בשוק המטחנות בגודל 40 מ\"מ ו-54 מ\"מ, המאופיינות בטחינה לא אחידה עם גושים. לטחינה ברמה עוד יותר גבוהה, מומלץ לשקול את DF64 דור 2, המציעה איכות טחינה ומהירות טחינה משופרות.</p>\n<p><strong>תכונות עיקריות של DF54:</strong></p>\n<ul>\n<li><strong>סכינים שטוחות 54 מ\"מ:</strong> סכינים מנירוסטה בהתאמה אישית לטחינה אחידה ומינימום גושים.</li>\n<li><strong>ג'נרטור פלזמה (Ionizer):</strong> פתח היציאה מצויד בג'נרטור פלזמה לביטול סטטיות.</li>\n<li><strong>כיסוי אנטי-פופקורן:</strong> דיסק מובנה שמונע קפיצת פולי קפה ומשפר את מהירות הטחינה.</li>\n<li><strong>יציבות מירבית:</strong> שלושה מצבים לייצוב סכין עליונה עם קפיץ גל מובנה, מבטיחים יציבות מוחלטת ותפוקת טחינה כמעט ללא שאריות.</li>\n<li><strong>כוס מידה:</strong> כוס מידה מפלסטיק שקוף בגודל 58 מ\"מ, בדרגת מזון, לשימוש נוח.</li>\n<li><strong>כוונון רציף:</strong> חוגת מתכת בעיצוב כרום לאיזון מדויק של גודל הטחינה.</li>\n<li><strong>ניקוי קל:</strong> המטחנה ניתנת לפירוק וניקוי בכמה שלבים פשוטים ללא צורך בכלים.</li>\n<li><strong>גוף אלומיניום:</strong> עיצוב אלגנטי עם ציפוי עמיד.</li>\n<li><strong>קיבולת פולים:</strong> 20 גרם (ללא בלוור) או 50 גרם (עם בלוור).</li>\n</ul>\n<p><strong>נתונים טכניים:</strong></p>\n<ul>\n<li><strong>משקל:</strong> 4.5 ק\"ג.</li>\n<li><strong>מנוע:</strong> 150W, עם כניסת מתח 100-120V או 220-240V.</li>\n<li><strong>צבע:</strong> שחור בלבד.</li>\n<li><strong>מידות:</strong> 17.8 ס\"מ (עומק), 11.4 ס\"מ (רוחב), 30.5 ס\"מ (גובה). מתאים למיקום מתחת לכל ארון מטבח.</li>\n<li><strong>מהירות סיבוב:</strong> 1400RPM.</li>\n<li><strong>אחריות יבואן:</strong> 12 חודשים קדמה קפה .</li>\n</ul>\n<p><strong>מה כלול בערכה:</strong></p>\n<ul>\n<li>מטחנת קפה DF54.</li>\n<li>בלוור ומכסה עץ.</li>\n<li>כוס מידה מפלסטיק ומתקן גומי.</li>\n<li>חוברת הוראות.</li>\n</ul>\n<p>&nbsp;</p>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - מטחנת קפה | DF54. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "לבן",
+      "שחור"
+     ],
+     "id": 12,
+     "variation": false
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "DF64"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 68264,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/",
+   "name": "מטחנת קפה מקצועית  WPM ZD-12 GRAEF",
+   "short_description": "<ul>\n<li>\n<div class=\"item-name\">\n<h1>מטחנת קפה מקצועית WPM ZD-12 &#8211; רק אצלנו במלאי</h1>\n</div>\n<div class=\"product-short-desc grid_6 omega \">\n<p>מטחנה מקצועית קונית עיצוב איטלקי.</p>\n<p>25 דרגות טחינה.</p>\n<p>טחינה איטית.</p>\n</div>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:html --></p>\n<div>\n<h1>מטחנת קפה מקצועית&nbsp;&nbsp;WPM ZD-12 GRAEF</h1>\n<h1>למטחנה 25 דרגות טחינה</h1>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>סכינים קוניות&nbsp;מקצועיות איכותיות&nbsp;בעיצוב איטלקי,</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המתאימות&nbsp;לכל סוגי הקפה&nbsp;וניתנות לשליפה וניקוי והחלפה בקלות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה&nbsp;<strong>ZD-12</strong>&nbsp;מאפשרת 2 מצבי טחינה; ישירות לידית החליטה או למיכל האיסוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה&nbsp;<strong>ZD-12</strong> מצוידת במנגנון \"גיר\"&nbsp;במנוע המכונה,&nbsp;המאט את מהירות הסיבוב ומונע את חימום ושירפת הקפה הטחון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל פולים בנפח של 250 גרם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:html --></p>\n<div>קומפקטית ושקטה.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>משקל:&nbsp;<span class=\"li_content\">2.71 ק\"ג.</span></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>אחריות:&nbsp;12 חודשים.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>צבע: לבן-שחור</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div></div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>אחריות 12 חודשים ע\"י היבואן קופמה בע\"מ</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה איכותית לטחינה מדויקת ואחידה. מתאימה לאספרסו, פילטר ושיטות חליטה שונות - 12. מושלמת לשימוש יומיומי וקבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 12,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 81200,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9b%d7%a8%d7%95%d7%9d/",
+   "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - כרום",
+   "short_description": "<p data-sourcepos=\"3:1-3:72\"><strong>מטחנת קפה פרימיום עם משקל מובנה, טחינה מדויקת וסכיני טיטניום עמידים.</strong></p>\n<p data-sourcepos=\"5:1-5:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"7:1-12:0\">\n<li data-sourcepos=\"7:1-7:24\">טחינה מדויקת לפי גרמים</li>\n<li data-sourcepos=\"8:1-8:39\">סכיני טיטניום 64 מ&quot;מ עם ציפוי Dark-T®</li>\n<li data-sourcepos=\"9:1-9:18\">טחינה רציפה וקלה</li>\n<li data-sourcepos=\"10:1-10:18\">פתיחה קלה לניקוי</li>\n<li data-sourcepos=\"11:1-12:0\">צריכה מומלצת: עד 1 ק&quot;ג ליום</li>\n</ul>\n<p data-sourcepos=\"13:1-13:75\"><strong>הזמינו עכשיו את Fiorenzato AllGround Sense ויהנו מטחינה מושלמת בכל פעם!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:61\">Fiorenzato AllGround Sense: טחינה מדויקת ללא פשרות בכל פעם</h2>\n<p data-sourcepos=\"3:1-3:286\"><strong>מטחנת הקפה Fiorenzato AllGround Sense מגלמת את מיטב הטכנולוגיה מקו הבית של Fiorenzato, ומיועדת לבית קליה ולבריסטה הביתי המקצועי, וחובבי קפה שמעריכים ציוד פרימיום.</strong></p>\n<p data-sourcepos=\"5:1-5:95\"><strong>פלא טכנולוגי עם משקל מובנה במזלג האחיזה, מאפשרת למלא את הפילטר בכמות המדויקת של קפה בכל פעם.</strong></p>\n<p data-sourcepos=\"7:1-7:204\"><strong>הדיוק מובטח גם על ידי תא צף עם פטנט להגנה ולמניעת הפרעות.  באמצעות מסך מגע ייעודי, המשתמשים יכולים לבחור בקלות את כמות הקפה הרצויה במתכונים שונים (אספרסו, מוקה, פילטר), ומקבלים דיוק יוצא דופן בכל תנאי.</strong></p>\n<p data-sourcepos=\"9:1-9:23\"><strong>טבעת כיוון מסתובבת:</strong></p>\n<ul data-sourcepos=\"11:1-13:0\">\n<li data-sourcepos=\"11:1-11:89\">רכה למגע, קלה לסיבוב ומדויקת כמו מסגרת שעון, מחולקת לשלושה אזורים: אספרסו, מוקה ופילטר.</li>\n<li data-sourcepos=\"12:1-13:0\">בסוף הטחינה, מופעל כפתור פתיחה קל, המאפשר לפתוח ולנקות במהירות את תא הטחינה.</li>\n</ul>\n<p data-sourcepos=\"14:1-14:40\"><strong>סכיני טחינה 64 מ\"מ עם ציפוי טיטניום:</strong></p>\n<ul data-sourcepos=\"16:1-17:0\">\n<li data-sourcepos=\"16:1-17:0\">סכיני ה-AllGround הן מסוג Dark-T® החדש, התפתחות של סכיני ה-M340 שלנו, שנוצרו לשיפור נוסף על ביצועי הטחינה.\n<ul data-sourcepos=\"16:1-17:0\">\n<li data-sourcepos=\"16:1-17:0\">הציפוי השחור בטיטניום, אלומיניום, פחמן וחנקן מבטיח אורך חיים גדול פי 5 מסכינים סטנדרטיים.</li>\n</ul>\n</li>\n</ul>\n<p data-sourcepos=\"18:1-18:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"20:1-32:0\">\n<li data-sourcepos=\"20:1-20:40\">כיוון דרגת טחינה מיקרומטרי בטבעת: רציף</li>\n<li data-sourcepos=\"21:1-21:25\">מזלג: מתכוונן, עם תמיכה</li>\n<li data-sourcepos=\"22:1-22:16\">הספק: 250 וואט</li>\n<li data-sourcepos=\"23:1-23:28\">סוג סכינים: שטוחות Dark-T®</li>\n<li data-sourcepos=\"24:1-24:23\">קוטר סכינים: Ø 64 מ\"מ</li>\n<li data-sourcepos=\"25:1-25:52\">סל\"ד סכינים: 1400/דקה (50 הרץ) – 1600/דקה (60 הרץ)</li>\n<li data-sourcepos=\"26:1-26:24\">כיוון מינון: לפי גרמים</li>\n<li data-sourcepos=\"27:1-27:26\">קיבולת פולי קפה: 250 גרם</li>\n<li data-sourcepos=\"28:1-28:17\">משקל נטו: 9 ק\"ג</li>\n<li data-sourcepos=\"29:1-29:24\">מידות: 169x440x240 מ\"מ</li>\n<li data-sourcepos=\"30:1-30:29\">צריכה מומלצת: עד 1 ק\"ג ליום</li>\n<li data-sourcepos=\"31:1-32:0\">אורך חיי סכינים: 3000 ק\"ג</li>\n</ul>\n<p data-sourcepos=\"33:1-33:117\"><strong>רוצים ליהנות מטחינה מדויקת ועקבית בכל פעם? הזמינו עכשיו את מטחנת הקפה Fiorenzato AllGround Sense מאתר מינוטו קפה!</strong></p>\n<p>&nbsp;</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת, כרום. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ירוק",
+      "כרום",
+      "כרום בשילוב עץ",
+      "לבן",
+      "לבן עם עץ",
+      "שחור",
+      "שחור רוז גולד",
+      "תכלת"
+     ],
+     "id": 14,
+     "variation": true
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "FIORENZATO"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 81208,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%99%d7%a8%d7%95%d7%a7/",
+   "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - ירוק",
+   "short_description": "<p data-sourcepos=\"3:1-3:72\"><strong>מטחנת קפה פרימיום עם משקל מובנה, טחינה מדויקת וסכיני טיטניום עמידים.</strong></p>\n<p data-sourcepos=\"5:1-5:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"7:1-12:0\">\n<li data-sourcepos=\"7:1-7:24\">טחינה מדויקת לפי גרמים</li>\n<li data-sourcepos=\"8:1-8:39\">סכיני טיטניום 64 מ&quot;מ עם ציפוי Dark-T®</li>\n<li data-sourcepos=\"9:1-9:18\">טחינה רציפה וקלה</li>\n<li data-sourcepos=\"10:1-10:18\">פתיחה קלה לניקוי</li>\n<li data-sourcepos=\"11:1-12:0\">צריכה מומלצת: עד 1 ק&quot;ג ליום</li>\n</ul>\n<p data-sourcepos=\"13:1-13:75\"><strong>הזמינו עכשיו את Fiorenzato AllGround Sense ויהנו מטחינה מושלמת בכל פעם!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:61\">Fiorenzato AllGround Sense: טחינה מדויקת ללא פשרות בכל פעם</h2>\n<p data-sourcepos=\"3:1-3:286\"><strong>מטחנת הקפה Fiorenzato AllGround Sense מגלמת את מיטב הטכנולוגיה מקו הבית של Fiorenzato, ומיועדת לבית קליה ולבריסטה הביתי המקצועי, וחובבי קפה שמעריכים ציוד פרימיום.</strong></p>\n<p data-sourcepos=\"5:1-5:95\"><strong>פלא טכנולוגי עם משקל מובנה במזלג האחיזה, מאפשרת למלא את הפילטר בכמות המדויקת של קפה בכל פעם.</strong></p>\n<p data-sourcepos=\"7:1-7:204\"><strong>הדיוק מובטח גם על ידי תא צף עם פטנט להגנה ולמניעת הפרעות.  באמצעות מסך מגע ייעודי, המשתמשים יכולים לבחור בקלות את כמות הקפה הרצויה במתכונים שונים (אספרסו, מוקה, פילטר), ומקבלים דיוק יוצא דופן בכל תנאי.</strong></p>\n<p data-sourcepos=\"9:1-9:23\"><strong>טבעת כיוון מסתובבת:</strong></p>\n<ul data-sourcepos=\"11:1-13:0\">\n<li data-sourcepos=\"11:1-11:89\">רכה למגע, קלה לסיבוב ומדויקת כמו מסגרת שעון, מחולקת לשלושה אזורים: אספרסו, מוקה ופילטר.</li>\n<li data-sourcepos=\"12:1-13:0\">בסוף הטחינה, מופעל כפתור פתיחה קל, המאפשר לפתוח ולנקות במהירות את תא הטחינה.</li>\n</ul>\n<p data-sourcepos=\"14:1-14:40\"><strong>סכיני טחינה 64 מ\"מ עם ציפוי טיטניום:</strong></p>\n<ul data-sourcepos=\"16:1-17:0\">\n<li data-sourcepos=\"16:1-17:0\">סכיני ה-AllGround הן מסוג Dark-T® החדש, התפתחות של סכיני ה-M340 שלנו, שנוצרו לשיפור נוסף על ביצועי הטחינה.\n<ul data-sourcepos=\"16:1-17:0\">\n<li data-sourcepos=\"16:1-17:0\">הציפוי השחור בטיטניום, אלומיניום, פחמן וחנקן מבטיח אורך חיים גדול פי 5 מסכינים סטנדרטיים.</li>\n</ul>\n</li>\n</ul>\n<p data-sourcepos=\"18:1-18:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"20:1-32:0\">\n<li data-sourcepos=\"20:1-20:40\">כיוון דרגת טחינה מיקרומטרי בטבעת: רציף</li>\n<li data-sourcepos=\"21:1-21:25\">מזלג: מתכוונן, עם תמיכה</li>\n<li data-sourcepos=\"22:1-22:16\">הספק: 250 וואט</li>\n<li data-sourcepos=\"23:1-23:28\">סוג סכינים: שטוחות Dark-T®</li>\n<li data-sourcepos=\"24:1-24:23\">קוטר סכינים: Ø 64 מ\"מ</li>\n<li data-sourcepos=\"25:1-25:52\">סל\"ד סכינים: 1400/דקה (50 הרץ) – 1600/דקה (60 הרץ)</li>\n<li data-sourcepos=\"26:1-26:24\">כיוון מינון: לפי גרמים</li>\n<li data-sourcepos=\"27:1-27:26\">קיבולת פולי קפה: 250 גרם</li>\n<li data-sourcepos=\"28:1-28:17\">משקל נטו: 9 ק\"ג</li>\n<li data-sourcepos=\"29:1-29:24\">מידות: 169x440x240 מ\"מ</li>\n<li data-sourcepos=\"30:1-30:29\">צריכה מומלצת: עד 1 ק\"ג ליום</li>\n<li data-sourcepos=\"31:1-32:0\">אורך חיי סכינים: 3000 ק\"ג</li>\n</ul>\n<p data-sourcepos=\"33:1-33:117\"><strong>רוצים ליהנות מטחינה מדויקת ועקבית בכל פעם? הזמינו עכשיו את מטחנת הקפה Fiorenzato AllGround Sense מאתר מינוטו קפה!</strong></p>\n<p>&nbsp;</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת, ירוק. מטחנת קפה עם מידע על הדגם, המפרט ושיטות החליטה המתאימות. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ירוק",
+      "כרום",
+      "כרום בשילוב עץ",
+      "לבן",
+      "לבן עם עץ",
+      "שחור",
+      "שחור רוז גולד",
+      "תכלת"
+     ],
+     "id": 14,
+     "variation": true
+    },
+    {
+     "name": "מותג",
+     "options": [
+      "FIORENZATO"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  }
+ ]
+}

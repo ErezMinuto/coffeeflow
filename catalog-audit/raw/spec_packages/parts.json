@@ -1,0 +1,501 @@
+{
+ "findings": [
+  {
+   "product_id": "79401",
+   "product_name": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%94%d7%a2%d7%aa%d7%a7/",
+   "field": "name",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+   "problem": "Created as a copy (permalink ends in 'העתק') of 77141: same copy and near-identical title, but 390 vs 280 ILS and larger dimensions (25.5x34.5 vs 20x25 cm); the title does not tell customers it is the larger size.",
+   "suggested_fix": "להוסיף את הגודל לשם, למשל: מגירת ריקון לקפה בצבע שחור – גודל L (25.5x34.5 ס״מ), ולתקן את הקישור הקבוע",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64799",
+   "product_name": "דוחסן 57 ממ ILSA לידית מכונת קפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-57-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "חומר: פלדת אל חלד",
+   "problem": "Short says stainless steel while description says aluminium.",
+   "suggested_fix": "לאמת את החומר ולאחד בין התיאור הקצר לארוך",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "64978",
+   "product_name": "דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 58",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-58/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "ידית עץ שחור מוקשח ואיכותית",
+   "problem": "Title says walnut handle but text describes black wood (identical to the black-handle sibling 64979).",
+   "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65411",
+   "product_name": "דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 57",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-57/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "ידית עץ שחור מוקשח ואיכותית",
+   "problem": "Title says walnut-wood handle, short and description say hardened black wood.",
+   "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "65471",
+   "product_name": "דוחסן 53 ממ ILSA לידית מכונת קפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-53-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "חומר: פלדת אל חלד\n ידית נירוסטה איכותית",
+   "problem": "Short says stainless steel, description repeatedly says aluminium tamper.",
+   "suggested_fix": "לאמת את החומר ולאחד: טמפר אלומיניום ILSA 53 מ\"מ",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67641",
+   "product_name": "ידית חליטה חתוכה למכונת קפה Gaggaia classic pro",
+   "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-gaggaia-classic-pro/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "מותג: ECM",
+   "problem": "Bottomless portafilter for Gaggia Classic Pro carries brand attribute ECM; also name typo 'Gaggaia'.",
+   "suggested_fix": "להסיר את המותג ECM; לתקן בכותרת: Gaggia Classic Pro",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "68274",
+   "product_name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%93%d7%95-%d7%a9%d7%99%d7%9e%d7%95%d7%a9%d7%99/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "דוחסן דו שימושי 52/57 מ\"מ ... ובצד השני 58 מ\"מ",
+   "problem": "Heading says 52/57 mm, body says 52 and 58 mm.",
+   "suggested_fix": "לאמת את הקוטר בצד הגדול ולאחד (57 או 58 מ\"מ)",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "77141",
+   "product_name": "מגירת ריקון knock box לקפה בצבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Product is a black knock box, but the colour attribute lists red, bronze and stainless and not black.",
+   "suggested_fix": "צבע מוצר: שחור",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "78244",
+   "product_name": "דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 54",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-54/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "ידית עץ שחור מוקשח ואיכותית",
+   "problem": "Title says walnut-wood handle, short and description say hardened black wood.",
+   "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "79401",
+   "product_name": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%94%d7%a2%d7%aa%d7%a7/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Product is a black knock box, but the colour attribute lists red, bronze and stainless and not black.",
+   "suggested_fix": "צבע מוצר: שחור",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  },
+  {
+   "product_id": "67176",
+   "product_name": "נוק בוקס - סיר ריקון Knockbox נירוסטה",
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knockbox-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: אדום, אפור, שחור",
+   "problem": "Stainless knock box lists red/grey/black colours and not stainless.",
+   "suggested_fix": "צבע מוצר: נירוסטה",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67222",
+   "product_name": "מגירת ריקון לקפה מנירוסטה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "problem": "Single stainless product carries a multi-colour attribute (red, bronze) that does not apply.",
+   "suggested_fix": "צבע מוצר: נירוסטה",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "68276",
+   "product_name": "Blind Filter Basket - פילטר באסקט עיוור",
+   "permalink": "https://www.minuto.co.il/product/blind-filter-basket-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%90%d7%a1%d7%a7%d7%98-%d7%a2%d7%99%d7%95%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "low",
+   "current_text": "ושסתום פריקת לחץ  לשם ניקוי שטיפה הפוכה",
+   "problem": "Broken sentence starting with 'ו' and claiming a pressure-release valve, which a blind basket doesn't have.",
+   "suggested_fix": "פילטר עיוור (ללא חורים) לניקוי בשטיפה הפוכה (Backflush)",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "67207",
+   "product_name": "פילטר IMS 2 מנות 16/18 גרם B702TH26.5M",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-ims-2-%d7%9e%d7%a0%d7%95%d7%aa-16-18-%d7%92%d7%a8%d7%9d-b702th26-5m/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "פילטר IMS 2 מנות 16/18 גרם B702TH26.5M",
+   "problem": "Same model B702TH26.5M is sold as 18-21 g in 82021; IMS H26.5 is the larger basket, H24.5 (82018) is 16-18 g.",
+   "suggested_fix": "לאמת מול IMS ולתקן את הקיבולת ל-18/20 גרם או את קוד הדגם ל-B702TH24.5M.",
+   "confidence": "likely",
+   "status": "left for later",
+   "status_note": "needs checking: likely"
+  },
+  {
+   "product_id": "76629",
+   "product_name": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-ims-b62-52tfh23-5-%d7%92%d7%95%d7%93%d7%9c-16-18-%d7%91%d7%a8%d7%95%d7%95%d7%99%d7%9c/",
+   "field": "name",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+   "problem": "Title says Breville (B62 = 54 mm) 16-18 g, but short/description describe a standard 58 mm basket for 21-23 g, code B702TFH23.5BB, height 25.5 mm.",
+   "suggested_fix": "לאמת איזה מוצר נמכר ולהתאים כותרת או תיאור (קוטר, קיבולת, קוד דגם).",
+   "confidence": "certain",
+   "status": "left for later",
+   "status_note": "skipped by the fix plan: needs data or a decision"
+  }
+ ],
+ "products": [
+  {
+   "id": 64799,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-57-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "name": "דוחסן 57 ממ ILSA לידית מכונת קפה",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית שחורה ואיכותית</p>\n<p>57 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן 57 ממ ILSA לידית מכונת קפה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>טמפר קפה מאלומיניום ILSA – 57 מ\"מ: לשיפור את חווית חליטת הקפה שלכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ILSA דוחסן קפה - 57 מ\"מ, מעוצב עם דיוק ותוכנן לשפר כל היבט של בתהליך חליטת הקפה, טמפר זה הוא הכלי האולטימטיבי להשגת שלמות ברמת בריסטה בנוחות של בית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>למה לבחור ב-ILSA אלומיניום קפה טמפר?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>1. איכות ללא תחרות: עשוי מאלומיניום בדרגה גבוהה, הטמפר של ILSA בנוי להחזיק מעמד. הוא מתהדר בעמידות יוצאת דופן, מה שמבטיח שנים של ביצועים אמינים, בעל מבנה מוצק , טמפר זה מספק פיזור לחץ עקבי לחליטה אחידה יותר, וכתוצאה מכך כוס אספרסו מעולה בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>2. הנדסה מדויקת: קוטר 57 מ\"מ של הטמפר תואם באופן מושלם לסלסילות פילטר סטנדרטיות של מכונת אספרסו, מה שמאפשר הידוק וחחליטה מיטביים. העיצוב הארגונומי משתלב בנוחות ביד, מספק אחיזה ושליטה מצוינים, כך שתוכלו להתעסק בביטחון עם דיוק ועקביות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>3. טעם משופר: טמפר קפה ILSA ממלא תפקיד מכריע בהשגת האספרסו המושלם. על ידי הפעלת כמות הלחץ הנכונה על הקפה, הוא עוזר ליצור משטח אחיד, מקדם זרימת מים אחידה ומקסום מיצוי הטעם. תגידו שלום לכוסות אספרסו לא מוצלחות וקבלו קפה עשיר ובעל גוף מלא בטעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>4. אסתטי: בשילוב סגנון ופונקציונליות, טמפר הקפה של ILSA מתהדר בעיצוב מלוטש ומודרני. גימור האלומיניום החלק משדר אלגנטיות, מה שהופך אותו לתוספת מדהימה לאוסף של כל חובבי קפה. זה לא רק כלי; זו יצירה שמשלימה את מערך החליטה הביתי שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>5. קל לניקוי: אנו מבינים שנוחות חשובה. זו הסיבה שהטמפר של ILSA קל להפליא לניקוי. כל שיש לעשות הוא לשטוף אותו תחת מים חמים ולנגב אותו והוא מוכן לחליטה הבאה שלך. הקדישו פחות זמן לתחזוקה ויותר זמן ליהנות מכוס הקפה המושלמת שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוו את ההבדל ב-ILSA היום!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם טמפר קפה ממILSA – 57, אתם מחזיקים בידיים את הכוח ליצור כוסות אספרסו יוצאי דופן. הרימו את חוויית חליטת הקפה שלכם, הרשימו את האורחים שלכם, והעיר את החושים שלכם עם האיזון המושלם של טעם, דיוק וסגנון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו את ILSA Aluminum Coffee Tamper שלכם עכשיו ופתחו רמה חדשה של מצוינות בקפה!</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית דוחסן לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - זמין במלאי. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 64978,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-58/",
+   "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 58",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p>58 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 58</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומר: פלדת אל חלד(נירוסטה) איכותית בחיתוך מדויק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>58 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">צורת המשטח התחתון : שטוח </span><br />\n<span lang=\"iw\" xml:lang=\"iw\"><span title=\"Height incl.\">גובה (כולל </span><span title=\"base :86mm\">בסיס)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 9 ס\"מ</span><br />\n<span title=\"Product Weight :293g with 58mm base\">משקל&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; : 354 גרם</span></span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "חומר: פלדת אל חלד ידית עץ שחור מוקשח ואיכותית 58 ממ - דוחסן קפה. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65411,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-57/",
+   "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 57",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p>57 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 57</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומר: פלדת אל חלד(נירוסטה) איכותית בחיתוך מדויק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>57 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">צורת המשטח התחתון : שטוח </span><br />\n<span lang=\"iw\" xml:lang=\"iw\"><span title=\"Height incl.\">גובה (כולל </span><span title=\"base :86mm\">בסיס)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 9 ס\"מ</span><br />\n<span title=\"Product Weight :293g with 58mm base\">משקל&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; : 354 גרם</span></span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "חומר: פלדת אל חלד ידית עץ שחור מוקשח ואיכותית 57 ממ. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה"
+   },
+   "attributes": []
+  },
+  {
+   "id": 65471,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-53-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "name": "דוחסן 53 ממ ILSA לידית מכונת קפה",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית נירוסטה איכותית</p>\n<p>53 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן 53 ממ ILSA לידית מכונת קפה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>טמפר קפה מאלומיניום ILSA – 53 מ\"מ: לשיפור את חווית חליטת הקפה שלכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ILSA דוחסן קפה - 53 מ\"מ, מעוצב עם דיוק ותוכנן לשפר כל היבט של בתהליך חליטת הקפה, טמפר זה הוא הכלי האולטימטיבי להשגת שלמות ברמת בריסטה בנוחות של בית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>למה לבחור ב-ILSA אלומיניום קפה טמפר?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>1. איכות ללא תחרות: עשוי מאלומיניום בדרגה גבוהה, הטמפר של ILSA בנוי להחזיק מעמד. הוא מתהדר בעמידות יוצאת דופן, מה שמבטיח שנים של ביצועים אמינים, בעל מבנה מוצק , טמפר זה מספק פיזור לחץ עקבי לחליטה אחידה יותר, וכתוצאה מכך כוס אספרסו מעולה בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>2. הנדסה מדויקת: קוטר 53 מ\"מ של הטמפר תואם באופן מושלם לסלסילות פילטר סטנדרטיות של מכונת אספרסו, מה שמאפשר הידוק וחחליטה מיטביים. העיצוב הארגונומי משתלב בנוחות ביד, מספק אחיזה ושליטה מצוינים, כך שתוכלו להתעסק בביטחון עם דיוק ועקביות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>3. טעם משופר: טמפר קפה ILSA ממלא תפקיד מכריע בהשגת האספרסו המושלם. על ידי הפעלת כמות הלחץ הנכונה על הקפה, הוא עוזר ליצור משטח אחיד, מקדם זרימת מים אחידה ומקסום מיצוי הטעם. תגידו שלום לכוסות אספרסו לא מוצלחות וקבלו קפה עשיר ובעל גוף מלא בטעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>4. אסתטי: בשילוב סגנון ופונקציונליות, טמפר הקפה של ILSA מתהדר בעיצוב מלוטש ומודרני. גימור האלומיניום החלק משדר אלגנטיות, מה שהופך אותו לתוספת מדהימה לאוסף של כל חובבי קפה. זה לא רק כלי; זו יצירה שמשלימה את מערך החליטה הביתי שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>5. קל לניקוי: אנו מבינים שנוחות חשובה. זו הסיבה שהטמפר של ILSA קל להפליא לניקוי. כל שיש לעשות הוא לשטוף אותו תחת מים חמים ולנגב אותו והוא מוכן לחליטה הבאה שלך. הקדישו פחות זמן לתחזוקה ויותר זמן ליהנות מכוס הקפה המושלמת שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוו את ההבדל ב-ILSA היום!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם טמפר קפה ממILSA – 53, אתם מחזיקים בידיים את הכוח ליצור כוסות אספרסו יוצאי דופן. הרימו את חוויית חליטת הקפה שלכם, הרשימו את האורחים שלכם, והעיר את החושים שלכם עם האיזון המושלם של טעם, דיוק וסגנון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו את ILSA Aluminum Coffee Tamper שלכם עכשיו ופתחו רמה חדשה של מצוינות בקפה!</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית דוחסן לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - משלוח מהיר. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": []
+  },
+  {
+   "id": 67176,
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knockbox-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/",
+   "name": "נוק בוקס - סיר ריקון Knockbox נירוסטה",
+   "short_description": "<p>פח הריקון הוא האביזר המושלם הפותר, לחובב הקפה הביתי, את שאלת שאריות הקפה ממכונת האספרסו.</p>\n<p>מידות:</p>\n<p>-קוטר 14 ס&quot;מ עליון / תחתון</p>\n<p>-גובה 15 ס&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">נוק בוקס - סיר ריקון Knockbox נירוסטה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומר באיכות גבוהה - גוף Knock Box עשוי מפלדת אל חלד והגנה על צבע פני השטח, הציפוי המיוחד סביב מוט האלומיניום עשוי מסיליקון איכותי ויספג את רוב הזעזועים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גודל במושלם , קוטר 14 סמ, גובה 15 סמ .</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקיבולת גדולה מספיק כדי שלא תצטרכו לרוקן אותו לעתים קרובות מדי.<br />\nמוט דפיקה נתיק – מוט הדפיקה עשוי מגומי קשיח ואלומיניום, מראה אופנתי ויפה, מוט גומי מסוגל להפחית את הרעש בשימוש, עיצוב ניתן להסרה מקל על הניקוי.<br />\nשימושים רבים - בשימוש נרחב בבית, בחנות קפה, במסעדות, בברים ועוד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתנה אידיאלית לאוהבי קפה.<br />\nטבעת אחיזה תחתונה נגד החלקה מספקת משטח אחיזה חזק, מייצבת את הסיר ומגינה על שיש בזמן השימוש.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פח הריקון הוא האביזר המושלם הפותר, לחובב הקפה הביתי, את שאלת שאריות הקפה ממכונת האספרסו - זמין במלאי"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "אפור",
+      "שחור"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67222,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94/",
+   "name": "מגירת ריקון לקפה מנירוסטה",
+   "short_description": "<p>מגירת ריקון לקפה מנירוסטה בגימור מוברש – עמידה, שקטה ומעוצבת.</p>\n<p>מושלמת לעמדות קפה קומפקטיות, עם ניקוי נוח והנחה אידאלית תחת מטחנה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מגירת ריקון לקפה – נירוסטה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגירת ריקון ייעודית לפולי קפה טחונים, עשויה נירוסטה איכותית בגימור מוברש למראה אלגנטי ומקצועי. נועדה לפינוי קל, נקי ושקט של עוגת הקפה מהפורטפילטר, ומתאימה לעמדות בריסטה ביתיות ועסקיות כאחד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המגירה מתאפיינת במבנה יציב ועמיד לאורך זמן, עם פס גומי מונע רעש על מוט ההקשה, ותכנון פנימי שמאפשר ניקוי מהיר ותחזוקה פשוטה. עיצוב קומפקטי שניתן לשלב מתחת למטחנה לחיסכון במקום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"520\" data-end=\"539\">תכונות עיקריות:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p data-start=\"542\" data-end=\"575\">גוף נירוסטה עמיד בגימור מוברש</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"578\" data-end=\"610\">פס סיליקון מונע רעש על מוט ההקשה</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"613\" data-end=\"634\">מגירה נשלפת לניקוי קל</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"637\" data-end=\"660\">מתאימה לשימוש אינטנסיבי</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"663\" data-end=\"695\">משתלבת היטב בכל עמדת קפה מקצועית</p>\n</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"579\" data-end=\"589\">מידות:</strong><br data-start=\"589\" data-end=\"592\">רוחב 20 ס״מ | עומק 25 ס״מ | גובה 9 ס״מ</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מגירת ריקון לקפה מנירוסטה בגימור מוברש – עמידה, שקטה ומעוצבת. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67641,
+   "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-gaggaia-classic-pro/",
+   "name": "ידית חליטה חתוכה  למכונת קפה Gaggaia classic pro",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:82\">ידית חליטה חתוכה: אספרסו חזק וטעים יותר</h2>\n<p data-sourcepos=\"3:1-3:61\"><strong>שדרגו את חווית האספרסו שלכם עם ידית חליטה חתוכה למכונת קפה גאג׳יה קלאסיק פרו!</strong></p>\n<p data-sourcepos=\"5:1-5:17\"><strong>הידית מאפשרת:</strong></p>\n<ul data-sourcepos=\"7:1-11:0\">\n<li data-sourcepos=\"7:1-7:28\">הפקת אספרסו חזק ועשיר בטעם</li>\n<li data-sourcepos=\"8:1-8:23\">שליטה רבה יותר בחליטה</li>\n<li data-sourcepos=\"9:1-9:29\">חליטה אחידה ומוצלחת בכל פעם</li>\n<li data-sourcepos=\"10:1-11:0\">ניקוי קל ונוח</li>\n</ul>\n<p data-sourcepos=\"14:1-14:33\"><strong>הזמינו עכשיו באתר מינוטו קפה!</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:88\">ידית חליטה חתוכה למכונת קפה גאג׳יה קלאסיק פרו</h2>\n<p data-sourcepos=\"3:1-3:107\"><strong>הידית החתוכה Portafilter Bottomless תעניק לכם שליטה רבה יותר וחווית אספרסו משודרגת.</strong></p>\n<p data-sourcepos=\"5:1-5:19\"><strong>תכונות עיקריות:</strong></p>\n<ul data-sourcepos=\"7:1-11:0\">\n<li data-sourcepos=\"7:1-7:68\"><strong>אספרסו חזק:</strong> ידית זו מותאמת במיוחד להפקת אספרסו חזק ועשיר בטעם.</li>\n<li data-sourcepos=\"8:1-8:89\"><strong>ציפוי כרום:</strong> ידית החליטה מצופה כרום יוקרתי, המעניק לה מראה אלגנטי ועמידות לאורך זמן.</li>\n<li data-sourcepos=\"9:1-9:96\"><strong>נוחות שימוש משופרת:</strong> העיצוב הארגונומי וחלוקת המשקל המושלמת הופכים את השימוש בידית לקל ונוח.</li>\n<li data-sourcepos=\"10:1-11:0\"></li>\n</ul>\n<p data-sourcepos=\"12:1-12:12\"><strong>יתרונות:</strong></p>\n<ul data-sourcepos=\"14:1-17:0\">\n<li data-sourcepos=\"14:1-14:110\"><strong>שליטה רבה יותר:</strong> ידית חתוכה מאפשרת לכם לראות את זרימת הקפה בזמן החליטה, ולשלוט בצורה טובה יותר על התהליך.</li>\n<li data-sourcepos=\"15:1-15:62\"><strong>חליטה אחידה:</strong> ידית זו מבטיחה חליטה אחידה ומוצלחת בכל פעם.</li>\n<li data-sourcepos=\"16:1-17:0\"><strong>קלות ניקוי:</strong> ידית החליטה ניתנת לפירוק קל וניקוי יסודי.</li>\n</ul>\n<p data-sourcepos=\"18:1-18:134\"><strong>ידית חליטה חתוכה ידית חליטה חתוכה Portafilter Bottomless – היא הבחירה המושלמת לחובבי אספרסו מושבעים שרוצים לשדרג את חווית הקפה שלהם.</strong></p>\n<p data-sourcepos=\"20:1-20:33\"><strong>הזמינו עכשיו באתר מינוטו קפה!</strong></p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית ידית לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - מבצע מיוחד. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "ECM"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 68274,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%93%d7%95-%d7%a9%d7%99%d7%9e%d7%95%d7%a9%d7%99/",
+   "name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+   "short_description": "",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\"><strong>דוחסן קפה מפלסטיק - דוחסן דו שימושי 52/57 מ\"מ</strong></h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>דוחסן הקפה מפלסטיק בנוי כך שיכול לדחוס משני הצדדים: בצד אחד קוטר 52 מ\"מ ובצד השני 58 מ\"מ.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "דוחסן קפה מפלסטיק - דוחסן דו שימושי - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 68276,
+   "permalink": "https://www.minuto.co.il/product/blind-filter-basket-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%90%d7%a1%d7%a7%d7%98-%d7%a2%d7%99%d7%95%d7%95%d7%a8/",
+   "name": "Blind Filter Basket - פילטר באסקט עיוור",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Blind Filter Basket - פילטר באסקט עיוור</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פילטר עיוור לשימוש במכונות קפה בעלות ידית מקצועיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גודל: 58 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ושסתום פריקת לחץ&nbsp; לשם ניקוי שטיפה הפוכה (Back flush)</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Blind Filter Basket - פילטר באסקט עיוור - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": []
+  },
+  {
+   "id": 77141,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "name": "מגירת ריקון knock box לקפה בצבע שחור",
+   "short_description": "<p>מגירת ריקון לקפה מנירוסטה בגימור שחור מט, עמידה, שקטה ומעוצבת.</p>\n<p>מושלמת לעמדות קפה קומפקטיות, עם ניקוי נוח והנחה אידאלית תחת מטחנה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מגירת ריקון לקפה – נירוסטה שחורה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגירת ריקון ייעודית לפולי קפה טחונים, עשויה נירוסטה איכותית בציפוי שחור מט למראה אלגנטי ומקצועי. נועדה לפינוי קל, נקי ושקט של עוגת הקפה מהפורטפילטר, ומתאימה לעמדות בריסטה ביתיות ועסקיות כאחד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המגירה מתאפיינת במבנה יציב ועמיד לאורך זמן, עם פס גומי מונע רעש על מוט ההקשה, ותכנון פנימי שמאפשר ניקוי מהיר ותחזוקה פשוטה. עיצוב קומפקטי שניתן לשלב מתחת למטחנה לחיסכון במקום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"520\" data-end=\"539\">תכונות עיקריות:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p data-start=\"542\" data-end=\"575\">גוף נירוסטה עמיד עם גימור שחור מט</p>\n<p></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"578\" data-end=\"610\">פס סיליקון מונע רעש על מוט ההקשה</p>\n<p></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"613\" data-end=\"634\">מגירה נשלפת לניקוי קל</p>\n<p></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"637\" data-end=\"660\">מתאימה לשימוש אינטנסיבי</p>\n<p></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"663\" data-end=\"695\">משתלבת היטב בכל עמדת קפה מקצועית</p>\n<p></li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"579\" data-end=\"589\">מידות:</strong><br data-start=\"589\" data-end=\"592\">רוחב 20 ס״מ | עומק 25 ס״מ | גובה 9 ס״מ</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מגירת ריקון knock box לקפה בצבע שחור. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 78244,
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-54/",
+   "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 54",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p>54 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן קפה נירוסטה עם ידית עץ אגוז קוטר 54</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומר: פלדת אל חלד(נירוסטה) איכותית בחיתוך מדויק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית עץ שחור מוקשח ואיכותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>54מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "חומר: פלדת אל חלד ידית עץ שחור מוקשח ואיכותית 54 ממ. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה"
+   },
+   "attributes": []
+  },
+  {
+   "id": 79401,
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%94%d7%a2%d7%aa%d7%a7/",
+   "name": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+   "short_description": "<p>מגירת ריקון לקפה מנירוסטה בגימור שחור מט, עמידה, שקטה ומעוצבת. מושלמת לעמדות קפה קומפקטיות, עם ניקוי נוח והנחה אידאלית תחת מטחנה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מגירת ריקון לקפה – נירוסטה שחורה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגירת ריקון ייעודית לפולי קפה טחונים, עשויה נירוסטה איכותית בציפוי שחור מט למראה אלגנטי ומקצועי. נועדה לפינוי קל, נקי ושקט של עוגת הקפה מהפורטפילטר, ומתאימה לעמדות בריסטה ביתיות ועסקיות כאחד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המגירה מתאפיינת במבנה יציב ועמיד לאורך זמן, עם פס גומי מונע רעש על מוט ההקשה, ותכנון פנימי שמאפשר ניקוי מהיר ותחזוקה פשוטה. עיצוב קומפקטי שניתן לשלב מתחת למטחנה לחיסכון במקום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"520\" data-end=\"539\">תכונות עיקריות:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>\n<p data-start=\"542\" data-end=\"575\">גוף נירוסטה עמיד עם גימור שחור מט</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"578\" data-end=\"610\">פס סיליקון מונע רעש על מוט ההקשה</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"613\" data-end=\"634\">מגירה נשלפת לניקוי קל</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"637\" data-end=\"660\">מתאימה לשימוש אינטנסיבי</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>\n<p data-start=\"663\" data-end=\"695\">משתלבת היטב בכל עמדת קפה מקצועית</p>\n</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"579\" data-end=\"589\">מידות:</strong><br data-start=\"589\" data-end=\"592\" />רוחב 25.5 ס״מ | עומק 34.5 ס״מ | גובה 9.2 ס״מ</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מגירת ריקון לקפה בצבע שחור, Knock Box. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "אדום",
+      "ברונז",
+      "נירוסטה"
+     ],
+     "id": 14,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 67207,
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-ims-2-%d7%9e%d7%a0%d7%95%d7%aa-16-18-%d7%92%d7%a8%d7%9d-b702th26-5m/",
+   "name": "פילטר IMS 2 מנות 16/18 גרם B702TH26.5M",
+   "short_description": "<p data-sourcepos=\"3:1-3:32\"><strong>שדרגו את מכונת האספרסו שלכם!</strong></p>\n<ul data-sourcepos=\"5:1-8:0\">\n<li data-sourcepos=\"5:1-5:42\">עיצוב פטנטי לניצול מקסימלי של פולי הקפה.</li>\n<li data-sourcepos=\"6:1-6:31\">קידוח מדויק לזרימת מים אחידה.</li>\n<li data-sourcepos=\"7:1-8:0\">גימור איכותי למשטח חלק ונקי.</li>\n</ul>\n<p data-sourcepos=\"9:1-9:30\"><strong>מתאים לידיות חליטה 58 מ&quot;מ.</strong></p>\n<p data-sourcepos=\"11:1-11:26\"><strong>קפה ברמה מקצועית בבית!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:54\">סל פילטר IMS B702TH26.5M: חווית קפה משופרת לכל בית!</h2>\n<p data-sourcepos=\"3:1-3:173\"><strong>שדרגו את מכונת האספרסו הביתית שלכם עם סלסלת פילטר איכותי מבית IMS!</strong></p>\n<p data-sourcepos=\"3:1-3:173\">סלסלת ה-B702TH26.5M תוכננה במיוחד להפיק את המיטב מפולי הקפה שלכם, ולהעניק לכם חווית אספרסו עשירה וטעימה בכל פעם.</p>\n<p data-sourcepos=\"5:1-5:38\"><strong>מה מייחד את סלסלת הפילטר B702TH26.5M?</strong></p>\n<ul data-sourcepos=\"7:1-11:0\">\n<li data-sourcepos=\"7:1-7:211\"><strong>עיצוב פטנטי:</strong> צורה גלילית עם תחתית שטוחה ייחודית מבית IMS, המבטיחה יחס אידיאלי בין בסיס עוגיית הקפה לגובה שלה ביחס לקיבולת. עיצוב זה מאפשר ניצול מקסימלי של עוגיית הקפה, ומסייע גם לייבוש ולחילוץ יעילים יותר.</li>\n<li data-sourcepos=\"8:1-8:153\"><strong>קידוח מדויק:</strong> פיזור חורים פטנטי מבית IMS עם 641 חורים משושה - &nbsp;מספר פיזור החורים תוכנן במיוחד לאיזון פיזור המים ביחס לגובה, צורה ושטח הקידוח של המסנן.</li>\n<li data-sourcepos=\"9:1-9:120\"><strong>חיתוך לייזר מדויק:</strong> קוטר חור של 0.30 מ\"מ וצורת חור מעוגלת עם חתך רוחבי חרוטי מבטיחים זרימת מים אחידה וחליטה מיטבית.</li>\n<li data-sourcepos=\"10:1-11:0\"><strong>גימור ללא תחרות:</strong> תהליך גימור קפדני הכולל טלטול רטוב עם תוספים קרמיים וייבוש עם גרעיני תירס, חמצון והכנה של החומר, וליטוש אלקטרו-פוליש עבור משטח חלק עם תכונות היגייניות מעולות.</li>\n</ul>\n<p data-sourcepos=\"12:1-12:58\"><strong>סלסלת הפילטר B702TH26.5M מתאים לידיות חליטה בקוטר 58 מ\"מ.</strong></p>\n<p data-sourcepos=\"14:1-14:143\"><strong></strong></p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "שדרגו את מכונת האספרסו שלכם. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה. עיצוב מקצועי ואיכותי"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "IMS"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 76629,
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-ims-b62-52tfh23-5-%d7%92%d7%95%d7%93%d7%9c-16-18-%d7%91%d7%a8%d7%95%d7%95%d7%99%d7%9c/",
+   "name": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+   "short_description": "<p data-sourcepos=\"25:1-25:101\"><strong>סלסלה מקצועית בקוטר 58 מ&quot;מ מסדרת Big Bang של IMS (2023)</strong></p>\n<p data-sourcepos=\"25:1-25:101\"> עם קיבולת של 21-23 גרם קפה.</p>\n<p data-sourcepos=\"25:1-25:101\">בעלת מבנה פתחים ייחודי למניעת תעלות (צ'אנלינג) ולהפקת אספרסו מאוזן ומתוק.</p>\n<p data-sourcepos=\"25:1-25:101\">מיועדת לשימוש מקצועי וביתי, עם איכות וגימור בלתי מתפשרים.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<h3 class=\"resize-observable\">פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל</h3>\n</div>\n<div class=\"response-container-content ng-tns-c2373124437-133\">\n<div class=\"response-content ng-tns-c2373124437-133\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:44\"></h2>\n<div class=\"flex max-w-full flex-col flex-grow\">\n<div class=\"min-h-8 text-message flex w-full flex-col items-end gap-2 whitespace-normal break-words text-start [.text-message+&amp;]:mt-5\" dir=\"auto\" data-message-author-role=\"assistant\" data-message-id=\"75c48d26-70d4-4585-9df0-9f070b301742\" data-message-model-slug=\"gpt-4o\">\n<div class=\"flex w-full flex-col gap-1 empty:hidden first:pt-[3px]\">\n<div class=\"markdown prose w-full break-words dark:prose-invert dark\">\n<p>&nbsp;</p>\n<p>סלסלה (פילטר) מקצועית בקוטר 58 מ\"מ, המתאימה לידית סטנדרטית של מכונת קפה ידנית, עם קיבולת של 21 עד 23 גרם קפה.</p>\n<p><strong>סדרת Big Bang החדשה</strong> – שהושקה בשנת 2023 על ידי חברת IMS – מציעה מבנה פתחים ייחודי עם צפיפות גבוהה יותר במרכז הסלסלה.</p>\n<p>עיצוב זה תוכנן במיוחד למניעת תעלות (צ'אנלינג) במהלך החליטה, להבטחת אספרסו מאוזן, עשיר ומתוק יותר.</p>\n<p><strong>טיפ מקצועי</strong>: קיבולת הקפה המומלצת משתנה בהתאם לרמת הקלייה – פולי קלייה בהירה שוקלים יותר ביחס לפולי קלייה כהה.</p>\n<p><strong>איכות בלתי מתפשרת</strong>:<br />\nחברת IMS, שמובילה בתחום הפיתוח של סלסלות מקצועיות מאז 2011, פיתחה את המוצר בשיתוף פעולה עם יצרניות מכונות קפה מובילות, אלופי עולם בבריסטה ובתי קלייה.</p>\n<p>התוצאה היא מוצר ברמת דיוק וגימור המתאימים הן לשימוש מקצועי והן לשימוש ביתי, תוך עמידה בסטנדרטים הגבוהים ביותר של עולם הקפה.</p>\n<p><strong>מפרט טכני</strong>:</p>\n<ul>\n<li><strong>קוד מוצר IMS</strong>: B702TFH23.5BB</li>\n<li><strong>קוטר תואם דוחסן</strong>: 58/58.4 מ\"מ</li>\n<li><strong>גובה</strong>: 25.5 מ\"מ</li>\n<li><strong>מבנה פתחים</strong>: 585 פתחים במרווחים החל מ-1.5 מ\"מ, עם הגדלה הדרגתית לכיוון ההיקף</li>\n<li><strong>קוטר חיצוני</strong>: 70 מ\"מ</li>\n<li><strong>קוטר פנימי</strong>: 60 מ\"מ</li>\n<li><strong>מבנה גוף</strong>: Ridgeless</li>\n<li><strong>בסיס</strong>: שטוח</li>\n</ul>\n<p>מוצר זה הוא הבחירה המושלמת למי שמחפש אספרסו מדויק, עקבי ואיכותי בכל פעם.</p>\n</div>\n</div>\n</div>\n</div>\n<p>&nbsp;</p>\n<p>&nbsp;</p>\n<p data-sourcepos=\"27:1-27:113\">\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "סלסלה מקצועית בקוטר 58 ממ מסדרת Big Bang של IMS (2023) עם קיבולת של 21-23 גרם קפה - FH23. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "IMS"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 82018,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-%d7%9e%d7%91%d7%99%d7%aa-ims-%d7%93%d7%92%d7%9d-b702th24-5m/",
+   "name": "סלסלת חליטה מדויקת IMS Competition 16-18g (דגם B702TH24.5M)",
+   "short_description": "<p data-sourcepos=\"25:1-25:101\"><strong>סלסלה מקצועית בקוטר 58 מ&quot;מ מסדרת Competition של IMS</strong></p>\n<p data-sourcepos=\"25:1-25:101\"> עם קיבולת של 16-18 גרם קפה.</p>\n<p data-sourcepos=\"25:1-25:101\">בעלת מבנה פתחים ייחודי למניעת תעלות (צ'אנלינג) ולהפקת אספרסו מאוזן ומתוק.</p>\n<p data-sourcepos=\"25:1-25:101\">מיועדת לשימוש מקצועי וביתי, עם איכות וגימור בלתי מתפשרים.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<h3 class=\"resize-observable\"><!-- wp:html --></h3>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<div class=\"container\">\n<div id=\"model-response-message-contentr_cad6d928d3d2574d\" class=\"markdown markdown-main-panel enable-luminous-fast-follows enable-updated-hr-color md-content tutor-markdown-rendering\" dir=\"rtl\" aria-busy=\"false\" aria-live=\"polite\">\n<h3 data-path-to-node=\"2\">סלסלת חליטה מדויקת IMS Competition 16-18g (דגם B702TH24.5M)</h3>\n<p data-path-to-node=\"3\"><b data-path-to-node=\"3\" data-index-in-node=\"0\">תיאור המוצר:</b></p>\n<p data-path-to-node=\"4\">סלסלת תחרות מדויקת (Competition) של חברת IMS האיטלקית, המיועדת לפורטאפילטרים standard בקוטר 58 מ\"מ. הסלסלה מתוכננת להבטיח פיזור מים אחיד בזמן החליטה, לחדד את הטעמים של האספרסו ולמנוע תופעות של צ'אנלינג (תיעול).</p>\n<p data-path-to-node=\"5\"><b data-path-to-node=\"5\" data-index-in-node=\"0\">נתונים טכניים:</b></p>\n<ul data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">גובה:</b> 24.5 מ\"מ</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">קוטר שפה חיצוני:</b> 70 מ\"מ (מתאים לידיות 58 מ\"מ נפוצות כמו E61, La Marzocco, Rocket, ECM וכדומה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">קיבולת:</b> מנה כפולה – כ-16 עד 18 גרם (בהתאם לדרגת הקלייה ורמת הטחינה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,3,0\"><b data-path-to-node=\"6,3,0\" data-index-in-node=\"0\">חירור:</b> תבנית חורים בלייזר ברמת דיוק גבוהה (מדרגת קומפטישן) לזרימה מאוזנת</p>\n</li>\n<li>\n<p data-path-to-node=\"6,4,0\"><b data-path-to-node=\"6,4,0\" data-index-in-node=\"0\">חומר:</b> נירוסטה איכותית שעברה ליטוש מיוחד למניעת הצטברות משקעים ולניקוי מהיר</p>\n</li>\n</ul>\n<p data-path-to-node=\"8\"> </p>\n<p data-path-to-node=\"9\"> </p>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "סלסלה מקצועית בקוטר 58 ממ מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "IMS"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 82021,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-ims-competition-18-21g-%d7%93%d7%92%d7%9d-b702th26-5m/",
+   "name": "סלסלת חליטה מדויקת IMS Competition 18-21g (דגם B702TH26.5M)",
+   "short_description": "<p data-sourcepos=\"25:1-25:101\"><strong>סלסלה מקצועית בקוטר 58 מ&quot;מ מסדרת Competition של IMS</strong></p>\n<p data-sourcepos=\"25:1-25:101\"> עם קיבולת של 18-21 גרם קפה.</p>\n<p data-sourcepos=\"25:1-25:101\">בעלת מבנה פתחים ייחודי למניעת תעלות (צ'אנלינג) ולהפקת אספרסו מאוזן ומתוק.</p>\n<p data-sourcepos=\"25:1-25:101\">מיועדת לשימוש מקצועי וביתי, עם איכות וגימור בלתי מתפשרים.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<h3 class=\"resize-observable\"><!-- wp:html --></h3>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<div class=\"container\">\n<div id=\"model-response-message-contentr_cad6d928d3d2574d\" class=\"markdown markdown-main-panel enable-luminous-fast-follows enable-updated-hr-color md-content tutor-markdown-rendering\" dir=\"rtl\" aria-busy=\"false\" aria-live=\"polite\">\n<h3 data-path-to-node=\"2\">סלסלת חליטה מדויקת IMS Competition 18-21g (דגם B702TH26.5M)</h3>\n<p data-path-to-node=\"3\"><b data-path-to-node=\"3\" data-index-in-node=\"0\">תיאור המוצר:</b></p>\n<p data-path-to-node=\"4\">סלסלת תחרות מדויקת (Competition) של חברת IMS האיטלקית, המיועדת לפורטאפילטרים standard בקוטר 58 מ\"מ. הסלסלה מתוכננת להבטיח פיזור מים אחיד בזמן החליטה, לחדד את הטעמים של האספרסו ולמנוע תופעות של צ'אנלינג (תיעול).</p>\n<p data-path-to-node=\"5\"><b data-path-to-node=\"5\" data-index-in-node=\"0\">נתונים טכניים:</b></p>\n<ul data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">גובה:</b> 26.5 מ\"מ</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">קוטר שפה חיצוני:</b> 70 מ\"מ (מתאים לידיות 58 מ\"מ נפוצות כמו E61, La Marzocco, Rocket, ECM וכדומה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">קיבולת:</b> מנה כפולה – כ-18 עד 21 גרם (בהתאם לדרגת הקלייה ורמת הטחינה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,3,0\"><b data-path-to-node=\"6,3,0\" data-index-in-node=\"0\">חירור:</b> תבנית חורים בלייזר ברמת דיוק גבוהה (מדרגת קומפטישן) לזרימה מאוזנת</p>\n</li>\n<li>\n<p data-path-to-node=\"6,4,0\"><b data-path-to-node=\"6,4,0\" data-index-in-node=\"0\">חומר:</b> נירוסטה איכותית שעברה ליטוש מיוחד למניעת הצטברות משקעים ולניקוי מהיר</p>\n</li>\n</ul>\n<p data-path-to-node=\"8\"> </p>\n<p data-path-to-node=\"9\"> </p>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "סלסלה מקצועית בקוטר 58 ממ מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "IMS"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  },
+  {
+   "id": 82023,
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-ims-competition-7-9g-%d7%93%d7%92%d7%9d-b702th26-5e/",
+   "name": "סלסלת חליטה מדויקת IMS Competition 7-9g (דגם B702TH26.5E)",
+   "short_description": "<p data-sourcepos=\"25:1-25:101\"><strong>סלסלה מקצועית בקוטר 58 מ&quot;מ מסדרת Competition של IMS</strong></p>\n<p data-sourcepos=\"25:1-25:101\"> למנה בודדת, עם קיבולת של 7-9 גרם קפה.</p>\n<p data-sourcepos=\"25:1-25:101\">בעלת מבנה פתחים ייחודי למניעת תעלות (צ'אנלינג) ולהפקת אספרסו מאוזן ומתוק.</p>\n<p data-sourcepos=\"25:1-25:101\">מיועדת לשימוש מקצועי וביתי, עם איכות וגימור בלתי מתפשרים.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<h3 class=\"resize-observable\"><!-- wp:html --></h3>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"avatar-gutter ng-tns-c2373124437-133 ng-star-inserted\">\n<div class=\"container\">\n<div id=\"model-response-message-contentr_cad6d928d3d2574d\" class=\"markdown markdown-main-panel enable-luminous-fast-follows enable-updated-hr-color md-content tutor-markdown-rendering\" dir=\"rtl\" aria-live=\"polite\">\n<h3 data-path-to-node=\"2\">סלסלת חליטה מדויקת IMS Competition 7-9g (דגם B702TH26.5E)</h3>\n<p data-path-to-node=\"3\"><b data-path-to-node=\"3\" data-index-in-node=\"0\">תיאור המוצר:</b></p>\n<p data-path-to-node=\"4\">סלסלת תחרות מדויקת (Competition) של חברת IMS האיטלקית, המיועדת לפורטאפילטרים standard בקוטר 58 מ\"מ. הסלסלה מתוכננת להבטיח פיזור מים אחיד בזמן החליטה, לחדד את הטעמים של האספרסו ולמנוע תופעות של צ'אנלינג (תיעול).</p>\n<p data-path-to-node=\"5\"><b data-path-to-node=\"5\" data-index-in-node=\"0\">נתונים טכניים:</b></p>\n<ul data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">גובה:</b> 26.5 מ\"מ</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">קוטר שפה חיצוני:</b> 70 מ\"מ (מתאים לידיות 58 מ\"מ נפוצות כמו E61, La Marzocco, Rocket, ECM וכדומה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">קיבולת:</b> מנה אחת – כ-7 עד 9 גרם (בהתאם לדרגת הקלייה ורמת הטחינה)</p>\n</li>\n<li>\n<p data-path-to-node=\"6,3,0\"><b data-path-to-node=\"6,3,0\" data-index-in-node=\"0\">חירור:</b> תבנית חורים בלייזר ברמת דיוק גבוהה (מדרגת קומפטישן) לזרימה מאוזנת</p>\n</li>\n<li>\n<p data-path-to-node=\"6,4,0\"><b data-path-to-node=\"6,4,0\" data-index-in-node=\"0\">חומר:</b> נירוסטה איכותית שעברה ליטוש מיוחד למניעת הצטברות משקעים ולניקוי מהיר</p>\n</li>\n</ul>\n<p data-path-to-node=\"8\"> </p>\n<p data-path-to-node=\"9\"> </p>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "סלסלה מקצועית בקוטר 58 ממ מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "IMS"
+     ],
+     "id": 18,
+     "variation": false
+    }
+   ]
+  }
+ ]
+}
