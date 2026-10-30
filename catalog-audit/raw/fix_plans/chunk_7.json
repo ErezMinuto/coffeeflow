@@ -731,509 +731,254 @@
  ],
  "skipped": [
   {
-   "finding": "מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה",
-   "product_id": "65118",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted",
-   "product_id": "76799",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "עם קיבולת של 18-21 גרם קפה.",
-   "product_id": "82018",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "עם קיבולת של 18-21 גרם קפה.",
-   "product_id": "82023",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "קוטר פורטפילטר: 40 מ\"מ",
-   "product_id": "64854",
-   "reason": "UNHANDLED"
-  },
-  {
    "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
-   "product_id": "65446",
-   "reason": "UNHANDLED"
+   "product_id": 65446,
+   "reason": "Which model (C8 or C9) is actually sold cannot be determined from the catalog."
   },
   {
    "finding": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
-   "product_id": "76629",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "תואמות למכונות נספרסו",
-   "product_id": "64712",
-   "reason": "UNHANDLED"
+   "product_id": 76629,
+   "reason": "Title (Breville 54 mm, 16-18 g) and text (58 mm, 21-23 g) conflict; which product is sold needs checking."
   },
   {
    "finding": "price='0.0000', instock",
-   "product_id": "65369",
+   "product_id": 65369,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
    "finding": "price='0.0000', instock",
-   "product_id": "65427",
+   "product_id": 65427,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
-  },
-  {
-   "finding": "התענגו על השמחה של הכנת קפה ידנית עם DeLonghi EC9155.MB",
-   "product_id": "64752",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מגיעה בשני צבעים לבחירה לבן ונחושת.",
-   "product_id": "65022",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי",
-   "product_id": "67221",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש",
-   "product_id": "76915",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מתהדר ברמת עוצמה של 4 מתוך 11",
-   "product_id": "82928",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
-   "product_id": "64679",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
-   "product_id": "64680",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "טקסט למטא תגים (Google Meta):",
-   "product_id": "65455",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M",
-   "product_id": "67207",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "טקסט למטא תגים (Google Meta):",
-   "product_id": "81358",
-   "reason": "UNHANDLED"
   },
   {
    "finding": "מידות: 215 x 280 x 610 מ\"מ (W x D x H)",
-   "product_id": "64831",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "בחרו את הגודל המתאים לכם: 14g, 17g או 21g.",
-   "product_id": "81142",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מסדרת Big Bang של IMS (2023)",
-   "product_id": "82021",
-   "reason": "UNHANDLED"
+   "product_id": 64831,
+   "reason": "Two dimension sets; which is correct requires a manufacturer lookup."
   },
   {
    "finding": "(no image)",
-   "product_id": "65381",
+   "product_id": 65381,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65404",
+   "product_id": 65404,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65413",
+   "product_id": 65413,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65423",
+   "product_id": 65423,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "82305",
+   "product_id": 82305,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "82472",
+   "product_id": 82472,
    "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "מתאים לרוב מכונות האספרסו בעלות ראש E61",
-   "product_id": "64830",
-   "reason": "UNHANDLED"
   },
   {
    "finding": "בדיקת תשלום · 1.0000 ₪",
-   "product_id": "64703",
+   "product_id": 64703,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
    "finding": "price='0.0000', outofstock",
-   "product_id": "64714",
+   "product_id": 64714,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
    "finding": "משלוח · 40.0000 ₪",
-   "product_id": "65380",
+   "product_id": 65380,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
    "finding": "התקנה · 585.0000 ₪",
-   "product_id": "65414",
+   "product_id": 65414,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
    "finding": "קפה פילטר · 15.0000 ₪",
-   "product_id": "65426",
+   "product_id": 65426,
    "reason": "Visibility/price change for a placeholder or service product is a business decision."
   },
   {
-   "finding": "ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים",
-   "product_id": "67348",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "לתיקון הקפה היומי שלך",
-   "product_id": "64712",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "קפסולות לוואצה מודו מיו DEK נטול קפאין",
-   "product_id": "64729",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "צבע: ירוק כסוףמקציף חלב מבודד",
-   "product_id": "64752",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "האביזר המושלם לשיפוחווית הקפה שלך",
-   "product_id": "64773",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "שהוא אלומיניום עטוף ויניל",
-   "product_id": "64782",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "האביזר המושלם לשיפוחווית הקפה שלך",
-   "product_id": "64802",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "ושוב לשפןך לבלנדר",
-   "product_id": "64821",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "בשבץ גאוני ייחודי,",
-   "product_id": "65040",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "יתקשו ויתייבשו כמואטם לגומי",
-   "product_id": "65074",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "יתקשו ויתייבשו כמואטם לגומי",
-   "product_id": "65075",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "להפעלת סרטי וידאו המתארים את זרימת החליטה",
-   "product_id": "65118",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "פילטר עיוור לשמוש במכונות קפה",
-   "product_id": "65154",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !",
-   "product_id": "65166",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מכונת הקפה שתמיד רציתם עכשיו עם.",
-   "product_id": "65240",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "Rocket R NINE ON ממינוטו",
-   "product_id": "65374",
-   "reason": "UNHANDLED"
-  },
-  {
    "finding": "מפרט",
-   "product_id": "65398",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "שימושי אם רוצים לעשות כספל קפוצ׳ינו גדול",
-   "product_id": "65429",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
-   "product_id": "65455",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם",
-   "product_id": "67186",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "הגולות עשיויות מאלמיניום ומוחזקים",
-   "product_id": "67223",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
-   "product_id": "67335",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "10 קפסולו קפה האוסברנדט",
-   "product_id": "67361",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מושלם להכנת אספרסו יחודי",
-   "product_id": "67610",
-   "reason": "UNHANDLED"
+   "product_id": 65398,
+   "reason": "Ambiguous: either add specs (needs data) or drop the heading; the list under it is not specs but removing the heading is a judgement call."
   },
   {
    "finding": "תכונות עיקריות:",
-   "product_id": "67635",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
-   "product_id": "81358",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "אטם ראש סטנדרטית למכונות La marzzoco",
-   "product_id": "81773",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "קיבולת: מנה חתא",
-   "product_id": "82023",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "מטחנת קפה Lifestyle Ceado",
-   "product_id": "64759",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "זמינה בשלושה גדלים.",
-   "product_id": "67609",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "זמינה בשלושה גדלים.",
-   "product_id": "81147",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "זמינה בשלושה גדלים.",
-   "product_id": "81152",
-   "reason": "UNHANDLED"
+   "product_id": 67635,
+   "reason": "Removing the duplicated list would require deleting HTML list elements, which the edit rules do not allow cleanly."
   },
   {
    "finding": "צבע: לבן, שחור",
-   "product_id": "81358",
-   "reason": "UNHANDLED"
+   "product_id": 81358,
+   "reason": "Removing an attribute option is not expressible as a single option replacement."
   },
   {
    "finding": "(no image)",
-   "product_id": "64703",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(no image)",
-   "product_id": "64714",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64729",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64761",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64773",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64834",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64834",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "64835",
+   "product_id": 64703,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65369",
+   "product_id": 64714,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65373",
+   "product_id": 64729,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65373",
+   "product_id": 64761,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64773,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64834,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64834,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64835,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65380",
+   "product_id": 65369,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65381",
+   "product_id": 65373,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65381",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "65404",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "65404",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "65413",
-   "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "(empty)",
-   "product_id": "65413",
+   "product_id": 65373,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65414",
+   "product_id": 65380,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65423",
+   "product_id": 65381,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65423",
+   "product_id": 65381,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65404,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65404,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65413,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65413,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65426",
+   "product_id": 65414,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65423,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65423,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(no image)",
-   "product_id": "65427",
+   "product_id": 65426,
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": 65427,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65437",
+   "product_id": 65437,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "65437",
+   "product_id": 65437,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "82305",
+   "product_id": 82305,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "82305",
+   "product_id": 82305,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "82472",
+   "product_id": 82472,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "82472",
+   "product_id": 82472,
    "reason": "Missing content/image; not fixable by text edit."
   },
   {
    "finding": "(empty)",
-   "product_id": "82796",
+   "product_id": 82796,
    "reason": "Missing content/image; not fixable by text edit."
-  },
-  {
-   "finding": "אנשים ששומרים על המשקל.",
-   "product_id": "64684",
-   "reason": "UNHANDLED"
-  },
-  {
-   "finding": "אנשים ששומרים על המשקל.",
-   "product_id": "68416",
-   "reason": "UNHANDLED"
   },
   {
    "finding": "(העתק)",
-   "product_id": "82022",
-   "reason": "UNHANDLED"
+   "product_id": 82022,
+   "reason": "Draft duplicate: deleting a product is a business decision."
   }
  ]
 }
