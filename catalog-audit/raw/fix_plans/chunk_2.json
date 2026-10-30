@@ -1,0 +1,601 @@
+{
+ "edits": [
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מבין 10 משקאות הקפה מוגדרות מראש",
+   "new": "מבין 12 משקאות הקפה המוגדרים מראש",
+   "finding": "Melitta® Caffeo® Passione® OT מציגה קפה ארומטי"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Melitta® Caffeo® Passione® OT מציגה",
+   "new": "Melitta® Latte Select מציגה",
+   "finding": "Melitta® Caffeo® Passione® OT מציגה קפה ארומטי"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ה- Caffeo® Passione® OT מרשימה",
+   "new": "ה- Melitta® Latte Select מרשימה",
+   "finding": "Melitta® Caffeo® Passione® OT מציגה קפה ארומטי"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Melitta® Caffeo® Passione® OT מציגה",
+   "new": "Melitta® CI Touch® מציגה",
+   "finding": "Melitta® Caffeo® Passione® OT מציגה קפה ארומטי"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ה- Caffeo® Passione® OT מרשימה",
+   "new": "ה- Melitta® CI Touch® מרשימה",
+   "finding": "Melitta® Caffeo® Passione® OT מציגה קפה ארומטי"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "description",
+   "old": "לכן ל- CI Touch® יש",
+   "new": "לכן ל- Melitta® Latte Select יש",
+   "finding": "לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "description",
+   "old": "Melitta® CI Touch® שומרת",
+   "new": "Melitta® Latte Select שומרת",
+   "finding": "לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "description",
+   "old": "ה- Caffeo® CI Touch® מציין",
+   "new": "ה- Melitta® Latte Select מציינת",
+   "finding": "לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית"
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "description",
+   "old": "ל- Caffeo® Ci touc® יש",
+   "new": "ל- Melitta® Latte Select יש",
+   "finding": "לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית"
+  },
+  {
+   "product_id": 64992,
+   "variation_id": null,
+   "target": "description",
+   "old": "Titanio V2 Matte black",
+   "new": "Titanio V2 - אלומיניום מלוטש",
+   "finding": "מטחנת קפה Bellezza Piccola 60 Titanio V2 Matte black"
+  },
+  {
+   "product_id": 81446,
+   "variation_id": null,
+   "target": "description",
+   "old": "Titanio V2 Matte black",
+   "new": "Titanio V2 - לבן",
+   "finding": "מטחנת קפה Bellezza Piccola 60 Titanio V2 Matte black"
+  },
+  {
+   "product_id": 67169,
+   "variation_id": null,
+   "target": "description",
+   "old": "ה-Bezzera Magica S מתגלה",
+   "new": "ה-Bezzera Magica MN PID מתגלה",
+   "finding": "גם מדף הכוסות על מכסה ה-Bezzera Magica S"
+  },
+  {
+   "product_id": 67169,
+   "variation_id": null,
+   "target": "description",
+   "old": "מילוי מים.מכונת אספרסו כפולה",
+   "new": "מילוי מים.",
+   "finding": "גם מדף הכוסות על מכסה ה-Bezzera Magica S"
+  },
+  {
+   "product_id": 76875,
+   "variation_id": null,
+   "target": "description",
+   "old": ",k, ptzh",
+   "new": "תלת פאזי",
+   "finding": "מתח חשמלי \n ,k, ptzh"
+  },
+  {
+   "product_id": 81092,
+   "variation_id": null,
+   "target": "description",
+   "old": ",k, ptzh",
+   "new": "תלת פאזי",
+   "finding": "מתח חשמלי \n ,k, ptzh"
+  },
+  {
+   "product_id": 67603,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מכונת אספרסו שחורה ומרשימה",
+   "new": "מכונת אספרסו כסופה ומרשימה",
+   "finding": "מכונת אספרסו שחורה ומרשימה"
+  },
+  {
+   "product_id": 64781,
+   "variation_id": null,
+   "target": "description",
+   "old": "מצויד בקוצים של 83 מ\"מ",
+   "new": "מצויד בסכינים שטוחות בקוטר 83 מ\"מ",
+   "finding": "מצויד בקוצים של 83 מ\"מ"
+  },
+  {
+   "product_id": 64897,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומיכל השעועית הגדול",
+   "new": "ומיכל פולי הקפה הגדול",
+   "finding": "ומיכל השעועית הגדול במיוחד"
+  },
+  {
+   "product_id": 77156,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומיכל השעועית הגדול",
+   "new": "ומיכל פולי הקפה הגדול",
+   "finding": "ומיכל השעועית הגדול במיוחד"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל שעועית כפול",
+   "new": "מיכל פולי קפה כפול",
+   "finding": "מיכל שעועית כפול"
+  },
+  {
+   "product_id": 65027,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קופמקטיות",
+   "new": "קומפקטיות",
+   "finding": "ומידות קופמקטיות"
+  },
+  {
+   "product_id": 65046,
+   "variation_id": null,
+   "target": "name",
+   "old": "Nova Simonelli",
+   "new": "Nuova Simonelli",
+   "finding": "Nova Simonelli Oscar Mood"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "(אפילו קפיצ'ינו)",
+   "new": "(אפילו קפוצ'ינו)",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "מגש טפטןף",
+   "new": "מגש טפטוף",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "אפשו לדאבל",
+   "new": "אפשרות לדאבל",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "ישירו מקרטון",
+   "new": "ישירות מקרטון",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "יחידת קלית הקפה",
+   "new": "יחידת החליטה",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולים הקפה בעל קבלות",
+   "new": "מיכל פולי הקפה בעל קיבולת",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "מגש טפטןף",
+   "new": "מגש טפטוף",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "אפשו לדאבל",
+   "new": "אפשרות לדאבל",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "ישירו מקרטון",
+   "new": "ישירות מקרטון",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "יחידת קלית הקפה",
+   "new": "יחידת החליטה",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולים הקפה בעל קבלות",
+   "new": "מיכל פולי הקפה בעל קיבולת",
+   "finding": "טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם"
+  },
+  {
+   "product_id": 65097,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה מכונת קפה ידנית עם המטחנה המובנית.",
+   "new": "מכונת קפה ידנית ללית דגם אניטה עם מטחנה מובנית ושרביט הקצפה מקצועי, רב כיווני ועוצמתי.",
+   "finding": "שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה"
+  },
+  {
+   "product_id": 65097,
+   "variation_id": null,
+   "target": "description",
+   "old": "מד לחץ לחץ קפה.",
+   "new": "מד לחץ קפה.",
+   "finding": "שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה"
+  },
+  {
+   "product_id": 65104,
+   "variation_id": null,
+   "target": "description",
+   "old": "ועץ עץ.",
+   "new": "ועץ.",
+   "finding": "בידית נירוסטה ועץ עץ"
+  },
+  {
+   "product_id": 65104,
+   "variation_id": null,
+   "target": "description",
+   "old": "היא לוחחת",
+   "new": "היא לוחית",
+   "finding": "בידית נירוסטה ועץ עץ"
+  },
+  {
+   "product_id": 65104,
+   "variation_id": null,
+   "target": "description",
+   "old": "אם מוקנת",
+   "new": "אם מותקנת",
+   "finding": "בידית נירוסטה ועץ עץ"
+  },
+  {
+   "product_id": 65163,
+   "variation_id": null,
+   "target": "description",
+   "old": "קנה מכונת קפה מכונת קפה מקצועית",
+   "new": "מכונת קפה מקצועית",
+   "finding": "קנה מכונת קפה מכונת קפה מקצועית לה פאבוני"
+  },
+  {
+   "product_id": 65163,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קנה מכונת קפה מכונת קפה מקצועית",
+   "new": "מכונת קפה מקצועית",
+   "finding": "קנה מכונת קפה מכונת קפה מקצועית לה פאבוני"
+  },
+  {
+   "product_id": 65182,
+   "variation_id": null,
+   "target": "description",
+   "old": "נוחות משולמת",
+   "new": "נוחות מושלמת",
+   "finding": "נוחות משולמת"
+  },
+  {
+   "product_id": 65197,
+   "variation_id": null,
+   "target": "description",
+   "old": "הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך ולעשות את הנסיעות שלך נהדר",
+   "new": "",
+   "finding": "הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך"
+  },
+  {
+   "product_id": 65197,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "@*",
+   "new": "®*",
+   "finding": "הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך"
+  },
+  {
+   "product_id": 65232,
+   "variation_id": null,
+   "target": "name",
+   "old": "Rancillio",
+   "new": "Rancilio",
+   "finding": "Rancillio Silvia"
+  },
+  {
+   "product_id": 65232,
+   "variation_id": null,
+   "target": "description",
+   "old": "רמצ'יליו סילביה",
+   "new": "רנצ'יליו סילביה",
+   "finding": "Rancillio Silvia"
+  },
+  {
+   "product_id": 78749,
+   "variation_id": null,
+   "target": "name",
+   "old": "Rancillio",
+   "new": "Rancilio",
+   "finding": "Rancillio Silvia"
+  },
+  {
+   "product_id": 78749,
+   "variation_id": null,
+   "target": "description",
+   "old": "רמצ'יליו סילביה",
+   "new": "רנצ'יליו סילביה",
+   "finding": "Rancillio Silvia"
+  },
+  {
+   "product_id": 67159,
+   "variation_id": null,
+   "target": "name",
+   "old": "Classic PRo E24צבע צהוב",
+   "new": "Classic Pro E24 צבע צהוב",
+   "finding": "Gaggia Classic PRo E24צבע צהוב"
+  },
+  {
+   "product_id": 67167,
+   "variation_id": null,
+   "target": "description",
+   "old": "מווסת לחת",
+   "new": "מווסת לחץ",
+   "finding": "מווסת לחת – Flow Control"
+  },
+  {
+   "product_id": 67167,
+   "variation_id": null,
+   "target": "description",
+   "old": "עצירה אוטומטית של ההתנגדויות",
+   "new": "ניתוק אוטומטי של גופי החימום",
+   "finding": "מווסת לחת – Flow Control"
+  },
+  {
+   "product_id": 67167,
+   "variation_id": null,
+   "target": "description",
+   "old": "70 ליטר h",
+   "new": "70 ליטר לשעה",
+   "finding": "מווסת לחת – Flow Control"
+  },
+  {
+   "product_id": 67214,
+   "variation_id": null,
+   "target": "description",
+   "old": "חווית שחיקה",
+   "new": "חוויית טחינה",
+   "finding": "מציעים חווית שחיקה יוצאת דופן"
+  },
+  {
+   "product_id": 67257,
+   "variation_id": null,
+   "target": "description",
+   "old": "22,4 X 35,7 X 43, 5",
+   "new": "22.4 X 35.7 X 43.5",
+   "finding": "22,4 X 35,7 X 43, 5 ס\"מ"
+  },
+  {
+   "product_id": 67278,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ביצור מטחנות",
+   "new": "בייצור מטחנות",
+   "finding": "סכיני פלדה שטוחות 54"
+  },
+  {
+   "product_id": 67278,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "סכיני פלדה שטוחות 54",
+   "new": "סכיני פלדה שטוחות 54 מ\"מ.",
+   "finding": "סכיני פלדה שטוחות 54"
+  },
+  {
+   "product_id": 67278,
+   "variation_id": null,
+   "target": "description",
+   "old": "ביצור מטחנות",
+   "new": "בייצור מטחנות",
+   "finding": "סכיני פלדה שטוחות 54"
+  },
+  {
+   "product_id": 67309,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מקציף פנרלו",
+   "new": "",
+   "finding": "מקציף פנרלו\n מקציף סטימר(פנרלו)"
+  },
+  {
+   "product_id": 67345,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מינימליסטילוח <span class=\"caps\">LED</span> עם מקשי מגעתהליך",
+   "new": "מינימליסטי. לוח <span class=\"caps\">LED</span> עם מקשי מגע. תהליך",
+   "finding": "עיצוב מינימליסטילוח LED עם מקשי מגעתהליך"
+  },
+  {
+   "product_id": 67345,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיל מים",
+   "new": "מיכל מים",
+   "finding": "עיצוב מינימליסטילוח LED עם מקשי מגעתהליך"
+  },
+  {
+   "product_id": 68271,
+   "variation_id": null,
+   "target": "description",
+   "old": ">vbm-domobar-machin וי.בי.אם מידות</figcaption>",
+   "new": ">מידות</figcaption>",
+   "finding": "vbm-domobar-machin וי.בי.אם מידות"
+  },
+  {
+   "product_id": 68271,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בבית הקפה קומפקטית.",
+   "new": "בבית הקפה. קומפקטית.",
+   "finding": "vbm-domobar-machin וי.בי.אם מידות"
+  },
+  {
+   "product_id": 68336,
+   "variation_id": null,
+   "target": "description",
+   "old": "אוטמטית",
+   "new": "אוטומטית",
+   "finding": "מכונת קפה אוטמטית טוחנת"
+  },
+  {
+   "product_id": 78317,
+   "variation_id": null,
+   "target": "description",
+   "old": "חובבי קפה, בריסטות ביתיים ואפילו מערכות המלצה מבוססות בינה מלאכותית.",
+   "new": "חובבי קפה ובריסטות ביתיים.",
+   "finding": "ואפילו מערכות המלצה מבוססות בינה מלאכותית"
+  },
+  {
+   "product_id": 65112,
+   "variation_id": null,
+   "target": "description",
+   "old": "לטאה מקיאטו ענק",
+   "new": "לאטה מקיאטו ענק",
+   "finding": "ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות ... 64 אפשרויות שונות"
+  },
+  {
+   "product_id": 65112,
+   "variation_id": null,
+   "target": "description",
+   "old": "כן, כן, שמעתם נכון 64 אפשרויות שונות והכל בזיכרון. ",
+   "new": "",
+   "finding": "ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות ... 64 אפשרויות שונות"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "product_id": 67349,
+   "reason": "Need to confirm the description's specs match the VI Slim before renaming; the text may describe the V Slim model."
+  },
+  {
+   "finding": "טקסט מותאם למנועי חיפוש:",
+   "product_id": 67157,
+   "reason": "Removing the SEO block means removing a whole <ul> of <li> items; a text-only edit would leave empty bullets. Needs a manual edit in the editor."
+  },
+  {
+   "finding": "בשילוב עם לחץ מים של 15 בר",
+   "product_id": 65088,
+   "reason": "Which value is right (15 or 19 bar) needs the Siemens spec."
+  },
+  {
+   "finding": "בשילוב עם לחץ מים של 15 בר",
+   "product_id": 65181,
+   "reason": "Which value is right (15 or 19 bar) needs the Siemens spec."
+  },
+  {
+   "finding": "עד 14 משקאות ... גלו את 10 המשקאות הזמינים",
+   "product_id": 65112,
+   "reason": "The correct drink count (14 vs 10) needs the manufacturer spec."
+  },
+  {
+   "finding": "גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",
+   "product_id": 67257,
+   "reason": "Need the manufacturer spec to know which drink is missing or whether the count is wrong."
+  },
+  {
+   "finding": "מותג: DF64, Gaggia",
+   "product_id": 67607,
+   "reason": "Fix means removing the option 'DF64' from the attribute; the plan format only allows replacing one option with another, and replacing it with 'Gaggia' would duplicate."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": 82651,
+   "reason": "Missing content, zero price or should-be-hidden product: a business decision, not a text edit."
+  },
+  {
+   "finding": "price='0.0000', outofstock",
+   "product_id": 82651,
+   "reason": "Missing content, zero price or should-be-hidden product: a business decision, not a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 82651,
+   "reason": "Missing content, zero price or should-be-hidden product: a business decision, not a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 82651,
+   "reason": "Missing content, zero price or should-be-hidden product: a business decision, not a text edit."
+  },
+  {
+   "finding": "לפרטים נוספים והזמנה: \n אתר מינוטו קפה:   https://www.minuto.co.il/",
+   "product_id": 64677,
+   "reason": "Removing it means removing a <p> and a <ul><li><a> block; a text-only edit would leave an empty bullet. Needs a manual edit."
+  },
+  {
+   "finding": "לפרטים נוספים והזמנה: \n אתר מינוטו קפה:   https://www.minuto.co.il/",
+   "product_id": 64678,
+   "reason": "Removing it means removing a <p> and a <ul><li><a> block; a text-only edit would leave an empty bullet. Needs a manual edit."
+  },
+  {
+   "finding": "לפרטים נוספים והזמנות: \n אתר מינוטו קפה:   https://www.minuto.co.il/",
+   "product_id": 67158,
+   "reason": "Removing it means removing a <p> and a <ul><li><a> block; a text-only edit would leave an empty bullet. Needs a manual edit."
+  },
+  {
+   "finding": "לפרטים נוספים והזמנות: \n אתר מינוטו קפה:   https://www.minuto.co.il/",
+   "product_id": 67159,
+   "reason": "Removing it means removing a <p> and a <ul><li><a> block; a text-only edit would leave an empty bullet. Needs a manual edit."
+  }
+ ]
+}

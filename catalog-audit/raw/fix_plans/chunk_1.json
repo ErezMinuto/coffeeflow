@@ -1,0 +1,894 @@
+{
+ "edits": [
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "old": "ועודפעולתו",
+   "new": "ועוד. פעולתו",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8, כך שניתן להסיר אותו בקלות למילוי מחדש.",
+   "new": "",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "old": "אבל אל תחשוב שפשטות פירושה שאתה מתפשר על טעם או ביצועים. ה-ENA 8 משתמש באותו תהליך מיצוי דופק כמו החבר'ה הגדולים יותר בקו Jura, כך שלקפה שלך יהיה את מלוא הטעם.",
+   "new": "",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "old": "ועודפעולתו",
+   "new": "ועוד. פעולתו",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8, כך שניתן להסיר אותו בקלות למילוי מחדש.",
+   "new": "",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "old": "אבל אל תחשוב שפשטות פירושה שאתה מתפשר על טעם או ביצועים. ה-ENA 8 משתמש באותו תהליך מיצוי דופק כמו החבר'ה הגדולים יותר בקו Jura, כך שלקפה שלך יהיה את מלוא הטעם.",
+   "new": "",
+   "finding": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "plus connect s500</h1>",
+   "new": "plus connect s700</h1>",
+   "finding": "מכונת קפה אוטומטית סימנס EQ.9 plus connect s500"
+  },
+  {
+   "product_id": 76423,
+   "variation_id": null,
+   "target": "description",
+   "old": "• צבע: נירוסטה",
+   "new": "• צבע: לבן",
+   "finding": "• צבע: נירוסטה"
+  },
+  {
+   "product_id": 64935,
+   "variation_id": null,
+   "target": "description",
+   "old": "Jura ENA 8 (מטרופוליטן שחור) תכונות:",
+   "new": "Jura ENA 8 לבן – תכונות:",
+   "finding": "Jura ENA 8 (מטרופוליטן שחור) תכונות:"
+  },
+  {
+   "product_id": 82012,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>Gaggia Classic E24</strong>",
+   "new": "<strong>Gaggia Classic UP</strong>",
+   "finding": "Gaggia Classic E24 –"
+  },
+  {
+   "product_id": 82014,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>Gaggia Classic E24</strong>",
+   "new": "<strong>Gaggia Classic UP</strong>",
+   "finding": "Gaggia Classic E24 –"
+  },
+  {
+   "product_id": 67670,
+   "variation_id": null,
+   "target": "description",
+   "old": "4o</span>",
+   "new": "</span>",
+   "finding": "4o"
+  },
+  {
+   "product_id": 64675,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דוד קיטור ומי חם",
+   "new": "דוד קיטור ומים חמים",
+   "finding": "דוד קיטור ומי חם"
+  },
+  {
+   "product_id": 64675,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל מים פנימים",
+   "new": "מיכל מים פנימי",
+   "finding": "דוד קיטור ומי חם"
+  },
+  {
+   "product_id": 64675,
+   "variation_id": null,
+   "target": "description",
+   "old": "משאבת סיבובית",
+   "new": "משאבה סיבובית",
+   "finding": "דוד קיטור ומי חם"
+  },
+  {
+   "product_id": 64715,
+   "variation_id": null,
+   "target": "description",
+   "old": "ויציבה הממנה ניתן",
+   "new": "ויציבה שממנה ניתן",
+   "finding": "יציבה הממנה ניתן להפיק ... 26,5 עומק"
+  },
+  {
+   "product_id": 64715,
+   "variation_id": null,
+   "target": "description",
+   "old": "26,5 עומק",
+   "new": "26.5 עומק",
+   "finding": "יציבה הממנה ניתן להפיק ... 26,5 עומק"
+  },
+  {
+   "product_id": 64716,
+   "variation_id": null,
+   "target": "description",
+   "old": "ויציבה הממנה ניתן",
+   "new": "ויציבה שממנה ניתן",
+   "finding": "יציבה הממנה ניתן להפיק ... 26,5 עומק"
+  },
+  {
+   "product_id": 64716,
+   "variation_id": null,
+   "target": "description",
+   "old": "26,5 עומק",
+   "new": "26.5 עומק",
+   "finding": "יציבה הממנה ניתן להפיק ... 26,5 עומק"
+  },
+  {
+   "product_id": 64790,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגודל הקומפקטי שלהו",
+   "new": "הגודל הקומפקטי שלה",
+   "finding": "הגודל הקומפקטי שלהו"
+  },
+  {
+   "product_id": 64790,
+   "variation_id": null,
+   "target": "description",
+   "old": "בין אם אתה חובבי קפה",
+   "new": "בין אם אתם חובבי קפה",
+   "finding": "הגודל הקומפקטי שלהו"
+  },
+  {
+   "product_id": 76352,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגודל הקומפקטי שלהו",
+   "new": "הגודל הקומפקטי שלה",
+   "finding": "הגודל הקומפקטי שלהו"
+  },
+  {
+   "product_id": 76352,
+   "variation_id": null,
+   "target": "description",
+   "old": "בין אם אתה חובבי קפה",
+   "new": "בין אם אתם חובבי קפה",
+   "finding": "הגודל הקומפקטי שלהו"
+  },
+  {
+   "product_id": 64827,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנפח 37 אונקיות",
+   "new": "בנפח 1.1 ליטר",
+   "finding": "מיכל מים גלילי בנפח 37 אונקיות"
+  },
+  {
+   "product_id": 64827,
+   "variation_id": null,
+   "target": "description",
+   "old": "לבן שטוח",
+   "new": "פלאט וייט",
+   "finding": "מיכל מים גלילי בנפח 37 אונקיות"
+  },
+  {
+   "product_id": 64935,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנפח 37 אונקיות",
+   "new": "בנפח 1.1 ליטר",
+   "finding": "מיכל מים גלילי בנפח 37 אונקיות"
+  },
+  {
+   "product_id": 64935,
+   "variation_id": null,
+   "target": "description",
+   "old": "לבן שטוח",
+   "new": "פלאט וייט",
+   "finding": "מיכל מים גלילי בנפח 37 אונקיות"
+  },
+  {
+   "product_id": 64867,
+   "variation_id": null,
+   "target": "description",
+   "old": "אחד המותגים המחודשים בעולם הקפה",
+   "new": "אחד המותגים הנחשבים בעולם הקפה",
+   "finding": "אחד המותגים המחודשים בעולם הקפה ... הודות לראש הטבוללזרימת"
+  },
+  {
+   "product_id": 64867,
+   "variation_id": null,
+   "target": "description",
+   "old": "לראש הטבוללזרימת",
+   "new": "לראש הטבול לזרימת",
+   "finding": "אחד המותגים המחודשים בעולם הקפה ... הודות לראש הטבוללזרימת"
+  },
+  {
+   "product_id": 64876,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64876,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64877,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64877,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64878,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64878,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64879,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64879,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64880,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64880,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64881,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64881,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 82622,
+   "variation_id": null,
+   "target": "description",
+   "old": "באיכות ביתית בבית",
+   "new": "באיכות של בית קפה, בבית",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 82622,
+   "variation_id": null,
+   "target": "description",
+   "old": "פיה כפולה ופורטה ללא תחתית(בוטמלס)",
+   "new": "פיה כפולה וידית ללא תחתית (בוטומלס)",
+   "finding": "ליהנות מאספרסו באיכות ביתית בבית"
+  },
+  {
+   "product_id": 64882,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64882,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64883,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64883,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64884,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64884,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64885,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64885,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64886,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64886,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64887,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64887,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 65025,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 65025,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 82155,
+   "variation_id": null,
+   "target": "description",
+   "old": "(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+   "new": "(Brew-by-Weight).",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 82155,
+   "variation_id": null,
+   "target": "description",
+   "old": "וזרימת ניקוי עצמית צמצם.",
+   "new": "ומצמצם זרימה עם ניקוי עצמי.",
+   "finding": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל ."
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "Product Recognizing Griinder ) P.R.G)",
+   "new": "Product Recognizing Grinder (P.R.G.)",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "Cold Brew Caffè Late<",
+   "new": "Cold Brew Caffè Latte<",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "Product Recognizing Griinder ) P.R.G)",
+   "new": "Product Recognizing Grinder (P.R.G.)",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "Cold Brew Caffè Late<",
+   "new": "Cold Brew Caffè Latte<",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 81462,
+   "variation_id": null,
+   "target": "description",
+   "old": "Product Recognizing Griinder ) P.R.G)",
+   "new": "Product Recognizing Grinder (P.R.G.)",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 81462,
+   "variation_id": null,
+   "target": "description",
+   "old": "Cold Brew Caffè Late<",
+   "new": "Cold Brew Caffè Latte<",
+   "finding": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late"
+  },
+  {
+   "product_id": 64966,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן לחלוט והלקציף בו זמנית,.",
+   "new": "ניתן לחלוט ולהקציף בו זמנית.",
+   "finding": "ניתן לחלוט והלקציף בו זמנית,."
+  },
+  {
+   "product_id": 65198,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "@*",
+   "new": "*",
+   "finding": "מבוססת קפסולות נספרסו @* או תואמות"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "description",
+   "old": "יחידת קליית פולי הקפה, ניתנת לשליפה",
+   "new": "יחידת החליטה ניתנת לשליפה",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "description",
+   "old": "וגם מבשלת את הקפה, פעמים,",
+   "new": "וגם חולטת את הקפה פעמיים,",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "description",
+   "old": "קראמית, מתכוננת,",
+   "new": "קראמית, מתכווננת,",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65231,
+   "variation_id": null,
+   "target": "description",
+   "old": "יחידת קליית פולי הקפה, ניתנת לשליפה",
+   "new": "יחידת החליטה ניתנת לשליפה",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65231,
+   "variation_id": null,
+   "target": "description",
+   "old": "וגם מבשלת את הקפה, פעמים,",
+   "new": "וגם חולטת את הקפה פעמיים,",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65231,
+   "variation_id": null,
+   "target": "description",
+   "old": "קראמית, מתכוננת,",
+   "new": "קראמית, מתכווננת,",
+   "finding": "יחידת קליית פולי הקפה, ניתנת לשליפה"
+  },
+  {
+   "product_id": 65477,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "תהנו מטעם עשיר ועשיר בכל פחית",
+   "new": "תיהנו מטעם עשיר בכל כוס",
+   "finding": "תהנו מטעם עשיר ועשיר בכל פחית"
+  },
+  {
+   "product_id": 67225,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פשוטה ואכותית",
+   "new": "פשוטה ואיכותית",
+   "finding": "יפה, פשוטה ואכותית"
+  },
+  {
+   "product_id": 67225,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן יכול לבחור",
+   "new": "ניתן לבחור",
+   "finding": "יפה, פשוטה ואכותית"
+  },
+  {
+   "product_id": 67273,
+   "variation_id": null,
+   "target": "description",
+   "old": "3 רמות טמפרטוה",
+   "new": "3 רמות טמפרטורה",
+   "finding": "3 רמות טמפרטוה"
+  },
+  {
+   "product_id": 67274,
+   "variation_id": null,
+   "target": "description",
+   "old": "3 רמות טמפרטוה",
+   "new": "3 רמות טמפרטורה",
+   "finding": "3 רמות טמפרטוה"
+  },
+  {
+   "product_id": 67275,
+   "variation_id": null,
+   "target": "description",
+   "old": "3 רמות טמפרטוה",
+   "new": "3 רמות טמפרטורה",
+   "finding": "3 רמות טמפרטוה"
+  },
+  {
+   "product_id": 67363,
+   "variation_id": null,
+   "target": "description",
+   "old": "לכן בינבונה שינו",
+   "new": "לכן בניבונה שינו",
+   "finding": "לכן בינבונה שינו ... מספר שינוייםיוצאי דופן"
+  },
+  {
+   "product_id": 67363,
+   "variation_id": null,
+   "target": "description",
+   "old": "שינוייםיוצאי דופן",
+   "new": "שינויים יוצאי דופן",
+   "finding": "לכן בינבונה שינו ... מספר שינוייםיוצאי דופן"
+  },
+  {
+   "product_id": 67363,
+   "variation_id": null,
+   "target": "description",
+   "old": "מעגש חימום כוסות",
+   "new": "מגש חימום כוסות",
+   "finding": "לכן בינבונה שינו ... מספר שינוייםיוצאי דופן"
+  },
+  {
+   "product_id": 67363,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניטור מפלסים אוטומטי לפולי מים וקפה",
+   "new": "ניטור מפלסים אוטומטי למים ולפולי קפה",
+   "finding": "לכן בינבונה שינו ... מספר שינוייםיוצאי דופן"
+  },
+  {
+   "product_id": 67618,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת אינטגרלית משולבת",
+   "new": "מטחנה אינטגרלית משולבת",
+   "finding": "מטחנת אינטגרלית משולבת"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "name",
+   "old": "(ROCKET GIOTTO CONOMETRO R (EVO",
+   "new": "ROCKET GIOTTO CRONOMETRO R EVO",
+   "finding": "(ROCKET GIOTTO CONOMETRO R (EVO"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "(back flash)",
+   "new": "(back flush)",
+   "finding": "ר אש יציאת הקפה ... מ ק סימום ... גרמנ י ים"
+  },
+  {
+   "product_id": 68294,
+   "variation_id": null,
+   "target": "description",
+   "old": "בין מנה בודדת, ולמה כפולה",
+   "new": "בין מנה בודדת למנה כפולה.",
+   "finding": "לאפשרות בחירה בין מנה בודדת, ולמה כפולה"
+  },
+  {
+   "product_id": 68294,
+   "variation_id": null,
+   "target": "description",
+   "old": "מכונת ידנית בעיצוב",
+   "new": "מכונה ידנית בעיצוב",
+   "finding": "לאפשרות בחירה בין מנה בודדת, ולמה כפולה"
+  },
+  {
+   "product_id": 68295,
+   "variation_id": null,
+   "target": "description",
+   "old": "בכל הנגע ליופי",
+   "new": "בכל הנוגע ליופי",
+   "finding": "בכל הנגע ליופי"
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "old": "מסייע לייבוש פולי הקפה לאחר החליטה",
+   "new": "מסייע לייבוש עוגת הקפה לאחר החליטה",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "old": "שרוול הקצפה מקצועי</strong>",
+   "new": "שרביט הקצפה מקצועי</strong>",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "old": "</strong> שרוול הקצפה מקצועי עם",
+   "new": "</strong> שרביט הקצפה מקצועי עם",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "old": "מסייע לייבוש פולי הקפה לאחר החליטה",
+   "new": "מסייע לייבוש עוגת הקפה לאחר החליטה",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "old": "שרוול הקצפה מקצועי</strong>",
+   "new": "שרביט הקצפה מקצועי</strong>",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "old": "</strong> שרוול הקצפה מקצועי עם",
+   "new": "</strong> שרביט הקצפה מקצועי עם",
+   "finding": "מסייע לייבוש פולי הקפה לאחר החליטה"
+  },
+  {
+   "product_id": 76409,
+   "variation_id": null,
+   "target": "description",
+   "old": "PID לשוטלים מדויקים",
+   "new": "PID לשוטים מדויקים",
+   "finding": "ובקרת טמפרטורה PID לשוטלים מדויקים"
+  },
+  {
+   "product_id": 76418,
+   "variation_id": null,
+   "target": "description",
+   "old": "PID לשוטלים מדויקים",
+   "new": "PID לשוטים מדויקים",
+   "finding": "ובקרת טמפרטורה PID לשוטלים מדויקים"
+  },
+  {
+   "product_id": 76423,
+   "variation_id": null,
+   "target": "description",
+   "old": "PID לשוטלים מדויקים",
+   "new": "PID לשוטים מדויקים",
+   "finding": "ובקרת טמפרטורה PID לשוטלים מדויקים"
+  },
+  {
+   "product_id": 79795,
+   "variation_id": null,
+   "target": "description",
+   "old": "להכין ספרסו ברמה",
+   "new": "להכין אספרסו ברמה",
+   "finding": "להכין ספרסו ברמה ... וברז מים חמים ייעודי לתה ואמריקנו. ו\nכן, גם טמפר"
+  },
+  {
+   "product_id": 79795,
+   "variation_id": null,
+   "target": "description",
+   "old": "ואמריקנו. ו<br />כן,",
+   "new": "ואמריקנו.<br />וכן,",
+   "finding": "להכין ספרסו ברמה ... וברז מים חמים ייעודי לתה ואמריקנו. ו\nכן, גם טמפר"
+  },
+  {
+   "product_id": 64786,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנות סכינים קרמיות כפולות:",
+   "new": "מטחנות דיסק קרמיות כפולות:",
+   "finding": "מטחנות סכינים קרמיות כפולות: ... שתי מטחנות דיסק קרמיות"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "צבע מוצר: לבן, שחור",
+   "product_id": 64929,
+   "reason": "Fix means removing an option from the attribute. The plan format can only swap one option value for another, and the attribute is marked variation:true, so removing it may affect variations."
+  },
+  {
+   "finding": "צבע מוצר: לבן, שחור",
+   "product_id": 81455,
+   "reason": "Fix means removing an option from the attribute. The plan format can only swap one option value for another, and the attribute is marked variation:true, so removing it may affect variations."
+  },
+  {
+   "finding": "עד ה-30.04.2019 – 5 שנות אחריות בבית הלקוח",
+   "product_id": 65230,
+   "reason": "Removing promotion/warranty text is a business decision under the spec, even though the 2019 offer is clearly expired. Recommend a human delete it."
+  },
+  {
+   "finding": "Lelit PL41EM שרביט הקצפה מקצועי + מטחנת קפה GRAEF",
+   "product_id": 64715,
+   "reason": "Missing content: the GRAEF grinder model and specs are not in the catalog data."
+  },
+  {
+   "finding": "340 x 590 x 420 מ\"מ ללא פילטר / 340 x 590 x 420 מ\"מ עם פילטר",
+   "product_id": 64675,
+   "reason": "Needs the correct dimensions from the manufacturer; the data can't tell which line is right."
+  },
+  {
+   "finding": "צבע מוצר: אדום, כסף",
+   "product_id": 67618,
+   "reason": "Fix means removing the 'אדום' option. The plan format can only swap option values; removal needs a human or a different tool."
+  },
+  {
+   "finding": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "product_id": 64955,
+   "reason": "Promotion wording: the benefit amount and whether the offer is still running are business decisions not in the data."
+  },
+  {
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "product_id": 64966,
+   "reason": "Promotion wording: the benefit amount and whether the offer is still running are business decisions not in the data."
+  },
+  {
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "product_id": 67274,
+   "reason": "Promotion wording: the benefit amount and whether the offer is still running are business decisions not in the data."
+  },
+  {
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "product_id": 67275,
+   "reason": "Promotion wording: the benefit amount and whether the offer is still running are business decisions not in the data."
+  },
+  {
+   "finding": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "product_id": 67296,
+   "reason": "Promotion wording: the benefit amount and whether the offer is still running are business decisions not in the data."
+  },
+  {
+   "finding": "מסך צבעוני TFT בגודל \"2 ושדירגה חכמה",
+   "product_id": 82012,
+   "reason": "The correct screen size and the intended word behind 'ושדירגה' aren't in the data, so the edit would be ambiguous."
+  },
+  {
+   "finding": "מסך צבעוני TFT בגודל \"2 ושדירגה חכמה",
+   "product_id": 82014,
+   "reason": "The correct screen size and the intended word behind 'ושדירגה' aren't in the data, so the edit would be ambiguous."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64827,
+   "reason": "Missing content (empty short description). Out of scope for the plan."
+  },
+  {
+   "finding": "Gaggia Classic UP - נירוסטה (העתק)",
+   "product_id": 82014,
+   "reason": "Deleting or renaming a duplicate draft product is a business decision."
+  },
+  {
+   "finding": "ר אש יציאת הקפה ... מ ק סימום ... גרמנ י ים",
+   "product_id": 68280,
+   "reason": "(Partial) Only 'back flash' is fixed. The broken words come from inline tags splitting them in the raw HTML; joining them would mean removing tags, which the validator forbids."
+  }
+ ]
+}

@@ -1,0 +1,1505 @@
+{
+ "edits": [
+  {
+   "product_id": 64903,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל קפה אספרסו נוט-ניוטרל אמרלד",
+   "new": "ספל קפה אספרסו נוט-ניוטרל ענבר",
+   "finding": "ספל קפה אספרסו נוט-ניוטרל אמרלד"
+  },
+  {
+   "product_id": 65475,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Loveramics צבע ירוק יער",
+   "new": "Loveramics צבע אפור פחם",
+   "finding": "כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע ירוק יער"
+  },
+  {
+   "product_id": 78228,
+   "variation_id": null,
+   "target": "description",
+   "old": "Loveramics - כחול 250",
+   "new": "Loveramics - צהוב 250",
+   "finding": "ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ\"ל"
+  },
+  {
+   "product_id": 78232,
+   "variation_id": null,
+   "target": "description",
+   "old": "Loveramics - כחול 250",
+   "new": "Loveramics - מינט 250",
+   "finding": "ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ\"ל"
+  },
+  {
+   "product_id": 80541,
+   "variation_id": null,
+   "target": "description",
+   "old": "מסדרת מניקו טורקיז",
+   "new": "מסדרת מניקו שחור",
+   "finding": "ספל קפוצ'ינו Club House מסדרת מניקו טורקיז (205 מ\"ל)"
+  },
+  {
+   "product_id": 67620,
+   "variation_id": null,
+   "target": "description",
+   "old": "כוס קפוצ׳ינו 80 מל צבע לבן כחול",
+   "new": "כוס אספרסו 80 מל צבע לבן כחול סלדון",
+   "finding": "כוס קפוצ׳ינו 80 מל צבע לבן כחול ... 200 מ״ל"
+  },
+  {
+   "product_id": 67620,
+   "variation_id": null,
+   "target": "description",
+   "old": "200 מ״ל",
+   "new": "80 מ״ל",
+   "finding": "כוס קפוצ׳ינו 80 מל צבע לבן כחול ... 200 מ״ל"
+  },
+  {
+   "product_id": 64733,
+   "variation_id": null,
+   "target": "description",
+   "old": "סדרת Melitta Bio עשויה מחומצת לימון בטוחה למזון ומתכלה.",
+   "new": "",
+   "finding": "סדרת Melitta Bio עשויה מחומצת לימון בטוחה למזון ומתכלה"
+  },
+  {
+   "product_id": 64797,
+   "variation_id": null,
+   "target": "description",
+   "old": "Loveramics Latte Glass 120 ml Urban Twisted הוא לא רק מושלם ליהנות מהלאטה האהוב עליכם אלא גם רב-תכליתי מספיק כדי להציג משקאות מיוחדים אחרים. מקורטאדו מוקצף ועד למשקה Flat white או לאטה מקיאטו,",
+   "new": "Loveramics Espresso Glass 70 ml Urban Twisted הוא לא רק מושלם ליהנות מהאספרסו האהוב עליכם אלא גם רב-תכליתי מספיק כדי להציג משקאות קטנים אחרים. מאספרסו ועד מקיאטו או קורטדו קטן,",
+   "finding": "Loveramics Latte Glass 120 ml Urban Twisted הוא לא רק מושלם ליהנות מהלאטה"
+  },
+  {
+   "product_id": 80560,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הדגם הצהוב מגיע",
+   "new": "הדגם הלבן מגיע",
+   "finding": "הדגם הצהוב מגיע בגימור מאט"
+  },
+  {
+   "product_id": 80560,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגרסה הצהובה בגימור המאט לא רק מוסיפה צבע זורח למטבח",
+   "new": "הגרסה הלבנה בגימור המאט לא רק מוסיפה מראה נקי למטבח",
+   "finding": "הדגם הצהוב מגיע בגימור מאט"
+  },
+  {
+   "product_id": 80562,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגרסה הצהובה בגימור המאט",
+   "new": "הגרסה הוורודה בגימור המאט",
+   "finding": "הגרסה הצהובה בגימור המאט"
+  },
+  {
+   "product_id": 64870,
+   "variation_id": null,
+   "target": "name",
+   "old": "notNeutral Lino Espresso",
+   "new": "notNeutral Lino",
+   "finding": "ספל קפה קפוצ׳ינו פורצלן 240 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64870,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso",
+   "new": "ספל קפה קפוצ׳ינו פורצלן 240 מל נוט-ניוטרל notNeutral Lino",
+   "finding": "ספל קפה קפוצ׳ינו פורצלן 240 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64871,
+   "variation_id": null,
+   "target": "name",
+   "old": "notNeutral Lino Espresso",
+   "new": "notNeutral Lino",
+   "finding": "ספל קפה קפוצ׳ינו פורצלן 180 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64871,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso",
+   "new": "ספל קפה קפוצ׳ינו פורצלן 180 מל נוט-ניוטרל notNeutral Lino",
+   "finding": "ספל קפה קפוצ׳ינו פורצלן 180 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64873,
+   "variation_id": null,
+   "target": "name",
+   "old": "notNeutral Lino Espresso",
+   "new": "notNeutral Lino",
+   "finding": "ספל קפה קורטדו פורצלן 150 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64873,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso",
+   "new": "ספל קפה קורטדו פורצלן 150 מל נוט-ניוטרל notNeutral Lino",
+   "finding": "ספל קפה קורטדו פורצלן 150 מל ... notNeutral Lino Espresso"
+  },
+  {
+   "product_id": 64888,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ מינימלי, MPa / בר",
+   "new": "לחץ מינימלי, בר / MPa",
+   "finding": "לחץ מינימלי, MPa / בר  2 / 0,2 ... לחץ מקסימלי, MPa / בר  6,5 / 0,63"
+  },
+  {
+   "product_id": 64888,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ מקסימלי, MPa / בר",
+   "new": "לחץ מקסימלי, בר / MPa",
+   "finding": "לחץ מינימלי, MPa / בר  2 / 0,2 ... לחץ מקסימלי, MPa / בר  6,5 / 0,63"
+  },
+  {
+   "product_id": 64888,
+   "variation_id": null,
+   "target": "description",
+   "old": "אוסמוזה אפוכה",
+   "new": "אוסמוזה הפוכה",
+   "finding": "אוסמוזה אפוכה ... למותרים ביתיים ... מפחית אבנית ללא אבנית"
+  },
+  {
+   "product_id": 64888,
+   "variation_id": null,
+   "target": "description",
+   "old": "למותרים ביתיים",
+   "new": "למכשירים ביתיים",
+   "finding": "אוסמוזה אפוכה ... למותרים ביתיים ... מפחית אבנית ללא אבנית"
+  },
+  {
+   "product_id": 80535,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הגוון הניטרלי והחם",
+   "new": "הגוון האדום העמוק",
+   "finding": "הגוון הניטרלי והחם"
+  },
+  {
+   "product_id": 64686,
+   "variation_id": null,
+   "target": "description",
+   "old": "אינו כולל מימברנה",
+   "new": "אינו כולל ממברנה",
+   "finding": "סט זה אינו כולל מימברנה"
+  },
+  {
+   "product_id": 64722,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כל חבילה כוללת 10",
+   "new": "כל חבילה כוללת 10 טבליות.",
+   "finding": "כל חבילה כוללת 10"
+  },
+  {
+   "product_id": 64733,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אוטמטיות",
+   "new": "אוטומטיות",
+   "finding": "למכונות קפה אוטמטיות"
+  },
+  {
+   "product_id": 64733,
+   "variation_id": null,
+   "target": "description",
+   "old": "אוטמטיות",
+   "new": "אוטומטיות",
+   "finding": "למכונות קפה אוטמטיות"
+  },
+  {
+   "product_id": 64737,
+   "variation_id": null,
+   "target": "description",
+   "old": "כוסות אלו עוצבות בהתאם לתקני (SCA (Specialty Coffee Association,",
+   "new": "כוסות אלו עוצבו בהתאם לתקני ה-SCA (Specialty Coffee Association)",
+   "finding": "כוסות אלו עוצבות בהתאם לתקני (SCA (Specialty Coffee Association,"
+  },
+  {
+   "product_id": 64785,
+   "variation_id": null,
+   "target": "description",
+   "old": "קנו עכשיו והעלה את חווית",
+   "new": "קנו עכשיו והעלו את חוויית",
+   "finding": "קנו עכשיו והעלה את חווית שתיית הקפה שלכם"
+  },
+  {
+   "product_id": 64848,
+   "variation_id": null,
+   "target": "description",
+   "old": "להשתקע על במערכת החליטה, שסתומים, מסננים, ראשי חליטה ושסתומים חשמליים",
+   "new": "להשתקע במערכת החליטה, בשסתומים, במסננים, בראשי החליטה ובשסתומים החשמליים",
+   "finding": "להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS"
+  },
+  {
+   "product_id": 64848,
+   "variation_id": null,
+   "target": "description",
+   "old": "הנוסחה החדשנית של COFFEE MAKER CLEANER TABLETS",
+   "new": "הנוסחה החדשנית של טבליות הניקוי",
+   "finding": "להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS"
+  },
+  {
+   "product_id": 64848,
+   "variation_id": null,
+   "target": "description",
+   "old": "את ה-COFFEE MAKER CLEANER TABLETS",
+   "new": "את טבליות הניקוי",
+   "finding": "להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS"
+  },
+  {
+   "product_id": 64864,
+   "variation_id": null,
+   "target": "description",
+   "old": "Eco Klear שרק מים",
+   "new": "Eco Klear מבטיח שרק מים",
+   "finding": "Eco Klear שרק מים טהורים ... פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :"
+  },
+  {
+   "product_id": 64864,
+   "variation_id": null,
+   "target": "description",
+   "old": "של פיליפס-סאיקו :",
+   "new": "של פיליפס-סאיקו: סדרת האינקנטו, סדרת האינטליה דה-לקס.",
+   "finding": "Eco Klear שרק מים טהורים ... פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :"
+  },
+  {
+   "product_id": 64903,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 64903,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 64904,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 64904,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65389,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65389,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65390,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65390,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65391,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65391,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65392,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65392,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65393,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65393,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65394,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65394,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65396,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65396,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65399,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65399,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65400,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65400,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65401,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65401,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65405,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 65405,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 82470,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>זכוכית האיכותית",
+   "new": "<li>הזכוכית האיכותית",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 82470,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולמקירוגל",
+   "new": "ולמיקרוגל",
+   "finding": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל"
+  },
+  {
+   "product_id": 64916,
+   "variation_id": null,
+   "target": "description",
+   "old": "מחזורי הסרת אבנית מלאים,",
+   "new": "מחזורי הסרת אבנית מלאים.",
+   "finding": "בקבוק 500 מ\"ל מספיק לחמישה מחזורי הסרת אבנית מלאים,"
+  },
+  {
+   "product_id": 64916,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אידיאליות לניקוי",
+   "new": "אידיאלי לניקוי",
+   "finding": "בקבוק 500 מ\"ל מספיק לחמישה מחזורי הסרת אבנית מלאים,"
+  },
+  {
+   "product_id": 64928,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אוטמטיות",
+   "new": "אוטומטיות",
+   "finding": "למכונות קפה אוטמטיות"
+  },
+  {
+   "product_id": 64928,
+   "variation_id": null,
+   "target": "description",
+   "old": "אוטמטיות",
+   "new": "אוטומטיות",
+   "finding": "למכונות קפה אוטמטיות"
+  },
+  {
+   "product_id": 64932,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לתקשר ללא עם המסנן",
+   "new": "לתקשר באופן אלחוטי עם המסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 64932,
+   "variation_id": null,
+   "target": "description",
+   "old": "לתקשר ללא עם המסנן",
+   "new": "לתקשר באופן אלחוטי עם המסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 64932,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומסננן",
+   "new": "ומסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 64932,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>רכת המים החכמה (I.W.S.®):",
+   "new": "<p>",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 76850,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לתקשר ללא עם המסנן",
+   "new": "לתקשר באופן אלחוטי עם המסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 76850,
+   "variation_id": null,
+   "target": "description",
+   "old": "לתקשר ללא עם המסנן",
+   "new": "לתקשר באופן אלחוטי עם המסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 76850,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומסננן",
+   "new": "ומסנן",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 76850,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>רכת המים החכמה (I.W.S.®):",
+   "new": "<p>",
+   "finding": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):"
+  },
+  {
+   "product_id": 64946,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64946,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64947,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64947,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64948,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64948,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64949,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64949,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64950,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64950,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64951,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64951,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64952,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64952,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64953,
+   "variation_id": null,
+   "target": "description",
+   "old": "ושיטתית מסלקת פחמן מהמים",
+   "new": "ושיטתית מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64953,
+   "variation_id": null,
+   "target": "description",
+   "old": "BRITA מסלקת פחמן מהמים",
+   "new": "BRITA מפחיתה קשיות קרבונטית מהמים",
+   "finding": "מסלקת פחמן מהמים בארבעה שלבים"
+  },
+  {
+   "product_id": 64956,
+   "variation_id": null,
+   "target": "description",
+   "old": "רצויוה",
+   "new": "רצויה",
+   "finding": "מסיר פסולת לא רצויוה ... החוומר יתמוסס לחלוטין"
+  },
+  {
+   "product_id": 64956,
+   "variation_id": null,
+   "target": "description",
+   "old": "החוומר",
+   "new": "החומר",
+   "finding": "מסיר פסולת לא רצויוה ... החוומר יתמוסס לחלוטין"
+  },
+  {
+   "product_id": 64980,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קושיות",
+   "new": "קשיות",
+   "finding": "סטיקים לבדיקת קושיות המים"
+  },
+  {
+   "product_id": 64980,
+   "variation_id": null,
+   "target": "description",
+   "old": "קושיות",
+   "new": "קשיות",
+   "finding": "סטיקים לבדיקת קושיות המים"
+  },
+  {
+   "product_id": 81452,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קושיות",
+   "new": "קשיות",
+   "finding": "סטיקים לבדיקת קושיות המים"
+  },
+  {
+   "product_id": 81452,
+   "variation_id": null,
+   "target": "description",
+   "old": "קושיות",
+   "new": "קשיות",
+   "finding": "סטיקים לבדיקת קושיות המים"
+  },
+  {
+   "product_id": 65069,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "שומני קפה שמני קפה מרשת",
+   "new": "שומני קפה מרשת",
+   "finding": "שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור"
+  },
+  {
+   "product_id": 65069,
+   "variation_id": null,
+   "target": "description",
+   "old": "עיווור(פילטר",
+   "new": "עיוור (פילטר",
+   "finding": "שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור"
+  },
+  {
+   "product_id": 65069,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולפתוח את ברז המים של כ- 15-20 שניות",
+   "new": "ולהפעיל את המים למשך כ-15-20 שניות",
+   "finding": "שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור"
+  },
+  {
+   "product_id": 65205,
+   "variation_id": null,
+   "target": "description",
+   "old": "ביתיות ומיקצועיות.",
+   "new": "ביתיות ומקצועיות.",
+   "finding": "ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד..."
+  },
+  {
+   "product_id": 65205,
+   "variation_id": null,
+   "target": "description",
+   "old": "של חברת ASCOR , האיטלקית.",
+   "new": "מתוצרת חברת ASCOR האיטלקית.",
+   "finding": "ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד..."
+  },
+  {
+   "product_id": 65205,
+   "variation_id": null,
+   "target": "description",
+   "old": "לניקוי יחיד...",
+   "new": "לניקוי יחיד.",
+   "finding": "ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד..."
+  },
+  {
+   "product_id": 65392,
+   "variation_id": null,
+   "target": "name",
+   "old": "שקוף7",
+   "new": "שקוף",
+   "finding": "Vero Cortado Glass שקוף7"
+  },
+  {
+   "product_id": 65405,
+   "variation_id": null,
+   "target": "name",
+   "old": "עשן הnotNeutral",
+   "new": "עשן notNeutral",
+   "finding": "עשן הnotNeutral"
+  },
+  {
+   "product_id": 65405,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "עשן הnotNeutral",
+   "new": "עשן notNeutral",
+   "finding": "עשן הnotNeutral"
+  },
+  {
+   "product_id": 65445,
+   "variation_id": null,
+   "target": "name",
+   "old": "זוג סנני מים",
+   "new": "זוג מסנני מים",
+   "finding": "משמש עם קנקני פילטר Aquaphor עם התאמה לקפסולת"
+  },
+  {
+   "product_id": 65445,
+   "variation_id": null,
+   "target": "description",
+   "old": "Aquaphor עם התאמה לקפסולת",
+   "new": "Aquaphor",
+   "finding": "משמש עם קנקני פילטר Aquaphor עם התאמה לקפסולת"
+  },
+  {
+   "product_id": 65440,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 65440,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 65475,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 65475,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67138,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67138,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67138,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67265,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67265,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67265,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67266,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67266,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67266,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67267,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67267,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67267,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67268,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67268,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67268,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67269,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67269,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67269,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67270,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67270,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67270,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67271,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67271,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67272,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67272,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67272,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67298,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67298,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67298,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67321,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67321,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67321,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67322,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67322,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67322,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67323,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67323,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67323,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67324,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67324,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67324,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67629,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67629,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67629,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67631,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67631,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67631,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67632,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67632,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67632,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 78775,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 78775,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 78846,
+   "variation_id": null,
+   "target": "description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 78846,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c",
+   "new": "גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 78846,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה",
+   "new": "דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה",
+   "finding": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c"
+  },
+  {
+   "product_id": 67197,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הכירו את יצרנית כוסות הקפה",
+   "new": "הכירו את כוסות הקפה",
+   "finding": "הכירו את יצרנית כוסות הקפה KRUVE IMAGINE"
+  },
+  {
+   "product_id": 67197,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכירו את יצרנית כוסות הקפה",
+   "new": "הכירו את כוסות הקפה",
+   "finding": "הכירו את יצרנית כוסות הקפה KRUVE IMAGINE"
+  },
+  {
+   "product_id": 67197,
+   "variation_id": null,
+   "target": "description",
+   "old": "בעמידותה ועמידותה בחום",
+   "new": "בעמידותה בחום",
+   "finding": "הכירו את יצרנית כוסות הקפה KRUVE IMAGINE"
+  },
+  {
+   "product_id": 67197,
+   "variation_id": null,
+   "target": "description",
+   "old": "מדוברבכוס",
+   "new": "מדובר בכוס",
+   "finding": "הכירו את יצרנית כוסות הקפה KRUVE IMAGINE"
+  },
+  {
+   "product_id": 67244,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קל לנקוי",
+   "new": "קל לניקוי",
+   "finding": "קל לנקוי"
+  },
+  {
+   "product_id": 67245,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קל לנקוי",
+   "new": "קל לניקוי",
+   "finding": "קל לנקוי"
+  },
+  {
+   "product_id": 67246,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קל לנקוי",
+   "new": "קל לניקוי",
+   "finding": "קל לנקוי"
+  },
+  {
+   "product_id": 68275,
+   "variation_id": null,
+   "target": "description",
+   "old": "דדרגנט",
+   "new": "דטרגנט",
+   "finding": "מסוג דדרגנט ... Franke Evolution and Bravilor"
+  },
+  {
+   "product_id": 68275,
+   "variation_id": null,
+   "target": "description",
+   "old": "Franke Evolution and Bravilor",
+   "new": "Franke Evolution ו-Bravilor",
+   "finding": "מסוג דדרגנט ... Franke Evolution and Bravilor"
+  },
+  {
+   "product_id": 68283,
+   "variation_id": null,
+   "target": "name",
+   "old": "לקנקי בריטה",
+   "new": "לקנקני בריטה",
+   "finding": "מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 68283,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנונית",
+   "new": "בינונית",
+   "finding": "מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 68283,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "(Maxtra)יכולת",
+   "new": "(Maxtra). יכולת",
+   "finding": "מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "6 טבליות ניקוי להסרת שומני קפה / כל טבליה במשקל שלושה נקודה ארבעה גרם",
+   "product_id": 76294,
+   "reason": "Which pack spec is right (8×2 g vs 6×3.4 g) needs checking against the actual product; catalog data conflicts."
+  },
+  {
+   "finding": "כמות: 12 יח, 3 יח",
+   "product_id": 64980,
+   "reason": "Fix means removing/replacing attribute options (multi-value list → single value); not expressible as a single option swap and the correct full set needs confirming."
+  },
+  {
+   "finding": "כמות: 36, 9",
+   "product_id": 65439,
+   "reason": "Fix means removing/replacing attribute options (multi-value list → single value); not expressible as a single option swap and the correct full set needs confirming."
+  },
+  {
+   "finding": "צבע מוצר: אפור, כחול, שחור",
+   "product_id": 67613,
+   "reason": "Fix means removing/replacing attribute options (multi-value list → single value); not expressible as a single option swap and the correct full set needs confirming."
+  },
+  {
+   "finding": "כמות: 12 יח, 3 יח",
+   "product_id": 81452,
+   "reason": "Fix means removing/replacing attribute options (multi-value list → single value); not expressible as a single option swap and the correct full set needs confirming."
+  },
+  {
+   "finding": "כמות: 36, 9",
+   "product_id": 81804,
+   "reason": "Fix means removing/replacing attribute options (multi-value list → single value); not expressible as a single option swap and the correct full set needs confirming."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64791,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64797,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68275,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68292,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 79112,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 79498,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 79498,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 79499,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 79499,
+   "reason": "Missing content (empty field); out of scope for a text edit."
+  }
+ ]
+}

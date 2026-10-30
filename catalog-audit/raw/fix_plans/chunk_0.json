@@ -1,0 +1,389 @@
+{
+ "edits": [
+  {
+   "product_id": 65180,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "Daye Bensa - קלייה בהירה וטריה",
+   "new": "Daye Bensa - קלייה בינונית וטריה",
+   "finding": "Daye Bensa - קלייה בהירה וטריה"
+  },
+  {
+   "product_id": 65180,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "ספשלטי בקלייה בהירה. טעם פירותי מתוק עם חמיצות לימונית נוצצת",
+   "new": "ספשלטי בקלייה בינונית. חלק, פירותי ומתוק עם רמיזות של וניל, לבנדר ולימון",
+   "finding": "Daye Bensa - קלייה בהירה וטריה"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "חד זני - קלייה בהירה ספשלטי",
+   "new": "חד זני - קלייה בינונית ספשלטי",
+   "finding": "יירגשף חד זני - קלייה בהירה"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "פולי קפה אתיופיה Sidama ספשלטי בקלייה בהירה. טעם פירותי מתוק עם חמיצות לימונית נוצצת",
+   "new": "פולי קפה אתיופיה יירגשף ספשלטי בקלייה בינונית. הדרים, יסמין ותה ירוק, גוף בינוני ומאוזן",
+   "finding": "יירגשף חד זני - קלייה בהירה"
+  },
+  {
+   "product_id": 80501,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "Sweet Leona: תערובת פולי קפה מובחרת המתאפיינת במתיקות עדינה, גוף מלא וארומה עשירה. חוויית אספרסו קטיפתית ומאוזנת שמשאירה טעם של עוד. עכשיו במינוטו!",
+   "new": "Sweet Leona: קפה ספשלטי חד-זני מקולומביה (Caturra, עיבוד Honey) בקלייה בהירה – פרחים, תאנים וקני סוכר מקורמל. מושלם לפילטר. עכשיו במינוטו!",
+   "finding": "Sweet Leona: תערובת פולי קפה מובחרת"
+  },
+  {
+   "product_id": 64771,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - מבצע מיוחד. קלייה טרייה לאיכות מקסימלית",
+   "new": "1 ק״ג פולי קפה Veneto Premium – כ-40% ערביקה ו-60% רובוסטה, תערובת אינטנסיבית עם קקאו ופירות יבשים. לאספרסו וקפוצ׳ינו",
+   "finding": "SEO description"
+  },
+  {
+   "product_id": 64772,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - מומלץ בחום. קלייה טרייה לאיכות מקסימלית",
+   "new": "1 ק״ג פולי קפה Veneto Delux – 60% ערביקה ו-40% רובוסטה, בסגנון איטלקי. מתיקות עדינה, תווים אגוזיים וחומציות נמוכה. לאספרסו ומקינטה",
+   "finding": "SEO description"
+  },
+  {
+   "product_id": 76255,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - בנפח 3 קג. קלייה טרייה לאיכות מקסימלית",
+   "new": "חבילת 3 ק״ג פולי קפה Veneto – תערובות ערביקה ורובוסטה בסגנון איטלקי, ב-10% הנחה. לאספרסו ומקינטה",
+   "finding": "SEO description"
+  },
+  {
+   "product_id": 65110,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "1 קג פולי קפה ירוקים איך זה מרגיש. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה",
+   "new": "1 ק״ג פולי קפה ירוקים קניה AA+ לקלייה ביתית – חומציות נוצצת ומתיקות עדינה, וברקע מרירות נעימה.",
+   "finding": "SEO description"
+  },
+  {
+   "product_id": 65201,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "250 גרם 90% ערביקה ברזיאלית 10% רובוסטה הודית. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה",
+   "new": "250 גרם פולי קפה ירוקים מינוטו פרסטיז׳ לקלייה ביתית – ערביקה ברזילאית ורובוסטה הודית.",
+   "finding": "SEO description"
+  },
+  {
+   "product_id": 65111,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "חומציות – הדרים. איכות מעולה ועמידות לאורך זמן",
+   "new": "חומציות – הדרים.",
+   "finding": "איכות מעולה ועמידות לאורך זמן"
+  },
+  {
+   "product_id": 65135,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "קלייה טרייה לאיכות מקסימלית, פרטים באתר &gt;",
+   "new": "קלייה טרייה לאיכות מקסימלית.",
+   "finding": "פרטים באתר &gt;"
+  },
+  {
+   "product_id": 64855,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מחיר ל - 100 גר - 19.5 שח</p>",
+   "new": "<p>מחיר ל-100 גר׳: 20.91 ₪</p>",
+   "finding": "מחיר ל - 100 גר - 19.5 שח"
+  },
+  {
+   "product_id": 65135,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מחיר ל - 100 גר 23.1₪</p>",
+   "new": "<p>מחיר ל-100 גר׳: 23.94 ₪</p>",
+   "finding": "מחיר ל - 100 גר 23.1₪"
+  },
+  {
+   "product_id": 65189,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מחיר ל - 100 גר - 16.5 שח</p>",
+   "new": "<p>מחיר ל-100 גר׳: 17.88 ₪</p>",
+   "finding": "מחיר ל - 100 גר - 16.5 שח"
+  },
+  {
+   "product_id": 65196,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מחיר ל - 100 גר 16.5 שח</p>",
+   "new": "<p>מחיר ל-100 גר׳: 17.88 ₪</p>",
+   "finding": "מחיר ל - 100 גר 16.5 שח"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "description",
+   "old": "1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים. בדרך כלל, איכות הקפה שנשטף עקבית יותר מזו של קפה לא רחוץ.",
+   "new": "",
+   "finding": "1, יש לו 0 - 3 ליקויים"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה אתיופי יירגשף, פולי קפה יירגשף, קפה פרחוני, קפה פירותי.",
+   "new": "",
+   "finding": "קפה אתיופי יירגשף, פולי קפה יירגשף"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "name",
+   "old": "Yirgacheffee",
+   "new": "Yirgacheffe",
+   "finding": "Yirgacheffee"
+  },
+  {
+   "product_id": 65384,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פולי קפה ירגשף ידועים",
+   "new": "פולי קפה יירגשף ידועים",
+   "finding": "ירגשף"
+  },
+  {
+   "product_id": 65175,
+   "variation_id": null,
+   "target": "description",
+   "old": "והגיעה לגמר בתחריות קפה באיטליה, בעלת גוף מלא וגדלה באזור",
+   "new": "והגיעה לגמר בתחרויות קפה באיטליה, וגדלה באזור",
+   "finding": "בתחריות / בעלת גוף מלא"
+  },
+  {
+   "product_id": 65175,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>זן: 100% ערביקה</p>",
+   "new": "<p>זן: בורבון צהוב (Yellow Bourbon), 100% ערביקה</p>",
+   "finding": "זן: 100% ערביקה"
+  },
+  {
+   "product_id": 65463,
+   "variation_id": null,
+   "target": "description",
+   "old": "פולי קפה קניה AA מגיעים מזן ייחודי של פולי קפה הגדלים בגבהים ובתנאי אקלים ייחודיים.",
+   "new": "AA הוא דירוג גודל הפול הגבוה בקניה – פולים גדולים ואחידים, הגדלים בגבהים ובתנאי אקלים ייחודיים.",
+   "finding": "פולי קפה קניה AA מגיעים מזן ייחודי"
+  },
+  {
+   "product_id": 65135,
+   "variation_id": null,
+   "target": "description",
+   "old": "מדובר באחד מהזנים היותר מיוחדים שנחתו בארץ",
+   "new": "מדובר באחד הקפים המיוחדים ביותר שנחתו בארץ",
+   "finding": "מדובר באחד מהזנים"
+  },
+  {
+   "product_id": 65179,
+   "variation_id": null,
+   "target": "description",
+   "old": "אחד מזני הקפה הקלאסיים בעולם: ערביקה גוואטמלה אנטיגואה היא",
+   "new": "אחד מאזורי הקפה הקלאסיים בעולם: ערביקה מאנטיגואה שבגואטמלה היא",
+   "finding": "אחד מזני הקפה הקלאסיים"
+  },
+  {
+   "product_id": 80501,
+   "variation_id": null,
+   "target": "description",
+   "old": "להעניק גוף מלא ונעים",
+   "new": "להעניק גוף נעים וקטיפתי",
+   "finding": "גוף מלא ונעים"
+  },
+  {
+   "product_id": 80501,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מחווה של לוז הלנה (קולומביה)",
+   "new": "מחוות La Leona של לוז הלנה (קווינדיו, קולומביה)",
+   "finding": "מחווה של לוז הלנה"
+  },
+  {
+   "product_id": 64702,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הקפו׳צינו",
+   "new": "הקפוצ׳ינו",
+   "finding": "הקפו׳צינו"
+  },
+  {
+   "product_id": 64734,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "330 גר פולי קפה נטול <b>100% ערביקה מקסיקנית, נטול בתהליך Water proccess </b>",
+   "new": "330 גר פולי קפה נטול קפאין <b>100% ערביקה מקסיקנית, בתהליך Water Process </b>",
+   "finding": "Water proccess"
+  },
+  {
+   "product_id": 64855,
+   "variation_id": null,
+   "target": "description",
+   "old": "פרופיל פירחוני שוקולדי",
+   "new": "פרופיל פרחוני שוקולדי",
+   "finding": "פירחוני"
+  },
+  {
+   "product_id": 65135,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>איך זה מרגיש?</strong> עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה",
+   "new": "<strong>איך זה מרגיש?</strong> חומציות נוצצת ומתיקות עדינה, וברקע מרירות נעימה",
+   "finding": "איך זה מרגיש? עם חומציות"
+  },
+  {
+   "product_id": 65169,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחובבי ה- V60, פרנץ׳ פרס, פלאנג׳ר ) וחליטה קרה.",
+   "new": "לחובבי V60, פרנץ׳ פרס וחליטה קרה.",
+   "finding": "פלאנג׳ר )"
+  },
+  {
+   "product_id": 65180,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לבנדר וונגיעות לימון",
+   "new": "לבנדר ונגיעות לימון",
+   "finding": "וונגיעות"
+  },
+  {
+   "product_id": 65180,
+   "variation_id": null,
+   "target": "description",
+   "old": "אתיופיה נחשבת לעיר הולדתו של קפה",
+   "new": "אתיופיה נחשבת לארץ הולדתו של הקפה",
+   "finding": "לעיר הולדתו"
+  },
+  {
+   "product_id": 78450,
+   "variation_id": null,
+   "target": "description",
+   "old": "אתיופיה נחשבת לעיר הולדתו של קפה",
+   "new": "אתיופיה נחשבת לארץ הולדתו של הקפה",
+   "finding": "לעיר הולדתו"
+  },
+  {
+   "product_id": 78450,
+   "variation_id": null,
+   "target": "description",
+   "old": "טעמים לימוניים מתוקים ופרחים פרחוניים",
+   "new": "טעמים לימוניים מתוקים ופרחוניים",
+   "finding": "פרחים פרחוניים"
+  },
+  {
+   "product_id": 65189,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<li>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</li>",
+   "new": "<li>תערובת מתאימה במיוחד למשקאות אספרסו וקפוצ׳ינו</li>",
+   "finding": "קפוצינו,"
+  },
+  {
+   "product_id": 65189,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</p>",
+   "new": "<p>תערובת מתאימה במיוחד למשקאות אספרסו וקפוצ׳ינו.</p>",
+   "finding": "קפוצינו,"
+  },
+  {
+   "product_id": 65201,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<li>90% ערביקה ברזיאלית</li>",
+   "new": "<li>90% ערביקה ברזילאית</li>",
+   "finding": "ברזיאלית"
+  },
+  {
+   "product_id": 65201,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>80% ערביקה ברזיאלית</p>",
+   "new": "<p>80% ערביקה ברזילאית</p>",
+   "finding": "ברזיאלית"
+  },
+  {
+   "product_id": 65431,
+   "variation_id": null,
+   "target": "description",
+   "old": "מושלם להכנת אספרסו,קפוצינו וקפה פילטר.",
+   "new": "",
+   "finding": "duplicate sentence"
+  },
+  {
+   "product_id": 65463,
+   "variation_id": null,
+   "target": "description",
+   "old": "טיפים להכנת קפה קנייה AA:",
+   "new": "טיפים להכנת קפה קניה AA:",
+   "finding": "קנייה"
+  },
+  {
+   "product_id": 65463,
+   "variation_id": null,
+   "target": "description",
+   "old": "בארומות פרחוניות עדינות,.",
+   "new": "בארומות פרחוניות עדינות.",
+   "finding": "עדינות,."
+  },
+  {
+   "product_id": 67217,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניחוד של שוקולד",
+   "new": "ניחוח של שוקולד",
+   "finding": "ניחוד"
+  },
+  {
+   "product_id": 67217,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבא הוא Trieste,",
+   "new": "הבא הוא טריאסט,",
+   "finding": "Trieste"
+  },
+  {
+   "product_id": 76255,
+   "variation_id": null,
+   "target": "description",
+   "old": "בעלים טעמים",
+   "new": "בעלי טעמים",
+   "finding": "בעלים"
+  },
+  {
+   "product_id": 76255,
+   "variation_id": null,
+   "target": "name",
+   "old": "3  ק״ג",
+   "new": "3 ק״ג",
+   "finding": "double space"
+  },
+  {
+   "product_id": 82540,
+   "variation_id": null,
+   "target": "description",
+   "old": "בחחוות Las Brisas",
+   "new": "בחוות Las Brisas",
+   "finding": "בחחוות"
+  }
+ ],
+ "skipped": []
+}

@@ -1,0 +1,1778 @@
+{
+ "findings": [
+  {
+   "product_id": "64847",
+   "product_name": "קפסולות דולצה Italian Coffee Lungo",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%93%d7%95%d7%9c%d7%a6%d7%94-italian-coffee-lungo/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "הכירו את Dolce Gusto Super Creamy 100% ערביקה",
+   "problem": "The product is the Italian Coffee Lungo capsule, but the short and full descriptions describe a different product (Dolce Gusto Super Creamy).",
+   "suggested_fix": "לכתוב תיאור ייעודי לקפסולות Italian Coffee Lungo התואמות לדולצ׳ה גוסטו (16 קפסולות), ולאמת הרכב ועוצמה מול האריזה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65015",
+   "product_name": "100 קפסולות ביאלטי נאפולי לנספרסו",
+   "permalink": "https://www.minuto.co.il/product/100-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%a0%d7%90%d7%a4%d7%95%d7%9c%d7%99-%d7%9c%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מילאנו הוא קפה קליל ועדין. עשוי 100% ערביקה",
+   "problem": "The product is the Bialetti Napoli capsule, but the short and full descriptions describe the Milano blend. The short description also has the typo 'יעם'.",
+   "suggested_fix": "לכתוב תיאור ייעודי לביאלטי נאפולי (לאמת הרכב ועוצמה מול האריזה) ולהסיר את הטקסט על מילאנו",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65170",
+   "product_name": "תרמוס למכונת ננופרסו - Nanovessel",
+   "permalink": "https://www.minuto.co.il/product/%d7%aa%d7%a8%d7%9e%d7%95%d7%a1-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a0%d7%95%d7%a4%d7%a8%d7%a1%d7%95-nanovessel/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.",
+   "problem": "The short description of the Nanovessel thermos is copied from the NS capsule adapter.",
+   "suggested_fix": "ננווסל – תרמוס ואקום מנירוסטה 304 עם 3 פונקציות: תרמוס, כלי להכנת תה ומיכל מים שמתברג ישירות לננופרסו.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65208",
+   "product_name": "נרתיק נשיאה למכונת מיניפרסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%a8%d7%aa%d7%99%d7%a7-%d7%a0%d7%a9%d7%99%d7%90%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%9e%d7%99%d7%a0%d7%99%d7%a4%d7%a8%d7%a1%d7%95/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.",
+   "problem": "The short description of the Minipresso carrying case is copied from the Nanopresso NS capsule adapter, a different product.",
+   "suggested_fix": "נרתיק קשיח מ-EVA עם בטנה רכה, שתוכנן במיוחד לשמירה על המיניפרסו מפני מכות, שריטות ואבק בשטח.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78189",
+   "product_name": "ספל Volcano צהוב 210 מ\"ל Club House",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-volcano-%d7%a6%d7%94%d7%95%d7%91-210-%d7%9e%d7%9c-club-house/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "ספל פורצלן Volcano אקוואמארין 210 מ\"ל מבית Club House",
+   "problem": "The product is the yellow Volcano, but the short and full descriptions (including 'צבע אקוואמארין מודרני ורענן') were copied from the aquamarine variant.",
+   "suggested_fix": "ספל פורצלן Volcano צהוב 210 מ\"ל מבית Club House; בתיאור להחליף כל \"אקוואמארין\" ב\"צהוב\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67210",
+   "product_name": "50 קפסולות Esse Infinito",
+   "permalink": "https://www.minuto.co.il/product/50-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-esse-infinito/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "100 קפסולות Esse Infinito",
+   "problem": "The description heading says 100 capsules while the title and short description say 50. The text also misspells the brand as 'Essse'.",
+   "suggested_fix": "50 קפסולות Esse Infinito; לתקן \"Essse\" ל-\"Esse\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67308",
+   "product_name": "50 קפסולות Esse MAESTOSO",
+   "permalink": "https://www.minuto.co.il/product/50-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-esse-maestoso/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "100 קפסולות Esse",
+   "problem": "The description heading says 100 capsules while the title and short description say 50.",
+   "suggested_fix": "50 קפסולות Esse Maestoso",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81476",
+   "product_name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore לא כולל התקנה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-osmo-pro-100-aquaphore-%d7%9c%d7%90-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה",
+   "problem": "The product is the 'לא כולל התקנה' version (999 vs 1399), but the description heading says installation is included.",
+   "suggested_fix": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphor – לא כולל התקנה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67160",
+   "product_name": "La Pavoni Professional PLQ מכונת קפה מנוף לה פבוני פרופשיונאל",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-plq-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%a4%d7%a8%d7%95%d7%a4%d7%a9%d7%99%d7%95%d7%a0%d7%90/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "high",
+   "current_text": "אין צורך בחשמל:  המכונה פועלת ללא משאבת חשמל",
+   "problem": "The heading says the machine needs no electricity, but the same page lists a 1000 W heater on 230 V. Only the pump is manual.",
+   "suggested_fix": "ללא משאבה חשמלית: לחץ החליטה נוצר באופן ידני באמצעות המנוף (המכונה מחוברת לחשמל לחימום הדוד).",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64736",
+   "product_name": "מכונת אספרסו ניבונה Nivona CafeRomatica 560",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-560/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "הזמינו עוד היום את Nivona 550 שלכם",
+   "problem": "The product is the CafeRomatica 560, but the closing line names the Nivona 550.",
+   "suggested_fix": "הזמינו עוד היום את Nivona 560 שלכם",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67175",
+   "product_name": "קפסולות דולצ׳ה גוסטו קימבו אינטנסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%93%d7%95%d7%9c%d7%a6%d7%b3%d7%94-%d7%92%d7%95%d7%a1%d7%98%d7%95-%d7%a7%d7%99%d7%9e%d7%91%d7%95-%d7%90%d7%99%d7%a0%d7%98%d7%a0%d7%a1%d7%95/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו",
+   "problem": "The closing line names the Kimbo Espresso Napoli blend, but the product is Kimbo Intenso. The text also misspells 'Dulce Gusto'.",
+   "suggested_fix": "שדרגו את הבוקר שלכם עם קפסולות קימבו אינטנסו התואמות דולצ׳ה גוסטו; לתקן \"Dulce Gusto\" ל-\"Dolce Gusto\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81253",
+   "product_name": "מקינטה מוקה אינדוקציה 6 כוסות Bialetti - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.",
+   "problem": "The product is the black 6-cup version, but the short description says red.",
+   "suggested_fix": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע שחור.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81254",
+   "product_name": "מקינטה מוקה אינדוקציה 4 כוסות Bialetti - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.",
+   "problem": "The product is the black 4-cup version, but the short description says red.",
+   "suggested_fix": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע שחור.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81256",
+   "product_name": "מקינטה מוקה אינדוקציה 2 כוסות Bialetti - שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.",
+   "problem": "The product is the black version, but the short description, copied from the red variant, says red.",
+   "suggested_fix": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע שחור.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67161",
+   "product_name": "La Pavoni Europiccola ELH מכונת קפה מנוף לה פבוני יורופיקולה",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-europiccola-elh-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%99%d7%95%d7%a8%d7%95%d7%a4%d7%99%d7%a7%d7%95%d7%9c/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "medium",
+   "current_text": "להלן תיאור קצר המתאים לאתר אינטרנט:",
+   "problem": "Leftover AI-generation prompt text is published, and the short-description block is then repeated inside the description.",
+   "suggested_fix": "למחוק את השורה \"להלן תיאור קצר המתאים לאתר אינטרנט:\" ואת הפסקה הכפולה שאחריה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64701",
+   "product_name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-osmo-pro-100-aquaphore-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "התקנה: כולל התקנה, לא כולל התקנה",
+   "problem": "This simple product, sold with installation, lists both installation options in its attribute.",
+   "suggested_fix": "להשאיר בתכונה רק: כולל התקנה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65403",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כתום",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (orange) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: כתום",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67280",
+   "product_name": "מכונת קפה מקצועית Bellezza Valentina Leva צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-valentina-leva-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "2 ליטר דוד נירוסטה - PID אלגנטי ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "problem": "Boiler size is 2 L in the opening line and 1.8 L in the spec list.",
+   "suggested_fix": "לאמת את נפח הדוד מול דף היצרן ולאחד את שני האזכורים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67280",
+   "product_name": "מכונת קפה מקצועית Bellezza Valentina Leva צבע שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-valentina-leva-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: לבן, נירוסטה, שחור",
+   "problem": "The product is the black Valentina Leva ('צבע שחור' in the title) but the colour attribute lists all three colours.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: שחור",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67281",
+   "product_name": "מכונת קפה מקצועית Bellezza Bellona Black שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-bellona-black-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: לבן, נירוסטה, שחור",
+   "problem": "The product is the black Bellona (title 'Black שחור') but the colour attribute lists white, stainless and black, so filters show it under all three colours.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: שחור",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67306",
+   "product_name": "מכונת קפה מקצועית Bellezza Valentina Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-valentina-leva/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "2 ליטר דוד נירוסטה - PID אלגנטי ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "problem": "Boiler size is 2 L in the opening line and 1.8 L in the spec list.",
+   "suggested_fix": "לאמת את נפח הדוד מול דף היצרן ולאחד את שני האזכורים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67307",
+   "product_name": "מכונת קפה מקצועית Bellezza inizzio V Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-inizzio-v-leva/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "2 ליטר דוד נירוסטה - כמו ג PID ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "problem": "Boiler size is 2 L in the opening line and 1.8 L in the spec list. The opening phrase is also broken.",
+   "suggested_fix": "לאמת את נפח הדוד מול דף היצרן ולאחד את שני האזכורים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67320",
+   "product_name": "מכונת קפה מקצועית Bellezza inizzio V",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-inizzio-v/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "2 ליטר דוד נירוסטה - כמו ג PID ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "problem": "Boiler size is given as 2 L in the opening line and 1.8 L in the spec list. The opening phrase 'כמו ג PID' is also broken.",
+   "suggested_fix": "לאמת את נפח הדוד מול דף היצרן ולאחד (למשל: \"דוד נירוסטה 1.8 ליטר ובקר PID אלגנטי עם שליטה בזמן החליטה המוקדמת\")",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78176",
+   "product_name": "ספל קפה Maniko ורוד סלמון 70 מ\"ל - Club House",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-maniko-%d7%90%d7%93%d7%95%d7%9d-70-%d7%9e%d7%9c-club-house/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "ספל Maniko אדום בנפח 70 מ\"ל ... צבע האדום העז",
+   "problem": "The title and short description say salmon pink, the description says red, and its feature list says pink.",
+   "suggested_fix": "ספל Maniko ורוד סלמון בנפח 70 מ\"ל ... גוון הוורוד-סלמון העז",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81361",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כחול",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-6/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (blue) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: כחול",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81368",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - סגול",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-5/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (purple) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: סגול",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81375",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ורוד",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-4/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (pink) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: ורוד",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81382",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - צהוב",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-3/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (yellow) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: צהוב",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81389",
+   "product_name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ירוק",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-2/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "problem": "A single-colour product (green) lists all six colours in its colour attribute.",
+   "suggested_fix": "להשאיר בתכונת הצבע רק: ירוק",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81476",
+   "product_name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore לא כולל התקנה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-osmo-pro-100-aquaphore-%d7%9c%d7%90-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "התקנה: כולל התקנה, לא כולל התקנה",
+   "problem": "This simple product, sold without installation, lists both installation options in its attribute.",
+   "suggested_fix": "להשאיר בתכונה רק: לא כולל התקנה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67307",
+   "product_name": "מכונת קפה מקצועית Bellezza inizzio V Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-inizzio-v-leva/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "2000 וואט - 22 וולט / 120 וולט",
+   "problem": "Voltage shown as 22 V instead of 220 V. The name also uses the 'inizzio' spelling instead of 'Inizio'.",
+   "suggested_fix": "2000 וואט - 220 וולט / 120 וולט; בשם: Bellezza Inizio V Leva",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67320",
+   "product_name": "מכונת קפה מקצועית Bellezza inizzio V",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-inizzio-v/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "2000 וואט - 22 וולט / 120 וולט",
+   "problem": "Voltage shown as 22 V instead of 220 V.",
+   "suggested_fix": "2000 וואט - 220 וולט / 120 וולט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67336",
+   "product_name": "מכונת קפה מקצועית Bellezza Chiara Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-chiara-leva/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "2000 וואט - 22 וולט / 120 וולט",
+   "problem": "Voltage shown as 22 V; it should be 220 V (sibling Valentina pages say 220 V).",
+   "suggested_fix": "2000 וואט - 220 וולט / 120 וולט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67338",
+   "product_name": "מכונת קפה מקצועית Bellezza Inizio R Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-inizio-r-leva/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "2000 וואט - 22 וולט / 120 וולט",
+   "problem": "Voltage shown as 22 V instead of 220 V.",
+   "suggested_fix": "2000 וואט - 220 וולט / 120 וולט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67604",
+   "product_name": "La Pavoni Professional Rame Gold PRG: מכונת קפה מנוף מקצועית",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-rame-gold-prg-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "לחץ משאבה: 15 בר (מדיד)",
+   "problem": "This is a manual lever machine with no pump, so a 15 bar pump pressure is wrong.",
+   "suggested_fix": "להסיר את השורה; במקומה: \"לחץ חליטה: נוצר ידנית באמצעות המנוף\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64735",
+   "product_name": "מתאם אינדוקציה ביאלטי",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%aa%d7%90%d7%9d-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "ובזכות עוביו המשמעותי, היא מאפשר העברת חום מושלמת",
+   "problem": "Gender agreement errors (the plate is feminine).",
+   "suggested_fix": "ובזכות עוביה המשמעותי, היא מאפשרת העברת חום מושלמת",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64736",
+   "product_name": "מכונת אספרסו ניבונה Nivona CafeRomatica 560",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-560/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "יפה, פשוטה ואכותית.",
+   "problem": "Typo 'אכותית'.",
+   "suggested_fix": "יפה, פשוטה ואיכותית.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64760",
+   "product_name": "קפסולות קפה ESSE MONDOSE IDEALE",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-esse-mondose-ideale/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "\" – קפה קליל ועדין המיועד למי שמחפש",
+   "problem": "The short description starts with a stray quotation mark and dash because the product name was cut off. The title says 'MONDOSE' instead of 'MONODOSE', and the description says 'Essse'.",
+   "suggested_fix": "Esse Monodose Ideale – קפה קליל ועדין המיועד למי שמחפש...; בשם: קפסולות קפה ESSE MONODOSE IDEALE",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64846",
+   "product_name": "נרתיק נשיאה למכונת ננופרסו Wacaco bag for Nanopresso",
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%a8%d7%aa%d7%99%d7%a7-%d7%a0%d7%a9%d7%99%d7%90%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a0%d7%95%d7%a4%d7%a8%d7%a1%d7%95-wacaco-bag-for-nanopresso/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "לכוס קפה איכותית בעבודה בעבודה",
+   "problem": "Duplicated word.",
+   "suggested_fix": "לכוס קפה איכותית בעבודה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64990",
+   "product_name": "מכונת אספרסו רוקט אר 60 וי - Rocket R 60V",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-%d7%90%d7%a8-60-%d7%95%d7%99-rocket-r-60v/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "משאבה סיבובית מבוקרת על יד PID",
+   "problem": "Typo: 'על יד' should be 'על ידי'.",
+   "suggested_fix": "משאבה סיבובית מבוקרת על ידי PID",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65208",
+   "product_name": "נרתיק נשיאה למכונת מיניפרסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%a8%d7%aa%d7%99%d7%a7-%d7%a0%d7%a9%d7%99%d7%90%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%9e%d7%99%d7%a0%d7%99%d7%a4%d7%a8%d7%a1%d7%95/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הנרתיק מסייע להגן על המכשיר במפני רעידות",
+   "problem": "Typo 'במפני'.",
+   "suggested_fix": "הנרתיק מסייע להגן על המכשיר מפני רעידות",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65406",
+   "product_name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע פחם",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל",
+   "problem": "Duplicated word 'קלאסי וקלאסי' and a trailing bare site URL.",
+   "suggested_fix": "פנקו את עצמכם בספל קלאסי בנפח 300 מ\"ל עם טוויסט עכשווי! (ולהסיר את שורת הקישור לאתר)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65407",
+   "product_name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע חרדל",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-2/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל",
+   "problem": "Duplicated word 'קלאסי וקלאסי' and a trailing bare site URL.",
+   "suggested_fix": "פנקו את עצמכם בספל קלאסי בנפח 300 מ\"ל עם טוויסט עכשווי! (ולהסיר את שורת הקישור לאתר)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65408",
+   "product_name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אינדיגו",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-3/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל",
+   "problem": "Duplicated word 'קלאסי וקלאסי' and a trailing bare site URL.",
+   "suggested_fix": "פנקו את עצמכם בספל קלאסי בנפח 300 מ\"ל עם טוויסט עכשווי! (ולהסיר את שורת הקישור לאתר)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65409",
+   "product_name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אדום בריק",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-4/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל",
+   "problem": "Duplicated word 'קלאסי וקלאסי'. The page also repeats calls to action and ends with a bare site URL, which reads as SEO filler.",
+   "suggested_fix": "פנקו את עצמכם בספל קלאסי בנפח 300 מ\"ל עם טוויסט עכשווי! (ולהסיר את שורת הקישור לאתר)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67153",
+   "product_name": "La Pavoni Esperto Edotto: מכונת קפה ידנית מקצועית",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-edotto-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "דוסחן מנירוסטה",
+   "problem": "Typo: 'דוסחן' should be 'דוחסן'.",
+   "suggested_fix": "דוחסן מנירוסטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67160",
+   "product_name": "La Pavoni Professional PLQ מכונת קפה מנוף לה פבוני פרופשיונאל",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-plq-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%a4%d7%a8%d7%95%d7%a4%d7%a9%d7%99%d7%95%d7%a0%d7%90/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "שסתם ביטחון: מבטיחה פעולה בטוחה",
+   "problem": "Typo 'שסתם' and wrong gender.",
+   "suggested_fix": "שסתום ביטחון: מבטיח פעולה בטוחה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67194",
+   "product_name": "קפסולות נספרסו lavazza nespresso qualita rossa",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-lavazza-nespresso-qualita-rossa/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה",
+   "problem": "A broken sentence, plus the typo 'המאודינים'.",
+   "suggested_fix": "אספרסו שנחלט בצורה מושלמת, בסיס מצוין למשקאות מבוססי קפה; \"המאודינים\" -> \"המעודנים\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67218",
+   "product_name": "Melitta Optima Timer מכונת קפה פילטר מליטה אופטימה טיימר נירוסטה",
+   "permalink": "https://www.minuto.co.il/product/melitta-optima-timer-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%90%d7%95%d7%a4%d7%98%d7%99%d7%9e%d7%94-%d7%98%d7%99%d7%99%d7%9e/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הגדירור את הטיימר לפני השינה ותחכה לך",
+   "problem": "Typo 'הגדירור', inconsistent addressing, and an unclosed quotation mark in 'מידע על המוצר \"מכונת קפה...'.",
+   "suggested_fix": "הגדירו את הטיימר לפני השינה ותחכה לכם כוס קפה טרייה בבוקר!",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67258",
+   "product_name": "קפסולות אלומיניום נטול קפאין האוסברנדט לנספרסו - Hausbrandt Nespresso",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%90%d7%9c%d7%95%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%a0%d7%98%d7%95%d7%9c-%d7%a7%d7%a4%d7%90%d7%99%d7%9f-%d7%94%d7%90%d7%95%d7%a1%d7%91%d7%a8%d7%a0/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:",
+   "problem": "Cut-off sentence: a dangling colon and asterisk with no list or footnote.",
+   "suggested_fix": "תואם לכל המכונות המיוצרות עבור מערכת Nespresso®.* (*נספרסו היא סימן מסחרי של צד שלישי)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67281",
+   "product_name": "מכונת קפה מקצועית Bellezza Bellona Black שחור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-bellona-black-%d7%a9%d7%97%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב\n חירה מצוינת",
+   "problem": "Missing space ('חיצוניבעיצוב'), the word 'בחירה' is split across lines, and the opening 'מבית הנירוסטה שלו' is a garbled machine translation.",
+   "suggested_fix": "בעלת דוד כפול עם מיכל מים חיצוני בעיצוב עגול. ... בחירה מצוינת; לנסח מחדש: \"מגוף הנירוסטה דרך ראש החליטה של Bellezza ועד לדודי הנירוסטה\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67336",
+   "product_name": "מכונת קפה מקצועית Bellezza Chiara Leva",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bellezza-chiara-leva/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת",
+   "problem": "Typos: final mem written as regular 'מ' ('מרשימ') and 'שלייטה'. The description also has broken phrases ('קטנה וקטנה', 'כמו ג PID').",
+   "suggested_fix": "Bellezza Chiara מרשימה, עיצוב רטרו ... שליטה בתזמון חליטה מוקדמת; בתיאור: \"קטנה וקומפקטית\", \"דוד נירוסטה 2 ליטר ובקר PID אלגנטי\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67360",
+   "product_name": "קפסולות אלומיניום אינטנסו האוסברנדט לנספרסו - Hausbrandt Nespresso",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%90%d7%9c%d7%95%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%90%d7%99%d7%a0%d7%98%d7%a0%d7%a1%d7%95-%d7%94%d7%90%d7%95%d7%a1%d7%91%d7%a8%d7%a0%d7%93%d7%98/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "10 קפסולו קפה האוסברנדט ... תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:",
+   "problem": "Typo 'קפסולו', and the text ends in a dangling colon and asterisk with no list or footnote.",
+   "suggested_fix": "10 קפסולות קפה האוסברנדט ...; להשלים או להסיר: \"תואם לכל המכונות המיוצרות עבור מערכת Nespresso®*\" + הערת שוליים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67399",
+   "product_name": "מכונת אספרסו רוקט- V מוציפיאטו כרונומטרו V Rocket Mozzafiato Cronometro",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-v-%d7%9e%d7%95%d7%a6%d7%99%d7%a4%d7%99%d7%90%d7%98%d7%95-%d7%9b%d7%a8%d7%95%d7%a0%d7%95%d7%9e%d7%98%d7%a8/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "ווסת טמפרטורה (PIDׂ) ... לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה",
+   "problem": "Stray Hebrew diacritic (shin dot) attached to 'PID' and a duplicated word 'לפני לפי'.",
+   "suggested_fix": "ווסת טמפרטורה (PID) ... לבחור חליטה בטמפרטורה שונה לפי סוג הקפה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67604",
+   "product_name": "La Pavoni Professional Rame Gold PRG: מכונת קפה מנוף מקצועית",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-rame-gold-prg-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "איכות ללא פשרים ... מד לחץ המים בב דוד",
+   "problem": "Typos 'פשרים' and 'בב דוד' (the latter also in the short description).",
+   "suggested_fix": "איכות ללא פשרות ... מד לחץ המים בדוד",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67605",
+   "product_name": "La Pavoni Europiccola Nero: מכונת קפה מנוף ידנית מקצועית",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-europiccola-nero-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "מד לחץ מים בב דוד",
+   "problem": "Duplicated letters 'בב'.",
+   "suggested_fix": "מד לחץ מים בדוד",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67622",
+   "product_name": "La Pavoni EXPO 2015: מכונת קפה מנוף ידנית מקצועית",
+   "permalink": "https://www.minuto.co.il/product/la-pavoni-expo-2015-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:",
+   "problem": "Cut-off sentence: the certification list is missing.",
+   "suggested_fix": "להשלים את רשימת התקנים או למחוק את השורה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68284",
+   "product_name": "מתאם קפסולות NS לקפסולות נספרסו או תואמות למכונת ננופרסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%aa%d7%90%d7%9d-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-ns-%d7%9c%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%90%d7%95-%d7%aa%d7%95%d7%90%d7%9e%d7%95/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "*קפסולות NS מתיחס לקפסולות נספרסו® מקוריות ותואמות.",
+   "problem": "Typo 'מתיחס' and a gender/number mismatch.",
+   "suggested_fix": "*קפסולות NS – מתייחס לקפסולות נספרסו® מקוריות ותואמות.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "69450",
+   "product_name": "מכונת קפה פילטר BEEM Fresh Aroma Perfect",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-beem-fresh-aroma-perfect/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "תצוגת LC מוארת",
+   "problem": "Truncated abbreviation: should be LCD.",
+   "suggested_fix": "תצוגת LCD מוארת",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78179",
+   "product_name": "ספל Volcano אקוואמארין 90 מ\"ל Club House",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-volcano-%d7%90%d7%a7%d7%95%d7%95%d7%90%d7%9e%d7%90%d7%a8%d7%99%d7%9f-90-%d7%9e%d7%9c/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "אידיאלי לאספרסו או מקיאטו.\n ﻿",
+   "problem": "An invisible BOM/zero-width character is left at the end of the short description.",
+   "suggested_fix": "למחוק את התו הנסתר בסוף התיאור הקצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78892",
+   "product_name": "50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods",
+   "permalink": "https://www.minuto.co.il/product/50-%d7%a4%d7%95%d7%93%d7%99%d7%9d-%d7%a7%d7%a4%d7%94-%d7%9e%d7%90%d7%95%d7%a8%d7%95-%d7%a0%d7%98%d7%95%d7%9c-%d7%a7%d7%95%d7%a4%d7%90%d7%99%d7%9f-mauro-tropa-pods/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods",
+   "problem": "Typo 'קופאין' in the title; the text uses 'קפאין'.",
+   "suggested_fix": "50 פודים קפה מאורו נטול קפאין Mauro Tropa Pods",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "76577",
+   "product_name": "מבצע 200 קפסולות אספרסו קלאב",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a6%d7%a2-300-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a7%d7%9c%d7%90%d7%91/",
+   "field": "sku",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "No SKU.",
+   "suggested_fix": "להזין מק״ט",
+   "confidence": "certain"
+  }
+ ],
+ "products": [
+  {
+   "id": 64701,
+   "name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה",
+   "short_description": "<p>מערכת AQUAPHOR Osmo Pro 100 מצוידת במערכת החדשה שהופכת את החלפת הפילטרים למהירה וקלה,  לוקח פחות מדקה ואינו דורש כלים. יש להחליף פילטרים בזמן כדי שהממברנה תחזיק מעמד למשך 1.5-2 שנים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מפחית מזהמים נפוצים במי ברז כגון: כלור , חומרים אורגנים , מתכות כבדות , ניטריטים וניטראטים , בקטריות ווירוסים , פנולים , מלחי קשיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה ואספרסו הוא יישום אחד שדורש הסרת תכונות לא רצויות במי ההזנה, כגון כלור, אך רק את הכמות הנכונה של מינרלים חשובים להשאיר בתוכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כידוע מים טובים יכולים לעזור לשחרר את מלוא הטעם של פולי הקפה תוך הגנה על מכונות הקפה מפני ההשפעות היקרות של קורוזיות ואבנית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מערכת אוסמוזה Osmo Pro 100 כולל התקנה | מינוטו",
+    "rank_math_description": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה. מערכת לטיפול ולסינון מים עם מידע על הדגם, הסינון וההתקנה. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "התקנה",
+     "options": [
+      "כולל התקנה",
+      "לא כולל התקנה"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64735,
+   "name": "מתאם אינדוקציה ביאלטי",
+   "short_description": "<p>פלטת האינדוקציה של Bialetti היא ההתאמה המושלמת למי שיש לו מכונת קפה מסוג Moka Express וכיריים בטכנולוגיית אינדוקציה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מתאם אינדוקציה ביאלטי</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פלטת האינדוקציה של Bialetti היא ההתאמה המושלמת למי שיש לו מכונת קפה מסוג Moka Express וכיריים בטכנולוגיית אינדוקציה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתאימה לכל סוגי המקינטות (מ-1 כוס עד 9 כוסות), היא יכולה גם לשמש לקנקן החלב שלך ובכלל, לכל סיר קטן, על כל כיריים בטכנולוגיית אינדוקציה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפלטה עשויה כולה מפלדה ובזכות עוביו המשמעותי, היא מאפשר העברת חום מושלמת.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פלטת האינדוקציה של Bialetti היא ההתאמה המושלמת למי שיש לו מכונת קפה מסוג Moka Express וכיריים בטכנולוגיית אינדוקציה"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64736,
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 560",
+   "short_description": "<div class=\"product-short-desc grid_6 omega \">\n<p>יפה, פשוטה ואכותית. בשחור עם חזית בצבע לבן,</p>\n<p>פעולה פשוטה</p>\n<p>מערכת ארומטיקה עם לחץ משאבה של 15 בר</p>\n<p>מיכל מים גדול במיוחד (2.2 ליטר)</p>\n<p>מטחנה קונית שקטה עשויה פלדה מוקשה</p>\n<p>יחידת חליטה נשלפת לניקוי היגייני</p>\n<p>טמפרטורת הקפה ניתנת לבחירה בשלוש דרגות</p>\n</div>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו ניבונה Nivona CafeRomatica 560</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מציגים את מכונת הקפה Nivona 560, תוספת אלגנטית ומסוגננת למטבח של כל חובב קפה. עם התכונות המתקדמות והעיצוב האינטואיטיבי, מכונה זו מספקת חווית קפה שאין כמותה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 560 מצויידת במערכת חליטה עוצמתית החולטת טעם מקסימלי מכל פול, מייצרת קפה עשיר ומלא עם קרמה מושלמת בכל פעם. מיכל המים בעל קיבולת גדולה ומיכל פולי הקפה הופכים אותו לאידיאלי להגשת כוסות קפה מרובות ללא צורך במילוי תכוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחד המאפיינים הבולטים של ה-Nivona 560 הוא ממשק מסך צבעוני האינטואיטיבי שלו, המאפשר שליטה קלה ומדויקת על תהליך החליטה. ניתן יכול לבחור מתוך מגוון הגדרות הניתנות להתאמה אישית, כולל טמפרטורה, חוזק ונפח, כדי ליצור את כוס הקפה המושלמת בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 560 כולל גם מקציף חלב משולב, המאפשר ליצור בקלות מגוון רחב של משקאות על בסיס חלב, כגון לאטה, קפוצ'ינו ועוד. יחד עם פונקציות הניקוי והסרת אבנית אוטומטיות , התחזוקה היא קלה, מה שמבטיח שהמכונה תישאר במצב מעולה במשך שנים רבות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-Nivona 560 עשויה מחומרים איכותיים ומעוצבת תוך מחשבה על צורה ותפקוד, היא מכונת קפה שבאמת בולטת. אז למה להסתפק במשהו פחות משלמות? הזמינו עוד היום את Nivona 550 שלכם והתחילו ליהנות מחוויית הקפה האולטימטיבית מהנוחות של הבית שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>לחץ משאבה - 15 בר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>טמפרטורת קפה מתכווננת - 3 רמות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פיית קפה מתכווננת - 14 ס\"מ</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נפח מיכל מים - 2.2 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>גודל מיכל פולי הקפה - 250 גרם</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מידות בס\"מ: רוחב=24 ; גובה=34 ; עומק=46</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>הספק - 1455W</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל (כולל אריזה) - 10KG</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>יבואן קופמה</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>24 חודשי אחריות</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה nivona caferomatica 560 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "Nivona Caferomatica 560 - טעם מושלם בקלות מפתיעה. מאפשרת שליטה בחוזק הקפה ובכמות המים. ה-Nivona Caferomatica 560 כוללת תצוגה ברורה וניקוי אוטומטי."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64760,
+   "name": "קפסולות קפה ESSE MONDOSE IDEALE",
+   "short_description": "<p>&quot; &#8211; קפה קליל ועדין המיועד למי שמחפש אספרסו משביע ללא עודף קפאין. התערובת המאוזנת שלו של ערביקה מעודנת ורובוסטה מוערכת עדינה מיוחדת מבטיחה טעם בעל גוף מלא עם רק מחצית מהקפאין. תיהנו מהטעם העוטף וההרמוני, עם איזון מושלם בין תווים מרים וחומציים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות קפה ESSE MONDOSE IDEALE</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את \"Essse Capsule Monodose IDEALE\" - קפה קליל ועדין המיועד למי שמחפש אספרסו משביע ללא עודף קפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התערובת המאוזנת שלו של ערביקה מעודנת ורובוסטה מוערכת עדינה מיוחדת מבטיחה טעם בעל גוף מלא עם רק מחצית מהקפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תיהנו מהטעם העוטף וההרמוני, עם איזון מושלם בין תווים מרים וחומציים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בין אם לוגמים קפה חם או קר, Ideale נשאר קסום, מה שהופך אותו לבחירה האידיאלית לכל שעה ביום - מבוקר ועד בין ערביים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פנקו את עצמכם עם האספרסו המענג הזה והתפנקו בהפסקה מיוחדת מבלי להתפשר על הטעם או האנרגיה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קפסולות קפה איכותיות מבית ESSE Caffè מדגם Mondose Ideale. תערובת איטלקית מעולה ומאוזנת, בעלת גוף עשיר, ארומה נפלאה וקרמה קטיפתית. "
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64846,
+   "name": "נרתיק נשיאה למכונת ננופרסו Wacaco bag for Nanopresso",
+   "short_description": "<p>תוכנן במיוחד עבור מכונת האספרסו הניידת Wacaco Nanopresso, התיק האיכותי הזה עשוי מחומרים עמידים וקלים המבטיחים שה-Nanopresso שלך יישאר בטוח ומאובטח במהלך ההובלה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">נרתיק נשיאה למכונת ננופרסו Wacaco bag for Nanopresso</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את תיק Wacaco לננופרסו - האביזר המושלם לאוהבי קפה בדרכים!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכנן במיוחד עבור מכונת האספרסו הניידת Wacaco Nanopresso, התיק האיכותי הזה עשוי מחומרים עמידים וקלים המבטיחים שה-Nanopresso שלך יישאר בטוח ומאובטח במהלך ההובלה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התיק כולל עיצוב קומפקטי שקל לנשיאה, מה שהופך אותו לאידיאלי עבור מטיילים, חובבי טבע או כל מי שרוצה ליהנות מכוס קפה טעימה בכל מקום ובכל זמן. הוא מצויד גם ברוכסן יציב ששומר על הננופרסו שלך במקומו ומונע ממנו להינזק.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התיק מתאפיין בעיצוב מסוגנן ומודרני, בגימור שחור מלוטש והלוגו של Wacaco מוצג בולט בחזית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בין אם אתם יוצאים לטיול קמפינג, לטיול בכביש, או סתם זקוקים לכוס קפה איכותית בעבודה בעבודה, תיק Wacaco לננופרסו הוא האביזר המושלם למכונת האספרסו הניידת שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית נרתיק לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - זמין במלאי. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64847,
+   "name": "קפסולות דולצה Italian Coffee Lungo",
+   "short_description": "<p>Dolce Gusto Super Creamy 100% ערביקה &#8211; הפתרון המושלם למי שחושק בחווית קפה עשירה, אינטנסיבית וטעימה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>הכירו את Dolce Gusto Super Creamy 100% ערביקה - הפתרון המושלם למי שחושק בחווית קפה עשירה, אינטנסיבית וטעימה. כל חבילה מכילה 16 קפסולות קלות לשימוש, המאפשרות להכין 16 כוסות קפה משובח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת זו עשויה מ-100% פולי ערביקה, שנבחרו בקפידה ונקלו לשלמות כדי להבטיח פרופיל טעם חלק, מאוזן וארומטי. הודות למרקם הקרמי שלו, הקפה הזה אידיאלי ליצירת משקאות ארוכים ומפנקים שישביעו את התשוקה שלכם ויעלו את רמת הקפה שלכם לשלב הבא.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אז למה להסתפק במשהו פחות מהטוב ביותר? התענגו על הטעם העשיר והעז של דולצ'ה גוסטו סופר קרמי 100% ערביקה, וגלו רמה חדשה של הנאה מקפה שלא תמצאו בשום מקום אחר. הזמינו עכשיו ותחוו את סיפוק הקפה האולטימטיבי!</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Dolce Gusto Super Creamy 100% ערביקה - הפתרון המושלם למי שחושק בחווית קפה עשירה, אינטנסיבית וטעימה. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64990,
+   "name": "מכונת אספרסו רוקט אר 60 וי - Rocket R 60V",
+   "short_description": "<ul>\n<li class=\"first\">ה- R 60V מצוידת במערכת לחץ ייחודית המאפשרת שיפור נוסף בטעם הקפה באמצעות היכולת לכוונן את לחץ המשאבה במהלך הפקת הקפה.</li>\n<li class=\"\">מערכת הלחץ של רוקט מסתמכת על גישה של 5 שלבים שמאפשרת קיטוע של הפקת הקפה ל-5 מרווחי זמן שונים, אשר כל אחד מהם מאפשר להגדיר מדד שונה שמגביר או מקטין את לחץ המשאבה בהתאם לסוג הקפה והטעם הנדרש.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו רוקט אר 60 וי - Rocket R 60V</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פרטים טכניים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ה- R 60V מצוידת במערכת לחץ ייחודית המאפשרת שיפור נוסף בטעם הקפה באמצעות היכולת לכוונן את לחץ המשאבה במהלך הפקת הקפה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת הלחץ של רוקט מסתמכת על גישה של 5 שלבים שמאפשרת קיטוע של הפקת הקפה ל-5 מרווחי זמן שונים, אשר כל אחד מהם מאפשר להגדיר מדד שונה שמגביר או מקטין את לחץ המשאבה בהתאם לסוג הקפה והטעם הנדרש.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תא התקשורת של רוקט אספרסו מאפשר ביצוע התאמות באמצעות שלט רחוק או באמצעות מערכת Wi-Fi שמציגה טמפרטורות, לחץ וזמני הפקה בזמן אמת.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>הרתחה כפולה ומשאבה סיבובית מבוקרת על יד PID .</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בכל מכונה מדגם זה קיימת האופציה לעבודה עם מיכל מים או חיבור ישיר לרשת המים.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מאפיינים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>60V</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל הרתחה כפול של 0.58 ו-1.8 ליטרים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בקרת PID</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מערכת פרופיל לחץ משאבה סיבובי</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>תא התקשורת של רוקט אספרסו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>טיימר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים בנפח 2.5 ליטר או אפשרות לחיבור מים ישיר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>הספק: 1400W</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מידות: 310x440x390* מ\"מ (רוחב/עומק/גובה)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל: 29.5 ק\"ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אחריות 48 חודשים ע\"י היבואן קרמה פלוס</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - 60. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65015,
+   "name": "100 קפסולות ביאלטי נאפולי לנספרסו",
+   "short_description": "<p>מילאנו הוא קפה קליל ועדין. עשוי 100% ערביקה, יעם רמיזות של פרחים ופירות יבשים וטעם רך וארומה עשירה,</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">100 קפסולות ביאלטי נאפולי לנספרסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מילאנו הוא קפה קליל ועדין. עשוי 100% ערביקה, עם רמיזות של פרחים ופירות יבשים וטעם רך וארומה עשירה,</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם למי ששותה יותר מקפה אחד ביום.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - 100 קפסולות. קלייה טרייה לאיכות מקסימלית"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65170,
+   "name": "תרמוס למכונת ננופרסו - Nanovessel",
+   "short_description": "<p><span id=\"result_box\" lang=\"iw\">מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.</span></p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">תרמוס למכונת ננופרסו - Nanovessel</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"><strong>התרמוס המדהים של Wacaco</strong></h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>ננווסל (Nanovessel) תרמוס מבודד וואקום שיש בו 3 פונקציות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>תרמוס </strong>- תרמוס איכותי מאושר מזון עשוי מנירוסטה 304. הוא שומר על המשקה חם או קר מספיק זמן כדי לשמר את כל הטעמים והרעננות של המשקה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>כלי להכנת תה</strong> - התרמוס הוא גם כלי להכנת תה מעולה. בתוך התרמוס יש רשת, שלתוכה מכניסים עלי תה, יוצקים את המים החמים על התה ומקבלים תה איכותי ישירות לתוך התרמוס.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>כלי קיבול לננופרסו</strong>.- התרמוס תואם 100% לננופרסו. הוא מתברג ישירות לננופרסו במקום מיכל המים כך שאין צורך לצקת את המים החמים. פשוט מחברים ונהנים מאספרסו חם ואמיתי, התוסף המושלם לננופרסו שלך</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:shortcode --></p>\n<p><!-- /wp:shortcode --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית תרמוס לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65208,
+   "name": "נרתיק נשיאה למכונת מיניפרסו",
+   "short_description": "<p><span id=\"result_box\" lang=\"iw\">מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.</span></p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">נרתיק קשיח לשמירה על המיניפרסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>Minipresso-Case עשוי מחומר EVA (Ethylene-vinyl acetate) עמיד עם בד רך בבטנה הפנימית. הנרתיק תוכנן במיוחד כדי להתאים למכשיר המיניפרסו. עכשיו תוכלו לקחת את המכשיר עם נרתיק איכותי לשטח מבלי חשש שיקבל מכה או יפול.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הנרתיק מסייע להגן על המכשיר במפני רעידות, מכות, שריטות ואבק. עם הנרתיק מוכן להרפתקה הגדולה הבאה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מידות:</strong> 200x80x70 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>משקל:</strong> 80 גרם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הערה</strong>: הנרתיק נמכר בנפרד</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית נרתיק לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - משלוח מהיר. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65403,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כתום",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - 250 מל - 250. מתאים למדיח כלים ולמיקרוגל"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65406,
+   "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע פחם",
+   "short_description": "<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:81\">ספל קלאסי מסדרת BOND של לוברמיקס:</h2>\n<h2 data-sourcepos=\"1:1-1:81\">עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה!</h2>\n<p data-sourcepos=\"3:1-3:13\"><b>300 מ״ל</b></p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:65\">פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל עם טוויסט עכשווי!</h2>\n<p>&nbsp;</p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"7:1-7:48\"><strong>למה לבחור בספל קלאסי מסדרת BOND של לוברמיקס?</strong></p>\n<ul data-sourcepos=\"9:1-16:0\">\n<li data-sourcepos=\"9:1-9:90\"><strong>עיצוב ייחודי:</strong> שילוב קווים ישרים וזיגוג ב-4 צבעים שקטים ומעודנים בהשראת השיק הפריזאי.</li>\n<li data-sourcepos=\"10:1-10:74\"><strong>חווית קפה משופרת:</strong> מבנה פנימי מעוגל המאפשר לארומת הקפה להתפתח במלואה.</li>\n<li data-sourcepos=\"11:1-11:85\"><strong>שמירה על חום:</strong> דופן עבה במיוחד וחלל נוסף בתחתית, לשמירה ארוכה על טמפרטורת המשקה.</li>\n<li data-sourcepos=\"12:1-12:109\"><strong>נוחות שתייה:</strong> ידית בסגנון אוונגארד משנה את מרכז הכבידה, מוסיפה נוחות מרבית ומאזנת את הספל בעת ציור בקפה.</li>\n<li data-sourcepos=\"13:1-13:110\"><strong>עיצוב ע״י מעצב עטור פרסים:</strong> סיימון סטיבנס, מעצב מוצר ידוע ומוכר, עומד מאחורי העיצוב הייחודי של ספל קלאסי.</li>\n<li data-sourcepos=\"14:1-14:88\"><strong>איכות גבוהה:</strong> סדרת BOND של לוברמיקס ידועה באיכותה הגבוהה ובחומרי הגלם המשובחים שלה.</li>\n<li data-sourcepos=\"15:1-16:0\"><strong>התאמה מושלמת:</strong> מתאים למעמד לדריפר+דריפר מסדרת BOND.</li>\n</ul>\n<p data-sourcepos=\"17:1-17:96\"><strong>ספל קלאסי מסדרת BOND של לוברמיקס הוא לא רק כלי שתייה, הוא יצירת אמנות שתוסיף יוקרה לכל מטבח.</strong></p>\n<p data-sourcepos=\"19:1-19:85\"><strong>אל תפספסו את ההזדמנות ליהנות מספל קלאסי במחיר מיוחד! הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"21:1-21:103\"><strong>לפרטים נוספים והזמנות, בקרו באתר מינוטו קפה:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "ספל קלאסי מסדרת BOND של לוברמיקס: עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה - זמין במלאי. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65407,
+   "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע חרדל",
+   "short_description": "<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:81\">ספל קלאסי מסדרת BOND של לוברמיקס:</h2>\n<h2 data-sourcepos=\"1:1-1:81\">עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה!</h2>\n<p data-sourcepos=\"3:1-3:13\"><b>300 מ״ל</b></p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:65\">פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל עם טוויסט עכשווי!</h2>\n<p>&nbsp;</p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"7:1-7:48\"><strong>למה לבחור בספל קלאסי מסדרת BOND של לוברמיקס?</strong></p>\n<ul data-sourcepos=\"9:1-16:0\">\n<li data-sourcepos=\"9:1-9:90\"><strong>עיצוב ייחודי:</strong> שילוב קווים ישרים וזיגוג ב-4 צבעים שקטים ומעודנים בהשראת השיק הפריזאי.</li>\n<li data-sourcepos=\"10:1-10:74\"><strong>חווית קפה משופרת:</strong> מבנה פנימי מעוגל המאפשר לארומת הקפה להתפתח במלואה.</li>\n<li data-sourcepos=\"11:1-11:85\"><strong>שמירה על חום:</strong> דופן עבה במיוחד וחלל נוסף בתחתית, לשמירה ארוכה על טמפרטורת המשקה.</li>\n<li data-sourcepos=\"12:1-12:109\"><strong>נוחות שתייה:</strong> ידית בסגנון אוונגארד משנה את מרכז הכבידה, מוסיפה נוחות מרבית ומאזנת את הספל בעת ציור בקפה.</li>\n<li data-sourcepos=\"13:1-13:110\"><strong>עיצוב ע״י מעצב עטור פרסים:</strong> סיימון סטיבנס, מעצב מוצר ידוע ומוכר, עומד מאחורי העיצוב הייחודי של ספל קלאסי.</li>\n<li data-sourcepos=\"14:1-14:88\"><strong>איכות גבוהה:</strong> סדרת BOND של לוברמיקס ידועה באיכותה הגבוהה ובחומרי הגלם המשובחים שלה.</li>\n<li data-sourcepos=\"15:1-16:0\"><strong>התאמה מושלמת:</strong> מתאים למעמד לדריפר+דריפר מסדרת BOND.</li>\n</ul>\n<p data-sourcepos=\"17:1-17:96\"><strong>ספל קלאסי מסדרת BOND של לוברמיקס הוא לא רק כלי שתייה, הוא יצירת אמנות שתוסיף יוקרה לכל מטבח.</strong></p>\n<p data-sourcepos=\"19:1-19:85\"><strong>אל תפספסו את ההזדמנות ליהנות מספל קלאסי במחיר מיוחד! הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"21:1-21:103\"><strong>לפרטים נוספים והזמנות, בקרו באתר מינוטו קפה:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "ספל קלאסי מסדרת BOND של לוברמיקס: עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה - משלוח מהיר. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65408,
+   "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אינדיגו",
+   "short_description": "<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:81\">ספל קלאסי מסדרת BOND של לוברמיקס:</h2>\n<h2 data-sourcepos=\"1:1-1:81\">עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה!</h2>\n<p data-sourcepos=\"3:1-3:13\"><b>300 מ״ל</b></p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:65\">פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל עם טוויסט עכשווי!</h2>\n<p>&nbsp;</p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"7:1-7:48\"><strong>למה לבחור בספל קלאסי מסדרת BOND של לוברמיקס?</strong></p>\n<ul data-sourcepos=\"9:1-16:0\">\n<li data-sourcepos=\"9:1-9:90\"><strong>עיצוב ייחודי:</strong> שילוב קווים ישרים וזיגוג ב-4 צבעים שקטים ומעודנים בהשראת השיק הפריזאי.</li>\n<li data-sourcepos=\"10:1-10:74\"><strong>חווית קפה משופרת:</strong> מבנה פנימי מעוגל המאפשר לארומת הקפה להתפתח במלואה.</li>\n<li data-sourcepos=\"11:1-11:85\"><strong>שמירה על חום:</strong> דופן עבה במיוחד וחלל נוסף בתחתית, לשמירה ארוכה על טמפרטורת המשקה.</li>\n<li data-sourcepos=\"12:1-12:109\"><strong>נוחות שתייה:</strong> ידית בסגנון אוונגארד משנה את מרכז הכבידה, מוסיפה נוחות מרבית ומאזנת את הספל בעת ציור בקפה.</li>\n<li data-sourcepos=\"13:1-13:110\"><strong>עיצוב ע״י מעצב עטור פרסים:</strong> סיימון סטיבנס, מעצב מוצר ידוע ומוכר, עומד מאחורי העיצוב הייחודי של ספל קלאסי.</li>\n<li data-sourcepos=\"14:1-14:88\"><strong>איכות גבוהה:</strong> סדרת BOND של לוברמיקס ידועה באיכותה הגבוהה ובחומרי הגלם המשובחים שלה.</li>\n<li data-sourcepos=\"15:1-16:0\"><strong>התאמה מושלמת:</strong> מתאים למעמד לדריפר+דריפר מסדרת BOND.</li>\n</ul>\n<p data-sourcepos=\"17:1-17:96\"><strong>ספל קלאסי מסדרת BOND של לוברמיקס הוא לא רק כלי שתייה, הוא יצירת אמנות שתוסיף יוקרה לכל מטבח.</strong></p>\n<p data-sourcepos=\"19:1-19:85\"><strong>אל תפספסו את ההזדמנות ליהנות מספל קלאסי במחיר מיוחד! הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"21:1-21:103\"><strong>לפרטים נוספים והזמנות, בקרו באתר מינוטו קפה:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מאג לוברמיקס קולקציית בונד צבע אינדיגו | מינוטו קפה ואביזרים",
+    "rank_math_description": "ספל קלאסי מסדרת BOND של לוברמיקס: עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה - איכות פרימיום. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "search",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65409,
+   "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אדום בריק",
+   "short_description": "<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:81\">ספל קלאסי מסדרת BOND של לוברמיקס:</h2>\n<h2 data-sourcepos=\"1:1-1:81\">עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה!</h2>\n<p data-sourcepos=\"3:1-3:13\"><b>300 מ״ל</b></p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:65\">פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל עם טוויסט עכשווי!</h2>\n<p>&nbsp;</p>\n<p data-sourcepos=\"5:1-5:32\"><strong>הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"7:1-7:48\"><strong>למה לבחור בספל קלאסי מסדרת BOND של לוברמיקס?</strong></p>\n<ul data-sourcepos=\"9:1-16:0\">\n<li data-sourcepos=\"9:1-9:90\"><strong>עיצוב ייחודי:</strong> שילוב קווים ישרים וזיגוג ב-4 צבעים שקטים ומעודנים בהשראת השיק הפריזאי.</li>\n<li data-sourcepos=\"10:1-10:74\"><strong>חווית קפה משופרת:</strong> מבנה פנימי מעוגל המאפשר לארומת הקפה להתפתח במלואה.</li>\n<li data-sourcepos=\"11:1-11:85\"><strong>שמירה על חום:</strong> דופן עבה במיוחד וחלל נוסף בתחתית, לשמירה ארוכה על טמפרטורת המשקה.</li>\n<li data-sourcepos=\"12:1-12:109\"><strong>נוחות שתייה:</strong> ידית בסגנון אוונגארד משנה את מרכז הכבידה, מוסיפה נוחות מרבית ומאזנת את הספל בעת ציור בקפה.</li>\n<li data-sourcepos=\"13:1-13:110\"><strong>עיצוב ע״י מעצב עטור פרסים:</strong> סיימון סטיבנס, מעצב מוצר ידוע ומוכר, עומד מאחורי העיצוב הייחודי של ספל קלאסי.</li>\n<li data-sourcepos=\"14:1-14:88\"><strong>איכות גבוהה:</strong> סדרת BOND של לוברמיקס ידועה באיכותה הגבוהה ובחומרי הגלם המשובחים שלה.</li>\n<li data-sourcepos=\"15:1-16:0\"><strong>התאמה מושלמת:</strong> מתאים למעמד לדריפר+דריפר מסדרת BOND.</li>\n</ul>\n<p data-sourcepos=\"17:1-17:96\"><strong>ספל קלאסי מסדרת BOND של לוברמיקס הוא לא רק כלי שתייה, הוא יצירת אמנות שתוסיף יוקרה לכל מטבח.</strong></p>\n<p data-sourcepos=\"19:1-19:85\"><strong>אל תפספסו את ההזדמנות ליהנות מספל קלאסי במחיר מיוחד! הזמינו עכשיו דרך מינוטו קפה!</strong></p>\n<p data-sourcepos=\"21:1-21:103\"><strong>לפרטים נוספים והזמנות, בקרו באתר מינוטו קפה:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "ספל קלאסי מסדרת BOND של לוברמיקס: עיצוב ייחודי, חווית קפה משופרת, איכות גבוהה בצבע אדום בולט. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67153,
+   "name": "La Pavoni Esperto Edotto: מכונת קפה ידנית מקצועית",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:50\"><strong>מכונת קפה ידנית מקצועית לחובבי אספרסו מושבעים.</strong></p>\n<p data-sourcepos=\"5:1-5:47\"><strong>הכינו קפה איכותי בדיוק כמו בבית קפה איטלקי.</strong></p>\n<p data-sourcepos=\"7:1-7:43\"><strong>מד לחץ ומד טמפרטורה לשליטה מלאה בחליטה.</strong></p>\n<p data-sourcepos=\"9:1-9:33\"><strong>רכיבים איכותיים ועיצוב יפהפה.</strong></p>\n<p data-sourcepos=\"11:1-11:47\"><strong>הזמינו עכשיו ותיהנו מחוויית קפה בלתי נשכחת!</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:74\">La Pavoni Esperto Edotto: מכונת קפה ידנית מקצועית לחובבי אספרסו מושבעים</h2>\n<p data-sourcepos=\"3:1-3:345\"><strong>La Pavoni Esperto Edotto</strong> היא מכונת קפה ידנית ברמה מקצועית, המיועדת לחובבי אספרסו אמיתיים. מד הלחץ ומד הטמפרטורה שעל גוף המכונה מאפשרים לכם לשלוט באופן מלא בלחץ המופעל במהלך החליטה, ולהגיע לתוצאה מושלמת עם כל סוג של פולי קפה או תערובת. רכיבים איכותיים ופרטים עיצוביים מוקפדים הופכים את המכונה הזאת לא רק לפונקציונלית אלא גם לפריט עיצוב יפהפה.</p>\n<p data-sourcepos=\"5:1-5:14\"><strong>מפרט טכני:</strong></p>\n<ul data-sourcepos=\"7:1-20:0\">\n<li data-sourcepos=\"9:1-9:16\"><strong>הספק:</strong> 950W</li>\n<li data-sourcepos=\"10:1-10:25\"><strong>צבע:</strong> נחושת (Edotto)</li>\n<li data-sourcepos=\"11:1-11:27\"><strong>חומר גוף המכונה:</strong> פליז</li>\n<li data-sourcepos=\"12:1-12:31\"><strong>חומר בסיס המכונה:</strong> נירוסטה</li>\n<li data-sourcepos=\"13:1-13:29\"><strong>חומר מגש כוסות:</strong> נירוסטה</li>\n<li data-sourcepos=\"14:1-14:39\"><strong>חומר צינור קיטור:</strong> פליז מצופה כרום</li>\n<li data-sourcepos=\"15:1-15:28\"><strong>חומר מגש טפטוף:</strong> פלסטיק</li>\n<li data-sourcepos=\"16:1-16:38\"><strong>חומר יחידת חליטה:</strong> פליז (צבע זהב)</li>\n</ul>\n<p data-sourcepos=\"21:1-21:13\"><strong>פונקציות:</strong></p>\n<ul data-sourcepos=\"23:1-25:0\">\n<li data-sourcepos=\"23:1-23:30\">חליטת קפה: ידנית עם בקרת לחץ</li>\n<li data-sourcepos=\"24:1-25:0\">הקצפת חלב: כן</li>\n</ul>\n<p data-sourcepos=\"26:1-26:18\"><strong>תכונות נוספות:</strong></p>\n<ul data-sourcepos=\"28:1-37:0\">\n<li data-sourcepos=\"28:1-28:10\">דוד יחיד</li>\n<li data-sourcepos=\"29:1-29:20\">בקרת לחץ אלקטרונית</li>\n<li data-sourcepos=\"30:1-30:24\">מד לחץ על יחידת החליטה</li>\n<li data-sourcepos=\"31:1-31:20\">מיכל מים: 1.6 ליטר</li>\n<li data-sourcepos=\"32:1-32:16\">תצוגת מפלס מים</li>\n<li data-sourcepos=\"33:1-33:12\">מד לחץ דוד</li>\n<li data-sourcepos=\"34:1-34:22\">נורית חיווי טמפרטורה</li>\n<li data-sourcepos=\"35:1-35:23\">בקרת לחץ חליטה (BPPC)</li>\n<li data-sourcepos=\"36:1-37:0\">צינור קיטור עם ציפוי מבודד</li>\n</ul>\n<p data-sourcepos=\"38:1-38:19\"><strong>אביזרים כלולים:</strong></p>\n<ul data-sourcepos=\"40:1-46:0\">\n<li data-sourcepos=\"40:1-40:48\">פילטרים: 1 כוס, 2 כוסות (\"Competition\")</li>\n<li data-sourcepos=\"41:1-41:33\">דוסחן מנירוסטה</li>\n<li data-sourcepos=\"42:1-42:24\">כוס מדידה</li>\n<li data-sourcepos=\"43:1-43:46\">Filter Holder</li>\n<li data-sourcepos=\"44:1-44:19\">מקציף חלב אוטומטי</li>\n<li data-sourcepos=\"45:1-46:0\">צינור קיטור: 1 פיות בקוטר 1.5 מ\"מ ו-2 מ\"מ</li>\n</ul>\n<p data-sourcepos=\"47:1-47:9\"><strong>חשמל:</strong></p>\n<p>&nbsp;</p>\n<ul data-sourcepos=\"49:1-53:0\">\n<li data-sourcepos=\"50:1-50:15\">מתח: 220-240V</li>\n<li data-sourcepos=\"51:1-51:14\">תדר: 50/60Hz</li>\n<li data-sourcepos=\"52:1-53:0\">אורך כבל חשמל: 1.5 מטר</li>\n</ul>\n<p data-sourcepos=\"54:1-54:10\"><strong>מידות:</strong></p>\n<ul data-sourcepos=\"56:1-62:21\">\n<li data-sourcepos=\"56:1-56:19\">משקל נטו: 6.2 ק\"ג</li>\n<li data-sourcepos=\"57:1-57:15\">עומק: 290 מ\"מ</li>\n<li data-sourcepos=\"58:1-58:15\">רוחב: 200 מ\"מ</li>\n<li data-sourcepos=\"59:1-59:15\">גובה: 410 מ\"מ</li>\n</ul>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה ecm technika v profi pid | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת הקפה La Pavoni Esperto Edotto - חוויית אספרסו ידנית מקצועית ברמה הגבוהה ביותר. ה-La Pavoni Esperto Edotto מציעה שליטה מלאה חומרים איכותיים לקפה מושלם"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67160,
+   "name": "La Pavoni Professional PLQ מכונת קפה מנוף לה פבוני פרופשיונאל",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:76\"><strong>מכונת אספרסו איכותית וקלה לשימוש שתעניק לכם חווית קפה ברמה מקצועית בבית.</strong></p>\n<p data-sourcepos=\"5:1-5:13\"><strong>היתרונות:</strong></p>\n<ul data-sourcepos=\"7:1-11:0\">\n<li data-sourcepos=\"7:1-7:54\"><strong>מד לחץ בקיטור:</strong> מבטיח אספרסו מושלם עם קרמה עשירה.</li>\n<li data-sourcepos=\"8:1-8:42\"><strong>גמישות:</strong> אפשרות לשימוש עם קפה טחון ופודים ESE.</li>\n<li data-sourcepos=\"9:1-9:54\"><strong>מיצוי טעם מושלם:</strong> שליטה על לחץ המים באמצעות מנוף.</li>\n<li data-sourcepos=\"10:1-11:0\"><strong>מקציף חלב:</strong> להכנת משקאות חמים מגוונים.</li>\n</ul>\n<p data-sourcepos=\"12:1-12:35\"><strong>הזמינו עכשיו ותיהנו מקפה משובח!</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:67\">La Pavoni Professional PLQ: מכונת אספרסו מקצועית לבַּריסטה שבכם!</h2>\n<p data-sourcepos=\"3:1-3:166\">חובבי קפה אמיתיים יודעים להעריך את הטעם העשיר והאותנטיות של מכונת אספרסו ידנית. La Pavoni Professional PLQ, המיוצרת באיטליה מאז 1961, היא דוגמה מושלמת למכונה מסוג זה.</p>\n<p data-sourcepos=\"5:1-5:43\"><strong>מה מייחד את La Pavoni Professional PLQ?</strong></p>\n<ul data-sourcepos=\"7:1-12:0\">\n<li data-sourcepos=\"7:1-7:126\"><strong>מכונה ידנית קלאסית:</strong>&nbsp;הפעלה באמצעות לחיצה ידנית על מנוף, המאפשרת שליטה מלאה על לחץ החליטה וזמן החליטה לקבלת אספרסו מושלם.</li>\n<li data-sourcepos=\"8:1-8:92\"><strong>אין צורך בחשמל:</strong>&nbsp;המכונה פועלת ללא משאבת חשמל, ומייצרת לחץ מים באופן ידני באמצעות המנוף.</li>\n<li data-sourcepos=\"9:1-9:74\"><strong>דוד גדול:</strong>&nbsp;קיבולת של 1.6 ליטר מים מבטיחה הכנת מספר רב של משקאות ברצף.</li>\n<li data-sourcepos=\"10:1-10:79\"><strong>מד לחץ בקיטור:</strong>&nbsp;מאפשר בקרה על לחץ הקיטור לקבלת הקצפת חלב מושלמת לקפוצ'ינו.</li>\n<li data-sourcepos=\"11:1-12:0\"><strong>מקציף חלב:</strong>&nbsp;להכנת משקאות חלב חמים שונים.</li>\n</ul>\n<p data-sourcepos=\"13:1-13:160\"><strong>La Pavoni Professional PLQ משלבת בין עיצוב מסורתי לבין טכנולוגיה איכותית, ומאפשרת לכם להכין בבית קפה ברמה מקצועית.</strong></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:57\">תכונות עיקריות</h2>\n<p data-sourcepos=\"3:1-3:18\"><strong>עיצוב קומפקטי:</strong></p>\n<ul data-sourcepos=\"5:1-9:0\">\n<li data-sourcepos=\"5:1-5:14\">גובה: 32 ס\"מ</li>\n<li data-sourcepos=\"6:1-6:16\">רוחב: 20.0 ס\"מ</li>\n<li data-sourcepos=\"7:1-7:16\">עומק: 29.0 ס\"מ</li>\n<li data-sourcepos=\"8:1-9:0\">משקל: 5.5 ק\"ג</li>\n</ul>\n<p data-sourcepos=\"10:1-10:14\"><strong>מפרט טכני:</strong></p>\n<ul data-sourcepos=\"12:1-18:0\">\n<li data-sourcepos=\"12:1-12:19\">גודל טמפר: 51 מ\"מ</li>\n<li data-sourcepos=\"13:1-13:39\">מתח חשמלי: 230V (תקע אירופאי דו-פיני)</li>\n<li data-sourcepos=\"14:1-14:23\">הספק גוף חימום: 1000W</li>\n<li data-sourcepos=\"15:1-15:19\">נפח דוד: 1.6 ליטר</li>\n<li data-sourcepos=\"16:1-16:22\">לחץ דוד: 0.7-0.8 bar</li>\n<li data-sourcepos=\"17:1-18:0\">זמן חימום: כ-5 דקות</li>\n</ul>\n<p data-sourcepos=\"19:1-19:14\"><strong>תפעול נוח:</strong></p>\n<ul data-sourcepos=\"21:1-24:0\">\n<li data-sourcepos=\"21:1-21:31\">מד לחץ: מציג את לחץ המים בדוד</li>\n<li data-sourcepos=\"22:1-22:37\">לחץ חליטה: נוצר באמצעות לחיצת המנוף</li>\n</ul>\n<p data-sourcepos=\"25:1-25:11\"><strong>בטיחות:</strong></p>\n<ul data-sourcepos=\"27:1-28:0\">\n<li data-sourcepos=\"27:1-28:0\">שסתם ביטחון: מבטיחה פעולה בטוחה של המכונה</li>\n</ul>\n<p data-sourcepos=\"29:1-29:163\"><strong>La Pavoni Professional &nbsp;מציעה את כל התכונות הדרושות להכנת אספרסו משובח בבית. </strong></p>\n<p data-sourcepos=\"29:1-29:163\"><strong>גודלה הקומפקטי מאפשר התאמה לכל מטבח, והתפעול שלה נוח וידידותי למשתמש.</strong></p>\n</div>\n<p data-sourcepos=\"13:1-13:160\">הזמינו עכשיו ותיהנו מחווית אספרסו אמיתית!</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "la pavoni professional plq | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "\"מכונת הקפה La Pavoni Professional PLQ מכונת אספרסו איכותית וקלה לשימוש. ה-La Pavoni Professional PLQ מציעה דוד גדול יותר, ושליטה מדויקת לאספרסו מושלם.\n\""
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67161,
+   "name": "La Pavoni Europiccola ELH מכונת קפה מנוף לה פבוני יורופיקולה",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:67\"><strong>ה-Europiccola ELH היא מכונת אספרסו ידנית קלאסית מבית La Pavoni.</strong></p>\n<p data-sourcepos=\"5:1-5:58\"><strong>עשויה מפליז כרום, קלה לשימוש ומתאימה לכל רמות הניסיון.</strong></p>\n<p data-sourcepos=\"7:1-7:41\"><strong>הכינו אספרסו משובח בבית כמו בבית קפה!</strong></p>\n<p data-sourcepos=\"9:1-9:18\"><strong>תכונות נוספות:</strong></p>\n<ul data-sourcepos=\"11:1-15:0\">\n<li data-sourcepos=\"11:1-11:17\">הספק: 1000 וואט</li>\n<li data-sourcepos=\"12:1-12:12\">לחץ: 15 בר</li>\n<li data-sourcepos=\"13:1-13:20\">מיכל מים: 1.6 ליטר</li>\n<li data-sourcepos=\"14:1-15:0\">משקל: 6.5 ק&quot;ג</li>\n</ul>\n<p data-sourcepos=\"16:1-16:19\"><strong>אביזרים נלווים:</strong></p>\n<ul data-sourcepos=\"18:1-23:0\">\n<li data-sourcepos=\"18:1-18:18\">ידית פילטר יחידה</li>\n<li data-sourcepos=\"19:1-19:18\">ידית פילטר כפולה</li>\n<li data-sourcepos=\"20:1-20:11\">כוס מדידה</li>\n<li data-sourcepos=\"21:1-21:10\">מקצף חלב</li>\n<li data-sourcepos=\"22:1-23:0\">מברשת ניקוי</li>\n</ul>\n<p data-sourcepos=\"24:1-24:11\"><strong>אחריות:</strong></p>\n<ul data-sourcepos=\"26:1-26:9\">\n<li data-sourcepos=\"26:1-26:9\">שנה אחת</li>\n</ul>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:55\">La Pavoni Europiccola ELH: מכונת אספרסו ידנית קלאסית</h2>\n<p data-sourcepos=\"3:1-3:116\">ה-Europiccola ELH היא מכונת אספרסו ידנית יפהפייה ופונקציונלית מבית La Pavoni, חברה איטלקית ותיקה ומוערכת בתחום.</p>\n<p data-sourcepos=\"5:1-5:90\">המכונה עשויה ברובה מפליז כרום, מה שהופך אותה לעמידה לאורך זמן ומוודא חלוקת חום אחידה.</p>\n<p data-sourcepos=\"7:1-7:75\">היא מצוידת בידית עץ נוחה לאחיזה ובידית קיטור נפרדת להכנת קצף חלב עשיר.</p>\n<p data-sourcepos=\"9:1-9:76\">ה-Europiccola ELH קלה לשימוש ומתאימה הן לחובבי קפה מנוסים והן למתחילים.</p>\n<p data-sourcepos=\"11:1-11:69\">עם קצת תרגול, תוכלו להכין בביתכם אספרסו משובח וטעים כמו בבית קפה.</p>\n<p data-sourcepos=\"13:1-13:56\">להלן כמה מהיתרונות של מכונת האספרסו Europiccola ELH:</p>\n<ul data-sourcepos=\"15:1-21:0\">\n<li data-sourcepos=\"15:1-15:32\">עיצוב איטלקי קלאסי ואלגנטי</li>\n<li data-sourcepos=\"16:1-16:41\">עשויה ברובה מפליז כרום איכותי ועמיד</li>\n<li data-sourcepos=\"17:1-17:25\">ידית עץ נוחה לאחיזה</li>\n<li data-sourcepos=\"18:1-18:41\">ידית קיטור נפרדת להכנת קצף חלב עשיר</li>\n<li data-sourcepos=\"19:1-19:41\">קלה לשימוש ומתאימה לכל רמות הניסיון</li>\n<li data-sourcepos=\"20:1-21:0\">מאפשרת הכנת אספרסו משובח וטעים בבית</li>\n</ul>\n<p data-sourcepos=\"22:1-22:39\">להלן תיאור קצר המתאים לאתר אינטרנט:</p>\n<p data-sourcepos=\"24:1-24:68\">ה-Europiccola ELH היא מכונת אספרסו ידנית קלאסית מבית La Pavoni.</p>\n<p data-sourcepos=\"26:1-26:76\">עשויה מפליז כרום, קלה לשימוש ומתאימה הן לחובבי קפה מנוסים והן למתחילים.</p>\n<p data-sourcepos=\"28:1-28:69\">עם קצת תרגול, תוכלו להכין בביתכם אספרסו משובח וטעים כמו בבית קפה.</p>\n<p data-sourcepos=\"30:1-30:18\">תכונות נוספות:</p>\n<ul data-sourcepos=\"32:1-36:0\">\n<li data-sourcepos=\"32:1-32:21\">הספק: 1000 וואט</li>\n<li data-sourcepos=\"33:1-33:16\">לחץ: 15 בר</li>\n<li data-sourcepos=\"34:1-34:24\">מיכל מים: 1.6 ליטר</li>\n<li data-sourcepos=\"35:1-36:0\">משקל: 6.5 ק\"ג</li>\n</ul>\n<p data-sourcepos=\"37:1-37:19\">אביזרים נלווים:</p>\n<ul data-sourcepos=\"39:1-44:0\">\n<li data-sourcepos=\"39:1-39:22\">ידית פילטר יחידה</li>\n<li data-sourcepos=\"40:1-40:22\">ידית פילטר כפולה</li>\n<li data-sourcepos=\"41:1-41:15\">כוס מדידה</li>\n<li data-sourcepos=\"42:1-42:14\">מקציף חלב</li>\n<li data-sourcepos=\"43:1-44:0\">מברשת ניקוי</li>\n</ul>\n<p data-sourcepos=\"45:1-45:11\">אחריות:</p>\n<ul data-sourcepos=\"47:1-48:0\">\n<li data-sourcepos=\"47:1-48:0\">שנה אחת</li>\n</ul>\n<p data-sourcepos=\"49:1-49:96\">לסיכום, ה-Europiccola ELH היא מכונת אספרסו ידנית איכותית שתאפשר לכם ליהנות מקפה משובח בבית.</p>\n<p data-sourcepos=\"51:1-51:75\">היא קלה לשימוש, מתאימה לכל רמות הניסיון ומגיעה עם מגוון אביזרים נלווים.</p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה la pavoni europiccola elh | מינוטו קפה ואביזרים",
+    "rank_math_description": "מכונת הקפה La Pavoni Europiccola ELH - יצירת מופת ידנית לחובבי האספרסו האמיתיים. ה-La Pavoni Europiccola ELH משלבת מסורת איטלקית, עיצוב איקוני ושליטה מלאה"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67175,
+   "name": "קפסולות דולצ׳ה גוסטו קימבו אינטנסו",
+   "short_description": "<p>חוו את המהות הנועזת של Espresso Intenso מאת Kimbo, זמין כעת בקפסולות תואמות Dulce Gusto באתר Minuto.co.il.</p>\n<p>תערובת זו, מעוצבת ממבחר קפדני של פולי ערביקה ורובוסטה, שובה לב עם הסימפוניה הארומטית הייחודית שלה.</p>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות דולצ׳ה גוסטו קימבו אינטנסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוו את המהות הנועזת של Espresso Intenso מאת Kimbo, זמין כעת בקפסולות תואמות Dulce Gusto באתר Minuto.co.il.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת זו, מעוצבת ממבחר קפדני של פולי ערביקה ורובוסטה, שובה לב עם הסימפוניה הארומטית הייחודית שלה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בעל ניחוח עז להדהים המועשר בתווים בולטים של תבלינים עדינים עם רמיזות שוקולדיות ואגוזים קלויים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טכניקת הקלייה הכהה, נטועה במסורת הנפוליטנית, מעצימה את עומקו וגופו של הקפה, ומשאירה זכר של שוקולד מריר על החך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הרימו את מסע הקפה שלכם עם היצירה המדהימה הזו, בלעדית באתר Minuto.co.il.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל קופסה מכילה 16 קפסולות, המעניקות לך שפע של הזדמנויות להתפנק עם משקה הקפה האהוב עליך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בנוסף, עם המחויבות של קימבו לקיימות, אתם יכולים להרגיש טוב בידיעה שכל קפסולה ניתנת למחזור ב-100%.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אל תסתפקו בקפה בינוני - שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו עכשיו ותחוו את הטעם האיטלקי האותנטי בנוחות של ביתכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "חוו את המהות הנועזת של Espresso Intenso מאת Kimbo, זמין כעת בקפסולות תואמות Dulce Gusto באתר Minuto. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "10"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67194,
+   "name": "קפסולות נספרסו lavazza nespresso qualita rossa",
+   "short_description": "<p>הכירו את Lavazza Nespresso Qualità Rossa &#8211; השילוב המושלם של מצוינות ונוחות בכל כוס. התענגו על הטעמים העשירים והחזקים של קפה פרימיום זה, שעוצב בקפידה על ידי Lavazza, מומחי הקפה הנודעים של איטליה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות נספרסו lavazza nespresso qualita rossa</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את Lavazza Nespresso Qualità Rossa - השילוב המושלם של מצוינות ונוחות בכל כוס. התענגו על הטעמים העשירים והחזקים של קפה פרימיום זה, שעוצב בקפידה על ידי Lavazza, מומחי הקפה הנודעים של איטליה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם טעם יוצא הדופן ואיכות ללא תחרות, Lavazza Nespresso Qualità Rossa מספקת חווית קפה בלתי נשכחת שתספק אפילו את חובבי הקפה המאודינים ביותר. כל לגימה חושפת איזון הרמוני של עוצמת גוף מלא ונימוחות קטיפתית, ומותירה ניחוח מתמשך שאין לעמוד בפניו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת קפה יוצאת דופן זו תוכננה במיוחד עבור מכונות נספרסו, מה שמבטיח תהליך חליטה ללא רבב בכל שימוש. הקפסולות הנוחות של Nespresso תואמות למגוון רחב של מכונות Nespresso, מה שמעניק לכם את האפשרות להכין את הקפה האהוב עליכם בבית, במשרד או בכל מקום שתחפצו בו</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>Lavazza Nespresso Qualità Rossa לוכדת את המהות של מורשת הקפה של איטליה, המשלבת את מיטב פולי הערביקה והרובוסטה כדי ליצור טעם ייחודי שהוא גם נועז וממריץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התערובת נבחרה בקפידה ונקלתה במומחיות לשלמות, תוך שמירה על הטעמים והריחות הייחודיים שלה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התפנקו על האיכות של לוואצה, המבטיחה חליטה עקבית ומדויקת בלחיצת כפתור בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה כמו קפוצ'ינו ולאטה בנוחות של הבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אל תפספסו את חווית הקפה יוצאת הדופן הזו. הזמינו את Lavazza Nespresso Qualità Rossa שלכם היום והעירו את החושים שלכם לאומנות האמיתית של הקפה האיטלקי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העלו את רגעי הקפה שלכם והתענגו על הטעם והאיכות שאין שני להם ש- Lavazza ידועה בהם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוו את השמחה של קפה איטלקי אותנטי, במשלוח נוח עד פתח ביתכם. עם Lavazza Nespresso Qualità Rossa, כל כוס היא מסע יוצא דופן של טעם וסיפוק.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "הכירו את Lavazza Nespresso Qualità Rossa - השילוב המושלם של מצוינות ונוחות בכל כוס. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "10"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67210,
+   "name": "50 קפסולות Esse Infinito",
+   "short_description": "<p>50 קפסולות תערובת איכותית של ערביקה ורובוסטה שנותנת את המיטב עם מכונת האספרסו הביתית שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">100 קפסולות Esse Infinito</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הארומה המלאה והריחנית של אינפיניטו בקפסולות מודגשת בכוס על ידי גופו המובנה וטעמו ההרמוני, כאשר רמזי השוקולד שלו פוגשים את הניואנסים החריפים ותווי הפירות היבשים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מה שמייחד את אינפיניטו הוא ההתמדה הסופית שלו, שמסוגלת ללוות את כל החושים שלך לקראת הלגימה הבאה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת איכותית של ערביקה ורובוסטה שנותנת את המיטב עם מכונת האספרסו הביתית שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אינפיניטו היא תוצאה של תערובת ייחודית שפותחה על ידי צוות Essse, אשר הודות לניסיון רב השנים שלו הצליח לרכז את כל הארומה של סוגי הקפה האיכותיים הללו בקפסולות Sistema Espresso.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "50 קפסולות תערובת איכותית של ערביקה ורובוסטה שנותנת את המיטב עם מכונת האספרסו הביתית שלכם. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "9"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67218,
+   "name": "Melitta Optima Timer מכונת קפה פילטר מליטה אופטימה טיימר נירוסטה",
+   "short_description": "<ul>\n<li>תצוגת התחלת חליטה אוטומטית ניתנת לתכנות מכונת קפה ל-2-8 כוסות מיכל מים נשלף למילוי קל תכונת כיבוי אוטומטי בהתאם לתקנות האיחוד האירופי מתג הפעלה/כיבוי עם LED ירוק</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Melitta Optima Timer מכונת קפה פילטר מליטה אופטימה טיימר נירוסטה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>טיימר Optima מאפשר לך ליהנות מכוס קפה לא משנה באיזו שעה ביום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל שעליך לעשות הוא להגדיר זמן התחלת חליטה באמצעות פונקציית התחלת הבישול האוטומטית והמכונה תבשל את הקפה שלך באופן אוטומטי בזמן זה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגדירור את הטיימר לפני השינה ותחכה לך כוס קפה טריה בבוקר!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מידע על המוצר \"מכונת קפה אופטימה טיימר פילטר<br />תצוגת התחלת חליטה אוטומטית ניתנת לתכנות<br />מכונת קפה ל-2-8 כוסות<br />מיכל מים נשלף למילוי קל<br />תכונת כיבוי אוטומטי בהתאם לתקנות האיחוד האירופי<br />מתג הפעלה/כיבוי עם LED ירוק<br />ניתן להגדיר את קשיות המים<br />כד זכוכית עם מכסה צירים<br />אחסון כבלים<br />תצוגת זמן<br />750 - 850 W<br />מסנני קפה של Melitta® 102</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Melitta לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - טחינה לפילטר. מושלמת לשימוש יומיומי בבית או במשרד",
+    "rank_math_title": "Melitta Optima Timer: מכונת פילטר עם טיימר מובנה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "שחור-זהב",
+      "שחור-כסף"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67258,
+   "name": "קפסולות אלומיניום נטול קפאין האוסברנדט לנספרסו - Hausbrandt Nespresso",
+   "short_description": "<p>קפסולות אלומיניום לנספרסו תערובת עדינה המובחנת בניחוח קפה עדין, מלווה ברמיזות נעימות של פירות יבשים, ממותקים ומתחדשים בניחוחות של שוקולד.  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות אלומיניום נטול קפאין האוסברנדט לנספרסו - Hausbrandt Nespresso</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>10 קפסולות קפה האוסברנדט למערכת נספרסו®</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת עדינה המובחנת בניחוח קפה עדין, מלווה ברמיזות נעימות של פירות יבשים, ממותקים ומתחדשים בניחוחות של שוקולד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קפסולות אלומיניום לנספרסו תערובת עדינה המובחנת בניחוח קפה עדין, מלווה ברמיזות נעימות של פירות יבשים, ממותקים ומתחדשים בניחוחות של שוקולד",
+    "rank_math_title": "Hausbrandt Decaff: קפסולות נטול קפאין לנספרסו | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "8"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67280,
+   "name": "מכונת קפה מקצועית Bellezza Valentina Leva צבע שחור",
+   "short_description": "<ul>\n<li><strong>המחיר מותנה ברכישה של 6 ק״ג קפה טרי ספשלטי מינוטו</strong></li>\n<li>מכונת אספרסו קומפקטית ואלגנטית.</li>\n<li>Bellezza מכונת אספרסו מנירוסטה עם ראש E61</li>\n<li> PID לשליטה על טמפרטורת החליטה.</li>\n<li>שני שעוני לחץ</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מקצועית Bellezza Valentina Leva</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>2 ליטר דוד נירוסטה - PID אלגנטי עם שליטה בזמן החליטה המוקדמת להשלים לקבלת אספרסו מדויק.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המכונה בנוייה מהחלקים האיכותיים ביותר מאיטליה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שני שעוני לחץ גדולים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מחליף חום - מאפשר חליטה והקצפה במקביל</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בקרת PID</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שעון תזמון חליטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>צינור מים חמים וקיטור מבודד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>1.8 ליטר דוד נירוסטה עם בידוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שרביט הקצפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ברז תה למים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משאבה ויבראציונית</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל 20 ק״ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>285 רוחב, 355 גובה, 350 עומק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2000 וואט - 220 וולט / 120 וולט</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Bellezza Valentina Leva צבע שחור. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    },
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "לבן",
+      "נירוסטה",
+      "שחור"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67281,
+   "name": "מכונת קפה מקצועית Bellezza Bellona Black שחור",
+   "short_description": "<p>טכנולוגיה מתקדמת לאספרסו מושלם.<br />\nמבית הנירוסטה שלו דרך ראש החליטה של Bellezza ועד לדודי הנירוסטה: כל פיסת הטכנולוגיה של Bellona שלנו מותאמת בדיוק לאחרת, ומספקת לכל בריסטה שליטה מלאה.</p>\n<p>חווית חליטת אספרסו מושלמת. Bellona משלבת הנדסה גרמנית עם עיצוב מודרני ועכשווי.</p>\n<p>טכנולוגיה מושלמת. גודל מושלם. אספרסו מושלם.</p>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מקצועית Bellezza Bellona Black שחור</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>טכנולוגיה מתקדמת לאספרסו מושלם.<br />\nמבית הנירוסטה שלו דרך ראש החליטה של Bellezza ועד לדודי הנירוסטה: כל פיסת הטכנולוגיה של Bellona שלנו מותאמת בדיוק לאחרת, ומספקת לכל בריסטה שליטה מלאה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חווית חליטת אספרסו מושלמת. Bellona משלבת הנדסה גרמנית עם עיצוב מודרני ועכשווי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טכנולוגיה מושלמת. גודל מושלם. אספרסו מושלם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בקרת PID, Shot Timer ואלמנטים מנירוסטה מספקים טעם מושלם וחוויה חזותית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הטמפרטורה הקבועה וביצועי הקיטור האינסופיים לכאורה מגלים שפע של טעמים שלוקחים אותך למסע גילוי אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יחידת החליטה של Bellezza המותקנת בבלונה שלנו היא יצירה פנימית ובעלת אורך חיים גבוה מאוד. ב</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חירה מצוינת עבור כל בריסטה ביתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כשמדובר במכונות אספרסו ביתיות מהשורה הראשונה, לבלונה שלנו יש מגוון תכונות ברמה גבוהה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>משאבה</strong><br />\nמשאבה ויברציונית קטנה וקלה עם קצב זרימת מים 40 ליטר לשעה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מיכל מים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיכל מים בנפח&nbsp;1.8 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כיבוי אוטומטי במקרה של מחסור במים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>דוד</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>דוד נירוסטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נפח דוד&nbsp;קיטור 1 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נפח דוד חליטה&nbsp;500 מ\"ל</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגש חימום כוסות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מידות</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עומק 37 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רוחב 21 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה 41.5 סמ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משקל 23 ק״ג</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתח 220 וולט / 120 וולט<br />\nתדר 50 הרץ / 60 הרץ<br />\nהספק 2000 W</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות יבואן 12 חודשים על ידי קדמה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Bellezza Bellona Black שחור. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    },
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "לבן",
+      "נירוסטה",
+      "שחור"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67306,
+   "name": "מכונת קפה מקצועית Bellezza Valentina Leva",
+   "short_description": "<ul>\n<li>מכונת אספרסו קומפקטית ואלגנטית.</li>\n<li>המכונה מגיעה בצבעים: לבן, שחור, נירוסטה</li>\n<li>Bellezza מכונת אספרסו מנירוסטה עם ראש E61</li>\n<li> PID לשליטה על טמפרטורת החליטה.</li>\n<li>שני שעוני לחץ</li>\n</ul>\n",
+   "description": "<h3>מכונת קפה מקצועית Bellezza Valentina Leva</h3>\n<p>2 ליטר דוד נירוסטה - PID אלגנטי עם שליטה בזמן החליטה המוקדמת להשלים לקבלת אספרסו מדויק.</p>\n<p> </p>\n<p>המכונה בנוייה מהחלקים האיכותיים ביותר מאיטליה.</p>\n<ul>\n<li>שני שעוני לחץ גדולים</li>\n<li>מחליף חום - מאפשר חליטה והקצפה במקביל</li>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<li>בקרת PID</li>\n<li>שעון תזמון חליטה</li>\n<li>צינור מים חמים וקיטור מבודד</li>\n<li>1.8 ליטר דוד נירוסטה עם בידוד</li>\n<li>שרביט הקצפה</li>\n<li>ברז תה למים חמים</li>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<li>משאבה ויבראציונית</li>\n<li>משקל 20 ק״ג</li>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<li>285 רוחב, 355 גובה, 350 עומק</li>\n<li>2000 וואט - 220 וולט / 120 וולט</li>\n</ul>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Bellezza Valentina Leva. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    },
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "לבן",
+      "נירוסטה",
+      "שחור"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67307,
+   "name": "מכונת קפה מקצועית Bellezza inizzio V Leva",
+   "short_description": "<ul>\n<li>ברזי ג׳ויסטיק</li>\n<li>מכונת אספרסו קומפקטית ואלגנטית.</li>\n<li>Bellezza מכונת אספרסו מנירוסטה עם ראש E61</li>\n<li> PID לשליטה על טמפרטורת החליטה.</li>\n<li>שני שעוני לחץ גדולים</li>\n</ul>\n",
+   "description": "<h3>מכונת קפה מקצועית Bellezza inizzio V Leva</h3>\n<p>2 ליטר דוד נירוסטה - כמו ג PID אלגנטי עם שליטה בזמן החליטה המוקדמת להשלים את כל העניין.</p>\n<p> </p>\n<p>המכונה בנוייה מהחלקים האיכותיים ביותר מאיטליה.</p>\n<p> </p>\n<p> </p>\n<ul>\n<li>שני שעוני לחץ גדולים</li>\n<li>מחליף חום - מאפשר חליטה והקצפה במקביל</li>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<li>בקרת PID</li>\n<li>שעון תזמון חליטה</li>\n<li>צינור מים חמים וקיטור מבודד</li>\n<li>1.8 ליטר דוד נירוסטה עם בידוד</li>\n<li>שרביט הקצפה</li>\n<li>ברז תה למים חמים</li>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<li>משאבה ויבראציונית</li>\n<li>משקל 23.6 ק״ג</li>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<li>297 רוחב, 397 גובה, 487 עומק</li>\n<li>2000 וואט - 22 וולט / 120 וולט</li>\n</ul>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Bellezza inizzio V Leva. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67308,
+   "name": "50 קפסולות Esse MAESTOSO",
+   "short_description": "<p>50 קפסולות</p>\n<p>רמיזות של שוקולד מריר. הניחוח מלא וריחני, הגוף עשיר ועקבי, בעל טעם הרמוני. טעם מתמשך.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">100 קפסולות Esse</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>אינטנסיבי ומתמשך</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת של קפה ערביקה ורובוסטה מעודנת עם טעם מעוגל היטב, רמיזות של שוקולד מריר. הניחוח מלא וריחני, הגוף עשיר ועקבי, בעל טעם הרמוני. טעם מתמשך.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "50 קפסולות רמיזות של שוקולד מריר. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "9"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67320,
+   "name": "מכונת קפה מקצועית Bellezza inizzio V",
+   "short_description": "<ul>\n<li>מכונת אספרסו קומפקטית ואלגנטית.</li>\n<li>Bellezza מכונת אספרסו מנירוסטה עם ראש E61</li>\n<li> PID לשליטה על טמפרטורת החליטה.</li>\n<li>שני שעוני לחץ גדולים</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מקצועית Bellezza inizzio V</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>2 ליטר דוד נירוסטה - כמו ג PID אלגנטי עם שליטה בזמן החליטה המוקדמת להשלים את כל העניין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המכונה בנוייה מהחלקים האיכותיים ביותר מאיטליה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שני שעוני לחץ גדולים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מחליף חום - מאפשר חליטה והקצפה במקביל</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בקרת PID</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שעון תזמון חליטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>צינור מים חמים וקיטור מבודד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>1.8 ליטר דוד נירוסטה עם בידוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שרביט הקצפה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ברז תה למים חמים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משאבה ויבראציונית</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל 23.6 ק״ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>297 רוחב, 397 גובה, 487 עומק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2000 וואט - 22 וולט / 120 וולט</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית Bellezza inizzio V. מכונת קפה עם מידע על הדגם, המפרט, התפעול וההתאמה לצורכי הבית או העסק. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67336,
+   "name": "מכונת קפה מקצועית Bellezza Chiara Leva",
+   "short_description": "<ul>\n<li>קטנה ואיכותית</li>\n<li>Bellezza Chiara מרשימ, עיצוב רטרו ואיכות ללא פשרות</li>\n<li>מכונת אספרסו קומפקטית ואלגנטית.</li>\n<li>Bellezza מכונת אספרסו מנירוסטה עם ראש E61</li>\n<li> PID לשליטה על טמפרטורת החליטה.</li>\n<li>שלייטה בתזמון חליטה מוקדמת</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מקצועית Bellezza Chiara Leva</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>אספרסו היא תשוקה. לכן צ'יארה יש אחד השמות הראשונים האיטלקיים היפים ביותר. הצ'יארה מציגה את עצמה קטנה וקטנה עם ביצועים מדהימים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בניגוד לציפייה שזה יהיה רק מערכת עם מעגל 1- זה מערכת מלאה עם 2 מעגלים. אז שום דבר לא עומד בדרך של האספרסו שלך ואת הנאת הקפוצ'ינו בבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>2 ליטר דוד נירוסטה - כמו ג PID אלגנטי עם שליטה בזמן החליטה המוקדמת להשלים את כל העניין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נעשה שימוש בחומרים ובחלקים האיכותיים ביותר מאיטליה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שעון לחץ גדול</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בקרת PID</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שעון תזמון חליטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>צינור מים חמים וקיטור מבודד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2 ליטר דוד נירוסטה עם בידוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים גדול 1.8 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משאבה ויבראציונית</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל 19 ק״ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>285 רוחב, 355 גובה, 350 עומק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2000 וואט - 22 וולט / 120 וולט</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה bellezza chiara leva | מינוטו חנות קפה ואביזרים ",
+    "rank_math_description": "Bellezza Chiara Leva - מכונת אספרסו ידנית באיכות מסחרית. מציעה מנוף חליטה ושליטה מלאה בתהליך החליטה. ה-Bellezza Chiara Leva כוללת דוד נחושת וברז קיטור עוצמתי.\n"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67338,
+   "name": "מכונת קפה מקצועית Bellezza Inizio R Leva",
+   "short_description": "<ul>\n<li>מחליף חום</li>\n<li>שני שעוני לחץ גדולים</li>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<li>בקרת PID</li>\n<li>שעון תזמון חליטה</li>\n<li>צינור מים חמים וקיטור מבודד</li>\n<li>2 ליטר דוד נירוסטה עם בידוד</li>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<li>משאבה רוטורית</li>\n<li>אפשרות לשימוש במיכל או חיבור למים</li>\n<li>מצב ECO לחסכון בחשמל</li>\n<li></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת קפה מקצועית Bellezza Inizio R Leva</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכונת אספרסו E61 מקצועית עם מחליף חום, בקר PID, משאבה וולומטרית שקטה במיוחד, מצב ECO לחסכון באנרגיה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ההתחלה. עם התפתחותה של איניזיו בשנת 2017, נוסד המותג בלצה. זו הגאווה והשמחה שלנו והיא מופיעה בכל מכונה שהורכבה ביד. מכונת ה-CNC הגרמנית הראתה בגלוי את שלמותה. בהמשך מרותכים ומלוטשים כל חלק בודד ביד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נעשה שימוש בחומרים ובחלקים האיכותיים ביותר מאיטליה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שני שעוני לחץ גדולים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>E61 עם ראש חליטה נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בקרת PID</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שעון תזמון חליטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>צינור מים חמים וקיטור מבודד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2 ליטר דוד נירוסטה עם בידוד</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מיכל מים גדול 2.4 ליטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משאבה רוטורית</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אפשרות לשימוש במיכל או חיבור למים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מצב ECO לחסכון בחשמל</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>משקל 28 ק״ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חלקי צד ורגליים 100% נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>297 רוחב, 397 גובה, 487 עומק</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>2000 וואט - 22 וולט / 120 וולט</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה bellezza inizio r leva | מינוטו חנות קפה ואביזרים ",
+    "rank_math_description": "Bellezza Inizio R Leva - חוויית אספרסו ידנית אותנטית. מציעה מנוף חליטה מקצועי ובקרת לחץ מדויקת. ה-Bellezza Inizio R Leva כוללת גימור נירוסטה ודוד נחושת איכותי."
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bellezza"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67360,
+   "name": "קפסולות אלומיניום אינטנסו האוסברנדט לנספרסו - Hausbrandt Nespresso",
+   "short_description": "<p>קפסולות אלומיניום תערובת קפה עוצמתית ומלאה בטעמים מתוקים ומתובלים, עם גוף עשיר ומרקם חלק<br data-start=\"420\" data-end=\"423\" />מושלם לאוהבי קפה עז, מורכב ומפנק  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות אלומיניום אינטנסו האוסברנדט לנספרסו - Hausbrandt Nespresso</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>10 קפסולו קפה האוסברנדט למערכת נספרסו®</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3,\"className\":\"\"} --></p>\n<h3 class=\"wp-block-heading\"><strong data-start=\"73\" data-end=\"116\">Intenso – קפסולות קפה טחון של האוסברנדט</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph {\"className\":\"\"} --></p>\n<p>תערובת קפה טחון בקפסולות, בעלת ארומה מפתה של עוגיות, דבש וקרמל<br data-start=\"180\" data-end=\"183\" />הטעמים משתלבים עם נגיעות של דגנים ותבלינים, ויוצרים חוויית קפה מלאה, עשירה ומעוגלת<br data-start=\"265\" data-end=\"268\" />המרקם אינטנסיבי ומלטף, עם חמיצות עדינה שמעוררת את החיך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "קפסולות אלומיניום אינטנסו האוסברנדט",
+    "rank_math_description": "קפסולות אלומיניום תערובת קפה עוצמתית ומלאה בטעמים מתוקים ומתובלים, עם גוף עשיר ומרקם חלק מושלם לאוהבי קפה עז, מורכב ומפנק",
+    "rank_math_title": "קפסולות אלומיניום אינטנסו האוסברנדט - איכות פרימיום | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "חוזק",
+     "options": [
+      "8"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67399,
+   "name": "מכונת אספרסו רוקט- V מוציפיאטו כרונומטרו V Rocket Mozzafiato Cronometro",
+   "short_description": "<h1 style=\"margin: 0px 0px 0.5em; padding: 0px; border: 0px; font-size: 24px; font-style: inherit; font-weight: bold; line-height: 1; vertical-align: baseline; direction: rtl; color: #302620; font-family: 'Noto Sans Hebrew', Arial !important;\"><span style=\"font-size: 14px;\">בעלת מאפיינים הנלקחים ישירות מתוך טווח מכונת האספרסו המסחרי של רוקט כדי להעניק למכונה ביתית יכולות מקצועיות.</span></h1>\n<p>PID &#8211; שליטה בטמפרטורת החליטה  </p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מכונת אספרסו רוקט- V מוציפיאטו כרונומטר V Rocket Mozzafiato Cronometro</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div class=\"product-short-desc grid_6 omega\" style=\"margin: 0px 0px 10px 10px; padding: 0px; border: 0px; font-family: 'Noto Sans Hebrew', Arial; font-size: 14px; line-height: inherit; vertical-align: baseline; float: right; width: 555px; color: #302620; text-align: right;\">\n<p>דגם חדש מבית רוקט.</p>\n<p>כרונומטר</p>\n<p>דוד בנפח 1.8 ליטר עם מחליף חום.</p>\n<p>ווסת טמפרטורה (PIDׂ) המציע ארבעה אופנים שונים של טמפרטורה בהפקת הקפה כדי להבטיח יציבות וחליטה אופטימלית.</p>\n<p>תצוגת טמפרטורה הניתנת לכיוונון מעניקה למשתמש אופציה לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה או סוג הקלייה.</p>\n<p>מפרט טכני:</p>\n<p>הספק: 1200W</p>\n<p>רוחב: 28</p>\n<p>עומק: 42.5</p>\n<p>גובה:40</p>\n<p>משקל: 25.4</p>\n<p>מארז המכונה כולל: 2 ידיות + 2 מסננים + דוחסן קפה מקצועי + פילטר עיוור + מברשת ניקוי ראש מקצועי.</p>\n<p>אחריות 12 חודשים ע\"י היבואן קרמה פלוס</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה רוקט מקצועית, מכונת לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - אספרסו. מושלמת לשימוש יומיומי בבית או במשרד &gt;",
+    "rank_math_focus_keyword": "מכונת אספרסו רוקט",
+    "rank_math_title": "מכונת אספרסו רוקט V מוציפיאטו כרונומטר | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Rocket"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67604,
+   "name": "La Pavoni Professional Rame Gold PRG: מכונת קפה מנוף מקצועית",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-4:88\"><strong> זהב וידיות עץ,</strong> <strong>ה-La Pavoni Professional Rame Gold תביא לכם את הטעם המקצועי של בית קפה ישירות למטבח.</strong></p>\n<p data-sourcepos=\"6:1-6:21\"><strong>פונקציות עיקריות:</strong></p>\n<ul data-sourcepos=\"8:1-11:0\">\n<li data-sourcepos=\"8:1-8:23\">הכנת אספרסו בלחץ ידני</li>\n<li data-sourcepos=\"9:1-9:11\">הקצפת חלב</li>\n<li data-sourcepos=\"10:1-11:0\">מד לחץ מים בב דוד</li>\n</ul>\n<p data-sourcepos=\"12:1-12:12\"><strong>יתרונות:</strong></p>\n<ul data-sourcepos=\"14:1-18:0\">\n<li data-sourcepos=\"14:1-14:14\">עיצוב יוקרתי</li>\n<li data-sourcepos=\"15:1-15:17\">איכות ללא פשרות</li>\n<li data-sourcepos=\"16:1-16:28\">שליטה מדויקת בתהליך החליטה</li>\n<li data-sourcepos=\"17:1-18:0\">קפה משובח בכל פעם</li>\n</ul>\n<p data-sourcepos=\"19:1-19:51\"><strong>הזמינו עכשיו ותתחילו ליהנות מחווית קפה ייחודית!</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:84\">La Pavoni Professional Rame Gold: מכונת אספרסו ידנית יוקרתית עם ידית עץ ולחץ מדיד</h2>\n<p data-sourcepos=\"3:1-3:108\"><strong>מכונת האספרסו La Pavoni Professional Rame Gold משלבת עיצוב יוקרתי, איכות ללא פשרים ופונקציונליות מתקדמת.</strong></p>\n<p data-sourcepos=\"5:1-5:103\"><strong>מראה מדהים:</strong> גוף נחושת מצופה זהב בשילוב ידיות עץ מעניקים למכונה מראה ייחודי ויוקרתי שיתאים לכל מטבח.</p>\n<p data-sourcepos=\"7:1-7:95\"><strong>לחץ מדויק:</strong> מד לחץ המים בב דוד מאפשר שליטה מדויקת בתהליך החליטה ויצירת אספרסו מושלם בכל פעם.</p>\n<p data-sourcepos=\"9:1-9:21\"><strong>פונקציות עיקריות:</strong></p>\n<ul data-sourcepos=\"11:1-13:0\">\n<li data-sourcepos=\"11:1-11:23\">הכנת אספרסו בלחץ ידני</li>\n<li data-sourcepos=\"12:1-13:0\">הקצפת חלב למשקאות חמים כמו קפוצ'ינו ולאטה</li>\n</ul>\n<h2 data-sourcepos=\"1:1-1:46\">מפרט טכני</h2>\n<p data-sourcepos=\"3:1-3:27\"><strong>סוג:</strong> מכונת אספרסו ידנית</p>\n<p data-sourcepos=\"5:1-5:14\"><strong>הספק:</strong> 950W</p>\n<p data-sourcepos=\"7:1-7:21\"><strong>נפח דוד:</strong> 1.6 ליטר</p>\n<p data-sourcepos=\"9:1-9:22\"><strong>מיכל מים:</strong> 1.6 ליטר</p>\n<p data-sourcepos=\"11:1-11:27\"><strong>לחץ משאבה:</strong> 15 בר (מדיד)</p>\n<p data-sourcepos=\"13:1-13:25\"><strong>חומר גוף המכונה:</strong> פליז</p>\n<p data-sourcepos=\"15:1-15:18\"><strong>חומר ידיות:</strong> עץ</p>\n<p data-sourcepos=\"17:1-17:24\"><strong>צבע:</strong> נחושת מצופה זהב</p>\n<p data-sourcepos=\"19:1-19:13\"><strong>פונקציות:</strong></p>\n<ul data-sourcepos=\"21:1-23:0\">\n<li data-sourcepos=\"21:1-21:23\">הכנת אספרסו בלחץ ידני</li>\n<li data-sourcepos=\"22:1-23:0\">הקצפת חלב</li>\n</ul>\n<p data-sourcepos=\"24:1-24:19\"><strong>אביזרים כלולים:</strong></p>\n<ul data-sourcepos=\"26:1-29:0\">\n<li data-sourcepos=\"26:1-26:22\">פילטרים בגדלים שונים</li>\n<li data-sourcepos=\"27:1-27:6\">טמפר</li>\n<li data-sourcepos=\"28:1-29:0\">מיכל מדידה</li>\n</ul>\n<p data-sourcepos=\"37:1-37:10\"><strong>מידות:</strong></p>\n<ul data-sourcepos=\"39:1-42:0\">\n<li data-sourcepos=\"39:1-39:14\">גובה: 35 ס\"מ</li>\n<li data-sourcepos=\"40:1-40:14\">רוחב: 20 ס\"מ</li>\n<li data-sourcepos=\"41:1-42:0\">עומק: 29 ס\"מ</li>\n</ul>\n<p data-sourcepos=\"43:1-43:17\"><strong>משקל:</strong> 5.5 ק\"ג</p>\n<p data-sourcepos=\"28:1-28:11\"><strong>ה-La Pavoni Professional Rame Gold היא הבחירה המושלמת עבור חובבי קפה אמיתיים שמחפשים חווית אספרסו ביתית ברמה מקצועית עם טאץ' של יוקרה.</strong></p>\n<p data-sourcepos=\"24:1-24:103\"><strong>הזמינו עכשיו את La Pavoni Professional Rame Gold באתר מינוטו קפה ותתחילו ליהנות מקפה משובח בכל יום!</strong></p>\n<p>&nbsp;</p>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית La לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - מבצע מיוחד. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67605,
+   "name": "La Pavoni Europiccola Nero: מכונת קפה מנוף ידנית מקצועית",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-4:83\"><strong>מכונת אספרסו ידנית ייחודית בעלת גוף פליז מצופה כרום ,</strong> <strong>ה-La Pavoni Europiccola Nero תביא לכם את הטעם המקצועי של בית קפה ישירות למטבח.</strong></p>\n<p data-sourcepos=\"6:1-6:21\"><strong>פונקציות עיקריות:</strong></p>\n<ul data-sourcepos=\"8:1-11:0\">\n<li data-sourcepos=\"8:1-8:23\">הכנת אספרסו בלחץ ידני</li>\n<li data-sourcepos=\"9:1-9:11\">הקצפת חלב</li>\n<li data-sourcepos=\"10:1-11:0\">מד לחץ מים בב דוד</li>\n</ul>\n<p data-sourcepos=\"12:1-12:12\"><strong>יתרונות:</strong></p>\n<ul data-sourcepos=\"14:1-18:0\">\n<li data-sourcepos=\"14:1-14:14\">עיצוב יוקרתי</li>\n<li data-sourcepos=\"15:1-15:17\">איכות ללא פשרות</li>\n<li data-sourcepos=\"16:1-16:28\">שליטה מדויקת בתהליך החליטה</li>\n<li data-sourcepos=\"17:1-18:0\">קפה משובח בכל פעם</li>\n</ul>\n<p data-sourcepos=\"19:1-19:51\"><strong>הזמינו עכשיו ותתחילו ליהנות מחווית קפה ייחודית!</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:74\">La Pavoni Europiccola Nero: מכונת אספרסו ידנית אייקונית בעיצוב על זמני</h2>\n<p data-sourcepos=\"3:1-3:118\"><strong>מכונת האספרסו La Pavoni Europiccola Nero היא בחירה מצוינת לחובבי קפה אמיתיים שמעריכים איכות, עיצוב ופונקציונליות.</strong></p>\n<p data-sourcepos=\"5:1-5:198\"><strong>מכונת אספרסו ידנית זו, המיוצרת מאז 1961, עשויה מחומרים איכותיים ובעלת עיצוב ייחודי ובלתי מתפשר.</strong></p>\n<p data-sourcepos=\"5:1-5:198\">גוף המכונה עשוי פליז מצופה כרום, היוצר מראה יוקרתי שיתאים לכל מטבח.</p>\n<p data-sourcepos=\"7:1-7:40\"><strong>יתרונות La Pavoni Europiccola Nero:</strong></p>\n<ul data-sourcepos=\"9:1-14:0\">\n<li data-sourcepos=\"9:1-9:50\"><strong>עיצוב על זמני:</strong>&nbsp;מודל אייקוני שלא יוצא מהאופנה</li>\n<li data-sourcepos=\"10:1-10:53\"><strong>איכות ללא פשרות:</strong>&nbsp;עשויה מחומרים איכותיים ועמידים</li>\n<li data-sourcepos=\"11:1-11:78\"><strong>8 כוסות אספרסו ברצף:</strong>&nbsp;דוד בנפח 0.8 ליטר מאפשר הכנת עד 8 כוסות אספרסו ברצף</li>\n<li data-sourcepos=\"12:1-12:66\"><strong>תפעול ידני קל:</strong>&nbsp;ידית האחיזה מאפשרת שליטה מדויקת בתהליך החליטה</li>\n<li data-sourcepos=\"13:1-14:0\"><strong>אביזרים נלווים:</strong>&nbsp;מגוון רחב של אביזרים נלווים זמין לרכישה בנפרד, כגון ידיות אחיזה בצבעים שונים, כוסות קרמיקה וזכוכית, קנקן חלב ועוד.</li>\n</ul>\n<p data-sourcepos=\"15:1-15:155\"><strong>La Pavoni Europiccola Nero היא הבחירה המושלמת עבורכם אם אתם מחפשים מכונת אספרסו ביתית איכותית שתעניק לכם חווית קפה משובחת ותהפוך כל כוס אספרסו לחוויה.</strong></p>\n<p data-sourcepos=\"17:1-17:105\"><strong>הזמינו עכשיו את La Pavoni Europiccola Nero באתר מינוטו קפה ותתחילו ליהנות מקפה איכותי וטעים בכל יום!</strong></p>\n<p data-sourcepos=\"19:1-19:14\"><strong>מפרט טכני:</strong></p>\n<ul data-sourcepos=\"21:1-28:0\">\n<li data-sourcepos=\"21:1-21:12\">\n<p data-sourcepos=\"3:1-3:27\"><strong>סוג:</strong> מכונת אספרסו ידנית</p>\n<p data-sourcepos=\"5:1-5:14\"><strong>הספק:</strong> 950W</p>\n<p data-sourcepos=\"7:1-7:21\"><strong>נפח דוד:</strong> 0.8 ליטר</p>\n<p data-sourcepos=\"9:1-9:22\"><strong>מיכל מים:</strong> 0.8 ליטר</p>\n<p data-sourcepos=\"11:1-11:20\"><strong>לחץ קיטור:</strong> 15 בר</p>\n<p data-sourcepos=\"13:1-13:36\"><strong>חומר גוף המכונה:</strong> פליז מצופה כרום</p>\n<p data-sourcepos=\"17:1-17:24\"><strong>צבע:</strong> פליז מצופה כרום</p>\n<p data-sourcepos=\"19:1-19:13\"><strong>פונקציות:</strong></p>\n<ul data-sourcepos=\"21:1-23:0\">\n<li data-sourcepos=\"21:1-21:23\">הכנת אספרסו בלחץ ידני</li>\n<li data-sourcepos=\"22:1-23:0\">הקצפת חלב</li>\n</ul>\n<p data-sourcepos=\"24:1-24:19\"><strong>אביזרים כלולים:</strong></p>\n<ul data-sourcepos=\"26:1-29:0\">\n<li data-sourcepos=\"26:1-26:22\">פילטרים בגדלים שונים</li>\n<li data-sourcepos=\"27:1-27:6\">טמפר</li>\n<li data-sourcepos=\"28:1-29:0\">מיכל מדידה</li>\n</ul>\n<p data-sourcepos=\"30:1-30:31\"><strong>אביזרים נלווים אופציונליים:</strong></p>\n<ul data-sourcepos=\"32:1-36:0\">\n<li data-sourcepos=\"32:1-32:26\">ידיות אחיזה בצבעים שונים</li>\n<li data-sourcepos=\"33:1-33:22\">כוסות קרמיקה וזכוכית</li>\n<li data-sourcepos=\"34:1-34:10\">קנקן חלב</li>\n<li data-sourcepos=\"35:1-36:0\">ועוד</li>\n</ul>\n<p data-sourcepos=\"37:1-37:10\"><strong>מידות:</strong></p>\n<ul data-sourcepos=\"39:1-42:0\">\n<li data-sourcepos=\"39:1-39:14\">גובה: 32 ס\"מ</li>\n<li data-sourcepos=\"40:1-40:14\">רוחב: 20 ס\"מ</li>\n<li data-sourcepos=\"41:1-42:0\">עומק: 29 ס\"מ</li>\n</ul>\n<p data-sourcepos=\"43:1-43:17\"><strong>משקל:</strong> 5.5 ק\"ג</p>\n</li>\n<li data-sourcepos=\"21:1-21:12\">12 חודשי אחריות יבואן רשמי</li>\n</ul>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית La לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - מומלץ בחום. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67622,
+   "name": "La Pavoni EXPO 2015: מכונת קפה מנוף ידנית מקצועית",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 class=\"\" data-sourcepos=\"1:1-1:35\">La Pavoni: חדשנות על בסיס מסורת!</h2>\n<p data-sourcepos=\"3:1-3:37\"><strong>מכונות קפה חדשות לכבוד EXPO 2015:</strong></p>\n<ul data-sourcepos=\"5:1-5:1\">\n<li data-sourcepos=\"5:1-5:1\">עיצוב קלאסי משולב טכנולוגיות חדשות</li>\n<li data-sourcepos=\"6:1-6:37\">אספרסו מושלם עם פילטר Fascino מיוחד</li>\n<li data-sourcepos=\"7:1-7:14\">ביצועים גבוהים וקלות שימוש</li>\n<li data-sourcepos=\"8:1-9:0\">איכות ללא פשרות</li>\n</ul>\n<p data-sourcepos=\"10:1-10:17\"><strong>הזמינו עכשיו!</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h2 class=\"\" data-sourcepos=\"1:1-1:84\">La Pavoni EXPO 2015</h2>\n<p data-sourcepos=\"4:1-4:218\"><strong>La Pavoni</strong> גאה להציג שלושה דגמים חדשים לכבוד תערוכת EXPO 2015 הבינלאומית: <strong>LA GRANDE BELLEZZA</strong>,<strong>EXPO 2015</strong> ו- <strong>MILANO 2015</strong>.</p>\n<p data-sourcepos=\"4:1-4:218\">דגמים אלו משלבים בתוכם את הפרטים הייחודיים שעשו את מכונות היד של La Pavoni מפורסמות בכל העולם.</p>\n<p data-sourcepos=\"6:1-6:183\"><strong>מסורת פוגשת עתיד:</strong> קונספט חדש של מכונת קפה שנולד מתוך מסורת מפוארת.</p>\n<p data-sourcepos=\"6:1-6:183\">דגם שאינו שוכח את העבר ומביט אל העתיד.</p>\n<p data-sourcepos=\"6:1-6:183\">המכונות מצוידות בפילטר מיוחד מסוג Fascino המאפשר להכין אספרסו קרמי משובח.</p>\n<p data-sourcepos=\"8:1-8:34\"><strong>כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:</strong></p>\n<p data-sourcepos=\"12:1-12:14\"><strong>מפרט טכני:</strong></p>\n<ul data-sourcepos=\"14:1-26:1\">\n<li data-sourcepos=\"14:1-14:23\">קיבולת דוד: 1.6 ליטר</li>\n<li data-sourcepos=\"16:1-16:22\">תפוקת קיטור: 15 בר</li>\n<li data-sourcepos=\"18:1-18:25\">זמן חימום ממוצע: 5 דקות</li>\n<li data-sourcepos=\"19:1-19:14\">שסתום בטיחות</li>\n<li data-sourcepos=\"20:1-20:59\">ברז קיטור עם מתאם מתחלף צינור קיטור</li>\n<li data-sourcepos=\"21:1-21:8\">מד לחץ</li>\n<li data-sourcepos=\"23:1-23:17\">מתג הפעלה/כיבוי</li>\n<li data-sourcepos=\"24:1-24:13\">נורית חיווי</li>\n<li data-sourcepos=\"25:1-25:21\">שרביט הקצפה</li>\n<li data-sourcepos=\"26:1-26:1\">תרמוסטט בטיחות עם איפוס ידני</li>\n<li data-sourcepos=\"28:1-28:17\">גוף חימום: 950W</li>\n<li data-sourcepos=\"29:1-29:35\">רוחב, עומק, גובה: 200x290x350 מ\"מ</li>\n<li data-sourcepos=\"30:1-30:15\">משקל: 6.5 ק\"ג</li>\n<li data-sourcepos=\"31:1-32:0\">מפרט חשמלי: 220-240V 50/60Hz – 120V 60Hz</li>\n</ul>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_title": "מכונת קפה la pavoni expo 2015 | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מכונת קפה מנוף ידנית La Pavoni Expo 2015 בעיצוב קלאסי וטכנולוגיה מתקדמת. כוללת פילטר Fascino לאספרסו קרמי, דוד 1.6 ליטר וביצועים מקצועיים. זמין במינוטו"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "LA Pavoni"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 68284,
+   "name": "מתאם קפסולות NS לקפסולות נספרסו או תואמות למכונת ננופרסו",
+   "short_description": "<p><span id=\"result_box\" lang=\"iw\">מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.</span></p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מתאם קפסולות NS לקפסולות נספרסו או תואמות למכונת ננופרסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">היתרון הגדול של השימוש בקפסולות הוא, שהקפה נטחן מראש בעובי הנדרש במדויק, בכמות המדודה, המותאם בדייקנות גבוהה למכשיר.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">מרווח הטעות הוא קטן ביותר. בצורה כזו&nbsp;האספרסו שלכם הוא עקבי בכל שימוש.&nbsp;שימוש בקפסולות&nbsp;הוא נוח ונקי.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>*קפסולות NS מתיחס לקפסולות נספרסו® מקוריות ותואמות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>**נספרסו® היא חברה שלישית ללא קשר כלשהו לחברת Wacaco Company Limited</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יבואן אמיגו פ״ת</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחריות 12 חודשים</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית מתאם לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 69450,
+   "name": "מכונת קפה פילטר BEEM Fresh Aroma Perfect",
+   "short_description": "<ul>\n<li>\n<p data-start=\"42\" data-end=\"204\"><strong>מכונת קפה פילטר BEEM Fresh Aroma Perfect – הכנת קפה עשיר בארומה בלחיצת כפתור! </strong></p>\n<p data-start=\"42\" data-end=\"204\">כוללת טיימר אוטומטי, שני קנקנים (זכוכית + ואקום מבודד) ופלטת חימום לשמירה על החום.</p>\n<h3 data-start=\"206\" data-end=\"231\"> </h3>\n</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong data-start=\"4\" data-end=\"48\">מכונת קפה פילטר BEEM Fresh Aroma Perfect</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"52\" data-end=\"84\">קפה עשיר בארומה בלחיצת כפתור</strong><br data-start=\"84\" data-end=\"87\" />מכונת קפה פילטר ביתית להכנת קפה טחון עם טיימר מובנה להכנה אוטומטית וללא צורך במסנני נייר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong data-start=\"182\" data-end=\"209\">טכנולוגיית מיצוי מתקדמת</strong> להפקת קפה עם טעם מלא וארומה עשירה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"249\" data-end=\"270\">שני קנקנים כלולים</strong> – קנקן זכוכית וקנקן ואקום מבודד עם דפנות כפולות לשמירה על החום.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"339\" data-end=\"360\">שמירה על חום הקפה</strong> – פלטת חימום וקנקן מבודד שומרים על הקפה חם לאורך זמן.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"419\" data-end=\"434\">טיימר מובנה</strong> – קביעת זמן הפעלה מראש להכנה מהירה וללא המתנה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"486\" data-end=\"504\">תצוגת LC מוארת</strong> לנוחות ושליטה מלאה על תהליך ההכנה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"544\" data-end=\"561\">כיבוי אוטומטי</strong> לחיסכון באנרגיה ובטיחות מרבית.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"597\" data-end=\"625\">מתאימה להכנת 8 כוסות קפה</strong> בלחיצת כפתור אחת.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"647\" data-end=\"661\">מפרט טכני:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong data-start=\"666\" data-end=\"676\">תוצרת:</strong> גרמניה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"688\" data-end=\"698\">צבעים:</strong> שחור, כסף</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"713\" data-end=\"724\">חומרים:</strong> זכוכית, פוליפרופילן (PP), נירוסטה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"763\" data-end=\"772\">הספק:</strong> 1000W</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"783\" data-end=\"791\">מתח:</strong> 240V</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"801\" data-end=\"810\">משקל:</strong> 2.27 ק\"ג</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"824\" data-end=\"834\">מידות:</strong><!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>גובה: 31.5 ס\"מ</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>רוחב: 19.5 ס\"מ</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עומק: 21.5 ס\"מ</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"902\" data-end=\"915\">אורך כבל:</strong> 1.08 מ'</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong data-start=\"928\" data-end=\"938\">תפעול:</strong> כפתור הפעלה/כיבוי, חוטי</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>✨ <strong data-start=\"968\" data-end=\"1036\">מכונת קפה פילטר אידיאלית לאוהבי הקפה – קלה לתפעול, חכמה ומדויקת!</strong> ✨</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "התעוררו לארומה של קפה טרי עם Beem Fresh Aroma Perfect. מכונת פילטר הכוללת מטחנה מובנית, טיימר 24 שעות ומערכת בקרה למיצוי טעמים מקסימלי.\n\n\n"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "BEEM"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 76577,
+   "name": "מבצע 200 קפסולות אספרסו קלאב",
+   "short_description": "<p>קפסולות למכונות קפה אספרסו קלאב</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">200 קפסולות אספרסו קלאב</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מבצע 200 קפסולות אספרסו קלאב במגוון סוגים שונים לבחירה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קפסולות למכונות קפה אספרסו קלאב. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה. עיצוב מקצועי ואיכותי"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 78176,
+   "name": "ספל קפה Maniko ורוד סלמון 70 מ\"ל - Club House",
+   "short_description": "<p><strong>ספל פורצלן Maniko ורוד סלמון 70 מ&quot;ל מבית Club House</strong></p>\n<p>בעיצוב יוקרתי וצבע עז.</p>\n<p>אידיאלי לאספרסו קצר, שומר על חום הקפה ומעצים את הקרמה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>ספל Maniko אדום בנפח 70 מ\"ל מבית Club House הוא הבחירה המושלמת לחובבי האספרסו הקלאסי. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בעיצוב מודרני וזוכה פרסים, הספל עשוי פורצלן איכותי ששומר על חום המשקה, מדגיש את הקרמה ומעצים את הארומה בכל לגימה. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צבע האדום העז מעניק נגיעה של יוקרה ואנרגיה לכל שולחן קפה.<br />מתאים במיוחד לאספרסו קצר, ריסטרטו או דופיו, ומשתלב בצורה מושלמת לשימוש מקצועי בבתי קפה וגם לשימוש יומיומי בבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות עיקריות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בטוח לשטיפה במדיח</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פורצלן איכותי ועמיד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב מודרני ומדויק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צבע ורוד ייחודי ומלא נוכחות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אידיאלי לאספרסו וריסטרטו</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - בנפח 70 מל. עיצוב איכותי ונעים למגע"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 78179,
+   "name": "ספל Volcano אקוואמארין 90 מ\"ל Club House",
+   "short_description": "<p>ספל פורצלן Volcano אקוואמארין 90 מ&quot;ל מבית Club House,<br />\nבעיצוב אלכסוני ייחודי ששומר על חום המשקה ומעצים את הקרמה. אידיאלי לאספרסו או מקיאטו.<br />\n<span style=\"width: 0px;overflow: hidden;line-height: 0\" data-mce-type=\"bookmark\" class=\"mce_SELRES_start\">﻿</span></p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>ספל Volcano אקוואמארין בנפח 90 מ\"ל מבית Club House הוא סמל לחדשנות עיצובית וחוויית קפה מושלמת. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקצה האלכסוני הייחודי של דגם Volcano מדגיש את הקרמה, שומר על חום המשקה ומאפשר שילוב מאוזן בין אספרסו לחלב. </p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הצבע האקוואמארין הרענן מוסיף טאץ’ עכשווי ומלא אופי לכל שולחן קפה.<br />הספל עשוי פורצלן איטלקי איכותי, מתאים במיוחד לאספרסו, מקיאטו או קפוצ’ינו קטן ומשתלב בצורה מושלמת גם בבתי קפה מקצועיים וגם לשימוש ביתי יוקרתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות עיקריות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בטוח לשטיפה במדיח</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פורצלן איכותי ועמיד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב Volcano עם קצה אלכסוני ייחודי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צבע אקוואמארין מודרני ורענן</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אידיאלי לאספרסו ומקיאטו</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - 90 מל קומפקטי. עיצוב איכותי ונעים למגע"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 78189,
+   "name": "ספל Volcano צהוב 210 מ\"ל Club House",
+   "short_description": "<p><strong>ספל פורצלן Volcano אקוואמארין 210 מ&quot;ל מבית Club House</strong></p>\n<p>בעיצוב אלכסוני ייחודי.</p>\n<p>אידיאלי לקפוצ’ינו או לאטה, שומר על חום הקפה ומעצים את הקרמה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>ספל Volcano אקוואמארין בנפח 210 מ\"ל מבית Club House מציע שילוב מושלם בין עיצוב חדשני לפורצלן איטלקי איכותי. דגם Volcano מתאפיין בקצה האלכסוני הייחודי שלו, שמעצים את הקרמה ושומר על חום המשקה לאורך זמן. הנפח הגדול מתאים במיוחד לקפוצ’ינו, פלאט ווייט או לאטה, והצבע האקוואמארין הרענן מעניק נגיעה עכשווית ומלאת סטייל לכל חוויית קפה.<br />מתאים לשימוש מקצועי בבתי קפה ולחובבי קפה ביתיים שמחפשים ספל ייחודי ואיכותי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות עיקריות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בטוח לשטיפה במדיח</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פורצלן איטלקי איכותי ועמיד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב Volcano עם קצה אלכסוני מעצים קרמה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צבע אקוואמארין מודרני ורענן</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אידיאלי לקפוצ’ינו, פלאט ווייט ולאטה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - 210. עיצוב איכותי ונעים למגע"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 78892,
+   "name": "50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods",
+   "short_description": "<p>קפה נטול קפאין בעל טעם מלא ועדין, המופק מתהליך דה־קפאין ייחודי השומר על הארומה המקורית.<br />\nקפה עם טעמים מאוזנים, פודים קומפוסטבילים המתאימים לכל מכונות ESE 44.</p>\n<p>ארוז בסביבה מוגנת לשמירה על טריות מושלמת.</p>\n",
+   "description": "<h3 data-start=\"143\" data-end=\"281\">50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods</h3>\n<p data-start=\"143\" data-end=\"281\">תערובת איכותית השומרת על כל הטעם המלא והעדין של קפה קלוי היטב, בזכות תהליך דה־קפאין ייחודי שמצליח לשמור על הארומה והאופי המקורי של הפולים.</p>\n<h3 data-start=\"283\" data-end=\"300\"><strong data-start=\"287\" data-end=\"300\">רמת קפאין</strong></h3>\n<p data-start=\"301\" data-end=\"349\">קפה נטול קפאין<br data-start=\"315\" data-end=\"318\" />תכולת קפאין שאינה עולה על 0.1%.</p>\n<h3 data-start=\"351\" data-end=\"368\"><strong data-start=\"355\" data-end=\"368\">טעם</strong></h3>\n<p data-start=\"369\" data-end=\"405\">טעם מאוזן, עגול ומלא עומק.</p>\n<h3 data-start=\"407\" data-end=\"421\"><strong data-start=\"411\" data-end=\"421\">תאימות</strong></h3>\n<p data-start=\"422\" data-end=\"492\">פודי קפה קומפוסטבילים, תואמים לכל מכונות הקפה בפורמט<br data-start=\"474\" data-end=\"477\" /><strong data-start=\"477\" data-end=\"491\">ESE 44 מ״מ</strong>.</p>\n<h3 data-start=\"494\" data-end=\"508\"><strong data-start=\"498\" data-end=\"508\">רכיבים</strong></h3>\n<p data-start=\"509\" data-end=\"536\">קפה טחון וקלוי איכותי בלבד.</p>\n<h3 data-start=\"538\" data-end=\"551\"><strong data-start=\"542\" data-end=\"551\">אריזה</strong></h3>\n<p data-start=\"552\" data-end=\"617\">ארוז בסביבה מוגנת לשמירה על טריות מרבית, טעמים נקיים וניחוח עשיר.</p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "Mauro Tropa Pods",
+    "rank_math_description": "מארז 50 פודי קפה (E.S.E) מבית Mauro איטליה בגרסה נטולת קופאין. תערובת עשירה ומאוזנת השומרת על הארומה והטעם האותנטי של קפה איטלקי משובח."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81253,
+   "name": "מקינטה מוקה אינדוקציה 6 כוסות Bialetti - שחור",
+   "short_description": "<p>המקינטה המסורתית של ביאלטי, <br />עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום. <br />היא עשויה משילוב של אלומיניום ופלדת אל-חלד כדי לאפשר חימום יעיל על האינדוקציה, תוך שמירה על הטעם המוכר של הקפה. <br />כוללת ידית סיליקון רכה למזיגה נוחה ובטוחה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p data-path-to-node=\"8\"><b data-path-to-node=\"8\" data-index-in-node=\"0\">מקינטה מוקה אינדוקציה 6 כוסות Bialetti – שחור</b></p>\n<p data-path-to-node=\"9\">הרבה זמן שהמעבר לכיריים אינדוקציה אילץ אוהבי קפה לוותר על המקינטה המסורתית שלהם או להשתמש במתאמים מסורבלים. ה-מוקה אינדוקציה של ביאלטי פותרת בדיוק את הבעיה הזו. היא שומרת על העיצוב המוכר והקלאסי של מקינטת האלומיניום, אבל משלבת בבסיס שלה פלדת אל-חלד (נירוסטה).</p>\n<p data-path-to-node=\"10\">השילוב הזה הוא לא סתם עיצובי: האלומיניום בחלק העליון שומר על הטעם המוכר והמסורתי של הקפה, והנירוסטה בחלק התחתון מאפשרת למקינטה לעבוד בצורה חלקה, מהירה ואחידה על כל כיריים מסוג אינדוקציה.</p>\n<p data-path-to-node=\"11\"><b data-path-to-node=\"11\" data-index-in-node=\"0\">מה חשוב לדעת?</b></p>\n<ul data-path-to-node=\"12\">\n<li>\n<p data-path-to-node=\"12,0,0\"><b data-path-to-node=\"12,0,0\" data-index-in-node=\"0\">מותאמת לאינדוקציה:</b> הבסיס הדו-שכבתי (אלומיניום מבפנים ונירוסטה מבחוץ) תוכנן ספציפית כדי לקלוט את החום של האינדוקציה ביעילות.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,1,0\"><b data-path-to-node=\"12,1,0\" data-index-in-node=\"0\">בטיחות ואמינות:</b> מגיעה עם שסתום הבטיחות המוכר של ביאלטי (Bialetti), שקל לנקות ולשחרר במקרה הצורך.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,2,0\"><b data-path-to-node=\"12,2,0\" data-index-in-node=\"0\">נוחה לשימוש:</b> ידית המזיגה מצופה בסיליקון רך שמונע החלקה ומבודד את החום, כדי שלא תקבלו כוויה בזמן המזיגה.</p>\n</li>\n</ul>\n<p data-path-to-node=\"13\"><b data-path-to-node=\"13\" data-index-in-node=\"0\">איך מכינים קפה?</b> השיטה נשארה פשוטה. ממלאים מים קרים בחלק התחתון עד גובה השסתום (לא מעבר לו). שמים קפה טחון – בעובי שמתאים למקינטה – בתוך המשפך, בלי לדחוס אותו. סוגרים חזק, מניחים על הכיריים בעוצמה בינונית, וברגע ששומעים את הגרגור והקפה ממלא את החלק העליון – מסירים מהאש ומוזגים.</p>\n<p data-path-to-node=\"14\"><b data-path-to-node=\"14\" data-index-in-node=\"0\">איך שומרים עליה לאורך זמן?</b> הכלל הכי חשוב למקינטה: שוטפים אותה אך ורק במים. בלי סבון כלים, בלי סקוצ'ים שורטים, ובשום פנים ואופן לא מכניסים למדיח. סבון או מדיח יהרסו את המקינטה ויפגעו בטעם הקפה. פשוט שוטפים במים זורמים, נותנים לחלקים להתייבש באוויר הפתוח ומרכיבים מחדש.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": " %title% %sep% %sitename%",
+    "rank_math_description": "מקינטה מוקה אינדוקציה 6 כוסות Bialetti, שחור. מקינטה עם מידע על מספר הכוסות, החומר וההתאמה לכיריים. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "מקינטה מוקה אינדוקציה"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bialetti"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81254,
+   "name": "מקינטה מוקה אינדוקציה 4 כוסות Bialetti - שחור",
+   "short_description": "<p>המקינטה המסורתית של ביאלטי, <br />עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום. <br />היא עשויה משילוב של אלומיניום ופלדת אל-חלד כדי לאפשר חימום יעיל על האינדוקציה, תוך שמירה על הטעם המוכר של הקפה. <br />כוללת ידית סיליקון רכה למזיגה נוחה ובטוחה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p data-path-to-node=\"8\"><b data-path-to-node=\"8\" data-index-in-node=\"0\">מקינטה מוקה אינדוקציה 4 כוסות Bialetti – שחור</b></p>\n<p data-path-to-node=\"9\">הרבה זמן שהמעבר לכיריים אינדוקציה אילץ אוהבי קפה לוותר על המקינטה המסורתית שלהם או להשתמש במתאמים מסורבלים. ה-מוקה אינדוקציה של ביאלטי פותרת בדיוק את הבעיה הזו. היא שומרת על העיצוב המוכר והקלאסי של מקינטת האלומיניום, אבל משלבת בבסיס שלה פלדת אל-חלד (נירוסטה).</p>\n<p data-path-to-node=\"10\">השילוב הזה הוא לא סתם עיצובי: האלומיניום בחלק העליון שומר על הטעם המוכר והמסורתי של הקפה, והנירוסטה בחלק התחתון מאפשרת למקינטה לעבוד בצורה חלקה, מהירה ואחידה על כל כיריים מסוג אינדוקציה.</p>\n<p data-path-to-node=\"11\"><b data-path-to-node=\"11\" data-index-in-node=\"0\">מה חשוב לדעת?</b></p>\n<ul data-path-to-node=\"12\">\n<li>\n<p data-path-to-node=\"12,0,0\"><b data-path-to-node=\"12,0,0\" data-index-in-node=\"0\">מותאמת לאינדוקציה:</b> הבסיס הדו-שכבתי (אלומיניום מבפנים ונירוסטה מבחוץ) תוכנן ספציפית כדי לקלוט את החום של האינדוקציה ביעילות.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,1,0\"><b data-path-to-node=\"12,1,0\" data-index-in-node=\"0\">בטיחות ואמינות:</b> מגיעה עם שסתום הבטיחות המוכר של ביאלטי (Bialetti), שקל לנקות ולשחרר במקרה הצורך.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,2,0\"><b data-path-to-node=\"12,2,0\" data-index-in-node=\"0\">נוחה לשימוש:</b> ידית המזיגה מצופה בסיליקון רך שמונע החלקה ומבודד את החום, כדי שלא תקבלו כוויה בזמן המזיגה.</p>\n</li>\n</ul>\n<p data-path-to-node=\"13\"><b data-path-to-node=\"13\" data-index-in-node=\"0\">איך מכינים קפה?</b> השיטה נשארה פשוטה. ממלאים מים קרים בחלק התחתון עד גובה השסתום (לא מעבר לו). שמים קפה טחון – בעובי שמתאים למקינטה – בתוך המשפך, בלי לדחוס אותו. סוגרים חזק, מניחים על הכיריים בעוצמה בינונית, וברגע ששומעים את הגרגור והקפה ממלא את החלק העליון – מסירים מהאש ומוזגים.</p>\n<p data-path-to-node=\"14\"><b data-path-to-node=\"14\" data-index-in-node=\"0\">איך שומרים עליה לאורך זמן?</b> הכלל הכי חשוב למקינטה: שוטפים אותה אך ורק במים. בלי סבון כלים, בלי סקוצ'ים שורטים, ובשום פנים ואופן לא מכניסים למדיח. סבון או מדיח יהרסו את המקינטה ויפגעו בטעם הקפה. פשוט שוטפים במים זורמים, נותנים לחלקים להתייבש באוויר הפתוח ומרכיבים מחדש.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": " %title% %sep% %sitename%",
+    "rank_math_description": "מקינטה מוקה אינדוקציה 4 כוסות Bialetti, שחור. מקינטה עם מידע על מספר הכוסות, החומר וההתאמה לכיריים. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "מקינטה מוקה אינדוקציה"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bialetti"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81256,
+   "name": "מקינטה מוקה אינדוקציה 2 כוסות Bialetti - שחור",
+   "short_description": "<p>המקינטה המסורתית של ביאלטי, <br />עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום. <br />היא עשויה משילוב של אלומיניום ופלדת אל-חלד כדי לאפשר חימום יעיל על האינדוקציה, תוך שמירה על הטעם המוכר של הקפה. <br />כוללת ידית סיליקון רכה למזיגה נוחה ובטוחה.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p data-path-to-node=\"8\"><b data-path-to-node=\"8\" data-index-in-node=\"0\">מקינטה מוקה אינדוקציה 2 כוסות Bialetti – שחור</b></p>\n<p data-path-to-node=\"9\">הרבה זמן שהמעבר לכיריים אינדוקציה אילץ אוהבי קפה לוותר על המקינטה המסורתית שלהם או להשתמש במתאמים מסורבלים. ה-מוקה אינדוקציה של ביאלטי פותרת בדיוק את הבעיה הזו. היא שומרת על העיצוב המוכר והקלאסי של מקינטת האלומיניום, אבל משלבת בבסיס שלה פלדת אל-חלד (נירוסטה).</p>\n<p data-path-to-node=\"10\">השילוב הזה הוא לא סתם עיצובי: האלומיניום בחלק העליון שומר על הטעם המוכר והמסורתי של הקפה, והנירוסטה בחלק התחתון מאפשרת למקינטה לעבוד בצורה חלקה, מהירה ואחידה על כל כיריים מסוג אינדוקציה.</p>\n<p data-path-to-node=\"11\"><b data-path-to-node=\"11\" data-index-in-node=\"0\">מה חשוב לדעת?</b></p>\n<ul data-path-to-node=\"12\">\n<li>\n<p data-path-to-node=\"12,0,0\"><b data-path-to-node=\"12,0,0\" data-index-in-node=\"0\">מותאמת לאינדוקציה:</b> הבסיס הדו-שכבתי (אלומיניום מבפנים ונירוסטה מבחוץ) תוכנן ספציפית כדי לקלוט את החום של האינדוקציה ביעילות.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,1,0\"><b data-path-to-node=\"12,1,0\" data-index-in-node=\"0\">בטיחות ואמינות:</b> מגיעה עם שסתום הבטיחות המוכר של ביאלטי (Bialetti), שקל לנקות ולשחרר במקרה הצורך.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,2,0\"><b data-path-to-node=\"12,2,0\" data-index-in-node=\"0\">נוחה לשימוש:</b> ידית המזיגה מצופה בסיליקון רך שמונע החלקה ומבודד את החום, כדי שלא תקבלו כוויה בזמן המזיגה.</p>\n</li>\n</ul>\n<p data-path-to-node=\"13\"><b data-path-to-node=\"13\" data-index-in-node=\"0\">איך מכינים קפה?</b> השיטה נשארה פשוטה. ממלאים מים קרים בחלק התחתון עד גובה השסתום (לא מעבר לו). שמים קפה טחון – בעובי שמתאים למקינטה – בתוך המשפך, בלי לדחוס אותו. סוגרים חזק, מניחים על הכיריים בעוצמה בינונית, וברגע ששומעים את הגרגור והקפה ממלא את החלק העליון – מסירים מהאש ומוזגים.</p>\n<p data-path-to-node=\"14\"><b data-path-to-node=\"14\" data-index-in-node=\"0\">איך שומרים עליה לאורך זמן?</b> הכלל הכי חשוב למקינטה: שוטפים אותה אך ורק במים. בלי סבון כלים, בלי סקוצ'ים שורטים, ובשום פנים ואופן לא מכניסים למדיח. סבון או מדיח יהרסו את המקינטה ויפגעו בטעם הקפה. פשוט שוטפים במים זורמים, נותנים לחלקים להתייבש באוויר הפתוח ומרכיבים מחדש.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": " %title% %sep% %sitename%",
+    "rank_math_description": "מקינטה מוקה אינדוקציה 2 כוסות Bialetti, שחור. מקינטה עם מידע על מספר הכוסות, החומר וההתאמה לכיריים. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "מקינטה מוקה אינדוקציה"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Bialetti"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81361,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כחול",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס, BREWERS EMBOSSED, כחול. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "כוס טעימה אמבוסד 250 מ״ל, כחול | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81368,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - סגול",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס, BREWERS EMBOSSED, סגול. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "כוס טעימה אמבוסד 250 מ״ל, סגול | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81375,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ורוד",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס, BREWERS EMBOSSED, ורוד. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "כוס טעימה אמבוסד 250 מ״ל, ורוד | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81382,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - צהוב",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס, BREWERS EMBOSSED, צהוב. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "כוס טעימה אמבוסד 250 מ״ל, צהוב | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81389,
+   "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ירוק",
+   "short_description": "<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג. הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את ספלי הקפה המעוצבים של חברת Loveramics , בהשראת הנוף האורבני התוסס של הונג קונג.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוסות המדהימות הללו משפרים בצורה חלקה את עיצוב הפנים של הבית או בית הקפה שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוסות אלו מעוצבות עם פתח רחב ומאפשרות חווית ארומה משופרת, המאפשרת לקפה האהוב עליך לזרוח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזיגוג החצי שקוף המעודן משלים יפה את פסי התבליט העדינים העוברים לאורך הזכוכית, ויוצר עיצוב מושך מבחינה ויזואלית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יתרה מכך, הפתח המרווח מספק קנבס ליצירות לאטה אמנותיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שדרגו את חווית הקפה שלכם עם כוסות יוצאות דופן אלה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס, BREWERS EMBOSSED, ירוק. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+    "rank_math_title": "כוס טעימה אמבוסד 250 מ״ל, ירוק | מינוטו"
+   },
+   "attributes": [
+    {
+     "name": "צבע מוצר",
+     "options": [
+      "ורוד",
+      "ירוק",
+      "כחול",
+      "כתום",
+      "סגול",
+      "צהוב"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81476,
+   "name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore לא כולל התקנה",
+   "short_description": "<p>מערכת AQUAPHOR Osmo Pro 100 מצוידת במערכת החדשה שהופכת את החלפת הפילטרים למהירה וקלה,  לוקח פחות מדקה ואינו דורש כלים. יש להחליף פילטרים בזמן כדי שהממברנה תחזיק מעמד למשך 1.5-2 שנים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מפחית מזהמים נפוצים במי ברז כגון: כלור , חומרים אורגנים , מתכות כבדות , ניטריטים וניטראטים , בקטריות ווירוסים , פנולים , מלחי קשיות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה ואספרסו הוא יישום אחד שדורש הסרת תכונות לא רצויות במי ההזנה, כגון כלור, אך רק את הכמות הנכונה של מינרלים חשובים להשאיר בתוכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כידוע מים טובים יכולים לעזור לשחרר את מלוא הטעם של פולי הקפה תוך הגנה על מכונות הקפה מפני ההשפעות היקרות של קורוזיות ואבנית.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מערכת אוסמוזה Osmo Pro 100 ללא התקנה | מינוטו",
+    "rank_math_description": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore לא כולל התקנה. מערכת לטיפול ולסינון מים עם מידע על הדגם, הסינון וההתקנה. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "התקנה",
+     "options": [
+      "כולל התקנה",
+      "לא כולל התקנה"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  }
+ ]
+}

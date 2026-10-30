@@ -1,0 +1,627 @@
+{
+ "edits": [
+  {
+   "product_id": 65170,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.",
+   "new": "ננווסל (Nanovessel) – תרמוס ואקום מנירוסטה 304 עם 3 פונקציות: תרמוס, כלי להכנת תה ומיכל שמתברג ישירות לננופרסו במקום מיכל המים.",
+   "finding": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם."
+  },
+  {
+   "product_id": 65208,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.",
+   "new": "נרתיק קשיח מחומר EVA עם בטנה רכה, שתוכנן במיוחד למיניפרסו ומגן עליו מפני מכות, שריטות ואבק בשטח.",
+   "finding": "מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם."
+  },
+  {
+   "product_id": 65208,
+   "variation_id": null,
+   "target": "description",
+   "old": "להגן על המכשיר במפני רעידות",
+   "new": "להגן על המכשיר מפני רעידות",
+   "finding": "הנרתיק מסייע להגן על המכשיר במפני רעידות"
+  },
+  {
+   "product_id": 78189,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Volcano אקוואמארין 210",
+   "new": "Volcano צהוב 210",
+   "finding": "ספל פורצלן Volcano אקוואמארין 210 מ\"ל מבית Club House"
+  },
+  {
+   "product_id": 78189,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל Volcano אקוואמארין בנפח",
+   "new": "ספל Volcano צהוב בנפח",
+   "finding": "ספל פורצלן Volcano אקוואמארין 210 מ\"ל מבית Club House"
+  },
+  {
+   "product_id": 78189,
+   "variation_id": null,
+   "target": "description",
+   "old": "והצבע האקוואמארין הרענן",
+   "new": "והצבע הצהוב הרענן",
+   "finding": "ספל פורצלן Volcano אקוואמארין 210 מ\"ל מבית Club House"
+  },
+  {
+   "product_id": 78189,
+   "variation_id": null,
+   "target": "description",
+   "old": "צבע אקוואמארין מודרני ורענן",
+   "new": "צבע צהוב מודרני ורענן",
+   "finding": "ספל פורצלן Volcano אקוואמארין 210 מ\"ל מבית Club House"
+  },
+  {
+   "product_id": 67210,
+   "variation_id": null,
+   "target": "description",
+   "old": "100 קפסולות Esse Infinito",
+   "new": "50 קפסולות Esse Infinito",
+   "finding": "100 קפסולות Esse Infinito"
+  },
+  {
+   "product_id": 67210,
+   "variation_id": null,
+   "target": "description",
+   "old": "צוות Essse,",
+   "new": "צוות Esse,",
+   "finding": "100 קפסולות Esse Infinito"
+  },
+  {
+   "product_id": 67308,
+   "variation_id": null,
+   "target": "description",
+   "old": "100 קפסולות Esse<",
+   "new": "50 קפסולות Esse Maestoso<",
+   "finding": "100 קפסולות Esse"
+  },
+  {
+   "product_id": 81476,
+   "variation_id": null,
+   "target": "description",
+   "old": "Osmo Pro 100 Aquaphore כולל התקנה",
+   "new": "Osmo Pro 100 Aquaphore לא כולל התקנה",
+   "finding": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "אין צורך בחשמל:</strong>&nbsp;המכונה פועלת ללא משאבת חשמל",
+   "new": "ללא משאבה חשמלית:</strong>&nbsp;המכונה פועלת ללא משאבת חשמל",
+   "finding": "אין צורך בחשמל:  המכונה פועלת ללא משאבת חשמל"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "שסתם ביטחון: מבטיחה פעולה",
+   "new": "שסתום ביטחון: מבטיח פעולה",
+   "finding": "שסתם ביטחון: מבטיחה פעולה בטוחה"
+  },
+  {
+   "product_id": 64736,
+   "variation_id": null,
+   "target": "description",
+   "old": "את Nivona 550 שלכם",
+   "new": "את Nivona 560 שלכם",
+   "finding": "הזמינו עוד היום את Nivona 550 שלכם"
+  },
+  {
+   "product_id": 64736,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פשוטה ואכותית.",
+   "new": "פשוטה ואיכותית.",
+   "finding": "יפה, פשוטה ואכותית."
+  },
+  {
+   "product_id": 67175,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו",
+   "new": "קפסולות קימבו אינטנסו התואמות דולצ'ה גוסטו",
+   "finding": "שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו"
+  },
+  {
+   "product_id": 67175,
+   "variation_id": null,
+   "target": "description",
+   "old": "תואמות Dulce Gusto",
+   "new": "תואמות Dolce Gusto",
+   "finding": "שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו"
+  },
+  {
+   "product_id": 67175,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "תואמות Dulce Gusto",
+   "new": "תואמות Dolce Gusto",
+   "finding": "שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו"
+  },
+  {
+   "product_id": 81253,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אינדוקציה ובצבע אדום.",
+   "new": "אינדוקציה ובצבע שחור.",
+   "finding": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום."
+  },
+  {
+   "product_id": 81254,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אינדוקציה ובצבע אדום.",
+   "new": "אינדוקציה ובצבע שחור.",
+   "finding": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום."
+  },
+  {
+   "product_id": 81256,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אינדוקציה ובצבע אדום.",
+   "new": "אינדוקציה ובצבע שחור.",
+   "finding": "עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום."
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "old": "להלן תיאור קצר המתאים לאתר אינטרנט:",
+   "new": "",
+   "finding": "להלן תיאור קצר המתאים לאתר אינטרנט:"
+  },
+  {
+   "product_id": 78176,
+   "variation_id": null,
+   "target": "description",
+   "old": "ספל Maniko אדום בנפח",
+   "new": "ספל Maniko ורוד סלמון בנפח",
+   "finding": "ספל Maniko אדום בנפח 70 מ\"ל ... צבע האדום העז"
+  },
+  {
+   "product_id": 78176,
+   "variation_id": null,
+   "target": "description",
+   "old": "צבע האדום העז",
+   "new": "גוון הוורוד-סלמון העז",
+   "finding": "ספל Maniko אדום בנפח 70 מ\"ל ... צבע האדום העז"
+  },
+  {
+   "product_id": 67307,
+   "variation_id": null,
+   "target": "description",
+   "old": "2000 וואט - 22 וולט",
+   "new": "2000 וואט - 220 וולט",
+   "finding": "2000 וואט - 22 וולט / 120 וולט"
+  },
+  {
+   "product_id": 67320,
+   "variation_id": null,
+   "target": "description",
+   "old": "2000 וואט - 22 וולט",
+   "new": "2000 וואט - 220 וולט",
+   "finding": "2000 וואט - 22 וולט / 120 וולט"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "description",
+   "old": "2000 וואט - 22 וולט",
+   "new": "2000 וואט - 220 וולט",
+   "finding": "2000 וואט - 22 וולט / 120 וולט"
+  },
+  {
+   "product_id": 67338,
+   "variation_id": null,
+   "target": "description",
+   "old": "2000 וואט - 22 וולט",
+   "new": "2000 וואט - 220 וולט",
+   "finding": "2000 וואט - 22 וולט / 120 וולט"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>לחץ משאבה:</strong> 15 בר (מדיד)",
+   "new": "<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף",
+   "finding": "לחץ משאבה: 15 בר (מדיד)"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "איכות ללא פשרים",
+   "new": "איכות ללא פשרות",
+   "finding": "איכות ללא פשרים ... מד לחץ המים בב דוד"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "מד לחץ המים בב דוד",
+   "new": "מד לחץ המים בדוד",
+   "finding": "איכות ללא פשרים ... מד לחץ המים בב דוד"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מד לחץ מים בב דוד",
+   "new": "מד לחץ מים בדוד",
+   "finding": "איכות ללא פשרים ... מד לחץ המים בב דוד"
+  },
+  {
+   "product_id": 67605,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מד לחץ מים בב דוד",
+   "new": "מד לחץ מים בדוד",
+   "finding": "מד לחץ מים בב דוד"
+  },
+  {
+   "product_id": 64735,
+   "variation_id": null,
+   "target": "description",
+   "old": "ובזכות עוביו המשמעותי, היא מאפשר",
+   "new": "ובזכות עוביה המשמעותי, היא מאפשרת",
+   "finding": "ובזכות עוביו המשמעותי, היא מאפשר העברת חום מושלמת"
+  },
+  {
+   "product_id": 64760,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "&quot; &#8211; קפה קליל",
+   "new": "Esse Monodose Ideale &#8211; קפה קליל",
+   "finding": "\" – קפה קליל ועדין המיועד למי שמחפש"
+  },
+  {
+   "product_id": 64760,
+   "variation_id": null,
+   "target": "name",
+   "old": "ESSE MONDOSE IDEALE",
+   "new": "ESSE MONODOSE IDEALE",
+   "finding": "\" – קפה קליל ועדין המיועד למי שמחפש"
+  },
+  {
+   "product_id": 64760,
+   "variation_id": null,
+   "target": "description",
+   "old": "ESSE MONDOSE IDEALE",
+   "new": "ESSE MONODOSE IDEALE",
+   "finding": "\" – קפה קליל ועדין המיועד למי שמחפש"
+  },
+  {
+   "product_id": 64760,
+   "variation_id": null,
+   "target": "description",
+   "old": "\"Essse Capsule",
+   "new": "\"Esse Capsule",
+   "finding": "\" – קפה קליל ועדין המיועד למי שמחפש"
+  },
+  {
+   "product_id": 64846,
+   "variation_id": null,
+   "target": "description",
+   "old": "בעבודה בעבודה",
+   "new": "בעבודה",
+   "finding": "לכוס קפה איכותית בעבודה בעבודה"
+  },
+  {
+   "product_id": 64990,
+   "variation_id": null,
+   "target": "description",
+   "old": "מבוקרת על יד PID",
+   "new": "מבוקרת על ידי PID",
+   "finding": "משאבה סיבובית מבוקרת על יד PID"
+  },
+  {
+   "product_id": 65406,
+   "variation_id": null,
+   "target": "description",
+   "old": "בספל קלאסי וקלאסי בנפח",
+   "new": "בספל קלאסי בנפח",
+   "finding": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל"
+  },
+  {
+   "product_id": 65407,
+   "variation_id": null,
+   "target": "description",
+   "old": "בספל קלאסי וקלאסי בנפח",
+   "new": "בספל קלאסי בנפח",
+   "finding": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל"
+  },
+  {
+   "product_id": 65408,
+   "variation_id": null,
+   "target": "description",
+   "old": "בספל קלאסי וקלאסי בנפח",
+   "new": "בספל קלאסי בנפח",
+   "finding": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל"
+  },
+  {
+   "product_id": 65409,
+   "variation_id": null,
+   "target": "description",
+   "old": "בספל קלאסי וקלאסי בנפח",
+   "new": "בספל קלאסי בנפח",
+   "finding": "פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ\"ל"
+  },
+  {
+   "product_id": 67153,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוסחן מנירוסטה",
+   "new": "דוחסן מנירוסטה",
+   "finding": "דוסחן מנירוסטה"
+  },
+  {
+   "product_id": 67194,
+   "variation_id": null,
+   "target": "description",
+   "old": "חובבי הקפה המאודינים",
+   "new": "חובבי הקפה המעודנים",
+   "finding": "אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה"
+  },
+  {
+   "product_id": 67194,
+   "variation_id": null,
+   "target": "description",
+   "old": "אספרסו נחלט בצורה למשקאות",
+   "new": "אספרסו שנחלט בצורה מושלמת, בסיס למשקאות",
+   "finding": "אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה"
+  },
+  {
+   "product_id": 67218,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגדירור את הטיימר לפני השינה ותחכה לך כוס קפה טריה",
+   "new": "הגדירו את הטיימר לפני השינה ותחכה לכם כוס קפה טרייה",
+   "finding": "הגדירור את הטיימר לפני השינה ותחכה לך"
+  },
+  {
+   "product_id": 67218,
+   "variation_id": null,
+   "target": "description",
+   "old": "מידע על המוצר \"מכונת",
+   "new": "מידע על המוצר: מכונת",
+   "finding": "הגדירור את הטיימר לפני השינה ותחכה לך"
+  },
+  {
+   "product_id": 67258,
+   "variation_id": null,
+   "target": "description",
+   "old": "מערכת Nespresso® *:",
+   "new": "מערכת Nespresso®.",
+   "finding": "תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:"
+  },
+  {
+   "product_id": 67360,
+   "variation_id": null,
+   "target": "description",
+   "old": "10 קפסולו קפה",
+   "new": "10 קפסולות קפה",
+   "finding": "10 קפסולו קפה האוסברנדט ... תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:"
+  },
+  {
+   "product_id": 67360,
+   "variation_id": null,
+   "target": "description",
+   "old": "מערכת Nespresso® *:",
+   "new": "מערכת Nespresso®.",
+   "finding": "10 קפסולו קפה האוסברנדט ... תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:"
+  },
+  {
+   "product_id": 67281,
+   "variation_id": null,
+   "target": "description",
+   "old": "מבית הנירוסטה שלו דרך",
+   "new": "מגוף הנירוסטה, דרך",
+   "finding": "בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב\n חירה מצוינת"
+  },
+  {
+   "product_id": 67281,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל מים חיצוניבעיצוב",
+   "new": "מיכל מים חיצוני בעיצוב",
+   "finding": "בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב\n חירה מצוינת"
+  },
+  {
+   "product_id": 67281,
+   "variation_id": null,
+   "target": "description",
+   "old": "אורך חיים גבוה מאוד. ב<",
+   "new": "אורך חיים גבוה מאוד.<",
+   "finding": "בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב\n חירה מצוינת"
+  },
+  {
+   "product_id": 67281,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>חירה מצוינת",
+   "new": "<p>בחירה מצוינת",
+   "finding": "בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב\n חירה מצוינת"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Chiara מרשימ,",
+   "new": "Chiara מרשימה,",
+   "finding": "Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "שלייטה בתזמון",
+   "new": "שליטה בתזמון",
+   "finding": "Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "description",
+   "old": "קטנה וקטנה",
+   "new": "קטנה וקומפקטית",
+   "finding": "Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוד נירוסטה - כמו ג PID אלגנטי",
+   "new": "דוד נירוסטה ובקר PID אלגנטי",
+   "finding": "Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת"
+  },
+  {
+   "product_id": 67399,
+   "variation_id": null,
+   "target": "description",
+   "old": "(PIDׂ)",
+   "new": "(PID)",
+   "finding": "ווסת טמפרטורה (PIDׂ) ... לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה"
+  },
+  {
+   "product_id": 67399,
+   "variation_id": null,
+   "target": "description",
+   "old": "שונה לפני לפי סוג",
+   "new": "שונה לפי סוג",
+   "finding": "ווסת טמפרטורה (PIDׂ) ... לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה"
+  },
+  {
+   "product_id": 67622,
+   "variation_id": null,
+   "target": "description",
+   "old": "כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:",
+   "new": "",
+   "finding": "כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:"
+  },
+  {
+   "product_id": 68284,
+   "variation_id": null,
+   "target": "description",
+   "old": "*קפסולות NS מתיחס",
+   "new": "*קפסולות NS – מתייחס",
+   "finding": "*קפסולות NS מתיחס לקפסולות נספרסו® מקוריות ותואמות."
+  },
+  {
+   "product_id": 69450,
+   "variation_id": null,
+   "target": "description",
+   "old": "תצוגת LC מוארת",
+   "new": "תצוגת LCD מוארת",
+   "finding": "תצוגת LC מוארת"
+  },
+  {
+   "product_id": 78179,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "﻿",
+   "new": "",
+   "finding": "אידיאלי לאספרסו או מקיאטו.\n ﻿"
+  },
+  {
+   "product_id": 78892,
+   "variation_id": null,
+   "target": "name",
+   "old": "נטול קופאין",
+   "new": "נטול קפאין",
+   "finding": "50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "הכירו את Dolce Gusto Super Creamy 100% ערביקה",
+   "product_id": 64847,
+   "reason": "Needs a new description of the Lungo capsule; composition and strength are not in the catalog data."
+  },
+  {
+   "finding": "מילאנו הוא קפה קליל ועדין. עשוי 100% ערביקה",
+   "product_id": 65015,
+   "reason": "Needs a new Bialetti Napoli description; blend details are not in the catalog data."
+  },
+  {
+   "finding": "2 ליטר דוד נירוסטה - PID אלגנטי ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "product_id": 67280,
+   "reason": "2 L vs 1.8 L boiler: which value is right needs the manufacturer spec."
+  },
+  {
+   "finding": "2 ליטר דוד נירוסטה - PID אלגנטי ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "product_id": 67306,
+   "reason": "2 L vs 1.8 L boiler: which value is right needs the manufacturer spec."
+  },
+  {
+   "finding": "2 ליטר דוד נירוסטה - כמו ג PID ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "product_id": 67307,
+   "reason": "2 L vs 1.8 L boiler: which value is right needs the manufacturer spec."
+  },
+  {
+   "finding": "2 ליטר דוד נירוסטה - כמו ג PID ... 1.8 ליטר דוד נירוסטה עם בידוד",
+   "product_id": 67320,
+   "reason": "2 L vs 1.8 L boiler: which value is right needs the manufacturer spec."
+  },
+  {
+   "finding": "התקנה: כולל התקנה, לא כולל התקנה",
+   "product_id": 64701,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 65403,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: לבן, נירוסטה, שחור",
+   "product_id": 67280,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: לבן, נירוסטה, שחור",
+   "product_id": 67281,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 81361,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 81368,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 81375,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 81382,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "צבע מוצר: ורוד, ירוק, כחול, כתום, סגול, צהוב",
+   "product_id": 81389,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "התקנה: כולל התקנה, לא כולל התקנה",
+   "product_id": 81476,
+   "reason": "Fix means removing options from the attribute, which a single old->new option swap can't express; also these attributes are flagged variation=true, so changing them needs a manual check."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 76577,
+   "reason": "Missing SKU: out of scope (missing content)."
+  }
+ ]
+}

@@ -1,0 +1,1574 @@
+{
+ "findings": [
+  {
+   "product_id": "65057",
+   "product_name": "פרנץ׳ פרס 8 כוסות (1 ליטר) - ביאלטי Bialetti",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%a8%d7%a0%d7%a5%d7%b3-%d7%a4%d7%a8%d7%a1-8-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-1-%d7%9c%d7%99%d7%98%d7%a8-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-bialetti/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "פרנץ׳ פרס ביאלטי עם קיבולת של 3 כוסות (350 מ\"ל)",
+   "problem": "Short description of the 8-cup / 1 L press states 3 cups (350 ml), copied from the 3-cup sibling; title and description say 8 cups / 1 L.",
+   "suggested_fix": "פרנץ׳ פרס ביאלטי עם קיבולת של 8 כוסות (1 ליטר), לאוהבי קפה מסורתי יותר. מסגרת נירוסטה עם צורת ביאלטי וכד זכוכית בורוסיליקט. עיצוב מסוגנן",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65092",
+   "product_name": "קנקן מזיגה 350 מ\"ל AIR\" HARIO\"",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-350-%d7%9e%d7%9c-air-hario/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "בדריפ שני מסנני רשת קוניים דקים חופפים",
+   "problem": "The 350 ml AIR serving pitcher has the short description of the Hario double-mesh stainless dripper (65095).",
+   "suggested_fix": "קנקן מזיגה Hario AIR בנפח 350 מ\"ל, קל משקל ושקוף, אידיאלי להיכרות ראשונה עם הכנת קפה פילטר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "79213",
+   "product_name": "חליטת תה חליטת יער אורגנית בשקיקי פירמידה מבית עדנים",
+   "permalink": "https://www.minuto.co.il/product/%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94-%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%99%d7%a2%d7%a8-%d7%90%d7%95%d7%a8%d7%92%d7%a0%d7%99%d7%aa-%d7%91%d7%a9%d7%a7%d7%99%d7%a7%d7%99-%d7%a4%d7%99%d7%a8%d7%9e/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "high",
+   "current_text": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.",
+   "problem": "Short description of the forest-fruit infusion starts with the full ginger-lime product text before the forest text.",
+   "suggested_fix": "חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים. תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64799",
+   "product_name": "דוחסן 57 ממ ILSA לידית מכונת קפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-57-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "ידית שחורה ואיכותית\n 51 מ\"מ",
+   "problem": "Short description of the 57 mm ILSA tamper lists 51 mm; title and description say 57 mm.",
+   "suggested_fix": "חומר: אלומיניום\n 57 מ\"מ (לאמת את צבע הידית)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64997",
+   "product_name": "CHEMEX - פילטר נייר קמקס 6-10 כוסות",
+   "permalink": "https://www.minuto.co.il/product/chemex-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a0%d7%99%d7%99%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-6-10-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות",
+   "problem": "Paper filter's short description says it is made of borosilicate glass (copied from the Chemex carafe).",
+   "suggested_fix": "להסיר את המשפט על זכוכית בורוסיליקט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65048",
+   "product_name": "CHEMEX - פילטר נייר קמקס 1-3 כוסות(חצי ירח)",
+   "permalink": "https://www.minuto.co.il/product/chemex-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a0%d7%99%d7%99%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-1-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa%d7%97%d7%a6%d7%99-%d7%99%d7%a8%d7%97/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות",
+   "problem": "Paper filter's short description says it is made of borosilicate glass (copied from the Chemex carafe).",
+   "suggested_fix": "להסיר את המשפט על זכוכית בורוסיליקט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65215",
+   "product_name": "Hario V60 Server 360 ml - קנקן מזיגה האריו",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "האחים שעועית מחזיקים את השרת Hario V60 בשני גדלים שונים",
+   "problem": "Machine-translated copy from another retailer ('Bean Brothers') offering two sizes via a dropdown that doesn't exist; also garbled text ('שרת הריינג 'V60 טווח').",
+   "suggested_fix": "להסיר את הפסקה על 'האחים שעועית' והתפריט הנפתח, ולנסח מחדש: קנקן הגשה Hario V60 בנפח 360 מ\"ל, תואם לדריפר V60 01",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65226",
+   "product_name": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "מעמד לקפה פילטר 1 כוסות V60 מפלסטיק הריו Hario VD-02R",
+   "problem": "Short description of the 1-cup VD-01R names model VD-02R (2-cup); also 'או או' duplication.",
+   "suggested_fix": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82537",
+   "product_name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע ירוק עשן",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-fellow-stagg-ekg-pour-over-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%a2%d7%a9%d7%9f/",
+   "field": "short_description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "קומקום חשמלי Stagg EKG בצבע לבן",
+   "problem": "Smoke-green kettle's short description says the colour is white (copied from the white variant).",
+   "suggested_fix": "קומקום חשמלי Stagg EKG בצבע ירוק עשן בעיצוב יוקרתי ומתקדם עם שליטה מדויקת בטמפרטורה.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65223",
+   "product_name": "דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-hario-vd-02r/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "medium",
+   "current_text": "דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר...",
+   "problem": "Product name is repeated three times.",
+   "suggested_fix": "דריפר זכוכית Hario V60 דגם VDGR-02",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65099",
+   "product_name": "MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה 600 מ״ל - Cold Brew - אדום",
+   "permalink": "https://www.minuto.co.il/product/mizudashi-hario-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%9e%d7%99%d7%a6%d7%95%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a8-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-600-%d7%9e%d7%b4%d7%9c-cold-brew-%d7%90/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "קנקנן הריו לחליטה קרה צבע שוקולד",
+   "problem": "Title says red (אדום) but short description says chocolate colour; also typo 'קנקנן'.",
+   "suggested_fix": "קנקן הריו לחליטה קרה צבע אדום קיבולת 5 כוסות / נפח מבושל 600 מ\"ל",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67295",
+   "product_name": "Clever Dripper",
+   "permalink": "https://www.minuto.co.il/product/clever-dripper/",
+   "field": "attributes",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "מותג: Toddy",
+   "problem": "Clever Dripper has brand attribute Toddy, which is a different brand.",
+   "suggested_fix": "להסיר את המותג Toddy ולהגדיר את המותג הנכון (Clever)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68274",
+   "product_name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%93%d7%95-%d7%a9%d7%99%d7%9e%d7%95%d7%a9%d7%99/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "דוחסן דו שימושי 52/57 מ\"מ ... ובצד השני 58 מ\"מ",
+   "problem": "Heading says 52/57 mm, body says 52 and 58 mm.",
+   "suggested_fix": "לאמת את הקוטר בצד הגדול ולאחד (57 או 58 מ\"מ)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64765",
+   "product_name": "קפסולות לניקוי מכונת נספרסו CAFETTO ECO",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-cafetto-eco/",
+   "field": "images",
+   "issue_type": "missing_data",
+   "severity": "medium",
+   "current_text": "(no image)",
+   "problem": "Published product without an image.",
+   "suggested_fix": "להעלות תמונת מוצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64788",
+   "product_name": "פילטר קוקוס BWT",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%95%d7%a7%d7%95%d7%a1-bwt/",
+   "field": "images",
+   "issue_type": "missing_data",
+   "severity": "medium",
+   "current_text": "(no image)",
+   "problem": "Published product without an image.",
+   "suggested_fix": "להעלות תמונת מוצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65468",
+   "product_name": "כפית במבוק להכנת תה מאצ'ה",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%a4%d7%99%d7%aa-%d7%91%d7%9e%d7%91%d7%95%d7%a7-%d7%9c%d7%94%d7%9b%d7%a0%d7%aa-%d7%aa%d7%94-%d7%9e%d7%90%d7%a6%d7%94/",
+   "field": "description",
+   "issue_type": "product_facts",
+   "severity": "medium",
+   "current_text": "יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף",
+   "problem": "The bamboo scoop (chashaku) is for measuring only; whisking is done with the bamboo whisk (chasen), not the spoon.",
+   "suggested_fix": "מדידה: השתמשו בכפית כדי למדוד את אבקת המאצ'ה. הקצפה: יש להקציף בעזרת מקצף במבוק (צ'אסן).",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64798",
+   "product_name": "WDT Needles Coffee Tool",
+   "permalink": "https://www.minuto.co.il/product/wdt-needles-coffee-tool/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה",
+   "problem": "Asks customers to contact the shop instead of ordering online; broken line 'מתאים לכל סוגי פורטה-פילטר: המתאימות...'.",
+   "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה; מתאים למגוון רחב של ידיות",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64894",
+   "product_name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 6 כוסות",
+   "permalink": "https://www.minuto.co.il/product/chemex-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a2%d7%a5-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "עשוי מזכוכית בורוסיליקט kלא נקבובית",
+   "problem": "Stray Latin 'k' in Hebrew word.",
+   "suggested_fix": "עשוי מזכוכית בורוסיליקט ללא נקבובית",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64901",
+   "product_name": "פילטר מים למכונת לליט",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%9c%d7%9c%d7%99%d7%98/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פילטר מים למכונת לליט",
+   "problem": "Brand spelled 'לליט' in name and 'ללית' in body.",
+   "suggested_fix": "לאחד את האיות: לליט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64995",
+   "product_name": "פילטר מרכך BestMax M להחלפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-m-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "problem": "Announced capacity table is missing.",
+   "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64996",
+   "product_name": "פילטר מרכך BestMax L להחלפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-l-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "problem": "Text announces a capacity table that is missing (also in M 64995 and S 65076); 'הסרת אבנית למחצה רגילה' is garbled.",
+   "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65014",
+   "product_name": "אירופרס לטיולים - AEROPRESS GO TRAVEL COFFEE PRESS",
+   "permalink": "https://www.minuto.co.il/product/%d7%90%d7%99%d7%a8%d7%95%d7%a4%d7%a8%d7%a1-%d7%9c%d7%98%d7%99%d7%95%d7%9c%d7%99%d7%9d-aeropress-go-travel-coffee-press/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "מגיע עם ספלק אירופרס",
+   "problem": "Typos 'ספלק', 'ללהכין', 'קל ומשקל'.",
+   "suggested_fix": "מגיע עם ספל אירופרס; ניתן להכין; קל משקל",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65076",
+   "product_name": "פילטר מרכך BestMax S להחלפה",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-s-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "problem": "Announced capacity table is missing.",
+   "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65079",
+   "product_name": "קנקן Aquaphor דגם Compact לשיפור המים",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-compact-%d7%9c%d7%a9%d7%99%d7%a4%d7%95%d7%a8-%d7%94%d7%9e%d7%99%d7%9d/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "קשיות (אבנית) בנונית",
+   "problem": "Typos 'בנונית', 'הבייתיים'.",
+   "suggested_fix": "בינונית; הביתיים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65083",
+   "product_name": "גומייה למקינטה ביאלטי - 9 כוסות",
+   "permalink": "https://www.minuto.co.il/product/%d7%92%d7%95%d7%9e%d7%99%d7%99%d7%94-%d7%9c%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "וסט פילטר למקקינטה ביאלטי",
+   "problem": "Typo 'למקקינטה'.",
+   "suggested_fix": "למקינטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65090",
+   "product_name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300",
+   "problem": "Wrong word 'החברה' (companion), stray '300', typo 'וחזיק'.",
+   "suggested_fix": "הכירו את החבר החדש שלכם ... כוס מבודדת 300 מ\"ל Hario עם מכסה; ויחזיק",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65091",
+   "product_name": "ספל HARIO טרמית מנירוסטה 300 מ\"ל",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "Hario עם מכסה 300 ... וחזיק מעמד",
+   "problem": "Stray '300' and typo 'וחזיק'.",
+   "suggested_fix": "ספל מבודד 300 מ\"ל Hario עם מכסה; ויחזיק מעמד",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65157",
+   "product_name": "אירופרס - Aeropress",
+   "permalink": "https://www.minuto.co.il/product/%d7%90%d7%99%d7%a8%d7%95%d7%a4%d7%a8%d7%a1-aeropress/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "ניתן ללהכין ... קל ומשקל",
+   "problem": "Typos 'ללהכין' and 'קל ומשקל'.",
+   "suggested_fix": "ניתן להכין ... קל משקל",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65209",
+   "product_name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 3 כוסות",
+   "permalink": "https://www.minuto.co.il/product/chemex-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a2%d7%a5-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "עשוי מזכוכית בורוסיליקט kלא נקבובית",
+   "problem": "Stray Latin 'k' in short and description.",
+   "suggested_fix": "עשוי מזכוכית בורוסיליקט ללא נקבובית",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65221",
+   "product_name": "Hario - V60 Drip Decanter - קנקן פילטר קלאסי עם חבק סיליקון",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-drip-decanter-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9c%d7%90%d7%a1%d7%99-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a1%d7%99%d7%9c%d7%99%d7%a7%d7%95%d7%9f/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "חבק הסילקוון",
+   "problem": "Typo 'סילקוון'.",
+   "suggested_fix": "חבק הסיליקון",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65227",
+   "product_name": "מעמד לקפה פילטר 2 כוסות V60 מפלסטיק הריו Hario VD-02R",
+   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%94%d7%a8%d7%99%d7%95-hario-vd-02r/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום",
+   "problem": "Duplicated words and typo 'לקומוקום' (also in 65225, 65106).",
+   "suggested_fix": "הקפה זורם דרך הקונוס ישירות לתוך הספל או לקנקן הקפה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65244",
+   "product_name": "קנקן Aquaphor דגם Amethyst + 4 סננים",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-amethyst-4-%d7%a1%d7%a0%d7%a0%d7%99%d7%9d/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "קשיות (אבנית) בנונית",
+   "problem": "Typos 'בנונית' and 'הבייתיים' (also in 68282 and 65079).",
+   "suggested_fix": "בינונית; הביתיים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65370",
+   "product_name": "WDT Needles Coffee Tool דיסטרביוטור 58ממ",
+   "permalink": "https://www.minuto.co.il/product/wdt-needles-coffee-tool-%d7%93%d7%99%d7%a1%d7%98%d7%a8%d7%91%d7%99%d7%95%d7%98%d7%95%d7%a8-58%d7%9e%d7%9e/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "צרו קשר עם מינוטו קפה עוד היום!",
+   "problem": "Asks customers to contact the shop instead of adding to cart.",
+   "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה!",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65418",
+   "product_name": "בוחשן במבוק לתה מאצ'ה - Bamboo Whisk",
+   "permalink": "https://www.minuto.co.il/product/%d7%91%d7%95%d7%97%d7%a9%d7%9f-%d7%91%d7%9e%d7%91%d7%95%d7%a7-%d7%9e%d7%90%d7%a6%d7%94-%d7%a8%d7%95%d7%a0%d7%a4%d7%9c%d7%93%d7%98-ronnefeldt-bamboo-whisk/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "מחזיקים תואמים למקצים הבמבוק",
+   "problem": "Typo 'למקצים'.",
+   "suggested_fix": "למקצפי הבמבוק",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65466",
+   "product_name": "תה מאצ'ה סרמונייאל 30 גרם - matcha ceremonial",
+   "permalink": "https://www.minuto.co.il/product/%d7%aa%d7%94-%d7%9e%d7%90%d7%a6%d7%94-%d7%a1%d7%a8%d7%9e%d7%95%d7%a0%d7%99%d7%99%d7%90%d7%9c-30-%d7%92%d7%a8%d7%9d-matcha-ceremonial/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "תה מאצ'ה סרמינייאל",
+   "problem": "Spelling inconsistent with title 'סרמונייאל' (also 65467).",
+   "suggested_fix": "סרמונייאל",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67200",
+   "product_name": "\"Toddy® Cold Brew System",
+   "permalink": "https://www.minuto.co.il/product/toddy-cold-brew-system/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "\"Toddy® Cold Brew System",
+   "problem": "Stray opening quote in product name.",
+   "suggested_fix": "Toddy® Cold Brew System",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67295",
+   "product_name": "Clever Dripper",
+   "permalink": "https://www.minuto.co.il/product/clever-dripper/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "בטמם של 90 עד 95 מעלות",
+   "problem": "Typo 'בטמם'.",
+   "suggested_fix": "בטמפרטורה של 90 עד 95 מעלות צלזיוס",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68282",
+   "product_name": "קנקן Aquaphor דגם Amethyst לשיפור המים",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-amethyst-%d7%9c%d7%a9%d7%99%d7%a4%d7%95%d7%a8-%d7%94%d7%9e%d7%99%d7%9d/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "קשיות (אבנית) בנונית",
+   "problem": "Typos 'בנונית', 'הבייתיים'.",
+   "suggested_fix": "בינונית; הביתיים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68448",
+   "product_name": "קפסולות AXOR לניקוי מכונות נספרסו",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-axor-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "חמצן פעיל וחומריםטבעיים",
+   "problem": "Missing space; odd phrase 'חווית קפה בתולית'.",
+   "suggested_fix": "חמצן פעיל וחומרים טבעיים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "76590",
+   "product_name": "טבעת / משפך טחינת קפה Motta 40mm",
+   "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%a2%d7%aa-%d7%98%d7%97%d7%99%d7%a0%d7%94/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "כמעט לכל מ טחנת קפה",
+   "problem": "Stray letter; 'ראשי חליטה' used where portafilter is meant.",
+   "suggested_fix": "כמעט לכל מטחנת קפה; מתאים לידיות בקוטר 55, 57, 58 ו-58.5 מ\"מ",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78262",
+   "product_name": "כד הקצפה בריסטה סוואג איבו 2 מולטיקולור",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%99%d7%91%d7%95-480/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "האיבו 2 – כד ההקצפה המושלם בנפח 480 מ״ל, חובה לכל בר",
+   "problem": "Last sentence cut off.",
+   "suggested_fix": "חובה לכל בריסטה שאוהב לאטה ארט.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "79213",
+   "product_name": "חליטת תה חליטת יער אורגנית בשקיקי פירמידה מבית עדנים",
+   "permalink": "https://www.minuto.co.il/product/%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94-%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%99%d7%a2%d7%a8-%d7%90%d7%95%d7%a8%d7%92%d7%a0%d7%99%d7%aa-%d7%91%d7%a9%d7%a7%d7%99%d7%a7%d7%99-%d7%a4%d7%99%d7%a8%d7%9e/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "כקילוף מרענן כשנעשתה קרה",
+   "problem": "Garbled phrase; name also repeats 'חליטת תה חליטת'.",
+   "suggested_fix": "או כמשקה קר ומרענן; חליטת יער אורגנית בשקיקי פירמידה מבית עדנים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "79215",
+   "product_name": "חליטת תה חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים",
+   "permalink": "https://www.minuto.co.il/product/%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94-%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%92%d7%99%d7%a0%d7%92%d7%a8-%d7%95%d7%9c%d7%99%d7%99%d7%9d-%d7%90%d7%95%d7%a8%d7%92%d7%a0%d7%99%d7%aa/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "חליטת תה חליטת ג’ינג’ר וליים",
+   "problem": "Word 'חליטת' duplicated in name (also 79213).",
+   "suggested_fix": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81418",
+   "product_name": "גומייה למקינטה ביאלטי - 12 כוסות",
+   "permalink": "https://www.minuto.co.il/product/%d7%92%d7%95%d7%9e%d7%99%d7%99%d7%94-%d7%9c%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-12-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "וסט פילטר למקקינטה ביאלטי",
+   "problem": "Typo 'למקקינטה' (same in 81430, 81436, 65083, 81424).",
+   "suggested_fix": "וסט פילטר למקינטה ביאלטי מוקה ו-ונוס",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81424",
+   "product_name": "גומייה למקינטה מוק הביאלטי - 2 כוסות",
+   "permalink": "https://www.minuto.co.il/product/%d7%92%d7%95%d7%9e%d7%99%d7%99%d7%94-%d7%9c%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "גומייה למקינטה מוק הביאלטי - 2 כוסות",
+   "problem": "Name typo 'מוק הביאלטי'; short has 'למקקינטה'.",
+   "suggested_fix": "גומייה למקינטה מוקה ביאלטי - 2 כוסות",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81430",
+   "product_name": "גומייה למקינטה ביאלטי - 3-4 כוסות",
+   "permalink": "https://www.minuto.co.il/product/%d7%92%d7%95%d7%9e%d7%99%d7%99%d7%94-%d7%9c%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-3-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "וסט פילטר למקקינטה ביאלטי",
+   "problem": "Typo 'למקקינטה'.",
+   "suggested_fix": "למקינטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "81436",
+   "product_name": "גומייה למקינטה ביאלטי - 6 כוסות",
+   "permalink": "https://www.minuto.co.il/product/%d7%92%d7%95%d7%9e%d7%99%d7%99%d7%94-%d7%9c%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "וסט פילטר למקקינטה ביאלטי",
+   "problem": "Typo 'למקקינטה'.",
+   "suggested_fix": "למקינטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82915",
+   "product_name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל (אפור)",
+   "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c-%d7%90%d7%a4%d7%95%d7%a8/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300",
+   "problem": "Same text errors as 65090; SKU is a malformed concatenation of the 65090 SKU.",
+   "suggested_fix": "הכירו את החבר החדש שלכם; להסיר '300' המיותר; ויחזיק; לתקן מק\"ט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65067",
+   "product_name": "קפסולות לניקוי מכונות קפיטאלי ואספרסו קלאב",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%99%d7%98%d7%90%d7%9c%d7%99-%d7%95%d7%90%d7%a1%d7%a4%d7%a8%d7%a1/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "תמיסה יעודית למכונות קפה",
+   "problem": "Short calls the product a solution while it is a pack of 4 cleaning capsules; description has typos 'רצויוה', 'החוומר'.",
+   "suggested_fix": "4 קפסולות ניקוי ייעודיות למכונות קפיטאלי ואספרסו קלאב; לתקן: רצויה, החומר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64765",
+   "product_name": "קפסולות לניקוי מכונת נספרסו CAFETTO ECO",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-cafetto-eco/",
+   "field": "description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Long description is empty.",
+   "suggested_fix": "לכתוב תיאור מוצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64765",
+   "product_name": "קפסולות לניקוי מכונת נספרסו CAFETTO ECO",
+   "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-cafetto-eco/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64788",
+   "product_name": "פילטר קוקוס BWT",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%95%d7%a7%d7%95%d7%a1-bwt/",
+   "field": "description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Long description is empty.",
+   "suggested_fix": "לכתוב תיאור מוצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64788",
+   "product_name": "פילטר קוקוס BWT",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%95%d7%a7%d7%95%d7%a1-bwt/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65211",
+   "product_name": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה",
+   "permalink": "https://www.minuto.co.il/product/leaf-tea-pot-pure-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65212",
+   "product_name": "Hario V60 Server 600 ml - קנקן מזיגה האריו שקוף",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-600-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65213",
+   "product_name": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65214",
+   "product_name": "Hario V60 Server 600 ml - קנקן מזיגה האריו",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-600-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65215",
+   "product_name": "Hario V60 Server 360 ml - קנקן מזיגה האריו",
+   "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65217",
+   "product_name": "V60 Coffee drip kettle Buono - קומקום מזיגה האריו 1 ליטר",
+   "permalink": "https://www.minuto.co.il/product/v60-coffee-drip-kettle-buono-%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-1-%d7%9c%d7%99%d7%98%d7%a8/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68274",
+   "product_name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%93%d7%95-%d7%a9%d7%99%d7%9e%d7%95%d7%a9%d7%99/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "68276",
+   "product_name": "Blind Filter Basket - פילטר באסקט עיוור",
+   "permalink": "https://www.minuto.co.il/product/blind-filter-basket-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%90%d7%a1%d7%a7%d7%98-%d7%a2%d7%99%d7%95%d7%95%d7%a8/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82888",
+   "product_name": "50 גר אבקת אובה טהורה פרימיום – ALATA UBE",
+   "permalink": "https://www.minuto.co.il/product/100-%d7%92%d7%a8-%d7%90%d7%91%d7%a7%d7%aa-%d7%90%d7%95%d7%91%d7%94-%d7%98%d7%94%d7%95%d7%a8%d7%94-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d-alata-ube/",
+   "field": "short_description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "(empty)",
+   "problem": "Short description is empty.",
+   "suggested_fix": "לכתוב תיאור קצר (2–3 שורות)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64965",
+   "product_name": "דוחסן קפה OAK8 קפיצי קוטר 58",
+   "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-oak8-%d7%a7%d7%a4%d7%99%d7%a6%d7%99-%d7%a7%d7%95%d7%98%d7%a8-58/",
+   "field": "price",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "SKU: 1234567",
+   "problem": "Placeholder SKU on a published product.",
+   "suggested_fix": "להזין מק\"ט/ברקוד אמיתי",
+   "confidence": "certain"
+  }
+ ],
+ "products": [
+  {
+   "id": 64765,
+   "name": "קפסולות לניקוי מכונת נספרסו CAFETTO ECO",
+   "short_description": "",
+   "description": "",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית קפסולות לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - זמין במלאי. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64788,
+   "name": "פילטר קוקוס BWT",
+   "short_description": "",
+   "description": "",
+   "meta": {
+    "rank_math_title": "פילטר קוקוס BWT | מינוטו קפה ואביזרים",
+    "rank_math_description": "פילטר קוקוס איכותי מבית BWT לשיפור טעם המים, הפחתת כלור וטעם לוואי. מתאים למערכות סינון ומשפר את טעם הקפה."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64798,
+   "name": "WDT Needles Coffee Tool",
+   "short_description": "<p data-sourcepos=\"21:1-21:81\"><strong>WDT Needles Coffee Tool: </strong></p>\n<p data-sourcepos=\"21:1-21:81\"><strong>פיזור אחיד, טעם מושלם. </strong></p>\n<p data-sourcepos=\"21:1-21:81\"><strong>הזמינו עכשיו באתר מינוטו קפה!</strong></p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">WDT Needles Coffee Tool: כלי חיוני לחובבי קפה מושבעים</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>שדרגו את חווית הקפה שלכם עם WDT Needles Coffee Tool!</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כלי זה, המכונה גם \"מחט ערבוב\" או \"דיסטרביטור\", נועד לפזר באופן אחיד את הקפה הטחון בתוך פורטה-פילטר לפני החליטה. פיזור אחיד מבטיח חליטה אחידה וטעימה יותר, ומביא לידי ביטוי את מלוא הפוטנציאל של פולי הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>יתרונות WDT Needles Coffee Tool:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>שיפור משמעותי בטעם הקפה:</strong> פיזור אחיד של הקפה הטחון מונע מיצוי יתר או תת-מיצוי באזורים מסוימים ומביא למיצוי אחיד וטעים יותר.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>הפחתת גושים:</strong> המחטים מפרקות גושים של קפה טחון ומבטיחות חליטה אחידה יותר.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>שימוש קל:</strong> פשוט הכניסו את המחטים לתוך פורטה-פילטר וסובבו בעדינות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיצוב קומפקטי:</strong> קל לאחסון ולנשיאה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>מתאים לכל סוגי פורטה-פילטר:</strong>  המתאימות למגוון רחב של פורטה-פילטר.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>WDT Needles Coffee Tool הוא כלי חיוני לכל חובב קפה שרוצה לשפר את איכות הקפה שלו. </strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הכלי קל לשימוש ומתאים לכל סוגי פורטה-פילטר.</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה עוד היום!</strong></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "WDT Needles Coffee Tool: פיזור אחיד, טעם מושלם. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64799,
+   "name": "דוחסן 57 ממ ILSA לידית מכונת קפה",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>ידית שחורה ואיכותית</p>\n<p>51 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן 57 ממ ILSA לידית מכונת קפה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>טמפר קפה מאלומיניום ILSA – 57 מ\"מ: לשיפור את חווית חליטת הקפה שלכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ILSA דוחסן קפה - 57 מ\"מ, מעוצב עם דיוק ותוכנן לשפר כל היבט של בתהליך חליטת הקפה, טמפר זה הוא הכלי האולטימטיבי להשגת שלמות ברמת בריסטה בנוחות של בית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>למה לבחור ב-ILSA אלומיניום קפה טמפר?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>1. איכות ללא תחרות: עשוי מאלומיניום בדרגה גבוהה, הטמפר של ILSA בנוי להחזיק מעמד. הוא מתהדר בעמידות יוצאת דופן, מה שמבטיח שנים של ביצועים אמינים, בעל מבנה מוצק , טמפר זה מספק פיזור לחץ עקבי לחליטה אחידה יותר, וכתוצאה מכך כוס אספרסו מעולה בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>2. הנדסה מדויקת: קוטר 57 מ\"מ של הטמפר תואם באופן מושלם לסלסילות פילטר סטנדרטיות של מכונת אספרסו, מה שמאפשר הידוק וחחליטה מיטביים. העיצוב הארגונומי משתלב בנוחות ביד, מספק אחיזה ושליטה מצוינים, כך שתוכלו להתעסק בביטחון עם דיוק ועקביות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>3. טעם משופר: טמפר קפה ILSA ממלא תפקיד מכריע בהשגת האספרסו המושלם. על ידי הפעלת כמות הלחץ הנכונה על הקפה, הוא עוזר ליצור משטח אחיד, מקדם זרימת מים אחידה ומקסום מיצוי הטעם. תגידו שלום לכוסות אספרסו לא מוצלחות וקבלו קפה עשיר ובעל גוף מלא בטעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>4. אסתטי: בשילוב סגנון ופונקציונליות, טמפר הקפה של ILSA מתהדר בעיצוב מלוטש ומודרני. גימור האלומיניום החלק משדר אלגנטיות, מה שהופך אותו לתוספת מדהימה לאוסף של כל חובבי קפה. זה לא רק כלי; זו יצירה שמשלימה את מערך החליטה הביתי שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>5. קל לניקוי: אנו מבינים שנוחות חשובה. זו הסיבה שהטמפר של ILSA קל להפליא לניקוי. כל שיש לעשות הוא לשטוף אותו תחת מים חמים ולנגב אותו והוא מוכן לחליטה הבאה שלך. הקדישו פחות זמן לתחזוקה ויותר זמן ליהנות מכוס הקפה המושלמת שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוו את ההבדל ב-ILSA היום!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם טמפר קפה ממILSA – 57, אתם מחזיקים בידיים את הכוח ליצור כוסות אספרסו יוצאי דופן. הרימו את חוויית חליטת הקפה שלכם, הרשימו את האורחים שלכם, והעיר את החושים שלכם עם האיזון המושלם של טעם, דיוק וסגנון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו את ILSA Aluminum Coffee Tamper שלכם עכשיו ופתחו רמה חדשה של מצוינות בקפה!</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית דוחסן לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - זמין במלאי. מושלמת לשימוש יומיומי בבית או במשרד"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64894,
+   "name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 6 כוסות",
+   "short_description": "<p>עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות  / טעמים</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">CHEMEX - קנקן פילטר קמקס עם חבק עץ 6 כוסות</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>CHEMEX® מספק את חווית הטעם הטהורה ביותר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עשוי מזכוכית בורוסיליקט kלא נקבובית שלא תספוג ריחות &nbsp;/ טעמים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כיסוי CHEMEX מאפשר לכסות את הקפה ולקירור לחימום מחדש מבלי לאבד טעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פשוט וקל לשימוש עם עיצוב אלגנטי נצחי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>השתמש ב- CHEMEX® מסנני חצי ירח לא מקופלים FP-2</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - בנפח 6 כוסות, לפילטר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64901,
+   "name": "פילטר מים למכונת לליט",
+   "short_description": "<ul>\n<li>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה</li>\n<li>יכול לעזור להאריך את חייה של מכונת הקפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">פילטר מים למכונת לליט</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגנו על המכונה שלך מההשפעות ארוכות הטווח של מים קשים עם מסנן ריכוך מים וחלקיקים חלופי זה שתוכנן על ידי ללית עבור מכונות אספרסו ללית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אנו ממליצים לבדוק את המים מהמכונה מדי רבעון כדי לוודא שהסנן פעיל.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "מכונת קפה מקצועית פילטר לאספרסו איכותי בבית. טכנולוגיה מתקדמת וביצועים יוצאי דופן - טחינה לפילטר - פילטר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64965,
+   "name": "דוחסן קפה OAK8 קפיצי קוטר 58",
+   "short_description": "<p>חומר: פלדת אל חלד</p>\n<p>דוחסן קפיצי עם פטנט &quot;חצאית״ יחודי לקבלת דחיסה ישרה ומאוזנת (ללא שיפועים)</p>\n<p>58 מ&quot;מ</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">דוחסן קפה OAK8 קפיצי קוטר 58</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>OAK8 Espresso Tamper הוא אביזר קפה באיכות פרימיום שנועד לשפר את חווית הכנת האספרסו שלך. עם גודל 58 מ\"מ, טמפר זה תוכנן להתאים לכל ידיות הקפה בגודל 58 מ\"מ ומהווה כלי חיוני לכל בריסטה, בין אם בבית או בסביבה מקצועית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-OAK8 Espresso Tamper, הכולל ״חצאית״ עגולה וקפיץ מכויל, מבטיח דחיסה עקבית ואחידה בכל פעם, וכתוצאה מכך חליטת האספרסו המופקת מושלמת עם טעם וארומה אופטימליים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעוצב מפלדת אל חלד איכותית, דוחסן זה עמיד ומסוגנן כאחד, עם גימור שחור אלגנטי המשלים כל מכונת קפה או עיצוב מטבח. בסיס הנירוסטה עמיד בפני קורוזיה וקל לניקוי, מה שהופך אותו לבחירה נוחה והיגיינית לשגרת הכנת הקפה שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה-OAK8 אספרסו טמפר מעוצב גם בצורה ארגונומית, עם ידית נוחה שמתאימה היטב ליד שלך, מה שהופך אותו קל ונוח לשימוש. בין אם את/ה בריסטה מנוסה או רק בתחילת הדרך, טמפר האספרסו הזה יעזור לך להשיג צילום אספרסו באיכות מקצועית במינימום מאמץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אז אם אתם מחפשים לקחת את כישורי הכנת האספרסו שלכם לשלב הבא, השקיעו בדוחסן קפה OAK8 עוד היום ותחוו את שוט האספרסו המושלם בכל פעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שוליים קוטר 60 - לקבלת דחיסה ישרה ומאוזנת</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומרי נירוסטה איכותית, ויסות לחץ ידית קפיץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גודל בסיס 58 מ\"מ, טמפרור קפה אספרסו מקצועי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>משוב כוח - כל לחיצה היא חזרתית ולא יופעל כוח שונה על הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בסיס שטוח מנירוסטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב הידית קל לאחיזה ולחיצה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>58 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span lang=\"iw\" xml:lang=\"iw\">צורת המשטח התחתון : שטוח </span><br />\n<span lang=\"iw\" xml:lang=\"iw\"><span title=\"Height incl.\">גובה (כולל </span><span title=\"base :86mm\">בסיס)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 87 מ״מ</span><br />\n<span title=\"Product Weight :293g with 58mm base\">משקל&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; : 306 גרם</span></span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "חומר: פלדת אל חלד דוחסן קפיצי עם פטנט חצאית יחודי לקבלת דחיסה ישרה ומאוזנת (ללא שיפועים) 58 ממ. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64995,
+   "name": "פילטר מרכך BestMax M להחלפה",
+   "short_description": "<ul>\n<li>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה</li>\n<li>יכול לעזור להאריך את חייה של מכונת הקפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">פילטר מרכך BestMax M להחלפה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>השלם את ההתקנה שלך באמצעות מחסנית המסנן BWT Bestmax M</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנן Bestmax Premium של BWT היא פתרון סינון מים כולל. מתאים במיוחד לסינון מים למשקאות חמים כמו קפה, אספרסו, ה- Bestmax הוא פילטר רב-שלבי מודולרי המשתמש בטכנולוגיית BWT Mg2 + בפטנט. תכונה ייחודית זו מייצרת את המים המסוננים עם מגנזיום, משפר טעם ידוע שעלול ללכת לאיבוד בשיטות סינון אחרות. Bestmax משתמש בתהליך סינון חמש שכבות המפורט להלן:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>פילטר מקדים לחלקיקים - הפרדת חלקיקים גסים כמו חול וחלודה.סינון מקדים של פחם פעיל - סילוק חומרים מחמצנים, הגנה על מחליף היונים מפני הזדקנות.מחליף יונים בעל ביצועים גבוהים - הסרת חומרים מתקשים, התאמת איזון מינרלים.סילוק חומרים אורגניים, כלור, ריח זר וטעם זר.מסנן דק חלקיקים - הפרדת חלקיקים עדינים וחומר תלוי.\n<p>מסנן Bestmax גם מפחית הצטברות אבנית במכונות אספרסו ומערכות קפה, מה שמקטין באופן דרמטי את הצורך להסרת אבנית. עם זאת, אנו עדיין ממליצים על הסרת אבנית למחצה רגילה כדי להגן על אורך החיים של המכונה שלך.</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קיבולת סינון</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>בהתאם לקשיות המים שלך, הקיבולת הכוללת של המסנן שלך תשתנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* ללא קשר לנפח המים הכולל המופעל דרך המחסנית, BWT ממליץ להחליף את המסנן לאחר 12 חודשי שימוש לכל היותר.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פילטר מרכך BestMax M להחלפה. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64996,
+   "name": "פילטר מרכך BestMax L להחלפה",
+   "short_description": "<ul>\n<li>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה</li>\n<li>יכול לעזור להאריך את חייה של מכונת הקפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>השלם את ההתקנה שלך באמצעות מחסנית המסנן BWT Bestmax L</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנן Bestmax Premium של BWT היא פתרון סינון מים כולל. מתאים במיוחד לסינון מים למשקאות חמים כמו קפה, אספרסו, ה- Bestmax הוא פילטר רב-שלבי מודולרי המשתמש בטכנולוגיית BWT Mg2 + בפטנט. תכונה ייחודית זו מייצרת את המים המסוננים עם מגנזיום, משפר טעם ידוע שעלול ללכת לאיבוד בשיטות סינון אחרות. Bestmax משתמש בתהליך סינון חמש שכבות המפורט להלן:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>פילטר מקדים לחלקיקים - הפרדת חלקיקים גסים כמו חול וחלודה.סינון מקדים של פחם פעיל - סילוק חומרים מחמצנים, הגנה על מחליף היונים מפני הזדקנות.מחליף יונים בעל ביצועים גבוהים - הסרת חומרים מתקשים, התאמת איזון מינרלים.סילוק חומרים אורגניים, כלור, ריח זר וטעם זר.\n<p>מסנן דק חלקיקים - הפרדת חלקיקים עדינים וחומר תלוי.</p>\n<p></p>\n<p>מסנן Bestmax גם מפחית הצטברות אבנית במכונות אספרסו ומערכות קפה, מה שמקטין באופן דרמטי את הצורך להסרת אבנית. עם זאת, אנו עדיין ממליצים על הסרת אבנית למחצה רגילה כדי להגן על אורך החיים של המכונה שלך.</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קיבולת סינון</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>בהתאם לקשיות המים שלך, הקיבולת הכוללת של המסנן שלך תשתנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* ללא קשר לנפח המים הכולל המופעל דרך המחסנית, BWT ממליץ להחליף את המסנן לאחר 12 חודשי שימוש לכל היותר.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פילטר מרכך BestMax L להחלפה. מוצר לטיפול במים או לתחזוקת מכונת הקפה, עם מידע על התאמה, כמות ואופן שימוש באתר מינוטו."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 64997,
+   "name": "CHEMEX - פילטר נייר קמקס 6-10 כוסות",
+   "short_description": "<p>100 יחידות. לשימוש בקנקן CHEMEX 6,8,10 כוסות בלבד פילטר הנייר הייחודי של CHEMEX עבה בכ- 20% – 30% מכל פילטר נייר אחר. עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות  / טעמים</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">CHEMEX - פילטר נייר קמקס 6-10 כוסות</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מה הופך את CHEMEX® Filters Bonded לדבר האמיתי?</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>צורת קונוס מבטיחה מיצוי אחיד לטעם קפה טהור</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עבה יותר (20-30% יותר מהמתחרים) עיצוב מסנני סיבים מיוחדים שומר על אלמנטים מרירים, שמנים ושאריות במקומם (ומחוץ לכוס שלך)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתאים למכשירי קפה CHEMEX קלאסיים וידיות זכוכית 6,8,10 כוסות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>100 פילטרים לחבילה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל כדי החליטה של CHEMEX® המשמשות יחד עם מסנני ה- CHEMEX® המותאמים באופן מדעי ומעוצבים באופן פטנטי,</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כך שיבטיחו שתהליך המזיגה שלנו ייצר את כוס הקפה המושלמת, ללא משקעים או אלמנטים מרים.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - בנפח 10 כוסות, לפילטר | CHEMEX פילטר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65014,
+   "name": "אירופרס לטיולים -  AEROPRESS GO TRAVEL COFFEE PRESS",
+   "short_description": "<p>ה- AeroPress Go מעניק לכם את כל יכולות הבישול הנהדרות של AeroPress המקורי ומעניק את היכולת להכין כוס קפה איכותית בכל מקום שתהיו.</p>\n<p>מגיע עם ספלק אירופרס איכותי</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">אירופרס לטיולים - &nbsp;AEROPRESS GO TRAVEL COFFEE PRESS</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה- AeroPress Go מעניק לכם את כל יכולות הבישול הנהדרות של AeroPress המקורי ומעניק את היכולת להכין כוס קפה איכותית בכל מקום שתהיו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה- AeroPress אידיאלי לכל חובב קפה המחפש כוס קפה עשירה וחלקה ללא חומציות או מרירות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן ללהכין כוס אחת עד שלוש כוסות אמריקנו או אספרסו בסגנון איטלקי בערך דקה והניקוי לוקח כמה שניות בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>זוהי תוספת נהדרת לכל מטבח, אך מכיוון שהוא עמיד, קל ומשקל, ה- AeroPress הופך גם את בן הזוג המושלם בעת נסיעה, קמפינג או סתם לעבודה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": " aeropress go travel coffee press | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "AeroPress Go Travel Coffee Press - פתרון קפה איכותי לדרך. ה-AeroPress Go Travel Coffee Press קומפקטי, קל לשימוש בכל מקום, כולל ערכת נסיעות מלאה."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65048,
+   "name": "CHEMEX - פילטר נייר קמקס 1-3 כוסות(חצי ירח)",
+   "short_description": "<p>100 יחידות.</p>\n<p>לשימוש בקנקן CHEMEX 3 בלבד</p>\n<p>פילטר הנייר הייחודי של CHEMEX עבה בכ- 20% – 30% מכל פילטר נייר אחר.</p>\n<p>עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות  / טעמים</p>\n",
+   "description": "<h3>CHEMEX - פילטר נייר קמקס 1-3 כוסות(חצי ירח)</h3>\n<p>מה הופך את CHEMEX® Filters Bonded לדבר האמיתי?</p>\n<p>צורת קונוס מבטיחה מיצוי אחיד לטעם קפה טהור</p>\n<p>עבה יותר (20-30% יותר מהמתחרים) עיצוב מסנני סיבים מיוחדים שומר על אלמנטים מרירים, שמנים ושאריות במקומם (ומחוץ לכוס שלך)</p>\n<p>מתאים למכשירי קפה CHEMEX קלאסיים וידיות זכוכית 3 כוסות</p>\n<p>100 פילטרים לחבילה.</p>\n<p>כל כדי החליטה של CHEMEX® המשמשות יחד עם מסנני ה- CHEMEX® המותאמים באופן מדעי ומעוצבים באופן פטנטי, יבטיחו שתהליך המזיגה שלנו ייצר את כוס הקפה המושלמת, ללא משקעים או אלמנטים מרים.</p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - בנפח 3 כוסות, לפילטר | CHEMEX פילטר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65057,
+   "name": "פרנץ׳ פרס 8 כוסות (1 ליטר) -  ביאלטי Bialetti",
+   "short_description": "<p>פרנץ׳ פרס ביאלטי עם קיבולת של 3 כוסות (350 מ&quot;ל), לאוהבי קפה מסורתי יותר. מסגרת נירוסטה עם צורת ביאלטי וכד זכוכית בורוסיליקט. עיצוב מסוגנן</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">פרנץ׳ פרס 8 כוסות (1 ליטר) - ביאלטי Bialetti</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פרנץ׳ פרס ביאלטי עם קיבולת של 8 כוסות (1 ליטר), לאוהבי קפה מסורתי יותר. מסגרת נירוסטה עם צורת ביאלטי וכד זכוכית בורוסיליקט. עיצוב מסוגנן שישתלב בצורה מושלמת בכל מטבח. ניתן לשטיפה במדיח כלים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המובילה העולמית בשוק מקינטות המוקה האיטלקיים, ביאלטי מציעה גם מגוון כלי קפה של French Press, הדרך הפשוטה ביותר להכין קפה מסורתי. קפה בוכנה / צרפתי פופולרי בקרב רוסטרים בכל רחבי העולם כדרך להכין קפה מסורתי עם ניחוחות מקסימליים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>איכות ומסורת: ביאלטי הוא שם נרדף לאיכות בכל רחבי העולם. עם מכשיר הפרנץ׳ פרס המסוגנן הזה, המותג האיטלקי מציע לכם מכונת קפה עם תמורה מצוינת לכסף. ידית הביאלטי הבלעדית שלה היא בצורת מוקה אקספרס המפורסם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפלנג׳ר של ביאלטי אידיאלי לשתות קפה יחד עם המשפחה או עם חברים. כמו גם קפה, ניתן  להשתמש בו להכנת חליטת תה צמחים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הערה: השתמש תמיד בקפה טחון גס. טחינה דקה יותר יכולה לסתום את הפילטר ולהשאיר שאריות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מאפיינים:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כוס זכוכית איכותי משולב באלמנטים נירוסטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית האחיזה היא שימושית ועמידה בפני חום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל לשימוש: ניתן לעשות כמה כוסות קפה ללא כל מאמץ (נהדר עבור אורחים)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל לניקוי</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - פרנץ. מתאים למדיח כלים ולמיקרוגל"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65067,
+   "name": "קפסולות לניקוי מכונות קפיטאלי ואספרסו קלאב",
+   "short_description": "<p>תמיסה יעודית למכונות קפה</p>\n",
+   "description": "<h3>קפסולות לניקוי מכונות קפה קפיטאלי ואספרסו קלאב</h3>\n<p>אריזה של 4 קפסולות המיועדות במיוחד לניקוי אזורים לא נגישים של מכונות קפה קפיטאלי</p>\n<p>המוצר הראשון מסוגו - מסיר פסולת לא רצויוה מן הדוד, זרבובית, מגש הכוסות ומגש הקפסולות</p>\n<p>חומר ניקוי מהיר ממיס שמנים, גרגירים, חיידקים וריחות תוך 2 דקות בלבד</p>\n<p>מבטיח כי הארומה של הקפה שלך נשמרת</p>\n<p>יאריך את תוחלת החיים של המכשיר על ידי מניעת חסימות והפחתת הלחץ / עומס על מרכיבי המפתח שלו</p>\n<p>קפסולות הן 100% בטוחות מכילות נוסחה אורגנית ומתכלה</p>\n<p>החוומר יתמוסס לחלוטין, לא משאיר עקבות</p>\n",
+   "meta": {
+    "rank_math_description": "קפסולות לניקוי מכונות קפיטאלי ואספרסו קלאב - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65076,
+   "name": "פילטר מרכך BestMax S להחלפה",
+   "short_description": "<ul>\n<li>עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה</li>\n<li>יכול לעזור להאריך את חייה של מכונת הקפה.</li>\n</ul>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>השלם את ההתקנה שלך באמצעות מחסנית המסנן BWT Bestmax S</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנן Bestmax Premium של BWT היא פתרון סינון מים כולל. מתאים במיוחד לסינון מים למשקאות חמים כמו קפה, אספרסו, ה- Bestmax הוא פילטר רב-שלבי מודולרי המשתמש בטכנולוגיית BWT Mg2 + בפטנט. תכונה ייחודית זו מייצרת את המים המסוננים עם מגנזיום, משפר טעם ידוע שעלול ללכת לאיבוד בשיטות סינון אחרות. Bestmax משתמש בתהליך סינון חמש שכבות המפורט להלן:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>פילטר מקדים לחלקיקים - הפרדת חלקיקים גסים כמו חול וחלודה.סינון מקדים של פחם פעיל - סילוק חומרים מחמצנים, הגנה על מחליף היונים מפני הזדקנות.מחליף יונים בעל ביצועים גבוהים - הסרת חומרים מתקשים, התאמת איזון מינרלים.\n<p>סילוק חומרים אורגניים, כלור, ריח זר וטעם זר.</p>\n<p></p>\n<p>מסנן דק חלקיקים - הפרדת חלקיקים עדינים וחומר תלוי.</p>\n<p></p>\n<p>מסנן Bestmax גם מפחית הצטברות אבנית במכונות אספרסו ומערכות קפה, מה שמקטין באופן דרמטי את הצורך להסרת אבנית. עם זאת, אנו עדיין ממליצים על הסרת אבנית למחצה רגילה כדי להגן על אורך החיים של המכונה שלך.</p>\n</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>קיבולת סינון</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>בהתאם לקשיות המים שלך, הקיבולת הכוללת של המסנן שלך תשתנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>* ללא קשר לנפח המים הכולל המופעל דרך המחסנית, BWT ממליץ להחליף את המסנן לאחר 12 חודשי שימוש לכל היותר.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "עוזר לשפר את ביצועי המכונה, יעיל ביותר בהפחתת הצטברות האבנית בתוך מכונת הקפה יכול לעזור להאריך את חייה של מכונת הקפה - טחינה לפילטר - פילטר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65079,
+   "name": "קנקן Aquaphor דגם Compact לשיפור המים",
+   "short_description": "<ul>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"><strong>קנקן Aquaphor דגם Compact לשיפור המים</strong></h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנן (פילטר) בר החלפה סטנדרטי לניקוי וטיהור מי ברז. אפקטיבי ביותר בהרחקת חלקיקים מהמים ואת רוב גורמי הזיהום הפוגעים בבריאותנו. משפר את צבע המים, טעמם, ואת הריח שלהם. מיועד למים עם רמת קשיות (אבנית) בנונית (עד&nbsp;<span dir=\"ltr\">200&nbsp;</span>מ\"ג/ליטר.)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המסנן יעיל עד ל-200 ליטר או עד חודשיים. (המוקדם יותר) ומתאים למשפחה של 3-4 נפשות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קיבולת הקנקן:</strong>&nbsp;2.4 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>כמות המים המסוננים:</strong>&nbsp;1.5 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קצב הסינון:</strong>&nbsp;3-10 דקות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פתח הכנסת המים:</strong>&nbsp;דרך פתח במכסה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פילטר תואם:</strong>&nbsp;מתאים גם לקנקן בריטה מקסטרה (Maxtra)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>יכולת הסינון של הפילטר:</strong>&nbsp; 200 ליטר - (יש להחליף פילטר כל 2 חודשים)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>אם רמת האבנית גבוהה יותר יעילות המכשיר בהסרת אבנית יורדת לקראת סוף התקופה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים) בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן - משלוח מהיר"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65083,
+   "name": "גומייה למקינטה ביאלטי - 9 כוסות",
+   "short_description": "<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>גומיה / אטם החלפה לביאלטי וסט צלחות פילטר - למקינטה מוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הסט כולל אטמים חלופיים וצלחת פילטר חלופית למקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לשמש גם למקינטה ונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יוצר באיטליה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגיע באריזה מקורית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "גומייה אטם למקינטה",
+    "rank_math_description": "גומייה למקינטה ביאלטי, 9 כוסות. חלק חילוף או אביזר עם מידע על מידה, התאמה לדגמים ואופן שימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "גודל",
+     "options": [
+      "12 כוסות",
+      "2 כוסות",
+      "3-4 כוסות",
+      "6 כוסות",
+      "9 כוסות"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65090,
+   "name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל",
+   "short_description": "<ul>\n<li>תוכנן לעבוד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הספל ולחלוט עד הסוף.</li>\n<li>ספל קפה טרמי לשמירה על חום וקור</li>\n<li>אטימה מלאה למניעת דליפות</li>\n<li>שומר על הקפה חם</li>\n<li>ספל מבודד בעל דופן כפולה</li>\n<li>ללא BPA</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס HARIO טרמית מנירוסטה 300 מ\"ל</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>כוס קפה טרמית לשמירה על חום וקור</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אטימה מלאה למניעת דליפות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שומרת על הקפה חם</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>כוס מבודדת בעלת דופן כפולה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ללא BPA</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את החברה החדשה שלכם. ברגע שתשתמשו בכוס התרמית של הריו, לעולם לא תרצו להשתמש בשום דבר אחר. כוס מבודדת 300 מ\"ל Hario עם מכסה 300</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם לשימוש בבית, בעבודה או לנסיעה. כוס נסיעות מסוגננת זאת עשויה נירוסטה איכותית וכוללת דופן כפולה ומכסה גומי. מבנה הנירוסטה בעל הדופן הכפולה מסייע בשמירה על יציבות הטמפרטורה ושומר על הקפה חם לאורך זמן. המכסה העליון אטום לנזילות ומונע דליפה מקרית בעת סגירתו. פשוט להכניס את הכוס לתיק הנסיעות שלך מבלי לדאוג שהנוזל ידלוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוס המבודדת עם המכסה היא המיכל המושלם למשקאות החמים או הקרים שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החומר עשוי מנירוסטה חזקה 18/8 כך שהוא לא יחליד וחזיק מעמד לאורך שנים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המכסה העליון מאפשר לך לפתוח, לשתות, לסגור ביד אחת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב דופן כפולה כדי להבטיח שהקפה שלכם יישאר חם יותר זמן ואילו החלק החיצוני של הספל יישאר קריר ונוח לאחיזה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכנן גם לעבוד יחד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הכוס ולחלוט עד הסוף.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - בנפח 300 מל | כוס HARIO"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65091,
+   "name": "ספל HARIO טרמית מנירוסטה 300 מ\"ל",
+   "short_description": "<ul>\n<li>תוכנן לעבוד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הספל ולחלוט עד הסוף.</li>\n<li>ספל קפה טרמי לשמירה על חום וקור</li>\n<li>אטימה מלאה למניעת דליפות</li>\n<li>שומר על הקפה חם</li>\n<li>ספל מבודד בעל דופן כפולה</li>\n<li>ללא BPA</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">ספל HARIO טרמית מנירוסטה 300 מ\"ל</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>ספל קפה טרמי לשמירה על חום וקור</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אטימה מלאה למניעת דליפות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שומר על הקפה חם</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ספל מבודד בעל דופן כפולה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ללא BPA</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את החבר החדש שלכם. ברגע שתשתמשו בספל התרמי של הריו, לעולם לא תרצה להשתמש בשום דבר אחר. ספל מבודד 300 מ\"ל Hario עם מכסה 300</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם לשימוש בבית, בעבודה או לנסיעה. ספל נסיעות מסוגנן זה עשוי נירוסטה איכותית וכולל דופן כפולה ומכסה גומי. מבנה הנירוסטה בעל הדופן הכפולה מסייע בשמירה על יציבות הטמפרטורה ושומר על הקפה חם לאורך זמן. המכסה העליון אטום לנזילות ומונע דליפה מקרית בעת סגירתו. פשוט להכניס את הספל לתיק הנסיעות שלך מבלי לדאוג שהנוזל ידלוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הספל המבודד עם המכסה הוא המיכל המושלם למשקאות החמים או הקרים שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החומר עשוי מנירוסטה חזקה 18/8 כך שהוא לא יחליד וחזיק מעמד לאורך שנים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המכסה העליון מאפשר לך לפתוח, לשתות, לסגור ביד אחת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב דופן כפולה כדי להבטיח שהקפה שלכם יישאר חם יותר זמן ואילו החלק החיצוני של הספל יישאר קריר ונוח לאחיזה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכנן גם לעבוד יחד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הספל ולחלוט עד הסוף.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - בנפח 300 מל | ספל HARIO"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65092,
+   "name": "קנקן מזיגה 350 מ\"ל AIR\" HARIO\"",
+   "short_description": "<p>בדריפ שני מסנני רשת קוניים דקים חופפים. להכנת קפה פילטר המאוד דומה בתוצאה לקפה מפילטר נייר</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קנקן מזיגה 350 מ\"ל AIR\" HARIO\"</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>אידיאלי להכרות ראשונים עם הכנת קפה פילטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב מקל על המזיגה, עם תחושה קלה להפליא וחומר שקוף המאפשר לראות את תנועת המים. הגודל הקומפקטי חוסך מקום במהלך האחסון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המוצר זוכה בפרס העיצוב הטוב לשנת 2020.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "בדריפ שני מסנני רשת קוניים דקים חופפים - גודל 350 מל. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65099,
+   "name": "MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה 600 מ״ל - Cold Brew - אדום",
+   "short_description": "<p>קנקנן הריו לחליטה קרה צבע שוקולד קיבולת 5 כוסות / נפח מבושל 600 מ&quot;ל</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1,\"align\":\"center\",\"className\":\"product_title entry-title\"} --></p>\n<h1 class=\"wp-block-heading product_title entry-title\">MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה - Cold Brew</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:html --></p>\n<div class=\"woocommerce-product-details__short-description\">Water Brew Coffee Pot – HARIO למיצוי קפה קר היינו מכשיר פשוט להכנת קפה קר בהשריה ארוכה המאפשר לנו ליהנות מקפה קר בעל טעמים מורכבים מתוקים בחומציות נמוכה. בשל היציבות בטמפרטורת המיצוי לאורך כל ההשריה טעמי הקפה \"נלכדים\" במשקה ולכן מרגע שנוציא את סנן הקפה נעצור את תהליך המיצוי והקפה הקר ישמור על טעמיו.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"woocommerce-product-details__short-description\">שיטת מיצוי זאת מדגישה את טעמי המקור של הזנים על כן מומלץ להשתמש בקפה חד זני לצורך הכנת המשקה ולגוון מפעם לפעם על מנת ליהנות מעולם טעמים עשיר.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div class=\"woocommerce-product-details__short-description\"><u>טיפ:</u> על ידי שינוי פרמטרים כגון זמן ההשריה ,כמות הקפה ביחס למים נוכל לשלוט על טעם וחוזק הקפה.</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div> </div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:html --></p>\n<div>גודל  5 כוסות</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "קנקנן הריו לחליטה קרה צבע שוקולד קיבולת 5 כוסות / נפח מבושל 600 מל. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע",
+    "rank_math_title": "MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה 600 מ״ל | %sitename%"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65157,
+   "name": "אירופרס -  Aeropress",
+   "short_description": "<p>אירופרס &#8211;  Aeropress ה- AeroPress אידיאלי לכל חובב קפה המחפש כוס קפה עשירה וחלקה ללא חומציות או מרירות.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>אירופרס -  Aeropress</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ה- AeroPress אידיאלי לכל חובב קפה המחפש כוס קפה עשירה וחלקה ללא חומציות או מרירות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן ללהכין כוס אחת עד שלוש כוסות אמריקנו או אספרסו בסגנון איטלקי בערך דקה והניקוי לוקח כמה שניות בלבד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>זוהי תוספת נהדרת לכל מטבח, אך מכיוון שהוא עמיד, קל ומשקל, ה- AeroPress הופך גם את בן הזוג המושלם בעת נסיעה, קמפינג או סתם לעבודה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "אירופרס - Aeropress ה- AeroPress אידיאלי לכל חובב קפה המחפש כוס קפה עשירה וחלקה ללא חומציות או מרירות",
+    "rank_math_title": "AeroPress Coffee Maker - מכשיר אירופרס לקפה איכותי | %sitename%",
+    "rank_math_focus_keyword": "אירופרס,Aeropress"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65209,
+   "name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 3 כוסות",
+   "short_description": "<p>עשוי מזכוכית בורוסיליקט kלא נקבובית שלא תספוג ריחות  / טעמים</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">CHEMEX - קנקן פילטר קמקס עם חבק עץ 3 כוסות</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>CHEMEX® מספק את חווית הטעם הטהורה ביותר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עשוי מזכוכית בורוסיליקט kלא נקבובית שלא תספוג ריחות &nbsp;/ טעמים</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כיסוי CHEMEX מאפשר לכסות את הקפה ולקירור לחימום מחדש מבלי לאבד טעם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פשוט וקל לשימוש עם עיצוב אלגנטי נצחי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>השתמש ב- CHEMEX® מסנני חצי ירח לא מקופלים FP-2</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - בנפח 3 כוסות, לפילטר | CHEMEX קנקן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65211,
+   "name": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Leaf tea pot Pure 360 ml - קנקן לחליטת תה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>זכוכית עמידה בחום</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסננת עשויה נירוסטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מכסה מזכוכית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>למזיגת עד כ-4 כוסות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ידית זכוכית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65212,
+   "name": "Hario V60 Server 600 ml - קנקן מזיגה האריו שקוף",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario V60 Server 600 ml - קנקן מזיגה האריו שקוף</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פירוש השם \"האריו\" מיפנית הוא \"מלך הזכוכית\" ומטרתו ליצור חוויית מזיגה מקצועית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל ופשוט לשימוש ולניקיון</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיוצר ביפן</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario V60 Server 600 ml - קנקן מזיגה האריו שקוף - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65213,
+   "name": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פירוש השם \"האריו\" מיפנית הוא \"מלך הזכוכית\" ומטרתו ליצור חוויית מזיגה מקצועית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל ופשוט לשימוש ולניקיון</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיוצר ביפן</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65214,
+   "name": "Hario V60 Server 600 ml - קנקן מזיגה האריו",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario V60 Server 600 ml - קנקן מזיגה האריו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פירוש השם \"האריו\" מיפנית הוא \"מלך הזכוכית\" ומטרתו ליצור חוויית מזיגה מקצועית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קל ופשוט לשימוש ולניקיון</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מיוצר ביפן</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario V60 Server 600 ml - קנקן מזיגה האריו - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65215,
+   "name": "Hario V60 Server 360 ml - קנקן מזיגה האריו",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Hario V60 Server 360 ml - קנקן מזיגה האריו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פירוש השם \"האריו\" מיפנית הוא \"מלך הזכוכית\" ומטרתו ליצור חוויית מזיגה מקצועית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>Hario, מייצרת מוצרי זכוכית איכותיים לקפה ותה מאז 1921. V60 Range Server Clear הוא קנקן זכוכית והוא תואם לדריפ Hario V60.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>באמצעות הקנקן V60 תוכלו להבטיח יציבות תרמית. בטוח לשימוש במיקרוגל ויעזור להכנת קפה ידני בבית או בבתי קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>העיצוב הקלאסי של שרת הריינג 'V60 טווח אומר שהוא מתאים לחלוטין לכל הסביבות. הכד עצמו עשוי מזכוכית מפנקת וחסינה עמידה קלת משקל, המאפשרת לבריסטות למזוג קפה בקלות רבה. בנוסף קל מאוד לנקות אותו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לשרת הרייו V60 טווח יש מכסה להכניס גומי אשר מחזיק את החום הרבה יותר טוב מכל דקנטר זכוכית אחר שם. בסך הכל קנקן V60 מציע שמירה על חום נהדר ודרך מסוגננת להגיש קפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>האחים שעועית מחזיקים את השרת Hario V60 בשני גדלים שונים - נקה 600 מ\"ל 02 ונקי 360 מ\"ל 01. פשוט בחר את הגודל הדרוש לך מהתפריט הנפתח למטה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Hario V60 Server 360 ml - קנקן מזיגה האריו - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65217,
+   "name": "V60 Coffee drip kettle Buono - קומקום מזיגה האריו 1 ליטר",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">V60 Coffee drip kettle Buono - קומקום מזיגה האריו 1 ליטר</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>קומקום נירוסטה בעיצוב ארגונומי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פיית מזיגה ארוכה וצרה למזיגה מבוקרת ואחידה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתאים לכל סוגי משטחי החימום כולל אינדוקציה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": " v60 coffee drip kettle buono | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "V60 Coffee Drip Kettle Buono - קומקום מזיגה מקצועי לחליטת קפה פילטר. ה-V60 Coffee Drip Kettle Buono מציע זרימה מדויקת, שליטה מלאה וצוואר ארוך למזיגה מושלמת"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65221,
+   "name": "Hario - V60 Drip Decanter - קנקן פילטר קלאסי עם חבק סיליקון",
+   "short_description": "<p>קנקן פילטר של חברת הריו היפנית</p>\n<p>חבק הסילקוון נעים למגע ופשוט ונוח לשטיפה</p>\n<p>עשוי ממיטב החומרים העמידים לחום של חברת האריו</p>\n<p>נפח 700 מ״ל</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">Hario - V60 Drip Decanter - קנקן פילטר קלאסי עם חבק סיליקון</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>קנקן הפילטר של האריו מפיק  את הקפה האיכותי ביותר שתטעמו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה צלול ונקי מטעמי לוואי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חבק הסילקוון נעים למגע ופשוט ונוח לשטיפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עשוי ממיטב החומרים העמידים לחום של חברת האריו</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>נפח 700 מ״ל</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קנקן פילטר של חברת הריו היפנית חבק הסילקוון נעים למגע ופשוט ונוח לשטיפה עשוי ממיטב החומרים העמידים לחום של חברת האריו נפח 700 מל"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65223,
+   "name": "דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02",
+   "short_description": "<p>דריפר זכוכית Hario V60 — חוויית קפה מושלמת לעיניים ולחיך דריפר זכוכית איקוני בעיצוב קוני ייחודי, המוציא את המיטב מהקפה שלכם ומעניק חוויית חליטה עשירה ומרהיבה לעין.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p><strong>דריפר זכוכית Hario V60 דגם VDGR-02</strong><br />הדריפר המפורסם של Hario, המוכר והאהוב בעולם כולו.<br />העיצוב הקוני בצורת V מאפשר סידור עמוק ואחיד של פולי הקפה לטעם עשיר ומאוזן.<br />בעת מזיגת המים, הם זורמים לנקודת השפיץ של החרוט ומחלצים את הטעמים העמוקים והמרקם האומאמי של הקפה.<br />הזכוכית השקופה והעמידה בחום מאפשרת לכם ליהנות גם מחוויית הצפייה בתהליך החליטה עצמו.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מעמד קפה פילטר V60 מזכוכית Hario VD-02R | מינוטו קפה ואביזרים",
+    "rank_math_description": "דריפר זכוכית Hario V60 — חוויית קפה מושלמת לעיניים ולחיך דריפר זכוכית איקוני בעיצוב קוני ייחודי, המוציא את המיטב מהקפה שלכם ומעניק חוויית חליטה עשי..."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65226,
+   "name": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+   "short_description": "<p>מעמד לקפה פילטר 1 כוסות V60 מפלסטיק הריו Hario VD-02R מעמד איכותי, קל לשימוש, נוח לנשיאה &#8211; לשימוש בטיולים שיטת בישול פילטר מאפשרת לך להכין בכל מקום את הקפה האידיאלי שלך ולהבטיח קפה איכותי גם כאשר אתם מטיילים בטבע / מלון או סתם מחוץ לבית הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום הקפה</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>מעמד לקפה פילטר 1 כוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעמד נייד, קל לנשיאה, מבטיח קפה נהדר גם בדרכים,</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - טחינה לפילטר - V60"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65227,
+   "name": "מעמד לקפה פילטר 2 כוסות V60 מפלסטיק הריו Hario VD-02R",
+   "short_description": "<p>מעמד לקפה פילטר 2 כוסות V60 מפלסטיק הריו Hario VD-02R</p>\n<p>מעמד איכותי, קל לשימוש, נוח לנשיאה &#8211; לשימוש בטיולים</p>\n<p>שיטת בישול פילטר מאפשרת לך להכין בכל מקום את הקפה האידיאלי שלך ולהבטיח קפה איכותי גם כאשר אתם מטיילים בטבע / מלון או סתם מחוץ לבית</p>\n<p>הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום הקפה</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>מעמד לקפה פילטר 2 כוסות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מעמד נייד, קל לנשיאה, מבטיח קפה נהדר גם בדרכים,</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "מעמד לקפה פילטר 2 כוסות Hario VD-02R | מינוטו קפה ואביזרים",
+    "rank_math_description": "מעמד לקפה פילטר 2 כוסות V60 מפלסטיק הריו Hario VD-02R. אביזר לחליטת קפה עם מידע על החומר, ההתאמה ואופן השימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65244,
+   "name": "קנקן Aquaphor דגם Amethyst + 4 סננים",
+   "short_description": "<ul>\n<li>כולל 4 מסננים</li>\n<li>לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר</li>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">קנקן Aquaphor דגם Amethyst + 4 סננים</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>מסנן (פילטר) בר החלפה סטנדרטי לניקוי וטיהור מי ברז. אפקטיבי ביותר בהרחקת חלקיקים מהמים ואת רוב גורמי הזיהום הפוגעים בבריאותנו. משפר את צבע המים, טעמם, ואת הריח שלהם. מיועד למים עם רמת קשיות (אבנית) בנונית (עד <span dir=\"ltr\">200</span>מ\"ג/ליטר.)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המסנן יעיל עד ל-200 ליטר או עד חודשיים. (המוקדם יותר) ומתאים למשפחה של 3-4 נפשות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קיבולת הקנקן:</strong> 2.8 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>כמות המים המסוננים:</strong> 1.4 ליטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>קצב הסינון:</strong> 3-10 דקות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פתח הכנסת המים:</strong> דרך חריצים במכסה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פילטר תואם:</strong> מתאים גם לקנקן בריטה מקסטרה (Maxtra)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>יכולת הסינון של הפילטר:</strong>  200 ליטר - (יש להחליף פילטר כל 2 חודשים)</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>אם רמת האבנית גבוהה יותר יעילות המכשיר בהסרת אבנית יורדת לקראת סוף התקופה</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כולל 4 מסננים לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים) בזכות הטכנולוגיה הי...",
+    "rank_math_focus_keyword": "Aquaphor"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65370,
+   "name": "WDT Needles Coffee Tool דיסטרביוטור 58ממ",
+   "short_description": "<p data-sourcepos=\"21:1-21:81\"><strong>WDT Needles Coffee Tool &#8211; דיסטרביוטור 58 מ&quot;מ: </strong></p>\n<p data-sourcepos=\"21:1-21:81\"><strong>פיזור אחיד, טעם מושלם. </strong></p>\n<p data-sourcepos=\"21:1-21:81\"><strong>הזמינו עכשיו באתר מינוטו קפה!</strong></p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ: פיזור אחיד, טעם מושלם</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>שדרגו את חווית הקפה שלכם עם WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ!</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כלי זה, המכונה גם \"מחט ערבוב\", נועד לפזר באופן אחיד את הקפה הטחון בתוך פורטה-פילטר לפני החליטה. פיזור אחיד מבטיח חליטה אחידה וטעימה יותר ומביא לידי ביטוי את מלוא הפוטנציאל של פולי הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>יתרונות WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>שיפור משמעותי בטעם הקפה:</strong> פיזור אחיד של הקפה הטחון מונע מיצוי יתר או תת-מיצוי באזורים מסוימים ומביא למיצוי אחיד וטעים יותר.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>הפחתת גושים:</strong> המחטים מפרקות גושים של קפה טחון, ומבטיחות חליטה אחידה יותר.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>קל לשימוש:</strong> פשוט הכניסו את המחטים לתוך פורטה-פילטר וסובבו בעדינות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיצוב קומפקטי:</strong> קל לאחסון ולנשיאה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>מתאים לפורטה-פילטר 58 מ\"מ:</strong> הכלי מתאים למגוון רחב של פורטה-פילטר בגודל 58 מ\"מ.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ הוא כלי חיוני לכל חובב קפה שרוצה לשפר את איכות הקפה שלו. </strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הכלי קל לשימוש ומתאים לפורטה-פילטר 58 מ\"מ.</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>להזמנת WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ, </strong><strong>צרו קשר עם מינוטו קפה עוד היום!</strong></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "WDT Needles Coffee Tool - דיסטרביוטור 58 ממ: פיזור אחיד, טעם מושלם. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65418,
+   "name": "בוחשן במבוק לתה מאצ'ה - Bamboo Whisk",
+   "short_description": "<p data-sourcepos=\"3:1-3:27\"><strong>הקצפת תה Matcha מושלמת!</strong></p>\n<ul data-sourcepos=\"5:1-5:18\">\n<li data-sourcepos=\"5:1-5:18\">מקבלים מרקם קרמי ומקציף</li>\n<li data-sourcepos=\"6:1-6:12\">כלי מסורתי</li>\n<li data-sourcepos=\"7:1-7:16\">עשוי בעבודת יד</li>\n<li data-sourcepos=\"8:1-9:0\">איכותי</li>\n</ul>\n<p data-sourcepos=\"10:1-10:17\"><strong>הזמינו עכשיו!</strong></p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<h3 data-sourcepos=\"1:1-1:62\">בוחשן במבוק מאצ'ה - Bamboo Whisk</h3>\n<h4 data-sourcepos=\"1:1-1:62\">המקציף המקורי תה ירוק (Matcha) - מקציף במבוק (Chasen)</h4>\n<p data-sourcepos=\"3:1-4:59\"><strong>מקציף הבמבוק (Chasen)</strong> משמש כבר מאות שנים להקצפת אבקת תה ירוק מכותש (Matcha), והוא הדרך היחידה להשיג את המרקם הקרמי והמקציף הייחודי שלו.</p>\n<p data-sourcepos=\"6:1-6:24\"><strong>חלק בלתי נפרד מהטקס:</strong></p>\n<p data-sourcepos=\"8:1-9:1\">מקציף הבמבוק הוא חלק בלתי נפרד מטקס תה המטצ'ה המסורתי. הוא עשוי בעבודת יד, כאשר השיניים נחתכים בקפידה מחתיכת במבוק ומעוצבים בקפידה.</p>\n<p data-sourcepos=\"11:1-11:17\"><strong>אומנות עתיקה:</strong></p>\n<p data-sourcepos=\"13:1-14:70\">רק אומנים בעלי הכשרה מיוחדת שולטים באומנות זו. הידע עובר מדור לדור ואת מקציף הבמבוק אי אפשר לייצר במכונה, מה שעושה כל מקציף למיוחד במינו.</p>\n<p data-sourcepos=\"16:1-16:2\">\n<p data-sourcepos=\"18:1-18:20\"><strong>אביזרים משלימים:</strong></p>\n<p data-sourcepos=\"20:1-20:69\">תוכלו למצוא אצלנו גם מחזיקים תואמים למקצים הבמבוק בצבעים ירוק / שחור.</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "Bamboo Whisk, מאצ'ה, Matcha",
+    "rank_math_description": "תה מאצה סרמונייאל יפני איכותי. עשיר בנוגדי חמצון וטעם עדין, לטקס תה יפני אותנטי - בוחשן במבוק. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65466,
+   "name": "תה מאצ'ה סרמונייאל 30 גרם - matcha ceremonial",
+   "short_description": "<h2 class=\"\" data-sourcepos=\"1:1-1:36\">תה מאצ'ה סרמונייאל</h2>\n<p data-sourcepos=\"1:1-1:36\">חוו את הטקס היפני העתיק עם תה מאצ'ה איכותי, עשיר בטעם ונוגדי חמצון.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:52\"><strong>תה מאצ'ה סרמונייאל - חוויה יפנית אותנטית בכל ספל</strong></p>\n<p data-sourcepos=\"5:1-5:254\">גלו את סוד הטקס היפני העתיק עם תה מאצ'ה סרמינייאל, תוצרת מגדלי המאצ'ה המובילים ביפן. כל עלה תה עובר תהליך ייצור קפדני, החל משדות התה הממוקמים באזורים ההרריים של נישיו, קגושימה ואוג'י, שם האקלים האידיאלי והטיפוח המסורתי מעניקים לתה את טעמו העשיר והייחודי.</p>\n<p data-sourcepos=\"7:1-7:37\"><strong>מה הופך את תה המאצ'ה שלנו למיוחד:</strong></p>\n<ul data-sourcepos=\"9:1-13:0\">\n<li data-sourcepos=\"9:1-9:98\"><strong>מקור איכותי:</strong> התה שלנו מגיע ישירות משדות התה הטובים ביותר ביפן, שם הוא גדל בתנאים אופטימליים.</li>\n<li data-sourcepos=\"10:1-10:118\"><strong>טעם עשיר ומורכב:</strong> תה מאצ'ה סרמינייאל מציע חווית טעם עשירה ומורכבת, עם רמזים של אומאמי, מתיקות עדינה ומרקם קטיפתי.</li>\n<li data-sourcepos=\"11:1-11:117\"><strong>טקס יפני אותנטי:</strong> תה מאצ'ה הוא לא רק משקה, אלא טקס. עם מאצ'ה סרמינייאל, תוכלו לחוות את הטקס הזה בנוחות של ביתכם.</li>\n<li data-sourcepos=\"12:1-13:0\"><strong>תכולת נוגדי חמצון גבוהה:</strong> תה מאצ'ה עשיר בנוגדי חמצון המסייעים לשמור על בריאותך.</li>\n</ul>\n<p data-sourcepos=\"14:1-14:19\"><strong>אודות תה מאצ'ה:</strong></p>\n<p data-sourcepos=\"16:1-16:161\">תה מאצ'ה הוא אבקה ירוקה עדינה המתקבלת על ידי טחינת עלי תה ירוק איכותיים. הוא מכיל ריכוז גבוה של נוגדי חמצון, ויטמינים ומינרלים, ומעניק אנרגיה מתמשכת ללא התרסקות.</p>\n<p data-sourcepos=\"18:1-18:16\"><strong>הוראות הכנה:</strong></p>\n<ol data-sourcepos=\"20:1-23:0\">\n<li data-sourcepos=\"20:1-20:45\">הכניסו כפית תה אחת (כ-2 גרם) של מאצ'ה לקערה.</li>\n<li data-sourcepos=\"21:1-21:62\">הוסיפו כ-80 מ\"ל מים חמים בטמפרטורה של כ-70-80 מעלות צלזיוס.</li>\n<li data-sourcepos=\"22:1-23:0\">הקציפו את המאצ'ה בעזרת מקצף במבוק או מיקסר חלב עד לקבלת קצף ירוק וקטיפתי.</li>\n</ol>\n<p data-sourcepos=\"24:1-24:96\"><strong>השתמשו במאצ'ה סרמונייאל להכנת מגוון משקאות חמים וקרים, כמו לאטה או פשוט עם מים חמים.</strong></p>\n<p data-sourcepos=\"26:1-26:76\"><strong>גלו את סוד הטקס היפני העתיק והעניקו לעצמכם חווית תה ייחודית ובלתי נשכחת.</strong></p>\n<p data-sourcepos=\"28:1-28:51\"><strong>תוכן האריזה:</strong> 30 גרם תה מאצ'ה ירוק באיכות מעולה.</p>\n<p data-sourcepos=\"30:1-30:55\"><strong>אחסון:</strong> יש לאחסן במקום קריר ויבש הרחק מאור שמש ישיר.</p>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "תה מאצה סרמונייאל יפני איכותי. עשיר בנוגדי חמצון וטעם עדין, לטקס תה יפני אותנטי - בנפח 30 גרם. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 65468,
+   "name": "כפית במבוק להכנת תה מאצ'ה",
+   "short_description": "<p>כפית במבוק מסורתית להכנת מאצ'ה.</p>\n<p>חוו את הטקס היפני האותנטי עם כלי איכותי ועמיד.</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<div id=\"model-response-message-contentr_0fcbaa41e7cafa54\" class=\"markdown markdown-main-panel response-optimization stronger\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:41\"><strong>כפית במבוק מסורתית להכנת מאצ'ה מושלמת</strong></p>\n<p data-sourcepos=\"5:1-5:188\">הוסיפו נופך אותנטי לטקס התה עם כפית במבוק יפנית מסורתית, המיועדת במיוחד להכנת מאצ'ה.</p>\n<p data-sourcepos=\"5:1-5:188\">הכפית, העשויה מבמבוק איכותי, מאפשרת למדוד את הכמות המושלמת של אבקת המאצ'ה ולהקציף אותה בצורה חלקה.</p>\n<p data-sourcepos=\"7:1-7:33\"><strong>למה לבחור בכפית במבוק למאצ'ה?</strong></p>\n<ul data-sourcepos=\"9:1-14:0\">\n<li data-sourcepos=\"9:1-9:108\"><strong>מסורת יפנית:</strong> הכפית היא חלק בלתי נפרד מטקס התה היפני המסורתי, ומאפשרת לחוות את החוויה האותנטית בבית.</li>\n<li data-sourcepos=\"10:1-10:64\"><strong>איכות:</strong> הבמבוק הוא חומר טבעי ועמיד, המבטיח שימוש ארוך טווח.</li>\n<li data-sourcepos=\"11:1-11:72\"><strong>עיצוב אלגנטי:</strong> הכפית בעלת עיצוב מינימליסטי ויפהפה, שיתאים לכל מטבח.</li>\n<li data-sourcepos=\"12:1-12:104\"><strong>מדידה מדויקת:</strong> הכפית מאפשרת למדוד את הכמות המדויקת של אבקת המאצ'ה, כך שתמיד יתקבל את הטעם המושלם.</li>\n<li data-sourcepos=\"13:1-14:0\"><strong>קלה לניקוי:</strong> את הכפית ניתן לנקות בקלות במים חמים וסבון.</li>\n</ul>\n<p data-sourcepos=\"15:1-15:22\"><strong>איך משתמשים בכפית:</strong></p>\n<ol data-sourcepos=\"17:1-19:0\">\n<li data-sourcepos=\"17:1-17:66\"><strong>מדידה:</strong> יש להשתמש בכפית כדי למדוד את הכמות הרצויה של אבקת מאצ'ה.</li>\n<li data-sourcepos=\"18:1-19:0\"><strong>הקצפה:</strong> יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף בתנועות מהירות עד לקבלת קצף ירוק וקטיפתי.</li>\n</ol>\n<p data-sourcepos=\"20:1-20:82\"><strong>טיפ:</strong> כדי לשמור על הכפית במצב טוב, יש להימנע משימוש במדיח כלים ולהשתמש בה רק למאצ'ה.</p>\n<p data-sourcepos=\"22:1-22:94\"><strong>הוסיפו את כפית הבמבוק לקולקציית אביזרי המאצ'ה שלכם והתחילו ליהנות מטקס תה יפני אותנטי בכל פעם.</strong></p>\n<p data-sourcepos=\"37:1-37:37\">\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "תה מאצה סרמונייאל יפני איכותי. עשיר בנוגדי חמצון וטעם עדין, לטקס תה יפני אותנטי - כפית במבוק. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67200,
+   "name": "\"Toddy® Cold Brew System",
+   "short_description": "<p>הכירו את מערכת ה-Toddy® Cold Brew &#8211; הדרך האולטימטיבית ליהנות מקפה קר טעים וחלק! עם העיצוב הקל לשימוש והחומרים האיכותיים, מערכת זו תשנה את הדרך בה אתם נהנים מקפה.</p>\n<p>מערכת החליטה הקרה של Toddy® היא חלוצת החליטות הקרות של החברה, והחליטה מוציאה תרכיז נוזלי חלק ועשיר המשמש להכנת קפה קר ללא מרירות או חמיצות שאין כמוהו.</p>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3,\"className\":\"product_title entry-title\"} --></p>\n<h3 class=\"wp-block-heading product_title entry-title\">Toddy® Cold Brew System – מערכת ביתית להשרייה קרה של קפה/תה</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את מערכת ה-Toddy® Cold Brew - הדרך האולטימטיבית ליהנות מקפה קר טעים וחלק! עם העיצוב הקל לשימוש והחומרים האיכותיים, מערכת זו תשנה את הדרך בה אתם נהנים מקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מערכת ה-Toddy® Cold Brew מגיעה עם מיכל חליטה עמיד, העשוי מפלסטיק איכותי מאושר מזון. המיכל נועד להכיל עד 12 כוסות מים - כ -2 ליטר, מה שמאפשר להכין מספר מנות של קפה קר בו זמנית. מיכל החליטה כולל גם מכסה הדוק כדי לסייע במניעת דליפה ונזילות בזמן שהקפה נחלט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המערכת מגיעה גם עם פילטר לבד לשימוש חוזר המתאים היטב לתוך מיכל ההשרייה. מסנן זה עשוי מתערובת ייחודית של סיבים טבעיים וסינתטיים, הפועלים יחד כדי ללכוד אפילו את גרגירי הקפה והמשקעים הקטנים ביותר, וכתוצאה מכך לחלוט קפה חלק ונקי בטעם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כדי להשתמש במערכת ה-Toddy® Cold Brew, פשוט הוסיפו את הקפה האהוב עליכם למסנן הלבד, שפכו מים קרים לתוך מיכל הבישול והניחו לו לשבת 12-24 שעות. התוצאה היא קפה עשיר ובעל גוף שהוא פחות חומצי מקפה מבושל חם מסורתי, מה שהופך אותו למושלם לבעלי קיבה רגישה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לאחר סיום הכנת הקפה, יש להסיר את המסנן ולהשליך את שאריות הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ניתן לשמור את הקפה במקרר עד שבועיים, מה שהופך אותו לדרך נוחה וחסכונית ליהנות מקפה מבושל קר בבית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בסך הכל, מערכת ה-Toddy® Cold Brew היא פריט חובה לכל חובב קפה שמעוניין ליהנות מקפה טעים וחלק בבית. עם העיצוב הקל לשימוש והחומרים האיכותיים שלה, מערכת זו תהפוך למרכיב עיקרי בשגרת הבוקר שלך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החבילה כוללת:<br />\nמיכל חליטה עם ידית<br />\nמכסה מיכל חליטה מסיליקון<br />\nקנקן זכוכית עם מכסה<br />\nפילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)<br />\nפקק סיליקון<br />\nנייר פילטר X3 (הקפה יושב בתוכו)</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "toddy cold brew system | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "Toddy Cold Brew System - מערכת מקצועית להכנת קפה קר בבית. ה-Toddy Cold Brew System מציע חליטה קרה המפיקה קפה חלק, מרוכז ודל בחומציות, מושלם לימי הקיץ החמים.\n"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Toddy"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 67295,
+   "name": "Clever Dripper",
+   "short_description": "<p>מכשיר חליטת פילטר אידיאלי.</p>\n<p>קל לתפעול ואסטתי; מערכת ה-&quot;פתיחה/סגירה&quot; שלו שומרת את מי החליטה בטפטפת, והחילוץ מתחיל רק בעת הלחיצה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3,\"className\":\"product_title entry-title\"} --></p>\n<h3 class=\"wp-block-heading product_title entry-title\">Clever Dripper</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>איך לחלוט:<br />\n1 מניחים את מסנן הנייר במחזיק המסנן - מומלץ להשתמש בפילטר מליטה עם תחתית שטוחה<br />\n2 מוזגים מים חמים על הפילטר כדי&nbsp;להסיר שאריות טעם מהנייר.<br />\n3 יש להניח קפה טחון במסנן - אנחנו ממליצים על 60 גר קפה לליטר מים.<br />\n4 מיצוי ראשון: יוצקים מים על הקפה באיטיות למשך 30 עד 45&nbsp;שניות נעות מהמרכז החוצה אל החוץ.<br />\n5 מיצוי שני: יוצקים את יתרת המים&nbsp;באמצעות אותה שיטה.<br />\n6 מכסים את מחזיק המסנן במכסה ומשאירים להתבשל.<br />\n7 הניחו את הטפטף החכם מעל קנקן או כוס והניחו לקפה&nbsp;לטפטף לחלוטין. הערה: זמן הזרימה הכולל של 400 מ\"ל מים<br />\nהוא בערך 90 שניות.<br />\n8 הסר את מחזיק המסנן ותהנו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טיפים לבישול:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גודל הטחינה: בינוני+ (יותר ממסנן חשמלי אבל פחות מבית קפה).<br />\nהשתמשו במים: &nbsp;בטמם של 90 עד 95 מעלות צלזיוס, מסוננים .</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "Clever Dripper | מינוטו קפה ואביזרים",
+    "rank_math_description": "Hario SWITCH - דריפר משולב לטפטפוט ולטבילה. שתי שיטות חליטה במכשיר אחד למגוון טעמים - מבצע מיוחד. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [
+    {
+     "name": "מותג",
+     "options": [
+      "Toddy"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 68274,
+   "name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+   "short_description": "",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\"><strong>דוחסן קפה מפלסטיק - דוחסן דו שימושי 52/57 מ\"מ</strong></h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>דוחסן הקפה מפלסטיק בנוי כך שיכול לדחוס משני הצדדים: בצד אחד קוטר 52 מ\"מ ובצד השני 58 מ\"מ.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "דוחסן קפה מפלסטיק - דוחסן דו שימושי - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 68276,
+   "name": "Blind Filter Basket - פילטר באסקט עיוור",
+   "short_description": "",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">Blind Filter Basket - פילטר באסקט עיוור</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פילטר עיוור לשימוש במכונות קפה בעלות ידית מקצועיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גודל: 58 מ\"מ</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ושסתום פריקת לחץ&nbsp; לשם ניקוי שטיפה הפוכה (Back flush)</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "Blind Filter Basket - פילטר באסקט עיוור - ציוד קפה מקצועי מבית מינוטו | משלוח מהיר | אחריות ושירות. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 68282,
+   "name": "קנקן Aquaphor דגם Amethyst לשיפור המים",
+   "short_description": "<ul>\n<li>לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר</li>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n</ul>\n",
+   "description": "<h1><strong>קנקן Aquaphor דגם Amethyst לשיפור המים</strong></h1>\n<p>מסנן (פילטר) בר החלפה סטנדרטי לניקוי וטיהור מי ברז. אפקטיבי ביותר בהרחקת חלקיקים מהמים ואת רוב גורמי הזיהום הפוגעים בבריאותנו. משפר את צבע המים, טעמם, ואת הריח שלהם. מיועד למים עם רמת קשיות (אבנית) בנונית (עד <span dir=\"ltr\">200 </span>מ\"ג/ליטר.)</p>\n<p>המסנן יעיל עד ל-200 ליטר או עד חודשיים. (המוקדם יותר) ומתאים למשפחה של 3-4 נפשות.</p>\n<p><strong>קיבולת הקנקן:</strong> 2.8 ליטר</p>\n<p><strong>כמות המים המסוננים:</strong> 1.4 ליטר</p>\n<p><strong>קצב הסינון:</strong> 3-10 דקות</p>\n<p><strong>פתח הכנסת המים:</strong> דרך חריצים במכסה</p>\n<p><strong>פילטר תואם:</strong> מתאים גם לקנקן בריטה מקסטרה (Maxtra)</p>\n<p><strong>יכולת הסינון של הפילטר:</strong>  200 ליטר - (יש להחליף פילטר כל 2 חודשים)</p>\n<ul>\n<li>לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר</li>\n<li>רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים)</li>\n<li>בזכות הטכנולוגיה היחודית שפותחה במעבדות החברה, הפילטר מצליח לסנן כמעט פי 3 מהמתחרה המוכרת.</li>\n</ul>\n<p>אם רמת האבנית גבוהה יותר יעילות המכשיר בהסרת אבנית יורדת לקראת סוף התקופה</p>\n",
+   "meta": {
+    "rank_math_description": "לקנקן יש שעון יחודי המראה מתי יש להחליף פילטר רוחבו של הקנקן מאפשר להכניס אותו לדלת המקרר (ברוב המקררים הבייתיים) בזכות הטכנולוגיה היחודית שפותחה ב..."
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 68448,
+   "name": "קפסולות AXOR לניקוי מכונות נספרסו",
+   "short_description": "<p>הכירו את קפסולות הניקוי של מכונת הקפה שלנו, שתוכננו במיוחד כדי להסיר ביעילות שאריות שמנוניות של קפה מהחלקים הפנימיים של מכונות קפה נספרסו. פולי הקפה מכילים רכיבים שומניים חיוניים התורמים לעושר ולקרמיות של הקפה שלך. עם זאת, עם כל חליטה, שאריות שומניות אלו עלולות להצטבר על תא החליטה, צלחת הניקוב והפיה.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפסולות לניקוי מכונות קפה נספרסו</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את קפסולות הניקוי של מכונת הקפה שלנו, שתוכננו במיוחד כדי להסיר ביעילות שאריות שמנוניות של קפה מהחלקים הפנימיים של מכונות קפה נספרסו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי הקפה מכילים רכיבים שומניים חיוניים התורמים לעושר ולקרמיות של הקפה שלך. עם זאת, עם כל חליטה, שאריות שומניות אלו עלולות להצטבר על תא החליטה, צלחת הניקוב והפיה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span style=\"font-size: 14.4px;\">עם הזמן, שאריות אלה מתחמצנות ומתכלות, וכתוצאה מכך טעם חמוץ בקפה שלך ותקלות פוטנציאליות במכונה שלך.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפסולות ניקוי למכונות נספרסו של חברת AXOR משתמש בנוסחה חדשנית עם חמצן פעיל וחומריםטבעיים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שילוב רב עוצמה זה מסיר במהירות חומרים שמנים, חיידקים וריחות לא נעימים מהרכיבים הפנימיים של מכונת הקפה שלך, מבלי להשאיר עקבות מאחור.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>על ידי שימוש קבוע בקפסולות הניקוי של חברת AXOR למכונת קפה,  ניתן להאריך את תוחלת החיים של המכשיר שלך ולשחזר את תנאי העבודה האופטימליים שלה. היפרדו מטעמים לא רצויים והבטיחו חווית קפה בתולית תוך מודעות לסביבה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שמור על המצוינות של מכונת הקפה שלך עם קפסולות ה-COFFEE MAKER CLEANER שלנו.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "הכירו את קפסולות הניקוי של מכונת הקפה שלנו, שתוכננו במיוחד כדי להסיר ביעילות שאריות שמנוניות של קפה מהחלקים הפנימיים של מכונות קפה נספרסו"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 76590,
+   "name": "טבעת / משפך טחינת קפה Motta 40mm",
+   "short_description": "<p><strong><span class=\"_fadeIn_m1hgl_8\">משפך </span><span class=\"_fadeIn_m1hgl_8\">טחינת </span><span class=\"_fadeIn_m1hgl_8\">קפה </span><span class=\"_fadeIn_m1hgl_8\">Motta 40 </span><span class=\"_fadeIn_m1hgl_8\">מ&quot;מ </span></strong></p>\n<p><span class=\"_fadeIn_m1hgl_8\">עשוי מנירוסטה </span><span class=\"_fadeIn_m1hgl_8\">איכותית </span><span class=\"_fadeIn_m1hgl_8\">מתאים </span><span class=\"_fadeIn_m1hgl_8\">לראשי </span><span class=\"_fadeIn_m1hgl_8\">חליטה </span><span class=\"_fadeIn_m1hgl_8\">בקוטר 55, 57, 58 </span><span class=\"_fadeIn_m1hgl_8\">ו‑58.5 </span><span class=\"_fadeIn_m1hgl_8\">מ&quot;מ </span><span class=\"_fadeIn_m1hgl_8\">ומאפשר </span><span class=\"_fadeIn_m1hgl_8\">טחינה </span><span class=\"_fadeIn_m1hgl_8\">מדויקת </span><span class=\"_fadeIn_m1hgl_8\">ונקייה </span><span class=\"_fadeIn_m1hgl_8\">בכל </span><span class=\"_fadeIn_m1hgl_8\">פעם. </span></p>\n<p><span class=\"_fadeIn_m1hgl_8\">הזמינו </span><span class=\"_fadeIn_m1hgl_8\">עכשיו </span><span class=\"_fadeIn_m1hgl_8\">ב‑</span><span class=\"_fadeIn_m1hgl_8\">מינוטו קפה</span><span class=\"_fadeIn_m1hgl_8\"> </span><span class=\"_fadeIn_m1hgl_8\">והפכו </span><span class=\"_fadeIn_m1hgl_8\">כל </span><span class=\"_fadeIn_m1hgl_8\">קפה </span><span class=\"_fadeIn_m1hgl_8\">לחוויה </span><span class=\"_fadeIn_m1hgl_8\">מושלמת!</span></p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><span class=\"_fadeIn_m1hgl_8\">טבעת / משפך טחינת קפה Motta 40mm</span></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><span class=\"_fadeIn_m1hgl_8\">משפך </span><span class=\"_fadeIn_m1hgl_8\">טחינת </span><span class=\"_fadeIn_m1hgl_8\">קפה </span><span class=\"_fadeIn_m1hgl_8\">Motta </span><span class=\"_fadeIn_m1hgl_8\">בקוטר 40 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ </span><span class=\"_fadeIn_m1hgl_8\">הוא </span><span class=\"_fadeIn_m1hgl_8\">כלי </span><span class=\"_fadeIn_m1hgl_8\">איטלקי </span><span class=\"_fadeIn_m1hgl_8\">איכותי </span><span class=\"_fadeIn_m1hgl_8\">שישדרג </span><span class=\"_fadeIn_m1hgl_8\">את </span><span class=\"_fadeIn_m1hgl_8\">חוויית </span><span class=\"_fadeIn_m1hgl_8\">הטחינה </span><span class=\"_fadeIn_m1hgl_8\">שלכם.</span><br data-start=\"85\" data-end=\"88\"><span class=\"_fadeIn_m1hgl_8\">המשפך </span><span class=\"_fadeIn_m1hgl_8\">מתאים </span><span class=\"_fadeIn_m1hgl_8\">לידיות </span><span class=\"_fadeIn_m1hgl_8\">ראש </span><span class=\"_fadeIn_m1hgl_8\">חליטה </span><span class=\"_fadeIn_m1hgl_8\">בקוטר 55 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ 57 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ 58 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ </span><span class=\"_fadeIn_m1hgl_8\">ו‑58.5 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ.</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span class=\"_fadeIn_m1hgl_8\">עומקו </span><span class=\"_fadeIn_m1hgl_8\">הוא 40 </span><span class=\"_fadeIn_m1hgl_8\">מ\"מ, </span><span class=\"_fadeIn_m1hgl_8\">מה </span><span class=\"_fadeIn_m1hgl_8\">שהופך </span><span class=\"_fadeIn_m1hgl_8\">אותו </span><span class=\"_fadeIn_m1hgl_8\">להתאמה </span><span class=\"_fadeIn_m1hgl_8\">מושלמת </span><span class=\"_fadeIn_m1hgl_8\">כמעט </span><span class=\"_fadeIn_m1hgl_8\">לכל מ</span><span class=\"_fadeIn_m1hgl_8\">טחנת </span><span class=\"_fadeIn_m1hgl_8\">קפה </span><span class=\"_fadeIn_m1hgl_8\">ביתית </span><span class=\"_fadeIn_m1hgl_8\">ומקצועית.</span><br data-start=\"235\" data-end=\"238\"><span class=\"_fadeIn_m1hgl_8\">המשפך </span><span class=\"_fadeIn_m1hgl_8\">עשוי </span><span class=\"_fadeIn_m1hgl_8\">נירוסטה </span><span class=\"_fadeIn_m1hgl_8\">איכותית </span><span class=\"_fadeIn_m1hgl_8\">שמבטיחה </span><span class=\"_fadeIn_m1hgl_8\">עמידות </span><span class=\"_fadeIn_m1hgl_8\">לאורך </span><span class=\"_fadeIn_m1hgl_8\">שנים </span><span class=\"_fadeIn_m1hgl_8\">וניקוי </span><span class=\"_fadeIn_m1hgl_8\">קל </span><span class=\"_fadeIn_m1hgl_8\">ופשוט. </span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><span class=\"_fadeIn_m1hgl_8\">בעזרת </span><span class=\"_fadeIn_m1hgl_8\">העיצוב </span><span class=\"_fadeIn_m1hgl_8\">המדויק </span><span class=\"_fadeIn_m1hgl_8\">שלו </span><span class=\"_fadeIn_m1hgl_8\">תוכלו </span><span class=\"_fadeIn_m1hgl_8\">לטחון </span><span class=\"_fadeIn_m1hgl_8\">את </span><span class=\"_fadeIn_m1hgl_8\">גרגרי </span><span class=\"_fadeIn_m1hgl_8\">הקפה </span><span class=\"_fadeIn_m1hgl_8\">ישירות </span><span class=\"_fadeIn_m1hgl_8\">לפילטר </span><span class=\"_fadeIn_m1hgl_8\">ללא </span><span class=\"_fadeIn_m1hgl_8\">פיזור </span><span class=\"_fadeIn_m1hgl_8\">על </span><span class=\"_fadeIn_m1hgl_8\">המשטח </span><span class=\"_fadeIn_m1hgl_8\">וללא </span><span class=\"_fadeIn_m1hgl_8\">בזבוז </span><span class=\"_fadeIn_m1hgl_8\">של </span><span class=\"_fadeIn_m1hgl_8\">גרגרים.</span><br data-start=\"412\" data-end=\"415\"><span class=\"_fadeIn_m1hgl_8\">כדי </span><span class=\"_fadeIn_m1hgl_8\">להשתמש </span><span class=\"_fadeIn_m1hgl_8\">בו </span><span class=\"_fadeIn_m1hgl_8\">פשוט </span><span class=\"_fadeIn_m1hgl_8\">הציבו </span><span class=\"_fadeIn_m1hgl_8\">את </span><span class=\"_fadeIn_m1hgl_8\">המשפך </span><span class=\"_fadeIn_m1hgl_8\">על </span><span class=\"_fadeIn_m1hgl_8\">ידית </span><span class=\"_fadeIn_m1hgl_8\">ראש </span><span class=\"_fadeIn_m1hgl_8\">החליטה</span><span class=\"_fadeIn_m1hgl_8\">&nbsp;</span><span class=\"_fadeIn_m1hgl_8\">ותיהנו </span><span class=\"_fadeIn_m1hgl_8\">מטחינה </span><span class=\"_fadeIn_m1hgl_8\">נקייה, </span><span class=\"_fadeIn_m1hgl_8\">מהירה </span><span class=\"_fadeIn_m1hgl_8\">ומדויקת </span><span class=\"_fadeIn_m1hgl_8\">בכל </span><span class=\"_fadeIn_m1hgl_8\">פעם.</span><br data-start=\"518\" data-end=\"521\"><span class=\"_fadeIn_m1hgl_8\">בחרו </span><span class=\"_fadeIn_m1hgl_8\">Motta </span><span class=\"_fadeIn_m1hgl_8\">כמו </span><span class=\"_fadeIn_m1hgl_8\">בריסטות </span><span class=\"_fadeIn_m1hgl_8\">מקצועיות </span><span class=\"_fadeIn_m1hgl_8\">ברחבי </span><span class=\"_fadeIn_m1hgl_8\">העולם </span><span class=\"_fadeIn_m1hgl_8\">ועצבו </span><span class=\"_fadeIn_m1hgl_8\">כל </span><span class=\"_fadeIn_m1hgl_8\">כוס </span><span class=\"_fadeIn_m1hgl_8\">קפה </span><span class=\"_fadeIn_m1hgl_8\">לחוויה </span><span class=\"_fadeIn_m1hgl_8\">מושלמת.</span><br data-start=\"596\" data-end=\"599\"><span class=\"_fadeIn_m1hgl_8\">הזמינו </span><span class=\"_fadeIn_m1hgl_8\">עכשיו </span><span class=\"_fadeIn_m1hgl_8\">באתר </span><span class=\"_fadeIn_m1hgl_8\">Minuto </span><span class=\"_fadeIn_m1hgl_8\">Coffee </span><span class=\"_fadeIn_m1hgl_8\">בלחיצה </span><span class=\"_fadeIn_m1hgl_8\">על ״</span><span class=\"_fadeIn_m1hgl_8\">הוסף </span><span class=\"_fadeIn_m1hgl_8\">לסל״ </span><span class=\"_fadeIn_m1hgl_8\">ותתחילו </span><span class=\"_fadeIn_m1hgl_8\">ליהנות </span><span class=\"_fadeIn_m1hgl_8\">מטחינה </span><span class=\"_fadeIn_m1hgl_8\">נקייה </span><span class=\"_fadeIn_m1hgl_8\">ואחידה.</span></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "משפך טחינת קפה Motta 40mm",
+    "rank_math_description": "משפך טחינת קפה Motta 40 ממ עשוי מנירוסטה איכותית מתאים לראשי חליטה בקוטר 55, 57, 58 ו‑58. איכות מעולה ועמידות לאורך זמן"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 78262,
+   "name": "כד הקצפה בריסטה סוואג איבו 2 מולטיקולור",
+   "short_description": "<p><strong>איבו 2 – כד הקצפה מקצועי 480 מ״ל </strong></p>\n<ul>\n<li>גרסה משודרגת לאיבו המקורי</li>\n<li>עם גוף מקומר יותר, פיה חדה במיוחד ונירוסטה עבה ועמידה.</li>\n<li>מושלם להקצפת כמויות קטנות בלחץ גבוה וליצירת לאטה ארט מדויק ועדין.</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\"><strong>איבו 2 – כד הקצפה ברמת פרימיום 480 מ״ל</strong><br />האיבו 2 הוא הדור החדש של כד ההקצפה המהפכני של בריסטה סוואג, עם סדרת שיפורים שהופכים אותו לכלי עבודה אולטימטיבי לכל בריסטה מקצועי או חובב קפה.</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>גוף מקומר יותר</strong>&nbsp;– המצאה מקורית של בריסטה סוואג, שנועדה לשפר את זווית המגע עם פני השטח של הקפה. האיבו 2 מקומר אף יותר, מה שמאפשר יצירת לאטה ארט איכותי כבר מהניסיון הראשון.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עמידות משופרת</strong>&nbsp;– עשוי מנירוסטה עבה וכבדה יותר, עמיד פי שניים מהדגם הקודם ומותאם במיוחד להקצפת כמויות קטנות בלחץ אדים חזק.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>פיה חדה במיוחד</strong>&nbsp;– גרסה מותאמת של Ultra Sharp 2, שמבטיחה שליטה מלאה במזיגה ויכולת לשרטט קווים עדינים וטוליפים מדויקים גם בכוסות קורטדו.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיצוב סימטרי</strong>&nbsp;– ידית מאוזנת ונוחה שמעניקה יציבות ודיוק.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>אריזת פרימיום</strong>&nbsp;– מגיע בקופסת מתנה ייחודית עם שלוש שכבות הגנה, כך שהאיבו 2 ישמור על יופיו ויגיע אליכם בשלמותו.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><em>האיבו 2 – כד ההקצפה המושלם בנפח 480 מ״ל, חובה לכל בר</em></p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כד הקצפה Barista Swag Evo 2 מקצועי 480 מל. גוף מקומר ונירוסטה עבה להקצפה מושלמת ולאטה ארט - בעיצוב צבעוני"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 79213,
+   "name": "חליטת תה חליטת יער אורגנית בשקיקי פירמידה מבית עדנים",
+   "short_description": "<p data-sourcepos=\"11:1-11:126\">חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"372\" data-end=\"375\" />תערובת טבעית של ג’ינג’ר ליים טרי וצמחים אורגניים לטעימה מרעננת עם ניחוח הדרית ומגע חריף עדין. <br />חליטה חמה או קרה, נטולת קפאין ומתאימה לכל שעה ביום.חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"311\" data-end=\"314\" />תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה. <br />ניתן לשתות גם כחליטה חמה או קרה. מוצר אורגני איכותי בפיקוח סקאל ומשרד החקלאות.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<h3>חליטת תה חליטת יער אורגנית בשקיקי פירמידה מבית עדנים</h3>\n<p>חליטת יער אורגנית בשקיקי פירמידה יוקרתיים מבית עדנים, באריזת גליל איכותית עם מכסה במבוק לשימוש חוזר. <br />המארז מכיל 25 שקיקים קלים לשימוש, המתאימים גם לחליטה קרה.<br data-start=\"703\" data-end=\"706\" />תערובת פירות בגוון אדום בעומק טעמים עם ניחוח פירות יער קסום ופרופיל ארומטי מאוזן. <br />ניתן להנות מהחליטה חמה להפסקת רוגע ביום או כקילוף מרענן כשנעשתה קרה.<br data-start=\"856\" data-end=\"859\" />המוצר עשוי מרכיבים איכותיים:</p>\n<p>כולל תפוח, היביסקוס, ורד הבר, קליפות תפוז ותמצית טבעית של פירות יער כגון אוכמניות</p>\n<p>ללא קפאין ומיוצר באופן אורגני בפיקוח רשויות תקנים.</p>\n<ul class=\"wp-block-list\"><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "חליטת תה פירות יער אורגנית בשקיקי פירמידה מבית עדנים",
+    "rank_math_description": "חליטת תה חליטת יער אורגנית בשקיקי פירמידה מבית עדנים. תה או חליטה עם מידע על הסוג, הכמות והוראות הכנה. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "חליטת תה פירות יער"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 79215,
+   "name": "חליטת תה חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים",
+   "short_description": "<p data-sourcepos=\"11:1-11:126\">חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"372\" data-end=\"375\" />תערובת טבעית של ג’ינג’ר ליים טרי וצמחים אורגניים לטעימה מרעננת עם ניחוח הדרית ומגע חריף עדין. <br />חליטה חמה או קרה, נטולת קפאין ומתאימה לכל שעה ביום.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<h3>חליטת תה חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים</h3>\n<p>חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, מארז המכיל 25 שקיקים. <br />השקיקים בגאומטריית פירמידה מאפשרים לחליטה להיפתח באופן מלא ולשחרר טעמים עשירים וניחוחות טבעיים של ג’ינג’ר וליים.<br data-start=\"755\" data-end=\"758\" />תערובת זו מאוזנת בין חריפות עדינה של ג’ינג’ר טרי לרעננות הדרי הליים, עם תוספת צמחים טבעיים לארומה מרתקת.<br data-start=\"862\" data-end=\"865\" />חליטה זו מתאימה לשתייה חמה שמחממת את הגוף והנפש, וכן לשתייה קרה ומרעננת בימים החמים. <br />המוצר אורגני בפיקוח רשויות תקן, נטול תוספות מיותרות ונטול קפאין, לחוויית תה טבעית ובריאה.</p>\n<ul class=\"wp-block-list\"><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n",
+   "meta": {
+    "rank_math_title": "חליטת תה חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים",
+    "rank_math_description": "חליטת תה חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים. תה או חליטה עם מידע על הסוג, הכמות והוראות הכנה. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "חליטת ג׳ינג׳ר ליים"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81418,
+   "name": "גומייה למקינטה ביאלטי - 12 כוסות",
+   "short_description": "<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>גומיה / אטם החלפה לביאלטי וסט צלחות פילטר - למקינטה מוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הסט כולל אטמים חלופיים וצלחת פילטר חלופית למקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לשמש גם למקינטה ונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יוצר באיטליה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגיע באריזה מקורית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "גומייה אטם למקינטה",
+    "rank_math_description": "גומייה למקינטה ביאלטי, 12 כוסות. חלק חילוף או אביזר עם מידע על מידה, התאמה לדגמים ואופן שימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "גודל",
+     "options": [
+      "12 כוסות",
+      "2 כוסות",
+      "3-4 כוסות",
+      "6 כוסות",
+      "9 כוסות"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 81424,
+   "name": "גומייה למקינטה מוק הביאלטי - 2 כוסות",
+   "short_description": "<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>גומיה / אטם החלפה לביאלטי וסט צלחות פילטר - למקינטה מוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הסט כולל אטמים חלופיים וצלחת פילטר חלופית למקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לשמש גם למקינטה ונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יוצר באיטליה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגיע באריזה מקורית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "גומייה אטם למקינטה",
+    "rank_math_description": "גומייה למקינטה מוק הביאלטי, 2 כוסות. חלק חילוף או אביזר עם מידע על מידה, התאמה לדגמים ואופן שימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "גודל",
+     "options": [
+      "12 כוסות",
+      "2 כוסות",
+      "3-4 כוסות",
+      "6 כוסות",
+      "9 כוסות"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 81430,
+   "name": "גומייה למקינטה ביאלטי - 3-4 כוסות",
+   "short_description": "<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>גומיה / אטם החלפה לביאלטי וסט צלחות פילטר - למקינטה מוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הסט כולל אטמים חלופיים וצלחת פילטר חלופית למקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לשמש גם למקינטה ונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יוצר באיטליה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגיע באריזה מקורית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "גומייה אטם למקינטה",
+    "rank_math_description": "גומייה למקינטה ביאלטי, 3-4 כוסות. חלק חילוף או אביזר עם מידע על מידה, התאמה לדגמים ואופן שימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "גודל",
+     "options": [
+      "12 כוסות",
+      "2 כוסות",
+      "3-4 כוסות",
+      "6 כוסות",
+      "9 כוסות"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 81436,
+   "name": "גומייה למקינטה ביאלטי - 6 כוסות",
+   "short_description": "<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n",
+   "description": "<p><!-- wp:paragraph --></p>\n<p>גומיה / אטם החלפה לביאלטי וסט צלחות פילטר - למקינטה מוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אטמי החלפה מקוריים של ביאלטי וסט פילטר למקקינטה ביאלטי מוקה ו- ונוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תכונות:</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הסט כולל אטמים חלופיים וצלחת פילטר חלופית למקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יכול לשמש גם למקינטה ונוס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>יוצר באיטליה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מגיע באריזה מקורית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "גומייה אטם למקינטה",
+    "rank_math_description": "גומייה למקינטה ביאלטי, 6 כוסות. חלק חילוף או אביזר עם מידע על מידה, התאמה לדגמים ואופן שימוש. פרטים באתר מינוטו."
+   },
+   "attributes": [
+    {
+     "name": "גודל",
+     "options": [
+      "12 כוסות",
+      "2 כוסות",
+      "3-4 כוסות",
+      "6 כוסות",
+      "9 כוסות"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 82537,
+   "name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע ירוק עשן",
+   "short_description": "<p data-start=\"37\" data-end=\"218\">קומקום חשמלי Stagg EKG בצבע לבן בעיצוב יוקרתי ומתקדם עם שליטה מדויקת בטמפרטורה.</p>\n<p data-start=\"37\" data-end=\"218\">חימום מהיר ונפח של 0.9 ליטר.</p>\n<p data-start=\"37\" data-end=\"218\">מושלם לחליטות קפה pour over לכל הרמות &#8211; ממקצוענים ועד מתחילים.</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קומקום חשמלי Fellow Stagg EKG | Pour Over</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוויית חליטת קפה מושלמת מתחילה בשליטה מדויקת בטמפרטורה ובחימום מהיר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקומקום החשמלי Stagg EKG, בנפח של 0.9 ליטר, מציע לכם כלי ברמה מקצועית עם עיצוב מרהיב ומודרני המתאים בדיוק לצרכים שלכם, בין אם אתם מומחים בקפה או רק מתחילים את המסע לעבר הספל המושלם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong data-start=\"370\" data-end=\"391\">מאפיינים עיקריים:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>שליטה מדויקת בטמפרטורה: טווח רחב של 57°C עד 100°C להתאמה מלאה לכל סוגי החליטות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>חימום מהיר: הספק חזק של 1,200 ואט מבטיח שהמים יגיעו לטמפרטורה הרצויה במהירות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>עיצוב ייחודי: מבנה מפלדת אל-חלד 304 בשילוב ידית עץ אגוז יוקרתי (בדגמים המתאימים).</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נוחות מקסימלית: כבל באורך 76 ס”מ, תקע EU המתאים לשימוש בישראל.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>נפח אידיאלי: 0.9 ליטר עם משקל כולל של 1.274 ק”ג (כולל בסיס).</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>מגוון צבעים לבחירה: ירוק מט עם ידית עץ אגוז, כחול כהה עם ידית עץ אגוז, לבן ושחור.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוויית חליטת הקפה שלכם עומדת להשתדרג לרמה חדשה. עם Stagg EKG, אתם נהנים מעיצוב מרהיב, טכנולוגיה מתקדמת ושליטה מוחלטת בתהליך ההכנה.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע לבן. אביזר לחליטת קפה עם מידע על החומר, ההתאמה ואופן השימוש. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "Fellow Stagg EKG"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 82888,
+   "name": "50 גר אבקת אובה טהורה פרימיום – ALATA UBE",
+   "short_description": "",
+   "description": "<blockquote class=\"\" data-path-to-node=\"4\">\n<p data-path-to-node=\"2\"><b data-path-to-node=\"2\" data-index-in-node=\"0\">אבקת אובה טהורה פרימיום – ALATA UBE<br />\n</b></p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"5,0,0\">חומר הגלם הטרנדי בעולם עכשיו אצלכם: 100% שורש יאם סגול טהור, בלי צבעי מאכל סינתטיים</span><span data-path-to-node=\"5,0,2\">.</span></p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"8,0\">הכירו את הטרנד העולמי שכובש את בתי הקפה והקולינריה המובילים בעולם, ועכשיו זמין בישראל</span><span data-path-to-node=\"8,2\">. אבקת האובה של <b data-path-to-node=\"8,2\" data-index-in-node=\"16\">ALATA</b> עשויה מ-100% שורש יאם סגול (Purple Yam) טבעי ואיכותי, ללא צבעי מאכל סינתטיים, ללא חומרים משמרים וללא תוספת סוכר</span><span data-path-to-node=\"8,4\">.</span></p>\n<p>&nbsp;</p>\n<p data-path-to-node=\"2\"><span data-path-to-node=\"9,0\">האבקה מעניקה צבע סגול עמוק ומהפנט יחד עם טעם עדין, מתקתק ואגוזי שמשתלב בקלות ובאחידות בכל סוגי החלב, המשקאות (חמים או קר, כולל לאטה ושייקים), הגלידות, המאפים והקינוחים שלכם</span><span data-path-to-node=\"9,2\">.</span></p>\n<p data-path-to-node=\"10\"><b data-path-to-node=\"10\" data-index-in-node=\"0\">יתרונות בולטים:</b></p>\n<ul data-path-to-node=\"11\">\n<li>\n<p id=\"p-rc_e1d6f16342428130-52\" data-path-to-node=\"11,0,0\"><span data-path-to-node=\"11,0,0,0\"><b data-path-to-node=\"11,0,0,0\" data-index-in-node=\"0\">100% טבעי וטהור:</b> חומר גלם ברמת פרימיום (Clean Label), טבעוני וללא גלוטן</span><span data-path-to-node=\"11,0,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-53\" data-path-to-node=\"11,1,0\"><span data-path-to-node=\"11,1,0,0\"><b data-path-to-node=\"11,1,0,0\" data-index-in-node=\"0\">עשיר בנוגדי חמצון:</b> מכיל פיגמנטים טבעיים ממשפחת האנתוציאנינים, לצד סיבים תזונתיים וויטמינים (A ו-C)</span><span data-path-to-node=\"11,1,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-54\" data-path-to-node=\"11,2,0\"><span data-path-to-node=\"11,2,0,0\"><b data-path-to-node=\"11,2,0,0\" data-index-in-node=\"0\">עקביות ונוחות בעבודה:</b> אבקה יבשה עם חיי מדף ארוכים של 24 חודשים, המבטיחה תוצאה אחידה בטעם ובצבע לאורך זמן</span><span data-path-to-node=\"11,2,0,2\">.</span></p>\n</li>\n<li>\n<p id=\"p-rc_e1d6f16342428130-55\" data-path-to-node=\"11,3,0\"><span data-path-to-node=\"11,3,0,0\"><b data-path-to-node=\"11,3,0,0\" data-index-in-node=\"0\">ורסטיליות קולינרית:</b> מתאים למסעדות, בתי קפה, קונדיטוריות ולשימוש ביתי</span><span data-path-to-node=\"11,3,0,2\">.</span></p>\n</li>\n</ul>\n<p data-path-to-node=\"2\">\n</blockquote>\n",
+   "meta": {},
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 82915,
+   "name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל (אפור)",
+   "short_description": "<ul>\n<li>תוכנן לעבוד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הספל ולחלוט עד הסוף.</li>\n<li>ספל קפה טרמי לשמירה על חום וקור</li>\n<li>אטימה מלאה למניעת דליפות</li>\n<li>שומר על הקפה חם</li>\n<li>ספל מבודד בעל דופן כפולה</li>\n<li>ללא BPA</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">כוס HARIO טרמית מנירוסטה 300 מ\"ל (אפור)</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>כוס קפה טרמית לשמירה על חום וקור</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>אטימה מלאה למניעת דליפות</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>שומרת על הקפה חם</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>כוס מבודדת בעלת דופן כפולה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>ללא BPA</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את החברה החדשה שלכם. ברגע שתשתמשו בכוס התרמית של הריו, לעולם לא תרצו להשתמש בשום דבר אחר. כוס מבודדת 300 מ\"ל Hario עם מכסה 300</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם לשימוש בבית, בעבודה או לנסיעה. כוס נסיעות מסוגננת זאת עשויה נירוסטה איכותית וכוללת דופן כפולה ומכסה גומי. מבנה הנירוסטה בעל הדופן הכפולה מסייע בשמירה על יציבות הטמפרטורה ושומר על הקפה חם לאורך זמן. המכסה העליון אטום לנזילות ומונע דליפה מקרית בעת סגירתו. פשוט להכניס את הכוס לתיק הנסיעות שלך מבלי לדאוג שהנוזל ידלוף.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכוס המבודדת עם המכסה היא המיכל המושלם למשקאות החמים או הקרים שלכם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החומר עשוי מנירוסטה חזקה 18/8 כך שהוא לא יחליד וחזיק מעמד לאורך שנים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>המכסה העליון מאפשר לך לפתוח, לשתות, לסגור ביד אחת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיצוב דופן כפולה כדי להבטיח שהקפה שלכם יישאר חם יותר זמן ואילו החלק החיצוני של הספל יישאר קריר ונוח לאחיזה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תוכנן גם לעבוד יחד עם פילטר דריפ הריו בכל גודל או פשוט לשים את הדריפ Hario V60 על גבי הכוס ולחלוט עד הסוף.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "כוס/ספל קפה איכותי בעיצוב מקצועי. שומר על טמפרטורה נכונה ומעניק חוויית שתייה מושלמת - בנפח 300 מל | כוס HARIO"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  }
+ ]
+}

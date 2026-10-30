@@ -1,0 +1,1122 @@
+{
+ "edits": [
+  {
+   "product_id": 67674,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא, המשלבות ניחוחות עץ, תבלינים וקקאו. קלייה בינונית מדויקת מבטיחה הפקת קפה מושלמת בכל כוס.",
+   "new": "קפסולות Lavazza Espresso Gourmet Chocolate – אספרסו עשיר בניחוח שוקולד, קלייה בינונית.",
+   "finding": "מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא"
+  },
+  {
+   "product_id": 67674,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא, המשלבות ניחוחות עץ, תבלינים וקקאו",
+   "new": "גורמה שוקולד – קפסולות אספרסו עשיר בניחוח שוקולד, קלייה בינונית",
+   "finding": "מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא"
+  },
+  {
+   "product_id": 81722,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81734,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81735,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81736,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81737,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81742,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81743,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81744,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81745,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81746,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />\nעשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />\nמושלם לחוויית קפה יומיומית בבית או בעבודה.",
+   "new": "תחתית קרמית מסדרת Pico.<br />\nעשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />\nמתאימה לשימוש במדיח כלים ובמיקרוגל.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81722,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "ספל לאטה 240 מל מרווה - מינוטו של notneutral",
+   "new": "תחתית לקפוצ׳ינו ולאטה notNeutral Pico, מרווה | מינוטו",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81722,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.",
+   "new": "NotNeutral pico, תחתית לקפוצינו/לאטה בצבע מרווה. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+   "finding": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico."
+  },
+  {
+   "product_id": 81724,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כ־240 מ״ל",
+   "new": "כ־355 מ״ל",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81725,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כ־240 מ״ל",
+   "new": "כ־355 מ״ל",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81726,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כ־240 מ״ל",
+   "new": "כ־355 מ״ל",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81727,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כ־240 מ״ל",
+   "new": "כ־355 מ״ל",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81733,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "כ־240 מ״ל",
+   "new": "כ־355 מ״ל",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81724,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "ספל לאטה 240 מל מרווה - מינוטו של notneutral",
+   "new": "ספל לאטה גדול notNeutral Pico 355 מ״ל, מרווה | מינוטו",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81724,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.",
+   "new": "NotNeutral pico, ספל לאטה גדול 355 מ\"ל בצבע מרווה. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81725,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "ספל לאטה 240 מל מרווה - מינוטו של notneutral",
+   "new": "ספל לאטה גדול notNeutral Pico 355 מ״ל, לבן | מינוטו",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 81725,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.",
+   "new": "NotNeutral pico, ספל לאטה גדול 355 מ\"ל בצבע לבן. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",
+   "finding": "ומתאים לנפח של כ־240 מ״ל"
+  },
+  {
+   "product_id": 82277,
+   "variation_id": null,
+   "target": "name",
+   "old": "רומא אספרסו 100% ערביקה -",
+   "new": "רומא אספרסו -",
+   "finding": "רומא אספרסו 100% ערביקה"
+  },
+  {
+   "product_id": 82277,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "רומא, 100% ערביקה |",
+   "new": "רומא |",
+   "finding": "רומא אספרסו 100% ערביקה"
+  },
+  {
+   "product_id": 67249,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "30 קפסולות מכילות קפה",
+   "new": "16 קפסולות מכילות קפה",
+   "finding": "30 קפסולות מכילות קפה"
+  },
+  {
+   "product_id": 67253,
+   "variation_id": null,
+   "target": "description",
+   "old": "אריזה של 30 קפסולות",
+   "new": "אריזה של 16 קפסולות",
+   "finding": "אריזה של 30 קפסולות"
+  },
+  {
+   "product_id": 65045,
+   "variation_id": null,
+   "target": "description",
+   "old": "בטעם קרם ברולה",
+   "new": "בטעם קרמל",
+   "finding": "16  קפסולות בטעם קרם ברולה"
+  },
+  {
+   "product_id": 67228,
+   "variation_id": null,
+   "target": "description",
+   "old": "אספרסו נאפולי סטייל",
+   "new": "אספרסו אינטנסו",
+   "finding": "קפסולות דולצ׳ה גוסטו אספרסו נאפולי סטייל"
+  },
+  {
+   "product_id": 67376,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אספרסו מור אינטנסו כשר לפסח,",
+   "new": "אספרסו מור פורטה כשר לפסח,",
+   "finding": "קפסולות תואמות דולצ׳ה גוסטו אספרסו מור אינטנסו כשר לפסח,"
+  },
+  {
+   "product_id": 67384,
+   "variation_id": null,
+   "target": "description",
+   "old": "אמודו מיו דולצ׳ה מקורי,",
+   "new": "אמודו מיו פסיונאל מקורי,",
+   "finding": "קפסולות לוואצה אמודו מיו דולצ׳ה מקורי,"
+  },
+  {
+   "product_id": 68261,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גראנד &#8211; Espresso Club",
+   "new": "קרם &#8211; Espresso Club",
+   "finding": "גראנד – Espresso Club"
+  },
+  {
+   "product_id": 68375,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גראנד &#8211; Espresso Club",
+   "new": "בלאק &#8211; Espresso Club",
+   "finding": "גראנד – Espresso Club"
+  },
+  {
+   "product_id": 68376,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גראנד &#8211; Espresso Club",
+   "new": "אינטנסו &#8211; Espresso Club",
+   "finding": "גראנד – Espresso Club"
+  },
+  {
+   "product_id": 81714,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פל קפוצ׳ינו Pico לבן",
+   "new": "ספל קפוצ׳ינו Pico טבעי",
+   "finding": "פל קפוצ׳ינו Pico לבן"
+  },
+  {
+   "product_id": 81718,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פל קפוצ׳ינו Pico לבן",
+   "new": "ספל קפוצ׳ינו Pico כחול",
+   "finding": "פל קפוצ׳ינו Pico לבן"
+  },
+  {
+   "product_id": 81716,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Pico בצבע טבעי",
+   "new": "Pico בצבע כחול",
+   "finding": "ספל אספרסו קרמי Pico בצבע טבעי"
+  },
+  {
+   "product_id": 82277,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia",
+   "new": "קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma",
+   "finding": "קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia"
+  },
+  {
+   "product_id": 65378,
+   "variation_id": null,
+   "target": "description",
+   "old": "טקסט למטא תגים (Google Meta):",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 65378,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפסולות קפה, לאווהצה, נספרסו, אורגני, אפריקה, ¡Tierra!, קפה איכותי, קפה עוצמתי, קקאו, פירות יבשים, קפה אתי, קיימות",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 65378,
+   "variation_id": null,
+   "target": "description",
+   "old": "הצעות נוספות למילות מפתח:",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 65378,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה שחור, קפה אספרסו, קפסולות קפה מתכלות, קפה טרי, קפה בוטיק, קפה ירוק, קפה סחר הוגן",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 67151,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "</strong> URL מינוטו קפה",
+   "new": "</strong> www.minuto.co.il",
+   "finding": "בקרו באתר מינוטו קפה: URL מינוטו קפה"
+  },
+  {
+   "product_id": 64890,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מכיל 16 קפסולות קפה",
+   "new": "מכיל 16 קפסולות שוקו",
+   "finding": "מכיל 16 קפסולות קפה"
+  },
+  {
+   "product_id": 64890,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספל שוקו גדולה ומנחמת",
+   "new": "ספל שוקו גדול ומנחם",
+   "finding": "מכיל 16 קפסולות קפה"
+  },
+  {
+   "product_id": 64891,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מכיל 16 קפסולות קפה",
+   "new": "מכיל 16 קפסולות",
+   "finding": "מכיל 16 קפסולות קפה"
+  },
+  {
+   "product_id": 67305,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>30 קפסולות</p>",
+   "new": "<p>16 קפסולות</p>",
+   "finding": "30 קפסולות"
+  },
+  {
+   "product_id": 64758,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>",
+   "new": "מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 64758,
+   "variation_id": null,
+   "target": "description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 64758,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81467,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>",
+   "new": "מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81467,
+   "variation_id": null,
+   "target": "description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81467,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81471,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>",
+   "new": "מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81471,
+   "variation_id": null,
+   "target": "description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 81471,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Electric Griinder",
+   "new": "Electric Grinder",
+   "finding": "מטחנת קפה (VARIA VS3 (2ND GENERATION"
+  },
+  {
+   "product_id": 64779,
+   "variation_id": null,
+   "target": "name",
+   "old": "Nitro Blade Cooper",
+   "new": "Nitro Blade Copper",
+   "finding": "Nitro Blade Cooper"
+  },
+  {
+   "product_id": 64779,
+   "variation_id": null,
+   "target": "description",
+   "old": "Nitro Blade cooper</h1>",
+   "new": "Nitro Blade Copper</h1>",
+   "finding": "Nitro Blade Cooper"
+  },
+  {
+   "product_id": 64779,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת ללהבים",
+   "new": "הבחירה בחומר המתכתי ללהבים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64936,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת ללהבים",
+   "new": "הבחירה בחומר המתכתי ללהבים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64937,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת ללהבים",
+   "new": "הבחירה בחומר המתכתי ללהבים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64938,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת ללהבים",
+   "new": "הבחירה בחומר המתכתי ללהבים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 65045,
+   "variation_id": null,
+   "target": "description",
+   "old": "זה הזמן זמן להתענג",
+   "new": "זה הזמן להתענג",
+   "finding": "זה הזמן זמן להתענג"
+  },
+  {
+   "product_id": 65051,
+   "variation_id": null,
+   "target": "description",
+   "old": "זה הזמן זמן להתענג",
+   "new": "זה הזמן להתענג",
+   "finding": "זה הזמן זמן להתענג"
+  },
+  {
+   "product_id": 65193,
+   "variation_id": null,
+   "target": "description",
+   "old": "זה הזמן זמן להתענג",
+   "new": "זה הזמן להתענג",
+   "finding": "זה הזמן זמן להתענג"
+  },
+  {
+   "product_id": 65052,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פוליח קפה",
+   "new": "מיכל פולי קפה",
+   "finding": "מיכל פוליח קפה 500 גרם"
+  },
+  {
+   "product_id": 65055,
+   "variation_id": null,
+   "target": "description",
+   "old": "למשתמש הביתי ההממוצע(לא באמת).",
+   "new": "למשתמש הביתי המקצועי.",
+   "finding": "למשתמש הביתי ההממוצע(לא באמת)"
+  },
+  {
+   "product_id": 65055,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למשתמש הביתי ההממוצע(לא באמת).",
+   "new": "למשתמש הביתי המקצועי.",
+   "finding": "למשתמש הביתי ההממוצע(לא באמת)"
+  },
+  {
+   "product_id": 65055,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>בחיר בין",
+   "new": "<p>בחירה בין",
+   "finding": "למשתמש הביתי ההממוצע(לא באמת)"
+  },
+  {
+   "product_id": 65055,
+   "variation_id": null,
+   "target": "description",
+   "old": "סכינןם",
+   "new": "סכינים",
+   "finding": "למשתמש הביתי ההממוצע(לא באמת)"
+  },
+  {
+   "product_id": 65203,
+   "variation_id": null,
+   "target": "description",
+   "old": "Rancilio Silviaארץ יצור: איטליה.",
+   "new": "Rancilio Silvia. ארץ ייצור: איטליה.",
+   "finding": "Rancilio Silviaארץ יצור: איטליה."
+  },
+  {
+   "product_id": 65378,
+   "variation_id": null,
+   "target": "description",
+   "old": "קרן לוואלה",
+   "new": "קרן לוואצה",
+   "finding": "שם קרן לוואלה תומכת"
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "בצורה חלקה בין.",
+   "new": "בצורה חלקה בין כל הדרגות.",
+   "finding": "כיוון הטחינה עובד בצורה חלקה בין."
+  },
+  {
+   "product_id": 67171,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי"
+  },
+  {
+   "product_id": 67384,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי"
+  },
+  {
+   "product_id": 67385,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי"
+  },
+  {
+   "product_id": 67315,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו"
+  },
+  {
+   "product_id": 67316,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו"
+  },
+  {
+   "product_id": 67383,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו"
+  },
+  {
+   "product_id": 79334,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "new": "36 קפסולות לוואצה אמודו מיו מקוריות",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו"
+  },
+  {
+   "product_id": 67240,
+   "variation_id": null,
+   "target": "name",
+   "old": "Italian Coffee Cappucci",
+   "new": "Italian Coffee Cappuccino",
+   "finding": "Italian Coffee Cappucci"
+  },
+  {
+   "product_id": 67240,
+   "variation_id": null,
+   "target": "description",
+   "old": "Italian Coffee Cappucci</h3>",
+   "new": "Italian Coffee Cappuccino</h3>",
+   "finding": "Italian Coffee Cappucci"
+  },
+  {
+   "product_id": 67243,
+   "variation_id": null,
+   "target": "description",
+   "old": "ל-17 (גס מאוד, תלוי בשיטת החליטה.",
+   "new": "ל-17 (גס מאוד), בהתאם לשיטת החליטה.",
+   "finding": "מ-1 (עדין מאוד) ל-17 (גס מאוד, תלוי בשיטת החליטה."
+  },
+  {
+   "product_id": 67303,
+   "variation_id": null,
+   "target": "description",
+   "old": "תערובuת",
+   "new": "תערובת",
+   "finding": "תערובuת"
+  },
+  {
+   "product_id": 67303,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "תערובuת",
+   "new": "תערובת",
+   "finding": "תערובuת"
+  },
+  {
+   "product_id": 67313,
+   "variation_id": null,
+   "target": "description",
+   "old": "212x309x360ג ממ",
+   "new": "212x309x360 מ\"מ",
+   "finding": "212x309x360ג ממ"
+  },
+  {
+   "product_id": 67319,
+   "variation_id": null,
+   "target": "description",
+   "old": "212x309x432ג ממ",
+   "new": "212x309x432 מ\"מ",
+   "finding": "212x309x432ג ממ"
+  },
+  {
+   "product_id": 67365,
+   "variation_id": null,
+   "target": "description",
+   "old": "למכונתו נספרסו",
+   "new": "למכונות נספרסו",
+   "finding": "כדי להתאים למכונתו נספרסו"
+  },
+  {
+   "product_id": 67395,
+   "variation_id": null,
+   "target": "description",
+   "old": "ועוצמה גבהוו",
+   "new": "ועוצמה גבוהה",
+   "finding": "ועוצמה גבהוו"
+  },
+  {
+   "product_id": 67395,
+   "variation_id": null,
+   "target": "description",
+   "old": "איטנסיבי",
+   "new": "אינטנסיבי",
+   "finding": "ועוצמה גבהוו"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO Gusto של Nescafé:",
+   "new": "Intenso Gusto של Nescafé:",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO Gusto ש",
+   "new": "Intenso Gusto ש",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": " ב-Café au Lait INRENSO",
+   "new": " ב-Café au Lait Intenso",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO Gusto מצי",
+   "new": "Intenso Gusto מצי",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO Gusto א",
+   "new": "Intenso Gusto א",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO Gusto מ",
+   "new": "Intenso Gusto מ",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "description",
+   "old": "INRENSO",
+   "new": "Intenso",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 67615,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "INRENSO",
+   "new": "Intenso",
+   "finding": "Café au Lait INRENSO Gusto"
+  },
+  {
+   "product_id": 68306,
+   "variation_id": null,
+   "target": "description",
+   "old": "LavAzza ESPESSO POINT",
+   "new": "LavAzza ESPRESSO POINT",
+   "finding": "LavAzza ESPESSO POINT"
+  },
+  {
+   "product_id": 68385,
+   "variation_id": null,
+   "target": "description",
+   "old": "קימבו ריסטרו לנספרסו",
+   "new": "קימבו ריסטרטו לנספרסו",
+   "finding": "קפסולות קימבו ריסטרו לנספרסו"
+  },
+  {
+   "product_id": 68385,
+   "variation_id": null,
+   "target": "description",
+   "old": "לקפוצי׳נו",
+   "new": "לקפוצ׳ינו",
+   "finding": "קפסולות קימבו ריסטרו לנספרסו"
+  },
+  {
+   "product_id": 68385,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לקפוצי׳נו",
+   "new": "לקפוצ׳ינו",
+   "finding": "קפסולות קימבו ריסטרו לנספרסו"
+  },
+  {
+   "product_id": 76368,
+   "variation_id": null,
+   "target": "description",
+   "old": "ותגובה חפצית",
+   "new": "ומשוב רטט",
+   "finding": "תגובה חפצית"
+  },
+  {
+   "product_id": 76368,
+   "variation_id": null,
+   "target": "description",
+   "old": "עם ספירה של מהפכות",
+   "new": "עם ספירת סיבובים",
+   "finding": "תגובה חפצית"
+  },
+  {
+   "product_id": 81107,
+   "variation_id": null,
+   "target": "description",
+   "old": "ותגובה חפצית",
+   "new": "ומשוב רטט",
+   "finding": "תגובה חפצית"
+  },
+  {
+   "product_id": 81107,
+   "variation_id": null,
+   "target": "description",
+   "old": "עם ספירה של מהפכות",
+   "new": "עם ספירת סיבובים",
+   "finding": "תגובה חפצית"
+  },
+  {
+   "product_id": 76639,
+   "variation_id": null,
+   "target": "description",
+   "old": "קלה </span><span class=\"_fadeIn_m1hgl_8\">בדרגה",
+   "new": "קלויה </span><span class=\"_fadeIn_m1hgl_8\">בדרגה",
+   "finding": "ה תערובת שלנו קלה בדרגה בינונית כהה"
+  },
+  {
+   "product_id": 78155,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מתקדמות.0",
+   "new": "מתקדמות.",
+   "finding": "שימוש בשיטות ייצור מתקדמות.0"
+  },
+  {
+   "product_id": 78157,
+   "variation_id": null,
+   "target": "description",
+   "old": "¡¡Tierra! For Amazonia",
+   "new": "¡Tierra! For Amazonia",
+   "finding": "¡¡Tierra! For Amazonia"
+  },
+  {
+   "product_id": 78396,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "﻿</span>מטחנת קפה",
+   "new": "</span>מטחנת קפה",
+   "finding": "﻿ מטחנת קפה ידנית מדויקת וקומפקטית מבית Wacaco. ﻿"
+  },
+  {
+   "product_id": 78396,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "﻿</span><br />",
+   "new": "</span><br />",
+   "finding": "﻿ מטחנת קפה ידנית מדויקת וקומפקטית מבית Wacaco. ﻿"
+  },
+  {
+   "product_id": 78695,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "פל קפוצ׳ינו Pico לבן",
+   "new": "ספל קפוצ׳ינו Pico לבן",
+   "finding": "פל קפוצ׳ינו Pico לבן"
+  },
+  {
+   "product_id": 81129,
+   "variation_id": null,
+   "target": "name",
+   "old": "600 יחדות",
+   "new": "600 יחידות",
+   "finding": "600 יחדות"
+  },
+  {
+   "product_id": 81722,
+   "variation_id": null,
+   "target": "description",
+   "old": "זו שבדך כלל",
+   "new": "זו שבדרך כלל",
+   "finding": "זו שבדך כלל שוכחים ממנה"
+  },
+  {
+   "product_id": 81734,
+   "variation_id": null,
+   "target": "description",
+   "old": "זו שבדך כלל",
+   "new": "זו שבדרך כלל",
+   "finding": "זו שבדך כלל שוכחים ממנה"
+  },
+  {
+   "product_id": 81735,
+   "variation_id": null,
+   "target": "description",
+   "old": "זו שבדך כלל",
+   "new": "זו שבדרך כלל",
+   "finding": "זו שבדך כלל שוכחים ממנה"
+  },
+  {
+   "product_id": 81736,
+   "variation_id": null,
+   "target": "description",
+   "old": "זו שבדך כלל",
+   "new": "זו שבדרך כלל",
+   "finding": "זו שבדך כלל שוכחים ממנה"
+  },
+  {
+   "product_id": 81737,
+   "variation_id": null,
+   "target": "description",
+   "old": "זו שבדך כלל",
+   "new": "זו שבדרך כלל",
+   "finding": "זו שבדך כלל שוכחים ממנה"
+  },
+  {
+   "product_id": 64893,
+   "variation_id": null,
+   "target": "description",
+   "old": "קוסטה ריקה - תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה - תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 64893,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 68438,
+   "variation_id": null,
+   "target": "description",
+   "old": "קוסטה ריקה - תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה - תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 68438,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81125,
+   "variation_id": null,
+   "target": "description",
+   "old": "קוסטה ריקה - תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה - תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81125,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81129,
+   "variation_id": null,
+   "target": "description",
+   "old": "קוסטה ריקה - תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה - תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81129,
+   "variation_id": null,
+   "target": "description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 68438,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קוסטה ריקה &#8211; תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה &#8211; תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 68438,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81125,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קוסטה ריקה &#8211; תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה &#8211; תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81125,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81129,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קוסטה ריקה &#8211; תערובת דרום אמריקאית",
+   "new": "קוסטה ריקה &#8211; תערובת מרכז אמריקאית",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  },
+  {
+   "product_id": 81129,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קפה קולמביאני",
+   "new": "קפה קולומביאני",
+   "finding": "קוסטה ריקה - תערובת דרום אמריקאית"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "קפסולות לוואצה אמודו מיו אספרסו דלציוזו,",
+   "product_id": 67385,
+   "reason": "Needs a new Suerte description and blend composition, which the catalog doesn't contain."
+  },
+  {
+   "finding": "צבע: לבן, שחור",
+   "product_id": 67653,
+   "reason": "Removing an attribute option isn't a single-value swap, and which colours really exist must be checked with the supplier."
+  },
+  {
+   "finding": "צבע: אדום, ברונז, נירוסטה",
+   "product_id": 68264,
+   "reason": "Three options would need to collapse into one value (לבן-שחור); not a single-option edit, and the real colour must be confirmed."
+  },
+  {
+   "finding": "משקל נטו 13.2 ק״ג",
+   "product_id": 67262,
+   "reason": "Correct net and gross weights must be looked up with the manufacturer."
+  },
+  {
+   "finding": "מקינטה ביאלטי - Bialetti",
+   "product_id": 64942,
+   "reason": "Categories are not an editable target in this plan."
+  },
+  {
+   "finding": "כל מלאי היבואן אצלנו במלאי ! זמין במלאי למשלוח מידי.",
+   "product_id": 65176,
+   "reason": "Stock and availability messaging is a business decision."
+  },
+  {
+   "finding": "PERÚ CAJAMARCA ESPRESSO מהדורה מוגבלת - Copy",
+   "product_id": 68251,
+   "reason": "Product is a published duplicate; renaming vs deleting/merging it is a business decision."
+  },
+  {
+   "finding": "weight: 8032680752674",
+   "product_id": 68386,
+   "reason": "Weight is not an editable target here, and the real weight isn't in the catalog."
+  },
+  {
+   "finding": "notneutral-pico-ספל-לאטה-גדול-355-מל-בצבע-כחול",
+   "product_id": 81722,
+   "reason": "Permalink/slug is not an editable target in this plan (changing it also needs a redirect)."
+  },
+  {
+   "finding": "מותג: DF64",
+   "product_id": 67653,
+   "reason": "Brand is likely a shared taxonomy term; whether the right value is DF54 or DF isn't unambiguous."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68384,
+   "reason": "Missing content (empty short description)."
+  },
+  {
+   "finding": "רק אצלנו במלאי",
+   "product_id": 68264,
+   "reason": "Stock/exclusivity claim is a business decision."
+  }
+ ]
+}

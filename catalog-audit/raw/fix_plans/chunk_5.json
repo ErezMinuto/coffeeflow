@@ -1,0 +1,592 @@
+{
+ "edits": [
+  {
+   "product_id": 65057,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "3 כוסות (350 מ&quot;ל)",
+   "new": "8 כוסות (1 ליטר)",
+   "finding": "פרנץ׳ פרס ביאלטי עם קיבולת של 3 כוסות (350 מ\"ל)"
+  },
+  {
+   "product_id": 65092,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בדריפ שני מסנני רשת קוניים דקים חופפים. להכנת קפה פילטר המאוד דומה בתוצאה לקפה מפילטר נייר",
+   "new": "קנקן מזיגה Hario AIR בנפח 350 מ&quot;ל, קל משקל ושקוף, אידיאלי להיכרות ראשונה עם הכנת קפה פילטר",
+   "finding": "בדריפ שני מסנני רשת קוניים דקים חופפים"
+  },
+  {
+   "product_id": 79213,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"372\" data-end=\"375\" />תערובת טבעית של ג’ינג’ר ליים טרי וצמחים אורגניים לטעימה מרעננת עם ניחוח הדרית ומגע חריף עדין. <br />חליטה חמה או קרה, נטולת קפאין ומתאימה לכל שעה ביום.חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"311\" data-end=\"314\" />תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה. <br />ניתן לשתות גם כחליטה חמה או קרה. מוצר אורגני איכותי בפיקוח סקאל ומשרד החקלאות.",
+   "new": "חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=\"372\" data-end=\"375\" />תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה. <br />חליטה נטולת קפאין ומתאימה לכל שעה ביום.<br data-start=\"311\" data-end=\"314\" />ניתן לשתות גם כחליטה חמה או קרה. <br />מוצר אורגני איכותי בפיקוח סקאל ומשרד החקלאות.",
+   "finding": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים."
+  },
+  {
+   "product_id": 64799,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "51 מ&quot;מ",
+   "new": "57 מ&quot;מ",
+   "finding": "ידית שחורה ואיכותית\n 51 מ\"מ"
+  },
+  {
+   "product_id": 64997,
+   "variation_id": null,
+   "target": "short_description",
+   "old": " עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות  / טעמים",
+   "new": "",
+   "finding": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות"
+  },
+  {
+   "product_id": 65048,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות  / טעמים",
+   "new": "",
+   "finding": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות"
+  },
+  {
+   "product_id": 65215,
+   "variation_id": null,
+   "target": "description",
+   "old": "האחים שעועית מחזיקים את השרת Hario V60 בשני גדלים שונים - נקה 600 מ\"ל 02 ונקי 360 מ\"ל 01. פשוט בחר את הגודל הדרוש לך מהתפריט הנפתח למטה.",
+   "new": "",
+   "finding": "האחים שעועית מחזיקים את השרת Hario V60 בשני גדלים שונים"
+  },
+  {
+   "product_id": 65226,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "1 כוסות V60 מפלסטיק הריו Hario VD-02R",
+   "new": "1 כוס V60 מפלסטיק הריו Hario VD-01R",
+   "finding": "מעמד לקפה פילטר 1 כוסות V60 מפלסטיק הריו Hario VD-02R"
+  },
+  {
+   "product_id": 65226,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "או או לקומוקום",
+   "new": "או לקנקן",
+   "finding": "מעמד לקפה פילטר 1 כוסות V60 מפלסטיק הריו Hario VD-02R"
+  },
+  {
+   "product_id": 82537,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בצבע לבן",
+   "new": "בצבע ירוק עשן",
+   "finding": "קומקום חשמלי Stagg EKG בצבע לבן"
+  },
+  {
+   "product_id": 65223,
+   "variation_id": null,
+   "target": "name",
+   "old": "VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02",
+   "new": "VDGR-02",
+   "finding": "דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר..."
+  },
+  {
+   "product_id": 65099,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "קנקנן הריו לחליטה קרה צבע שוקולד",
+   "new": "קנקן הריו לחליטה קרה צבע אדום",
+   "finding": "קנקנן הריו לחליטה קרה צבע שוקולד"
+  },
+  {
+   "product_id": 67295,
+   "variation_id": null,
+   "target": "attribute:מותג",
+   "old": "Toddy",
+   "new": "Clever",
+   "finding": "מותג: Toddy"
+  },
+  {
+   "product_id": 65468,
+   "variation_id": null,
+   "target": "description",
+   "old": "יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף בתנועות מהירות",
+   "new": "יש להוסיף מים חמים ולהקציף בעזרת מקצף במבוק (צ'אסן) בתנועות מהירות",
+   "finding": "יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף"
+  },
+  {
+   "product_id": 64798,
+   "variation_id": null,
+   "target": "description",
+   "old": "להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה עוד היום!",
+   "new": "הזמינו עכשיו את WDT Needles Coffee Tool באתר מינוטו קפה!",
+   "finding": "להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה"
+  },
+  {
+   "product_id": 64798,
+   "variation_id": null,
+   "target": "description",
+   "old": "  המתאימות למגוון רחב של פורטה-פילטר.",
+   "new": " מתאים למגוון רחב של פורטה-פילטר.",
+   "finding": "להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה"
+  },
+  {
+   "product_id": 64894,
+   "variation_id": null,
+   "target": "description",
+   "old": "בורוסיליקט kלא",
+   "new": "בורוסיליקט ללא",
+   "finding": "עשוי מזכוכית בורוסיליקט kלא נקבובית"
+  },
+  {
+   "product_id": 64995,
+   "variation_id": null,
+   "target": "description",
+   "old": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "new": "",
+   "finding": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו."
+  },
+  {
+   "product_id": 64996,
+   "variation_id": null,
+   "target": "description",
+   "old": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "new": "",
+   "finding": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו."
+  },
+  {
+   "product_id": 65076,
+   "variation_id": null,
+   "target": "description",
+   "old": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+   "new": "",
+   "finding": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו."
+  },
+  {
+   "product_id": 65014,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ספלק",
+   "new": "ספל",
+   "finding": "מגיע עם ספלק אירופרס"
+  },
+  {
+   "product_id": 65014,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן ללהכין",
+   "new": "ניתן להכין",
+   "finding": "מגיע עם ספלק אירופרס"
+  },
+  {
+   "product_id": 65014,
+   "variation_id": null,
+   "target": "description",
+   "old": "קל ומשקל",
+   "new": "קל משקל",
+   "finding": "מגיע עם ספלק אירופרס"
+  },
+  {
+   "product_id": 65157,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן ללהכין",
+   "new": "ניתן להכין",
+   "finding": "ניתן ללהכין ... קל ומשקל"
+  },
+  {
+   "product_id": 65157,
+   "variation_id": null,
+   "target": "description",
+   "old": "קל ומשקל",
+   "new": "קל משקל",
+   "finding": "ניתן ללהכין ... קל ומשקל"
+  },
+  {
+   "product_id": 65079,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנונית",
+   "new": "בינונית",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 65079,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבייתיים",
+   "new": "הביתיים",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 65244,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנונית",
+   "new": "בינונית",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 65244,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבייתיים",
+   "new": "הביתיים",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 68282,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנונית",
+   "new": "בינונית",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 68282,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבייתיים",
+   "new": "הביתיים",
+   "finding": "קשיות (אבנית) בנונית"
+  },
+  {
+   "product_id": 65083,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למקקינטה",
+   "new": "למקינטה",
+   "finding": "וסט פילטר למקקינטה ביאלטי"
+  },
+  {
+   "product_id": 81418,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למקקינטה",
+   "new": "למקינטה",
+   "finding": "וסט פילטר למקקינטה ביאלטי"
+  },
+  {
+   "product_id": 81430,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למקקינטה",
+   "new": "למקינטה",
+   "finding": "וסט פילטר למקקינטה ביאלטי"
+  },
+  {
+   "product_id": 81436,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למקקינטה",
+   "new": "למקינטה",
+   "finding": "וסט פילטר למקקינטה ביאלטי"
+  },
+  {
+   "product_id": 65090,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכירו את החברה החדשה שלכם",
+   "new": "הכירו את החבר החדש שלכם",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 65090,
+   "variation_id": null,
+   "target": "description",
+   "old": "Hario עם מכסה 300",
+   "new": "Hario עם מכסה",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 65090,
+   "variation_id": null,
+   "target": "description",
+   "old": "וחזיק מעמד",
+   "new": "ויחזיק מעמד",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 82915,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכירו את החברה החדשה שלכם",
+   "new": "הכירו את החבר החדש שלכם",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 82915,
+   "variation_id": null,
+   "target": "description",
+   "old": "Hario עם מכסה 300",
+   "new": "Hario עם מכסה",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 82915,
+   "variation_id": null,
+   "target": "description",
+   "old": "וחזיק מעמד",
+   "new": "ויחזיק מעמד",
+   "finding": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300"
+  },
+  {
+   "product_id": 65091,
+   "variation_id": null,
+   "target": "description",
+   "old": "Hario עם מכסה 300",
+   "new": "Hario עם מכסה",
+   "finding": "Hario עם מכסה 300 ... וחזיק מעמד"
+  },
+  {
+   "product_id": 65091,
+   "variation_id": null,
+   "target": "description",
+   "old": "וחזיק מעמד",
+   "new": "ויחזיק מעמד",
+   "finding": "Hario עם מכסה 300 ... וחזיק מעמד"
+  },
+  {
+   "product_id": 65209,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בורוסיליקט kלא",
+   "new": "בורוסיליקט ללא",
+   "finding": "עשוי מזכוכית בורוסיליקט kלא נקבובית"
+  },
+  {
+   "product_id": 65209,
+   "variation_id": null,
+   "target": "description",
+   "old": "בורוסיליקט kלא",
+   "new": "בורוסיליקט ללא",
+   "finding": "עשוי מזכוכית בורוסיליקט kלא נקבובית"
+  },
+  {
+   "product_id": 65221,
+   "variation_id": null,
+   "target": "description",
+   "old": "חבק הסילקוון",
+   "new": "חבק הסיליקון",
+   "finding": "חבק הסילקוון"
+  },
+  {
+   "product_id": 65227,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום",
+   "new": "הקפה זורם דרך הקונוס ישירות לתוך הספל שלך או לקנקן",
+   "finding": "הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום"
+  },
+  {
+   "product_id": 65370,
+   "variation_id": null,
+   "target": "description",
+   "old": "להזמנת WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ, ",
+   "new": "הזמינו עכשיו את WDT Needles Coffee Tool - דיסטרביוטור 58 מ\"מ ",
+   "finding": "צרו קשר עם מינוטו קפה עוד היום!"
+  },
+  {
+   "product_id": 65370,
+   "variation_id": null,
+   "target": "description",
+   "old": "צרו קשר עם מינוטו קפה עוד היום!",
+   "new": "באתר מינוטו קפה!",
+   "finding": "צרו קשר עם מינוטו קפה עוד היום!"
+  },
+  {
+   "product_id": 65418,
+   "variation_id": null,
+   "target": "description",
+   "old": "למקצים הבמבוק",
+   "new": "למקצפי הבמבוק",
+   "finding": "מחזיקים תואמים למקצים הבמבוק"
+  },
+  {
+   "product_id": 65466,
+   "variation_id": null,
+   "target": "description",
+   "old": "תה מאצ'ה סרמינייאל, תוצרת",
+   "new": "תה מאצ'ה סרמונייאל, תוצרת",
+   "finding": "תה מאצ'ה סרמינייאל"
+  },
+  {
+   "product_id": 65466,
+   "variation_id": null,
+   "target": "description",
+   "old": "תה מאצ'ה סרמינייאל מציע",
+   "new": "תה מאצ'ה סרמונייאל מציע",
+   "finding": "תה מאצ'ה סרמינייאל"
+  },
+  {
+   "product_id": 65466,
+   "variation_id": null,
+   "target": "description",
+   "old": "עם מאצ'ה סרמינייאל, תוכלו",
+   "new": "עם מאצ'ה סרמונייאל, תוכלו",
+   "finding": "תה מאצ'ה סרמינייאל"
+  },
+  {
+   "product_id": 67200,
+   "variation_id": null,
+   "target": "name",
+   "old": "\"Toddy®",
+   "new": "Toddy®",
+   "finding": "\"Toddy® Cold Brew System"
+  },
+  {
+   "product_id": 67295,
+   "variation_id": null,
+   "target": "description",
+   "old": "בטמם של",
+   "new": "בטמפרטורה של",
+   "finding": "בטמם של 90 עד 95 מעלות"
+  },
+  {
+   "product_id": 68448,
+   "variation_id": null,
+   "target": "description",
+   "old": "וחומריםטבעיים",
+   "new": "וחומרים טבעיים",
+   "finding": "חמצן פעיל וחומריםטבעיים"
+  },
+  {
+   "product_id": 76590,
+   "variation_id": null,
+   "target": "description",
+   "old": "לכל מ</span><span class=\"_fadeIn_m1hgl_8\">טחנת ",
+   "new": "לכל </span><span class=\"_fadeIn_m1hgl_8\">מטחנת ",
+   "finding": "כמעט לכל מ טחנת קפה"
+  },
+  {
+   "product_id": 78262,
+   "variation_id": null,
+   "target": "description",
+   "old": "חובה לכל בר<",
+   "new": "חובה לכל בריסטה שאוהב לאטה ארט.<",
+   "finding": "האיבו 2 – כד ההקצפה המושלם בנפח 480 מ״ל, חובה לכל בר"
+  },
+  {
+   "product_id": 79213,
+   "variation_id": null,
+   "target": "description",
+   "old": "או כקילוף מרענן כשנעשתה קרה",
+   "new": "או כמשקה קר ומרענן",
+   "finding": "כקילוף מרענן כשנעשתה קרה"
+  },
+  {
+   "product_id": 79215,
+   "variation_id": null,
+   "target": "name",
+   "old": "חליטת תה חליטת",
+   "new": "חליטת",
+   "finding": "חליטת תה חליטת ג’ינג’ר וליים"
+  },
+  {
+   "product_id": 81424,
+   "variation_id": null,
+   "target": "name",
+   "old": "מוק הביאלטי",
+   "new": "מוקה ביאלטי",
+   "finding": "גומייה למקינטה מוק הביאלטי - 2 כוסות"
+  },
+  {
+   "product_id": 65067,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "תמיסה יעודית למכונות קפה",
+   "new": "4 קפסולות ניקוי ייעודיות למכונות קפיטאלי ואספרסו קלאב",
+   "finding": "תמיסה יעודית למכונות קפה"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "דוחסן דו שימושי 52/57 מ\"מ ... ובצד השני 58 מ\"מ",
+   "product_id": 68274,
+   "reason": "Which diameter is correct (57 or 58 mm) is not in the catalog data."
+  },
+  {
+   "finding": "פילטר מים למכונת לליט",
+   "product_id": 64901,
+   "reason": "The name already uses the suggested spelling; the body spelling fix is outside this finding and the preferred spelling is an editorial choice."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": 64765,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": 64788,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64765,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64765,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64788,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64788,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65211,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65212,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65213,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65214,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65215,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 65217,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68274,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68276,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 82888,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  },
+  {
+   "finding": "SKU: 1234567",
+   "product_id": 64965,
+   "reason": "Missing content / SKU or image issue; not a text edit (out of scope per spec)."
+  }
+ ]
+}

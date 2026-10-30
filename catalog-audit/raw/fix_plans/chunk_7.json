@@ -1,0 +1,1239 @@
+{
+ "edits": [
+  {
+   "product_id": 65118,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה ומאפשר חליטות טובות ואחידות יותר, פחות תחזוקה ועוזרת לייצר גוף עגול יותר לאספרסו שלך.",
+   "new": "ידית חליטה חתוכה (Bottomless) הכוללת סלסלת נירוסטה עד 21 גרם – לצפייה בזרימת האספרסו ולשיפור הדחיסה והטחינה.",
+   "finding": "מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה"
+  },
+  {
+   "product_id": 65118,
+   "variation_id": null,
+   "target": "description",
+   "old": "לעשות כספל קפוצ׳ינו",
+   "new": "להכין ספל קפוצ׳ינו",
+   "finding": "להפעלת סרטי וידאו המתארים את זרימת החליטה"
+  },
+  {
+   "product_id": 65118,
+   "variation_id": null,
+   "target": "description",
+   "old": "המכונות קפה הקימות בשוק",
+   "new": "המכונות קפה הקיימות בשוק",
+   "finding": "להפעלת סרטי וידאו המתארים את זרימת החליטה"
+  },
+  {
+   "product_id": 65118,
+   "variation_id": null,
+   "target": "description",
+   "old": " להפעלת סרטי וידאו המתארים את זרימת החליטה דרך ידית Naked Portafilter",
+   "new": "",
+   "finding": "להפעלת סרטי וידאו המתארים את זרימת החליטה"
+  },
+  {
+   "product_id": 76799,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכירו את Loveramics Latte Glass 120 ml",
+   "new": "הכירו את Loveramics Latte Glass 180 ml",
+   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted"
+  },
+  {
+   "product_id": 76799,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנפח 120 מ\"ל",
+   "new": "בנפח 180 מ\"ל",
+   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted"
+  },
+  {
+   "product_id": 76799,
+   "variation_id": null,
+   "target": "description",
+   "old": "Latte Glass 120 ml Urban Twisted הוא",
+   "new": "Latte Glass 180 ml Urban Twisted הוא",
+   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted"
+  },
+  {
+   "product_id": 76799,
+   "variation_id": null,
+   "target": "description",
+   "old": "Latte Glass 120 מ\"ל",
+   "new": "Latte Glass 180 מ\"ל",
+   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted"
+  },
+  {
+   "product_id": 82018,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מסדרת Big Bang של IMS (2023)",
+   "new": "מסדרת Competition של IMS",
+   "finding": "עם קיבולת של 18-21 גרם קפה."
+  },
+  {
+   "product_id": 82018,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "עם קיבולת של 18-21 גרם קפה.",
+   "new": "עם קיבולת של 16-18 גרם קפה.",
+   "finding": "עם קיבולת של 18-21 גרם קפה."
+  },
+  {
+   "product_id": 82023,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מסדרת Big Bang של IMS (2023)",
+   "new": "מסדרת Competition של IMS",
+   "finding": "עם קיבולת של 18-21 גרם קפה."
+  },
+  {
+   "product_id": 82023,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "עם קיבולת של 18-21 גרם קפה.",
+   "new": "למנה בודדת, עם קיבולת של 7-9 גרם קפה.",
+   "finding": "עם קיבולת של 18-21 גרם קפה."
+  },
+  {
+   "product_id": 82021,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מסדרת Big Bang של IMS (2023)",
+   "new": "מסדרת Competition של IMS",
+   "finding": "מסדרת Big Bang של IMS (2023)"
+  },
+  {
+   "product_id": 82023,
+   "variation_id": null,
+   "target": "description",
+   "old": "מנה חתא",
+   "new": "מנה אחת",
+   "finding": "קיבולת: מנה חתא"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "קוטר פורטפילטר: 40 מ\"מ",
+   "new": "קוטר פורטפילטר: 58 מ\"מ",
+   "finding": "קוטר פורטפילטר: 40 מ\"מ"
+  },
+  {
+   "product_id": 64712,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "תואמות למכונות נספרסו",
+   "new": "מתאימות למכונות לוואצה A Modo Mio",
+   "finding": "תואמות למכונות נספרסו"
+  },
+  {
+   "product_id": 64712,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לתיקון הקפה היומי שלך",
+   "new": "לכוס הקפה היומית שלכם",
+   "finding": "לתיקון הקפה היומי שלך"
+  },
+  {
+   "product_id": 64752,
+   "variation_id": null,
+   "target": "description",
+   "old": "DeLonghi EC9155.MB",
+   "new": "DeLonghi EC9155.GR",
+   "finding": "התענגו על השמחה של הכנת קפה ידנית עם DeLonghi EC9155.MB"
+  },
+  {
+   "product_id": 64752,
+   "variation_id": null,
+   "target": "description",
+   "old": "צבע: ירוק כסוףמקציף חלב מבודד",
+   "new": "צבע: ירוק כסוף. מקציף חלב מבודד",
+   "finding": "צבע: ירוק כסוףמקציף חלב מבודד"
+  },
+  {
+   "product_id": 65022,
+   "variation_id": null,
+   "target": "description",
+   "old": "מגיעה בשני צבעים לבחירה לבן ונחושת.",
+   "new": "צבע המכונה: שחור ונחושת.",
+   "finding": "מגיעה בשני צבעים לבחירה לבן ונחושת."
+  },
+  {
+   "product_id": 67221,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי. הוא משתמש בכמה חלקים, ללא אלקטרוניקה מסובכת ורק חומרי פרימיום כמו נירוסטה &#8211; הוא נטול פלסטיק לחלוטין. כל מה שצריך זה קפה טחון, קצת מים חמים מהקומקום והאספרסו מוכן. התהליך כולו פשוט ולוקח מספר דקות בלבד.",
+   "new": "רשת פיזור חלופית מנירוסטה למכונות האספרסו הידניות Cafelat Robot.",
+   "finding": "הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי"
+  },
+  {
+   "product_id": 76915,
+   "variation_id": null,
+   "target": "description",
+   "old": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש",
+   "new": "",
+   "finding": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש"
+  },
+  {
+   "product_id": 76915,
+   "variation_id": null,
+   "target": "description",
+   "old": "מרקם חלק, מתיקות עדינה וחמיצות קלה שמוסיפה עניין בלי להשתלט",
+   "new": "",
+   "finding": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש"
+  },
+  {
+   "product_id": 82928,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הרימו את הבוקר שלכם לגבהים חדשים עם NESCAFÉ® Dolce Gusto® Americano. עשוי מ-100% פולי ערביקה, הקפה המעולה הזה מתהדר ברמת עוצמה של 4 מתוך 11, מה שמבטיח פרופיל טעמים מאוזן לחלוטין.",
+   "new": "אמריקנו אינטנסו מבית נסקפה דולצ'ה גוסטו – 100% ערביקה, דרגת חוזק 8, לספל גדול. מארז 16 קפסולות.",
+   "finding": "מתהדר ברמת עוצמה של 4 מתוך 11"
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "old": "הערות:",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "old": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "old": "ודאו שהטקסט קצר, תמציתי ורלוונטי לקהל היעד שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "old": "השתמשו בקריאה לפעולה (CTA) שתעודד את הגולשים לרכוש את המוצר.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "old": "מקווה שהטקסט יעזור לכם לקדם את מכונת Lelit Bianca PL162T V3 באתר שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "old": "הערות:",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "old": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "old": "ודאו שהטקסט קצר, תמציתי ורלוונטי לקהל היעד שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "old": "השתמשו בקריאה לפעולה (CTA) שתעודד את הגולשים לרכוש את המוצר.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "old": "מקווה שהטקסט יעזור לכם לקדם את מכונת Lelit Bianca PL162T V3 באתר שלכם.",
+   "new": "",
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם."
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "טקסט למטא תגים (Google Meta):",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "כוס מינון, Varia VS3, טוחנת קפה, אספרסו, קפה, אביזרי קפה, קפה ביתי, קפה מקצועי, עיצוב קומפקטי, עמיד,מדויק, נוח",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "תהליך הבישול שלכם",
+   "new": "תהליך החליטה שלכם",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "של קרקע מטוחנת מטוחנת לפורטפילטר",
+   "new": "של הקפה הטחון מהמטחנה לפורטפילטר",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "ביותר של הבישול.",
+   "new": "ביותר של החליטה.",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 65455,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולשגרת הבישול של הקפה שלך",
+   "new": "ולשגרת חליטת הקפה שלך",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "טקסט למטא תגים (Google Meta):",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "כוס מינון, Varia VS3, טוחנת קפה, אספרסו, קפה, אביזרי קפה, קפה ביתי, קפה מקצועי, עיצוב קומפקטי, עמיד,מדויק, נוח",
+   "new": "",
+   "finding": "טקסט למטא תגים (Google Meta):"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "תהליך הבישול שלכם",
+   "new": "תהליך החליטה שלכם",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "של קרקע מטוחנת מטוחנת לפורטפילטר",
+   "new": "של הקפה הטחון מהמטחנה לפורטפילטר",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "ביותר של הבישול.",
+   "new": "ביותר של החליטה.",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 81358,
+   "variation_id": null,
+   "target": "description",
+   "old": "ולשגרת הבישול של הקפה שלך",
+   "new": "ולשגרת חליטת הקפה שלך",
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר"
+  },
+  {
+   "product_id": 67207,
+   "variation_id": null,
+   "target": "description",
+   "old": "בין בסיס פ puck הקפה לגובה שלו",
+   "new": "בין בסיס עוגיית הקפה לגובה שלה",
+   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M"
+  },
+  {
+   "product_id": 67207,
+   "variation_id": null,
+   "target": "description",
+   "old": "של &nbsp;puck הקפה",
+   "new": "של עוגיית הקפה",
+   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M"
+  },
+  {
+   "product_id": 67207,
+   "variation_id": null,
+   "target": "description",
+   "old": "מילות מפתח:",
+   "new": "",
+   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M"
+  },
+  {
+   "product_id": 67207,
+   "variation_id": null,
+   "target": "description",
+   "old": " סל פילטר, IMS, B702TH26.5M, אספרסו, קפה, חליטה, איכות, עיצוב פטנטי, קידוח מדויק, חיתוך לייזר, גימור ללא תחרות, חווית קפה משופרת",
+   "new": "",
+   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M"
+  },
+  {
+   "product_id": 81142,
+   "variation_id": null,
+   "target": "description",
+   "old": "בחרו את הגודל המתאים לכם:</strong> 14g, 17g או 21g.",
+   "new": "בחרו את הגודל המתאים לכם:</strong> 7g, 14g, 17g או 21g.",
+   "finding": "בחרו את הגודל המתאים לכם: 14g, 17g או 21g."
+  },
+  {
+   "product_id": 81142,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "זמינה בשלושה גדלים.",
+   "new": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+   "finding": "בחרו את הגודל המתאים לכם: 14g, 17g או 21g."
+  },
+  {
+   "product_id": 67609,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "זמינה בשלושה גדלים.",
+   "new": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+   "finding": "זמינה בשלושה גדלים."
+  },
+  {
+   "product_id": 81147,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "זמינה בשלושה גדלים.",
+   "new": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+   "finding": "זמינה בשלושה גדלים."
+  },
+  {
+   "product_id": 81152,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "זמינה בשלושה גדלים.",
+   "new": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+   "finding": "זמינה בשלושה גדלים."
+  },
+  {
+   "product_id": 67609,
+   "variation_id": null,
+   "target": "description",
+   "old": "שדרוג את חליטת",
+   "new": "שדרגו את חליטת",
+   "finding": "זמינה בשלושה גדלים."
+  },
+  {
+   "product_id": 64830,
+   "variation_id": null,
+   "target": "description",
+   "old": "מתאים לרוב מכונות האספרסו בעלות ראש E61",
+   "new": "מתאים לכל מכונת אספרסו עם צינור קיטור",
+   "finding": "מתאים לרוב מכונות האספרסו בעלות ראש E61"
+  },
+  {
+   "product_id": 67348,
+   "variation_id": null,
+   "target": "description",
+   "old": "ה- ECM Synchronika ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים הטובים ביותר שלנו.",
+   "new": "ה-ECM Synchronika מפיקה שוטים של אספרסו ברמה של בתי הקפה הטובים ביותר.",
+   "finding": "ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים"
+  },
+  {
+   "product_id": 67348,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מים חמיםמסך תצוגהעם הפרמטרים הבאים",
+   "new": "מים חמים. מסך תצוגה עם הפרמטרים הבאים",
+   "finding": "ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים"
+  },
+  {
+   "product_id": 64729,
+   "variation_id": null,
+   "target": "name",
+   "old": "קפסולות לוואצה מודו מיו",
+   "new": "קפסולות לוואצה אמודו מיו",
+   "finding": "קפסולות לוואצה מודו מיו DEK נטול קפאין"
+  },
+  {
+   "product_id": 64773,
+   "variation_id": null,
+   "target": "description",
+   "old": "לשיפוחווית הקפה",
+   "new": "לשיפור חוויית הקפה",
+   "finding": "האביזר המושלם לשיפוחווית הקפה שלך"
+  },
+  {
+   "product_id": 64802,
+   "variation_id": null,
+   "target": "description",
+   "old": "לשיפוחווית הקפה",
+   "new": "לשיפור חוויית הקפה",
+   "finding": "האביזר המושלם לשיפוחווית הקפה שלך"
+  },
+  {
+   "product_id": 64802,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לשיפוחווית הקפה",
+   "new": "לשיפור חוויית הקפה",
+   "finding": "האביזר המושלם לשיפוחווית הקפה שלך"
+  },
+  {
+   "product_id": 64782,
+   "variation_id": null,
+   "target": "description",
+   "old": "שהוא אלומיניום עטוף ויניל",
+   "new": "שהוא אלומיניום עטוף ויניל).",
+   "finding": "שהוא אלומיניום עטוף ויניל"
+  },
+  {
+   "product_id": 64821,
+   "variation_id": null,
+   "target": "description",
+   "old": "(כ 1/3 שליש) בחלב ושוב לשפןך",
+   "new": "(כשליש) בחלב ושוב לשפוך",
+   "finding": "ושוב לשפןך לבלנדר"
+  },
+  {
+   "product_id": 64821,
+   "variation_id": null,
+   "target": "description",
+   "old": "שלאבקת אייס קפה ,",
+   "new": "של אבקת אייס קפה,",
+   "finding": "ושוב לשפןך לבלנדר"
+  },
+  {
+   "product_id": 65040,
+   "variation_id": null,
+   "target": "description",
+   "old": " בשבץ גאוני ייחודי,",
+   "new": "",
+   "finding": "בשבץ גאוני ייחודי,"
+  },
+  {
+   "product_id": 65074,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "יתקשו ויתייבשו כמואטם לגומי",
+   "new": "יתקשו ויתייבשו כמו אטם גומי",
+   "finding": "יתקשו ויתייבשו כמואטם לגומי"
+  },
+  {
+   "product_id": 65074,
+   "variation_id": null,
+   "target": "description",
+   "old": "יתקשו ויתייבשו כמואטם לגומי",
+   "new": "יתקשו ויתייבשו כמו אטם גומי",
+   "finding": "יתקשו ויתייבשו כמואטם לגומי"
+  },
+  {
+   "product_id": 65075,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "יתקשו ויתייבשו כמואטם לגומי",
+   "new": "יתקשו ויתייבשו כמו אטם גומי",
+   "finding": "יתקשו ויתייבשו כמואטם לגומי"
+  },
+  {
+   "product_id": 65075,
+   "variation_id": null,
+   "target": "description",
+   "old": "יתקשו ויתייבשו כמואטם לגומי",
+   "new": "יתקשו ויתייבשו כמו אטם גומי",
+   "finding": "יתקשו ויתייבשו כמואטם לגומי"
+  },
+  {
+   "product_id": 65154,
+   "variation_id": null,
+   "target": "description",
+   "old": "עיוור לשמוש",
+   "new": "עיוור לשימוש",
+   "finding": "פילטר עיוור לשמוש במכונות קפה"
+  },
+  {
+   "product_id": 65166,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !",
+   "new": "",
+   "finding": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !"
+  },
+  {
+   "product_id": 65166,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק חשמלי: WW1500 .",
+   "new": "הספק חשמלי: 1500W.",
+   "finding": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !"
+  },
+  {
+   "product_id": 65240,
+   "variation_id": null,
+   "target": "description",
+   "old": "מכונת הקפה שתמיד רציתם עכשיו עם.",
+   "new": "מכונת הקפה שתמיד רציתם.",
+   "finding": "מכונת הקפה שתמיד רציתם עכשיו עם."
+  },
+  {
+   "product_id": 65240,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>י</li>",
+   "new": "<li></li>",
+   "finding": "מכונת הקפה שתמיד רציתם עכשיו עם."
+  },
+  {
+   "product_id": 65374,
+   "variation_id": null,
+   "target": "description",
+   "old": "Rocket R NINE ON ממינוטו",
+   "new": "Rocket R NINE ONE ממינוטו",
+   "finding": "Rocket R NINE ON ממינוטו"
+  },
+  {
+   "product_id": 65429,
+   "variation_id": null,
+   "target": "description",
+   "old": "לעשות כספל קפוצ׳ינו",
+   "new": "להכין ספל קפוצ׳ינו",
+   "finding": "שימושי אם רוצים לעשות כספל קפוצ׳ינו גדול"
+  },
+  {
+   "product_id": 67186,
+   "variation_id": null,
+   "target": "description",
+   "old": "משלבת גם שעועית רובוסטה",
+   "new": "משלבת גם פולי רובוסטה",
+   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם"
+  },
+  {
+   "product_id": 67186,
+   "variation_id": null,
+   "target": "description",
+   "old": "והשעועית המובחרת מעבירים",
+   "new": "ופולי הקפה המובחרים מעבירים",
+   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם"
+  },
+  {
+   "product_id": 67186,
+   "variation_id": null,
+   "target": "description",
+   "old": "פולי הערביקה הטהורים המשובחים",
+   "new": "פולי הערביקה המשובחים",
+   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם"
+  },
+  {
+   "product_id": 67186,
+   "variation_id": null,
+   "target": "description",
+   "old": "פולי ערביקה טהורים שנבחרו",
+   "new": "פולי ערביקה שנבחרו",
+   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם"
+  },
+  {
+   "product_id": 67223,
+   "variation_id": null,
+   "target": "description",
+   "old": "הגולות עשיויות מאלמיניום ומוחזקים",
+   "new": "הגולות עשויות מאלומיניום ומוחזקות",
+   "finding": "הגולות עשיויות מאלמיניום ומוחזקים"
+  },
+  {
+   "product_id": 67335,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "new": "36 קפסולות לוואצה אמודו מיו מקורי",
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו"
+  },
+  {
+   "product_id": 67361,
+   "variation_id": null,
+   "target": "description",
+   "old": "10 קפסולו קפה",
+   "new": "10 קפסולות קפה",
+   "finding": "10 קפסולו קפה האוסברנדט"
+  },
+  {
+   "product_id": 67610,
+   "variation_id": null,
+   "target": "description",
+   "old": "אספרסו יחודי",
+   "new": "אספרסו יחיד",
+   "finding": "מושלם להכנת אספרסו יחודי"
+  },
+  {
+   "product_id": 81773,
+   "variation_id": null,
+   "target": "description",
+   "old": "אטם ראש סטנדרטית למכונות La marzzoco",
+   "new": "אטם ראש סטנדרטי למכונות La Marzocco",
+   "finding": "אטם ראש סטנדרטית למכונות La marzzoco"
+  },
+  {
+   "product_id": 64759,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת קפה Lifestyle Ceado",
+   "new": "מטחנת קפה Ceado Life",
+   "finding": "מטחנת קפה Lifestyle Ceado"
+  },
+  {
+   "product_id": 64684,
+   "variation_id": null,
+   "target": "description",
+   "old": "אנשים ששומרים על המשקל.",
+   "new": "",
+   "finding": "אנשים ששומרים על המשקל."
+  },
+  {
+   "product_id": 68416,
+   "variation_id": null,
+   "target": "description",
+   "old": "אנשים ששומרים על המשקל.",
+   "new": "",
+   "finding": "אנשים ששומרים על המשקל."
+  },
+  {
+   "product_id": 68416,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "אנשים ששומרים על המשקל.",
+   "new": "",
+   "finding": "אנשים ששומרים על המשקל."
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה",
+   "product_id": "65118",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted",
+   "product_id": "76799",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "עם קיבולת של 18-21 גרם קפה.",
+   "product_id": "82018",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "עם קיבולת של 18-21 גרם קפה.",
+   "product_id": "82023",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "קוטר פורטפילטר: 40 מ\"מ",
+   "product_id": "64854",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "product_id": "65446",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+   "product_id": "76629",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "תואמות למכונות נספרסו",
+   "product_id": "64712",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "price='0.0000', instock",
+   "product_id": "65369",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "price='0.0000', instock",
+   "product_id": "65427",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "התענגו על השמחה של הכנת קפה ידנית עם DeLonghi EC9155.MB",
+   "product_id": "64752",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מגיעה בשני צבעים לבחירה לבן ונחושת.",
+   "product_id": "65022",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי",
+   "product_id": "67221",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש",
+   "product_id": "76915",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מתהדר ברמת עוצמה של 4 מתוך 11",
+   "product_id": "82928",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+   "product_id": "64679",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+   "product_id": "64680",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "טקסט למטא תגים (Google Meta):",
+   "product_id": "65455",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מילות מפתח: סל פילטר, IMS, B702TH26.5M",
+   "product_id": "67207",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "טקסט למטא תגים (Google Meta):",
+   "product_id": "81358",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מידות: 215 x 280 x 610 מ\"מ (W x D x H)",
+   "product_id": "64831",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "בחרו את הגודל המתאים לכם: 14g, 17g או 21g.",
+   "product_id": "81142",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מסדרת Big Bang של IMS (2023)",
+   "product_id": "82021",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65381",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65404",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65413",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65423",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "82305",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "82472",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "מתאים לרוב מכונות האספרסו בעלות ראש E61",
+   "product_id": "64830",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "בדיקת תשלום · 1.0000 ₪",
+   "product_id": "64703",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "price='0.0000', outofstock",
+   "product_id": "64714",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "משלוח · 40.0000 ₪",
+   "product_id": "65380",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "התקנה · 585.0000 ₪",
+   "product_id": "65414",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "קפה פילטר · 15.0000 ₪",
+   "product_id": "65426",
+   "reason": "Visibility/price change for a placeholder or service product is a business decision."
+  },
+  {
+   "finding": "ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים",
+   "product_id": "67348",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "לתיקון הקפה היומי שלך",
+   "product_id": "64712",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "קפסולות לוואצה מודו מיו DEK נטול קפאין",
+   "product_id": "64729",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "צבע: ירוק כסוףמקציף חלב מבודד",
+   "product_id": "64752",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "האביזר המושלם לשיפוחווית הקפה שלך",
+   "product_id": "64773",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "שהוא אלומיניום עטוף ויניל",
+   "product_id": "64782",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "האביזר המושלם לשיפוחווית הקפה שלך",
+   "product_id": "64802",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "ושוב לשפןך לבלנדר",
+   "product_id": "64821",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "בשבץ גאוני ייחודי,",
+   "product_id": "65040",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "יתקשו ויתייבשו כמואטם לגומי",
+   "product_id": "65074",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "יתקשו ויתייבשו כמואטם לגומי",
+   "product_id": "65075",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "להפעלת סרטי וידאו המתארים את זרימת החליטה",
+   "product_id": "65118",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "פילטר עיוור לשמוש במכונות קפה",
+   "product_id": "65154",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !",
+   "product_id": "65166",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מכונת הקפה שתמיד רציתם עכשיו עם.",
+   "product_id": "65240",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "Rocket R NINE ON ממינוטו",
+   "product_id": "65374",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מפרט",
+   "product_id": "65398",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "שימושי אם רוצים לעשות כספל קפוצ׳ינו גדול",
+   "product_id": "65429",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
+   "product_id": "65455",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "התערובת משלבת גם שעועית רובוסטה מווייטנאם",
+   "product_id": "67186",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "הגולות עשיויות מאלמיניום ומוחזקים",
+   "product_id": "67223",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+   "product_id": "67335",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "10 קפסולו קפה האוסברנדט",
+   "product_id": "67361",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מושלם להכנת אספרסו יחודי",
+   "product_id": "67610",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "תכונות עיקריות:",
+   "product_id": "67635",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
+   "product_id": "81358",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "אטם ראש סטנדרטית למכונות La marzzoco",
+   "product_id": "81773",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "קיבולת: מנה חתא",
+   "product_id": "82023",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "מטחנת קפה Lifestyle Ceado",
+   "product_id": "64759",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "זמינה בשלושה גדלים.",
+   "product_id": "67609",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "זמינה בשלושה גדלים.",
+   "product_id": "81147",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "זמינה בשלושה גדלים.",
+   "product_id": "81152",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "צבע: לבן, שחור",
+   "product_id": "81358",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "64703",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "64714",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64729",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64761",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64773",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64834",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64834",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "64835",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65369",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65373",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65373",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65380",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65381",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65381",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65404",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65404",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65413",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65413",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65414",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65423",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65423",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65426",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": "65427",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65437",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "65437",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "82305",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "82305",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "82472",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "82472",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": "82796",
+   "reason": "Missing content/image; not fixable by text edit."
+  },
+  {
+   "finding": "אנשים ששומרים על המשקל.",
+   "product_id": "64684",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "אנשים ששומרים על המשקל.",
+   "product_id": "68416",
+   "reason": "UNHANDLED"
+  },
+  {
+   "finding": "(העתק)",
+   "product_id": "82022",
+   "reason": "UNHANDLED"
+  }
+ ]
+}

@@ -1,0 +1,1398 @@
+{
+ "edits": [
+  {
+   "product_id": 64861,
+   "variation_id": null,
+   "target": "description",
+   "old": ">צנצנת פולי קפה פולימרית אדום למטחנת Comandante<",
+   "new": ">משחה לטיפול בעץ למטחנות קפה קומנדנטה - Wood Care Balm<",
+   "finding": "צנצנת פולי קפה פולימרית אדום למטחנת Comandante"
+  },
+  {
+   "product_id": 67222,
+   "variation_id": null,
+   "target": "description",
+   "old": "נירוסטה איכותית בציפוי שחור מט",
+   "new": "נירוסטה איכותית בגימור מוברש",
+   "finding": "עשויה נירוסטה איכותית בציפוי שחור מט"
+  },
+  {
+   "product_id": 67222,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף נירוסטה עמיד עם גימור שחור מט",
+   "new": "גוף נירוסטה עמיד בגימור מוברש",
+   "finding": "עשויה נירוסטה איכותית בציפוי שחור מט"
+  },
+  {
+   "product_id": 77223,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הכירו את NanoFoamer V2 &#8211; הפתרון האולטימטיבי להשגת הקצפה באיכות מקצועית ישירות בנוחות של הבית שלכם. חוו את אותה רמת הקצפה שנמצאת בבתי הקפה האהובים עליך, מה שמאפשר לך ליצור אמנות לאטה מעודנת וקפוצ'ינו מושלמים בקלות. בין אם אתה משתמש במכונת קפסולות, מקינטה, מכונת אספרסו או כל שיטת חליטה אחרת, NanoFoamer V2 מבטיח תוצאות יוצאות דופן.",
+   "new": "ערכת חלקי חילוף מקוריים (מדחף ושתי רשתות הקצפה) למקציף NanoFoamer V2 ו-Lithium.",
+   "finding": "הכירו את NanoFoamer V2 – הפתרון האולטימטיבי"
+  },
+  {
+   "product_id": 65461,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>מילות מפתח:</strong> מברשת ניקוי, קומנדנטה, מטחנת קפה, ניקיון, תחזוקה, עץ אלון, שיער סוס, כלי ניקוי, קפה",
+   "new": "<strong></strong>",
+   "finding": "מילות מפתח: מברשת ניקוי, קומנדנטה, מטחנת קפה, ניקיון"
+  },
+  {
+   "product_id": 67667,
+   "variation_id": null,
+   "target": "description",
+   "old": ">4o</span>",
+   "new": "></span>",
+   "finding": " 4o"
+  },
+  {
+   "product_id": 64697,
+   "variation_id": null,
+   "target": "name",
+   "old": "סירופ רוטן לקפה בטעם אגוזי לוז 1889",
+   "new": "סירופ רוטן לקפה בטעם אגוזי לוז 1883",
+   "finding": "סירופ רוטן לקפה בטעם אגוזי לוז 1889"
+  },
+  {
+   "product_id": 64697,
+   "variation_id": null,
+   "target": "description",
+   "old": "סירופ אגוזי לוז 1889 לקפה",
+   "new": "סירופ אגוזי לוז 1883 לקפה",
+   "finding": "סירופ רוטן לקפה בטעם אגוזי לוז 1889"
+  },
+  {
+   "product_id": 64698,
+   "variation_id": null,
+   "target": "name",
+   "old": "סירופ רוטן לקפה בטעם וניל 1889",
+   "new": "סירופ רוטן לקפה בטעם וניל 1883",
+   "finding": "סירופ רוטן לקפה בטעם וניל 1889"
+  },
+  {
+   "product_id": 64698,
+   "variation_id": null,
+   "target": "description",
+   "old": "סירופ רוטן וניל 1889",
+   "new": "סירופ רוטן וניל 1883",
+   "finding": "סירופ רוטן לקפה בטעם וניל 1889"
+  },
+  {
+   "product_id": 64770,
+   "variation_id": null,
+   "target": "description",
+   "old": "הקנקן מתאים לשימוש על כל סוגי הכיריים, כולל גז, חשמל ואינדוקציה,",
+   "new": "הקנקן מתאים לשימוש על כיריים גז, חשמל ואינדוקציה (בחלק מכיריים האינדוקציה ייתכן שיידרש מתאם),",
+   "finding": "אם כי תנורי אינדוקציה מסוימים עשויים לדרוש מתאם"
+  },
+  {
+   "product_id": 64770,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הקנקן מתאים לשימוש על כל סוגי הכיריים, כולל גז, חשמל ואינדוקציה,",
+   "new": "הקנקן מתאים לשימוש על כיריים גז, חשמל ואינדוקציה (בחלק מכיריים האינדוקציה ייתכן שיידרש מתאם),",
+   "finding": "אם כי תנורי אינדוקציה מסוימים עשויים לדרוש מתאם"
+  },
+  {
+   "product_id": 64789,
+   "variation_id": null,
+   "target": "description",
+   "old": "Crem EX3 3 High Group",
+   "new": "Crem EX3 2 High Group",
+   "finding": "תכונות מכונת קפה Crem EX3 3 High Group"
+  },
+  {
+   "product_id": 64789,
+   "variation_id": null,
+   "target": "description",
+   "old": "בצבעלבן או שחור",
+   "new": "בצבע לבן או שחור",
+   "finding": "בצבעלבן או שחור ... לכל בית מקום"
+  },
+  {
+   "product_id": 64789,
+   "variation_id": null,
+   "target": "description",
+   "old": "לכל בית מקום עם תשוקה",
+   "new": "לכל בית קפה עם תשוקה",
+   "finding": "בצבעלבן או שחור ... לכל בית מקום"
+  },
+  {
+   "product_id": 65239,
+   "variation_id": null,
+   "target": "description",
+   "old": "בנפח מילוי של 700 מ\"ל להקצפה.",
+   "new": "בנפח מילוי של 700 מ\"ל לחימום ועד 350 מ\"ל להקצפה.",
+   "finding": "בנפח מילוי של 700 מ\"ל להקצפה"
+  },
+  {
+   "product_id": 65239,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בנפח מילוי של 700 מ&quot;ל להקצפה.",
+   "new": "בנפח מילוי של 700 מ&quot;ל לחימום ועד 350 מ&quot;ל להקצפה.",
+   "finding": "בנפח מילוי של 700 מ\"ל להקצפה"
+  },
+  {
+   "product_id": 65239,
+   "variation_id": null,
+   "target": "description",
+   "old": "בגמר ההקצה ",
+   "new": "בגמר ההקצפה ",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 65239,
+   "variation_id": null,
+   "target": "description",
+   "old": "עשיר וכרמי",
+   "new": "עשיר וקרמי",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 68312,
+   "variation_id": null,
+   "target": "description",
+   "old": "בגמר ההקצה ",
+   "new": "בגמר ההקצפה ",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 68312,
+   "variation_id": null,
+   "target": "description",
+   "old": "עשיר וכרמי",
+   "new": "עשיר וקרמי",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 68312,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בגמר ההקצה ",
+   "new": "בגמר ההקצפה ",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 68312,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "עשיר וכרמי",
+   "new": "עשיר וקרמי",
+   "finding": "בגמר ההקצה ... קצף עשיר וכרמי"
+  },
+  {
+   "product_id": 65119,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "אדום",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 81566,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "נחושת",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 81574,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "נירוסטה",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 81581,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "לבן",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 82082,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "כחול",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 82084,
+   "variation_id": null,
+   "target": "attribute:צבע",
+   "old": "שחור",
+   "new": "טורקיז",
+   "finding": "צבע: שחור"
+  },
+  {
+   "product_id": 64685,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>מתיקו את היום",
+   "new": "<strong>המתיקו את היום",
+   "finding": "מתיקו את היום שלכם"
+  },
+  {
+   "product_id": 64691,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64691,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64691,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64692,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64692,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64692,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64693,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64693,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64693,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64694,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64694,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64694,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65101,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65101,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65101,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65119,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65119,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65119,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65120,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65120,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65120,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65121,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65121,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65121,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65122,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65122,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65122,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65123,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65123,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65123,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65436,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65436,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 65436,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 78557,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 78557,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 78557,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81559,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81559,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81559,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81566,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81566,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81566,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81574,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81574,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81574,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81581,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81581,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 81581,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82082,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82082,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82082,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82084,
+   "variation_id": null,
+   "target": "description",
+   "old": "למטבח שלך. שטיפת</p>",
+   "new": "למטבח שלך.</p>",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82084,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל גדול אייסקייפ",
+   "new": "מיכל איירסקייפ",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 82084,
+   "variation_id": null,
+   "target": "description",
+   "old": "כשהו ארוז",
+   "new": "כשהוא ארוז",
+   "finding": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת"
+  },
+  {
+   "product_id": 64696,
+   "variation_id": null,
+   "target": "description",
+   "old": "והפלישו את העץ",
+   "new": "והבריקו את העץ",
+   "finding": "והפלישו את העץ"
+  },
+  {
+   "product_id": 64705,
+   "variation_id": null,
+   "target": "description",
+   "old": "רשת זאת תואם",
+   "new": "רשת זו תואמת",
+   "finding": "רשת זאת תואם לרוב מכונות"
+  },
+  {
+   "product_id": 64705,
+   "variation_id": null,
+   "target": "description",
+   "old": "הסטנדרט הגבוה ש-La Marzocco",
+   "new": "הסטנדרט הגבוה של La Marzocco",
+   "finding": "רשת זאת תואם לרוב מכונות"
+  },
+  {
+   "product_id": 64710,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת",
+   "new": "הבחירה בחומר המתכת",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64710,
+   "variation_id": null,
+   "target": "description",
+   "old": "טחונים.ייצור",
+   "new": "טחונים. ייצור",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64710,
+   "variation_id": null,
+   "target": "description",
+   "old": "רב.קשה",
+   "new": "רב. קשה",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64710,
+   "variation_id": null,
+   "target": "description",
+   "old": "טיולים. שלא רוצים",
+   "new": "טיולים שלא רוצים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64841,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת",
+   "new": "הבחירה בחומר המתכת",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64841,
+   "variation_id": null,
+   "target": "description",
+   "old": "טחונים.ייצור",
+   "new": "טחונים. ייצור",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64841,
+   "variation_id": null,
+   "target": "description",
+   "old": "רב.קשה",
+   "new": "רב. קשה",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64841,
+   "variation_id": null,
+   "target": "description",
+   "old": "טיולים. שלא רוצים",
+   "new": "טיולים שלא רוצים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 77111,
+   "variation_id": null,
+   "target": "description",
+   "old": "הבחירהבחומר במתכת",
+   "new": "הבחירה בחומר המתכת",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 77111,
+   "variation_id": null,
+   "target": "description",
+   "old": "טחונים.ייצור",
+   "new": "טחונים. ייצור",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 77111,
+   "variation_id": null,
+   "target": "description",
+   "old": "רב.קשה",
+   "new": "רב. קשה",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 77111,
+   "variation_id": null,
+   "target": "description",
+   "old": "טיולים. שלא רוצים",
+   "new": "טיולים שלא רוצים",
+   "finding": "הבחירהבחומר במתכת ללהבים"
+  },
+  {
+   "product_id": 64743,
+   "variation_id": null,
+   "target": "name",
+   "old": "משקל קפה Acia Pearl s - לבן",
+   "new": "משקל קפה Acaia Pearl s - לבן",
+   "finding": "משקל קפה Acia Pearl s - לבן"
+  },
+  {
+   "product_id": 64743,
+   "variation_id": null,
+   "target": "description",
+   "old": ">משקל קפה Acia Pearl s<",
+   "new": ">משקל קפה Acaia Pearl s<",
+   "finding": "משקל קפה Acia Pearl s - לבן"
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "name",
+   "old": "משקל קפה Acia Pearl",
+   "new": "משקל קפה Acaia Pearl",
+   "finding": "משקל קפה Acia Pearl"
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "description",
+   "old": ">משקל קפה Acia Pearl<",
+   "new": ">משקל קפה Acaia Pearl<",
+   "finding": "משקל קפה Acia Pearl"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "name",
+   "old": "משקל קפה Acia Lunar - לבן",
+   "new": "משקל קפה Acaia Lunar - לבן",
+   "finding": "משקל קפה Acia Lunar - לבן"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "description",
+   "old": ">משקל קפה Acia Lunar<",
+   "new": ">משקל קפה Acaia Lunar<",
+   "finding": "משקל קפה Acia Lunar - לבן"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "description",
+   "old": "המקצועי Acia Lunar<",
+   "new": "המקצועי Acaia Lunar<",
+   "finding": "משקל קפה Acia Lunar - לבן"
+  },
+  {
+   "product_id": 81077,
+   "variation_id": null,
+   "target": "name",
+   "old": "משקל קפה Acia Lunar - שחור",
+   "new": "משקל קפה Acaia Lunar - שחור",
+   "finding": "משקל קפה Acia Lunar - שחור"
+  },
+  {
+   "product_id": 81077,
+   "variation_id": null,
+   "target": "description",
+   "old": ">משקל קפה Acia Lunar<",
+   "new": ">משקל קפה Acaia Lunar<",
+   "finding": "משקל קפה Acia Lunar - שחור"
+  },
+  {
+   "product_id": 81077,
+   "variation_id": null,
+   "target": "description",
+   "old": "המקצועי Acia Lunar<",
+   "new": "המקצועי Acaia Lunar<",
+   "finding": "משקל קפה Acia Lunar - שחור"
+  },
+  {
+   "product_id": 81089,
+   "variation_id": null,
+   "target": "name",
+   "old": "משקל קפה Acia Pearl s - שחור",
+   "new": "משקל קפה Acaia Pearl s - שחור",
+   "finding": "משקל קפה Acia Pearl s - שחור"
+  },
+  {
+   "product_id": 81089,
+   "variation_id": null,
+   "target": "description",
+   "old": ">משקל קפה Acia Pearl s<",
+   "new": ">משקל קפה Acaia Pearl s<",
+   "finding": "משקל קפה Acia Pearl s - שחור"
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל קפה המקוצעי",
+   "new": "משקל הקפה המקצועי",
+   "finding": "משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת"
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "description",
+   "old": "והתחילו חלוט קפה בצורה מדיוקת",
+   "new": "והתחילו לחלוט קפה בצורה מדויקת",
+   "finding": "משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת"
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "description",
+   "old": "המקצועיות שלכם??",
+   "new": "המקצועיות שלכם?",
+   "finding": "משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "שלכם סולם Acaia Lunar",
+   "new": "שלכם עם משקל Acaia Lunar",
+   "finding": "שדרגו את תהליך החליטה שלכם סולם Acaia Lunar"
+  },
+  {
+   "product_id": 81077,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "שלכם סולם Acaia Lunar",
+   "new": "שלכם עם משקל Acaia Lunar",
+   "finding": "שדרגו את תהליך החליטה שלכם סולם Acaia Lunar"
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "בתוך דק. הודות",
+   "new": "בתוך דקות. הודות",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתןלמלא",
+   "new": "ניתן למלא",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "היא משתלב בצורה",
+   "new": "היא משתלבת בצורה",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "243 ממ<",
+   "new": "243 מ\"מ<",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "350 ממ<",
+   "new": "350 מ\"מ<",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64805,
+   "variation_id": null,
+   "target": "description",
+   "old": "340 ממ<",
+   "new": "340 מ\"מ<",
+   "finding": "ליצור קרח במהירות בתוך דק."
+  },
+  {
+   "product_id": 64905,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "צנצנת POLYMER BEAN הוא תוספת",
+   "new": "צנצנת POLYMER BEAN היא תוספת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64905,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למזון לטחנת",
+   "new": "למזון למטחנת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64905,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>.תואמת",
+   "new": "<p>תואמת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64906,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "צנצנת POLYMER BEAN הוא תוספת",
+   "new": "צנצנת POLYMER BEAN היא תוספת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64906,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למזון לטחנת",
+   "new": "למזון למטחנת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64906,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>.תואמת",
+   "new": "<p>תואמת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64907,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "צנצנת POLYMER BEAN הוא תוספת",
+   "new": "צנצנת POLYMER BEAN היא תוספת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64907,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למזון לטחנת",
+   "new": "למזון למטחנת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64907,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>.תואמת",
+   "new": "<p>תואמת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64908,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "צנצנת POLYMER BEAN הוא תוספת",
+   "new": "צנצנת POLYMER BEAN היא תוספת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64908,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למזון לטחנת",
+   "new": "למזון למטחנת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 65472,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "צנצנת POLYMER BEAN הוא תוספת",
+   "new": "צנצנת POLYMER BEAN היא תוספת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 65472,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "למזון לטחנת",
+   "new": "למזון למטחנת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 65472,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>.תואמת",
+   "new": "<p>תואמת",
+   "finding": "במיוחד למזון לטחנת COMANDANTE® C40"
+  },
+  {
+   "product_id": 64909,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת הקומננטה",
+   "new": "מטחנת הקומנדנטה",
+   "finding": "מטחנת הקומננטה שלך"
+  },
+  {
+   "product_id": 64915,
+   "variation_id": null,
+   "target": "description",
+   "old": "גם לך חובב קפה הפילטר תובעני /ת, ודורש/ת רמת דיוק גבוהה.",
+   "new": "גם חובבי קפה פילטר שדורשים רמת דיוק גבוהה ייהנו מהשדרוג.",
+   "finding": "גם לך חובב קפה הפילטר תובעני /ת, ודורש/ת"
+  },
+  {
+   "product_id": 64976,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מושלמת מקפה/</p>",
+   "new": "מושלמת מקפה.</p>",
+   "finding": "להנאה מושלמת מקפה/"
+  },
+  {
+   "product_id": 64976,
+   "variation_id": null,
+   "target": "description",
+   "old": "מושלמת מקפה/</p>",
+   "new": "מושלמת מקפה.</p>",
+   "finding": "להנאה מושלמת מקפה/"
+  },
+  {
+   "product_id": 65021,
+   "variation_id": null,
+   "target": "description",
+   "old": "הקפצה חמה קרה",
+   "new": "הקצפה חמה וקרה",
+   "finding": "הקפצה חמה קרה"
+  },
+  {
+   "product_id": 65049,
+   "variation_id": null,
+   "target": "description",
+   "old": "בורוסיליקט kלא",
+   "new": "בורוסיליקט לא",
+   "finding": "בורוסיליקט kלא נקבובית"
+  },
+  {
+   "product_id": 65077,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "יופי אלנגטי",
+   "new": "יופי אלגנטי",
+   "finding": "שילוב של יופי אלנגטי ואיכות"
+  },
+  {
+   "product_id": 65077,
+   "variation_id": null,
+   "target": "description",
+   "old": "יופי אלנגטי",
+   "new": "יופי אלגנטי",
+   "finding": "שילוב של יופי אלנגטי ואיכות"
+  },
+  {
+   "product_id": 65138,
+   "variation_id": null,
+   "target": "name",
+   "old": "מקינטה מקינטה ונוס",
+   "new": "מקינטה ונוס",
+   "finding": "מקינטה מקינטה ונוס"
+  },
+  {
+   "product_id": 65138,
+   "variation_id": null,
+   "target": "description",
+   "old": "מקינטה מקינטה ונוס",
+   "new": "מקינטה ונוס",
+   "finding": "מקינטה מקינטה ונוס"
+  },
+  {
+   "product_id": 65139,
+   "variation_id": null,
+   "target": "name",
+   "old": "מקינטה מקינטה ונוס",
+   "new": "מקינטה ונוס",
+   "finding": "מקינטה מקינטה ונוס"
+  },
+  {
+   "product_id": 65139,
+   "variation_id": null,
+   "target": "description",
+   "old": "מקינטה מקינטה ונוס",
+   "new": "מקינטה ונוס",
+   "finding": "מקינטה מקינטה ונוס"
+  },
+  {
+   "product_id": 65385,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 65387,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 81342,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 81346,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 81398,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 81402,
+   "variation_id": null,
+   "target": "description",
+   "old": "הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו",
+   "new": "הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו",
+   "finding": "הזמינו עכשיו את  באתר מינוטו קפה כוסות"
+  },
+  {
+   "product_id": 65441,
+   "variation_id": null,
+   "target": "description",
+   "old": "להזנת וטחינת החלב",
+   "new": "להזנת החלב",
+   "finding": "להזנת וטחינת החלב בקלות"
+  },
+  {
+   "product_id": 67142,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה: 65</li>",
+   "new": "גובה: 65 מ\"מ</li>",
+   "finding": "גובה: 65"
+  },
+  {
+   "product_id": 67193,
+   "variation_id": null,
+   "target": "description",
+   "old": "וצינורית הצפה.",
+   "new": "וצינורית הקצפה.",
+   "finding": "ברז מים חמים וצינורית הצפה."
+  },
+  {
+   "product_id": 67220,
+   "variation_id": null,
+   "target": "description",
+   "old": "אטם אטם V סיליקון",
+   "new": "אטם V מסיליקון",
+   "finding": "אטם אטם V סיליקון"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "old": "מתכונים שונים שניתן לשמור </span>",
+   "new": "מתכונים שונים. </span>",
+   "finding": "שניתן לשמור  מאפיינים: ... מגש טפטוף חכם מסופק עם"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "old": "מגש טפטוף חכם<strong>מסופק עם</strong>",
+   "new": "מגש טפטוף חכם. <strong>מסופק עם:</strong>",
+   "finding": "שניתן לשמור  מאפיינים: ... מגש טפטוף חכם מסופק עם"
+  },
+  {
+   "product_id": 67672,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קטגוריות:</strong> CI, תחרות, מקלחות",
+   "new": "<strong></strong>",
+   "finding": "CI CI200IM ... קטגוריות: CI, תחרות, מקלחות"
+  },
+  {
+   "product_id": 67672,
+   "variation_id": null,
+   "target": "description",
+   "old": "בעובי המקלחת",
+   "new": "בעובי המסננת",
+   "finding": "CI CI200IM ... קטגוריות: CI, תחרות, מקלחות"
+  },
+  {
+   "product_id": 67672,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף המקלחת",
+   "new": "גוף המסננת",
+   "finding": "CI CI200IM ... קטגוריות: CI, תחרות, מקלחות"
+  },
+  {
+   "product_id": 68290,
+   "variation_id": null,
+   "target": "description",
+   "old": "של חברת - מאפשר",
+   "new": "של חברת מוטה (Motta) מאפשר",
+   "finding": "מדחום לחלב של חברת - מאפשר"
+  },
+  {
+   "product_id": 68307,
+   "variation_id": null,
+   "target": "description",
+   "old": "את הטוטוקרnה עד שליש המיכל בחלב ומניכים",
+   "new": "את הטוטוקרמה עד שליש המיכל בחלב ומניחים",
+   "finding": "ממלאים את הטוטוקרnה ... ומניכים אותה"
+  },
+  {
+   "product_id": 68308,
+   "variation_id": null,
+   "target": "description",
+   "old": "את הטוטוקרnה עד שליש המיכל בחלב ומניכים",
+   "new": "את הטוטוקרמה עד שליש המיכל בחלב ומניחים",
+   "finding": "ממלאים את הטוטוקרnה ... ומניכים אותה"
+  },
+  {
+   "product_id": 78245,
+   "variation_id": null,
+   "target": "description",
+   "old": ">ורטקס – כד הקצפה",
+   "new": ">וורטקס – כד הקצפה",
+   "finding": "ורטקס – כד הקצפה מושלם 500 מ״ל"
+  },
+  {
+   "product_id": 81503,
+   "variation_id": null,
+   "target": "description",
+   "old": ">ורטקס – כד הקצפה",
+   "new": ">וורטקס – כד הקצפה",
+   "finding": "ורטקס – כד הקצפה מושלם 500 מ״ל"
+  },
+  {
+   "product_id": 79402,
+   "variation_id": null,
+   "target": "description",
+   "old": "כלי. ה- WDT הוא",
+   "new": "כלי ה-WDT הוא",
+   "finding": "כלי. ה- WDT הוא הפתרון"
+  }
+ ],
+ "skipped": [
+  {
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "product_id": 77141,
+   "reason": "Fix needs removing two options and adding 'שחור'; not expressible as one option swap, and whether the shared attribute list is intentional is a catalogue decision."
+  },
+  {
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "product_id": 79401,
+   "reason": "Fix needs removing two options and adding 'שחור'; not expressible as one option swap, and whether the shared attribute list is intentional is a catalogue decision."
+  },
+  {
+   "finding": "(no image)",
+   "product_id": 81503,
+   "reason": "Missing image: content issue, out of scope."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 64822,
+   "reason": "Missing content: out of scope."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 67182,
+   "reason": "Missing content: out of scope."
+  },
+  {
+   "finding": "(empty)",
+   "product_id": 68383,
+   "reason": "Missing content: out of scope."
+  },
+  {
+   "finding": "משקלים לקפה Acia | מותג: Subminimal",
+   "product_id": 67651,
+   "reason": "Category reassignment is a taxonomy decision and not a supported edit target."
+  },
+  {
+   "finding": "ל חימום, פשוט מלאו",
+   "product_id": 76648,
+   "reason": "False positive: raw HTML has 'ל' and 'חימום' in adjacent spans with no space, so the page already renders 'לחימום'."
+  }
+ ]
+}

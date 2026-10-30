@@ -1,0 +1,3353 @@
+{
+ "findings": [
+  {
+   "product_id": "65180",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-daye-bensa-ethiopia-special/",
+   "field": "rank_math_title / rank_math_description vs attribute",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "Daye Bensa - קלייה בהירה וטריה · attribute: רמת קלייה = בינונית",
+   "problem": "Google title/snippet say light roast; the product is the medium-roast Daye Bensa. A separate light-roast listing (78450) exists, so a customer can buy the wrong roast.",
+   "suggested_fix": "כותרת SEO: \"פולי קפה אתיופיה Daye Bensa - קלייה בינונית | %sitename%\"; תיאור SEO: \"...ספשלטי בקלייה בינונית...\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65384",
+   "product_name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%99%d7%99%d7%a8%d7%92%d7%a9%d7%a3-%d7%97%d7%93-%d7%96%d7%a0%d7%99-yirgacheffee-ethiopia-specialty-coffee/",
+   "field": "rank_math_title / rank_math_description vs attribute",
+   "issue_type": "internal_mismatch",
+   "severity": "high",
+   "current_text": "יירגשף חד זני - קלייה בהירה · \"פולי קפה אתיופיה Sidama...\" · attribute: בינונית",
+   "problem": "SEO says light roast and \"Sidama\" (copied from Daye Bensa); attribute and description say medium roast, Yirgacheffe.",
+   "suggested_fix": "כותרת SEO: \"פולי קפה אתיופיה יירגשף חד זני - קלייה בינונית\"; תיאור SEO: \"פולי קפה אתיופיה יירגשף ספשלטי בקלייה בינונית. הדרים, יסמין ותה ירוק, גוף בינוני ומאוזן\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64855",
+   "product_name": "פולי קפה ספשלטי טרי 100% ערביקה קולומביה - Minuto Velvet Star",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%98%d7%a8%d7%99-100-%d7%a2%d7%a8%d7%91%d7%99%d7%a7%d7%94-%d7%a7%d7%95%d7%9c%d7%95%d7%9e%d7%91%d7%99%d7%94-minuto/",
+   "field": "description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מחיר ל - 100 גר - 19.5 שח",
+   "problem": "Hard-coded unit price is wrong: 69 ₪ / 330 g = 20.91 ₪ per 100 g.",
+   "suggested_fix": "מחיר ל-100 גר׳: 20.91 ₪",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65135",
+   "product_name": "ספשלטי קפה פולי קפה קניה AA+ חד זני | +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-mount-kenya/",
+   "field": "description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מחיר ל - 100 גר 23.1₪",
+   "problem": "Hard-coded unit price is wrong: 79 ₪ / 330 g = 23.94 ₪ per 100 g (23.1 matches an older ~76 ₪ price).",
+   "suggested_fix": "מחיר ל-100 גר׳: 23.94 ₪ (עדיף להסיר את השורה ולהציג מחיר ליחידה אוטומטית מהמחיר בפועל)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65189",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו טריאסט - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%98%d7%a8%d7%99%d7%90%d7%a1%d7%98-minu/",
+   "field": "description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מחיר ל - 100 גר - 16.5 שח",
+   "problem": "Hard-coded unit price is wrong: 59 ₪ / 330 g = 17.88 ₪ per 100 g.",
+   "suggested_fix": "מחיר ל-100 גר׳: 17.88 ₪",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65196",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו פרסטיז' - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96-mi/",
+   "field": "description",
+   "issue_type": "spec_commerce",
+   "severity": "high",
+   "current_text": "מחיר ל - 100 גר 16.5 שח",
+   "problem": "Hard-coded unit price is wrong: 59 ₪ / 330 g = 17.88 ₪ per 100 g.",
+   "suggested_fix": "מחיר ל-100 גר׳: 17.88 ₪",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "80501",
+   "product_name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/sweet-leona/",
+   "field": "rank_math_description",
+   "issue_type": "blend_vs_single_origin",
+   "severity": "medium",
+   "current_text": "Sweet Leona: תערובת פולי קפה מובחרת... חוויית אספרסו קטיפתית",
+   "problem": "SEO snippet calls a single-origin Colombian Caturra a blend and pitches espresso; page says single origin, light roast, best for filter.",
+   "suggested_fix": "Sweet Leona: קפה ספשלטי חד-זני מקולומביה (Caturra, עיבוד Honey) בקלייה בהירה – פרחים, תאנים וקני סוכר מקורמל. מושלם לפילטר. עכשיו במינוטו!",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65463",
+   "product_name": "פולי קפה קניה AA+ חד זני בקלייה בהירה - +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94-%d7%91%d7%94%d7%99%d7%a8%d7%94-minuto-specialty-coffee/",
+   "field": "description",
+   "issue_type": "coffee_facts",
+   "severity": "medium",
+   "current_text": "פולי קפה קניה AA מגיעים מזן ייחודי של פולי קפה",
+   "problem": "AA is a Kenyan bean-size grade, not a variety.",
+   "suggested_fix": "\"AA הוא דירוג גודל הפול הגבוה בקניה. הזנים: SL28, SL34 ו-Ruiru\" (לאמת מול הספק)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65384",
+   "product_name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%99%d7%99%d7%a8%d7%92%d7%a9%d7%a3-%d7%97%d7%93-%d7%96%d7%a0%d7%99-yirgacheffee-ethiopia-specialty-coffee/",
+   "field": "description",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים...",
+   "problem": "Broken fragment pasted from the Daye Bensa description at the end of the page.",
+   "suggested_fix": "למחוק את הפסקה מ-\"1, יש לו 0 - 3 ליקויים\" ועד \"קפה לא רחוץ.\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78450",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני בקלייה בהירה - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94/",
+   "field": "whole product vs 65180",
+   "issue_type": "copy_paste",
+   "severity": "medium",
+   "current_text": "Daye Bensa (בהירה) ו-Daye Bensa (בינונית) – תיאור כמעט זהה",
+   "problem": "Two live listings of the same coffee; 65180 title has no roast level and both share the same story text, so the light/medium difference is easy to miss.",
+   "suggested_fix": "להוסיף \"בקלייה בינונית\" לשם של 65180; לפתוח את התיאור של כל אחד במשפט על רמת הקלייה והשימוש המומלץ; לאשר ששני המוצרים נמכרים בפועל",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64771",
+   "product_name": "1 ק״ג פולי קפה Veneto Premium",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-premium/",
+   "field": "rank_math_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר",
+   "problem": "Non-specialty 40/60 Arabica/robusta blend described as specialty, suitable for filter.",
+   "suggested_fix": "1 ק״ג פולי קפה Veneto Premium – כ-40% ערביקה ו-60% רובוסטה, תערובת אינטנסיבית עם קקאו ופירות יבשים. לאספרסו וקפוצ׳ינו",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64772",
+   "product_name": "1 ק״ג פולי קפה Veneto Delux",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-delux/",
+   "field": "rank_math_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר",
+   "problem": "Non-specialty 60/40 Arabica/robusta blend described as specialty, suitable for filter.",
+   "suggested_fix": "1 ק״ג פולי קפה Veneto Delux – 60% ערביקה ו-40% רובוסטה, בסגנון איטלקי. מתיקות עדינה, תווים אגוזיים וחומציות נמוכה. לאספרסו ומקינטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65175",
+   "product_name": "פולי קפה ברזיל Fazenda Sertão חד זני - Minuto Specialty Coffee Fazenda Sertão yellow bourbon",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%91%d7%a8%d7%96%d7%99%d7%9c-fazenda-sertao-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-fazenda-sertao-yellow-bourbon/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "גוף – בינוני · \"בעלת גוף מלא\"",
+   "problem": "Body is given as medium in the spec box and full in the story text.",
+   "suggested_fix": "למחוק \"בעלת גוף מלא\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "76255",
+   "product_name": "3 ק״ג פולי קפה Veneto",
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-premium/",
+   "field": "rank_math_description",
+   "issue_type": "internal_mismatch",
+   "severity": "medium",
+   "current_text": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר",
+   "problem": "Veneto is the non-specialty Italian line (Arabica + robusta), but the SEO snippet calls it specialty and suggests filter.",
+   "suggested_fix": "חבילת 3 ק״ג פולי קפה Veneto – תערובות ערביקה ורובוסטה בסגנון איטלקי, ב-10% הנחה. לאספרסו ומקינטה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65110",
+   "product_name": "1 ק״ג קפה ירוק קניה AA+ חד זני – +Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-specialty-coffee-mount-kenya-aa/",
+   "field": "rank_math_description / description",
+   "issue_type": "missing_data",
+   "severity": "medium",
+   "current_text": "1 קג פולי קפה ירוקים איך זה מרגיש. ... קל לשימוש ולתחזוקה",
+   "problem": "SEO snippet is garbled appliance boilerplate; page has no region, altitude or process and gives brewing advice for green beans.",
+   "suggested_fix": "תיאור SEO: \"1 ק״ג פולי קפה ירוקים קניה AA+ לקלייה ביתית – חומציות נוצצת ומתיקות עדינה.\" ולהוסיף אזור/גובה/עיבוד כמו בקלוי",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65135",
+   "product_name": "ספשלטי קפה פולי קפה קניה AA+ חד זני | +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-mount-kenya/",
+   "field": "description",
+   "issue_type": "coffee_facts",
+   "severity": "low",
+   "current_text": "מדובר באחד מהזנים היותר מיוחדים שנחתו בארץ",
+   "problem": "AA is a grade, not a variety.",
+   "suggested_fix": "מדובר באחד הקפים המיוחדים ביותר שנחתו בארץ",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65179",
+   "product_name": "פולי קפה ספשלטי קפה אנטיגואה חד זני - Minuto GUATEMALA ANTIGUA Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%a0%d7%98%d7%99%d7%92%d7%95%d7%90%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-guatemala/",
+   "field": "description",
+   "issue_type": "coffee_facts",
+   "severity": "low",
+   "current_text": "אחד מזני הקפה הקלאסיים בעולם: ערביקה גוואטמלה אנטיגואה",
+   "problem": "Antigua is a region, not a variety.",
+   "suggested_fix": "אחד מאזורי הקפה הקלאסיים בעולם: אנטיגואה שבגואטמלה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64702",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו אריסטו - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%90%d7%a8%d7%99%d7%a1%d7%98%d7%95-minu/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "הקפו׳צינו",
+   "problem": "Typo.",
+   "suggested_fix": "הקפוצ׳ינו",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64734",
+   "product_name": "פולי קפה ספשלטי קפה מינוטו נטול קפאין - Minuto Decaffeinato",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a0%d7%98%d7%95%d7%9c-%d7%a7%d7%a4%d7%90%d7%99%d7%9f-minut/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פולי קפה נטול 100% ערביקה מקסיקנית, נטול בתהליך Water proccess",
+   "problem": "Missing word and English typo.",
+   "suggested_fix": "פולי קפה נטול קפאין, 100% ערביקה מקסיקנית, בתהליך Water Process",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64855",
+   "product_name": "פולי קפה ספשלטי טרי 100% ערביקה קולומביה - Minuto Velvet Star",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%98%d7%a8%d7%99-100-%d7%a2%d7%a8%d7%91%d7%99%d7%a7%d7%94-%d7%a7%d7%95%d7%9c%d7%95%d7%9e%d7%91%d7%99%d7%94-minuto/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פרופיל פירחוני שוקולדי",
+   "problem": "Typo.",
+   "suggested_fix": "פרופיל פרחוני שוקולדי",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65135",
+   "product_name": "ספשלטי קפה פולי קפה קניה AA+ חד זני | +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-mount-kenya/",
+   "field": "short_description / rank_math_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "איך זה מרגיש? עם חומציות נוצצת · פרטים באתר &gt;",
+   "problem": "Broken sentence; HTML entity in SEO text.",
+   "suggested_fix": "\"איך זה מרגיש? חומציות נוצצת ומתיקות עדינה, וברקע מרירות נעימה\" · להסיר \"&gt;\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65169",
+   "product_name": "פולי קפה ספשלטי קפה גוג'י חד זני - Minuto Specialty Coffee Guji",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%92%d7%95%d7%92%d7%99-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-guji/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "פרנץ׳ פרס, פלאנג׳ר ) וחליטה קרה",
+   "problem": "Stray parenthesis; French press and plunger are the same thing.",
+   "suggested_fix": "מומלץ מאוד לחובבי V60, פרנץ׳ פרס וחליטה קרה.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65175",
+   "product_name": "פולי קפה ברזיל Fazenda Sertão חד זני - Minuto Specialty Coffee Fazenda Sertão yellow bourbon",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%91%d7%a8%d7%96%d7%99%d7%9c-fazenda-sertao-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-fazenda-sertao-yellow-bourbon/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "בתחריות קפה · Play · Fazenda Sertão - Nazareth Dias Pereira",
+   "problem": "Typo plus leftover video-embed text.",
+   "suggested_fix": "בתחרויות קפה; למחוק \"Play\" ואת שם הסרטון",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65180",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-daye-bensa-ethiopia-special/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "לבנדר וונגיעות לימון",
+   "problem": "Typo (double vav).",
+   "suggested_fix": "לבנדר ונגיעות לימון",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65180",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-daye-bensa-ethiopia-special/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "אתיופיה נחשבת לעיר הולדתו של קפה",
+   "problem": "Ethiopia is a country, not a city.",
+   "suggested_fix": "אתיופיה נחשבת לארץ הולדתו של הקפה (גם ב-78450)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65189",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו טריאסט - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%98%d7%a8%d7%99%d7%90%d7%a1%d7%98-minu/",
+   "field": "short_description / description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "למשקאות האספרסו ,קפוצ'ינו,",
+   "problem": "Sentence ends on a comma; comma spacing.",
+   "suggested_fix": "למשקאות אספרסו וקפוצ׳ינו.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65201",
+   "product_name": "250 גר קפה ירוק מינוטו - פרסטיז'",
+   "permalink": "https://www.minuto.co.il/product/250-%d7%92%d7%a8-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96/",
+   "field": "rank_math_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "...איכות מעולה ועמידות לאורך זמן. ... קל לשימוש ולתחזוקה",
+   "problem": "Appliance boilerplate on a coffee product.",
+   "suggested_fix": "\"250 גרם פולי קפה ירוקים מינוטו פרסטיז׳ לקלייה ביתית – ערביקה ברזילאית ורובוסטה הודית.\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65201",
+   "product_name": "250 גר קפה ירוק מינוטו - פרסטיז'",
+   "permalink": "https://www.minuto.co.il/product/250-%d7%92%d7%a8-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96/",
+   "field": "short_description / description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "ערביקה ברזיאלית",
+   "problem": "Typo.",
+   "suggested_fix": "ערביקה ברזילאית",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65384",
+   "product_name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%99%d7%99%d7%a8%d7%92%d7%a9%d7%a3-%d7%97%d7%93-%d7%96%d7%a0%d7%99-yirgacheffee-ethiopia-specialty-coffee/",
+   "field": "name / short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "Yirgacheffee · ירגשף",
+   "problem": "English typo; Hebrew spelled two ways.",
+   "suggested_fix": "Yirgacheffe · יירגשף",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65384",
+   "product_name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%99%d7%99%d7%a8%d7%92%d7%a9%d7%a3-%d7%97%d7%93-%d7%96%d7%a0%d7%99-yirgacheffee-ethiopia-specialty-coffee/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "קפה אתיופי יירגשף, פולי קפה יירגשף, קפה פרחוני, קפה פירותי.",
+   "problem": "Visible SEO keyword line.",
+   "suggested_fix": "למחוק את השורה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65431",
+   "product_name": "ספשלטי קפה פולי קפה Jungle Java - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-jungle-java-minuto/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "מושלם לאספרסו, קפוצ'ינו או פילטר ... מושלם להכנת אספרסו,קפוצינו וקפה פילטר.",
+   "problem": "Same sentence twice.",
+   "suggested_fix": "למחוק את המשפט השני",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65463",
+   "product_name": "פולי קפה קניה AA+ חד זני בקלייה בהירה - +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94-%d7%91%d7%94%d7%99%d7%a8%d7%94-minuto-specialty-coffee/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "טיפים להכנת קפה קנייה AA · עדינות,.",
+   "problem": "Typo and stray punctuation.",
+   "suggested_fix": "קפה קניה AA · עדינות.",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67146",
+   "product_name": "ערכת התנסות פולי קפה ספשלטי חד זני מינוטו Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%94%d7%aa%d7%a0%d7%a1%d7%95%d7%aa-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%9e%d7%99%d7%a0%d7%95/",
+   "field": "short_description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "לפרטים נוספים והזמנה: https://www.minuto.co.il/",
+   "problem": "Raw homepage URL in the short description of a page already on the site.",
+   "suggested_fix": "למחוק את השורה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "67217",
+   "product_name": "ערכת התנסות פולי קפה טרי ספשלטי קפה מינוטו - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%94%d7%aa%d7%a0%d7%a1%d7%95%d7%aa-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "ניחוד של שוקולד · Trieste",
+   "problem": "Typo; blend name spelled differently from its product (טריאסט / Triest).",
+   "suggested_fix": "ניחוח של שוקולד · טריאסט",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "76255",
+   "product_name": "3 ק״ג פולי קפה Veneto",
+   "permalink": "https://www.minuto.co.il/product/3-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-premium/",
+   "field": "description / name",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "בעלים טעמים · \"3  ק״ג\"",
+   "problem": "Typo; double space in title.",
+   "suggested_fix": "בעלי טעמים · \"3 ק״ג\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78450",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני בקלייה בהירה - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "אתיופיה נחשבת לעיר הולדתו של קפה · פרחים פרחוניים",
+   "problem": "Country, not city; \"flowery flowers\" redundancy.",
+   "suggested_fix": "\"אתיופיה נחשבת לארץ הולדתו של הקפה\" · \"טעמים לימוניים מתוקים ופרחוניים\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82540",
+   "product_name": "פולי קפה ספשלטי מינוטו Aji Bourbon Anaerobic - Roastery Brisas",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-aji-bourbon-anaerobic-roastery-brisas/",
+   "field": "description",
+   "issue_type": "hebrew_text",
+   "severity": "low",
+   "current_text": "בחחוות Las Brisas",
+   "problem": "Typo.",
+   "suggested_fix": "בחוות Las Brisas",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65169",
+   "product_name": "פולי קפה ספשלטי קפה גוג'י חד זני - Minuto Specialty Coffee Guji",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%92%d7%95%d7%92%d7%99-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-guji/",
+   "field": "short_description vs description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "גוף – בינוני (קצר) · גוף - בינוני - מלא (ארוך)",
+   "problem": "Body differs.",
+   "suggested_fix": "גוף – בינוני-מלא בשני השדות",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65175",
+   "product_name": "פולי קפה ברזיל Fazenda Sertão חד זני - Minuto Specialty Coffee Fazenda Sertão yellow bourbon",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%91%d7%a8%d7%96%d7%99%d7%9c-fazenda-sertao-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-fazenda-sertao-yellow-bourbon/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "yellow bourbon (כותרת) · זן: 100% ערביקה",
+   "problem": "Variety in the title is missing from the spec box.",
+   "suggested_fix": "זן: בורבון צהוב (Yellow Bourbon), 100% ערביקה",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "80501",
+   "product_name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/sweet-leona/",
+   "field": "description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "\"להעניק גוף מלא ונעים\" · גוף: בינוני-קטיפתי",
+   "problem": "Body is described as both full and medium.",
+   "suggested_fix": "\"להעניק גוף נעים וקטיפתי\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "80501",
+   "product_name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/sweet-leona/",
+   "field": "short_description",
+   "issue_type": "internal_mismatch",
+   "severity": "low",
+   "current_text": "מחווה של לוז הלנה (קולומביה)",
+   "problem": "Short description calls Luz Helena a farm; the long description names the farm as La Leona and Luz Helena as the producer.",
+   "suggested_fix": "מחוות La Leona של לוז הלנה (קווינדיו, קולומביה)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65111",
+   "product_name": "1 ק״ג קפה ירוק ספשלטי קפה אנטיגואה חד זני – GUATEMALA ANTIGUA Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%a0%d7%98%d7%99%d7%92%d7%95%d7%90%d7%94-%d7%97%d7%93-%d7%96%d7%a0/",
+   "field": "rank_math_description / description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "איכות מעולה ועמידות לאורך זמן · (אין עיבוד)",
+   "problem": "Boilerplate in SEO; process missing (roasted page says washed).",
+   "suggested_fix": "להסיר את המשפט הגנרי; להוסיף \"עיבוד: שטוף\"",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65169",
+   "product_name": "פולי קפה ספשלטי קפה גוג'י חד זני - Minuto Specialty Coffee Guji",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%92%d7%95%d7%92%d7%99-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-guji/",
+   "field": "description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "מקור: אתיופיה",
+   "problem": "No altitude, variety, process or roast level for the most expensive single origin (92 ₪).",
+   "suggested_fix": "להוסיף גובה, זן (היירלום?), עיבוד ורמת קלייה – לאמת מול הספק",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65463",
+   "product_name": "פולי קפה קניה AA+ חד זני בקלייה בהירה - +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94-%d7%91%d7%94%d7%99%d7%a8%d7%94-minuto-specialty-coffee/",
+   "field": "description",
+   "issue_type": "missing_data",
+   "severity": "low",
+   "current_text": "מקור: קניה · גדל בגובה של מעל 1800 מטר",
+   "problem": "No region, variety, process or harvest; most of the page is generic copy.",
+   "suggested_fix": "להוסיף אזור, זנים, עיבוד – לאמת מול הספק",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64734",
+   "product_name": "פולי קפה ספשלטי קפה מינוטו נטול קפאין - Minuto Decaffeinato",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a0%d7%98%d7%95%d7%9c-%d7%a7%d7%a4%d7%90%d7%99%d7%9f-minut/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64771",
+   "product_name": "1 ק״ג פולי קפה Veneto Premium",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-premium/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64772",
+   "product_name": "1 ק״ג פולי קפה Veneto Delux",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-veneto-delux/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "64855",
+   "product_name": "פולי קפה ספשלטי טרי 100% ערביקה קולומביה - Minuto Velvet Star",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%98%d7%a8%d7%99-100-%d7%a2%d7%a8%d7%91%d7%99%d7%a7%d7%94-%d7%a7%d7%95%d7%9c%d7%95%d7%9e%d7%91%d7%99%d7%94-minuto/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65108",
+   "product_name": "1 ק״ג קפה ירוק ברזיל Fazenda Sertão חד זני – Specialty Coffee Fazenda Sertão",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%91%d7%a8%d7%96%d7%99%d7%9c-fazenda-sertao-%d7%97%d7%93-%d7%96%d7%a0%d7%99-specialty-coffee-fazenda-sertao/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight=''",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65110",
+   "product_name": "1 ק״ג קפה ירוק קניה AA+ חד זני – +Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-specialty-coffee-mount-kenya-aa/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight=''",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65111",
+   "product_name": "1 ק״ג קפה ירוק ספשלטי קפה אנטיגואה חד זני – GUATEMALA ANTIGUA Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%a0%d7%98%d7%99%d7%92%d7%95%d7%90%d7%94-%d7%97%d7%93-%d7%96%d7%a0/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight=''",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65135",
+   "product_name": "ספשלטי קפה פולי קפה קניה AA+ חד זני | +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-mount-kenya/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65169",
+   "product_name": "פולי קפה ספשלטי קפה גוג'י חד זני - Minuto Specialty Coffee Guji",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%92%d7%95%d7%92%d7%99-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-guji/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65175",
+   "product_name": "פולי קפה ברזיל Fazenda Sertão חד זני - Minuto Specialty Coffee Fazenda Sertão yellow bourbon",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%91%d7%a8%d7%96%d7%99%d7%9c-fazenda-sertao-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-specialty-coffee-fazenda-sertao-yellow-bourbon/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65179",
+   "product_name": "פולי קפה ספשלטי קפה אנטיגואה חד זני - Minuto GUATEMALA ANTIGUA Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%a0%d7%98%d7%99%d7%92%d7%95%d7%90%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-guatemala/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65180",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-minuto-daye-bensa-ethiopia-special/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65189",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו טריאסט - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%98%d7%a8%d7%99%d7%90%d7%a1%d7%98-minu/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65196",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו פרסטיז' - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96-mi/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65201",
+   "product_name": "250 גר קפה ירוק מינוטו - פרסטיז'",
+   "permalink": "https://www.minuto.co.il/product/250-%d7%92%d7%a8-%d7%a7%d7%a4%d7%94-%d7%99%d7%a8%d7%95%d7%a7-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight=''",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65204",
+   "product_name": "פולי קפה טרי ספשלטי קפה מינוטו אינטנסו - Minuto Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%98%d7%a8%d7%99-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-%d7%90%d7%99%d7%a0%d7%98%d7%a0%d7%a1%d7%95/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65384",
+   "product_name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%99%d7%99%d7%a8%d7%92%d7%a9%d7%a3-%d7%97%d7%93-%d7%96%d7%a0%d7%99-yirgacheffee-ethiopia-specialty-coffee/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65431",
+   "product_name": "ספשלטי קפה פולי קפה Jungle Java - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-jungle-java-minuto/",
+   "field": "variation SKUs",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "4545645632-54575 … (מק״ט אב 1000000005)",
+   "problem": "Variation SKUs use a placeholder-looking prefix unrelated to the parent SKU.",
+   "suggested_fix": "לאחד למבנה 1000000005-xxxxx כמו בשאר המוצרים",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65431",
+   "product_name": "ספשלטי קפה פולי קפה Jungle Java - Minuto",
+   "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%a7%d7%a4%d7%94-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-jungle-java-minuto/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "65463",
+   "product_name": "פולי קפה קניה AA+ חד זני בקלייה בהירה - +Minuto Specialty Coffee Mount Kenya AA",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a0%d7%99%d7%94-aa-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94-%d7%91%d7%94%d7%99%d7%a8%d7%94-minuto-specialty-coffee/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "78450",
+   "product_name": "פולי קפה אתיופיה דיי בנסה חד זני בקלייה בהירה - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%90%d7%aa%d7%99%d7%95%d7%a4%d7%99%d7%94-%d7%93%d7%99%d7%99-%d7%91%d7%a0%d7%a1%d7%94-%d7%97%d7%93-%d7%96%d7%a0%d7%99-%d7%91%d7%a7%d7%9c%d7%99%d7%99%d7%94/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "80501",
+   "product_name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/sweet-leona/",
+   "field": "SKU / text",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "SKU 69f87b45339c1 · (אין אפשרויות טחינה)",
+   "problem": "Auto-generated SKU; simple product without grind options and the text doesn't say it ships as whole beans.",
+   "suggested_fix": "מק״ט ייעודי; להוסיף \"שקית 200 גר׳, פולים שלמים\" לתיאור הקצר",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "80501",
+   "product_name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "permalink": "https://www.minuto.co.il/product/sweet-leona/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82540",
+   "product_name": "פולי קפה ספשלטי מינוטו Aji Bourbon Anaerobic - Roastery Brisas",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-aji-bourbon-anaerobic-roastery-brisas/",
+   "field": "attributes / weight / SKU",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "כמות: 180 · משקל: 0 · SKU 69f87b45339c1-12",
+   "problem": "Bag size has no unit and isn't in the text; shipping weight empty; SKU is an auto-generated copy of Sweet Leona's.",
+   "suggested_fix": "כמות: \"180 גר׳\"; להוסיף \"שקית 180 גר׳, פולים שלמים\" לתיאור הקצר; משקל 0.18; מק״ט ייעודי",
+   "confidence": "certain"
+  },
+  {
+   "product_id": "82540",
+   "product_name": "פולי קפה ספשלטי מינוטו Aji Bourbon Anaerobic - Roastery Brisas",
+   "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99-%d7%9e%d7%99%d7%a0%d7%95%d7%98%d7%95-aji-bourbon-anaerobic-roastery-brisas/",
+   "field": "weight",
+   "issue_type": "spec_commerce",
+   "severity": "low",
+   "current_text": "weight='0'",
+   "problem": "Shipping weight is empty or 0 although the bag size is known.",
+   "suggested_fix": "להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)",
+   "confidence": "certain"
+  }
+ ],
+ "products": [
+  {
+   "id": 64702,
+   "name": "פולי קפה טרי ספשלטי קפה מינוטו אריסטו  - Minuto Specialty Coffee",
+   "short_description": "<ul>\n<li>תערובת 100% ערביקה, מושלמת לאספרסו ולאוהבי הקפו׳צינו החזק, תערובת עם גוונים של שוקולד ואגוזים, תערובת חלקה וקרמית.מקור: <em>ברזיל</em></li>\n<li>פולי קפה פרימיום טרי וקלוי במקום</li>\n<li>100% ערביקה</li>\n</ul>\n<p>330 גר</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\"><strong>פולי קפה מינוטו אריסטו- Espresso Aristo</strong></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת הקפה \"אריסטו\" נולדה אחרי חודשים של טעימות, ניסויים ועדכונים קטנים שבדיוק מהם מורכבת שלמות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>רצינו ליצור תערובת ספשלטי שתהיה יציבה, עשירה, ומדויקת - כזו שאפשר לסמוך עליה בכל שוט.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>היא מבוססת על שילוב מוקפד של פולים ממקורות שונים, בגובה רב, אשר מעניקים לה גוף חלק, קרמה עבה וטעמים קלאסיים של שוקולד מריר, אגוזים קלויים ומרירות עדינה שמחזיקה גם בחלב וגם באספרסו קצר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מתאימה למי שמחפש קפה חזק, הרמוני ולא מתפשר, לשימוש יומיומי במכונות אספרסו, קפסולות פתוחות או מקינטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: <em>ברזיל</em></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו והכנת קפה במקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה אריסטו ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - משלוח מהיר. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "אריסטו",
+    "rank_math_title": "פולי קפה אריסטו Minuto Aristo - תערובת ספשלטי טרייה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0.33",
+   "variations": [
+    {
+     "id": 69755,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    },
+    {
+     "id": 69754,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    },
+    {
+     "id": 69753,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    },
+    {
+     "id": 69752,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    },
+    {
+     "id": 69751,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    },
+    {
+     "id": 69750,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0.33",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 64734,
+   "name": "פולי קפה ספשלטי קפה מינוטו נטול קפאין - Minuto Decaffeinato",
+   "short_description": "<p>330 גר פולי קפה נטול <b>100% ערביקה מקסיקנית, נטול בתהליך Water proccess </b> <strong>איך זה מרגיש?</strong></p>\n<p dir=\"rtl\">קפה עדין, עם גוף מלא, מתקתק וקרמי</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\">פולי קפה מינוטו נטול קפאין - Decaffeinato</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת נטולת קפאין המורכבת מ 100 % ערביקה מקסיקנית, שעברה דה קפאין בשיטת Water Process תהליך טבעי המבוסס על מים ופחם פעיל, בלי שימוש בכימיקלים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שיטה זו שומרת על הארומה והטעמים המקוריים של הפולים, כך שתוכלו ליהנות מקפה עשיר גם בלי קפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי ערביקה המקסיקניים ידועים בגוף בינוני ובטעם חלק ומאוזן עם רמזים לשוקולד, אגוזים ותבלינים, והם מעניקים לכוס מרקם קרמי ומתקתק. <br />בקלייה עדינה מתקבל קפה נטול קפאין עם גוף מלא, מתיקות טבעית ואיזון עדין של חמיצות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם למי שמחפש חוויית קפה מפנקת בשעות הערב או למי שמעדיף להפחית את צריכת הקפאין.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "פולי קפה נטול קפאין | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מארז 330 גרם פולי קפה נטול קפאין 100% ערביקה מקסיקנית, נטול בתהליך Water proccess היוצר פולי קפה נטול קפאין קפה עדין, עם גוף מלא, מתקתק וקרמי\n",
+    "rank_math_focus_keyword": "Decaffeinato"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69749,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69748,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69747,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69746,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69745,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69744,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 64771,
+   "name": "1 ק״ג פולי קפה Veneto Premium",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:147\">התענגו על חווית קפה יוצאת דופן עם פולי קפה פרימיום וונטו! תערובת אינטנסיבית וקלייה מושלמת מעניקים טעם עשיר וחזק, עם רמזים של קקאו ופירות יבשים.</p>\n<p data-sourcepos=\"5:1-5:60\">התאימו את הטחינה למכונת הקפה שלכם והכינו קפה מושלם בבית!</p>\n<p data-sourcepos=\"5:1-5:60\">תערובת מעולה זו משלבת כ-40% קפה ערביקה ארומטי עם 60% קפה רובוסטה לפרופיל טעמים עשיר ומאוזן.</p>\n<p data-sourcepos=\"7:1-7:38\">הזמינו עוד היום מ-www.minuto.co.il</p>\n</div>\n<p>&nbsp;</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:47\">פולי קפה פרימיום וונטו: מסע טעמים עוצר נשימה</h2>\n<p data-sourcepos=\"3:1-3:135\"><strong>התענגו על חווית קפה יוצאת דופן עם פולי קפה פרימיום וונטו, תערובת אינטנסיבית שנוצרה כדי להעיר את החושים ולעורר את התשוקה לקפה משובח.</strong></p>\n<p data-sourcepos=\"5:1-5:31\"><strong>הקפדה על איכות בלתי מתפשרת:</strong></p>\n<ul data-sourcepos=\"7:1-10:0\">\n<li data-sourcepos=\"7:1-7:62\">קלייה מדויקת של פולי ערביקה משובחים מאמריקה המרכזית והדרומית</li>\n<li data-sourcepos=\"8:1-8:38\">שילוב מופלא עם רובוסטה הודית איכותית</li>\n<li data-sourcepos=\"9:1-10:0\">יצירת חליטה בעלת גוף מלא ועשיר</li>\n</ul>\n<p data-sourcepos=\"11:1-11:21\"><strong>הרמוניה של טעמים:</strong></p>\n<ul data-sourcepos=\"13:1-17:0\">\n<li data-sourcepos=\"13:1-13:16\">חומציות מאוזנת</li>\n<li data-sourcepos=\"14:1-14:21\">תווים חזקים של קקאו</li>\n<li data-sourcepos=\"15:1-15:39\">רמזים עדינים של פירות יבשים ולחם קלוי</li>\n<li data-sourcepos=\"16:1-17:0\">סימפוניה של טעמים בכל לגימה</li>\n</ul>\n<p data-sourcepos=\"18:1-18:19\"><strong>קפוצ'ינו חלומי:</strong></p>\n<ul data-sourcepos=\"20:1-23:0\">\n<li data-sourcepos=\"20:1-20:59\">פולי קפה פרימיום וונטו מעניקים לקפוצ'ינו טעם עוצמתי ומענג</li>\n<li data-sourcepos=\"21:1-21:17\">קצף קטיפתי וחלק</li>\n<li data-sourcepos=\"22:1-23:0\">חוויה בלתי נשכחת</li>\n</ul>\n<p data-sourcepos=\"24:1-24:28\"><strong>שדרגו את שגרת הקפה שלכם:</strong></p>\n<ul data-sourcepos=\"26:1-29:0\">\n<li data-sourcepos=\"26:1-26:32\">התפנקו עם התגלמות הטעם והאיכות</li>\n<li data-sourcepos=\"27:1-27:62\">הזמינו את פולי קפה פרימיום וונטו עוד היום מ-www.minuto.co.il</li>\n<li data-sourcepos=\"28:1-29:0\">צאו למסע טעמים מרגש</li>\n</ul>\n<p data-sourcepos=\"30:1-30:59\"><strong>פולי קפה פרימיום וונטו - תענוג צרוף לחובבי קפה אמיתיים.</strong></p>\n<p data-sourcepos=\"32:1-32:186\">\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - מבצע מיוחד. קלייה טרייה לאיכות מקסימלית"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "1000"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64772,
+   "name": "1 ק״ג פולי קפה Veneto Delux",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p style=\"text-align: right;\" data-sourcepos=\"3:1-3:64\">תערובת דלוקס של ערביקה ורובוסטה, קלייה מקומית טרייה בסגנון איטלקי.</p>\n<p data-sourcepos=\"5:1-5:55\">טעמים עשירים ומאוזנים, מתיקות עדינה ותווים אגוזיים.</p>\n<p data-sourcepos=\"7:1-7:27\">חומציות נמוכה וקפה חלק.</p>\n<p data-sourcepos=\"9:1-9:45\">התפנקו במסע טעמים בלתי נשכח אל לב איטליה!</p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:55\">1 ק\"ג פולי קפה Veneto Delux: חגיגה של טעמים איטלקיים</h2>\n<p data-sourcepos=\"3:1-3:212\"><strong>התענגו על תערובת דלוקס מבית וונטו, פולי קפה משובחים המעוצבים בדיוק מופתי. </strong></p>\n<p data-sourcepos=\"3:1-3:212\"><strong>שילוב מושלם של 60% ערביקה ארומטית ו-40% רובוסטה איכותית יוצר פרופיל טעמים עשיר ומאוזן, המזמין אתכם לחוות את המסורת האיטלקית בכל לגימה.</strong></p>\n<p data-sourcepos=\"5:1-5:33\"><strong>הקסם של קלייה מקומית בסגנון איטלקי:</strong></p>\n<ul data-sourcepos=\"7:1-9:0\">\n<li data-sourcepos=\"7:1-7:98\">פולי הקפה עוברים קלייה מקומית טרייה, איטית ומדויקת, תוך שימוש בטכניקות עתיקות יומין וידע איטלקי אותנטי.</li>\n<li data-sourcepos=\"8:1-9:0\">התוצאה: קפה בעל ניחוח משכר ועושר טעמים בלתי מתפשר, המביא לכם את הטעם האיטלקי היישר אליכם הביתה.</li>\n</ul>\n<p data-sourcepos=\"10:1-10:32\"><strong>מתיקות עדינה ותווים אגוזיים:</strong></p>\n<ul data-sourcepos=\"12:1-14:0\">\n<li data-sourcepos=\"12:1-12:80\">תערובת Veneto Delux מפנקת את החושים עם רמז עדין של מתיקות ותת גוון אגוזי מענג.</li>\n<li data-sourcepos=\"13:1-14:0\">השילוב המוקפד יוצר הרמוניה של טעמים שנמשכת לאורך זמן, ומעניק לכם חוויה קולינרית ייחודית.</li>\n</ul>\n<p data-sourcepos=\"15:1-15:27\"><strong>חומציות נמוכה וקפה חלק:</strong></p>\n<ul data-sourcepos=\"17:1-19:0\">\n<li data-sourcepos=\"17:1-17:69\">פולי הקפה נבחרו בקפידה על מנת להבטיח חומציות נמוכה וטעם חלק ומעודן.</li>\n<li data-sourcepos=\"18:1-19:0\">פרופיל עדין זה מאפשר לכל מגוון הטעמים לזרוח, ומביא לכם כוס קפה קטיפתית ומעוגלת היטב.</li>\n</ul>\n<p data-sourcepos=\"20:1-20:29\"><strong>התפנקו בחוויה יוצאת דופן:</strong></p>\n<ul data-sourcepos=\"22:1-24:0\">\n<li data-sourcepos=\"22:1-22:95\">תערובת Veneto Delux היא התגלמות הטעם והאיכות, ומזמינה אתכם לצאת למסע טעמים מרתק אל לב איטליה.</li>\n<li data-sourcepos=\"23:1-24:0\">טבלו את עצמכם במורשת האיטלקית העשירה ותנו לטעמים המפתים להעביר אתכם לחוויה בלתי נשכחת.</li>\n</ul>\n<p data-sourcepos=\"25:1-25:70\"><strong>הזמינו עוד היום את פולי הקפה Veneto Delux ותגלו עולם חדש של טעמים!</strong></p>\n<p data-sourcepos=\"35:1-35:45\">\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - מומלץ בחום. קלייה טרייה לאיכות מקסימלית"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "1000"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 64855,
+   "name": "פולי קפה ספשלטי טרי 100% ערביקה קולומביה  - Minuto Velvet Star",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> תערובת 100% קולומביה עם גוף בינוני, עשיר בקרמה, חומציות בהירה, טעם פרחוני, עם רמיזות של שוקולד מריר 330 גר</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\">פולי קפה טרי 100% ערביקה קולומביה Velvet Star</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת 100% קולומביה עם גוף בינוני, עשיר בקרמה, חומציות בהירה, טעם פרחוני, עם רמיזות של שוקולד מריר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה בעיבוד שטוף עובר שטיפה במים, ניקיון והוצאת הפולים מפרי הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תהליך זה מעניק תווים נקיים ועדינים ומייצר גוף קרמי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התוצאה היא פרופיל פירחוני שוקולדי, מאוזן היטב עם חומציות בהירה וגוף חלק - כוס מהנה לאוהבי האספרסו והקפוצ׳ינו האיטלקי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: קולומביה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גדל בגובה של מעל 1200 מטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מחיר ל - 100 גר - 19.5 שח</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_title": "פולי קפה קולומביה | מינוטו חנות קפה ואביזרים",
+    "rank_math_description": "מארז של 330 גרם פולי קפה קולומביה עם גוף בינוני, עשיר בקרמה, חומציות בהירה, טעם פרחוני, ורמיזת שוקולד מריר. פולי קפה קולומביה מתאימים במיוחד לאספרסו וקפוצ'ינו",
+    "rank_math_focus_keyword": "Velvet Star"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69743,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69742,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69741,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69740,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69739,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69738,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65108,
+   "name": "1 ק״ג קפה ירוק ברזיל Fazenda Sertão חד זני – Specialty Coffee Fazenda Sertão",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> טעמים – דבש פירותי עם רמיזות שוקולדיות ארומה – שוקולד מריר, סוכר חום וחמיצות נעימה גוף – בינוני חומציות – פירותית</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"item-name\">\n<p><strong>איך זה מרגיש?</strong></p>\n<p>טעמים – דבש פירותי עם רמיזות שוקולדיות</p>\n<p>ארומה – שוקולד מריר, סוכר חום וחמיצות נעימה</p>\n<p>גוף – בינוני</p>\n<p>חומציות – פירותית</p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p>מקור: <em>ברזיל</em></p>\n<p>אזור:עמק גרמה – Grama Valley</p>\n<p>שם החווה – Grupo Sertãozinho</p>\n<p>גובה: 1,200 – 1,400 מטר</p>\n<p>זן: 100% ערביקה</p>\n<p>עיבוד: Natural Process</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "טעמים – דבש פירותי עם רמיזות שוקולדיות ארומה – שוקולד מריר, סוכר חום וחמיצות נעימה גוף – בינוני חומציות – פירותית",
+    "rank_math_title": "1 ק״ג פולי קפה ירוקים ברזיל פזנדה סרטאו - חד-זני | %sitename%"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65110,
+   "name": "1 ק״ג קפה ירוק קניה AA+ חד זני – +Specialty Coffee Mount Kenya AA",
+   "short_description": "<p><strong>1 ק&quot;ג פולי קפה ירוקים</strong> <strong>איך זה מרגיש?</strong> עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"item-name\">\n<p><strong>איך זה מרגיש?</strong></p>\n<p>עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה</p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p>לפולי הקפה מאונט קניה AA+ יש אצלנו מקום של כבוד, הרבה כבוד.</p>\n<p>הקפה מתאים לפילטר, קפוצ׳ינו ולאוהבי אספרסו ארומטי</p>\n<p>מקור: קניה</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "1 קג פולי קפה ירוקים איך זה מרגיש. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה",
+    "rank_math_title": "1 ק\"ג קפה ירוק קניה חד זני AA ספשלטי Mount Kenya | %sitename%"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65111,
+   "name": "1 ק״ג קפה ירוק ספשלטי קפה אנטיגואה חד זני – GUATEMALA ANTIGUA Specialty Coffee",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> טעמים – אגוז לוז עם רמיזות שוקולדיות ארומה – שוקולד, שקד גוף – בינוני חומציות – הדרים</p>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"item-name\">\n<div class=\"item-name\">\n<div class=\"item-name\">\n<h1 class=\"product-title product_title entry-title\">קפה ירוק ספשלטי קפה אנטיגואה חד זני – GUATEMALA ANTIGUA Specialty Coffee</h1>\n</div>\n<div class=\"product-short-desc grid_6 omega\">\n<p><strong>איך זה מרגיש?</strong></p>\n<p>טעמים – אגוז לוז עם רמיזות שוקולדיות</p>\n<p>ארומה – שוקולד, שקד</p>\n<p>גוף – בינוני</p>\n<p>חומציות – הדרים</p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p>מקור: גואטמלה</p>\n<p>אזור: אנטיגואה פוגו</p>\n<p>גובה: 1500-  1650<span class=\"Apple-converted-space\"> מטר</span></p>\n<p>זן: 100% ערביקה – טיפיקה, בורבון</p>\n</div>\n</div>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "טעמים – אגוז לוז עם רמיזות שוקולדיות ארומה – שוקולד, שקד גוף – בינוני חומציות – הדרים. איכות מעולה ועמידות לאורך זמן",
+    "rank_math_title": "1 ק\"ג קפה ירוק גוואטמלה אנטיגואה ספשלטי חד זני | %sitename%"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65135,
+   "name": "ספשלטי קפה פולי קפה קניה AA+ חד זני |  +Minuto Specialty Coffee Mount Kenya AA",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\">פולי קפה מאונט קניה AA+ חד זני - +Specialty Coffee Mount Kenya AA</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איך זה מרגיש?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לפולי הקפה מאונט קניה AA+ יש אצלנו מקום של כבוד, הרבה כבוד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מדובר באחד מהזנים היותר מיוחדים שנחתו בארץ ואנחנו מעניקים לו טיפול מיוחד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כדי לשמר את הטעמים המאוד מיוחדים שהקפה הזה יכול להפיק אנחנו מעניקים לו פרופיל קלייה מאוד יחודי, הוא נכנס בטמפרטורה גבוהה לקולה ולזמן קצר מה שיוצר שילוב של קפה חזק עם גוף בחלק החיצוני שלו ויחד עם זאת החלק הפנימי נשאר ארומטי ומתקתק</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקפה מתאים לפילטר, קפוצ׳ינו ולאוהבי אספרסו ארומטי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: קניה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מחוז קיאמבו - ניירובי</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>זן ערביקה,  Kenya AA Top – SL28 &amp; SL34 &amp; Ruiru</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גדל בגובה של 1700 מטר מעל פני הים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מחיר ל - 100 גר 23.1₪</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי +Mount Kenya AA בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - ספשלטי. קלייה טרייה לאיכות מקסימלית, פרטים באתר &gt;",
+    "rank_math_focus_keyword": "Mount Kenya AA",
+    "rank_math_title": "ספשלטי קפה פולי קפה קניה AA+ חד זני | +Mount Kenya AA "
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69719,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69718,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69717,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69716,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69715,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69714,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65169,
+   "name": "פולי קפה ספשלטי קפה  גוג'י חד זני - Minuto Specialty Coffee Guji",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> טעמים &#8211; פירותי, חמיצות הדרית, סיומת מתוקה ארומה &#8211; דבש, פירות הדר, מתיקות גוף &#8211; בינוני חומציות &#8211; פירותית <strong>עוד קצת פרטים</strong> מקור:אתיופיה</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\">פולי קפה גוג'י חד זני - Specialty Coffee Guji</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איך זה מרגיש?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טעמים - פירותי, חמיצות הדרית, סיומת מתוקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ארומה - דבש, פירות הדר, מתיקות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גוף - בינוני - מלא</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומציות - פירותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: <em>אתיופיה</em></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>את האתיופיה סידמו גוג׳י פגשנו לראשונה בתערוכת  Specialty coffee שביקרנו בה, מהרגע שטעמנו אותו נוצר קליק!, הבנו שפגשנו בקפה מיוחד מאוד והיה לנו ברור שאת הקפה הזה אנחנו מכניסים למגוון הקפה שלנו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הבנו שהיעוד שלו הוא לחובבי הפילטר ולצרכני הקפה שאוהבים קפוצ׳ינו לא סטנדרטי, לגוג׳י יש הרבה עומק ונוכחות, הוא מותיר טעם מתמשך מתקתק וייני, כמעט כמו לשתות תה פירות משובח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התחלנו אתו בקלייה בינונית בהירה ומהר מאוד הבנו שאם אנחנו רוצים למצות את הפוטנציאל הטמון בו עלינו לעבור לפרופילים מהירים יותר, בטמפרטורה גבוהה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התוצאה היא קפה משובח מאוד, מהמיוחדים שהכרנו, מומלץ מאוד לחובבי ה- V60, פרנץ׳ פרס, פלאנג׳ר ) וחליטה קרה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ציון 83.5</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי קפה גוג'י חד זני, Minuto Specialty Coffee Guji. פולי קפה עם מידע על מקור, פרופיל טעמים ודרכי הכנה. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "Guji,פולי קפה ספשלטי קפה גוג'י חד זני",
+    "rank_math_title": "פולי קפה Guji ספשלטי קפה  גוג'י חד זני | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69713,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69712,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69711,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69710,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69709,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69708,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65175,
+   "name": "פולי קפה ברזיל Fazenda Sertão חד זני - Minuto Specialty Coffee Fazenda Sertão yellow bourbon",
+   "short_description": "<p><strong>ציון 83.5</strong> <strong>איך זה מרגיש?</strong> טעמים &#8211; דבש פירותי עם רמיזות שוקולדיות ארומה &#8211; שוקולד מריר, סוכר חום וחמיצות נעימה גוף &#8211; בינוני חומציות &#8211; פירותית <strong>עוד קצת פרטים</strong> מקור: <em>ברזיל</em> אזור:עמק גרמה &#8211; Grama Valley שם החווה &#8211; Grupo Sertãozinho גובה: 1,100 &#8211; 1,450 מטר זן: 100% ערביקה עיבוד: נטורל פרוסס</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h2 class=\"wp-block-heading\"><strong>פולי ספשלטי קופי ברזיל  נטורל פרוסס Fazenda Sertão- Brazil yellow bourbon</strong></h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ציון 83.5</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איך זה מרגיש?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טעמים - דבש פירותי עם רמיזות שוקולדיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ארומה - שוקולד מריר, סוכר חום וחמיצות נעימה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גוף - בינוני</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חומציות - פירותית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: <em>ברזיל</em></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אזור:עמק גרמה - Grama Valley</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>שם החווה - Grupo Sertãozinho</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה: 1,100 - 1,450 מטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>זן: 100% ערביקה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיבוד: נטורל פרוסס</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קציר הקפה נעשה רק ברגע הבשלות. הפולים נקטפים על גבי בד במטרה למנוע מגע עם האדמה. לאחר שנקטף, דובדבן הקפה הוא נשטף ומונח על  משטח ייבוש, הייבוש מבוקר ונעשה באטיות ובשמש מלאה עד שהוא מגיע ל -11% לחות. לאחר הייבוש, הקפה מאוחסן באגני עץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחד מזני הקפה הקלאסיים בעולם: ערביקה ברזיל ילו בורבון היא ערביקה נהדרת ומאוזנת. והגיעה לגמר בתחריות קפה באיטליה, בעלת גוף מלא וגדלה באזור  עם תנאי גידול מושלמים: גובה, מזג אוויר מאוזן, קרקעות וולקניות ותנאים דמויי אביב נצח מספקים את התפאורה ליצור אחד מסוגי הקפה הטובים בעולם. פולי קפה מעובדים באופן מסורתי ומיובשים בשמש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ההיסטוריה של Fazenda Sertão מתמזגת עם הצעדים הראשונים של גידול הקפה בכרמו דה מינאס. מהדור הראשון של מגדלי הקפה באזור, חוסה איסידרו פריירה למד מוקדם מאוד בחייו שמשמעות החיים היא אחריות ושמחה. חוסה איסידרו איבד את אביו כשהיה בן שנה בלבד וגדל על ידי אמו האוהבת והמסורה, שהפכה אותו לאדם מכובד. חוסה איסידרו גדל, אז, ולמד רפואת שיניים - עיסוק שעסק בו במשך כמה שנים במהלך שנותיו הצעירות.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הגורל קראו לו בחזרה לכרמו דה מינאס כשאמו נפטרה והוא היה היורש היחיד של פיסת אדמה שהיא, כמובן, למעשה פזנדה סרטאו. כעבור שנים, בשנת 1949, נישא חוסה איסידרו לאהבת חייו, נצרת, ומצא בה בן זוג אמיתי לכל החיים - ואף יותר מכך.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>הדור השני</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוזה איסידרו אמר פעם שכל ההשראה לעסק באה מאביו, גם בלי להכיר אותו זמן רב. שנים אחר כך הגיעו ילדיו שלו: פרנסיסקו, לואיז פאולו, גליציה וסנדרה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל אחד מהם הלך ללימודים נפרדים בלימודים כבקשת ההורים. עכשיו כולם חזרו ביחד, ועוזרים לשמור על פעילות עסקית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקפה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אין זה סוד, בהשוואה לימים האחרונים, לקפה שגדל בכרמו דה מינאס ובאזור יש כעת הרבה יותר מודעות. אך גם בתקופות קדומות יותר, כאשר המיקוד היה יותר בנפח הייצור מאשר באיכות עצמה, היו כמה קונים גדולים מאותה תקופה העדפה מפורשת לפולי הבורבון הצהובים שעובדו בחווה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החווה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>Fazenda Sertão ממוקם מעל 1,000 מ ', בכרמו דה מינאס - מדינת מינאס גראיס. האזור מתאפיין טמפרטורה שנתית ממוצעת של 18 מעלות צלזיוס. גידולים נטועים בראש גבעות בשיפועים של עד 50%. זהו אמצעי חשוב להימנע מכפור, הנפוץ באזור בחורף, המשפיע על בריאות העצים וכדי לספק הבשלה אחידה יותר וכן הגנה מפני זיהומים בפטריות בגלל הלחות היחסית הנמוכה יותר. כל השלבים הללו, בסופו של דבר, מביאים להשגת איכות סופית טובה יותר של פולי הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הדור הבא</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בהשראת האיחוד ושגשוגם של שני הדורות הקודמים, נכדי נצרת משתפים פעולה בכמה תחומים ונוכחים בכל רשת הקפה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:boldblocks/youtube-block {\"url\":\"https://www.youtube.com/watch?v=Bkli6vNbwlA\\u0026amp;feature=youtu.be\"} --></p>\n<figure class=\"wp-block-boldblocks-youtube-block\">\n<div id=\"yb-video-Bkli6vNbwlA\" class=\"yb-player\" style=\"background-image: url('https://img.youtube.com/vi/Bkli6vNbwlA/hqdefault.jpg');\" data-video-id=\"Bkli6vNbwlA\" data-title=\"Play\"><button class=\"yb-btn-play\" type=\"button\"><span class=\"visually-hidden\">Play</span></button></div><figcaption class=\"yb-caption\">Fazenda Sertão - Nazareth Dias Pereira</figcaption></figure>\n<p><!-- /wp:boldblocks/youtube-block --></p>\n",
+   "meta": {
+    "rank_math_title": "פולי קפה ברזיל Fazenda Sertão חד זני | מינוטו קפה ואביזרים",
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - ברזיל. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "Fazenda Sertão"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69707,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69706,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69705,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69704,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69703,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69702,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65179,
+   "name": "פולי קפה ספשלטי קפה אנטיגואה חד זני - Minuto GUATEMALA ANTIGUA Specialty Coffee",
+   "short_description": "<p><strong>ציון 84</strong> <strong>איך זה מרגיש?</strong></p>\n<p>טעמים:  אגוז לוז עם רמיזות שוקולדיות</p>\n<p>ארומה &#8211; שוקולד, גוף בינוני, חמיצות הדרית</p>\n<p><strong>עוד קצת פרטים</strong> מקור: גואטמלה אזור: אנטיגואה פוגו גובה: 1500 &#8211;  1650<span class=\"Apple-converted-space\"> מטר</span></p>\n<p>זן: 100% ערביקה &#8211; טיפיקה, בורבון עיבוד: רטוב, שטוף</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h3 class=\"wp-block-heading\"><b>פולי קפה </b><span style=\"font-size: 25.92px;\"><b>גואטמלה</b></span><b> אנטיגואה- GUATEMALA ANTIGUA </b></h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>ציון 84</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איך זה מרגיש?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>טעמים - אגוז לוז עם רמיזות שוקולדיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גוף - בינוני</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>חמיצות - הדרית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>עוד קצת פרטים</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: גואטמלה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אזור: אנטיגואה פוגו</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה: 1500-  1650<span class=\"Apple-converted-space\"> מטר</span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>זן: 100% ערביקה - טיפיקה, בורבון</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עיבוד: שטוף רטוב</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחד מזני הקפה הקלאסיים בעולם: ערביקה גוואטמלה אנטיגואה היא ערביקה נהדרת ומאוזנת. <br />קרוב לתנאי גידול מושלמים: גובה, מזג אוויר מאוזן, קרקעות וולקניות ותנאים דמויי אביב נצח מספקים את התפאורה ליצור אחד מסוגי הקפה הטובים בעולם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקפה נבחר ע\"י הקואופרטיב מ-500 מגדלים באיזור הגבוה ביותר של אנטיגואה. <br />האקלים באיזור ובעיקר האדמה הוולקנית מדשנים את עצי הקפה ועוזרים לפתח את טעמי הקפה המייחדים את איזור זה.<span class=\"Apple-converted-space\"> </span></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי קפה מעובדים באופן מסורתי ומיובשים בשמש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי קפה אנטיגואה חד זני, Minuto GUATEMALA ANTIGUA Specialty Coffee. פולי קפה עם מידע על מקור, פרופיל טעמים ודרכי הכנה. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "GUATEMALA ANTIGUA",
+    "rank_math_title": "קפה GUATEMALA ANTIGUA חד-זני - חווית בוטיק טרייה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69688,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69687,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69686,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69685,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69684,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69683,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65180,
+   "name": "פולי קפה אתיופיה דיי בנסה חד זני  - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> חלק, פירותי ומתוק, עם רמיזות של וניל, לבנדר וונגיעות לימון. <br />קפה קלוי טרי עשוי לשנות את כל התפיסה שלך לגבי איך קפה יכול להיות <br /><strong>עוד קצת פרטים</strong> מקור: אתיופיה אזור: סידמו גובה: 1,600 -1,900 מ 'מעל פני הים זן: 100% ערביקה היירלום <br />תקופת קציר: אוקטובר &#8211; דצמבר עיבוד: שטוף לחלוטין</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">פולי קפה ספשלטי קפה אתיופיה דיי בנסה - Sidamo Ethiopia</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">איך זה מרגיש?</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חלק, פירותי ומתוק, עם רמיזות של וניל, לבנדר ונגיעות לימון. קפה קלוי טרי עשוי לשנות את כל התפיסה שלך לגבי איך קפה יכול להיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">עוד קצת פרטים</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>מקור:</strong> אתיופיה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>אזור:</strong> סידמו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>גובה:</strong> 1,600 -1,900 מ 'מעל פני הים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>זן:</strong> 100% ערביקה היירלום</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>תקופת קציר:</strong> אוקטובר - דצמבר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיבוד:</strong> שטוף לחלוטין</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קצת על ההיסטוריה של קפה אתיופיה דיי בנסה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוות דיי בנסה ממוקמת בלב כפר שאנטאווין, במרחק של 10 ק\"מ מהעיירה דיי, בתוך יער טבעי ועצים מקומיים שגילם מוערך במעל 200 שנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החווה נמצאת במרחק נגיש למגדלים מחוץ לכפרים בומבה, שנטואנה וכרמו. הוא מקיף נהרות שאחד מהם מפריד בין שנטאווין לבומבה העובר מהגבעות מעל קרמו. לשמירה על גוונים טבעיים ופוריות האדמה עם ייעוץ מומחים ממשרד החקלאות ניטעים בחווה עצי צל שונים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אתיופיה נחשבת לעיר הולדתו של קפה עם עצי הערביקה שגדלים בר ביערות שנמצאים באזור הקאפה. קפה אתיופיה הוא בין המגוונים והייחודיים בעולם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סוג זה גדל באזור סידמו מדרום לבירה אדיס אבבה. זהו המחוז הדרומי והפרודוקטיבי ביותר במדינה. האזור ידוע כאזור בעל תנאי אקלים אידיאליים לגידול קפה. כל זה נובע מגובה רב של בין 1600 - 1900 מטר, גשמים בשפע, טמפרטורה אופטימלית ואדמה עשירה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סידמו שטוף הוא קפה באיכות גבוהה בדרך כלל עם טעמים לימוניים מתוקים ופרחים פרחוניים, ואיזון אידיאלי בין חומציות לגוף. לעיתים ניתן להשוות לטובה סוג זה עם קפה מאזור Yirgacheffe.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עבור קפה אתיופי, דרגה 2 מסמנת כי הקפה נשטף. כמו כן, ההבדל בין רמה 1 ו -2 מוגדר על ידי מספר הליקויים הגלויים. אם הקפה מקבל סיווג רמה 1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים. בדרך כלל, איכות הקפה שנשטף עקבית יותר מזו של קפה לא רחוץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במינוטו תוכלו למצוא מגוון רחב של <a href=\"https://www.minuto.co.il/product-category/פולי-קפה/פולי-קפה-טרי-מינוטו-specialty-coffee/פולי-קפה-חד-זני/\">קפה חד זני</a>.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_focus_keyword": "Daye Bensa",
+    "rank_math_description": "פולי קפה אתיופיה Sidama ספשלטי בקלייה בהירה. טעם פירותי מתוק עם חמיצות לימונית נוצצת - קלייה טרייה - משלוח מהיר",
+    "rank_math_title": "פולי קפה אתיופיה Daye Bensa - קלייה בהירה וטריה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    },
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בינונית"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69701,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69700,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69699,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69698,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69697,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69696,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65189,
+   "name": "פולי קפה טרי ספשלטי קפה מינוטו טריאסט  - Minuto Specialty Coffee",
+   "short_description": "<ul>\n<li>פולי קפה פרימיום מדרום אמריקה והודו, תערובת בעלת גוף מלא, עשירה בקרמה, קפה עז, אינטנסיבי ורמיזות של שוקולד מריר</li>\n<li>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</li>\n<li>80% ערביקה ו-20% רובוסטה</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"><strong>קפה מינוטו טריאסט- Espresso Triest</strong></h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי קפה פרימיום מדרום אמריקה והודו, תערובת בעלת גוף מלא, עשירה בקרמה, קפה עז, אינטנסיבי ורמיזות של שוקולד מריר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>80% ערביקה ו-20% רובוסטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מחיר ל - 100 גר - 16.5 שח</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה מינוטו טריאסט ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - טרי. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "מינוטו טריאסט",
+    "rank_math_title": "פולי קפה מינוטו טריאסט - תערובת ספשלטי טרייה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69694,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69693,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69692,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69691,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69690,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69689,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65196,
+   "name": "פולי קפה טרי ספשלטי קפה מינוטו פרסטיז' - Minuto Specialty Coffee",
+   "short_description": "<ul>\n<li><strong>תערובת ארומטית מאד עם רמיזות של שוקולד מריר ברקע עם גוף מלא וקרמה עשירה</strong></li>\n<li><strong>פולי קפה פרימיום טרי וקלוי במקום </strong></li>\n<li><strong>80% ערביקה ו-20% רובוסטה</strong></li>\n</ul>\n<p>330 גר</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\"><strong>פולי קפה מינוטו פרסטיז'- Espresso prestige</strong></h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>תערובת ארומטית מאד ומאוזנת, עם ניחוח שוקולד מריר ברקע עם גוף מלא וקרמה עשירה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פולי קפה משובחים מברזיל, ורובוסטה פרימיום הודית</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>80% ערביקה ו-20% רובוסטה</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו והכנת קפה במקינטה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מחיר ל - 100 גר 16.5 שח</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה מינוטו פרסטיז׳ ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - טרי. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "מינוטו פרסטיז'",
+    "rank_math_title": "פולי קפה מינוטו פרסטיז׳ - תערובת ספשלטי עשירה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69737,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69736,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69735,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69734,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69733,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69732,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65201,
+   "name": "250 גר קפה ירוק מינוטו - פרסטיז'",
+   "short_description": "<ul>\n<li>250 גרם</li>\n<li>90% ערביקה ברזיאלית</li>\n<li>10% רובוסטה הודית</li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">קפה ירוק מינוטו - פרסטיז'</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>250 גרם</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>80% ערביקה ברזיאלית</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>20% רובוסטה הודית</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "250 גרם 90% ערביקה ברזיאלית 10% רובוסטה הודית. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה"
+   },
+   "attributes": [],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 65204,
+   "name": "פולי קפה טרי ספשלטי קפה מינוטו אינטנסו  - Minuto Specialty Coffee",
+   "short_description": "<ul>\n<li><strong>תערובת ארומטית מאד עם ניחוח פירות ברקע עם גוף מלא וקרמה עשירה</strong></li>\n<li><strong>פולי קפה פרימיום טרי וקלוי במקום </strong></li>\n<li><strong>70% ערביקה ו-30% רובוסטה</strong></li>\n</ul>\n<p>330 גר</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">תערובת קפה ייחודית המיועדת לחובבי האספרסו האינטנסיבי. הפולים נבחרים בקפידה משלוש מדינות, כל אחת מוסיפה לתערובת אופי שונה:</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>פולי ערביקה מברזיל: מוסיפים מתיקות טבעית וחומציות נמוכה עם נגיעות אגוזיות ושוקולדיות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>פולי ערביקה מאזור סידמו באתיופיה: מעניקים גוף בינוני וארומה פרחונית עם רמזים להדרים ופירות יער.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li>רובוסטה הודית: אחראית לגוף מלא, טעם חזק וקרמה עשירה שמאפיינת אספרסו משובח.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>היחס בתערובת עומד על 70 % ערביקה ו‑30 % רובוסטה, המשלב את המורכבות הטעימה של הערביקה עם העוצמה והקרמה של הרובוסטה. מתקבל אספרסו עגול ומאוזן המושלם למשקאות קפוצ’ינו או להכנת קפה במקינטה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מה מרגישים: ניחוח שוקולד ופירות ברקע, גוף מלא עם סיומת ארוכה ומתוקה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>התוצאה היא חוויה אינטנסיבית אך הרמונית, שתשאיר אתכם עם טעם של עוד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - טרי. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "מינוטו אינטנסו",
+    "rank_math_title": "פולי קפה מינוטו אינטנסו - קלייה טרייה ועוצמתית | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 69731,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69730,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69729,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69728,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69727,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 69726,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65384,
+   "name": "פולי קפה אתיופיה יירגשף חד זני - Yirgacheffee Ethiopia Specialty Coffee  - Minuto",
+   "short_description": "<p data-sourcepos=\"5:1-5:144\"><strong>פולי קפה ירגשף ידועים בטעמם הפירותי העדין ובארומה הפרחונית המשכרת.</strong></p>\n<p data-sourcepos=\"5:1-5:144\">מקורם באזור יירגשף שבאתיופיה, הידוע בתנאי גידול אידיאליים לקפה איכותי.</p>\n<p data-sourcepos=\"7:1-7:92\"><strong>פולי הקפה שלנו עובדו בשיטת העיבוד הרטובה על מנת להבטיח לכם חווית קפה ייחודית וטעם משובח.</strong></p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\"><strong>פולי קפה אתיופיה יירגשף – פירותיות עדינה וניחוח פרחוני</strong></h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את פולי הקפה היוקרתיים מאזור יירגשף שבדרום אתיופיה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפולים גדלים בגבהים של 1,700–2,200 מ' מעל פני הים ומקורם בזני ערביקה היירלום המפורסמים. האזור ידוע בפולים בעלי חמיצות בהירה וטעמים פרחוניים ופירותיים, אך במינוטו קפה אנו קולים אותם בעדינות כדי לאזן את החמיצות ולייצר גוף בינוני ומאוזן.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>בטעימה תגלו תווים של הדרים ולימונים מתקתקים, רמזי יסמין ותה ירוק ומתיקות עדינה שמלווה את הכוס.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הארומה פרחונית, מרעננת וקלאסית לקפה יירגשף. שיטת העיבוד הרטובה (washed) שבה נעשה שימוש החלה באתיופיה רק בשנות ה‑70. השיטה כוללת מיון, דה‑פולפינג, תסיסה ושטיפה, והיא מפיקה קפה נקי ואחיד שבו החמיצות ההדרית והניחוחות הפרחוניים בולטים במיוחד</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>פרטים חשובים:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>מקור:</strong> אזור יירגשף, אתיופיה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>זן:</strong> 100 % ערביקה היירלום</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>גובה גידול:</strong> 2,200‑1,700 מ'</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיבוד:</strong> שטוף (washed)</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>תקופת קטיף:</strong> אוקטובר–דצמבר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>דירוג איכות:</strong> Grade 2 – דירוג זה מציין קפה שטוף עם עד 12 פגמים ב‑300 גרם</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי הקפה שלנו נבחנו ונבחרו בקפידה כדי להעניק לכם חוויית קפה ייחודית. קלייה מבוקרת ומודרנית מאפשרת ליהנות מהטעמים הפירותיים והפרחוניים האופייניים ליירגשף תוך ריכוך החמיצות הבהירה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו עכשיו ותיהנו מכוס קפה יוצאת דופן שמשלבת ארומה פרחונית, טעם הדרי מתוק וגוף בינוני מאוזן.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה אתיופי יירגשף, פולי קפה יירגשף, קפה פרחוני, קפה פירותי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים. בדרך כלל, איכות הקפה שנשטף עקבית יותר מזו של קפה לא רחוץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במינוטו תוכלו למצוא מגוון רחב של <a href=\"https://www.minuto.co.il/product-category/פולי-קפה/פולי-קפה-טרי-מינוטו-specialty-coffee/פולי-קפה-חד-זני/\">קפה חד זני</a>.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה אתיופיה Sidama ספשלטי בקלייה בהירה. טעם פירותי מתוק עם חמיצות לימונית נוצצת - קלייה טרייה - איכות פרימיום",
+    "rank_math_focus_keyword": "פולי קפה אתיופיה יירגשף",
+    "rank_math_title": "פולי קפה אתיופיה יירגשף חד זני - קלייה בהירה ספשלטי | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    },
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בינונית"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 65526,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65525,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65523,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65522,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65524,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65521,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65431,
+   "name": "ספשלטי קפה פולי קפה Jungle Java - Minuto",
+   "short_description": "<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<div class=\"markdown markdown-main-panel\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:22\"><strong>מינוטו מלוס סנטוס:</strong></p>\n<p data-sourcepos=\"3:1-3:22\">קפה 100% ערביקה מקוסטה ריקה עם פרופיל טעמים עשיר: גוף מלא, חמיצות עדינה וסיומת שוקולדית.</p>\n<p data-sourcepos=\"3:1-3:22\"><strong>מכיל 330 גר</strong></p>\n</div>\n</div>\n",
+   "description": "<p><!-- wp:columns --></p>\n<div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"100%\"} --></p>\n<div class=\"wp-block-column\" style=\"flex-basis: 100%;\"><!-- wp:paragraph --></p>\n<p><strong>100% ערביקה | מקור יחיד | קלייה טרייה </strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ג'אנגל ג'אווה הוא קפה ספשלטי מקוסטה ריקה שכבש אותנו מהרגע הראשון.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אחרי אינספור טעימות ובחינה של מקורות שונים, בחרנו באזור טארזו שבקוסטה ריקה – אזור גידול גבוה שמפיק קפה עם חמיצות עדינה ואופי נקי במיוחד.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הפולים, מזני קטורה וטיפיקה, גדלים בגבהים של 1,250–1,650 מטר ועוברים תהליך עיבוד שטוף מסורתי עם ייבוש בשמש.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקלייה שלנו נועדה לשמר את התווים הטבעיים של הקפה: איזון מרשים בין חמיצות קלילה, גוף מלא, וסיומת שוקולדית עשירה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם לאספרסו, קפוצ'ינו או פילטר – למי שמחפש קפה עם נוכחות אבל לא משתלט</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מושלם להכנת אספרסו,קפוצינו וקפה פילטר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גובה גידול: 1,250 - 1,650 מטר<br />זן: 90% קטורה, 10% טיפיקה<br />עיבוד: שטיפה, ייבוש בשמש על פטיו<br />אזור: טארזו</p>\n<p><!-- /wp:paragraph --></div>\n<p><!-- /wp:column --></div>\n<p><!-- /wp:columns --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "ספשלטי קפה פולי קפה Jungle Java, Minuto. פולי קפה עם מידע על מקור, פרופיל טעמים ודרכי הכנה. פרטים באתר מינוטו.",
+    "rank_math_focus_keyword": "Jungle Java"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 65552,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65551,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65550,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65549,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65548,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65547,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 65463,
+   "name": "פולי קפה קניה AA+ חד זני בקלייה בהירה -  +Minuto Specialty Coffee Mount Kenya AA",
+   "short_description": "<p><strong>איך זה מרגיש?</strong> <strong>פולי קפה בקלייה בהירה</strong> עם חומציות נוצצת ומתיקות עדינה כשברקע מרירות נעימה</p>\n",
+   "description": "<p><!-- wp:heading {\"level\":4} --></p>\n<h4 class=\"wp-block-heading\">פולי קפה מאונט קניה AA+ חד זני - +Specialty Coffee Mount Kenya AA</h4>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>איך זה מרגיש?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>פולי קפה קניה AA בקלייה בהירה מציעים חווית טעימה ייחודית ועשירה. הקלייה הבהירה שומרת על טעמים עדינים ומורכבים יותר של הפולים, ומבליטה את האופי הייחודי של הקפה הקנייתי.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מה תוכלו לחוות כשאתם שותים קפה קניה AA בקלייה בהירה:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>חמיצות פירותית:</strong> הקפה הקנייתי ידוע בחמיצות הפירותית שלו, ובקלייה הבהירה היא בולטת עוד יותר. תוכלו לחוש טעמים של פירות יער, הדרים ואפילו תותים.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>גוף בינוני:</strong> הקפה לא יהיה גופי מדי, אך גם לא דליל מדי. הוא ייתן תחושה נעימה בפה ויצור איזון טוב בין החמיצות לגוף.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>ארומות פרחוניות:</strong> בנוסף לפירותיות, תוכלו להבחין גם בארומות פרחוניות עדינות,.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>מתיקות טבעית:</strong> הקפה הקנייתי מכיל מתיקות טבעית, שבקלייה הבהירה תבלוט ותוסיף עומק לטעם.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>סיומת נקייה ורעננה:</strong> לאחר הבליעה, תישאר תחושה נעימה ונקייה בפה, עם רמזים עדינים לטעמים שחוויתם.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>מה הופך את הקפה הקנייתי AA למיוחד?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>זן ייחודי:</strong> פולי קפה קניה AA מגיעים מזן ייחודי של פולי קפה הגדלים בגבהים ובתנאי אקלים ייחודיים.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיבוד מוקפד:</strong> הפולים עוברים תהליך עיבוד קפדני, שמבטיח את שמירת הטעמים והארומות הטבעיים שלהם.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>קלייה בהירה:</strong> הקלייה הבהירה שומרת על המורכבות הטעם של הפולים ומבליטה את המאפיינים הייחודיים שלהם.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>למי מתאים קפה קניה AA בקלייה בהירה?</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>חובבי קפה מיוחדים:</strong> אם אתם מחפשים חווית קפה ייחודית ומורכבת, הקפה הקנייתי בקלייה בהירה הוא בשבילכם.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>אוהבי חמיצות:</strong> אם אתם נהנים מטעמים פירותיים וחמיצות עדינה, הקפה הזה יענה על הציפיות שלכם.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>מי שמחפש חוויה חדשה:</strong> אם אתם רוצים לגוון את שגרת הקפה שלכם ולנסות משהו חדש, הקפה הקנייתי הוא בחירה מצוינת.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>טיפים להכנת קפה קנייה AA:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>טחינה טרייה:</strong> טחנו את הפולים ממש לפני ההכנה, כדי לשמור על הטריות והארומות.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>מים מסוננים ומאוזנים:</strong> השתמשו במים מסוננים, בטמפרטורה הנכונה.</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>שיטת הכנה מתאימה:</strong> נסו שיטות הכנה שונות, כמו פילטר, אירופרס, או אספרסו, כדי למצוא את השיטה המועדפת עליכם.</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p><strong>לסיכום:</strong></p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>קפה קניה AA בקלייה בהירה הוא חוויה קולינרית מיוחדת, שמציעה עושר של טעמים וארומות. אם אתם מחפשים קפה ייחודי ומורכב, הקפה הקנייתי הוא בחירה מצוינת.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הקפה מתאים לפילטר, קורטאדו ולאט ווייט</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מקור: קניה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>גדל בגובה של מעל 1800 מטר</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - קניה. קלייה טרייה לאיכות מקסימלית",
+    "rank_math_focus_keyword": "Mount Kenya AA",
+    "rank_math_title": "פולי קפה Mount Kenya AA - קלייה בהירה וספשלטי | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    },
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בהירה"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 65576,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65575,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65574,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65573,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65572,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 65571,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 67146,
+   "name": "ערכת התנסות פולי קפה ספשלטי חד זני מינוטו Minuto Specialty Coffee",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:45\">ערכת התנסות פולי קפה ספשלטי חד זני מינוטו:</h2>\n<p data-sourcepos=\"3:1-3:39\"><strong>4 סוגים שונים של שקיות  330 גר׳ פולי קפה איכותיים:</strong></p>\n<ul data-sourcepos=\"5:1-9:0\">\n<li data-sourcepos=\"5:1-5:82\"><strong>ברזיל Fazenda Sertão yellow bourbon:</strong> טעמים פירותיים ודבשיים, ארומה שוקולדית.</li>\n<li data-sourcepos=\"6:1-6:57\"><strong>קניה AA:</strong> חומציות נוצצת, מתיקות עדינה, מרירות נעימה.</li>\n<li data-sourcepos=\"7:1-7:76\"><strong>גואטמלה אנטיגואה:</strong> טעמים של אגוז לוז ושוקולד, גוף בינוני, חמיצות הדרים.</li>\n<li data-sourcepos=\"8:1-9:0\"><strong>אתיופיה סידמו דיי בנסה:</strong> חלק, פירותי ומתוק, רמיזות של וניל ולבנדר.</li>\n</ul>\n<p data-sourcepos=\"10:1-10:31\"><strong>גלו עולם של טעמים ייחודיים!</strong></p>\n<p data-sourcepos=\"12:1-12:80\"><strong>לפרטים נוספים והזמנה:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<h2 data-sourcepos=\"1:1-1:62\">ערכת התנסות פולי קפה ספשלטי חד זני מינוטו - מסע טעמים מרתק!</h2>\n<p data-sourcepos=\"3:1-3:52\"><strong>גלו עולם של טעמים ייחודיים עם ערכת ההתנסות שלנו!</strong></p>\n<p data-sourcepos=\"5:1-5:54\">הערכה מכילה 4 סוגים שונים של פולי קפה חד זני איכותיים:</p>\n<p data-sourcepos=\"7:1-7:54\"><strong>1. Specialty Coffee Fazenda Sertão yellow bourbon:</strong></p>\n<ul data-sourcepos=\"9:1-16:0\">\n<li data-sourcepos=\"9:1-9:12\">טעמים: דבש פירותי עם רמיזות שוקולדיות</li>\n<li data-sourcepos=\"11:1-11:44\">ארומה: שוקולד מריר, סוכר חום וחמיצות נעימה</li>\n<li data-sourcepos=\"12:1-12:13\">גוף: בינוני</li>\n<li data-sourcepos=\"13:1-13:18\">חומציות: פירותית</li>\n<li data-sourcepos=\"14:1-14:23\">מקור: ברזיל, עמק גרמה</li>\n<li data-sourcepos=\"15:1-16:0\">גובה: 1,100 – 1,450 מטר</li>\n</ul>\n<p data-sourcepos=\"17:1-17:39\"><strong>2. Specialty Coffee Mount Kenya AA:</strong></p>\n<ul data-sourcepos=\"19:1-23:0\">\n<li data-sourcepos=\"19:1-19:29\">חומציות נוצצת ומתיקות עדינה</li>\n<li data-sourcepos=\"20:1-20:19\">מרירות נעימה ברקע</li>\n<li data-sourcepos=\"21:1-21:28\">טיפול מיוחד וקלייה ייחודית</li>\n<li data-sourcepos=\"22:1-23:0\">שילוב של קפה חזק עם גוף בחלק החיצוני וחלק פנימי ארומטי ומתקתק</li>\n</ul>\n<p data-sourcepos=\"24:1-24:42\"><strong>3. GUATEMALA ANTIGUA Specialty Coffee:</strong></p>\n<ul data-sourcepos=\"26:1-34:0\">\n<li data-sourcepos=\"26:1-26:37\">טעמים: אגוז לוז עם רמיזות שוקולדיות</li>\n<li data-sourcepos=\"27:1-27:20\">ארומה: שוקולד, שקד</li>\n<li data-sourcepos=\"28:1-28:13\">גוף: בינוני</li>\n<li data-sourcepos=\"29:1-29:16\">חומציות: הדרים</li>\n<li data-sourcepos=\"30:1-30:30\">מקור: גואטמלה, אנטיגואה פוגו</li>\n<li data-sourcepos=\"31:1-31:21\">גובה: 1500-1650 מטר</li>\n<li data-sourcepos=\"32:1-32:34\">זן: 100% ערביקה – טיפיקה, בורבון</li>\n<li data-sourcepos=\"33:1-34:0\">עיבוד: רטוב, שטוף</li>\n</ul>\n<p data-sourcepos=\"35:1-35:51\"><strong>4. Sidama Ethiopia Deya Bensa Specialty Coffee:</strong></p>\n<ul data-sourcepos=\"37:1-45:0\">\n<li data-sourcepos=\"37:1-37:19\">חלק, פירותי ומתוק</li>\n<li data-sourcepos=\"38:1-38:38\">רמיזות של וניל, לבנדר וונגיעות לימון</li>\n<li data-sourcepos=\"39:1-39:46\">קפה קלוי טרי שעשוי לשנות את תפיסתכם לגבי קפה</li>\n<li data-sourcepos=\"40:1-40:22\">מקור: אתיופיה, סידמו</li>\n<li data-sourcepos=\"41:1-41:36\">גובה: 1,600 -1,900 מטר מעל פני הים</li>\n<li data-sourcepos=\"42:1-42:25\">זן: 100% ערביקה היירלום</li>\n<li data-sourcepos=\"43:1-43:29\">תקופת קציר: אוקטובר – דצמבר</li>\n<li data-sourcepos=\"44:1-45:0\">עיבוד: שטוף לחלוטין</li>\n</ul>\n<p data-sourcepos=\"46:1-46:73\"><strong>הערכה מתאימה לחובבי קפה סקרנים המעוניינים לחוות מגוון טעמים ייחודיים.</strong></p>\n<p data-sourcepos=\"48:1-48:46\"><strong>הזמינו עכשיו ותיהנו מחווית קפה בלתי נשכחת!</strong></p>\n<p data-sourcepos=\"50:1-50:103\"><strong>לפרטים נוספים על כל סוג קפה, בקרו באתר שלנו:</strong> <a class=\"traceable-link\" href=\"https://www.minuto.co.il/\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.minuto.co.il/</a></p>\n</div>\n<p><!-- /wp:html --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "ערכת התנסות פולי קפה ספשלטי חד זני מינוטו Minuto Specialty Coffee. פולי קפה עם מידע על מקור, פרופיל טעמים ודרכי הכנה. פרטים באתר מינוטו.",
+    "rank_math_title": "ערכת התנסות מינוטו: פולי קפה טריים בקלייה מקומית | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "1320"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 67217,
+   "name": "ערכת התנסות פולי קפה טרי ספשלטי קפה מינוטו  - Minuto Specialty Coffee",
+   "short_description": "<p>&nbsp;</p>\n<ul>\n<li><strong>תערובות מפולי קפה ספשלטי </strong></li>\n<li><strong>תערובות ארומטיות מאד ומאוזנות, תערובות קפה בקלייה בינונית</strong></li>\n</ul>\n",
+   "description": "<p><!-- wp:heading {\"level\":1} --></p>\n<h1 class=\"wp-block-heading\">ערכת התנסות פולי קפה טרי ספשלטי קפה מינוטו Specialty Coffee</h1>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>הכירו את קופסת הטעימות שלנו, הכוללת ארבע תערובות של 330 גרם של פולי הקפה הטריים הקלויים שלנו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל תערובת עוצבה בקפידה כדי לספק חווית טעם ייחודית שחובבי הקפה בוודאי ייהנו ממנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>ראשית, יש לנו את אריסטו, שעשוי מ-100% פולי קפה ערביקה ברזילאית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת זו עשירה בטעם שוקולדי, בעלת מרקם חלק וקרמי המושלם למי שמעדיף אספרסו ארומתי עם גוף מלא וסיומת אגוזית.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הבא הוא Trieste, שהוא תערובת של 80% ערביקה דרום אמריקאית ו-20% רובוסטה משובח.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת זו מספקת טעם מאוזן שהוא גם מודגש וחלק, עם רמז של שוקולד מריר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת אינטנסו שלנו היא תערובת של 70% פולי ערביקה מאפריקה ודרום אמריקה ו-30% קאפי רויאל רובוסטה פרימיום.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>תערובת זו מושלמת למי שמעדיף טעם חזק, עם ניחוד של שוקולד ופירות ברקע חלקה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>לבסוף, תערובת הפרסטיג' שלנו עשויה עם 80% ערביקה ברזילאית ו-20% רובוסטה. תערובת זו עשירה ומלאת טעמים בגוונים שוקולדיים ואגוזי לוז, עם נגיעה של מתיקות המושלם למי שנהנה מטעם נועז ועשיר.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>מארז הטעימות שלנו היא הדרך המושלמת לגלות ולחוות את פרופילי הטעם הייחודיים של תערובות הקפה שלנו.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>כל שקית פולי קפה נקלית טריה וארוזה כדי להבטיח טריות וטעם מקסימליים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>הזמינו את מארז הטעימות שלכם עוד היום וגלו את התערובת האהובה החדשה עליכם!</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li>המארז מכיל 4 שקיות קפה, משקל כל שקית הוא 330 גר</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:paragraph --></p>\n<p>&nbsp;</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "ערכת התנסות פולי קפה טרי ספשלטי קפה מינוטו, Minuto Specialty Coffee. פולי קפה עם מידע על מקור, פרופיל טעמים ודרכי הכנה. פרטים באתר מינוטו.",
+    "rank_math_title": "ערכת התנסות פולי קפה ספשלטי - טעימות מינוטו | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "1320"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "",
+   "variations": []
+  },
+  {
+   "id": 76255,
+   "name": "3  ק״ג פולי קפה Veneto",
+   "short_description": "<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p data-sourcepos=\"3:1-3:147\">חבילת &quot;ונטו&quot; מבית מינוטו קפה &#8211; ליהנות מ-3 ק&quot;ג ומעלה של פולי קפה מובחרים במחיר משתלם עם 10% הנחה.</p>\n<p data-sourcepos=\"3:1-3:147\">כל בוקר מתחיל בכוס קפה עשיר, טעים ומאוזן.</p>\n</div>\n",
+   "description": "<p><!-- wp:html --></p>\n<div class=\"markdown markdown-main-panel ui-v2-enabled\" dir=\"rtl\">\n<p class=\"\" data-start=\"48\" data-end=\"99\"><strong data-start=\"48\" data-end=\"99\">חבילת Veneto – מינימום 3 ק\"ג קפה עם הנחה של 10%</strong></p>\n<p class=\"\" data-start=\"101\" data-end=\"285\">הכירו את חבילת Veneto המיוחדת מבית Minuto Coffee - חבילת קפה מושלמת לשיפור כל בוקר.</p>\n<p class=\"\" data-start=\"101\" data-end=\"285\">באנדל זה תקבלו לפחות 3 ק\"ג של פולי קפה איכותיים, בעלים טעמים עשירים ומאוזנים, עם הנחה בלעדית של 10%!</p>\n<p class=\"\" data-start=\"287\" data-end=\"466\">בין אם אתם מומחים לקפה ובין אם אתם סתם מחפשים את הכוס המושלמת - קפה Veneto יעורר בכם השראה בכל לגימה.</p>\n<p class=\"\" data-start=\"287\" data-end=\"466\">הפולים נבחרים בקפידה ועוברים תהליך קלייה מקצועי שמבטיח את טריות הקפה ואיכותו.</p>\n<p class=\"\" data-start=\"468\" data-end=\"482\"><strong data-start=\"468\" data-end=\"480\">מה כלול?</strong></p>\n<ul data-start=\"483\" data-end=\"613\">\n<li class=\"\" data-start=\"483\" data-end=\"527\">\n<p class=\"\" data-start=\"485\" data-end=\"527\">מינימום 3 ק\"ג של פולי קפה Veneto מובחרים</p>\n</li>\n<li class=\"\" data-start=\"528\" data-end=\"553\">\n<p class=\"\" data-start=\"530\" data-end=\"553\">הנחה של 10% על החבילה</p>\n</li>\n<li class=\"\" data-start=\"554\" data-end=\"613\">\n<p class=\"\" data-start=\"556\" data-end=\"613\">קפה בעל טעם עשיר ומדויק, שיבטיח לכם התחלה מושלמת בכל בוקר</p>\n</li>\n</ul>\n<p class=\"\" data-start=\"615\" data-end=\"734\">הזמינו עכשיו את חבילת Veneto ותיהנו מהנחה מיוחדת והבטחה לאיכות מעולה בכל שקית.<br data-start=\"693\" data-end=\"696\" />מינוטו קפה - כי כל לגימה היא חוויה!</p>\n</div>\n<p><!-- /wp:html --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - בנפח 3 קג. קלייה טרייה לאיכות מקסימלית"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "3000"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 78450,
+   "name": "פולי קפה אתיופיה דיי בנסה חד זני בקלייה בהירה  - Minuto Daye Bensa Ethiopia Specialty Coffee",
+   "short_description": "<p><strong>איך זה מרגיש?</strong></p>\n<p>קפה בקלייה בהירה חלק, פירותי, מתוק עם חמיצות לימונית נוצצת ורמיזות של וניל</p>\n<p>קפה קלוי טרי עשוי לשנות את כל התפיסה שלך לגבי איך קפה יכול להיות</p>\n<p><strong>עוד קצת פרטים</strong> מקור: אתיופיה אזור: סידמו גובה: 1,600 -1,900 מ 'מעל פני הים</p>\n<p>זן: 100% ערביקה היירלום תקופת קציר: אוקטובר &#8211; דצמבר עיבוד: שטוף לחלוטין</p>\n",
+   "description": "<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">פולי קפה ספשלטי קפה אתיופיה דיי בנסה בקלייה בהירה - Sidamo Ethiopia</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">איך זה מרגיש?</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חלק, פירותי, מתוק עם חמיצות לימונית נוצצת ורמיזות של וניל. קפה קלוי טרי עשוי לשנות את כל התפיסה שלך לגבי איך קפה יכול להיות</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:heading {\"level\":3} --></p>\n<h3 class=\"wp-block-heading\">עוד קצת פרטים</h3>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:list --></p>\n<ul class=\"wp-block-list\"><!-- wp:list-item --></p>\n<li><strong>מקור:</strong> אתיופיה</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>אזור:</strong> סידמו</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>גובה:</strong> 1,600 -1,900 מ 'מעל פני הים</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>זן:</strong> 100% ערביקה היירלום</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>תקופת קציר:</strong> אוקטובר - דצמבר</li>\n<p><!-- /wp:list-item --></p>\n<p><!-- wp:list-item --></p>\n<li><strong>עיבוד:</strong> שטוף לחלוטין</li>\n<p><!-- /wp:list-item --></ul>\n<p><!-- /wp:list --></p>\n<p><!-- wp:heading --></p>\n<h2 class=\"wp-block-heading\">קצת על ההיסטוריה של קפה אתיופיה דיי בנסה</h2>\n<p><!-- /wp:heading --></p>\n<p><!-- wp:paragraph --></p>\n<p>חוות דיי בנסה ממוקמת בלב כפר שאנטאווין, במרחק של 10 ק\"מ מהעיירה דיי, בתוך יער טבעי ועצים מקומיים שגילם מוערך במעל 200 שנה.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>החווה נמצאת במרחק נגיש למגדלים מחוץ לכפרים בומבה, שנטואנה וכרמו. הוא מקיף נהרות שאחד מהם מפריד בין שנטאווין לבומבה העובר מהגבעות מעל קרמו. לשמירה על גוונים טבעיים ופוריות האדמה עם ייעוץ מומחים ממשרד החקלאות ניטעים בחווה עצי צל שונים.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>אתיופיה נחשבת לעיר הולדתו של קפה עם עצי הערביקה שגדלים בר ביערות שנמצאים באזור הקאפה. קפה אתיופיה הוא בין המגוונים והייחודיים בעולם.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סוג זה גדל באזור סידמו מדרום לבירה אדיס אבבה. זהו המחוז הדרומי והפרודוקטיבי ביותר במדינה. האזור ידוע כאזור בעל תנאי אקלים אידיאליים לגידול קפה. כל זה נובע מגובה רב של בין 1600 - 1900 מטר, גשמים בשפע, טמפרטורה אופטימלית ואדמה עשירה</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>סידמו שטוף הוא קפה באיכות גבוהה בדרך כלל עם טעמים לימוניים מתוקים ופרחים פרחוניים, ואיזון אידיאלי בין חומציות לגוף. לעיתים ניתן להשוות לטובה סוג זה עם קפה מאזור Yirgacheffe.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>עבור קפה אתיופי, דרגה 2 מסמנת כי הקפה נשטף. כמו כן, ההבדל בין רמה 1 ו -2 מוגדר על ידי מספר הליקויים הגלויים. אם הקפה מקבל סיווג רמה 1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים. בדרך כלל, איכות הקפה שנשטף עקבית יותר מזו של קפה לא רחוץ.</p>\n<p><!-- /wp:paragraph --></p>\n<p><!-- wp:paragraph --></p>\n<p>במינוטו תוכלו למצוא מגוון רחב של <a href=\"https://www.minuto.co.il/product-category/פולי-קפה/פולי-קפה-טרי-מינוטו-specialty-coffee/פולי-קפה-חד-זני/\">קפה חד זני</a>.</p>\n<p><!-- /wp:paragraph --></p>\n",
+   "meta": {
+    "rank_math_description": "פולי קפה אתיופיה Sidama ספשלטי בקלייה בהירה. טעם פירותי מתוק עם חמיצות לימונית נוצצת - קלייה טרייה - אתיופיה",
+    "rank_math_focus_keyword": "Daye Bensa",
+    "rank_math_title": "פולי קפה אתיופיה Daye Bensa - קלייה בהירה וספשלטי | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "כמות",
+     "options": [
+      "330 גר"
+     ],
+     "variation": true
+    },
+    {
+     "name": "בחרו את סוג הטחינה",
+     "options": [
+      "לא לטחון, יש לי מטחנה - פולים שלמים",
+      "לאספרסו",
+      "לקפה שחור",
+      "מקינטה",
+      "פילטר",
+      "פרנץ פרס קולד ברו"
+     ],
+     "variation": true
+    },
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בהירה"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": [
+    {
+     "id": 78456,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פרנץ פרס קולד ברו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 78455,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "פילטר"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 78454,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "מקינטה"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 78453,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לקפה שחור"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 78452,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לאספרסו"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    },
+    {
+     "id": 78451,
+     "attributes": [
+      {
+       "id": 17,
+       "name": "כמות",
+       "slug": "pa_כמות",
+       "option": "330-גר"
+      },
+      {
+       "id": 13,
+       "name": "בחרו את סוג הטחינה",
+       "slug": "pa_grinding",
+       "option": "לא לטחון, יש לי מטחנה - פולים שלמים"
+      }
+     ],
+     "weight": "0",
+     "description": ""
+    }
+   ]
+  },
+  {
+   "id": 80501,
+   "name": "פולי קפה בקלייה בהירה Sweet Leona | Colombia Luz Helena Specialty Coffee",
+   "short_description": "<p><b data-path-to-node=\"5\" data-index-in-node=\"0\">Sweet Leona – המתיקות המכשפת של קולומביה.</b><br />\nקפה יוצא דופן מחווה של לוז הלנה (קולומביה), המשלב עדינות פרחונית משכרת עם תווים עמוקים של תאנים וקני סוכר מקורמל.<br />\nבקלייה בהירה ומדויקת,<br />\nהוא מציע פרופיל טרופי עשיר שזורח בפילטר ומפתיע בקפוצ'ינו פירותי ומתוק במיוחד.</p>\n",
+   "description": "<h2 data-path-to-node=\"7\">Sweet Leona | Colombia Luz Helena</h2>\n<p data-path-to-node=\"9\"><b data-path-to-node=\"9\" data-index-in-node=\"0\">חוויה רב-שכבתית של טעמים: מהשדה בקווינדיו ועד לספל שלכם.</b></p>\n<p data-path-to-node=\"10\">הקפה הזה, מבית היוצר של <b data-path-to-node=\"10\" data-index-in-node=\"24\">לוז הלנה</b> (חווה: La Leona), הוא מלאכת מחשבת של עיבוד Honey.<br />\nזן ה-Caturra מקבל כאן במה לביטוי המורכבות שלו, עם פרופיל ייחודי שנע בין עולם הפרחים למתיקות פירותית כהה.</p>\n<p data-path-to-node=\"11\"><b data-path-to-node=\"11\" data-index-in-node=\"0\">פרופיל הטעם:</b> הלגימה הראשונה נפתחת ב<b data-path-to-node=\"11\" data-index-in-node=\"35\">ניחוח פרחוני</b> משכר ורעננות של <b data-path-to-node=\"11\" data-index-in-node=\"64\">פירות טרופיים</b>. ככל שהקפה מתקרר, נחשפים הרבדים העמוקים יותר: מתיקות עשירה של <b data-path-to-node=\"11\" data-index-in-node=\"140\">תאנים בשלות</b> ונוכחות דומיננטית ומנחמת של <b data-path-to-node=\"11\" data-index-in-node=\"180\">קני סוכר מקורמל</b>.</p>\n<ul data-path-to-node=\"12\">\n<li>\n<p data-path-to-node=\"12,0,0\"><b data-path-to-node=\"12,0,0\" data-index-in-node=\"0\">הקלייה:</b> במינוטו קלינו את הפולים בקלייה בהירה (Omni-Roast) ששומרת על הניואנסים הפרחוניים, אך מפתחת מספיק סוכרים כדי להעניק גוף מלא ונעים.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,1,0\"><b data-path-to-node=\"12,1,0\" data-index-in-node=\"0\">ההמלצה שלנו:</b> חובבי ה<b data-path-to-node=\"12,1,0\" data-index-in-node=\"20\">פילטר</b> ייהנו מקפה נקי, אלגנטי ומתפתח. ב<b data-path-to-node=\"12,1,0\" data-index-in-node=\"58\">קפוצ'ינו</b>, תווים של קני הסוכר והתאנים מתחברים לחלב ליצירת משקה שמזכיר קינוח פירותי איכותי.</p>\n</li>\n</ul>\n<p>&nbsp;</p>\n<ul>\n<li>\n<p data-path-to-node=\"19,0,0\"><b data-path-to-node=\"19,0,0\" data-index-in-node=\"0\">מקור:</b> Quindío, קולומביה.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,1,0\"><b data-path-to-node=\"19,1,0\" data-index-in-node=\"0\">זן:</b> Caturra.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,2,0\"><b data-path-to-node=\"19,2,0\" data-index-in-node=\"0\">עיבוד:</b> Honey Process.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,3,0\"><b data-path-to-node=\"19,3,0\" data-index-in-node=\"0\">תווים מובילים:</b> פרחים, פירות טרופיים, תאנים, קני סוכר מקורמל.</p>\n</li>\n<li>\n<p data-path-to-node=\"19,4,0\"><b data-path-to-node=\"19,4,0\" data-index-in-node=\"0\">גוף:</b> בינוני-קטיפתי.</p>\n</li>\n</ul>\n<p data-path-to-node=\"13\"><b data-path-to-node=\"13\" data-index-in-node=\"0\">מתאים במיוחד למי שמחפש קפה עם \"אישיות\",  כזה שלא מפסיק להפתיע בכל טמפרטורה.</b></p>\n",
+   "meta": {
+    "rank_math_description": "Sweet Leona: תערובת פולי קפה מובחרת המתאפיינת במתיקות עדינה, גוף מלא וארומה עשירה. חוויית אספרסו קטיפתית ומאוזנת שמשאירה טעם של עוד. עכשיו במינוטו!",
+    "rank_math_focus_keyword": "Sweet Leona",
+    "rank_math_title": "סוויט ליאונה Sweet Leona: קפה ספשלטי בקלייה טרייה | %sitename%"
+   },
+   "attributes": [
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בהירה"
+     ],
+     "variation": false
+    },
+    {
+     "name": "כמות",
+     "options": [
+      "200 גר"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  },
+  {
+   "id": 82540,
+   "name": "פולי קפה ספשלטי מינוטו Aji Bourbon Anaerobic - Roastery Brisas",
+   "short_description": "<p>קפה איכותי וייחודי <b data-path-to-node=\"1\" data-index-in-node=\"19\">בקלייה בהירה</b> מחוות Las Brisas, שעבר עיבוד אנאירובי שטוף.<br />\nהקפה מתאפיין בתווים עשירים של פירות טרופיים בשלים ומנגו עסיסי, עם חמיצות פירותית עדינה וגימור ארוך ומתוק עם רמז לדבש.<br />\nמתאים במיוחד לחליטת פילטר לאוהבי טעמים פירותיים ומורכבים.</p>\n",
+   "description": "<p data-path-to-node=\"0\"><b data-path-to-node=\"0\" data-index-in-node=\"0\">קפה אג'י בורבון אנאירובי (Aji Bourbon Anaerobic) – Roastery Brisas</b></p>\n<p data-path-to-node=\"1\">חוויית קפה יוקרתית המשלבת מורכבות פירותית עשירה, מתיקות מעודנת וגוף קטיפתי. הקפה מגודל בחחוות Las Brisas על ידי המגדל Brayan Smith, ועובר תהליך עיבוד אנאירובי שטוף המבליט את אופיו הייחודי והעמוק של הזן.</p>\n<p data-path-to-node=\"2\"><b data-path-to-node=\"2\" data-index-in-node=\"0\">תעודת זהות לקפה</b></p>\n<ul data-path-to-node=\"3\">\n<li>\n<p data-path-to-node=\"3,0,0\"><b data-path-to-node=\"3,0,0\" data-index-in-node=\"0\">מותג:</b> Roastery Brisas</p>\n</li>\n<li>\n<p data-path-to-node=\"3,1,0\"><b data-path-to-node=\"3,1,0\" data-index-in-node=\"0\">זן ועיבוד:</b> Washed Bourbon Aji Anaerobic (בורבון אנאירובי שטוף)</p>\n</li>\n<li>\n<p data-path-to-node=\"3,2,0\"><b data-path-to-node=\"3,2,0\" data-index-in-node=\"0\">מגדל:</b> Brayan Smith</p>\n</li>\n<li>\n<p data-path-to-node=\"3,3,0\"><b data-path-to-node=\"3,3,0\" data-index-in-node=\"0\">חווה:</b> Las Brisas</p>\n</li>\n<li>\n<p data-path-to-node=\"3,4,0\"><b data-path-to-node=\"3,4,0\" data-index-in-node=\"0\">פרופיל טעמים:</b> תווים עשירים של פירות טרופיים בשלים, מנגו עסיסי, חמיצות פירותית עדינה וגימור ארוך ומתוק עם רמז לדבש</p>\n</li>\n<li>\n<p data-path-to-node=\"3,5,0\"><b data-path-to-node=\"3,5,0\" data-index-in-node=\"0\">מתאים לשיטות חליטה:</b> פילטר (V60, Chemex, Aeropress) ואספרסו מדויק</p>\n</li>\n</ul>\n<p data-path-to-node=\"4\"><b data-path-to-node=\"4\" data-index-in-node=\"0\">חוויית הטעם</b> העיבוד האנאירובי השטוף מעניק לפולים פרופיל ארומטי עוצמתי ונקי. הלגימה הראשונה נפתחת בעסיסיות טרופית של מנגו ופירות בשלים, עטופה בחמיצות עדינה ומאוזנת. הסיומת ארוכה ומתוקה, ומשאירה עקבות נעימים של דבש טבעי בכל לגימה.</p>\n",
+   "meta": {},
+   "attributes": [
+    {
+     "name": "רמת קלייה",
+     "options": [
+      "בהירה"
+     ],
+     "variation": false
+    },
+    {
+     "name": "כמות",
+     "options": [
+      "180"
+     ],
+     "variation": false
+    }
+   ],
+   "catalog_visibility": "visible",
+   "weight": "0",
+   "variations": []
+  }
+ ]
+}

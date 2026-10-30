@@ -1,0 +1,29 @@
+{
+ "edits": [
+  {
+   "product_id": 65427,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "הצבה: visible at 0 ₪, in stock"
+  },
+  {
+   "product_id": 65369,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "כללי: visible at 0 ₪, in stock"
+  },
+  {
+   "product_id": 64703,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "בדיקת תשלום: test product visible at 1 ₪"
+  }
+ ],
+ "skipped": []
+}
