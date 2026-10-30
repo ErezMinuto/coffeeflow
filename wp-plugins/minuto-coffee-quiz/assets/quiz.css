@@ -1,0 +1,64 @@
+/*
+ * Matches the live shop on minuto.co.il (read from its computed styles):
+ * Greycliff Hebrew (loaded by the theme), Minuto green #3C4A2C, product cards
+ * with a gray-200 border that turns green on hover, 8px corners, a small
+ * shadow, centered name and bold price, and full pill buttons.
+ */
+#minuto-coffee-quiz {
+  --mq-green: #3C4A2C;
+  --mq-border: #E5E7EB;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  font-family: greycliff-hebrew-cf, sans-serif;
+  color: #000;
+  text-align: center;
+}
+#minuto-coffee-quiz * { box-sizing: border-box; font-family: inherit; }
+
+.mq-progress { margin: 0 0 8px; font-size: 14px; color: #6B7280; }
+.mq-title:focus { outline: none; }
+.mq-title { margin: 0 0 32px; font-size: 36px; line-height: 1.2; font-weight: 700; color: var(--mq-green); }
+
+.mq-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; max-width: 720px; margin: 0 auto; }
+.mq-option {
+  display: block; width: 100%; padding: 20px 16px;
+  background: #fff; border: 1px solid var(--mq-border); border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+  text-align: center; cursor: pointer; color: #000;
+  transition: border-color .3s cubic-bezier(.4, 0, .2, 1);
+}
+.mq-option:hover, .mq-option:focus-visible { border-color: var(--mq-green); outline: none; }
+.mq-option-label { display: block; font-size: 18px; line-height: 28px; font-weight: 600; color: var(--mq-green); }
+.mq-option-hint { display: block; margin-top: 2px; font-size: 14px; color: #6B7280; }
+
+.mq-link { display: inline-block; margin-top: 24px; padding: 4px 0; background: none; border: 0; font-size: 16px; color: var(--mq-green); text-decoration: underline; cursor: pointer; }
+
+.mq-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 300px)); justify-content: center; gap: 24px; }
+.mq-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; border: 1px solid var(--mq-border); border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+  transition: border-color .3s cubic-bezier(.4, 0, .2, 1);
+}
+.mq-card:hover { border-color: var(--mq-green); }
+.mq-photo { display: block; width: 100%; height: auto; }
+.mq-card-body { display: flex; flex-direction: column; flex: 1; padding: 16px; }
+.mq-name { margin: 0 0 8px; font-size: 18px; line-height: 28px; font-weight: 600; color: var(--mq-green); }
+.mq-why { flex: 1; margin: 0 0 12px; font-size: 16px; line-height: 24px; color: #000; }
+.mq-price { margin: 0 0 12px; font-size: 18px; line-height: 28px; font-weight: 700; color: var(--mq-green); }
+.mq-button {
+  display: inline-block; width: 100%; padding: 8px 16px;
+  background: var(--mq-green); color: #fff !important;
+  font-size: 14px; font-weight: 500; line-height: 20px;
+  text-align: center; text-decoration: none !important; border-radius: 9999px;
+  transition: opacity .3s cubic-bezier(.4, 0, .2, 1);
+}
+.mq-button:hover { opacity: .9; }
+.mq-error { margin: 0; }
+
+@media (max-width: 640px) {
+  #minuto-coffee-quiz { padding: 24px 16px; }
+  .mq-title { font-size: 28px; margin-bottom: 24px; }
+  .mq-cards { grid-template-columns: 1fr; }
+}
