@@ -145,3 +145,46 @@ Deno.test("every combination gives 1–3 in-stock coffees", () => {
             assert(l.length >= 1 && l.length <= 3 && l.every((k: string) => ALL.includes(k)));
           }
 });
+
+const jar = (over = {}) => ({ key: "extra_1", flavor: "fruity", milk: false, brews: ["filter"], limited: true, light: true, ...over });
+const withJar = (over = {}) => ({ ...stock, extras: [jar(over)] });
+
+Deno.test("limited edition takes the third place when it fits", () => {
+  assertEquals(r({ brew: "filter", taste: "fruity" }, withJar()), ["kenya_l", "kenya_m", "extra_1"]);
+  assertEquals(r({ brew: "moka", strength: "strong", taste: "chocolate" }, withJar({ brews: ["moka"], flavor: "chocolate", light: false })), ["sertao", "extra_1"]);
+});
+
+Deno.test("limited edition stays out when it doesn't fit", () => {
+  assert(!r({ brew: "auto", brand: "premium" }, withJar()).includes("extra_1"));            // wrong brew
+  assert(!r({ taste: "chocolate" }, withJar()).includes("extra_1"));                        // wrong flavor
+  assert(!r({ milk: "cow", taste: "fruity" }, withJar()).includes("extra_1"));              // not for milk
+  assert(!r({ strength: "very_strong" }, withJar()).includes("extra_1"));
+  assert(!r({ decaf: true }, withJar()).includes("extra_1"));
+  assert(!r({ natural: true }, withJar()).includes("extra_1"));
+  assert(!r({ noSour: true }, withJar()).includes("extra_1"));
+});
+
+Deno.test("alternative milk: a fruity or light jar only if light is asked for", () => {
+  const m = { milk: true };
+  assert(!r({ milk: "alt", taste: "fruity" }, withJar(m)).includes("extra_1"));
+  assert(r({ milk: "alt", light: true, taste: "fruity" }, withJar(m)).includes("extra_1"));
+  const washedMedium = withJar({ milk: true, flavor: "chocolate", light: false });
+  assert(r({ milk: "alt", taste: "chocolate" }, washedMedium).includes("extra_1"));
+});
+
+Deno.test("a new coffee, not limited, only fills empty places", () => {
+  const plain = withJar({ limited: false });
+  assertEquals(r({ brew: "filter", taste: "fruity" }, plain), ["kenya_l", "kenya_m", "bensa_m"]);
+  const moka = withJar({ limited: false, brews: ["moka"], flavor: "chocolate", light: false });
+  assertEquals(r({ brew: "moka", strength: "strong", taste: "chocolate" }, moka), ["sertao", "extra_1"]);
+});
+
+Deno.test("a sold-out jar is simply not in the list", () => {
+  assertEquals(r({ taste: "fruity" }), r({ taste: "fruity" }, { ...stock, extras: [] }));
+});
+
+Deno.test("a jar that is a named coffee is not shown twice", () => {
+  const s2 = { ...stock, extras: [{ key: "kenya_l", flavor: "fruity", milk: false, brews: ["filter"], limited: true, light: true }] };
+  const l = r({ taste: "fruity" }, s2);
+  assertEquals(new Set(l).size, l.length);
+});

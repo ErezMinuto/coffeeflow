@@ -111,6 +111,7 @@
       card.appendChild(img);
     }
     var body = el('div', 'mq-card-body');
+    if (c.limited) body.appendChild(el('p', 'mq-badge', 'מהדורה מוגבלת'));
     body.appendChild(el('h3', 'mq-name', c.name));
     if (c.why) body.appendChild(el('p', 'mq-why', c.why));
     if (c.price) body.appendChild(el('p', 'mq-price', c.price));
@@ -122,9 +123,11 @@
   }
 
   function renderResult() {
+    var named = catalog.filter(function (c) { return !c.extra; });
     var available = {
-      all: catalog.map(function (c) { return c.key; }),
-      light: catalog.filter(function (c) { return c.light; }).map(function (c) { return c.key; }),
+      all: named.map(function (c) { return c.key; }),
+      light: named.filter(function (c) { return c.light; }).map(function (c) { return c.key; }),
+      extras: catalog.filter(function (c) { return c.extra || c.limited; }),
     };
     var keys = window.MinutoQuizEngine.recommend(answers, available);
     var wrap = el('div', 'mq-result');
