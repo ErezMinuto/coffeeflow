@@ -25,7 +25,9 @@
   var COW_MILK = ['bensa_m', 'jungle'];
   var ALT_MILK = ['sertao', 'jungle', 'velvet'];
   var NO_SOUR = ['jungle', 'velvet'];
-  var LIGHT_ORDER = ['kenya_l', 'guji', 'aji', 'leona', 'bensa_l'];
+  var LIGHT_ORDER = ['kenya_l', 'bensa_l', 'guji', 'aji', 'leona'];
+  // Espresso without milk: one of these joins the machine's two leads.
+  var BLACK = { chocolate: 'jungle', fruity: 'kenya_m', floral: 'velvet', unknown: 'bensa_m' };
   // Natural process only. Kenya, Aji (anaerobic washed) and Leona (honey) are not.
   var NATURAL = ['guji', 'sertao', 'dark'];
   var MAX = 3;
@@ -60,11 +62,20 @@
       default:                               // filter, and French press / cold brew
         if (veryStrong) return ['dark', 'aristo'].concat(ROBUSTA);
         if (strong) return ['jungle', 'velvet'];
-        if (a.taste === 'fruity') return lightList(light);
+        if (a.taste === 'fruity') return ['kenya_l', 'kenya_m', 'bensa_m'];
         if (a.taste === 'floral') return ['leona', 'yirgacheffe', 'velvet'];
         if (a.taste === 'chocolate') return ['jungle', 'velvet', 'antigua'];
-        return ['kenya_l', 'jungle', 'velvet'];
+        return ['kenya_l', 'kenya_m', 'jungle'];
     }
+  }
+
+  function isEspresso(a) {
+    return a.brew === 'auto' || a.brew === 'combo' || a.brew === 'manual';
+  }
+
+  function blackPicks(a, base) {
+    if (!isEspresso(a) || (a.strength !== 'gentle' && a.strength !== 'balanced')) return base;
+    return base.slice(0, 2).concat(BLACK[a.taste] || BLACK.unknown, base.slice(2));
   }
 
   function uniq(list) {
@@ -85,16 +96,22 @@
       // Alternative milk still rules out the fruity one.
       picks = pick(NATURAL).filter(function (k) { return a.milk !== 'alt' || FRUITY.indexOf(k) === -1; });
     } else if (a.light) {
-      picks = pick(lightList(light));        // an explicit ask beats the milk rules
+      // An explicit ask beats the milk rules. With cow's milk, Daye Bensa
+      // leads. The flavor answer keeps Aji and Sweet Leona in rotation.
+      var byTaste = { fruity: ['kenya_l', 'aji'], floral: ['kenya_l', 'leona'] }[a.taste] || [];
+      var cow = a.milk === 'cow' ? ['bensa_l'] : [];
+      picks = pick(cow.concat(byTaste, lightList(light)));
     } else if (a.milk === 'alt' || a.noSour) {
       picks = pick(a.strength === 'very_strong' ? ['aristo', 'dark'] : (a.noSour ? NO_SOUR : ALT_MILK));
     } else if (a.milk === 'cow' && a.strength !== 'very_strong') {
       // Two from the milk rule, one from the machine rule.
-      var milk = pick(COW_MILK).slice(0, 2);
+      // Kenya regular takes the second place for fruity espresso with milk.
+      var milkList = isEspresso(a) && a.taste === 'fruity' ? ['bensa_m', 'kenya_m', 'jungle'] : COW_MILK;
+      var milk = pick(milkList).slice(0, 2);
       var machine = pick(brewPicks(a, light)).filter(function (k) { return milk.indexOf(k) === -1; });
       picks = milk.concat(machine.slice(0, 1));
     } else {
-      picks = pick(brewPicks(a, light));
+      picks = pick(blackPicks(a, brewPicks(a, light)));
     }
 
     // Never come back empty: closest safe matches, still honouring alt milk.
