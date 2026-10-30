@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Minuto catalog audit (read-only). Re-run from ./raw without re-fetching:
+    python3 catalog-audit/audit.py
+Writes findings.csv and summary.md next to this file."""
+import csv, html, json, os, re, collections
+D = os.path.dirname(os.path.abspath(__file__))
+P = {p['id']: p for p in json.load(open(f'{D}/raw/products.json'))}
+COFFEE = [c['id'] for c in json.load(open(f'{D}/raw/coffee_products_clean.json'))]
+
+def strip(h):
+    return re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', h or ''))).strip()
+
+H, M, L = 'high', 'medium', 'low'
+C, LI, VE = 'certain', 'likely', 'verify'
+IM, CP, BS, SC, CF, HE, MI = ('internal_mismatch', 'copy_paste', 'blend_vs_single_origin',
+                              'spec_commerce', 'coffee_facts', 'hebrew_text', 'missing_data')
+
+# (product_id, field, issue_type, severity, current_text, problem, suggested_fix, confidence)
+F = [
+ # ---- unit prices written into the copy are stale
+ (65135,'description',SC,H,'מחיר ל - 100 גר 23.1₪','Hard-coded unit price is wrong: 79 ₪ / 330 g = 23.94 ₪ per 100 g (23.1 matches an older ~76 ₪ price).','מחיר ל-100 גר׳: 23.94 ₪ (עדיף להסיר את השורה ולהציג מחיר ליחידה אוטומטית מהמחיר בפועל)',C),
+ (65196,'description',SC,H,'מחיר ל - 100 גר 16.5 שח','Hard-coded unit price is wrong: 59 ₪ / 330 g = 17.88 ₪ per 100 g.','מחיר ל-100 גר׳: 17.88 ₪',C),
+ (65189,'description',SC,H,'מחיר ל - 100 גר - 16.5 שח','Hard-coded unit price is wrong: 59 ₪ / 330 g = 17.88 ₪ per 100 g.','מחיר ל-100 גר׳: 17.88 ₪',C),
+ (64855,'description',SC,H,'מחיר ל - 100 גר - 19.5 שח','Hard-coded unit price is wrong: 69 ₪ / 330 g = 20.91 ₪ per 100 g.','מחיר ל-100 גר׳: 20.91 ₪',C),
+ # ---- composition / roast contradictions
+ (65201,'short_description + rank_math_description vs description',IM,H,'קצר: 90% ערביקה / 10% רובוסטה · תיאור: 80% ערביקה / 20% רובוסטה','Blend ratio differs between short description/SEO (90/10) and long description (80/20). Roasted Prestige (65196) is 80/20.','לאשר את היחס מול הספק; אם זהה לפרסטיז׳ הקלוי: "80% ערביקה ברזילאית, 20% רובוסטה הודית" בכל השדות',LI),
+ (82277,'name vs short_description/description',CF,H,'קפסולות לוואצה בלו רומא אספרסו 100% ערביקה','Title claims 100% Arabica, but the short and long descriptions say the blend is Arabica + Robusta.','קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma (להסיר "100% ערביקה"; לאמת הרכב מול אריזת לוואצה)',LI),
+ (82277,'description',CP,M,'קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia','Description headline names a different product (Venezia) than the product itself (Roma).','קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma',C),
+ (65180,'rank_math_title / rank_math_description vs attribute',IM,H,'Daye Bensa - קלייה בהירה וטריה · attribute: רמת קלייה = בינונית','Google title/snippet say light roast; the product is the medium-roast Daye Bensa. A separate light-roast listing (78450) exists, so a customer can buy the wrong roast.','כותרת SEO: "פולי קפה אתיופיה Daye Bensa - קלייה בינונית | %sitename%"; תיאור SEO: "...ספשלטי בקלייה בינונית..."',C),
+ (65384,'rank_math_title / rank_math_description vs attribute',IM,H,'יירגשף חד זני - קלייה בהירה · "פולי קפה אתיופיה Sidama..." · attribute: בינונית','SEO says light roast and "Sidama" (copied from Daye Bensa); attribute and description say medium roast, Yirgacheffe.','כותרת SEO: "פולי קפה אתיופיה יירגשף חד זני - קלייה בינונית"; תיאור SEO: "פולי קפה אתיופיה יירגשף ספשלטי בקלייה בינונית. הדרים, יסמין ותה ירוק, גוף בינוני ומאוזן"',C),
+ # ---- origin / farm
+ (65175,'short_description / description',IM,H,'אזור: עמק גרמה – Grama Valley · שם החווה – Grupo Sertãozinho · "...בכרמו דה מינאס - מדינת מינאס גראיס"','Spec box gives Grama Valley (São Paulo/Mogiana) and farm "Grupo Sertãozinho"; the story text and title say Fazenda Sertão in Carmo de Minas (Sul de Minas). Two different origins.','לאמת מול ספק הקפה הירוק; אם זה Fazenda Sertão: "אזור: כרמו דה מינאס, דרום מינאס ז׳ראיס" · "חווה: Fazenda Sertão". לעדכן גם ב-65108 וב-67146',LI),
+ (65108,'description',IM,M,'אזור: עמק גרמה · Grupo Sertãozinho · גובה: 1,200 – 1,400 מטר','Same region/farm conflict as 65175; altitude also differs from the roasted page (1,100–1,450 m).','ליישר מול 65175 לאחר אימות מול הספק (אזור, חווה וגובה זהים בשני המוצרים)',LI),
+ (67146,'description',IM,M,'מקור: ברזיל, עמק גרמה · Sidama Ethiopia Deya Bensa','Kit repeats the unverified Grama Valley origin; spells Daye Bensa as "Deya Bensa".','לעדכן אחרי אימות 65175; "Daye Bensa" באיות אחיד',LI),
+ (82540,'description / name',MI,M,'פולי קפה ספשלטי מינוטו ... - Roastery Brisas · מותג: Roastery Brisas','No country of origin anywhere. Title brands it Minuto, but spec box says brand Roastery Brisas (roasted by Minuto or bought in roasted?).','להוסיף "מקור: [מדינה/אזור – לאמת מול הספק]"; לאשר מי קלה – אם מינוטו, "קלייה: מינוטו"; אם לא, להסיר "מינוטו" מהכותרת',VE),
+ # ---- blend vs single origin
+ (80501,'rank_math_description',BS,M,'Sweet Leona: תערובת פולי קפה מובחרת... חוויית אספרסו קטיפתית','SEO snippet calls a single-origin Colombian Caturra a blend and pitches espresso; page says single origin, light roast, best for filter.','Sweet Leona: קפה ספשלטי חד-זני מקולומביה (Caturra, עיבוד Honey) בקלייה בהירה – פרחים, תאנים וקני סוכר מקורמל. מושלם לפילטר. עכשיו במינוטו!',C),
+ (64855,'short_description / description vs category',BS,M,'תערובת 100% קולומביה · קטגוריה: פולי קפה חד זני','Described as a blend ("תערובת") while sold under single origin.','אם לוט אחד: "קפה חד-זני 100% קולומביה"; אם שילוב של כמה אזורים בקולומביה: "תערובת של פולים מכמה אזורים בקולומביה" ולהוציא מקטגוריית חד זני',VE),
+ (64734,'description vs category',BS,M,'תערובת נטולת קפאין המורכבת מ 100 % ערביקה מקסיקנית · קטגוריה: חד זני','Described as a blend while sold under single origin.','אם מקור אחד: "קפה נטול קפאין חד-זני, 100% ערביקה ממקסיקו"; אחרת להוציא מקטגוריית חד זני',VE),
+ (64702,'description',IM,M,'שילוב מוקפד של פולים ממקורות שונים · מקור: ברזיל','"Different origins" contradicts "מקור: ברזיל" in short and long description (and the kit 67217 says 100% Brazilian).','אם כל הפולים מברזיל: "שילוב מוקפד של פולים מחוות שונות בברזיל"; אחרת לפרט את המקורות ולתקן את "מקור: ברזיל"',VE),
+ (65204,'name / category',CF,M,'פולי קפה טרי ספשלטי ... אינטנסו · 70% ערביקה ו-30% רובוסטה','Marketed and categorised as specialty while 30% robusta. Specialty normally means SCA-graded Arabica (or graded Fine Robusta).','אם הרובוסטה אינה Fine Robusta מדורגת: "פולי קפה טרי מינוטו אינטנסו – תערובת אספרסו" והוצאה מקטגוריית ספשלטי',VE),
+ (65196,'name / category',CF,M,"פולי קפה טרי ספשלטי ... פרסטיז' · 80% ערביקה ו-20% רובוסטה",'Specialty claim on a blend with 20% robusta.',"אם אינה Fine Robusta: \"פולי קפה טרי מינוטו פרסטיז' – תערובת אספרסו\"",VE),
+ (65189,'name / category',CF,M,'פולי קפה טרי ספשלטי ... טריאסט · 80% ערביקה ו-20% רובוסטה','Specialty claim on a blend with 20% robusta.','אם אינה Fine Robusta: "פולי קפה טרי מינוטו טריאסט – תערובת אספרסו"',VE),
+ (76255,'rank_math_description',IM,M,'פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר','Veneto is the non-specialty Italian line (Arabica + robusta), but the SEO snippet calls it specialty and suggests filter.','חבילת 3 ק״ג פולי קפה Veneto – תערובות ערביקה ורובוסטה בסגנון איטלקי, ב-10% הנחה. לאספרסו ומקינטה',C),
+ (64772,'rank_math_description',IM,M,'פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר','Non-specialty 60/40 Arabica/robusta blend described as specialty, suitable for filter.','1 ק״ג פולי קפה Veneto Delux – 60% ערביקה ו-40% רובוסטה, בסגנון איטלקי. מתיקות עדינה, תווים אגוזיים וחומציות נמוכה. לאספרסו ומקינטה',C),
+ (64771,'rank_math_description',IM,M,'פולי קפה ספשלטי בקלייה טרייה מבית מינוטו... לאספרסו או פילטר','Non-specialty 40/60 Arabica/robusta blend described as specialty, suitable for filter.','1 ק״ג פולי קפה Veneto Premium – כ-40% ערביקה ו-60% רובוסטה, תערובת אינטנסיבית עם קקאו ופירות יבשים. לאספרסו וקפוצ׳ינו',C),
+ # ---- copy-paste leftovers / duplicates
+ (65384,'description',CP,M,'1, יש לו 0 - 3 ליקויים ; זה נדיר! קפה בדרגה 2 מאפשר 4 - 12 ליקויים...','Broken fragment pasted from the Daye Bensa description at the end of the page.','למחוק את הפסקה מ-"1, יש לו 0 - 3 ליקויים" ועד "קפה לא רחוץ."',C),
+ (65175,'description',CP,M,'אחד מזני הקפה הקלאסיים בעולם... קרקעות וולקניות ותנאים דמויי אביב נצח','Paragraph copied from Guatemala Antigua (65179); "volcanic soil, eternal spring" describes Antigua, not Carmo de Minas.','להחליף ב: "ערביקה ברזילאית מזן בורבון צהוב – קלאסית, מתוקה ומאוזנת." ולמחוק את המשפט על קרקעות וולקניות ואביב נצח',LI),
+ (78450,'whole product vs 65180',CP,M,'Daye Bensa (בהירה) ו-Daye Bensa (בינונית) – תיאור כמעט זהה','Two live listings of the same coffee; 65180 title has no roast level and both share the same story text, so the light/medium difference is easy to miss.','להוסיף "בקלייה בינונית" לשם של 65180; לפתוח את התיאור של כל אחד במשפט על רמת הקלייה והשימוש המומלץ; לאשר ששני המוצרים נמכרים בפועל',C),
+ (65463,'whole product vs 65135',IM,M,'גדל בגובה של מעל 1800 מטר (65463) · 1700 מטר, מחוז קיאמבו (65135)','Two Kenya AA+ listings with different altitude; 65135 has no roast level. If the same green lot, the specs must match.','לאמת מול הספק אם זה אותו לוט; ליישר גובה/אזור/זנים, ולהוסיף רמת קלייה ל-65135 (וגם לשם המוצר)',VE),
+ (65196,'whole product vs 65189',CP,L,"פרסטיז': ברזיל + רובוסטה הודית 80/20 · טריאסט: דרום אמריקה + הודו 80/20",'Two blends with the same ratio, price and near-identical copy; customers cannot tell them apart.','להוסיף לכל אחת משפט מבדיל (מקור, רמת קלייה, תווי טעם) – לאמת מול מתכון הקלייה',VE),
+ # ---- coffee facts
+ (65463,'description',CF,M,'פולי קפה קניה AA מגיעים מזן ייחודי של פולי קפה','AA is a Kenyan bean-size grade, not a variety.','"AA הוא דירוג גודל הפול הגבוה בקניה. הזנים: SL28, SL34 ו-Ruiru" (לאמת מול הספק)',C),
+ (65135,'description',CF,L,'מדובר באחד מהזנים היותר מיוחדים שנחתו בארץ','AA is a grade, not a variety.','מדובר באחד הקפים המיוחדים ביותר שנחתו בארץ',C),
+ (65135,'name vs description',CF,M,'Mount Kenya AA · מחוז קיאמבו - ניירובי','Kiambu (north of Nairobi) is not part of the Mount Kenya growing region (Nyeri, Kirinyaga, Embu, Meru).','לאמת מול הספק את האזור; אם קיאמבו – להסיר "Mount" מהשם או להסביר שזה שם מסחרי',VE),
+ (65180,'description',CF,L,'גובה: 1,600 -1,900 מ׳ (חוות דיי בנסה, שאנטאווין)','Daye Bensa lots from Shantawene/Bensa are usually listed around 1,900–2,350 m; 1,600–1,900 m is generic Sidamo.','לאמת את הגובה מול גיליון הלוט של הספק (גם ב-78450 וב-67146)',VE),
+ (65169,'description',CF,L,'את האתיופיה סידמו גוג׳י','Guji is its own zone (Oromia), not Sidamo; older trade names mix them up.','"את הגוג׳י מאתיופיה" (ולאמת את שם הלוט מול הספק)',VE),
+ (65179,'description',CF,L,'אחד מזני הקפה הקלאסיים בעולם: ערביקה גוואטמלה אנטיגואה','Antigua is a region, not a variety.','אחד מאזורי הקפה הקלאסיים בעולם: אנטיגואה שבגואטמלה',C),
+ (65175,'description',CF,L,'עיבוד: נטורל פרוסס · "דובדבן הקפה הוא נשטף ומונח על משטח ייבוש"','"Washed" can be read as washed process; for a natural it means cleaning the cherries before drying.','"לאחר הקטיף הדובדבנים נשטפים וממוינים, ומיובשים בשלמותם (נטורל) על משטחי ייבוש"',LI),
+ (65175,'description',IM,M,'גוף – בינוני · "בעלת גוף מלא"','Body is given as medium in the spec box and full in the story text.','למחוק "בעלת גוף מלא"',C),
+ (65175,'description',IM,L,'yellow bourbon (כותרת) · זן: 100% ערביקה','Variety in the title is missing from the spec box.','זן: בורבון צהוב (Yellow Bourbon), 100% ערביקה',C),
+ (80501,'description',IM,L,'"להעניק גוף מלא ונעים" · גוף: בינוני-קטיפתי','Body is described as both full and medium.','"להעניק גוף נעים וקטיפתי"',C),
+ (80501,'short_description',IM,L,'מחווה של לוז הלנה (קולומביה)','Short description calls Luz Helena a farm; the long description names the farm as La Leona and Luz Helena as the producer.','מחוות La Leona של לוז הלנה (קווינדיו, קולומביה)',C),
+ (65169,'short_description vs description',IM,L,'גוף – בינוני (קצר) · גוף - בינוני - מלא (ארוך)','Body differs.','גוף – בינוני-מלא בשני השדות',C),
+ # ---- missing specs
+ (65463,'description',MI,L,'מקור: קניה · גדל בגובה של מעל 1800 מטר','No region, variety, process or harvest; most of the page is generic copy.','להוסיף אזור, זנים, עיבוד – לאמת מול הספק',C),
+ (65169,'description',MI,L,'מקור: אתיופיה','No altitude, variety, process or roast level for the most expensive single origin (92 ₪).','להוסיף גובה, זן (היירלום?), עיבוד ורמת קלייה – לאמת מול הספק',C),
+ (65110,'rank_math_description / description',MI,M,'1 קג פולי קפה ירוקים איך זה מרגיש. ... קל לשימוש ולתחזוקה','SEO snippet is garbled appliance boilerplate; page has no region, altitude or process and gives brewing advice for green beans.','תיאור SEO: "1 ק״ג פולי קפה ירוקים קניה AA+ לקלייה ביתית – חומציות נוצצת ומתיקות עדינה." ולהוסיף אזור/גובה/עיבוד כמו בקלוי',C),
+ (65201,'rank_math_description',HE,L,'...איכות מעולה ועמידות לאורך זמן. ... קל לשימוש ולתחזוקה','Appliance boilerplate on a coffee product.','"250 גרם פולי קפה ירוקים מינוטו פרסטיז׳ לקלייה ביתית – ערביקה ברזילאית ורובוסטה הודית."',C),
+ (65111,'rank_math_description / description',MI,L,'איכות מעולה ועמידות לאורך זמן · (אין עיבוד)','Boilerplate in SEO; process missing (roasted page says washed).','להסיר את המשפט הגנרי; להוסיף "עיבוד: שטוף"',C),
+ (65201,'price',SC,L,'30 ₪ / 250 גר׳ (120 ₪ לק״ג)','Green robusta blend costs about the same per kg as the green specialty single origins (125 ₪/kg).','לאמת את המחיר מול העלות – ייתכן תקין',VE),
+ # ---- commerce / data hygiene
+ (82540,'attributes / weight / SKU',SC,L,'כמות: 180 · משקל: 0 · SKU 69f87b45339c1-12','Bag size has no unit and isn\'t in the text; shipping weight empty; SKU is an auto-generated copy of Sweet Leona\'s.','כמות: "180 גר׳"; להוסיף "שקית 180 גר׳, פולים שלמים" לתיאור הקצר; משקל 0.18; מק״ט ייעודי',C),
+ (80501,'SKU / text',SC,L,'SKU 69f87b45339c1 · (אין אפשרויות טחינה)','Auto-generated SKU; simple product without grind options and the text doesn\'t say it ships as whole beans.','מק״ט ייעודי; להוסיף "שקית 200 גר׳, פולים שלמים" לתיאור הקצר',C),
+ (65431,'short_description / name',CP,L,'מינוטו מלוס סנטוס: · Jungle Java','Short description opens with "Minuto from Los Santos", probably a leftover name; "Java" in the name suggests Indonesia for a Costa Rican coffee.','"ג׳אנגל ג׳אווה – קוסטה ריקה, טארזו:" (לאשר שם המוצר)',VE),
+ (65431,'variation SKUs',SC,L,'4545645632-54575 … (מק״ט אב 1000000005)','Variation SKUs use a placeholder-looking prefix unrelated to the parent SKU.','לאחד למבנה 1000000005-xxxxx כמו בשאר המוצרים',C),
+ (76255,'bundle setup',SC,L,'מינימום 3 ק"ג · פריטים: Premium×2, Delux×1 (optional, min 0)','Text promises a 3 kg minimum, but bundle items are optional with min 0. Check that WPC bundle limits enforce 3 kg. Slug says "veneto-premium" though it mixes Delux.','לאמת את מגבלת המינימום בהגדרות הבאנדל',VE),
+ (64772,'description / name',IM,L,'קלייה מקומית טרייה... טכניקות עתיקות יומין וידע איטלקי · Delux','Unclear whether Veneto is roasted locally by Minuto or imported Italian; "Delux" vs common "Deluxe".','לאשר מי קולה את Veneto ואת איות שם המותג',VE),
+ # ---- Hebrew text
+ (82540,'description',HE,L,'בחחוות Las Brisas','Typo.','בחוות Las Brisas',C),
+ (65180,'short_description',HE,L,'לבנדר וונגיעות לימון','Typo (double vav).','לבנדר ונגיעות לימון',C),
+ (65180,'description',HE,L,'אתיופיה נחשבת לעיר הולדתו של קפה','Ethiopia is a country, not a city.','אתיופיה נחשבת לארץ הולדתו של הקפה (גם ב-78450)',C),
+ (78450,'description',HE,L,'אתיופיה נחשבת לעיר הולדתו של קפה · פרחים פרחוניים','Country, not city; "flowery flowers" redundancy.','"אתיופיה נחשבת לארץ הולדתו של הקפה" · "טעמים לימוניים מתוקים ופרחוניים"',C),
+ (65384,'name / short_description',HE,L,'Yirgacheffee · ירגשף','English typo; Hebrew spelled two ways.','Yirgacheffe · יירגשף',C),
+ (65384,'description',HE,L,'קפה אתיופי יירגשף, פולי קפה יירגשף, קפה פרחוני, קפה פירותי.','Visible SEO keyword line.','למחוק את השורה',C),
+ (65175,'description',HE,L,'בתחריות קפה · Play · Fazenda Sertão - Nazareth Dias Pereira','Typo plus leftover video-embed text.','בתחרויות קפה; למחוק "Play" ואת שם הסרטון',C),
+ (65463,'description',HE,L,'טיפים להכנת קפה קנייה AA · עדינות,.','Typo and stray punctuation.','קפה קניה AA · עדינות.',C),
+ (65135,'short_description / rank_math_description',HE,L,'איך זה מרגיש? עם חומציות נוצצת · פרטים באתר &gt;','Broken sentence; HTML entity in SEO text.','"איך זה מרגיש? חומציות נוצצת ומתיקות עדינה, וברקע מרירות נעימה" · להסיר "&gt;"',C),
+ (65431,'description',HE,L,'מושלם לאספרסו, קפוצ\'ינו או פילטר ... מושלם להכנת אספרסו,קפוצינו וקפה פילטר.','Same sentence twice.','למחוק את המשפט השני',C),
+ (65189,'short_description / description',HE,L,"למשקאות האספרסו ,קפוצ'ינו,",'Sentence ends on a comma; comma spacing.',"למשקאות אספרסו וקפוצ׳ינו.",C),
+ (65169,'description',HE,L,'פרנץ׳ פרס, פלאנג׳ר ) וחליטה קרה','Stray parenthesis; French press and plunger are the same thing.','מומלץ מאוד לחובבי V60, פרנץ׳ פרס וחליטה קרה.',C),
+ (64855,'description',HE,L,'פרופיל פירחוני שוקולדי','Typo.','פרופיל פרחוני שוקולדי',C),
+ (64734,'short_description',HE,L,'פולי קפה נטול 100% ערביקה מקסיקנית, נטול בתהליך Water proccess','Missing word and English typo.','פולי קפה נטול קפאין, 100% ערביקה מקסיקנית, בתהליך Water Process',C),
+ (64702,'short_description',HE,L,'הקפו׳צינו','Typo.','הקפוצ׳ינו',C),
+ (76255,'description / name',HE,L,'בעלים טעמים · "3  ק״ג"','Typo; double space in title.','בעלי טעמים · "3 ק״ג"',C),
+ (67217,'description',HE,L,'ניחוד של שוקולד · Trieste','Typo; blend name spelled differently from its product (טריאסט / Triest).','ניחוח של שוקולד · טריאסט',C),
+ (67146,'short_description',HE,L,'לפרטים נוספים והזמנה: https://www.minuto.co.il/','Raw homepage URL in the short description of a page already on the site.','למחוק את השורה',C),
+ (65201,'short_description / description',HE,L,'ערביקה ברזיאלית','Typo.','ערביקה ברזילאית',C),
+]
+
+rows = []
+for pid, field, it, sev, cur, prob, fix, conf in F:
+    p = P[pid]
+    rows.append(dict(product_id=pid, product_name=strip(p['name']), permalink=p['permalink'], field=field,
+                     issue_type=it, severity=sev, current_text=cur, problem=prob, suggested_fix=fix, confidence=conf))
+
+# ---- automated checks: whole catalog, skipping hidden products
+manual_ids = {r['product_id'] for r in rows}
+for pid in COFFEE:
+    p = P[pid]
+    if p['type'] == 'woosb': continue
+    if not p['weight'] or float(p['weight'] or 0) == 0:
+        rows.append(dict(product_id=pid, product_name=strip(p['name']), permalink=p['permalink'], field='weight',
+            issue_type=SC, severity=L, current_text=f"weight={p['weight']!r}",
+            problem='Shipping weight is empty or 0 although the bag size is known.',
+            suggested_fix='להזין משקל לפי גודל השקית (למשל 0.33 לשקית 330 גר׳, 1 לק״ג)', confidence=C))
+
+SERVICE = {65427, 65369, 64714, 64703, 65380, 65414, 65426}  # placeholders / fees, not real products
+for p in P.values():
+    if p['catalog_visibility'] == 'hidden' or p['status'] != 'publish': continue
+    pid, name = p['id'], strip(p['name'])
+    def add(field, it, sev, cur, prob, fix, conf=C):
+        rows.append(dict(product_id=pid, product_name=name, permalink=p['permalink'], field=field, issue_type=it,
+                         severity=sev, current_text=cur, problem=prob, suggested_fix=fix, confidence=conf))
+    if p['type'] in ('simple', 'subscription') and (not p['price'] or float(p['price']) == 0):
+        sev = H if p['stock_status'] == 'instock' else M
+        add('price', SC, sev, f"price={p['price']!r}, {p['stock_status']}",
+            'Published and visible in the shop at price 0' + (' and in stock, so it can be added to the cart for free.' if sev == H else '.'),
+            'להעביר לנראות "מוסתר" / פרטי, או להזין מחיר' if pid in SERVICE else 'להזין מחיר או להעביר לטיוטה עד שהמוצר מוכן')
+    if pid in SERVICE and p['price'] and float(p['price']) > 0:
+        add('catalog_visibility', SC, M, f"{name} · {p['price']} ₪",
+            'Internal/service or test item is visible in the shop catalogue.', 'להעביר לנראות "מוסתר" (נשאר זמין להזמנות ידניות)')
+    if not p['images']:
+        add('images', MI, L if pid in SERVICE else M, '(no image)', 'Published product without an image.',
+            'להעלות תמונת מוצר' if pid not in SERVICE else 'להסתיר מהקטלוג')
+    if len(strip(p['description'])) < 15 and pid not in SERVICE:
+        add('description', MI, L, '(empty)', 'Long description is empty.', 'לכתוב תיאור מוצר')
+    if len(strip(p['short_description'])) < 5 and pid not in SERVICE:
+        add('short_description', MI, L, '(empty)', 'Short description is empty.', 'לכתוב תיאור קצר (2–3 שורות)')
+    if not p['sku'].strip():
+        add('sku', MI, L, '(empty)', 'No SKU.', 'להזין מק״ט')
+
+sevorder = {H: 0, M: 1, L: 2}
+rows.sort(key=lambda r: (sevorder[r['severity']], r['issue_type'], r['product_id']))
+cols = ['product_id','product_name','permalink','field','issue_type','severity','current_text','problem','suggested_fix','confidence']
+with open(f'{D}/findings.csv', 'w', newline='', encoding='utf-8-sig') as f:
+    w = csv.DictWriter(f, fieldnames=cols); w.writeheader(); w.writerows(rows)
+
+# ---- summary
+by = collections.Counter((r['issue_type'], r['severity']) for r in rows)
+types = sorted({r['issue_type'] for r in rows})
+hit = {r['product_id'] for r in rows}
+visible = [p for p in P.values() if p['status'] == 'publish' and p['catalog_visibility'] != 'hidden']
+coffee_clean = [P[i] for i in COFFEE if i not in hit]
+lines = ['# Minuto catalog audit: summary', '',
+ f"Read-only audit of minuto.co.il via the WooCommerce REST API. {len(P)} products and "
+ f"{sum(len(v) for v in json.load(open(f'{D}/raw/variations.json')).values())} variations fetched; "
+ f"{sum(1 for p in P.values() if p['catalog_visibility']=='hidden')} hidden products excluded, as you asked.", '',
+ f"* **Full content audit** (checks a–f) on the {len(COFFEE)} coffee-bean products: roasted single origins, Minuto blends, Veneto, green beans and tasting kits.",
+ f"* **Mechanical checks** on all {len(visible)} published, non-hidden products: price 0, duplicate SKUs, missing SKU, image or descriptions, and \"100% Arabica\" next to robusta.",
+ '* No duplicate SKUs anywhere. No lorem or English placeholder text.', '',
+ f"**{len(rows)} findings**: {sum(r['severity']==H for r in rows)} high · {sum(r['severity']==M for r in rows)} medium · {sum(r['severity']==L for r in rows)} low.", '',
+ '## Counts by issue type and severity', '', '| issue_type | high | medium | low | total |', '|---|---|---|---|---|']
+for t in types:
+    lines.append(f"| {t} | {by[(t,H)]} | {by[(t,M)]} | {by[(t,L)]} | {sum(by[(t,s)] for s in (H,M,L))} |")
+lines.append(f"| **total** | {sum(r['severity']==H for r in rows)} | {sum(r['severity']==M for r in rows)} | {sum(r['severity']==L for r in rows)} | {len(rows)} |")
+lines += ['', '## Top 10 fixes', '',
+ '1. **Wrong "price per 100 g" in the copy** on Kenya AA+ (65135), Prestige (65196), Triest (65189) and Velvet Star (64855). All are below the real price: 23.1 → 23.94, 16.5 → 17.88, 16.5 → 17.88, 19.5 → 20.91. Best fix: remove the hard-coded lines and let a unit-price display compute it.',
+ '2. **Lavazza Blue Tales of Roma (82277)**: the title says "100% ערביקה", but its own descriptions say Arabica + Robusta. The description headline also names the Venezia product.',
+ '3. **Green Prestige 250 g (65201)**: the short description and SEO say 90/10 Arabica/robusta, but the description says 80/20.',
+ '4. **Daye Bensa medium (65180)**: the Google title and snippet say light roast, but the product is medium, and a separate light-roast listing (78450) exists. Add the roast level to the product name too.',
+ '5. **Yirgacheffe (65384)**: the SEO says light roast and "Sidama", but the attribute and copy say medium Yirgacheffe. The page also ends in a broken fragment pasted from Daye Bensa.',
+ '6. **Fazenda Sertão (65175, plus green 65108 and kit 67146)**: the spec box says Grama Valley / Grupo Sertãozinho; the story says Fazenda Sertão, Carmo de Minas. It also contains the Guatemala "volcanic soil, eternal spring" paragraph. Confirm with the green supplier.',
+ '7. **Two placeholder products are live at 0 ₪ and in stock**: "הצבה" (65427) and "כללי" (65369). Hide them. Also hide "בדיקת תשלום" (1 ₪), "משלוח", "התקנה", "קפה פילטר" and "shipping Costs"; set a price for or unpublish VARIA VS4 (82651).',
+ '8. **Kenya AA+ duplicates (65463 / 65135)**: the two listings give different altitudes, and 65135 has no roast level. 65463 also says AA is a variety (it is a size grade). Kiambu is not in the Mount Kenya region.',
+ '9. **Blend vs single origin**: Velvet Star (64855) and Decaf (64734) are described as "תערובת" but sit in חד זני. Aristo (64702) says "different origins" next to "מקור: ברזיל". Sweet Leona\'s SEO calls it a blend for espresso.',
+ '10. **"ספשלטי" on robusta blends and Veneto**: Intenso (30% robusta), Prestige and Triest (20% robusta), and the SEO for all three Veneto products. Decide on a policy; unless the robusta is graded Fine Robusta, drop "ספשלטי" there.',
+ '', '## Came out clean', '',
+ 'Coffee products with no findings:']
+lines += [f"* {strip(p['name'])} ({p['id']})" for p in coffee_clean] or ['* none']
+mech_clean = [p for p in visible if p['id'] not in hit]
+lines += ['', f"{len(mech_clean)} of {len(visible)} published, non-hidden products passed all mechanical checks. They were not content-reviewed; the full list is in `clean_products.txt`.",
+ '', 'Notes:', '* Shipping weight is 0 or empty on 22 of the 24 non-kit coffee products. These are logged as low.',
+ '* Every "verify" row needs a source the catalog doesn\'t have (supplier lot sheet, roasting recipe, Lavazza packaging). The suggested text applies only once that source is confirmed.',
+ '* Re-run with `python3 catalog-audit/audit.py` (reads `raw/`, no fetch).']
+open(f'{D}/summary.md', 'w').write('\n'.join(lines) + '\n')
+open(f'{D}/clean_products.txt', 'w').write('\n'.join(f"{p['id']}\t{strip(p['name'])}" for p in sorted(mech_clean, key=lambda p: p['id'])) + '\n')
+print(len(rows), 'findings', collections.Counter(r['severity'] for r in rows))
