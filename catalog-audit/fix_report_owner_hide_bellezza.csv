@@ -1,0 +1,13 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+81446,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+81442,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67338,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67336,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67320,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67307,,set:catalog_visibility,rejected,current value is 'hidden',visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67281,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67306,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67293,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67292,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+67280,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json
+64992,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Bellezza,owner_hide_bellezza.json

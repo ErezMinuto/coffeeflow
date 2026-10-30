@@ -1,0 +1,113 @@
+{
+ "edits": [
+  {
+   "product_id": 81446,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 81442,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67338,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67336,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67320,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67307,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67281,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67306,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67293,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67292,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 67280,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64992,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Bellezza",
+   "source": "owner decision"
+  }
+ ],
+ "skipped": []
+}
