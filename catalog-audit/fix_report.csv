@@ -8,7 +8,7 @@
 64772,,meta:rank_math_description,ok,,פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - מומלץ בחום. קלייה טרייה לאיכות מקסימלית,"1 ק״ג פולי קפה Veneto Delux – 60% ערביקה ו-40% רובוסטה, בסגנון איטלקי. מתיקות עדינה, תווים אגוזיים וחומציות נמוכה. לאספרסו ומקינטה",SEO description,chunk_0.json
 76255,,meta:rank_math_description,ok,,פולי קפה ספשלטי בקלייה טרייה מבית מינוטו. איכות פרימיום לאספרסו או פילטר מושלם - בנפח 3 קג. קלייה טרייה לאיכות מקסימלית,"חבילת 3 ק״ג פולי קפה Veneto – תערובות ערביקה ורובוסטה בסגנון איטלקי, ב-10% הנחה. לאספרסו ומקינטה",SEO description,chunk_0.json
 65110,,meta:rank_math_description,ok,,1 קג פולי קפה ירוקים איך זה מרגיש. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה,"1 ק״ג פולי קפה ירוקים קניה AA+ לקלייה ביתית – חומציות נוצצת ומתיקות עדינה, וברקע מרירות נעימה.",SEO description,chunk_0.json
-65201,,meta:rank_math_description,applied,,250 גרם 90% ערביקה ברזיאלית 10% רובוסטה הודית. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה,250 גרם פולי קפה ירוקים מינוטו פרסטיז׳ לקלייה ביתית – ערביקה ברזילאית ורובוסטה הודית.,SEO description,chunk_0.json
+65201,,meta:rank_math_description,rejected,old text found 0× (must be 1),250 גרם 90% ערביקה ברזיאלית 10% רובוסטה הודית. איכות מעולה ועמידות לאורך זמן. מושלם לשימוש יומיומי קבוע. קל לשימוש ולתחזוקה,250 גרם פולי קפה ירוקים מינוטו פרסטיז׳ לקלייה ביתית – ערביקה ברזילאית ורובוסטה הודית.,SEO description,chunk_0.json
 65111,,meta:rank_math_description,ok,,חומציות – הדרים. איכות מעולה ועמידות לאורך זמן,חומציות – הדרים.,איכות מעולה ועמידות לאורך זמן,chunk_0.json
 65135,,meta:rank_math_description,ok,,"קלייה טרייה לאיכות מקסימלית, פרטים באתר &gt;",קלייה טרייה לאיכות מקסימלית.,פרטים באתר &gt;,chunk_0.json
 64855,,description,ok,,<p>מחיר ל - 100 גר - 19.5 שח</p>,<p>מחיר ל-100 גר׳: 20.91 ₪</p>,מחיר ל - 100 גר - 19.5 שח,chunk_0.json
@@ -37,8 +37,8 @@
 78450,,description,ok,,טעמים לימוניים מתוקים ופרחים פרחוניים,טעמים לימוניים מתוקים ופרחוניים,פרחים פרחוניים,chunk_0.json
 65189,,short_description,ok,,"<li>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</li>",<li>תערובת מתאימה במיוחד למשקאות אספרסו וקפוצ׳ינו</li>,"קפוצינו,",chunk_0.json
 65189,,description,ok,,"<p>תערובת מתאימה במיוחד למשקאות האספרסו ,קפוצ'ינו,</p>",<p>תערובת מתאימה במיוחד למשקאות אספרסו וקפוצ׳ינו.</p>,"קפוצינו,",chunk_0.json
-65201,,short_description,applied,,<li>90% ערביקה ברזיאלית</li>,<li>90% ערביקה ברזילאית</li>,ברזיאלית,chunk_0.json
-65201,,description,applied,,<p>80% ערביקה ברזיאלית</p>,<p>80% ערביקה ברזילאית</p>,ברזיאלית,chunk_0.json
+65201,,short_description,rejected,old text found 0× (must be 1),<li>90% ערביקה ברזיאלית</li>,<li>90% ערביקה ברזילאית</li>,ברזיאלית,chunk_0.json
+65201,,description,rejected,old text found 0× (must be 1),<p>80% ערביקה ברזיאלית</p>,<p>80% ערביקה ברזילאית</p>,ברזיאלית,chunk_0.json
 65431,,description,ok,,"מושלם להכנת אספרסו,קפוצינו וקפה פילטר.",,duplicate sentence,chunk_0.json
 65463,,description,ok,,טיפים להכנת קפה קנייה AA:,טיפים להכנת קפה קניה AA:,קנייה,chunk_0.json
 65463,,description,ok,,"בארומות פרחוניות עדינות,.",בארומות פרחוניות עדינות.,"עדינות,.",chunk_0.json
@@ -47,6 +47,527 @@
 76255,,description,ok,,בעלים טעמים,בעלי טעמים,בעלים,chunk_0.json
 76255,,name,ok,,3  ק״ג,3 ק״ג,double space,chunk_0.json
 82540,,description,ok,,בחחוות Las Brisas,בחוות Las Brisas,בחחוות,chunk_0.json
+64929,,description,ok,,ועודפעולתו,ועוד. פעולתו,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+64929,,description,ok,,"מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8, כך שניתן להסיר אותו בקלות למילוי מחדש.",,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+64929,,description,ok,,"אבל אל תחשוב שפשטות פירושה שאתה מתפשר על טעם או ביצועים. ה-ENA 8 משתמש באותו תהליך מיצוי דופק כמו החבר'ה הגדולים יותר בקו Jura, כך שלקפה שלך יהיה את מלוא הטעם.",,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+81455,,description,ok,,ועודפעולתו,ועוד. פעולתו,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+81455,,description,ok,,"מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8, כך שניתן להסיר אותו בקלות למילוי מחדש.",,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+81455,,description,ok,,"אבל אל תחשוב שפשטות פירושה שאתה מתפשר על טעם או ביצועים. ה-ENA 8 משתמש באותו תהליך מיצוי דופק כמו החבר'ה הגדולים יותר בקו Jura, כך שלקפה שלך יהיה את מלוא הטעם.",,מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך,chunk_1.json
+65230,,short_description,ok,,plus connect s500</h1>,plus connect s700</h1>,מכונת קפה אוטומטית סימנס EQ.9 plus connect s500,chunk_1.json
+76423,,description,ok,,• צבע: נירוסטה,• צבע: לבן,• צבע: נירוסטה,chunk_1.json
+64935,,description,ok,,Jura ENA 8 (מטרופוליטן שחור) תכונות:,Jura ENA 8 לבן – תכונות:,Jura ENA 8 (מטרופוליטן שחור) תכונות:,chunk_1.json
+82012,,short_description,ok,,<strong>Gaggia Classic E24</strong>,<strong>Gaggia Classic UP</strong>,Gaggia Classic E24 –,chunk_1.json
+82014,,short_description,ok,,<strong>Gaggia Classic E24</strong>,<strong>Gaggia Classic UP</strong>,Gaggia Classic E24 –,chunk_1.json
+67670,,description,ok,,4o</span>,</span>,4o,chunk_1.json
+64675,,short_description,ok,,דוד קיטור ומי חם,דוד קיטור ומים חמים,דוד קיטור ומי חם,chunk_1.json
+64675,,description,ok,,מיכל מים פנימים,מיכל מים פנימי,דוד קיטור ומי חם,chunk_1.json
+64675,,description,ok,,משאבת סיבובית,משאבה סיבובית,דוד קיטור ומי חם,chunk_1.json
+64715,,description,ok,,ויציבה הממנה ניתן,ויציבה שממנה ניתן,"יציבה הממנה ניתן להפיק ... 26,5 עומק",chunk_1.json
+64715,,description,ok,,"26,5 עומק",26.5 עומק,"יציבה הממנה ניתן להפיק ... 26,5 עומק",chunk_1.json
+64716,,description,ok,,ויציבה הממנה ניתן,ויציבה שממנה ניתן,"יציבה הממנה ניתן להפיק ... 26,5 עומק",chunk_1.json
+64716,,description,ok,,"26,5 עומק",26.5 עומק,"יציבה הממנה ניתן להפיק ... 26,5 עומק",chunk_1.json
+64790,,description,ok,,הגודל הקומפקטי שלהו,הגודל הקומפקטי שלה,הגודל הקומפקטי שלהו,chunk_1.json
+64790,,description,ok,,בין אם אתה חובבי קפה,בין אם אתם חובבי קפה,הגודל הקומפקטי שלהו,chunk_1.json
+76352,,description,ok,,הגודל הקומפקטי שלהו,הגודל הקומפקטי שלה,הגודל הקומפקטי שלהו,chunk_1.json
+76352,,description,ok,,בין אם אתה חובבי קפה,בין אם אתם חובבי קפה,הגודל הקומפקטי שלהו,chunk_1.json
+64827,,description,ok,,בנפח 37 אונקיות,בנפח 1.1 ליטר,מיכל מים גלילי בנפח 37 אונקיות,chunk_1.json
+64827,,description,ok,,לבן שטוח,פלאט וייט,מיכל מים גלילי בנפח 37 אונקיות,chunk_1.json
+64935,,description,ok,,בנפח 37 אונקיות,בנפח 1.1 ליטר,מיכל מים גלילי בנפח 37 אונקיות,chunk_1.json
+64935,,description,ok,,לבן שטוח,פלאט וייט,מיכל מים גלילי בנפח 37 אונקיות,chunk_1.json
+64867,,description,ok,,אחד המותגים המחודשים בעולם הקפה,אחד המותגים הנחשבים בעולם הקפה,אחד המותגים המחודשים בעולם הקפה ... הודות לראש הטבוללזרימת,chunk_1.json
+64867,,description,ok,,לראש הטבוללזרימת,לראש הטבול לזרימת,אחד המותגים המחודשים בעולם הקפה ... הודות לראש הטבוללזרימת,chunk_1.json
+64876,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64876,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64877,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64877,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64878,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64878,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64879,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64879,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64880,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64880,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64881,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64881,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+82622,,description,ok,,באיכות ביתית בבית,"באיכות של בית קפה, בבית",ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+82622,,description,ok,,פיה כפולה ופורטה ללא תחתית(בוטמלס),פיה כפולה וידית ללא תחתית (בוטומלס),ליהנות מאספרסו באיכות ביתית בבית,chunk_1.json
+64882,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64882,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64883,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64883,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64884,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64884,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64885,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64885,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64886,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64886,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64887,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64887,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+65025,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+65025,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+82155,,description,ok,,"(Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",(Brew-by-Weight).,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+82155,,description,ok,,וזרימת ניקוי עצמית צמצם.,ומצמצם זרימה עם ניקוי עצמי.,"חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",chunk_1.json
+64923,,description,ok,,Product Recognizing Griinder ) P.R.G),Product Recognizing Grinder (P.R.G.),Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+64923,,description,ok,,Cold Brew Caffè Late<,Cold Brew Caffè Latte<,Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+81458,,description,ok,,Product Recognizing Griinder ) P.R.G),Product Recognizing Grinder (P.R.G.),Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+81458,,description,ok,,Cold Brew Caffè Late<,Cold Brew Caffè Latte<,Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+81462,,description,ok,,Product Recognizing Griinder ) P.R.G),Product Recognizing Grinder (P.R.G.),Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+81462,,description,ok,,Cold Brew Caffè Late<,Cold Brew Caffè Latte<,Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late,chunk_1.json
+64966,,description,ok,,"ניתן לחלוט והלקציף בו זמנית,.",ניתן לחלוט ולהקציף בו זמנית.,"ניתן לחלוט והלקציף בו זמנית,.",chunk_1.json
+65198,,short_description,ok,,@*,*,מבוססת קפסולות נספרסו @* או תואמות,chunk_1.json
+65230,,description,ok,,"יחידת קליית פולי הקפה, ניתנת לשליפה",יחידת החליטה ניתנת לשליפה,"יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65230,,description,ok,,"וגם מבשלת את הקפה, פעמים,","וגם חולטת את הקפה פעמיים,","יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65230,,description,ok,,"קראמית, מתכוננת,","קראמית, מתכווננת,","יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65231,,description,ok,,"יחידת קליית פולי הקפה, ניתנת לשליפה",יחידת החליטה ניתנת לשליפה,"יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65231,,description,ok,,"וגם מבשלת את הקפה, פעמים,","וגם חולטת את הקפה פעמיים,","יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65231,,description,ok,,"קראמית, מתכוננת,","קראמית, מתכווננת,","יחידת קליית פולי הקפה, ניתנת לשליפה",chunk_1.json
+65477,,short_description,ok,,תהנו מטעם עשיר ועשיר בכל פחית,תיהנו מטעם עשיר בכל כוס,תהנו מטעם עשיר ועשיר בכל פחית,chunk_1.json
+67225,,short_description,ok,,פשוטה ואכותית,פשוטה ואיכותית,"יפה, פשוטה ואכותית",chunk_1.json
+67225,,description,ok,,ניתן יכול לבחור,ניתן לבחור,"יפה, פשוטה ואכותית",chunk_1.json
+67273,,description,ok,,3 רמות טמפרטוה,3 רמות טמפרטורה,3 רמות טמפרטוה,chunk_1.json
+67274,,description,ok,,3 רמות טמפרטוה,3 רמות טמפרטורה,3 רמות טמפרטוה,chunk_1.json
+67275,,description,ok,,3 רמות טמפרטוה,3 רמות טמפרטורה,3 רמות טמפרטוה,chunk_1.json
+67363,,description,ok,,לכן בינבונה שינו,לכן בניבונה שינו,לכן בינבונה שינו ... מספר שינוייםיוצאי דופן,chunk_1.json
+67363,,description,ok,,שינוייםיוצאי דופן,שינויים יוצאי דופן,לכן בינבונה שינו ... מספר שינוייםיוצאי דופן,chunk_1.json
+67363,,description,ok,,מעגש חימום כוסות,מגש חימום כוסות,לכן בינבונה שינו ... מספר שינוייםיוצאי דופן,chunk_1.json
+67363,,description,ok,,ניטור מפלסים אוטומטי לפולי מים וקפה,ניטור מפלסים אוטומטי למים ולפולי קפה,לכן בינבונה שינו ... מספר שינוייםיוצאי דופן,chunk_1.json
+67618,,description,ok,,מטחנת אינטגרלית משולבת,מטחנה אינטגרלית משולבת,מטחנת אינטגרלית משולבת,chunk_1.json
+68280,,name,ok,,(ROCKET GIOTTO CONOMETRO R (EVO,ROCKET GIOTTO CRONOMETRO R EVO,(ROCKET GIOTTO CONOMETRO R (EVO,chunk_1.json
+68280,,description,ok,,(back flash),(back flush),ר אש יציאת הקפה ... מ ק סימום ... גרמנ י ים,chunk_1.json
+68294,,description,ok,,"בין מנה בודדת, ולמה כפולה",בין מנה בודדת למנה כפולה.,"לאפשרות בחירה בין מנה בודדת, ולמה כפולה",chunk_1.json
+68294,,description,ok,,מכונת ידנית בעיצוב,מכונה ידנית בעיצוב,"לאפשרות בחירה בין מנה בודדת, ולמה כפולה",chunk_1.json
+68295,,description,ok,,בכל הנגע ליופי,בכל הנוגע ליופי,בכל הנגע ליופי,chunk_1.json
+69413,,description,ok,,מסייע לייבוש פולי הקפה לאחר החליטה,מסייע לייבוש עוגת הקפה לאחר החליטה,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+69413,,description,ok,,שרוול הקצפה מקצועי</strong>,שרביט הקצפה מקצועי</strong>,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+69413,,description,ok,,</strong> שרוול הקצפה מקצועי עם,</strong> שרביט הקצפה מקצועי עם,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+69416,,description,ok,,מסייע לייבוש פולי הקפה לאחר החליטה,מסייע לייבוש עוגת הקפה לאחר החליטה,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+69416,,description,ok,,שרוול הקצפה מקצועי</strong>,שרביט הקצפה מקצועי</strong>,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+69416,,description,ok,,</strong> שרוול הקצפה מקצועי עם,</strong> שרביט הקצפה מקצועי עם,מסייע לייבוש פולי הקפה לאחר החליטה,chunk_1.json
+76409,,description,ok,,PID לשוטלים מדויקים,PID לשוטים מדויקים,ובקרת טמפרטורה PID לשוטלים מדויקים,chunk_1.json
+76418,,description,ok,,PID לשוטלים מדויקים,PID לשוטים מדויקים,ובקרת טמפרטורה PID לשוטלים מדויקים,chunk_1.json
+76423,,description,ok,,PID לשוטלים מדויקים,PID לשוטים מדויקים,ובקרת טמפרטורה PID לשוטלים מדויקים,chunk_1.json
+79795,,description,ok,,להכין ספרסו ברמה,להכין אספרסו ברמה,"להכין ספרסו ברמה ... וברז מים חמים ייעודי לתה ואמריקנו. ו
+כן, גם טמפר",chunk_1.json
+79795,,description,ok,,"ואמריקנו. ו<br />כן,","ואמריקנו.<br />וכן,","להכין ספרסו ברמה ... וברז מים חמים ייעודי לתה ואמריקנו. ו
+כן, גם טמפר",chunk_1.json
+64786,,description,ok,,מטחנות סכינים קרמיות כפולות:,מטחנות דיסק קרמיות כפולות:,מטחנות סכינים קרמיות כפולות: ... שתי מטחנות דיסק קרמיות,chunk_1.json
+67329,,short_description,ok,,מבין 10 משקאות הקפה מוגדרות מראש,מבין 12 משקאות הקפה המוגדרים מראש,Melitta® Caffeo® Passione® OT מציגה קפה ארומטי,chunk_2.json
+67329,,short_description,ok,,Melitta® Caffeo® Passione® OT מציגה,Melitta® Latte Select מציגה,Melitta® Caffeo® Passione® OT מציגה קפה ארומטי,chunk_2.json
+67329,,short_description,ok,,ה- Caffeo® Passione® OT מרשימה,ה- Melitta® Latte Select מרשימה,Melitta® Caffeo® Passione® OT מציגה קפה ארומטי,chunk_2.json
+67330,,short_description,ok,,Melitta® Caffeo® Passione® OT מציגה,Melitta® CI Touch® מציגה,Melitta® Caffeo® Passione® OT מציגה קפה ארומטי,chunk_2.json
+67330,,short_description,ok,,ה- Caffeo® Passione® OT מרשימה,ה- Melitta® CI Touch® מרשימה,Melitta® Caffeo® Passione® OT מציגה קפה ארומטי,chunk_2.json
+67329,,description,ok,,לכן ל- CI Touch® יש,לכן ל- Melitta® Latte Select יש,לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית,chunk_2.json
+67329,,description,ok,,Melitta® CI Touch® שומרת,Melitta® Latte Select שומרת,לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית,chunk_2.json
+67329,,description,ok,,ה- Caffeo® CI Touch® מציין,ה- Melitta® Latte Select מציינת,לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית,chunk_2.json
+67329,,description,ok,,ל- Caffeo® Ci touc® יש,ל- Melitta® Latte Select יש,לכן ל- CI Touch® יש מיכל פולי קפה דו-קאמרית,chunk_2.json
+64992,,description,ok,,Titanio V2 Matte black,Titanio V2 - אלומיניום מלוטש,מטחנת קפה Bellezza Piccola 60 Titanio V2 Matte black,chunk_2.json
+81446,,description,ok,,Titanio V2 Matte black,Titanio V2 - לבן,מטחנת קפה Bellezza Piccola 60 Titanio V2 Matte black,chunk_2.json
+67169,,description,ok,,ה-Bezzera Magica S מתגלה,ה-Bezzera Magica MN PID מתגלה,גם מדף הכוסות על מכסה ה-Bezzera Magica S,chunk_2.json
+67169,,description,ok,,מילוי מים.מכונת אספרסו כפולה,מילוי מים.,גם מדף הכוסות על מכסה ה-Bezzera Magica S,chunk_2.json
+76875,,description,ok,,",k, ptzh",תלת פאזי,"מתח חשמלי 
+ ,k, ptzh",chunk_2.json
+81092,,description,ok,,",k, ptzh",תלת פאזי,"מתח חשמלי 
+ ,k, ptzh",chunk_2.json
+67603,,short_description,ok,,מכונת אספרסו שחורה ומרשימה,מכונת אספרסו כסופה ומרשימה,מכונת אספרסו שחורה ומרשימה,chunk_2.json
+64781,,description,ok,,"מצויד בקוצים של 83 מ""מ","מצויד בסכינים שטוחות בקוטר 83 מ""מ","מצויד בקוצים של 83 מ""מ",chunk_2.json
+64897,,description,ok,,ומיכל השעועית הגדול,ומיכל פולי הקפה הגדול,ומיכל השעועית הגדול במיוחד,chunk_2.json
+77156,,description,ok,,ומיכל השעועית הגדול,ומיכל פולי הקפה הגדול,ומיכל השעועית הגדול במיוחד,chunk_2.json
+67330,,description,ok,,מיכל שעועית כפול,מיכל פולי קפה כפול,מיכל שעועית כפול,chunk_2.json
+65027,,short_description,ok,,קופמקטיות,קומפקטיות,ומידות קופמקטיות,chunk_2.json
+65046,,name,ok,,Nova Simonelli,Nuova Simonelli,Nova Simonelli Oscar Mood,chunk_2.json
+65088,,description,ok,,(אפילו קפיצ'ינו),(אפילו קפוצ'ינו),טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65088,,description,ok,,מגש טפטןף,מגש טפטוף,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65088,,description,ok,,אפשו לדאבל,אפשרות לדאבל,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65088,,description,ok,,ישירו מקרטון,ישירות מקרטון,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65088,,description,ok,,יחידת קלית הקפה,יחידת החליטה,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65088,,description,ok,,מיכל פולים הקפה בעל קבלות,מיכל פולי הקפה בעל קיבולת,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65181,,description,ok,,מגש טפטןף,מגש טפטוף,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65181,,description,ok,,אפשו לדאבל,אפשרות לדאבל,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65181,,description,ok,,ישירו מקרטון,ישירות מקרטון,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65181,,description,ok,,יחידת קלית הקפה,יחידת החליטה,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65181,,description,ok,,מיכל פולים הקפה בעל קבלות,מיכל פולי הקפה בעל קיבולת,טפטןף ... אפשו לדאבל שוט ... ישירו מקרטון ... קבלות של כ-300 גרם,chunk_2.json
+65097,,short_description,ok,,"שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה מכונת קפה ידנית עם המטחנה המובנית.","מכונת קפה ידנית ללית דגם אניטה עם מטחנה מובנית ושרביט הקצפה מקצועי, רב כיווני ועוצמתי.","שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה",chunk_2.json
+65097,,description,ok,,מד לחץ לחץ קפה.,מד לחץ קפה.,"שרביט הקצפה מקצועי, רב כיווני, עוצמתי מכונת קפה ללית דגם אניטה",chunk_2.json
+65104,,description,ok,,ועץ עץ.,ועץ.,בידית נירוסטה ועץ עץ,chunk_2.json
+65104,,description,ok,,היא לוחחת,היא לוחית,בידית נירוסטה ועץ עץ,chunk_2.json
+65104,,description,ok,,אם מוקנת,אם מותקנת,בידית נירוסטה ועץ עץ,chunk_2.json
+65163,,description,ok,,קנה מכונת קפה מכונת קפה מקצועית,מכונת קפה מקצועית,קנה מכונת קפה מכונת קפה מקצועית לה פאבוני,chunk_2.json
+65163,,short_description,ok,,קנה מכונת קפה מכונת קפה מקצועית,מכונת קפה מקצועית,קנה מכונת קפה מכונת קפה מקצועית לה פאבוני,chunk_2.json
+65182,,description,ok,,נוחות משולמת,נוחות מושלמת,נוחות משולמת,chunk_2.json
+65197,,description,ok,,הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך ולעשות את הנסיעות שלך נהדר,,הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך,chunk_2.json
+65197,,short_description,ok,,@*,®*,הערה לכל אוהבי הקפה הגדולה: להביא Handpresso אוטומטי קפסולה איתך,chunk_2.json
+65232,,name,ok,,Rancillio,Rancilio,Rancillio Silvia,chunk_2.json
+65232,,description,ok,,רמצ'יליו סילביה,רנצ'יליו סילביה,Rancillio Silvia,chunk_2.json
+78749,,name,ok,,Rancillio,Rancilio,Rancillio Silvia,chunk_2.json
+78749,,description,ok,,רמצ'יליו סילביה,רנצ'יליו סילביה,Rancillio Silvia,chunk_2.json
+67159,,name,ok,,Classic PRo E24צבע צהוב,Classic Pro E24 צבע צהוב,Gaggia Classic PRo E24צבע צהוב,chunk_2.json
+67167,,description,ok,,מווסת לחת,מווסת לחץ,מווסת לחת – Flow Control,chunk_2.json
+67167,,description,ok,,עצירה אוטומטית של ההתנגדויות,ניתוק אוטומטי של גופי החימום,מווסת לחת – Flow Control,chunk_2.json
+67167,,description,ok,,70 ליטר h,70 ליטר לשעה,מווסת לחת – Flow Control,chunk_2.json
+67214,,description,ok,,חווית שחיקה,חוויית טחינה,מציעים חווית שחיקה יוצאת דופן,chunk_2.json
+67257,,description,ok,,"22,4 X 35,7 X 43, 5",22.4 X 35.7 X 43.5,"22,4 X 35,7 X 43, 5 ס""מ",chunk_2.json
+67278,,short_description,ok,,ביצור מטחנות,בייצור מטחנות,סכיני פלדה שטוחות 54,chunk_2.json
+67278,,short_description,ok,,סכיני פלדה שטוחות 54,"סכיני פלדה שטוחות 54 מ""מ.",סכיני פלדה שטוחות 54,chunk_2.json
+67278,,description,ok,,ביצור מטחנות,בייצור מטחנות,סכיני פלדה שטוחות 54,chunk_2.json
+67309,,short_description,ok,,מקציף פנרלו,,"מקציף פנרלו
+ מקציף סטימר(פנרלו)",chunk_2.json
+67345,,short_description,ok,,"מינימליסטילוח <span class=""caps"">LED</span> עם מקשי מגעתהליך","מינימליסטי. לוח <span class=""caps"">LED</span> עם מקשי מגע. תהליך",עיצוב מינימליסטילוח LED עם מקשי מגעתהליך,chunk_2.json
+67345,,description,ok,,מיל מים,מיכל מים,עיצוב מינימליסטילוח LED עם מקשי מגעתהליך,chunk_2.json
+68271,,description,ok,,>vbm-domobar-machin וי.בי.אם מידות</figcaption>,>מידות</figcaption>,vbm-domobar-machin וי.בי.אם מידות,chunk_2.json
+68271,,short_description,ok,,בבית הקפה קומפקטית.,בבית הקפה. קומפקטית.,vbm-domobar-machin וי.בי.אם מידות,chunk_2.json
+68336,,description,ok,,אוטמטית,אוטומטית,מכונת קפה אוטמטית טוחנת,chunk_2.json
+78317,,description,ok,,"חובבי קפה, בריסטות ביתיים ואפילו מערכות המלצה מבוססות בינה מלאכותית.",חובבי קפה ובריסטות ביתיים.,ואפילו מערכות המלצה מבוססות בינה מלאכותית,chunk_2.json
+65112,,description,ok,,לטאה מקיאטו ענק,לאטה מקיאטו ענק,ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות ... 64 אפשרויות שונות,chunk_2.json
+65112,,description,ok,,"כן, כן, שמעתם נכון 64 אפשרויות שונות והכל בזיכרון. ",,ניתן לתכנת עד 4 פרופילים שונים לכל 10 המשקאות ... 64 אפשרויות שונות,chunk_2.json
+67674,,short_description,ok,,"מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא, המשלבות ניחוחות עץ, תבלינים וקקאו. קלייה בינונית מדויקת מבטיחה הפקת קפה מושלמת בכל כוס.","קפסולות Lavazza Espresso Gourmet Chocolate – אספרסו עשיר בניחוח שוקולד, קלייה בינונית.",מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא,chunk_3.json
+67674,,meta:rank_math_description,ok,,"מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא, המשלבות ניחוחות עץ, תבלינים וקקאו","גורמה שוקולד – קפסולות אספרסו עשיר בניחוח שוקולד, קלייה בינונית",מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא,chunk_3.json
+81722,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81734,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81735,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81736,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81737,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81742,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81743,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81744,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81745,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81746,,short_description,ok,,"ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.<br />
+עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־240 מ״ל.<br />
+מושלם לחוויית קפה יומיומית בבית או בעבודה.","תחתית קרמית מסדרת Pico.<br />
+עשויה מחימר טרקוטה, עם מקום ייעודי להנחת הכפית.<br />
+מתאימה לשימוש במדיח כלים ובמיקרוגל.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81722,,meta:rank_math_title,ok,,ספל לאטה 240 מל מרווה - מינוטו של notneutral,"תחתית לקפוצ׳ינו ולאטה notNeutral Pico, מרווה | מינוטו",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81722,,meta:rank_math_description,ok,,"ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.","NotNeutral pico, תחתית לקפוצינו/לאטה בצבע מרווה. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.,chunk_3.json
+81724,,short_description,ok,,כ־240 מ״ל,כ־355 מ״ל,ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81725,,short_description,ok,,כ־240 מ״ל,כ־355 מ״ל,ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81726,,short_description,ok,,כ־240 מ״ל,כ־355 מ״ל,ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81727,,short_description,ok,,כ־240 מ״ל,כ־355 מ״ל,ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81733,,short_description,ok,,כ־240 מ״ל,כ־355 מ״ל,ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81724,,meta:rank_math_title,ok,,ספל לאטה 240 מל מרווה - מינוטו של notneutral,"ספל לאטה גדול notNeutral Pico 355 מ״ל, מרווה | מינוטו",ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81724,,meta:rank_math_description,ok,,"ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.","NotNeutral pico, ספל לאטה גדול 355 מ""ל בצבע מרווה. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81725,,meta:rank_math_title,ok,,ספל לאטה 240 מל מרווה - מינוטו של notneutral,"ספל לאטה גדול notNeutral Pico 355 מ״ל, לבן | מינוטו",ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+81725,,meta:rank_math_description,ok,,"ספל לאטה 240 מל מרווה של notneutral, בעיצוב אלגנטי לשמירה על חום הקפה שלך, עשוי מקרמיקה איכותית בדחיסות וחום גבוה, חוויית קפה יומית מושלמת.","NotNeutral pico, ספל לאטה גדול 355 מ""ל בצבע לבן. כלי הגשה לקפה עם מידע על נפח, חומר וגוון. פרטים ואפשרויות רכישה באתר מינוטו.",ומתאים לנפח של כ־240 מ״ל,chunk_3.json
+82277,,name,ok,,רומא אספרסו 100% ערביקה -,רומא אספרסו -,רומא אספרסו 100% ערביקה,chunk_3.json
+82277,,meta:rank_math_title,ok,,"רומא, 100% ערביקה |",רומא |,רומא אספרסו 100% ערביקה,chunk_3.json
+67249,,short_description,ok,,30 קפסולות מכילות קפה,16 קפסולות מכילות קפה,30 קפסולות מכילות קפה,chunk_3.json
+67253,,description,ok,,אריזה של 30 קפסולות,אריזה של 16 קפסולות,אריזה של 30 קפסולות,chunk_3.json
+65045,,description,ok,,בטעם קרם ברולה,בטעם קרמל,16  קפסולות בטעם קרם ברולה,chunk_3.json
+67228,,description,ok,,אספרסו נאפולי סטייל,אספרסו אינטנסו,קפסולות דולצ׳ה גוסטו אספרסו נאפולי סטייל,chunk_3.json
+67376,,short_description,ok,,"אספרסו מור אינטנסו כשר לפסח,","אספרסו מור פורטה כשר לפסח,","קפסולות תואמות דולצ׳ה גוסטו אספרסו מור אינטנסו כשר לפסח,",chunk_3.json
+67384,,description,ok,,"אמודו מיו דולצ׳ה מקורי,","אמודו מיו פסיונאל מקורי,","קפסולות לוואצה אמודו מיו דולצ׳ה מקורי,",chunk_3.json
+68261,,short_description,ok,,גראנד &#8211; Espresso Club,קרם &#8211; Espresso Club,גראנד – Espresso Club,chunk_3.json
+68375,,short_description,ok,,גראנד &#8211; Espresso Club,בלאק &#8211; Espresso Club,גראנד – Espresso Club,chunk_3.json
+68376,,short_description,ok,,גראנד &#8211; Espresso Club,אינטנסו &#8211; Espresso Club,גראנד – Espresso Club,chunk_3.json
+81714,,short_description,ok,,פל קפוצ׳ינו Pico לבן,ספל קפוצ׳ינו Pico טבעי,פל קפוצ׳ינו Pico לבן,chunk_3.json
+81718,,short_description,ok,,פל קפוצ׳ינו Pico לבן,ספל קפוצ׳ינו Pico כחול,פל קפוצ׳ינו Pico לבן,chunk_3.json
+81716,,short_description,ok,,Pico בצבע טבעי,Pico בצבע כחול,ספל אספרסו קרמי Pico בצבע טבעי,chunk_3.json
+82277,,description,ok,,קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia,קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma,קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia,chunk_3.json
+65378,,description,ok,,טקסט למטא תגים (Google Meta):,,טקסט למטא תגים (Google Meta):,chunk_3.json
+65378,,description,ok,,"קפסולות קפה, לאווהצה, נספרסו, אורגני, אפריקה, ¡Tierra!, קפה איכותי, קפה עוצמתי, קקאו, פירות יבשים, קפה אתי, קיימות",,טקסט למטא תגים (Google Meta):,chunk_3.json
+65378,,description,ok,,הצעות נוספות למילות מפתח:,,טקסט למטא תגים (Google Meta):,chunk_3.json
+65378,,description,ok,,"קפה שחור, קפה אספרסו, קפסולות קפה מתכלות, קפה טרי, קפה בוטיק, קפה ירוק, קפה סחר הוגן",,טקסט למטא תגים (Google Meta):,chunk_3.json
+67151,,short_description,ok,,</strong> URL מינוטו קפה,</strong> www.minuto.co.il,בקרו באתר מינוטו קפה: URL מינוטו קפה,chunk_3.json
+64890,,short_description,ok,,מכיל 16 קפסולות קפה,מכיל 16 קפסולות שוקו,מכיל 16 קפסולות קפה,chunk_3.json
+64890,,short_description,ok,,ספל שוקו גדולה ומנחמת,ספל שוקו גדול ומנחם,מכיל 16 קפסולות קפה,chunk_3.json
+64891,,short_description,ok,,מכיל 16 קפסולות קפה,מכיל 16 קפסולות,מכיל 16 קפסולות קפה,chunk_3.json
+67305,,description,ok,,<p>30 קפסולות</p>,<p>16 קפסולות</p>,30 קפסולות,chunk_3.json
+64758,,description,ok,,מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>,מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+64758,,description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+64758,,short_description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81467,,description,ok,,מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>,מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81467,,description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81467,,short_description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81471,,description,ok,,מטחנת קפה (VARIA VS3 (2ND GENERATION</h3>,מטחנת קפה VARIA VS3 (2ND GENERATION)</h3>,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81471,,description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+81471,,short_description,ok,,Electric Griinder,Electric Grinder,מטחנת קפה (VARIA VS3 (2ND GENERATION,chunk_3.json
+64779,,name,ok,,Nitro Blade Cooper,Nitro Blade Copper,Nitro Blade Cooper,chunk_3.json
+64779,,description,ok,,Nitro Blade cooper</h1>,Nitro Blade Copper</h1>,Nitro Blade Cooper,chunk_3.json
+64779,,description,ok,,הבחירהבחומר במתכת ללהבים,הבחירה בחומר המתכתי ללהבים,הבחירהבחומר במתכת ללהבים,chunk_3.json
+64936,,description,ok,,הבחירהבחומר במתכת ללהבים,הבחירה בחומר המתכתי ללהבים,הבחירהבחומר במתכת ללהבים,chunk_3.json
+64937,,description,ok,,הבחירהבחומר במתכת ללהבים,הבחירה בחומר המתכתי ללהבים,הבחירהבחומר במתכת ללהבים,chunk_3.json
+64938,,description,ok,,הבחירהבחומר במתכת ללהבים,הבחירה בחומר המתכתי ללהבים,הבחירהבחומר במתכת ללהבים,chunk_3.json
+65045,,description,ok,,זה הזמן זמן להתענג,זה הזמן להתענג,זה הזמן זמן להתענג,chunk_3.json
+65051,,description,ok,,זה הזמן זמן להתענג,זה הזמן להתענג,זה הזמן זמן להתענג,chunk_3.json
+65193,,description,ok,,זה הזמן זמן להתענג,זה הזמן להתענג,זה הזמן זמן להתענג,chunk_3.json
+65052,,description,ok,,מיכל פוליח קפה,מיכל פולי קפה,מיכל פוליח קפה 500 גרם,chunk_3.json
+65055,,description,ok,,למשתמש הביתי ההממוצע(לא באמת).,למשתמש הביתי המקצועי.,למשתמש הביתי ההממוצע(לא באמת),chunk_3.json
+65055,,short_description,ok,,למשתמש הביתי ההממוצע(לא באמת).,למשתמש הביתי המקצועי.,למשתמש הביתי ההממוצע(לא באמת),chunk_3.json
+65055,,description,ok,,<p>בחיר בין,<p>בחירה בין,למשתמש הביתי ההממוצע(לא באמת),chunk_3.json
+65055,,description,ok,,סכינןם,סכינים,למשתמש הביתי ההממוצע(לא באמת),chunk_3.json
+65203,,description,ok,,Rancilio Silviaארץ יצור: איטליה.,Rancilio Silvia. ארץ ייצור: איטליה.,Rancilio Silviaארץ יצור: איטליה.,chunk_3.json
+65378,,description,ok,,קרן לוואלה,קרן לוואצה,שם קרן לוואלה תומכת,chunk_3.json
+65459,,description,ok,,בצורה חלקה בין.,בצורה חלקה בין כל הדרגות.,כיוון הטחינה עובד בצורה חלקה בין.,chunk_3.json
+67171,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,chunk_3.json
+67384,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,chunk_3.json
+67385,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי,chunk_3.json
+67315,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,chunk_3.json
+67316,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,chunk_3.json
+67383,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,chunk_3.json
+79334,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,36 קפסולות לוואצה אמודו מיו מקוריות,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,chunk_3.json
+67240,,name,ok,,Italian Coffee Cappucci,Italian Coffee Cappuccino,Italian Coffee Cappucci,chunk_3.json
+67240,,description,ok,,Italian Coffee Cappucci</h3>,Italian Coffee Cappuccino</h3>,Italian Coffee Cappucci,chunk_3.json
+67243,,description,ok,,"ל-17 (גס מאוד, תלוי בשיטת החליטה.","ל-17 (גס מאוד), בהתאם לשיטת החליטה.","מ-1 (עדין מאוד) ל-17 (גס מאוד, תלוי בשיטת החליטה.",chunk_3.json
+67303,,description,ok,,תערובuת,תערובת,תערובuת,chunk_3.json
+67303,,short_description,ok,,תערובuת,תערובת,תערובuת,chunk_3.json
+67313,,description,ok,,212x309x360ג ממ,"212x309x360 מ""מ",212x309x360ג ממ,chunk_3.json
+67319,,description,ok,,212x309x432ג ממ,"212x309x432 מ""מ",212x309x432ג ממ,chunk_3.json
+67365,,description,ok,,למכונתו נספרסו,למכונות נספרסו,כדי להתאים למכונתו נספרסו,chunk_3.json
+67395,,description,ok,,ועוצמה גבהוו,ועוצמה גבוהה,ועוצמה גבהוו,chunk_3.json
+67395,,description,ok,,איטנסיבי,אינטנסיבי,ועוצמה גבהוו,chunk_3.json
+67615,,description,ok,,INRENSO Gusto של Nescafé:,Intenso Gusto של Nescafé:,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,,INRENSO Gusto ש,Intenso Gusto ש,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,, ב-Café au Lait INRENSO, ב-Café au Lait Intenso,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,,INRENSO Gusto מצי,Intenso Gusto מצי,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,,INRENSO Gusto א,Intenso Gusto א,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,,INRENSO Gusto מ,Intenso Gusto מ,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,description,ok,,INRENSO,Intenso,Café au Lait INRENSO Gusto,chunk_3.json
+67615,,short_description,ok,,INRENSO,Intenso,Café au Lait INRENSO Gusto,chunk_3.json
+68306,,description,ok,,LavAzza ESPESSO POINT,LavAzza ESPRESSO POINT,LavAzza ESPESSO POINT,chunk_3.json
+68385,,description,ok,,קימבו ריסטרו לנספרסו,קימבו ריסטרטו לנספרסו,קפסולות קימבו ריסטרו לנספרסו,chunk_3.json
+68385,,description,ok,,לקפוצי׳נו,לקפוצ׳ינו,קפסולות קימבו ריסטרו לנספרסו,chunk_3.json
+68385,,short_description,ok,,לקפוצי׳נו,לקפוצ׳ינו,קפסולות קימבו ריסטרו לנספרסו,chunk_3.json
+76368,,description,ok,,ותגובה חפצית,ומשוב רטט,תגובה חפצית,chunk_3.json
+76368,,description,ok,,עם ספירה של מהפכות,עם ספירת סיבובים,תגובה חפצית,chunk_3.json
+81107,,description,ok,,ותגובה חפצית,ומשוב רטט,תגובה חפצית,chunk_3.json
+81107,,description,ok,,עם ספירה של מהפכות,עם ספירת סיבובים,תגובה חפצית,chunk_3.json
+76639,,description,ok,,"קלה </span><span class=""_fadeIn_m1hgl_8"">בדרגה","קלויה </span><span class=""_fadeIn_m1hgl_8"">בדרגה",ה תערובת שלנו קלה בדרגה בינונית כהה,chunk_3.json
+78155,,short_description,ok,,מתקדמות.0,מתקדמות.,שימוש בשיטות ייצור מתקדמות.0,chunk_3.json
+78157,,description,ok,,¡¡Tierra! For Amazonia,¡Tierra! For Amazonia,¡¡Tierra! For Amazonia,chunk_3.json
+78396,,short_description,ok,,﻿</span>מטחנת קפה,</span>מטחנת קפה,﻿ מטחנת קפה ידנית מדויקת וקומפקטית מבית Wacaco. ﻿,chunk_3.json
+78396,,short_description,ok,,﻿</span><br />,</span><br />,﻿ מטחנת קפה ידנית מדויקת וקומפקטית מבית Wacaco. ﻿,chunk_3.json
+78695,,short_description,ok,,פל קפוצ׳ינו Pico לבן,ספל קפוצ׳ינו Pico לבן,פל קפוצ׳ינו Pico לבן,chunk_3.json
+81129,,name,ok,,600 יחדות,600 יחידות,600 יחדות,chunk_3.json
+81722,,description,ok,,זו שבדך כלל,זו שבדרך כלל,זו שבדך כלל שוכחים ממנה,chunk_3.json
+81734,,description,ok,,זו שבדך כלל,זו שבדרך כלל,זו שבדך כלל שוכחים ממנה,chunk_3.json
+81735,,description,ok,,זו שבדך כלל,זו שבדרך כלל,זו שבדך כלל שוכחים ממנה,chunk_3.json
+81736,,description,ok,,זו שבדך כלל,זו שבדרך כלל,זו שבדך כלל שוכחים ממנה,chunk_3.json
+81737,,description,ok,,זו שבדך כלל,זו שבדרך כלל,זו שבדך כלל שוכחים ממנה,chunk_3.json
+64893,,description,ok,,קוסטה ריקה - תערובת דרום אמריקאית,קוסטה ריקה - תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+64893,,description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+68438,,description,ok,,קוסטה ריקה - תערובת דרום אמריקאית,קוסטה ריקה - תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+68438,,description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81125,,description,ok,,קוסטה ריקה - תערובת דרום אמריקאית,קוסטה ריקה - תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81125,,description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81129,,description,ok,,קוסטה ריקה - תערובת דרום אמריקאית,קוסטה ריקה - תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81129,,description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+68438,,short_description,ok,,קוסטה ריקה &#8211; תערובת דרום אמריקאית,קוסטה ריקה &#8211; תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+68438,,short_description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81125,,short_description,ok,,קוסטה ריקה &#8211; תערובת דרום אמריקאית,קוסטה ריקה &#8211; תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81125,,short_description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81129,,short_description,ok,,קוסטה ריקה &#8211; תערובת דרום אמריקאית,קוסטה ריקה &#8211; תערובת מרכז אמריקאית,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+81129,,short_description,ok,,קפה קולמביאני,קפה קולומביאני,קוסטה ריקה - תערובת דרום אמריקאית,chunk_3.json
+64903,,description,ok,,ספל קפה אספרסו נוט-ניוטרל אמרלד,ספל קפה אספרסו נוט-ניוטרל ענבר,ספל קפה אספרסו נוט-ניוטרל אמרלד,chunk_4.json
+65475,,short_description,ok,,Loveramics צבע ירוק יער,Loveramics צבע אפור פחם,כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע ירוק יער,chunk_4.json
+78228,,description,ok,,Loveramics - כחול 250,Loveramics - צהוב 250,"ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ""ל",chunk_4.json
+78232,,description,ok,,Loveramics - כחול 250,Loveramics - מינט 250,"ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ""ל",chunk_4.json
+80541,,description,ok,,מסדרת מניקו טורקיז,מסדרת מניקו שחור,"ספל קפוצ'ינו Club House מסדרת מניקו טורקיז (205 מ""ל)",chunk_4.json
+67620,,description,ok,,כוס קפוצ׳ינו 80 מל צבע לבן כחול,כוס אספרסו 80 מל צבע לבן כחול סלדון,כוס קפוצ׳ינו 80 מל צבע לבן כחול ... 200 מ״ל,chunk_4.json
+67620,,description,ok,,200 מ״ל,80 מ״ל,כוס קפוצ׳ינו 80 מל צבע לבן כחול ... 200 מ״ל,chunk_4.json
+64733,,description,ok,,סדרת Melitta Bio עשויה מחומצת לימון בטוחה למזון ומתכלה.,,סדרת Melitta Bio עשויה מחומצת לימון בטוחה למזון ומתכלה,chunk_4.json
+64797,,description,ok,,"Loveramics Latte Glass 120 ml Urban Twisted הוא לא רק מושלם ליהנות מהלאטה האהוב עליכם אלא גם רב-תכליתי מספיק כדי להציג משקאות מיוחדים אחרים. מקורטאדו מוקצף ועד למשקה Flat white או לאטה מקיאטו,","Loveramics Espresso Glass 70 ml Urban Twisted הוא לא רק מושלם ליהנות מהאספרסו האהוב עליכם אלא גם רב-תכליתי מספיק כדי להציג משקאות קטנים אחרים. מאספרסו ועד מקיאטו או קורטדו קטן,",Loveramics Latte Glass 120 ml Urban Twisted הוא לא רק מושלם ליהנות מהלאטה,chunk_4.json
+80560,,short_description,ok,,הדגם הצהוב מגיע,הדגם הלבן מגיע,הדגם הצהוב מגיע בגימור מאט,chunk_4.json
+80560,,description,ok,,הגרסה הצהובה בגימור המאט לא רק מוסיפה צבע זורח למטבח,הגרסה הלבנה בגימור המאט לא רק מוסיפה מראה נקי למטבח,הדגם הצהוב מגיע בגימור מאט,chunk_4.json
+80562,,description,ok,,הגרסה הצהובה בגימור המאט,הגרסה הוורודה בגימור המאט,הגרסה הצהובה בגימור המאט,chunk_4.json
+64870,,name,ok,,notNeutral Lino Espresso,notNeutral Lino,ספל קפה קפוצ׳ינו פורצלן 240 מל ... notNeutral Lino Espresso,chunk_4.json
+64870,,description,ok,,ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso,ספל קפה קפוצ׳ינו פורצלן 240 מל נוט-ניוטרל notNeutral Lino,ספל קפה קפוצ׳ינו פורצלן 240 מל ... notNeutral Lino Espresso,chunk_4.json
+64871,,name,ok,,notNeutral Lino Espresso,notNeutral Lino,ספל קפה קפוצ׳ינו פורצלן 180 מל ... notNeutral Lino Espresso,chunk_4.json
+64871,,description,ok,,ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso,ספל קפה קפוצ׳ינו פורצלן 180 מל נוט-ניוטרל notNeutral Lino,ספל קפה קפוצ׳ינו פורצלן 180 מל ... notNeutral Lino Espresso,chunk_4.json
+64873,,name,ok,,notNeutral Lino Espresso,notNeutral Lino,ספל קפה קורטדו פורצלן 150 מל ... notNeutral Lino Espresso,chunk_4.json
+64873,,description,ok,,ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso,ספל קפה קורטדו פורצלן 150 מל נוט-ניוטרל notNeutral Lino,ספל קפה קורטדו פורצלן 150 מל ... notNeutral Lino Espresso,chunk_4.json
+64888,,description,ok,,"לחץ מינימלי, MPa / בר","לחץ מינימלי, בר / MPa","לחץ מינימלי, MPa / בר  2 / 0,2 ... לחץ מקסימלי, MPa / בר  6,5 / 0,63",chunk_4.json
+64888,,description,ok,,"לחץ מקסימלי, MPa / בר","לחץ מקסימלי, בר / MPa","לחץ מינימלי, MPa / בר  2 / 0,2 ... לחץ מקסימלי, MPa / בר  6,5 / 0,63",chunk_4.json
+64888,,description,ok,,אוסמוזה אפוכה,אוסמוזה הפוכה,אוסמוזה אפוכה ... למותרים ביתיים ... מפחית אבנית ללא אבנית,chunk_4.json
+64888,,description,ok,,למותרים ביתיים,למכשירים ביתיים,אוסמוזה אפוכה ... למותרים ביתיים ... מפחית אבנית ללא אבנית,chunk_4.json
+80535,,short_description,ok,,הגוון הניטרלי והחם,הגוון האדום העמוק,הגוון הניטרלי והחם,chunk_4.json
+64686,,description,ok,,אינו כולל מימברנה,אינו כולל ממברנה,סט זה אינו כולל מימברנה,chunk_4.json
+64722,,short_description,ok,,כל חבילה כוללת 10,כל חבילה כוללת 10 טבליות.,כל חבילה כוללת 10,chunk_4.json
+64733,,short_description,ok,,אוטמטיות,אוטומטיות,למכונות קפה אוטמטיות,chunk_4.json
+64733,,description,ok,,אוטמטיות,אוטומטיות,למכונות קפה אוטמטיות,chunk_4.json
+64737,,description,ok,,"כוסות אלו עוצבות בהתאם לתקני (SCA (Specialty Coffee Association,",כוסות אלו עוצבו בהתאם לתקני ה-SCA (Specialty Coffee Association),"כוסות אלו עוצבות בהתאם לתקני (SCA (Specialty Coffee Association,",chunk_4.json
+64785,,description,ok,,קנו עכשיו והעלה את חווית,קנו עכשיו והעלו את חוויית,קנו עכשיו והעלה את חווית שתיית הקפה שלכם,chunk_4.json
+64848,,description,ok,,"להשתקע על במערכת החליטה, שסתומים, מסננים, ראשי חליטה ושסתומים חשמליים","להשתקע במערכת החליטה, בשסתומים, במסננים, בראשי החליטה ובשסתומים החשמליים","להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS",chunk_4.json
+64848,,description,ok,,הנוסחה החדשנית של COFFEE MAKER CLEANER TABLETS,הנוסחה החדשנית של טבליות הניקוי,"להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS",chunk_4.json
+64848,,description,ok,,את ה-COFFEE MAKER CLEANER TABLETS,את טבליות הניקוי,"להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS",chunk_4.json
+64864,,description,ok,,Eco Klear שרק מים,Eco Klear מבטיח שרק מים,Eco Klear שרק מים טהורים ... פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :,chunk_4.json
+64864,,description,ok,,של פיליפס-סאיקו :,"של פיליפס-סאיקו: סדרת האינקנטו, סדרת האינטליה דה-לקס.",Eco Klear שרק מים טהורים ... פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :,chunk_4.json
+64903,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+64903,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+64904,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+64904,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65389,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65389,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65390,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65390,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65391,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65391,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65392,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65392,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65393,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65393,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65394,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65394,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65396,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65396,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65399,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65399,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65400,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65400,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65401,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65401,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65405,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+65405,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+82470,,description,ok,,<li>זכוכית האיכותית,<li>הזכוכית האיכותית,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+82470,,description,ok,,ולמקירוגל,ולמיקרוגל,זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל,chunk_4.json
+64916,,description,ok,,"מחזורי הסרת אבנית מלאים,",מחזורי הסרת אבנית מלאים.,"בקבוק 500 מ""ל מספיק לחמישה מחזורי הסרת אבנית מלאים,",chunk_4.json
+64916,,short_description,ok,,אידיאליות לניקוי,אידיאלי לניקוי,"בקבוק 500 מ""ל מספיק לחמישה מחזורי הסרת אבנית מלאים,",chunk_4.json
+64928,,short_description,ok,,אוטמטיות,אוטומטיות,למכונות קפה אוטמטיות,chunk_4.json
+64928,,description,ok,,אוטמטיות,אוטומטיות,למכונות קפה אוטמטיות,chunk_4.json
+64932,,short_description,ok,,לתקשר ללא עם המסנן,לתקשר באופן אלחוטי עם המסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+64932,,description,ok,,לתקשר ללא עם המסנן,לתקשר באופן אלחוטי עם המסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+64932,,description,ok,,ומסננן,ומסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+64932,,description,ok,,<p>רכת המים החכמה (I.W.S.®):,<p>,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+76850,,short_description,ok,,לתקשר ללא עם המסנן,לתקשר באופן אלחוטי עם המסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+76850,,description,ok,,לתקשר ללא עם המסנן,לתקשר באופן אלחוטי עם המסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+76850,,description,ok,,ומסננן,ומסנן,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+76850,,description,ok,,<p>רכת המים החכמה (I.W.S.®):,<p>,מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):,chunk_4.json
+64946,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64946,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64947,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64947,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64948,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64948,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64949,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64949,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64950,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64950,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64951,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64951,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64952,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64952,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64953,,description,ok,,ושיטתית מסלקת פחמן מהמים,ושיטתית מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64953,,description,ok,,BRITA מסלקת פחמן מהמים,BRITA מפחיתה קשיות קרבונטית מהמים,מסלקת פחמן מהמים בארבעה שלבים,chunk_4.json
+64956,,description,ok,,רצויוה,רצויה,מסיר פסולת לא רצויוה ... החוומר יתמוסס לחלוטין,chunk_4.json
+64956,,description,ok,,החוומר,החומר,מסיר פסולת לא רצויוה ... החוומר יתמוסס לחלוטין,chunk_4.json
+64980,,short_description,ok,,קושיות,קשיות,סטיקים לבדיקת קושיות המים,chunk_4.json
+64980,,description,ok,,קושיות,קשיות,סטיקים לבדיקת קושיות המים,chunk_4.json
+81452,,short_description,ok,,קושיות,קשיות,סטיקים לבדיקת קושיות המים,chunk_4.json
+81452,,description,ok,,קושיות,קשיות,סטיקים לבדיקת קושיות המים,chunk_4.json
+65069,,short_description,ok,,שומני קפה שמני קפה מרשת,שומני קפה מרשת,שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור,chunk_4.json
+65069,,description,ok,,עיווור(פילטר,עיוור (פילטר,שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור,chunk_4.json
+65069,,description,ok,,ולפתוח את ברז המים של כ- 15-20 שניות,ולהפעיל את המים למשך כ-15-20 שניות,שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור,chunk_4.json
+65205,,description,ok,,ביתיות ומיקצועיות.,ביתיות ומקצועיות.,"ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד...",chunk_4.json
+65205,,description,ok,,"של חברת ASCOR , האיטלקית.",מתוצרת חברת ASCOR האיטלקית.,"ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד...",chunk_4.json
+65205,,description,ok,,לניקוי יחיד...,לניקוי יחיד.,"ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד...",chunk_4.json
+65392,,name,ok,,שקוף7,שקוף,Vero Cortado Glass שקוף7,chunk_4.json
+65405,,name,ok,,עשן הnotNeutral,עשן notNeutral,עשן הnotNeutral,chunk_4.json
+65405,,meta:rank_math_description,ok,,עשן הnotNeutral,עשן notNeutral,עשן הnotNeutral,chunk_4.json
+65445,,name,ok,,זוג סנני מים,זוג מסנני מים,משמש עם קנקני פילטר Aquaphor עם התאמה לקפסולת,chunk_4.json
+65445,,description,ok,,Aquaphor עם התאמה לקפסולת,Aquaphor,משמש עם קנקני פילטר Aquaphor עם התאמה לקפסולת,chunk_4.json
+65440,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+65440,,short_description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+65475,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+65475,,short_description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67138,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67138,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67138,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67265,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67265,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67265,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67266,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67266,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67266,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67267,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67267,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67267,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67268,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67268,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67268,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67269,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67269,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67269,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67270,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67270,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67270,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67271,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67271,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67272,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67272,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67272,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67298,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67298,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67298,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67321,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67321,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67321,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67322,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67322,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67322,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67323,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67323,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67323,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67324,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67324,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67324,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67629,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67629,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67629,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67631,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67631,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67631,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67632,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67632,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67632,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+78775,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+78775,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+78846,,description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+78846,,description,ok,,גוף צפוף מאוד (קטן מ -0.5% קצב ספיגה); פורצלן גבוה מסחרי פורצלן ב 1300c,גוף צפוף מאוד (קצב ספיגה נמוך מ-0.5%); פורצלן מסחרי שנשרף ב-1300°C,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+78846,,short_description,ok,,דופן עבה במיוחד האפשרי שומר על קפה בטמפרטורה נכונה,דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה,דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c,chunk_4.json
+67197,,short_description,ok,,הכירו את יצרנית כוסות הקפה,הכירו את כוסות הקפה,הכירו את יצרנית כוסות הקפה KRUVE IMAGINE,chunk_4.json
+67197,,description,ok,,הכירו את יצרנית כוסות הקפה,הכירו את כוסות הקפה,הכירו את יצרנית כוסות הקפה KRUVE IMAGINE,chunk_4.json
+67197,,description,ok,,בעמידותה ועמידותה בחום,בעמידותה בחום,הכירו את יצרנית כוסות הקפה KRUVE IMAGINE,chunk_4.json
+67197,,description,ok,,מדוברבכוס,מדובר בכוס,הכירו את יצרנית כוסות הקפה KRUVE IMAGINE,chunk_4.json
+67244,,short_description,ok,,קל לנקוי,קל לניקוי,קל לנקוי,chunk_4.json
+67245,,short_description,ok,,קל לנקוי,קל לניקוי,קל לנקוי,chunk_4.json
+67246,,short_description,ok,,קל לנקוי,קל לניקוי,קל לנקוי,chunk_4.json
+68275,,description,ok,,דדרגנט,דטרגנט,מסוג דדרגנט ... Franke Evolution and Bravilor,chunk_4.json
+68275,,description,ok,,Franke Evolution and Bravilor,Franke Evolution ו-Bravilor,מסוג דדרגנט ... Franke Evolution and Bravilor,chunk_4.json
+68283,,name,ok,,לקנקי בריטה,לקנקני בריטה,מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית,chunk_4.json
+68283,,description,ok,,בנונית,בינונית,מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית,chunk_4.json
+68283,,short_description,ok,,(Maxtra)יכולת,(Maxtra). יכולת,מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית,chunk_4.json
 65057,,short_description,ok,,3 כוסות (350 מ&quot;ל),8 כוסות (1 ליטר),"פרנץ׳ פרס ביאלטי עם קיבולת של 3 כוסות (350 מ""ל)",chunk_5.json
 65092,,short_description,ok,,בדריפ שני מסנני רשת קוניים דקים חופפים. להכנת קפה פילטר המאוד דומה בתוצאה לקפה מפילטר נייר,"קנקן מזיגה Hario AIR בנפח 350 מ&quot;ל, קל משקל ושקוף, אידיאלי להיכרות ראשונה עם הכנת קפה פילטר",בדריפ שני מסנני רשת קוניים דקים חופפים,chunk_5.json
 79213,,short_description,ok,,"חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=""372"" data-end=""375"" />תערובת טבעית של ג’ינג’ר ליים טרי וצמחים אורגניים לטעימה מרעננת עם ניחוח הדרית ומגע חריף","חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.<br data-start=""372"" data-end=""375"" />תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה. <br />חליטה ","חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.",chunk_5.json
@@ -60,7 +581,7 @@
 82537,,short_description,ok,,בצבע לבן,בצבע ירוק עשן,קומקום חשמלי Stagg EKG בצבע לבן,chunk_5.json
 65223,,name,ok,,VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02,VDGR-02,דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר...,chunk_5.json
 65099,,short_description,ok,,קנקנן הריו לחליטה קרה צבע שוקולד,קנקן הריו לחליטה קרה צבע אדום,קנקנן הריו לחליטה קרה צבע שוקולד,chunk_5.json
-67295,,attribute:מותג,ok,,Toddy,Clever,מותג: Toddy,chunk_5.json
+67295,,attribute:מותג,skipped,global or variation attribute: change by hand,Toddy,Clever,מותג: Toddy,chunk_5.json
 65468,,description,ok,,"יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף בתנועות מהירות",יש להוסיף מים חמים ולהקציף בעזרת מקצף במבוק (צ'אסן) בתנועות מהירות,"יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף",chunk_5.json
 64798,,description,ok,,"להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה עוד היום!",הזמינו עכשיו את WDT Needles Coffee Tool באתר מינוטו קפה!,"להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה",chunk_5.json
 64798,,description,ok,,  המתאימות למגוון רחב של פורטה-פילטר., מתאים למגוון רחב של פורטה-פילטר.,"להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה",chunk_5.json
@@ -110,6 +631,339 @@
 79215,,name,ok,,חליטת תה חליטת,חליטת,חליטת תה חליטת ג’ינג’ר וליים,chunk_5.json
 81424,,name,ok,,מוק הביאלטי,מוקה ביאלטי,גומייה למקינטה מוק הביאלטי - 2 כוסות,chunk_5.json
 65067,,short_description,ok,,תמיסה יעודית למכונות קפה,4 קפסולות ניקוי ייעודיות למכונות קפיטאלי ואספרסו קלאב,תמיסה יעודית למכונות קפה,chunk_5.json
+64861,,description,ok,,>צנצנת פולי קפה פולימרית אדום למטחנת Comandante<,>משחה לטיפול בעץ למטחנות קפה קומנדנטה - Wood Care Balm<,צנצנת פולי קפה פולימרית אדום למטחנת Comandante,chunk_6.json
+67222,,description,ok,,נירוסטה איכותית בציפוי שחור מט,נירוסטה איכותית בגימור מוברש,עשויה נירוסטה איכותית בציפוי שחור מט,chunk_6.json
+67222,,description,ok,,גוף נירוסטה עמיד עם גימור שחור מט,גוף נירוסטה עמיד בגימור מוברש,עשויה נירוסטה איכותית בציפוי שחור מט,chunk_6.json
+77223,,short_description,ok,,"הכירו את NanoFoamer V2 &#8211; הפתרון האולטימטיבי להשגת הקצפה באיכות מקצועית ישירות בנוחות של הבית שלכם. חוו את אותה רמת הקצפה שנמצאת בבתי הקפה האהובים עליך, מה שמאפשר לך ליצור אמנות לאטה מעודנת וקפוצ",ערכת חלקי חילוף מקוריים (מדחף ושתי רשתות הקצפה) למקציף NanoFoamer V2 ו-Lithium.,הכירו את NanoFoamer V2 – הפתרון האולטימטיבי,chunk_6.json
+65461,,description,ok,,"<strong>מילות מפתח:</strong> מברשת ניקוי, קומנדנטה, מטחנת קפה, ניקיון, תחזוקה, עץ אלון, שיער סוס, כלי ניקוי, קפה",<strong></strong>,"מילות מפתח: מברשת ניקוי, קומנדנטה, מטחנת קפה, ניקיון",chunk_6.json
+67667,,description,ok,,>4o</span>,></span>, 4o,chunk_6.json
+64697,,name,ok,,סירופ רוטן לקפה בטעם אגוזי לוז 1889,סירופ רוטן לקפה בטעם אגוזי לוז 1883,סירופ רוטן לקפה בטעם אגוזי לוז 1889,chunk_6.json
+64697,,description,ok,,סירופ אגוזי לוז 1889 לקפה,סירופ אגוזי לוז 1883 לקפה,סירופ רוטן לקפה בטעם אגוזי לוז 1889,chunk_6.json
+64698,,name,ok,,סירופ רוטן לקפה בטעם וניל 1889,סירופ רוטן לקפה בטעם וניל 1883,סירופ רוטן לקפה בטעם וניל 1889,chunk_6.json
+64698,,description,ok,,סירופ רוטן וניל 1889,סירופ רוטן וניל 1883,סירופ רוטן לקפה בטעם וניל 1889,chunk_6.json
+64770,,description,ok,,"הקנקן מתאים לשימוש על כל סוגי הכיריים, כולל גז, חשמל ואינדוקציה,","הקנקן מתאים לשימוש על כיריים גז, חשמל ואינדוקציה (בחלק מכיריים האינדוקציה ייתכן שיידרש מתאם),",אם כי תנורי אינדוקציה מסוימים עשויים לדרוש מתאם,chunk_6.json
+64770,,short_description,ok,,"הקנקן מתאים לשימוש על כל סוגי הכיריים, כולל גז, חשמל ואינדוקציה,","הקנקן מתאים לשימוש על כיריים גז, חשמל ואינדוקציה (בחלק מכיריים האינדוקציה ייתכן שיידרש מתאם),",אם כי תנורי אינדוקציה מסוימים עשויים לדרוש מתאם,chunk_6.json
+64789,,description,ok,,Crem EX3 3 High Group,Crem EX3 2 High Group,תכונות מכונת קפה Crem EX3 3 High Group,chunk_6.json
+64789,,description,ok,,בצבעלבן או שחור,בצבע לבן או שחור,בצבעלבן או שחור ... לכל בית מקום,chunk_6.json
+64789,,description,ok,,לכל בית מקום עם תשוקה,לכל בית קפה עם תשוקה,בצבעלבן או שחור ... לכל בית מקום,chunk_6.json
+65239,,description,ok,,"בנפח מילוי של 700 מ""ל להקצפה.","בנפח מילוי של 700 מ""ל לחימום ועד 350 מ""ל להקצפה.","בנפח מילוי של 700 מ""ל להקצפה",chunk_6.json
+65239,,short_description,ok,,בנפח מילוי של 700 מ&quot;ל להקצפה.,בנפח מילוי של 700 מ&quot;ל לחימום ועד 350 מ&quot;ל להקצפה.,"בנפח מילוי של 700 מ""ל להקצפה",chunk_6.json
+65239,,description,ok,,בגמר ההקצה ,בגמר ההקצפה ,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+65239,,description,ok,,עשיר וכרמי,עשיר וקרמי,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+68312,,description,ok,,בגמר ההקצה ,בגמר ההקצפה ,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+68312,,description,ok,,עשיר וכרמי,עשיר וקרמי,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+68312,,short_description,ok,,בגמר ההקצה ,בגמר ההקצפה ,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+68312,,short_description,ok,,עשיר וכרמי,עשיר וקרמי,בגמר ההקצה ... קצף עשיר וכרמי,chunk_6.json
+65119,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,אדום,צבע: שחור,chunk_6.json
+81566,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,נחושת,צבע: שחור,chunk_6.json
+81574,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,נירוסטה,צבע: שחור,chunk_6.json
+81581,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,לבן,צבע: שחור,chunk_6.json
+82082,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,כחול,צבע: שחור,chunk_6.json
+82084,,attribute:צבע,skipped,global or variation attribute: change by hand,שחור,טורקיז,צבע: שחור,chunk_6.json
+64685,,short_description,ok,,<strong>מתיקו את היום,<strong>המתיקו את היום,מתיקו את היום שלכם,chunk_6.json
+64691,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64691,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64691,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64692,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64692,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64692,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64693,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64693,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64693,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64694,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64694,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64694,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65101,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65101,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65101,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65119,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65119,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65119,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65120,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65120,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65120,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65121,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65121,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65121,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65122,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65122,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65122,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65123,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65123,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65123,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65436,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65436,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+65436,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+78557,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+78557,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+78557,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81559,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81559,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81559,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81566,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81566,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81566,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81574,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81574,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81574,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81581,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81581,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+81581,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82082,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82082,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82082,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82084,,description,ok,,למטבח שלך. שטיפת</p>,למטבח שלך.</p>,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82084,,description,ok,,מיכל גדול אייסקייפ,מיכל איירסקייפ,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+82084,,description,ok,,כשהו ארוז,כשהוא ארוז,מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת,chunk_6.json
+64696,,description,ok,,והפלישו את העץ,והבריקו את העץ,והפלישו את העץ,chunk_6.json
+64705,,description,ok,,רשת זאת תואם,רשת זו תואמת,רשת זאת תואם לרוב מכונות,chunk_6.json
+64705,,description,ok,,הסטנדרט הגבוה ש-La Marzocco,הסטנדרט הגבוה של La Marzocco,רשת זאת תואם לרוב מכונות,chunk_6.json
+64710,,description,ok,,הבחירהבחומר במתכת,הבחירה בחומר המתכת,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64710,,description,ok,,טחונים.ייצור,טחונים. ייצור,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64710,,description,ok,,רב.קשה,רב. קשה,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64710,,description,ok,,טיולים. שלא רוצים,טיולים שלא רוצים,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64841,,description,ok,,הבחירהבחומר במתכת,הבחירה בחומר המתכת,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64841,,description,ok,,טחונים.ייצור,טחונים. ייצור,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64841,,description,ok,,רב.קשה,רב. קשה,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64841,,description,ok,,טיולים. שלא רוצים,טיולים שלא רוצים,הבחירהבחומר במתכת ללהבים,chunk_6.json
+77111,,description,ok,,הבחירהבחומר במתכת,הבחירה בחומר המתכת,הבחירהבחומר במתכת ללהבים,chunk_6.json
+77111,,description,ok,,טחונים.ייצור,טחונים. ייצור,הבחירהבחומר במתכת ללהבים,chunk_6.json
+77111,,description,ok,,רב.קשה,רב. קשה,הבחירהבחומר במתכת ללהבים,chunk_6.json
+77111,,description,ok,,טיולים. שלא רוצים,טיולים שלא רוצים,הבחירהבחומר במתכת ללהבים,chunk_6.json
+64743,,name,ok,,משקל קפה Acia Pearl s - לבן,משקל קפה Acaia Pearl s - לבן,משקל קפה Acia Pearl s - לבן,chunk_6.json
+64743,,description,ok,,>משקל קפה Acia Pearl s<,>משקל קפה Acaia Pearl s<,משקל קפה Acia Pearl s - לבן,chunk_6.json
+64744,,name,ok,,משקל קפה Acia Pearl,משקל קפה Acaia Pearl,משקל קפה Acia Pearl,chunk_6.json
+64744,,description,ok,,>משקל קפה Acia Pearl<,>משקל קפה Acaia Pearl<,משקל קפה Acia Pearl,chunk_6.json
+64745,,name,ok,,משקל קפה Acia Lunar - לבן,משקל קפה Acaia Lunar - לבן,משקל קפה Acia Lunar - לבן,chunk_6.json
+64745,,description,ok,,>משקל קפה Acia Lunar<,>משקל קפה Acaia Lunar<,משקל קפה Acia Lunar - לבן,chunk_6.json
+64745,,description,ok,,המקצועי Acia Lunar<,המקצועי Acaia Lunar<,משקל קפה Acia Lunar - לבן,chunk_6.json
+81077,,name,ok,,משקל קפה Acia Lunar - שחור,משקל קפה Acaia Lunar - שחור,משקל קפה Acia Lunar - שחור,chunk_6.json
+81077,,description,ok,,>משקל קפה Acia Lunar<,>משקל קפה Acaia Lunar<,משקל קפה Acia Lunar - שחור,chunk_6.json
+81077,,description,ok,,המקצועי Acia Lunar<,המקצועי Acaia Lunar<,משקל קפה Acia Lunar - שחור,chunk_6.json
+81089,,name,ok,,משקל קפה Acia Pearl s - שחור,משקל קפה Acaia Pearl s - שחור,משקל קפה Acia Pearl s - שחור,chunk_6.json
+81089,,description,ok,,>משקל קפה Acia Pearl s<,>משקל קפה Acaia Pearl s<,משקל קפה Acia Pearl s - שחור,chunk_6.json
+64744,,description,ok,,משקל קפה המקוצעי,משקל הקפה המקצועי,משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת,chunk_6.json
+64744,,description,ok,,והתחילו חלוט קפה בצורה מדיוקת,והתחילו לחלוט קפה בצורה מדויקת,משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת,chunk_6.json
+64744,,description,ok,,המקצועיות שלכם??,המקצועיות שלכם?,משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת,chunk_6.json
+64745,,short_description,ok,,שלכם סולם Acaia Lunar,שלכם עם משקל Acaia Lunar,שדרגו את תהליך החליטה שלכם סולם Acaia Lunar,chunk_6.json
+81077,,short_description,ok,,שלכם סולם Acaia Lunar,שלכם עם משקל Acaia Lunar,שדרגו את תהליך החליטה שלכם סולם Acaia Lunar,chunk_6.json
+64805,,description,ok,,בתוך דק. הודות,בתוך דקות. הודות,ליצור קרח במהירות בתוך דק.,chunk_6.json
+64805,,description,ok,,ניתןלמלא,ניתן למלא,ליצור קרח במהירות בתוך דק.,chunk_6.json
+64805,,description,ok,,היא משתלב בצורה,היא משתלבת בצורה,ליצור קרח במהירות בתוך דק.,chunk_6.json
+64805,,description,ok,,243 ממ<,"243 מ""מ<",ליצור קרח במהירות בתוך דק.,chunk_6.json
+64805,,description,ok,,350 ממ<,"350 מ""מ<",ליצור קרח במהירות בתוך דק.,chunk_6.json
+64805,,description,ok,,340 ממ<,"340 מ""מ<",ליצור קרח במהירות בתוך דק.,chunk_6.json
+64905,,short_description,ok,,צנצנת POLYMER BEAN הוא תוספת,צנצנת POLYMER BEAN היא תוספת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64905,,short_description,ok,,למזון לטחנת,למזון למטחנת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64905,,short_description,ok,,<p>.תואמת,<p>תואמת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64906,,short_description,ok,,צנצנת POLYMER BEAN הוא תוספת,צנצנת POLYMER BEAN היא תוספת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64906,,short_description,ok,,למזון לטחנת,למזון למטחנת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64906,,short_description,ok,,<p>.תואמת,<p>תואמת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64907,,short_description,ok,,צנצנת POLYMER BEAN הוא תוספת,צנצנת POLYMER BEAN היא תוספת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64907,,short_description,ok,,למזון לטחנת,למזון למטחנת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64907,,short_description,ok,,<p>.תואמת,<p>תואמת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64908,,short_description,ok,,צנצנת POLYMER BEAN הוא תוספת,צנצנת POLYMER BEAN היא תוספת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64908,,short_description,ok,,למזון לטחנת,למזון למטחנת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+65472,,short_description,ok,,צנצנת POLYMER BEAN הוא תוספת,צנצנת POLYMER BEAN היא תוספת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+65472,,short_description,ok,,למזון לטחנת,למזון למטחנת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+65472,,short_description,ok,,<p>.תואמת,<p>תואמת,במיוחד למזון לטחנת COMANDANTE® C40,chunk_6.json
+64909,,description,ok,,מטחנת הקומננטה,מטחנת הקומנדנטה,מטחנת הקומננטה שלך,chunk_6.json
+64915,,description,ok,,"גם לך חובב קפה הפילטר תובעני /ת, ודורש/ת רמת דיוק גבוהה.",גם חובבי קפה פילטר שדורשים רמת דיוק גבוהה ייהנו מהשדרוג.,"גם לך חובב קפה הפילטר תובעני /ת, ודורש/ת",chunk_6.json
+64976,,short_description,ok,,מושלמת מקפה/</p>,מושלמת מקפה.</p>,להנאה מושלמת מקפה/,chunk_6.json
+64976,,description,ok,,מושלמת מקפה/</p>,מושלמת מקפה.</p>,להנאה מושלמת מקפה/,chunk_6.json
+65021,,description,ok,,הקפצה חמה קרה,הקצפה חמה וקרה,הקפצה חמה קרה,chunk_6.json
+65049,,description,ok,,בורוסיליקט kלא,בורוסיליקט לא,בורוסיליקט kלא נקבובית,chunk_6.json
+65077,,short_description,ok,,יופי אלנגטי,יופי אלגנטי,שילוב של יופי אלנגטי ואיכות,chunk_6.json
+65077,,description,ok,,יופי אלנגטי,יופי אלגנטי,שילוב של יופי אלנגטי ואיכות,chunk_6.json
+65138,,name,ok,,מקינטה מקינטה ונוס,מקינטה ונוס,מקינטה מקינטה ונוס,chunk_6.json
+65138,,description,ok,,מקינטה מקינטה ונוס,מקינטה ונוס,מקינטה מקינטה ונוס,chunk_6.json
+65139,,name,ok,,מקינטה מקינטה ונוס,מקינטה ונוס,מקינטה מקינטה ונוס,chunk_6.json
+65139,,description,ok,,מקינטה מקינטה ונוס,מקינטה ונוס,מקינטה מקינטה ונוס,chunk_6.json
+65385,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו,הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+65387,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו,הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+81342,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו,הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+81346,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות האספרסו,הזמינו עכשיו באתר מינוטו קפה את כוסות האספרסו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+81398,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו,הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+81402,,description,ok,,הזמינו עכשיו את  באתר מינוטו קפה כוסות הקפוצ'ינו,הזמינו עכשיו באתר מינוטו קפה את כוסות הקפוצ'ינו,הזמינו עכשיו את  באתר מינוטו קפה כוסות,chunk_6.json
+65441,,description,ok,,להזנת וטחינת החלב,להזנת החלב,להזנת וטחינת החלב בקלות,chunk_6.json
+67142,,description,ok,,גובה: 65</li>,"גובה: 65 מ""מ</li>",גובה: 65,chunk_6.json
+67193,,description,ok,,וצינורית הצפה.,וצינורית הקצפה.,ברז מים חמים וצינורית הצפה.,chunk_6.json
+67220,,description,ok,,אטם אטם V סיליקון,אטם V מסיליקון,אטם אטם V סיליקון,chunk_6.json
+67371,,description,ok,,מתכונים שונים שניתן לשמור </span>,מתכונים שונים. </span>,שניתן לשמור  מאפיינים: ... מגש טפטוף חכם מסופק עם,chunk_6.json
+67371,,description,ok,,מגש טפטוף חכם<strong>מסופק עם</strong>,מגש טפטוף חכם. <strong>מסופק עם:</strong>,שניתן לשמור  מאפיינים: ... מגש טפטוף חכם מסופק עם,chunk_6.json
+67672,,description,ok,,"<strong>קטגוריות:</strong> CI, תחרות, מקלחות",<strong></strong>,"CI CI200IM ... קטגוריות: CI, תחרות, מקלחות",chunk_6.json
+67672,,description,ok,,בעובי המקלחת,בעובי המסננת,"CI CI200IM ... קטגוריות: CI, תחרות, מקלחות",chunk_6.json
+67672,,description,ok,,גוף המקלחת,גוף המסננת,"CI CI200IM ... קטגוריות: CI, תחרות, מקלחות",chunk_6.json
+68290,,description,ok,,של חברת - מאפשר,של חברת מוטה (Motta) מאפשר,מדחום לחלב של חברת - מאפשר,chunk_6.json
+68307,,description,ok,,את הטוטוקרnה עד שליש המיכל בחלב ומניכים,את הטוטוקרמה עד שליש המיכל בחלב ומניחים,ממלאים את הטוטוקרnה ... ומניכים אותה,chunk_6.json
+68308,,description,ok,,את הטוטוקרnה עד שליש המיכל בחלב ומניכים,את הטוטוקרמה עד שליש המיכל בחלב ומניחים,ממלאים את הטוטוקרnה ... ומניכים אותה,chunk_6.json
+78245,,description,ok,,>ורטקס – כד הקצפה,>וורטקס – כד הקצפה,ורטקס – כד הקצפה מושלם 500 מ״ל,chunk_6.json
+81503,,description,ok,,>ורטקס – כד הקצפה,>וורטקס – כד הקצפה,ורטקס – כד הקצפה מושלם 500 מ״ל,chunk_6.json
+79402,,description,ok,,כלי. ה- WDT הוא,כלי ה-WDT הוא,כלי. ה- WDT הוא הפתרון,chunk_6.json
+65118,,short_description,ok,,"מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה ומאפשר חליטות טובות ואחידות יותר, פחות תחזוקה ועוזרת לייצר גוף עגול יותר לאספרסו שלך.",ידית חליטה חתוכה (Bottomless) הכוללת סלסלת נירוסטה עד 21 גרם – לצפייה בזרימת האספרסו ולשיפור הדחיסה והטחינה.,מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה,chunk_7.json
+65118,,description,ok,,לעשות כספל קפוצ׳ינו,להכין ספל קפוצ׳ינו,להפעלת סרטי וידאו המתארים את זרימת החליטה,chunk_7.json
+65118,,description,ok,,המכונות קפה הקימות בשוק,המכונות קפה הקיימות בשוק,להפעלת סרטי וידאו המתארים את זרימת החליטה,chunk_7.json
+65118,,description,ok,, להפעלת סרטי וידאו המתארים את זרימת החליטה דרך ידית Naked Portafilter,,להפעלת סרטי וידאו המתארים את זרימת החליטה,chunk_7.json
+76799,,description,ok,,הכירו את Loveramics Latte Glass 120 ml,הכירו את Loveramics Latte Glass 180 ml,הכירו את Loveramics Latte Glass 120 ml Urban Twisted,chunk_7.json
+76799,,description,ok,,"בנפח 120 מ""ל","בנפח 180 מ""ל",הכירו את Loveramics Latte Glass 120 ml Urban Twisted,chunk_7.json
+76799,,description,ok,,Latte Glass 120 ml Urban Twisted הוא,Latte Glass 180 ml Urban Twisted הוא,הכירו את Loveramics Latte Glass 120 ml Urban Twisted,chunk_7.json
+76799,,description,ok,,"Latte Glass 120 מ""ל","Latte Glass 180 מ""ל",הכירו את Loveramics Latte Glass 120 ml Urban Twisted,chunk_7.json
+82018,,short_description,ok,,מסדרת Big Bang של IMS (2023),מסדרת Competition של IMS,עם קיבולת של 18-21 גרם קפה.,chunk_7.json
+82018,,short_description,ok,,עם קיבולת של 18-21 גרם קפה.,עם קיבולת של 16-18 גרם קפה.,עם קיבולת של 18-21 גרם קפה.,chunk_7.json
+82023,,short_description,ok,,מסדרת Big Bang של IMS (2023),מסדרת Competition של IMS,עם קיבולת של 18-21 גרם קפה.,chunk_7.json
+82023,,short_description,ok,,עם קיבולת של 18-21 גרם קפה.,"למנה בודדת, עם קיבולת של 7-9 גרם קפה.",עם קיבולת של 18-21 גרם קפה.,chunk_7.json
+82021,,short_description,ok,,מסדרת Big Bang של IMS (2023),מסדרת Competition של IMS,מסדרת Big Bang של IMS (2023),chunk_7.json
+82023,,description,ok,,מנה חתא,מנה אחת,קיבולת: מנה חתא,chunk_7.json
+64854,,description,ok,,"קוטר פורטפילטר: 40 מ""מ","קוטר פורטפילטר: 58 מ""מ","קוטר פורטפילטר: 40 מ""מ",chunk_7.json
+64712,,short_description,ok,,תואמות למכונות נספרסו,מתאימות למכונות לוואצה A Modo Mio,תואמות למכונות נספרסו,chunk_7.json
+64712,,short_description,ok,,לתיקון הקפה היומי שלך,לכוס הקפה היומית שלכם,לתיקון הקפה היומי שלך,chunk_7.json
+64752,,description,ok,,DeLonghi EC9155.MB,DeLonghi EC9155.GR,התענגו על השמחה של הכנת קפה ידנית עם DeLonghi EC9155.MB,chunk_7.json
+64752,,description,ok,,צבע: ירוק כסוףמקציף חלב מבודד,צבע: ירוק כסוף. מקציף חלב מבודד,צבע: ירוק כסוףמקציף חלב מבודד,chunk_7.json
+65022,,description,ok,,מגיעה בשני צבעים לבחירה לבן ונחושת.,צבע המכונה: שחור ונחושת.,מגיעה בשני צבעים לבחירה לבן ונחושת.,chunk_7.json
+67221,,short_description,ok,,"הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי. הוא משתמש בכמה חלקים, ללא אלקטרוניקה מסובכת ורק חומרי פרימיום כמו נירוסטה &#8211; הוא נטול פלסטיק לחלוטין. כל מה שצריך זה קפה טחון, קצת מ",רשת פיזור חלופית מנירוסטה למכונות האספרסו הידניות Cafelat Robot.,הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי,chunk_7.json
+76915,,description,ok,,תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש,,תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש,chunk_7.json
+76915,,description,ok,,"מרקם חלק, מתיקות עדינה וחמיצות קלה שמוסיפה עניין בלי להשתלט",,תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש,chunk_7.json
+82928,,short_description,ok,,"הרימו את הבוקר שלכם לגבהים חדשים עם NESCAFÉ® Dolce Gusto® Americano. עשוי מ-100% פולי ערביקה, הקפה המעולה הזה מתהדר ברמת עוצמה של 4 מתוך 11, מה שמבטיח פרופיל טעמים מאוזן לחלוטין.","אמריקנו אינטנסו מבית נסקפה דולצ'ה גוסטו – 100% ערביקה, דרגת חוזק 8, לספל גדול. מארז 16 קפסולות.",מתהדר ברמת עוצמה של 4 מתוך 11,chunk_7.json
+64679,,description,ok,,הערות:,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64679,,description,ok,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64679,,description,ok,,"ודאו שהטקסט קצר, תמציתי ורלוונטי לקהל היעד שלכם.",,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64679,,description,ok,,השתמשו בקריאה לפעולה (CTA) שתעודד את הגולשים לרכוש את המוצר.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64679,,description,ok,,מקווה שהטקסט יעזור לכם לקדם את מכונת Lelit Bianca PL162T V3 באתר שלכם.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64680,,description,ok,,הערות:,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64680,,description,ok,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64680,,description,ok,,"ודאו שהטקסט קצר, תמציתי ורלוונטי לקהל היעד שלכם.",,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64680,,description,ok,,השתמשו בקריאה לפעולה (CTA) שתעודד את הגולשים לרכוש את המוצר.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+64680,,description,ok,,מקווה שהטקסט יעזור לכם לקדם את מכונת Lelit Bianca PL162T V3 באתר שלכם.,,חשוב להתאים את הטקסט לאתר ולמטרות שלכם.,chunk_7.json
+65455,,description,ok,,טקסט למטא תגים (Google Meta):,,טקסט למטא תגים (Google Meta):,chunk_7.json
+65455,,description,ok,,"כוס מינון, Varia VS3, טוחנת קפה, אספרסו, קפה, אביזרי קפה, קפה ביתי, קפה מקצועי, עיצוב קומפקטי, עמיד,מדויק, נוח",,טקסט למטא תגים (Google Meta):,chunk_7.json
+65455,,description,ok,,תהליך הבישול שלכם,תהליך החליטה שלכם,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+65455,,description,ok,,של קרקע מטוחנת מטוחנת לפורטפילטר,של הקפה הטחון מהמטחנה לפורטפילטר,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+65455,,description,ok,,ביותר של הבישול.,ביותר של החליטה.,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+65455,,description,ok,,ולשגרת הבישול של הקפה שלך,ולשגרת חליטת הקפה שלך,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+81358,,description,ok,,טקסט למטא תגים (Google Meta):,,טקסט למטא תגים (Google Meta):,chunk_7.json
+81358,,description,ok,,"כוס מינון, Varia VS3, טוחנת קפה, אספרסו, קפה, אביזרי קפה, קפה ביתי, קפה מקצועי, עיצוב קומפקטי, עמיד,מדויק, נוח",,טקסט למטא תגים (Google Meta):,chunk_7.json
+81358,,description,ok,,תהליך הבישול שלכם,תהליך החליטה שלכם,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+81358,,description,ok,,של קרקע מטוחנת מטוחנת לפורטפילטר,של הקפה הטחון מהמטחנה לפורטפילטר,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+81358,,description,ok,,ביותר של הבישול.,ביותר של החליטה.,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+81358,,description,ok,,ולשגרת הבישול של הקפה שלך,ולשגרת חליטת הקפה שלך,העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר,chunk_7.json
+67207,,description,ok,,בין בסיס פ puck הקפה לגובה שלו,בין בסיס עוגיית הקפה לגובה שלה,"מילות מפתח: סל פילטר, IMS, B702TH26.5M",chunk_7.json
+67207,,description,ok,,של &nbsp;puck הקפה,של עוגיית הקפה,"מילות מפתח: סל פילטר, IMS, B702TH26.5M",chunk_7.json
+67207,,description,ok,,מילות מפתח:,,"מילות מפתח: סל פילטר, IMS, B702TH26.5M",chunk_7.json
+67207,,description,ok,," סל פילטר, IMS, B702TH26.5M, אספרסו, קפה, חליטה, איכות, עיצוב פטנטי, קידוח מדויק, חיתוך לייזר, גימור ללא תחרות, חווית קפה משופרת",,"מילות מפתח: סל פילטר, IMS, B702TH26.5M",chunk_7.json
+81142,,description,ok,,"בחרו את הגודל המתאים לכם:</strong> 14g, 17g או 21g.","בחרו את הגודל המתאים לכם:</strong> 7g, 14g, 17g או 21g.","בחרו את הגודל המתאים לכם: 14g, 17g או 21g.",chunk_7.json
+81142,,short_description,ok,,זמינה בשלושה גדלים.,"זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.","בחרו את הגודל המתאים לכם: 14g, 17g או 21g.",chunk_7.json
+67609,,short_description,ok,,זמינה בשלושה גדלים.,"זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",זמינה בשלושה גדלים.,chunk_7.json
+81147,,short_description,ok,,זמינה בשלושה גדלים.,"זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",זמינה בשלושה גדלים.,chunk_7.json
+81152,,short_description,ok,,זמינה בשלושה גדלים.,"זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",זמינה בשלושה גדלים.,chunk_7.json
+67609,,description,ok,,שדרוג את חליטת,שדרגו את חליטת,זמינה בשלושה גדלים.,chunk_7.json
+64830,,description,ok,,מתאים לרוב מכונות האספרסו בעלות ראש E61,מתאים לכל מכונת אספרסו עם צינור קיטור,מתאים לרוב מכונות האספרסו בעלות ראש E61,chunk_7.json
+67348,,description,ok,,"ה- ECM Synchronika ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים הטובים ביותר שלנו.",ה-ECM Synchronika מפיקה שוטים של אספרסו ברמה של בתי הקפה הטובים ביותר.,"ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים",chunk_7.json
+67348,,short_description,ok,,מים חמיםמסך תצוגהעם הפרמטרים הבאים,מים חמים. מסך תצוגה עם הפרמטרים הבאים,"ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים",chunk_7.json
+64729,,name,ok,,קפסולות לוואצה מודו מיו,קפסולות לוואצה אמודו מיו,קפסולות לוואצה מודו מיו DEK נטול קפאין,chunk_7.json
+64773,,description,ok,,לשיפוחווית הקפה,לשיפור חוויית הקפה,האביזר המושלם לשיפוחווית הקפה שלך,chunk_7.json
+64802,,description,ok,,לשיפוחווית הקפה,לשיפור חוויית הקפה,האביזר המושלם לשיפוחווית הקפה שלך,chunk_7.json
+64802,,short_description,ok,,לשיפוחווית הקפה,לשיפור חוויית הקפה,האביזר המושלם לשיפוחווית הקפה שלך,chunk_7.json
+64782,,description,ok,,שהוא אלומיניום עטוף ויניל,שהוא אלומיניום עטוף ויניל).,שהוא אלומיניום עטוף ויניל,chunk_7.json
+64821,,description,ok,,(כ 1/3 שליש) בחלב ושוב לשפןך,(כשליש) בחלב ושוב לשפוך,ושוב לשפןך לבלנדר,chunk_7.json
+64821,,description,ok,,"שלאבקת אייס קפה ,","של אבקת אייס קפה,",ושוב לשפןך לבלנדר,chunk_7.json
+65040,,description,ok,," בשבץ גאוני ייחודי,",,"בשבץ גאוני ייחודי,",chunk_7.json
+65074,,short_description,ok,,יתקשו ויתייבשו כמואטם לגומי,יתקשו ויתייבשו כמו אטם גומי,יתקשו ויתייבשו כמואטם לגומי,chunk_7.json
+65074,,description,ok,,יתקשו ויתייבשו כמואטם לגומי,יתקשו ויתייבשו כמו אטם גומי,יתקשו ויתייבשו כמואטם לגומי,chunk_7.json
+65075,,short_description,ok,,יתקשו ויתייבשו כמואטם לגומי,יתקשו ויתייבשו כמו אטם גומי,יתקשו ויתייבשו כמואטם לגומי,chunk_7.json
+65075,,description,ok,,יתקשו ויתייבשו כמואטם לגומי,יתקשו ויתייבשו כמו אטם גומי,יתקשו ויתייבשו כמואטם לגומי,chunk_7.json
+65154,,description,ok,,עיוור לשמוש,עיוור לשימוש,פילטר עיוור לשמוש במכונות קפה,chunk_7.json
+65166,,short_description,ok,,חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !,,חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !,chunk_7.json
+65166,,description,ok,,הספק חשמלי: WW1500 .,הספק חשמלי: 1500W.,חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !,chunk_7.json
+65240,,description,ok,,מכונת הקפה שתמיד רציתם עכשיו עם.,מכונת הקפה שתמיד רציתם.,מכונת הקפה שתמיד רציתם עכשיו עם.,chunk_7.json
+65240,,description,ok,,<li>י</li>,<li></li>,מכונת הקפה שתמיד רציתם עכשיו עם.,chunk_7.json
+65374,,description,ok,,Rocket R NINE ON ממינוטו,Rocket R NINE ONE ממינוטו,Rocket R NINE ON ממינוטו,chunk_7.json
+65429,,description,ok,,לעשות כספל קפוצ׳ינו,להכין ספל קפוצ׳ינו,שימושי אם רוצים לעשות כספל קפוצ׳ינו גדול,chunk_7.json
+67186,,description,ok,,משלבת גם שעועית רובוסטה,משלבת גם פולי רובוסטה,התערובת משלבת גם שעועית רובוסטה מווייטנאם,chunk_7.json
+67186,,description,ok,,והשעועית המובחרת מעבירים,ופולי הקפה המובחרים מעבירים,התערובת משלבת גם שעועית רובוסטה מווייטנאם,chunk_7.json
+67186,,description,ok,,פולי הערביקה הטהורים המשובחים,פולי הערביקה המשובחים,התערובת משלבת גם שעועית רובוסטה מווייטנאם,chunk_7.json
+67186,,description,ok,,פולי ערביקה טהורים שנבחרו,פולי ערביקה שנבחרו,התערובת משלבת גם שעועית רובוסטה מווייטנאם,chunk_7.json
+67223,,description,ok,,הגולות עשיויות מאלמיניום ומוחזקים,הגולות עשויות מאלומיניום ומוחזקות,הגולות עשיויות מאלמיניום ומוחזקים,chunk_7.json
+67335,,short_description,ok,,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,36 קפסולות לוואצה אמודו מיו מקורי,36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו,chunk_7.json
+67361,,description,ok,,10 קפסולו קפה,10 קפסולות קפה,10 קפסולו קפה האוסברנדט,chunk_7.json
+67610,,description,ok,,אספרסו יחודי,אספרסו יחיד,מושלם להכנת אספרסו יחודי,chunk_7.json
+81773,,description,ok,,אטם ראש סטנדרטית למכונות La marzzoco,אטם ראש סטנדרטי למכונות La Marzocco,אטם ראש סטנדרטית למכונות La marzzoco,chunk_7.json
+64759,,description,ok,,מטחנת קפה Lifestyle Ceado,מטחנת קפה Ceado Life,מטחנת קפה Lifestyle Ceado,chunk_7.json
+64684,,description,ok,,אנשים ששומרים על המשקל.,,אנשים ששומרים על המשקל.,chunk_7.json
+68416,,description,ok,,אנשים ששומרים על המשקל.,,אנשים ששומרים על המשקל.,chunk_7.json
+68416,,short_description,ok,,אנשים ששומרים על המשקל.,,אנשים ששומרים על המשקל.,chunk_7.json
+65170,,short_description,ok,,מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.,"ננווסל (Nanovessel) – תרמוס ואקום מנירוסטה 304 עם 3 פונקציות: תרמוס, כלי להכנת תה ומיכל שמתברג ישירות לננופרסו במקום מיכל המים.",מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.,chunk_8.json
+65208,,short_description,ok,,מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.,"נרתיק קשיח מחומר EVA עם בטנה רכה, שתוכנן במיוחד למיניפרסו ומגן עליו מפני מכות, שריטות ואבק בשטח.",מתאם הקפסולות של ננופרסו מאפשר להשתמש בקפסולות NS* עם מכשיר הננופרסו שלכם.,chunk_8.json
+65208,,description,ok,,להגן על המכשיר במפני רעידות,להגן על המכשיר מפני רעידות,הנרתיק מסייע להגן על המכשיר במפני רעידות,chunk_8.json
+78189,,short_description,ok,,Volcano אקוואמארין 210,Volcano צהוב 210,"ספל פורצלן Volcano אקוואמארין 210 מ""ל מבית Club House",chunk_8.json
+78189,,description,ok,,ספל Volcano אקוואמארין בנפח,ספל Volcano צהוב בנפח,"ספל פורצלן Volcano אקוואמארין 210 מ""ל מבית Club House",chunk_8.json
+78189,,description,ok,,והצבע האקוואמארין הרענן,והצבע הצהוב הרענן,"ספל פורצלן Volcano אקוואמארין 210 מ""ל מבית Club House",chunk_8.json
+78189,,description,ok,,צבע אקוואמארין מודרני ורענן,צבע צהוב מודרני ורענן,"ספל פורצלן Volcano אקוואמארין 210 מ""ל מבית Club House",chunk_8.json
+67210,,description,ok,,100 קפסולות Esse Infinito,50 קפסולות Esse Infinito,100 קפסולות Esse Infinito,chunk_8.json
+67210,,description,ok,,"צוות Essse,","צוות Esse,",100 קפסולות Esse Infinito,chunk_8.json
+67308,,description,ok,,100 קפסולות Esse<,50 קפסולות Esse Maestoso<,100 קפסולות Esse,chunk_8.json
+81476,,description,ok,,Osmo Pro 100 Aquaphore כולל התקנה,Osmo Pro 100 Aquaphore לא כולל התקנה,מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה,chunk_8.json
+67160,,description,ok,,אין צורך בחשמל:</strong>&nbsp;המכונה פועלת ללא משאבת חשמל,ללא משאבה חשמלית:</strong>&nbsp;המכונה פועלת ללא משאבת חשמל,אין צורך בחשמל:  המכונה פועלת ללא משאבת חשמל,chunk_8.json
+67160,,description,ok,,שסתם ביטחון: מבטיחה פעולה,שסתום ביטחון: מבטיח פעולה,שסתם ביטחון: מבטיחה פעולה בטוחה,chunk_8.json
+64736,,description,ok,,את Nivona 550 שלכם,את Nivona 560 שלכם,הזמינו עוד היום את Nivona 550 שלכם,chunk_8.json
+64736,,short_description,ok,,פשוטה ואכותית.,פשוטה ואיכותית.,"יפה, פשוטה ואכותית.",chunk_8.json
+67175,,description,ok,,קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו,קפסולות קימבו אינטנסו התואמות דולצ'ה גוסטו,שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו,chunk_8.json
+67175,,description,ok,,תואמות Dulce Gusto,תואמות Dolce Gusto,שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו,chunk_8.json
+67175,,short_description,ok,,תואמות Dulce Gusto,תואמות Dolce Gusto,שדרגו את הבוקר שלכם עם קפסולות קפה תואמות קימבו אספרסו נאפולי דולצ'ה גוסטו,chunk_8.json
+81253,,short_description,ok,,אינדוקציה ובצבע אדום.,אינדוקציה ובצבע שחור.,עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.,chunk_8.json
+81254,,short_description,ok,,אינדוקציה ובצבע אדום.,אינדוקציה ובצבע שחור.,עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.,chunk_8.json
+81256,,short_description,ok,,אינדוקציה ובצבע אדום.,אינדוקציה ובצבע שחור.,עכשיו בגרסה שעובדת מעולה על כיריים אינדוקציה ובצבע אדום.,chunk_8.json
+67161,,description,ok,,להלן תיאור קצר המתאים לאתר אינטרנט:,,להלן תיאור קצר המתאים לאתר אינטרנט:,chunk_8.json
+78176,,description,held,colour unclear (title vs slug) – check the product photo,ספל Maniko אדום בנפח,ספל Maniko ורוד סלמון בנפח,"ספל Maniko אדום בנפח 70 מ""ל ... צבע האדום העז",chunk_8.json
+78176,,description,held,colour unclear (title vs slug) – check the product photo,צבע האדום העז,גוון הוורוד-סלמון העז,"ספל Maniko אדום בנפח 70 מ""ל ... צבע האדום העז",chunk_8.json
+67307,,description,ok,,2000 וואט - 22 וולט,2000 וואט - 220 וולט,2000 וואט - 22 וולט / 120 וולט,chunk_8.json
+67320,,description,ok,,2000 וואט - 22 וולט,2000 וואט - 220 וולט,2000 וואט - 22 וולט / 120 וולט,chunk_8.json
+67336,,description,ok,,2000 וואט - 22 וולט,2000 וואט - 220 וולט,2000 וואט - 22 וולט / 120 וולט,chunk_8.json
+67338,,description,ok,,2000 וואט - 22 וולט,2000 וואט - 220 וולט,2000 וואט - 22 וולט / 120 וולט,chunk_8.json
+67604,,description,ok,,<strong>לחץ משאבה:</strong> 15 בר (מדיד),"<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף",לחץ משאבה: 15 בר (מדיד),chunk_8.json
+67604,,description,ok,,איכות ללא פשרים,איכות ללא פשרות,איכות ללא פשרים ... מד לחץ המים בב דוד,chunk_8.json
+67604,,description,ok,,מד לחץ המים בב דוד,מד לחץ המים בדוד,איכות ללא פשרים ... מד לחץ המים בב דוד,chunk_8.json
+67604,,short_description,ok,,מד לחץ מים בב דוד,מד לחץ מים בדוד,איכות ללא פשרים ... מד לחץ המים בב דוד,chunk_8.json
+67605,,short_description,ok,,מד לחץ מים בב דוד,מד לחץ מים בדוד,מד לחץ מים בב דוד,chunk_8.json
+64735,,description,ok,,"ובזכות עוביו המשמעותי, היא מאפשר","ובזכות עוביה המשמעותי, היא מאפשרת","ובזכות עוביו המשמעותי, היא מאפשר העברת חום מושלמת",chunk_8.json
+64760,,short_description,ok,,&quot; &#8211; קפה קליל,Esse Monodose Ideale &#8211; קפה קליל,""" – קפה קליל ועדין המיועד למי שמחפש",chunk_8.json
+64760,,name,ok,,ESSE MONDOSE IDEALE,ESSE MONODOSE IDEALE,""" – קפה קליל ועדין המיועד למי שמחפש",chunk_8.json
+64760,,description,ok,,ESSE MONDOSE IDEALE,ESSE MONODOSE IDEALE,""" – קפה קליל ועדין המיועד למי שמחפש",chunk_8.json
+64760,,description,ok,,"""Essse Capsule","""Esse Capsule",""" – קפה קליל ועדין המיועד למי שמחפש",chunk_8.json
+64846,,description,ok,,בעבודה בעבודה,בעבודה,לכוס קפה איכותית בעבודה בעבודה,chunk_8.json
+64990,,description,ok,,מבוקרת על יד PID,מבוקרת על ידי PID,משאבה סיבובית מבוקרת על יד PID,chunk_8.json
+65406,,description,ok,,בספל קלאסי וקלאסי בנפח,בספל קלאסי בנפח,"פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ""ל",chunk_8.json
+65407,,description,ok,,בספל קלאסי וקלאסי בנפח,בספל קלאסי בנפח,"פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ""ל",chunk_8.json
+65408,,description,ok,,בספל קלאסי וקלאסי בנפח,בספל קלאסי בנפח,"פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ""ל",chunk_8.json
+65409,,description,ok,,בספל קלאסי וקלאסי בנפח,בספל קלאסי בנפח,"פנקו את עצמכם בספל קלאסי וקלאסי בנפח 300 מ""ל",chunk_8.json
+67153,,description,ok,,דוסחן מנירוסטה,דוחסן מנירוסטה,דוסחן מנירוסטה,chunk_8.json
+67194,,description,ok,,חובבי הקפה המאודינים,חובבי הקפה המעודנים,אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה,chunk_8.json
+67194,,description,ok,,אספרסו נחלט בצורה למשקאות,"אספרסו שנחלט בצורה מושלמת, בסיס למשקאות",אספרסו נחלט בצורה למשקאות מענגים מבוססי קפה,chunk_8.json
+67218,,description,ok,,הגדירור את הטיימר לפני השינה ותחכה לך כוס קפה טריה,הגדירו את הטיימר לפני השינה ותחכה לכם כוס קפה טרייה,הגדירור את הטיימר לפני השינה ותחכה לך,chunk_8.json
+67218,,description,ok,,"מידע על המוצר ""מכונת",מידע על המוצר: מכונת,הגדירור את הטיימר לפני השינה ותחכה לך,chunk_8.json
+67258,,description,ok,,מערכת Nespresso® *:,מערכת Nespresso®.,תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:,chunk_8.json
+67360,,description,ok,,10 קפסולו קפה,10 קפסולות קפה,10 קפסולו קפה האוסברנדט ... תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:,chunk_8.json
+67360,,description,ok,,מערכת Nespresso® *:,מערכת Nespresso®.,10 קפסולו קפה האוסברנדט ... תואם לכל המכונות המיוצרות עבור מערכת Nespresso® *:,chunk_8.json
+67281,,description,ok,,מבית הנירוסטה שלו דרך,"מגוף הנירוסטה, דרך","בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב
+ חירה מצוינת",chunk_8.json
+67281,,description,ok,,מיכל מים חיצוניבעיצוב,מיכל מים חיצוני בעיצוב,"בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב
+ חירה מצוינת",chunk_8.json
+67281,,description,ok,,אורך חיים גבוה מאוד. ב<,אורך חיים גבוה מאוד.<,"בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב
+ חירה מצוינת",chunk_8.json
+67281,,description,ok,,<p>חירה מצוינת,<p>בחירה מצוינת,"בעלת דוד כפול עם מיכל מים חיצוניבעיצוב עגול. ... ב
+ חירה מצוינת",chunk_8.json
+67336,,short_description,ok,,"Chiara מרשימ,","Chiara מרשימה,","Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת",chunk_8.json
+67336,,short_description,ok,,שלייטה בתזמון,שליטה בתזמון,"Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת",chunk_8.json
+67336,,description,ok,,קטנה וקטנה,קטנה וקומפקטית,"Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת",chunk_8.json
+67336,,description,ok,,דוד נירוסטה - כמו ג PID אלגנטי,דוד נירוסטה ובקר PID אלגנטי,"Bellezza Chiara מרשימ, עיצוב רטרו ... שלייטה בתזמון חליטה מוקדמת",chunk_8.json
+67399,,description,ok,,(PIDׂ),(PID),ווסת טמפרטורה (PIDׂ) ... לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה,chunk_8.json
+67399,,description,ok,,שונה לפני לפי סוג,שונה לפי סוג,ווסת טמפרטורה (PIDׂ) ... לבחור חליטה בטמפרטורה שונה לפני לפי סוג הקפה,chunk_8.json
+67622,,description,ok,,כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:,,כל דגמי La Pavoni 230V בעלי ידית הוסמכו על ידי:,chunk_8.json
+68284,,description,ok,,*קפסולות NS מתיחס,*קפסולות NS – מתייחס,*קפסולות NS מתיחס לקפסולות נספרסו® מקוריות ותואמות.,chunk_8.json
+69450,,description,ok,,תצוגת LC מוארת,תצוגת LCD מוארת,תצוגת LC מוארת,chunk_8.json
+78179,,short_description,ok,,﻿,,"אידיאלי לאספרסו או מקיאטו.
+ ﻿",chunk_8.json
+78892,,name,ok,,נטול קופאין,נטול קפאין,50 פודים קפה מאורו נטול קופאין Mauro Tropa Pods,chunk_8.json
 65427,,set:catalog_visibility,ok,,visible,hidden,"הצבה: visible at 0 ₪, in stock",store.json
 65369,,set:catalog_visibility,ok,,visible,hidden,"כללי: visible at 0 ₪, in stock",store.json
 64703,,set:catalog_visibility,ok,,visible,hidden,בדיקת תשלום: test product visible at 1 ₪,store.json
+65230,,short_description,ok,,עד ה-30.04.2019 &#8211; 5 שנות אחריות בבית הלקוח ,,Expired 2019 promo promising a 5-year warranty,store.json

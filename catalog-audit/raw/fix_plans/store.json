@@ -23,6 +23,14 @@
    "old": "visible",
    "new": "hidden",
    "finding": "בדיקת תשלום: test product visible at 1 ₪"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "עד ה-30.04.2019 &#8211; 5 שנות אחריות בבית הלקוח ",
+   "new": "",
+   "finding": "Expired 2019 promo promising a 5-year warranty"
   }
  ],
  "skipped": []

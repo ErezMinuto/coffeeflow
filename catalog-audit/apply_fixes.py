@@ -23,7 +23,7 @@ def call(method, path, body=None):
 
 tags = lambda s: re.findall(r'<[^>]+>', s)
 edits = []
-for f in sorted(glob.glob(f'{D}/raw/fix_plans/*.json')):
+for f in sorted(g for g in glob.glob(f'{D}/raw/fix_plans/*.json') if not g.endswith('hold.json')):
     for e in json.load(open(f))['edits']: e['_plan'] = os.path.basename(f); edits.append(e)
 
 live = {}   # (product_id, variation_id) -> current object
