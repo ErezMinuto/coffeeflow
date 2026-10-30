@@ -1,0 +1,43 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+65055,,description,ok,,"הספק: 110-120 וולט, 60 הרץ, 15 אמפר, 600 וואט","הספק: 230 וולט, 50 הרץ, 600 וואט","הספק: 110-120 וולט, 60 הרץ, 15 אמפר, 600 וואט",spec_espresso.json
+64987,,name,ok,,LELIT William - PL043,LELIT Fred Prima - PL043,LELIT William - PL043,spec_espresso.json
+64987,,description,ok,,LELIT William - PL43,LELIT Fred Prima - PL043,LELIT William - PL043,spec_espresso.json
+67638,,description,ok,,"- רוחב: 20 ס""מ","- רוחב: 25 ס""מ","דוד 1.5 ליטר ... סירקולציה תרמוסיפון ... קבוצת הראש E61 ... רוחב: 20 ס""מ",spec_espresso.json
+67638,,name,ok,,Bezzera aria S MN,Bezzera Aria MN,Bezzera aria S MN,spec_espresso.json
+67163,,description,ok,,מכונת הקפה Bezzera Duo DE היא,מכונת הקפה Bezzera Duo MN היא,מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת,spec_espresso.json
+67163,,description,ok,,"עם כפתורים אינטואיטיביים לבחירת אספרסו קצר או כפול, כמו גם התאמת לחץ הקיטור והטמפרטורה","עם ידית מנוף להתחלת החליטה ועצירתה, ומסך מגע 3.5 אינץ' לשליטה בטמפרטורת שני הדודים",מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת,spec_espresso.json
+67163,,description,ok,,דוד קפה 0.5 ליטר,דוד קפה 0.45 ליטר,מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת,spec_espresso.json
+67163,,description,ok,,"משקל נקי 34 ק""ג","משקל נקי 33 ק""ג",מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת,spec_espresso.json
+67349,,description,ok,,ECM Mechanika V Slim: קומפקטי,ECM Mechanika VI Slim: קומפקטי,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,description,ok,,מכונת האספרסו Mechanika V Slim,מכונת האספרסו Mechanika VI Slim,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,description,ok,,מכונת ה-Mechanika V Slim,מכונת ה-Mechanika VI Slim,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,description,ok,,יחידת חליטה: Ring Brew Group,יחידת חליטה: ECM Brew Group,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,meta:rank_math_description,ok,,ECM Mechanika V Slim: ,ECM Mechanika VI Slim: ,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,meta:rank_math_description,ok,,האספרסו Mechanika V Slim,האספרסו Mechanika VI Slim,"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67349,,short_description,ok,,2 פורטפולטרים(ידיות),2 פורטפילטרים (ידיות),"ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",spec_espresso.json
+67624,,description,ok,,הידית החתוכה Gran Crema Portafilter Bottomless,הידית החתוכה Portafilter Bottomless,הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit,spec_espresso.json
+67624,,description,ok,,ידית חליטה חתוכה ידית חליטה חתוכה Portafilter,ידית חליטה חתוכה Portafilter,הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit,spec_espresso.json
+67642,,description,ok,,הידית החתוכה Gran Crema Portafilter Bottomless,הידית החתוכה Portafilter Bottomless,הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit,spec_espresso.json
+67642,,description,ok,,ידית חליטה חתוכה ידית חליטה חתוכה Portafilter,ידית חליטה חתוכה Portafilter,הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit,spec_espresso.json
+68280,,short_description,ok,,מה זה? רוקט Evoluzione R,מה זה? רוקט Giotto Cronometro R,רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+68280,,short_description,ok,,במלאי? רוקט Evoluzione R,במלאי? רוקט Giotto Cronometro R,רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+68280,,description,ok,,Rocket Evoluzione R (מהיום עם PID),Rocket Giotto Cronometro R (עם PID),רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+68280,,description,ok,,הכל מנירוסטה.  ה –Cellini Premium ,הכל מנירוסטה.  ה –Giotto Cronometro R ,רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+68280,,description,ok,,"ROCKET ECM <span style=""font-style: inherit"">Cellini</span>","ROCKET <span style=""font-style: inherit"">Giotto Cronometro R</span>",רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+68280,,description,ok,,"טמפרטורת <span style=""font-style: inherit"">ו</span>לחץ הדוד נמצאים <span style=""font-style: inherit"">תחת </span>שליט<span style=""font-style: inherit"">ה</span> <span style=""font-style: inherit"">של חייש","טמפרטורת הדוד נשלטת על ידי בקר PID.<span style=""font-style: inherit""></span><span style=""font-style: inherit""></span><span style=""font-style: inherit""></span> <span style=""font-style: inherit""></span>",(מהיום עם PID) ... תחת שליטה של חיישני לחץ מקצועיים,spec_espresso.json
+68280,,description,ok,," 420.5</span><span style=""font-style: inherit"">X</span><span style=""font-style: inherit""> 350</span><span style=""font-style: inherit"">X</span><span style=""font-style: inherit""> 330</span>"," 335</span><span style=""font-style: inherit"">X</span><span style=""font-style: inherit""> 400</span><span style=""font-style: inherit"">X</span><span style=""font-style: inherit""> 420</span>",רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום,spec_espresso.json
+64675,,description,ok,,"340 x 590 x 420 מ""מ ללא פילטר","340 x 485 x 420 מ""מ ללא פילטר","340 x 590 x 420 מ""מ ללא פילטר / 340 x 590 x 420 מ""מ עם פילטר",spec_espresso.json
+67156,,description,ok,,סוג: מיכל פנימי,"סוג: מיכל חיצוני מזכוכית, ניתן למיקום חופשי",סוג: מיכל פנימי,spec_espresso.json
+67156,,description,ok,,"</strong> 13.6 ק""ג","</strong> 13.4 ק""ג",סוג: מיכל פנימי,spec_espresso.json
+67157,,description,ok,,<strong>משאבה רוטטיבית</strong>,<strong>משאבה סיבובית</strong>,משאבה רוטטיבית,spec_espresso.json
+67157,,description,ok,,<strong>משאבה רוטטרית:</strong>,<strong>משאבה סיבובית:</strong>,משאבה רוטטיבית,spec_espresso.json
+67157,,description,ok,,רוחב x עומק x גובה - 250*445*405,רוחב x עומק x גובה - 275*445*405,משאבה רוטטיבית,spec_espresso.json
+67606,,short_description,ok,,מכונת אספרסו שחורה ומרשימה בעלת גוף נירוסטה,מכונת אספרסו מרשימה בעלת גוף נירוסטה,מכונת אספרסו שחורה ומרשימה בעלת גוף נירוסטה,spec_espresso.json
+67606,,description,ok,,<strong>לחץ קיטור:</strong> 15 בר,<strong>לחץ משאבה:</strong> 15 בר,לחץ קיטור: 15 בר,spec_espresso.json
+65188,,short_description,ok,,גוף המכונה עשוי נירוסטה באיכות,גוף המכונה עשוי פלסטיק ופלדה באיכות,גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים,spec_espresso.json
+65188,,description,ok,,גוף המכונה עשוי נירוסטה באיכות,גוף המכונה עשוי פלסטיק ופלדה באיכות,גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים,spec_espresso.json
+65188,,meta:rank_math_description,ok,,גוף המכונה עשוי נירוסטה באיכות,גוף המכונה עשוי פלסטיק ופלדה באיכות,גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים,spec_espresso.json
+67152,,description,ok,,"בזכות המנגנון המכני שלהן, ללא צורך במשאבה חשמלית. ב-Strega Top, זוג קפיצים חזקים אחראים על חליטת האספרסו.","בזכות המנגנון המכני שלהן. ב-Strega Top, משאבת ויברציה ממלאת את ראש המנוף לחליטה מוקדמת (pre-infusion), ובמהלך החליטה המשאבה נעצרת וזוג קפיצים חזקים אחראים על חליטת האספרסו.",ללא צורך במשאבה חשמלית,spec_espresso.json
+67158,,description,ok,,"היא מכונת קיטור כפולה בעלת דוד יחיד,","היא מכונת אספרסו בעלת דוד יחיד מפליז המשמש גם לחליטה וגם לקיטור,",מכונת קיטור כפולה בעלת דוד יחיד,spec_espresso.json
+67159,,description,ok,,"היא מכונת קיטור כפולה בעלת דוד יחיד,","היא מכונת אספרסו בעלת דוד יחיד מפליז המשמש גם לחליטה וגם לקיטור,",מכונת קיטור כפולה בעלת דוד יחיד,spec_espresso.json
+67283,,short_description,ok,,זמין גם בגרסת DE עם 3 תרמוסטטים וניפוק נפחי.,ובגרסת DE זו: 3 תרמוסטטי PID וניפוק נפחי עם 4 מנות הניתנות לתכנות.,זמין גם בגרסת DE עם 3 תרמוסטטים וניפוק נפחי,spec_espresso.json

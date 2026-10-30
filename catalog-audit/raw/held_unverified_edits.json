@@ -1,0 +1,86 @@
+{
+ "reason": "official page unreachable (Rocket 500, Handpresso 403); values only from search snippets / blog — confirm by hand",
+ "edits": [
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה – 35 ס\"מ. רוחב – 33 ס\"מ. עומק – 42 ס\"מ.",
+   "new": "גובה – 40 ס\"מ. רוחב – 33.5 ס\"מ. עומק – 42 ס\"מ.",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "   21  ק\"ג.",
+   "new": "   27.8  ק\"ג.",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "<span style=\"font-style: inherit\">21</span><span style=\"font-style: inherit\">  ק\"ג</span>",
+   "new": "<span style=\"font-style: inherit\">27.8</span><span style=\"font-style: inherit\">  ק\"ג</span>",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "1500 w / 220 v",
+   "new": "1350 w / 220-240 v",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 65191,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ: 19 בר",
+   "new": "לחץ: 16 בר",
+   "finding": "לחץ: 19 בר",
+   "source": "https://www.handpresso.com/en/blog/the-handpresso-car-espresso-maker-rated-in-the-10-best-car-accessories-n114"
+  },
+  {
+   "product_id": 65191,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "lang=\"iw\">לחץ 19 בר",
+   "new": "lang=\"iw\">לחץ 16 בר",
+   "finding": "לחץ: 19 בר",
+   "source": "https://www.handpresso.com/en/blog/the-handpresso-car-espresso-maker-rated-in-the-10-best-car-accessories-n114"
+  },
+  {
+   "product_id": 65191,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "Handpresso Auto לחץ 19 בר",
+   "new": "Handpresso Auto לחץ 16 בר",
+   "finding": "לחץ: 19 בר",
+   "source": "https://www.handpresso.com/en/blog/the-handpresso-car-espresso-maker-rated-in-the-10-best-car-accessories-n114"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "טמפרטורת <span style=\"font-style: inherit\">ו</span>לחץ הדוד נמצאים <span style=\"font-style: inherit\">תחת </span>שליט<span style=\"font-style: inherit\">ה</span> <span style=\"font-style: inherit\">של חיישני</span> לחץ מקצועי<span style=\"font-style: inherit\">ים</span> אשר חש<span style=\"font-style: inherit\">ים</span> בלחץ הנמצא בדוד </span></p>\n<p style=\"font-style: inherit;font-weight: inherit\"><span style=\"font-style: inherit\">ומפעיל<span style=\"font-style: inherit\">ים</span> את אלמנט החימום שהלחץ יורד.",
+   "new": "טמפרטורת הדוד נשלטת על ידי בקר PID.<span style=\"font-style: inherit\"></span><span style=\"font-style: inherit\"></span><span style=\"font-style: inherit\"></span> <span style=\"font-style: inherit\"></span><span style=\"font-style: inherit\"></span><span style=\"font-style: inherit\"></span></span></p>\n<p style=\"font-style: inherit;font-weight: inherit\"><span style=\"font-style: inherit\"><span style=\"font-style: inherit\"></span>",
+   "finding": "(מהיום עם PID) ... תחת שליטה של חיישני לחץ מקצועיים",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": " 420.5</span><span style=\"font-style: inherit\">X</span><span style=\"font-style: inherit\"> 350</span><span style=\"font-style: inherit\">X</span><span style=\"font-style: inherit\"> 330</span>",
+   "new": " 335</span><span style=\"font-style: inherit\">X</span><span style=\"font-style: inherit\"> 400</span><span style=\"font-style: inherit\">X</span><span style=\"font-style: inherit\"> 420</span>",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  }
+ ]
+}

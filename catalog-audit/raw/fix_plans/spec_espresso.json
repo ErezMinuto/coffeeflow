@@ -1,0 +1,758 @@
+{
+ "edits": [
+  {
+   "product_id": 65055,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק: 110-120 וולט, 60 הרץ, 15 אמפר, 600 וואט",
+   "new": "הספק: 230 וולט, 50 הרץ, 600 וואט",
+   "finding": "הספק: 110-120 וולט, 60 הרץ, 15 אמפר, 600 וואט",
+   "source": "https://www.lelit.com/product/william-pl72/"
+  },
+  {
+   "product_id": 64987,
+   "variation_id": null,
+   "target": "name",
+   "old": "LELIT William - PL043",
+   "new": "LELIT Fred Prima - PL043",
+   "finding": "LELIT William - PL043",
+   "source": "https://www.lelit.com/product/fred-pl043mmi/"
+  },
+  {
+   "product_id": 64987,
+   "variation_id": null,
+   "target": "description",
+   "old": "LELIT William - PL43",
+   "new": "LELIT Fred Prima - PL043",
+   "finding": "LELIT William - PL043",
+   "source": "https://www.lelit.com/product/fred-pl043mmi/"
+  },
+  {
+   "product_id": 67638,
+   "variation_id": null,
+   "target": "description",
+   "old": "- רוחב: 20 ס\"מ",
+   "new": "- רוחב: 25 ס\"מ",
+   "finding": "דוד 1.5 ליטר ... סירקולציה תרמוסיפון ... קבוצת הראש E61 ... רוחב: 20 ס\"מ",
+   "source": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67638,
+   "variation_id": null,
+   "target": "name",
+   "old": "Bezzera aria S MN",
+   "new": "Bezzera Aria MN",
+   "finding": "Bezzera aria S MN",
+   "source": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67163,
+   "variation_id": null,
+   "target": "description",
+   "old": "מכונת הקפה Bezzera Duo DE היא",
+   "new": "מכונת הקפה Bezzera Duo MN היא",
+   "finding": "מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת",
+   "source": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67163,
+   "variation_id": null,
+   "target": "description",
+   "old": "עם כפתורים אינטואיטיביים לבחירת אספרסו קצר או כפול, כמו גם התאמת לחץ הקיטור והטמפרטורה",
+   "new": "עם ידית מנוף להתחלת החליטה ועצירתה, ומסך מגע 3.5 אינץ' לשליטה בטמפרטורת שני הדודים",
+   "finding": "מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת",
+   "source": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67163,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוד קפה 0.5 ליטר",
+   "new": "דוד קפה 0.45 ליטר",
+   "finding": "מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת",
+   "source": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67163,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל נקי 34 ק\"ג",
+   "new": "משקל נקי 33 ק\"ג",
+   "finding": "מכונת הקפה Bezzera Duo DE היא הבחירה המושלמת",
+   "source": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "old": "ECM Mechanika V Slim: קומפקטי",
+   "new": "ECM Mechanika VI Slim: קומפקטי",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "old": "מכונת האספרסו Mechanika V Slim",
+   "new": "מכונת האספרסו Mechanika VI Slim",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "old": "מכונת ה-Mechanika V Slim",
+   "new": "מכונת ה-Mechanika VI Slim",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "old": "יחידת חליטה: Ring Brew Group",
+   "new": "יחידת חליטה: ECM Brew Group",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "ECM Mechanika V Slim: ",
+   "new": "ECM Mechanika VI Slim: ",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "האספרסו Mechanika V Slim",
+   "new": "האספרסו Mechanika VI Slim",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "2 פורטפולטרים(ידיות)",
+   "new": "2 פורטפילטרים (ידיות)",
+   "finding": "ECM Mechanika V Slim: קומפקטי בחוץ, מדהים מבפנים",
+   "source": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67624,
+   "variation_id": null,
+   "target": "description",
+   "old": "הידית החתוכה Gran Crema Portafilter Bottomless",
+   "new": "הידית החתוכה Portafilter Bottomless",
+   "finding": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+   "source": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 67624,
+   "variation_id": null,
+   "target": "description",
+   "old": "ידית חליטה חתוכה ידית חליטה חתוכה Portafilter",
+   "new": "ידית חליטה חתוכה Portafilter",
+   "finding": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+   "source": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 67642,
+   "variation_id": null,
+   "target": "description",
+   "old": "הידית החתוכה Gran Crema Portafilter Bottomless",
+   "new": "הידית החתוכה Portafilter Bottomless",
+   "finding": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+   "source": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 67642,
+   "variation_id": null,
+   "target": "description",
+   "old": "ידית חליטה חתוכה ידית חליטה חתוכה Portafilter",
+   "new": "ידית חליטה חתוכה Portafilter",
+   "finding": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+   "source": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מה זה? רוקט Evoluzione R",
+   "new": "מה זה? רוקט Giotto Cronometro R",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "במלאי? רוקט Evoluzione R",
+   "new": "במלאי? רוקט Giotto Cronometro R",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "Rocket Evoluzione R (מהיום עם PID)",
+   "new": "Rocket Giotto Cronometro R (עם PID)",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכל מנירוסטה.  ה –Cellini Premium ",
+   "new": "הכל מנירוסטה.  ה –Giotto Cronometro R ",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "variation_id": null,
+   "target": "description",
+   "old": "ROCKET ECM <span style=\"font-style: inherit\">Cellini</span>",
+   "new": "ROCKET <span style=\"font-style: inherit\">Giotto Cronometro R</span>",
+   "finding": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+   "source": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 64675,
+   "variation_id": null,
+   "target": "description",
+   "old": "340 x 590 x 420 מ\"מ ללא פילטר",
+   "new": "340 x 485 x 420 מ\"מ ללא פילטר",
+   "finding": "340 x 590 x 420 מ\"מ ללא פילטר / 340 x 590 x 420 מ\"מ עם פילטר",
+   "source": "https://www.profitec-espresso.com/en/products/drive"
+  },
+  {
+   "product_id": 67156,
+   "variation_id": null,
+   "target": "description",
+   "old": "סוג: מיכל פנימי",
+   "new": "סוג: מיכל חיצוני מזכוכית, ניתן למיקום חופשי",
+   "finding": "סוג: מיכל פנימי",
+   "source": "https://www.ecm.de/en/products/puristika/"
+  },
+  {
+   "product_id": 67156,
+   "variation_id": null,
+   "target": "description",
+   "old": "</strong> 13.6 ק\"ג",
+   "new": "</strong> 13.4 ק\"ג",
+   "finding": "סוג: מיכל פנימי",
+   "source": "https://www.ecm.de/en/products/puristika/"
+  },
+  {
+   "product_id": 67157,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>משאבה רוטטיבית</strong>",
+   "new": "<strong>משאבה סיבובית</strong>",
+   "finding": "משאבה רוטטיבית",
+   "source": "https://www.ecm.de/en/mechanika-max-ii-temperature-control-made-easy/"
+  },
+  {
+   "product_id": 67157,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>משאבה רוטטרית:</strong>",
+   "new": "<strong>משאבה סיבובית:</strong>",
+   "finding": "משאבה רוטטיבית",
+   "source": "https://www.ecm.de/en/mechanika-max-ii-temperature-control-made-easy/"
+  },
+  {
+   "product_id": 67157,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב x עומק x גובה - 250*445*405",
+   "new": "רוחב x עומק x גובה - 275*445*405",
+   "finding": "משאבה רוטטיבית",
+   "source": "https://www.ecm.de/wp-content/uploads/2025/05/ECM-Mechanika-MAX-2503-web.pdf"
+  },
+  {
+   "product_id": 67606,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מכונת אספרסו שחורה ומרשימה בעלת גוף נירוסטה",
+   "new": "מכונת אספרסו מרשימה בעלת גוף נירוסטה",
+   "finding": "מכונת אספרסו שחורה ומרשימה בעלת גוף נירוסטה",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/new-cellini-classic"
+  },
+  {
+   "product_id": 67606,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>לחץ קיטור:</strong> 15 בר",
+   "new": "<strong>לחץ משאבה:</strong> 15 בר",
+   "finding": "לחץ קיטור: 15 בר",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/new-cellini-classic"
+  },
+  {
+   "product_id": 65188,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גוף המכונה עשוי נירוסטה באיכות",
+   "new": "גוף המכונה עשוי פלסטיק ופלדה באיכות",
+   "finding": "גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים",
+   "source": "https://www.gaggia.com/app/uploads/2023/07/4219-465-08621-MANUAL-GRAN.-GAG.-IT-EN-DE-FR-ES-PT-NL-SV-NO-FI-DA-GR-V3-Rev-00-1.pdf"
+  },
+  {
+   "product_id": 65188,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף המכונה עשוי נירוסטה באיכות",
+   "new": "גוף המכונה עשוי פלסטיק ופלדה באיכות",
+   "finding": "גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים",
+   "source": "https://www.gaggia.com/app/uploads/2023/07/4219-465-08621-MANUAL-GRAN.-GAG.-IT-EN-DE-FR-ES-PT-NL-SV-NO-FI-DA-GR-V3-Rev-00-1.pdf"
+  },
+  {
+   "product_id": 65188,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "גוף המכונה עשוי נירוסטה באיכות",
+   "new": "גוף המכונה עשוי פלסטיק ופלדה באיכות",
+   "finding": "גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים",
+   "source": "https://www.gaggia.com/app/uploads/2023/07/4219-465-08621-MANUAL-GRAN.-GAG.-IT-EN-DE-FR-ES-PT-NL-SV-NO-FI-DA-GR-V3-Rev-00-1.pdf"
+  },
+  {
+   "product_id": 67152,
+   "variation_id": null,
+   "target": "description",
+   "old": "בזכות המנגנון המכני שלהן, ללא צורך במשאבה חשמלית. ב-Strega Top, זוג קפיצים חזקים אחראים על חליטת האספרסו.",
+   "new": "בזכות המנגנון המכני שלהן. ב-Strega Top, משאבת ויברציה ממלאת את ראש המנוף לחליטה מוקדמת (pre-infusion), ובמהלך החליטה המשאבה נעצרת וזוג קפיצים חזקים אחראים על חליטת האספרסו.",
+   "finding": "ללא צורך במשאבה חשמלית",
+   "source": "https://www.bezzera.it/en/machines/strega"
+  },
+  {
+   "product_id": 67158,
+   "variation_id": null,
+   "target": "description",
+   "old": "היא מכונת קיטור כפולה בעלת דוד יחיד,",
+   "new": "היא מכונת אספרסו בעלת דוד יחיד מפליז המשמש גם לחליטה וגם לקיטור,",
+   "finding": "מכונת קיטור כפולה בעלת דוד יחיד",
+   "source": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67159,
+   "variation_id": null,
+   "target": "description",
+   "old": "היא מכונת קיטור כפולה בעלת דוד יחיד,",
+   "new": "היא מכונת אספרסו בעלת דוד יחיד מפליז המשמש גם לחליטה וגם לקיטור,",
+   "finding": "מכונת קיטור כפולה בעלת דוד יחיד",
+   "source": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67283,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "זמין גם בגרסת DE עם 3 תרמוסטטים וניפוק נפחי.",
+   "new": "ובגרסת DE זו: 3 תרמוסטטי PID וניפוק נפחי עם 4 מנות הניתנות לתכנות.",
+   "finding": "זמין גם בגרסת DE עם 3 תרמוסטטים וניפוק נפחי",
+   "source": "https://www.bezzera.it/en/machines/matrix"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 65198,
+   "finding": "לחץ: 19 בר",
+   "reason": "matches official: the Handpresso Auto Capsule (Nespresso-compatible capsules, 12V/24V) is specified by Handpresso at 19 bar; the 16 bar figure belongs to the E.S.E. Handpresso Auto",
+   "source": "https://www.handpresso.com/en/handpresso-auto-capsule-353.html"
+  },
+  {
+   "product_id": 67672,
+   "finding": "מסננת ראש למכונות פרופיטק גו IMS CI200IM",
+   "reason": "official page is ambiguous for this model: IMS compatibility table lists CI200IM for Profitec Pro 300 (ring group), but Profitec GO is not listed at all; cannot confirm or refute GO fit",
+   "source": "https://www.imsfiltri.com/assets/compatibility-shower.csv"
+  },
+  {
+   "product_id": 68295,
+   "finding": "החבילה כוללת מתאם, המאפשר להשתמש בה גם עם קפסולות תואמות נספרסו",
+   "reason": "stock/business decision: Wacaco says the standard Nanopresso ships with one single basket and the NS adapter is sold separately (a NANOPRESSO + NS ADAPTER bundle also exists). Whether this SKU is the bundle must be checked against what Minuto actually ships",
+   "source": "https://www.wacaco.com/products/nanopresso"
+  },
+  {
+   "product_id": 64715,
+   "finding": "Lelit PL41EM שרביט הקצפה מקצועי + מטחנת קפה GRAEF",
+   "reason": "business decision: which GRAEF grinder model the bundle contains is not stated anywhere; adding it needs the shop owner"
+  },
+  {
+   "product_id": 64681,
+   "finding": "מערכת חימום כפולה (אפשרות לדוד יחיד) ... ניתן לבחור גם בדגם עם דוד יחיד",
+   "reason": "no official source: profitec-espresso.com no longer has a Pro 600 page (404) or datasheet; the copied block (Profitec brew group, 0.75/1.0 l, single boiler option) matches the RIDE page, but the Pro 600 spec cannot be confirmed",
+   "source": "https://www.profitec-espresso.com/en/products/ride"
+  },
+  {
+   "product_id": 67157,
+   "finding": "ראש חליטה E61: ראש חליטה זה ידוע",
+   "reason": "no official source: the Mechanika MAX product page is gone (404) and its manual only says \"brew group\"; ECM calls the group \"ECM brew group\" on its E61-style machines too, so E61 vs not cannot be confirmed",
+   "source": "https://www.ecm.de/wp-content/uploads/2025/05/ECM-Mechanika-MAX-2503-web.pdf"
+  },
+  {
+   "product_id": 67169,
+   "finding": "רמת לחץ: 16 bar",
+   "reason": "no official source: Bezzera Magica page and datasheet give no pump/brew pressure figure",
+   "source": "https://www.bezzera.it/en/machines/magica"
+  },
+  {
+   "product_id": 67292,
+   "finding": "עשוי מפלסטיק מיוחד מפחית רעש איכותי עם מגש פלסטיק נשלף",
+   "reason": "no official source: no Bellezza manufacturer page or datasheet for the Elegance drawers reachable (bellezza-espresso.com refused)"
+  },
+  {
+   "product_id": 67292,
+   "finding": "ידית: 42 ס\"מ",
+   "reason": "no official source: no Bellezza manufacturer page or datasheet for the Elegance drawers reachable"
+  },
+  {
+   "product_id": 67293,
+   "finding": "עשוי מפלסטיק מיוחד מפחית רעש איכותי עם מגש פלסטיק נשלף",
+   "reason": "no official source: no Bellezza manufacturer page or datasheet for the Elegance drawers reachable (bellezza-espresso.com refused)"
+  },
+  {
+   "product_id": 67293,
+   "finding": "ידית: 42 ס\"מ",
+   "reason": "no official source: no Bellezza manufacturer page or datasheet for the Elegance drawers reachable"
+  },
+  {
+   "product_id": 67607,
+   "finding": "מותג: DF64, Gaggia",
+   "reason": "store-wide attribute (global brand attribute id 18); remove DF64 by hand"
+  },
+  {
+   "product_id": 78317,
+   "finding": "אמינות איטלקית עם אחריות יצרן לשנה",
+   "reason": "business decision: warranty term is set by the importer, not by the manufacturer spec"
+  },
+  {
+   "product_id": 82139,
+   "finding": "ידית חליטה חתוכה (Bottomless) מקורית מבית Lelit",
+   "reason": "business/sourcing decision: Lelit lists PLA570S only \"for machines with LELIT57 group\" and does not mention La Pavoni; whether this SKU is the original Lelit PLA570S or a third-party compatible handle must be confirmed by the shop",
+   "source": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 65104,
+   "finding": "לעמוד בלחץ גבוה וטמפרטורות גבוהות עד 620 מעלות צלזיוס",
+   "reason": "no official source: Lelit MaraX PL62X page/datasheet give no hose temperature rating, so the correct value cannot be sourced (the 620°C figure is clearly wrong; consider deleting the clause by hand)",
+   "source": "https://www.lelit.com/product/marax-pl62x/"
+  },
+  {
+   "product_id": 65104,
+   "finding": "PRICE: 5490.0000",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 64955,
+   "finding": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "business decision: promo wording/terms"
+  },
+  {
+   "product_id": 64966,
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "business decision: promo wording/terms"
+  },
+  {
+   "product_id": 65176,
+   "finding": "כל מלאי היבואן אצלנו במלאי ! זמין במלאי למשלוח מידי.",
+   "reason": "stock decision"
+  },
+  {
+   "product_id": 67142,
+   "finding": "מגירת ריקון קפה מנירוסטה KNOCKBOX (M) DRAWER ECM",
+   "reason": "business decision: duplicate listing of 67667 (merge/unpublish)"
+  },
+  {
+   "product_id": 67143,
+   "finding": "הזמינו עכשיו ותקבלו משלוח חינם!",
+   "reason": "business decision: shipping/club promo policy"
+  },
+  {
+   "product_id": 67602,
+   "finding": "67603: 4990 ₪ · 67602: 5200 ₪",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 67603,
+   "finding": "PRICE: 4990.0000",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 68308,
+   "finding": "טוטוקרמה 6 כוסות | 148",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 64900,
+   "finding": "אחריות 48 חודשים ע\"י היבואן קופמה",
+   "reason": "business decision: warranty term set by importer"
+  },
+  {
+   "product_id": 76839,
+   "finding": "גודל: ראש אחד, שני ראשים, שלושה ראשים, ארבעה ראשים",
+   "reason": "store-wide attribute (size attribute options)"
+  },
+  {
+   "product_id": 81104,
+   "finding": "גודל: ראש אחד, שני ראשים, שלושה ראשים, ארבעה ראשים",
+   "reason": "store-wide attribute (size attribute options)"
+  },
+  {
+   "product_id": 65021,
+   "finding": "מנגנון עצירה אוטומטי בטמפרטורת רתיחה",
+   "reason": "no official source: no manufacturer page/manual found for the \"Espresso More\" Crema Di Latte frother"
+  },
+  {
+   "product_id": 68278,
+   "finding": "Lavaza A Modo Mio",
+   "reason": "no official source: no Brita/Saeco/Gaggia compatibility list found that confirms or rules out the listed machines for this cartridge"
+  },
+  {
+   "product_id": 65131,
+   "finding": "CATEGORIES: GAGGIA, מוצרים חדשים, מכונות קפה, מכונות קפה ידניות",
+   "reason": "store-wide: category assignment is not a text field in this plan; move out of \"מכונות קפה ידניות\" by hand"
+  },
+  {
+   "product_id": 65134,
+   "finding": "CATEGORIES: GAGGIA, מכונות קפה, מכונות קפה ידניות",
+   "reason": "store-wide: category assignment is not a text field in this plan; move out of \"מכונות קפה ידניות\" by hand"
+  },
+  {
+   "product_id": 82014,
+   "finding": "Gaggia Classic UP - נירוסטה (העתק)",
+   "reason": "business decision: leftover draft duplicate of 82012 (delete or keep as draft)"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 65055,
+   "spec": "Power supply (EU version PL72)",
+   "value": "230 V 50 Hz | Plug Type E+F",
+   "url": "https://www.lelit.com/product/william-pl72/"
+  },
+  {
+   "product_id": 64987,
+   "spec": "Model name of PL043MMI",
+   "value": "Fred Prima PL043MMI (Ø 38 mm conical burrs)",
+   "url": "https://www.lelit.com/product/fred-pl043mmi/"
+  },
+  {
+   "product_id": 67638,
+   "spec": "Boiler / group / circulation",
+   "value": "1.5 lt boiler with heat exchanger, E61 type lever group, thermosiphonic circulation, vibration pump, 3 lt tank",
+   "url": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67638,
+   "spec": "Width",
+   "value": "250 mm (data sheet: 251 mm)",
+   "url": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67638,
+   "spec": "Net weight / height / depth",
+   "value": "24 kg / 411 mm / 428 mm",
+   "url": "https://www.bezzera.it/uploads/prod_images/Aria/aria-mn-03-2023-low.pdf"
+  },
+  {
+   "product_id": 67638,
+   "spec": "Model name",
+   "value": "ARIA MN (variants: ARIA MN, ARIA MN PID)",
+   "url": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67163,
+   "spec": "DUO MN operation",
+   "value": "traditional manual lever unit; 2 PID thermostats; 3.5\" touch display controls the double water heater system",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67163,
+   "spec": "Coffee boiler",
+   "value": "0,45 lt",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67163,
+   "spec": "Net weight",
+   "value": "DUO MN 33 kg",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67349,
+   "spec": "Model / specs",
+   "value": "Mechanika VI Slim: heat exchanger, vibration pump, ECM brew group, tank approx. 2.8 L, boiler approx. 1.9 L, 20.2 kg, 250 x 445 x 395 mm, 3 selectable temperatures",
+   "url": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67349,
+   "spec": "Brew group",
+   "value": "ECM brew group",
+   "url": "https://www.ecm.de/en/products/mechanika-vi-slim/"
+  },
+  {
+   "product_id": 67624,
+   "spec": "Official name (58 mm)",
+   "value": "PLA580S Bottomless filterholder with polished black classic handle, for LELIT58 group (no \"Gran Crema\" name)",
+   "url": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 67642,
+   "spec": "Official name (57 mm)",
+   "value": "PLA570S Bottomless filterholder with black classic handle, for LELIT57 group (no \"Gran Crema\" name)",
+   "url": "https://www.lelit.com/product/classic-handle-filterholders/"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Model",
+   "value": "Giotto Cronometro R",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Temperature control",
+   "value": "PID control (with shot timer)",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Boiler / pump",
+   "value": "1.80 L total boiler capacity; rotary pump, plumbed-in or internal reservoir",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Power",
+   "value": "220-240 V 50/60 Hz, 1350 W",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Dimensions",
+   "value": "335 W x 420 D x 400 H mm",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 68280,
+   "spec": "Weight",
+   "value": "27.8 kg",
+   "url": "https://rocket-espresso.com/products/domestic-models/giotto-cronometro-r"
+  },
+  {
+   "product_id": 64675,
+   "spec": "Dimensions (WxDxH)",
+   "value": "340 x 485 x 420 mm without portafilter; 340 x 590 x 420 mm with portafilter",
+   "url": "https://www.profitec-espresso.com/en/products/drive"
+  },
+  {
+   "product_id": 67156,
+   "spec": "Water tank",
+   "value": "Elegant glass water container; freely positionable (separate water tank), approx. 2 l",
+   "url": "https://www.ecm.de/en/products/puristika/"
+  },
+  {
+   "product_id": 67156,
+   "spec": "Weight",
+   "value": "13.4 kg",
+   "url": "https://www.ecm.de/en/products/puristika/"
+  },
+  {
+   "product_id": 67157,
+   "spec": "Pump (Mechanika MAX, predecessor of MAX II)",
+   "value": "\"Proven features such as the small footprint, powerful rotary pump ... remain unchanged\"",
+   "url": "https://www.ecm.de/en/mechanika-max-ii-temperature-control-made-easy/"
+  },
+  {
+   "product_id": 67157,
+   "spec": "Dimensions WxDxH (MECHANIKA MAX CM100008-00 manual)",
+   "value": "275 mm x 445 mm x 405 mm",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/05/ECM-Mechanika-MAX-2503-web.pdf"
+  },
+  {
+   "product_id": 67606,
+   "spec": "Body",
+   "value": "Sheet metal in AISI 304 stainless steel (no black finish listed)",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/new-cellini-classic"
+  },
+  {
+   "product_id": 67606,
+   "spec": "Pump",
+   "value": "Vibration pump, pump pressure 15 bar (15 bar is pump pressure, not steam pressure)",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/new-cellini-classic"
+  },
+  {
+   "product_id": 65188,
+   "spec": "Housing material (Gran Gaggia GG2016 Style/Deluxe/Prestige manual, technical data)",
+   "value": "Plastic / Steel",
+   "url": "https://www.gaggia.com/app/uploads/2023/07/4219-465-08621-MANUAL-GRAN.-GAG.-IT-EN-DE-FR-ES-PT-NL-SV-NO-FI-DA-GR-V3-Rev-00-1.pdf"
+  },
+  {
+   "product_id": 65191,
+   "spec": "Pressure (Handpresso Auto, E.S.E. pods / ground coffee, 12V)",
+   "value": "16 bar",
+   "url": "https://www.handpresso.com/en/blog/the-handpresso-car-espresso-maker-rated-in-the-10-best-car-accessories-n114"
+  },
+  {
+   "product_id": 65191,
+   "spec": "E.S.E. pods used with Handpresso Auto and Pump",
+   "value": "built to withstand 16 bar",
+   "url": "https://www.handpresso.com/en/blog/ese-pod-soft-pod-what-is-the-difference-n5"
+  },
+  {
+   "product_id": 65198,
+   "spec": "Pressure (Handpresso Auto Capsule 12V/24V)",
+   "value": "19 bar",
+   "url": "https://www.handpresso.com/en/handpresso-auto-capsule-353.html"
+  },
+  {
+   "product_id": 67152,
+   "spec": "Pump (Strega TOP)",
+   "value": "Vibration pump (net weight 30 kg \"vibration pump\" TOP); pump fills the lever group for pre-infusion, stops during delivery while two springs develop the pressure",
+   "url": "https://www.bezzera.it/en/machines/strega"
+  },
+  {
+   "product_id": 67158,
+   "spec": "Boiler",
+   "value": "single lead-free brass boiler (one boiler for espresso, hot water and steam); 100% designed and made in Italy",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "Boiler",
+   "value": "single lead-free brass boiler (one boiler for espresso, hot water and steam); 100% designed and made in Italy",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67283,
+   "spec": "MATRIX DE",
+   "value": "3 PID thermostats; volumetric coffee dispensing with 4 doses programmable from the keyboard, fifth button for continuous dispensing",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67672,
+   "spec": "CI200IM compatibility (IMS table, Profitec rows)",
+   "value": "x only for PROFITEC Pro 300 (Pro 400-800/Jump use E61 screens); GO not listed",
+   "url": "https://www.imsfiltri.com/assets/compatibility-shower.csv"
+  },
+  {
+   "product_id": 67672,
+   "spec": "CI200IM specs",
+   "value": "200 µm, external diameter 51.5 mm, central hole M5 (match the listing)",
+   "url": "https://imsfiltri.com/prodotto/ci200im/"
+  },
+  {
+   "product_id": 68295,
+   "spec": "Nanopresso standard box",
+   "value": "one single filter basket; double basket, NS capsules adapter and large water tank sold separately",
+   "url": "https://www.wacaco.com/products/nanopresso"
+  }
+ ]
+}
