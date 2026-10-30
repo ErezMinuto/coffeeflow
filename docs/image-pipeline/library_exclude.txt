@@ -17,3 +17,6 @@
 *     bag_scenes/jungle_java_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
 *     bag_scenes/velvet_star_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
 *     bag_scenes/yirgacheffe_window.jpg                # street, parked cars and passers-by behind the bag (owner, 2026-10-29)
+*     hands/IMG_5190.jpg                       # awkward crop: paper takeaway cups, forearm across the frame
+*     hands/IMG_5191.jpg                       # same scene as IMG_5190
+*     machine/espresso_bar_2026-10-16_06.jpg   # order tickets at the bottom of the frame

@@ -239,14 +239,19 @@ async function pickMatchingRealPhoto(
     const candidates = paths.filter(p => captionCache.has(p))
     if (candidates.length === 0) return []
     const list = candidates.map((p, i) => `[${i}] ${captionCache.get(p)}`).join('\n')
-    const out = await geminiJson([{ text: `A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:
+    // A photo published as photographed gets no edit, so it must already show
+    // the moment. A reference only anchors what the equipment looks like.
+    const published = root.startsWith('upload_images_ready')
+    const out = await geminiJson([{ text: `${published
+      ? 'A real photo will be PUBLISHED AS PHOTOGRAPHED, with nothing added or changed, to illustrate this scene brief:'
+      : 'A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:'}
 
 ${brief}
 
 Library photos:
 ${list}
 
-Which photos ALREADY show the brief's main subject and action from a usable viewpoint, so that only a crop, light and that small action need changing? IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
+Which photos ALREADY show the brief's main subject and action from a usable viewpoint${published ? '? Nothing will be added, so the action itself must be visible in the photo.' : ', so that only a crop, light and that small action need changing?'} IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
     const idx: number[] = Array.isArray(out?.matches)
       ? out.matches.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < candidates.length)
       : []
@@ -439,11 +444,13 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
       pick = (await pickMatchingRealPhoto(supabase, shot.folders, referenceSubject(shot, slots), readyRoot, exclude))[0]
       if (!pick) slots.moment = shot.moments[0]
     } else {
-      pick = (await pickMatchingRealPhoto(supabase, shot.folders, brief, readyRoot, exclude))[0]
-        // Every photo in the shot's folders is on-topic by construction.
-        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, exclude))[0]
-        // All used recently: allow a repeat rather than fail.
-        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot))[0]
+      // A photo that shows this moment; if those were all used recently, a
+      // repeat of one beats a photo of something else. Only then any shot-
+      // folder photo, and never an excluded one.
+      const subject = referenceSubject(shot, slots)
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, exclude))[0]
+        ?? (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, PHOTO_EXCLUDE))[0]
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, PHOTO_EXCLUDE))[0]
     }
     if (!pick && shot.source !== 'generated') {
       return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
