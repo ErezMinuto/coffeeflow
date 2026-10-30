@@ -98,7 +98,7 @@
     body.appendChild(el('h3', 'mq-name', c.name));
     if (c.why) body.appendChild(el('p', 'mq-why', c.why));
     if (c.price) body.appendChild(el('p', 'mq-price', c.price));
-    var a = el('a', 'mq-button', c.cart ? 'הוספה לסל' : 'לבחירת גודל וטחינה');
+    var a = el('a', 'mq-button', c.cart ? 'הוספה לסל' : 'לבחירת טחינה');
     a.href = c.cart || c.url;
     body.appendChild(a);
     card.appendChild(body);

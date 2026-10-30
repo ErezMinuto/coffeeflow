@@ -69,7 +69,7 @@ function minuto_quiz_item(string $key, WC_Product $p, string $name, string $why,
         'url'   => $p->get_permalink(),
         'image' => $image ?: '',
         'price' => wp_strip_all_tags(wc_price((float) $p->get_price())),
-        // Simple products go straight to the cart; others need size and grind.
+        // Simple products go straight to the cart; others need a grind choice.
         'cart'  => $p->is_type('simple') ? $p->add_to_cart_url() : '',
     ];
 }
