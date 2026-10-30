@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Coffee Quiz
  * Description: "איזה קפה מתאים לי?" quiz. Place [minuto_coffee_quiz] on a page.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -14,9 +14,12 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_QUIZ_VERSION', '1.0.2');
+define('MINUTO_QUIZ_VERSION', '1.0.3');
 define('MINUTO_QUIZ_CACHE_KEY', 'minuto_quiz_catalog');
 define('MINUTO_QUIZ_ROAST_ATTRIBUTE_ID', 20);   // רמת קלייה
+define('MINUTO_QUIZ_MACHINES_CATEGORY_ID', 394);  // מכונות קפה, including its subcategories
+define('MINUTO_QUIZ_GRINDERS_CATEGORY_ID', 387);  // מטחנות קפה: never gets the link
+define('MINUTO_QUIZ_PAGE_PATH', '/coffee-quiz/');
 define('MINUTO_QUIZ_LIGHT_TERM', 'בהירה');
 
 /** Quiz key → WooCommerce product, display name, one line on why. */
@@ -148,3 +151,25 @@ add_shortcode('minuto_coffee_quiz', function () {
         . ' data-catalog="' . esc_url(rest_url('minuto-quiz/v1/catalog')) . '" data-shop="' . $shop . '">'
         . '<noscript><a href="' . $shop . '">לכל הקפה בחנות</a></noscript></div>';
 });
+
+/** Small link on machine pages. Hooked below the add-to-cart form. */
+function minuto_quiz_machine_link(): void {
+    global $product;
+    if (!$product instanceof WC_Product) return;
+    $terms = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'ids']);
+    if (is_wp_error($terms) || !$terms) return;
+    $tree = function (int $root): array {
+        $children = get_term_children($root, 'product_cat');
+        return is_wp_error($children) ? [$root] : array_merge([$root], array_map('intval', $children));
+    };
+    $terms = array_map('intval', $terms);
+    if (!array_intersect($terms, $tree(MINUTO_QUIZ_MACHINES_CATEGORY_ID))) return;
+    if (array_intersect($terms, $tree(MINUTO_QUIZ_GRINDERS_CATEGORY_ID))) return;
+
+    printf(
+        '<p class="mq-machine-link" style="margin:12px 0 0;font-size:14px;"><a href="%s" style="color:#3C4A2C;text-decoration:underline;">%s</a></p>',
+        esc_url(home_url(MINUTO_QUIZ_PAGE_PATH)),
+        esc_html('איזה קפה מתאים למכונה הזו?')
+    );
+}
+add_action('woocommerce_after_add_to_cart_form', 'minuto_quiz_machine_link');
