@@ -10,9 +10,9 @@ def cat(pid):
     for c in ORDER:
         if c in cs: return c
     return 'אחר'
-rows = list(csv.DictReader(open(f'{D}/findings.csv', encoding='utf-8-sig')))
+rows = list(csv.DictReader(open(f'{D}/findings_status.csv', encoding='utf-8-sig')))
 data = [[int(r['product_id']), r['product_name'], r['permalink'], r['field'], r['issue_type'], r['severity'][0],
-         r['current_text'], r['problem'], r['suggested_fix'], r['confidence'][0], cat(int(r['product_id']))] for r in rows]
+         r['current_text'], r['problem'], r['suggested_fix'], r['confidence'][0], cat(int(r['product_id'])), {'fixed':'f','partly fixed':'p'}.get(r['status'],'t'), r['status_note']] for r in rows]
 md = open(f'{D}/summary.md').read()
 top = md.split('## Top 10 fixes', 1)[1].split('## Came out clean', 1)[0].strip()
 def inline(t):

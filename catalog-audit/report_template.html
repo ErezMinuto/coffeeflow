@@ -72,6 +72,9 @@ button.reset { font: inherit; font-size: .85rem; background: none; border: 0; co
 .card.h { --sev: var(--high) } .card.m { --sev: var(--med) } .card.l { --sev: var(--low) }
 .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline }
 .pill { font: 600 .7rem var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px }
+.pill.done { color: var(--fix-ink); background: var(--fix-bg) }
+.note { font-size: .82rem; color: var(--muted) }
+.card.done { opacity: .8 }
 .pill.h { color: var(--high); background: var(--high-bg) } .pill.m { color: var(--med); background: var(--med-bg) } .pill.l { color: var(--low); background: var(--low-bg) }
 .name { font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: anywhere }
 .name:hover { color: var(--accent); text-decoration: underline }
@@ -89,16 +92,16 @@ footer { color: var(--muted); font-size: .82rem; margin-top: 28px }
 <div class="wrap">
   <div class="eyebrow">minuto.co.il · WooCommerce · read-only</div>
   <h1>Catalog audit</h1>
-  <p class="sub">{{TOTAL}} findings in {{PRODUCTS}} products, out of 1,064 visible products checked. {{CLEAN}} products came out clean. Hidden products were not checked. Nothing in the store was changed.</p>
+  <p class="sub">{{TOTAL}} findings in {{PRODUCTS}} products, out of 1,064 visible products checked. {{CLEAN}} products came out clean. Hidden products were not checked. The clear fixes are now applied in the store; the rest are left for later and shown by default.</p>
 
   <div class="stats" id="stats">
-    <button class="stat h" data-sev="h" aria-pressed="false"><b id="nh">0</b><span>High: wrong info customers rely on</span></button>
-    <button class="stat m" data-sev="m" aria-pressed="false"><b id="nm">0</b><span>Medium: inconsistent</span></button>
-    <button class="stat l" data-sev="l" aria-pressed="false"><b id="nl">0</b><span>Low: cosmetic</span></button>
+    <button class="stat h" data-sev="h" aria-pressed="false"><b id="nh">0</b><span>High left: wrong info customers rely on</span></button>
+    <button class="stat m" data-sev="m" aria-pressed="false"><b id="nm">0</b><span>Medium left: inconsistent</span></button>
+    <button class="stat l" data-sev="l" aria-pressed="false"><b id="nl">0</b><span>Low left: cosmetic</span></button>
   </div>
 
   <details class="topbox" id="topbox">
-    <summary>Top 10 fixes</summary>
+    <summary>Top 10 fixes (from the audit)</summary>
     <!--TOP-->
   </details>
 
@@ -110,6 +113,7 @@ footer { color: var(--muted); font-size: .82rem; margin-top: 28px }
       <select id="fsev" aria-label="Severity"><option value="">All severities</option><option value="h">High</option><option value="m">Medium</option><option value="l">Low</option></select>
       <select id="fcat" aria-label="Category"><option value="">All categories</option></select>
       <select id="ftype" aria-label="Issue type"><option value="">All issue types</option></select>
+      <select id="fst" aria-label="Status"><option value="t">Left for later</option><option value="f">Fixed</option><option value="">Fixed and left</option></select>
       <select id="fconf" aria-label="Confidence"><option value="">Any confidence</option><option value="c">Certain</option><option value="l">Likely</option><option value="v">Needs checking</option></select>
       <button class="reset" id="reset">Clear filters</button>
       <span class="count" id="count"></span>
@@ -122,7 +126,7 @@ footer { color: var(--muted); font-size: .82rem; margin-top: 28px }
 
 <script>
 const DATA = /*DATA*/[];
-const F = {id:0,name:1,url:2,field:3,type:4,sev:5,cur:6,prob:7,fix:8,conf:9,cat:10};
+const F = {id:0,name:1,url:2,field:3,type:4,sev:5,cur:6,prob:7,fix:8,conf:9,cat:10,st:11,note:12};
 const TYPE_LABEL = {copy_paste:"Copied from another product", internal_mismatch:"Contradicts itself", product_facts:"Implausible spec", coffee_facts:"Coffee facts",
   spec_commerce:"Price / pack / commerce", missing_data:"Missing data", hebrew_text:"Hebrew text", blend_vs_single_origin:"Blend vs single origin"};
 const SEV = {h:"High", m:"Medium", l:"Low"}, CONF = {c:"certain", l:"likely", v:"needs checking"};
@@ -130,7 +134,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const count = (k, i) => DATA.reduce((m, r) => (m[r[i]] = (m[r[i]] || 0) + 1, m), {});
 
-["h","m","l"].forEach(s => $("n"+s).textContent = DATA.filter(r => r[F.sev] === s).length);
+["h","m","l"].forEach(s => $("n"+s).textContent = DATA.filter(r => r[F.sev] === s && r[F.st] !== "f").length);
 const cats = count(0, F.cat), types = count(0, F.type);
 Object.entries(cats).sort((a,b) => b[1]-a[1]).forEach(([k,n]) => $("fcat").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${n})</option>`));
 Object.entries(types).sort((a,b) => b[1]-a[1]).forEach(([k,n]) => $("ftype").insertAdjacentHTML("beforeend", `<option value="${k}">${TYPE_LABEL[k]||k} (${n})</option>`));
@@ -138,34 +142,35 @@ Object.entries(types).sort((a,b) => b[1]-a[1]).forEach(([k,n]) => $("ftype").ins
 let shown = 60, rows = [];
 function card(r) {
   return `<article class="card ${r[F.sev]}">
-    <div class="head"><span class="pill ${r[F.sev]}">${SEV[r[F.sev]]}</span>
+    <div class="head"><span class="pill ${r[F.sev]}">${SEV[r[F.sev]]}</span>${r[F.st]==="t" ? "" : `<span class="pill done">${r[F.st]==="f" ? "Fixed" : "Partly fixed"}</span>`}
       <a class="name" href="${esc(r[F.url])}" target="_blank" rel="noopener" dir="auto">${esc(r[F.name])}</a></div>
     <div class="meta"><span>#${r[F.id]}</span><span>${esc(r[F.cat])}</span><span>${TYPE_LABEL[r[F.type]]||r[F.type]}</span><span>field: ${esc(r[F.field])}</span><span>${CONF[r[F.conf]]}</span></div>
     ${r[F.cur] ? `<div class="cur">${esc(r[F.cur])}</div>` : ""}
     <div class="prob">${esc(r[F.prob])}</div>
     <div class="fix" dir="rtl">${esc(r[F.fix])}</div>
+    ${r[F.st]==="f" ? "" : `<div class="note">Why it's left: ${esc(r[F.note])}</div>`}
   </article>`;
 }
 function render() {
-  const q = $("q").value.trim().toLowerCase(), s = $("fsev").value, c = $("fcat").value, t = $("ftype").value, cf = $("fconf").value;
-  rows = DATA.filter(r => (!s || r[F.sev] === s) && (!c || r[F.cat] === c) && (!t || r[F.type] === t) && (!cf || r[F.conf] === cf) &&
+  const q = $("q").value.trim().toLowerCase(), s = $("fsev").value, c = $("fcat").value, t = $("ftype").value, cf = $("fconf").value, st = $("fst").value;
+  rows = DATA.filter(r => (!s || r[F.sev] === s) && (!c || r[F.cat] === c) && (!t || r[F.type] === t) && (!cf || r[F.conf] === cf) && (!st || r[F.st] === st || (st === "t" && r[F.st] === "p")) &&
     (!q || String(r[F.id]) === q || [r[F.name], r[F.cur], r[F.prob], r[F.fix], r[F.field]].some(x => x.toLowerCase().includes(q))));
   const list = $("list");
   list.innerHTML = rows.length ? rows.slice(0, shown).map(card).join("") : `<div class="empty">No findings match these filters.</div>`;
   if (rows.length > shown) list.insertAdjacentHTML("beforeend", `<button class="more" id="more">Show ${Math.min(60, rows.length - shown)} more of ${rows.length - shown} remaining</button>`);
   $("count").textContent = `${rows.length.toLocaleString()} shown`;
   document.querySelectorAll(".stat").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sev === s)));
-  try { localStorage.setItem("audit-filters", JSON.stringify({q:$("q").value, s, c, t, cf})); } catch (e) {}
+  try { localStorage.setItem("audit-filters-v2", JSON.stringify({q:$("q").value, s, c, t, cf, st})); } catch (e) {}
 }
 document.addEventListener("click", e => {
   if (e.target.id === "more") { shown += 60; render(); }
   const st = e.target.closest(".stat");
   if (st) { $("fsev").value = $("fsev").value === st.dataset.sev ? "" : st.dataset.sev; shown = 60; render(); $("list").scrollIntoView({behavior:"smooth", block:"start"}); }
 });
-["q","fsev","fcat","ftype","fconf"].forEach(id => $(id).addEventListener(id === "q" ? "input" : "change", () => { shown = 60; render(); }));
-$("reset").addEventListener("click", () => { ["q","fsev","fcat","ftype","fconf"].forEach(id => $(id).value = ""); shown = 60; render(); });
-try { const f = JSON.parse(localStorage.getItem("audit-filters") || "null");
-  if (f) { $("q").value = f.q || ""; $("fsev").value = f.s || ""; $("fcat").value = f.c || ""; $("ftype").value = f.t || ""; $("fconf").value = f.cf || ""; } } catch (e) {}
+["q","fsev","fcat","ftype","fconf","fst"].forEach(id => $(id).addEventListener(id === "q" ? "input" : "change", () => { shown = 60; render(); }));
+$("reset").addEventListener("click", () => { ["q","fsev","fcat","ftype","fconf"].forEach(id => $(id).value = ""); $("fst").value = "t"; shown = 60; render(); });
+try { const f = JSON.parse(localStorage.getItem("audit-filters-v2") || "null");
+  if (f) { $("q").value = f.q || ""; $("fsev").value = f.s || ""; $("fcat").value = f.c || ""; $("ftype").value = f.t || ""; $("fconf").value = f.cf || ""; if (f.st !== undefined) $("fst").value = f.st; } } catch (e) {}
 if (!$("fsev").value && !$("q").value && !$("fcat").value && !$("ftype").value && !$("fconf").value) $("fsev").value = "h";
 render();
 </script>
