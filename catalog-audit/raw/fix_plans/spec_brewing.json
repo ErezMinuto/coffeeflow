@@ -1,0 +1,401 @@
+{
+ "edits": [
+  {
+   "product_id": 65232,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "new": "רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ",
+   "finding": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "source": "https://www.ranciliogroup.com/rancilio/silvia/silvia/"
+  },
+  {
+   "product_id": 78749,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "new": "רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ",
+   "finding": "עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",
+   "source": "https://www.ranciliogroup.com/rancilio/silvia/silvia/"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומשקל כיול של 0.1 גרם.",
+   "new": "ומשקולת כיול של 100 גרם.",
+   "finding": "משקל כיול של 0.1 גרם",
+   "source": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 81077,
+   "variation_id": null,
+   "target": "description",
+   "old": "ומשקל כיול של 0.1 גרם.",
+   "new": "ומשקולת כיול של 100 גרם.",
+   "finding": "משקל כיול של 0.1 גרם",
+   "source": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 64745,
+   "variation_id": null,
+   "target": "description",
+   "old": "אנודייז (כסף שחור)",
+   "new": "אנודייז",
+   "finding": "משטח: ציפוי אלומיניום אנודייז (כסף שחור)",
+   "source": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 65100,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>צבע חום ירוק</p>",
+   "new": "<p>צבע ירוק מעושן (Smokey Green)</p>",
+   "finding": "צבע חום ירוק",
+   "source": "https://global.hario.com/product/tea/coldbrew/FIB.html"
+  },
+  {
+   "product_id": 65100,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "צבע חום ירוק",
+   "new": "צבע ירוק מעושן (Smokey Green)",
+   "finding": "צבע חום ירוק",
+   "source": "https://global.hario.com/product/tea/coldbrew/FIB.html"
+  },
+  {
+   "product_id": 65162,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל אחסון לקפה 300 מל</h3>",
+   "new": "מיכל אחסון לקפה 300 גרם</h3>",
+   "finding": "מיכל אחסון לקפה 300 מל",
+   "source": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 65162,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכירו את מיכל פולי הקפה HARIO 300 מ\"ל,",
+   "new": "הכירו את מיכל פולי הקפה HARIO 300 גרם,",
+   "finding": "מיכל אחסון לקפה 300 מל",
+   "source": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 65162,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולי הקפה HARIO 300 מ\"ל הוא לא רק",
+   "new": "מיכל פולי הקפה HARIO 300 גרם הוא לא רק",
+   "finding": "מיכל אחסון לקפה 300 מל",
+   "source": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 65162,
+   "variation_id": null,
+   "target": "description",
+   "old": "למיכל קיבולת של 300 מ\"ל,",
+   "new": "למיכל קיבולת של 1,000 מ\"ל (כ-300 גרם קפה טחון),",
+   "finding": "מיכל אחסון לקפה 300 מל",
+   "source": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 65162,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולי הקפה HARIO 300 מ\"ל הוא אביזר",
+   "new": "מיכל פולי הקפה HARIO 300 גרם הוא אביזר",
+   "finding": "מיכל אחסון לקפה 300 מל",
+   "source": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 80246,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "450 מ&quot;ל / 700 מ&quot;ל",
+   "new": "700 מ&quot;ל",
+   "finding": "נפח: 450 מ\"ל / 700 מ\"ל",
+   "source": "https://global.hario.com/product/tea/teapot/FNC.html"
+  },
+  {
+   "product_id": 65156,
+   "variation_id": null,
+   "target": "description",
+   "old": "כל פילטר מסנן כוס אחת בכל פעם",
+   "new": "מתאים לדריפר V60 בגודל 02 (1-4 כוסות)",
+   "finding": "כל פילטר מסנן כוס אחת בכל פעם",
+   "source": "https://global.hario.com/product/coffee/paperfilter/VCF.html"
+  },
+  {
+   "product_id": 65058,
+   "variation_id": null,
+   "target": "description",
+   "old": "הוקמה בשנת 1933",
+   "new": "הוקמה בשנת 1919",
+   "finding": "הוקמה בשנת 1933",
+   "source": "https://www.bialetti.com/us_en/our-history"
+  },
+  {
+   "product_id": 65211,
+   "variation_id": null,
+   "target": "description",
+   "old": "למזיגת עד כ-4 כוסות",
+   "new": "קיבולת מעשית 360 מ\"ל",
+   "finding": "למזיגת עד כ-4 כוסות",
+   "source": "https://global.hario.com/product/tea/teapot/CHEN.html"
+  },
+  {
+   "product_id": 67200,
+   "variation_id": null,
+   "target": "description",
+   "old": "פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)",
+   "new": "פילטר לבד לשימוש חוזר X2 (מונח במיכל החליטה, לסינון כפול יחד עם נייר הפילטר)",
+   "finding": "פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)",
+   "source": "https://toddycafe.com/product/toddy-cold-brew-system"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 65152,
+   "finding": "מיוצר על ידי המותג האיטלקי Forever",
+   "field": "description",
+   "reason": "no official source: Jinmeilai has no official product page; the real manufacturer/brand of this plunger must be confirmed before replacing the Forever claim"
+  },
+  {
+   "product_id": 81503,
+   "finding": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+   "field": "description",
+   "reason": "no official source: no Barista Swag page found for a \"Vortex Dynamic\" (only Vortex High Velocity); what distinguishes it, or whether to merge the listings, needs a decision"
+  },
+  {
+   "product_id": 64980,
+   "finding": "כמות: 12 יח, 3 יח",
+   "field": "attributes",
+   "reason": "store-wide attribute (quantity attribute options); needs data or a decision"
+  },
+  {
+   "product_id": 64999,
+   "finding": "צבע לבן",
+   "field": "short_description",
+   "reason": "no official source for the Pascale machine colour; check the physical product (Silver vs white)"
+  },
+  {
+   "product_id": 65388,
+   "finding": "קפסולות, פולי קפה,  ניידת, ניקוי קל, 12V!",
+   "field": "short_description",
+   "reason": "no official source: the Emilio car espresso maker has no manufacturer page; the page itself says ground coffee, but the value could not be confirmed officially"
+  },
+  {
+   "product_id": 81452,
+   "finding": "כמות: 12 יח, 3 יח",
+   "field": "attributes",
+   "reason": "store-wide attribute (quantity attribute options); needs data or a decision"
+  },
+  {
+   "product_id": 82888,
+   "finding": "50 גר אבקת אובה טהורה פרימיום",
+   "field": "name",
+   "reason": "pack size / permalink is a stock and catalogue decision; no official ALATA spec page found"
+  },
+  {
+   "product_id": 65225,
+   "finding": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+   "field": "name",
+   "reason": "official page ambiguous for this listing: the ceramic V60 01 is VDCR-01-W (white) or VDCR-01-R (red) on https://global.hario.com/product/coffee/dripper/VDC.html; the colour stocked is unknown, so the exact code cannot be chosen"
+  },
+  {
+   "product_id": 82864,
+   "finding": "מתאימה לדגמי RO-101S, RO-100S ו-RO-102S",
+   "field": "short_description",
+   "reason": "official sources ambiguous for this listing: the title mixes \"Pro 100\" and \"RO100S\", which are two different Aquaphor membranes. The RO-100S membrane suits RO-102S/RO-31/RO-202S (https://aquaphor.com/en-lv/filtri-un-membranas-osmos-sistemam/ro-100s; the Israeli page lists RO-102S, https://aquaphor.com/en-il/cartridges/ro-100s), while Pro 100 is a separate membrane (https://aquaphor.com/en-lv/filtri-un-membranas-osmos-sistemam/pro-100). Confirm which membrane is sold before rewriting the compatibility list"
+  },
+  {
+   "product_id": 65123,
+   "finding": "AIRSCAPE כ- 1 ק״ג קפה צבע שחור | 229",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65178,
+   "finding": "167 (צבע מוקה) vs 174 (חום שוקולד, 65149)",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65213,
+   "finding": "Hario V60 Server 450 ml ... 90 (360 ml sibling 154)",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 81073,
+   "finding": "600 מל ... 159 (350 מל גם 159)",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 64692,
+   "finding": "65120: 210 ₪ · 78557: 215 ₪ · 65122: 215 ₪ · 64694: 215 ₪ · 64693: 215 ₪ · 65436: 219 ₪ · 64692: 219 ₪",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 64991,
+   "finding": "מקינטה ביאלטי בריקה 4 כוסות + קפה | 290",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65101,
+   "finding": "65123: 229 ₪ · 65121: 259 ₪ · 65101: 259 ₪",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65120,
+   "finding": "AIRSCAPE כ- 500 גרם קפה צבע שחור | 210",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65121,
+   "finding": "65123: 229 ₪ · 65121: 259 ₪ · 65101: 259 ₪",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 65436,
+   "finding": "65120: 210 ₪ · 78557: 215 ₪ · 65122: 215 ₪ · 64694: 215 ₪ · 64693: 215 ₪ · 65436: 219 ₪ · 64692: 219 ₪",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 82537,
+   "finding": "995 (white/generic variants 950)",
+   "field": "price",
+   "reason": "price: needs a price/business decision"
+  },
+  {
+   "product_id": 77389,
+   "finding": "בנפח של 500 מ\"ל – אידיאלי לשתיים-שלוש מנות קפה",
+   "field": "description",
+   "reason": "no official source: unbranded 500 ml server; the serving-count phrase cannot be checked against a manufacturer page"
+  },
+  {
+   "product_id": 64743,
+   "finding": "צבע: לבן, שחור",
+   "field": "attributes",
+   "reason": "store-wide attribute (colour attribute options on the product); not a text field covered by this plan"
+  },
+  {
+   "product_id": 64745,
+   "finding": "צבע: לבן, שחור",
+   "field": "attributes",
+   "reason": "store-wide attribute (colour attribute options on the product); not a text field covered by this plan"
+  },
+  {
+   "product_id": 81077,
+   "finding": "צבע: לבן, שחור",
+   "field": "attributes",
+   "reason": "store-wide attribute (colour attribute options on the product); not a text field covered by this plan"
+  },
+  {
+   "product_id": 81089,
+   "finding": "צבע: לבן, שחור",
+   "field": "attributes",
+   "reason": "store-wide attribute (colour attribute options on the product); not a text field covered by this plan"
+  },
+  {
+   "product_id": 67651,
+   "finding": "משקלים לקפה Acia | מותג: Subminimal",
+   "field": "categories",
+   "reason": "category assignment: needs a decision (not a text field)"
+  },
+  {
+   "product_id": 64911,
+   "finding": "משקל סופר רגיש, עם דיוק של עד 1 גר׳",
+   "field": "description",
+   "reason": "no official source: unbranded scale; resolution (0.1 g vs 1 g) must be checked on the product/packaging"
+  },
+  {
+   "product_id": 81083,
+   "finding": "SKU: 4977642027104",
+   "field": "price",
+   "reason": "SKU/barcode: must be checked on the packaging; not a text field covered by this plan"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 65232,
+   "spec": "dimensions (W/H/D)",
+   "value": "Width 235 mm, Height 340 mm, Depth 290 mm",
+   "url": "https://www.ranciliogroup.com/rancilio/silvia/silvia/"
+  },
+  {
+   "product_id": 78749,
+   "spec": "dimensions (W/H/D)",
+   "value": "Width 235 mm, Height 340 mm, Depth 290 mm",
+   "url": "https://www.ranciliogroup.com/rancilio/silvia/silvia/"
+  },
+  {
+   "product_id": 64745,
+   "spec": "calibration weight in box",
+   "value": "Acaia Calibration Weight 100 g x 1",
+   "url": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 81077,
+   "spec": "calibration weight in box",
+   "value": "Acaia Calibration Weight 100 g x 1",
+   "url": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 64745,
+   "spec": "colours / finish",
+   "value": "Black / Silver / Cool White / Beige White / Space Gray; anodized coating; Material: Aluminum, Acrylic (no \"silver black\" for white)",
+   "url": "https://acaia.co/products/lunar_2021"
+  },
+  {
+   "product_id": 65100,
+   "spec": "colour (FIB-30, 300 mL)",
+   "value": "FIB-30-SG Smokey Green / FIB-30-SPR Smokey Pink / FIB-30-W White; practical capacity 300 mL",
+   "url": "https://global.hario.com/product/tea/coldbrew/FIB.html"
+  },
+  {
+   "product_id": 65162,
+   "spec": "capacity (Coffee Canister L, MCNR-300-B)",
+   "value": "Full capacity 1,000mL / Coffee grounds 300g",
+   "url": "https://global.hario.com/product/coffee/accessories/MCN.html"
+  },
+  {
+   "product_id": 80246,
+   "spec": "capacity (FNC-70-T)",
+   "value": "Practical capacity 700mL (FNC-45-T is the separate 450 mL model)",
+   "url": "https://global.hario.com/product/tea/teapot/FNC.html"
+  },
+  {
+   "product_id": 65156,
+   "spec": "capacity (VCF-02-100W)",
+   "value": "V60 Paper Filter 02 W 100 sheets, 1-4 cups",
+   "url": "https://global.hario.com/product/coffee/paperfilter/VCF.html"
+  },
+  {
+   "product_id": 65058,
+   "spec": "company founded",
+   "value": "1919 - The birth of Bialetti (Crusinallo); Moka Express 1933",
+   "url": "https://www.bialetti.com/us_en/our-history"
+  },
+  {
+   "product_id": 65211,
+   "spec": "capacity (CHEN-36T)",
+   "value": "Practical capacity 360mL (no cup count given)",
+   "url": "https://global.hario.com/product/tea/teapot/CHEN.html"
+  },
+  {
+   "product_id": 67200,
+   "spec": "what's included / felt filter use",
+   "value": "Reusable felt filters (2), Paper filter bags (3); felt filter is used in the brew container together with the paper filter for double filtration",
+   "url": "https://toddycafe.com/product/toddy-cold-brew-system"
+  }
+ ]
+}
