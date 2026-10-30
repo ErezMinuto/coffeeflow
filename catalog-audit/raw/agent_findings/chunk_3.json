@@ -1,0 +1,1272 @@
+[
+ {
+  "product_id": 64857,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "מקור חשמל: 110-120v - 60Hz",
+  "problem": "Electrical spec is the US 110-120V/60Hz version (RPM also quoted at 60Hz); Israeli units run on 220-240V/50Hz.",
+  "suggested_fix": "לאמת מול היבואן ולתקן ל: מקור חשמל: 220-240V - 50Hz, ולעדכן את הסל\"ד בהתאם",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67243,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Colour attribute set (red/bronze/stainless) appears copied across unrelated grinders (Molino, Emilio, Calibra, WPM) and is not mentioned in the copy.",
+  "suggested_fix": "לאמת את הצבעים הזמינים בפועל ולהסיר צבעים שאינם קיימים",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67243,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מ-1 (עדין מאוד) ל-17 (גס מאוד, תלוי בשיטת החליטה.",
+  "problem": "Unclosed parenthesis.",
+  "suggested_fix": "מ-1 (עדין מאוד) ל-17 (גס מאוד), בהתאם לשיטת החליטה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67653,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "מותג: DF64",
+  "problem": "Brand attribute says DF64 on the DF54 product.",
+  "suggested_fix": "מותג: DF54 (או DF)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67653,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Colour attribute offers white and black, but the description says black only.",
+  "suggested_fix": "צבע: שחור בלבד (או לעדכן את התיאור אם קיים גם לבן)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67286,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "אחריות: 24 חודשים ע\"י קרמה פלוס",
+  "problem": "Warranty/importer differs from sibling DF54 (12 months by קדמה); 'קרמה פלוס' may be a typo for קדמה.",
+  "suggested_fix": "לאמת את תקופת האחריות ושם היבואן מול DF54 ולאחד",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 81471,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת קפה (VARIA VS3 (2ND GENERATION",
+  "problem": "Broken parentheses in heading, 'Griinder' typo, and machine-translated 'תנאי שמירה אידיאליים של אפס' (zero retention).",
+  "suggested_fix": "מטחנת קפה VARIA VS3 (2ND GENERATION); Grinder; 'מבטיחה שאריות קפה אפסיות'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81467,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת קפה (VARIA VS3 (2ND GENERATION",
+  "problem": "Broken parentheses in heading, 'Griinder' typo, and machine-translated 'תנאי שמירה אידיאליים של אפס' (zero retention).",
+  "suggested_fix": "מטחנת קפה VARIA VS3 (2ND GENERATION); Grinder; 'מבטיחה שאריות קפה אפסיות'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64758,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת קפה (VARIA VS3 (2ND GENERATION",
+  "problem": "Broken parentheses in heading, 'Griinder' typo, and machine-translated 'תנאי שמירה אידיאליים של אפס' (zero retention).",
+  "suggested_fix": "מטחנת קפה VARIA VS3 (2ND GENERATION); Grinder; 'מבטיחה שאריות קפה אפסיות'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65177,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מידות: 36x15x26",
+  "problem": "Dimensions without unit (and 'OBELJunior' missing space in heading).",
+  "suggested_fix": "מידות: 36x15x26 ס\"מ; מטחנה מקצועית OBEL Junior",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67151,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "בקרו באתר מינוטו קפה: URL מינוטו קפה",
+  "problem": "Placeholder 'URL' left in the published short description.",
+  "suggested_fix": "להסיר את המשפט או: בקרו באתר מינוטו קפה: www.minuto.co.il",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67151,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Same copied colour attribute set as Melitta grinders; colours not mentioned in copy.",
+  "suggested_fix": "לאמת את הצבעים הזמינים ולעדכן",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64779,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Nitro Blade Cooper",
+  "problem": "'Cooper' should be 'Copper' (the copy describes copper colour).",
+  "suggested_fix": "מטחנת קפה ידנית Comandante C40 MK4 Nitro Blade Copper",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64779,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "1199.0000",
+  "problem": "Copper colour variant is cheaper than the black C40 MK4 (1249); special colours are normally priced at or above black.",
+  "suggested_fix": "לאמת את המחיר מול המחירון של היבואן",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64779,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing space between words (also 'בחום גבוהה' where present).",
+  "suggested_fix": "הבחירה בחומר המתכתי ללהבים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64938,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing space between words (also 'בחום גבוהה' where present).",
+  "suggested_fix": "הבחירה בחומר המתכתי ללהבים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64937,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing space between words (also 'בחום גבוהה' where present).",
+  "suggested_fix": "הבחירה בחומר המתכתי ללהבים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64936,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing space between words (also 'בחום גבוהה' where present).",
+  "suggested_fix": "הבחירה בחומר המתכתי ללהבים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64937,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+  "problem": "Premium Wood model, but the text describes the powder-coated steel body of the standard C40.",
+  "suggested_fix": "להחליף בתיאור ציפוי העץ של דגם Premium Wood, לאמת מול היצרן",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64936,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+  "problem": "Premium Wood model, but the text describes the powder-coated steel body of the standard C40.",
+  "suggested_fix": "להחליף בתיאור ציפוי העץ של דגם Premium Wood, לאמת מול היצרן",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64937,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "1390.0000",
+  "problem": "Premium Wood Liquid Amber is 1390 while the sibling Premium Wood Virginia Walnut is 1299; same model, different finish.",
+  "suggested_fix": "לאמת שהפרש המחיר בין גימורי העץ מכוון",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 78396,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "﻿ מטחנת קפה ידנית מדויקת וקומפקטית מבית Wacaco. ﻿",
+  "problem": "Invisible BOM/zero-width characters left in the text.",
+  "suggested_fix": "להסיר את התווים הנסתרים בתחילת ובסוף המשפט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64942,
+  "field": "categories",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מקינטה ביאלטי - Bialetti",
+  "problem": "Oak8 hand grinder is categorised under Bialetti moka pots.",
+  "suggested_fix": "להסיר את הקטגוריה 'מקינטה ביאלטי - Bialetti'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64942,
+  "field": "sku",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "SKU: 123456",
+  "problem": "Placeholder SKU value.",
+  "suggested_fix": "להזין מק\"ט/ברקוד אמיתי",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65459,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כיוון הטחינה עובד בצורה חלקה בין.",
+  "problem": "Cut-off sentences and heavy machine-translation ('בישול' for brewing, 'בסגסוגת כוללת').",
+  "suggested_fix": "לנסח מחדש: כיוון הטחינה עובד בצורה חלקה בין כל הדרגות; להחליף 'בישול' ב'חליטה'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68281,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Copied colour attribute set; Calibra colours not stated in copy.",
+  "suggested_fix": "לאמת את הצבעים הזמינים ולעדכן",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65064,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מטחנת קפה מקצועית Compak I3 PRO",
+  "problem": "Title says Compak I3 PRO but the permalink is compak-e5-od and specs (58 mm burrs, 1370 rpm, on-demand) match the Compak E5 OD.",
+  "suggested_fix": "לאמת את הדגם בפועל ולאחד שם, כתובת ומפרט",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65064,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מידות עXרXג : 950x165x360",
+  "problem": "950 mm depth is implausible for this grinder (likely a typo); also 'מנה כפולהן' typo.",
+  "suggested_fix": "לאמת מידות מול היצרן (כנראה 250x165x360 מ\"מ); לתקן 'מנה כפולה'",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65055,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "הספק: 110-120 וולט, 60 הרץ, 15 אמפר, 600 וואט",
+  "problem": "US electrical spec on a product sold in Israel (220-240V/50Hz).",
+  "suggested_fix": "לאמת מול היבואן ולתקן ל-220-240 וולט, 50 הרץ",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65055,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "למשתמש הביתי ההממוצע(לא באמת)",
+  "problem": "Typo and odd joke left in text (also 'בחיר', 'סכינןם').",
+  "suggested_fix": "המיועדת למשתמש הביתי המקצועי; 'בחירה'; 'סכינים'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64987,
+  "field": "name",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "LELIT William - PL043",
+  "problem": "PL043 is Lelit's Fred grinder (38 mm conical); 'William' is the PL72 name, apparently copied from the sibling.",
+  "suggested_fix": "מטחנת קפה Lelit Fred PL043 (לאמת מול היבואן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65052,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מיכל פוליח קפה 500 גרם",
+  "problem": "Typo.",
+  "suggested_fix": "מיכל פולי קפה 500 גרם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81107,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תגובה חפצית",
+  "problem": "Machine-translation errors ('תגובה חפצית' = haptic, 'ספירה של מהפכות' = revolutions); bag described both as cloth and hard case.",
+  "suggested_fix": "משוב רטט (Haptic); ספירת סיבובים; לאחד את תיאור התיק",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76368,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תגובה חפצית",
+  "problem": "Machine-translation errors ('תגובה חפצית' = haptic, 'ספירה של מהפכות' = revolutions); bag described both as cloth and hard case.",
+  "suggested_fix": "משוב רטט (Haptic); ספירת סיבובים; לאחד את תיאור התיק",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68264,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "WPM ZD-12 GRAEF",
+  "problem": "Title combines two different brands (WPM and Graef).",
+  "suggested_fix": "לאמת את המותג ולהשאיר שם אחד, למשל: מטחנת קפה מקצועית WPM ZD-12",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 68264,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: אדום, ברונז, נירוסטה",
+  "problem": "Colour attribute contradicts description 'צבע: לבן-שחור'.",
+  "suggested_fix": "צבע: לבן-שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68264,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "רק אצלנו במלאי",
+  "problem": "Claims exclusive stock while product is out of stock; warranty also stated twice.",
+  "suggested_fix": "להסיר 'רק אצלנו במלאי' ואת שורת האחריות הכפולה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67319,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "סכינים מיוחדות למינון יחיד.",
+  "problem": "E37J is an on-demand doser-less grinder; 'special burrs for single dosing' is copied from the E5SD/E37SD single-dose models.",
+  "suggested_fix": "להסיר את המשפט או להחליף בתיאור המתאים ל-E37J",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67319,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "212x309x432ג ממ",
+  "problem": "Stray letter in dimensions (also in E37SD); burr size given without unit.",
+  "suggested_fix": "212x309x432 מ\"מ; קוטר סכינים 64 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65176,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "כל מלאי היבואן אצלנו במלאי ! זמין במלאי למשלוח מידי.",
+  "problem": "Claims immediate stock while the product is out of stock.",
+  "suggested_fix": "להסיר את משפטי המלאי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67262,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "משקל נטו 13.2 ק״ג",
+  "problem": "Net weight (13.2 kg) is higher than gross weight (8.7 kg), impossible; 'כיוון רמת הטחינה' heading has no text.",
+  "suggested_fix": "לאמת משקלים מול היצרן ולתקן; להשלים או להסיר את הכותרת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67212,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "אחריות 12 חודשים ע\"י היבואן דאדא",
+  "problem": "Importer misspelled (elsewhere 'דדה'); dangling 'הערה' heading with no text.",
+  "suggested_fix": "אחריות 12 חודשים ע\"י היבואן דדה; להסיר 'הערה'",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67313,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "212x309x360ג ממ",
+  "problem": "Stray letter in dimensions.",
+  "suggested_fix": "212x309x360 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65203,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Rancilio Silviaארץ יצור: איטליה.",
+  "problem": "Missing line break/space; odd backtick quotes in units (ס``מ, ק``ג).",
+  "suggested_fix": "Rancilio Silvia. ארץ ייצור: איטליה; ס\"מ, ק\"ג, מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68306,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "LavAzza ESPESSO POINT",
+  "problem": "Typo 'ESPESSO' and odd brand casing.",
+  "suggested_fix": "Lavazza ESPRESSO POINT",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67232,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "אי אפשר שלא לאהוב את האספרסו העדין אך התוסס הזה",
+  "problem": "Short describes a delicate, fruity espresso (text of the plain Espresso), while the description presents an intense ristretto-style Napoli intensity 13.",
+  "suggested_fix": "להחליף בתיאור נאפולי: אספרסו קצר ועוצמתי עם קרמה כהה וגוף מלא, עוצמה 13",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67253,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "high",
+  "current_text": "אריזה של 30 קפסולות",
+  "problem": "Description says 30 capsules; title and short say 16.",
+  "suggested_fix": "אריזה של 16 קפסולות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67249,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "high",
+  "current_text": "30 קפסולות מכילות קפה",
+  "problem": "Short says 30 capsules; title and description say 16.",
+  "suggested_fix": "16 קפסולות מכילות קפה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67305,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "30 קפסולות",
+  "problem": "Description says 30 capsules; title and short say 16 (product is private).",
+  "suggested_fix": "16 קפסולות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64893,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מארז טעימות מומנטו המכיל את הקפסולות למכונות נספרסו",
+  "problem": "Espresso More product, but the copy attributes the tasting pack and roasting to 'מומנטו' (a different brand).",
+  "suggested_fix": "להחליף 'מומנטו' ב'אספרסו מור' לאורך הטקסט (לאחר אימות היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64893,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "קוסטה ריקה - תערובת דרום אמריקאית",
+  "problem": "Costa Rica is in Central America, not South America; also 'קולמביאני' typo.",
+  "suggested_fix": "קוסטה ריקה - תערובת מרכז אמריקאית; קפה קולומביאני",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81129,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מארז טעימות מומנטו המכיל את הקפסולות למכונות נספרסו",
+  "problem": "Espresso More product, but the copy attributes the tasting pack and roasting to 'מומנטו' (a different brand).",
+  "suggested_fix": "להחליף 'מומנטו' ב'אספרסו מור' לאורך הטקסט (לאחר אימות היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81129,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "קוסטה ריקה - תערובת דרום אמריקאית",
+  "problem": "Costa Rica is in Central America, not South America; also 'קולמביאני' typo.",
+  "suggested_fix": "קוסטה ריקה - תערובת מרכז אמריקאית; קפה קולומביאני",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81125,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מארז טעימות מומנטו המכיל את הקפסולות למכונות נספרסו",
+  "problem": "Espresso More product, but the copy attributes the tasting pack and roasting to 'מומנטו' (a different brand).",
+  "suggested_fix": "להחליף 'מומנטו' ב'אספרסו מור' לאורך הטקסט (לאחר אימות היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81125,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "קוסטה ריקה - תערובת דרום אמריקאית",
+  "problem": "Costa Rica is in Central America, not South America; also 'קולמביאני' typo.",
+  "suggested_fix": "קוסטה ריקה - תערובת מרכז אמריקאית; קפה קולומביאני",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68438,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מארז טעימות מומנטו המכיל את הקפסולות למכונות נספרסו",
+  "problem": "Espresso More product, but the copy attributes the tasting pack and roasting to 'מומנטו' (a different brand).",
+  "suggested_fix": "להחליף 'מומנטו' ב'אספרסו מור' לאורך הטקסט (לאחר אימות היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68438,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "קוסטה ריקה - תערובת דרום אמריקאית",
+  "problem": "Costa Rica is in Central America, not South America; also 'קולמביאני' typo.",
+  "suggested_fix": "קוסטה ריקה - תערובת מרכז אמריקאית; קפה קולומביאני",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81129,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "600 יחדות",
+  "problem": "Typo in title.",
+  "suggested_fix": "קפסולות אספרסו מור מארז טעימות לנספרסו - 600 יחידות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67303,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תערובuת",
+  "problem": "Latin 'u' inside a Hebrew word (also in short).",
+  "suggested_fix": "תערובת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76267,
+  "field": "weight",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "weight: 30",
+  "problem": "Weight field 30 (kg) is implausible for 180 capsules.",
+  "suggested_fix": "לעדכן משקל משלוח אמיתי (כ-1.5 ק\"ג)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 68376,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "גראנד – Espresso Club",
+  "problem": "Short description names the Grand blend on a different Caffiataly blend.",
+  "suggested_fix": "לעדכן לשם התערובת הנכון של המוצר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68375,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "גראנד – Espresso Club",
+  "problem": "Short description names the Grand blend on a different Caffiataly blend.",
+  "suggested_fix": "לעדכן לשם התערובת הנכון של המוצר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68261,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "גראנד – Espresso Club",
+  "problem": "Short description names the Grand blend on a different Caffiataly blend.",
+  "suggested_fix": "לעדכן לשם התערובת הנכון של המוצר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68414,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קפה א׳קפה דליציוסו – Espresso Club",
+  "problem": "Unclear brand prefix 'א׳קפה' that does not match Espresso Club/Caffiataly.",
+  "suggested_fix": "דליציוסו – Espresso Club",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65378,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "טקסט למטא תגים (Google Meta):",
+  "problem": "SEO meta-tag and keyword-suggestion block published in the description (keyword stuffing, incl. 'קפסולות מתכלות' on aluminium capsules).",
+  "suggested_fix": "להסיר את כל בלוק 'טקסט למטא תגים' ו'הצעות נוספות למילות מפתח'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65378,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שם קרן לוואלה תומכת",
+  "problem": "Typo of Lavazza.",
+  "suggested_fix": "שם קרן לוואצה תומכת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68251,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "PERÚ CAJAMARCA ESPRESSO מהדורה מוגבלת - Copy",
+  "problem": "Published duplicate with '- Copy' in the title; also 'Cajamaraca' typo in description.",
+  "suggested_fix": "להסיר '- Copy' או לבטל את פרסום הכפיל; Cajamarca",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67228,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קפסולות דולצ׳ה גוסטו אספרסו נאפולי סטייל",
+  "problem": "Espresso Intenso product, but the description heading names Napoli Style.",
+  "suggested_fix": "קפסולות דולצ׳ה גוסטו אספרסו אינטנסו",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67233,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "אי אפשר שלא לאהוב את האספרסו העדין אך התוסס הזה",
+  "problem": "Short repeats the plain Espresso text (Brazil/Colombia arabica), unrelated to the Extra Crema description (pomegranate, roasted nuts).",
+  "suggested_fix": "להחליף בתקציר המבוסס על תיאור אקסטרה קרמה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67224,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "low",
+  "current_text": "קלייה בינונית-גבוהה לתערובת הקפה האינטנסיבית",
+  "problem": "Leftover sentence about an intense blend for whole milk, contradicting the smooth intensity-5 Grande description.",
+  "suggested_fix": "להסיר את המשפט",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67615,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Café au Lait INRENSO Gusto",
+  "problem": "Typo 'INRENSO' repeated throughout.",
+  "suggested_fix": "Café au Lait Intenso",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64890,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מכיל 16 קפסולות קפה",
+  "problem": "Nesquik is a cocoa drink with no coffee, yet called coffee capsules; also 'ספל שוקו גדולה'.",
+  "suggested_fix": "מכיל 16 קפסולות שוקו; ספל שוקו גדול ומנחם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64891,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מכיל 16 קפסולות קפה",
+  "problem": "Chococino is a chocolate drink, not coffee.",
+  "suggested_fix": "מכיל 16 קפסולות שוקו (לאמת חלוקה לקפסולות שוקו וחלב)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67240,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Italian Coffee Cappucci",
+  "problem": "Truncated 'Cappuccino' in title and description.",
+  "suggested_fix": "Italian Coffee Cappuccino",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76639,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ה תערובת שלנו קלה בדרגה בינונית כהה",
+  "problem": "Typos: split 'ה תערובת' and 'קלה' instead of 'קלויה'.",
+  "suggested_fix": "התערובת שלנו קלויה בדרגה בינונית-כהה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78157,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "¡¡Tierra! For Amazonia",
+  "problem": "Doubled '¡' and heading omits 'For Amazonia'.",
+  "suggested_fix": "¡Tierra! For Amazonia",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78155,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שימוש בשיטות ייצור מתקדמות.0",
+  "problem": "Stray '0' at end of text.",
+  "suggested_fix": "שימוש בשיטות ייצור מתקדמות.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79334,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קפה קרמי, בעל טעם עשיר,",
+  "problem": "Crema e Gusto Dolce description is word-for-word the Ricco text (and Dolce strength 12 matches Ricco).",
+  "suggested_fix": "לכתוב תיאור ייעודי ל-Dolce ולאמת עוצמה מול האריזה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 79334,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67316,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67315,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67383,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67171,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67385,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67384,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי",
+  "problem": "Repeated words in the short description (keyword-stuffing style).",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקוריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67395,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "high",
+  "current_text": "16 קפסולות",
+  "problem": "Says 16 capsules at 55 ILS, the same price as the sibling 36-capsule A Modo Mio packs; pack count or price is wrong. Weight field is 30.",
+  "suggested_fix": "לאמת את כמות הקפסולות באריזה (16/36) ולעדכן מחיר/תיאור ומשקל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67395,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ועוצמה גבהוו",
+  "problem": "Typos ('גבהוו', 'איטנסיבי').",
+  "suggested_fix": "ועוצמה גבוהה; אינטנסיבי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67385,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "קפסולות לוואצה אמודו מיו אספרסו דלציוזו,",
+  "problem": "Suerte (strength 13) carries the Delizioso text: '100% delicate arabica with floral notes'.",
+  "suggested_fix": "לכתוב תיאור ייעודי ל-Suerte (תערובת עוצמתית, עוצמה 13) ולאמת הרכב מול האריזה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67384,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קפסולות לוואצה אמודו מיו דולצ׳ה מקורי,",
+  "problem": "Passionale description opens with a heading naming the Dolce blend.",
+  "suggested_fix": "קפסולות לוואצה אמודו מיו פסיונאל מקורי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82277,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "רומא אספרסו 100% ערביקה",
+  "problem": "Title claims 100% Arabica but short and description state an Arabica+Robusta blend.",
+  "suggested_fix": "קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82277,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קפסולות לוואצה בלו ונציה אספרסו 100% ערביקה - Lavazza Blue Tales of Venezia",
+  "problem": "Description heading names the Venezia product.",
+  "suggested_fix": "קפסולות לוואצה בלו רומא אספרסו - Lavazza Blue Tales of Roma",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68253,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "תואם נספרסו - Cop",
+  "problem": "Title ends with truncated '- Cop' (likely a '- Copy' leftover).",
+  "suggested_fix": "קפסולות לוואצה נטול קפאין Dek תואם נספרסו",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67365,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כדי להתאים למכונתו נספרסו",
+  "problem": "Typo.",
+  "suggested_fix": "כדי להתאים למכונות נספרסו",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67674,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מאסטרו אינטנסו – קפסולות אספרסו עם טעם עשיר ומלא",
+  "problem": "Gourmet Chocolate product shows the Maestro Intenso short description.",
+  "suggested_fix": "קפסולות Lavazza Espresso Gourmet Chocolate – אספרסו עשיר בניחוח שוקולד, קלייה בינונית. מכיל 10 קפסולות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65045,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "16  קפסולות בטעם קרם ברולה",
+  "problem": "Caramel product description says crème brûlée flavour.",
+  "suggested_fix": "16 קפסולות בטעם קרמל מכילות חלב, קפה וסוכר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65193,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זה הזמן זמן להתענג",
+  "problem": "Duplicated word.",
+  "suggested_fix": "זה הזמן להתענג",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65051,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זה הזמן זמן להתענג",
+  "problem": "Duplicated word.",
+  "suggested_fix": "זה הזמן להתענג",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65045,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זה הזמן זמן להתענג",
+  "problem": "Duplicated word.",
+  "suggested_fix": "זה הזמן להתענג",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68386,
+  "field": "weight",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "weight: 8032680752674",
+  "problem": "A barcode was entered in the weight field.",
+  "suggested_fix": "לעדכן משקל אמיתי ולהעביר את הברקוד לשדה המתאים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68385,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קפסולות קימבו ריסטרו לנספרסו",
+  "problem": "Typo 'ריסטרו' (title says ריסטרטו); also 'קפוצי׳נו'.",
+  "suggested_fix": "קפסולות קימבו ריסטרטו לנספרסו; קפוצ׳ינו",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67376,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קפסולות תואמות דולצ׳ה גוסטו אספרסו מור אינטנסו כשר לפסח,",
+  "problem": "Forte product's short description names the Intenso blend.",
+  "suggested_fix": "קפסולות תואמות דולצ׳ה גוסטו אספרסו מור פורטה כשר לפסח",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67381,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "תן לתערובת הטעימה הזאת, המגיעה אלינו ממגדלי הקפה המובחרים באפריקה",
+  "problem": "Premium description is identical to the sibling Alto (67382), so two different blends share the same origin and flavour text.",
+  "suggested_fix": "לאמת את מאפייני תערובת פרימיום ולכתוב תיאור ייעודי",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81716,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו קרמי Pico בצבע טבעי",
+  "problem": "Blue cup's short description says natural colour.",
+  "suggested_fix": "ספל אספרסו קרמי Pico בצבע כחול",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81733,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ומתאים לנפח של כ־240 מ״ל",
+  "problem": "Large latte mug is 355 ml (title and description), short says 240 ml.",
+  "suggested_fix": "עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־355 מ״ל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81727,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ומתאים לנפח של כ־240 מ״ל",
+  "problem": "Large latte mug is 355 ml (title and description), short says 240 ml.",
+  "suggested_fix": "עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־355 מ״ל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81726,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ומתאים לנפח של כ־240 מ״ל",
+  "problem": "Large latte mug is 355 ml (title and description), short says 240 ml.",
+  "suggested_fix": "עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־355 מ״ל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81725,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ומתאים לנפח של כ־240 מ״ל",
+  "problem": "Large latte mug is 355 ml (title and description), short says 240 ml.",
+  "suggested_fix": "עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־355 מ״ל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81724,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ומתאים לנפח של כ־240 מ״ל",
+  "problem": "Large latte mug is 355 ml (title and description), short says 240 ml.",
+  "suggested_fix": "עשוי מקרמיקה איכותית, שומר על חום המשקה ומתאים לנפח של כ־355 מ״ל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81746,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81745,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81744,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81743,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81742,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81737,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81736,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81735,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81734,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81722,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל לאטה בעיצוב נקי ואלגנטי מסדרת Pico.",
+  "problem": "Saucer product's short description describes a 240 ml latte mug.",
+  "suggested_fix": "תחתית קרמית מסדרת Pico, עשויה חימר טרקוטה, עם שקע ייעודי לכפית. מתאימה למדיח ולמיקרוגל.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81737,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זו שבדך כלל שוכחים ממנה",
+  "problem": "Typo.",
+  "suggested_fix": "זו שבדרך כלל שוכחים ממנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81736,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זו שבדך כלל שוכחים ממנה",
+  "problem": "Typo.",
+  "suggested_fix": "זו שבדרך כלל שוכחים ממנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81735,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זו שבדך כלל שוכחים ממנה",
+  "problem": "Typo.",
+  "suggested_fix": "זו שבדרך כלל שוכחים ממנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81734,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זו שבדך כלל שוכחים ממנה",
+  "problem": "Typo.",
+  "suggested_fix": "זו שבדרך כלל שוכחים ממנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81722,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זו שבדך כלל שוכחים ממנה",
+  "problem": "Typo.",
+  "suggested_fix": "זו שבדרך כלל שוכחים ממנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81722,
+  "field": "permalink",
+  "issue_type": "copy_paste",
+  "severity": "low",
+  "current_text": "notneutral-pico-ספל-לאטה-גדול-355-מל-בצבע-כחול",
+  "problem": "Permalink of the sage saucer is the slug of a blue 355 ml latte mug.",
+  "suggested_fix": "לעדכן את הכתובת ל-notneutral-pico-תחתית-לקפוצינו-לאטה-בצבע-מרווה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81718,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "פל קפוצ׳ינו Pico לבן",
+  "problem": "Short says white (and 'פל' typo) on the blue cup.",
+  "suggested_fix": "ספל קפוצ׳ינו Pico כחול",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81714,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "פל קפוצ׳ינו Pico לבן",
+  "problem": "Short says white (and 'פל' typo) on the natural cup.",
+  "suggested_fix": "ספל קפוצ׳ינו Pico טבעי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78695,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "פל קפוצ׳ינו Pico לבן",
+  "problem": "Missing first letter.",
+  "suggested_fix": "ספל קפוצ׳ינו Pico לבן",
+  "confidence": "certain"
+ }
+]

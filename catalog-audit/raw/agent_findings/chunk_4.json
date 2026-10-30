@@ -1,0 +1,1592 @@
+[
+ {
+  "product_id": 67620,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "כוס קפוצ׳ינו 80 מל צבע לבן כחול ... 200 מ״ל",
+  "problem": "Title and short description say an 80 ml espresso cup, but the description calls it a cappuccino cup and ends with '200 מ״ל' (copied from the 200 ml sibling).",
+  "suggested_fix": "לתקן את פתיח התיאור ל\"כוס אספרסו 80 מל צבע לבן כחול סלדון\" ואת השורה האחרונה ל\"80 מ״ל\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67620,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "35.0000",
+  "problem": "The same Dale Harris 80 ml espresso cup in white/green (67344) costs 40 ILS; this colour is 35 ILS.",
+  "suggested_fix": "לאמת את המחיר מול האח בצבע לבן ירוק (40 ₪) ולהשוות אם אין סיבה להפרש.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67619,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "כוס קפוצ׳ינו 200 מל צבע לבן כחול",
+  "problem": "Title says colour 'כחול סלדון' while the description heading says 'לבן כחול'.",
+  "suggested_fix": "לאחד את שם הצבע בכותרת ובתיאור, למשל \"צבע לבן כחול סלדון\".",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67209,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "כוסות נירוסטה דופן כפולה ... יד אב טיפוס שנזרקה על ידי הקרמיקן בן סאטון",
+  "problem": "Product is stainless-steel double-wall cups, but the whole short/description is the Dale Harris Loveramics ceramic cup copy (ceramicist-thrown handle, Loveramics body), contradicting the material; the number of cups in the set is also not stated.",
+  "suggested_fix": "לכתוב תיאור ייעודי לכוסות הנירוסטה (חומר, נפח, כמות כוסות בסט) ולהסיר את טקסט סדרת דייל האריס של Loveramics, או לאמת שזה אכן מוצר קרמיקה ולתקן את הכותרת.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67612,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "הזמינו עכשיו במינוטו קפה ותיהנו מהנחה מיוחדת!",
+  "problem": "Copy promises a 'special discount' but the product has no sale price; the description also hard-codes a raw site URL (https://www.minuto.co.il/).",
+  "suggested_fix": "להסיר את ההבטחה ל\"הנחה מיוחדת\" (או להגדיר מחיר מבצע בפועל) ולמחוק את שורת הקישור לאתר מהתיאור.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67614,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "הזמינו עכשיו במינוטו קפה ותיהנו מהנחה מיוחדת!",
+  "problem": "Copy promises a 'special discount' but the product has no sale price; the description also hard-codes a raw site URL (https://www.minuto.co.il/).",
+  "suggested_fix": "להסיר את ההבטחה ל\"הנחה מיוחדת\" (או להגדיר מחיר מבצע בפועל) ולמחוק את שורת הקישור לאתר מהתיאור.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67613,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "הזמינו עכשיו במינוטו קפה ותיהנו מהנחה מיוחדת!",
+  "problem": "Copy promises a 'special discount' but the product has no sale price; the description also hard-codes a raw site URL (https://www.minuto.co.il/).",
+  "suggested_fix": "להסיר את ההבטחה ל\"הנחה מיוחדת\" (או להגדיר מחיר מבצע בפועל) ולמחוק את שורת הקישור לאתר מהתיאור.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67612,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "3 סנפירים פנימיים מערבבים את האספרסו בעת הנעירה",
+  "problem": "'הנעירה' is a wrong word (means braying); should be swirling.",
+  "suggested_fix": "\"...מערבבים את האספרסו בעת הערבול/הניעור\".",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67197,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הכירו את יצרנית כוסות הקפה KRUVE IMAGINE",
+  "problem": "Calls the glass a 'manufacturer'; also 'עמידותה ועמידותה' duplicated, 'מדוברבכוס' missing space, and singular 'ספל זכוכית זה' for a pair.",
+  "suggested_fix": "לתקן ל\"הכירו את כוסות הקפה KRUVE IMAGINE\", \"הידועה בעמידותה בחום\", \"מדובר בכוס\" ולנסח ברבים לזוג הכוסות.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67613,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, כחול, שחור",
+  "problem": "White porcelain cups are tagged only grey/blue/black; white is missing, so colour filters are wrong.",
+  "suggested_fix": "להגדיר צבע מוצר: לבן.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67246,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קל לנקוי",
+  "problem": "Typo: 'לנקוי' should be 'לניקוי'.",
+  "suggested_fix": "\"קל לניקוי\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67245,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קל לנקוי",
+  "problem": "Typo: 'לנקוי' should be 'לניקוי'.",
+  "suggested_fix": "\"קל לניקוי\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67244,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קל לנקוי",
+  "problem": "Typo: 'לנקוי' should be 'לניקוי'.",
+  "suggested_fix": "\"קל לניקוי\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67244,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "126.0000",
+  "problem": "Same Nomad 2GO 250 ml cup costs 119 ILS in other colours (67246, 67245) but 126 ILS in black.",
+  "suggested_fix": "לאמת אם הפרש המחיר לצבע שחור לילה מכוון.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67245,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Blue cup carries the generic 7-colour list, which has no blue.",
+  "suggested_fix": "להגדיר צבע מוצר: כחול בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67244,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Night-black cup carries the generic 7-colour list, which has no black.",
+  "suggested_fix": "להגדיר צבע מוצר: שחור בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65475,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע ירוק יער",
+  "problem": "Product is the charcoal grey ('אפור פחם') cup, but the short description opens with the forest-green sibling's name.",
+  "suggested_fix": "\"כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע אפור פחם\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64737,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "SKU: 123321123321",
+  "problem": "SKU is an obvious placeholder pattern (123321123321).",
+  "suggested_fix": "להזין מק\"ט / ברקוד אמיתי של היצרן.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64737,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כוסות אלו עוצבות בהתאם לתקני (SCA (Specialty Coffee Association,",
+  "problem": "Typo 'עוצבות' and broken parentheses; also mixed person ('שלכם/עליך').",
+  "suggested_fix": "\"כוסות אלו עוצבו בהתאם לתקני ה-SCA (Specialty Coffee Association)\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67632,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "53 / 58 / 60 / 63",
+  "problem": "The same Egg 80 ml espresso cup + saucer is priced 53, 58, 60 and 63 ILS across colours (e.g. red/blue 53, granite 58, rose/caramel 60, charcoal/forest 63) with no stated reason.",
+  "suggested_fix": "לאמת את מדרגות המחיר לפי צבע מול מחירון Loveramics ולאחד אם אין הצדקה.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67322,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour 'אדום' cup carries the generic 7-colour list, which does not include its colour.",
+  "suggested_fix": "להגדיר צבע מוצר: אדום בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67321,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour 'כחול' cup carries the generic 7-colour list, which does not include its colour.",
+  "suggested_fix": "להגדיר צבע מוצר: כחול בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67267,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour 'רוז' cup carries the generic 7-colour list, which does not include its colour.",
+  "suggested_fix": "להגדיר צבע מוצר: רוז בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64797,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Loveramics Latte Glass 120 ml Urban Twisted הוא לא רק מושלם ליהנות מהלאטה",
+  "problem": "Description of the 70 ml espresso glass contains a paragraph naming the 120 ml latte glass.",
+  "suggested_fix": "\"Loveramics Espresso Glass 70 ml Urban Twisted מושלם לאספרסו, מקיאטו וקורטדו קטן...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64785,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קנו עכשיו והעלה את חווית שתיית הקפה שלכם",
+  "problem": "Mixed plural/singular imperative (same line repeats in sibling Urban Twisted glasses 64797, 64791).",
+  "suggested_fix": "\"קנו עכשיו והעלו את חוויית שתיית הקפה שלכם...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65440,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65475,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67138,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67265,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67266,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67267,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67268,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67269,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67270,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67271,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67272,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67298,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67321,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67322,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67323,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67324,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67629,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67631,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67632,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78775,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78846,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דופן עבה במיוחד האפשרי ... פורצלן גבוה מסחרי פורצלן ב 1300c",
+  "problem": "Machine-translated boilerplate: broken phrases 'עבה במיוחד האפשרי', 'קטן מ -0.5% קצב ספיגה', 'פורצלן גבוה מסחרי פורצלן ב 1300c'.",
+  "suggested_fix": "\"דופן עבה במיוחד השומרת על הקפה בטמפרטורה הנכונה. גוף צפוף מאוד (ספיגות נמוכה מ-0.5%), פורצלן מסחרי שנשרף ב-1300°C.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67660,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "הספל מגיע בגודל 200 מ\"ל ומתאים בצורה מושלמת לקפוצ'ינו",
+  "problem": "Title, short description and heading say 250 ml, but the body says 200 ml (and the permalink also says 200).",
+  "suggested_fix": "לאמת את הנפח ולאחד; אם 250 מ\"ל: \"הספל מגיע בגודל 250 מ\"ל\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67660,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "76.0000",
+  "problem": "Other Egg 250 ml cappuccino cups are 62-74 ILS (most 65-66); charcoal is 76 ILS.",
+  "suggested_fix": "לאמת את המחיר מול שאר צבעי הספל 250 מ\"ל.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 78232,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ\"ל",
+  "problem": "Description heading names the blue cup, but the product is 'מינט' (title and short say מינט).",
+  "suggested_fix": "\"ספל קפוצ'ינו וצלוחית Loveramics - מינט 250 מ\"ל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78228,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל קפוצ'ינו וצלוחית Loveramics - כחול 250 מ\"ל",
+  "problem": "Description heading names the blue cup, but the product is 'צהוב' (title and short say צהוב).",
+  "suggested_fix": "\"ספל קפוצ'ינו וצלוחית Loveramics - צהוב 250 מ\"ל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67138,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל (permalink: ...250-מל...)",
+  "problem": "Title and copy say 200 ml but the product permalink says 250 ml, suggesting the size was changed or copied from a 250 ml listing.",
+  "suggested_fix": "לאמת את נפח הספל בפועל (200 או 250 מ\"ל) ולתקן את הכותרת או את הקישור הקבוע בהתאם.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67629,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל (permalink: ...250-מל...)",
+  "problem": "Title and copy say 200 ml but the product permalink says 250 ml, suggesting the size was changed or copied from a 250 ml listing.",
+  "suggested_fix": "לאמת את נפח הספל בפועל (200 או 250 מ\"ל) ולתקן את הכותרת או את הקישור הקבוע בהתאם.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67270,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל (permalink: ...250-מל...)",
+  "problem": "Title and copy say 200 ml but the product permalink says 250 ml, suggesting the size was changed or copied from a 250 ml listing.",
+  "suggested_fix": "לאמת את נפח הספל בפועל (200 או 250 מ\"ל) ולתקן את הכותרת או את הקישור הקבוע בהתאם.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67324,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "כוס: אורך 11.5 ס\"מ; קוטר 9.5 ס\"מ; גובה 5.5 ס\"מ; תכולה 200 מ\"ל",
+  "problem": "The 200 ml cup is given the same 5.5 cm height as the 80 ml espresso cup, which looks copied.",
+  "suggested_fix": "לאמת את מידות הספל 200 מ\"ל מול דף היצרן.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67327,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "60.0000",
+  "problem": "Egg 200 ml cappuccino cups are 65-66 ILS in other colours; red is 60 ILS.",
+  "suggested_fix": "לאמת את המחיר מול שאר הצבעים.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 78775,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('Berry') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (Berry) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67138,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('שחור') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (שחור) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67327,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('אדום') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (אדום) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 78230,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('כחול') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (כחול) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67325,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('כחול') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (כחול) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67269,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('רוז') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (רוז) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67271,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('Berry') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (Berry) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67619,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אפור, חום, ירוק, לבן, צהוב, קרם, תכלת",
+  "problem": "Single-colour product ('כחול סלדון') carries the generic 7-colour list that does not include its colour.",
+  "suggested_fix": "להגדיר את צבע המוצר בפועל (כחול סלדון) בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80979,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80977,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80892,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80975,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80992,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80990,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80988,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80986,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80984,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80982,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סט 4 ספלי ... + צלוחית / ספל אספרסו מניקו ... (ספל יחיד)",
+  "problem": "Title sells a set of 4 cups + saucer(s), but short and description describe a single cup and never state the quantity or how many saucers are included.",
+  "suggested_fix": "להוסיף לתיאור \"הסט כולל 4 ספלים ו-4 צלוחיות\" (לאחר אימות הכמות).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80979,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "259 (single cup 49)",
+  "problem": "Set of 4 Manico espresso cups costs 259 ILS while a single cup is 49 ILS (4×49=196); the set is dearer per cup unless saucers explain it.",
+  "suggested_fix": "לאמת את מחיר הסט מול מחיר הספל הבודד ולציין אם הצלוחיות כלולות.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 80992,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "349 (single cup 73)",
+  "problem": "Set of 4 Manico cappuccino cups costs 349 ILS vs 73 ILS single (4×73=292); the set is dearer per cup.",
+  "suggested_fix": "לאמת את מחיר הסט מול מחיר הספל הבודד ולציין אם הצלוחיות כלולות.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 80539,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The אדום cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון אדום...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80644,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The טורקיז cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון טורקיז...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80646,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The ירוק cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון ירוק...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80648,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The שחור cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון שחור...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80892,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The טורקיז cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון טורקיז...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80977,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The אדום cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון אדום...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80979,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "ספל אספרסו Club House מסדרת מניקו ניקל",
+  "problem": "The ירוק cup's description says it belongs to the 'מניקו ניקל' variant (copied from the nickel cup) and praises a metallic finish.",
+  "suggested_fix": "\"ספל אספרסו Club House מסדרת מניקו בגוון ירוק...\" ולהתאים את תיאור הגימור לצבע.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 79506,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The אדום cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור אדום מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80541,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The שחור cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור שחור מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80543,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The סלמון cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור סלמון מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80545,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The טורקיז cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור טורקיז מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80547,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The ירוק cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור ירוק מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80549,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The לבן cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור לבן מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80982,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The טורקיז cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור טורקיז מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80986,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The אדום cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור אדום מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80988,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The סלמון cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור סלמון מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80990,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The ירוק cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור ירוק מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80992,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עיצוב איטלקי נקי בגימור ניקל מבריק",
+  "problem": "The לבן cappuccino cup is described (short and 'איכות איטלקית' bullet) as having a shiny nickel finish, copied from the nickel variant.",
+  "suggested_fix": "\"עיצוב איטלקי נקי בגימור לבן מבריק...\" (לאמת את סוג הגימור).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80541,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל קפוצ'ינו Club House מסדרת מניקו טורקיז (205 מ\"ל)",
+  "problem": "Black cappuccino cup description names the turquoise variant.",
+  "suggested_fix": "\"ספל קפוצ'ינו Club House מסדרת מניקו שחור (205 מ\"ל)...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 80562,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הגרסה הצהובה בגימור המאט",
+  "problem": "Pink cup description calls it the yellow version.",
+  "suggested_fix": "\"הגרסה הוורודה בגימור המאט...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 80560,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הדגם הצהוב מגיע בגימור מאט",
+  "problem": "White cup's short and description both call it the yellow model ('הדגם הצהוב', 'הגרסה הצהובה ... צבע זורח').",
+  "suggested_fix": "\"הדגם הלבן מגיע בגימור מאט...\" ובתיאור \"הגרסה הלבנה בגימור המאט...\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 80553,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "מושלם ללאטה ארט: מבנה פנימי עגול",
+  "problem": "Espresso cups across the Tulipano family (80193-80562) are promoted as ideal for latte art, which doesn't fit an espresso cup.",
+  "suggested_fix": "להסיר את סעיף הלאטה ארט מספלי האספרסו או לנסח לשמירה על הקרמה.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 80535,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "low",
+  "current_text": "הגוון הניטרלי והחם",
+  "problem": "Red matte cup is described as a 'neutral' shade (copied from the grey variant).",
+  "suggested_fix": "\"הגוון האדום העמוק הופך אותו...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 80551,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כחול מט (Blue Matte)",
+  "problem": "Spelling 'מט' vs 'מאט' used everywhere else in the family (also in 80195 spec line, 80537/80535 titles).",
+  "suggested_fix": "\"כחול מאט (Blue Matte)\"",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64903,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64904,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65389,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65390,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65391,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65392,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65393,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65394,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65396,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65399,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65400,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65401,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65405,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82470,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "זכוכית האיכותית ... מתאים למדיח כלים ולמקירוגל",
+  "problem": "Typos 'למקירוגל' (microwave) and 'זכוכית האיכותית' (missing ה); every Vero size is also called 'הספל הראשון בסדרה'.",
+  "suggested_fix": "\"הזכוכית האיכותית, עבה במיוחד...\" ; \"מתאים למדיח כלים ולמיקרוגל\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64903,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "ספל קפה אספרסו נוט-ניוטרל אמרלד",
+  "problem": "Amber ('ענבר') cup's description heading names the emerald colour.",
+  "suggested_fix": "\"ספל קפה אספרסו נוט-ניוטרל ענבר notNeutral Vero Espresso Glass\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65405,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "עשן הnotNeutral",
+  "problem": "Stray 'ה' glued to the brand name.",
+  "suggested_fix": "\"ספל קפה אספרסו נוט-ניוטרל עשן notNeutral Vero Espresso Glass\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65392,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Vero Cortado Glass שקוף7",
+  "problem": "Stray digit '7' at the end of the title.",
+  "suggested_fix": "\"ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass שקוף\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82470,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "permalink: ...cappuccino-glass-שקוף-העתק",
+  "problem": "Permalink ends with 'העתק' (copy), i.e. the listing was duplicated from another product and the slug was never cleaned.",
+  "suggested_fix": "לנקות את הקישור הקבוע מ-\"העתק\" ולוודא שאין מוצר כפול זהה.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64873,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ספל קפה קורטדו פורצלן 150 מל ... notNeutral Lino Espresso",
+  "problem": "Title calls it a 150 ml קורטדו cup but ends with 'Lino Espresso', and the description heading says 'ספל קפה אספרסו' (copied from the espresso cup).",
+  "suggested_fix": "להסיר \"Espresso\" מהכותרת ולתקן את פתיח התיאור ל\"ספל קורטדו פורצלן 150 מ\"ל נוט-ניוטרל notNeutral Lino\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64871,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ספל קפה קפוצ׳ינו פורצלן 180 מל ... notNeutral Lino Espresso",
+  "problem": "Title calls it a 180 ml קפוצ׳ינו cup but ends with 'Lino Espresso', and the description heading says 'ספל קפה אספרסו' (copied from the espresso cup).",
+  "suggested_fix": "להסיר \"Espresso\" מהכותרת ולתקן את פתיח התיאור ל\"ספל קפוצ׳ינו פורצלן 180 מ\"ל נוט-ניוטרל notNeutral Lino\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64870,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ספל קפה קפוצ׳ינו פורצלן 240 מל ... notNeutral Lino Espresso",
+  "problem": "Title calls it a 240 ml קפוצ׳ינו cup but ends with 'Lino Espresso', and the description heading says 'ספל קפה אספרסו' (copied from the espresso cup).",
+  "suggested_fix": "להסיר \"Espresso\" מהכותרת ולתקן את פתיח התיאור ל\"ספל קפוצ׳ינו פורצלן 240 מ\"ל נוט-ניוטרל notNeutral Lino\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81041,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ספל קפה תרמי צבע אפור Adventure Tumbler",
+  "problem": "Description says grey, the title has no colour, and attributes list orange/white/black (no grey); 78498 (same title) is described as orange.",
+  "suggested_fix": "לאמת את צבע המוצר, להוסיף אותו לכותרת ולהגדיר בתכונות צבע אחד בלבד.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 78498,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "ספל תרמי Adventure Tumbler מבית Planetary Design",
+  "problem": "Title is identical to 81041; colour (orange per description) is missing from the title while attributes list three colours.",
+  "suggested_fix": "\"ספל תרמי צבע כתום Adventure Tumbler מבית Planetary Design\" והגדרת צבע מוצר: כתום.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64722,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כל חבילה כוללת 10",
+  "problem": "Short description is cut off mid-sentence.",
+  "suggested_fix": "\"כל חבילה כוללת 10 טבליות.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68283,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מותאמים לקנקי בריטה ... קשיות (אבנית) בנונית",
+  "problem": "Typos 'לקנקי' and 'בנונית'; short description lacks a space after '(Maxtra)'.",
+  "suggested_fix": "\"מותאמים לקנקני בריטה\" ; \"רמת קשיות בינונית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64957,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן",
+  "problem": "Philips' 5,000-cup claim is 'without descaling' when the AquaClean filter is replaced as prompted (about 8 filters), not 5,000 cups from one filter.",
+  "suggested_fix": "\"תוכלו ליהנות מעד 5000 כוסות ללא צורך בהסרת אבנית, בהחלפת המסנן בכל פעם שהמכונה מתריעה\".",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64864,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+  "problem": "Title calls an Eco Klear product 'Aqua Clean' (a Philips trademark) and says 4 filters, while the permalink says 3 ('3-פילטר...'). Description also borrows Philips' patented-flow claims.",
+  "suggested_fix": "לאמת את כמות הפילטרים באריזה ולשנות ל\"4 פילטרי מים Eco Klear תואמי AquaClean למכונות פיליפס/סאיקו\".",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64864,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Eco Klear שרק מים טהורים ... פילטר יחודי לדור החדש של מכונות הקפה של פיליפס-סאיקו :",
+  "problem": "Sentence is missing its verb ('מבטיח') and the description ends at a colon with no model list.",
+  "suggested_fix": "\"Eco Klear מבטיח שרק מים טהורים...\" ולהשלים את רשימת הדגמים התואמים.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76294,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "6 טבליות ניקוי להסרת שומני קפה / כל טבליה במשקל שלושה נקודה ארבעה גרם",
+  "problem": "Title and short say 8 tablets of 2 g each; the 'what's included' list says 6 tablets of 3.4 g (permalink also says 6 tablets 3.4 g).",
+  "suggested_fix": "לאמת את תכולת האריזה ולאחד בכל השדות (למשל \"8 טבליות ניקוי, כל טבליה 2 גרם\").",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81804,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כמות: 36, 9",
+  "problem": "The 36-tablet product has both 36 and 9 as quantity values.",
+  "suggested_fix": "להגדיר כמות: 36 בלבד.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65439,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כמות: 36, 9",
+  "problem": "The 9-tablet product has both 36 and 9 as quantity values, and its title omits the count.",
+  "suggested_fix": "להגדיר כמות: 9 ולשנות כותרת ל\"9 טבליות הסרת אבנית למכונות קפה Jura\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81452,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כמות: 12 יח, 3 יח",
+  "problem": "12-stick pack lists both 12 and 3 as quantity.",
+  "suggested_fix": "להגדיר כמות: 12 יח בלבד.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64980,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "כמות: 12 יח, 3 יח",
+  "problem": "3-stick pack lists both 12 and 3 as quantity.",
+  "suggested_fix": "להגדיר כמות: 3 יח בלבד.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64980,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "סטיקים לבדיקת קושיות המים",
+  "problem": "Typo 'קושיות' (difficulties) instead of 'קשיות' (hardness); same in 81452.",
+  "suggested_fix": "\"סטיקים לבדיקת קשיות המים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81452,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "סטיקים לבדיקת קושיות המים",
+  "problem": "Typo 'קושיות' instead of 'קשיות'.",
+  "suggested_fix": "\"סטיקים לבדיקת קשיות המים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68275,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסוג דדרגנט ... Franke Evolution and Bravilor",
+  "problem": "Typo 'דדרגנט' and leftover English 'and' in the brand list.",
+  "suggested_fix": "\"מסוג דטרגנט\" ; \"...Franke Evolution ו-Bravilor\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65069,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שמני קפה שמני קפה מרשת הקפה ... פילטר עיווור",
+  "problem": "Duplicated words in short description, typo 'עיווור', garbled step 'לפתוח את ברז המים של כ- 15-20 שניות'.",
+  "suggested_fix": "\"להסרת שמני קפה מרשת הקפה ומהמסנן\" ; \"פילטר עיוור\" ; \"להפעיל את המים למשך 15-20 שניות\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65445,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משמש עם קנקני פילטר Aquaphor עם התאמה לקפסולת",
+  "problem": "Sentence cut off; title says 'זוג סנני' (typo, and pair not confirmed anywhere in the text).",
+  "suggested_fix": "להשלים את המשפט (למשל \"...עם התאמה למחסנית A5\"), לתקן ל\"זוג מסנני מים\" ולציין בתיאור שבאריזה 2 מסננים.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64733,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "סדרת Melitta Bio עשויה מחומצת לימון בטוחה למזון ומתכלה",
+  "problem": "Eco Klear descaler description ends with a Melitta sentence (other brand, citric acid), while the sibling Eco Klear descaler (76289) says it is lactic-acid based.",
+  "suggested_fix": "להסיר את המשפט על Melitta ולציין את החומר הפעיל של Eco Klear לאחר אימות (לפי 76289: חומצה לקטית).",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64733,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "למכונות קפה אוטמטיות",
+  "problem": "Typo 'אוטמטיות' (also in 64928).",
+  "suggested_fix": "\"למכונות קפה אוטומטיות\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64928,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "למכונות קפה אוטמטיות",
+  "problem": "Typo 'אוטמטיות'.",
+  "suggested_fix": "\"למכונות קפה אוטומטיות\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64916,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בקבוק 500 מ\"ל מספיק לחמישה מחזורי הסרת אבנית מלאים,",
+  "problem": "Description ends with a comma (cut off); short uses plural 'אידיאליות' for a liquid (copied from Melitta tablets).",
+  "suggested_fix": "לסיים את המשפט בנקודה ולתקן ל\"אידיאלי לניקוי יעיל של מכונת הקפה\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65205,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ביתיות ומיקצועיות. של חברת ASCOR , האיטלקית. ... לניקוי יחיד...",
+  "problem": "Typo 'מיקצועיות', sentence fragment, and text ending with '...' (truncated).",
+  "suggested_fix": "\"חומר ניקוי למקציף החלב במכונות אספרסו ביתיות ומקצועיות, מתוצרת ASCOR האיטלקית. הבקבוק מכיל 1 ליטר ומגיע עם כוס מדידה.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64686,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "סט זה אינו כולל מימברנה",
+  "problem": "Typo 'מימברנה'.",
+  "suggested_fix": "\"סט זה אינו כולל ממברנה.\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64956,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסיר פסולת לא רצויוה ... החוומר יתמוסס לחלוטין",
+  "problem": "Typos 'רצויוה' and 'החוומר'.",
+  "suggested_fix": "\"מסיר פסולת לא רצויה\" ; \"החומר יתמוסס לחלוטין\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64888,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "לחץ מינימלי, MPa / בר  2 / 0,2 ... לחץ מקסימלי, MPa / בר  6,5 / 0,63",
+  "problem": "Units are swapped: 2 and 6.5 are bar values, 0.2 and 0.63 are MPa, but the label reads 'MPa / bar'.",
+  "suggested_fix": "\"לחץ מינימלי: 0.2 MPa / 2 בר ; לחץ מקסימלי: 0.63 MPa / 6.5 בר\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64888,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "אוסמוזה אפוכה ... למותרים ביתיים ... מפחית אבנית ללא אבנית",
+  "problem": "Typos 'אפוכה', 'למותרים' (should be 'למכשירים') and a garbled bullet.",
+  "suggested_fix": "\"אוסמוזה הפוכה\" ; \"חיים ארוכים יותר למכשירים ביתיים\" ; \"מונע הצטברות אבנית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82864,
+  "field": "short_description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "מתאימה לדגמי RO-101S, RO-100S ו-RO-102S",
+  "problem": "Compatibility list includes RO-101S (Morion), yet the catalog's own RO-50S membrane (64687) is sold as the Morion RO-101 membrane; the 100 GPD Pro membrane may not fit RO-101S.",
+  "suggested_fix": "לאמת מול Aquaphor לאילו מערכות מתאימה ממברנת Pro 100 ולתקן את רשימת הדגמים.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 76850,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):",
+  "problem": "Missing word ('ללא חוטים'), typo 'ומסננן', and the description ends on a truncated heading ('רכת' for 'מערכת') with nothing after it.",
+  "suggested_fix": "\"...לתקשר באופן אלחוטי עם המסנן\" ; \"ומסנן\" ; להשלים או להסיר את הכותרת \"מערכת המים החכמה (I.W.S.®)\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64932,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מכונת קפה יכולה לתקשר ללא עם המסנן ... רכת המים החכמה (I.W.S.®):",
+  "problem": "Missing word ('ללא חוטים'), typo 'ומסננן', and the description ends on a truncated heading ('רכת' for 'מערכת') with nothing after it.",
+  "suggested_fix": "\"...לתקשר באופן אלחוטי עם המסנן\" ; \"ומסנן\" ; להשלים או להסיר את הכותרת \"מערכת המים החכמה (I.W.S.®)\".",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64946,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64947,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64948,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64949,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64950,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64951,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64952,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64953,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסלקת פחמן מהמים בארבעה שלבים",
+  "problem": "Mistranslation: BRITA reduces carbonate hardness, not 'carbon'; 'גזה' for the fine filter is also odd.",
+  "suggested_fix": "\"מפחיתה קשיות קרבונטית (אבנית) בארבעה שלבים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64933,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "טבלית הניקוי התלת-פאזית ... שלב 1: ניקוי ... שלב 2: טיפול",
+  "problem": "Copy calls it a three-phase tablet but describes only two phases (the protect phase is missing).",
+  "suggested_fix": "להוסיף \"שלב 3: הגנה\" עם תיאור קצר, או לתקן ל\"דו-שלבית\".",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64848,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להשתקע על במערכת החליטה, שסתומים ... COFFEE MAKER CLEANER TABLETS",
+  "problem": "Typo 'על במערכת', 'שסתומים' repeated, and untranslated English product name in body text.",
+  "suggested_fix": "\"להשתקע במערכת החליטה, בשסתומים...\" ולהחליף את השם באנגלית ב\"טבליות הניקוי\".",
+  "confidence": "certain"
+ }
+]

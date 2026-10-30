@@ -1,0 +1,832 @@
+[
+ {
+  "product_id": 65057,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "פרנץ׳ פרס ביאלטי עם קיבולת של 3 כוסות (350 מ\"ל)",
+  "problem": "Short description of the 8-cup / 1 L press states 3 cups (350 ml), copied from the 3-cup sibling; title and description say 8 cups / 1 L.",
+  "suggested_fix": "פרנץ׳ פרס ביאלטי עם קיבולת של 8 כוסות (1 ליטר), לאוהבי קפה מסורתי יותר. מסגרת נירוסטה עם צורת ביאלטי וכד זכוכית בורוסיליקט. עיצוב מסוגנן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64799,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "ידית שחורה ואיכותית\n 51 מ\"מ",
+  "problem": "Short description of the 57 mm ILSA tamper lists 51 mm; title and description say 57 mm.",
+  "suggested_fix": "חומר: אלומיניום\n 57 מ\"מ (לאמת את צבע הידית)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65140,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "גובה כולל בסיס: 86 מ\"מ\n 57 מ\"מ",
+  "problem": "Title says 58 mm tamper but description spec says 57 mm.",
+  "suggested_fix": "לאמת את קוטר הבסיס מול המוצר ולתקן ל-58 מ\"מ בהתאם לכותרת",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64894,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "השתמש ב- CHEMEX® מסנני חצי ירח לא מקופלים FP-2",
+  "problem": "The 6-cup Chemex is told to use FP-2 half-moon filters, which are for the 1-3 cup model (copied from the 3-cup sibling); the 6-cup uses the bonded 6-10 cup filters (e.g. FS-100/FC-100).",
+  "suggested_fix": "השתמשו במסנני CHEMEX® Bonded ל-6-10 כוסות (כגון FS-100)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67208,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מארז ה- 20 נארז בשקית ידידותית",
+  "problem": "Title sells a 50-pack of commercial Toddy filters, but description says the pack contains 20 and that filters suit 'up to 1 kg' while the short says 2 kg; the short description describes the brewing system itself, not filters.",
+  "suggested_fix": "50 שקיות פילטר נייר טודי® למערכת המסחרית, תואמות למערכת Toddy® Commercial Model. (לאמת כמות קפה מרבית לשקית מול היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65152,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מיוצר על ידי המותג האיטלקי Forever",
+  "problem": "Title names the brand Jinmeilai (Chambord style), but short and description say it is made by the Italian brand Forever; copy-paste from another plunger.",
+  "suggested_fix": "פלנג׳ר Jinmeilai בסגנון Chambord – לאמת את שם המותג ולהסיר את האזכור של Forever",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65092,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "בדריפ שני מסנני רשת קוניים דקים חופפים",
+  "problem": "The 350 ml AIR serving pitcher has the short description of the Hario double-mesh stainless dripper (65095).",
+  "suggested_fix": "קנקן מזיגה Hario AIR בנפח 350 מ\"ל, קל משקל ושקוף, אידיאלי להיכרות ראשונה עם הכנת קפה פילטר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79213,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים.",
+  "problem": "Short description of the forest-fruit infusion starts with the full ginger-lime product text before the forest text.",
+  "suggested_fix": "חליטת יער אורגנית בשקיקי פירמידה מבית עדנים, באריזה של 25 שקיקים. תערובת פירות צבעונית בגוון אדום עם ניחוח יער קסום, המעניקה טעם עשיר ורענן בכל לגימה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82537,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "קומקום חשמלי Stagg EKG בצבע לבן",
+  "problem": "Smoke-green kettle's short description says the colour is white (copied from the white variant).",
+  "suggested_fix": "קומקום חשמלי Stagg EKG בצבע ירוק עשן בעיצוב יוקרתי ומתקדם עם שליטה מדויקת בטמפרטורה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82537,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "995 (white/generic variants 950)",
+  "problem": "Same kettle model is 995 in green vs 950 in white and the generic listing; confirm the colour surcharge is intended.",
+  "suggested_fix": "לאמת את המחיר מול וריאנט הלבן (950 ₪)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65099,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "קנקנן הריו לחליטה קרה צבע שוקולד",
+  "problem": "Title says red (אדום) but short description says chocolate colour; also typo 'קנקנן'.",
+  "suggested_fix": "קנקן הריו לחליטה קרה צבע אדום קיבולת 5 כוסות / נפח מבושל 600 מ\"ל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65100,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע חום ירוק",
+  "problem": "Title says green but short description says 'brown green'.",
+  "suggested_fix": "צבע ירוק",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65178,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "167 (צבע מוקה) vs 174 (חום שוקולד, 65149)",
+  "problem": "Mocha and chocolate-brown versions of the same 650 ml Filter-in Bottle have different prices.",
+  "suggested_fix": "לאמת ולהשוות את המחיר בין צבעי הבקבוק 650 מ\"ל",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65226,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מעמד לקפה פילטר 1 כוסות V60 מפלסטיק הריו Hario VD-02R",
+  "problem": "Short description of the 1-cup VD-01R names model VD-02R (2-cup); also 'או או' duplication.",
+  "suggested_fix": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65225,
+  "field": "name",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+  "problem": "Ceramic dripper is labelled VD-01R, which is the plastic model code (ceramic is VDC-01); title copied from plastic sibling.",
+  "suggested_fix": "לאמת את דגם הקרמיקה (VDC-01) ולתקן את הכותרת",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65215,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "האחים שעועית מחזיקים את השרת Hario V60 בשני גדלים שונים",
+  "problem": "Machine-translated copy from another retailer ('Bean Brothers') offering two sizes via a dropdown that doesn't exist; also garbled text ('שרת הריינג 'V60 טווח').",
+  "suggested_fix": "להסיר את הפסקה על 'האחים שעועית' והתפריט הנפתח, ולנסח מחדש: קנקן הגשה Hario V60 בנפח 360 מ\"ל, תואם לדריפר V60 01",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65213,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "Hario V60 Server 450 ml ... 90 (360 ml sibling 154)",
+  "problem": "The 450 ml server costs 90 while the 360 ml sibling costs 154 and 600 ml costs 160-168; permalink of this product also says 360 ml.",
+  "suggested_fix": "לאמת את המחיר והנפח של הקנקן מול הספק",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 80246,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "נפח: 450 מ\"ל / 700 מ\"ל",
+  "problem": "Product is the 700 ml FNC-70 teapot but short description lists 450/700 ml as if both sizes were offered.",
+  "suggested_fix": "נפח: 700 מ\"ל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67295,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מותג: Toddy",
+  "problem": "Clever Dripper has brand attribute Toddy, which is a different brand.",
+  "suggested_fix": "להסיר את המותג Toddy ולהגדיר את המותג הנכון (Clever)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67641,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מותג: ECM",
+  "problem": "Bottomless portafilter for Gaggia Classic Pro carries brand attribute ECM; also name typo 'Gaggaia'.",
+  "suggested_fix": "להסיר את המותג ECM; לתקן בכותרת: Gaggia Classic Pro",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 82139,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ידית חליטה חתוכה (Bottomless) מקורית מבית Lelit",
+  "problem": "Name and description call it a compatible (תואמת) handle, short says original Lelit; brand attribute also includes ECM. Lelit 57 mm compatibility with La Pavoni should be verified.",
+  "suggested_fix": "לאמת אם הידית מקורית או תואמת, להסיר את מותג ECM ולאמת התאמה ל-La Pavoni",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67642,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+  "problem": "'Gran Crema' is the ECM portafilter name (67145); the Lelit listing reuses it and names Lelit as maker. Brand attribute lists ECM too; 'ידית חליטה חתוכה' is duplicated.",
+  "suggested_fix": "הידית החתוכה Portafilter Bottomless 57 מ\"מ מבית Lelit; להסיר ECM ממאפיין המותג",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67624,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הידית החתוכה Gran Crema Portafilter Bottomless מבית Lelit",
+  "problem": "Same ECM 'Gran Crema' copy on the Lelit 58 mm handle; brand attribute lists ECM; duplicated 'ידית חליטה חתוכה'.",
+  "suggested_fix": "הידית החתוכה Portafilter Bottomless 58 מ\"מ מבית Lelit; להסיר ECM ממאפיין המותג",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65471,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "חומר: פלדת אל חלד\n ידית נירוסטה איכותית",
+  "problem": "Short says stainless steel, description repeatedly says aluminium tamper.",
+  "suggested_fix": "לאמת את החומר ולאחד: טמפר אלומיניום ILSA 53 מ\"מ",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64799,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "חומר: פלדת אל חלד",
+  "problem": "Short says stainless steel while description says aluminium.",
+  "suggested_fix": "לאמת את החומר ולאחד בין התיאור הקצר לארוך",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65140,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ידית יציקת שרף צבעונית מרהיבה",
+  "problem": "Title and description say rubber-wood handle; short says coloured cast-resin handle.",
+  "suggested_fix": "דוחסן שטוח ברמת גימור גבוה עם ידית מעץ גומי",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 78244,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ידית עץ שחור מוקשח ואיכותית",
+  "problem": "Title says walnut-wood handle, short and description say hardened black wood.",
+  "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65411,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ידית עץ שחור מוקשח ואיכותית",
+  "problem": "Title says walnut-wood handle, short and description say hardened black wood.",
+  "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64978,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "ידית עץ שחור מוקשח ואיכותית",
+  "problem": "Title says walnut handle but text describes black wood (identical to the black-handle sibling 64979).",
+  "suggested_fix": "ידית עץ אגוז איכותית (לאמת מול המוצר)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68274,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "דוחסן דו שימושי 52/57 מ\"מ ... ובצד השני 58 מ\"מ",
+  "problem": "Heading says 52/57 mm, body says 52 and 58 mm.",
+  "suggested_fix": "לאמת את הקוטר בצד הגדול ולאחד (57 או 58 מ\"מ)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79220,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "חליטת קינמון תפוח בשקיקי מבית עדנים",
+  "problem": "Title and short say loose 100 g, description heading says tea bags; permalink also says pyramid bags.",
+  "suggested_fix": "חליטת קינמון תפוח בתפזורת מבית עדנים, 100 גרם",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 82888,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "50 גר אבקת אובה טהורה פרימיום",
+  "problem": "Name says 50 g while the permalink says 100 g; pack size should be confirmed.",
+  "suggested_fix": "לאמת את משקל האריזה ולעדכן את הכותרת/הקישור בהתאם",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65162,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מיכל אחסון לקפה 300 מל",
+  "problem": "Title says 300 g capacity, description says 300 ml and then 'fits 300-350 g'; 300 ml would hold far less than 300 g of beans.",
+  "suggested_fix": "לאמת את קיבולת המיכל (מ\"ל וגרם פולים) ולאחד בין הכותרת לתיאור",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65223,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "דריפר זכוכית Hario V60 דגם VDGR-02דריפר זכוכית Hario V60 דגם VDGR-02דריפר...",
+  "problem": "Product name is repeated three times.",
+  "suggested_fix": "דריפר זכוכית Hario V60 דגם VDGR-02",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65468,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "יש להכניס את הכפית לקערה עם אבקת המאצ'ה ומים חמים, ולהקציף",
+  "problem": "The bamboo scoop (chashaku) is for measuring only; whisking is done with the bamboo whisk (chasen), not the spoon.",
+  "suggested_fix": "מדידה: השתמשו בכפית כדי למדוד את אבקת המאצ'ה. הקצפה: יש להקציף בעזרת מקצף במבוק (צ'אסן).",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68278,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "Lavaza A Modo Mio",
+  "problem": "Compatibility list for a Brita Intenza filter for Saeco/Gaggia includes Lavazza A Modo Mio and claims fit for 'almost all Italian machines, automatic and manual'; overbroad. Also 'Seaco' and 'Lavaza' misspellings.",
+  "suggested_fix": "לאמת את רשימת התאימות מול BRITA, להסיר את A Modo Mio אם אינו תואם, ולתקן Saeco / Lavazza",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65048,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות",
+  "problem": "Paper filter's short description says it is made of borosilicate glass (copied from the Chemex carafe).",
+  "suggested_fix": "להסיר את המשפט על זכוכית בורוסיליקט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64997,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "עשוי מזכוכית בורוסיליקט ללא נקבובית שלא תספוג ריחות",
+  "problem": "Paper filter's short description says it is made of borosilicate glass (copied from the Chemex carafe).",
+  "suggested_fix": "להסיר את המשפט על זכוכית בורוסיליקט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81073,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "600 מל ... 159 (350 מל גם 159)",
+  "problem": "Ultra Sharp 2.0 600 ml (also 81069) costs the same 159 as the 350 ml versions; confirm price per size.",
+  "suggested_fix": "לאמת את מחיר כד 600 מ\"ל מול 350 מ\"ל",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65067,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "תמיסה יעודית למכונות קפה",
+  "problem": "Short calls the product a solution while it is a pack of 4 cleaning capsules; description has typos 'רצויוה', 'החוומר'.",
+  "suggested_fix": "4 קפסולות ניקוי ייעודיות למכונות קפיטאלי ואספרסו קלאב; לתקן: רצויה, החומר",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65156,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "כל פילטר מסנן כוס אחת בכל פעם",
+  "problem": "2-cup (size 02) filters described as filtering one cup at a time.",
+  "suggested_fix": "להסיר את המשפט או לכתוב: מתאים לדריפר V60 בגודל 02 (1-4 כוסות)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 77389,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "low",
+  "current_text": "בנפח של 500 מ\"ל – אידיאלי לשתיים-שלוש מנות קפה",
+  "problem": "Serving-size phrase copied unchanged from the 300 ml version.",
+  "suggested_fix": "בנפח של 500 מ\"ל – אידיאלי לשלוש-ארבע מנות קפה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65211,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "למזיגת עד כ-4 כוסות",
+  "problem": "A 360 ml teapot is unlikely to serve about 4 cups.",
+  "suggested_fix": "לאמת מול היצרן (כ-2 כוסות)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 80374,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "הפילטר מתאים לכל סדרת: ECAM EC680 ו-EC800 .",
+  "problem": "Garbled compatibility line mixing ECAM with EC680/EC800 models, plus the ESAM exclusion; title typo 'דלוגי' in description heading.",
+  "suggested_fix": "לאמת את רשימת התאימות מול DeLonghi DLSC002 ולתקן: דלונגי",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64996,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+  "problem": "Text announces a capacity table that is missing (also in M 64995 and S 65076); 'הסרת אבנית למחצה רגילה' is garbled.",
+  "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64995,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+  "problem": "Announced capacity table is missing.",
+  "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65076,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקיבולות שלהלן הן קירוב למסנן המשמש למכונת אספרסו.",
+  "problem": "Announced capacity table is missing.",
+  "suggested_fix": "להוסיף טבלת קיבולות לפי קשיות מים או להסיר את המשפט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64993,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קיבולת:-250",
+  "problem": "Capacity has no unit (litres).",
+  "suggested_fix": "קיבולת: 250 ליטר",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65244,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קשיות (אבנית) בנונית",
+  "problem": "Typos 'בנונית' and 'הבייתיים' (also in 68282 and 65079).",
+  "suggested_fix": "בינונית; הביתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68282,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קשיות (אבנית) בנונית",
+  "problem": "Typos 'בנונית', 'הבייתיים'.",
+  "suggested_fix": "בינונית; הביתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65079,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קשיות (אבנית) בנונית",
+  "problem": "Typos 'בנונית', 'הבייתיים'.",
+  "suggested_fix": "בינונית; הביתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64894,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "עשוי מזכוכית בורוסיליקט kלא נקבובית",
+  "problem": "Stray Latin 'k' in Hebrew word.",
+  "suggested_fix": "עשוי מזכוכית בורוסיליקט ללא נקבובית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65209,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "עשוי מזכוכית בורוסיליקט kלא נקבובית",
+  "problem": "Stray Latin 'k' in short and description.",
+  "suggested_fix": "עשוי מזכוכית בורוסיליקט ללא נקבובית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67295,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בטמם של 90 עד 95 מעלות",
+  "problem": "Typo 'בטמם'.",
+  "suggested_fix": "בטמפרטורה של 90 עד 95 מעלות צלזיוס",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65157,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ניתן ללהכין ... קל ומשקל",
+  "problem": "Typos 'ללהכין' and 'קל ומשקל'.",
+  "suggested_fix": "ניתן להכין ... קל משקל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65014,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מגיע עם ספלק אירופרס",
+  "problem": "Typos 'ספלק', 'ללהכין', 'קל ומשקל'.",
+  "suggested_fix": "מגיע עם ספל אירופרס; ניתן להכין; קל משקל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65090,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300",
+  "problem": "Wrong word 'החברה' (companion), stray '300', typo 'וחזיק'.",
+  "suggested_fix": "הכירו את החבר החדש שלכם ... כוס מבודדת 300 מ\"ל Hario עם מכסה; ויחזיק",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82915,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הכירו את החברה החדשה שלכם ... Hario עם מכסה 300",
+  "problem": "Same text errors as 65090; SKU is a malformed concatenation of the 65090 SKU.",
+  "suggested_fix": "הכירו את החבר החדש שלכם; להסיר '300' המיותר; ויחזיק; לתקן מק\"ט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65091,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Hario עם מכסה 300 ... וחזיק מעמד",
+  "problem": "Stray '300' and typo 'וחזיק'.",
+  "suggested_fix": "ספל מבודד 300 מ\"ל Hario עם מכסה; ויחזיק מעמד",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65227,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקפה קפה זורם דרך הקונוס ישירות לתוך הספל שלך או או לקומוקום",
+  "problem": "Duplicated words and typo 'לקומוקום' (also in 65225, 65106).",
+  "suggested_fix": "הקפה זורם דרך הקונוס ישירות לתוך הספל או לקנקן הקפה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79215,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטת תה חליטת ג’ינג’ר וליים",
+  "problem": "Word 'חליטת' duplicated in name (also 79213).",
+  "suggested_fix": "חליטת ג’ינג’ר וליים אורגנית בשקיקי פירמידה מבית עדנים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79213,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כקילוף מרענן כשנעשתה קרה",
+  "problem": "Garbled phrase; name also repeats 'חליטת תה חליטת'.",
+  "suggested_fix": "או כמשקה קר ומרענן; חליטת יער אורגנית בשקיקי פירמידה מבית עדנים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 80845,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שקיותפילטרים (2 מסנני נייר ו -2 פילטרים ללא עצים)",
+  "problem": "Missing space and nonsensical 'ללא עצים' (likely felt filters); name has stray quotes.",
+  "suggested_fix": "שקיות פילטרים (2 מסנני נייר ו-2 פילטרי לבד); כותרת: Toddy® Cold Brew System Commercial Model",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67200,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "\"Toddy® Cold Brew System",
+  "problem": "Stray opening quote in product name.",
+  "suggested_fix": "Toddy® Cold Brew System",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68448,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חמצן פעיל וחומריםטבעיים",
+  "problem": "Missing space; odd phrase 'חווית קפה בתולית'.",
+  "suggested_fix": "חמצן פעיל וחומרים טבעיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81418,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "וסט פילטר למקקינטה ביאלטי",
+  "problem": "Typo 'למקקינטה' (same in 81430, 81436, 65083, 81424).",
+  "suggested_fix": "וסט פילטר למקינטה ביאלטי מוקה ו-ונוס",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81430,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "וסט פילטר למקקינטה ביאלטי",
+  "problem": "Typo 'למקקינטה'.",
+  "suggested_fix": "למקינטה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81436,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "וסט פילטר למקקינטה ביאלטי",
+  "problem": "Typo 'למקקינטה'.",
+  "suggested_fix": "למקינטה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65083,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "וסט פילטר למקקינטה ביאלטי",
+  "problem": "Typo 'למקקינטה'.",
+  "suggested_fix": "למקינטה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81424,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "גומייה למקינטה מוק הביאלטי - 2 כוסות",
+  "problem": "Name typo 'מוק הביאלטי'; short has 'למקקינטה'.",
+  "suggested_fix": "גומייה למקינטה מוקה ביאלטי - 2 כוסות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68276,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "ושסתום פריקת לחץ  לשם ניקוי שטיפה הפוכה",
+  "problem": "Broken sentence starting with 'ו' and claiming a pressure-release valve, which a blind basket doesn't have.",
+  "suggested_fix": "פילטר עיוור (ללא חורים) לניקוי בשטיפה הפוכה (Backflush)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64798,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להזמנת WDT Needles Coffee Tool, צרו קשר עם מינוטו קפה",
+  "problem": "Asks customers to contact the shop instead of ordering online; broken line 'מתאים לכל סוגי פורטה-פילטר: המתאימות...'.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה; מתאים למגוון רחב של ידיות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65370,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "צרו קשר עם מינוטו קפה עוד היום!",
+  "problem": "Asks customers to contact the shop instead of adding to cart.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78262,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "האיבו 2 – כד ההקצפה המושלם בנפח 480 מ״ל, חובה לכל בר",
+  "problem": "Last sentence cut off.",
+  "suggested_fix": "חובה לכל בריסטה שאוהב לאטה ארט.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65466,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תה מאצ'ה סרמינייאל",
+  "problem": "Spelling inconsistent with title 'סרמונייאל' (also 65467).",
+  "suggested_fix": "סרמונייאל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64901,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "פילטר מים למכונת לליט",
+  "problem": "Brand spelled 'לליט' in name and 'ללית' in body.",
+  "suggested_fix": "לאחד את האיות: לליט",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65221,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חבק הסילקוון",
+  "problem": "Typo 'סילקוון'.",
+  "suggested_fix": "חבק הסיליקון",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65418,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מחזיקים תואמים למקצים הבמבוק",
+  "problem": "Typo 'למקצים'.",
+  "suggested_fix": "למקצפי הבמבוק",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76590,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כמעט לכל מ טחנת קפה",
+  "problem": "Stray letter; 'ראשי חליטה' used where portafilter is meant.",
+  "suggested_fix": "כמעט לכל מטחנת קפה; מתאים לידיות בקוטר 55, 57, 58 ו-58.5 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64975,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "נא לוודא התאמה למטחנה טרם ביצוע הרכישה",
+  "problem": "Dosing ring fits the portafilter, not the grinder.",
+  "suggested_fix": "נא לוודא התאמה לידית (פורטפילטר) 58 מ\"מ טרם הרכישה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64965,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "SKU: 1234567",
+  "problem": "Placeholder SKU on a published product.",
+  "suggested_fix": "להזין מק\"ט/ברקוד אמיתי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81083,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "SKU: 4977642027104",
+  "problem": "Black Polaris SKU fails the EAN-13 check digit, unlike the white sibling 4977642027107.",
+  "suggested_fix": "לאמת את הברקוד של הדגם השחור מול האריזה",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67200,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר)",
+  "problem": "Text says the felt filter goes into the brewing container with the coffee, while the contents list says the coffee sits in paper filters and the reusable filters are for the finished product.",
+  "suggested_fix": "לאמת את תכולת הערכה ואופן השימוש בפילטרים מול Toddy",
+  "confidence": "verify"
+ }
+]

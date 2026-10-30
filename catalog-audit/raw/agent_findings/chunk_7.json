@@ -884,7 +884,7 @@
   "field": "description",
   "issue_type": "hebrew_text",
   "severity": "low",
-  "current_text": "מכונת הקפה שתמיד רציתם עכשיו עם. \n י",
+  "current_text": "מכונת הקפה שתמיד רציתם עכשיו עם.",
   "problem": "Broken sentence fragment and stray letter.",
   "suggested_fix": "מכניסים את בית הקפה הביתה – מכונת הקפה שתמיד רציתם.",
   "confidence": "certain"

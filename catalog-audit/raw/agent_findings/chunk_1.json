@@ -1,0 +1,952 @@
+[
+ {
+  "product_id": 79795,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להכין ספרסו ברמה ... וברז מים חמים ייעודי לתה ואמריקנו. ו\nכן, גם טמפר",
+  "problem": "Typo 'ספרסו' and a stray 'ו' split from 'וכן' onto a new line.",
+  "suggested_fix": "להכין אספרסו ברמה...; לאחד ל: \"...לתה ואמריקנו. וכן, גם טמפר עם ידית עץ...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81104,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "גודל: ראש אחד, שני ראשים, שלושה ראשים, ארבעה ראשים",
+  "problem": "Size attribute offers a 4-group option, but the spec table and the listed products only cover 1-3 groups.",
+  "suggested_fix": "להסיר את 'ארבעה ראשים' מהמאפיין, או להוסיף מפרט ומוצר לגרסת 4 ראשים",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 76839,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "גודל: ראש אחד, שני ראשים, שלושה ראשים, ארבעה ראשים",
+  "problem": "Size attribute offers a 4-group option, but the spec table and the listed products only cover 1-3 groups.",
+  "suggested_fix": "להסיר את 'ארבעה ראשים' מהמאפיין, או להוסיף מפרט ומוצר לגרסת 4 ראשים",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67618,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אדום, כסף",
+  "problem": "Product is the Silver model, but the colour attribute also lists red, so red shows up as an option.",
+  "suggested_fix": "להשאיר בצבע המוצר רק 'כסף'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67618,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת אינטגרלית משולבת",
+  "problem": "Grammar: 'מטחנת' is the construct form; it should be 'מטחנה'.",
+  "suggested_fix": "מטחנה אינטגרלית משולבת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68295,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "החבילה כוללת מתאם, המאפשר להשתמש בה גם עם קפסולות תואמות נספרסו",
+  "problem": "The standard Wacaco Nanopresso comes without the NS capsule adapter, which is sold separately. The claim, and the Nespresso-capsule categories, may be wrong for this SKU.",
+  "suggested_fix": "לאמת אם הערכה כוללת NS Adapter; אם לא – \"ניתן לרכוש בנפרד מתאם לקפסולות תואמות נספרסו\" ולהסיר את הקטגוריות של מכונות קפסולות/תואמות נספרסו",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 68295,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בכל הנגע ליופי",
+  "problem": "Typo: 'הנגע' should be 'הנוגע'.",
+  "suggested_fix": "בכל הנוגע ליופי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76423,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "• צבע: נירוסטה",
+  "problem": "White model (title 'Stone Lite white … צבע לבן') lists its colour as stainless, copied from the Premium sibling.",
+  "suggested_fix": "• צבע: לבן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76409,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ובקרת טמפרטורה PID לשוטלים מדויקים",
+  "problem": "Typo: 'לשוטלים' should be 'לשוטים'.",
+  "suggested_fix": "ובקרת טמפרטורה PID לשוטים מדויקים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76418,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ובקרת טמפרטורה PID לשוטלים מדויקים",
+  "problem": "Typo: 'לשוטלים' should be 'לשוטים'.",
+  "suggested_fix": "ובקרת טמפרטורה PID לשוטים מדויקים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76423,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ובקרת טמפרטורה PID לשוטלים מדויקים",
+  "problem": "Typo: 'לשוטלים' should be 'לשוטים'.",
+  "suggested_fix": "ובקרת טמפרטורה PID לשוטים מדויקים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68294,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "לאפשרות בחירה בין מנה בודדת, ולמה כפולה",
+  "problem": "Typos ('ולמה' for 'ומנה', 'מכונת ידנית' for 'מכונה ידנית'). The whole description is one run-on line with no punctuation between features.",
+  "suggested_fix": "\"לבחירה בין מנה בודדת למנה כפולה\"; \"מכונה ידנית\"; לפצל את התכונות לשורות נפרדות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65188,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "גוף המכונה עשוי נירוסטה באיכות גימור ועיצוב מרשימים",
+  "problem": "The Gran Gaggia Style has a black plastic body (the copy also says 'צבע שחור'). A stainless body is a Prestige/other-model claim.",
+  "suggested_fix": "לאמת חומר הגוף מול דף היצרן; אם פלסטיק – \"גוף המכונה בגימור שחור איכותי\"",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65191,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "לחץ: 19 בר",
+  "problem": "Handpresso Auto models are specified by the maker at 16 bar, not 19 bar.",
+  "suggested_fix": "לאמת את הלחץ מול דף היצרן (Handpresso Auto: 16 בר)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65198,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "לחץ: 19 בר",
+  "problem": "Handpresso Auto models are specified by the maker at 16 bar, not 19 bar.",
+  "suggested_fix": "לאמת את הלחץ מול דף היצרן (Handpresso Auto: 16 בר)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65198,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מבוססת קפסולות נספרסו @* או תואמות",
+  "problem": "Stray '@*' symbol residue in the short description; machine-translated closing line ('ולעשות את הנסיעות שלך נהדר').",
+  "suggested_fix": "מבוססת קפסולות נספרסו* או תואמות; \"קחו את ה-Handpresso איתכם ותיהנו מאספרסו מושלם גם בדרכים!\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64716,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יציבה הממנה ניתן להפיק ... 26,5 עומק",
+  "problem": "Typos: 'הממנה' should be 'שממנה', and '26,5' uses a comma decimal. The short description has a broken fragment: 'מתאימה לשימוש בקפה הטחון גם את השימוש בפודים'.",
+  "suggested_fix": "\"...יציבה שממנה ניתן להפיק\"; \"26.5 עומק\"; \"מתאימה לשימוש בקפה טחון וגם בפודים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64715,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יציבה הממנה ניתן להפיק ... 26,5 עומק",
+  "problem": "Typos: 'הממנה' should be 'שממנה', and '26,5' uses a comma decimal. The short description has a broken fragment: 'מתאימה לשימוש בקפה הטחון גם את השימוש בפודים'.",
+  "suggested_fix": "\"...יציבה שממנה ניתן להפיק\"; \"26.5 עומק\"; \"מתאימה לשימוש בקפה טחון וגם בפודים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64715,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Lelit PL41EM שרביט הקצפה מקצועי + מטחנת קפה GRAEF",
+  "problem": "Bundle title includes a GRAEF grinder, but the description and short description describe only the Lelit machine. The grinder model and its specs are never mentioned.",
+  "suggested_fix": "להוסיף פסקה על מטחנת GRAEF הכלולה (דגם ומפרט) – לאמת דגם מול המלאי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67638,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "דוד 1.5 ליטר ... סירקולציה תרמוסיפון ... קבוצת הראש E61 ... רוחב: 20 ס\"מ",
+  "problem": "These specs fit a larger HX E61 machine: 1.5 L HX boiler, thermosiphon, E61 group, 24 kg. The Bezzera Aria is a compact machine with a small boiler and Bezzera's electrically heated group. A 20 cm width is also implausible for an E61 machine.",
+  "suggested_fix": "לאמת את כל המפרט (דוד, ראש, משקל, מידות) מול דף היצרן של Bezzera Aria MN",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67638,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "Bezzera aria S MN",
+  "problem": "Title says 'aria S MN' (lower-case), while the short description and description say 'Aria MN'.",
+  "suggested_fix": "לאחד את שם הדגם: Bezzera Aria MN (או Aria S MN אם זה הדגם הנכון)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67230,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מגיעה עם ידית מדידה",
+  "problem": "'ידית מדידה' (measuring handle) is likely meant to be a measuring spoon.",
+  "suggested_fix": "מגיעה עם כף מדידה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 82012,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Gaggia Classic E24 –",
+  "problem": "Classic UP product uses the Classic E24 short description (names E24, '15 בר'), so it names a different model.",
+  "suggested_fix": "Gaggia Classic UP – מכונת אספרסו ידנית עם PID כפול, טרום-חליטה מתכווננת, מסך TFT וידית 58 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82012,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסך צבעוני TFT בגודל \"2 ושדירגה חכמה",
+  "problem": "Garbled text: unclear screen size and the non-word 'ושדירגה'.",
+  "suggested_fix": "לאמת גודל מסך ולתקן, למשל: \"מסך TFT צבעוני בגודל 2 אינץ' ותצוגה חכמה\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82014,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Gaggia Classic E24 –",
+  "problem": "Classic UP product uses the Classic E24 short description (names E24, '15 בר'), so it names a different model.",
+  "suggested_fix": "Gaggia Classic UP – מכונת אספרסו ידנית עם PID כפול, טרום-חליטה מתכווננת, מסך TFT וידית 58 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82014,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסך צבעוני TFT בגודל \"2 ושדירגה חכמה",
+  "problem": "Garbled text: unclear screen size and the non-word 'ושדירגה'.",
+  "suggested_fix": "לאמת גודל מסך ולתקן, למשל: \"מסך TFT צבעוני בגודל 2 אינץ' ותצוגה חכמה\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82014,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "Gaggia Classic UP - נירוסטה (העתק)",
+  "problem": "Leftover '(העתק)' duplicate of 82012 (draft, not published). Risky if published by mistake.",
+  "suggested_fix": "למחוק את הטיוטה או לשנות את שמה ולהשלים כמוצר נפרד",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 69413,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסייע לייבוש פולי הקפה לאחר החליטה",
+  "problem": "The 3-way valve dries the spent coffee puck, not the coffee beans. 'שרוול הקצפה' should be 'שרביט הקצפה'.",
+  "suggested_fix": "\"מסייע לייבוש עוגת הקפה לאחר החליטה\"; \"שרביט הקצפה מקצועי\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 69416,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מסייע לייבוש פולי הקפה לאחר החליטה",
+  "problem": "The 3-way valve dries the spent coffee puck, not the coffee beans. 'שרוול הקצפה' should be 'שרביט הקצפה'.",
+  "suggested_fix": "\"מסייע לייבוש עוגת הקפה לאחר החליטה\"; \"שרביט הקצפה מקצועי\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82622,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64881,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64880,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64879,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64878,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64877,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64876,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליהנות מאספרסו באיכות ביתית בבית",
+  "problem": "Mistranslation: the source says café-quality espresso at home, but the copy says 'home quality'. The text 'פיה כפולה ופורטה ללא תחתית' is also garbled.",
+  "suggested_fix": "\"ליהנות מאספרסו באיכות של בית קפה, בבית\"; \"...בין פיה אחת, פיה כפולה וידית ללא תחתית (בוטומלס)\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82155,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65025,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64887,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64886,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64885,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64884,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64883,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64882,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חליטה לפי משקל (Brew-by-Weight), מערכת חדשה של חליטה לפי משקל .",
+  "problem": "Phrase repeated within one line. The next line ends with garbled 'וזרימת ניקוי עצמית צמצם'.",
+  "suggested_fix": "\"חליטה לפי משקל (Brew-by-Weight)\"; \"...מציעה הרטבה רכה וזרימת ניקוי עצמית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64867,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "אחד המותגים המחודשים בעולם הקפה ... הודות לראש הטבוללזרימת",
+  "problem": "'המחודשים' is likely meant to be 'המפורסמים/המוערכים', and a space is missing in 'הטבוללזרימת'.",
+  "suggested_fix": "\"אחד המותגים הנחשבים בעולם הקפה\"; \"הודות לראש הטבול לזרימת מים עקבית\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64675,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "340 x 590 x 420 מ\"מ ללא פילטר / 340 x 590 x 420 מ\"מ עם פילטר",
+  "problem": "Dimensions 'with' and 'without' the portafilter are identical, so one line is wrong. The same 31 kg / 340x590x420 figures appear on the Pro 700, which suggests they were copied.",
+  "suggested_fix": "לאמת מידות ומשקל של Profitec Drive מול דף היצרן ולתקן את שתי השורות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64675,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "דוד קיטור ומי חם",
+  "problem": "Typos: 'ומי חם' (short description), 'מיכל מים פנימים', 'משאבת סיבובית'. 'מצב ECO ניתן לתכנות' appears twice in the spec list.",
+  "suggested_fix": "\"דוד קיטור ומים חמים\"; \"מיכל מים פנימי\"; \"משאבה סיבובית\"; להסיר את השורה הכפולה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64681,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מערכת חימום כפולה (אפשרות לדוד יחיד) ... ניתן לבחור גם בדגם עם דוד יחיד",
+  "problem": "Title says dual boiler, but the copy offers a single-boiler option. The Pro 600 is dual-boiler only. The text also says 'ראש חליטה E61' and then 'ראש חליטה Profitec'.",
+  "suggested_fix": "להסיר את האזכור לדגם דוד יחיד: \"מערכת דוד כפול\"",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64966,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+  "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+  "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64955,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+  "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+  "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67275,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+  "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+  "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67274,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+  "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+  "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67296,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+  "problem": "Short description opens with a cut-off promo condition: it does not say what depends on buying 5 kg (price? gift?). A customer may read the listed price as conditional. Sibling 67273 states it fully ('250 ש\"ח מתנה ... ברכישה של 5 ק״ג').",
+  "suggested_fix": "לנסח את ההטבה במלואה (למשל: \"X ש\"ח הנחה/מתנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו\"), או להסיר אם המבצע הסתיים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64966,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ניתן לחלוט והלקציף בו זמנית,.",
+  "problem": "Typo 'והלקציף' and doubled punctuation.",
+  "suggested_fix": "ניתן לחלוט ולהקציף בו זמנית.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64900,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "אחריות 48 חודשים ע\"י היבואן קופמה",
+  "problem": "Warranty is 48 months, while every other Profitec from the same importer lists 12-24 months.",
+  "suggested_fix": "לאמת את תקופת האחריות מול היבואן קופמה",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67225,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "ממשק מסך צבעוני האינטואיטיבי שלו",
+  "problem": "The CafeRomatica 550 has a plain-text display, not a colour screen (colour TFT comes on the 6/7/8 series). The description is generic AI copy.",
+  "suggested_fix": "לאמת סוג תצוגה מול דף היצרן; אם אינה צבעונית – \"תצוגת טקסט ברורה\"",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67225,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יפה, פשוטה ואכותית",
+  "problem": "Typo 'אכותית' should be 'איכותית'. Also 'ניתן יכול לבחור' in the description.",
+  "suggested_fix": "יפה, פשוטה ואיכותית; \"ניתן לבחור\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67363,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "לכן בינבונה שינו ... מספר שינוייםיוצאי דופן",
+  "problem": "Typos: 'בינבונה' should be 'בניבונה', missing space in 'שינוייםיוצאי', 'מעגש' should be 'מגש', 'לפולי מים וקפה' should be 'למים ולפולי קפה'.",
+  "suggested_fix": "\"לכן בניבונה שינו...\"; \"שינויים יוצאי דופן\"; \"מגש חימום כוסות\"; \"ניטור מפלסים אוטומטי למים ולפולי קפה\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67274,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מידות - רוחב 24, גובה 58, עומק 34",
+  "problem": "Dimensions differ from identical siblings NICR 795/796 (רוחב 24, גובה 34, עומק 46). A 58 cm height is implausible; the values look swapped or mistyped.",
+  "suggested_fix": "מידות - רוחב 24, גובה 34, עומק 46 (לאמת מול היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67275,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "3 רמות טמפרטוה",
+  "problem": "Typo 'טמפרטוה' should be 'טמפרטורה'.",
+  "suggested_fix": "3 רמות טמפרטורה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67274,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "3 רמות טמפרטוה",
+  "problem": "Typo 'טמפרטוה' should be 'טמפרטורה'.",
+  "suggested_fix": "3 רמות טמפרטורה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67273,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "3 רמות טמפרטוה",
+  "problem": "Typo 'טמפרטוה' should be 'טמפרטורה'.",
+  "suggested_fix": "3 רמות טמפרטורה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65388,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "קפסולות, פולי קפה,  ניידת, ניקוי קל, 12V!",
+  "problem": "Short description says the machine takes coffee beans. The description says it takes ground coffee, and a 12V car espresso maker has no grinder.",
+  "suggested_fix": "קפסולות נספרסו ודולצ'ה גוסטו, קפה טחון, ניידת, ניקוי קל, 12V!",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67670,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "4o",
+  "problem": "A stray '4o' (ChatGPT model-name residue) sits at the end of the description.",
+  "suggested_fix": "למחוק את השורה '4o'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68280,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "(ROCKET GIOTTO CONOMETRO R (EVO",
+  "problem": "Title has a typo ('CONOMETRO' should be 'CRONOMETRO') and broken, mismatched parentheses.",
+  "suggested_fix": "מכונת אספרסו רוקט ג'יוטו כרונומטרו R - Rocket Giotto Cronometro R",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68280,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "רוקט Evoluzione R היא מכונת אספרסו עם מחליף חום",
+  "problem": "Title is the Giotto Cronometro R, but the short description and description call it 'Evoluzione R' throughout. The model is unclear.",
+  "suggested_fix": "לאחד את שם הדגם בכל הטקסטים (Giotto Cronometro R) ולאמת מול הדגם במלאי",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68280,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "(מהיום עם PID) ... תחת שליטה של חיישני לחץ מקצועיים",
+  "problem": "Copy says the machine now has PID, but later says boiler temperature is controlled by pressure sensors (pressurestat), which contradicts PID.",
+  "suggested_fix": "לאמת אם הדגם עם PID; אם כן – לעדכן את פסקת 'לחץ הדוד' לבקרת PID",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68280,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ר אש יציאת הקפה ... מ ק סימום ... גרמנ י ים",
+  "problem": "Many words are broken by stray spaces from an old copy-paste, plus 'back flash' for backflush. The short description has 'חוויה כי אשר', 'אלקטורניםי'.",
+  "suggested_fix": "לנקות רווחים שבורים (ראש, מקסימום, גרמניים, חיישנים מקצועיים); \"back flush\"; \"אלקטרוניים\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65231,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יחידת קליית פולי הקפה, ניתנת לשליפה",
+  "problem": "The removable part is the brewing unit (יחידת חליטה), not a bean-roasting unit. 'מבשלת את הקפה, פעמים' is broken, and 'מתכוננת' should be 'מתכווננת'.",
+  "suggested_fix": "\"יחידת החליטה ניתנת לשליפה...\"; \"טוחנת וחולטת את הקפה פעמיים\"; \"מתכווננת\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65230,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יחידת קליית פולי הקפה, ניתנת לשליפה",
+  "problem": "The removable part is the brewing unit (יחידת חליטה), not a bean-roasting unit. 'מבשלת את הקפה, פעמים' is broken, and 'מתכוננת' should be 'מתכווננת'.",
+  "suggested_fix": "\"יחידת החליטה ניתנת לשליפה...\"; \"טוחנת וחולטת את הקפה פעמיים\"; \"מתכווננת\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65230,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מכונת קפה אוטומטית סימנס EQ.9 plus connect s500",
+  "problem": "s700 product's short description names the s500 (a cheaper sibling). The description is the s500 text and lists a single bean container, so s700 dual-bean features are missing.",
+  "suggested_fix": "\"מכונת קפה אוטומטית סימנס EQ.9 plus connect s700\" ולאמת מפרט s700 (מיכלי פולים כפולים) מול היצרן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65230,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "high",
+  "current_text": "עד ה-30.04.2019 – 5 שנות אחריות בבית הלקוח",
+  "problem": "Expired 2019 promo promising a 5-year warranty, which contradicts the 24-month warranty in the description.",
+  "suggested_fix": "למחוק את המשפט על 5 שנות אחריות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76352,
+  "field": "name",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מכונת קפה JURA W8",
+  "problem": "Title says 'W8', but all copy is for the Jura WE8. Product 64790 is the same WE8 at 8000 vs 8400 here, so the same machine has two prices.",
+  "suggested_fix": "לאחד עם מוצר 64790 או לתקן שם ומחיר; לאמת את המחיר הנכון ל-WE8",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 76352,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הגודל הקומפקטי שלהו",
+  "problem": "Typo 'שלהו'; grammar 'בין אם אתה חובבי קפה'. Same text in 64790.",
+  "suggested_fix": "\"הגודל הקומפקטי שלה\"; \"בין אם אתם חובבי קפה\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64790,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הגודל הקומפקטי שלהו",
+  "problem": "Typo 'שלהו'; grammar 'בין אם אתה חובבי קפה'.",
+  "suggested_fix": "\"הגודל הקומפקטי שלה\"; \"בין אם אתם חובבי קפה\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64786,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "מטחנות סכינים קרמיות כפולות: ... שתי מטחנות דיסק קרמיות",
+  "problem": "Grinder called 'knife' (blade) in the heading and 'disc' in the body. The GIGA 10 uses ceramic disc grinders.",
+  "suggested_fix": "מטחנות דיסק קרמיות כפולות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76545,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "הכנת מעל 42 סוגי משקאות",
+  "problem": "42+ specialties looks too high for the Jura J10 and should be checked against Jura's spec.",
+  "suggested_fix": "לאמת את מספר המשקאות מול דף היצרן של Jura J10",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65477,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תהנו מטעם עשיר ועשיר בכל פחית",
+  "problem": "'פחית' (can) is wrong for coffee from a machine, and 'עשיר ועשיר' is doubled.",
+  "suggested_fix": "תיהנו מטעם עשיר בכל כוס",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65469,
+  "field": "short_description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "החיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה",
+  "problem": "Copy implies built-in Wi-Fi. On Jura E-line, app connectivity needs an optional Smart Connect / Wi-Fi Connect dongle.",
+  "suggested_fix": "\"אפשרות לחיבור לאפליקציית J.O.E. (באמצעות משדר אופציונלי)\" – לאמת מול היצרן",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 81455,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך",
+  "problem": "Jura E8 description has paragraphs pasted from the ENA 8 page that name the ENA 8 (cylindrical side tank, conical grinder), and a missing space in 'ועודפעולתו'.",
+  "suggested_fix": "למחוק את הפסקאות המזכירות ENA 8 ולתקן \"ועוד. פעולתו...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81455,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: לבן, שחור",
+  "problem": "Single-colour product (title gives one colour) lists both white and black in the colour attribute.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (81455: שחור; 64929: לבן)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64929,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מיכל המים המעוצב והגלילי יושב בצד ה-ENA 8 ... ה-ENA 8 משתמש באותו תהליך",
+  "problem": "Jura E8 description has paragraphs pasted from the ENA 8 page that name the ENA 8 (cylindrical side tank, conical grinder), and a missing space in 'ועודפעולתו'.",
+  "suggested_fix": "למחוק את הפסקאות המזכירות ENA 8 ולתקן \"ועוד. פעולתו...\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64929,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: לבן, שחור",
+  "problem": "Single-colour product (title gives one colour) lists both white and black in the colour attribute.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (81455: שחור; 64929: לבן)",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64935,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Jura ENA 8 (מטרופוליטן שחור) תכונות:",
+  "problem": "White ENA 8 product's feature list is headed 'Metropolitan Black'.",
+  "suggested_fix": "Jura ENA 8 לבן – תכונות:",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64935,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מיכל מים גלילי בנפח 37 אונקיות",
+  "problem": "US unit (ounces) left from the English source. Also 'לבן שטוח' is a literal translation of flat white.",
+  "suggested_fix": "מיכל מים גלילי בנפח 1.1 ליטר; \"פלאט וייט\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64827,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מיכל מים גלילי בנפח 37 אונקיות",
+  "problem": "US unit (ounces) left from the English source. Also 'לבן שטוח' is a literal translation of flat white.",
+  "suggested_fix": "מיכל מים גלילי בנפח 1.1 ליטר; \"פלאט וייט\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67216,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת P.A.G.+2",
+  "problem": "Jura's grinder name is written 'P.A.G.2+'.",
+  "suggested_fix": "מטחנת P.A.G.2+",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81462,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "הספק -  2450 W",
+  "problem": "Jura Z10 is rated 230 V / 1450 W; 2450 W is very unlikely for a domestic 230 V machine.",
+  "suggested_fix": "הספק - 1450 W (לאמת מול דף היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81462,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late",
+  "problem": "Typos 'Griinder' and 'Caffè Late', and broken parentheses.",
+  "suggested_fix": "Product Recognizing Grinder (P.R.G.); Cold Brew Caffè Latte",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81458,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "הספק -  2450 W",
+  "problem": "Jura Z10 is rated 230 V / 1450 W; 2450 W is very unlikely for a domestic 230 V machine.",
+  "suggested_fix": "הספק - 1450 W (לאמת מול דף היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81458,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late",
+  "problem": "Typos 'Griinder' and 'Caffè Late', and broken parentheses.",
+  "suggested_fix": "Product Recognizing Grinder (P.R.G.); Cold Brew Caffè Latte",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64923,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "הספק -  2450 W",
+  "problem": "Jura Z10 is rated 230 V / 1450 W; 2450 W is very unlikely for a domestic 230 V machine.",
+  "suggested_fix": "הספק - 1450 W (לאמת מול דף היצרן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64923,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Product Recognizing Griinder ) P.R.G) ... Cold Brew Caffè Late",
+  "problem": "Typos 'Griinder' and 'Caffè Late', and broken parentheses.",
+  "suggested_fix": "Product Recognizing Grinder (P.R.G.); Cold Brew Caffè Latte",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81462,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "PRICE: 12500",
+  "problem": "White Z10 costs 12500, the same as the Signature INOX version and 1000 more than the black Z10 (11500), with identical copy.",
+  "suggested_fix": "לאמת את מחיר הגרסה הלבנה מול מחירון היבואן",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 68297,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "טחינת פולי הקפה נותנת בידי המשתמש שליטה",
+  "problem": "Minipresso GR takes pre-ground coffee and has no grinder. 'Grinding beans' implies the device grinds.",
+  "suggested_fix": "\"השימוש בקפה טחון לבחירתכם נותן בידי המשתמש שליטה...\"",
+  "confidence": "likely"
+ }
+]
