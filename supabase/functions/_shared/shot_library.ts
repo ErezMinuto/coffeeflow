@@ -388,10 +388,11 @@ export function normalizeShotChoice(
 // draws scene_brief, so planners keep writing one, describing the picked shot.
 export function plannerShotInstructions(opts: { legacyScene?: boolean } = {}): string {
   const sceneRule = opts.legacyScene
-    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer. Describe the picked shot only, never a different scene.`
+    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer: the same subject and moment as shot_type + shot_slots, never a different scene, and hands only for bar_moment.`
     : `scene_brief is optional: at most one sentence of context, never a new scene.`
   return `INSTAGRAM IMAGES: CAPTION FIRST, THEN A SHOT FROM THE MENU.
 1. Write the Hebrew caption (caption_he) first. The caption decides what the post is about.
+Choose a topic the menu below can show: if nothing on the menu shows what a caption talks about (for example a hand grinder, which has no shot yet), pick a different topic and write the caption for that.
 2. Then pick the ONE shot below that shows what that caption talks about, and fill its slots. Never describe a new scene: the image pipeline can only make these shots.
 
 SHOT MENU (shot_type: what it shows. moments):
