@@ -1,12 +1,20 @@
 # Minuto catalog audit: summary
 
-Read-only audit of minuto.co.il via the WooCommerce REST API. 1191 products and 113 variations fetched; 127 hidden products excluded, as you asked.
+Read-only audit of minuto.co.il through the WooCommerce REST API: 1191 products and 113 variations. The 127 hidden products were excluded, as you asked.
 
-* **Full content audit** (checks a–f) on the 27 coffee-bean products: roasted single origins, Minuto blends, Veneto, green beans and tasting kits.
-* **Mechanical checks** on all 1055 published, non-hidden products: price 0, duplicate SKUs, missing SKU, image or descriptions, and "100% Arabica" next to robusta.
-* No duplicate SKUs anywhere. No lorem or English placeholder text.
+* **Every visible product was read and checked** (1064): coffee beans, machines, grinders, capsules, cups, brewing gear, cleaning products, water filters and accessories.
+  * Each title, short description, description, attribute set and variation list was compared, and colour/size siblings were compared with each other.
+* **Automatic checks:**
+  * zero price
+  * duplicate SKUs (none found)
+  * missing SKU, image or descriptions
+  * "100% Arabica" next to robusta
+  * stale price-per-100 g text
+  * colour variants of the same model priced differently
+* Rows marked **verify** need a source the catalog doesn't have, such as an importer spec sheet, a supplier lot sheet or packaging. Apply the suggested text only after checking it.
 
-**189 findings**: 11 high · 45 medium · 133 low.
+**1056 findings in 715 products**: 94 high · 345 medium · 617 low.
+Many low rows are the same typo or machine-translated paragraph repeated across a product family, logged once per product.
 
 ## Counts by issue type and severity
 
@@ -14,34 +22,75 @@ Read-only audit of minuto.co.il via the WooCommerce REST API. 1191 products and 
 |---|---|---|---|---|
 | blend_vs_single_origin | 0 | 3 | 0 | 3 |
 | coffee_facts | 1 | 5 | 5 | 11 |
-| copy_paste | 0 | 4 | 2 | 6 |
-| hebrew_text | 0 | 0 | 20 | 20 |
-| internal_mismatch | 4 | 9 | 5 | 18 |
+| copy_paste | 42 | 85 | 12 | 139 |
+| hebrew_text | 0 | 16 | 401 | 417 |
+| internal_mismatch | 23 | 138 | 45 | 206 |
 | missing_data | 0 | 12 | 63 | 75 |
-| spec_commerce | 6 | 12 | 38 | 56 |
-| **total** | 11 | 45 | 133 | 189 |
+| product_facts | 16 | 42 | 23 | 81 |
+| spec_commerce | 12 | 44 | 68 | 124 |
+| **total** | 94 | 345 | 617 | 1056 |
 
 ## Top 10 fixes
 
-1. **Wrong "price per 100 g" in the copy** on Kenya AA+ (65135), Prestige (65196), Triest (65189) and Velvet Star (64855). All are below the real price: 23.1 → 23.94, 16.5 → 17.88, 16.5 → 17.88, 19.5 → 20.91. Best fix: remove the hard-coded lines and let a unit-price display compute it.
-2. **Lavazza Blue Tales of Roma (82277)**: the title says "100% ערביקה", but its own descriptions say Arabica + Robusta. The description headline also names the Venezia product.
-3. **Green Prestige 250 g (65201)**: the short description and SEO say 90/10 Arabica/robusta, but the description says 80/20.
-4. **Daye Bensa medium (65180)**: the Google title and snippet say light roast, but the product is medium, and a separate light-roast listing (78450) exists. Add the roast level to the product name too.
-5. **Yirgacheffe (65384)**: the SEO says light roast and "Sidama", but the attribute and copy say medium Yirgacheffe. The page also ends in a broken fragment pasted from Daye Bensa.
-6. **Fazenda Sertão (65175, plus green 65108 and kit 67146)**: the spec box says Grama Valley / Grupo Sertãozinho; the story says Fazenda Sertão, Carmo de Minas. It also contains the Guatemala "volcanic soil, eternal spring" paragraph. Confirm with the green supplier.
-7. **Two placeholder products are live at 0 ₪ and in stock**: "הצבה" (65427) and "כללי" (65369). Hide them. Also hide "בדיקת תשלום" (1 ₪), "משלוח", "התקנה", "קפה פילטר" and "shipping Costs"; set a price for or unpublish VARIA VS4 (82651).
-8. **Kenya AA+ duplicates (65463 / 65135)**: the two listings give different altitudes, and 65135 has no roast level. 65463 also says AA is a variety (it is a size grade). Kiambu is not in the Mount Kenya region.
-9. **Blend vs single origin**: Velvet Star (64855) and Decaf (64734) are described as "תערובת" but sit in חד זני. Aristo (64702) says "different origins" next to "מקור: ברזיל". Sweet Leona's SEO calls it a blend for espresso.
-10. **"ספשלטי" on robusta blends and Veneto**: Intenso (30% robusta), Prestige and Triest (20% robusta), and the SEO for all three Veneto products. Decide on a policy; unless the robusta is graded Fine Robusta, drop "ספשלטי" there.
+1. **Machine pages describing a different model.**
+   * Melitta CI Touch (67330) and Latte Select (67329) carry the Caffeo Passione OT short description.
+   * The Jura C9 (65446) short description says C8 with 6 drinks.
+   * The Jura "W8" (76352) is all WE8 copy. It duplicates 64790 at 8,400 vs 8,000 ₪.
+   * The Siemens EQ.9 s700 (65230) shows s500 copy plus an expired "until 30.04.2019, 5-year warranty" offer.
+   * The Jura E8 (81455, 64929) contains ENA 8 paragraphs.
+2. **Wrong machine specs.**
+   * Lelit Mara X (64677, 64678) is listed with two boilers; it is a heat-exchanger machine.
+   * ECM Technika VI (67650) is sold as dual boiler.
+   * The Flair 58X (64854) spec block says 40 mm / 60 ml, copied from the Signature.
+   * Jura Z10 (×3) is listed at 2,450 W instead of 1,450 W.
+   * La Pavoni Europiccola (67161) is listed with a 1.6 L boiler.
+   * La Pavoni PLQ (67160) is said to need no electricity.
+   * Two grinders list US 110–120 V / 60 Hz: Fiorenzato AllGround (64857) and Lelit William (65055).
+3. **Capsules: compatibility, pack count, blend.**
+   * Lavazza A Modo Mio Oro (64712) is said to fit Nespresso.
+   * Dolce Gusto Cortado (67253) and Ardenza (67249) say 16 in one place and 30 in another.
+   * Esse Infinito (67210) and Maestoso (67308) say 50 and 100.
+   * A Modo Mio Intenso (67395) is 16 capsules at the price of the 36-packs.
+   * Suerte (67385) carries the Delizioso text.
+   * Lavazza Blue Roma (82277) is called "100% ערביקה" but is a robusta blend.
+   * Bialetti Napoli (65015) carries the Milano text.
+   * Italian Coffee Lungo (64847) carries the Super Creamy text.
+4. **Free or test items that can be bought.** "הצבה" (65427) and "כללי" (65369) are visible at 0 ₪ and in stock. "בדיקת תשלום" (64703) is visible at 1 ₪. "משלוח", "התקנה" and "קפה פילטר" are also visible.
+5. **A cut-off promo line on machine pages**, "מותנה ברכישה של 5 ק״ג פולי קפה…". It appears on Profitec Pro 500 and Pro 700, Nivona 790 and 795, Melitta Barista TS and T Smart, and Gaggia Magenta Plus. It reads as if the price depends on buying 5 kg of beans.
+6. **Wrong size or volume on cups and serveware.**
+   * All 10 NotNeutral Pico saucers, and the 5 Pico 355 ml mugs, have a short description saying 240 ml.
+   * Loveramics glass 76799 is titled 180 ml; its description says 120 ml.
+   * Dale Harris 80 ml cup 67620: the description calls it a 200 ml cappuccino cup.
+   * Loveramics 67660 says both 250 and 200 ml.
+   * Bialetti 8-cup French press 65057: the short description says 3 cups.
+   * Knock box 79990 is titled 114 mm; its text says 14 cm.
+   * Eco Klear tablets 76294 say 8 × 2 g in one place and 6 × 3.4 g in another.
+7. **Baskets, tampers and filters.**
+   * IMS baskets 82018, 82023, 67207 and 76629 give the wrong gram range or size.
+   * ILSA tamper 64799 is 57 mm, but its short description says 51 mm.
+   * CafeLat tamper 65140 is titled 58 mm; its spec says 57 mm.
+   * The Chemex 6-cup (64894) recommends the 3-cup FP-2 filters.
+   * The naked portafilter 65118 claims to fit every machine.
+   * The Toddy 50-pack filters 67208 say 20 per pack.
+8. **Coffee beans.**
+   * The price-per-100 g text is wrong on four products (65135, 65196, 65189, 64855).
+   * The Google titles of Daye Bensa (65180) and Yirgacheffe (65384) say light roast; both are medium.
+   * Fazenda Sertão (65175) gives two different origins.
+   * Green Prestige (65201) says 90/10 in one place and 80/20 in another.
+9. **Draft or internal text left on live pages.**
+   * An assistant note, "חשוב להתאים את הטקסט לאתר…", on Lelit Bianca V3 (64680, 64679).
+   * "4o" (ChatGPT residue) at the end of Rocket TCA and ECM Knock Box M.
+   * Visible SEO keyword blocks on ECM Mechanika Max, Lavazza Tierra Africa and others.
+   * ",k, ptzh" (תלת פאזי typed with an English keyboard layout) on both La Marzocco KB90 listings.
+   * Duplicates published with "- Copy" or "(העתק)" in the title, e.g. 68251, 68253 and 79401.
+10. **Colour copied from a sibling product.** Loveramics, Club House, notNeutral and Hario products name another colour in the copy (65475, 78228, 78232, 64903, 80541, 78189, 82537 and more). Colour attributes are also wrong on Airscape 250 g (all say "black") and on the black knock boxes.
 
 ## Came out clean
 
-Coffee products with no findings:
+349 of 1064 visible products had no findings. The full list is in `clean_products.txt`. Coffee products among them:
 * פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate (64860)
 
-964 of 1055 published, non-hidden products passed all mechanical checks. They were not content-reviewed; the full list is in `clean_products.txt`.
-
-Notes:
-* Shipping weight is 0 or empty on 22 of the 24 non-kit coffee products. These are logged as low.
-* Every "verify" row needs a source the catalog doesn't have (supplier lot sheet, roasting recipe, Lavazza packaging). The suggested text applies only once that source is confirmed.
-* Re-run with `python3 catalog-audit/audit.py` (reads `raw/`, no fetch).
+Files:
+* `findings.csv`: every finding, sorted high → low.
+* `raw/`: the API snapshot, the review chunks and the reviewers' JSON.
+* To re-run without fetching: `python3 catalog-audit/family.py && python3 catalog-audit/audit.py`.

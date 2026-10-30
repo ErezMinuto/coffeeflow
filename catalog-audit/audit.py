@@ -161,10 +161,14 @@ if os.path.exists(f'{D}/raw/family_diffs.json'):
 # ---- per-product content review of the non-coffee catalog (raw/agent_findings/*.json)
 import glob
 seen = {(r['product_id'], r['current_text']) for r in rows}
+seen_type = {(r['product_id'], r['issue_type']) for r in rows if r['issue_type'] != MI}
 for fn in sorted(glob.glob(f'{D}/raw/agent_findings/chunk_*.json')):
     for f in json.load(open(fn)):
         pid = int(f['product_id'])
         if pid not in P or (pid, f['current_text']) in seen: continue
+        it0 = {'product_facts': CF}.get(f['issue_type'], f['issue_type'])
+        if (pid, f['issue_type']) in seen_type or (pid, it0) in seen_type and pid in manual_ids: continue
+        if pid in SERVICE and f['issue_type'] == SC: continue
         p = P[pid]
         it = f['issue_type']
         rows.append(dict(product_id=pid, product_name=strip(p['name']), permalink=p['permalink'], field=f['field'],
@@ -181,39 +185,89 @@ with open(f'{D}/findings.csv', 'w', newline='', encoding='utf-8-sig') as f:
 by = collections.Counter((r['issue_type'], r['severity']) for r in rows)
 types = sorted({r['issue_type'] for r in rows})
 hit = {r['product_id'] for r in rows}
-visible = [p for p in P.values() if p['status'] == 'publish' and p['catalog_visibility'] != 'hidden']
-coffee_clean = [P[i] for i in COFFEE if i not in hit]
+visible = [p for p in P.values() if p['catalog_visibility'] != 'hidden']
+nH, nM, nL = (sum(r['severity'] == s for r in rows) for s in (H, M, L))
 lines = ['# Minuto catalog audit: summary', '',
- f"Read-only audit of minuto.co.il via the WooCommerce REST API. {len(P)} products and "
- f"{sum(len(v) for v in json.load(open(f'{D}/raw/variations.json')).values())} variations fetched; "
- f"{sum(1 for p in P.values() if p['catalog_visibility']=='hidden')} hidden products excluded, as you asked.", '',
- f"* **Full content audit** (checks a–f) on the {len(COFFEE)} coffee-bean products: roasted single origins, Minuto blends, Veneto, green beans and tasting kits.",
- f"* **Mechanical checks** on all {len(visible)} published, non-hidden products: price 0, duplicate SKUs, missing SKU, image or descriptions, and \"100% Arabica\" next to robusta.",
- '* No duplicate SKUs anywhere. No lorem or English placeholder text.', '',
- f"**{len(rows)} findings**: {sum(r['severity']==H for r in rows)} high · {sum(r['severity']==M for r in rows)} medium · {sum(r['severity']==L for r in rows)} low.", '',
+ f"Read-only audit of minuto.co.il through the WooCommerce REST API: {len(P)} products and "
+ f"{sum(len(v) for v in json.load(open(f'{D}/raw/variations.json')).values())} variations. "
+ f"The {sum(1 for p in P.values() if p['catalog_visibility']=='hidden')} hidden products were excluded, as you asked.", '',
+ f"* **Every visible product was read and checked** ({len(visible)}): coffee beans, machines, grinders, capsules, cups, brewing gear, cleaning products, water filters and accessories.",
+ '  * Each title, short description, description, attribute set and variation list was compared, and colour/size siblings were compared with each other.',
+ '* **Automatic checks:**',
+ '  * zero price',
+ '  * duplicate SKUs (none found)',
+ '  * missing SKU, image or descriptions',
+ '  * "100% Arabica" next to robusta',
+ '  * stale price-per-100 g text',
+ '  * colour variants of the same model priced differently',
+ '* Rows marked **verify** need a source the catalog doesn\'t have, such as an importer spec sheet, a supplier lot sheet or packaging. Apply the suggested text only after checking it.', '',
+ f"**{len(rows)} findings in {len(hit)} products**: {nH} high · {nM} medium · {nL} low.",
+ 'Many low rows are the same typo or machine-translated paragraph repeated across a product family, logged once per product.', '',
  '## Counts by issue type and severity', '', '| issue_type | high | medium | low | total |', '|---|---|---|---|---|']
 for t in types:
     lines.append(f"| {t} | {by[(t,H)]} | {by[(t,M)]} | {by[(t,L)]} | {sum(by[(t,s)] for s in (H,M,L))} |")
-lines.append(f"| **total** | {sum(r['severity']==H for r in rows)} | {sum(r['severity']==M for r in rows)} | {sum(r['severity']==L for r in rows)} | {len(rows)} |")
+lines.append(f"| **total** | {nH} | {nM} | {nL} | {len(rows)} |")
 lines += ['', '## Top 10 fixes', '',
- '1. **Wrong "price per 100 g" in the copy** on Kenya AA+ (65135), Prestige (65196), Triest (65189) and Velvet Star (64855). All are below the real price: 23.1 → 23.94, 16.5 → 17.88, 16.5 → 17.88, 19.5 → 20.91. Best fix: remove the hard-coded lines and let a unit-price display compute it.',
- '2. **Lavazza Blue Tales of Roma (82277)**: the title says "100% ערביקה", but its own descriptions say Arabica + Robusta. The description headline also names the Venezia product.',
- '3. **Green Prestige 250 g (65201)**: the short description and SEO say 90/10 Arabica/robusta, but the description says 80/20.',
- '4. **Daye Bensa medium (65180)**: the Google title and snippet say light roast, but the product is medium, and a separate light-roast listing (78450) exists. Add the roast level to the product name too.',
- '5. **Yirgacheffe (65384)**: the SEO says light roast and "Sidama", but the attribute and copy say medium Yirgacheffe. The page also ends in a broken fragment pasted from Daye Bensa.',
- '6. **Fazenda Sertão (65175, plus green 65108 and kit 67146)**: the spec box says Grama Valley / Grupo Sertãozinho; the story says Fazenda Sertão, Carmo de Minas. It also contains the Guatemala "volcanic soil, eternal spring" paragraph. Confirm with the green supplier.',
- '7. **Two placeholder products are live at 0 ₪ and in stock**: "הצבה" (65427) and "כללי" (65369). Hide them. Also hide "בדיקת תשלום" (1 ₪), "משלוח", "התקנה", "קפה פילטר" and "shipping Costs"; set a price for or unpublish VARIA VS4 (82651).',
- '8. **Kenya AA+ duplicates (65463 / 65135)**: the two listings give different altitudes, and 65135 has no roast level. 65463 also says AA is a variety (it is a size grade). Kiambu is not in the Mount Kenya region.',
- '9. **Blend vs single origin**: Velvet Star (64855) and Decaf (64734) are described as "תערובת" but sit in חד זני. Aristo (64702) says "different origins" next to "מקור: ברזיל". Sweet Leona\'s SEO calls it a blend for espresso.',
- '10. **"ספשלטי" on robusta blends and Veneto**: Intenso (30% robusta), Prestige and Triest (20% robusta), and the SEO for all three Veneto products. Decide on a policy; unless the robusta is graded Fine Robusta, drop "ספשלטי" there.',
+ '1. **Machine pages describing a different model.**',
+ '   * Melitta CI Touch (67330) and Latte Select (67329) carry the Caffeo Passione OT short description.',
+ '   * The Jura C9 (65446) short description says C8 with 6 drinks.',
+ '   * The Jura "W8" (76352) is all WE8 copy. It duplicates 64790 at 8,400 vs 8,000 ₪.',
+ '   * The Siemens EQ.9 s700 (65230) shows s500 copy plus an expired "until 30.04.2019, 5-year warranty" offer.',
+ '   * The Jura E8 (81455, 64929) contains ENA 8 paragraphs.',
+ '2. **Wrong machine specs.**',
+ '   * Lelit Mara X (64677, 64678) is listed with two boilers; it is a heat-exchanger machine.',
+ '   * ECM Technika VI (67650) is sold as dual boiler.',
+ '   * The Flair 58X (64854) spec block says 40 mm / 60 ml, copied from the Signature.',
+ '   * Jura Z10 (×3) is listed at 2,450 W instead of 1,450 W.',
+ '   * La Pavoni Europiccola (67161) is listed with a 1.6 L boiler.',
+ '   * La Pavoni PLQ (67160) is said to need no electricity.',
+ '   * Two grinders list US 110–120 V / 60 Hz: Fiorenzato AllGround (64857) and Lelit William (65055).',
+ '3. **Capsules: compatibility, pack count, blend.**',
+ '   * Lavazza A Modo Mio Oro (64712) is said to fit Nespresso.',
+ '   * Dolce Gusto Cortado (67253) and Ardenza (67249) say 16 in one place and 30 in another.',
+ '   * Esse Infinito (67210) and Maestoso (67308) say 50 and 100.',
+ '   * A Modo Mio Intenso (67395) is 16 capsules at the price of the 36-packs.',
+ '   * Suerte (67385) carries the Delizioso text.',
+ '   * Lavazza Blue Roma (82277) is called "100% ערביקה" but is a robusta blend.',
+ '   * Bialetti Napoli (65015) carries the Milano text.',
+ '   * Italian Coffee Lungo (64847) carries the Super Creamy text.',
+ '4. **Free or test items that can be bought.** "הצבה" (65427) and "כללי" (65369) are visible at 0 ₪ and in stock. "בדיקת תשלום" (64703) is visible at 1 ₪. "משלוח", "התקנה" and "קפה פילטר" are also visible.',
+ '5. **A cut-off promo line on machine pages**, "מותנה ברכישה של 5 ק״ג פולי קפה…". It appears on Profitec Pro 500 and Pro 700, Nivona 790 and 795, Melitta Barista TS and T Smart, and Gaggia Magenta Plus. It reads as if the price depends on buying 5 kg of beans.',
+ '6. **Wrong size or volume on cups and serveware.**',
+ '   * All 10 NotNeutral Pico saucers, and the 5 Pico 355 ml mugs, have a short description saying 240 ml.',
+ '   * Loveramics glass 76799 is titled 180 ml; its description says 120 ml.',
+ '   * Dale Harris 80 ml cup 67620: the description calls it a 200 ml cappuccino cup.',
+ '   * Loveramics 67660 says both 250 and 200 ml.',
+ '   * Bialetti 8-cup French press 65057: the short description says 3 cups.',
+ '   * Knock box 79990 is titled 114 mm; its text says 14 cm.',
+ '   * Eco Klear tablets 76294 say 8 × 2 g in one place and 6 × 3.4 g in another.',
+ '7. **Baskets, tampers and filters.**',
+ '   * IMS baskets 82018, 82023, 67207 and 76629 give the wrong gram range or size.',
+ '   * ILSA tamper 64799 is 57 mm, but its short description says 51 mm.',
+ '   * CafeLat tamper 65140 is titled 58 mm; its spec says 57 mm.',
+ '   * The Chemex 6-cup (64894) recommends the 3-cup FP-2 filters.',
+ '   * The naked portafilter 65118 claims to fit every machine.',
+ '   * The Toddy 50-pack filters 67208 say 20 per pack.',
+ '8. **Coffee beans.**',
+ '   * The price-per-100 g text is wrong on four products (65135, 65196, 65189, 64855).',
+ '   * The Google titles of Daye Bensa (65180) and Yirgacheffe (65384) say light roast; both are medium.',
+ '   * Fazenda Sertão (65175) gives two different origins.',
+ '   * Green Prestige (65201) says 90/10 in one place and 80/20 in another.',
+ '9. **Draft or internal text left on live pages.**',
+ '   * An assistant note, "חשוב להתאים את הטקסט לאתר…", on Lelit Bianca V3 (64680, 64679).',
+ '   * "4o" (ChatGPT residue) at the end of Rocket TCA and ECM Knock Box M.',
+ '   * Visible SEO keyword blocks on ECM Mechanika Max, Lavazza Tierra Africa and others.',
+ '   * ",k, ptzh" (תלת פאזי typed with an English keyboard layout) on both La Marzocco KB90 listings.',
+ '   * Duplicates published with "- Copy" or "(העתק)" in the title, e.g. 68251, 68253 and 79401.',
+ '10. **Colour copied from a sibling product.** Loveramics, Club House, notNeutral and Hario products name another colour in the copy (65475, 78228, 78232, 64903, 80541, 78189, 82537 and more). Colour attributes are also wrong on Airscape 250 g (all say "black") and on the black knock boxes.',
  '', '## Came out clean', '',
- 'Coffee products with no findings:']
-lines += [f"* {strip(p['name'])} ({p['id']})" for p in coffee_clean] or ['* none']
-mech_clean = [p for p in visible if p['id'] not in hit]
-lines += ['', f"{len(mech_clean)} of {len(visible)} published, non-hidden products passed all mechanical checks. They were not content-reviewed; the full list is in `clean_products.txt`.",
- '', 'Notes:', '* Shipping weight is 0 or empty on 22 of the 24 non-kit coffee products. These are logged as low.',
- '* Every "verify" row needs a source the catalog doesn\'t have (supplier lot sheet, roasting recipe, Lavazza packaging). The suggested text applies only once that source is confirmed.',
- '* Re-run with `python3 catalog-audit/audit.py` (reads `raw/`, no fetch).']
+ f"{len(visible) - len(hit & {p['id'] for p in visible})} of {len(visible)} visible products had no findings. The full list is in `clean_products.txt`. Coffee products among them:"]
+clean = [p for p in visible if p['id'] not in hit]
+lines += [f"* {strip(p['name'])} ({p['id']})" for p in clean if p['id'] in COFFEE] or ['* none']
+lines += ['', 'Files:',
+ '* `findings.csv`: every finding, sorted high → low.',
+ '* `raw/`: the API snapshot, the review chunks and the reviewers\' JSON.',
+ '* To re-run without fetching: `python3 catalog-audit/family.py && python3 catalog-audit/audit.py`.']
 open(f'{D}/summary.md', 'w').write('\n'.join(lines) + '\n')
-open(f'{D}/clean_products.txt', 'w').write('\n'.join(f"{p['id']}\t{strip(p['name'])}" for p in sorted(mech_clean, key=lambda p: p['id'])) + '\n')
-print(len(rows), 'findings', collections.Counter(r['severity'] for r in rows))
+open(f'{D}/clean_products.txt', 'w').write('\n'.join(f"{p['id']}\t{strip(p['name'])}" for p in sorted(clean, key=lambda p: p['id'])) + '\n')
+print(len(rows), 'findings', collections.Counter(r['severity'] for r in rows), len(hit), 'products')
