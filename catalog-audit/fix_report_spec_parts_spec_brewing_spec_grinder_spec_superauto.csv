@@ -1,0 +1,83 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+65232,,description,ok,,"עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ","רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ","עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",spec_brewing.json
+78749,,description,ok,,"עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ","רוחב 235 ממ, עומק 290 ממ, גובה 340 ממ","עומק 235 ממ, רוחב 340 ממ , גובה 290 ממ",spec_brewing.json
+64745,,description,ok,,ומשקל כיול של 0.1 גרם.,ומשקולת כיול של 100 גרם.,משקל כיול של 0.1 גרם,spec_brewing.json
+81077,,description,ok,,ומשקל כיול של 0.1 גרם.,ומשקולת כיול של 100 גרם.,משקל כיול של 0.1 גרם,spec_brewing.json
+64745,,description,ok,,אנודייז (כסף שחור),אנודייז,משטח: ציפוי אלומיניום אנודייז (כסף שחור),spec_brewing.json
+65100,,short_description,ok,,<p>צבע חום ירוק</p>,<p>צבע ירוק מעושן (Smokey Green)</p>,צבע חום ירוק,spec_brewing.json
+65100,,meta:rank_math_description,ok,,צבע חום ירוק,צבע ירוק מעושן (Smokey Green),צבע חום ירוק,spec_brewing.json
+65162,,description,ok,,מיכל אחסון לקפה 300 מל</h3>,מיכל אחסון לקפה 300 גרם</h3>,מיכל אחסון לקפה 300 מל,spec_brewing.json
+65162,,description,ok,,"הכירו את מיכל פולי הקפה HARIO 300 מ""ל,","הכירו את מיכל פולי הקפה HARIO 300 גרם,",מיכל אחסון לקפה 300 מל,spec_brewing.json
+65162,,description,ok,,"מיכל פולי הקפה HARIO 300 מ""ל הוא לא רק",מיכל פולי הקפה HARIO 300 גרם הוא לא רק,מיכל אחסון לקפה 300 מל,spec_brewing.json
+65162,,description,ok,,"למיכל קיבולת של 300 מ""ל,","למיכל קיבולת של 1,000 מ""ל (כ-300 גרם קפה טחון),",מיכל אחסון לקפה 300 מל,spec_brewing.json
+65162,,description,ok,,"מיכל פולי הקפה HARIO 300 מ""ל הוא אביזר",מיכל פולי הקפה HARIO 300 גרם הוא אביזר,מיכל אחסון לקפה 300 מל,spec_brewing.json
+80246,,short_description,ok,,450 מ&quot;ל / 700 מ&quot;ל,700 מ&quot;ל,"נפח: 450 מ""ל / 700 מ""ל",spec_brewing.json
+65156,,description,ok,,כל פילטר מסנן כוס אחת בכל פעם,מתאים לדריפר V60 בגודל 02 (1-4 כוסות),כל פילטר מסנן כוס אחת בכל פעם,spec_brewing.json
+65058,,description,ok,,הוקמה בשנת 1933,הוקמה בשנת 1919,הוקמה בשנת 1933,spec_brewing.json
+65211,,description,ok,,למזיגת עד כ-4 כוסות,"קיבולת מעשית 360 מ""ל",למזיגת עד כ-4 כוסות,spec_brewing.json
+67200,,description,ok,,פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר),"פילטר לבד לשימוש חוזר X2 (מונח במיכל החליטה, לסינון כפול יחד עם נייר הפילטר)",פילטר שטוח לשימוש חוזר X2 (לסינון המוצר מוגמר),spec_brewing.json
+64857,,description,ok,,מקור חשמל: 110-120v - 60Hz,מקור חשמל: 220-240V - 50Hz,מקור חשמל: 110-120v - 60Hz,spec_grinder.json
+64857,,description,ok,,"סל""ד סכינים: 1600 סל""ד (60 הרץ)","סל""ד סכינים: 1400 סל""ד (50 הרץ)",מקור חשמל: 110-120v - 60Hz,spec_grinder.json
+67367,,short_description,ok,,מטחנה מקצועית מיועדת לטחינה עם מחלק מנות לשימוש ביתי או של קפה נטול קפאין בבתי קפה.,"מטחנה מקצועית שקטה לטחינה ישירה לידית החליטה (ללא מחלק מנות), עם צג מגע ודיסקיות שטוחות בקוטר 55 מ""מ.","מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה
+ יחידת מינון מתכת",spec_grinder.json
+67367,,short_description,ok,,גוף פלסטי מעכב בעירה,טכנולוגיית Silent להפחתת רעש הטחינה,"מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה
+ יחידת מינון מתכת",spec_grinder.json
+67367,,short_description,ok,,יחידת מינון מתכת,מתקן Hands-Free מתכוונן להחזקת ידית החליטה,"מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה
+ יחידת מינון מתכת",spec_grinder.json
+67367,,short_description,ok,,ניתן לשנות/לכוונן את המינונים,צג מגע עם 2 מנות ניתנות לתכנות וכיוון זמן הטחינה,"מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה
+ יחידת מינון מתכת",spec_grinder.json
+67367,,description,ok,,"עומק: 18 ס""מ","עומק: 14 ס""מ","מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה
+ יחידת מינון מתכת",spec_grinder.json
+67165,,description,ok,,מיגנון classic אוריקה,מיגנון classico אוריקה,אפשרויות טחינה: ידני .,spec_grinder.json
+67165,,description,ok,,אפשרויות טחינה: ידני .,אפשרויות טחינה: ידני וטיימר.,אפשרויות טחינה: ידני .,spec_grinder.json
+67165,,description,ok,,מיכל פולים: 300 גרם,מיכל פולים: 150 גרם,אפשרויות טחינה: ידני .,spec_grinder.json
+67165,,description,ok,,"עומק: 18 ס""מ","עומק: 14 ס""מ",אפשרויות טחינה: ידני .,spec_grinder.json
+67366,,description,ok,,במטחנה מאפשרת כיוון זמן הטחינה ומתקן,המטחנה מופעלת ידנית וכוללת מתקן,במטחנה מאפשרת כיוון זמן הטחינה,spec_grinder.json
+67366,,short_description,ok,,במטחנה מאפשרת כיוון זמן הטחינה ומתקן,המטחנה מופעלת ידנית וכוללת מתקן,במטחנה מאפשרת כיוון זמן הטחינה,spec_grinder.json
+67366,,description,ok,,מיכל פולים: 300 גרם,מיכל פולים: 150 גרם,במטחנה מאפשרת כיוון זמן הטחינה,spec_grinder.json
+67366,,description,ok,,"עומק: 18 ס""מ","עומק: 14 ס""מ",במטחנה מאפשרת כיוון זמן הטחינה,spec_grinder.json
+64936,,description,ok,,גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.,"גוף המטחנה מצופה בציפוי עץ Virginia Walnut טבעי ב-100%, כך שכל מטחנה ייחודית.",גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה,spec_grinder.json
+64937,,description,ok,,גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.,"גוף המטחנה מצופה בציפוי עץ Liquid Amber טבעי ב-100%, כך שכל מטחנה ייחודית.",גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה,spec_grinder.json
+67319,,short_description,ok,,סכינים מיוחדות למינון יחיד.,מטחנה לפי דרישה (On-Demand) עם סכינים שטוחות.,סכינים מיוחדות למינון יחיד.,spec_grinder.json
+67319,,description,ok,,משקל נטו 9.5 ק״ג,משקל נטו 9.7 ק״ג,סכינים מיוחדות למינון יחיד.,spec_grinder.json
+67319,,description,ok,,<li>סל״ד 1650</li>,<li>סל״ד 1380 (50 הרץ)</li>,סכינים מיוחדות למינון יחיד.,spec_grinder.json
+67262,,description,ok,,משקל נטו 13.2 ק״ג,משקל נטו 8.7 ק״ג,משקל נטו 13.2 ק״ג,spec_grinder.json
+67262,,description,ok,,משקל ברוטו 8.7 ק״ג ברוטו,משקל ברוטו 10.7 ק״ג ברוטו,משקל נטו 13.2 ק״ג,spec_grinder.json
+67262,,description,ok,,<li>סל״ד 1650</li>,<li>סל״ד 1380 (50 הרץ)</li>,משקל נטו 13.2 ק״ג,spec_grinder.json
+67213,,name,ok,,Mahlkonig E65S מטחנת קפה ביתית,Mahlkonig E65S מטחנת קפה מקצועית,Mahlkonig E65S מטחנת קפה ביתית,spec_grinder.json
+67213,,description,ok,,<h3>Mahlkonig E65S מטחנת קפה ביתית</h3>,<h3>Mahlkonig E65S מטחנת קפה מקצועית</h3>,Mahlkonig E65S מטחנת קפה ביתית,spec_grinder.json
+67213,,meta:rank_math_description,ok,,Mahlkonig E65S מטחנת קפה ביתית.,Mahlkonig E65S מטחנת קפה מקצועית.,Mahlkonig E65S מטחנת קפה ביתית,spec_grinder.json
+67637,,name,ok,,Mahlkonig E65S GBW מטחנת קפה ביתית,Mahlkonig E65S GBW מטחנת קפה מקצועית,Mahlkonig E65S GBW מטחנת קפה ביתית,spec_grinder.json
+67637,,description,ok,,Mahlkonig E65S GbW מטחנת קפה ביתית</h3>,Mahlkonig E65S GbW מטחנת קפה מקצועית</h3>,Mahlkonig E65S GBW מטחנת קפה ביתית,spec_grinder.json
+67637,,description,ok,,מטחנת הקפה קפה E65S GbW,מטחנת הקפה E65S GbW,Mahlkonig E65S GBW מטחנת קפה ביתית,spec_grinder.json
+67637,,short_description,ok,,מטחנת קפה קפה מהפכנית,מטחנת קפה מהפכנית,Mahlkonig E65S GBW מטחנת קפה ביתית,spec_grinder.json
+67637,,meta:rank_math_description,ok,,Mahlkonig E65S GBW מטחנת קפה ביתית.,Mahlkonig E65S GBW מטחנת קפה מקצועית.,Mahlkonig E65S GBW מטחנת קפה ביתית,spec_grinder.json
+67207,,name,ok,,16/18 גרם,18/20 גרם,פילטר IMS 2 מנות 16/18 גרם B702TH26.5M,spec_parts.json
+82018,,meta:rank_math_description,ok,,מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה,מסדרת Competition של IMS עם קיבולת של 16-18 גרם קפה,IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82021,,name,ok,,18-21g,18-20g,IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82021,,short_description,ok,,עם קיבולת של 18-21 גרם קפה.,עם קיבולת של 18-20 גרם קפה.,IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82021,,description,ok,,IMS Competition 18-21g (דגם B702TH26.5M),IMS Competition 18-20g (דגם B702TH26.5M),IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82021,,description,ok,,מנה כפולה – כ-18 עד 21 גרם (בהתאם לדרגת הקלייה ורמת הטחינה),"מנה כפולה – 18-20 גרם בקלייה כהה, 19-21 גרם בקלייה בינונית, 22-24 גרם בקלייה בהירה (בהתאם גם לרמת הטחינה)",IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82021,,meta:rank_math_description,ok,,מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה,מסדרת Competition של IMS עם קיבולת של 18-20 גרם קפה,IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+82023,,meta:rank_math_description,ok,,מסדרת Big Bang של IMS (2023) עם קיבולת של 18-21 גרם קפה,מסדרת Competition של IMS למנה בודדת,IMS basket spec check vs imsfiltri.com (requested by owner),spec_parts.json
+67641,,name,ok,,Gaggaia,Gaggia,מותג: ECM,spec_parts.json
+65446,,short_description,ok,,Jura C8 היא מכונת קפה,Jura C9 היא מכונת קפה,Jura C8 היא מכונת קפה אוטומטית קומפקטית,spec_superauto.json
+65446,,short_description,ok,,"היא מאפשרת הכנה של 6 סוגי משקאות, כולל אספרסו, קפה, קפוצ'ינו ולאטה מקיאטו, עם שליטה אישית בעוצמה, טחינה וכמות חלב.","היא מאפשרת הכנה של 17 סוגי משקאות בשני עולמות טעם – חליטה חמה קלאסית וחליטה קלה (Light Brew) – כולל אספרסו, קפה, קורטאדו, אספרסו מקיאטו, קפוצ'ינו, פלאט וייט ולאטה מקיאטו, עם שליטה אישית בעוצמה (10 רמו",Jura C8 היא מכונת קפה אוטומטית קומפקטית,spec_superauto.json
+65446,,meta:rank_math_title,ok,,jura ena 8,jura c9,Jura C8 היא מכונת קפה אוטומטית קומפקטית,spec_superauto.json
+65446,,meta:rank_math_description,ok,,"מכונת קפה אוטומטית Jura ENA 8 - היא מכונת הקפה החדשה לספל יחיד. קטנה, פשוטה - פריט חובה לכל חובבי הקפה. ה- 8 ENA מכינה שלל משקאות קפה מפולי קפה שהרגע נטחנו. ","מכונת קפה אוטומטית Jura C9 - מכונה קומפקטית עם 17 משקאות בשני עולמות טעם: חליטה חמה ו-Light Brew. מטחנת Professional Aroma Grinder, מיכל מים 1.6 ליטר ומסך צבעוני 2.8 אינץ'.",Jura C8 היא מכונת קפה אוטומטית קומפקטית,spec_superauto.json
+76545,,description,ok,,הכנת מעל 42 סוגי משקאות,הכנת 42 סוגי משקאות,הכנת מעל 42 סוגי משקאות,spec_superauto.json
+65469,,short_description,ok,,בעוד שהחיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה,בעוד שהחיבור ל-Wi-Fi (באמצעות משדר JURA Wi-Fi Connect הנמכר בנפרד) מאפשר חוויה חכמה ונוחה,החיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה,spec_superauto.json
+64933,,description,ok,,המונעים הצטברות שאריות קפה ושומנים.,"המונעים הצטברות שאריות קפה ושומנים. שלב 3: הגנה – בשלב השלישי, חומרים מקבעים (complexing agents) מעניקים הגנה מתמשכת מפני מרבצי מינרלים.",טבלית הניקוי התלת-פאזית ... שלב 1: ניקוי ... שלב 2: טיפול,spec_superauto.json
+65088,,description,ok,,לחץ מים של 15 בר,לחץ מים של 19 בר,בשילוב עם לחץ מים של 15 בר,spec_superauto.json
+65181,,description,ok,,לחץ מים של 15 בר,לחץ מים של 19 בר,בשילוב עם לחץ מים של 15 בר,spec_superauto.json
+67274,,description,ok,,"מידות - רוחב 24, גובה 58, עומק 34","מידות - רוחב 24, גובה 34, עומק 48","מידות - רוחב 24, גובה 58, עומק 34",spec_superauto.json
+67257,,short_description,ok,,"Flat White, לאטה מקיאטו ומים חמים.","Flat White, לאטה מקיאטו, קפה קורטדו ומים חמים.","גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",spec_superauto.json
+67257,,description,ok,,"Flat White, לאטה מקיאטו ומים חמים.","Flat White, לאטה מקיאטו, קפה קורטדו ומים חמים.","גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",spec_superauto.json
+67328,,description,ok,,הנאה מ- 6 משקאות קפה,הנאה מ- 5 משקאות קפה,"הנאה מ- 6 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו",spec_superauto.json
+67330,,description,ok,,תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים,תוכלו להכין 4 ממשקאות הקפה הקלאסיים,"תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים - אספרסו, קפה קרם, קפוצ'ינו ולאטה",spec_superauto.json
+67330,,description,ok,,מיכל מים 1.2 ליטר,מיכל מים 1.8 ליטר,מיכל מים 1.2 ליטר,spec_superauto.json
+67330,,description,ok,,רוחב 25.3 סמ,רוחב 25.5 סמ,מיכל מים 1.2 ליטר,spec_superauto.json
+67330,,description,ok,,עומק 38 סמ,עומק 47.5 סמ,מיכל מים 1.2 ליטר,spec_superauto.json
+67330,,description,ok,,גובה 39 סמ,גובה 34.5 סמ,מיכל מים 1.2 ליטר,spec_superauto.json
+64957,,description,ok,,תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן.,תוכלו ליהנות מעד 5000 כוסות* ללא צורך בהסרת אבנית (*בהחלפת 8 מסננים לפי התראת המכונה; עד 625 כוסות לכל מסנן).,תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן,spec_superauto.json
+64957,,short_description,ok,,<li>עד 5000 כוסות</li>,"<li>עד 5000 כוסות ללא הסרת אבנית (בהחלפת 8 מסננים, עד 625 כוסות לכל מסנן)</li>",תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן,spec_superauto.json
