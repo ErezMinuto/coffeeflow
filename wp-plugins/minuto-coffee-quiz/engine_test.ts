@@ -18,19 +18,21 @@ Deno.test("simple automatics get the robusta blends", () => {
 
 Deno.test("Jura / Melitta / Nivona ladder", () => {
   const p = { brew: "auto", brand: "premium" };
-  assertEquals(r(p), ["aristo", "sertao"]);
+  assertEquals(r(p).slice(0, 2), ["aristo", "sertao"]);
   assertEquals(r({ ...p, strength: "strong" })[0], "dark");
   assert(noRobusta(r({ ...p, strength: "strong" })));
   assertEquals(r({ ...p, strength: "very_strong" }), ROBUSTA);
 });
 
 Deno.test("built-in grinder: Aristo + Dark Chocolate, robusta only if very strong", () => {
-  assertEquals(r({ brew: "combo" }), ["aristo", "dark"]);
+  assertEquals(r({ brew: "combo" }).slice(0, 2), ["aristo", "dark"]);
   assertEquals(r({ brew: "combo", strength: "very_strong" }), ROBUSTA);
 });
 
 Deno.test("manual espresso: Sertão, Jungle, Aristo; no robusta by default", () => {
-  assertEquals(r({ brew: "manual" }), ["sertao", "jungle", "aristo"]);
+  assertEquals(r({ brew: "manual", milk: "cow" }).includes("sertao"), true);
+  assertEquals(r({ brew: "manual" }).slice(0, 2), ["sertao", "jungle"]);
+  assert(noRobusta(r({ brew: "manual" })));
 });
 
 Deno.test("moka: strong Sertão, balanced Jungle + Antigua, no robusta by default", () => {
@@ -96,6 +98,30 @@ Deno.test("light roast: Kenya first; new light coffees join", () => {
   assertEquals(r({ light: true })[0], "kenya_l");
   const s = { all: ["kenya_l", "new_light"], light: ["kenya_l", "new_light"] };
   assertEquals(r({ light: true }, s), ["kenya_l", "new_light"]);
+});
+
+Deno.test("black espresso: the machine's two leads, plus one by taste", () => {
+  const j = { brew: "auto", brand: "premium" };
+  assertEquals(r({ ...j, taste: "fruity" }), ["aristo", "sertao", "kenya_m"]);
+  assertEquals(r({ ...j, taste: "chocolate" }), ["aristo", "sertao", "jungle"]);
+  assertEquals(r({ ...j, taste: "floral" }), ["aristo", "sertao", "velvet"]);
+  assertEquals(r({ ...j, taste: "unknown" }), ["aristo", "sertao", "bensa_m"]);
+  assertEquals(r({ brew: "manual", taste: "chocolate" }), ["sertao", "jungle", "aristo"]);   // no duplicate
+  assertEquals(r({ ...j, strength: "strong" })[0], "dark");                                  // strength ladder untouched
+});
+
+Deno.test("Kenya regular: espresso with milk, filter, French press", () => {
+  assert(r({ brew: "combo", milk: "cow", taste: "fruity" }).includes("kenya_m"));
+  assert(r({ brew: "filter", taste: "fruity" }).includes("kenya_m"));
+  assert(r({ brew: "press", taste: "unknown" }).includes("kenya_m"));
+});
+
+Deno.test("Daye Bensa light: filter and milk, when light is asked for", () => {
+  assertEquals(r({ light: true }).slice(0, 2), ["kenya_l", "bensa_l"]);
+  assertEquals(r({ light: true, milk: "cow" })[0], "bensa_l");
+  assert(!r({ taste: "fruity" }).includes("bensa_l"));                                       // only when asked
+  assertEquals(r({ light: true, taste: "fruity" }), ["kenya_l", "aji", "bensa_l"]);
+  assertEquals(r({ light: true, taste: "floral" }), ["kenya_l", "leona", "bensa_l"]);
 });
 
 Deno.test("decaf shows decaf, for every method", () => {
