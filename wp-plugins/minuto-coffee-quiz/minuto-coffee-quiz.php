@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Coffee Quiz
  * Description: "איזה קפה מתאים לי?" quiz. Place [minuto_coffee_quiz] on a page.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_QUIZ_VERSION', '1.1.1');
+define('MINUTO_QUIZ_VERSION', '1.1.2');
 define('MINUTO_QUIZ_CACHE_KEY', 'minuto_quiz_catalog');
 define('MINUTO_QUIZ_ROAST_ATTRIBUTE_ID', 20);   // רמת קלייה
 define('MINUTO_QUIZ_MACHINES_CATEGORY_ID', 394);  // מכונות קפה, including its subcategories
