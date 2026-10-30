@@ -6,7 +6,7 @@ Read-only audit of minuto.co.il via the WooCommerce REST API. 1191 products and 
 * **Mechanical checks** on all 1055 published, non-hidden products: price 0, duplicate SKUs, missing SKU, image or descriptions, and "100% Arabica" next to robusta.
 * No duplicate SKUs anywhere. No lorem or English placeholder text.
 
-**171 findings**: 11 high · 38 medium · 122 low.
+**189 findings**: 11 high · 45 medium · 133 low.
 
 ## Counts by issue type and severity
 
@@ -16,10 +16,10 @@ Read-only audit of minuto.co.il via the WooCommerce REST API. 1191 products and 
 | coffee_facts | 1 | 5 | 5 | 11 |
 | copy_paste | 0 | 4 | 2 | 6 |
 | hebrew_text | 0 | 0 | 20 | 20 |
-| internal_mismatch | 4 | 8 | 5 | 17 |
+| internal_mismatch | 4 | 9 | 5 | 18 |
 | missing_data | 0 | 12 | 63 | 75 |
-| spec_commerce | 6 | 6 | 27 | 39 |
-| **total** | 11 | 38 | 122 | 171 |
+| spec_commerce | 6 | 12 | 38 | 56 |
+| **total** | 11 | 45 | 133 | 189 |
 
 ## Top 10 fixes
 
@@ -39,7 +39,7 @@ Read-only audit of minuto.co.il via the WooCommerce REST API. 1191 products and 
 Coffee products with no findings:
 * פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate (64860)
 
-981 of 1055 published, non-hidden products passed all mechanical checks. They were not content-reviewed; the full list is in `clean_products.txt`.
+964 of 1055 published, non-hidden products passed all mechanical checks. They were not content-reviewed; the full list is in `clean_products.txt`.
 
 Notes:
 * Shipping weight is 0 or empty on 22 of the 24 non-kit coffee products. These are logged as low.

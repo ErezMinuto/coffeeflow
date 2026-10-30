@@ -97,6 +97,7 @@ F = [
  (67217,'description',HE,L,'ניחוד של שוקולד · Trieste','Typo; blend name spelled differently from its product (טריאסט / Triest).','ניחוח של שוקולד · טריאסט',C),
  (67146,'short_description',HE,L,'לפרטים נוספים והזמנה: https://www.minuto.co.il/','Raw homepage URL in the short description of a page already on the site.','למחוק את השורה',C),
  (65201,'short_description / description',HE,L,'ערביקה ברזיאלית','Typo.','ערביקה ברזילאית',C),
+ (67660,'name / short_description vs description',IM,M,'כוס קפוצ׳ינו וצלוחית 250 מ"ל · "הספל מגיע בגודל 200 מ"ל"','Title and short description say 250 ml; description and URL slug say 200 ml.','לאמת את נפח הספל (Loveramics Egg cappuccino מגיע ב-200 וב-250 מ״ל) וליישר את הכותרת, התיאור הקצר והתיאור',LI),
 ]
 
 rows = []
@@ -140,6 +141,35 @@ for p in P.values():
         add('short_description', MI, L, '(empty)', 'Short description is empty.', 'לכתוב תיאור קצר (2–3 שורות)')
     if not p['sku'].strip():
         add('sku', MI, L, '(empty)', 'No SKU.', 'להזין מק״ט')
+
+# ---- colour variants of the same model priced differently (family.py)
+if os.path.exists(f'{D}/raw/family_diffs.json'):
+    for d in json.load(open(f'{D}/raw/family_diffs.json')):
+        if d['kind'] != 'price': continue
+        vals = {int(k): v for k, v in d['values'].items()}
+        lo, hi = min(vals.values()), max(vals.values())
+        big = hi >= 1000 and (hi - lo) / lo > 0.03
+        listing = ' · '.join(f"{i}: {v:g} ₪" for i, v in sorted(vals.items(), key=lambda x: x[1]))
+        for i, v in vals.items():
+            if v != hi: continue
+            p = P[i]
+            rows.append(dict(product_id=i, product_name=strip(p['name']), permalink=p['permalink'], field='price',
+                issue_type=SC, severity=M if big else L, current_text=listing,
+                problem=f'Same model in another colour/finish is priced differently ({lo:g}–{hi:g} ₪). May be a deliberate finish premium or a stale price.',
+                suggested_fix='לאמת מול מחירון היבואן אם יש תוספת מחיר לצבע/גימור; אם לא – ליישר את המחיר בין הצבעים', confidence=VE))
+
+# ---- per-product content review of the non-coffee catalog (raw/agent_findings/*.json)
+import glob
+seen = {(r['product_id'], r['current_text']) for r in rows}
+for fn in sorted(glob.glob(f'{D}/raw/agent_findings/chunk_*.json')):
+    for f in json.load(open(fn)):
+        pid = int(f['product_id'])
+        if pid not in P or (pid, f['current_text']) in seen: continue
+        p = P[pid]
+        it = f['issue_type']
+        rows.append(dict(product_id=pid, product_name=strip(p['name']), permalink=p['permalink'], field=f['field'],
+            issue_type=it, severity=f['severity'], current_text=f['current_text'], problem=f['problem'],
+            suggested_fix=f['suggested_fix'], confidence=f['confidence']))
 
 sevorder = {H: 0, M: 1, L: 2}
 rows.sort(key=lambda r: (sevorder[r['severity']], r['issue_type'], r['product_id']))
