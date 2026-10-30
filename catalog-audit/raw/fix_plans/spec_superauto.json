@@ -1,0 +1,418 @@
+{
+ "edits": [
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Jura C8 היא מכונת קפה",
+   "new": "Jura C9 היא מכונת קפה",
+   "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "היא מאפשרת הכנה של 6 סוגי משקאות, כולל אספרסו, קפה, קפוצ'ינו ולאטה מקיאטו, עם שליטה אישית בעוצמה, טחינה וכמות חלב.",
+   "new": "היא מאפשרת הכנה של 17 סוגי משקאות בשני עולמות טעם – חליטה חמה קלאסית וחליטה קלה (Light Brew) – כולל אספרסו, קפה, קורטאדו, אספרסו מקיאטו, קפוצ'ינו, פלאט וייט ולאטה מקיאטו, עם שליטה אישית בעוצמה (10 רמות), בדרגת הטחינה (7 רמות) ובכמות החלב וקצף החלב.",
+   "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "meta:rank_math_title",
+   "old": "jura ena 8",
+   "new": "jura c9",
+   "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "מכונת קפה אוטומטית Jura ENA 8 - היא מכונת הקפה החדשה לספל יחיד. קטנה, פשוטה - פריט חובה לכל חובבי הקפה. ה- 8 ENA מכינה שלל משקאות קפה מפולי קפה שהרגע נטחנו. ",
+   "new": "מכונת קפה אוטומטית Jura C9 - מכונה קומפקטית עם 17 משקאות בשני עולמות טעם: חליטה חמה ו-Light Brew. מטחנת Professional Aroma Grinder, מיכל מים 1.6 ליטר ומסך צבעוני 2.8 אינץ'.",
+   "finding": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 76545,
+   "variation_id": null,
+   "target": "description",
+   "old": "הכנת מעל 42 סוגי משקאות",
+   "new": "הכנת 42 סוגי משקאות",
+   "finding": "הכנת מעל 42 סוגי משקאות",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j10-piano-black-ea-15562"
+  },
+  {
+   "product_id": 65469,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "בעוד שהחיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה",
+   "new": "בעוד שהחיבור ל-Wi-Fi (באמצעות משדר JURA Wi-Fi Connect הנמכר בנפרד) מאפשר חוויה חכמה ונוחה",
+   "finding": "החיבור ל-Wi-Fi מאפשר חוויה חכמה ונוחה",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e6-piano-black-ec-15437"
+  },
+  {
+   "product_id": 64933,
+   "variation_id": null,
+   "target": "description",
+   "old": "המונעים הצטברות שאריות קפה ושומנים.",
+   "new": "המונעים הצטברות שאריות קפה ושומנים. שלב 3: הגנה – בשלב השלישי, חומרים מקבעים (complexing agents) מעניקים הגנה מתמשכת מפני מרבצי מינרלים.",
+   "finding": "טבלית הניקוי התלת-פאזית ... שלב 1: ניקוי ... שלב 2: טיפול",
+   "source": "https://www.jura.com/en/homeproducts/maintenance-products/3phasecleaningtablets6pc-24225"
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ מים של 15 בר",
+   "new": "לחץ מים של 19 בר",
+   "finding": "בשילוב עם לחץ מים של 15 בר",
+   "source": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ מים של 15 בר",
+   "new": "לחץ מים של 19 בר",
+   "finding": "בשילוב עם לחץ מים של 15 בר",
+   "source": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+  },
+  {
+   "product_id": 67274,
+   "variation_id": null,
+   "target": "description",
+   "old": "מידות - רוחב 24, גובה 58, עומק 34",
+   "new": "מידות - רוחב 24, גובה 34, עומק 48",
+   "finding": "מידות - רוחב 24, גובה 58, עומק 34",
+   "source": "https://www.nivona.com/en/product/7series"
+  },
+  {
+   "product_id": 67257,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "Flat White, לאטה מקיאטו ומים חמים.",
+   "new": "Flat White, לאטה מקיאטו, קפה קורטדו ומים חמים.",
+   "finding": "גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",
+   "source": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67257,
+   "variation_id": null,
+   "target": "description",
+   "old": "Flat White, לאטה מקיאטו ומים חמים.",
+   "new": "Flat White, לאטה מקיאטו, קפה קורטדו ומים חמים.",
+   "finding": "גלו את 12 המשקאות הזמינים: ריסטרטו, אספרסו, ... לאטה מקיאטו ומים חמים.",
+   "source": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67328,
+   "variation_id": null,
+   "target": "description",
+   "old": "הנאה מ- 6 משקאות קפה",
+   "new": "הנאה מ- 5 משקאות קפה",
+   "finding": "הנאה מ- 6 משקאות קפה בקצות האצבעות, כולל קפוצ’ינו",
+   "source": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים",
+   "new": "תוכלו להכין 4 ממשקאות הקפה הקלאסיים",
+   "finding": "תוכלו לקרוא להכין 10 ממשקאות הקפה הקלאסיים - אספרסו, קפה קרם, קפוצ'ינו ולאטה",
+   "source": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל מים 1.2 ליטר",
+   "new": "מיכל מים 1.8 ליטר",
+   "finding": "מיכל מים 1.2 ליטר",
+   "source": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב 25.3 סמ",
+   "new": "רוחב 25.5 סמ",
+   "finding": "מיכל מים 1.2 ליטר",
+   "source": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 38 סמ",
+   "new": "עומק 47.5 סמ",
+   "finding": "מיכל מים 1.2 ליטר",
+   "source": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה 39 סמ",
+   "new": "גובה 34.5 סמ",
+   "finding": "מיכל מים 1.2 ליטר",
+   "source": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 64957,
+   "variation_id": null,
+   "target": "description",
+   "old": "תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן.",
+   "new": "תוכלו ליהנות מעד 5000 כוסות* ללא צורך בהסרת אבנית (*בהחלפת 8 מסננים לפי התראת המכונה; עד 625 כוסות לכל מסנן).",
+   "finding": "תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן",
+   "source": "https://www.documents.philips.com/assets/20210902/4404039e12fb45ec9880ad970178b6c8.pdf"
+  },
+  {
+   "product_id": 64957,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<li>עד 5000 כוסות</li>",
+   "new": "<li>עד 5000 כוסות ללא הסרת אבנית (בהחלפת 8 מסננים, עד 625 כוסות לכל מסנן)</li>",
+   "finding": "תוכלו ליהנות מעד 5000 כוסות * מבלי להחליף את המסנן",
+   "source": "https://www.documents.philips.com/assets/20210902/4404039e12fb45ec9880ad970178b6c8.pdf"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 76352,
+   "finding": "מכונת קפה JURA W8",
+   "reason": "needs business decision: JURA makes both a W8 (15550, 17 specialities, P.A.G.2, 3.5\" display) and a WE8 (15419, 16 specialities); the copy's 3 l / 500 g / 25 servings fit both. Which model is stocked, and whether to merge with 64790 / fix the price, is an owner decision. Sources: https://www.jura.com/en/professional/machines/w8-dark-inox-ea-15550 , https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+  },
+  {
+   "product_id": 65102,
+   "finding": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "promo/price condition – business decision, no spec fix"
+  },
+  {
+   "product_id": 67337,
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו ישירות ממסורת גגיה",
+   "reason": "promo/price condition – business decision, no spec fix"
+  },
+  {
+   "product_id": 67274,
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "promo/price condition – business decision, no spec fix"
+  },
+  {
+   "product_id": 67275,
+   "finding": "מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "promo/price condition – business decision, no spec fix"
+  },
+  {
+   "product_id": 67296,
+   "finding": "מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו",
+   "reason": "promo/price condition – business decision, no spec fix"
+  },
+  {
+   "product_id": 65088,
+   "finding": "*מסלול קפה לשנה מתנה :1 ק\"ג פולי קפה איטלקי מדי חודש. (סה\"כ 12 ק\"ג)",
+   "reason": "gift promo validity – business decision"
+  },
+  {
+   "product_id": 65181,
+   "finding": "*מסלול קפה לשנה מתנה :1 ק\"ג פולי קפה איטלקי מדי חודש. (סה\"כ 12 ק\"ג)",
+   "reason": "gift promo validity – business decision"
+  },
+  {
+   "product_id": 64864,
+   "finding": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+   "reason": "no official manufacturer source: \"Eco Klear\" is not a Philips product, and the pack count (3 vs 4) is a stock/listing decision"
+  },
+  {
+   "product_id": 65112,
+   "finding": "עד 14 משקאות ... גלו את 10 המשקאות הזמינים",
+   "reason": "official page ambiguous about version: gaggia.com now lists 15 beverages for the Cadorna Prestige (incl. flat white and the newer over-ice coffee); the shop copy (heading 14, list of 13) matches the older pre-over-ice version. Confirm which version is stocked before changing the \"10\" counts. Source: https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 67154,
+   "finding": "גאג'יה קדורנה בריסטה פלוס",
+   "reason": "needs decision: Gaggia sells both Cadorna Plus (Classic Pannarello) and Cadorna Plus Barista (professional steam wand). The copy calls it Barista Plus and describes a professional stainless steam wand, so it may be the title that is wrong. Confirm the stocked model. Sources: https://www.gaggia.com/automatic-machines/cadorna-plus/ , https://www.gaggia.com/automatic-machines/cadorna-plus-barista/"
+  },
+  {
+   "product_id": 65029,
+   "finding": "האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה",
+   "reason": "matches official: Melitta lists Passione app support as \"Companion App\" (tips, step-by-step care guides, service functions), which is what the copy describes. Source: https://www.melitta.de/kaffeevollautomaten/refurbished/passione-edelstahl-refurbished"
+  },
+  {
+   "product_id": 67299,
+   "finding": "האפליקציה כוללת טיפים וטריקים לרגעים טעימים של הנאה מקפה",
+   "reason": "matches official: Melitta lists Passione app support as \"Companion App\" (tips, step-by-step care guides, service functions), which is what the copy describes. Source: https://www.melitta.de/kaffeevollautomaten/refurbished/passione-edelstahl-refurbished"
+  },
+  {
+   "product_id": 67225,
+   "finding": "ממשק מסך צבעוני האינטואיטיבי שלו",
+   "reason": "matches official: Nivona lists a 2.4-inch colour (TFT) display for the 5 series / NICR 550. Source: https://www.nivona.com/en/product/5series"
+  },
+  {
+   "product_id": 80374,
+   "finding": "הפילטר מתאים לכל סדרת: ECAM EC680 ו-EC800 .",
+   "reason": "no exact model: the listing does not name the DeLonghi filter model (e.g. DLSC002), so it cannot be matched to an official compatibility list. The heading typo \"דלוגי\" is editorial"
+  },
+  {
+   "product_id": 65439,
+   "finding": "כמות: 36, 9",
+   "reason": "store-wide attribute (quantity option values), not a copy field"
+  },
+  {
+   "product_id": 81804,
+   "finding": "כמות: 36, 9",
+   "reason": "store-wide attribute (quantity option values), not a copy field"
+  },
+  {
+   "product_id": 67618,
+   "finding": "צבע מוצר: אדום, כסף",
+   "reason": "store-wide attribute (colour options)"
+  },
+  {
+   "product_id": 64929,
+   "finding": "צבע מוצר: לבן, שחור",
+   "reason": "store-wide attribute (colour options)"
+  },
+  {
+   "product_id": 81455,
+   "finding": "צבע מוצר: לבן, שחור",
+   "reason": "store-wide attribute (colour options)"
+  },
+  {
+   "product_id": 67243,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "store-wide attribute (colour options)"
+  },
+  {
+   "product_id": 68281,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "store-wide attribute (colour options)"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 65446,
+   "spec": "Number of specialities",
+   "value": "17 (espresso, coffee, cortado, espresso macchiato, cappuccino, flat white, latte macchiato + Light Brew versions, 2x espresso/coffee, milk foam)",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Brewing worlds",
+   "value": "hot brew + light brew (Light Extraction Process)",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Coffee strength",
+   "value": "10 levels",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Grind consistency",
+   "value": "7 levels",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Milk/milk foam amount",
+   "value": "individually programmable",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Grinder",
+   "value": "Professional Aroma Grinder (P.A.G.)",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Water tank",
+   "value": "1.6 l",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 65446,
+   "spec": "Display",
+   "value": "2.8\" colour display with buttons",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c9-piano-black-ea-15753"
+  },
+  {
+   "product_id": 76545,
+   "spec": "Number of specialities",
+   "value": "42",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j10-piano-black-ea-15562"
+  },
+  {
+   "product_id": 65469,
+   "spec": "Wi-Fi transmitter supplied as standard",
+   "value": "- (no; must be ordered separately, e.g. Wi-Fi Connect V2)",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e6-piano-black-ec-15437"
+  },
+  {
+   "product_id": 64933,
+   "spec": "3 phases",
+   "value": "cleaning (removes coffee fats), care (seals pipes), protection (complexing agents vs mineral deposits)",
+   "url": "https://www.jura.com/en/homeproducts/maintenance-products/3phasecleaningtablets6pc-24225"
+  },
+  {
+   "product_id": 65088,
+   "spec": "Pump pressure (לחץ משאבה)",
+   "value": "19 bar",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+  },
+  {
+   "product_id": 65181,
+   "spec": "Pump pressure (לחץ משאבה)",
+   "value": "19 bar",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+  },
+  {
+   "product_id": 67274,
+   "spec": "Product dimensions (W x H x D)",
+   "value": "240 x 340 x 480 mm",
+   "url": "https://www.nivona.com/en/product/7series"
+  },
+  {
+   "product_id": 67257,
+   "spec": "Beverages",
+   "value": "12 pre-set: ristretto, espresso, espresso lungo, coffee, americano, cappuccino, café au lait, frothed milk, flat white, latte macchiato, café cortado, hot water (+ over-ice coffee on the current version)",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "Drinks",
+   "value": "5 coffee and milk-based drinks (4 at one touch) + hot water",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Pre-set coffee variations",
+   "value": "10 (4 classics via touch keys + 6 via menu)",
+   "url": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Water tank",
+   "value": "1.8 l",
+   "url": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Dimensions (H x W x D)",
+   "value": "345 x 255 x 475 mm",
+   "url": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 64957,
+   "spec": "Cup claim",
+   "value": "No descaling up to 5000 cups*, *based on 8 filter replacements as indicated by the machine; up to 625 cups per filter",
+   "url": "https://www.documents.philips.com/assets/20210902/4404039e12fb45ec9880ad970178b6c8.pdf"
+  }
+ ]
+}
