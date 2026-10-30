@@ -1,0 +1,1332 @@
+[
+ {
+  "product_id": 81503,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+  "problem": "Title names the 'Dynamic' variant, but short and long descriptions are word-for-word identical to the 'High-velocity' sibling (78245) and never mention what distinguishes Dynamic.",
+  "suggested_fix": "להוסיף לתיאור את ההבדל בין דגם Dynamic לדגם High-velocity (צורת פיה/זרימה), או לאחד את שני המוצרים אם מדובר באותו כד",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81503,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ורטקס – כד הקצפה מושלם 500 מ״ל",
+  "problem": "Opening heading misspells the product name ('ורטקס' instead of 'וורטקס'); same typo in sibling 78245.",
+  "suggested_fix": "וורטקס – כד הקצפה מושלם 500 מ״ל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78245,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ורטקס – כד הקצפה מושלם 500 מ״ל",
+  "problem": "Opening heading misspells the product name ('ורטקס' instead of 'וורטקס').",
+  "suggested_fix": "וורטקס – כד הקצפה מושלם 500 מ״ל",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65077,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שילוב של יופי אלנגטי ואיכות",
+  "problem": "Typo 'אלנגטי' (should be 'אלגנטי'), repeated in the description.",
+  "suggested_fix": "שילוב של יופי אלגנטי ואיכות ללא פשרות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67651,
+  "field": "categories",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "משקלים לקפה Acia | מותג: Subminimal",
+  "problem": "Subscale is a Subminimal product but it is filed under the Acaia ('Acia') scales brand category.",
+  "suggested_fix": "להעביר לקטגוריית משקלים לקפה כללית / Subminimal ולהסיר מקטגוריית Acaia",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79402,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "כלי. ה- WDT הוא הפתרון",
+  "problem": "Stray full stop splits the sentence ('כלי. ה- WDT').",
+  "suggested_fix": "כלי ה-WDT הוא הפתרון הכי יעיל...",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67665,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מגירת דחיסת קפה Slim – Knock Box ECM",
+  "problem": "A knock box is for emptying (ריקון) spent pucks, not 'tamping' (דחיסה); the title and copy call it a 'tamping drawer', which is misleading next to the actual ECM tamping stations.",
+  "suggested_fix": "מגירת ריקון קפה Slim – Knock Box ECM",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 77141,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Product is a black knock box, but the colour attribute lists red, bronze and stainless and not black.",
+  "suggested_fix": "צבע מוצר: שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79401,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Product is a black knock box, but the colour attribute lists red, bronze and stainless and not black.",
+  "suggested_fix": "צבע מוצר: שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79401,
+  "field": "name",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+  "problem": "Created as a copy (permalink ends in 'העתק') of 77141: same copy and near-identical title, but 390 vs 280 ILS and larger dimensions (25.5x34.5 vs 20x25 cm); the title does not tell customers it is the larger size.",
+  "suggested_fix": "להוסיף את הגודל לשם, למשל: מגירת ריקון לקפה בצבע שחור – גודל L (25.5x34.5 ס״מ), ולתקן את הקישור הקבוע",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67222,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "עשויה נירוסטה איכותית בציפוי שחור מט",
+  "problem": "Title and short description describe a brushed stainless drawer, but the description (copied from the black model) says it has a matte black coating, twice.",
+  "suggested_fix": "עשויה נירוסטה איכותית בגימור מוברש... / גוף נירוסטה עמיד בגימור מוברש",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67222,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: אדום, ברונז, נירוסטה",
+  "problem": "Single stainless product carries a multi-colour attribute (red, bronze) that does not apply.",
+  "suggested_fix": "צבע מוצר: נירוסטה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67293,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "עשוי מפלסטיק מיוחד מפחית רעש איכותי עם מגש פלסטיק נשלף",
+  "problem": "Copy says the drawer is made of special plastic with a removable plastic tray, while the same text and specs say polished 304 stainless; the material is contradictory.",
+  "suggested_fix": "לאמת את החומר מול היצרן ולנסח: גוף נירוסטה 304 מלוטשת עם פס הקשה מפלסטיק מפחית רעש",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67293,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "ידית: 42 ס\"מ",
+  "problem": "A 42 cm 'handle' (knock bar) is implausible on a drawer that is only 14-20 cm wide; probably 4.2 cm or a different measurement.",
+  "suggested_fix": "לאמת את מידת הידית/מוט ההקשה מול דף היצרן (כנראה 4.2 ס\"מ)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67292,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "עשוי מפלסטיק מיוחד מפחית רעש איכותי עם מגש פלסטיק נשלף",
+  "problem": "Copy says the drawer is made of special plastic with a removable plastic tray, while the same text and specs say polished 304 stainless; the material is contradictory.",
+  "suggested_fix": "לאמת את החומר מול היצרן ולנסח: גוף נירוסטה 304 מלוטשת עם פס הקשה מפלסטיק מפחית רעש",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67292,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "ידית: 42 ס\"מ",
+  "problem": "A 42 cm 'handle' (knock bar) is implausible on a drawer that is only 14-20 cm wide; probably 4.2 cm or a different measurement.",
+  "suggested_fix": "לאמת את מידת הידית/מוט ההקשה מול דף היצרן (כנראה 4.2 ס\"מ)",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67667,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": " 4o",
+  "problem": "Leftover 'ChatGPT 4o' artefact at the end of the description.",
+  "suggested_fix": "למחוק את השורה \"4o\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67142,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "מגירת ריקון קפה מנירוסטה KNOCKBOX (M) DRAWER ECM",
+  "problem": "Same product as 67667 (ECM Knock Box M, same price 799 and dimensions 160x240x65) listed twice under different SKUs.",
+  "suggested_fix": "לאחד עם מוצר 67667 או להסתיר את אחד הכפילים",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67142,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "גובה: 65",
+  "problem": "Height value lacks a unit.",
+  "suggested_fix": "מידות: רוחב: 160 מ\"מ / עומק: 240 מ\"מ / גובה: 65 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68290,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מדחום לחלב של חברת - מאפשר",
+  "problem": "Brand name missing ('של חברת -'); brand (Motta) is only named later in a run-on paragraph.",
+  "suggested_fix": "מדחום לחלב של חברת מוטה (Motta) מאפשר להקציף חלב לטמפרטורה הנכונה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65441,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להזנת וטחינת החלב בקלות",
+  "problem": "Machine-translation error: milk is not 'ground'; also 'מוליכות ניטרלית בטעם' is meaningless.",
+  "suggested_fix": "צינורית החלב מחוברת בגובה המתאים להזנת החלב בקלות",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64805,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליצור קרח במהירות בתוך דק.",
+  "problem": "Cut-off word ('דק.' instead of 'דקות'), missing space 'ניתןלמלא', 'היא משתלב', and units written 'ממ'.",
+  "suggested_fix": "ליצור קרח במהירות בתוך דקות; ניתן למלא; היא משתלבת; רוחב 243 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67672,
+  "field": "name",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "מסננת ראש למכונות פרופיטק גו IMS CI200IM",
+  "problem": "IMS code prefix 'CI' (and the scraped line 'קטגוריות: CI') denotes the Cimbali range, and the 51.5 mm screen does not fit the Profitec GO's 58 mm E61-style group; the compatibility claim looks wrong.",
+  "suggested_fix": "לאמת מול קטלוג IMS לאיזו מכונה מתאים CI200IM (כנראה Cimbali) ולתקן את שם המוצר והתיאור",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67672,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "CI CI200IM ... קטגוריות: CI, תחרות, מקלחות",
+  "problem": "Leftover scraped catalogue lines ('CI CI200IM', 'קטגוריות: ...') and literal 'מקלחות' (shower) for shower screen.",
+  "suggested_fix": "למחוק את השורות שהועתקו מקטלוג היצרן ולהשתמש ב'מסננת ראש' במקום 'מקלחת'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67143,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "הזמינו עכשיו ותקבלו משלוח חינם!",
+  "problem": "Hard-coded free-shipping and club-discount promises in product copy may not match current shipping policy.",
+  "suggested_fix": "להסיר את ההבטחה למשלוח חינם או לאמת מול מדיניות המשלוחים הנוכחית",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64991,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64808,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 79432,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65117,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68383,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65116,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64973,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקומה בשנת 1933",
+  "problem": "Typo 'הקומה' (should be 'הוקמה'), and Bialetti was founded in 1919 (1933 is the Moka Express); the Tuttocrema pages in the same catalogue say 1919.",
+  "suggested_fix": "חברת ביאלטי היא אחת החברות המובילות בתחום הקפה באיטליה. הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65058,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "הוקמה בשנת 1933",
+  "problem": "Bialetti was founded in 1919 (1933 is the year of the Moka Express); contradicts the Tuttocrema pages that say 1919.",
+  "suggested_fix": "הוקמה בשנת 1919",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64991,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הוידאו המצורף מדגים את תהליך יצירת הקרמה",
+  "problem": "Refers to an attached video that is not part of the page (leftover embed text).",
+  "suggested_fix": "למחוק את המשפט על הווידאו או להטמיע את הווידאו בפועל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64991,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "מקינטה ביאלטי בריקה 4 כוסות + קפה | 290",
+  "problem": "Bundle of Brikka 4 + 330 g specialty coffee costs 290, only 35 ILS more than the Brikka 4 alone (255); check the bundle price or included coffee.",
+  "suggested_fix": "לאמת את מחיר המארז מול מחיר הבריקה 4 (255) ומחיר שקית 330 גרם",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65139,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מקינטה מקינטה ונוס",
+  "problem": "Word 'מקינטה' duplicated in title and description heading.",
+  "suggested_fix": "מקינטה ונוס ... כוסות ביאלטי - Makineta Venus Bialetti",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65138,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מקינטה מקינטה ונוס",
+  "problem": "Word 'מקינטה' duplicated in title and description heading.",
+  "suggested_fix": "מקינטה ונוס ... כוסות ביאלטי - Makineta Venus Bialetti",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65021,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הקפצה חמה קרה",
+  "problem": "Typo 'הקפצה' (should be 'הקצפה').",
+  "suggested_fix": "הקצפה חמה וקרה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65021,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "מנגנון עצירה אוטומטי בטמפרטורת רתיחה",
+  "problem": "Milk frothers stop around 60-70°C; stopping at boiling contradicts the site's own advice not to heat milk above ~70°C.",
+  "suggested_fix": "מנגנון עצירה אוטומטי בהגעה לטמפרטורת ההקצפה האידיאלית",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 68308,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "טוטוקרמה 6 כוסות | 148",
+  "problem": "The 6-cup Tuttocrema (148) is cheaper than the 3-cup (166, ID 68307).",
+  "suggested_fix": "לאמת את המחירים של טוטוקרמה 3 ו-6 כוסות",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 68307,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ממלאים את הטוטוקרnה ... ומניכים אותה",
+  "problem": "Latin 'n' inside the Hebrew word 'טוטוקרמה' and typo 'ומניכים' (should be 'ומניחים').",
+  "suggested_fix": "ממלאים את הטוטוקרמה עד שליש המיכל בחלב ומניחים אותה ישירות על הכיריים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68308,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ממלאים את הטוטוקרnה ... ומניכים אותה",
+  "problem": "Latin 'n' inside the Hebrew word 'טוטוקרמה' and typo 'ומניכים' (should be 'ומניחים').",
+  "suggested_fix": "ממלאים את הטוטוקרמה עד שליש המיכל בחלב ומניחים אותה ישירות על הכיריים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64976,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להנאה מושלמת מקפה/",
+  "problem": "Stray slash at the end of the sentence (also in the description).",
+  "suggested_fix": "להנאה מושלמת מקפה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68312,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בגמר ההקצה ... קצף עשיר וכרמי",
+  "problem": "Typos 'ההקצה' (ההקצפה) and 'כרמי' (קרמי), in short description and description.",
+  "suggested_fix": "מפסיק את פעולתו בגמר ההקצפה באופן אוטומטי; מתאים ל-2-4 מנות של קצף עשיר וקרמי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65239,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "בנפח מילוי של 700 מ\"ל להקצפה",
+  "problem": "Says the 700 ml fill is for frothing, but the same text gives 120-350 ml for frothing and 700 ml only for heating.",
+  "suggested_fix": "קיבולת XXL הודות למיכל חלב גדול מנירוסטה: עד 700 מ\"ל לחימום ועד 350 מ\"ל להקצפה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65239,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בגמר ההקצה ... קצף עשיר וכרמי",
+  "problem": "Typos 'ההקצה' (ההקצפה) and 'כרמי' (קרמי).",
+  "suggested_fix": "מפסיק את פעולתו בגמר ההקצפה באופן אוטומטי; קצף עשיר וקרמי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64911,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "משקל סופר רגיש, עם דיוק של עד 1 גר׳",
+  "problem": "1 g resolution contradicts 'super sensitive'; coffee timer scales are usually 0.1 g. Check the actual resolution.",
+  "suggested_fix": "לאמת את רזולוציית המשקל (0.1 גרם או 1 גרם) מול המפרט",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 81077,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה Acia Lunar - שחור",
+  "problem": "Brand misspelled 'Acia' in the title (and closing line); the brand is Acaia, as written elsewhere in the copy.",
+  "suggested_fix": "משקל קפה Acaia Lunar - שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64745,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה Acia Lunar - לבן",
+  "problem": "Brand misspelled 'Acia' in the title (and closing line); the brand is Acaia, as written elsewhere in the copy.",
+  "suggested_fix": "משקל קפה Acaia Lunar - לבן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64744,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה Acia Pearl",
+  "problem": "Brand misspelled 'Acia' in the title (and closing line); the brand is Acaia, as written elsewhere in the copy.",
+  "suggested_fix": "משקל קפה Acaia Pearl",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81089,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה Acia Pearl s - שחור",
+  "problem": "Brand misspelled 'Acia' in the title (and closing line); the brand is Acaia, as written elsewhere in the copy.",
+  "suggested_fix": "משקל קפה Acaia Pearl s - שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64743,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה Acia Pearl s - לבן",
+  "problem": "Brand misspelled 'Acia' in the title (and closing line); the brand is Acaia, as written elsewhere in the copy.",
+  "suggested_fix": "משקל קפה Acaia Pearl s - לבן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81077,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "משקל כיול של 0.1 גרם",
+  "problem": "A 0.1 g calibration weight is not plausible; 0.1 g is the scale's readability. Lunar ships with a 100 g calibration weight.",
+  "suggested_fix": "לאמת מול תכולת האריזה (משקולת כיול 100 גרם) ולתקן",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 81077,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שדרגו את תהליך החליטה שלכם סולם Acaia Lunar",
+  "problem": "Machine translation: 'scale' translated as 'סולם' (ladder), and the word 'עם' is missing.",
+  "suggested_fix": "שדרגו את תהליך החליטה שלכם עם משקל Acaia Lunar",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64745,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "משקל כיול של 0.1 גרם",
+  "problem": "A 0.1 g calibration weight is not plausible; 0.1 g is the scale's readability. Lunar ships with a 100 g calibration weight.",
+  "suggested_fix": "לאמת מול תכולת האריזה (משקולת כיול 100 גרם) ולתקן",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64745,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שדרגו את תהליך החליטה שלכם סולם Acaia Lunar",
+  "problem": "Machine translation: 'scale' translated as 'סולם' (ladder), and the word 'עם' is missing.",
+  "suggested_fix": "שדרגו את תהליך החליטה שלכם עם משקל Acaia Lunar",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64745,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "משטח: ציפוי אלומיניום אנודייז (כסף שחור)",
+  "problem": "White Lunar page copies the black model's finish ('silver black').",
+  "suggested_fix": "לעדכן את הגימור לגרסה הלבנה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81077,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64745,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81089,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64743,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Each colour is a separate product, yet the colour attribute lists both colours.",
+  "suggested_fix": "להשאיר רק את הצבע של המוצר (שחור / לבן)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64744,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "משקל קפה המקוצעי ... חלוט קפה בצורה מדיוקת",
+  "problem": "Typos 'המקוצעי', 'חלוט', 'מדיוקת' and double '??'.",
+  "suggested_fix": "משקל הקפה המקצועי Acaia Pearl והתחילו לחלוט קפה בצורה מדויקת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81089,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליניאריות: 1 ד",
+  "problem": "Cut-off spec value ('1 ד', from '1 d').",
+  "suggested_fix": "ליניאריות: 1d (0.1 גרם)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64743,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ליניאריות: 1 ד",
+  "problem": "Cut-off spec value ('1 ד', from '1 d').",
+  "suggested_fix": "ליניאריות: 1d (0.1 גרם)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 79990,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "Knockbox נירוסטה שחור (114mmx114mm)",
+  "problem": "Title says 114x114 mm, but short description and description say 14 cm diameter x 15 cm height (the same as sibling 67276 titled 141x150 mm).",
+  "suggested_fix": "לאמת את המידות; אם הן 14x15 ס\"מ – לעדכן את השם ל-(141mmx150mm), ואם 114 מ\"מ – לעדכן את התיאור",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67176,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע מוצר: אדום, אפור, שחור",
+  "problem": "Stainless knock box lists red/grey/black colours and not stainless.",
+  "suggested_fix": "צבע מוצר: נירוסטה",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64685,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מתיקו את היום שלכם",
+  "problem": "Typo 'מתיקו' (should be 'המתיקו'), and a dead 'להזמנה: לחצו כאן' link residue; also says both 'דל קלוריות' and 'ללא קלוריות'.",
+  "suggested_fix": "המתיקו את היום שלכם בלי רגשות אשם! ... (להסיר את \"להזמנה: לחצו כאן\")",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64697,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סירופ רוטן לקפה בטעם אגוזי לוז 1889",
+  "problem": "Title says '1889', but the description (and the caramel sibling) say '1883'; the brand is 1883 Maison Routin.",
+  "suggested_fix": "סירופ רוטן לקפה בטעם אגוזי לוז 1883",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64698,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "סירופ רוטן לקפה בטעם וניל 1889",
+  "problem": "Title says '1889', but the description (and the caramel sibling) say '1883'; the brand is 1883 Maison Routin.",
+  "suggested_fix": "סירופ רוטן לקפה בטעם וניל 1883",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 77223,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הכירו את NanoFoamer V2 – הפתרון האולטימטיבי",
+  "problem": "Short description markets the whole NanoFoamer V2 frother, but the product is only a 29 ILS replacement impeller and screens kit.",
+  "suggested_fix": "ערכת חלקי חילוף מקוריים (מדחף ושתי רשתות הקצפה) למקציף NanoFoamer V2 ו-Lithium",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65123,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "AIRSCAPE כ- 1 ק״ג קפה צבע שחור | 229",
+  "problem": "Black 1 kg Airscape is 229 while the white and grey 1 kg versions are 259.",
+  "suggested_fix": "לאמת את מחיר ה-1 ק\"ג השחור מול שאר הצבעים",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65120,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "AIRSCAPE כ- 500 גרם קפה צבע שחור | 210",
+  "problem": "500 g colour versions vary unexpectedly: black 210, red/yellow/white/green 215, copper/turquoise 219.",
+  "suggested_fix": "לאמת ולהאחיד את מחירי ה-500 גרם בצבעים",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 82084,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is טורקיז but the colour attribute says black.",
+  "suggested_fix": "צבע: טורקיז",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82082,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is כחול but the colour attribute says black.",
+  "suggested_fix": "צבע: כחול",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81581,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is לבן but the colour attribute says black.",
+  "suggested_fix": "צבע: לבן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81574,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is נירוסטה but the colour attribute says black.",
+  "suggested_fix": "צבע: נירוסטה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81566,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is נחושת but the colour attribute says black.",
+  "suggested_fix": "צבע: נחושת",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65119,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "צבע: שחור",
+  "problem": "Title colour is אדום but the colour attribute says black.",
+  "suggested_fix": "צבע: אדום",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64692,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82084,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82082,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81581,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81574,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81566,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81559,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 78557,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65120,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65436,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65123,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-1 ק״ג פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65122,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65121,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-1 ק״ג פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65119,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא). On this 250 g (smallest) size it also wrongly calls the canister 'large'.",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-250 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65101,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-1 ק״ג פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64694,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64693,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64691,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מספר צבעים זמינים להוספת צבע למטבח שלך. שטיפת",
+  "problem": "Sentence cut off after 'שטיפת', brand typo 'אייסקייפ' and 'כשהו' (כשהוא).",
+  "suggested_fix": "להשלים/למחוק את 'שטיפת'; מיכל איירסקייפ מכיל כ-500 גרם פולי קפה; ...כשהוא ארוז בתוך שקית",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65049,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בורוסיליקט kלא נקבובית",
+  "problem": "Stray Latin 'k' inside a Hebrew word.",
+  "suggested_fix": "עשוי מזכוכית בורוסיליקט לא נקבובית שלא תספוג ריחות או טעמים",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64909,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מטחנת הקומננטה שלך",
+  "problem": "Typo 'הקומננטה' (should be 'הקומנדנטה').",
+  "suggested_fix": "כלי אידיאלי לניקוי מטחנת הקומנדנטה שלך",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65461,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "מילות מפתח: מברשת ניקוי, קומנדנטה, מטחנת קפה, ניקיון",
+  "problem": "Visible SEO keyword list left in the customer-facing description.",
+  "suggested_fix": "למחוק את שורת \"מילות מפתח\"",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 77111,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing spaces ('הבחירהבחומר', 'טחונים.ייצור', 'רב.קשה') and a dangling sentence 'שלא רוצים להתפשר...'.",
+  "suggested_fix": "הבחירה בחומר המתכת ללהבים...; ...טחונים. ייצור להב Nitro...",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64710,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing spaces ('הבחירהבחומר', 'טחונים.ייצור', 'רב.קשה') and a dangling sentence 'שלא רוצים להתפשר...'.",
+  "suggested_fix": "הבחירה בחומר המתכת ללהבים...; ...טחונים. ייצור להב Nitro...",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64841,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הבחירהבחומר במתכת ללהבים",
+  "problem": "Missing spaces ('הבחירהבחומר', 'טחונים.ייצור', 'רב.קשה') and a dangling sentence 'שלא רוצים להתפשר...'.",
+  "suggested_fix": "הבחירה בחומר המתכת ללהבים...; ...טחונים. ייצור להב Nitro...",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64710,
+  "field": "sku",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "5454545457454545",
+  "problem": "SKU is a keyboard-pattern placeholder rather than a real barcode/SKU.",
+  "suggested_fix": "לעדכן מק\"ט/ברקוד אמיתי מהספק",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64861,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "צנצנת פולי קפה פולימרית אדום למטחנת Comandante",
+  "problem": "Description heading names a red polymer bean jar, copied from another product, while the product is the Wood Care Balm.",
+  "suggested_fix": "משחה לטיפול בעץ למטחנות קפה קומנדנטה - Wood Care Balm",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64861,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "WOOD CARE BALM Comandante | 59",
+  "problem": "Same Comandante Wood Care Balm is also listed as ID 64696 at 49 ILS; duplicate listing with different prices.",
+  "suggested_fix": "לאחד את שני המוצרים ולקבוע מחיר אחד",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64696,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "והפלישו את העץ",
+  "problem": "Typo 'הפלישו' (should be 'הבריקו').",
+  "suggested_fix": "המתינו מספר דקות והבריקו את העץ בעזרת מטלית הכותנה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64915,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "גם לך חובב קפה הפילטר תובעני /ת, ודורש/ת",
+  "problem": "Broken sentence with no verb or point.",
+  "suggested_fix": "גם חובבי קפה פילטר שדורשים רמת דיוק גבוהה ייהנו מהשדרוג.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65472,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "במיוחד למזון לטחנת COMANDANTE® C40",
+  "problem": "Typo 'לטחנת' (למטחנת), misplaced period '.תואמת', and gender agreement 'צנצנת ... הוא'.",
+  "suggested_fix": "צנצנת POLYMER BEAN היא תוספת בטוחה וחזקה למטחנת COMANDANTE® C40 – תואמת ב-100% לכל דגמי C40 Mk3 ו-Mk4.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64908,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "במיוחד למזון לטחנת COMANDANTE® C40",
+  "problem": "Typo 'לטחנת' (למטחנת), misplaced period '.תואמת', and gender agreement 'צנצנת ... הוא'.",
+  "suggested_fix": "צנצנת POLYMER BEAN היא תוספת בטוחה וחזקה למטחנת COMANDANTE® C40 – תואמת ב-100% לכל דגמי C40 Mk3 ו-Mk4.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64907,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "במיוחד למזון לטחנת COMANDANTE® C40",
+  "problem": "Typo 'לטחנת' (למטחנת), misplaced period '.תואמת', and gender agreement 'צנצנת ... הוא'.",
+  "suggested_fix": "צנצנת POLYMER BEAN היא תוספת בטוחה וחזקה למטחנת COMANDANTE® C40 – תואמת ב-100% לכל דגמי C40 Mk3 ו-Mk4.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64906,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "במיוחד למזון לטחנת COMANDANTE® C40",
+  "problem": "Typo 'לטחנת' (למטחנת), misplaced period '.תואמת', and gender agreement 'צנצנת ... הוא'.",
+  "suggested_fix": "צנצנת POLYMER BEAN היא תוספת בטוחה וחזקה למטחנת COMANDANTE® C40 – תואמת ב-100% לכל דגמי C40 Mk3 ו-Mk4.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64905,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "במיוחד למזון לטחנת COMANDANTE® C40",
+  "problem": "Typo 'לטחנת' (למטחנת), misplaced period '.תואמת', and gender agreement 'צנצנת ... הוא'.",
+  "suggested_fix": "צנצנת POLYMER BEAN היא תוספת בטוחה וחזקה למטחנת COMANDANTE® C40 – תואמת ב-100% לכל דגמי C40 Mk3 ו-Mk4.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64840,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "שמן מינרלי ... עשוי עם מרכיבים טבעיים לחלוטין",
+  "problem": "Calls it a mineral oil and also 'made of completely natural ingredients' that 'removes coffee oils'; contradictory claims.",
+  "suggested_fix": "לאמת את הרכב הנוזל מול היצרן ולנסח בהתאם",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67193,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ברז מים חמים וצינורית הצפה.",
+  "problem": "Typo 'הצפה' (flooding) instead of 'הקצפה' (frothing).",
+  "suggested_fix": "ברז מים חמים וצינורית הקצפה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64789,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "תכונות מכונת קפה Crem EX3 3 High Group",
+  "problem": "Product is the 2-group EX3, but the features heading says '3 High Group' (spec heading says 2).",
+  "suggested_fix": "תכונות מכונת קפה Crem EX3 2 High Group",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64789,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בצבעלבן או שחור ... לכל בית מקום",
+  "problem": "Missing space 'בצבעלבן' and garbled 'לכל בית מקום'.",
+  "suggested_fix": "המכונה מגיעה בצבע לבן או שחור; ההתאמה המושלמת לכל בית קפה",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67371,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שניתן לשמור  מאפיינים: ... מגש טפטוף חכם מסופק עם",
+  "problem": "Sentence cut off ('ניתן לשמור') and merged with the next list; 'מגש טפטוף חכם' run into 'מסופק עם'.",
+  "suggested_fix": "המכונה יכולה לשמור עד חמישה מתכונים שונים. מאפיינים: ... מגש טפטוף חכם. מסופק עם:",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67227,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "אחריות 12 חודשים ע\"י היבואן קפה רות",
+  "problem": "Siblings from the same importer (Crem ONE 1B, 2B R-GSP Dual, Dual Boiler LFPP) state 24 months warranty; this one says 12.",
+  "suggested_fix": "לאמת את תקופת האחריות מול היבואן קפה רות",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 81346,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81342,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65387,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81402,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81398,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65385,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הזמינו עכשיו את  באתר מינוטו קפה כוסות",
+  "problem": "Broken word order: object missing after 'את', inserted later in the sentence.",
+  "suggested_fix": "הזמינו עכשיו באתר מינוטו קפה את כוסות דייל האריס במהדורה מוגבלת ותיהנו מקפה בסטייל!",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81414,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "ההנחה אוטומטית ותתקבל בקופה. אין כפל קופונים והנחות.",
+  "problem": "Promises an automatic checkout discount, but the product has no sale price; leftover promo text.",
+  "suggested_fix": "להסיר את המשפט על ההנחה, או לאמת שקיים מבצע פעיל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81410,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "ההנחה אוטומטית ותתקבל בקופה. אין כפל קופונים והנחות.",
+  "problem": "Promises an automatic checkout discount, but the product has no sale price; leftover promo text.",
+  "suggested_fix": "להסיר את המשפט על ההנחה, או לאמת שקיים מבצע פעיל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81406,
+  "field": "description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "ההנחה אוטומטית ותתקבל בקופה. אין כפל קופונים והנחות.",
+  "problem": "Promises an automatic checkout discount, but the product has no sale price; leftover promo text.",
+  "suggested_fix": "להסיר את המשפט על ההנחה, או לאמת שקיים מבצע פעיל",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 76406,
+  "field": "name",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "ספל קורטדו דייל האריס בז' 200 מל",
+  "problem": "The Dale Harris cortado cups in other colours are 150 ml; 200 ml is the cappuccino size, so the capacity (or cup type) of the beige item is suspect.",
+  "suggested_fix": "לאמת את נפח הספל מול Loveramics (קורטדו 150 מ\"ל או קפוצ'ינו 200 מ\"ל) ולתקן שם ותיאור",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64705,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "רשת זאת תואם לרוב מכונות",
+  "problem": "Gender agreement error and fragment 'עם הסטנדרט הגבוה ש-La Marzocco,'.",
+  "suggested_fix": "רשת זו תואמת לרוב מכונות La Marzocco...; גם עם הסטנדרט הגבוה של La Marzocco",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64770,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "אם כי תנורי אינדוקציה מסוימים עשויים לדרוש מתאם",
+  "problem": "Short description and body say it suits all hobs including induction, later the text says some induction hobs need an adapter.",
+  "suggested_fix": "הקנקן מתאים לכיריים גז וחשמל; בכיריים אינדוקציה מסוימות ייתכן שיידרש מתאם בשל הקוטר הקטן",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67220,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "אטם אטם V סיליקון",
+  "problem": "Word 'אטם' duplicated.",
+  "suggested_fix": "אטם V מסיליקון זה מהווה תחליף מושלם...",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76537,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "משקל: כ-2 גרם ליחידה",
+  "problem": "A ~58 mm paper filter disc weighs a fraction of a gram; 2 g each is implausible.",
+  "suggested_fix": "לאמת את משקל נייר בודד או להסיר את השורה",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 76648,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ל חימום, פשוט מלאו",
+  "problem": "Broken word 'ל חימום'.",
+  "suggested_fix": "לחימום, פשוט מלאו את הסל במים חמים",
+  "confidence": "certain"
+ }
+]

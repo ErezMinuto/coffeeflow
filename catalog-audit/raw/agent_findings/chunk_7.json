@@ -1,0 +1,942 @@
+[
+ {
+  "product_id": 76799,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "הכירו את Loveramics Latte Glass 120 ml Urban Twisted",
+  "problem": "Title and short description say 180 ml, but the description repeatedly states 120 ml (copied from sibling 64796).",
+  "suggested_fix": "להחליף בכל התיאור '120 ml' / '120 מ\"ל' ב-'180 ml' / '180 מ\"ל', כמו בכותרת.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67221,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "הרובוט הוא מכונת קפה ידנית קטנה ואיכותית שמייצרת אספרסו אמיתי",
+  "problem": "Short description of the dispersion screen spare part is the full marketing text of the Robot machine itself.",
+  "suggested_fix": "רשת פיזור חלופית מנירוסטה למכונות האספרסו הידניות Cafelat Robot.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64821,
+  "field": "short_description",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "כל שקית מכילה 600 גר",
+  "problem": "Product is a 10 kg pack, but 600 g bags do not divide evenly into 10 kg (16.7 bags); pack composition is unclear.",
+  "suggested_fix": "לאמת את משקל השקית ומספר השקיות במארז 10 ק\"ג ולעדכן (למשל: 'כל שקית מכילה 1 ק\"ג, 10 שקיות במארז').",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64821,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "ושוב לשפןך לבלנדר",
+  "problem": "Typos in the recipe: 'לשפןך', 'שלאבקת', and redundant '1/3 שליש'.",
+  "suggested_fix": "'למלא את הכוס (כשליש) בחלב ושוב לשפוך לבלנדר. להוסיף לבלנדר 2 כפות גדושות של אבקת אייס קפה'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82928,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "חוזק: 4",
+  "problem": "Strength attribute is 4 (and short says 4 of 11), but the description states strength 8 for Americano Intenso.",
+  "suggested_fix": "לעדכן את מאפיין החוזק ל-8 בהתאם לתיאור (לאמת מול האריזה).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 82928,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מתהדר ברמת עוצמה של 4 מתוך 11",
+  "problem": "Short description is copied verbatim from the regular Americano (67189) and doesn't describe the Intenso variant.",
+  "suggested_fix": "אמריקנו אינטנסו מבית נסקפה דולצ'ה גוסטו – 100% ערביקה, דרגת חוזק 8, לספל גדול. מארז 16 קפסולות.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67186,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "התערובת משלבת גם שעועית רובוסטה מווייטנאם",
+  "problem": "Machine-translated 'beans' rendered as 'שעועית' (legume beans), twice; also calls the blend 'pure Arabica' while it includes robusta.",
+  "suggested_fix": "להחליף 'שעועית' ב'פולי קפה' ולהסיר 'טהורים' מתיאור התערובת שכוללת רובוסטה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64752,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "התענגו על השמחה של הכנת קפה ידנית עם DeLonghi EC9155.MB",
+  "problem": "Green EC9155.GR product names model EC9155.MB (another colour) at the end of the description.",
+  "suggested_fix": "להחליף 'EC9155.MB' ב-'EC9155.GR'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64752,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "צבע: ירוק כסוףמקציף חלב מבודד",
+  "problem": "Two lines merged without separator.",
+  "suggested_fix": "'צבע: ירוק כסוף' ובשורה נפרדת 'מקציף חלב מבודד'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76276,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שמשלבים בין איכות הבטא למורכבות הבלנד",
+  "problem": "Garbled phrase ('איכות הבטא', 'כל שאיבה', 'בכל גישה לקפה') - unclear machine-translated text.",
+  "suggested_fix": "לנסח מחדש, למשל: 'ניחוח עשיר וטעמים עמוקים המשלבים איכות ומורכבות של בלנד ערביקה ורובוסטה'.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64759,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "מטחנת קפה Lifestyle Ceado",
+  "problem": "Description heading calls the grinder 'Lifestyle' while title and body call it 'Life'.",
+  "suggested_fix": "מטחנת קפה Ceado Life",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67361,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "10 קפסולו קפה האוסברנדט",
+  "problem": "Typo 'קפסולו'.",
+  "suggested_fix": "10 קפסולות קפה האוסברנדט למערכת נספרסו®",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76915,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "בקפסולות קומפוסטבליות ואריזה אקולוגית",
+  "problem": "Title says aluminium capsules, while short and long description say the capsules are compostable.",
+  "suggested_fix": "לאמת את חומר הקפסולה מול האריזה ולהתאים את הכותרת או את הטקסט (אלומיניום או קומפוסטבילי).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 76915,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "תערובת מאוזנת ומעודנת עם ארומות פרחוניות ונגיעות של פירות יבשים ודבש",
+  "problem": "Trailing block is copied from the Sublime product and contradicts UNICO's own profile (lively acidity vs 'mild acidity', dried fruit/honey).",
+  "suggested_fix": "להסיר את הבלוק המועתק מסוף התיאור ולהשאיר את פרופיל הטעם של UNICO.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81773,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "אטם ראש עשוי מסיליקון",
+  "problem": "Short says silicone gasket, but description calls it the original La Marzocco standard gasket (rubber); title doesn't say silicone and a separate silicone LM gasket (64706) exists.",
+  "suggested_fix": "לאמת את חומר האטם ולתקן: אם זה אטם מקורי – להסיר את טקסט הסיליקון מהתקציר.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81773,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "אטם ראש סטנדרטית למכונות La marzzoco",
+  "problem": "Brand misspelt and wrong gender.",
+  "suggested_fix": "אטם ראש סטנדרטי למכונות La Marzocco",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64706,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "לה מרזוקו השקיעה חודשים על בדיקות והתאמת החומר",
+  "problem": "Text copied from the Cafelat gasket copy with 'קפלט' replaced by 'לה מרזוקו', attributing Cafelat's development to La Marzocco.",
+  "suggested_fix": "להחזיר את שם היצרן הנכון (Cafelat) או להסיר את המשפט.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65074,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יתקשו ויתייבשו כמואטם לגומי",
+  "problem": "Missing space and wrong preposition (also repeated in description).",
+  "suggested_fix": "'לא יתקשו ויתייבשו כמו אטם גומי.'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65075,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "יתקשו ויתייבשו כמואטם לגומי",
+  "problem": "Missing space and wrong preposition (also repeated in description).",
+  "suggested_fix": "'לא יתקשו ויתייבשו כמו אטם גומי.'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65118,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "מסננת למכונות מקבוצת ראש E61. חלוקת מים אחידה",
+  "problem": "Short description of a bottomless portafilter describes an E61 shower screen.",
+  "suggested_fix": "ידית חליטה חתוכה (Bottomless) הכוללת סלסלת נירוסטה עד 21 גרם – לצפייה בזרימת האספרסו ולשיפור הדחיסה והטחינה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65118,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "עבור גאג`יה מכל הדגמים , רנצ`יליו - סילביה ו-אפוקה, עבור נובה סימונלי - אוסקר",
+  "problem": "One portafilter cannot fit Gaggia, Rancilio, Nuova Simonelli and all E61 groups - they use different lug/bayonet designs.",
+  "suggested_fix": "לציין את הדגם/ראש המדויק שהידית מתאימה לו (למשל: E61 בלבד) ולאמת מול הספק.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65118,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "להפעלת סרטי וידאו המתארים את זרימת החליטה",
+  "problem": "Leftover embed/video text with no video; also typo 'כספל' and 'הקימות'.",
+  "suggested_fix": "להסיר את משפט הווידאו; 'לעשות ספל קפוצ׳ינו גדול'; 'הקיימות'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65154,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "פילטר עיוור לשמוש במכונות קפה",
+  "problem": "Typo 'לשמוש'.",
+  "suggested_fix": "פילטר עיוור לשימוש במכונות קפה בעלות ידית מקצועית 58 מ\"מ",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64830,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "מתאים לרוב מכונות האספרסו בעלות ראש E61",
+  "problem": "A milk pitcher's compatibility has nothing to do with an E61 group; claim is meaningless.",
+  "suggested_fix": "להסיר את הטענה, או לכתוב 'מתאים לכל מכונת אספרסו עם צינור קיטור'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64830,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מזגו את הקפה בעדינות לתוך הקצף",
+  "problem": "Instruction reversed: milk is poured into the espresso, not coffee into the foam.",
+  "suggested_fix": "מזגו את החלב המוקצף בעדינות לתוך האספרסו",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65421,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "סט איכותי הכולל שתי כוסות אספרסו מחרסינה",
+  "problem": "Title says ceramic and text says double-walled porcelain; KRUVE espresso cups (EQ) are double-wall glass. Material needs checking.",
+  "suggested_fix": "לאמת את חומר הכוסות (זכוכית דופן כפולה / חרסינה) ולהתאים כותרת ותיאור.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 65417,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "סט איכותי הכולל שתי כוסות אספרסו מחרסינה",
+  "problem": "Same as white variant: 'ceramic' title vs double-wall porcelain text; KRUVE EQ cups are glass.",
+  "suggested_fix": "לאמת את חומר הכוסות ולהתאים כותרת ותיאור.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64703,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "high",
+  "current_text": "בדיקת תשלום",
+  "problem": "Published, in-stock test product ('payment test') at 1 ILS is visible and purchasable.",
+  "suggested_fix": "להעביר לטיוטה / פרטי או למחוק.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64714,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "shipping Costs",
+  "problem": "Published placeholder 'shipping Costs' product in English with no content.",
+  "suggested_fix": "להעביר לטיוטה / פרטי או למחוק.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65369,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "כללי",
+  "problem": "Published, in-stock placeholder product named 'כללי' (general) with SKU 999999.",
+  "suggested_fix": "להעביר לסטטוס פרטי כדי שלא יופיע בחנות.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65380,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "משלוח",
+  "problem": "Shipping charge published as a purchasable product.",
+  "suggested_fix": "להסתיר מהקטלוג (פרטי) או לטפל במשלוח דרך הגדרות המשלוח.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65414,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "התקנה",
+  "problem": "Installation service (585 ILS) published as a product with no description of what it covers.",
+  "suggested_fix": "להסתיר מהקטלוג או להוסיף תיאור שירות ההתקנה ולמה הוא מתאים.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65427,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "הצבה",
+  "problem": "Service placeholder 'הצבה' published as product.",
+  "suggested_fix": "להסתיר מהקטלוג (פרטי).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65429,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שימושי אם רוצים לעשות כספל קפוצ׳ינו גדול",
+  "problem": "Typo 'כספל'.",
+  "suggested_fix": "שימושי אם רוצים להכין ספל קפוצ׳ינו גדול",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65153,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מסננת E61 PRECISION IMS 60 מ\"מ",
+  "problem": "Title sells screen + group gasket, but the description only describes the shower screen; gasket not mentioned.",
+  "suggested_fix": "להוסיף פרטי אטם הראש הכלול (מידה/חומר) או לתקן את הכותרת.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65153,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "לכל דגמי הרוקט, לליט בזארה, - ECM",
+  "problem": "Brand list garbled ('לליט בזארה' merges two brands, stray dash).",
+  "suggested_fix": "מתאים לכל דגמי VBM, Rocket, Lelit, Bezzera ו-ECM עם ראש E61.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64712,
+  "field": "short_description",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "תואמות למכונות נספרסו",
+  "problem": "Lavazza A Modo Mio capsules are NOT Nespresso compatible; they fit only A Modo Mio machines.",
+  "suggested_fix": "להחליף ב'מתאימות למכונות לוואצה A Modo Mio'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64712,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "לתיקון הקפה היומי שלך",
+  "problem": "Mistranslation ('fix' as 'תיקון').",
+  "suggested_fix": "לכוס הקפה היומית שלכם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67335,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "36 קפסולות קפסולות לוואצה אמודו מיו מקורי אמודו מיו",
+  "problem": "Duplicated words.",
+  "suggested_fix": "36 קפסולות לוואצה אמודו מיו מקורי",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64729,
+  "field": "name",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קפסולות לוואצה מודו מיו DEK נטול קפאין",
+  "problem": "Brand line misspelt ('מודו' instead of 'אמודו').",
+  "suggested_fix": "קפסולות לוואצה אמודו מיו DEK נטול קפאין",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64680,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+  "problem": "Leftover AI-writing assistant notes ('הערות', 'מקווה שהטקסט יעזור לכם') are published in the description.",
+  "suggested_fix": "למחוק את כל בלוק 'הערות' עד 'באתר שלכם.'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64679,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "חשוב להתאים את הטקסט לאתר ולמטרות שלכם.",
+  "problem": "Leftover AI-writing assistant notes published in the description.",
+  "suggested_fix": "למחוק את כל בלוק 'הערות' עד 'באתר שלכם.'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65040,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "בשבץ גאוני ייחודי,",
+  "problem": "Translated retailer copy cut off mid-sentence ('בשבץ' = stroke); also 'הקטלוג שלנו' refers to a foreign retailer.",
+  "suggested_fix": "להסיר את המשפט הקטוע ואת ההשוואה ל'קטלוג המכונות שלנו'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65040,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "אחריות קופמה",
+  "problem": "Leftover fragment 'אחריות קופמה' next to 'שנתיים אחריות' (also in 64680/64679); importer name unclear.",
+  "suggested_fix": "לציין את שם היבואן הנכון: 'שנתיים אחריות ע\"י היבואן ...' (לאמת).",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64684,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "אנשים ששומרים על המשקל.",
+  "problem": "Sugar sticks recommended for 'people watching their weight' - misleading.",
+  "suggested_fix": "להסיר את השורה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 68416,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "אנשים ששומרים על המשקל.",
+  "problem": "Sugar sticks recommended for 'people watching their weight' - misleading.",
+  "suggested_fix": "להסיר את השורה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 79485,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "ידית חליטה אספרסו קצר מנירוסטה",
+  "problem": "Name says 'short espresso' while text describes a single-spout portafilter; description sentence cut off ('להכנת.').",
+  "suggested_fix": "ידית חליטה משפך יחיד מנירוסטה למכונות לה מרזוקו; 'להכנת מנת אספרסו בודדת.'",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67610,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "משפכים / פיות נמכר בנפרד",
+  "problem": "Short says three spouts (single, double, bottomless) are included, while the description says spouts are sold separately.",
+  "suggested_fix": "לאמת מה כלול באריזה ולהתאים את התקציר והתיאור.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67610,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מושלם להכנת אספרסו יחודי",
+  "problem": "Typo: 'יחודי' should be 'יחיד'.",
+  "suggested_fix": "פייה יחידה: מושלמת להכנת אספרסו יחיד.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81358,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "טקסט למטא תגים (Google Meta):",
+  "problem": "SEO meta keyword list left visible at the end of the description.",
+  "suggested_fix": "למחוק את השורה ואת רשימת מילות המפתח שאחריה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81358,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
+  "problem": "Machine translation: 'grounds' as 'קרקע', duplicated word; 'brewing' as 'בישול'; short says 'ראשי ראשים'.",
+  "suggested_fix": "העברה קלה של הקפה הטחון מהמטחנה לפורטפילטר; להחליף 'בישול' ב'חליטה'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81358,
+  "field": "attributes",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "צבע: לבן, שחור",
+  "problem": "Simple product titled black lists both colours as attributes.",
+  "suggested_fix": "צבע: שחור",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65455,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "טקסט למטא תגים (Google Meta):",
+  "problem": "SEO meta keyword list left visible at the end of the description.",
+  "suggested_fix": "למחוק את השורה ואת רשימת מילות המפתח שאחריה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65455,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "העברה קלה ויעילה של קרקע מטוחנת מטוחנת לפורטפילטר",
+  "problem": "Machine translation: 'grounds' as 'קרקע', duplicated word; 'בישול' for brewing.",
+  "suggested_fix": "העברה קלה של הקפה הטחון מהמטחנה לפורטפילטר; להחליף 'בישול' ב'חליטה'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67206,
+  "field": "name",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "E61 IMS Precision Rancilio Bezzera",
+  "problem": "An E61 shower screen is named for 'Rancilio Bezzera'; Rancilio machines don't use E61 groups. Compatibility is unclear.",
+  "suggested_fix": "לאמת את ההתאמה (E61 בלבד?) ולהסיר את 'Rancilio' אם אינו מתאים.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 82023,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "עם קיבולת של 18-21 גרם קפה.",
+  "problem": "7-9 g single basket's short says 18-21 g and 'Big Bang' series (copied from double basket).",
+  "suggested_fix": "סלסלת תחרות IMS בקוטר 58 מ\"מ למנה בודדת, קיבולת 7-9 גרם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82023,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "קיבולת: מנה חתא",
+  "problem": "Typo 'חתא'.",
+  "suggested_fix": "קיבולת: מנה אחת – כ-7 עד 9 גרם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82018,
+  "field": "short_description",
+  "issue_type": "copy_paste",
+  "severity": "high",
+  "current_text": "עם קיבולת של 18-21 גרם קפה.",
+  "problem": "16-18 g Competition basket's short says 18-21 g and Big Bang series.",
+  "suggested_fix": "סלסלת תחרות IMS בקוטר 58 מ\"מ, קיבולת 16-18 גרם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82021,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מסדרת Big Bang של IMS (2023)",
+  "problem": "Title and description say Competition series (B702TH26.5M) while short says Big Bang series.",
+  "suggested_fix": "סלסלת תחרות IMS Competition בקוטר 58 מ\"מ, קיבולת 18-21 גרם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 82022,
+  "field": "name",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "(העתק)",
+  "problem": "Draft duplicate '(העתק)' of 82018 with same SKU family; short also says 18-21 g.",
+  "suggested_fix": "למחוק את הטיוטה הכפולה.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67207,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "פילטר IMS 2 מנות 16/18 גרם B702TH26.5M",
+  "problem": "Same model B702TH26.5M is sold as 18-21 g in 82021; IMS H26.5 is the larger basket, H24.5 (82018) is 16-18 g.",
+  "suggested_fix": "לאמת מול IMS ולתקן את הקיבולת ל-18/20 גרם או את קוד הדגם ל-B702TH24.5M.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67207,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "medium",
+  "current_text": "מילות מפתח: סל פילטר, IMS, B702TH26.5M",
+  "problem": "Visible SEO keyword list and English residue ('פ puck') in description.",
+  "suggested_fix": "למחוק את שורת 'מילות מפתח' ולתקן 'בין בסיס עוגיית הקפה לגובה שלה'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76629,
+  "field": "name",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "פילטר IMS B62.52TFH23.5 גודל 16-18 ברוויל",
+  "problem": "Title says Breville (B62 = 54 mm) 16-18 g, but short/description describe a standard 58 mm basket for 21-23 g, code B702TFH23.5BB, height 25.5 mm.",
+  "suggested_fix": "לאמת איזה מוצר נמכר ולהתאים כותרת או תיאור (קוטר, קיבולת, קוד דגם).",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 76626,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "קוד מוצר IMS : B702TFH23.5BB",
+  "problem": "14-16 g basket (b702TFH21.5) lists IMS code B702TFH23.5BB, copied from sibling.",
+  "suggested_fix": "קוד מוצר IMS : B702TFH21.5BB (לאמת)",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 76627,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "פילטר IMS Big Bang b702tfh23 גודל 21-23",
+  "problem": "21-23 g basket (TFH25.5 in title) has description heading b702tfh23 and code B702TFH23.5BB.",
+  "suggested_fix": "כותרת: 'פילטר IMS Big Bang B702TFH25.5 גודל 21-23'; קוד מוצר: B702TFH25.5BB (לאמת).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 81142,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "בחרו את הגודל המתאים לכם: 14g, 17g או 21g.",
+  "problem": "7 g basket's text says only three sizes (14/17/21 g) exist, omitting its own size.",
+  "suggested_fix": "זמינה בארבעה גדלים: 7g, 14g, 17g או 21g.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81152,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "זמינה בשלושה גדלים.",
+  "problem": "Four sizes exist (7/14/17/21 g per attributes) but copy says three.",
+  "suggested_fix": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 81147,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "זמינה בשלושה גדלים.",
+  "problem": "Four sizes exist (7/14/17/21 g per attributes) but copy says three.",
+  "suggested_fix": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67609,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "low",
+  "current_text": "זמינה בשלושה גדלים.",
+  "problem": "Four sizes exist (7/14/17/21 g per attributes) but copy says three; also typo 'שדרוג את'.",
+  "suggested_fix": "זמינה בארבעה גדלים: 7, 14, 17 ו-21 גרם. 'שדרגו את חליטת האספרסו'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64831,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "מידות: 215 x 280 x 610 מ\"מ (W x D x H)",
+  "problem": "Two different dimension sets: 215x280x610 mm vs 21.2x30.9x54.7 cm.",
+  "suggested_fix": "לאמת את המידות מול היצרן ולהשאיר שורה אחת.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64831,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "תדר 60 הרץ",
+  "problem": "Israeli mains are 50 Hz; 60 Hz spec looks copied from a US listing.",
+  "suggested_fix": "תדר 50 הרץ (לאמת מול תווית המכשיר).",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64835,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "הספק מנוע: 400 וואט",
+  "problem": "83 mm E37Z Barista listed with the same 400 W motor as the 64 mm E37R; looks copied.",
+  "suggested_fix": "לאמת את הספק המנוע ומהירות הסיבוב מול דף היצרן.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 64782,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "שהוא אלומיניום עטוף ויניל",
+  "problem": "Description ends mid-sentence with an unclosed parenthesis.",
+  "suggested_fix": "לסגור את המשפט: '...שהוא אלומיניום עטוף ויניל).'",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64782,
+  "field": "categories",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "מטחנות קפה ידניות מקצועיות",
+  "problem": "Electric DF83 is listed in the manual grinders category.",
+  "suggested_fix": "להסיר מקטגוריית מטחנות ידניות.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65402,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "2990",
+  "problem": "Black Mignon Single Dose 65 costs 2990 while the identical-copy sibling 64807 costs 2690; colour-only price gap.",
+  "suggested_fix": "לאמת את המחיר ולהשוות בין הגרסאות.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 78273,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "medium",
+  "current_text": "2100.0000",
+  "problem": "Leo 55 Touch (touchscreen, 390 W) is cheaper than the base Leo 55 Essential (2290); looks inverted.",
+  "suggested_fix": "לאמת את המחירים של Touch ו-Essential.",
+  "confidence": "verify"
+ },
+ {
+  "product_id": 67635,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "תכונות עיקריות:",
+  "problem": "Feature list block duplicated twice.",
+  "suggested_fix": "להשאיר רשימת 'תכונות עיקריות' אחת.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67650,
+  "field": "name",
+  "issue_type": "product_facts",
+  "severity": "high",
+  "current_text": "ECM Technika VI דוד כפול",
+  "problem": "ECM Technika V/VI Profi PID (as in slug and description heading) is a heat-exchanger single-boiler machine, not dual boiler; the dual-boiler spec block looks wrong.",
+  "suggested_fix": "לאמת את הדגם: אם Technika – לתאר מחליף חום (HX) ולתקן נפחי דוד; אם דגם דוד כפול – לתקן את שם הדגם.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 67348,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "low",
+  "current_text": "ייצר בעבורנו שוטים של אספרסו מהטובים שחווינו, גם בהשוואה לכמה מבתי הקפה המקומיים",
+  "problem": "Translated foreign review voice ('our local cafes'); also merged words 'חמיםמסך תצוגהעם' in short.",
+  "suggested_fix": "לנסח מחדש בקול של מינוטו; 'דוד קיטור / מים חמים. מסך תצוגה עם הפרמטרים הבאים'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65382,
+  "field": "short_description",
+  "issue_type": "product_facts",
+  "severity": "low",
+  "current_text": "קומפקטי ונייד:  קל לאחסון ולנשיאה, מושלם לשימוש בבית, בטיול או בקמפינג.",
+  "problem": "Flair 58 relies on a plug-in electric preheater; marketing it for camping is misleading.",
+  "suggested_fix": "להסיר את 'בטיול או בקמפינג' או לציין שהחימום המוקדם דורש חשמל.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 64854,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "קוטר פורטפילטר: 40 מ\"מ",
+  "problem": "Flair 58X spec block (40 mm, 12-18 g, 60 ml, 7 kg) is copied from the Signature; contradicts the 58 mm portafilter in the same text.",
+  "suggested_fix": "קוטר פורטפילטר: 58 מ\"מ; לעדכן מינון, נפח ומשקל לפי מפרט Flair 58X.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64896,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "Flair PRO ממשיכה להוביל בסגנון העיצוב",
+  "problem": "Signature product copy names Flair PRO; spec block lists 7 kg weight and all three colours for the white unit.",
+  "suggested_fix": "להחליף 'Flair PRO' ב-'Flair Signature'; לאמת משקל; 'צבע: לבן'.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65446,
+  "field": "short_description",
+  "issue_type": "internal_mismatch",
+  "severity": "high",
+  "current_text": "Jura C8 היא מכונת קפה אוטומטית קומפקטית",
+  "problem": "Title and description are Jura C9 with 17 drinks; short says C8 with 6 drinks (slug also c8).",
+  "suggested_fix": "לאמת את הדגם ולהתאים: 'Jura C9 ... 17 סוגי משקאות' או לשנות כותרת ותיאור ל-C8.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64802,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "האביזר המושלם לשיפוחווית הקפה שלך",
+  "problem": "Merged/typo 'לשיפוחווית' (also in short).",
+  "suggested_fix": "האביזר המושלם לשיפור חוויית הקפה שלכם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64773,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "האביזר המושלם לשיפוחווית הקפה שלך",
+  "problem": "Merged/typo 'לשיפוחווית'.",
+  "suggested_fix": "האביזר המושלם לשיפור חוויית הקפה שלכם",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65166,
+  "field": "short_description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "חלליות סימנס 2020 נחתו עכשו מהחלל ורק אצלנו במלאי !",
+  "problem": "Outdated gimmick line with typo; also 'הספק חשמלי: WW1500' in description.",
+  "suggested_fix": "להסיר את השורה; 'הספק חשמלי: 1500W'.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 67223,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "הגולות עשיויות מאלמיניום ומוחזקים",
+  "problem": "Typos.",
+  "suggested_fix": "הגולות עשויות מאלומיניום ומוחזקות בעזרת בורג במרכז.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65240,
+  "field": "description",
+  "issue_type": "product_facts",
+  "severity": "medium",
+  "current_text": "משאבת ULKA 54W עם מחברי פליז",
+  "problem": "Copy claims smooth pressure unlike vibration pumps, yet lists an Ulka vibration pump (Appartamento uses a vibratory pump).",
+  "suggested_fix": "להסיר את הטענה על לחץ ללא רעידות משאבה.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65240,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מכונת הקפה שתמיד רציתם עכשיו עם. \n י",
+  "problem": "Broken sentence fragment and stray letter.",
+  "suggested_fix": "מכניסים את בית הקפה הביתה – מכונת הקפה שתמיד רציתם.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65240,
+  "field": "description",
+  "issue_type": "internal_mismatch",
+  "severity": "medium",
+  "current_text": "אחריות 12 חודשים ע\"י היבואן קרמה פלוס",
+  "problem": "Warranty 12 months, while sibling 65022 (same model) and other Rocket listings say 4 years / 48 months from the same importer.",
+  "suggested_fix": "לאמת את תקופת האחריות ולאחד בין הדגמים.",
+  "confidence": "likely"
+ },
+ {
+  "product_id": 65022,
+  "field": "description",
+  "issue_type": "copy_paste",
+  "severity": "medium",
+  "current_text": "מגיעה בשני צבעים לבחירה לבן ונחושת.",
+  "problem": "Black/copper product says it comes in white and copper.",
+  "suggested_fix": "לציין את הצבע של המוצר: שחור נחושת.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65374,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "Rocket R NINE ON ממינוטו",
+  "problem": "Model name truncated.",
+  "suggested_fix": "Rocket R NINE ONE",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 65398,
+  "field": "description",
+  "issue_type": "hebrew_text",
+  "severity": "low",
+  "current_text": "מפרט",
+  "problem": "Empty 'מפרט' heading with no specs under it.",
+  "suggested_fix": "להוסיף מפרט (קוטר 58 מ\"מ, משקל, חומרים) או להסיר את הכותרת.",
+  "confidence": "certain"
+ },
+ {
+  "product_id": 64761,
+  "field": "price",
+  "issue_type": "spec_commerce",
+  "severity": "low",
+  "current_text": "550.0000",
+  "problem": "550 ILS for 50 Toddy commercial paper filters looks high; may be the price of a larger pack.",
+  "suggested_fix": "לאמת את כמות הפילטרים במארז מול המחיר.",
+  "confidence": "verify"
+ }
+]
