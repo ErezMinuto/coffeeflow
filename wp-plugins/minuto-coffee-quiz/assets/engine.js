@@ -94,8 +94,10 @@
   // Does a coffee from the Quiz box fit these answers?
   function extraFits(x, a) {
     if (a.decaf || a.natural || a.strength === 'very_strong') return false;
-    if ((x.brews || []).indexOf(brewGroup(a.brew)) === -1) return false;
-    if (a.milk !== 'none' && !x.milk) return false;
+    // Asked for light: any light coffee works, any brew, with or without milk.
+    var lightAsk = a.light && x.light;
+    if (!lightAsk && (x.brews || []).indexOf(brewGroup(a.brew)) === -1) return false;
+    if (!lightAsk && a.milk !== 'none' && !x.milk) return false;
     var bright = x.light || x.flavor === 'fruity';
     if (bright && (a.noSour || (a.milk === 'alt' && !a.light))) return false;
     if (a.light && !x.light) return false;

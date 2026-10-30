@@ -188,3 +188,17 @@ Deno.test("a jar that is a named coffee is not shown twice", () => {
   const l = r({ taste: "fruity" }, s2);
   assertEquals(new Set(l).size, l.length);
 });
+
+Deno.test("asked for light: a light jar shows for any brew, with or without milk", () => {
+  for (const brew of ["auto", "combo", "manual", "moka", "filter", "press"]) {
+    for (const milk of ["none", "cow", "alt"]) {
+      assert(r({ brew, milk, light: true, taste: "fruity" }, withJar()).includes("extra_1"), `${brew}/${milk}`);
+    }
+  }
+  assert(!r({ brew: "auto", milk: "cow", taste: "fruity" }, withJar()).includes("extra_1"));   // not without the ask
+});
+
+Deno.test("asked for light: every named light coffee can reach espresso with milk", () => {
+  assertEquals(r({ brew: "manual", milk: "cow", light: true }), ["bensa_l", "kenya_l", "guji"]);
+  assert(r({ brew: "manual", milk: "cow", light: true, taste: "fruity" }).includes("aji"));
+});
