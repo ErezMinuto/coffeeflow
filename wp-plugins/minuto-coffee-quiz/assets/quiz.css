@@ -51,7 +51,7 @@
   display: inline-block; width: 100%; padding: 8px 16px;
   background: var(--mq-green); color: #fff !important;
   font-size: 14px; font-weight: 500; line-height: 20px;
-  text-align: center; text-decoration: none; border-radius: 9999px;
+  text-align: center; text-decoration: none !important; border-radius: 9999px;
   transition: opacity .3s cubic-bezier(.4, 0, .2, 1);
 }
 .mq-button:hover { opacity: .9; }

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Coffee Quiz
  * Description: "איזה קפה מתאים לי?" quiz. Place [minuto_coffee_quiz] on a page.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_QUIZ_VERSION', '1.0.1');
+define('MINUTO_QUIZ_VERSION', '1.0.2');
 define('MINUTO_QUIZ_CACHE_KEY', 'minuto_quiz_catalog');
 define('MINUTO_QUIZ_ROAST_ATTRIBUTE_ID', 20);   // רמת קלייה
 define('MINUTO_QUIZ_LIGHT_TERM', 'בהירה');
@@ -30,8 +30,8 @@ function minuto_quiz_coffees(): array {
         'antigua'     => [65179, 'Antigua גואטמלה', 'אגוז לוז ורמיזות שוקולד, גוף בינוני.'],
         'bensa_m'     => [65180, 'Daye Bensa', 'חלק, פירותי ומתוק, עם רמיזות של וניל ולבנדר.'],
         'bensa_l'     => [78450, 'Daye Bensa בקלייה בהירה', 'פירותי ומתוק, עם חמיצות לימונית ווניל.'],
-        'kenya_m'     => [65135, 'Kenya AA+', 'חמיצות נוצצת ומתיקות עדינה.'],
-        'kenya_l'     => [65463, 'Kenya AA+ בקלייה בהירה', 'פירות יער והדרים, גוף בינוני וסיומת נקייה.'],
+        'kenya_m'     => [65135, 'Kenya AA+‎', 'חמיצות נוצצת ומתיקות עדינה.'],
+        'kenya_l'     => [65463, 'Kenya AA+‎ בקלייה בהירה', 'פירות יער והדרים, גוף בינוני וסיומת נקייה.'],
         'guji'        => [65169, 'Guji אתיופיה', 'פירותי והדרי, עם סיומת מתוקה וניחוח דבש.'],
         'aji'         => [82540, 'Aji Bourbon Anaerobic', 'פירות טרופיים ומנגו, וסיומת ארוכה עם רמז לדבש.'],
         'leona'       => [80501, 'Sweet Leona', 'פרחים, תאנים וקני סוכר מקורמל.'],
