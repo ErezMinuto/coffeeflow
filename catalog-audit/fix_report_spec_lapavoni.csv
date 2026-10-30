@@ -1,0 +1,10 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+67161,,short_description,applied,,הספק: 1000 וואט,הספק: 950 וואט,La Pavoni spec vs official site,spec_lapavoni.json
+67161,,short_description,applied,,לחץ: 15 בר,"לחץ חליטה: ידני, באמצעות המנוף",La Pavoni spec vs official site,spec_lapavoni.json
+67161,,short_description,applied,,מיכל מים: 1.6 ליטר,דוד: 0.8 ליטר (עד 8 כוסות אספרסו ברצף),La Pavoni spec vs official site,spec_lapavoni.json
+67161,,description,applied,,הספק: 1000 וואט,הספק: 950 וואט,La Pavoni spec vs official site,spec_lapavoni.json
+67161,,description,applied,,לחץ: 15 בר,"לחץ חליטה: ידני, באמצעות המנוף",La Pavoni spec vs official site,spec_lapavoni.json
+67161,,description,applied,,מיכל מים: 1.6 ליטר,דוד: 0.8 ליטר (עד 8 כוסות אספרסו ברצף),La Pavoni spec vs official site,spec_lapavoni.json
+67160,,description,applied,,הספק גוף חימום: 1000W,הספק גוף חימום: 950W,La Pavoni spec vs official site,spec_lapavoni.json
+67605,,description,applied,,<strong>לחץ קיטור:</strong> 15 בר,"<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף",La Pavoni spec vs official site,spec_lapavoni.json
+67622,,description,applied,,תפוקת קיטור: 15 בר,"לחץ חליטה: ידני, באמצעות המנוף",La Pavoni spec vs official site,spec_lapavoni.json

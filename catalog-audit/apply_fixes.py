@@ -23,6 +23,15 @@ def call(method, path, body=None):
     raise RuntimeError('request failed after retries')
 
 tags = lambda s: re.findall(r'<[^>]+>', s)
+def balanced(s):
+    st = []
+    for t in tags(s):
+        m = re.match(r'<(/?)([a-zA-Z0-9]+)', t)
+        if not m or t.endswith('/>') or m.group(2).lower() in ('br', 'img', 'hr'): continue
+        if m.group(1): 
+            if not st or st.pop() != m.group(2).lower(): return False
+        else: st.append(m.group(2).lower())
+    return not st
 edits = []
 import fnmatch
 for f in sorted(g for g in glob.glob(f'{D}/raw/fix_plans/*.json') if not g.endswith('hold.json') and (not PLANS or any(fnmatch.fnmatch(os.path.basename(g)[:-5], p) for p in ','.join(PLANS).split(',')))):
@@ -72,7 +81,7 @@ for e in edits:
             if cur is None: status, why = 'rejected', 'field not present'
             elif cur.count(e['old']) != 1: status, why = 'rejected', f"old text found {cur.count(e['old'])}× (must be 1)"
             elif not e['old']: status, why = 'rejected', 'empty old'
-            elif tags(e['old']) != tags(e['new']): status, why = 'rejected', 'HTML tags changed'
+            elif tags(e['old']) != tags(e['new']) and not (e['new'] == '' and e.get('remove_element') and balanced(e['old'])): status, why = 'rejected', 'HTML tags changed'
             elif e['old'] == e['new']: status, why = 'rejected', 'no change'
             else: w[t] = cur.replace(e['old'], e['new'], 1)
     except Exception as ex: status, why = 'error', str(ex)[:200]

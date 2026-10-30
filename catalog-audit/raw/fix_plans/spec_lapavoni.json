@@ -1,0 +1,86 @@
+{
+ "edits": [
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "הספק: 1000 וואט",
+   "new": "הספק: 950 וואט",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לחץ: 15 בר",
+   "new": "לחץ חליטה: ידני, באמצעות המנוף",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מיכל מים: 1.6 ליטר",
+   "new": "דוד: 0.8 ליטר (עד 8 כוסות אספרסו ברצף)",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק: 1000 וואט",
+   "new": "הספק: 950 וואט",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ: 15 בר",
+   "new": "לחץ חליטה: ידני, באמצעות המנוף",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל מים: 1.6 ליטר",
+   "new": "דוד: 0.8 ליטר (עד 8 כוסות אספרסו ברצף)",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1000W",
+   "new": "הספק גוף חימום: 950W",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-lusso"
+  },
+  {
+   "product_id": 67605,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>לחץ קיטור:</strong> 15 בר",
+   "new": "<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67622,
+   "variation_id": null,
+   "target": "description",
+   "old": "תפוקת קיטור: 15 בר",
+   "new": "לחץ חליטה: ידני, באמצעות המנוף",
+   "finding": "La Pavoni spec vs official site",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/expo"
+  }
+ ],
+ "skipped": []
+}

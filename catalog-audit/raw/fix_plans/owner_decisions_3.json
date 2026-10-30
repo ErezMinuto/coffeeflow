@@ -1,0 +1,206 @@
+{
+ "edits": [
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "סלסלה מקצועית בקוטר 58 מ&quot;מ מסדרת Big Bang של IMS (2023)",
+   "new": "סלסלה מקצועית למכונות Breville / Sage בקוטר 54 מ&quot;מ, מסדרת Big Bang של IMS",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "short_description",
+   "old": " עם קיבולת של 21-23 גרם קפה.",
+   "new": " עם קיבולת של 14-20 גרם קפה, בהתאם לרמת הקלייה.",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "סלסלה (פילטר) מקצועית בקוטר 58 מ\"מ, המתאימה לידית סטנדרטית של מכונת קפה ידנית, עם קיבולת של 21 עד 23 גרם קפה.",
+   "new": "סלסלה (פילטר) מקצועית בקוטר 54 מ\"מ, המתאימה לידית של מכונות Breville / Sage, עם קיבולת של 14 עד 20 גרם קפה בהתאם לרמת הקלייה (קלייה כהה 14-17 גרם, בינונית 15.5-18 גרם, בהירה 17.5-20 גרם).",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "B702TFH23.5BB",
+   "new": "B62.52TFH23.5BB",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "58/58.4 מ\"מ",
+   "new": "53/53.4 מ\"מ",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>גובה</strong>: 25.5 מ\"מ",
+   "new": "<strong>גובה</strong>: 23.5 מ\"מ",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "585 פתחים במרווחים החל מ-1.5 מ\"מ, עם הגדלה הדרגתית לכיוון ההיקף",
+   "new": "497 פתחים בשטח בקוטר 44 מ\"מ",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קוטר חיצוני</strong>: 70 מ\"מ",
+   "new": "<strong>קוטר חיצוני</strong>: 62.5 מ\"מ",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קוטר פנימי</strong>: 60 מ\"מ",
+   "new": "<strong>קוטר פנימי</strong>: 54 מ\"מ",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 76629,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "סלסלה מקצועית בקוטר 58 ממ מסדרת Big Bang של IMS (2023) עם קיבולת של 21-23 גרם קפה - FH23. איכות מעולה ועמידות לאורך זמן",
+   "new": "סלסלה מקצועית למכונות Breville / Sage בקוטר 54 ממ מסדרת Big Bang של IMS, קיבולת 14-20 גרם קפה לפי רמת הקלייה.",
+   "finding": "IMS 76629: owner confirmed Breville 54 mm",
+   "source": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67275,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 67274,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 67337,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong> ",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 67296,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 65040,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 64966,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<li class=\"first\"><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></li>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong> ",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישה של 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 65102,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<li><strong>מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו</strong></li>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  },
+  {
+   "product_id": 64955,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p><strong>מותנה ברכישת 5 ק״ג פולי קפה ספשלטי מינוטו</strong></p>\n",
+   "new": "",
+   "finding": "promo line \"מותנה ברכישה של 5 ק״ג\" – owner: remove",
+   "source": "owner decision",
+   "remove_element": true
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 67280,
+   "finding": "המחיר מותנה ברכישה של 6 ק״ג",
+   "reason": "different (6 kg, price-conditional) offer – not covered by the owner instruction"
+  },
+  {
+   "product_id": 68295,
+   "finding": "Nanopresso NS adapter included",
+   "reason": "owner confirmed: adapter is in the box – text correct"
+  }
+ ]
+}
