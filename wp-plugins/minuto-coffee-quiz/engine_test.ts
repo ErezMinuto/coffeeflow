@@ -202,3 +202,9 @@ Deno.test("asked for light: every named light coffee can reach espresso with mil
   assertEquals(r({ brew: "manual", milk: "cow", light: true }), ["bensa_l", "kenya_l", "guji"]);
   assert(r({ brew: "manual", milk: "cow", light: true, taste: "fruity" }).includes("aji"));
 });
+
+Deno.test("asked for light: flavor doesn't hide a light jar, and non-light jars stay out", () => {
+  assert(r({ light: true, taste: "chocolate" }, withJar()).includes("extra_1"));
+  assert(!r({ light: true }, withJar({ light: false, flavor: "chocolate" })).includes("extra_1"));
+  assert(!r({ light: true, strength: "very_strong" }, withJar()).includes("extra_1"));
+});
