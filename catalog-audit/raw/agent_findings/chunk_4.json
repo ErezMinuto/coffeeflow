@@ -171,7 +171,7 @@
  },
  {
   "product_id": 64737,
-  "field": "price",
+  "field": "sku",
   "issue_type": "spec_commerce",
   "severity": "low",
   "current_text": "SKU: 123321123321",
@@ -1161,7 +1161,7 @@
  },
  {
   "product_id": 82470,
-  "field": "name",
+  "field": "permalink",
   "issue_type": "spec_commerce",
   "severity": "low",
   "current_text": "permalink: ...cappuccino-glass-שקוף-העתק",
