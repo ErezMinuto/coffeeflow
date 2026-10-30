@@ -1,0 +1,21 @@
+/* Same language as the site and the emails: white, hairlines, Minuto green. */
+#minuto-coffee-quiz { max-width: 720px; margin: 0 auto; padding: 24px 16px; color: #333; text-align: right; }
+#minuto-coffee-quiz * { box-sizing: border-box; }
+.mq-progress { margin: 0 0 8px; font-size: 14px; color: #666; }
+.mq-title { margin: 0 0 24px; font-size: 30px; line-height: 1.25; font-weight: 700; color: #3C4A2C; }
+.mq-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.mq-option { display: block; width: 100%; padding: 18px 20px; background: #fff; border: 1px solid #DADADA; border-radius: 4px; text-align: right; cursor: pointer; font: inherit; color: #333; transition: border-color .15s; }
+.mq-option:hover, .mq-option:focus-visible { border-color: #3C4A2C; outline: none; }
+.mq-option-label { display: block; font-size: 17px; font-weight: 700; color: #3C4A2C; }
+.mq-option-hint { display: block; margin-top: 4px; font-size: 14px; color: #666; }
+.mq-link { display: inline-block; margin-top: 20px; padding: 4px 0; background: none; border: 0; font: inherit; font-size: 15px; color: #3C4A2C; text-decoration: underline; cursor: pointer; }
+.mq-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.mq-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #E6E6E6; border-radius: 4px; }
+.mq-photo { display: block; width: 100%; height: auto; padding: 16px; }
+.mq-card-body { display: flex; flex-direction: column; flex: 1; padding: 0 16px 16px; }
+.mq-name { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #3C4A2C; }
+.mq-why { margin: 0 0 12px; font-size: 15px; line-height: 1.6; flex: 1; }
+.mq-price { margin: 0 0 12px; font-size: 15px; color: #555; }
+.mq-button { display: block; padding: 12px 16px; background: #3C4A2C; color: #fff !important; text-align: center; text-decoration: none; font-weight: 700; border-radius: 4px; }
+.mq-error { margin: 0; }
+@media (max-width: 480px) { .mq-title { font-size: 25px; } }
