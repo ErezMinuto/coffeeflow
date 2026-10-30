@@ -1,0 +1,3 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+65198,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Handpresso,owner_hide_handpresso_all.json
+65197,,set:catalog_visibility,applied,,visible,hidden,owner: hide all Handpresso,owner_hide_handpresso_all.json

@@ -1,0 +1,23 @@
+{
+ "edits": [
+  {
+   "product_id": 65198,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Handpresso",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 65197,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "owner: hide all Handpresso",
+   "source": "owner decision"
+  }
+ ],
+ "skipped": []
+}
