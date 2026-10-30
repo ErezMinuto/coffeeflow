@@ -1,0 +1,32 @@
+{
+ "edits": [
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לחץ חליטה: ידני, באמצעות המנוף",
+   "new": "לחץ חליטה: ידני, באמצעות המנוף · קיטור מהדוד ושרביט קיטור להקצפת חלב",
+   "finding": "owner: Europiccola has a steam wand and froths",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "old": "לחץ חליטה: ידני, באמצעות המנוף",
+   "new": "לחץ חליטה: ידני, באמצעות המנוף · קיטור מהדוד ושרביט קיטור להקצפת חלב",
+   "finding": "owner: Europiccola has a steam wand and froths",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67605,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף",
+   "new": "<strong>לחץ חליטה:</strong> ידני, באמצעות המנוף · קיטור מהדוד ושרביט קיטור להקצפת חלב",
+   "finding": "owner: Europiccola has a steam wand and froths",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  }
+ ],
+ "skipped": []
+}
