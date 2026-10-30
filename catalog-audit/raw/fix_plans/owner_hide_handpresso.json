@@ -1,0 +1,14 @@
+{
+ "edits": [
+  {
+   "product_id": 65191,
+   "variation_id": null,
+   "target": "set:catalog_visibility",
+   "old": "visible",
+   "new": "hidden",
+   "finding": "Handpresso Auto pods: pressure unverifiable; owner asked to hide",
+   "source": "owner decision"
+  }
+ ],
+ "skipped": []
+}

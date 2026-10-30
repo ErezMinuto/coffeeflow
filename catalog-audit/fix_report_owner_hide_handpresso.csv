@@ -1,0 +1,2 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+65191,,set:catalog_visibility,applied,,visible,hidden,Handpresso Auto pods: pressure unverifiable; owner asked to hide,owner_hide_handpresso.json
