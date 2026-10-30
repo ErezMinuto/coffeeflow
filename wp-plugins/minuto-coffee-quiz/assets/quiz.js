@@ -37,6 +37,7 @@
   var catalog = [];
   var answers = {};
   var stepIndex = 0;
+  var interacted = false;
 
   function el(tag, className, text) {
     var n = document.createElement(tag);
@@ -45,11 +46,24 @@
     return n;
   }
 
+  // Each screen replaces the last, which would drop keyboard and screen-reader
+  // focus. Not on first load: that would scroll the page down to the quiz.
+  function heading(text) {
+    var h = el('h2', 'mq-title', text);
+    h.tabIndex = -1;
+    return h;
+  }
+
+  function focusHeading(h) {
+    if (interacted) h.focus();
+  }
+
   function activeSteps() {
     return STEPS.filter(function (s) { return !s.when || s.when(answers); });
   }
 
   function answer(step, value) {
+    interacted = true;
     if (step.id === 'extra') {
       answers.light = value === 'light';
       answers.natural = value === 'natural';
@@ -67,7 +81,8 @@
     var step = steps[stepIndex];
     var wrap = el('div', 'mq-step');
     wrap.appendChild(el('p', 'mq-progress', 'שאלה ' + (stepIndex + 1) + ' מתוך ' + steps.length));
-    wrap.appendChild(el('h2', 'mq-title', step.title));
+    var title = heading(step.title);
+    wrap.appendChild(title);
     var list = el('div', 'mq-options');
     step.options.forEach(function (o) {
       var b = el('button', 'mq-option');
@@ -81,10 +96,11 @@
     if (stepIndex > 0) {
       var back = el('button', 'mq-link', 'חזרה');
       back.type = 'button';
-      back.addEventListener('click', function () { stepIndex -= 1; render(); });
+      back.addEventListener('click', function () { interacted = true; stepIndex -= 1; render(); });
       wrap.appendChild(back);
     }
     root.appendChild(wrap);
+    focusHeading(title);
   }
 
   function renderCard(c) {
@@ -112,7 +128,8 @@
     };
     var keys = window.MinutoQuizEngine.recommend(answers, available);
     var wrap = el('div', 'mq-result');
-    wrap.appendChild(el('h2', 'mq-title', 'הקפה שמתאים לך'));
+    var title = heading('הקפה שמתאים לך');
+    wrap.appendChild(title);
     var cards = el('div', 'mq-cards');
     keys.forEach(function (k) {
       var c = catalog.filter(function (x) { return x.key === k; })[0];
@@ -124,6 +141,7 @@
     again.addEventListener('click', function () { answers = {}; stepIndex = 0; render(); });
     wrap.appendChild(again);
     root.appendChild(wrap);
+    focusHeading(title);
   }
 
   function render() {
@@ -134,14 +152,15 @@
   fetch(root.getAttribute('data-catalog'))
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (items) {
-      catalog = items;
-      if (window.MinutoQuizDemo) { answers = window.MinutoQuizDemo; stepIndex = 99; }
+      catalog = Array.isArray(items) ? items : [];
+      if (!catalog.length) throw new Error('empty catalog');
       render();
     })
     .catch(function () {
+      root.textContent = '';
       var p = el('p', 'mq-error', 'משהו השתבש בטעינה. אפשר לראות את כל הקפה בחנות.');
       var a = el('a', 'mq-link', 'לחנות');
-      a.href = '/shop/';
+      a.href = root.getAttribute('data-shop') || '/shop/';
       root.appendChild(p); root.appendChild(a);
     });
 })();

@@ -17,6 +17,7 @@
 #minuto-coffee-quiz * { box-sizing: border-box; font-family: inherit; }
 
 .mq-progress { margin: 0 0 8px; font-size: 14px; color: #6B7280; }
+.mq-title:focus { outline: none; }
 .mq-title { margin: 0 0 32px; font-size: 36px; line-height: 1.2; font-weight: 700; color: var(--mq-green); }
 
 .mq-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; max-width: 720px; margin: 0 auto; }
