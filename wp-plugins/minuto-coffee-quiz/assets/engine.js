@@ -13,8 +13,12 @@
  *   noSour:   boolean  (no sourness at all),
  *   decaf:    boolean,
  * }
- * available = keys in stock, in catalog order; `light` lists every coffee
- * tagged light in WooCommerce, so a new light roast joins by itself.
+ * available = { all, light, extras }: `all` and `light` are the named coffees
+ * in stock. `extras` come from the Quiz box on the product page, so a new
+ * coffee or a limited-edition jar needs no code change:
+ *   { key, flavor, milk, brews: ['espresso','moka','filter'], limited, light }
+ * Named coffees keep their rules. A limited edition that fits takes the third
+ * place; other new coffees only fill places left empty.
  */
 (function (root) {
   'use strict';
@@ -82,6 +86,35 @@
     return list.filter(function (k, i) { return list.indexOf(k) === i; });
   }
 
+  function brewGroup(brew) {
+    if (brew === 'moka') return 'moka';
+    return brew === 'filter' || brew === 'press' ? 'filter' : 'espresso';
+  }
+
+  // Does a coffee from the Quiz box fit these answers?
+  function extraFits(x, a) {
+    if (a.decaf || a.natural || a.strength === 'very_strong') return false;
+    if ((x.brews || []).indexOf(brewGroup(a.brew)) === -1) return false;
+    if (a.milk !== 'none' && !x.milk) return false;
+    var bright = x.light || x.flavor === 'fruity';
+    if (bright && (a.noSour || (a.milk === 'alt' && !a.light))) return false;
+    if (a.light && !x.light) return false;
+    return a.taste === 'unknown' || !a.taste || x.flavor === a.taste;
+  }
+
+  function withExtras(picks, a, extras) {
+    var fits = (extras || []).filter(function (x) { return extraFits(x, a); });
+    var limited = fits.filter(function (x) { return x.limited; })[0];
+    var out = picks.slice();
+    if (limited && out.indexOf(limited.key) === -1) {
+      out = out.slice(0, MAX - 1).concat(limited.key);
+    }
+    fits.forEach(function (x) {
+      if (out.length < MAX && out.indexOf(x.key) === -1) out.push(x.key);
+    });
+    return out;
+  }
+
   function recommend(a, available) {
     var inStock = available.all || [];
     var light = available.light || [];
@@ -124,7 +157,7 @@
         });
       }
     }
-    return picks.slice(0, MAX);
+    return withExtras(picks, a, available.extras).slice(0, MAX);
   }
 
   root.MinutoQuizEngine = { recommend: recommend, ROBUSTA: ROBUSTA, FRUITY: FRUITY };
