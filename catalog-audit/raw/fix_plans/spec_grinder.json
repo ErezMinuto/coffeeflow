@@ -1,0 +1,505 @@
+{
+ "edits": [
+  {
+   "product_id": 64857,
+   "variation_id": null,
+   "target": "description",
+   "old": "מקור חשמל: 110-120v - 60Hz",
+   "new": "מקור חשמל: 220-240V - 50Hz",
+   "finding": "מקור חשמל: 110-120v - 60Hz",
+   "source": "https://cdn.shopify.com/s/files/1/2404/0687/files/Manuale.pdf"
+  },
+  {
+   "product_id": 64857,
+   "variation_id": null,
+   "target": "description",
+   "old": "סל\"ד סכינים: 1600 סל\"ד (60 הרץ)",
+   "new": "סל\"ד סכינים: 1400 סל\"ד (50 הרץ)",
+   "finding": "מקור חשמל: 110-120v - 60Hz",
+   "source": "https://cdn.shopify.com/s/files/1/2404/0687/files/Manuale.pdf"
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות לשימוש ביתי או של קפה נטול קפאין בבתי קפה.",
+   "new": "מטחנה מקצועית שקטה לטחינה ישירה לידית החליטה (ללא מחלק מנות), עם צג מגע ודיסקיות שטוחות בקוטר 55 מ\"מ.",
+   "finding": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "גוף פלסטי מעכב בעירה",
+   "new": "טכנולוגיית Silent להפחתת רעש הטחינה",
+   "finding": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "יחידת מינון מתכת",
+   "new": "מתקן Hands-Free מתכוונן להחזקת ידית החליטה",
+   "finding": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "ניתן לשנות/לכוונן את המינונים",
+   "new": "צג מגע עם 2 מנות ניתנות לתכנות וכיוון זמן הטחינה",
+   "finding": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 18 ס\"מ",
+   "new": "עומק: 14 ס\"מ",
+   "finding": "מטחנה מקצועית מיועדת לטחינה עם מחלק מנות ... גוף פלסטי מעכב בעירה\n יחידת מינון מתכת",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67165,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיגנון classic אוריקה",
+   "new": "מיגנון classico אוריקה",
+   "finding": "אפשרויות טחינה: ידני .",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "variation_id": null,
+   "target": "description",
+   "old": "אפשרויות טחינה: ידני .",
+   "new": "אפשרויות טחינה: ידני וטיימר.",
+   "finding": "אפשרויות טחינה: ידני .",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולים: 300 גרם",
+   "new": "מיכל פולים: 150 גרם",
+   "finding": "אפשרויות טחינה: ידני .",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 18 ס\"מ",
+   "new": "עומק: 14 ס\"מ",
+   "finding": "אפשרויות טחינה: ידני .",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67366,
+   "variation_id": null,
+   "target": "description",
+   "old": "במטחנה מאפשרת כיוון זמן הטחינה ומתקן",
+   "new": "המטחנה מופעלת ידנית וכוללת מתקן",
+   "finding": "במטחנה מאפשרת כיוון זמן הטחינה",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "במטחנה מאפשרת כיוון זמן הטחינה ומתקן",
+   "new": "המטחנה מופעלת ידנית וכוללת מתקן",
+   "finding": "במטחנה מאפשרת כיוון זמן הטחינה",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולים: 300 גרם",
+   "new": "מיכל פולים: 150 גרם",
+   "finding": "במטחנה מאפשרת כיוון זמן הטחינה",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 18 ס\"מ",
+   "new": "עומק: 14 ס\"מ",
+   "finding": "במטחנה מאפשרת כיוון זמן הטחינה",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 64936,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.",
+   "new": "גוף המטחנה מצופה בציפוי עץ Virginia Walnut טבעי ב-100%, כך שכל מטחנה ייחודית.",
+   "finding": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+   "source": "https://comandantegrinder.com/products/c40-mk4-nitro-blade-virginia-walnut"
+  },
+  {
+   "product_id": 64937,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה המעניק אחיזה ועמידות מקסימלית.",
+   "new": "גוף המטחנה מצופה בציפוי עץ Liquid Amber טבעי ב-100%, כך שכל מטחנה ייחודית.",
+   "finding": "גוף הפלדה מצופה בחומר מיוחד שנשרף בתנור בחום גבוה",
+   "source": "https://comandantegrinder.com/products/c40-mk4-nitro-blade-liquid-amber"
+  },
+  {
+   "product_id": 67319,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "סכינים מיוחדות למינון יחיד.",
+   "new": "מטחנה לפי דרישה (On-Demand) עם סכינים שטוחות.",
+   "finding": "סכינים מיוחדות למינון יחיד.",
+   "source": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67319,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל נטו 9.5 ק״ג",
+   "new": "משקל נטו 9.7 ק״ג",
+   "finding": "סכינים מיוחדות למינון יחיד.",
+   "source": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67319,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>סל״ד 1650</li>",
+   "new": "<li>סל״ד 1380 (50 הרץ)</li>",
+   "finding": "סכינים מיוחדות למינון יחיד.",
+   "source": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67262,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל נטו 13.2 ק״ג",
+   "new": "משקל נטו 8.7 ק״ג",
+   "finding": "משקל נטו 13.2 ק״ג",
+   "source": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67262,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל ברוטו 8.7 ק״ג ברוטו",
+   "new": "משקל ברוטו 10.7 ק״ג ברוטו",
+   "finding": "משקל נטו 13.2 ק״ג",
+   "source": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67262,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>סל״ד 1650</li>",
+   "new": "<li>סל״ד 1380 (50 הרץ)</li>",
+   "finding": "משקל נטו 13.2 ק״ג",
+   "source": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67213,
+   "variation_id": null,
+   "target": "name",
+   "old": "Mahlkonig E65S מטחנת קפה ביתית",
+   "new": "Mahlkonig E65S מטחנת קפה מקצועית",
+   "finding": "Mahlkonig E65S מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s"
+  },
+  {
+   "product_id": 67213,
+   "variation_id": null,
+   "target": "description",
+   "old": "<h3>Mahlkonig E65S מטחנת קפה ביתית</h3>",
+   "new": "<h3>Mahlkonig E65S מטחנת קפה מקצועית</h3>",
+   "finding": "Mahlkonig E65S מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s"
+  },
+  {
+   "product_id": 67213,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "Mahlkonig E65S מטחנת קפה ביתית.",
+   "new": "Mahlkonig E65S מטחנת קפה מקצועית.",
+   "finding": "Mahlkonig E65S מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s"
+  },
+  {
+   "product_id": 67637,
+   "variation_id": null,
+   "target": "name",
+   "old": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "new": "Mahlkonig E65S GBW מטחנת קפה מקצועית",
+   "finding": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  },
+  {
+   "product_id": 67637,
+   "variation_id": null,
+   "target": "description",
+   "old": "Mahlkonig E65S GbW מטחנת קפה ביתית</h3>",
+   "new": "Mahlkonig E65S GbW מטחנת קפה מקצועית</h3>",
+   "finding": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  },
+  {
+   "product_id": 67637,
+   "variation_id": null,
+   "target": "description",
+   "old": "מטחנת הקפה קפה E65S GbW",
+   "new": "מטחנת הקפה E65S GbW",
+   "finding": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  },
+  {
+   "product_id": 67637,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מטחנת קפה קפה מהפכנית",
+   "new": "מטחנת קפה מהפכנית",
+   "finding": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  },
+  {
+   "product_id": 67637,
+   "variation_id": null,
+   "target": "meta:rank_math_description",
+   "old": "Mahlkonig E65S GBW מטחנת קפה ביתית.",
+   "new": "Mahlkonig E65S GBW מטחנת קפה מקצועית.",
+   "finding": "Mahlkonig E65S GBW מטחנת קפה ביתית",
+   "source": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 65064,
+   "finding": "מטחנת קפה מקצועית Compak I3 PRO",
+   "reason": "official page ambiguous: Compak has no \"I3 PRO\"; the current i3 page (500 W, 1400 rpm, 700 g hopper, 8.07 kg) matches neither title nor the listed specs (550 W, 1370 rpm), and the E5 OD is no longer on compakgrinders.com. Which model is actually sold is a business decision."
+  },
+  {
+   "product_id": 65065,
+   "finding": "ניתן לקבל באלומיניום מוברש בתוספת 200 ש\"ח.",
+   "reason": "needs price/business decision (hard-coded surcharges +200/+50 ILS, finish options); K-3 Touch no longer on compakgrinders.com"
+  },
+  {
+   "product_id": 67653,
+   "finding": "צבע: לבן, שחור",
+   "reason": "attribute (store-wide/attribute data, not a text field); colour choice is a stock decision; no official DF54 manufacturer page"
+  },
+  {
+   "product_id": 67653,
+   "finding": "מותג: DF64",
+   "reason": "store-wide brand attribute"
+  },
+  {
+   "product_id": 68264,
+   "finding": "WPM ZD-12 GRAEF",
+   "reason": "no official source found (no WPM/Welhome or Graef page for a ZD-12)"
+  },
+  {
+   "product_id": 68264,
+   "finding": "צבע: אדום, ברונז, נירוסטה",
+   "reason": "attribute (store-wide); no official source"
+  },
+  {
+   "product_id": 68264,
+   "finding": "רק אצלנו במלאי",
+   "reason": "stock/business decision (marketing claim vs stock status)"
+  },
+  {
+   "product_id": 64942,
+   "finding": "מקינטה ביאלטי - Bialetti",
+   "reason": "category assignment is store-wide, not a spec fix"
+  },
+  {
+   "product_id": 64942,
+   "finding": "SKU: 123456",
+   "reason": "SKU is a business/inventory field, not in allowed targets"
+  },
+  {
+   "product_id": 81200,
+   "finding": "81235: 4950 ₪ · 81192: 4950 ₪ · 67147: 4950 ₪ · 81208: 4990 ₪ · 81200: 5200 ₪",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 81208,
+   "finding": "PRICE: 4990",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 64779,
+   "finding": "1199.0000",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 64937,
+   "finding": "1390.0000",
+   "reason": "price decision"
+  },
+  {
+   "product_id": 67151,
+   "finding": "צבע מוצר: אדום, ברונז, נירוסטה",
+   "reason": "attribute (store-wide colour attribute); no official spec involved"
+  },
+  {
+   "product_id": 67286,
+   "finding": "אחריות: 24 חודשים ע\"י קרמה פלוס",
+   "reason": "warranty/importer is a business fact, no manufacturer source"
+  },
+  {
+   "product_id": 67262,
+   "finding": "משקל נטו 13.2 ק״ג",
+   "reason": "partial: empty \"כיוון רמת הטחינה\" heading not filled - the official E6P sheet gives no grind-adjustment wording to fill it with (weights fixed)"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 64857,
+   "spec": "Power supply (EU version)",
+   "value": "220-240V - 50 Hz",
+   "url": "https://cdn.shopify.com/s/files/1/2404/0687/files/Manuale.pdf"
+  },
+  {
+   "product_id": 64857,
+   "spec": "Burr rpm",
+   "value": "1400 at 50 Hz / 1600 at 60 Hz",
+   "url": "https://cdn.shopify.com/s/files/1/2404/0687/files/Manuale.pdf"
+  },
+  {
+   "product_id": 67367,
+   "spec": "Burrs",
+   "value": "flat 55 mm hardened steel",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "Features",
+   "value": "Silent Technology; All-Purpose Adjustable Hands-Free fork; touch display, 2 programmable doses, +/- grinding time",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "Grinding activation",
+   "value": "Microswitch on the portafilter or on the display (grinds into portafilter)",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "Depth",
+   "value": "140 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "Program type",
+   "value": "Manual and timer",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "Bean hopper capacity",
+   "value": "150 gr",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "Depth",
+   "value": "140 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "Model name",
+   "value": "MIGNON CLASSICO",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67366,
+   "spec": "Grinding activation / Program type",
+   "value": "Manual",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "spec": "Bean hopper capacity",
+   "value": "150 gr",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "spec": "Depth",
+   "value": "140 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 64936,
+   "spec": "Body finish",
+   "value": "100% natural Virginia Walnut veneer",
+   "url": "https://comandantegrinder.com/products/c40-mk4-nitro-blade-virginia-walnut"
+  },
+  {
+   "product_id": 64937,
+   "spec": "Body finish",
+   "value": "100% natural Liquid Amber veneer",
+   "url": "https://comandantegrinder.com/products/c40-mk4-nitro-blade-liquid-amber"
+  },
+  {
+   "product_id": 67319,
+   "spec": "Type",
+   "value": "ON-DEMAND GRINDER, ø 64 flat burrs",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67319,
+   "spec": "Net weight",
+   "value": "9,7 kg",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67319,
+   "spec": "Rpm 50hz / 60hz",
+   "value": "1380 / 1650",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67262,
+   "spec": "Net weight",
+   "value": "8,7 kg",
+   "url": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67262,
+   "spec": "Gross weight",
+   "value": "10,7 kg",
+   "url": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67262,
+   "spec": "Rpm 50hz / 60hz",
+   "value": "1380 / 1650",
+   "url": "https://cdn2.shopify.com/s/files/1/0076/9064/9652/files/E6P.pdf?5867"
+  },
+  {
+   "product_id": 67213,
+   "spec": "Category",
+   "value": "Professional Coffee Grinders; \"The perfect choice for coffee shops and restaurants\"",
+   "url": "https://www.mahlkoenig.com/en-de/products/e65s"
+  },
+  {
+   "product_id": 67637,
+   "spec": "Category",
+   "value": "Professional Coffee Grinders (espresso grinder for coffee shops)",
+   "url": "https://www.mahlkoenig.com/en-de/products/e65s-gbw"
+  }
+ ]
+}
