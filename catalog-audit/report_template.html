@@ -1,0 +1,171 @@
+<title>Minuto Catalog Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column — summary strip, filter bar (sticky), then a list of finding cards. */
+:root {
+  --bg: #f6f3ef;        /* roasted-paper neutral, leaning toward the accent */
+  --surface: #ffffff;
+  --ink: #2a211c;       /* espresso */
+  --muted: #74675e;
+  --line: #e4dcd4;
+  --accent: #8a4b2a;    /* crema brown */
+  --accent-soft: #f1e4da;
+  --high: #b3261e; --high-bg: #fbe7e5;
+  --med: #a35d00;  --med-bg: #fdf0dc;
+  --low: #5b6b73;  --low-bg: #eceff1;
+  --fix-bg: #eef5ec; --fix-ink: #24502a;
+  --sans: "Rubik", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1714; --surface: #24201c; --ink: #efe7df; --muted: #a8998d; --line: #3a332d;
+  --accent: #d79a73; --accent-soft: #3a2a20;
+  --high: #ff8a80; --high-bg: #3d1f1c; --med: #f2b45a; --med-bg: #3a2c16; --low: #a9b8bf; --low-bg: #2b3135;
+  --fix-bg: #1f2e21; --fix-ink: #a9d8ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1b1714; --surface: #24201c; --ink: #efe7df; --muted: #a8998d; --line: #3a332d;
+  --accent: #d79a73; --accent-soft: #3a2a20;
+  --high: #ff8a80; --high-bg: #3d1f1c; --med: #f2b45a; --med-bg: #3a2c16; --low: #a9b8bf; --low-bg: #2b3135;
+  --fix-bg: #1f2e21; --fix-ink: #a9d8ad; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 1.75rem; font-weight: 700; margin: 0; letter-spacing: -.01em; text-wrap: balance }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 68ch }
+.eyebrow { font: 500 .72rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent) }
+
+.stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 8px }
+.stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--line); min-width: 120px; cursor: pointer; font: inherit; color: inherit; text-align: start }
+.stat b { font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.1 }
+.stat span { color: var(--muted); font-size: .82rem }
+.stat.h b { color: var(--high) } .stat.m b { color: var(--med) } .stat.l b { color: var(--low) }
+.stat[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -1px }
+.stat:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+details.topbox { margin: 18px 0 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 18px }
+details.topbox > summary { cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px }
+details.topbox > summary::after { content: "Show"; color: var(--accent); font-weight: 500; font-size: .85rem }
+details.topbox[open] > summary::after { content: "Hide" }
+ol.top { margin: 0 0 16px; padding-inline-start: 22px; display: grid; gap: 10px }
+ol.top ul { margin: 4px 0 0; padding-inline-start: 18px; color: var(--muted) }
+ol.top ul strong, ol.top li > strong { color: var(--ink) }
+code { font-family: var(--mono); font-size: .85em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding: 12px 0; margin-top: 10px;
+  border-bottom: 1px solid var(--line); display: grid; gap: 8px }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+input[type=search], select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px }
+input[type=search] { flex: 1 1 260px; min-width: 0 }
+select { flex: 0 1 auto; max-width: 100% }
+.count { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums }
+button.reset { font: inherit; font-size: .85rem; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 4px 2px; text-decoration: underline; text-underline-offset: 3px }
+
+.list { display: grid; gap: 10px; margin-top: 14px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0;
+  border-inline-start: 4px solid var(--sev) }
+.card.h { --sev: var(--high) } .card.m { --sev: var(--med) } .card.l { --sev: var(--low) }
+.head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline }
+.pill { font: 600 .7rem var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px }
+.pill.h { color: var(--high); background: var(--high-bg) } .pill.m { color: var(--med); background: var(--med-bg) } .pill.l { color: var(--low); background: var(--low-bg) }
+.name { font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: anywhere }
+.name:hover { color: var(--accent); text-decoration: underline }
+.meta { font: .75rem var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px }
+.cur { direction: rtl; text-align: right; font-size: .92rem; color: var(--muted); border-inline-end: 2px solid var(--line); padding-inline-end: 10px; overflow-wrap: anywhere; unicode-bidi: plaintext }
+.prob { overflow-wrap: anywhere }
+.fix { background: var(--fix-bg); color: var(--fix-ink); border-radius: 8px; padding: 8px 12px; overflow-wrap: anywhere; unicode-bidi: plaintext; text-align: start }
+.fix::before { content: "Suggested fix"; display: block; font: 500 .68rem var(--mono); letter-spacing: .08em; text-transform: uppercase; opacity: .75; margin-bottom: 2px; direction: ltr; text-align: left }
+.more { justify-self: center; font: inherit; font-weight: 500; color: var(--accent); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; cursor: pointer; margin-top: 6px }
+.empty { color: var(--muted); padding: 30px 0; text-align: center }
+footer { color: var(--muted); font-size: .82rem; margin-top: 28px }
+@media (max-width: 520px) { h1 { font-size: 1.4rem } .stat { min-width: calc(50% - 5px) } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">minuto.co.il · WooCommerce · read-only</div>
+  <h1>Catalog audit</h1>
+  <p class="sub">{{TOTAL}} findings in {{PRODUCTS}} products, out of 1,064 visible products checked. {{CLEAN}} products came out clean. Hidden products were not checked. Nothing in the store was changed.</p>
+
+  <div class="stats" id="stats">
+    <button class="stat h" data-sev="h" aria-pressed="false"><b id="nh">0</b><span>High: wrong info customers rely on</span></button>
+    <button class="stat m" data-sev="m" aria-pressed="false"><b id="nm">0</b><span>Medium: inconsistent</span></button>
+    <button class="stat l" data-sev="l" aria-pressed="false"><b id="nl">0</b><span>Low: cosmetic</span></button>
+  </div>
+
+  <details class="topbox" id="topbox">
+    <summary>Top 10 fixes</summary>
+    <!--TOP-->
+  </details>
+
+  <div class="bar">
+    <div class="row">
+      <input type="search" id="q" placeholder="Search a product name, ID or text…" aria-label="Search">
+    </div>
+    <div class="row">
+      <select id="fsev" aria-label="Severity"><option value="">All severities</option><option value="h">High</option><option value="m">Medium</option><option value="l">Low</option></select>
+      <select id="fcat" aria-label="Category"><option value="">All categories</option></select>
+      <select id="ftype" aria-label="Issue type"><option value="">All issue types</option></select>
+      <select id="fconf" aria-label="Confidence"><option value="">Any confidence</option><option value="c">Certain</option><option value="l">Likely</option><option value="v">Needs checking</option></select>
+      <button class="reset" id="reset">Clear filters</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <footer>"Needs checking" rows depend on a source the catalog doesn't contain, such as an importer spec sheet, supplier lot sheet or packaging. Check that source before applying the fix. The same data is in findings.csv.</footer>
+</div>
+
+<script>
+const DATA = /*DATA*/[];
+const F = {id:0,name:1,url:2,field:3,type:4,sev:5,cur:6,prob:7,fix:8,conf:9,cat:10};
+const TYPE_LABEL = {copy_paste:"Copied from another product", internal_mismatch:"Contradicts itself", product_facts:"Implausible spec", coffee_facts:"Coffee facts",
+  spec_commerce:"Price / pack / commerce", missing_data:"Missing data", hebrew_text:"Hebrew text", blend_vs_single_origin:"Blend vs single origin"};
+const SEV = {h:"High", m:"Medium", l:"Low"}, CONF = {c:"certain", l:"likely", v:"needs checking"};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const count = (k, i) => DATA.reduce((m, r) => (m[r[i]] = (m[r[i]] || 0) + 1, m), {});
+
+["h","m","l"].forEach(s => $("n"+s).textContent = DATA.filter(r => r[F.sev] === s).length);
+const cats = count(0, F.cat), types = count(0, F.type);
+Object.entries(cats).sort((a,b) => b[1]-a[1]).forEach(([k,n]) => $("fcat").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${n})</option>`));
+Object.entries(types).sort((a,b) => b[1]-a[1]).forEach(([k,n]) => $("ftype").insertAdjacentHTML("beforeend", `<option value="${k}">${TYPE_LABEL[k]||k} (${n})</option>`));
+
+let shown = 60, rows = [];
+function card(r) {
+  return `<article class="card ${r[F.sev]}">
+    <div class="head"><span class="pill ${r[F.sev]}">${SEV[r[F.sev]]}</span>
+      <a class="name" href="${esc(r[F.url])}" target="_blank" rel="noopener" dir="auto">${esc(r[F.name])}</a></div>
+    <div class="meta"><span>#${r[F.id]}</span><span>${esc(r[F.cat])}</span><span>${TYPE_LABEL[r[F.type]]||r[F.type]}</span><span>field: ${esc(r[F.field])}</span><span>${CONF[r[F.conf]]}</span></div>
+    ${r[F.cur] ? `<div class="cur">${esc(r[F.cur])}</div>` : ""}
+    <div class="prob">${esc(r[F.prob])}</div>
+    <div class="fix" dir="rtl">${esc(r[F.fix])}</div>
+  </article>`;
+}
+function render() {
+  const q = $("q").value.trim().toLowerCase(), s = $("fsev").value, c = $("fcat").value, t = $("ftype").value, cf = $("fconf").value;
+  rows = DATA.filter(r => (!s || r[F.sev] === s) && (!c || r[F.cat] === c) && (!t || r[F.type] === t) && (!cf || r[F.conf] === cf) &&
+    (!q || String(r[F.id]) === q || [r[F.name], r[F.cur], r[F.prob], r[F.fix], r[F.field]].some(x => x.toLowerCase().includes(q))));
+  const list = $("list");
+  list.innerHTML = rows.length ? rows.slice(0, shown).map(card).join("") : `<div class="empty">No findings match these filters.</div>`;
+  if (rows.length > shown) list.insertAdjacentHTML("beforeend", `<button class="more" id="more">Show ${Math.min(60, rows.length - shown)} more of ${rows.length - shown} remaining</button>`);
+  $("count").textContent = `${rows.length.toLocaleString()} shown`;
+  document.querySelectorAll(".stat").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sev === s)));
+  try { localStorage.setItem("audit-filters", JSON.stringify({q:$("q").value, s, c, t, cf})); } catch (e) {}
+}
+document.addEventListener("click", e => {
+  if (e.target.id === "more") { shown += 60; render(); }
+  const st = e.target.closest(".stat");
+  if (st) { $("fsev").value = $("fsev").value === st.dataset.sev ? "" : st.dataset.sev; shown = 60; render(); $("list").scrollIntoView({behavior:"smooth", block:"start"}); }
+});
+["q","fsev","fcat","ftype","fconf"].forEach(id => $(id).addEventListener(id === "q" ? "input" : "change", () => { shown = 60; render(); }));
+$("reset").addEventListener("click", () => { ["q","fsev","fcat","ftype","fconf"].forEach(id => $(id).value = ""); shown = 60; render(); });
+try { const f = JSON.parse(localStorage.getItem("audit-filters") || "null");
+  if (f) { $("q").value = f.q || ""; $("fsev").value = f.s || ""; $("fcat").value = f.c || ""; $("ftype").value = f.t || ""; $("fconf").value = f.cf || ""; } } catch (e) {}
+if (!$("fsev").value && !$("q").value && !$("fcat").value && !$("ftype").value && !$("fconf").value) $("fsev").value = "h";
+render();
+</script>
