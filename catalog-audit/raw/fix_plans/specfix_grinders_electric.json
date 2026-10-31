@@ -1,0 +1,292 @@
+{
+ "edits": [
+  {
+   "product_id": 64836,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>הספק מנוע: 260W</p>",
+   "new": "<p>הספק מנוע: 310W</p>",
+   "finding": "contradiction: page 260W vs official Power absorbed 310 watt",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra/117/"
+  },
+  {
+   "product_id": 64836,
+   "variation_id": null,
+   "target": "description",
+   "old": "מנוע עוצמתי של 260W ו-1350",
+   "new": "מנוע עוצמתי של 310W ו-1350",
+   "finding": "contradiction: page 260W vs official Power absorbed 310 watt",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra/117/"
+  },
+  {
+   "product_id": 64836,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מידות: 185 מ\"מ (ר) x 227 מ\"מ (ע) x 445 מ\"מ (ג)</p>",
+   "new": "<p>מידות: 124 מ\"מ (ר) x 192 מ\"מ (ע) x 390 מ\"מ (ג)</p>",
+   "finding": "contradiction: page 185×227×445 mm vs official Width 124 mm, Depth 192 mm, Height 390 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra/117/"
+  },
+  {
+   "product_id": 64836,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>משקל: 5.6 ק\"ג</p>",
+   "new": "<p>משקל: 6.5 ק\"ג</p>",
+   "finding": "contradiction: page 5.6 kg vs official Weight 6,5 kg",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra/117/"
+  },
+  {
+   "product_id": 67155,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב: 12 ס\"מ עומק: 18 ס\"מ",
+   "new": "רוחב: 12 ס\"מ עומק: 14 ס\"מ",
+   "finding": "contradiction: page depth 18 cm vs official Depth 140 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67607,
+   "variation_id": null,
+   "target": "short_description",
+   "old": ">מנוע עוצמתי 350W<",
+   "new": ">מנוע עוצמתי 310W<",
+   "finding": "contradiction: page 350W vs official 310 W",
+   "source": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 67607,
+   "variation_id": null,
+   "target": "description",
+   "old": "המנוע העוצמתי 350W מפזר",
+   "new": "המנוע העוצמתי 310W מפזר",
+   "finding": "contradiction: page 350W vs official 310 W",
+   "source": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 67278,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל: 8 ק״ג.",
+   "new": "משקל: 5.1 ק״ג (נטו).",
+   "finding": "contradiction: page 8 kg (official gross weight) vs official Net weight 5.1 kg",
+   "source": "https://www.mahlkoenig.com/en-de/products/x54-allround-home-grinder"
+  },
+  {
+   "product_id": 67148,
+   "variation_id": null,
+   "target": "description",
+   "old": ">סל\"ד: 1420<",
+   "new": ">סל\"ד: 1350<",
+   "finding": "contradiction: page 1420 rpm vs official Rpm 1350",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/sg85+grocery/106/"
+  },
+  {
+   "product_id": 67148,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "סכיני טחינה שטוחות מפלדת אל חלד 85 מ&quot;מ",
+   "new": "סכיני טחינה שטוחות מפלדה מוקשית 85 מ&quot;מ",
+   "finding": "contradiction: page stainless-steel burrs vs official burr Material Hardened steel",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/sg85+grocery/106/"
+  },
+  {
+   "product_id": 67148,
+   "variation_id": null,
+   "target": "description",
+   "old": "סכיני טחינה שטוחות מפלדת אל חלד 85 מ\"מ",
+   "new": "סכיני טחינה שטוחות מפלדה מוקשית 85 מ\"מ",
+   "finding": "contradiction: page stainless-steel burrs vs official burr Material Hardened steel",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/sg85+grocery/106/"
+  },
+  {
+   "product_id": 67150,
+   "variation_id": null,
+   "target": "description",
+   "old": ">גובה: 540 מ\"מ<",
+   "new": ">גובה: 544 מ\"מ<",
+   "finding": "contradiction: page height 540 mm vs official Height 544 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67150,
+   "variation_id": null,
+   "target": "description",
+   "old": ">רוחב: 180 מ\"מ<",
+   "new": ">רוחב: 278 מ\"מ<",
+   "finding": "contradiction: page width 180 mm vs official Width 278 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67150,
+   "variation_id": null,
+   "target": "description",
+   "old": ">עומק: 240 מ\"מ<",
+   "new": ">עומק: 204 מ\"מ<",
+   "finding": "contradiction: page depth 240 mm vs official Depth 204 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67150,
+   "variation_id": null,
+   "target": "description",
+   "old": ">תפוקה: 2.5 - 4.5 גרם לשנייה<",
+   "new": ">תפוקה: 2.3 - 3.8 גרם לשנייה<",
+   "finding": "contradiction: page 2.5–4.5 g/s vs official Productivity 2.3 - 3,8 g/s",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67149,
+   "variation_id": null,
+   "target": "description",
+   "old": ">גובה: 540 מ\"מ<",
+   "new": ">גובה: 544 מ\"מ<",
+   "finding": "contradiction: page height 540 mm vs official Height 544 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67149,
+   "variation_id": null,
+   "target": "description",
+   "old": ">רוחב: 180 מ\"מ<",
+   "new": ">רוחב: 278 מ\"מ<",
+   "finding": "contradiction: page width 180 mm vs official Width 278 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67149,
+   "variation_id": null,
+   "target": "description",
+   "old": ">עומק: 240 מ\"מ<",
+   "new": ">עומק: 204 מ\"מ<",
+   "finding": "contradiction: page depth 240 mm vs official Depth 204 mm",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67149,
+   "variation_id": null,
+   "target": "description",
+   "old": ">תפוקה: 2.5 - 4.5 גרם לשנייה<",
+   "new": ">תפוקה: 2.3 - 3.8 גרם לשנייה<",
+   "finding": "contradiction: page 2.5–4.5 g/s vs official Productivity 2.3 - 3,8 g/s",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 65402,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "העשויים מפלדה מחוסמת איכותית",
+   "new": "העשויים מ-Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page hardened-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "variation_id": null,
+   "target": "description",
+   "old": "בקוטר 65 מ\"מ העשויים מפלדה מחוסמת איכותית",
+   "new": "בקוטר 65 מ\"מ העשויים מ-Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page hardened-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "variation_id": null,
+   "target": "description",
+   "old": "וסכינים מפלדת אל חלד בדרגה גבוהה",
+   "new": "וסכיני Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page stainless-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "העשויים מפלדה מחוסמת איכותית",
+   "new": "העשויים מ-Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page hardened-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "variation_id": null,
+   "target": "description",
+   "old": "בקוטר 65 מ\"מ העשויים מפלדה מחוסמת איכותית",
+   "new": "בקוטר 65 מ\"מ העשויים מ-Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page hardened-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "variation_id": null,
+   "target": "description",
+   "old": "וסכינים מפלדת אל חלד בדרגה גבוהה",
+   "new": "וסכיני Pure Diamond (פטנט של Eureka)",
+   "finding": "contradiction: page stainless-steel burrs vs official burr Material Pure Diamond (patented Eureka)",
+   "source": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 67313,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>212x309x360 מ\"מ</li>",
+   "new": "<li>212x309x370 מ\"מ</li>",
+   "finding": "contradiction: page 212x309x360 mm vs official Dimensions 212 x 309 x 370h mm",
+   "source": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37SD_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 65203,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>תכולת מיכל פולים: 350 גר`</p>",
+   "new": "<p>תכולת מיכל פולים: 300 גר`</p>",
+   "finding": "contradiction: page hopper 350 g vs official Coffee bean hopper capacity 0.3 kg",
+   "source": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65203,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב – 11.5 ס``מ, עומק – 24.5 ס``מ",
+   "new": "רוחב – 12 ס``מ, עומק – 25 ס``מ",
+   "finding": "contradiction: page 11.5×24.5 cm vs official W × D × H 120 x 250 x 350 mm",
+   "source": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 64987,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מידות: 12סמ רוחב, 18 סמ עומק, 30.5 סמ גובה</p>",
+   "new": "<p>מידות: 12.5 סמ רוחב, 18 סמ עומק, 31 סמ גובה</p>",
+   "finding": "contradiction: page 12×18×30.5 cm vs official Dimensions LxDxH 12.5x18x31 cm",
+   "source": "https://www.lelit.com/product/fred-pl043mmi/"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 64836,
+   "finding": "מהירות טחינה: 1.5 גרם/שנייה",
+   "reason": "value not stated with a unit officially: Eureka lists \"Productivity 1,8 - 2,5 Espresso\" without units; left unchanged"
+  },
+  {
+   "product_id": 67148,
+   "finding": "יכולה לטחון עד 7 גרם קפה בשנייה",
+   "reason": "official \"Productivity 6 - 9 Espresso 10 - 13 Brew\" has no unit stated; left unchanged"
+  },
+  {
+   "product_id": 65203,
+   "finding": "משקל: 7 ק``ג",
+   "reason": "version uncertain: official catalogue gives Rocky 6.5 kg and Rocky SD 7 kg; page does not say which version"
+  },
+  {
+   "product_id": 64759,
+   "finding": "מיכל פולי קפה של 250 גרם",
+   "reason": "exact model/version uncertain: page \"Ceado Life\" vs official Life S / Life X Touch / Life WAM (all ~300 g); not changed"
+  },
+  {
+   "product_id": 65064,
+   "finding": "הספק מנוע חשמלי 550 וואט · סיבובים לדקה : 1370 · 800 גרם",
+   "reason": "exact model uncertain: Compak has no \"I3 PRO\"; official i3 (500 W, 1.400 rpm, 700 g) may be a different version than the page describes"
+  }
+ ]
+}

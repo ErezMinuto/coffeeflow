@@ -1,0 +1,85 @@
+{
+ "edits": [
+  {
+   "product_id": 81462,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב של 32 ס\"מ בלבד, גובה 38 ועומק של 45 ס\"מ",
+   "new": "רוחב של 32 ס\"מ בלבד, גובה 36.3 ועומק של 47 ס\"מ",
+   "finding": "contradiction: page height 38 cm / depth 45 cm vs official Z10 Aluminium White (EB) 32 x 36.3 x 47 cm (page weight 12.3 kg matches EB)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-white-eb-15613"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה 38 ועומק של 45 ס\"מ",
+   "new": "גובה 38 ועומק של 47 ס\"מ",
+   "finding": "contradiction: page depth 45 cm vs official 47 cm (same on every Z10 version EA/EB/EC); height left as is because it depends on the version (36.3 EA/EB, 38.3 EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349 ; https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-black-eb-15609 ; https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה 38 ועומק של 45 ס\"מ",
+   "new": "גובה 38 ועומק של 47 ס\"מ",
+   "finding": "contradiction: page depth 45 cm vs official 47 cm (same on every Z10 version EA/EB/EC); height left as is because it depends on the version (36.3 EA/EB, 38.3 EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349 ; https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-black-eb-15609 ; https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>מיכל פולים בעל מכסה לשימור ארומה עד 290 ג'</li>",
+   "new": "<li>שני מיכלי פולים בעלי מכסה לשימור ארומה, קיבולת מיכל הפולים: 250 ג'</li>",
+   "finding": "contradiction: page says one bean container up to 290 g (the s500 value) vs official TI9573X1RW: 2 bean containers, bean container capacity 250 g",
+   "source": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9573X1RW"
+  },
+  {
+   "product_id": 64944,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>רוחב 40 ס״מ</p>",
+   "new": "<p>רוחב 31.1 ס״מ</p>",
+   "finding": "contradiction: page width 40 cm vs official Epos 311 mm (Gerätemaße H x B x T: 357 x 311 x 359 mm)",
+   "source": "https://www.melitta.de/filterkaffeemaschinen/epos"
+  },
+  {
+   "product_id": 64944,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>גובה 40.5 ס״מ</p>",
+   "new": "<p>גובה 35.7 ס״מ</p>",
+   "finding": "contradiction: page height 40.5 cm vs official Epos 357 mm (Gerätemaße H x B x T: 357 x 311 x 359 mm)",
+   "source": "https://www.melitta.de/filterkaffeemaschinen/epos"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 81458,
+   "spec": "weight 12.3 kg; height 38 cm",
+   "reason": "version uncertain: Z10 black exists as Diamond Black EA (12 kg, H 36.3 cm), Aluminium Black EB (12.3 kg, H 36.3 cm) and Obsidian Black EC (12.5 kg, H 38.3 cm); the page doesn't say which, so only the depth (47 cm on all versions) was corrected"
+  },
+  {
+   "product_id": 64923,
+   "spec": "weight 12.3 kg; height 38 cm",
+   "reason": "version uncertain ('signature INOX' is not a name on jura.com); Z10 versions differ in weight (12 / 12.3 / 12.5 kg) and height (36.3 / 38.3 cm), so only the depth (47 cm on all versions) was corrected"
+  },
+  {
+   "product_id": 81455,
+   "spec": "weight 9.6 kg; dimensions 28 x 38.1 x 44.6 cm",
+   "reason": "page describes a different/older E8 generation than the one jura.com lists now (only E8 ED: 10 kg, 27 x 34.8 x 44.6 cm); the generation stocked is uncertain, so not changed"
+  },
+  {
+   "product_id": 64929,
+   "spec": "weight 9.6 kg; dimensions 28 x 38.1 x 44.6 cm",
+   "reason": "same as 81455: older/different E8 generation than the current official ED page"
+  },
+  {
+   "product_id": 64944,
+   "spec": "depth 36 cm",
+   "reason": "not a contradiction: official 359 mm rounds to 36 cm"
+  }
+ ]
+}

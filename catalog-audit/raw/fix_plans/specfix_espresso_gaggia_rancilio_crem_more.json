@@ -1,0 +1,247 @@
+{
+ "edits": [
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "old": "23 ס\"מ (רוחב) x 38 ס\"מ (גובה) x 24 ס\"מ (עומק)",
+   "new": "20 ס\"מ (רוחב) x 35.5 ס\"מ (גובה) x 27 ס\"מ (עומק)",
+   "finding": "contradiction: page 23x38x24 cm (W x H x D) vs official 20 x 35.5 x 27 cm (l x h x d)",
+   "source": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "old": "</strong> 7.3 ק\"ג</li>",
+   "new": "</strong> 8.1 ק\"ג</li>",
+   "finding": "contradiction: page weight 7.3 kg vs official 8.1 kg",
+   "source": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "old": "23 ס\"מ (רוחב) x 38 ס\"מ (גובה) x 24 ס\"מ (עומק)",
+   "new": "20 ס\"מ (רוחב) x 35.5 ס\"מ (גובה) x 27 ס\"מ (עומק)",
+   "finding": "contradiction: page 23x38x24 cm (W x H x D) vs official 20 x 35.5 x 27 cm (l x h x d)",
+   "source": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "old": "</strong> 7.3 ק\"ג</li>",
+   "new": "</strong> 8.1 ק\"ג</li>",
+   "finding": "contradiction: page weight 7.3 kg vs official 8.1 kg",
+   "source": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>דוד חליטה 1.2L</li>",
+   "new": "<li>דוד חליטה 1.5L</li>",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "variation_id": null,
+   "target": "description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>דוד חליטה 1.2L</li>",
+   "new": "<li>דוד חליטה 1.5L</li>",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67227,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "variation_id": null,
+   "target": "description",
+   "old": "1.7L קיטור ו- 1.2L חליטה",
+   "new": "1.7L קיטור ו- 1.5L חליטה",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>דוד חליטה 1.2L</li>",
+   "new": "<li>דוד חליטה 1.5L</li>",
+   "finding": "contradiction: page brew boiler 1.2 L vs official 1.5 L (1.7 + 1.5 L)",
+   "source": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב 31 ס\"מ / עומק 45.8",
+   "new": "רוחב 30 ס\"מ / עומק 45.8",
+   "finding": "contradiction: page width 31 cm vs official 30 cm (ONE 2B Dual)",
+   "source": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב 30 ס\"מ / עומק 45.8",
+   "new": "רוחב 31.1 ס\"מ / עומק 45.8",
+   "finding": "contradiction: page width 30 cm vs official 31.1 cm (ONE 2B R-LFPP Dual)",
+   "source": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>תכולה: 60 מ\"ל</li>",
+   "new": "<li>תכולה: 90 מ\"ל</li>",
+   "finding": "contradiction: page capacity 60 ml vs official 90 ml (Flair 58 family reservoir)",
+   "source": "https://support.flairespresso.com/knowledge/how-large-of-a-shot-can-i-pull"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>תפוקה מקסימלית: 40 מ\"ל</li>",
+   "new": "<li>תפוקה מקסימלית: 55 מ\"ל</li>",
+   "finding": "contradiction: page max yield 40 ml vs official up to 55 ml",
+   "source": "https://support.flairespresso.com/knowledge/how-large-of-a-shot-can-i-pull"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>מינון: 12-18 גרם</li>",
+   "new": "<li>מינון: 16-20 גרם</li>",
+   "finding": "contradiction: page dose 12-18 g vs official 16-20 g (18 g basket)",
+   "source": "https://support.flairespresso.com/knowledge/what-dose-does-the-flair-58-support"
+  },
+  {
+   "product_id": 64789,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>משקל 60 ק\"ג</p>",
+   "new": "<p>משקל 62 ק\"ג</p>",
+   "finding": "contradiction: page weight 60 kg vs official 62 kg",
+   "source": "https://www.crem.coffee/product/fam_qloqpv/EX3-2GR"
+  },
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "description",
+   "old": "</b> כ-9.5 ק\"ג.</p>",
+   "new": "</b> כ-9.4 ק\"ג.</p>",
+   "finding": "contradiction: page approx. 9.5 kg vs official approx. 9.4 kg (C9 EA manual)",
+   "source": "https://www.jura.com/-/media/global/pdf/manuals-global/home/C9/download_manual_C9_EA_SA_INTA.pdf"
+  },
+  {
+   "product_id": 67257,
+   "variation_id": null,
+   "target": "description",
+   "old": "22.4 X 35.7 X 43.5 ס\"מ",
+   "new": "22.5 X 36 X 43.5 ס\"מ",
+   "finding": "contradiction: page 22.4 x 35.7 x 43.5 cm vs official 22.5 x 36 x 43.5 cm",
+   "source": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 65046,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב x גובה x עומק: 30 x 40 x 40.8 ס\"מ",
+   "new": "רוחב x גובה x עומק: 30 x 40.8 x 40 ס\"מ",
+   "finding": "contradiction: page height 40 / depth 40.8 cm vs official height 408 mm / depth 400 mm (swapped)",
+   "source": "https://nuovasimonelli.com/machine/oscar-mood/"
+  },
+  {
+   "product_id": 67225,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב=24 ; גובה=34 ; עומק=46",
+   "new": "רוחב=24 ; גובה=34 ; עומק=48",
+   "finding": "contradiction: page depth 46 cm vs official approx. 48 cm (24 x 34 x 48)",
+   "source": "https://nivona.com/de/product/5series"
+  },
+  {
+   "product_id": 64736,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב=24 ; גובה=34 ; עומק=46",
+   "new": "רוחב=24 ; גובה=34 ; עומק=48",
+   "finding": "contradiction: page depth 46 cm vs official approx. 48 cm (24 x 34 x 48)",
+   "source": "https://nivona.com/de/product/5series"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 64854,
+   "name": "מכונת קפה ידנית ניידת Flair 58X",
+   "reason": "remaining copied values (weight 7 kg, size 30x15x25 cm, \"plus 2.7 kg / pressure kit 3.18 kg\", box 32x23x8 cm, colours) are not stated in any official Flair 58/58x source (model discontinued, product page gone), so they are not corrected; consider removing them by hand"
+  },
+  {
+   "product_id": 64789,
+   "name": "מכונת קפה crem ex3 2GR",
+   "reason": "dimensions not corrected: page says H550 x D580 x W770 mm; official crem.coffee lists 46.5 cm height for both standard and take-away (TA) 2GR variants, which looks like a copy error on the official page (US TA variant is 51.5 cm), so the right height for the \"High Group\" version is uncertain"
+  },
+  {
+   "product_id": 65246,
+   "name": "מכונת קפה ידנית מקצועית וי.בי.אם ג׳וניור VBM Junior",
+   "reason": "VBM Junior: page weight 21 kg / 22.5x39x41 cm vs current official 26 kg / 25x42x43 cm, but the page describes the earlier Junior version (current sheet is the redesigned model) — not changed"
+  },
+  {
+   "product_id": 68271,
+   "name": "מכונת קפה ידנית מקצועית וי.בי.אם דומובר VBM Domobar",
+   "reason": "VBM Domobar: page 22.5x34x41.5 cm vs current official sheet 22x37x40 cm; page describes the earlier Domobar (official web page itself still says 22.5 wide x 41.5 deep) — sources disagree and version differs, not changed"
+  },
+  {
+   "product_id": 67328,
+   "finding": "Anima Class bean container 250 → 150 g",
+   "reason": "held: older Anima units shipped with 250 g; confirm stocked version"
+  }
+ ]
+}
