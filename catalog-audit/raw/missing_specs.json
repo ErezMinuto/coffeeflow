@@ -30,7 +30,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2052,
+  "text_len": 2054,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9d-%d7%9c%d7%99%d7%a0%d7%90/"
  },
  {
@@ -67,7 +67,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9d-%d7%9c%d7%99%d7%a0%d7%90/"
  },
  {
@@ -101,7 +101,7 @@
   "missing": [
    "bean_hopper"
   ],
-  "text_len": 2203,
+  "text_len": 2205,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-z-10-%d7%9c%d7%91%d7%9f/"
  },
  {
@@ -375,7 +375,7 @@
    "power",
    "pressure"
   ],
-  "text_len": 2118,
+  "text_len": 2115,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-lelit-elizabeth-pl92t/"
  },
  {
@@ -659,7 +659,7 @@
   "name": "מכונת אספרסו ידנית Gaggia Classic E24 - צבע שחור",
   "group": "espresso",
   "missing": [],
-  "text_len": 1875,
+  "text_len": 1877,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-gaggia-classic-e24-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
  },
  {
@@ -667,7 +667,7 @@
   "name": "מכונת אספרסו ידנית Gaggia Classic E24 - נירוסטה",
   "group": "espresso",
   "missing": [],
-  "text_len": 1848,
+  "text_len": 1850,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-gaggia-classic-e24/"
  },
  {
@@ -772,6 +772,17 @@
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%95%d7%99-%d7%91%d7%99-%d7%90%d7%9d-%d7%93%d7%95%d7%9e%d7%95%d7%91%d7%a8/"
  },
  {
+  "id": 67671,
+  "name": "La Pavoni Esperto Abile: מכונת קפה ידנית מקצועית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1689,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-abile-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
   "id": 67670,
   "name": "מכונת אספרסו רוקט אפרטמנטו TCA בצבע שחור-נחושת - Rocket Appartamento TCA Black-Copper",
   "group": "espresso",
@@ -854,7 +865,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 987,
+  "text_len": 985,
   "permalink": "https://www.minuto.co.il/product/la-pavoni-expo-2015-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
  },
  {
@@ -939,7 +950,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1257,
+  "text_len": 1259,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-crem-one-dual-boiler-pid-r-lfpp/"
  },
  {
@@ -1149,7 +1160,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1508,
+  "text_len": 1498,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bezzera-matrix-electronic-dosage-1-gr/"
  },
  {
@@ -1159,7 +1170,7 @@
   "missing": [
    "speed"
   ],
-  "text_len": 1156,
+  "text_len": 1164,
   "permalink": "https://www.minuto.co.il/product/mahlkonig-x54-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/"
  },
  {
@@ -1214,7 +1225,7 @@
   "missing": [
    "portafilter"
   ],
-  "text_len": 1936,
+  "text_len": 1934,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96%d7%b3-gaggia-magenta-prestige/"
  },
  {
@@ -1392,7 +1403,7 @@
   "missing": [
    "water_tank"
   ],
-  "text_len": 1624,
+  "text_len": 1622,
   "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-plq-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%a4%d7%a8%d7%95%d7%a4%d7%a9%d7%99%d7%95%d7%a0%d7%90/"
  },
  {
@@ -1419,7 +1430,7 @@
    "power",
    "pressure"
   ],
-  "text_len": 2255,
+  "text_len": 2257,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-mechanika-max/"
  },
  {
@@ -1448,7 +1459,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1394,
+  "text_len": 1392,
   "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-edotto-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
  },
  {
@@ -1528,17 +1539,6 @@
   ],
   "text_len": 566,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/"
- },
- {
-  "id": 67671,
-  "name": "La Pavoni Esperto Abile: מכונת קפה ידנית מקצועית",
-  "group": "espresso",
-  "missing": [
-   "pressure",
-   "portafilter"
-  ],
-  "text_len": 1689,
-  "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-abile-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
  },
  {
   "id": 67661,
@@ -1800,7 +1800,7 @@
   "name": "מטחנת קפה Eureka MIGNON SINGLE DOSE 65 שחור",
   "group": "grinder",
   "missing": [],
-  "text_len": 1500,
+  "text_len": 1526,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-single-dose-65-%d7%a9%d7%97%d7%95%d7%a8/"
  },
  {
@@ -1847,10 +1847,11 @@
   "name": "מכונת אספרסו רוקט Rocket R Nine One Dark Wood",
   "group": "espresso",
   "missing": [
+   "water_tank",
    "pressure",
    "portafilter"
   ],
-  "text_len": 2003,
+  "text_len": 2007,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one-dark-wood/"
  },
  {
@@ -1858,10 +1859,11 @@
   "name": "מכונת אספרסו רוקט Rocket R Nine One Walnut Wood",
   "group": "espresso",
   "missing": [
+   "water_tank",
    "pressure",
    "portafilter"
   ],
-  "text_len": 2024,
+  "text_len": 2028,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one-walnut-wood/"
  },
  {
@@ -1869,10 +1871,11 @@
   "name": "מכונת אספרסו רוקט Rocket R NINE ONE",
   "group": "espresso",
   "missing": [
+   "water_tank",
    "pressure",
    "portafilter"
   ],
-  "text_len": 1835,
+  "text_len": 1839,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one/"
  },
  {
@@ -1901,7 +1904,7 @@
   "name": "מכונת קפה אוטומטית סימנס EQ.9 plus connect s700",
   "group": "superauto",
   "missing": [],
-  "text_len": 3901,
+  "text_len": 3925,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-eq-9-plus-connect-s700/"
  },
  {
@@ -1914,13 +1917,19 @@
  },
  {
   "id": 65226,
-  "name": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+  "name": "מעמד לקפה פילטר 1–2 כוסות V60 מפלסטיק הריו Hario VD-01R",
   "group": "brewer",
-  "missing": [
-   "capacity"
-  ],
-  "text_len": 364,
+  "missing": [],
+  "text_len": 372,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/"
+ },
+ {
+  "id": 65225,
+  "name": "מעמד לקפה פילטר 1–2 כוסות V60 מקרמיקה הריו Hario VD-01R",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 527,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/"
  },
  {
   "id": 65223,
@@ -2006,7 +2015,7 @@
    "burr_size",
    "speed"
   ],
-  "text_len": 402,
+  "text_len": 398,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a8%d7%a0%d7%a6%d7%b3%d7%99%d7%9c%d7%99%d7%95-%d7%a8%d7%95%d7%a7%d7%99-rancilio-rocky/"
  },
  {
@@ -2054,7 +2063,7 @@
   "missing": [
    "material"
   ],
-  "text_len": 502,
+  "text_len": 515,
   "permalink": "https://www.minuto.co.il/product/%d7%90%d7%99%d7%a8%d7%95%d7%a4%d7%a8%d7%a1-aeropress/"
  },
  {
@@ -2184,12 +2193,10 @@
  },
  {
   "id": 65106,
-  "name": "מעמד לקפה פילטר 2 כוסות V60 מקרמיקה הריו Hario VDC-02W",
+  "name": "מעמד לקפה פילטר 1–4 כוסות V60 מקרמיקה הריו Hario VDC-02W",
   "group": "brewer",
-  "missing": [
-   "capacity"
-  ],
-  "text_len": 540,
+  "missing": [],
+  "text_len": 548,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vdc-02w/"
  },
  {
@@ -2380,7 +2387,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2450,7 +2457,7 @@
    "power",
    "speed"
   ],
-  "text_len": 430,
+  "text_len": 431,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-william-pl043/"
  },
  {
@@ -2484,7 +2491,7 @@
   "name": "מכונת קפה פילטר טוחנת מליטה Melitta Epos Momentum",
   "group": "filter_machine",
   "missing": [],
-  "text_len": 1827,
+  "text_len": 1829,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%98%d7%95%d7%97%d7%a0%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-epos-momentum/"
  },
  {
@@ -2616,7 +2623,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-%d7%9c%d7%99%d7%a0%d7%90/"
  },
  {
@@ -2627,7 +2634,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2638,7 +2645,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2649,7 +2656,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a6%d7%94%d7%95%d7%91-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2660,7 +2667,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%aa%d7%9b%d7%9c%d7%aa-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2671,7 +2678,7 @@
    "pressure",
    "portafilter"
   ],
-  "text_len": 1655,
+  "text_len": 1645,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2681,7 +2688,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2047,
+  "text_len": 2049,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%aa%d7%9b%d7%9c%d7%aa-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2691,7 +2698,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2047,
+  "text_len": 2049,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2701,7 +2708,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2047,
+  "text_len": 2049,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2711,7 +2718,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2051,
+  "text_len": 2053,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
  },
  {
@@ -2721,7 +2728,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2047,
+  "text_len": 2049,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d-%d7%9c%d7%99%d7%a0/"
  },
  {
@@ -2731,7 +2738,7 @@
   "missing": [
    "pressure"
   ],
-  "text_len": 2046,
+  "text_len": 2048,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-%d7%9c%d7%99%d7%a0%d7%90/"
  },
  {
@@ -2797,6 +2804,16 @@
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-comandante-mk4-nb-premium/"
  },
  {
+  "id": 64836,
+  "name": "מטחנת קפה Eureka MIGNON LIBRA 55",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1080,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-libra-55/"
+ },
+ {
   "id": 64827,
   "name": "מכונת קפה אוטומטית Jura ENA 8 שחורה",
   "group": "superauto",
@@ -2817,7 +2834,7 @@
   "name": "מטחנת קפה Eureka MIGNON SINGLE DOSE 65",
   "group": "grinder",
   "missing": [],
-  "text_len": 1491,
+  "text_len": 1517,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-single-dose-65/"
  },
  {
@@ -3144,16 +3161,6 @@
   ],
   "text_len": 843,
   "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens/"
- },
- {
-  "id": 65225,
-  "name": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
-  "group": "brewer",
-  "missing": [
-   "capacity"
-  ],
-  "text_len": 519,
-  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/"
  },
  {
   "id": 65220,
@@ -3518,16 +3525,6 @@
   ],
   "text_len": 1949,
   "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-gs3-av/"
- },
- {
-  "id": 64836,
-  "name": "מטחנת קפה Eureka MIGNON LIBRA 55",
-  "group": "grinder",
-  "missing": [
-   "hopper"
-  ],
-  "text_len": 1080,
-  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-libra-55/"
  },
  {
   "id": 64835,
