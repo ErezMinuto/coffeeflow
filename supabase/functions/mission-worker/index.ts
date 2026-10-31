@@ -49,7 +49,7 @@ import {
   type RecentScene,
 } from '../seo-agent/services/sceneRepeat.ts'
 import type { MissionRow, MissionState, NewSeoTask } from '../seo-agent/types.ts'
-import { applyPlannedShot, plannerShotInstructions } from '../_shared/shot_library.ts'
+import { applyPlannedShot, withIgDestination, plannerShotInstructions } from '../_shared/shot_library.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -690,6 +690,7 @@ serve(async (req) => {
       let   rawBrief   = (input.brief_data ?? {}) as Record<string, unknown>
       const rationale  = String(input.rationale ?? '').trim()
       if (!task_type) continue
+      if (task_type === 'visual_generation') rawBrief = withIgDestination(rawBrief)
       // CAPTION FIRST, THEN A SHOT (docs/image-pipeline/plan.md, owner
       // 2026-10-28). An IG visual carries the caption it is for and a shot
       // from the menu. Done before the story-lock and no-repeat guards, which
