@@ -1,0 +1,935 @@
+{
+ "edits": [
+  {
+   "product_id": 82381,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>\n<li><strong>מהירות:</strong> 1950 סל\"ד (ללא עומס)</li>\n<li><strong>מיכל פולים:</strong> כ-250 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 15.4×21.8×39 ס\"מ (כולל מיכל פולים)</li>\n<li><strong>משקל:</strong> 5.8 ק\"ג (נטו)</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+   ]
+  },
+  {
+   "product_id": 82379,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>\n<li><strong>מהירות:</strong> 1950 סל\"ד (ללא עומס)</li>\n<li><strong>מיכל פולים:</strong> כ-250 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 15.4×21.8×39 ס\"מ (כולל מיכל פולים)</li>\n<li><strong>משקל:</strong> 5.8 ק\"ג (נטו)</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+   ]
+  },
+  {
+   "product_id": 78678,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>\n<li><strong>מהירות:</strong> 1950 סל\"ד (ללא עומס)</li>\n<li><strong>מיכל פולים:</strong> 30 גרם (סטנדרטי) · 100 גרם עם מאריך המיכל · 80 גרם עם המפוח</li>\n<li><strong>מידות (ר×ע×ג):</strong> 14.3×25.3×24.9 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions",
+   "sources": [
+    "https://www.mahlkoenig.com/en-de/products/x64-sd-single-dose-home-grinder"
+   ]
+  },
+  {
+   "product_id": 67278,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 120 וואט (220–240 וולט, 50/60 הרץ)</li>\n</ul>",
+   "finding": "missing specs: power",
+   "sources": [
+    "https://www.mahlkoenig.com/en-de/products/x54-allround-home-grinder"
+   ]
+  },
+  {
+   "product_id": 80356,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 310 וואט</li>\n<li><strong>מהירות:</strong> 1350 סל\"ד</li>\n<li><strong>מיכל פולים:</strong> 350 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 12.4×19.2×39 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra+65+all+purpose/115/"
+   ]
+  },
+  {
+   "product_id": 67367,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>\n<li><strong>הספק:</strong> 310 וואט</li>\n<li><strong>מהירות:</strong> 1350 סל\"ד</li>\n</ul>",
+   "finding": "missing specs: burrs, power, speed",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+   ]
+  },
+  {
+   "product_id": 67155,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>\n<li><strong>הספק:</strong> 310 וואט</li>\n<li><strong>מהירות:</strong> 1350 סל\"ד</li>\n</ul>",
+   "finding": "missing specs: burrs, power, speed",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+   ]
+  },
+  {
+   "product_id": 67165,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>\n<li><strong>הספק:</strong> 310 וואט</li>\n<li><strong>מהירות:</strong> 1350 סל\"ד</li>\n</ul>",
+   "finding": "missing specs: burrs, power, speed",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+   ]
+  },
+  {
+   "product_id": 67150,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מיכל פולים:</strong> 1.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: hopper",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+   ]
+  },
+  {
+   "product_id": 67149,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מיכל פולים:</strong> 1.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: hopper",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+   ]
+  },
+  {
+   "product_id": 67148,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 23×29.5×57 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/sg85+grocery/106/"
+   ]
+  },
+  {
+   "product_id": 65402,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 320 וואט</li>\n<li><strong>מהירות:</strong> 1650 סל\"ד</li>\n<li><strong>מיכל פולים:</strong> 45 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 12.8×26×32.1 ס\"מ</li>\n<li><strong>משקל:</strong> 7.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+   ]
+  },
+  {
+   "product_id": 64807,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 320 וואט</li>\n<li><strong>מהירות:</strong> 1650 סל\"ד</li>\n<li><strong>מיכל פולים:</strong> 45 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 12.8×26×32.1 ס\"מ</li>\n<li><strong>משקל:</strong> 7.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+   ]
+  },
+  {
+   "product_id": 64849,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 800 וואט</li>\n<li><strong>מהירות:</strong> 1400 סל\"ד</li>\n<li><strong>מיכל פולים:</strong> 1.6 ק\"ג</li>\n<li><strong>מידות (ר×ע×ג):</strong> 24×31.5×63.7 ס\"מ</li>\n<li><strong>משקל:</strong> 13.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+   ]
+  },
+  {
+   "product_id": 77026,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 740 וואט (220–240 וולט, 50–60 הרץ)</li>\n<li><strong>מהירות:</strong> 1480 סל\"ד (50 הרץ) / 1700 סל\"ד (60 הרץ)</li>\n<li><strong>מיכל פולים:</strong> כ-1600 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 20×27×63 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions",
+   "sources": [
+    "https://www.ceado.com/en/products/professional-coffee-grinder-rev-titan/"
+   ]
+  },
+  {
+   "product_id": 77024,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 500 וואט (220–240 וולט, 50–60 הרץ)</li>\n<li><strong>מהירות:</strong> 1480 סל\"ד (50 הרץ) / 1700 סל\"ד (60 הרץ)</li>\n<li><strong>מיכל פולים:</strong> כ-1600 גרם</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper",
+   "sources": [
+    "https://www.ceado.com/en/products/coffee-grinder-espresso-rev-steel/"
+   ]
+  },
+  {
+   "product_id": 67319,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל פולים:</strong> 600 גרם</li>\n</ul>",
+   "finding": "missing specs: hopper",
+   "sources": [
+    "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+   ]
+  },
+  {
+   "product_id": 68287,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 300 וואט (220–240 וולט, 50–60 הרץ)</li>\n<li><strong>מהירות:</strong> 1380 סל\"ד (50 הרץ) / 1650 סל\"ד (60 הרץ)</li>\n<li><strong>מיכל פולים:</strong> 600 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 17.8×21.2×44 ס\"מ</li>\n<li><strong>משקל:</strong> 7.9 ק\"ג (נטו)</li>\n</ul>",
+   "finding": "missing specs: power, speed, hopper, dimensions, weight",
+   "sources": [
+    "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+   ]
+  },
+  {
+   "product_id": 67326,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 300 וואט (220–240 וולט, 50–60 הרץ)</li>\n<li><strong>מהירות:</strong> 1380 סל\"ד (50 הרץ) / 1650 סל\"ד (60 הרץ)</li>\n<li><strong>מידות (ר×ע×ג):</strong> 17.8×21.2×38 ס\"מ</li>\n<li><strong>משקל:</strong> 8.5 ק\"ג (נטו)</li>\n</ul>",
+   "finding": "missing specs: power, speed, dimensions, weight",
+   "sources": [
+    "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5SD_Product_Sheet.pdf"
+   ]
+  },
+  {
+   "product_id": 67635,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מהירות:</strong> 1400 סל\"ד (50 הרץ)</li>\n<li><strong>משקל:</strong> 6.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: speed, weight",
+   "sources": [
+    "https://macap.it/en/products/leo-line/leo-55/leo-55-essential"
+   ]
+  },
+  {
+   "product_id": 67607,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מהירות:</strong> 1350 סל\"ד (בגרסת 230 וולט)</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n<li><strong>מידות (ר×ע×ג):</strong> 13.5×22.5×34 ס\"מ</li>\n<li><strong>משקל:</strong> 5.5 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: speed, hopper, dimensions, weight",
+   "sources": [
+    "https://www.gaggia.com/grinders/grinder-mdf-55/",
+    "https://www.gaggia-na.com/products/gaggia-mdf-55"
+   ]
+  },
+  {
+   "product_id": 68281,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ג×ר×ע):</strong> 37.4×22.7×12 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions",
+   "sources": [
+    "https://www.melitta.de/kaffeemuehlen/calibra"
+   ]
+  },
+  {
+   "product_id": 67243,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 100 וואט (מרבי)</li>\n<li><strong>מידות (ג×ר×ע):</strong> 25.5×10.5×16.2 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: power, dimensions",
+   "sources": [
+    "https://www.melitta.co.uk/coffee-grinders/molino",
+    "https://www.melitta.at/kaffeemuehlen/molino-/schwarz-rot"
+   ]
+  },
+  {
+   "product_id": 65433,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 21.1 ק\"ג (נטו)</li>\n</ul>",
+   "finding": "missing specs: weight",
+   "sources": [
+    "https://www.compakgrinders.com/en/r8"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 78273,
+   "finding": "missing: burrs, burr_size",
+   "reason": "nothing to add: burrs/burr_size already on page (\"דיסקי טחינה שטוחים בקוטר 55 מ״מ\"); official Macap Leo 55 Touch page gives only \"Ø 55 mm piane\" (flat), no burr material"
+  },
+  {
+   "product_id": 76315,
+   "finding": "missing: burrs, burr_size",
+   "reason": "nothing to add: burrs/burr_size already on page (\"סוג טחינה: קונית, 40 מ\"מ (S1)\")"
+  },
+  {
+   "product_id": 67313,
+   "finding": "missing: burr_size, hopper",
+   "reason": "nothing to add: burr size already on page (\"קוטר סכינים 83\"); official Ceado E37SD sheet lists no bean hopper (single-dose grinder)"
+  },
+  {
+   "product_id": 67262,
+   "finding": "missing: burr_size, hopper",
+   "reason": "nothing to add: burr size (\"קוטר סכינים 64\") and hopper (\"קיבולת מיכל - 600 גר\") already on page"
+  },
+  {
+   "product_id": 67214,
+   "finding": "missing: hopper",
+   "reason": "nothing to add: hopper already on page (\"קיבולת מיכל פולי קפה 300 גר'\"), matches official 300 gr"
+  },
+  {
+   "product_id": 64836,
+   "finding": "missing: hopper",
+   "reason": "nothing to add: hopper already on page (300 גרם, matches official 300 gr)"
+  },
+  {
+   "product_id": 64836,
+   "finding": "הספק מנוע: 260W · מידות: 185 מ\"מ (ר) x 227 מ\"מ (ע) x 445 מ\"מ (ג)",
+   "reason": "contradiction: page says הספק מנוע 260W, official says Power absorbed 310 watt; page says מידות 185×227×445 מ\"מ, official says 124 W × 192 D × 390 H mm (existing values, not appended; left for owner review)"
+  },
+  {
+   "product_id": 67212,
+   "finding": "missing: burr_size",
+   "reason": "nothing to add: burr size already on page (\"סכינים ø 83 סכינים שטוחות\")"
+  },
+  {
+   "product_id": 65055,
+   "finding": "missing: hopper",
+   "reason": "nothing to add: hopper already on page (\"קיבולת מיכל פולי קפה: 350 גר׳\")"
+  },
+  {
+   "product_id": 65052,
+   "finding": "missing: hopper",
+   "reason": "nothing to add: hopper already on page (\"מיכל פולי קפה 500 גרם\")"
+  },
+  {
+   "product_id": 64781,
+   "finding": "missing: speed, hopper",
+   "reason": "nothing to add: speed (\"1350/דקה (50 הרץ)\") and hopper (\"1.5 ק\"ג\") already on page; Fiorenzato official site not consulted since nothing is missing"
+  },
+  {
+   "product_id": 64835,
+   "finding": "missing: burrs, burr_size, hopper",
+   "reason": "nothing to add: burr size (83 מ\"מ) and hopper (1.2 ק\"ג) already on page; the original E37Z Barista is no longer on ceado.com (current E37Z-Barista 2.0 is a different model: 900 W), so no official source to verify burr type"
+  },
+  {
+   "product_id": 64831,
+   "finding": "missing: speed, hopper",
+   "reason": "no official source: Ceado has no E37R page or product sheet (not on ceado.com, no Ceado-issued sheet found); hopper (1.6 ק\"ג) is already on page"
+  },
+  {
+   "product_id": 64759,
+   "finding": "missing: power, weight, burrs, burr_size, speed, hopper",
+   "reason": "model version ambiguous: page is \"Ceado Life\" (250 g hopper); ceado.com lists only Life S / Life X Touch / Life WAM, all with ~300 g hopper, so the exact version cannot be matched (hopper contradicts: page 250 g, current models 300 g)"
+  },
+  {
+   "product_id": 65064,
+   "finding": "missing: burrs, burr_size, speed, hopper",
+   "reason": "model ambiguous / contradiction: Compak has no \"I3 PRO\"; official i3 page says 500 W, 1.400 rpm, 700 g hopper, while the page says 550 W, 1370 rpm, 800 g; burr size 58 mm already on page"
+  },
+  {
+   "product_id": 65065,
+   "finding": "missing: burrs, burr_size, speed",
+   "reason": "no official source: K-3 Touch is no longer on compakgrinders.com; burr size (58 מ\"מ) and speed (1400) already on page"
+  },
+  {
+   "product_id": 65203,
+   "finding": "missing: burr_size, speed",
+   "reason": "nothing to add from official source: burr size already on page (50 מ\"מ); Rancilio Home Line catalogue gives no rpm for Rocky"
+  },
+  {
+   "product_id": 65203,
+   "finding": "תכולת מיכל פולים: 350 גר`",
+   "reason": "contradiction (existing values, not appended): page says תכולת מיכל פולים 350 גר`, official Rancilio catalogue says 0.3 kg; page dims 11.5×24.5×35 ס\"מ vs official 120×250×350 mm; page weight 7 ק\"ג matches Rocky SD (Rocky = 6.5 kg)"
+  },
+  {
+   "product_id": 64987,
+   "finding": "missing: power, speed",
+   "reason": "official Lelit Fred Prima PL043MMI page and technical sheet give no motor power or rpm"
+  },
+  {
+   "product_id": 65177,
+   "finding": "missing: weight, hopper",
+   "reason": "no official source: no Obel/La Pavoni spec page or manual for the Obel Junior found"
+  },
+  {
+   "product_id": 65176,
+   "finding": "missing: power, weight, speed, hopper",
+   "reason": "no official EU-version source: Gaggia MDF (50 mm doser) is not on gaggia.com; only Gaggia North America's 120 V page exists (100 W, 10 oz hopper), not usable for the 230 V Israeli version"
+  },
+  {
+   "product_id": 67286,
+   "finding": "missing: power, dimensions, weight, speed, hopper",
+   "reason": "no official EU-version source: DF64E is not on turingrinders.com (US-market brand site, 110–120 V, lists only DF64 Gen 2); only retailer data found"
+  },
+  {
+   "product_id": 64782,
+   "finding": "missing: power, dimensions, weight, speed, hopper",
+   "reason": "no official EU-version source: turingrinders.com (US-market, 110–120 V) lists only the DF83 Gen 2; the page describes the original DF83 (225 g hopper); only retailer data found"
+  },
+  {
+   "product_id": 68264,
+   "finding": "missing: power, dimensions, burr_size, speed",
+   "reason": "no official source (no WPM/Welhome or Graef page for a ZD-12)"
+  },
+  {
+   "product_id": 64715,
+   "finding": "missing: power, weight, burrs, burr_size, speed, hopper",
+   "reason": "bundle of a Lelit PL41EM machine + an unnamed GRAEF grinder; grinder model not identified, so no official source"
+  },
+  {
+   "product_id": 65007,
+   "finding": "missing: power, dimensions, weight, burr_size, speed, hopper",
+   "reason": "not a grinder: Puly grinder-cleaning powder sachets; grinder specs do not apply"
+  },
+  {
+   "product_id": 67155,
+   "finding": "מידות: גובה: 35 ס\"מ רוחב: 12 ס\"מ עומק: 18 ס\"מ",
+   "reason": "contradiction (existing value, not appended): page says עומק: 18 ס\"מ, official Mignon Specialità depth is 140 mm"
+  },
+  {
+   "product_id": 67607,
+   "finding": "מנוע עוצמתי 350W",
+   "reason": "contradiction (existing value, not appended): page says מנוע עוצמתי 350W, official says 310 W"
+  },
+  {
+   "product_id": 67278,
+   "finding": "משקל: 8 ק״ג",
+   "reason": "contradiction (existing value, not appended): page says משקל: 8 ק״ג, official net weight is 5.1 kg (8 kg is the gross/packed weight); page hopper 500 g is the optional large hopper (standard approx. 250 g)"
+  },
+  {
+   "product_id": 67148,
+   "finding": "סל\"ד: 1420",
+   "reason": "contradiction (existing value, not appended): page says סל\"ד: 1420, official says Rpm 1350"
+  },
+  {
+   "product_id": 67150,
+   "finding": "מידות: גובה: 540 מ\"מ | רוחב: 180 מ\"מ | עומק: 240 מ\"מ",
+   "reason": "contradiction (existing value, not appended): page says רוחב 180 מ\"מ, עומק 240 מ\"מ, גובה 540 מ\"מ; official Atom W 65 says Width 278 mm, Depth 204 mm, Height 544 mm"
+  },
+  {
+   "product_id": 67149,
+   "finding": "מידות: גובה: 540 מ\"מ | רוחב: 180 מ\"מ | עומק: 240 מ\"מ",
+   "reason": "contradiction (existing value, not appended): page says רוחב 180 מ\"מ, עומק 240 מ\"מ, גובה 540 מ\"מ; official Atom W 65 says Width 278 mm, Depth 204 mm, Height 544 mm"
+  },
+  {
+   "product_id": 65402,
+   "finding": "סכינים שטוחים בקוטר 65 מ\"מ העשויים מפלדה מחוסמת",
+   "reason": "contradiction (existing value, not appended): page says סכינים ... מפלדה מחוסמת / פלדת אל חלד, official Mignon Single Dose burr material is Pure Diamond (patented Eureka)"
+  },
+  {
+   "product_id": 64807,
+   "finding": "סכינים שטוחים בקוטר 65 מ\"מ העשויים מפלדה מחוסמת",
+   "reason": "contradiction (existing value, not appended): page says סכינים ... מפלדה מחוסמת / פלדת אל חלד, official Mignon Single Dose burr material is Pure Diamond (patented Eureka)"
+  },
+  {
+   "product_id": 67313,
+   "finding": "212x309x360 מ\"מ",
+   "reason": "contradiction (existing value, not appended): page says 212x309x360 מ\"מ, official E37SD sheet says 212 x 309 x 370h mm"
+  },
+  {
+   "product_id": 67326,
+   "finding": "missing: hopper, burr_size",
+   "reason": "hopper not added: official E5SD sheet lists no bean hopper (single-dose, \"Dosing: Free\"); burr size already on page (קוטר סכינים 64)"
+  },
+  {
+   "product_id": 68281,
+   "finding": "missing: power, burr_size, speed, hopper",
+   "reason": "partial: power, burr size and speed not stated on Melitta's official page or manual (manual refers to the website); hopper (375 גרם) already on page"
+  },
+  {
+   "product_id": 67243,
+   "finding": "missing: weight, burr_size, speed, hopper",
+   "reason": "partial: weight, burr size and speed not stated on Melitta's official page; hopper (200 גרם) already on page"
+  },
+  {
+   "product_id": 65433,
+   "finding": "missing: burrs, burr_size",
+   "reason": "partial: burrs/burr_size already on page (טחנות שטוחות בקוטר 83 מ\"מ); official page gives no burr material"
+  },
+  {
+   "product_id": 67635,
+   "finding": "missing: burrs, burr_size",
+   "reason": "partial: burrs/burr_size already on page (טחינות שטוחות בקוטר 55 מ\"מ); official page gives only \"piane Ø 55 mm\""
+  },
+  {
+   "product_id": 67278,
+   "finding": "missing: speed",
+   "reason": "partial: speed already on page (מהירות 1050 סלד, matches official 1050 rpm)"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 82381,
+   "spec": "power",
+   "value": "220–240 V / 50/60 Hz / 1~ / 200 W",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82381,
+   "spec": "speed",
+   "value": "Idle speed: 1950 rpm",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82381,
+   "spec": "hopper",
+   "value": "Bean hopper capacity: approx. 250 g",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82381,
+   "spec": "dimensions",
+   "value": "Dimensions w/ hopper (WxHxD): 15.4 × 39 × 21.8 cm",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82381,
+   "spec": "weight",
+   "value": "Net weight: 5.8 kg",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82379,
+   "spec": "power",
+   "value": "220–240 V / 50/60 Hz / 1~ / 200 W",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82379,
+   "spec": "speed",
+   "value": "Idle speed: 1950 rpm",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82379,
+   "spec": "hopper",
+   "value": "Bean hopper capacity: approx. 250 g",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82379,
+   "spec": "dimensions",
+   "value": "Dimensions w/ hopper (WxHxD): 15.4 × 39 × 21.8 cm",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 82379,
+   "spec": "weight",
+   "value": "Net weight: 5.8 kg",
+   "url": "https://www.mahlkoenig.com/en-de/products/e64-ws-espresso-home-grinder"
+  },
+  {
+   "product_id": 78678,
+   "spec": "power",
+   "value": "220–240 V / 50/60 Hz / 1~ / 200 W",
+   "url": "https://www.mahlkoenig.com/en-de/products/x64-sd-single-dose-home-grinder"
+  },
+  {
+   "product_id": 78678,
+   "spec": "speed",
+   "value": "Idle speed: 1950 rpm",
+   "url": "https://www.mahlkoenig.com/en-de/products/x64-sd-single-dose-home-grinder"
+  },
+  {
+   "product_id": 78678,
+   "spec": "hopper",
+   "value": "Bean hopper capacity: Standard / Anti-Popcorning: 30 g; Hopper Extension: 100 g; Bellow: 80 g",
+   "url": "https://www.mahlkoenig.com/en-de/products/x64-sd-single-dose-home-grinder"
+  },
+  {
+   "product_id": 78678,
+   "spec": "dimensions",
+   "value": "Dimensions (WxHxD): 14.3 × 24.9 × 25.3 cm",
+   "url": "https://www.mahlkoenig.com/en-de/products/x64-sd-single-dose-home-grinder"
+  },
+  {
+   "product_id": 67278,
+   "spec": "power",
+   "value": "220–240 V / 50/60 Hz / 1~ / 120 W",
+   "url": "https://www.mahlkoenig.com/en-de/products/x54-allround-home-grinder"
+  },
+  {
+   "product_id": 80356,
+   "spec": "power",
+   "value": "Power absorbed 310 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra+65+all+purpose/115/"
+  },
+  {
+   "product_id": 80356,
+   "spec": "speed",
+   "value": "Rpm 1350",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra+65+all+purpose/115/"
+  },
+  {
+   "product_id": 80356,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 350 gr",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra+65+all+purpose/115/"
+  },
+  {
+   "product_id": 80356,
+   "spec": "dimensions",
+   "value": "Height 390 mm, Width 124 mm, Depth 192 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+libra+65+all+purpose/115/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "burrs",
+   "value": "Burrs: Type flat, Diameter 55 mm, Material Hardened steel",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "power",
+   "value": "Power absorbed 310 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67367,
+   "spec": "speed",
+   "value": "Rpm 1350",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67155,
+   "spec": "burrs",
+   "value": "Burrs: Type flat, Diameter 55 mm, Material Hardened steel",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67155,
+   "spec": "power",
+   "value": "Power absorbed 310 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67155,
+   "spec": "speed",
+   "value": "Rpm 1350",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/silent+range/20/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "burrs",
+   "value": "Burrs: Type flat, Diameter 50 mm, Material Hardened steel",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "power",
+   "value": "Power absorbed 310 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67165,
+   "spec": "speed",
+   "value": "Rpm 1350",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/29/"
+  },
+  {
+   "product_id": 67150,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 1,2 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67149,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 1,2 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/atom+w+65/100/"
+  },
+  {
+   "product_id": 67148,
+   "spec": "dimensions",
+   "value": "Height 570 mm, Width 230 mm, Depth 295 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/sg85+grocery/106/"
+  },
+  {
+   "product_id": 65402,
+   "spec": "power",
+   "value": "Power absorbed 320 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "spec": "speed",
+   "value": "Rpm 1650",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 45 g",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "spec": "dimensions",
+   "value": "Height 321 mm, Width 128 mm, Depth 260 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 65402,
+   "spec": "weight",
+   "value": "Weight 7,2 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "spec": "power",
+   "value": "Power absorbed 320 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "spec": "speed",
+   "value": "Rpm 1650",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 45 g",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "spec": "dimensions",
+   "value": "Height 321 mm, Width 128 mm, Depth 260 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64807,
+   "spec": "weight",
+   "value": "Weight 7,2 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/mignon+single+dose/71/"
+  },
+  {
+   "product_id": 64849,
+   "spec": "power",
+   "value": "Power absorbed 800 watt",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+  },
+  {
+   "product_id": 64849,
+   "spec": "speed",
+   "value": "Rpm 1400",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+  },
+  {
+   "product_id": 64849,
+   "spec": "hopper",
+   "value": "Bean hopper capacity 1,6 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+  },
+  {
+   "product_id": 64849,
+   "spec": "dimensions",
+   "value": "Height 637 mm, Width 240 mm, Depth 315 mm",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+  },
+  {
+   "product_id": 64849,
+   "spec": "weight",
+   "value": "Weight 13,2 kg",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/olympus+75+hs/13/"
+  },
+  {
+   "product_id": 77026,
+   "spec": "power",
+   "value": "220-240 V • 50-60 Hz / 740 W",
+   "url": "https://www.ceado.com/en/products/professional-coffee-grinder-rev-titan/"
+  },
+  {
+   "product_id": 77026,
+   "spec": "speed",
+   "value": "Rpm 50hz/60hz 1480 / 1700 rpm",
+   "url": "https://www.ceado.com/en/products/professional-coffee-grinder-rev-titan/"
+  },
+  {
+   "product_id": 77026,
+   "spec": "hopper",
+   "value": "Hopper Approximately 1600 g",
+   "url": "https://www.ceado.com/en/products/professional-coffee-grinder-rev-titan/"
+  },
+  {
+   "product_id": 77026,
+   "spec": "dimensions",
+   "value": "Dimensions 200 x 270 x 630h mm",
+   "url": "https://www.ceado.com/en/products/professional-coffee-grinder-rev-titan/"
+  },
+  {
+   "product_id": 77024,
+   "spec": "power",
+   "value": "220-240 V • 50-60 Hz / 500 W",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-espresso-rev-steel/"
+  },
+  {
+   "product_id": 77024,
+   "spec": "speed",
+   "value": "Rpm 50hz/60hz 1480 / 1700 rpm",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-espresso-rev-steel/"
+  },
+  {
+   "product_id": 77024,
+   "spec": "hopper",
+   "value": "Hopper Approximately 1600 g",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-espresso-rev-steel/"
+  },
+  {
+   "product_id": 67319,
+   "spec": "hopper",
+   "value": "Hopper / Tramoggia: Capacity 600 g",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E37J_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 68287,
+   "spec": "power",
+   "value": "Voltage 220-240V • 50-60 hz; Power / Motore 300 W",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 68287,
+   "spec": "speed",
+   "value": "Rpm 50hz / 60hz 1380 / 1650",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 68287,
+   "spec": "hopper",
+   "value": "Hopper / Tramoggia: Capacity 600 g",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 68287,
+   "spec": "dimensions",
+   "value": "Dimensions 178 x 212 x 440h mm",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 68287,
+   "spec": "weight",
+   "value": "Net weight / Peso netto 7,9 kg",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5P_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67326,
+   "spec": "power",
+   "value": "Voltage 220-240V • 50-60 hz; Power / Motore 300 W",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5SD_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67326,
+   "spec": "speed",
+   "value": "Rpm 50hz / 60hz 1380 / 1650",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5SD_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67326,
+   "spec": "dimensions",
+   "value": "Dimensions 178 x 212 x 380h mm",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5SD_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67326,
+   "spec": "weight",
+   "value": "Net weight / Peso netto 8,5 kg",
+   "url": "https://cdn.shopify.com/s/files/1/1189/2380/files/Ceado_E5SD_Product_Sheet.pdf"
+  },
+  {
+   "product_id": 67635,
+   "spec": "speed",
+   "value": "RPM 1400 rpm (50 Hz) | 1680 rpm (60 Hz)",
+   "url": "https://macap.it/en/products/leo-line/leo-55/leo-55-essential"
+  },
+  {
+   "product_id": 67635,
+   "spec": "weight",
+   "value": "WEIGHT 6,2 kg",
+   "url": "https://macap.it/en/products/leo-line/leo-55/leo-55-essential"
+  },
+  {
+   "product_id": 67607,
+   "spec": "speed",
+   "value": "Motor RPM 310 W (1350 RPM for 230V; 1630 RPM for 120V; 220-240V)",
+   "url": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 67607,
+   "spec": "hopper",
+   "value": "Bean Hopper Capacity 250 gr",
+   "url": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 67607,
+   "spec": "dimensions",
+   "value": "Product dimensions (l x h x d) 340 x 135 x 225 mm; axes per gaggia-na.com: Height 13.4 in, Width 5.3 in, Depth 8.9 in",
+   "url": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 67607,
+   "spec": "dimensions",
+   "value": "Product dimensions (l x h x d) 340 x 135 x 225 mm; axes per gaggia-na.com: Height 13.4 in, Width 5.3 in, Depth 8.9 in",
+   "url": "https://www.gaggia-na.com/products/gaggia-mdf-55"
+  },
+  {
+   "product_id": 67607,
+   "spec": "weight",
+   "value": "Product weight 5,5 KG",
+   "url": "https://www.gaggia.com/grinders/grinder-mdf-55/"
+  },
+  {
+   "product_id": 68281,
+   "spec": "dimensions",
+   "value": "Gerätemaße (Höhe x Breite x Tiefe in mm): 374x227x120",
+   "url": "https://www.melitta.de/kaffeemuehlen/calibra"
+  },
+  {
+   "product_id": 67243,
+   "spec": "power",
+   "value": "Max. output: 100 watts",
+   "url": "https://www.melitta.co.uk/coffee-grinders/molino"
+  },
+  {
+   "product_id": 67243,
+   "spec": "power",
+   "value": "Max. output: 100 watts",
+   "url": "https://www.melitta.at/kaffeemuehlen/molino-/schwarz-rot"
+  },
+  {
+   "product_id": 67243,
+   "spec": "dimensions",
+   "value": "Compact design (H x W x D): 255 x 105 x 162 mm",
+   "url": "https://www.melitta.co.uk/coffee-grinders/molino"
+  },
+  {
+   "product_id": 67243,
+   "spec": "dimensions",
+   "value": "Compact design (H x W x D): 255 x 105 x 162 mm",
+   "url": "https://www.melitta.at/kaffeemuehlen/molino-/schwarz-rot"
+  },
+  {
+   "product_id": 65433,
+   "spec": "weight",
+   "value": "Net weight 21,1 Kg (page at /en/r8, now titled iR8; motor 610 W, 1.290 rpm, Ø 83 mm burrs and 1.100 g hopper identical to the listing)",
+   "url": "https://www.compakgrinders.com/en/r8"
+  }
+ ]
+}

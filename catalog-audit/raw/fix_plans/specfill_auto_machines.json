@@ -1,0 +1,1327 @@
+{
+ "edits": [
+  {
+   "product_id": 81462,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: לחץ משאבה",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-white-eb-15613",
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+   ]
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: לחץ משאבה",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+   ]
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: לחץ משאבה",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+   ]
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: לחץ משאבה",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+   ]
+  },
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: לחץ משאבה",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-piano-white-ed-15747"
+   ]
+  },
+  {
+   "product_id": 78267,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>\n<li><strong>מידות (ר×ג×ע):</strong> 26×32.5×43.7 ס\"מ</li>\n<li><strong>משקל:</strong> 8.8 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 200 גרם</li>\n<li><strong>מערכת חימום:</strong> Thermoblock</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, מידות (ר×ג×ע), משקל, לחץ משאבה, מיכל פולים, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+   ]
+  },
+  {
+   "product_id": 76545,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>\n<li><strong>מערכת חימום:</strong> Thermoblock</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j10-piano-black-ea-15562"
+   ]
+  },
+  {
+   "product_id": 67216,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 10.2 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.9 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 280 גרם</li>\n<li><strong>מערכת חימום:</strong> Thermoblock</li>\n</ul>",
+   "finding": "missing specs: משקל, מיכל מים, לחץ משאבה, מיכל פולים, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+   ]
+  },
+  {
+   "product_id": 64935,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n<li><strong>מערכת חימום:</strong> Thermoblock</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, לחץ משאבה, מיכל פולים, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-nordic-white-ec-15491"
+   ]
+  },
+  {
+   "product_id": 64827,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>\n<li><strong>משקל:</strong> 9.4 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n<li><strong>מערכת חימום:</strong> Thermoblock</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, משקל, לחץ משאבה, מיכל פולים, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+   ]
+  },
+  {
+   "product_id": 64790,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>\n<li><strong>מידות (ר×ג×ע):</strong> 29.5×41.9×44.4 ס\"מ</li>\n<li><strong>משקל:</strong> 10 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, מידות (ר×ג×ע), משקל",
+   "sources": [
+    "https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+   ]
+  },
+  {
+   "product_id": 64786,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח / הספק:</strong> 230 וולט / 2300 וואט</li>\n<li><strong>מידות (ר×ג×ע):</strong> 32×41.5×49.6 ס\"מ</li>\n<li><strong>משקל:</strong> 18 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 2.6 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 2×280 גרם</li>\n<li><strong>מערכת חימום:</strong> 2 Thermoblock</li>\n</ul>",
+   "finding": "missing specs: מתח / הספק, מידות (ר×ג×ע), משקל, מיכל מים, לחץ משאבה, מיכל פולים, מערכת חימום",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+   ]
+  },
+  {
+   "product_id": 77156,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, לחץ משאבה",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/latticia-ot",
+    "https://www.melitta.de/media/6e/d6/b1/1695408013/mel_014_latticiaot_10_de-lt_web.pdf"
+   ]
+  },
+  {
+   "product_id": 64897,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, לחץ משאבה",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/latticia-ot",
+    "https://www.melitta.de/media/6e/d6/b1/1695408013/mel_014_latticiaot_10_de-lt_web.pdf"
+   ]
+  },
+  {
+   "product_id": 67618,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1400 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>משקל:</strong> 8 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/solo",
+    "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 67162,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1400 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>משקל:</strong> 8 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/solo",
+    "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 65011,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1400 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>משקל:</strong> 8 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/solo",
+    "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 68336,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ג×ע):</strong> 20×32.5×45.5 ס\"מ</li>\n<li><strong>משקל:</strong> 8.1 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 125 גרם</li>\n</ul>",
+   "finding": "missing specs: מידות (ר×ג×ע), משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/solo-milk-7950fe8e448033050a9364d3507312b3",
+    "https://www.melitta.de/media/2d/fc/95/1768350989/ba_solo_milk_052022_book_gesamt_einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 67330,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 9.3 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 270 גרם (2×135 גרם, דו-תאי)</li>\n</ul>",
+   "finding": "missing specs: משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/ci-touch",
+    "https://www.melitta.de/media/f8/c4/79/1768350308/mel_009_ci_touch_31_de-kr_web_2024-05-16_sw_einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 67329,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 9.25 ק\"ג</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 270 גרם (2×135 גרם, דו-תאי)</li>\n</ul>",
+   "finding": "missing specs: משקל, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/latteselect",
+    "https://www.melitta.de/media/e5/a7/49/1769501408/latteselect_manual_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 67296,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>משקל:</strong> 10.6 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, משקל, מיכל מים, לחץ משאבה",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/barista-ts-smart",
+    "https://www.melitta.de/media/dc/33/4a/1769425074/barista-t_ts-smart_manual_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 65102,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>משקל:</strong> 10.4 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>\n<li><strong>מיכל פולים:</strong> 270 גרם (2×135 גרם, דו-תאי)</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, משקל, מיכל מים, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.melitta.de/kaffeevollautomaten/barista-t-smart",
+    "https://www.melitta.de/media/dc/33/4a/1769425074/barista-t_ts-smart_manual_total_web_plus-einleger.pdf"
+   ]
+  },
+  {
+   "product_id": 67218,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ג×ע):</strong> 25.5×33.5×20 ס\"מ</li>\n<li><strong>משקל:</strong> 2.3 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: מידות (ר×ג×ע), משקל",
+   "sources": [
+    "https://www.melitta.de/filterkaffeemaschinen/optima-timer/schwarz"
+   ]
+  },
+  {
+   "product_id": 64944,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 4.6 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: משקל",
+   "sources": [
+    "https://www.melitta.de/filterkaffeemaschinen/epos"
+   ]
+  },
+  {
+   "product_id": 64943,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ג×ע):</strong> 16.7×35.7×35.9 ס\"מ</li>\n<li><strong>משקל:</strong> 2.7 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: מידות (ר×ג×ע), משקל",
+   "sources": [
+    "https://www.melitta.de/filterkaffeemaschinen/epour-/schwarz-gold"
+   ]
+  },
+  {
+   "product_id": 67274,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1455 וואט</li>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "finding": "missing specs: הספק, מיכל מים, מיכל פולים",
+   "sources": [
+    "https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
+   ]
+  },
+  {
+   "product_id": 67275,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "finding": "missing specs: מיכל מים, מיכל פולים",
+   "sources": [
+    "https://nivona.com/de/product/7series"
+   ]
+  },
+  {
+   "product_id": 67273,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "finding": "missing specs: מיכל מים, מיכל פולים",
+   "sources": [
+    "https://nivona.com/de/product/7series"
+   ]
+  },
+  {
+   "product_id": 65231,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מידות (ג×ר×ע):</strong> 39.2×29.9×47 ס\"מ</li>\n<li><strong>משקל:</strong> 12 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: מידות (ג×ר×ע), משקל",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9553X9RW"
+   ]
+  },
+  {
+   "product_id": 65230,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מידות (ג×ר×ע):</strong> 39.2×29.9×47 ס\"מ</li>\n<li><strong>משקל:</strong> 12.9 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: מידות (ג×ר×ע), משקל",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9573X1RW"
+   ]
+  },
+  {
+   "product_id": 65182,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ג×ר×ע):</strong> 37.8×24.7×42 ס\"מ</li>\n<li><strong>משקל:</strong> 8.5 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.4 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "finding": "missing specs: מידות (ג×ר×ע), משקל, מיכל מים, לחץ משאבה, מיכל פולים",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+   ]
+  },
+  {
+   "product_id": 65181,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1500 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>מידות (ג×ר×ע):</strong> 38.5×28.1×46.8 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, מידות (ג×ר×ע)",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+   ]
+  },
+  {
+   "product_id": 65088,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1500 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט</li>\n<li><strong>מידות (ג×ר×ע):</strong> 38.5×28.1×46.8 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: הספק, מתח, מידות (ג×ר×ע)",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+   ]
+  },
+  {
+   "product_id": 65166,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 8.5 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: משקל",
+   "sources": [
+    "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TP507R04"
+   ]
+  },
+  {
+   "product_id": 68295,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות:</strong> 6.2×7.1×15.6 ס\"מ</li>\n<li><strong>משקל:</strong> 336 גרם</li>\n<li><strong>מיכל מים:</strong> 80 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: מידות, משקל, מיכל מים",
+   "sources": [
+    "https://www.wacaco.com/products/nanopresso"
+   ]
+  },
+  {
+   "product_id": 68298,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות:</strong> 6×7×17.5 ס\"מ</li>\n<li><strong>מיכל מים:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: מידות, מיכל מים",
+   "sources": [
+    "https://www.wacaco.com/products/minipresso-ns"
+   ]
+  },
+  {
+   "product_id": 64872,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הפעלה:</strong> ידנית, ללא חשמל וללא סוללות</li>\n<li><strong>מידות:</strong> 6×7×12.9 ס\"מ</li>\n<li><strong>משקל:</strong> 290 גרם</li>\n<li><strong>מיכל מים:</strong> 80 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: הפעלה, מידות, משקל, מיכל מים",
+   "sources": [
+    "https://www.wacaco.com/products/minipresso-ns2"
+   ]
+  },
+  {
+   "product_id": 65476,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1000 וואט</li>\n<li><strong>מידות (ר×ג×ע):</strong> 22×44×30 ס\"מ</li>\n<li><strong>משקל:</strong> 4.57 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: הספק, מידות (ר×ג×ע), משקל",
+   "sources": [
+    "https://beem.de/products/fresh-aroma-perfect-3-filterkaffeemaschine-thermo"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 76352,
+   "spec": "power, dimensions, weight",
+   "reason": "model ambiguous: title says JURA W8 but the copy describes the WE8; official W8 (EA 15550: 12.7 kg, 29.5x44.3x44.6 cm) and WE8 (EA 15419: 10 kg, 29.5x41.9x44.4 cm) differ in exactly the missing items. Owner must confirm which model is stocked (earlier plan already flagged this). Sources: https://www.jura.com/en/professional/machines/w8-dark-inox-ea-15550 , https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+  },
+  {
+   "product_id": 81462,
+   "spec": "dimensions (info only, not appended)",
+   "reason": "contradiction: page says 32x38x45 cm (W x H x D), official Z10 says 32 x 36.3 x 47 cm. Pump pressure still added. Source: https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-white-eb-15613"
+  },
+  {
+   "product_id": 81458,
+   "spec": "dimensions, weight (info only, not appended)",
+   "reason": "contradiction: page says 32x38x45 cm and 12.3 kg, official Z10 Diamond Black (EA) says 32 x 36.3 x 47 cm and 12 kg. Pump pressure still added. Bean container (280 g) already on page. Source: https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+  },
+  {
+   "product_id": 64923,
+   "spec": "dimensions, weight (info only, not appended)",
+   "reason": "contradiction: page says 32x38x45 cm and 12.3 kg, official Z10 (EA) says 32 x 36.3 x 47 cm and 12 kg. Pump pressure still added. Bean container (280 g) already on page. Source: https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+  },
+  {
+   "product_id": 81455,
+   "spec": "dimensions, weight (info only, not appended)",
+   "reason": "contradiction: page says 9.6 kg and 28 x 38.1 x 44.6 cm, the current official E8 (ED) says 10 kg and 27 x 34.8 x 44.6 cm; page may describe an earlier E8 generation. Only pump pressure (15 bar, same on all E8 versions) added; bean container 280 g already on page. Source: https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  },
+  {
+   "product_id": 64929,
+   "spec": "dimensions, weight (info only, not appended)",
+   "reason": "contradiction: page says 9.6 kg and 28 x 38.1 x 44.6 cm, the current official E8 (ED) says 10 kg and 27 x 34.8 x 44.6 cm. Only pump pressure added; bean container 280 g already on page. Source: https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-piano-white-ed-15747"
+  },
+  {
+   "product_id": 67216,
+   "spec": "dimensions",
+   "reason": "already on page (31.8 x 34.8 x 44.6 cm); other missing items added"
+  },
+  {
+   "product_id": 76545,
+   "spec": "-",
+   "reason": "only power was missing; added. Nothing else needed"
+  },
+  {
+   "product_id": 77156,
+   "spec": "weight; bean_hopper",
+   "reason": "weight: official sources disagree (melitta.de product page 9.3 kg vs official Latticia OT manual 7.7 kg). Bean container 250 g already on page. Sources: https://www.melitta.de/kaffeevollautomaten/latticia-ot , https://www.melitta.de/media/6e/d6/b1/1695408013/mel_014_latticiaot_10_de-lt_web.pdf"
+  },
+  {
+   "product_id": 64897,
+   "spec": "weight; bean_hopper",
+   "reason": "weight: official sources disagree (melitta.de 9.3 kg vs manual 7.7 kg). Bean container 250 g already on page. Sources as for 77156"
+  },
+  {
+   "product_id": 68336,
+   "spec": "power",
+   "reason": "official sources disagree: melitta.de Solo Milk page says Leistung max. 1.400 W, the official Solo Milk manual says max. 1450 W. Other items added. Sources: https://www.melitta.de/kaffeevollautomaten/solo-milk-7950fe8e448033050a9364d3507312b3 , https://www.melitta.de/media/2d/fc/95/1768350989/ba_solo_milk_052022_book_gesamt_einleger.pdf"
+  },
+  {
+   "product_id": 67296,
+   "spec": "dimensions",
+   "reason": "official sources disagree: melitta.de Barista TS page 372 x 259 x 467 mm (H x W x D), official manual 365 x 255 x 465 mm. Other items added; bean container already on page (2-chamber). Sources: https://www.melitta.de/kaffeevollautomaten/barista-ts-smart , https://www.melitta.de/media/dc/33/4a/1769425074/barista-t_ts-smart_manual_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 65102,
+   "spec": "dimensions",
+   "reason": "official sources disagree: melitta.de 372 x 259 x 467 mm vs manual 365 x 255 x 465 mm. Other items added. Sources as for 67296"
+  },
+  {
+   "product_id": 67314,
+   "spec": "bean_hopper",
+   "reason": "already on page (מיכל פולי קפה – 125 גרם, matches official). Nothing to add"
+  },
+  {
+   "product_id": 67299,
+   "spec": "weight, pressure, bean_hopper",
+   "reason": "no official source reachable: Caffeo Passione is discontinued, its melitta.de page is gone (404) and melitta-international.com answers 403 (bot check, not bypassed); no Passione manual on melitta.de/bedienungsanleitungen"
+  },
+  {
+   "product_id": 65027,
+   "spec": "weight, pressure, bean_hopper",
+   "reason": "no official source reachable: melitta.de/kaffeevollautomaten/passione-ot is 404, melitta-international.com 403 (bot check, not bypassed)"
+  },
+  {
+   "product_id": 65029,
+   "spec": "weight, pressure, bean_hopper",
+   "reason": "no official source reachable (same as 67299)"
+  },
+  {
+   "product_id": 65026,
+   "spec": "power, dimensions, weight",
+   "reason": "exact version unclear: the copy describes the original Melitta AromaFresh (glass jug, keep-warm 20/40/60 min); melitta.de now only lists the newer AromaFresh X (1080 W, 3.7 kg), the old product page is 404 and the current AromaFresh manual refers to an online datasheet. Confirm the stocked version before adding. Source checked: https://www.melitta.de/filterkaffeemaschinen/aromafresh-x"
+  },
+  {
+   "product_id": 64944,
+   "spec": "dimensions (info only, not appended)",
+   "reason": "contradiction: page says W 40 x H 40.5 x D 36 cm, official Epos says 311 x 357 x 359 mm (W x H x D). Weight still added. Source: https://www.melitta.de/filterkaffeemaschinen/epos"
+  },
+  {
+   "product_id": 64943,
+   "spec": "power",
+   "reason": "not stated on the official Epour page or manual (manual refers to an online datasheet); dimensions and weight added"
+  },
+  {
+   "product_id": 67363,
+   "spec": "weight; bean_hopper",
+   "reason": "bean container 250 g already on page. Weight: no official source - the NICR 8xx series is no longer on nivona.com (product page empty, manual links fall back to the homepage); only retailer values found"
+  },
+  {
+   "product_id": 67274,
+   "spec": "weight",
+   "reason": "official sources disagree: nivona.com 7-series page lists 10 kg (Technik) and 12 kg (Dimensionen), the official NICR 790 datasheet says 8.7 kg. Also note: the same nivona.com page lists the water tank as both 2.2 l and 1.8 l; 2.2 l was used because the NICR 790 datasheet confirms it. Sources: https://nivona.com/de/product/7series , https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
+  },
+  {
+   "product_id": 67275,
+   "spec": "power, weight",
+   "reason": "power: only the NICR 790 datasheet gives it (1455 W), and the 7-series page does not list power, so it is not carried over to the 795; weight: official sources disagree (10 / 12 / 8.7 kg). Water tank and bean container added from the series page"
+  },
+  {
+   "product_id": 67273,
+   "spec": "power",
+   "reason": "same as 67275: power stated only on the NICR 790 datasheet, not for the 796"
+  },
+  {
+   "product_id": 65182,
+   "spec": "power",
+   "reason": "not stated on the official Siemens IL page for TI303203RW (no rated power field); other items added"
+  },
+  {
+   "product_id": 65181,
+   "spec": "bean_hopper",
+   "reason": "already on page (כ-300 גרם, matches official 300 g); power and dimensions added"
+  },
+  {
+   "product_id": 65088,
+   "spec": "bean_hopper",
+   "reason": "already on page (כ-300 גרם, matches official 300 g); power and dimensions added"
+  },
+  {
+   "product_id": 65230,
+   "spec": "bean_hopper (info only, not appended)",
+   "reason": "contradiction: page says bean container up to 290 g, official TI9573X1RW (EQ.9 plus connect s700, 2 bean containers) says 250 g. Dimensions and weight added. Model number inferred from the s700 name (stainless TI9573X1RW; the black TI9573X9RW shares the dimensions). Source: https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9573X1RW"
+  },
+  {
+   "product_id": 68295,
+   "spec": "power",
+   "reason": "manual device; page already says no batteries or electricity needed"
+  },
+  {
+   "product_id": 68298,
+   "spec": "power",
+   "reason": "manual device; page already says it works by hand without electricity. (Weight 360 g already on page and matches official.)"
+  },
+  {
+   "product_id": 67345,
+   "spec": "bean_hopper",
+   "reason": "already on page (מיכל פולי קפה: 160 גרם); also no official manufacturer source identified for the Pascale brand"
+  },
+  {
+   "product_id": 64999,
+   "spec": "bean_hopper",
+   "reason": "already on page (מיכל פולי קפה: 160 גרם); no official manufacturer source identified"
+  },
+  {
+   "product_id": 76781,
+   "spec": "power, weight, water_tank, pressure, bean_hopper",
+   "reason": "no official source: the Emilio machine's manufacturer is not identified on the page (only an ARS pump made in Italy is mentioned)"
+  },
+  {
+   "product_id": 64695,
+   "spec": "power, pressure, bean_hopper",
+   "reason": "no official source: no Dr.Coffee manufacturer page found, only resellers, and the 'Coffee Break' name covers several variants (Plus / Big / Premia) with different specs. Bean capacity (~1 kg) already on page"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 81462,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-aluminium-white-eb-15613"
+  },
+  {
+   "product_id": 81462,
+   "spec": "Pump (EA version, same value)",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+  },
+  {
+   "product_id": 81458,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+  },
+  {
+   "product_id": 64923,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10diamond-black-ea-15349"
+  },
+  {
+   "product_id": 81455,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  },
+  {
+   "product_id": 64929,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-piano-white-ed-15747"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 1450 W",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Dimensions (W x H x D)",
+   "value": "26 x 32.5 x 43.7 cm",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Weight",
+   "value": "8.8 kg",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Bean container holding capacity",
+   "value": "200 g",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 78267,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 1",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/c3-piano-black-ea-15599"
+  },
+  {
+   "product_id": 76545,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 1450 W",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j10-piano-black-ea-15562"
+  },
+  {
+   "product_id": 76545,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 1",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j10-piano-black-ea-15562"
+  },
+  {
+   "product_id": 67216,
+   "spec": "Weight",
+   "value": "10.2 kg",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+  },
+  {
+   "product_id": 67216,
+   "spec": "Water tank capacity",
+   "value": "1.9 l",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+  },
+  {
+   "product_id": 67216,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+  },
+  {
+   "product_id": 67216,
+   "spec": "Bean container holding capacity",
+   "value": "280 g",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+  },
+  {
+   "product_id": 67216,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 1",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/j8-piano-black-ea-15457"
+  },
+  {
+   "product_id": 64935,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 1450 W",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-nordic-white-ec-15491"
+  },
+  {
+   "product_id": 64935,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-nordic-white-ec-15491"
+  },
+  {
+   "product_id": 64935,
+   "spec": "Bean container holding capacity",
+   "value": "125 g",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-nordic-white-ec-15491"
+  },
+  {
+   "product_id": 64935,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 1",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-nordic-white-ec-15491"
+  },
+  {
+   "product_id": 64827,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 1450 W",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+  },
+  {
+   "product_id": 64827,
+   "spec": "Weight",
+   "value": "9.4 kg",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+  },
+  {
+   "product_id": 64827,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+  },
+  {
+   "product_id": 64827,
+   "spec": "Bean container holding capacity",
+   "value": "125 g",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+  },
+  {
+   "product_id": 64827,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 1",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/ena-8-full-metropolitan-black-ec-15493"
+  },
+  {
+   "product_id": 64790,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 1450 W",
+   "url": "https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+  },
+  {
+   "product_id": 64790,
+   "spec": "Dimensions (W x H x D)",
+   "value": "29.5 x 41.9 x 44.4 cm",
+   "url": "https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+  },
+  {
+   "product_id": 64790,
+   "spec": "Weight",
+   "value": "10 kg",
+   "url": "https://www.jura.com/en/professional/machines/we8-chrom-ea-15419"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Voltage / power",
+   "value": "230 V ~ / 2300 W",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Dimensions (W x H x D)",
+   "value": "32 x 41.5 x 49.6 cm",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Weight",
+   "value": "18 kg",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Water tank capacity",
+   "value": "2.6 l",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Pump",
+   "value": "High-performance pump, 15 bar",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Bean container holding capacity",
+   "value": "2 x 280 g",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 64786,
+   "spec": "Heating system",
+   "value": "Thermoblock heating system: 2",
+   "url": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/giga-10-diamond-black-ea-15478"
+  },
+  {
+   "product_id": 77156,
+   "spec": "Leistung max. / Power consumption",
+   "value": "1.450 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latticia-ot"
+  },
+  {
+   "product_id": 77156,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latticia-ot"
+  },
+  {
+   "product_id": 77156,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/6e/d6/b1/1695408013/mel_014_latticiaot_10_de-lt_web.pdf"
+  },
+  {
+   "product_id": 64897,
+   "spec": "Leistung max. / Power consumption",
+   "value": "1.450 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latticia-ot"
+  },
+  {
+   "product_id": 64897,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latticia-ot"
+  },
+  {
+   "product_id": 64897,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/6e/d6/b1/1695408013/mel_014_latticiaot_10_de-lt_web.pdf"
+  },
+  {
+   "product_id": 67618,
+   "spec": "Leistung max.",
+   "value": "1.400 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67618,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67618,
+   "spec": "Gewicht (ohne Verpackung) / Weight (empty)",
+   "value": "8 kg / 8.0 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67618,
+   "spec": "Pump pressure",
+   "value": "maximum 15 bar",
+   "url": "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 67618,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "125g",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67162,
+   "spec": "Leistung max.",
+   "value": "1.400 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67162,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67162,
+   "spec": "Gewicht (ohne Verpackung) / Weight (empty)",
+   "value": "8 kg / 8.0 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 67162,
+   "spec": "Pump pressure",
+   "value": "maximum 15 bar",
+   "url": "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 67162,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "125g",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 65011,
+   "spec": "Leistung max.",
+   "value": "1.400 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 65011,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 65011,
+   "spec": "Gewicht (ohne Verpackung) / Weight (empty)",
+   "value": "8 kg / 8.0 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 65011,
+   "spec": "Pump pressure",
+   "value": "maximum 15 bar",
+   "url": "https://www.melitta.de/media/3d/3e/f5/1769589116/solo_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 65011,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "125g",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo"
+  },
+  {
+   "product_id": 68336,
+   "spec": "Gerätemaße (H x B x T in mm)",
+   "value": "325 x 200 x 455",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo-milk-7950fe8e448033050a9364d3507312b3"
+  },
+  {
+   "product_id": 68336,
+   "spec": "Gewicht (ohne Verpackung)",
+   "value": "8,1 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo-milk-7950fe8e448033050a9364d3507312b3"
+  },
+  {
+   "product_id": 68336,
+   "spec": "Pump pressure",
+   "value": "maximum 15 bar",
+   "url": "https://www.melitta.de/media/2d/fc/95/1768350989/ba_solo_milk_052022_book_gesamt_einleger.pdf"
+  },
+  {
+   "product_id": 68336,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "125g",
+   "url": "https://www.melitta.de/kaffeevollautomaten/solo-milk-7950fe8e448033050a9364d3507312b3"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Gewicht (ohne Verpackung)",
+   "value": "9,3 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/f8/c4/79/1768350308/mel_009_ci_touch_31_de-kr_web_2024-05-16_sw_einleger.pdf"
+  },
+  {
+   "product_id": 67330,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "270g (2x135g)",
+   "url": "https://www.melitta.de/kaffeevollautomaten/ci-touch"
+  },
+  {
+   "product_id": 67329,
+   "spec": "Gewicht (ohne Verpackung) / Weight (empty)",
+   "value": "9,25 / 9.25 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latteselect"
+  },
+  {
+   "product_id": 67329,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/e5/a7/49/1769501408/latteselect_manual_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 67329,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "270g (2x135g)",
+   "url": "https://www.melitta.de/kaffeevollautomaten/latteselect"
+  },
+  {
+   "product_id": 67296,
+   "spec": "Leistung max.",
+   "value": "1.450 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-ts-smart"
+  },
+  {
+   "product_id": 67296,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-ts-smart"
+  },
+  {
+   "product_id": 67296,
+   "spec": "Gewicht (ohne Verpackung)",
+   "value": "10,6 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-ts-smart"
+  },
+  {
+   "product_id": 67296,
+   "spec": "Volumen Wassertank",
+   "value": "1,8 l",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-ts-smart"
+  },
+  {
+   "product_id": 67296,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/dc/33/4a/1769425074/barista-t_ts-smart_manual_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Leistung max.",
+   "value": "1.450 W",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-t-smart"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Spannung",
+   "value": "220-240 V",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-t-smart"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Gewicht (ohne Verpackung)",
+   "value": "10,4 kg",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-t-smart"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Volumen Wassertank",
+   "value": "1,8 l",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-t-smart"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Pump pressure",
+   "value": "Static, max. 15 bar",
+   "url": "https://www.melitta.de/media/dc/33/4a/1769425074/barista-t_ts-smart_manual_total_web_plus-einleger.pdf"
+  },
+  {
+   "product_id": 65102,
+   "spec": "Volumen Bohnenbehälter",
+   "value": "270g (2x135g)",
+   "url": "https://www.melitta.de/kaffeevollautomaten/barista-t-smart"
+  },
+  {
+   "product_id": 67218,
+   "spec": "Gerätemaße (H x B x T in mm)",
+   "value": "335 x 255 x 200",
+   "url": "https://www.melitta.de/filterkaffeemaschinen/optima-timer/schwarz"
+  },
+  {
+   "product_id": 67218,
+   "spec": "Gewicht (kg)",
+   "value": "2,30",
+   "url": "https://www.melitta.de/filterkaffeemaschinen/optima-timer/schwarz"
+  },
+  {
+   "product_id": 64944,
+   "spec": "Gewicht (kg)",
+   "value": "4,6",
+   "url": "https://www.melitta.de/filterkaffeemaschinen/epos"
+  },
+  {
+   "product_id": 64943,
+   "spec": "Gerätemaße (H x B x T in mm)",
+   "value": "357 x 167 x 359",
+   "url": "https://www.melitta.de/filterkaffeemaschinen/epour-/schwarz-gold"
+  },
+  {
+   "product_id": 64943,
+   "spec": "Gewicht (kg)",
+   "value": "2,7",
+   "url": "https://www.melitta.de/filterkaffeemaschinen/epour-/schwarz-gold"
+  },
+  {
+   "product_id": 67274,
+   "spec": "Power",
+   "value": "1455 W",
+   "url": "https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
+  },
+  {
+   "product_id": 67274,
+   "spec": "Water tank capacity / Wassertank",
+   "value": "2.2 l (datasheet) / 2,2 l (series page, Technik)",
+   "url": "https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
+  },
+  {
+   "product_id": 67274,
+   "spec": "Coffee bean holder capacity / Bohnenbehälter",
+   "value": "250 g",
+   "url": "https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
+  },
+  {
+   "product_id": 67275,
+   "spec": "Wassertank (Technik)",
+   "value": "2,2 l",
+   "url": "https://nivona.com/de/product/7series"
+  },
+  {
+   "product_id": 67275,
+   "spec": "Bohnenbehälter",
+   "value": "250 g",
+   "url": "https://nivona.com/de/product/7series"
+  },
+  {
+   "product_id": 67273,
+   "spec": "Wassertank (Technik)",
+   "value": "2,2 l",
+   "url": "https://nivona.com/de/product/7series"
+  },
+  {
+   "product_id": 67273,
+   "spec": "Bohnenbehälter",
+   "value": "250 g",
+   "url": "https://nivona.com/de/product/7series"
+  },
+  {
+   "product_id": 65231,
+   "spec": "מידות המוצר",
+   "value": "392x299x470 מ\"מ",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9553X9RW"
+  },
+  {
+   "product_id": 65231,
+   "spec": "משקל",
+   "value": "12.0 ק\"ג",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9553X9RW"
+  },
+  {
+   "product_id": 65230,
+   "spec": "מידות המוצר",
+   "value": "392x299x470 מ\"מ",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9573X1RW"
+  },
+  {
+   "product_id": 65230,
+   "spec": "משקל",
+   "value": "12.9 ק\"ג",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI9573X1RW"
+  },
+  {
+   "product_id": 65182,
+   "spec": "מידות המוצר",
+   "value": "378x247x420 מ\"מ",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+  },
+  {
+   "product_id": 65182,
+   "spec": "משקל",
+   "value": "8.5 ק\"ג",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+  },
+  {
+   "product_id": 65182,
+   "spec": "נפח מיכל המים",
+   "value": "1.4 ליטר",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+  },
+  {
+   "product_id": 65182,
+   "spec": "לחץ משאבה",
+   "value": "15.0 בר",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+  },
+  {
+   "product_id": 65182,
+   "spec": "קיבולת מיכל הפולים הטריים",
+   "value": "250 גרם",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TI303203RW"
+  },
+  {
+   "product_id": 65181,
+   "spec": "דירוג חיבור",
+   "value": "1500 ואט",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+  },
+  {
+   "product_id": 65181,
+   "spec": "הספק נומינלי",
+   "value": "220-240 וולט",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+  },
+  {
+   "product_id": 65181,
+   "spec": "מידות המוצר",
+   "value": "385x281x468 מ\"מ",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE655203RW"
+  },
+  {
+   "product_id": 65088,
+   "spec": "דירוג חיבור",
+   "value": "1500 ואט",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+  },
+  {
+   "product_id": 65088,
+   "spec": "הספק נומינלי",
+   "value": "220-240 וולט",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+  },
+  {
+   "product_id": 65088,
+   "spec": "מידות המוצר",
+   "value": "385x281x468 מ\"מ",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TE657313RW"
+  },
+  {
+   "product_id": 65166,
+   "spec": "משקל",
+   "value": "8.5 ק\"ג",
+   "url": "https://www.siemens-home.bsh-group.com/il/he/mkt-product/TP507R04"
+  },
+  {
+   "product_id": 68295,
+   "spec": "net dimensions",
+   "value": "62 x 71 x 156 mm",
+   "url": "https://www.wacaco.com/products/nanopresso"
+  },
+  {
+   "product_id": 68295,
+   "spec": "net weight",
+   "value": "336 g",
+   "url": "https://www.wacaco.com/products/nanopresso"
+  },
+  {
+   "product_id": 68295,
+   "spec": "water capacity",
+   "value": "80 ml",
+   "url": "https://www.wacaco.com/products/nanopresso"
+  },
+  {
+   "product_id": 68298,
+   "spec": "net dimensions",
+   "value": "60 x 70 x 175 mm",
+   "url": "https://www.wacaco.com/products/minipresso-ns"
+  },
+  {
+   "product_id": 68298,
+   "spec": "water capacity",
+   "value": "70 ml",
+   "url": "https://www.wacaco.com/products/minipresso-ns"
+  },
+  {
+   "product_id": 64872,
+   "spec": "Power",
+   "value": "Hand powered - No electricity, no battery required",
+   "url": "https://www.wacaco.com/products/minipresso-ns2"
+  },
+  {
+   "product_id": 64872,
+   "spec": "net dimensions",
+   "value": "60 x 70 x 129 mm",
+   "url": "https://www.wacaco.com/products/minipresso-ns2"
+  },
+  {
+   "product_id": 64872,
+   "spec": "net weight",
+   "value": "290 g",
+   "url": "https://www.wacaco.com/products/minipresso-ns2"
+  },
+  {
+   "product_id": 64872,
+   "spec": "water capacity",
+   "value": "80 ml",
+   "url": "https://www.wacaco.com/products/minipresso-ns2"
+  },
+  {
+   "product_id": 65476,
+   "spec": "Leistung",
+   "value": "1000 W",
+   "url": "https://beem.de/products/fresh-aroma-perfect-3-filterkaffeemaschine-thermo"
+  },
+  {
+   "product_id": 65476,
+   "spec": "Breite / Höhe / Länge",
+   "value": "22 cm / 44 cm / 30 cm",
+   "url": "https://beem.de/products/fresh-aroma-perfect-3-filterkaffeemaschine-thermo"
+  },
+  {
+   "product_id": 65476,
+   "spec": "Gewicht",
+   "value": "4.57 kg",
+   "url": "https://beem.de/products/fresh-aroma-perfect-3-filterkaffeemaschine-thermo"
+  }
+ ]
+}
