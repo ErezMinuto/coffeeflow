@@ -1,0 +1,2872 @@
+{
+ "edits": [
+  {
+   "product_id": 64792,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+   ]
+  },
+  {
+   "product_id": 67620,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+   ]
+  },
+  {
+   "product_id": 67344,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+   ]
+  },
+  {
+   "product_id": 81346,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 81342,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 65387,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 76516,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+   ]
+  },
+  {
+   "product_id": 64794,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+   ]
+  },
+  {
+   "product_id": 64793,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+   ]
+  },
+  {
+   "product_id": 81414,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 81410,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 81406,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 76406,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+   ]
+  },
+  {
+   "product_id": 67619,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+   ]
+  },
+  {
+   "product_id": 67297,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+   ]
+  },
+  {
+   "product_id": 81402,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 81398,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 65385,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+   ]
+  },
+  {
+   "product_id": 81389,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 81382,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 81375,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 81368,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 81361,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 65403,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+   ]
+  },
+  {
+   "product_id": 67632,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67323,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67322,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67321,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67267,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67266,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67265,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 65475,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 65440,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 64737,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 78775,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67629,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67324,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67270,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67268,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67138,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67327,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 78846,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 78232,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 78230,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 78228,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67631,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67298,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67272,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67271,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67269,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67660,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 67325,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer",
+    "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+   ]
+  },
+  {
+   "product_id": 64797,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/urban-glass-70ml-twisted-espresso-glass-clear"
+   ]
+  },
+  {
+   "product_id": 64796,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/urban-glass-120ml-twisted-cortado-glass-clear"
+   ]
+  },
+  {
+   "product_id": 76799,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/urban-glass-180ml-twisted-cappuccino-glass-clear"
+   ]
+  },
+  {
+   "product_id": 64785,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/urban-glass-360ml-twisted-latte-glass-clear"
+   ]
+  },
+  {
+   "product_id": 67246,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug",
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+   ]
+  },
+  {
+   "product_id": 67245,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug",
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+   ]
+  },
+  {
+   "product_id": 67244,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug",
+    "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+   ]
+  },
+  {
+   "product_id": 65409,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+   ]
+  },
+  {
+   "product_id": 65408,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+   ]
+  },
+  {
+   "product_id": 65407,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+   ]
+  },
+  {
+   "product_id": 65406,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+   ]
+  },
+  {
+   "product_id": 64874,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 89 מ\"ל (3 אונקיות)</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: volume, dishwasher",
+   "sources": [
+    "https://www.notneutral.com/products/lino-espresso-white"
+   ]
+  },
+  {
+   "product_id": 64873,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.notneutral.com/products/lino-single-capp-white"
+   ]
+  },
+  {
+   "product_id": 64871,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.notneutral.com/products/lino-double-capp-white"
+   ]
+  },
+  {
+   "product_id": 64870,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://www.notneutral.com/products/lino-small-latte-white"
+   ]
+  },
+  {
+   "product_id": 65421,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 75 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://www.kruveinc.com/products/cascade-espresso-cup-black"
+   ]
+  },
+  {
+   "product_id": 65417,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 75 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://www.kruveinc.com/products/cascade-espresso-cup-black"
+   ]
+  },
+  {
+   "product_id": 82915,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://global.hario.com/product/coffee/insulatedmag/STF.html",
+    "https://global.hario.com/product/STF-300.pdf"
+   ]
+  },
+  {
+   "product_id": 65090,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://global.hario.com/product/coffee/insulatedmag/STF.html",
+    "https://global.hario.com/product/STF-300.pdf"
+   ]
+  },
+  {
+   "product_id": 65091,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://global.hario.com/product/coffee/insulatedmag/SMF.html",
+    "https://global.hario.com/product/SMF-300.pdf"
+   ]
+  },
+  {
+   "product_id": 80992,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80990,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80988,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80986,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80984,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80982,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80549,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80547,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80545,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80543,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80541,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 79506,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 79505,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80979,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80977,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80975,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80892,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80648,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80646,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80644,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80539,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 79504,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פורצלן</li>\n<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: material, dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/maniko-tazzina-espresso",
+    "https://www.clubhouse.ch/en/products/maniko/"
+   ]
+  },
+  {
+   "product_id": 80579,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80577,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80575,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80573,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80571,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80564,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80537,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80535,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80505,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80503,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>\n</ul>",
+   "finding": "missing specs: dishwasher",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80562,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80560,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80557,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80555,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80553,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80551,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80201,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80199,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80195,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 80193,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>נפח:</strong> 70 מ\"ל</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano",
+    "https://www.clubhouse.ch/en/products/tulipano/"
+   ]
+  },
+  {
+   "product_id": 67651,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 120 מ\"ל (כ-60 גרם פולים)</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://subminimal.com/products/subscale"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 67651,
+   "spec": "material",
+   "reason": "already on page: body of food-safe Tritan (matches subminimal.com)"
+  },
+  {
+   "product_id": 67651,
+   "spec": "dishwasher",
+   "reason": "already on page (rinse under running water, no full immersion; IPX-4); official subminimal.com page does not state dishwasher suitability"
+  },
+  {
+   "product_id": 81746,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81745,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81744,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81743,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81742,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81737,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81736,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81735,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81734,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81722,
+   "spec": "volume",
+   "reason": "not applicable: saucer has no volume (official notneutral.com Pico saucer page lists terracotta, dishwasher/microwave safe and diameter, all already on the page)"
+  },
+  {
+   "product_id": 81041,
+   "spec": "dishwasher",
+   "reason": "already on page (\"מומלץ לשטוף ידנית בלבד\"); official planetarydesign.com Adventure Tumbler page does not state dishwasher suitability for the tumbler"
+  },
+  {
+   "product_id": 80994,
+   "spec": "dishwasher",
+   "reason": "already on page (\"מומלץ לשטוף ידנית בלבד\"); official planetarydesign.com Adventure Tumbler page does not state dishwasher suitability for the tumbler"
+  },
+  {
+   "product_id": 78498,
+   "spec": "dishwasher",
+   "reason": "already on page (\"מומלץ לשטוף ידנית בלבד\"); official planetarydesign.com Adventure Tumbler page does not state dishwasher suitability for the tumbler"
+  },
+  {
+   "product_id": 81358,
+   "spec": "volume, dishwasher",
+   "reason": "volume not applicable (grounds cup; capacity 50 g already on page, matches variabrewing.com); dishwasher not stated on the official Varia page"
+  },
+  {
+   "product_id": 65455,
+   "spec": "volume, dishwasher",
+   "reason": "volume not applicable (grounds cup; capacity 50 g already on page, matches variabrewing.com); dishwasher not stated on the official Varia page"
+  },
+  {
+   "product_id": 79499,
+   "spec": "volume, material, dishwasher",
+   "reason": "no official source: \"room of ceramics\" maker/model not identifiable (empty description, no manufacturer site found)"
+  },
+  {
+   "product_id": 79498,
+   "spec": "volume, material, dishwasher",
+   "reason": "no official source: \"room of ceramics\" maker/model not identifiable (empty description, no manufacturer site found)"
+  },
+  {
+   "product_id": 79418,
+   "spec": "volume",
+   "reason": "no official source: unbranded stainless measuring cup (100 ml already in name)"
+  },
+  {
+   "product_id": 77373,
+   "spec": "volume, dishwasher",
+   "reason": "no official source: unbranded stainless dosing cup"
+  },
+  {
+   "product_id": 67209,
+   "spec": "dishwasher",
+   "reason": "no official source: unbranded stainless double-wall cups; page description is copied from Dale Harris (needs owner review)"
+  },
+  {
+   "product_id": 65422,
+   "spec": "dishwasher",
+   "reason": "no official source: Loveramics currently lists Urban Glass Twisted only in Clear; the black glass version is not on loveramics.com, so its dishwasher/microwave rating cannot be confirmed"
+  },
+  {
+   "product_id": 64791,
+   "spec": "dishwasher",
+   "reason": "no official source: Loveramics currently lists Urban Glass Twisted only in Clear; the black glass version is not on loveramics.com, so its dishwasher/microwave rating cannot be confirmed"
+  },
+  {
+   "product_id": 64795,
+   "spec": "dishwasher",
+   "reason": "no official source: Loveramics currently lists Urban Glass Twisted only in Clear; the black glass version is not on loveramics.com, so its dishwasher/microwave rating cannot be confirmed"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 64792,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+  },
+  {
+   "product_id": 67620,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+  },
+  {
+   "product_id": 67620,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+  },
+  {
+   "product_id": 67344,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+  },
+  {
+   "product_id": 67344,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup"
+  },
+  {
+   "product_id": 81346,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 81346,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 81342,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 81342,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 65387,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 65387,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-80ml-espresso-cup-new-colours"
+  },
+  {
+   "product_id": 76516,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+  },
+  {
+   "product_id": 64794,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+  },
+  {
+   "product_id": 64793,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup"
+  },
+  {
+   "product_id": 81414,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 81414,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 81410,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 81410,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 81406,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 81406,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-150ml-flat-white-cup-new-colours"
+  },
+  {
+   "product_id": 76406,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+  },
+  {
+   "product_id": 67619,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+  },
+  {
+   "product_id": 67619,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+  },
+  {
+   "product_id": 67297,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+  },
+  {
+   "product_id": 67297,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup"
+  },
+  {
+   "product_id": 81402,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 81402,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 81398,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 81398,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 65385,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 65385,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/dale-harris-200ml-cappuccino-cup-new-colours"
+  },
+  {
+   "product_id": 81389,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 81382,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 81375,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 81368,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 81361,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 65403,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/brewers-250ml-embossed-tasting-cup"
+  },
+  {
+   "product_id": 67632,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67632,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67323,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67323,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67322,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67322,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67321,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67321,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67267,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67267,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67266,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67266,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67265,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 67265,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 65475,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 65475,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 65440,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 65440,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 64737,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer"
+  },
+  {
+   "product_id": 64737,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-80ml-espresso-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 78775,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 78775,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67629,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67629,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67324,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67324,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67270,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67270,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67268,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67268,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67138,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67138,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67327,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-flat-white-cup-saucer"
+  },
+  {
+   "product_id": 67327,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-200ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 78846,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 78846,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 78232,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 78232,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 78230,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 78230,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 78228,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 78228,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67631,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67631,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67298,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67298,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67272,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67272,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67271,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67271,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67269,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67269,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67660,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67660,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 67325,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer"
+  },
+  {
+   "product_id": 67325,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/egg-set-of-1-250ml-cappuccino-cup-saucer-potters-colours"
+  },
+  {
+   "product_id": 64797,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/urban-glass-70ml-twisted-espresso-glass-clear"
+  },
+  {
+   "product_id": 64796,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/urban-glass-120ml-twisted-cortado-glass-clear"
+  },
+  {
+   "product_id": 76799,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/urban-glass-180ml-twisted-cappuccino-glass-clear"
+  },
+  {
+   "product_id": 64785,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/urban-glass-360ml-twisted-latte-glass-clear"
+  },
+  {
+   "product_id": 67246,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67246,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 67246,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67246,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 67245,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67245,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 67245,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67245,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 67244,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67244,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 67244,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug"
+  },
+  {
+   "product_id": 67244,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/nomad-250ml-double-walled-mug-10-potters"
+  },
+  {
+   "product_id": 65409,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65409,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65408,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65408,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65407,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65407,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65406,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 65406,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.loveramics.com/products/bond-300ml-mug-new-colours"
+  },
+  {
+   "product_id": 64874,
+   "spec": "volume",
+   "value": "89 מ\"ל (3 אונקיות)",
+   "url": "https://www.notneutral.com/products/lino-espresso-white"
+  },
+  {
+   "product_id": 64874,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.notneutral.com/products/lino-espresso-white"
+  },
+  {
+   "product_id": 64873,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.notneutral.com/products/lino-single-capp-white"
+  },
+  {
+   "product_id": 64871,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.notneutral.com/products/lino-double-capp-white"
+  },
+  {
+   "product_id": 64870,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.notneutral.com/products/lino-small-latte-white"
+  },
+  {
+   "product_id": 65421,
+   "spec": "volume",
+   "value": "75 מ\"ל",
+   "url": "https://www.kruveinc.com/products/cascade-espresso-cup-black"
+  },
+  {
+   "product_id": 65417,
+   "spec": "volume",
+   "value": "75 מ\"ל",
+   "url": "https://www.kruveinc.com/products/cascade-espresso-cup-black"
+  },
+  {
+   "product_id": 82915,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/coffee/insulatedmag/STF.html"
+  },
+  {
+   "product_id": 82915,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/STF-300.pdf"
+  },
+  {
+   "product_id": 65090,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/coffee/insulatedmag/STF.html"
+  },
+  {
+   "product_id": 65090,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/STF-300.pdf"
+  },
+  {
+   "product_id": 65091,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/coffee/insulatedmag/SMF.html"
+  },
+  {
+   "product_id": 65091,
+   "spec": "dishwasher",
+   "value": "לא (אין להשרות במים; לא מתאים למיקרוגל)",
+   "url": "https://global.hario.com/product/SMF-300.pdf"
+  },
+  {
+   "product_id": 80992,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80992,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80990,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80990,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80988,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80988,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80986,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80986,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80984,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80984,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80982,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80982,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80549,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80549,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80547,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80547,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80545,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80545,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80543,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80543,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80541,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 80541,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 79506,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 79506,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 79505,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-maniko-tazzina-espresso-con-piattino"
+  },
+  {
+   "product_id": 79505,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80979,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80979,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80979,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80979,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80977,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80977,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80977,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80977,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80975,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80975,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80975,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80975,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80892,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80892,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80892,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80892,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80648,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80648,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80648,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80648,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80646,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80646,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80646,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80646,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80644,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80644,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80644,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80644,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80539,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80539,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80539,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 80539,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 79504,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 79504,
+   "spec": "material",
+   "value": "פורצלן",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 79504,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/maniko-tazzina-espresso"
+  },
+  {
+   "product_id": 79504,
+   "spec": "dishwasher",
+   "value": "כן (לא מתאים למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/maniko/"
+  },
+  {
+   "product_id": 80579,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80579,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80577,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80577,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80575,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80575,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80573,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80573,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80571,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80571,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80564,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80564,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80537,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80537,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80535,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80535,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80505,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80505,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80503,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-cappuccino-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80503,
+   "spec": "dishwasher",
+   "value": "כן (מתאים גם למיקרוגל)",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80562,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80562,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80560,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80560,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80557,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80557,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80555,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80555,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80553,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80553,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80551,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80551,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80201,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80201,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80199,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80199,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80195,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80195,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 80193,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://shop.clubhouse.ch/products/1-x-tazza-espresso-con-piattino-tulipano"
+  },
+  {
+   "product_id": 80193,
+   "spec": "volume",
+   "value": "70 מ\"ל",
+   "url": "https://www.clubhouse.ch/en/products/tulipano/"
+  },
+  {
+   "product_id": 67651,
+   "spec": "volume",
+   "value": "120 מ\"ל (כ-60 גרם פולים)",
+   "url": "https://subminimal.com/products/subscale"
+  }
+ ]
+}
