@@ -1,0 +1,636 @@
+{
+ "edits": [
+  {
+   "product_id": 79432,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 68383,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 65117,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 65116,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 65058,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 65115,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 64808,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/moka-express.html"
+   ]
+  },
+  {
+   "product_id": 64991,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.bialetti.com/it_it/brikka-bialetti.html"
+   ]
+  },
+  {
+   "product_id": 65099,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://global.hario.com/product/coffee/coldbrew/MCPN.html"
+   ]
+  },
+  {
+   "product_id": 65151,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://global.hario.com/product/coffee/coldbrew/MCPN.html"
+   ]
+  },
+  {
+   "product_id": 65223,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>קיבולת:</strong> 1–4 כוסות</li>\n</ul>",
+   "finding": "missing specs: capacity",
+   "sources": [
+    "https://global.hario.com/product/coffee/dripper/VDGR.html"
+   ]
+  },
+  {
+   "product_id": 65221,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום, דריפר V60 מפוליפרופילן, חבק מגומי סיליקון</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://global.hario.com/product/coffee/set/VDD.html"
+   ]
+  },
+  {
+   "product_id": 65092,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פלסטיק PCT</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://global.hario.com/product/coffee/kettle/VKA.html"
+   ]
+  },
+  {
+   "product_id": 65147,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 16.7×9.5×19.5 ס\"מ</li>\n<li><strong>מיכל פולים:</strong> 100 גרם</li>\n</ul>",
+   "finding": "missing specs: dimensions, hopper",
+   "sources": [
+    "https://global.hario.com/product/coffee/grinder/MMCS.html"
+   ]
+  },
+  {
+   "product_id": 65137,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 15×5.3×19 ס\"מ</li>\n<li><strong>משקל:</strong> כ-400 גרם (כולל אריזה)</li>\n</ul>",
+   "finding": "missing specs: dimensions, weight",
+   "sources": [
+    "https://global.hario.com/product/coffee/grinder/MSGN.html"
+   ]
+  },
+  {
+   "product_id": 65130,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 17.2×9.3×23.1 ס\"מ</li>\n<li><strong>מיכל פולים:</strong> 100 גרם</li>\n</ul>",
+   "finding": "missing specs: dimensions, hopper",
+   "sources": [
+    "https://global.hario.com/product/coffee/grinder/MSCS.html"
+   ]
+  },
+  {
+   "product_id": 65062,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 15×7.2×22 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions",
+   "sources": [
+    "https://global.hario.com/product/coffee/grinder/MSS.html"
+   ]
+  },
+  {
+   "product_id": 64744,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 16×16×3.2 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions",
+   "sources": [
+    "https://acaia.co/products/pearl"
+   ]
+  },
+  {
+   "product_id": 65157,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 10 אונקיות (כ-296 מ\"ל)</li>\n<li><strong>חומר:</strong> פוליפרופילן, ללא BPA</li>\n</ul>",
+   "finding": "missing specs: capacity, material",
+   "sources": [
+    "https://aeropress.com/products/aeropress-coffee-maker"
+   ]
+  },
+  {
+   "product_id": 65014,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 8 אונקיות (כ-237 מ\"ל)</li>\n<li><strong>חומר:</strong> פוליפרופילן, מכסה הספל מסיליקון, ללא BPA</li>\n</ul>",
+   "finding": "missing specs: capacity, material",
+   "sources": [
+    "https://aeropress.com/products/aeropress-go-travel-coffee-press"
+   ]
+  },
+  {
+   "product_id": 80845,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> פלסטיק ללא BPA</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://wholesale.toddycafe.com/downloads/TODDY_CMLTCM_spec.pdf"
+   ]
+  },
+  {
+   "product_id": 77276,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>קיבולת:</strong> עד 38 אונקיות (כ-1.1 ליטר) תרכיז</li>\n</ul>",
+   "finding": "missing specs: capacity",
+   "sources": [
+    "https://toddycafe.com/product/essential-brewer"
+   ]
+  },
+  {
+   "product_id": 78396,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל:</strong> 464 גרם</li>\n</ul>",
+   "finding": "missing specs: weight",
+   "sources": [
+    "https://www.wacaco.com/products/exagrind"
+   ]
+  },
+  {
+   "product_id": 67366,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 310 וואט</li>\n<li><strong>מהירות:</strong> 1350 סל\"ד</li>\n<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>\n</ul>",
+   "finding": "missing specs: power, speed, burrs",
+   "sources": [
+    "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 82537,
+   "reason": "already on page: material (304 stainless steel body, walnut handle) is stated; nothing else missing",
+   "spec": "material"
+  },
+  {
+   "product_id": 81019,
+   "reason": "already on page: material (304 stainless steel body, walnut handle) is stated; nothing else missing",
+   "spec": "material"
+  },
+  {
+   "product_id": 65216,
+   "reason": "already on page: material (304 stainless steel body, walnut handle) is stated; nothing else missing",
+   "spec": "material"
+  },
+  {
+   "product_id": 79178,
+   "reason": "already on page: material PCT is stated (matches official V60 Drip-Assist PDA-02-T: Body / PCT resin)",
+   "spec": "material"
+  },
+  {
+   "product_id": 77111,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64938,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64937,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64936,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64841,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64779,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64710,
+   "reason": "no official source: Comandante official site (comandantegrinder.com product pages + C40 MK4 manual data sheet) does not state weight or burr diameter; hopper/bean-jar capacity 40 g is already on the page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64780,
+   "reason": "no official source: Comandante X25 product pages and X25 manual give no burr diameter; hopper 25-30 g already on page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64914,
+   "reason": "not applicable: carrying bag accessory; missing items are grinder specs (power, burrs, hopper...) that do not apply, and comandantegrinder.com lists no dimensions/weight for the bag"
+  },
+  {
+   "product_id": 64913,
+   "reason": "not applicable: bean-jar accessory set; missing items are grinder specs that do not apply; 40 g per jar already on page"
+  },
+  {
+   "product_id": 68451,
+   "reason": "not applicable: stovetop kettle (V60 Drip Kettle Buono), no electrical power rating exists",
+   "spec": "power"
+  },
+  {
+   "product_id": 65217,
+   "reason": "not applicable: stovetop kettle (V60 Drip Kettle Buono), no electrical power rating exists",
+   "spec": "power"
+  },
+  {
+   "product_id": 67295,
+   "reason": "no official source: no manufacturer site for the Clever Dripper found; only retailer listings state Tritan/capacity",
+   "spec": "material"
+  },
+  {
+   "product_id": 67151,
+   "reason": "no official source: \"Emilio\" grinder brand/manufacturer not identifiable; no official spec page"
+  },
+  {
+   "product_id": 65404,
+   "reason": "no official source: \"Emilio\" manual grinder brand/manufacturer not identifiable; page has no description at all"
+  },
+  {
+   "product_id": 65459,
+   "reason": "already on page / not applicable: burrs (38 mm stainless steel) already on page; product specs on page (1 kg, H 195 mm) are the EVO Hand Grinder, which has no motor, so power/speed do not apply. Note: the page body also describes the USB-C Hybrid version (official: 40 W, 80 RPM) and calls the burr \"Supernova\" while variabrewing.com now says \"Hypernova\" - owner should confirm which version is sold"
+  },
+  {
+   "product_id": 65226,
+   "reason": "contradiction: page says 1 כוס (title \"מעמד לקפה פילטר 1 כוס\"), official says V60 Dripper 01 capacity 1-2 cups (VDR-01-R, https://global.hario.com/product/coffee/dripper/VD.html)",
+   "spec": "capacity"
+  },
+  {
+   "product_id": 65225,
+   "reason": "contradiction: page says 1 כוס, official says V60 Ceramic Dripper 01 capacity 1-2 cups (VDCR-01, https://global.hario.com/product/coffee/dripper/VDC.html)",
+   "spec": "capacity"
+  },
+  {
+   "product_id": 65106,
+   "reason": "contradiction: page says 2 כוסות, official says V60 Ceramic Dripper 02 capacity 1-4 cups (VDCR-02-W, https://global.hario.com/product/coffee/dripper/VDC.html)",
+   "spec": "capacity"
+  },
+  {
+   "product_id": 65097,
+   "reason": "model mismatch: the only official datasheet is for Lelit Anita PL042EM (https://www.lelit.com/wp-content/uploads/2024/09/IT-Anita-EM.pdf: weight 10.2 kg, hopper 150 g, conical 38 mm burrs, dims 31.5x26.5x37 cm); product is PL042EMI and its page gives depth 25.5 cm, so values not applied without owner confirmation. Burrs/burr size (38 mm conical) already on page; power and rpm not stated officially"
+  },
+  {
+   "product_id": 64973,
+   "reason": "no official value: bialetti.com Moka Elettrika page (https://www.bialetti.com/it_it/moka-elettrika.html) does not state the material",
+   "spec": "material"
+  },
+  {
+   "product_id": 64778,
+   "reason": "already on page / no official value: bialetti.com gives only \"3 tazze\" (no ml), and 3 cups is already in the title; power/voltage/material already on page",
+   "spec": "capacity"
+  },
+  {
+   "product_id": 65098,
+   "reason": "model ambiguity: Hario currently lists only \"Ceramic Coffee Mill Wood N\" (MCWN-2-OV, olive wood); page does not identify the model/code, so specs not applied"
+  },
+  {
+   "product_id": 65094,
+   "reason": "no official source: the \"Baton Dripper\" (recycled material with coffee grounds) is not on global.hario.com; the Cafeor Dripper listed there (CFOD-02) is polypropylene, a different product",
+   "spec": "capacity"
+  },
+  {
+   "product_id": 64942,
+   "reason": "no official source: no OAK8 manufacturer site found; weight 500 g, burrs 38 mm and dimensions already on page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64940,
+   "reason": "no official source / already on page: no OAK8 manufacturer site found; burr size 38 mm already on page; power/speed not applicable (manual grinder)"
+  },
+  {
+   "product_id": 64911,
+   "reason": "no official source: unbranded scale, no manufacturer identifiable",
+   "spec": "dimensions"
+  },
+  {
+   "product_id": 77276,
+   "reason": "no official value: toddycafe.com states only \"BPA-free\" (already on page), no material; capacity added in edit",
+   "spec": "material"
+  },
+  {
+   "product_id": 65157,
+   "reason": "contradiction (partial): page says 1-3 cups, official says 1-2 cups (10 oz); cup count not added, only the 10 oz volume and material",
+   "spec": "capacity (cups)"
+  },
+  {
+   "product_id": 65014,
+   "reason": "contradiction (partial): page says 1-3 cups, official AeroPress Go says 1 cup (8 oz); cup count not added, only the 8 oz volume and material",
+   "spec": "capacity (cups)"
+  },
+  {
+   "product_id": 65062,
+   "reason": "no official value: Mini-Slim+ page gives no weight or burr size; hopper 24 g already on page",
+   "spec": "weight, burr_size, hopper"
+  },
+  {
+   "product_id": 65147,
+   "reason": "no official value: Skerton PRO page gives no weight or burr size",
+   "spec": "weight, burr_size"
+  },
+  {
+   "product_id": 65130,
+   "reason": "no official value: Skerton+ page gives no weight or burr size",
+   "spec": "weight, burr_size"
+  },
+  {
+   "product_id": 65137,
+   "reason": "no official value: Smart G page gives no burr size; hopper 24 g already on page",
+   "spec": "burr_size, hopper"
+  },
+  {
+   "product_id": 78396,
+   "reason": "already on page / not applicable: hopper 20 g already on page; power/speed not applicable (manual grinder)",
+   "spec": "hopper, power, speed"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 79432,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 68383,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 65117,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 65116,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 65058,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 65115,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 64808,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/moka-express.html"
+  },
+  {
+   "product_id": 64991,
+   "spec": "material",
+   "value": "גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק",
+   "url": "https://www.bialetti.com/it_it/brikka-bialetti.html"
+  },
+  {
+   "product_id": 65099,
+   "spec": "material",
+   "value": "קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון",
+   "url": "https://global.hario.com/product/coffee/coldbrew/MCPN.html"
+  },
+  {
+   "product_id": 65151,
+   "spec": "material",
+   "value": "קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון",
+   "url": "https://global.hario.com/product/coffee/coldbrew/MCPN.html"
+  },
+  {
+   "product_id": 65223,
+   "spec": "capacity",
+   "value": "1–4 כוסות",
+   "url": "https://global.hario.com/product/coffee/dripper/VDGR.html"
+  },
+  {
+   "product_id": 65221,
+   "spec": "material",
+   "value": "קנקן מזכוכית עמידה בחום, דריפר V60 מפוליפרופילן, חבק מגומי סיליקון",
+   "url": "https://global.hario.com/product/coffee/set/VDD.html"
+  },
+  {
+   "product_id": 65092,
+   "spec": "material",
+   "value": "פלסטיק PCT",
+   "url": "https://global.hario.com/product/coffee/kettle/VKA.html"
+  },
+  {
+   "product_id": 65147,
+   "spec": "dimensions",
+   "value": "16.7×9.5×19.5 ס\"מ",
+   "url": "https://global.hario.com/product/coffee/grinder/MMCS.html"
+  },
+  {
+   "product_id": 65147,
+   "spec": "hopper",
+   "value": "100 גרם",
+   "url": "https://global.hario.com/product/coffee/grinder/MMCS.html"
+  },
+  {
+   "product_id": 65137,
+   "spec": "dimensions",
+   "value": "15×5.3×19 ס\"מ",
+   "url": "https://global.hario.com/product/coffee/grinder/MSGN.html"
+  },
+  {
+   "product_id": 65137,
+   "spec": "weight",
+   "value": "כ-400 גרם (כולל אריזה)",
+   "url": "https://global.hario.com/product/coffee/grinder/MSGN.html"
+  },
+  {
+   "product_id": 65130,
+   "spec": "dimensions",
+   "value": "17.2×9.3×23.1 ס\"מ",
+   "url": "https://global.hario.com/product/coffee/grinder/MSCS.html"
+  },
+  {
+   "product_id": 65130,
+   "spec": "hopper",
+   "value": "100 גרם",
+   "url": "https://global.hario.com/product/coffee/grinder/MSCS.html"
+  },
+  {
+   "product_id": 65062,
+   "spec": "dimensions",
+   "value": "15×7.2×22 ס\"מ",
+   "url": "https://global.hario.com/product/coffee/grinder/MSS.html"
+  },
+  {
+   "product_id": 64744,
+   "spec": "dimensions",
+   "value": "16×16×3.2 ס\"מ",
+   "url": "https://acaia.co/products/pearl"
+  },
+  {
+   "product_id": 65157,
+   "spec": "capacity",
+   "value": "10 אונקיות (כ-296 מ\"ל)",
+   "url": "https://aeropress.com/products/aeropress-coffee-maker"
+  },
+  {
+   "product_id": 65157,
+   "spec": "material",
+   "value": "פוליפרופילן, ללא BPA",
+   "url": "https://aeropress.com/products/aeropress-coffee-maker"
+  },
+  {
+   "product_id": 65014,
+   "spec": "capacity",
+   "value": "8 אונקיות (כ-237 מ\"ל)",
+   "url": "https://aeropress.com/products/aeropress-go-travel-coffee-press"
+  },
+  {
+   "product_id": 65014,
+   "spec": "material",
+   "value": "פוליפרופילן, מכסה הספל מסיליקון, ללא BPA",
+   "url": "https://aeropress.com/products/aeropress-go-travel-coffee-press"
+  },
+  {
+   "product_id": 80845,
+   "spec": "material",
+   "value": "פלסטיק ללא BPA",
+   "url": "https://wholesale.toddycafe.com/downloads/TODDY_CMLTCM_spec.pdf"
+  },
+  {
+   "product_id": 77276,
+   "spec": "capacity",
+   "value": "עד 38 אונקיות (כ-1.1 ליטר) תרכיז",
+   "url": "https://toddycafe.com/product/essential-brewer"
+  },
+  {
+   "product_id": 78396,
+   "spec": "weight",
+   "value": "464 גרם",
+   "url": "https://www.wacaco.com/products/exagrind"
+  },
+  {
+   "product_id": 67366,
+   "spec": "power",
+   "value": "310 וואט",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "spec": "speed",
+   "value": "1350 סל\"ד",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  },
+  {
+   "product_id": 67366,
+   "spec": "burrs",
+   "value": "פלדה מוקשית",
+   "url": "https://www.eureka.co.it/en/products/eureka+1920/prosumer+grinders/evolution+range/27/"
+  }
+ ]
+}
