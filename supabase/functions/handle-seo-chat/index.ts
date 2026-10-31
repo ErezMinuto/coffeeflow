@@ -23,7 +23,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
-import { applyPlannedShot } from '../_shared/shot_library.ts'
+import { applyPlannedShot, withIgDestination } from '../_shared/shot_library.ts'
 import {
   callClaude,
   parseClaudeJson,
@@ -962,6 +962,7 @@ async function executeTool(
         // from the menu; carousels keep their slides. Flag off: the pick is
         // kept as planned_shot and the legacy renderer draws scene_brief.
         let shotNote: string | undefined
+        if (task_type === 'visual_generation') brief_data = withIgDestination(brief_data)
         if (task_type === 'visual_generation' &&
             String(brief_data.destination ?? '').toLowerCase() === 'ig_post' &&
             !(Array.isArray(brief_data.slides) && brief_data.slides.length > 0)) {
