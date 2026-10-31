@@ -76,6 +76,16 @@ for e in edits:
             elif e['new'] in a['options']: status, why = 'rejected', 'new option already present'
             else:
                 a['options'] = [e['new'] if o == e['old'] else o for o in a['options']]; w['attributes'] = attrs
+        elif e.get('op') == 'append':
+            cur = w.get(t, field_value(obj, t))
+            bad_tag = [x for x in tags(e['new']) if not re.match(r'</?(p|ul|li|strong|h3|h4|br)\s*/?>$', x)]
+            if t not in ('description', 'short_description'): status, why = 'rejected', 'append only to description fields'
+            elif cur is None: status, why = 'rejected', 'field not present'
+            elif bad_tag: status, why = 'rejected', f'tag not allowed in appended block: {bad_tag[0][:40]}'
+            elif not balanced(e['new']): status, why = 'rejected', 'appended block has unbalanced tags'
+            elif e.get('anchor') and cur.count(e['anchor']) != 1: status, why = 'rejected', 'anchor must occur exactly once'
+            elif e['new'].strip() and e['new'] in cur: status, why = 'rejected', 'already present'
+            else: w[t] = cur.replace(e['anchor'], e['anchor'] + e['new'], 1) if e.get('anchor') else cur.rstrip('\n') + '\n' + e['new']
         else:
             cur = w.get(t, field_value(obj, t))
             if cur is None: status, why = 'rejected', 'field not present'
@@ -85,7 +95,7 @@ for e in edits:
             elif e['old'] == e['new']: status, why = 'rejected', 'no change'
             else: w[t] = cur.replace(e['old'], e['new'], 1)
     except Exception as ex: status, why = 'error', str(ex)[:200]
-    report.append(dict(product_id=pid, variation_id=vid or '', target=t, status=status, reason=why, old=e['old'][:200], new=e['new'][:200], finding=e.get('finding', '')[:150], plan=e['_plan']))
+    report.append(dict(product_id=pid, variation_id=vid or '', target=t, status=status, reason=why, old=e.get('old', '')[:200], new=e['new'][:200], finding=e.get('finding', '')[:150], plan=e['_plan']))
 
 os.makedirs(f'{D}/backup/per-product-round2', exist_ok=True)
 applied = 0
