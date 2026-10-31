@@ -1,0 +1,444 @@
+{
+ "edits": [
+  {
+   "product_id": 76850,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> תלוי בקשיות המים – עד 300 ליטר (1–10°dH), עד 240 ליטר (11–12°dH), עד 180 ליטר (13–15°dH), עד 120 ליטר (16–20°dH), עד 95 ליטר (21–25°dH), עד 80 ליטר (26–30°dH)</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://au.jura.com/en/professional/maintenance-products/clarisprosmartplus-25055os",
+    "https://is.jura.com/en/professional/maintenance-products/clarisprosmart-72819"
+   ]
+  },
+  {
+   "product_id": 64932,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> תלוי בקשיות המים – עד 65 ליטר (1–5°dH), עד 60 ליטר (6–10°dH), עד 55 ליטר (11–15°dH), עד 50 ליטר (16–20°dH), עד 45 ליטר (21–25°dH), עד 40 ליטר (26–30°dH)</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/maintenance-products/clarissmartplus-24232"
+   ]
+  },
+  {
+   "product_id": 64933,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>כמות במארז:</strong> 6 טבליות</li>\n<li><strong>מתאים ל:</strong> מכונות קפה אוטומטיות של JURA</li>\n</ul>",
+   "finding": "missing specs: quantity, compatibility",
+   "sources": [
+    "https://www.jura.com/en/homeproducts/maintenance-products/3phasecleaningtablets6pc-24225",
+    "https://www.jura.com/-/media/global/pdf/produktinformationsblatt/Cleaning_V5/Produktinformationsblatt-UFI-FS02-50AC-N00V-DGP7.pdf?sc_lang=en&la=en"
+   ]
+  },
+  {
+   "product_id": 64931,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>כמות במארז:</strong> בקבוק 90 גרם עם מערכת מינון, ל-30 ניקויים</li>\n<li><strong>מתאים ל:</strong> מערכות החלב של מכונות קפה אוטומטיות של JURA; ניתן להשתמש גם במקציפי חלב</li>\n</ul>",
+   "finding": "missing specs: quantity, compatibility",
+   "sources": [
+    "https://uk.jura.com/en/homeproducts/maintenance-products/milksystemcleaner-mini-tabs-24158",
+    "https://us.jura.com/-/media/global/pdf/produktblaetter/Milchsystemreiniger/Mini-Tabs/download_produktblatt_mini_tabs.pdf"
+   ]
+  },
+  {
+   "product_id": 64989,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> החלפה כל חודשיים או לאחר 50 ליטר מים מסוננים, המוקדם מביניהם</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://www.melitta.co.uk/bean-to-cup-machines/filtering-water-how-it-works"
+   ]
+  },
+  {
+   "product_id": 65024,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> כ-50 ליטר מים; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://nivona.com/assets/Bedienungsanleitung%20(DE)-N_WsfJF9.pdf"
+   ]
+  },
+  {
+   "product_id": 65023,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> כ-50 ליטר מים לכל פילטר; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://nivona.com/assets/Bedienungsanleitung%20(DE)-N_WsfJF9.pdf"
+   ]
+  },
+  {
+   "product_id": 68278,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> יש להחליף את המחסנית כל חודשיים</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://www.documents.philips.com/assets/20210504/34eee7c059774f40a6bbad1e0181ab70.pdf"
+   ]
+  },
+  {
+   "product_id": 65445,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>מתאים ל:</strong> גם קנקני Aquaphor Provence A5 (Tritan) ו-Orleans A5 Mg, וקנקני Aquaphor שמתאימים למחסנית B5</li>\n</ul>",
+   "finding": "missing specs: compatibility",
+   "sources": [
+    "https://aquaphor.com/replacement-jug-filters/a5-mg"
+   ]
+  },
+  {
+   "product_id": 64829,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> מומלץ להחליף כל 6 חודשים, ולכל המאוחר לאחר 12 חודשים או כשמגיעים לקיבולת הפילטר</li>\n<li><strong>קיבולת (גודל M, קשיות 10°dH):</strong> כ-3,240 ליטר במכונות ללא הפקת קיטור, כ-2,700 ליטר במכונות להכנת משקאות חמים עם הפקת קיטור</li>\n<li><strong>מתאים ל:</strong> מכונות קפה, מכונות אספרסו ומכונות ממכר המחוברות לרשת המים (מותקן על ראש סינון BWT besthead)</li>\n</ul>",
+   "finding": "missing specs: filter_life, compatibility",
+   "sources": [
+    "https://www.bwt.com/en/-/media/bwt/global-data/documents/produktdatenblaetter-pou-ps/bwtwam_bwt_bestmax_premium_datasheet_en_2023-12.pdf"
+   ]
+  },
+  {
+   "product_id": 64686,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> פילטר Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+   ]
+  },
+  {
+   "product_id": 64688,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> K5: 6 חודשים, K2: 6 חודשים, K7M: שנה (בצריכה ממוצעת של 10–12 ליטר ליום; במים עם הרבה משקעים יש להחליף את K5 ו-K2 אחרי 1–3 חודשים)</li>\n<li><strong>מתאים ל:</strong> מערכות Aquaphor RO-101S (Morion) ו-RO-102S</li>\n</ul>",
+   "finding": "missing specs: filter_life, compatibility",
+   "sources": [
+    "https://aquaphor.com/media/uploads_files/RO-101S-102S_2019_print.pdf",
+    "https://aquaphor.com/en-gb/replacement-under-counter-filters/ro-101s-set-without-membrane"
+   ]
+  },
+  {
+   "product_id": 81476,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+   ]
+  },
+  {
+   "product_id": 64701,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>אורך חיי הפילטר:</strong> פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>\n</ul>",
+   "finding": "missing specs: filter_life",
+   "sources": [
+    "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+   ]
+  },
+  {
+   "product_id": 64765,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>כמות במארז:</strong> 6 קפסולות של 2.5 גרם</li>\n<li><strong>מתאים ל:</strong> מכונות קפסולות של Nespresso (קפסולה תואמת Nespresso)</li>\n</ul>",
+   "finding": "missing specs: quantity, compatibility",
+   "sources": [
+    "https://www.cafetto.com/product/eco-capsule-clean",
+    "https://cdn.cafetto.com/general-downloads/Cafetto-Product-Catalogue.pdf"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 81476,
+   "spec": "compatibility",
+   "reason": "not applicable: a whole under-sink RO system, not a part for specific machines"
+  },
+  {
+   "product_id": 81476,
+   "spec": "filter_life (membrane, Pro M)",
+   "reason": "membrane life 1.5–2 years already on page; Aquaphor states no life for the Pro M cartridge (passport lists Pro HFM, EU version)"
+  },
+  {
+   "product_id": 64701,
+   "spec": "compatibility",
+   "reason": "not applicable: a whole under-sink RO system, not a part for specific machines"
+  },
+  {
+   "product_id": 64701,
+   "spec": "filter_life (membrane, Pro M)",
+   "reason": "membrane life 1.5–2 years already on page; Aquaphor states no life for the Pro M cartridge (passport lists Pro HFM, EU version)"
+  },
+  {
+   "product_id": 64686,
+   "spec": "compatibility",
+   "reason": "already on page: Osmo Pro 100 / Osmo Pro 50; Aquaphor's Pro 1 / Pro M pages give no wider list"
+  },
+  {
+   "product_id": 64686,
+   "spec": "filter_life (Pro M)",
+   "reason": "Aquaphor states no service life for Pro M in the Osmo Pro documents (the passport lists Pro HFM)"
+  },
+  {
+   "product_id": 81452,
+   "spec": "compatibility, filter_life",
+   "reason": "not applicable: water hardness test strips (no filter, not machine-specific); brand not identified"
+  },
+  {
+   "product_id": 64980,
+   "spec": "compatibility, filter_life",
+   "reason": "not applicable: water hardness test strips (no filter, not machine-specific); brand not identified"
+  },
+  {
+   "product_id": 64888,
+   "spec": "compatibility",
+   "reason": "not applicable: a whole under-sink RO system, not a part for specific machines"
+  },
+  {
+   "product_id": 79184,
+   "spec": "quantity",
+   "reason": "already on page: name and text say set of 3 (שלישיית); Eco Klear/Aqualogis has no official manufacturer site"
+  },
+  {
+   "product_id": 64864,
+   "spec": "filter_life",
+   "reason": "no official source: Eco Klear (Aqualogis) has no manufacturer site or datasheet; only retailer listings found"
+  },
+  {
+   "product_id": 64842,
+   "spec": "filter_life",
+   "reason": "no official source: Eco Klear (Aqualogis) has no manufacturer site or datasheet; only retailer listings found"
+  },
+  {
+   "product_id": 64733,
+   "spec": "quantity",
+   "reason": "no official source: Eco Klear (Aqualogis) has no manufacturer site or datasheet; only retailer listings found"
+  },
+  {
+   "product_id": 68448,
+   "spec": "quantity",
+   "reason": "no official source: AXOR has no manufacturer site; only retailer listings (which give 6 capsules)"
+  },
+  {
+   "product_id": 64956,
+   "spec": "quantity",
+   "reason": "already on page: 4 cleaning capsules + 1 descaler bottle"
+  },
+  {
+   "product_id": 65067,
+   "spec": "quantity",
+   "reason": "already on page: pack of 4 capsules"
+  },
+  {
+   "product_id": 68292,
+   "spec": "quantity, compatibility",
+   "reason": "no official source: generic brush or blind rubber with no identifiable maker"
+  },
+  {
+   "product_id": 65061,
+   "spec": "quantity, compatibility",
+   "reason": "no official source: generic brush or blind rubber with no identifiable maker"
+  },
+  {
+   "product_id": 65054,
+   "spec": "quantity, compatibility",
+   "reason": "no official source: generic brush or blind rubber with no identifiable maker"
+  },
+  {
+   "product_id": 65205,
+   "spec": "compatibility",
+   "reason": "no official source: ASCOR (Ascor Express) has no manufacturer site or datasheet; only distributor listings"
+  },
+  {
+   "product_id": 64998,
+   "spec": "quantity",
+   "reason": "no official source: food-grade grease, brand not identified"
+  },
+  {
+   "product_id": 64941,
+   "spec": "quantity",
+   "reason": "official Melitta pages (melitta.de, melitta.co.uk) and enclosure PDF do not state the tablet count"
+  },
+  {
+   "product_id": 64925,
+   "spec": "quantity",
+   "reason": "official Nivona accessories page (NIRT 701) does not state the tablet count"
+  },
+  {
+   "product_id": 64788,
+   "spec": "compatibility, filter_life",
+   "reason": "page is empty and the BWT model is not identifiable from the name"
+  },
+  {
+   "product_id": 64787,
+   "spec": "compatibility",
+   "reason": "no official source: coconut carbon inline filter K-2010, maker not identified; 6-month life already on page"
+  },
+  {
+   "product_id": 64721,
+   "spec": "compatibility",
+   "reason": "already on page: coffee machines, kettles and automatic coffee machines (Siemens 00312574: coffee machines, kettles, hot water dispensers; 6 x 18 g)"
+  },
+  {
+   "product_id": 64901,
+   "reason": "held: page does not name the Lelit filter model (assumed PLA930M)"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 76850,
+   "spec": "filter_life",
+   "value": "תלוי בקשיות המים – עד 300 ליטר (1–10°dH), עד 240 ליטר (11–12°dH), עד 180 ליטר (13–15°dH), עד 120 ליטר (16–20°dH), עד 95 ליטר (21–25°dH), עד 80 ליטר (26–30°dH)",
+   "url": "https://au.jura.com/en/professional/maintenance-products/clarisprosmartplus-25055os"
+  },
+  {
+   "product_id": 64932,
+   "spec": "filter_life",
+   "value": "תלוי בקשיות המים – עד 65 ליטר (1–5°dH), עד 60 ליטר (6–10°dH), עד 55 ליטר (11–15°dH), עד 50 ליטר (16–20°dH), עד 45 ליטר (21–25°dH), עד 40 ליטר (26–30°dH)",
+   "url": "https://www.jura.com/en/homeproducts/maintenance-products/clarissmartplus-24232"
+  },
+  {
+   "product_id": 64933,
+   "spec": "quantity",
+   "value": "6 טבליות",
+   "url": "https://www.jura.com/en/homeproducts/maintenance-products/3phasecleaningtablets6pc-24225"
+  },
+  {
+   "product_id": 64933,
+   "spec": "compatibility",
+   "value": "מכונות קפה אוטומטיות של JURA",
+   "url": "https://www.jura.com/-/media/global/pdf/produktinformationsblatt/Cleaning_V5/Produktinformationsblatt-UFI-FS02-50AC-N00V-DGP7.pdf?sc_lang=en&la=en"
+  },
+  {
+   "product_id": 64931,
+   "spec": "quantity",
+   "value": "בקבוק 90 גרם עם מערכת מינון, ל-30 ניקויים",
+   "url": "https://uk.jura.com/en/homeproducts/maintenance-products/milksystemcleaner-mini-tabs-24158"
+  },
+  {
+   "product_id": 64931,
+   "spec": "compatibility",
+   "value": "מערכות החלב של מכונות קפה אוטומטיות של JURA; ניתן להשתמש גם במקציפי חלב",
+   "url": "https://us.jura.com/-/media/global/pdf/produktblaetter/Milchsystemreiniger/Mini-Tabs/download_produktblatt_mini_tabs.pdf"
+  },
+  {
+   "product_id": 64989,
+   "spec": "filter_life",
+   "value": "החלפה כל חודשיים או לאחר 50 ליטר מים מסוננים, המוקדם מביניהם",
+   "url": "https://www.melitta.co.uk/bean-to-cup-machines/filtering-water-how-it-works"
+  },
+  {
+   "product_id": 65024,
+   "spec": "filter_life",
+   "value": "כ-50 ליטר מים; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים",
+   "url": "https://nivona.com/assets/Bedienungsanleitung%20(DE)-N_WsfJF9.pdf"
+  },
+  {
+   "product_id": 65023,
+   "spec": "filter_life",
+   "value": "כ-50 ליטר מים לכל פילטר; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים",
+   "url": "https://nivona.com/assets/Bedienungsanleitung%20(DE)-N_WsfJF9.pdf"
+  },
+  {
+   "product_id": 64901,
+   "spec": "filter_life",
+   "value": "70 ליטר לפילטר",
+   "url": "https://www.lelit.com/en-us/product/water-softener-filters-pdccl05mlt0zxx1"
+  },
+  {
+   "product_id": 68278,
+   "spec": "filter_life",
+   "value": "יש להחליף את המחסנית כל חודשיים",
+   "url": "https://www.documents.philips.com/assets/20210504/34eee7c059774f40a6bbad1e0181ab70.pdf"
+  },
+  {
+   "product_id": 65445,
+   "spec": "compatibility",
+   "value": "גם קנקני Aquaphor Provence A5 (Tritan) ו-Orleans A5 Mg, וקנקני Aquaphor שמתאימים למחסנית B5",
+   "url": "https://aquaphor.com/replacement-jug-filters/a5-mg"
+  },
+  {
+   "product_id": 64829,
+   "spec": "filter_life",
+   "value": "מומלץ להחליף כל 6 חודשים, ולכל המאוחר לאחר 12 חודשים או כשמגיעים לקיבולת הפילטר",
+   "url": "https://www.bwt.com/en/-/media/bwt/global-data/documents/produktdatenblaetter-pou-ps/bwtwam_bwt_bestmax_premium_datasheet_en_2023-12.pdf"
+  },
+  {
+   "product_id": 64829,
+   "spec": "filter_life",
+   "value": "כ-3,240 ליטר במכונות ללא הפקת קיטור, כ-2,700 ליטר במכונות להכנת משקאות חמים עם הפקת קיטור",
+   "url": "https://www.bwt.com/en/-/media/bwt/global-data/documents/produktdatenblaetter-pou-ps/bwtwam_bwt_bestmax_premium_datasheet_en_2023-12.pdf"
+  },
+  {
+   "product_id": 64829,
+   "spec": "compatibility",
+   "value": "מכונות קפה, מכונות אספרסו ומכונות ממכר המחוברות לרשת המים (מותקן על ראש סינון BWT besthead)",
+   "url": "https://www.bwt.com/en/-/media/bwt/global-data/documents/produktdatenblaetter-pou-ps/bwtwam_bwt_bestmax_premium_datasheet_en_2023-12.pdf"
+  },
+  {
+   "product_id": 64686,
+   "spec": "filter_life",
+   "value": "פילטר Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום",
+   "url": "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+  },
+  {
+   "product_id": 64688,
+   "spec": "filter_life",
+   "value": "K5: 6 חודשים, K2: 6 חודשים, K7M: שנה (בצריכה ממוצעת של 10–12 ליטר ליום; במים עם הרבה משקעים יש להחליף את K5 ו-K2 אחרי 1–3 חודשים)",
+   "url": "https://aquaphor.com/media/uploads_files/RO-101S-102S_2019_print.pdf"
+  },
+  {
+   "product_id": 64688,
+   "spec": "compatibility",
+   "value": "מערכות Aquaphor RO-101S (Morion) ו-RO-102S",
+   "url": "https://aquaphor.com/media/uploads_files/RO-101S-102S_2019_print.pdf"
+  },
+  {
+   "product_id": 81476,
+   "spec": "filter_life",
+   "value": "פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום",
+   "url": "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+  },
+  {
+   "product_id": 64701,
+   "spec": "filter_life",
+   "value": "פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום",
+   "url": "https://aquaphor.com/media/uploads_files/passport_OSMO_Pro_EX_print.pdf"
+  },
+  {
+   "product_id": 64765,
+   "spec": "quantity",
+   "value": "6 קפסולות של 2.5 גרם",
+   "url": "https://cdn.cafetto.com/general-downloads/Cafetto-Product-Catalogue.pdf"
+  },
+  {
+   "product_id": 64765,
+   "spec": "compatibility",
+   "value": "מכונות קפסולות של Nespresso (קפסולה תואמת Nespresso)",
+   "url": "https://www.cafetto.com/product/eco-capsule-clean"
+  }
+ ]
+}
