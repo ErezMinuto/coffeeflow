@@ -97,7 +97,7 @@ for e in edits:
     except Exception as ex: status, why = 'error', str(ex)[:200]
     report.append(dict(product_id=pid, variation_id=vid or '', target=t, status=status, reason=why, old=e.get('old', '')[:200], new=e['new'][:200], finding=e.get('finding', '')[:150], plan=e['_plan']))
 
-os.makedirs(f'{D}/backup/per-product-specfix', exist_ok=True)
+os.makedirs(f'{D}/backup/per-product-acc', exist_ok=True)
 applied = 0
 for (pid, vid), w in work.items():
     if not w or (ONLY and pid not in ONLY): continue
@@ -107,7 +107,7 @@ for (pid, vid), w in work.items():
         else: body[t] = v
     if not APPLY: continue
     obj = live[(pid, vid)]
-    json.dump(obj, open(f"{D}/backup/per-product-specfix/{pid}{'-' + str(vid) if vid else ''}.json", 'w'), ensure_ascii=False)
+    json.dump(obj, open(f"{D}/backup/per-product-acc/{pid}{'-' + str(vid) if vid else ''}.json", 'w'), ensure_ascii=False)
     try:
         res = call('PUT', f'/products/{pid}' + (f'/variations/{vid}' if vid else ''), body)
         ok = all((res.get(t) == v) if not t.startswith(('meta:', 'attributes')) else True for t, v in w.items())

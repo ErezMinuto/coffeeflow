@@ -1,0 +1,599 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+81389,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+81382,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+81375,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+81368,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+81361,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+65403,,description,applied,,"העוברים לאורך הזכוכית,","העוברים לאורך הכוס,","Brewers Embossed is porcelain, page called it glass",fix_brewers_glass.json
+64792,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67620,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+67344,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81346,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81342,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65387,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+76516,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64794,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64793,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+81414,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81410,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81406,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+76406,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67619,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+67297,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81402,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81398,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65385,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+81389,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+81382,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+81375,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+81368,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+81361,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65403,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67632,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67323,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67322,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67321,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67267,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67266,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67265,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65475,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65440,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64737,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+78775,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67629,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67324,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67270,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67268,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67138,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67327,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+78846,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+78232,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+78230,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+78228,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67631,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67298,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67272,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67271,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67269,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67660,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67325,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64797,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64796,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+76799,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64785,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+67246,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+67245,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+67244,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65409,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65408,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65407,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+65406,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+64874,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 89 מ""ל (3 אונקיות)</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>","missing specs: volume, dishwasher",specfill_acc_cups.json
+64873,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64871,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+64870,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65421,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 75 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+65417,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 75 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+82915,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65090,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+65091,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> לא (אין להשרות במים; לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80992,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80990,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80988,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80986,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80984,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80982,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80549,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80547,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80545,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80543,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80541,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+79506,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+79505,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80979,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80977,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80975,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80892,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80648,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80646,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80644,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80539,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+79504,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פורצלן</li>
+<li><strong>מתאים למדיח כלים:</strong> כן (לא מתאים למיקרוגל)</li>
+</ul>","missing specs: material, dishwasher",specfill_acc_cups.json
+80579,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80577,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80575,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80573,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80571,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80564,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80537,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80535,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80505,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80503,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים למדיח כלים:</strong> כן (מתאים גם למיקרוגל)</li>
+</ul>",missing specs: dishwasher,specfill_acc_cups.json
+80562,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80560,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80557,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80555,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80553,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80551,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80201,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80199,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80195,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+80193,,description,applied-unverified,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>נפח:</strong> 70 מ""ל</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+67651,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 120 מ""ל (כ-60 גרם פולים)</li>
+</ul>",missing specs: volume,specfill_acc_cups.json
+77165,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף אלומיניום בגימור אנודייז מט, מחטי נירוסטה</li>
+</ul>",missing specs: material,specfill_acc_tools.json
+64713,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח חלב:</strong> 100–220 מ""ל</li>
+<li><strong>הספק:</strong> 400 וואט</li>
+</ul>","missing specs: volume, power",specfill_acc_tools.json
+64784,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>סוללה:</strong> ליתיום נטענת 1400mAh, 3.7 וולט</li>
+</ul>",missing specs: power,specfill_acc_tools.json
+64709,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>סוללה:</strong> ליתיום נטענת 1400mAh, 3.7 וולט</li>
+</ul>",missing specs: power,specfill_acc_tools.json
+68308,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 330 מ""ל חלב</li>
+</ul>",missing specs: volume,specfill_acc_tools.json
+68307,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> כ-160 מ""ל חלב</li>
+</ul>",missing specs: volume,specfill_acc_tools.json
+67206,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>קוטר:</strong> גוף 57 מ""מ, שוליים 60 מ""מ</li>
+</ul>",missing specs: diameter,specfill_acc_tools.json
+67143,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> אלומיניום</li>
+</ul>",missing specs: material,specfill_acc_tools.json
+67610,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למכונות:</strong> כל דגמי La Marzocco Home</li>
+<li><strong>קוטר:</strong> מתאים לדוחסנים סטנדרטיים בקוטר 58 מ""מ</li>
+</ul>","missing specs: compatibility, diameter",specfill_acc_tools.json
+67145,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתאים למכונות:</strong> כל דגמי ECM עם ראש חליטה E61</li>
+</ul>",missing specs: compatibility,specfill_acc_tools.json
+76850,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> תלוי בקשיות המים – עד 300 ליטר (1–10°dH), עד 240 ליטר (11–12°dH), עד 180 ליטר (13–15°dH), עד 120 ליטר (16–20°dH), עד 95 ליטר (21–25°dH), ע",missing specs: filter_life,specfill_acc_water_cleaning.json
+64932,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> תלוי בקשיות המים – עד 65 ליטר (1–5°dH), עד 60 ליטר (6–10°dH), עד 55 ליטר (11–15°dH), עד 50 ליטר (16–20°dH), עד 45 ליטר (21–25°dH), עד 40 ל",missing specs: filter_life,specfill_acc_water_cleaning.json
+64933,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>כמות במארז:</strong> 6 טבליות</li>
+<li><strong>מתאים ל:</strong> מכונות קפה אוטומטיות של JURA</li>
+</ul>","missing specs: quantity, compatibility",specfill_acc_water_cleaning.json
+64931,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>כמות במארז:</strong> בקבוק 90 גרם עם מערכת מינון, ל-30 ניקויים</li>
+<li><strong>מתאים ל:</strong> מערכות החלב של מכונות קפה אוטומטיות של JURA; ניתן להשתמש גם במקציפ","missing specs: quantity, compatibility",specfill_acc_water_cleaning.json
+64989,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> החלפה כל חודשיים או לאחר 50 ליטר מים מסוננים, המוקדם מביניהם</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+65024,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> כ-50 ליטר מים; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+65023,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> כ-50 ליטר מים לכל פילטר; בצריכה נמוכה יש להחליף לכל המאוחר לאחר חודשיים</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+68278,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> יש להחליף את המחסנית כל חודשיים</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+65445,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתאים ל:</strong> גם קנקני Aquaphor Provence A5 (Tritan) ו-Orleans A5 Mg, וקנקני Aquaphor שמתאימים למחסנית B5</li>
+</ul>",missing specs: compatibility,specfill_acc_water_cleaning.json
+64829,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> מומלץ להחליף כל 6 חודשים, ולכל המאוחר לאחר 12 חודשים או כשמגיעים לקיבולת הפילטר</li>
+<li><strong>קיבולת (גודל M, קשיות 10°dH):</strong> כ-","missing specs: filter_life, compatibility",specfill_acc_water_cleaning.json
+64686,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> פילטר Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+64688,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> K5: 6 חודשים, K2: 6 חודשים, K7M: שנה (בצריכה ממוצעת של 10–12 ליטר ליום; במים עם הרבה משקעים יש להחליף את K5 ו-K2 אחרי 1–3 חודשים)</li>
+<li","missing specs: filter_life, compatibility",specfill_acc_water_cleaning.json
+81476,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+64701,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>אורך חיי הפילטר:</strong> פילטר הסינון המקדים Pro 1: עד 6 חודשים (במים עם ריכוז גבוה של חלקיקים: כל 2–3 חודשים), בצריכה של 10–12 ליטר ליום</li>
+</ul>",missing specs: filter_life,specfill_acc_water_cleaning.json
+64765,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>כמות במארז:</strong> 6 קפסולות של 2.5 גרם</li>
+<li><strong>מתאים ל:</strong> מכונות קפסולות של Nespresso (קפסולה תואמת Nespresso)</li>
+</ul>","missing specs: quantity, compatibility",specfill_acc_water_cleaning.json

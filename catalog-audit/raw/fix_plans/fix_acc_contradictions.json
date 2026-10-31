@@ -1,0 +1,81 @@
+{
+ "edits": [
+  {
+   "product_id": 67143,
+   "variation_id": null,
+   "target": "description",
+   "old": ">קוטר: 95 מ\"מ<",
+   "new": ">קוטר: 94 מ\"מ<",
+   "finding": "contradiction vs official",
+   "source": "https://www.ecm.de (Tamperstation)"
+  },
+  {
+   "product_id": 67143,
+   "variation_id": null,
+   "target": "description",
+   "old": ">גובה: 70 מ\"מ<",
+   "new": ">גובה: 75 מ\"מ<",
+   "finding": "contradiction vs official",
+   "source": "https://www.ecm.de (Tamperstation)"
+  },
+  {
+   "product_id": 67667,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 240 מ\"מ",
+   "new": "עומק 315 מ\"מ",
+   "finding": "contradiction vs official",
+   "source": "https://www.ecm.de (Knock Box M)"
+  },
+  {
+   "product_id": 68307,
+   "variation_id": null,
+   "target": "short_description",
+   "old": ">גוף מנירוסטה מצופה<",
+   "new": ">גוף מאלומיניום<",
+   "finding": "contradiction vs official",
+   "source": "https://www.bialetti.com (Tuttocrema)"
+  },
+  {
+   "product_id": 68307,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>גוף מנירוסטה מצופה</li>",
+   "new": "<li>גוף מאלומיניום</li>",
+   "finding": "contradiction vs official",
+   "source": "https://www.bialetti.com (Tuttocrema)"
+  },
+  {
+   "product_id": 68308,
+   "variation_id": null,
+   "target": "short_description",
+   "old": ">גוף מנירוסטה מצופה<",
+   "new": ">גוף מאלומיניום<",
+   "finding": "contradiction vs official",
+   "source": "https://www.bialetti.com (Tuttocrema)"
+  },
+  {
+   "product_id": 68308,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>גוף מנירוסטה מצופה</li>",
+   "new": "<li>גוף מאלומיניום</li>",
+   "finding": "contradiction vs official",
+   "source": "https://www.bialetti.com (Tuttocrema)"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 65123,
+   "reason": "Airscape: page says stainless ~1 kg; stainless Classic max 500 g, ~1 kg is galvanized Kilo — confirm model"
+  },
+  {
+   "product_id": 65121,
+   "reason": "Airscape: page says stainless ~1 kg; stainless Classic max 500 g, ~1 kg is galvanized Kilo — confirm model"
+  },
+  {
+   "product_id": 65101,
+   "reason": "Airscape: page says stainless ~1 kg; stainless Classic max 500 g, ~1 kg is galvanized Kilo — confirm model"
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+67143,,description,applied,,">קוטר: 95 מ""מ<",">קוטר: 94 מ""מ<",contradiction vs official,fix_acc_contradictions.json
+67143,,description,applied,,">גובה: 70 מ""מ<",">גובה: 75 מ""מ<",contradiction vs official,fix_acc_contradictions.json
+67667,,description,applied,,"עומק 240 מ""מ","עומק 315 מ""מ",contradiction vs official,fix_acc_contradictions.json
+68307,,short_description,applied,,>גוף מנירוסטה מצופה<,>גוף מאלומיניום<,contradiction vs official,fix_acc_contradictions.json
+68307,,description,applied,,<li>גוף מנירוסטה מצופה</li>,<li>גוף מאלומיניום</li>,contradiction vs official,fix_acc_contradictions.json
+68308,,short_description,applied,,>גוף מנירוסטה מצופה<,>גוף מאלומיניום<,contradiction vs official,fix_acc_contradictions.json
+68308,,description,applied,,<li>גוף מנירוסטה מצופה</li>,<li>גוף מאלומיניום</li>,contradiction vs official,fix_acc_contradictions.json

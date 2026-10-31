@@ -1,0 +1,574 @@
+{
+ "edits": [
+  {
+   "product_id": 77165,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> גוף אלומיניום בגימור אנודייז מט, מחטי נירוסטה</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://subminimal.com/products/flick"
+   ]
+  },
+  {
+   "product_id": 64713,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח חלב:</strong> 100–220 מ\"ל</li>\n<li><strong>הספק:</strong> 400 וואט</li>\n</ul>",
+   "finding": "missing specs: volume, power",
+   "sources": [
+    "https://subminimal.com/products/nanofoamer-pro"
+   ]
+  },
+  {
+   "product_id": 64784,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>סוללה:</strong> ליתיום נטענת 1400mAh, 3.7 וולט</li>\n</ul>",
+   "finding": "missing specs: power",
+   "sources": [
+    "https://subminimal.com/products/nanofoamer"
+   ]
+  },
+  {
+   "product_id": 64709,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>סוללה:</strong> ליתיום נטענת 1400mAh, 3.7 וולט</li>\n</ul>",
+   "finding": "missing specs: power",
+   "sources": [
+    "https://subminimal.com/products/nanofoamer"
+   ]
+  },
+  {
+   "product_id": 68308,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> 330 מ\"ל חלב</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://www.bialetti.com/fr_fr/tuttocrema.html",
+    "https://www.bialetti.com/us_en/tuttocrema-manual-milk-frother-11-oz.html"
+   ]
+  },
+  {
+   "product_id": 68307,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>נפח:</strong> כ-160 מ\"ל חלב</li>\n</ul>",
+   "finding": "missing specs: volume",
+   "sources": [
+    "https://www.bialetti.com/fr_fr/tuttocrema.html",
+    "https://www.bialetti.com/it_it/tuttocrema-bialetti.html"
+   ]
+  },
+  {
+   "product_id": 67206,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>קוטר:</strong> גוף 57 מ\"מ, שוליים 60 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: diameter",
+   "sources": [
+    "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+   ]
+  },
+  {
+   "product_id": 67143,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>חומר:</strong> אלומיניום</li>\n</ul>",
+   "finding": "missing specs: material",
+   "sources": [
+    "https://www.ecm.de/en/products/tamperstation/"
+   ]
+  },
+  {
+   "product_id": 67610,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למכונות:</strong> כל דגמי La Marzocco Home</li>\n<li><strong>קוטר:</strong> מתאים לדוחסנים סטנדרטיים בקוטר 58 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: compatibility, diameter",
+   "sources": [
+    "https://au.lamarzoccohome.com/product/linea-micra/"
+   ]
+  },
+  {
+   "product_id": 67145,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתאים למכונות:</strong> כל דגמי ECM עם ראש חליטה E61</li>\n</ul>",
+   "finding": "missing specs: compatibility",
+   "sources": [
+    "https://www.ecm.de/en/products/portafilter/"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 68308,
+   "spec": "power",
+   "reason": "not applicable: stovetop manual frother, no electrical power"
+  },
+  {
+   "product_id": 68307,
+   "spec": "power",
+   "reason": "not applicable: stovetop manual frother, no electrical power"
+  },
+  {
+   "product_id": 68308,
+   "spec": "material",
+   "reason": "note (not in missing, not changed): contradiction: page says \"גוף מנירוסטה מצופה\" (coated stainless steel body), official says aluminium body with non-stick coating (Materiale corpo: alluminio / Matériau: aluminium antiadhésif) — https://www.bialetti.com/it_it/tuttocrema-bialetti.html"
+  },
+  {
+   "product_id": 68307,
+   "spec": "material",
+   "reason": "note (not in missing, not changed): contradiction: page says \"גוף מנירוסטה מצופה\" (coated stainless steel body), official says aluminium body with non-stick coating (Materiale corpo: alluminio / Matériau: aluminium antiadhésif) — https://www.bialetti.com/it_it/tuttocrema-bialetti.html"
+  },
+  {
+   "product_id": 64784,
+   "spec": "volume",
+   "reason": "not applicable: handheld immersion frother has no vessel volume; official spec lists none"
+  },
+  {
+   "product_id": 64709,
+   "spec": "volume",
+   "reason": "not applicable: handheld immersion frother has no vessel volume; official spec lists none"
+  },
+  {
+   "product_id": 77165,
+   "spec": "diameter",
+   "reason": "not applicable: WDT tool has no basket diameter (official lists tool dimensions 110 x 18 mm only)"
+  },
+  {
+   "product_id": 67143,
+   "spec": "diameter",
+   "reason": "contradiction: page says diameter 95 mm and height 70 mm, official says Ø 94 mm and height 75 mm (https://www.ecm.de/en/products/tamperstation/)"
+  },
+  {
+   "product_id": 67610,
+   "spec": "note",
+   "reason": "diameter phrased as tamper fit: official Micra page states the convertible portafilter is \"Compatible with all La Marzocco Home machines along with standard 58mm tampers\"; no portafilter diameter is stated outright"
+  },
+  {
+   "product_id": 67145,
+   "spec": "diameter",
+   "reason": "no official value: ecm.de portafilter page (chrome-plated, bottomless AC100106-00) states E61 fit but no diameter; \"Gran Crema\" name is not used on ecm.de, matched by chrome finish + bottomless"
+  },
+  {
+   "product_id": 82493,
+   "spec": "volume",
+   "reason": "not applicable: NanoFoamer GO is a handheld immersion frother; official spec (https://subminimal.com/products/nanofoamer-go) lists no volume"
+  },
+  {
+   "product_id": 82492,
+   "spec": "volume",
+   "reason": "not applicable: NanoFoamer GO is a handheld immersion frother; official spec (https://subminimal.com/products/nanofoamer-go) lists no volume"
+  },
+  {
+   "product_id": 82491,
+   "spec": "volume",
+   "reason": "not applicable: NanoFoamer GO is a handheld immersion frother; official spec (https://subminimal.com/products/nanofoamer-go) lists no volume"
+  },
+  {
+   "product_id": 77223,
+   "spec": "volume",
+   "reason": "not applicable: replacement impeller + NanoScreen kit"
+  },
+  {
+   "product_id": 77223,
+   "spec": "power",
+   "reason": "not applicable: replacement impeller + NanoScreen kit"
+  },
+  {
+   "product_id": 64770,
+   "spec": "power",
+   "reason": "not applicable: non-electric stovetop milk jug"
+  },
+  {
+   "product_id": 81503,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Vortex product/pages do not state the material (https://www.baristaswag.com/products/vortex-high-velocity-milk-pitcher)"
+  },
+  {
+   "product_id": 78245,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Vortex product/pages do not state the material (https://www.baristaswag.com/products/vortex-high-velocity-milk-pitcher)"
+  },
+  {
+   "product_id": 81073,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Ultra Sharp 2.0 product/pages do not state the material (https://www.baristaswag.com/products/ultra-sharp-2-0-classic-gold)"
+  },
+  {
+   "product_id": 81069,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Ultra Sharp 2.0 product/pages do not state the material (https://www.baristaswag.com/products/ultra-sharp-2-0-classic-gold)"
+  },
+  {
+   "product_id": 81063,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Ultra Sharp 2.0 product/pages do not state the material (https://www.baristaswag.com/products/ultra-sharp-2-0-classic-gold)"
+  },
+  {
+   "product_id": 81057,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Ultra Sharp 2.0 product/pages do not state the material (https://www.baristaswag.com/products/ultra-sharp-2-0-classic-gold)"
+  },
+  {
+   "product_id": 78251,
+   "spec": "material",
+   "reason": "no official source: baristaswag.com Ultra Sharp 2.0 product/pages do not state the material (https://www.baristaswag.com/products/ultra-sharp-2-0-classic-gold)"
+  },
+  {
+   "product_id": 81152,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official basket pages state stainless steel and \"fits all La Marzocco portafilters\" but no diameter (https://au.lamarzoccohome.com/product/17-gram-basket/)"
+  },
+  {
+   "product_id": 81147,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official basket pages state stainless steel and \"fits all La Marzocco portafilters\" but no diameter (https://au.lamarzoccohome.com/product/17-gram-basket/)"
+  },
+  {
+   "product_id": 81142,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official basket pages state stainless steel and \"fits all La Marzocco portafilters\" but no diameter (https://au.lamarzoccohome.com/product/17-gram-basket/)"
+  },
+  {
+   "product_id": 67609,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official basket pages state stainless steel and \"fits all La Marzocco portafilters\" but no diameter (https://au.lamarzoccohome.com/product/17-gram-basket/)"
+  },
+  {
+   "product_id": 79485,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official portafilter pages give no diameter (https://nz.lamarzoccohome.com/product/stainless-steel-portafilter-complete/)"
+  },
+  {
+   "product_id": 67608,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official portafilter pages give no diameter (https://nz.lamarzoccohome.com/product/stainless-steel-portafilter-complete/)"
+  },
+  {
+   "product_id": 77075,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco official portafilter pages give no diameter (https://nz.lamarzoccohome.com/product/stainless-steel-portafilter-complete/)"
+  },
+  {
+   "product_id": 64705,
+   "spec": "diameter",
+   "reason": "no official value: La Marzocco dispersion screen F304001 page says only \"Suitable for all La Marzocco home machines\" (https://au.lamarzoccohome.com/product/la-marzocco-dispersion-screen/)"
+  },
+  {
+   "product_id": 64705,
+   "spec": "compatibility",
+   "reason": "already on page: Linea Mini, Micra, GS3"
+  },
+  {
+   "product_id": 82796,
+   "spec": "diameter",
+   "reason": "no official source: bezzera.com unreachable (connection timeout) and no official page found; version (E61 vs BZ group) also not identifiable from the page"
+  },
+  {
+   "product_id": 79402,
+   "spec": "volume",
+   "reason": "not applicable: WDT tool (mis-grouped as milk_jug)"
+  },
+  {
+   "product_id": 79402,
+   "spec": "material",
+   "reason": "already on page (stainless steel needles); generic unbranded tool, no official source"
+  },
+  {
+   "product_id": 67672,
+   "spec": "diameter",
+   "reason": "already on page: 51.5 mm external, matches IMS catalogue CI200IM"
+  },
+  {
+   "product_id": 67182,
+   "spec": "diameter",
+   "reason": "already on page: 56.4/55.4 mm, matches IMS catalogue MA200IM"
+  },
+  {
+   "product_id": 67669,
+   "spec": "diameter",
+   "reason": "not applicable: WDT tool"
+  },
+  {
+   "product_id": 67669,
+   "spec": "material",
+   "reason": "no official value: ecm.de WDT Tool page says only \"made from durable materials\" (https://www.ecm.de/en/products/wdt-tool/)"
+  },
+  {
+   "product_id": 67667,
+   "spec": "material",
+   "reason": "already on page: polished stainless steel, matches ecm.de"
+  },
+  {
+   "product_id": 67667,
+   "spec": "dimensions",
+   "reason": "note (not in missing, not changed): contradiction: page says depth 240 mm (160x240x65), official says 160 x 315 x 65 mm (https://www.ecm.de/en/products/knock-box-m-drawer/)"
+  },
+  {
+   "product_id": 67642,
+   "spec": "compatibility",
+   "reason": "no official source: lelit.com does not list this accessory (only retailer listings found)"
+  },
+  {
+   "product_id": 67624,
+   "spec": "diameter",
+   "reason": "already in name (58MM)"
+  },
+  {
+   "product_id": 67624,
+   "spec": "compatibility",
+   "reason": "no official source: lelit.com does not list this accessory (only retailer listings found)"
+  },
+  {
+   "product_id": 67641,
+   "spec": "diameter",
+   "reason": "no official source: unbranded aftermarket portafilter for Gaggia Classic Pro"
+  },
+  {
+   "product_id": 68276,
+   "spec": "compatibility",
+   "reason": "no official source: unbranded blind basket (58 mm already on page)"
+  },
+  {
+   "product_id": 65154,
+   "spec": "compatibility",
+   "reason": "no official source: unbranded blind basket (58 mm already on page)"
+  },
+  {
+   "product_id": 68273,
+   "spec": "diameter",
+   "reason": "already on page (58 mm); unbranded leveler, no official source"
+  },
+  {
+   "product_id": 68273,
+   "spec": "material",
+   "reason": "no official source: unbranded leveler"
+  },
+  {
+   "product_id": 68254,
+   "spec": "power",
+   "reason": "no official source: unbranded automatic frother"
+  },
+  {
+   "product_id": 67664,
+   "spec": "diameter",
+   "reason": "already on page: Ø 94 mm, matches ecm.de (https://www.ecm.de/en/products/height-adjustable-tamper-station/)"
+  },
+  {
+   "product_id": 67331,
+   "spec": "material",
+   "reason": "no official value: Metallurgica Motta official site lists knock boxes 7750/3100/8250 with diameter only, no material (https://www.metallurgicamotta.it/en/category/bar-accessories/tamping-stand)"
+  },
+  {
+   "product_id": 65370,
+   "spec": "material",
+   "reason": "no official source: unbranded WDT tool"
+  },
+  {
+   "product_id": 64798,
+   "spec": "diameter",
+   "reason": "no official source: unbranded WDT tool"
+  },
+  {
+   "product_id": 64798,
+   "spec": "material",
+   "reason": "no official source: unbranded WDT tool"
+  },
+  {
+   "product_id": 65123,
+   "spec": "capacity_g",
+   "reason": "already on page (approx. 1 kg). Note: official Airscape stainless Classic is max 500 g / 1 lb (https://planetarydesign.com/products/airscape-classic-coffee-canister); the ~1 kg size is the Airscape Kilo (up to 2.5 lb), which is galvanized steel with painted finish, not stainless as the page says (https://planetarydesign.com/products/airscape-kilo-coffee-canister) — model/material on page should be checked by hand"
+  },
+  {
+   "product_id": 65121,
+   "spec": "capacity_g",
+   "reason": "already on page (approx. 1 kg). Note: official Airscape stainless Classic is max 500 g / 1 lb (https://planetarydesign.com/products/airscape-classic-coffee-canister); the ~1 kg size is the Airscape Kilo (up to 2.5 lb), which is galvanized steel with painted finish, not stainless as the page says (https://planetarydesign.com/products/airscape-kilo-coffee-canister) — model/material on page should be checked by hand"
+  },
+  {
+   "product_id": 65101,
+   "spec": "capacity_g",
+   "reason": "already on page (approx. 1 kg). Note: official Airscape stainless Classic is max 500 g / 1 lb (https://planetarydesign.com/products/airscape-classic-coffee-canister); the ~1 kg size is the Airscape Kilo (up to 2.5 lb), which is galvanized steel with painted finish, not stainless as the page says (https://planetarydesign.com/products/airscape-kilo-coffee-canister) — model/material on page should be checked by hand"
+  },
+  {
+   "product_id": 65118,
+   "spec": "diameter",
+   "reason": "no official source: unbranded bottomless portafilter"
+  },
+  {
+   "product_id": 65021,
+   "spec": "power",
+   "reason": "no official source: Crema Di Latte (Espresso More) has no manufacturer spec page found"
+  },
+  {
+   "product_id": 64976,
+   "spec": "volume",
+   "reason": "not applicable: handheld battery whisk"
+  },
+  {
+   "product_id": 64976,
+   "spec": "power",
+   "reason": "already on page: 2 x AA batteries (1.5 V)"
+  },
+  {
+   "product_id": 64822,
+   "spec": "capacity_g",
+   "reason": "already in name (200 g)"
+  },
+  {
+   "product_id": 65107,
+   "spec": "volume",
+   "reason": "already on page: 120 ml froth / 180 ml heat"
+  },
+  {
+   "product_id": 65107,
+   "spec": "power",
+   "reason": "no official source: Lavazza MilkEasy product pages on lavazza.co.uk / lavazza.com.au now redirect to a generic category; retailers disagree (420 W vs 500 W)"
+  },
+  {
+   "product_id": 64911,
+   "spec": "dimensions",
+   "reason": "no official source: unbranded coffee scale"
+  },
+  {
+   "product_id": 64751,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64750,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64749,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64748,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64747,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64746,
+   "spec": "material",
+   "reason": "no official source: jug is \"תואם MOTTA\" (Motta-compatible), manufacturer not identified"
+  },
+  {
+   "product_id": 64674,
+   "spec": "volume",
+   "reason": "no official source: Emilio Crema Touch, no manufacturer spec page found"
+  },
+  {
+   "product_id": 64674,
+   "spec": "power",
+   "reason": "no official source: Emilio Crema Touch, no manufacturer spec page found"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 77165,
+   "spec": "material",
+   "value": "גוף אלומיניום בגימור אנודייז מט, מחטי נירוסטה",
+   "url": "https://subminimal.com/products/flick"
+  },
+  {
+   "product_id": 64713,
+   "spec": "volume",
+   "value": "100–220 מ\"ל",
+   "url": "https://subminimal.com/products/nanofoamer-pro"
+  },
+  {
+   "product_id": 64713,
+   "spec": "power",
+   "value": "400 וואט",
+   "url": "https://subminimal.com/products/nanofoamer-pro"
+  },
+  {
+   "product_id": 64784,
+   "spec": "power",
+   "value": "ליתיום נטענת 1400mAh, 3.7 וולט",
+   "url": "https://subminimal.com/products/nanofoamer"
+  },
+  {
+   "product_id": 64709,
+   "spec": "power",
+   "value": "ליתיום נטענת 1400mAh, 3.7 וולט",
+   "url": "https://subminimal.com/products/nanofoamer"
+  },
+  {
+   "product_id": 68308,
+   "spec": "volume",
+   "value": "330 מ\"ל חלב",
+   "url": "https://www.bialetti.com/fr_fr/tuttocrema.html"
+  },
+  {
+   "product_id": 68308,
+   "spec": "volume",
+   "value": "330 מ\"ל חלב",
+   "url": "https://www.bialetti.com/us_en/tuttocrema-manual-milk-frother-11-oz.html"
+  },
+  {
+   "product_id": 68307,
+   "spec": "volume",
+   "value": "כ-160 מ\"ל חלב",
+   "url": "https://www.bialetti.com/fr_fr/tuttocrema.html"
+  },
+  {
+   "product_id": 68307,
+   "spec": "volume",
+   "value": "כ-160 מ\"ל חלב",
+   "url": "https://www.bialetti.com/it_it/tuttocrema-bialetti.html"
+  },
+  {
+   "product_id": 67206,
+   "spec": "diameter",
+   "value": "גוף 57 מ\"מ, שוליים 60 מ\"מ",
+   "url": "https://www.imsfiltri.com/IMS-competition-Catalogue.pdf"
+  },
+  {
+   "product_id": 67143,
+   "spec": "material",
+   "value": "אלומיניום",
+   "url": "https://www.ecm.de/en/products/tamperstation/"
+  },
+  {
+   "product_id": 67610,
+   "spec": "compatibility",
+   "value": "כל דגמי La Marzocco Home",
+   "url": "https://au.lamarzoccohome.com/product/linea-micra/"
+  },
+  {
+   "product_id": 67610,
+   "spec": "diameter",
+   "value": "מתאים לדוחסנים סטנדרטיים בקוטר 58 מ\"מ",
+   "url": "https://au.lamarzoccohome.com/product/linea-micra/"
+  },
+  {
+   "product_id": 67145,
+   "spec": "compatibility",
+   "value": "כל דגמי ECM עם ראש חליטה E61",
+   "url": "https://www.ecm.de/en/products/portafilter/"
+  }
+ ]
+}
