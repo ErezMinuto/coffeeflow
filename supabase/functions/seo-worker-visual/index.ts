@@ -72,6 +72,7 @@ import {
   insertTasks,
 } from '../seo-agent/db.ts'
 import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson, type MessageContentBlock } from '../seo-agent/claude.ts'
+import { shotBudget } from './shotBudget.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
 import { checkLabelText, LABEL_TRANSCRIBE_PROMPT, type LabelTranscript } from '../_shared/bag_label_check.ts'
 import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
@@ -666,7 +667,7 @@ const SHOT_QA_SYSTEM_PROMPT = `You are the visual QA for Minuto, a specialty cof
 First describe in one or two sentences exactly what the image shows. Then answer every numbered question about what is VISIBLE: "yes" (good), "no" (a problem), or "n/a" when the question's condition does not apply (e.g. it asks about hands and there are none). Answer "no" when you are not sure. Count hands and check what each object rests on before answering those questions.
 Reply with strict JSON only: {"description": "...", "answers": [{"n": 1, "answer": "yes" | "no" | "n/a", "why": "..."}]}`
 
-async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, sourcePhoto: string | null): Promise<VisualCritique> {
+async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, sourcePhoto: string | null, budget: ReturnType<typeof shotBudget>): Promise<VisualCritique> {
   const questions = shotChecklist(shot, slots)
   const compareBag = shot.needs_product && sourcePhoto
   const content: MessageContentBlock[] = [
@@ -676,7 +677,7 @@ async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, s
   ]
   const ask = () => callClaude({
     sourceFn: 'seo-worker-visual', model: MODEL_VISUAL_CRITIC, system: SHOT_QA_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content }], maxTokens: 900, temperature: 0, timeoutMs: 120_000,
+    messages: [{ role: 'user', content }], maxTokens: 900, temperature: 0, timeoutMs: Math.min(120_000, budget.remainingMs()),
   })
   let res: Awaited<ReturnType<typeof callClaude>>
   try { res = await ask() } catch { res = await ask() }   // one retry; a second failure throws
@@ -729,18 +730,35 @@ async function handleShot(
     }
   }
 
+  const budget = shotBudget()
   const recent = await recentShotPhotos(supabase).catch(() => [] as string[])
   const qaAttempts: Array<Record<string, unknown>> = []
   let imageUrl: string | null = null
   let raw: Record<string, unknown> = {}
   let lastCritique: VisualCritique | null = null
   let qaPassed = false
+  let lastAttemptMs = 0
   for (let a = 1; a <= MAX_SHOT_ATTEMPTS && !qaPassed; a++) {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
-      body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect, exclude_photos: recent }),
-    })
+    // A retry that cannot finish must not start: the edge runtime would kill
+    // this worker mid-render, losing the image already in hand. The attempt
+    // that just failed QA goes to review instead.
+    if (imageUrl && !budget.fits(lastAttemptMs)) {
+      console.warn(`[seo-worker-visual] ${workerId} shot attempt ${a}/${MAX_SHOT_ATTEMPTS} skipped: last took ${lastAttemptMs}ms, ${budget.remainingMs()}ms left`)
+      break
+    }
+    const attemptStart = Date.now()
+    let res: Response
+    try {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+        body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect, exclude_photos: recent }),
+        signal: AbortSignal.timeout(budget.remainingMs()),
+      })
+    } catch (e: any) {
+      qaAttempts.push({ attempt: a, render_error: `visual-test: ${e?.message ?? e}` })
+      continue
+    }
     const json = await res.json().catch(() => ({})) as Record<string, unknown>
     if (!res.ok || typeof json.url !== 'string') {
       qaAttempts.push({ attempt: a, render_error: String(json.error ?? `HTTP ${res.status}`), real_photo_checks: json.real_photo_checks })
@@ -749,7 +767,7 @@ async function handleShot(
     imageUrl = json.url; raw = json
     let critique: VisualCritique
     try {
-      critique = await evaluateShot(imageUrl, shot, slots, typeof json.real_photo === 'string' ? json.real_photo : null)
+      critique = await evaluateShot(imageUrl, shot, slots, typeof json.real_photo === 'string' ? json.real_photo : null, budget)
     } catch (e: any) {
       // Unlike the legacy path, an unanswerable QA does NOT count as a pass.
       critique = { passes: false, missing: [], issues: [`QA could not run: ${e?.message ?? e}`], suggested_adjustment: '' } as VisualCritique
@@ -757,6 +775,7 @@ async function handleShot(
     qaAttempts.push({ attempt: a, image_url: imageUrl, shot_type: shot.id, critique, prompt_doc: typeof json.prompt_doc === 'string' ? json.prompt_doc : undefined })
     lastCritique = critique
     qaPassed = critique.passes
+    lastAttemptMs = Date.now() - attemptStart
     console.log(`[seo-worker-visual] ${workerId} shot attempt ${a}/${MAX_SHOT_ATTEMPTS} ${qaPassed ? 'PASSED' : `FAILED ${JSON.stringify(critique.issues)}`}`)
   }
 
