@@ -31,8 +31,12 @@ The result was a recurring failure shape: something breaks, it returns HTTP
 
 ## Reading logs
 
-Needs `SUPABASE_ACCESS_TOKEN` — the same `sbp_…` token deploys use. The anon
-key is resolved from it automatically. Everything here is read-only.
+Reads with the service-role key, because `system_logs` has been admin-read since
+`20261018c` and the anon key can no longer see it. Uses `SUPABASE_SERVICE_ROLE_KEY`
+from your session; with only `SUPABASE_ACCESS_TOKEN` set, it looks up the `eyJ`
+service_role key and caches it in the session temp dir (mode 600). Run
+`./scripts/secrets-doctor.sh` to see what is set. Everything here is read-only:
+the script only sends GETs and never prints the key.
 
 ```bash
 ./scripts/logs.sh errors            # what is broken (last 24h)

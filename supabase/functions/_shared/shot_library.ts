@@ -434,6 +434,19 @@ export function shotSceneSummary(shot: ShotDef, slots: ShotSlots): string {
   return `${shot.label}: ${what}.`
 }
 
+// A planner that names a shot, or asks for a story, is writing an IG visual
+// even when it forgets destination. Without this the brief skips
+// applyPlannedShot, so no render_mode is set, and seo-worker-visual defaults it
+// to bag_hero and fails it for having no product (2026-10-31: 13 tasks in a day).
+// An explicit destination always wins.
+export function withIgDestination(raw: Record<string, unknown>): Record<string, unknown> {
+  const dest = typeof raw.destination === 'string' ? raw.destination.trim() : ''
+  if (dest) return raw
+  const namesShot = typeof raw.shot_type === 'string' && raw.shot_type.trim() !== ''
+  const isStory   = String(raw.aspect ?? '').trim().toLowerCase() === 'story'
+  return namesShot || isStory ? { ...raw, destination: 'ig_post' } : raw
+}
+
 // Validate a planner's shot pick on an IG visual brief and make the brief
 // consistent with it. Returns a copy; never throws.
 //   • caption: the post's caption, copied onto the brief when it has none

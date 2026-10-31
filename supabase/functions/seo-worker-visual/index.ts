@@ -229,13 +229,21 @@ serve(async (req) => {
   if (task.parent_task_id) {
     const { data: parent, error: parentErr } = await supabase
       .from('seo_tasks')
-      .select('status, result_data')
+      .select('status, task_type, result_data')
       .eq('id', task.parent_task_id)
       .maybeSingle()
     if (parentErr) {
       // Treat as transient — retry next tick.
       await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
+    }
+    if (destination === 'blog_banner' && parent?.task_type === 'dynamic_experiment') {
+      // The cannibalization gate turned this banner's article into a review
+      // proposal, so no article will ever exist to attach to. Waiting on it
+      // never ends: 8 such rows cycled for up to 10 weeks and took the chat's
+      // worker nudges. The [marker] keeps this out of the watchdog failure rate.
+      await safeMarkFailed(supabase, task, `[superseded] article ${task.parent_task_id} became a review proposal and was never written`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, reason: 'parent_superseded' })
     }
     if (destination === 'blog_banner') {
       const parentStatus = parent?.status ?? 'missing'

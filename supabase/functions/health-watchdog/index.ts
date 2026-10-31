@@ -26,6 +26,7 @@
 // Outputs SILENT-OK when everything is healthy (no spammy daily "all
 // good" tasks).
 
+import { freshnessBudgetHours } from './freshness_budget.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
@@ -173,6 +174,7 @@ const EXPECTED_FRESH_DATA: Array<{
   table:          string
   column:         string   // timestamptz or date column whose max() = freshness
   max_age_hours:  number
+  saturday_max_age_hours?: number
   required:       boolean
   label:          string
 }> = [
@@ -195,8 +197,9 @@ const EXPECTED_FRESH_DATA: Array<{
   // re-writes rows constantly, so synced_at would advance even if MFlow stopped
   // returning new documents. Minuto sells every day across POS + EcoSite +
   // back office, so a 12h budget catches a freeze within half a day without
-  // false-positiving on a quiet evening.
-  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
+  // false-positiving on a quiet evening. Saturday gets 36h: the Friday-to-first-
+  // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy.
+  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
 interface HealthFinding {
@@ -358,12 +361,13 @@ serve(async (req) => {
         continue
       }
       const ageHours = (Date.now() - new Date(raw).getTime()) / (3600 * 1000)
-      if (ageHours > src.max_age_hours) {
+      const budgetHours = freshnessBudgetHours(src, new Date())
+      if (ageHours > budgetHours) {
         findings.push({
           severity: src.required ? 'ERROR' : 'WARN',
           category: 'data_stale',
-          message:  `${src.label} is STALE — newest ${src.table}.${src.column} is ${ageHours.toFixed(1)}h old (budget: ${src.max_age_hours}h). The sync is not advancing the data even if its cron looks healthy.`,
-          context:  { table: src.table, column: src.column, latest: raw, age_hours: ageHours, budget_hours: src.max_age_hours },
+          message:  `${src.label} is STALE — newest ${src.table}.${src.column} is ${ageHours.toFixed(1)}h old (budget: ${budgetHours}h). The sync is not advancing the data even if its cron looks healthy.`,
+          context:  { table: src.table, column: src.column, latest: raw, age_hours: ageHours, budget_hours: budgetHours },
         })
       }
     } catch (e: any) {

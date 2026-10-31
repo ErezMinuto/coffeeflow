@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
@@ -192,4 +192,21 @@ Deno.test('bar moment: every moment has its own photo subject, and no hand-anato
   assert(!SHOTS.bar_moment.moments.some(m => m.includes('latte art')))
   assert(!shotChecklist(SHOTS.bar_moment, {}).some(q => q.includes('fingers')))
   assert(PHOTO_EXCLUDE.has('hands/IMG_5190.jpg'))
+})
+
+Deno.test('withIgDestination: a shot or story brief with no destination is an IG visual', () => {
+  assertEquals(withIgDestination({ shot_type: 'finished_drink' }).destination, 'ig_post')
+  assertEquals(withIgDestination({ aspect: 'story', scene_brief: 'x' }).destination, 'ig_post')
+  assertEquals(withIgDestination({ aspect: 'STORY', destination: '  ' }).destination, 'ig_post')
+})
+
+Deno.test('withIgDestination: explicit destinations and plain briefs are left alone', () => {
+  assertEquals(withIgDestination({ shot_type: 'roastery', destination: 'blog_banner' }).destination, 'blog_banner')
+  assertEquals(withIgDestination({ aspect: 'feed_square', scene_brief: 'x' }).destination, undefined)
+  assertEquals(withIgDestination({ shot_type: '  ' }).destination, undefined)
+})
+
+Deno.test('the 2026-10-31 failing brief now resolves to a render_mode', () => {
+  const raw = withIgDestination({ aspect: 'story', shot_type: 'finished_drink', caption_he: 'x', shot_slots: { drink: 'espresso', moment: 'top down' }, scene_brief: 'y' })
+  assertEquals(applyPlannedShot(raw, { enabled: true }).brief.render_mode, 'no_bag')
 })
