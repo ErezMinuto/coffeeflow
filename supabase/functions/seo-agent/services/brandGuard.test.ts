@@ -13,6 +13,8 @@ import {
   screenHeroProduct,
   namesResellerBrand,
   adCopyBrandViolation,
+  repairForBannedHero,
+  sceneDescribesBag,
   type BrandIndexEntry,
 } from './brandGuard.ts'
 
@@ -242,4 +244,30 @@ Deno.test('green coffee in an ad is caught; green-coloured gear and green-apple 
 Deno.test('a keyword list passed alone (update_targeting add_keywords) is checked', () => {
   assertEquals(adCopyBrandViolation(['קפה ספשלטי', 'ונטו'], 'targeting.add_keywords')?.path, 'targeting.add_keywords[1]')
   assertEquals(adCopyBrandViolation(undefined, 'targeting.add_keywords'), null)
+})
+
+// ── repairForBannedHero (queue-time no_bag fallback) ──────────────────────
+
+Deno.test('the 2026-09-23 Toddy banner had no bag in the scene, so it repairs to no_bag', () => {
+  // Verbatim opening of the blocked brief (seo_tasks 711828d0).
+  const scene = 'A close-up, bright and minimalist shot of a digital coffee scale with a small, sleek ceramic cup on it, measuring a precise amount of coffee beans.'
+  assertEquals(repairForBannedHero({ scene_brief: scene }), { action: 'no_bag' })
+})
+
+Deno.test('the Veneto Delux banner scenes describe the bag, so they stay blocked', () => {
+  // Verbatim opening of seo_tasks 5eba9aeb.
+  const scene = 'A white Minuto specialty coffee bag stands upright on a warm oak wooden surface in soft, diffused morning light.'
+  assertEquals(repairForBannedHero({ scene_brief: scene }).action, 'block')
+  assertEquals(repairForBannedHero({ scene_brief: 'שקית קפה לבנה על שולחן עץ' }).action, 'block')
+})
+
+Deno.test('a scene that itself names Veneto or green coffee stays blocked', () => {
+  assertEquals(repairForBannedHero({ scene_brief: 'An espresso cup beside a Veneto tin.' }).action, 'block')
+  assertEquals(repairForBannedHero({ scene_brief: 'A pile of raw coffee beans on burlap.' }).action, 'block')
+})
+
+Deno.test('sceneDescribesBag does not fire on unrelated words', () => {
+  assert(!sceneDescribesBag('A barista tamps espresso over the baggage-free counter.'))
+  assert(!sceneDescribesBag('Beans in a glass jar beside a grinder.'))
+  assert(sceneDescribesBag('Packaging sits softly in the background.'))
 })

@@ -326,3 +326,28 @@ export function screenHeroProduct(
       return { ok: true }
   }
 }
+
+// A banned hero blocks the whole visual today. That is right when the scene
+// prose describes the bag ("a white Minuto bag stands upright…"): dropping
+// product_name would leave Gemini drawing an unbranded bag. When the scene
+// never mentions a bag, the hero was decoration, and the same scene renders
+// fine as no_bag. 2026-09-23 lost a blog banner this way: a scale, a cup and
+// beans, blocked only because the planner had set Toddy as product_name.
+const RE_BAG_IN_SCENE = /\bbags?\b|\bpouch(?:es)?\b|\bpackag(?:e|es|ing)\b|שקית|שקיות/i
+
+/** True when a scene_brief describes a bag or package in the frame. */
+export function sceneDescribesBag(scene: unknown): boolean {
+  return RE_BAG_IN_SCENE.test(String(scene ?? ''))
+}
+
+// Decide what to do with a visual brief whose product_name failed
+// screenHeroProduct: repair it to no_bag, or block it.
+export function repairForBannedHero(
+  brief: { scene_brief?: unknown },
+): { action: 'no_bag' } | { action: 'block'; why: string } {
+  const scene = String(brief.scene_brief ?? '')
+  if (namesResellerBrand(scene)) return { action: 'block', why: 'the scene prose itself names Veneto' }
+  if (classifyByName(scene) === 'banned_green') return { action: 'block', why: 'the scene prose itself features green coffee' }
+  if (sceneDescribesBag(scene))  return { action: 'block', why: 'the scene prose describes the bag, so it cannot render without one' }
+  return { action: 'no_bag' }
+}

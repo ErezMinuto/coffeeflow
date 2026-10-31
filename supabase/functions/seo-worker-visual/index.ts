@@ -229,13 +229,29 @@ serve(async (req) => {
   if (task.parent_task_id) {
     const { data: parent, error: parentErr } = await supabase
       .from('seo_tasks')
-      .select('status, result_data')
+      .select('status, result_data, task_type, task_subtype')
       .eq('id', task.parent_task_id)
       .maybeSingle()
     if (parentErr) {
       // Treat as transient — retry next tick.
       await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
+    }
+    if (destination === 'blog_banner' && parent && parent.task_type !== 'text_generation') {
+      // The orchestrator's gates turn a refused article into a
+      // dynamic_experiment proposal. That proposal stays 'pending' until an
+      // admin acts, and approving it writes no article, so the check below
+      // would defer this banner forever (eight sat pending 08-23 → 10-25).
+      // Nothing will ever exist to attach to: fail it for good, before any
+      // render spend. The orchestrator no longer queues these (dependents
+      // cascade); this clears the ones already in the queue.
+      const kind = parent.task_subtype ? `${parent.task_type}:${parent.task_subtype}` : String(parent.task_type)
+      await safeMarkFailed(
+        supabase, task,
+        `parent ${task.parent_task_id} is a ${kind}, not an article — no blog post will exist to attach this banner to`,
+        true,
+      )
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent is not an article' })
     }
     if (destination === 'blog_banner') {
       const parentStatus = parent?.status ?? 'missing'
