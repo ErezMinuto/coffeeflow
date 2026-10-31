@@ -1,0 +1,911 @@
+{
+ "edits": [
+  {
+   "product_id": 82622,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 81092,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>בקרת טמפרטורה:</strong> PID כפול (קפה וקיטור)</li>\n<li><strong>דודי קפה:</strong> דוד רווי נפרד לכל ראש חליטה</li>\n</ul>",
+   "finding": "missing basics: PID, boiler type (water tank n/a - plumbed-in; pump pressure not stated by La Marzocco)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+   ]
+  },
+  {
+   "product_id": 81086,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>ראשי חליטה:</strong> רוויים (Saturated Groups)</li>\n</ul>",
+   "finding": "missing basics: group type (water tank n/a - plumbed-in; pump pressure and portafilter size not stated by La Marzocco)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_pb_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 81044,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>ראשי חליטה:</strong> רוויים (Saturated Groups)</li>\n</ul>",
+   "finding": "missing basics: group type (water tank n/a - plumbed-in; pump pressure and portafilter size not stated by La Marzocco)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_pb_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 76875,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>בקרת טמפרטורה:</strong> PID כפול (קפה וקיטור)</li>\n<li><strong>דודי קפה:</strong> דוד רווי נפרד לכל ראש חליטה</li>\n</ul>",
+   "finding": "missing basics: PID, boiler type (water tank n/a - plumbed-in; pump pressure not stated by La Marzocco)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+   ]
+  },
+  {
+   "product_id": 67670,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>דוד:</strong> 1.8 ליטר, נחושת, עם מחליף חום</li>\n<li><strong>ראש חליטה:</strong> E61 (בעיצוב מחודש)</li>\n</ul>",
+   "finding": "missing basics: boiler volume/material, group type (portafilter size not stated by Rocket)",
+   "sources": [
+    "https://cdn.sanity.io/files/zhlpxy7s/production/f6be58bcd76781b4c2bd99be8a9cb112402d0553.pdf"
+   ]
+  },
+  {
+   "product_id": 67638,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure and portafilter size not stated by Bezzera)",
+   "sources": [
+    "https://www.bezzera.it/en/machines/aria"
+   ]
+  },
+  {
+   "product_id": 67622,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: portafilter (water tank = the 1.6 L boiler already on page; brew pressure not stated - manual lever)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/expo"
+   ]
+  },
+  {
+   "product_id": 67605,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: portafilter (Europiccola Nero is a colour/finish variant of the Europiccola; brew pressure not stated - manual lever)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+   ]
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: portafilter (brew pressure not stated - manual lever)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/professional-rame-gold"
+   ]
+  },
+  {
+   "product_id": 67603,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>משקל נטו:</strong> 18 ק\"ג</li>\n<li><strong>דוד:</strong> יחיד, 0.8 ליטר</li>\n<li><strong>משאבה:</strong> ויברציה</li>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 58 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: weight, boiler, portafilter (+ pump type)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+   ]
+  },
+  {
+   "product_id": 67283,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>משקל נטו:</strong> 32.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: weight (pump pressure and portafilter size not stated by Bezzera)",
+   "sources": [
+    "https://www.bezzera.it/en/machines/matrix"
+   ]
+  },
+  {
+   "product_id": 67161,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 20×33.5×49 ס\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions (water tank = the 0.8 L boiler already on page; brew pressure not stated - manual lever)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+   ]
+  },
+  {
+   "product_id": 67153,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: portafilter (brew pressure not stated - manual lever)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/esperto-edotto"
+   ]
+  },
+  {
+   "product_id": 67152,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1250–1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>משקל נטו:</strong> 30 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, weight (pump pressure and portafilter size not stated by Bezzera)",
+   "sources": [
+    "https://www.bezzera.it/en/machines/strega"
+   ]
+  },
+  {
+   "product_id": 67602,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>משקל נטו:</strong> 18 ק\"ג</li>\n<li><strong>דוד:</strong> יחיד, 0.8 ליטר</li>\n<li><strong>משאבה:</strong> ויברציה</li>\n<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 58 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: weight, boiler, portafilter (+ pump type)",
+   "sources": [
+    "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+   ]
+  },
+  {
+   "product_id": 67285,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>גוף חימום קפה:</strong> 800 וואט</li>\n<li><strong>גוף חימום שירות (קיטור):</strong> 1200 וואט</li>\n<li><strong>דוד קפה:</strong> 0.45 ליטר</li>\n<li><strong>דוד שירות (קיטור):</strong> 1 ליטר</li>\n<li><strong>מידות (ר×ע×ג):</strong> 31×47×42 ס\"מ</li>\n<li><strong>משקל נטו:</strong> 33 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight (+ boiler volumes); pump pressure not stated by Bezzera",
+   "sources": [
+    "https://www.bezzera.it/en/machines/matrix"
+   ]
+  },
+  {
+   "product_id": 67202,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>גוף חימום קפה:</strong> 800 וואט</li>\n<li><strong>גוף חימום שירות (קיטור):</strong> 1100–1300 וואט</li>\n<li><strong>דוד קפה:</strong> 0.45 ליטר</li>\n<li><strong>דוד שירות (קיטור):</strong> 1 ליטר</li>\n<li><strong>משאבה:</strong> סיבובית (Rotary)</li>\n<li><strong>בקרת PID:</strong> 3 תרמוסטטים PID (ראש, דוד קפה ודוד קיטור)</li>\n<li><strong>מידות (ר×ע×ג):</strong> 32.6×47×42.5 ס\"מ</li>\n<li><strong>משקל נטו:</strong> 31 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight (+ boilers, pump, PID); pump pressure and portafilter size not stated by Bezzera",
+   "sources": [
+    "https://www.bezzera.it/en/machines/duo"
+   ]
+  },
+  {
+   "product_id": 65374,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>דוד קפה:</strong> 1.9 ליטר</li>\n<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>\n<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>\n</ul>",
+   "finding": "missing specs: boiler (+ group type). Note: page lists \"קיבולת מיכל מים: 5.5 ליטר\" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank volume; review that line manually",
+   "sources": [
+    "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+   ]
+  },
+  {
+   "product_id": 64881,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 64880,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 64879,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 64878,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 64877,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 64876,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>\n</ul>",
+   "finding": "missing specs: power (pump pressure not stated by La Marzocco - not added)",
+   "sources": [
+    "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+   ]
+  },
+  {
+   "product_id": 65377,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>דוד קפה:</strong> 1.9 ליטר</li>\n<li><strong>PID:</strong> כן</li>\n</ul>",
+   "finding": "missing basics: coffee boiler volume, PID (portafilter size not stated by Rocket)",
+   "sources": [
+    "https://rocket-espresso.com/products/domestic-models/epica"
+   ]
+  },
+  {
+   "product_id": 65376,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>דוד קפה:</strong> 1.9 ליטר</li>\n<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>\n<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>\n</ul>",
+   "finding": "missing specs: boiler (+ group type). Note: page lists \"קיבולת מיכל מים: 5.5 ליטר\" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank volume; review that line manually",
+   "sources": [
+    "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+   ]
+  },
+  {
+   "product_id": 65375,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>דוד קפה:</strong> 1.9 ליטר</li>\n<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>\n<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>\n</ul>",
+   "finding": "missing specs: boiler (+ group type). Note: page lists \"קיבולת מיכל מים: 5.5 ליטר\" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank volume; review that line manually",
+   "sources": [
+    "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 82155,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע קרם לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 77069,
+   "name": "ערכת התאמה אישית מעץ מייפל למכונת La Marzocco Linea Mini",
+   "missing": [
+    "power",
+    "dimensions",
+    "weight",
+    "water_tank",
+    "boiler",
+    "pressure"
+   ],
+   "reason": "accessory (maple customization kit), not a machine - machine specs do not apply"
+  },
+  {
+   "product_id": 67399,
+   "name": "מכונת אספרסו רוקט- V מוציפיאטו כרונומטרו V Rocket Mozzafiato Cronometro",
+   "missing": [
+    "water_tank",
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official source: Mozzafiato Cronometro V is discontinued; rocket-espresso.com lists only the Mozzafiato FAST (model page for the old version returns HTTP 500)"
+  },
+  {
+   "product_id": 67284,
+   "name": "מכונת קפה מקצועית בזרה Bezzera BZ10 Professional Coffee Machine",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: Bezzera does not state pump pressure or portafilter size for the BZ10 (all other specs already on page)"
+  },
+  {
+   "product_id": 67169,
+   "name": "מכונת קפה מקצועית Bezzera Magica MN PID",
+   "missing": [
+    "portafilter"
+   ],
+   "reason": "no official value: Bezzera does not state portafilter size for the Magica"
+  },
+  {
+   "product_id": 67167,
+   "name": "מכונת קפה מקצועית Bezzera Aria Top Black",
+   "missing": [
+    "water_tank",
+    "pressure"
+   ],
+   "reason": "contradiction: page says water tank 4 ליטר (and boiler 2 L, 1350-1550 W), official Aria MN PID data table says tank 3 lt (boiler 1.5 lt, 1200 W); \"Aria Top\" not listed by that name on bezzera.it"
+  },
+  {
+   "product_id": 67163,
+   "name": "מכונת קפה מקצועית בזרה Bezzera DUO MN",
+   "missing": [
+    "pressure"
+   ],
+   "reason": "no official value: Bezzera does not state pump pressure for the DUO"
+  },
+  {
+   "product_id": 67160,
+   "name": "La Pavoni Professional PLQ מכונת קפה מנוף לה פבוני פרופשיונאל",
+   "missing": [
+    "water_tank"
+   ],
+   "reason": "nothing to add: on a lever machine the water reservoir is the boiler (official \"Water Tank Capacity 1.6 l\"), already on page as נפח דוד 1.6 ליטר"
+  },
+  {
+   "product_id": 67671,
+   "name": "La Pavoni Esperto Abile: מכונת קפה ידנית מקצועית",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "nothing to add: portafilter (52 מ\"מ) already on page; brew pressure not stated (manual lever)"
+  },
+  {
+   "product_id": 67601,
+   "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Domus Bar",
+   "missing": [
+    "weight",
+    "boiler",
+    "portafilter"
+   ],
+   "reason": "version mismatch: page describes the previous Domus Bar (7-step grinder); lapavoni.com lists only the New Domus Bar (stepless grinder, different dimensions) - specs not safely transferable"
+  },
+  {
+   "product_id": 67263,
+   "name": "מכונת קפה מקצועית בזרה Bezzera Hobby 01",
+   "missing": [
+    "pressure"
+   ],
+   "reason": "no official value: Bezzera does not state pump pressure for the Hobby 01"
+  },
+  {
+   "product_id": 65240,
+   "name": "מבצע - מכונת קפה רוקט אפרטמנטו",
+   "missing": [
+    "dimensions",
+    "weight",
+    "water_tank",
+    "portafilter"
+   ],
+   "reason": "version mismatch: page describes the previous Appartamento (white/copper inserts, ULKA pump); rocket-espresso.com lists only the updated Appartamento, and its own web page and catalog disagree on depth (439.5 vs 425 mm); portafilter size not stated"
+  },
+  {
+   "product_id": 65163,
+   "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Gran Caffe GCM",
+   "missing": [
+    "portafilter"
+   ],
+   "reason": "no official source: Gran Caffe GCM is not listed on lapavoni.com (product URL returns HTTP 500)"
+  },
+  {
+   "product_id": 65025,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini נירוסטה לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 65022,
+   "name": "מבצע - מכונת קפה רוקט אפרטמנטו שחור נחושת",
+   "missing": [
+    "dimensions",
+    "weight",
+    "water_tank",
+    "portafilter"
+   ],
+   "reason": "version mismatch: page describes the previous Appartamento (white/copper inserts, ULKA pump); rocket-espresso.com lists only the updated Appartamento, and its own web page and catalog disagree on depth (439.5 vs 425 mm); portafilter size not stated"
+  },
+  {
+   "product_id": 64990,
+   "name": "מכונת אספרסו רוקט אר 60 וי - Rocket R 60V",
+   "missing": [
+    "boiler",
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official source: R 60V is discontinued; not on rocket-espresso.com (URL returns HTTP 500)"
+  },
+  {
+   "product_id": 64887,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע לבן לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64886,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע שחור לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64885,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע אדום לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64884,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע צהוב לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64883,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע תכלת לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64882,
+   "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע אפור לינאה מיני",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure or portafilter size for the Linea Mini"
+  },
+  {
+   "product_id": 64867,
+   "name": "מכונת אספרסו מקצועית La Marzocco GS3 MP",
+   "missing": [
+    "pressure"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure for the GS3"
+  },
+  {
+   "product_id": 65195,
+   "name": "מכונת אספרסו רוקט - ROCKET R Cinquantotto",
+   "missing": [
+    "pressure",
+    "portafilter"
+   ],
+   "reason": "no official source: R Cinquantotto (R58) is discontinued and replaced by the R58 TUNE, whose specs differ; old model not on rocket-espresso.com"
+  },
+  {
+   "product_id": 64868,
+   "name": "מכונת אספרסו מקצועית La Marzocco GS3 AV",
+   "missing": [
+    "pressure"
+   ],
+   "reason": "no official value: La Marzocco does not state pump pressure for the GS3"
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 82622,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 81092,
+   "spec": "pid",
+   "value": "Dual PID (coffee and steam)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+  },
+  {
+   "product_id": 81092,
+   "spec": "boiler_type",
+   "value": "Independent Saturated Boilers: separate saturated boilers for each group head",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+  },
+  {
+   "product_id": 81086,
+   "spec": "group_type",
+   "value": "Saturated Groups",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_pb_eng.pdf"
+  },
+  {
+   "product_id": 81044,
+   "spec": "group_type",
+   "value": "Saturated Groups",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_pb_eng.pdf"
+  },
+  {
+   "product_id": 76875,
+   "spec": "pid",
+   "value": "Dual PID (coffee and steam)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+  },
+  {
+   "product_id": 76875,
+   "spec": "boiler_type",
+   "value": "Independent Saturated Boilers: separate saturated boilers for each group head",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/data_sheet_KB90-EN.pdf"
+  },
+  {
+   "product_id": 67670,
+   "spec": "boiler",
+   "value": "1.8 L copper heat-exchange boiler",
+   "url": "https://cdn.sanity.io/files/zhlpxy7s/production/f6be58bcd76781b4c2bd99be8a9cb112402d0553.pdf"
+  },
+  {
+   "product_id": 67670,
+   "spec": "group_type",
+   "value": "redesigned E61 brew group",
+   "url": "https://cdn.sanity.io/files/zhlpxy7s/production/f6be58bcd76781b4c2bd99be8a9cb112402d0553.pdf"
+  },
+  {
+   "product_id": 67638,
+   "spec": "power",
+   "value": "Resistance 1200 W (220-240 V)",
+   "url": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67638,
+   "spec": "voltage",
+   "value": "Power supply 220 - 240 V~ / 50-60 Hz",
+   "url": "https://www.bezzera.it/en/machines/aria"
+  },
+  {
+   "product_id": 67622,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 52 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/expo"
+  },
+  {
+   "product_id": 67605,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 52 mm (Europiccola)",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67604,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 52 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/professional-rame-gold"
+  },
+  {
+   "product_id": 67603,
+   "spec": "weight",
+   "value": "Net weight 18.000 kg",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+  },
+  {
+   "product_id": 67603,
+   "spec": "boiler",
+   "value": "Boiler Type: Single Boiler; Boiler Capacity: 0.8 l",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+  },
+  {
+   "product_id": 67603,
+   "spec": "pump",
+   "value": "Pump type: Vibration Pump",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+  },
+  {
+   "product_id": 67603,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 58 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+  },
+  {
+   "product_id": 67283,
+   "spec": "weight",
+   "value": "Net weight MATRIX DE 32,2 kg",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67161,
+   "spec": "dimensions",
+   "value": "Product Width 200 / Depth 335 / Height 490 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/europiccola-lusso"
+  },
+  {
+   "product_id": 67153,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 52 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/esperto-edotto"
+  },
+  {
+   "product_id": 67152,
+   "spec": "power",
+   "value": "Resistance 1250 - 1450 W (220-240 V)",
+   "url": "https://www.bezzera.it/en/machines/strega"
+  },
+  {
+   "product_id": 67152,
+   "spec": "voltage",
+   "value": "Power supply 220 - 240 V~ / 50-60 Hz",
+   "url": "https://www.bezzera.it/en/machines/strega"
+  },
+  {
+   "product_id": 67152,
+   "spec": "weight",
+   "value": "Net weight 30 kg (vibration pump) TOP",
+   "url": "https://www.bezzera.it/en/machines/strega"
+  },
+  {
+   "product_id": 67602,
+   "spec": "weight",
+   "value": "Net weight 18.000 kg",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+  },
+  {
+   "product_id": 67602,
+   "spec": "boiler",
+   "value": "Boiler Type: Single Boiler; Boiler Capacity: 0.8 l",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+  },
+  {
+   "product_id": 67602,
+   "spec": "pump",
+   "value": "Pump type: Vibration Pump",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+  },
+  {
+   "product_id": 67602,
+   "spec": "portafilter",
+   "value": "Filter holder internal diameter (with filter): 58 mm",
+   "url": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+  },
+  {
+   "product_id": 67285,
+   "spec": "voltage",
+   "value": "Power 220–240 V~ / 50-60 Hz",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "power",
+   "value": "Coffee heating element 800 W",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "power",
+   "value": "Service heating element 1200 W (220-240 V)",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "boiler",
+   "value": "Coffee boiler 0,45 lt",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "boiler",
+   "value": "Service boiler 1 lt",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "dimensions",
+   "value": "Width 310 / Depth 470 / Height 420 mm",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67285,
+   "spec": "weight",
+   "value": "Net weight MATRIX MN 33 kg",
+   "url": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67202,
+   "spec": "voltage",
+   "value": "Power 220–240 V~ / 50-60 Hz",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "power",
+   "value": "Coffee heating element 800 W",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "power",
+   "value": "Service heating element 1100 - 1300 W (220-240 V)",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "boiler",
+   "value": "Coffee boiler 0,45 lt",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "boiler",
+   "value": "Service boiler 1 lt",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "pump",
+   "value": "hydraulic system powered by a rotary pump",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "pid",
+   "value": "DUO DE - 3 PID thermostats",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "dimensions",
+   "value": "Width 326 / Depth 470 / Height 425 mm",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 67202,
+   "spec": "weight",
+   "value": "Net weight DUO DE 31 kg",
+   "url": "https://www.bezzera.it/en/machines/duo"
+  },
+  {
+   "product_id": 65374,
+   "spec": "boiler",
+   "value": "Coffee boiler capacity 1.9 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65374,
+   "spec": "boiler",
+   "value": "Steam boiler capacity 3.6 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65374,
+   "spec": "group_type",
+   "value": "fully saturated group",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 64881,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 64880,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 64879,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 64878,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 64877,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 64876,
+   "spec": "power",
+   "value": "Wattage (max) 1816 (220V) - 2130 (240V)",
+   "url": "https://www.lamarzocco.com/it/wp-content/uploads/2023/04/product_brochure_linea_micra_eng.pdf"
+  },
+  {
+   "product_id": 65377,
+   "spec": "boiler",
+   "value": "Coffee boiler capacity 1.9 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/epica"
+  },
+  {
+   "product_id": 65377,
+   "spec": "pid",
+   "value": "Pid pressure control: Yes",
+   "url": "https://rocket-espresso.com/products/domestic-models/epica"
+  },
+  {
+   "product_id": 65376,
+   "spec": "boiler",
+   "value": "Coffee boiler capacity 1.9 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65376,
+   "spec": "boiler",
+   "value": "Steam boiler capacity 3.6 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65376,
+   "spec": "group_type",
+   "value": "fully saturated group",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65375,
+   "spec": "boiler",
+   "value": "Coffee boiler capacity 1.9 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65375,
+   "spec": "boiler",
+   "value": "Steam boiler capacity 3.6 l",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  },
+  {
+   "product_id": 65375,
+   "spec": "group_type",
+   "value": "fully saturated group",
+   "url": "https://rocket-espresso.com/products/domestic-models/r-nine-one"
+  }
+ ]
+}
