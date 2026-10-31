@@ -1,0 +1,804 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+81462,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul>",missing specs: לחץ משאבה,specfill_auto_machines.json
+81458,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul>",missing specs: לחץ משאבה,specfill_auto_machines.json
+64923,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul>",missing specs: לחץ משאבה,specfill_auto_machines.json
+81455,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul>",missing specs: לחץ משאבה,specfill_auto_machines.json
+64929,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul>",missing specs: לחץ משאבה,specfill_auto_machines.json
+78267,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>
+<li><strong>מידות (ר×ג×ע):</strong> 26×32.5×43.7 ס""מ</li>
+<li><strong>משקל:</strong> 8.8 ק""ג</li>
+<li><strong>לח","missing specs: מתח / הספק, מידות (ר×ג×ע), משקל, לחץ משאבה, מיכל פולים, מערכת חימום",specfill_auto_machines.json
+76545,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>
+<li><strong>מערכת חימום:</strong> Thermoblock</li>
+</ul>","missing specs: מתח / הספק, מערכת חימום",specfill_auto_machines.json
+67216,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 10.2 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.9 ליטר</li>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+<li><strong>מיכל פולים:</strong> 280 גרם</li>
+<","missing specs: משקל, מיכל מים, לחץ משאבה, מיכל פולים, מערכת חימום",specfill_auto_machines.json
+64935,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+<li><strong>מיכל פולים:</strong> 125 גרם</li>
+<li><strong>מערכת חימום:</st","missing specs: מתח / הספק, לחץ משאבה, מיכל פולים, מערכת חימום",specfill_auto_machines.json
+64827,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>
+<li><strong>משקל:</strong> 9.4 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+<li><strong>מיכל פולים:</strong> 1","missing specs: מתח / הספק, משקל, לחץ משאבה, מיכל פולים, מערכת חימום",specfill_auto_machines.json
+64790,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 1450 וואט</li>
+<li><strong>מידות (ר×ג×ע):</strong> 29.5×41.9×44.4 ס""מ</li>
+<li><strong>משקל:</strong> 10 ק""ג</li>
+</ul>","missing specs: מתח / הספק, מידות (ר×ג×ע), משקל",specfill_auto_machines.json
+64786,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח / הספק:</strong> 230 וולט / 2300 וואט</li>
+<li><strong>מידות (ר×ג×ע):</strong> 32×41.5×49.6 ס""מ</li>
+<li><strong>משקל:</strong> 18 ק""ג</li>
+<li><strong>מיכל מים","missing specs: מתח / הספק, מידות (ר×ג×ע), משקל, מיכל מים, לחץ משאבה, מיכל פולים, מערכת חימום",specfill_auto_machines.json
+77156,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>
+</ul>","missing specs: הספק, מתח, לחץ משאבה",specfill_auto_machines.json
+64897,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>
+</ul>","missing specs: הספק, מתח, לחץ משאבה",specfill_auto_machines.json
+67618,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1400 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>משקל:</strong> 8 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>","missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+67162,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1400 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>משקל:</strong> 8 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>","missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+65011,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1400 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>משקל:</strong> 8 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>","missing specs: הספק, מתח, משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+68336,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ג×ע):</strong> 20×32.5×45.5 ס""מ</li>
+<li><strong>משקל:</strong> 8.1 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (מקסימלי)</li>
+<li><strong>מיכל פולים:</","missing specs: מידות (ר×ג×ע), משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+67330,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 9.3 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>
+<li><strong>מיכל פולים:</strong> 270 גרם (2×135 גרם, דו-תאי)</li>
+</ul>","missing specs: משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+67329,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 9.25 ק""ג</li>
+<li><strong>לחץ משאבה:</strong> 15 בר (סטטי, מקסימלי)</li>
+<li><strong>מיכל פולים:</strong> 270 גרם (2×135 גרם, דו-תאי)</li>
+</ul>","missing specs: משקל, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+67296,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>משקל:</strong> 10.6 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</li>
+<li>","missing specs: הספק, מתח, משקל, מיכל מים, לחץ משאבה",specfill_auto_machines.json
+65102,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>משקל:</strong> 10.4 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</li>
+<li>","missing specs: הספק, מתח, משקל, מיכל מים, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+67218,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ג×ע):</strong> 25.5×33.5×20 ס""מ</li>
+<li><strong>משקל:</strong> 2.3 ק""ג</li>
+</ul>","missing specs: מידות (ר×ג×ע), משקל",specfill_auto_machines.json
+64944,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 4.6 ק""ג</li>
+</ul>",missing specs: משקל,specfill_auto_machines.json
+64943,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ג×ע):</strong> 16.7×35.7×35.9 ס""מ</li>
+<li><strong>משקל:</strong> 2.7 ק""ג</li>
+</ul>","missing specs: מידות (ר×ג×ע), משקל",specfill_auto_machines.json
+67274,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1455 וואט</li>
+<li><strong>מיכל פולים:</strong> 250 גרם</li>
+</ul>","missing specs: הספק, מיכל מים, מיכל פולים",specfill_auto_machines.json
+67275,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מיכל פולים:</strong> 250 גרם</li>
+</ul>","missing specs: מיכל מים, מיכל פולים",specfill_auto_machines.json
+67273,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מיכל פולים:</strong> 250 גרם</li>
+</ul>","missing specs: מיכל מים, מיכל פולים",specfill_auto_machines.json
+65231,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מידות (ג×ר×ע):</strong> 39.2×29.9×47 ס""מ</li>
+<li><strong>משקל:</strong> 12 ק""ג</li>
+</ul>","missing specs: מידות (ג×ר×ע), משקל",specfill_auto_machines.json
+65230,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מידות (ג×ר×ע):</strong> 39.2×29.9×47 ס""מ</li>
+<li><strong>משקל:</strong> 12.9 ק""ג</li>
+</ul>","missing specs: מידות (ג×ר×ע), משקל",specfill_auto_machines.json
+65182,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ג×ר×ע):</strong> 37.8×24.7×42 ס""מ</li>
+<li><strong>משקל:</strong> 8.5 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.4 ליטר</li>
+<li><strong>לחץ משאבה:</strong> 1","missing specs: מידות (ג×ר×ע), משקל, מיכל מים, לחץ משאבה, מיכל פולים",specfill_auto_machines.json
+65181,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1500 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>מידות (ג×ר×ע):</strong> 38.5×28.1×46.8 ס""מ</li>
+</ul>","missing specs: הספק, מתח, מידות (ג×ר×ע)",specfill_auto_machines.json
+65088,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1500 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט</li>
+<li><strong>מידות (ג×ר×ע):</strong> 38.5×28.1×46.8 ס""מ</li>
+</ul>","missing specs: הספק, מתח, מידות (ג×ר×ע)",specfill_auto_machines.json
+65166,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 8.5 ק""ג</li>
+</ul>",missing specs: משקל,specfill_auto_machines.json
+68295,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות:</strong> 6.2×7.1×15.6 ס""מ</li>
+<li><strong>משקל:</strong> 336 גרם</li>
+<li><strong>מיכל מים:</strong> 80 מ""ל</li>
+</ul>","missing specs: מידות, משקל, מיכל מים",specfill_auto_machines.json
+68298,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות:</strong> 6×7×17.5 ס""מ</li>
+<li><strong>מיכל מים:</strong> 70 מ""ל</li>
+</ul>","missing specs: מידות, מיכל מים",specfill_auto_machines.json
+64872,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הפעלה:</strong> ידנית, ללא חשמל וללא סוללות</li>
+<li><strong>מידות:</strong> 6×7×12.9 ס""מ</li>
+<li><strong>משקל:</strong> 290 גרם</li>
+<li><strong>מיכל מים:</strong","missing specs: הפעלה, מידות, משקל, מיכל מים",specfill_auto_machines.json
+65476,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1000 וואט</li>
+<li><strong>מידות (ר×ג×ע):</strong> 22×44×30 ס""מ</li>
+<li><strong>משקל:</strong> 4.57 ק""ג</li>
+</ul>","missing specs: הספק, מידות (ר×ג×ע), משקל",specfill_auto_machines.json
+79795,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1300 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 26×41.6×42.3 ס""מ</li>
+<li><strong>משקל:</stro","missing specs: power, dimensions, weight, water_tank, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+69416,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מיכל מים:</strong> 2.1 ליטר</li>
+<li><strong>קוטר ידית:</strong> 58 מ","missing specs: power, water_tank, portafilter",specfill_espresso_gaggia_rancilio_crem_more.json
+69413,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מיכל מים:</strong> 2.1 ליטר</li>
+<li><strong>קוטר ידית:</strong> 58 מ","missing specs: power, water_tank, portafilter",specfill_espresso_gaggia_rancilio_crem_more.json
+67159,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 8.1 ק""ג</li>
+<li><strong>מיכל מים:</strong> 2.1 ליטר</li>
+<","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67168,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 20×27×35.5 ס""מ</li>
+<li><strong>משקל:</strong> 8.1","missing specs: power, dimensions, weight, water_tank, pressure, portafilter",specfill_espresso_gaggia_rancilio_crem_more.json
+67337,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1900 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 7.6 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67328,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1500 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 8.7 ק""ג</li>
+<li><strong>דוד:</strong> נירוסטה</li>
+<l","missing specs: power, weight, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67309,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1850 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 7.9 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</li>
+<","missing specs: power, weight, water_tank, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67257,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1900 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</li>
+<li><strong>לחץ משאבה:</strong> 15 ב","missing specs: power, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65028,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1900 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 7.7 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר</","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65112,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1900 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 26×44×38 ס""מ</li>
+<li><strong>משקל:</strong> 9.6 ק","missing specs: power, dimensions, weight, water_tank, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65134,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1400 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>דוד:</strong> נירוסטה</li>
+<li><strong>לחץ משאבה:</strong> 15 בר</li>
+</ul","missing specs: power, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65131,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1400 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 25.6×44.7×31.5 ס""מ</li>
+<li><strong>משקל:</strong>","missing specs: power, dimensions, weight, water_tank, boiler, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65477,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 28×44.4×34.8 ס""מ</li>
+<li><strong>משקל:</","missing specs: power, dimensions, weight",specfill_espresso_gaggia_rancilio_crem_more.json
+65469,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 28×44.6×35.1 ס""מ</li>
+<li><strong>משקל:</stron","missing specs: power, dimensions, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+65446,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> עד 15 בר (סטטי)</li>
+</ul>",missing specs: pressure,specfill_espresso_gaggia_rancilio_crem_more.json
+65442,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>לחץ משאבה:</strong> עד 15 בר (סטטי)</li>
+</ul>",missing specs: pressure,specfill_espresso_gaggia_rancilio_crem_more.json
+65437,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות:</strong> 7.1×7.8×10.6 ס""מ</li>
+<li><strong>משקל:</strong> 350 גרם</li>
+<li><strong>מיכל מים:</strong> 80 מ""ל</li>
+<li><strong>לחץ מקסימלי:</strong> 18 בר</li","missing specs: dimensions, weight, water_tank, pressure, portafilter",specfill_espresso_gaggia_rancilio_crem_more.json
+68297,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות:</strong> 6×7×17.5 ס""מ</li>
+<li><strong>קוטר סלסלה:</strong> 36 מ""מ</li>
+</ul>","missing specs: dimensions, portafilter",specfill_espresso_gaggia_rancilio_crem_more.json
+67370,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 2150 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 30×45.8×42 ס""מ</li>
+<li><strong>משקל:<","missing specs: power, dimensions, weight, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67369,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 2250 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>משקל:</strong> 30 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר<","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67227,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 2150 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>משקל:</strong> 30 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר<","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+67371,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 2250 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>משקל:</strong> 30 ק""ג</li>
+<li><strong>מיכל מים:</strong> 1.8 ליטר<","missing specs: power, weight, water_tank",specfill_espresso_gaggia_rancilio_crem_more.json
+67193,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 2800 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>מידות (ר×ע×ג):</strong> 55×57.5×46.5 ס""מ</li>
+<li><strong>משקל:</st","missing specs: power, dimensions, weight, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+64789,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 3350 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+</ul>",missing specs: power,specfill_espresso_gaggia_rancilio_crem_more.json
+65382,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קיבולת מים בצילינדר:</strong> 90 מ""ל</li>
+<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>
+</ul>","missing specs: water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+64854,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>
+</ul>",missing specs: pressure,specfill_espresso_gaggia_rancilio_crem_more.json
+64725,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>
+</ul>",missing specs: pressure,specfill_espresso_gaggia_rancilio_crem_more.json
+64896,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>
+</ul>",missing specs: pressure,specfill_espresso_gaggia_rancilio_crem_more.json
+68271,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קוטר ידית:</strong> 58 מ""מ</li>
+</ul>",missing specs: portafilter,specfill_espresso_gaggia_rancilio_crem_more.json
+67158,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>
+<li><strong>משקל:</strong> 8.1 ק""ג</li>
+<li><strong>מיכל מים:</strong> 2.1 ליטר</li>
+<","missing specs: power, weight, water_tank, pressure",specfill_espresso_gaggia_rancilio_crem_more.json
+82968,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>לחץ מיצוי:</strong> 9 בר (המשאבה מעלה את הלחץ ל־9 בר לאחר הפרה־אינפיוז'ן)</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+76318,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>לחץ מיצוי:</strong> 9 בר (המשאבה מעלה את הלחץ ל־9 בר לאחר הפרה־אינפיוז'ן)</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+77225,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1000 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+67645,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1500 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>
+<li><strong>דוד:</strong> כ־1.9 ליטר, נירוסטה, ","missing specs: power, pressure, boiler, pump, water_tank, dimensions, weight",specfill_espresso_lelit_ecm_profitec.json
+67349,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1500 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>טווח כיוון לחץ החליטה:</strong> כ־8.5 עד 12 בר</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+67156,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1000 וואט (גרסת 230 וולט, 50 הרץ)</li>
+<li><strong>לחץ חליטה:</strong> מכויל במפעל ל־9–10 בר</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+67650,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 2200 וואט (גרסת 230 וולט)</li>
+<li><strong>לחץ מיצוי:</strong> 9 בר (המיצוי מתחיל ב־9 בר לאחר הפרה־אינפיוז'ן)</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+65104,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 22.5×52×35.5 ס""מ</li>
+<li><strong>משקל:</strong> 18.5 ק""ג</li>
+<li><strong>דוד:</strong> 1.8 ליטר עם מחליף חום מנירוסטה AISI316L</li>
+</ul>","missing specs: dimensions, weight, boiler",specfill_espresso_lelit_ecm_profitec.json
+65040,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>ידית חליטה:</strong> LELIT58 (58 מ""מ), ראש חליטה L58E</li>
+</ul>",missing specs: portafilter,specfill_espresso_lelit_ecm_profitec.json
+64680,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>ידית חליטה:</strong> LELIT58 (58 מ""מ), ראש חליטה L58E</li>
+</ul>",missing specs: portafilter,specfill_espresso_lelit_ecm_profitec.json
+64679,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>ידית חליטה:</strong> LELIT58 (58 מ""מ), ראש חליטה L58E</li>
+</ul>",missing specs: portafilter,specfill_espresso_lelit_ecm_profitec.json
+64675,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט)</li>
+<li><strong>לחץ מיצוי:</strong> 9 בר (המיצוי מתחיל ב־9 בר לאחר הפרה־אינפיוז'ן)</li>
+</ul>","missing specs: power, pressure",specfill_espresso_lelit_ecm_profitec.json
+64900,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>
+</ul>",missing specs: pressure,specfill_espresso_lelit_ecm_profitec.json
+82622,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+81092,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>בקרת טמפרטורה:</strong> PID כפול (קפה וקיטור)</li>
+<li><strong>דודי קפה:</strong> דוד רווי נפרד לכל ראש חליטה</li>
+</ul>","missing basics: PID, boiler type (water tank n/a - plumbed-in; pump pressure not stated by La Marzocco)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+81086,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>ראשי חליטה:</strong> רוויים (Saturated Groups)</li>
+</ul>",missing basics: group type (water tank n/a - plumbed-in; pump pressure and portafilter size not stated by La Marzocco),specfill_espresso_rocket_lm_bezzera_pavoni.json
+81044,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>ראשי חליטה:</strong> רוויים (Saturated Groups)</li>
+</ul>",missing basics: group type (water tank n/a - plumbed-in; pump pressure and portafilter size not stated by La Marzocco),specfill_espresso_rocket_lm_bezzera_pavoni.json
+76875,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>בקרת טמפרטורה:</strong> PID כפול (קפה וקיטור)</li>
+<li><strong>דודי קפה:</strong> דוד רווי נפרד לכל ראש חליטה</li>
+</ul>","missing basics: PID, boiler type (water tank n/a - plumbed-in; pump pressure not stated by La Marzocco)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67670,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>דוד:</strong> 1.8 ליטר, נחושת, עם מחליף חום</li>
+<li><strong>ראש חליטה:</strong> E61 (בעיצוב מחודש)</li>
+</ul>","missing basics: boiler volume/material, group type (portafilter size not stated by Rocket)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67638,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1200 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+</ul>",missing specs: power (pump pressure and portafilter size not stated by Bezzera),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67622,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ""מ</li>
+</ul>",missing specs: portafilter (water tank = the 1.6 L boiler already on page; brew pressure not stated - manual lever),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67605,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ""מ</li>
+</ul>",missing specs: portafilter (Europiccola Nero is a colour/finish variant of the Europiccola; brew pressure not stated - manual lever),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67604,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ""מ</li>
+</ul>",missing specs: portafilter (brew pressure not stated - manual lever),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67603,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>משקל נטו:</strong> 18 ק""ג</li>
+<li><strong>דוד:</strong> יחיד, 0.8 ליטר</li>
+<li><strong>משאבה:</strong> ויברציה</li>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם","missing specs: weight, boiler, portafilter (+ pump type)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67283,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל נטו:</strong> 32.2 ק""ג</li>
+</ul>",missing specs: weight (pump pressure and portafilter size not stated by Bezzera),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67161,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 20×33.5×49 ס""מ</li>
+</ul>",missing specs: dimensions (water tank = the 0.8 L boiler already on page; brew pressure not stated - manual lever),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67153,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם פילטר):</strong> 52 מ""מ</li>
+</ul>",missing specs: portafilter (brew pressure not stated - manual lever),specfill_espresso_rocket_lm_bezzera_pavoni.json
+67152,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 1250–1450 וואט</li>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>משקל נטו:</strong> 30 ק""ג</li>
+</ul>","missing specs: power, weight (pump pressure and portafilter size not stated by Bezzera)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67602,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>משקל נטו:</strong> 18 ק""ג</li>
+<li><strong>דוד:</strong> יחיד, 0.8 ליטר</li>
+<li><strong>משאבה:</strong> ויברציה</li>
+<li><strong>קוטר פנימי של מחזיק פילטר (עם","missing specs: weight, boiler, portafilter (+ pump type)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67285,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>גוף חימום קפה:</strong> 800 וואט</li>
+<li><strong>גוף חימום שירות (קיטור):</strong> 1200 וואט</li>
+<li><stron","missing specs: power, dimensions, weight (+ boiler volumes); pump pressure not stated by Bezzera",specfill_espresso_rocket_lm_bezzera_pavoni.json
+67202,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>
+<li><strong>גוף חימום קפה:</strong> 800 וואט</li>
+<li><strong>גוף חימום שירות (קיטור):</strong> 1100–1300 וואט</li>
+<li><","missing specs: power, dimensions, weight (+ boilers, pump, PID); pump pressure and portafilter size not stated by Bezzera",specfill_espresso_rocket_lm_bezzera_pavoni.json
+65374,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>דוד קפה:</strong> 1.9 ליטר</li>
+<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>
+<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>
+</ul>","missing specs: boiler (+ group type). Note: page lists ""קיבולת מיכל מים: 5.5 ליטר"" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank",specfill_espresso_rocket_lm_bezzera_pavoni.json
+64881,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+64880,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+64879,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+64878,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+64877,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+64876,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 1816 וואט (220 וולט) – 2130 וואט (240 וולט)</li>
+</ul>",missing specs: power (pump pressure not stated by La Marzocco - not added),specfill_espresso_rocket_lm_bezzera_pavoni.json
+65377,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>דוד קפה:</strong> 1.9 ליטר</li>
+<li><strong>PID:</strong> כן</li>
+</ul>","missing basics: coffee boiler volume, PID (portafilter size not stated by Rocket)",specfill_espresso_rocket_lm_bezzera_pavoni.json
+65376,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>דוד קפה:</strong> 1.9 ליטר</li>
+<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>
+<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>
+</ul>","missing specs: boiler (+ group type). Note: page lists ""קיבולת מיכל מים: 5.5 ליטר"" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank",specfill_espresso_rocket_lm_bezzera_pavoni.json
+65375,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>דוד קפה:</strong> 1.9 ליטר</li>
+<li><strong>דוד קיטור:</strong> 3.6 ליטר</li>
+<li><strong>ראש חליטה:</strong> רווי לחלוטין (Fully saturated group)</li>
+</ul>","missing specs: boiler (+ group type). Note: page lists ""קיבולת מיכל מים: 5.5 ליטר"" - Rocket gives 5.5 L as TOTAL BOILER CAPACITY (1.9+3.6), not a tank",specfill_espresso_rocket_lm_bezzera_pavoni.json
+82381,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>
+<li><strong>מהירות:</strong> 1950 סל""ד (ללא עומס)</li>
+<li><strong>מיכל פולים:</strong> כ-250 גרם</li>
+<li><s","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+82379,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>
+<li><strong>מהירות:</strong> 1950 סל""ד (ללא עומס)</li>
+<li><strong>מיכל פולים:</strong> כ-250 גרם</li>
+<li><s","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+78678,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 200 וואט (220–240 וולט, 50/60 הרץ)</li>
+<li><strong>מהירות:</strong> 1950 סל""ד (ללא עומס)</li>
+<li><strong>מיכל פולים:</strong> 30 גרם (סטנדרטי) · 10","missing specs: power, speed, hopper, dimensions",specfill_grinders_electric.json
+67278,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 120 וואט (220–240 וולט, 50/60 הרץ)</li>
+</ul>",missing specs: power,specfill_grinders_electric.json
+80356,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 310 וואט</li>
+<li><strong>מהירות:</strong> 1350 סל""ד</li>
+<li><strong>מיכל פולים:</strong> 350 גרם</li>
+<li><strong>מידות (ר×ע×ג):</strong> 12.4×19.2","missing specs: power, speed, hopper, dimensions",specfill_grinders_electric.json
+67367,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>
+<li><strong>הספק:</strong> 310 וואט</li>
+<li><strong>מהירות:</strong> 1350 סל""ד</li>
+</ul>","missing specs: burrs, power, speed",specfill_grinders_electric.json
+67155,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>
+<li><strong>הספק:</strong> 310 וואט</li>
+<li><strong>מהירות:</strong> 1350 סל""ד</li>
+</ul>","missing specs: burrs, power, speed",specfill_grinders_electric.json
+67165,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>
+<li><strong>הספק:</strong> 310 וואט</li>
+<li><strong>מהירות:</strong> 1350 סל""ד</li>
+</ul>","missing specs: burrs, power, speed",specfill_grinders_electric.json
+67150,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מיכל פולים:</strong> 1.2 ק""ג</li>
+</ul>",missing specs: hopper,specfill_grinders_electric.json
+67149,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מיכל פולים:</strong> 1.2 ק""ג</li>
+</ul>",missing specs: hopper,specfill_grinders_electric.json
+67148,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 23×29.5×57 ס""מ</li>
+</ul>",missing specs: dimensions,specfill_grinders_electric.json
+65402,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 320 וואט</li>
+<li><strong>מהירות:</strong> 1650 סל""ד</li>
+<li><strong>מיכל פולים:</strong> 45 גרם</li>
+<li><strong>מידות (ר×ע×ג):</strong> 12.8×26×32","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+64807,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 320 וואט</li>
+<li><strong>מהירות:</strong> 1650 סל""ד</li>
+<li><strong>מיכל פולים:</strong> 45 גרם</li>
+<li><strong>מידות (ר×ע×ג):</strong> 12.8×26×32","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+64849,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 800 וואט</li>
+<li><strong>מהירות:</strong> 1400 סל""ד</li>
+<li><strong>מיכל פולים:</strong> 1.6 ק""ג</li>
+<li><strong>מידות (ר×ע×ג):</strong> 24×31.5×6","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+77026,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 740 וואט (220–240 וולט, 50–60 הרץ)</li>
+<li><strong>מהירות:</strong> 1480 סל""ד (50 הרץ) / 1700 סל""ד (60 הרץ)</li>
+<li><strong>מיכל פולים:</stron","missing specs: power, speed, hopper, dimensions",specfill_grinders_electric.json
+77024,,description,ok,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>הספק:</strong> 500 וואט (220–240 וולט, 50–60 הרץ)</li>
+<li><strong>מהירות:</strong> 1480 סל""ד (50 הרץ) / 1700 סל""ד (60 הרץ)</li>
+<li><strong>מיכל פולים:</stron","missing specs: power, speed, hopper",specfill_grinders_electric.json
+67319,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מיכל פולים:</strong> 600 גרם</li>
+</ul>",missing specs: hopper,specfill_grinders_electric.json
+68287,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 300 וואט (220–240 וולט, 50–60 הרץ)</li>
+<li><strong>מהירות:</strong> 1380 סל""ד (50 הרץ) / 1650 סל""ד (60 הרץ)</li>
+<li><strong>מיכל פולים:</strong> 60","missing specs: power, speed, hopper, dimensions, weight",specfill_grinders_electric.json
+67326,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 300 וואט (220–240 וולט, 50–60 הרץ)</li>
+<li><strong>מהירות:</strong> 1380 סל""ד (50 הרץ) / 1650 סל""ד (60 הרץ)</li>
+<li><strong>מידות (ר×ע×ג):</strong>","missing specs: power, speed, dimensions, weight",specfill_grinders_electric.json
+67635,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מהירות:</strong> 1400 סל""ד (50 הרץ)</li>
+<li><strong>משקל:</strong> 6.2 ק""ג</li>
+</ul>","missing specs: speed, weight",specfill_grinders_electric.json
+67607,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מהירות:</strong> 1350 סל""ד (בגרסת 230 וולט)</li>
+<li><strong>מיכל פולים:</strong> 250 גרם</li>
+<li><strong>מידות (ר×ע×ג):</strong> 13.5×22.5×34 ס""מ</li>
+<li><strong","missing specs: speed, hopper, dimensions, weight",specfill_grinders_electric.json
+68281,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ג×ר×ע):</strong> 37.4×22.7×12 ס""מ</li>
+</ul>",missing specs: dimensions,specfill_grinders_electric.json
+67243,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 100 וואט (מרבי)</li>
+<li><strong>מידות (ג×ר×ע):</strong> 25.5×10.5×16.2 ס""מ</li>
+</ul>","missing specs: power, dimensions",specfill_grinders_electric.json
+65433,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 21.1 ק""ג (נטו)</li>
+</ul>",missing specs: weight,specfill_grinders_electric.json
+79432,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+68383,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65117,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65116,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65058,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65115,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+64808,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+64991,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> גוף מאלומיניום, ידית וכפתור מכסה מתרמופלסטיק</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65099,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65151,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום; מכסה, מסגרת המסננת ורצועת הידית מפוליפרופילן; רשת המסננת מפוליאסטר; אטם מגומי סיליקון</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65223,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>קיבולת:</strong> 1–4 כוסות</li>
+</ul>",missing specs: capacity,specfill_grinders_manual_brewing.json
+65221,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> קנקן מזכוכית עמידה בחום, דריפר V60 מפוליפרופילן, חבק מגומי סיליקון</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65092,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פלסטיק PCT</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+65147,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 16.7×9.5×19.5 ס""מ</li>
+<li><strong>מיכל פולים:</strong> 100 גרם</li>
+</ul>","missing specs: dimensions, hopper",specfill_grinders_manual_brewing.json
+65137,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 15×5.3×19 ס""מ</li>
+<li><strong>משקל:</strong> כ-400 גרם (כולל אריזה)</li>
+</ul>","missing specs: dimensions, weight",specfill_grinders_manual_brewing.json
+65130,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 17.2×9.3×23.1 ס""מ</li>
+<li><strong>מיכל פולים:</strong> 100 גרם</li>
+</ul>","missing specs: dimensions, hopper",specfill_grinders_manual_brewing.json
+65062,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 15×7.2×22 ס""מ</li>
+</ul>",missing specs: dimensions,specfill_grinders_manual_brewing.json
+64744,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מידות (ר×ע×ג):</strong> 16×16×3.2 ס""מ</li>
+</ul>",missing specs: dimensions,specfill_grinders_manual_brewing.json
+65157,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 10 אונקיות (כ-296 מ""ל)</li>
+<li><strong>חומר:</strong> פוליפרופילן, ללא BPA</li>
+</ul>","missing specs: capacity, material",specfill_grinders_manual_brewing.json
+65014,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>נפח:</strong> 8 אונקיות (כ-237 מ""ל)</li>
+<li><strong>חומר:</strong> פוליפרופילן, מכסה הספל מסיליקון, ללא BPA</li>
+</ul>","missing specs: capacity, material",specfill_grinders_manual_brewing.json
+80845,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>חומר:</strong> פלסטיק ללא BPA</li>
+</ul>",missing specs: material,specfill_grinders_manual_brewing.json
+77276,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>קיבולת:</strong> עד 38 אונקיות (כ-1.1 ליטר) תרכיז</li>
+</ul>",missing specs: capacity,specfill_grinders_manual_brewing.json
+78396,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>משקל:</strong> 464 גרם</li>
+</ul>",missing specs: weight,specfill_grinders_manual_brewing.json
+67366,,description,ok,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>הספק:</strong> 310 וואט</li>
+<li><strong>מהירות:</strong> 1350 סל""ד</li>
+<li><strong>חומר הסכינים:</strong> פלדה מוקשית</li>
+</ul>","missing specs: power, speed, burrs",specfill_grinders_manual_brewing.json

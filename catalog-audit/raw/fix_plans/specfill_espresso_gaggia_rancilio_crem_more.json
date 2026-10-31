@@ -1,0 +1,1368 @@
+{
+ "edits": [
+  {
+   "product_id": 79795,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1300 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 26×41.6×42.3 ס\"מ</li>\n<li><strong>משקל:</strong> 17.63 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 2 ליטר</li>\n<li><strong>דוד חליטה:</strong> 0.12 ליטר, פליז ללא עופרת</li>\n<li><strong>דוד קיטור:</strong> 0.9 ליטר, נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (נומינלי)</li>\n<li><strong>לחץ חליטה:</strong> 9 בר, שסתום OPV מתכוונן 6–12 בר</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, water_tank, boiler, pressure",
+   "sources": [
+    "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+   ]
+  },
+  {
+   "product_id": 69416,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מיכל מים:</strong> 2.1 ליטר</li>\n<li><strong>קוטר ידית:</strong> 58 מ\"מ (נירוסטה)</li>\n</ul>",
+   "finding": "missing specs: power, water_tank, portafilter",
+   "sources": [
+    "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+   ]
+  },
+  {
+   "product_id": 69413,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מיכל מים:</strong> 2.1 ליטר</li>\n<li><strong>קוטר ידית:</strong> 58 מ\"מ (נירוסטה)</li>\n</ul>",
+   "finding": "missing specs: power, water_tank, portafilter",
+   "sources": [
+    "https://www.gaggia.com/manual-machines/new-classic-e24/"
+   ]
+  },
+  {
+   "product_id": 67159,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 8.1 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 2.1 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (נומינלי)</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+   ]
+  },
+  {
+   "product_id": 67168,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 20×27×35.5 ס\"מ</li>\n<li><strong>משקל:</strong> 8.1 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 2.1 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (נומינלי)</li>\n<li><strong>קוטר ידית:</strong> 58 מ\"מ (נירוסטה)</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, water_tank, pressure, portafilter",
+   "sources": [
+    "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+   ]
+  },
+  {
+   "product_id": 67337,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1900 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 7.6 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/magenta-plus/"
+   ]
+  },
+  {
+   "product_id": 67328,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1500 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 8.7 ק\"ג</li>\n<li><strong>דוד:</strong> נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, boiler, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/anima-class/"
+   ]
+  },
+  {
+   "product_id": 67309,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1850 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 7.9 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>דוד:</strong> נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, boiler, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+   ]
+  },
+  {
+   "product_id": 67257,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1900 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, water_tank, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+   ]
+  },
+  {
+   "product_id": 65028,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1900 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 7.7 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/magenta-milk/"
+   ]
+  },
+  {
+   "product_id": 65112,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1900 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 26×44×38 ס\"מ</li>\n<li><strong>משקל:</strong> 9.6 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.5 ליטר</li>\n<li><strong>דוד:</strong> נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, water_tank, boiler, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+   ]
+  },
+  {
+   "product_id": 65134,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1400 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>דוד:</strong> נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, boiler, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/brera/"
+   ]
+  },
+  {
+   "product_id": 65131,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1400 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 25.6×44.7×31.5 ס\"מ</li>\n<li><strong>משקל:</strong> 8.5 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.2 ליטר</li>\n<li><strong>דוד:</strong> נירוסטה</li>\n<li><strong>לחץ משאבה:</strong> 15 בר</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, water_tank, boiler, pressure",
+   "sources": [
+    "https://www.gaggia.com/automatic-machines/brera/"
+   ]
+  },
+  {
+   "product_id": 65477,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 28×44.4×34.8 ס\"מ</li>\n<li><strong>משקל:</strong> כ-10 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight",
+   "sources": [
+    "https://hk.jura.com/-/media/global/pdf/manuals-global/home/S8/download_manual_s8_s80.pdf"
+   ]
+  },
+  {
+   "product_id": 65469,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1450 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 28×44.6×35.1 ס\"מ</li>\n<li><strong>משקל:</strong> כ-9 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.9 ליטר (ללא פילטר)</li>\n<li><strong>לחץ משאבה:</strong> עד 15 בר (סטטי)</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, water_tank, pressure",
+   "sources": [
+    "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+   ]
+  },
+  {
+   "product_id": 65446,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> עד 15 בר (סטטי)</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://www.jura.com/-/media/global/pdf/manuals-global/home/C9/download_manual_C9_EA_SA_INTA.pdf"
+   ]
+  },
+  {
+   "product_id": 65442,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>לחץ משאבה:</strong> עד 15 בר (סטטי)</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://us.jura.com/-/media/global/pdf/manuals-global/professional/X10/X10-EA-SA/download_manual_x10_ea_sa.pdf"
+   ]
+  },
+  {
+   "product_id": 65437,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות:</strong> 7.1×7.8×10.6 ס\"מ</li>\n<li><strong>משקל:</strong> 350 גרם</li>\n<li><strong>מיכל מים:</strong> 80 מ\"ל</li>\n<li><strong>לחץ מקסימלי:</strong> 18 בר</li>\n<li><strong>קוטר סלסלה:</strong> 52 מ\"מ</li>\n<li><strong>קיבולת סלסלה:</strong> 18 גרם</li>\n</ul>",
+   "finding": "missing specs: dimensions, weight, water_tank, pressure, portafilter",
+   "sources": [
+    "https://www.wacaco.com/products/picopresso"
+   ]
+  },
+  {
+   "product_id": 68297,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות:</strong> 6×7×17.5 ס\"מ</li>\n<li><strong>קוטר סלסלה:</strong> 36 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: dimensions, portafilter",
+   "sources": [
+    "https://www.wacaco.com/products/minipresso-gr"
+   ]
+  },
+  {
+   "product_id": 67370,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 2150 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 30×45.8×42 ס\"מ</li>\n<li><strong>משקל:</strong> 30 ק\"ג</li>\n<li><strong>לחץ עבודה בדוד:</strong> 0.8–1.2 בר</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, pressure",
+   "sources": [
+    "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+   ]
+  },
+  {
+   "product_id": 67369,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 2250 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>משקל:</strong> 30 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ עבודה בדוד:</strong> 0.8–1.2 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+   ]
+  },
+  {
+   "product_id": 67227,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 2150 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>משקל:</strong> 30 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n<li><strong>לחץ עבודה בדוד:</strong> 0.8–1.2 בר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+   ]
+  },
+  {
+   "product_id": 67371,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 2250 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>משקל:</strong> 30 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 1.8 ליטר</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank",
+   "sources": [
+    "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+   ]
+  },
+  {
+   "product_id": 67193,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 2800 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n<li><strong>מידות (ר×ע×ג):</strong> 55×57.5×46.5 ס\"מ</li>\n<li><strong>משקל:</strong> 48 ק\"ג</li>\n<li><strong>לחץ עבודה בדוד:</strong> 0.8–1.2 בר</li>\n</ul>",
+   "finding": "missing specs: power, dimensions, weight, pressure",
+   "sources": [
+    "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+   ]
+  },
+  {
+   "product_id": 64789,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 3350 וואט</li>\n<li><strong>מתח:</strong> 220–240 וולט, 50/60 הרץ</li>\n</ul>",
+   "finding": "missing specs: power",
+   "sources": [
+    "https://www.crem.coffee/product/fam_qloqpv/EX3-2GR"
+   ]
+  },
+  {
+   "product_id": 65382,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קיבולת מים בצילינדר:</strong> 90 מ\"ל</li>\n<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>\n</ul>",
+   "finding": "missing specs: water_tank, pressure",
+   "sources": [
+    "https://support.flairespresso.com/knowledge/how-large-of-a-shot-can-i-pull",
+    "https://flairespresso.com/wp-content/uploads/2022/01/flair_58_manual_january_2022_web.pdf"
+   ]
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://flairespresso.com/wp-content/uploads/2021/05/flair_58_nonelectric_manual_may_2021_web.pdf"
+   ]
+  },
+  {
+   "product_id": 64725,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://flairespresso.com/wp-content/uploads/2022/01/flair_58_manual_january_2022_web.pdf",
+    "https://support.flairespresso.com/knowledge/what-differentiates-the-flair-58-from-the-other-flair-58-models"
+   ]
+  },
+  {
+   "product_id": 64896,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ חליטה מומלץ:</strong> 6–9 בר (לפי מד הלחץ)</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://flairespresso.com/wp-content/uploads/2021/06/brew_guide_pro_only_legal_final_v6_web.pdf"
+   ]
+  },
+  {
+   "product_id": 68271,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>קוטר ידית:</strong> 58 מ\"מ</li>\n</ul>",
+   "finding": "missing specs: portafilter",
+   "sources": [
+    "https://vbmespresso.com/wp-content/uploads/2024/06/SpecTec_Domobar.pdf"
+   ]
+  },
+  {
+   "product_id": 67158,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1200 וואט</li>\n<li><strong>מתח:</strong> 230 וולט, 50 הרץ</li>\n<li><strong>משקל:</strong> 8.1 ק\"ג</li>\n<li><strong>מיכל מים:</strong> 2.1 ליטר</li>\n<li><strong>לחץ משאבה:</strong> 15 בר (נומינלי)</li>\n</ul>",
+   "finding": "missing specs: power, weight, water_tank, pressure",
+   "sources": [
+    "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 77376,
+   "name": "קנקן נירוסטה - חלבית למכונת אספרסו",
+   "reason": "not a machine (90 ml milk pitcher); espresso-machine spec items do not apply"
+  },
+  {
+   "product_id": 68278,
+   "name": "מרכך מים למכונת סאקו וגאגיה של בריטה - Water filter and cartridge",
+   "reason": "not a machine (BRITA water filter cartridge); machine spec items do not apply"
+  },
+  {
+   "product_id": 65242,
+   "name": "שלישיית פילטר בריטה מים למכונת סימנס- Siemens water filter",
+   "reason": "not a machine (BRITA Intenza filter for Siemens); machine spec items do not apply"
+  },
+  {
+   "product_id": 65165,
+   "name": "מרכך DVA מים 8 ליטר למכונת אספרסו עם חיבור ישיר",
+   "reason": "not a machine (8 L water softener); machine spec items do not apply"
+  },
+  {
+   "product_id": 65023,
+   "name": "שלישיית פילטרים מים למכונות ניבונה",
+   "reason": "not a machine (CLARIS water filters for Nivona); machine spec items do not apply"
+  },
+  {
+   "product_id": 65388,
+   "name": "מכונת אספרסו ניידת לרכב אמיליו",
+   "reason": "unbranded 12V car espresso maker; no identifiable manufacturer, so no official source exists"
+  },
+  {
+   "product_id": 67230,
+   "name": "מכונת אספרסו גאג'יה ויוה פרסטיז'- Gaggia Viva prestige",
+   "reason": "no official values: gaggia.com Viva Prestige page lists no tech data and the official Viva-range manual and safety booklet contain no power/size/weight/tank/boiler figures"
+  },
+  {
+   "product_id": 67154,
+   "name": "מכונת קפה גאג'יה קדורנה פלוס Gaggia Cadorna Plus",
+   "reason": "nothing to add: only \"portafilter\" is flagged, which does not apply to a super-automatic; all other specs already on page and match gaggia.com/automatic-machines/cadorna-plus/"
+  },
+  {
+   "product_id": 65046,
+   "name": "מכונת קפה אוסקר נובה סימונלי מוד Nuova Simonelli Oscar Mood",
+   "reason": "official spec (nuovasimonelli.com/machine/oscar-mood/) lists no pump pressure; brochure is behind a form. Page values for power 1200W, weight 13 kg, size 30x40x40.8 match official."
+  },
+  {
+   "product_id": 65246,
+   "name": "מכונת קפה ידנית מקצועית וי.בי.אם ג׳וניור VBM Junior",
+   "reason": "official spec sheet (vbmespresso.com SPEC_TEC_DOMOBARJUNIOR) gives no tank volume and no pump pressure. Note: page weight 21 kg and size 22.5x39x41 differ from the current official sheet (26 kg, 25x42x43 cm) — page likely describes the earlier Junior version; review."
+  },
+  {
+   "product_id": 65430,
+   "name": "Flair NEO : מכונת אספרסו ידנית במחיר משתלם - חלום המתחילים!",
+   "reason": "no official values: Flair NEO is discontinued; the official NEO brew guide states no dimensions, weight, water volume or pressure; boiler/portafilter-size not stated"
+  },
+  {
+   "product_id": 65438,
+   "name": "PICOPRESSO מכונת אספרסו ניידת + קפה ספשלטי",
+   "reason": "nothing to add: size, weight, 80 ml water, 52 mm/18 g basket and 18 bar already on page and match wacaco.com; power/boiler not applicable (manual device)"
+  },
+  {
+   "product_id": 64961,
+   "name": "PICOPRESSO מכונת אספרסו ניידת",
+   "reason": "nothing to add: size, weight, 80 ml water, 52 mm/18 g basket and 18 bar already on page and match wacaco.com; power/boiler not applicable (manual device)"
+  },
+  {
+   "product_id": 67225,
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 550",
+   "reason": "official spec (nivona.com/de/product/5series) gives no boiler/heater data; portafilter not applicable to a super-automatic"
+  },
+  {
+   "product_id": 64736,
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 560",
+   "reason": "official spec (nivona.com/de/product/5series) gives no boiler/heater data; portafilter not applicable to a super-automatic"
+  },
+  {
+   "product_id": 65450,
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 8103",
+   "reason": "official spec (nivona.com/de/product/nivo8000) gives no power rating or boiler data; portafilter not applicable"
+  },
+  {
+   "product_id": 65449,
+   "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 8101",
+   "reason": "official spec (nivona.com/de/product/nivo8000) gives no power rating or boiler data; portafilter not applicable"
+  },
+  {
+   "product_id": 76423,
+   "name": "Stone Lite white – מכונת אספרסו ידנית צבע לבן",
+   "reason": "official spec (stone-espresso.com/specifications/lite) states no pump pressure and no portafilter size; other listed values (1.5 L boiler, 1.2 L tank, 1000W+200W, 22.5x44x35.5 cm, 20.5 kg) already on page and match"
+  },
+  {
+   "product_id": 76418,
+   "name": "Stone Lite Premium – מכונת אספרסו ידנית",
+   "reason": "official spec (stone-espresso.com/specifications/lite) states no pump pressure and no portafilter size; other listed values (1.5 L boiler, 1.2 L tank, 1000W+200W, 22.5x44x35.5 cm, 20.5 kg) already on page and match"
+  },
+  {
+   "product_id": 76409,
+   "name": "Stone Lite Black – מכונת אספרסו ידנית",
+   "reason": "official spec (stone-espresso.com/specifications/lite) states no pump pressure and no portafilter size; other listed values (1.5 L boiler, 1.2 L tank, 1000W+200W, 22.5x44x35.5 cm, 20.5 kg) already on page and match"
+  },
+  {
+   "product_id": 69416,
+   "name": "מכונת אספרסו ידנית Gaggia Classic E24 - צבע שחור",
+   "reason": "contradiction: page says 23x38x24 cm (W x H x D) and 7.3 kg, official says 20 x 35.5 x 27 cm (l x h x d) and 8.1 kg — not appended; page values should be reviewed",
+   "items": [
+    "dimensions",
+    "weight"
+   ]
+  },
+  {
+   "product_id": 69413,
+   "name": "מכונת אספרסו ידנית Gaggia Classic E24 - נירוסטה",
+   "reason": "contradiction: page says 23x38x24 cm (W x H x D) and 7.3 kg, official says 20 x 35.5 x 27 cm (l x h x d) and 8.1 kg — not appended; page values should be reviewed",
+   "items": [
+    "dimensions",
+    "weight"
+   ]
+  },
+  {
+   "product_id": 67328,
+   "name": "מכונת קפה גאג'יה אנימה קלאס Gaggia Anima Class",
+   "reason": "contradiction: page says bean container 250 g, official says 150 g (not a flagged item; left untouched, review)",
+   "items": [
+    "beans"
+   ]
+  },
+  {
+   "product_id": 67371,
+   "name": "מכונת קפה מקצועית Crem One - Dual Boiler PID R LFPP",
+   "reason": "contradiction: page says brew boiler 1.2 L, official says 1.7 + 1.5 L (steam + brew) — not appended, review",
+   "items": [
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 67369,
+   "name": "מכונת קפה מקצועית ONE 2B R-GSP Dual",
+   "reason": "contradiction: page says brew boiler 1.2 L, official says 1.7 + 1.5 L (steam + brew) — not appended, review",
+   "items": [
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 67227,
+   "name": "מכונת קפה מקצועית Crem ONE 2BV Dual",
+   "reason": "contradiction: page says brew boiler 1.2 L, official says 1.7 + 1.5 L (steam + brew) — not appended, review",
+   "items": [
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 67371,
+   "name": "מכונת קפה מקצועית Crem One - Dual Boiler PID R LFPP",
+   "reason": "official LFPP page gives operation pressure as \"0.8 to 1.2 l\" (unit typo), so pressure not added; portafilter size not stated officially",
+   "items": [
+    "pressure",
+    "portafilter"
+   ]
+  },
+  {
+   "product_id": 64789,
+   "name": "מכונת קפה crem ex3 2GR",
+   "reason": "contradiction: page says 60 kg, official says 62 kg (not a flagged item, left untouched); water_tank not applicable (plumbed-in, 3/8\" connection); portafilter size not stated officially",
+   "items": [
+    "weight",
+    "water_tank",
+    "portafilter"
+   ]
+  },
+  {
+   "product_id": 64854,
+   "name": "מכונת קפה ידנית ניידת Flair 58X",
+   "reason": "contradiction: page says capacity 60 ml (and 7 kg, max yield 40 ml, values that appear copied from the Signature page), official says the Flair 58 family reservoir holds 90 ml with yield up to 55 ml — water not appended; power/boiler not applicable (non-electric, no boiler)",
+   "items": [
+    "water_tank",
+    "power",
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 65382,
+   "name": "מכונת קפה ידנית מנוף Flair 58",
+   "reason": "no official dimensions/weight/power figures found for the original Flair 58 (discontinued; only the 58 Plus 2 is listed now); boiler not applicable",
+   "items": [
+    "dimensions",
+    "weight",
+    "power",
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 64725,
+   "name": "מכונת קפה ידנית ניידת Flair 58 plus",
+   "reason": "water capacity 90 ml already on page; power of preheat controller not stated officially; boiler not applicable",
+   "items": [
+    "water_tank",
+    "power",
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 64896,
+   "name": "מכונת קפה ידנית ניידת Flair Signature Espresso Maker white",
+   "reason": "capacity 60 ml already on page; power/boiler not applicable (manual lever press)",
+   "items": [
+    "water_tank",
+    "power",
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 68271,
+   "name": "מכונת קפה ידנית מקצועית וי.בי.אם דומובר VBM Domobar",
+   "reason": "power and pump pressure not added: the current official Domobar sheet (1400 W, 22x37x40 cm) describes the redesigned model, while this page (22.5x34x41.5 cm, boiler-probe thermostat) appears to be the earlier version; only the version-independent 58 mm filter size is added",
+   "items": [
+    "power",
+    "pressure"
+   ]
+  },
+  {
+   "product_id": 65446,
+   "name": "מכונת קפה Jura C9 - מכונת קפה קומפקטית עם טעם מושלם",
+   "reason": "contradiction: page says approx. 9.5 kg, official C9 (EA) manual says approx. 9.4 kg (not a flagged item, left untouched)",
+   "items": [
+    "weight"
+   ]
+  },
+  {
+   "product_id": 65442,
+   "name": "מכונת קפה JURA X10 - המהפכה החמה והקרה בעולם הקפה",
+   "reason": "boiler/heater type not stated in the official X10 manual",
+   "items": [
+    "boiler"
+   ]
+  },
+  {
+   "product_id": 67257,
+   "name": "מכונת קפה גאג'יה מג׳נטה פרסטיז׳ Gaggia Magenta Prestige",
+   "reason": "note: page dimensions 22.4x35.7x43.5 cm differ slightly from current official 22.5x36x43.5 cm (not a flagged item, left untouched)",
+   "items": [
+    "dimensions"
+   ]
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 79795,
+   "spec": "power",
+   "value": "הספק: 1300 וואט",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 26×41.6×42.3 ס\"מ",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "weight",
+   "value": "משקל: 17.63 ק\"ג",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2 ליטר",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "boiler",
+   "value": "דוד חליטה: 0.12 ליטר, פליז ללא עופרת",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "boiler",
+   "value": "דוד קיטור: 0.9 ליטר, נירוסטה",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר (נומינלי)",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 79795,
+   "spec": "pressure",
+   "value": "לחץ חליטה: 9 בר, שסתום OPV מתכוונן 6–12 בר",
+   "url": "https://classicgt.gaggia.com/app/uploads/2025/02/TECHINFOGAGGIACLASSICGT.pdf"
+  },
+  {
+   "product_id": 69416,
+   "spec": "power",
+   "value": "הספק: 1200 וואט",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69416,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69416,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2.1 ליטר",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69416,
+   "spec": "portafilter",
+   "value": "קוטר ידית: 58 מ\"מ (נירוסטה)",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-color-vibes/"
+  },
+  {
+   "product_id": 69413,
+   "spec": "power",
+   "value": "הספק: 1200 וואט",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 69413,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 69413,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2.1 ליטר",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 69413,
+   "spec": "portafilter",
+   "value": "קוטר ידית: 58 מ\"מ (נירוסטה)",
+   "url": "https://www.gaggia.com/manual-machines/new-classic-e24/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "power",
+   "value": "הספק: 1200 וואט",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "weight",
+   "value": "משקל: 8.1 ק\"ג",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2.1 ליטר",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67159,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר (נומינלי)",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "power",
+   "value": "הספק: 1200 וואט",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 20×27×35.5 ס\"מ",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "weight",
+   "value": "משקל: 8.1 ק\"ג",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2.1 ליטר",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר (נומינלי)",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67168,
+   "spec": "portafilter",
+   "value": "קוטר ידית: 58 מ\"מ (נירוסטה)",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67337,
+   "spec": "power",
+   "value": "הספק: 1900 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-plus/"
+  },
+  {
+   "product_id": 67337,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-plus/"
+  },
+  {
+   "product_id": 67337,
+   "spec": "weight",
+   "value": "משקל: 7.6 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-plus/"
+  },
+  {
+   "product_id": 67337,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-plus/"
+  },
+  {
+   "product_id": 67337,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-plus/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "power",
+   "value": "הספק: 1500 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "weight",
+   "value": "משקל: 8.7 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "boiler",
+   "value": "דוד: נירוסטה",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67328,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "power",
+   "value": "הספק: 1850 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "weight",
+   "value": "משקל: 7.9 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "boiler",
+   "value": "דוד: נירוסטה",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67309,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/anima-barista-plus/"
+  },
+  {
+   "product_id": 67257,
+   "spec": "power",
+   "value": "הספק: 1900 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67257,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67257,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 67257,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-prestige/"
+  },
+  {
+   "product_id": 65028,
+   "spec": "power",
+   "value": "הספק: 1900 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-milk/"
+  },
+  {
+   "product_id": 65028,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-milk/"
+  },
+  {
+   "product_id": 65028,
+   "spec": "weight",
+   "value": "משקל: 7.7 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-milk/"
+  },
+  {
+   "product_id": 65028,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-milk/"
+  },
+  {
+   "product_id": 65028,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/magenta-milk/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "power",
+   "value": "הספק: 1900 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 26×44×38 ס\"מ",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "weight",
+   "value": "משקל: 9.6 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.5 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "boiler",
+   "value": "דוד: נירוסטה",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65112,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/cadorna-prestige/"
+  },
+  {
+   "product_id": 65134,
+   "spec": "power",
+   "value": "הספק: 1400 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65134,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65134,
+   "spec": "boiler",
+   "value": "דוד: נירוסטה",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65134,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "power",
+   "value": "הספק: 1400 וואט",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 25.6×44.7×31.5 ס\"מ",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "weight",
+   "value": "משקל: 8.5 ק\"ג",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.2 ליטר",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "boiler",
+   "value": "דוד: נירוסטה",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65131,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר",
+   "url": "https://www.gaggia.com/automatic-machines/brera/"
+  },
+  {
+   "product_id": 65477,
+   "spec": "power",
+   "value": "הספק: 1450 וואט",
+   "url": "https://hk.jura.com/-/media/global/pdf/manuals-global/home/S8/download_manual_s8_s80.pdf"
+  },
+  {
+   "product_id": 65477,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50 הרץ",
+   "url": "https://hk.jura.com/-/media/global/pdf/manuals-global/home/S8/download_manual_s8_s80.pdf"
+  },
+  {
+   "product_id": 65477,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 28×44.4×34.8 ס\"מ",
+   "url": "https://hk.jura.com/-/media/global/pdf/manuals-global/home/S8/download_manual_s8_s80.pdf"
+  },
+  {
+   "product_id": 65477,
+   "spec": "weight",
+   "value": "משקל: כ-10 ק\"ג",
+   "url": "https://hk.jura.com/-/media/global/pdf/manuals-global/home/S8/download_manual_s8_s80.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "power",
+   "value": "הספק: 1450 וואט",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50 הרץ",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 28×44.6×35.1 ס\"מ",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "weight",
+   "value": "משקל: כ-9 ק\"ג",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.9 ליטר (ללא פילטר)",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65469,
+   "spec": "pressure",
+   "value": "לחץ משאבה: עד 15 בר (סטטי)",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/home/E-Line-2022/E6-EC-SC-INTC/download_manual_E6_EC_SC_INTC.pdf"
+  },
+  {
+   "product_id": 65446,
+   "spec": "pressure",
+   "value": "לחץ משאבה: עד 15 בר (סטטי)",
+   "url": "https://www.jura.com/-/media/global/pdf/manuals-global/home/C9/download_manual_C9_EA_SA_INTA.pdf"
+  },
+  {
+   "product_id": 65442,
+   "spec": "pressure",
+   "value": "לחץ משאבה: עד 15 בר (סטטי)",
+   "url": "https://us.jura.com/-/media/global/pdf/manuals-global/professional/X10/X10-EA-SA/download_manual_x10_ea_sa.pdf"
+  },
+  {
+   "product_id": 65437,
+   "spec": "dimensions",
+   "value": "מידות: 7.1×7.8×10.6 ס\"מ",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 65437,
+   "spec": "weight",
+   "value": "משקל: 350 גרם",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 65437,
+   "spec": "water_tank",
+   "value": "מיכל מים: 80 מ\"ל",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 65437,
+   "spec": "pressure",
+   "value": "לחץ מקסימלי: 18 בר",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 65437,
+   "spec": "portafilter",
+   "value": "קוטר סלסלה: 52 מ\"מ",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 65437,
+   "spec": "portafilter",
+   "value": "קיבולת סלסלה: 18 גרם",
+   "url": "https://www.wacaco.com/products/picopresso"
+  },
+  {
+   "product_id": 68297,
+   "spec": "dimensions",
+   "value": "מידות: 6×7×17.5 ס\"מ",
+   "url": "https://www.wacaco.com/products/minipresso-gr"
+  },
+  {
+   "product_id": 68297,
+   "spec": "portafilter",
+   "value": "קוטר סלסלה: 36 מ\"מ",
+   "url": "https://www.wacaco.com/products/minipresso-gr"
+  },
+  {
+   "product_id": 67370,
+   "spec": "power",
+   "value": "הספק: 2150 וואט",
+   "url": "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+  },
+  {
+   "product_id": 67370,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+  },
+  {
+   "product_id": 67370,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 30×45.8×42 ס\"מ",
+   "url": "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+  },
+  {
+   "product_id": 67370,
+   "spec": "weight",
+   "value": "משקל: 30 ק\"ג",
+   "url": "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+  },
+  {
+   "product_id": 67370,
+   "spec": "pressure",
+   "value": "לחץ עבודה בדוד: 0.8–1.2 בר",
+   "url": "https://www.crem.coffee/product/fam_mevscg/ONE-1B-Dual"
+  },
+  {
+   "product_id": 67369,
+   "spec": "power",
+   "value": "הספק: 2250 וואט",
+   "url": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "spec": "weight",
+   "value": "משקל: 30 ק\"ג",
+   "url": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67369,
+   "spec": "pressure",
+   "value": "לחץ עבודה בדוד: 0.8–1.2 בר",
+   "url": "https://www.crem.coffee/product/fam_cnpaml/ONE-2B-R-GSP-Dual"
+  },
+  {
+   "product_id": 67227,
+   "spec": "power",
+   "value": "הספק: 2150 וואט",
+   "url": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "spec": "weight",
+   "value": "משקל: 30 ק\"ג",
+   "url": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67227,
+   "spec": "pressure",
+   "value": "לחץ עבודה בדוד: 0.8–1.2 בר",
+   "url": "https://www.crem.coffee/product/fam_txillg/ONE-2B-Dual"
+  },
+  {
+   "product_id": 67371,
+   "spec": "power",
+   "value": "הספק: 2250 וואט",
+   "url": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67371,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67371,
+   "spec": "weight",
+   "value": "משקל: 30 ק\"ג",
+   "url": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67371,
+   "spec": "water_tank",
+   "value": "מיכל מים: 1.8 ליטר",
+   "url": "https://www.crem.coffee/product/fam_ilijot/ONE-2B-R-LFPP-Dual"
+  },
+  {
+   "product_id": 67193,
+   "spec": "power",
+   "value": "הספק: 2800 וואט",
+   "url": "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+  },
+  {
+   "product_id": 67193,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+  },
+  {
+   "product_id": 67193,
+   "spec": "dimensions",
+   "value": "מידות (ר×ע×ג): 55×57.5×46.5 ס\"מ",
+   "url": "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+  },
+  {
+   "product_id": 67193,
+   "spec": "weight",
+   "value": "משקל: 48 ק\"ג",
+   "url": "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+  },
+  {
+   "product_id": 67193,
+   "spec": "pressure",
+   "value": "לחץ עבודה בדוד: 0.8–1.2 בר",
+   "url": "https://www.crem.coffee/product/fam_syqdxp/EX3-MINI-1GR"
+  },
+  {
+   "product_id": 64789,
+   "spec": "power",
+   "value": "הספק: 3350 וואט",
+   "url": "https://www.crem.coffee/product/fam_qloqpv/EX3-2GR"
+  },
+  {
+   "product_id": 64789,
+   "spec": "power",
+   "value": "מתח: 220–240 וולט, 50/60 הרץ",
+   "url": "https://www.crem.coffee/product/fam_qloqpv/EX3-2GR"
+  },
+  {
+   "product_id": 65382,
+   "spec": "water_tank",
+   "value": "קיבולת מים בצילינדר: 90 מ\"ל",
+   "url": "https://support.flairespresso.com/knowledge/how-large-of-a-shot-can-i-pull"
+  },
+  {
+   "product_id": 65382,
+   "spec": "pressure",
+   "value": "לחץ חליטה מומלץ: 6–9 בר (לפי מד הלחץ)",
+   "url": "https://flairespresso.com/wp-content/uploads/2022/01/flair_58_manual_january_2022_web.pdf"
+  },
+  {
+   "product_id": 64854,
+   "spec": "pressure",
+   "value": "לחץ חליטה מומלץ: 6–9 בר (לפי מד הלחץ)",
+   "url": "https://flairespresso.com/wp-content/uploads/2021/05/flair_58_nonelectric_manual_may_2021_web.pdf"
+  },
+  {
+   "product_id": 64725,
+   "spec": "pressure",
+   "value": "לחץ חליטה מומלץ: 6–9 בר (לפי מד הלחץ)",
+   "url": "https://flairespresso.com/wp-content/uploads/2022/01/flair_58_manual_january_2022_web.pdf"
+  },
+  {
+   "product_id": 64896,
+   "spec": "pressure",
+   "value": "לחץ חליטה מומלץ: 6–9 בר (לפי מד הלחץ)",
+   "url": "https://flairespresso.com/wp-content/uploads/2021/06/brew_guide_pro_only_legal_final_v6_web.pdf"
+  },
+  {
+   "product_id": 68271,
+   "spec": "portafilter",
+   "value": "קוטר ידית: 58 מ\"מ",
+   "url": "https://vbmespresso.com/wp-content/uploads/2024/06/SpecTec_Domobar.pdf"
+  },
+  {
+   "product_id": 67158,
+   "spec": "power",
+   "value": "הספק: 1200 וואט",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67158,
+   "spec": "power",
+   "value": "מתח: 230 וולט, 50 הרץ",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67158,
+   "spec": "weight",
+   "value": "משקל: 8.1 ק\"ג",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67158,
+   "spec": "water_tank",
+   "value": "מיכל מים: 2.1 ליטר",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  },
+  {
+   "product_id": 67158,
+   "spec": "pressure",
+   "value": "לחץ משאבה: 15 בר (נומינלי)",
+   "url": "https://www.gaggia.com/manual-machines/classic-e24-energy-vibes/"
+  }
+ ]
+}

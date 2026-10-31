@@ -291,7 +291,7 @@
    "variation_id": null,
    "target": "description",
    "op": "append",
-   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1455 וואט</li>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1455 וואט</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
    "finding": "missing specs: הספק, מיכל מים, מיכל פולים",
    "sources": [
     "https://cdn.shopify.com/s/files/1/0582/3030/9047/files/NIVONA_Datasheet_NICR790_3.pdf"
@@ -302,7 +302,7 @@
    "variation_id": null,
    "target": "description",
    "op": "append",
-   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
    "finding": "missing specs: מיכל מים, מיכל פולים",
    "sources": [
     "https://nivona.com/de/product/7series"
@@ -313,7 +313,7 @@
    "variation_id": null,
    "target": "description",
    "op": "append",
-   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל מים:</strong> 2.2 ליטר</li>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מיכל פולים:</strong> 250 גרם</li>\n</ul>",
    "finding": "missing specs: מיכל מים, מיכל פולים",
    "sources": [
     "https://nivona.com/de/product/7series"
