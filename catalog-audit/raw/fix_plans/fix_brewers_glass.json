@@ -1,0 +1,59 @@
+{
+ "edits": [
+  {
+   "product_id": 81389,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  },
+  {
+   "product_id": 81382,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  },
+  {
+   "product_id": 81375,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  },
+  {
+   "product_id": 81368,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  },
+  {
+   "product_id": 81361,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  },
+  {
+   "product_id": 65403,
+   "variation_id": null,
+   "target": "description",
+   "old": "העוברים לאורך הזכוכית,",
+   "new": "העוברים לאורך הכוס,",
+   "finding": "Brewers Embossed is porcelain, page called it glass",
+   "source": "https://www.loveramics.com"
+  }
+ ],
+ "skipped": []
+}
