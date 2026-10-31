@@ -1,0 +1,69 @@
+{
+ "edits": [
+  {
+   "product_id": 78317,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>דוד נירוסטה לחליטה + דוד נירוסטה לאדים</li>",
+   "new": "<li>דוד פליז לחליטה + דוד נירוסטה לאדים</li>",
+   "finding": "contradiction: page says stainless-steel coffee boiler vs official brass coffee boiler (300 ml) + AISI316L stainless steam boiler (600 ml)",
+   "source": "https://www.lelit.com/wp-content/uploads/2024/09/EN-Elizabeth.pdf"
+  },
+  {
+   "product_id": 67157,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת של כ-3 ליטר,",
+   "new": "קיבולת של כ-2.8 ליטר,",
+   "finding": "contradiction: page says water tank approx. 3 l vs official Mechanika Max water tank 2.8 l",
+   "source": "https://www.ecm.de/wp-content/uploads/2025/05/ECM-Produktkarte-MechanikaMax-en-2023-09-11.pdf"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 64899,
+   "spec": "power, boiler",
+   "reason": "page (230 V/1200 W, brass boiler 0,4 l) matches the earlier GO version: Profitec's own 2022 catalog and earlier GO manual state 1200 W and 0.4 l, while the current official catalog (pt-machines-en.pdf) states 1500 W and 0.3 l. Official sources disagree across versions and the unit's version is uncertain."
+  },
+  {
+   "product_id": 64889,
+   "spec": "power, boiler",
+   "reason": "same as 64899 (GO colour variant): official sources disagree across GO versions (1200 W / 0.4 l earlier vs 1500 W / 0.3 l current); version of the stocked unit uncertain."
+  },
+  {
+   "product_id": 64900,
+   "spec": "power",
+   "reason": "official sources disagree: profitec-espresso.com product page says 230V/1400 W (as the page), current manual and catalog say 1500 W."
+  },
+  {
+   "product_id": 67650,
+   "spec": "water tank, dimensions",
+   "reason": "official sources disagree: ecm.de product page/catalog say approx. 3 l and 325x470x385 mm (as the page), the Technika VI manual says 2.8 l and 325x475x390 mm."
+  },
+  {
+   "product_id": 76318,
+   "spec": "weight",
+   "reason": "official sources disagree: ecm.de product page says 30 kg (as the page), the manual says 31 kg."
+  },
+  {
+   "product_id": 78317,
+   "spec": "dimensions",
+   "reason": "official sources disagree on axis order: lelit.com JSON-LD says WxDxH 38x32x38 cm (as the page), the official sheet says LxDxH 32x38x38 cm."
+  },
+  {
+   "product_id": 65040,
+   "spec": "dimensions",
+   "reason": "page says H40 x W29 x D48.5 cm; official Bianca sheet says 29x58.5x39 cm (+8 cm movable tank). Bianca version on this page is not stated and the official measurement basis differs (tank/paddle), so it is uncertain whether this is a wrong value or an older version."
+  },
+  {
+   "product_id": 64680,
+   "spec": "dimensions",
+   "reason": "page says H40 x W29 x D48.5 cm vs official V3 29x58.5x39 cm; official depth figure appears to include the movable tank / paddle, measurement basis uncertain - left for manual check."
+  },
+  {
+   "product_id": 64679,
+   "spec": "dimensions",
+   "reason": "same as 64680 (colour variant)."
+  }
+ ]
+}

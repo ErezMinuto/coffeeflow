@@ -1,0 +1,126 @@
+{
+ "edits": [
+  {
+   "product_id": 65226,
+   "variation_id": null,
+   "target": "name",
+   "old": "מעמד לקפה פילטר 1 כוס V60",
+   "new": "מעמד לקפה פילטר 1–2 כוסות V60",
+   "finding": "contradiction: page 1 כוס vs official V60 Dripper 01 (VDR-01-R) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VD.html"
+  },
+  {
+   "product_id": 65226,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "מעמד לקפה פילטר 1 כוס V60",
+   "new": "מעמד לקפה פילטר 1–2 כוסות V60",
+   "finding": "contradiction: page 1 כוס vs official V60 Dripper 01 (VDR-01-R) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VD.html"
+  },
+  {
+   "product_id": 65226,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מעמד לקפה פילטר 1 כוס</p>",
+   "new": "<p>מעמד לקפה פילטר 1–2 כוסות</p>",
+   "finding": "contradiction: page 1 כוס vs official V60 Dripper 01 (VDR-01-R) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VD.html"
+  },
+  {
+   "product_id": 65225,
+   "variation_id": null,
+   "target": "name",
+   "old": "מעמד לקפה פילטר 1 כוס V60",
+   "new": "מעמד לקפה פילטר 1–2 כוסות V60",
+   "finding": "contradiction: page 1 כוס vs official V60 Ceramic Dripper 01 (VDCR-01) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65225,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "<p>מעמד קרמיקה לקפה פילטר 1 כוס</p>",
+   "new": "<p>מעמד קרמיקה לקפה פילטר 1–2 כוסות</p>",
+   "finding": "contradiction: page 1 כוס vs official V60 Ceramic Dripper 01 (VDCR-01) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65225,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>מעמד קרמיקה לקפה פילטר 1 כוס</p>",
+   "new": "<p>מעמד קרמיקה לקפה פילטר 1–2 כוסות</p>",
+   "finding": "contradiction: page 1 כוס vs official V60 Ceramic Dripper 01 (VDCR-01) capacity 1-2 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65106,
+   "variation_id": null,
+   "target": "name",
+   "old": "מעמד לקפה פילטר 2 כוסות V60",
+   "new": "מעמד לקפה פילטר 1–4 כוסות V60",
+   "finding": "contradiction: page 2 כוסות vs official V60 Ceramic Dripper 02 (VDCR-02-W) capacity 1-4 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65106,
+   "variation_id": null,
+   "target": "short_description",
+   "old": "לקפה פילטר 2 כוס צבע לבן",
+   "new": "לקפה פילטר 1–4 כוסות צבע לבן",
+   "finding": "contradiction: page 2 כוס vs official V60 Ceramic Dripper 02 (VDCR-02-W) capacity 1-4 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65106,
+   "variation_id": null,
+   "target": "description",
+   "old": "לקפה פילטר 2 כוס</p>",
+   "new": "לקפה פילטר 1–4 כוסות</p>",
+   "finding": "contradiction: page 2 כוס vs official V60 Ceramic Dripper 02 (VDCR-02-W) capacity 1-4 cups",
+   "source": "https://global.hario.com/product/coffee/dripper/VDC.html"
+  },
+  {
+   "product_id": 65157,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן להכין כוס אחת עד שלוש כוסות אמריקנו או אספרסו בסגנון איטלקי",
+   "new": "ניתן להכין כוס אחת עד שתי כוסות קפה או עד שלושה שוטים של אספרסו בסגנון איטלקי",
+   "finding": "contradiction: page 1-3 cups americano/espresso vs official AeroPress Original 1-2 cups (10 oz) or up to 3 espresso-style shots",
+   "source": "https://aeropress.com/products/aeropress-coffee-maker"
+  },
+  {
+   "product_id": 65014,
+   "variation_id": null,
+   "target": "description",
+   "old": "ניתן להכין כוס אחת עד שלוש כוסות אמריקנו או אספרסו בסגנון איטלקי",
+   "new": "ניתן להכין כוס קפה אחת או עד שלושה שוטים של אספרסו בסגנון איטלקי",
+   "finding": "contradiction: page 1-3 cups americano/espresso vs official AeroPress Go 1 cup (8 oz) or up to 3 espresso-style shots",
+   "source": "https://aeropress.com/products/aeropress-go-travel-coffee-press"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 65097,
+   "reason": "model uncertain: official datasheet is for Lelit Anita PL042EM, product is PL042EMI (page depth 25.5 cm vs datasheet 26.5 cm) - per coordinator, skipped"
+  },
+  {
+   "product_id": 65098,
+   "reason": "model uncertain: Hario lists only Ceramic Coffee Mill Wood N (MCWN-2-OV); page does not identify the model - per coordinator, skipped"
+  },
+  {
+   "product_id": 65459,
+   "reason": "version uncertain: page mixes Varia EVO Hand Grinder specs with Hybrid (USB-C) marketing and \"Supernova\" burr name vs official \"Hypernova\" - per coordinator, skipped"
+  },
+  {
+   "product_id": 80845,
+   "reason": "not corrected: page says up to 2 kg coffee / 9.5 L extract; official (toddycafe.com) says 5 lb (2.27 kg) coffee yields up to 2.5 gal (9.46 L). Extract volume matches; \"up to 2 kg\" is a rounded understatement rather than a clear contradiction - left for owner"
+  },
+  {
+   "product_id": 65225,
+   "reason": "note only (not changed): name/short call it \"Hario VD-01R\" but it is the ceramic dripper (official code VDCR-01-W/R; VD-01R/VDR-01-R is the plastic one). Exact colour/code not identifiable from the page, so the code was not changed",
+   "spec": "model code"
+  }
+ ]
+}
