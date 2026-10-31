@@ -94,18 +94,20 @@
   // Does a coffee from the Quiz box fit these answers?
   function extraFits(x, a) {
     if (a.decaf || a.natural || a.strength === 'very_strong') return false;
+    // Asked for light: any light coffee works, as the named ones do, and
+    // nothing else does.
+    if (a.light) return !!x.light;
     if ((x.brews || []).indexOf(brewGroup(a.brew)) === -1) return false;
     if (a.milk !== 'none' && !x.milk) return false;
     var bright = x.light || x.flavor === 'fruity';
-    if (bright && (a.noSour || (a.milk === 'alt' && !a.light))) return false;
-    if (a.light && !x.light) return false;
+    if (bright && (a.noSour || a.milk === 'alt')) return false;
     return a.taste === 'unknown' || !a.taste || x.flavor === a.taste;
   }
 
   function withExtras(picks, a, extras) {
     var fits = (extras || []).filter(function (x) { return extraFits(x, a); });
     var limited = fits.filter(function (x) { return x.limited; })[0];
-    var out = picks.slice();
+    var out = picks.slice(0, MAX);
     if (limited && out.indexOf(limited.key) === -1) {
       out = out.slice(0, MAX - 1).concat(limited.key);
     }

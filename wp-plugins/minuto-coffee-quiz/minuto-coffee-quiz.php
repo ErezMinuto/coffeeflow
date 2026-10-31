@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Coffee Quiz
  * Description: "איזה קפה מתאים לי?" quiz. Place [minuto_coffee_quiz] on a page.
- * Version: 1.1.0
+ * Version: 1.1.3
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_QUIZ_VERSION', '1.1.0');
+define('MINUTO_QUIZ_VERSION', '1.1.3');
 define('MINUTO_QUIZ_CACHE_KEY', 'minuto_quiz_catalog');
 define('MINUTO_QUIZ_ROAST_ATTRIBUTE_ID', 20);   // רמת קלייה
 define('MINUTO_QUIZ_MACHINES_CATEGORY_ID', 394);  // מכונות קפה, including its subcategories
@@ -168,6 +168,14 @@ register_deactivation_hook(__FILE__, 'minuto_quiz_flush_catalog');
 // WP Rocket's "Delay JS" would hold the quiz back until the visitor interacts.
 add_filter('rocket_delay_js_exclusions', function ($excluded) {
     $excluded[] = 'minuto-coffee-quiz/assets/';
+    return $excluded;
+});
+
+// WP Rocket's minified copy lives under its own path and can outlive a plugin
+// update, which leaves visitors on the old rules. Keep it on the plugin's own,
+// versioned files. Paths here are regular expressions, per WP Rocket's filter.
+add_filter('rocket_exclude_js', function ($excluded) {
+    $excluded[] = wp_make_link_relative(plugins_url('assets/', __FILE__)) . '(.*).js';
     return $excluded;
 });
 

@@ -188,3 +188,30 @@ Deno.test("a jar that is a named coffee is not shown twice", () => {
   const l = r({ taste: "fruity" }, s2);
   assertEquals(new Set(l).size, l.length);
 });
+
+Deno.test("asked for light: a light jar shows for any brew, with or without milk", () => {
+  for (const brew of ["auto", "combo", "manual", "moka", "filter", "press"]) {
+    for (const milk of ["none", "cow", "alt"]) {
+      assert(r({ brew, milk, light: true, taste: "fruity" }, withJar()).includes("extra_1"), `${brew}/${milk}`);
+    }
+  }
+  assert(!r({ brew: "auto", milk: "cow", taste: "fruity" }, withJar()).includes("extra_1"));   // not without the ask
+});
+
+Deno.test("asked for light: every named light coffee can reach espresso with milk", () => {
+  assertEquals(r({ brew: "manual", milk: "cow", light: true }), ["bensa_l", "kenya_l", "guji"]);
+  assert(r({ brew: "manual", milk: "cow", light: true, taste: "fruity" }).includes("aji"));
+});
+
+Deno.test("asked for light: flavor doesn't hide a light jar, and non-light jars stay out", () => {
+  assert(r({ light: true, taste: "chocolate" }, withJar()).includes("extra_1"));
+  assert(!r({ light: true }, withJar({ light: false, flavor: "chocolate" })).includes("extra_1"));
+  assert(!r({ light: true, strength: "very_strong" }, withJar()).includes("extra_1"));
+});
+
+Deno.test("a limited named coffee further down the list still takes the third place", () => {
+  const s2 = { ...stock, extras: [{ key: "aji", flavor: "fruity", milk: true, brews: ["filter"], limited: true, light: true }] };
+  assertEquals(r({ light: true, taste: "chocolate" }, s2), ["kenya_l", "bensa_l", "aji"]);
+  assertEquals(r({ light: true, taste: "floral" }, s2), ["kenya_l", "leona", "aji"]);
+  assertEquals(r({ light: true, taste: "fruity" }, s2), ["kenya_l", "aji", "bensa_l"]);       // already placed: stays
+});
