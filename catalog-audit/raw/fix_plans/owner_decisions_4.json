@@ -1,0 +1,208 @@
+{
+ "edits": [
+  {
+   "product_id": 64899,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוד פליז - 0,4 ליטר",
+   "new": "דוד פליז - 0.3 ליטר",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64899,
+   "variation_id": null,
+   "target": "description",
+   "old": "230 V/1200 W",
+   "new": "230 V/1300 W",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64899,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל 12.9 ק\"ג",
+   "new": "משקל 12 ק\"ג",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64899,
+   "variation_id": null,
+   "target": "description",
+   "old": "שלב חימום 5-7 דקות",
+   "new": "שלב חימום כ-7 דקות",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64889,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוד פליז - 0,4 ליטר",
+   "new": "דוד פליז - 0.3 ליטר",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64889,
+   "variation_id": null,
+   "target": "description",
+   "old": "230 V/1200 W",
+   "new": "230 V/1300 W",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64889,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל 12.9 ק\"ג",
+   "new": "משקל 12 ק\"ג",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 64889,
+   "variation_id": null,
+   "target": "description",
+   "old": "שלב חימום 5-7 דקות",
+   "new": "שלב חימום כ-7 דקות",
+   "finding": "owner: Profitec GO → current model (GO 2.0)",
+   "source": "https://www.profitec-espresso.com/en/products/go-2-0"
+  },
+  {
+   "product_id": 67328,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת מיכל פולי הקפה: 250 גרם",
+   "new": "קיבולת מיכל פולי הקפה: 150 גרם",
+   "finding": "owner: Anima Class bean container → official 150 g",
+   "source": "https://www.gaggia.com/automatic-machines/anima-class/"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<li>משקל: 7 ק\"ג</li>\n",
+   "new": "",
+   "remove_element": true,
+   "finding": "owner: remove Flair Signature values copied onto the 58X page",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p><!-- wp:list-item --></p>\n<li>מידות: 30 א × 15 ר  × 25 ג סמ</li>\n<p><!-- /wp:list-item --></p>\n",
+   "new": "",
+   "remove_element": true,
+   "finding": "owner: remove Flair Signature values copied onto the 58X page",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p><!-- wp:list-item --></p>\n<li>צבע: שחור, כרום, לבן</li>\n<p><!-- /wp:list-item --></p>\n",
+   "new": "",
+   "remove_element": true,
+   "finding": "owner: remove Flair Signature values copied onto the 58X page",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p><!-- wp:list-item --></p>\n<li>משקל: פלוס -2.7 ק\"ג, ערכת לחץ - 3.18 ק\"ג</li>\n<p><!-- /wp:list-item --></p>\n",
+   "new": "",
+   "remove_element": true,
+   "finding": "owner: remove Flair Signature values copied onto the 58X page",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 64854,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p><!-- wp:list-item --></p>\n<li>מידות מארז: 32 ס\"מ x 23 ס\"מ x 8 ס\"מ</li>\n<p><!-- /wp:list-item --></p>\n",
+   "new": "",
+   "remove_element": true,
+   "finding": "owner: remove Flair Signature values copied onto the 58X page",
+   "source": "owner decision"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל 12.3 ק\"ג",
+   "new": "משקל 12.5 ק\"ג",
+   "finding": "owner: Jura Z10 → current version (Obsidian Black EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 81458,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה 38 ועומק של 47 ס\"מ",
+   "new": "גובה 38.3 ועומק של 47 ס\"מ",
+   "finding": "owner: Jura Z10 → current version (Obsidian Black EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל 12.3 ק\"ג",
+   "new": "משקל 12.5 ק\"ג",
+   "finding": "owner: Jura Z10 → current version (Obsidian Black EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 64923,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה 38 ועומק של 47 ס\"מ",
+   "new": "גובה 38.3 ועומק של 47 ס\"מ",
+   "finding": "owner: Jura Z10 → current version (Obsidian Black EC)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/z10-obsidian-black-ec-15836"
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>משקל 9.6 קג</p>",
+   "new": "<p>משקל 10 ק\"ג</p>",
+   "finding": "owner: Jura E8 → current version (ED)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  },
+  {
+   "product_id": 81455,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב של 28 ס\"מ בלבד, גובה 38.1 ועומק של 44.6 ס\"מ",
+   "new": "רוחב של 27 ס\"מ בלבד, גובה 34.8 ועומק של 44.6 ס\"מ",
+   "finding": "owner: Jura E8 → current version (ED)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  },
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>משקל 9.6 קג</p>",
+   "new": "<p>משקל 10 ק\"ג</p>",
+   "finding": "owner: Jura E8 → current version (ED)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  },
+  {
+   "product_id": 64929,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב של 28 ס\"מ בלבד, גובה 38.1 ועומק של 44.6 ס\"מ",
+   "new": "רוחב של 27 ס\"מ בלבד, גובה 34.8 ועומק של 44.6 ס\"מ",
+   "finding": "owner: Jura E8 → current version (ED)",
+   "source": "https://www.jura.com/en/homeproducts/automatic-coffee-machines/e8-cosmic-black-ed-15749"
+  }
+ ],
+ "skipped": []
+}
