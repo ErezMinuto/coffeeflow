@@ -1,0 +1,4031 @@
+[
+ {
+  "id": 82968,
+  "name": "מכונת קפה ECM Synchronika II Heritage",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1687,
+  "permalink": "https://www.minuto.co.il/product/ecm-synchronika-ii-heritage/"
+ },
+ {
+  "id": 82651,
+  "name": "VARIA VS4",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/varia-vs4/"
+ },
+ {
+  "id": 82622,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע קרם לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1987,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9d-%d7%9c%d7%99%d7%a0%d7%90/"
+ },
+ {
+  "id": 82537,
+  "name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע ירוק עשן",
+  "group": "kettle",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1064,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-fellow-stagg-ekg-pour-over-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%a2%d7%a9%d7%9f/"
+ },
+ {
+  "id": 82381,
+  "name": "מטחנת קפה שוקלת Mahlkönig E64 WS - צבע לבן",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1692,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-mahlkonig-e64-ws-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 82379,
+  "name": "מטחנת קפה שוקלת Mahlkönig E64 WS - צבע שחור",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1692,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-mahlkonig-e64-ws/"
+ },
+ {
+  "id": 82155,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע קרם לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9d-%d7%9c%d7%99%d7%a0%d7%90/"
+ },
+ {
+  "id": 82012,
+  "name": "מכונת אספרסו ידנית Gaggia Classic UP - נירוסטה",
+  "group": "espresso",
+  "missing": [],
+  "text_len": 1930,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-gaggia-classic-up-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 81471,
+  "name": "מטחנת קפה VARIA VS3 (2ND GENERATION) - שחור",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1755,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-varia-vs3-2nd-generation-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81467,
+  "name": "מטחנת קפה VARIA VS3 (2ND GENERATION) - לבן",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1755,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-varia-vs3-2nd-generation-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81462,
+  "name": "מכונת קפה אוטומטית Jura Z 10 - לבן",
+  "group": "superauto",
+  "missing": [
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2176,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-z-10-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81458,
+  "name": "מכונת קפה אוטומטית Jura Z 10 - שחור",
+  "group": "superauto",
+  "missing": [
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2176,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-z-10-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81455,
+  "name": "מכונת קפה אוטומטית Jura E8 - שחור",
+  "group": "superauto",
+  "missing": [
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 3115,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e8-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81256,
+  "name": "מקינטה מוקה אינדוקציה 2 כוסות Bialetti - שחור",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1617,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81254,
+  "name": "מקינטה מוקה אינדוקציה 4 כוסות Bialetti - שחור",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1617,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81253,
+  "name": "מקינטה מוקה אינדוקציה 6 כוסות Bialetti - שחור",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1617,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81252,
+  "name": "מקינטה מוקה אינדוקציה 6 כוסות Bialetti – אדום",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1617,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 81251,
+  "name": "מקינטה מוקה אינדוקציה 4 כוסות Bialetti – אדום",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1618,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 81246,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - רוז גולד",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%a8%d7%95%d7%96-%d7%92%d7%95%d7%9c%d7%93/"
+ },
+ {
+  "id": 81241,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - לבן עם עץ",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9c%d7%91%d7%9f-%d7%a2%d7%9d-%d7%a2%d7%a5/"
+ },
+ {
+  "id": 81235,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - לבן",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81230,
+  "name": "מקינטה מוקה אינדוקציה 2 כוסות Bialetti – אדום",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1618,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-%d7%a9%d7%9c-bialetti-%d7%91%d7%a2%d7%99%d7%a6%d7%95%d7%91-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 81208,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - ירוק",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%99%d7%a8%d7%95%d7%a7/"
+ },
+ {
+  "id": 81200,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - כרום",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9b%d7%a8%d7%95%d7%9d/"
+ },
+ {
+  "id": 81192,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת - תכלת",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%aa%d7%9b%d7%9c%d7%aa/"
+ },
+ {
+  "id": 81107,
+  "name": "מטחנת קפה מקצועית  Varia VS6 - שחור",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1670,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-varia-vs6-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81092,
+  "name": "מכונת קפה מקצועית La Marzocco KB90 - שני ראשים",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1860,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-kb90-%d7%a9%d7%a0%d7%99-%d7%a8%d7%90%d7%a9%d7%99%d7%9d/"
+ },
+ {
+  "id": 81089,
+  "name": "משקל קפה Acaia Pearl s - שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1303,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81086,
+  "name": "מכונת קפה מקצועית La Marzocco Linea PB - שני ראשים",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1375,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-pb-%d7%a9%d7%a0%d7%99-%d7%a8%d7%90%d7%a9%d7%99%d7%9d/"
+ },
+ {
+  "id": 81083,
+  "name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1235,
+  "permalink": "https://www.minuto.co.il/product/hario-polaris-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-%d7%97%d7%9b%d7%9d-%d7%9c%d7%93%d7%99%d7%95%d7%a7-%d7%9e%d7%95%d7%a9%d7%9c%d7%9d/"
+ },
+ {
+  "id": 81077,
+  "name": "משקל קפה Acaia Lunar - שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1461,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81044,
+  "name": "מכונת קפה מקצועית La Marzocco Linea PB - שלושה ראשים",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1375,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-pb-2/"
+ },
+ {
+  "id": 81019,
+  "name": "קומקום חשמלי Fellow Stagg EKG | Pour Over צבע לבן",
+  "group": "kettle",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1059,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-fellow-stagg-ekg-pour-over-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 80845,
+  "name": "\"Toddy® Cold Brew System \"Commercial Model",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 695,
+  "permalink": "https://www.minuto.co.il/product/toddy-cold-brew-system-commercial-model/"
+ },
+ {
+  "id": 80356,
+  "name": "מטחנת קפה Eureka MIGNON LIBRA 65 All PURPOSE",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1220,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-libra-65-all-purpose/"
+ },
+ {
+  "id": 80246,
+  "name": "קנקן תה Hario Clear Teapot 700mL - FNC-70",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1017,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-hario-v60-drip-assist-%d7%90%d7%91%d7%99%d7%96%d7%a8-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7-%d7%9c%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 79795,
+  "name": "Gaggia Classic GT – מכונת אספרסו מקצועית לבית",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 1445,
+  "permalink": "https://www.minuto.co.il/product/gaggia-classic-gt-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%91%d7%99%d7%aa/"
+ },
+ {
+  "id": 79432,
+  "name": "מקינטה  ביאלטי מוקה 18 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 417,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-18-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 79178,
+  "name": "Hario V60 Drip Assist אביזר חליטה מדויק לפילטר",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1048,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-drip-assist-%d7%90%d7%91%d7%99%d7%96%d7%a8-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7-%d7%9c%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 78678,
+  "name": "Mahlkönig X64 SD – מטחנת קפה ביתית סינגל דוז",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1060,
+  "permalink": "https://www.minuto.co.il/product/mahlkonig-x64-sd-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa-%d7%a1%d7%99%d7%a0%d7%92%d7%9c-%d7%93%d7%95%d7%96/"
+ },
+ {
+  "id": 78396,
+  "name": "מטחנת קפה ידנית Wacaco Exagrind",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1181,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-wacaco-exagrind/"
+ },
+ {
+  "id": 78317,
+  "name": "מכונת קפה ידנית ללית Lelit Elizabeth PL92T",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 2118,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-lelit-elizabeth-pl92t/"
+ },
+ {
+  "id": 78278,
+  "name": "מכונת קפה ידנית ללית Lelit - PL41TEM",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1586,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-lelit-pl41tem/"
+ },
+ {
+  "id": 78273,
+  "name": "Macap Leo 55 Touch - מטחנת קפה מקצועית",
+  "group": "grinder",
+  "missing": [
+   "burrs",
+   "burr_size"
+  ],
+  "text_len": 1148,
+  "permalink": "https://www.minuto.co.il/product/macap-leo-55-touch-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 78267,
+  "name": "מכונת קפה אוטומטית Jura C3",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1198,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-c3/"
+ },
+ {
+  "id": 78106,
+  "name": "קנקן תה HARIO Colors Tea &amp; Coffee Server",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 881,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%aa%d7%94-hario-colors-tea-coffee-server/"
+ },
+ {
+  "id": 77389,
+  "name": "Coffee Server 500 ml - קנקן מזיגה לקפה פילטר",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 538,
+  "permalink": "https://www.minuto.co.il/product/coffee-server-500-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 77386,
+  "name": "Coffee Server 300 ml - קנקן מזיגה לקפה פילטר",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 574,
+  "permalink": "https://www.minuto.co.il/product/coffee-server-300-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 77376,
+  "name": "קנקן נירוסטה - חלבית למכונת אספרסו",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 658,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a0%d7%99%d7%a8%d7%95%d7%98%d7%94-%d7%97%d7%9c%d7%91%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 77276,
+  "name": "ערכת Toddy Essential – קולד ברו איכותי בסטנדרט מקצועי",
+  "group": "brewer",
+  "missing": [
+   "capacity",
+   "material"
+  ],
+  "text_len": 1104,
+  "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa-toddy-essential/"
+ },
+ {
+  "id": 77225,
+  "name": "מכונת קפה ECM Classika PID",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1072,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-ecm-classika-pid/"
+ },
+ {
+  "id": 77156,
+  "name": "מכונת קפה מליטה  Melitta® Latticia צבע שחור",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2979,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-latticia-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 77111,
+  "name": "מטחנת קפה ידנית קומנדנטה צבע שקיעה Comandante C40 Nitro Blade Special Coating Sunset",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1937,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%a7%d7%99%d7%a2%d7%94-comandante-c40-nitro/"
+ },
+ {
+  "id": 77069,
+  "name": "ערכת התאמה אישית מעץ מייפל למכונת La Marzocco Linea Mini",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 655,
+  "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%94%d7%aa%d7%90%d7%9e%d7%94-%d7%90%d7%99%d7%a9%d7%99%d7%aa-%d7%9e%d7%a2%d7%a5-%d7%9e%d7%99%d7%99%d7%a4%d7%9c-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-la-marzocco-linea-mini/"
+ },
+ {
+  "id": 77026,
+  "name": "מטחנת קפה שוקלת Ceado REV Titan On-Demand",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1336,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-ceado-rev-titan-on-demand/"
+ },
+ {
+  "id": 77024,
+  "name": "מטחנת קפה שוקלת Ceado REV Steel On-Demand",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1753,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-ceado-rev-steel-on-demand/"
+ },
+ {
+  "id": 76940,
+  "name": "מכונת אספרסו אוטומטית מלאה Nivona NICR 690 Cafe Romatica",
+  "group": "superauto",
+  "missing": [],
+  "text_len": 1569,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%90%d7%94-nivona-nicr-690-cafe-romatica/"
+ },
+ {
+  "id": 76875,
+  "name": "מכונת קפה מקצועית La Marzocco KB90 - שלושה ראשים",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1860,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-kb90/"
+ },
+ {
+  "id": 76857,
+  "name": "Hario SWITCH Immersion Dripper 03",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1095,
+  "permalink": "https://www.minuto.co.il/product/hario-switch-immersion-dripper-03/"
+ },
+ {
+  "id": 76781,
+  "name": "מכונת קפה טוחנת אוטומטית אמיליו",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1115,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%98%d7%95%d7%97%d7%a0%d7%aa-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/"
+ },
+ {
+  "id": 76545,
+  "name": "מכונת קפה JURA J10",
+  "group": "superauto",
+  "missing": [
+   "power"
+  ],
+  "text_len": 1745,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-j10/"
+ },
+ {
+  "id": 76423,
+  "name": "Stone Lite white – מכונת אספרסו ידנית צבע לבן",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 790,
+  "permalink": "https://www.minuto.co.il/product/stone-lite-white-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 76418,
+  "name": "Stone Lite Premium – מכונת אספרסו ידנית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 796,
+  "permalink": "https://www.minuto.co.il/product/stone-lite-premium-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa/"
+ },
+ {
+  "id": 76409,
+  "name": "Stone Lite Black – מכונת אספרסו ידנית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 810,
+  "permalink": "https://www.minuto.co.il/product/stone-lite-black-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/"
+ },
+ {
+  "id": 76368,
+  "name": "מטחנת קפה מקצועית  Varia VS6 - לבן",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1670,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-varia-vs6/"
+ },
+ {
+  "id": 76352,
+  "name": "מכונת קפה JURA W8",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 2851,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-we/"
+ },
+ {
+  "id": 76318,
+  "name": "מכונת קפה ECM SYNCHRONIKA II",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1079,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-ecm-synchronika-ii/"
+ },
+ {
+  "id": 76315,
+  "name": "מטחנת קפה מקצועית Baratza Sette 270Wi",
+  "group": "grinder",
+  "missing": [
+   "burrs",
+   "burr_size"
+  ],
+  "text_len": 1237,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-baratza-sette-270wi/"
+ },
+ {
+  "id": 69450,
+  "name": "מכונת קפה פילטר BEEM Fresh Aroma Perfect",
+  "group": "filter_machine",
+  "missing": [],
+  "text_len": 1022,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-beem-fresh-aroma-perfect/"
+ },
+ {
+  "id": 69416,
+  "name": "מכונת אספרסו ידנית Gaggia Classic E24 - צבע שחור",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "portafilter"
+  ],
+  "text_len": 1775,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-gaggia-classic-e24-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 69413,
+  "name": "מכונת אספרסו ידנית Gaggia Classic E24 - נירוסטה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "portafilter"
+  ],
+  "text_len": 1748,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-gaggia-classic-e24/"
+ },
+ {
+  "id": 68451,
+  "name": "V60 Coffee drip kettle Buono - קומקום מזיגה האריו 1.2 ליטר",
+  "group": "kettle",
+  "missing": [
+   "power"
+  ],
+  "text_len": 322,
+  "permalink": "https://www.minuto.co.il/product/v60-coffee-drip-kettle-buono-%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-1-2-%d7%9c%d7%99%d7%98%d7%a8/"
+ },
+ {
+  "id": 68383,
+  "name": "מקינטה  ביאלטי מוקה 3 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 287,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 68336,
+  "name": "מכונת קפה מליטה סולו -  Melitta Solo Milk Silver",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 532,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-melitta-solo-milk-silver/"
+ },
+ {
+  "id": 68295,
+  "name": "Nanopresso ננופרסו - מכונת אספרסו לשטח",
+  "group": "capsule_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank"
+  ],
+  "text_len": 547,
+  "permalink": "https://www.minuto.co.il/product/nanopresso-%d7%a0%d7%a0%d7%95%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%a9%d7%98%d7%97/"
+ },
+ {
+  "id": 68281,
+  "name": "מטחנת קפה מליטה קליברה  -  Melitta Calibra",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 883,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%9c%d7%99%d7%91%d7%a8%d7%94-melitta-calibra/"
+ },
+ {
+  "id": 68280,
+  "name": "מכונת אספרסו רוקט ג'יוטו כרונומטרו אר - ROCKET GIOTTO CRONOMETRO R EVO",
+  "group": "espresso",
+  "missing": [],
+  "text_len": 8353,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-%d7%92%d7%99%d7%95%d7%98%d7%95-%d7%9b%d7%a8%d7%95%d7%a0%d7%95%d7%9e%d7%98%d7%a8%d7%95-%d7%90%d7%a8-roc/"
+ },
+ {
+  "id": 68271,
+  "name": "מכונת קפה ידנית מקצועית וי.בי.אם דומובר VBM Domobar",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 941,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%95%d7%99-%d7%91%d7%99-%d7%90%d7%9d-%d7%93%d7%95%d7%9e%d7%95%d7%91%d7%a8/"
+ },
+ {
+  "id": 67670,
+  "name": "מכונת אספרסו רוקט אפרטמנטו TCA בצבע שחור-נחושת - Rocket Appartamento TCA Black-Copper",
+  "group": "espresso",
+  "missing": [
+   "portafilter"
+  ],
+  "text_len": 1101,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-%d7%90%d7%a4%d7%a8%d7%98%d7%9e%d7%a0%d7%98%d7%95-tca-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 67662,
+  "name": "מקינטה Bialetti Moka Induction Dolce&amp;Gabbana 4 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1113,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-bialetti-moka-induction-dolcegabbana-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67659,
+  "name": "מקינטה מוקה צבע תכלת Bialetti Rainbow - מקינטה 3 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 714,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%a6%d7%91%d7%a2-%d7%aa%d7%9b%d7%9c%d7%aa-bialetti-rainbow-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67645,
+  "name": "מכונת קפה מקצועית ECM Mechanika VI Slim PID",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1051,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-mechanika-slim-pid/"
+ },
+ {
+  "id": 67638,
+  "name": "מכונת אספרסו Bezzera Aria MN נירוסטה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 988,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-bezzera-aria-s-mn-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 67637,
+  "name": "Mahlkonig E65S GBW מטחנת קפה מקצועית",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1395,
+  "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-gbw-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/"
+ },
+ {
+  "id": 67622,
+  "name": "La Pavoni EXPO 2015: מכונת קפה מנוף ידנית מקצועית",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 927,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-expo-2015-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67618,
+  "name": "Melitta Solo Silver מכונת קפה אוטומטית מליטה סולו כסף",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 538,
+  "permalink": "https://www.minuto.co.il/product/melitta-solo-silver-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-%d7%9b%d7%a1%d7%a3/"
+ },
+ {
+  "id": 67606,
+  "name": "מכונת קפה מקצועית לה פאבוני La Pavoni New Cellini Classic",
+  "group": "espresso",
+  "missing": [],
+  "text_len": 1472,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%94-%d7%a4%d7%90%d7%91%d7%95%d7%a0%d7%99-la-pavoni-new-cellini-classic/"
+ },
+ {
+  "id": 67605,
+  "name": "La Pavoni Europiccola Nero: מכונת קפה מנוף ידנית מקצועית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1800,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-europiccola-nero-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67604,
+  "name": "La Pavoni Professional Rame Gold PRG: מכונת קפה מנוף מקצועית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1316,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-rame-gold-prg-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67603,
+  "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Mini Cellini Silver",
+  "group": "espresso",
+  "missing": [
+   "weight",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1524,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%94-%d7%a4%d7%90%d7%91%d7%95%d7%a0%d7%99-la-pavoni-mini-cellini-silver/"
+ },
+ {
+  "id": 67399,
+  "name": "מכונת אספרסו רוקט- V מוציפיאטו כרונומטרו V Rocket Mozzafiato Cronometro",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 675,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-v-%d7%9e%d7%95%d7%a6%d7%99%d7%a4%d7%99%d7%90%d7%98%d7%95-%d7%9b%d7%a8%d7%95%d7%a0%d7%95%d7%9e%d7%98%d7%a8/"
+ },
+ {
+  "id": 67371,
+  "name": "מכונת קפה מקצועית Crem One - Dual Boiler PID R LFPP",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1170,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-crem-one-dual-boiler-pid-r-lfpp/"
+ },
+ {
+  "id": 67367,
+  "name": "מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה - Eureka",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 703,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-%d7%a2%d7%9d-%d7%a6%d7%92-specialita-%d7%90%d7%95%d7%a8%d7%99%d7%a7-2/"
+ },
+ {
+  "id": 67366,
+  "name": "מטחנה קפה מקצועית מיגנון MANUALE אוריקה - Eureka",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 583,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-manuale-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/"
+ },
+ {
+  "id": 67363,
+  "name": "מכונת אספרסו ניבונה Nivona NICR 820",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "bean_hopper"
+  ],
+  "text_len": 1527,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-820/"
+ },
+ {
+  "id": 67349,
+  "name": "מכונת קפה מקצועית ECM Mechanika VI Slim",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1615,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-mechanika-vi-slim/"
+ },
+ {
+  "id": 67348,
+  "name": "מכונת קפה מקצועית ECM SYNCHRONIKA",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1597,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-synchronika/"
+ },
+ {
+  "id": 67345,
+  "name": "מכונת קפה פסקל Pascale Coffee &amp; Tea",
+  "group": "superauto",
+  "missing": [
+   "bean_hopper"
+  ],
+  "text_len": 998,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%a1%d7%a7%d7%9c-pascale-coffee-tea/"
+ },
+ {
+  "id": 67337,
+  "name": "מכונת קפה גאג'יה מג׳נטה פלוס Gaggia Magenta Plus",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 2031,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-magenta-plus/"
+ },
+ {
+  "id": 67330,
+  "name": "מכונת קפה מליטה  Melitta® Caffeo CI Touch",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 3772,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-ci-touch/"
+ },
+ {
+  "id": 67329,
+  "name": "מכונת קפה מליטה  Melitta® Latte Select",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 3818,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-latte-select/"
+ },
+ {
+  "id": 67328,
+  "name": "מכונת קפה גאג'יה אנימה קלאס Gaggia Anima Class",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1265,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%90%d7%a0%d7%99%d7%9e%d7%94-%d7%a7%d7%9c%d7%90%d7%a1-gaggia-anima-class/"
+ },
+ {
+  "id": 67319,
+  "name": "מטחנת קפה מקצועית אלקטרונית עם מסך מגע Ceado E37J",
+  "group": "grinder",
+  "missing": [
+   "burr_size",
+   "hopper"
+  ],
+  "text_len": 962,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%90%d7%9c%d7%a7%d7%98%d7%a8%d7%95%d7%a0%d7%99%d7%aa-%d7%a2%d7%9d-%d7%9e%d7%a1%d7%9a-%d7%9e%d7%92%d7%a2-c/"
+ },
+ {
+  "id": 67313,
+  "name": "מטחנת קפה מקצועית לטחינת מנה בודדת Ceado e37sd",
+  "group": "grinder",
+  "missing": [
+   "burr_size",
+   "hopper"
+  ],
+  "text_len": 1030,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%98%d7%97%d7%99%d7%a0%d7%aa-%d7%9e%d7%a0%d7%94-%d7%91%d7%95%d7%93%d7%93%d7%aa-ceado-e37sd/"
+ },
+ {
+  "id": 67309,
+  "name": "מכונת קפה גאג'יה אנימה בריסטה Gaggia ANIMA BARISTA PLUS",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1868,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%90%d7%a0%d7%99%d7%9e%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-gaggia-anima-barista-plus-2/"
+ },
+ {
+  "id": 67296,
+  "name": "מכונת קפה אוטומטית מליטה בריסטה טיאס סמארט Melitta® Barista TS Smart Black שחור",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1022,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99%d7%90%d7%a1-%d7%a1/"
+ },
+ {
+  "id": 67295,
+  "name": "Clever Dripper",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 823,
+  "permalink": "https://www.minuto.co.il/product/clever-dripper/"
+ },
+ {
+  "id": 67284,
+  "name": "מכונת קפה מקצועית בזרה Bezzera BZ10 Professional Coffee Machine",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 975,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-bezzera-bz10-professional-coffee-machine/"
+ },
+ {
+  "id": 67283,
+  "name": "מכונת קפה מקצועית BEZZERA MATRIX ELECTRONIC DOSAGE 1 GR",
+  "group": "espresso",
+  "missing": [
+   "weight",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1479,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bezzera-matrix-electronic-dosage-1-gr/"
+ },
+ {
+  "id": 67278,
+  "name": "Mahlkonig X54 מטחנת קפה ביתית",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "speed"
+  ],
+  "text_len": 1100,
+  "permalink": "https://www.minuto.co.il/product/mahlkonig-x54-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/"
+ },
+ {
+  "id": 67275,
+  "name": "מכונת אספרסו ניבונה Nivona NICR 795",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "bean_hopper"
+  ],
+  "text_len": 1301,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-795/"
+ },
+ {
+  "id": 67274,
+  "name": "מכונת אספרסו ניבונה Nivona NICR 790",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "bean_hopper"
+  ],
+  "text_len": 1301,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-790/"
+ },
+ {
+  "id": 67273,
+  "name": "מכונת אספרסו ניבונה Nivona NICR 796",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "water_tank",
+   "bean_hopper"
+  ],
+  "text_len": 1381,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-nicr-796/"
+ },
+ {
+  "id": 67262,
+  "name": "מטחנת קפה מקצועית דיגיטלית Ceado e6p",
+  "group": "grinder",
+  "missing": [
+   "burr_size",
+   "hopper"
+  ],
+  "text_len": 849,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%93%d7%99%d7%92%d7%99%d7%98%d7%9c%d7%99%d7%aa-ceado-e6p/"
+ },
+ {
+  "id": 67257,
+  "name": "מכונת קפה גאג'יה מג׳נטה פרסטיז׳ Gaggia Magenta Prestige",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1847,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96%d7%b3-gaggia-magenta-prestige/"
+ },
+ {
+  "id": 67243,
+  "name": "מטחנת קפה Melitta Molino",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1135,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-melitta-molino/"
+ },
+ {
+  "id": 67225,
+  "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 550",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1585,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-550/"
+ },
+ {
+  "id": 67218,
+  "name": "Melitta Optima Timer מכונת קפה פילטר מליטה אופטימה טיימר נירוסטה",
+  "group": "filter_machine",
+  "missing": [
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 794,
+  "permalink": "https://www.minuto.co.il/product/melitta-optima-timer-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%90%d7%95%d7%a4%d7%98%d7%99%d7%9e%d7%94-%d7%98%d7%99%d7%99%d7%9e/"
+ },
+ {
+  "id": 67214,
+  "name": "מטחנת קפה EUREKA MIGNON XL צבע שחור",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1249,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-xl-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 67213,
+  "name": "Mahlkonig E65S מטחנת קפה מקצועית",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1081,
+  "permalink": "https://www.minuto.co.il/product/mahlkonig-e65s-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%91%d7%99%d7%aa%d7%99%d7%aa/"
+ },
+ {
+  "id": 67200,
+  "name": "Toddy® Cold Brew System",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1812,
+  "permalink": "https://www.minuto.co.il/product/toddy-cold-brew-system/"
+ },
+ {
+  "id": 67193,
+  "name": "מכונת אספרסו ראש אחד - CREM EX3 Mini 1GR",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1091,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%90%d7%a9-%d7%90%d7%97%d7%93-exspobar-ex3-mini-1gr/"
+ },
+ {
+  "id": 67169,
+  "name": "מכונת קפה מקצועית Bezzera Magica MN PID",
+  "group": "espresso",
+  "missing": [
+   "portafilter"
+  ],
+  "text_len": 1219,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bezzera-magica-mn-pid/"
+ },
+ {
+  "id": 67167,
+  "name": "מכונת קפה מקצועית Bezzera Aria Top Black",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1846,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-bezzera-aria-top-black/"
+ },
+ {
+  "id": 67165,
+  "name": "מטחנה קפה מקצועית מיגנון classico אוריקה - Eureka",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 600,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-classico-%d7%90%d7%95%d7%a8%d7%99%d7%a7%d7%94-eureka/"
+ },
+ {
+  "id": 67163,
+  "name": "מכונת קפה מקצועית בזרה Bezzera DUO MN",
+  "group": "espresso",
+  "missing": [
+   "pressure"
+  ],
+  "text_len": 1631,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-bezzera-duo-mn/"
+ },
+ {
+  "id": 67162,
+  "name": "Melitta Solo מכונת קפה אוטומטית מליטה סולו צבע אדום",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 578,
+  "permalink": "https://www.minuto.co.il/product/melitta-solo-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-%d7%a6%d7%91%d7%a2-%d7%90%d7%93/"
+ },
+ {
+  "id": 67161,
+  "name": "La Pavoni Europiccola ELH מכונת קפה מנוף לה פבוני יורופיקולה",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1725,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-europiccola-elh-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%99%d7%95%d7%a8%d7%95%d7%a4%d7%99%d7%a7%d7%95%d7%9c/"
+ },
+ {
+  "id": 67160,
+  "name": "La Pavoni Professional PLQ מכונת קפה מנוף לה פבוני פרופשיונאל",
+  "group": "espresso",
+  "missing": [
+   "water_tank"
+  ],
+  "text_len": 1624,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-professional-plq-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9c%d7%94-%d7%a4%d7%91%d7%95%d7%a0%d7%99-%d7%a4%d7%a8%d7%95%d7%a4%d7%a9%d7%99%d7%95%d7%a0%d7%90/"
+ },
+ {
+  "id": 67159,
+  "name": "מכונת קפה גאגיה קלאסיק פרו - Gaggia Classic Pro E24 צבע צהוב",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1984,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%9c%d7%90%d7%a1%d7%99%d7%a7-%d7%a4%d7%a8%d7%95-gaggia-classic-pro-%d7%a6%d7%91%d7%a2-%d7%a6%d7%94%d7%95/"
+ },
+ {
+  "id": 67158,
+  "name": "מכונת קפה גאגיה קלאסיק פרו -    Gaggia Classic Pro E24 צבע ירוק",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 1984,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%9c%d7%90%d7%a1%d7%99%d7%a7-%d7%a4%d7%a8%d7%95-gaggia-classic-pro-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95/"
+ },
+ {
+  "id": 67157,
+  "name": "מכונת קפה מקצועית ECM Mechanika MAX",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 2255,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-mechanika-max/"
+ },
+ {
+  "id": 67156,
+  "name": "מכונת קפה מקצועית ECM Puristika",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 2181,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-puristika/"
+ },
+ {
+  "id": 67153,
+  "name": "La Pavoni Esperto Edotto: מכונת קפה ידנית מקצועית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1334,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-edotto-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67152,
+  "name": "מכונת קפה מנוף מקצועית בזרה Bezzera Strega Top",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 2491,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%95%d7%a3-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-bezzera-strega-top/"
+ },
+ {
+  "id": 67151,
+  "name": "מטחנת קפה אמיליו",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1122,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/"
+ },
+ {
+  "id": 68298,
+  "name": "מיניפרסו - מכונת אספרסו לשטח - MiniPresso NS",
+  "group": "capsule_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "water_tank"
+  ],
+  "text_len": 745,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%99%d7%a0%d7%99%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%a9%d7%98%d7%97-minipresso-ns/"
+ },
+ {
+  "id": 68297,
+  "name": "Minipresso-GR מיניפרסו קפה טחון, מכונת אספרסו לשטח",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "water_tank",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 683,
+  "permalink": "https://www.minuto.co.il/product/minipresso-gr-%d7%9e%d7%99%d7%a0%d7%99%d7%a4%d7%a8%d7%a1%d7%95-%d7%a7%d7%a4%d7%94-%d7%98%d7%97%d7%95%d7%9f-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%a9%d7%98%d7%97/"
+ },
+ {
+  "id": 68287,
+  "name": "מטחנת קפה Ceado דגם E5P - קוטר סכינים 64 מ\"מ",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 496,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-ceado-%d7%93%d7%92%d7%9d-e5p-%d7%a7%d7%95%d7%98%d7%a8-%d7%a1%d7%9b%d7%99%d7%a0%d7%99%d7%9d-64-%d7%9e%d7%9e/"
+ },
+ {
+  "id": 68278,
+  "name": "מרכך מים למכונת סאקו וגאגיה של בריטה - Water filter and cartridge",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 589,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%90%d7%a7%d7%95-%d7%95%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a9%d7%9c-%d7%91%d7%a8%d7%99%d7%98%d7%94-water-filte/"
+ },
+ {
+  "id": 68264,
+  "name": "מטחנת קפה מקצועית  WPM ZD-12 GRAEF",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 566,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-wpm-zd-12-graef/"
+ },
+ {
+  "id": 67671,
+  "name": "La Pavoni Esperto Abile: מכונת קפה ידנית מקצועית",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1689,
+  "permalink": "https://www.minuto.co.il/product/la-pavoni-esperto-abile-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67661,
+  "name": "מקינטה Bialetti Moka Induction Dolce&amp;Gabbana 2 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1142,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-bialetti-moka-induction-dolcegabbana-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67658,
+  "name": "מקינטה מוקה צבע ירוק Bialetti Rainbow - מקינטה 3 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 714,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-bialetti-rainbow-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67657,
+  "name": "מקינטה מוקה אדום Bialetti Rainbow - מקינטה 3 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 714,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%90%d7%93%d7%95%d7%9d-bialetti-rainbow-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67653,
+  "name": "מטחנת קפה - Single Dose DF54",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1770,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df54/"
+ },
+ {
+  "id": 67650,
+  "name": "מכונת קפה מקצועית ECM Technika VI דוד כפול",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 2810,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-technika-v-profi-pid/"
+ },
+ {
+  "id": 67648,
+  "name": "מטחנת קפה מקצועית Eureka Atom Excellence 75",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1267,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-eureka-atom-excellence-75/"
+ },
+ {
+  "id": 67635,
+  "name": "Macap Leo 55 Essential - מטחנת קפה עוצמתית וסטייליסטית",
+  "group": "grinder",
+  "missing": [
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 1061,
+  "permalink": "https://www.minuto.co.il/product/macap-leo-55-essential-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a2%d7%95%d7%a6%d7%9e%d7%aa%d7%99%d7%aa-%d7%95%d7%a1%d7%98%d7%99%d7%99%d7%9c%d7%99%d7%a1%d7%98%d7%99%d7%aa/"
+ },
+ {
+  "id": 67607,
+  "name": "Gaggia MDF 55 מטחנת אספרסו ביתית מקצועית",
+  "group": "grinder",
+  "missing": [
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 2235,
+  "permalink": "https://www.minuto.co.il/product/gaggia-mdf-55-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%99%d7%aa%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa/"
+ },
+ {
+  "id": 67602,
+  "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Mini Cellini Black",
+  "group": "espresso",
+  "missing": [
+   "weight",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1505,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%94-%d7%a4%d7%90%d7%91%d7%95%d7%a0%d7%99-la-pavoni-mini-cellini-black/"
+ },
+ {
+  "id": 67601,
+  "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Domus Bar",
+  "group": "espresso",
+  "missing": [
+   "weight",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1724,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%94-%d7%a4%d7%90%d7%91%d7%95%d7%a0%d7%99-la-pavoni-domus-bar/"
+ },
+ {
+  "id": 67370,
+  "name": "מכונת קפה מקצועית Crem ONE 1B מחליף חום",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 852,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-crem-one-1b-%d7%9e%d7%97%d7%9c%d7%99%d7%a3-%d7%97%d7%95%d7%9d/"
+ },
+ {
+  "id": 67369,
+  "name": "מכונת קפה מקצועית ONE 2B R-GSP Dual",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 744,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-one-2b-r-gsp-dual/"
+ },
+ {
+  "id": 67347,
+  "name": "מכונת קפה מקצועית ECM Mechanika IV Profi",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "pressure"
+  ],
+  "text_len": 1128,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ecm-mechanika-iv-profi/"
+ },
+ {
+  "id": 67343,
+  "name": "מטחנת קפה מקצועית Eureka Atom Excellence 65  לבנה",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1292,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-eureka-atom-excellence-65/"
+ },
+ {
+  "id": 67326,
+  "name": "מטחנת קפה למנה בודדת Ceado דגם E5SD",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 506,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9c%d7%9e%d7%a0%d7%94-%d7%91%d7%95%d7%93%d7%93%d7%aa-ceado-%d7%93%d7%92%d7%9d-e5sd/"
+ },
+ {
+  "id": 67314,
+  "name": "מכונת קפה אוטומטית Melitta Purista® Series 300",
+  "group": "superauto",
+  "missing": [
+   "bean_hopper"
+  ],
+  "text_len": 2543,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-melitta-purista-series-300/"
+ },
+ {
+  "id": 67299,
+  "name": "מכונת קפה מליטה נירוסטה Melitta® Caffeo Passione",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1636,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-melitta-caffeo-passione/"
+ },
+ {
+  "id": 67286,
+  "name": "מטחנת קפה - Single Dose DF64E - לבן",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 717,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df64e/"
+ },
+ {
+  "id": 67285,
+  "name": "מכונת קפה מקצועית בזרה מטריקס  Bezzera Matrix MN",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "pressure"
+  ],
+  "text_len": 1498,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-%d7%9e%d7%98%d7%a8%d7%99%d7%a7%d7%a1-%d7%a8%d7%90%d7%a9-%d7%90%d7%97%d7%93-bezzera/"
+ },
+ {
+  "id": 67263,
+  "name": "מכונת קפה מקצועית בזרה Bezzera Hobby 01",
+  "group": "espresso",
+  "missing": [
+   "pressure"
+  ],
+  "text_len": 1361,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-bezzera-hobby-01/"
+ },
+ {
+  "id": 67230,
+  "name": "מכונת אספרסו גאג'יה ויוה פרסטיז'- Gaggia Viva prestige",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 816,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%95%d7%99%d7%95%d7%94-%d7%a4%d7%a8%d7%a1%d7%98%d7%99%d7%96-gaggia-viva-prestige/"
+ },
+ {
+  "id": 67227,
+  "name": "מכונת קפה מקצועית Crem ONE 2BV Dual",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 721,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-crem-one-2bv-dual/"
+ },
+ {
+  "id": 67216,
+  "name": "מכונת קפה אוטומטית Jura J8",
+  "group": "superauto",
+  "missing": [
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2073,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-j8/"
+ },
+ {
+  "id": 67212,
+  "name": "מטחנת קפה מקצועית דיגיטלית Ceado 37S",
+  "group": "grinder",
+  "missing": [
+   "burr_size"
+  ],
+  "text_len": 1435,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%93%d7%99%d7%92%d7%99%d7%98%d7%9c%d7%99%d7%aa-ceado-37s/"
+ },
+ {
+  "id": 67202,
+  "name": "מכונת קפה מקצועית בזרה Bezzera DUO DE",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1331,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%91%d7%96%d7%a8%d7%94-bezzera-duo-de/"
+ },
+ {
+  "id": 67174,
+  "name": "מקינטה מוקה צהוב Bialetti Rainbow - מקינטה 3 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 714,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%95%d7%a7%d7%94-%d7%a6%d7%94%d7%95%d7%91-bialetti-rainbow-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 67168,
+  "name": "מכונת קפה גאגיה קלאסיק פרו - Gaggia Classic Pro צבע אדום E24",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 702,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%9c%d7%90%d7%a1%d7%99%d7%a7-%d7%a4%d7%a8%d7%95-gaggia-classic-pro-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95/"
+ },
+ {
+  "id": 67155,
+  "name": "מטחנה קפה מקצועית מיגנון עם צג SPECIALITA אוריקה - Eureka צבע טורקיז",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 792,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9e%d7%99%d7%92%d7%a0%d7%95%d7%9f-%d7%a2%d7%9d-%d7%a6%d7%92-specialita-%d7%90%d7%95%d7%a8%d7%99%d7%a7/"
+ },
+ {
+  "id": 67154,
+  "name": "מכונת קפה גאג'יה קדורנה פלוס Gaggia Cadorna Plus",
+  "group": "espresso",
+  "missing": [
+   "portafilter"
+  ],
+  "text_len": 1487,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a7%d7%93%d7%95%d7%a8%d7%a0%d7%94-%d7%a4%d7%9c%d7%95%d7%a1-gaggia-cadorna-plus/"
+ },
+ {
+  "id": 67150,
+  "name": "מטחנת קפה מקצועית שוקלת Eureka Atom W 65 שחור",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1723,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-eureka-atom-w-65-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 67149,
+  "name": "מטחנת קפה מקצועית שוקלת Eureka Atom W 65 לבן",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1723,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-eureka-atom-w-65-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 67148,
+  "name": "מטחנת קפה מסחרית Eureka SG85 Grocery",
+  "group": "grinder",
+  "missing": [
+   "dimensions"
+  ],
+  "text_len": 1686,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a1%d7%97%d7%a8%d7%99%d7%aa-eureka-sg85-grocery/"
+ },
+ {
+  "id": 67147,
+  "name": "מטחנת קפה FIORENZATO AllGround Sense מטחנה שוקלת",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1663,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground-sense-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa/"
+ },
+ {
+  "id": 65477,
+  "name": "מכונת קפה JURA S8 דור 1- כשאיכות וטכנולוגיה נפגשים",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "portafilter"
+  ],
+  "text_len": 1739,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-s8-%d7%9b%d7%a9%d7%90%d7%99%d7%9b%d7%95%d7%aa-%d7%95%d7%98%d7%9b%d7%a0%d7%95%d7%9c%d7%95%d7%92%d7%99%d7%94-%d7%a0%d7%a4%d7%92%d7%a9%d7%99%d7%9d/"
+ },
+ {
+  "id": 65469,
+  "name": "מכונת קפה Jura E6 - להנאה מושלמת מקפוצ'ינו בלחיצת כפתור",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1528,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-e6-%d7%9c%d7%94%d7%a0%d7%90%d7%94-%d7%9e%d7%95%d7%a9%d7%9c%d7%9e%d7%aa-%d7%9e%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%91%d7%9c%d7%97/"
+ },
+ {
+  "id": 65459,
+  "name": "מטחנת קפה ידנית מקצועית Varia EVO",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 2565,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-varia-evo/"
+ },
+ {
+  "id": 65446,
+  "name": "מכונת קפה Jura C9 - מכונת קפה קומפקטית עם טעם מושלם",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 2885,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-c8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%9e%d7%a4%d7%a7%d7%98%d7%99%d7%aa-%d7%a2%d7%9d-%d7%98%d7%a2%d7%9d/"
+ },
+ {
+  "id": 65388,
+  "name": "מכונת אספרסו ניידת לרכב אמיליו",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1029,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%99%d7%93%d7%aa-%d7%9c%d7%a8%d7%9b%d7%91-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/"
+ },
+ {
+  "id": 65374,
+  "name": "מכונת אספרסו רוקט Rocket R NINE ONE",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1734,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one/"
+ },
+ {
+  "id": 65240,
+  "name": "מבצע - מכונת קפה רוקט אפרטמנטו",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "weight",
+   "water_tank",
+   "portafilter"
+  ],
+  "text_len": 1794,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a6%d7%a2-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a8%d7%95%d7%a7%d7%98-%d7%90%d7%a4%d7%a8%d7%98%d7%9e%d7%a0%d7%98%d7%95/"
+ },
+ {
+  "id": 65231,
+  "name": "מכונת קפה EQ.9 s500 Siemens סימנס plus connect",
+  "group": "superauto",
+  "missing": [
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 3839,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eq-9-s500-siemens-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-plus-connect/"
+ },
+ {
+  "id": 65230,
+  "name": "מכונת קפה אוטומטית סימנס EQ.9 plus connect s700",
+  "group": "superauto",
+  "missing": [
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 3839,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-eq-9-plus-connect-s700/"
+ },
+ {
+  "id": 65227,
+  "name": "מעמד לקפה פילטר 2 כוסות V60 מפלסטיק הריו Hario VD-02R",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 364,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%94%d7%a8%d7%99%d7%95-hario-vd-02r/"
+ },
+ {
+  "id": 65226,
+  "name": "מעמד לקפה פילטר 1 כוס V60 מפלסטיק הריו Hario VD-01R",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 364,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/"
+ },
+ {
+  "id": 65223,
+  "name": "דריפר זכוכית Hario V60 דגם VDGR-02",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 505,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-hario-vd-02r/"
+ },
+ {
+  "id": 65221,
+  "name": "Hario - V60 Drip Decanter - קנקן פילטר קלאסי עם חבק סיליקון",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 370,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-drip-decanter-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9c%d7%90%d7%a1%d7%99-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a1%d7%99%d7%9c%d7%99%d7%a7%d7%95%d7%9f/"
+ },
+ {
+  "id": 65217,
+  "name": "V60 Coffee drip kettle Buono - קומקום מזיגה האריו 1 ליטר",
+  "group": "kettle",
+  "missing": [
+   "power"
+  ],
+  "text_len": 173,
+  "permalink": "https://www.minuto.co.il/product/v60-coffee-drip-kettle-buono-%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-1-%d7%9c%d7%99%d7%98%d7%a8/"
+ },
+ {
+  "id": 65216,
+  "name": "קומקום חשמלי Fellow Stagg EKG | Pour Over",
+  "group": "kettle",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1050,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%9e%d7%a7%d7%95%d7%9d-%d7%97%d7%a9%d7%9e%d7%9c%d7%99-stagg-ekg-pour-over/"
+ },
+ {
+  "id": 65215,
+  "name": "Hario V60 Server 360 ml - קנקן מזיגה האריו",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 697,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/"
+ },
+ {
+  "id": 65214,
+  "name": "Hario V60 Server 600 ml - קנקן מזיגה האריו",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 155,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-600-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/"
+ },
+ {
+  "id": 65212,
+  "name": "Hario V60 Server 600 ml - קנקן מזיגה האריו שקוף",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 160,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-600-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/"
+ },
+ {
+  "id": 65211,
+  "name": "Hario Leaf tea pot Pure 360 ml - קנקן לחליטת תה",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 125,
+  "permalink": "https://www.minuto.co.il/product/leaf-tea-pot-pure-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94/"
+ },
+ {
+  "id": 65209,
+  "name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 3 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 353,
+  "permalink": "https://www.minuto.co.il/product/chemex-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a2%d7%a5-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 65203,
+  "name": "מטחנת קפה רנצ׳יליו רוקי - Rancilio rocky",
+  "group": "grinder",
+  "missing": [
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 402,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a8%d7%a0%d7%a6%d7%b3%d7%99%d7%9c%d7%99%d7%95-%d7%a8%d7%95%d7%a7%d7%99-rancilio-rocky/"
+ },
+ {
+  "id": 65182,
+  "name": "מכונת קפה סימנס Siemens S300 EQ.3 TI303203RW",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-s300-eq-3-ti303203rw/"
+ },
+ {
+  "id": 65181,
+  "name": "מסלול קפה לשנה מכונת קפה סימנס Siemens EQ 6 Plus series TE655203RW",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "bean_hopper"
+  ],
+  "text_len": 2822,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%9c%d7%95%d7%9c-%d7%a7%d7%a4%d7%94-%d7%9c%d7%a9%d7%a0%d7%94-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-te655203rw/"
+ },
+ {
+  "id": 65166,
+  "name": "מכונת קפה Siemens EQ500 TP507R04 classic",
+  "group": "superauto",
+  "missing": [
+   "weight"
+  ],
+  "text_len": 2740,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-siemens-eq500-tp507r04-classic/"
+ },
+ {
+  "id": 65163,
+  "name": "מכונת קפה מקצועית לה פאבוני La Pavoni Gran Caffe GCM",
+  "group": "espresso",
+  "missing": [
+   "portafilter"
+  ],
+  "text_len": 572,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%9c%d7%94-%d7%a4%d7%90%d7%91%d7%95%d7%a0%d7%99-la-pavoni-gran-caffe-gcm/"
+ },
+ {
+  "id": 65157,
+  "name": "אירופרס -  Aeropress",
+  "group": "brewer",
+  "missing": [
+   "capacity",
+   "material"
+  ],
+  "text_len": 437,
+  "permalink": "https://www.minuto.co.il/product/%d7%90%d7%99%d7%a8%d7%95%d7%a4%d7%a8%d7%a1-aeropress/"
+ },
+ {
+  "id": 65139,
+  "name": "מקינטה ונוס 2 כוסות ביאלטי - Makineta Venus  2 Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 387,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%95%d7%a0%d7%95%d7%a1-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-makineta-venus-2-bialetti/"
+ },
+ {
+  "id": 65138,
+  "name": "מקינטה ונוס 4 כוסות ביאלטי - Makineta Venus 4 Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 387,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%95%d7%a0%d7%95%d7%a1-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-makineta-venus-4-bialetti/"
+ },
+ {
+  "id": 65117,
+  "name": "מקינטה  ביאלטי מוקה 2 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 415,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 65116,
+  "name": "מקינטה  ביאלטי מוקה 4 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 415,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 65113,
+  "name": "מקינטה ביאלטי בריקה 2 כוסות - Bialetti Brikka",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 854,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%93%d7%95%d7%a8-%d7%97%d7%93%d7%a9-2020/"
+ },
+ {
+  "id": 65112,
+  "name": "מכונת קפה גאג'יה Gaggia Cadorna Prestige",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1278,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-gaggia-cadorna-prestige/"
+ },
+ {
+  "id": 65106,
+  "name": "מעמד לקפה פילטר 2 כוסות V60 מקרמיקה הריו Hario VDC-02W",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 540,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vdc-02w/"
+ },
+ {
+  "id": 65104,
+  "name": "מכונת קפה ידנית ללית מארה  Lelit Mara X PL62X",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 3829,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-%d7%9e%d7%90%d7%a8%d7%94-lelit-mara-x-pl62x/"
+ },
+ {
+  "id": 65102,
+  "name": "מכונת קפה מליטה בריסטה טי סמארט Melitta® Barista T Smart",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 544,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%98%d7%99-%d7%a1%d7%9e%d7%90%d7%a8%d7%98-melitta-barista-t-smart/"
+ },
+ {
+  "id": 65100,
+  "name": "HARIO פילטר בבקבוק 300 מ״ל לקפה בחליטה קרה Cold Brew צבע ירוק",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 723,
+  "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-300-%d7%9e%d7%b4%d7%9c-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-cold-brew-%d7%a6%d7%91/"
+ },
+ {
+  "id": 65099,
+  "name": "MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה 600 מ״ל - Cold Brew - אדום",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 668,
+  "permalink": "https://www.minuto.co.il/product/mizudashi-hario-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%9e%d7%99%d7%a6%d7%95%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a8-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-600-%d7%9e%d7%b4%d7%9c-cold-brew-%d7%90/"
+ },
+ {
+  "id": 65097,
+  "name": "מכונת קפה ידנית ללית + מטחנה Lelit Anita - PL042EMI",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 735,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-%d7%9e%d7%98%d7%97%d7%a0%d7%94-lelit-anita-pl042emi/"
+ },
+ {
+  "id": 65092,
+  "name": "קנקן מזיגה 350 מ\"ל AIR\" HARIO\"",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 321,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-350-%d7%9e%d7%9c-air-hario/"
+ },
+ {
+  "id": 65088,
+  "name": "מכונת קפה סימנס Siemens EQ 6 Plus series 700 TE657313RW",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "bean_hopper"
+  ],
+  "text_len": 2657,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-eq-6-plus-series-700-te657313rw/"
+ },
+ {
+  "id": 65084,
+  "name": "פרנץ׳ פרס 3 כוסות (0.35) -  ביאלטי Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1139,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%a8%d7%a0%d7%a5%d7%b3-%d7%a4%d7%a8%d7%a1-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-0-35-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-bialetti/"
+ },
+ {
+  "id": 65064,
+  "name": "מטחנת קפה מקצועית Compak I3 PRO",
+  "group": "grinder",
+  "missing": [
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 899,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-compak-e5-od/"
+ },
+ {
+  "id": 65058,
+  "name": "מקינטה  ביאלטי מוקה 9 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 415,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-9-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 65057,
+  "name": "פרנץ׳ פרס 8 כוסות (1 ליטר) -  ביאלטי Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1164,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%a8%d7%a0%d7%a5%d7%b3-%d7%a4%d7%a8%d7%a1-8-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-1-%d7%9c%d7%99%d7%98%d7%a8-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-bialetti/"
+ },
+ {
+  "id": 65055,
+  "name": "מטחנת קפה מקצועית LELIT William - PL72",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1137,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-william-pl72/"
+ },
+ {
+  "id": 65052,
+  "name": "מטחנת קפה מקצועית Obel junior pro",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 360,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-obel-junior-pro/"
+ },
+ {
+  "id": 65046,
+  "name": "מכונת קפה אוסקר נובה סימונלי מוד Nuova Simonelli Oscar Mood",
+  "group": "espresso",
+  "missing": [
+   "pressure"
+  ],
+  "text_len": 1346,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%a1%d7%a7%d7%a8-%d7%a0%d7%95%d7%91%d7%94-%d7%a1%d7%99%d7%9e%d7%95%d7%a0%d7%9c%d7%99-%d7%9e%d7%95%d7%93-nova-simonelli-oscar-mood/"
+ },
+ {
+  "id": 65040,
+  "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1721,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-bianca-dual-boiler-pl162t/"
+ },
+ {
+  "id": 65027,
+  "name": "מכונת קפה מליטה  Melitta® Caffeo Passione Silver OT",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2950,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-passione-silver-ot/"
+ },
+ {
+  "id": 65025,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini נירוסטה לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 65022,
+  "name": "מבצע - מכונת קפה רוקט אפרטמנטו שחור נחושת",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "weight",
+   "water_tank",
+   "portafilter"
+  ],
+  "text_len": 1795,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a6%d7%a2-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a8%d7%95%d7%a7%d7%98-%d7%90%d7%a4%d7%a8%d7%98%d7%9e%d7%a0%d7%98%d7%95-%d7%a9%d7%97%d7%95%d7%a8-%d7%a0%d7%97%d7%95%d7%a9/"
+ },
+ {
+  "id": 65014,
+  "name": "אירופרס לטיולים -  AEROPRESS GO TRAVEL COFFEE PRESS",
+  "group": "brewer",
+  "missing": [
+   "capacity",
+   "material"
+  ],
+  "text_len": 650,
+  "permalink": "https://www.minuto.co.il/product/%d7%90%d7%99%d7%a8%d7%95%d7%a4%d7%a8%d7%a1-%d7%9c%d7%98%d7%99%d7%95%d7%9c%d7%99%d7%9d-aeropress-go-travel-coffee-press/"
+ },
+ {
+  "id": 65011,
+  "name": "Melitta Solo מכונת קפה אוטומטית מליטה סולו Pure",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 581,
+  "permalink": "https://www.minuto.co.il/product/melitta-solo-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%a1%d7%95%d7%9c%d7%95-pure/"
+ },
+ {
+  "id": 65009,
+  "name": "Hario V60 Server 800 ml - קנקן מזיגה האריו",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 198,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-800-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95/"
+ },
+ {
+  "id": 64991,
+  "name": "מקינטה ביאלטי בריקה 4 כוסות + קפה",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 620,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64990,
+  "name": "מכונת אספרסו רוקט אר 60 וי - Rocket R 60V",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1195,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-%d7%90%d7%a8-60-%d7%95%d7%99-rocket-r-60v/"
+ },
+ {
+  "id": 64987,
+  "name": "מטחנת קפה מקצועית LELIT Fred Prima - PL043",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "speed"
+  ],
+  "text_len": 430,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-william-pl043/"
+ },
+ {
+  "id": 64966,
+  "name": "מכונת אספרסו מקצועית PROFITEC PRO 500 QUICK STEAM ESPRESSO MACHINE",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 772,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-pro-500-quick-steam-espresso-machine/"
+ },
+ {
+  "id": 64955,
+  "name": "מכונת אספרסו מקצועית Profitec PRO 700 דוד כפול",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1214,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-pro-700-%d7%93%d7%95%d7%93-%d7%9b%d7%a4%d7%95%d7%9c/"
+ },
+ {
+  "id": 64944,
+  "name": "מכונת קפה פילטר טוחנת מליטה Melitta Epos Momentum",
+  "group": "filter_machine",
+  "missing": [
+   "weight"
+  ],
+  "text_len": 1803,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%98%d7%95%d7%97%d7%a0%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-epos-momentum/"
+ },
+ {
+  "id": 64938,
+  "name": "מטחנת קפה ידנית קומנדנטה Comandante C40 MK4 Nitro Blade Black",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1692,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-comandante-c40-mk4-nitro-blade-black/"
+ },
+ {
+  "id": 64937,
+  "name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ ענבר נוזלי Comandante MK4 NB Premium Wood Liquid Amber",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1712,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-%d7%a2%d7%a0%d7%91%d7%a8/"
+ },
+ {
+  "id": 64936,
+  "name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood Virginia Walnut",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1707,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-comandante-mk4-nb-premiu-2/"
+ },
+ {
+  "id": 64935,
+  "name": "מכונת קפה אוטומטית Jura ENA 8 צבע לבן",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2035,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-ena-8-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 64929,
+  "name": "מכונת קפה אוטומטית Jura E8 - לבן",
+  "group": "superauto",
+  "missing": [
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 3115,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-e-8/"
+ },
+ {
+  "id": 64923,
+  "name": "מכונת קפה אוטומטית Jura Z 10 - שחור signature INOX",
+  "group": "superauto",
+  "missing": [
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2176,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-z-10/"
+ },
+ {
+  "id": 64897,
+  "name": "מכונת קפה מליטה Melitta® Latticia סילבר",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2976,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-latticia/"
+ },
+ {
+  "id": 64894,
+  "name": "CHEMEX - קנקן פילטר קמקס עם חבק עץ 6 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 359,
+  "permalink": "https://www.minuto.co.il/product/chemex-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%9e%d7%a7%d7%a1-%d7%a2%d7%9d-%d7%97%d7%91%d7%a7-%d7%a2%d7%a5-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa/"
+ },
+ {
+  "id": 64887,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע לבן לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-%d7%9c%d7%99%d7%a0%d7%90/"
+ },
+ {
+  "id": 64886,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע שחור לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64885,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע אדום לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64884,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע צהוב לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%a6%d7%94%d7%95%d7%91-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64883,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע תכלת לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%aa%d7%9b%d7%9c%d7%aa-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64882,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Mini צבע אפור לינאה מיני",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1655,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-mini-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64881,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע תכלת לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%aa%d7%9b%d7%9c%d7%aa-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64880,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע שחור לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64879,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע אפור לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64878,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע נירוסטה לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1986,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 64877,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע אדום לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d-%d7%9c%d7%99%d7%a0/"
+ },
+ {
+  "id": 64876,
+  "name": "מכונת אספרסו מקצועית La Marzocco Linea Micra צבע לבן לינאה מיקרה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure"
+  ],
+  "text_len": 1981,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-linea-micra-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-%d7%9c%d7%99%d7%a0%d7%90/"
+ },
+ {
+  "id": 64867,
+  "name": "מכונת אספרסו מקצועית La Marzocco GS3 MP",
+  "group": "espresso",
+  "missing": [
+   "pressure"
+  ],
+  "text_len": 3323,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-gs3-mp/"
+ },
+ {
+  "id": 64857,
+  "name": "מטחנת קפה FIORENZATO AllGround - שחור רוז גולד",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1747,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-fiorenzato-allground/"
+ },
+ {
+  "id": 64854,
+  "name": "מכונת קפה ידנית ניידת Flair 58X",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 1087,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a0%d7%99%d7%99%d7%93%d7%aa-flair-58x/"
+ },
+ {
+  "id": 64841,
+  "name": "מטחנת קפה ידנית קומנדנטה ציפוי עץ Comandante MK4 NB Premium Wood American Cherry",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1629,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-%d7%a6%d7%99%d7%a4%d7%95%d7%99-%d7%a2%d7%a5-comandante-mk4-nb-premium/"
+ },
+ {
+  "id": 64827,
+  "name": "מכונת קפה אוטומטית Jura ENA 8 שחורה",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1660,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99%d7%aa-jura-ena-8-%d7%a9%d7%97%d7%95%d7%a8%d7%94/"
+ },
+ {
+  "id": 64790,
+  "name": "מכונת קפה JURA WE8",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 2851,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-we8/"
+ },
+ {
+  "id": 64789,
+  "name": "מכונת קפה crem ex3 2GR",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "portafilter"
+  ],
+  "text_len": 2621,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-crem-ex3-2gr/"
+ },
+ {
+  "id": 64786,
+  "name": "מכונת קפה JURA GIGA 10",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 2375,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-giga-10/"
+ },
+ {
+  "id": 64782,
+  "name": "מטחנת קפה Single Dose DF83",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 2791,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-single-dose-df83/"
+ },
+ {
+  "id": 64781,
+  "name": "מטחנה פיורנזטו אלקטרונית Fiorenzato F83 E",
+  "group": "grinder",
+  "missing": [
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1680,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%a4%d7%99%d7%95%d7%a8%d7%a0%d7%96%d7%98%d7%95-%d7%90%d7%9c%d7%a7%d7%98%d7%a8%d7%95%d7%a0%d7%99%d7%aa-fiorenzato-f83-e/"
+ },
+ {
+  "id": 64779,
+  "name": "מטחנת קפה ידנית Comandante C40 MK4 Nitro Blade Copper",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 2063,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-comandante-c40-mk4-nitro-blade-cooper/"
+ },
+ {
+  "id": 64759,
+  "name": "מטחנת קפה LIFE Ceado",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1160,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-lifestyle-ceado/"
+ },
+ {
+  "id": 64758,
+  "name": "מטחנת קפה VARIA VS3 (2ND GENERATION) - כסף",
+  "group": "grinder",
+  "missing": [],
+  "text_len": 1755,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-varia-vs3-2nd-generation/"
+ },
+ {
+  "id": 64745,
+  "name": "משקל קפה Acaia Lunar - לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1450,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/"
+ },
+ {
+  "id": 64744,
+  "name": "משקל קפה Acaia Pearl",
+  "group": "scale",
+  "missing": [
+   "dimensions"
+  ],
+  "text_len": 715,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl/"
+ },
+ {
+  "id": 64743,
+  "name": "משקל קפה Acaia Pearl s - לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1303,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s/"
+ },
+ {
+  "id": 64736,
+  "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 560",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1590,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-560/"
+ },
+ {
+  "id": 64720,
+  "name": "מקינטה נירוסטה ביאלטי בריקה אינדוקציה 4 כוסות",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 660,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99/"
+ },
+ {
+  "id": 64715,
+  "name": "מבצע ללית דגם אנה - Lelit PL41EM שרביט הקצפה מקצועי + מטחנת קפה GRAEF",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1266,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a6%d7%a2-%d7%9c%d7%9c%d7%99%d7%aa-%d7%93%d7%92%d7%9d-%d7%90%d7%a0%d7%94-lelit-pl41em-%d7%a9%d7%a8%d7%91%d7%99%d7%98-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2/"
+ },
+ {
+  "id": 64710,
+  "name": "מטחנת קפה ידנית קומנדנטה COMANDANTE NITRO BLADE MK4- ALPINE LAGOON",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1953,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-comandante-nitro-blade-mk4-alpine-lagoon/"
+ },
+ {
+  "id": 64681,
+  "name": "מכונת אספרסו מקצועית Profitec PRO 600 דוד כפול",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 2562,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-pro-600-%d7%93%d7%95%d7%93-%d7%9b%d7%a4%d7%95%d7%9c/"
+ },
+ {
+  "id": 64680,
+  "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T V3 צבע לבן",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1846,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-bianca-dual-boiler-pl162t-v3-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 64679,
+  "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T V3 צבע שחור",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1846,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-lelit-bianca-dual-boiler-pl162t-v3-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 64678,
+  "name": "מכונת קפה ידנית ללית מארה  Lelit Mara X PL62X  צבע שחור",
+  "group": "espresso",
+  "missing": [],
+  "text_len": 4267,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-%d7%9e%d7%90%d7%a8%d7%94-lelit-mara-x-pl62x-v3-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 64677,
+  "name": "מכונת קפה ידנית ללית מארה  Lelit Mara X PL62X V3 צבע לבן",
+  "group": "espresso",
+  "missing": [],
+  "text_len": 4266,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%9c%d7%99%d7%aa-%d7%9e%d7%90%d7%a8%d7%94-lelit-mara-x-pl62x-v3-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 64675,
+  "name": "מכונת אספרסו מקצועית Profitec Drive",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 2431,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-drive/"
+ },
+ {
+  "id": 65476,
+  "name": "מכונת קפה פילטר טוחנת BEEM-FRESH-AROMA-PERFECT III",
+  "group": "filter_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 1244,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%98%d7%95%d7%97%d7%a0%d7%aa-beem-fresh-aroma-perfect-iii/"
+ },
+ {
+  "id": 65450,
+  "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 8103",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1194,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-8103/"
+ },
+ {
+  "id": 65449,
+  "name": "מכונת אספרסו ניבונה Nivona CafeRomatica 8101",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1585,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-nivona-caferomatica-8101/"
+ },
+ {
+  "id": 65442,
+  "name": "מכונת קפה JURA X10 - המהפכה החמה והקרה בעולם הקפה",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 3240,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-jura-x10-%d7%94%d7%9e%d7%94%d7%a4%d7%9b%d7%94-%d7%94%d7%97%d7%9e%d7%94-%d7%95%d7%94%d7%a7%d7%a8%d7%94-%d7%91%d7%a2%d7%95%d7%9c%d7%9d-%d7%94%d7%a7/"
+ },
+ {
+  "id": 65438,
+  "name": "PICOPRESSO מכונת אספרסו ניידת + קפה ספשלטי",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1066,
+  "permalink": "https://www.minuto.co.il/product/picopresso-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%99%d7%93%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99/"
+ },
+ {
+  "id": 65437,
+  "name": "מכונת קפה Picopresso + שקית קפה ספשלטי",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-picopresso-%d7%a9%d7%a7%d7%99%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a1%d7%a4%d7%a9%d7%9c%d7%98%d7%99/"
+ },
+ {
+  "id": 65433,
+  "name": "מטחנת קפה מקצועית Compak R8",
+  "group": "grinder",
+  "missing": [
+   "weight",
+   "burrs",
+   "burr_size"
+  ],
+  "text_len": 1065,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-compak-r8/"
+ },
+ {
+  "id": 65430,
+  "name": "Flair NEO : מכונת אספרסו ידנית במחיר משתלם - חלום המתחילים!",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 723,
+  "permalink": "https://www.minuto.co.il/product/flair-neo-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%91%d7%9e%d7%97%d7%99%d7%a8-%d7%9e%d7%a9%d7%aa%d7%9c%d7%9d-%d7%97%d7%9c%d7%95%d7%9d/"
+ },
+ {
+  "id": 65404,
+  "name": "מטחנת קפה ידנית אמיליו",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95/"
+ },
+ {
+  "id": 65402,
+  "name": "מטחנת קפה Eureka MIGNON SINGLE DOSE 65 שחור",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1392,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-single-dose-65-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 65382,
+  "name": "מכונת קפה ידנית מנוף Flair 58",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 1409,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a0%d7%95%d7%a3-flair-58/"
+ },
+ {
+  "id": 65377,
+  "name": "מכונת אספרסו רוקט Rocket Epica",
+  "group": "espresso",
+  "missing": [
+   "portafilter"
+  ],
+  "text_len": 1326,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-epica/"
+ },
+ {
+  "id": 65376,
+  "name": "מכונת אספרסו רוקט Rocket R Nine One Dark Wood",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1902,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one-dark-wood/"
+ },
+ {
+  "id": 65375,
+  "name": "מכונת אספרסו רוקט Rocket R Nine One Walnut Wood",
+  "group": "espresso",
+  "missing": [
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1923,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-nine-one-walnut-wood/"
+ },
+ {
+  "id": 65246,
+  "name": "מכונת קפה ידנית מקצועית וי.בי.אם ג׳וניור VBM Junior",
+  "group": "espresso",
+  "missing": [
+   "water_tank",
+   "pressure"
+  ],
+  "text_len": 953,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%95%d7%99-%d7%91%d7%99-%d7%90%d7%9d-%d7%92%d7%b3%d7%95%d7%a0%d7%99%d7%95/"
+ },
+ {
+  "id": 65242,
+  "name": "שלישיית פילטר בריטה מים למכונת סימנס- Siemens water filter",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 843,
+  "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens/"
+ },
+ {
+  "id": 65225,
+  "name": "מעמד לקפה פילטר 1 כוס V60 מקרמיקה הריו Hario VD-01R",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 519,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-1-%d7%9b%d7%95%d7%a1-v60-%d7%9e%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94-%d7%94%d7%a8%d7%99%d7%95-hario-vd-01r/"
+ },
+ {
+  "id": 65220,
+  "name": "קנקן טפטוף עם פילטר בד- Hario Wood neck Drip Pot 240",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 271,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%98%d7%a4%d7%98%d7%95%d7%a3-%d7%a2%d7%9d-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%93-hario-wood-neck-drip-pot-240/"
+ },
+ {
+  "id": 65213,
+  "name": "Hario V60 Server 450 ml - קנקן מזיגה האריו שקוף",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 160,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-360-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/"
+ },
+ {
+  "id": 65210,
+  "name": "Hario Leaf tea pot Pure 700 ml - קנקן לחליטת תה",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 142,
+  "permalink": "https://www.minuto.co.il/product/leaf-tea-pot-pure-700-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%97%d7%9c%d7%99%d7%98%d7%aa-%d7%aa%d7%94/"
+ },
+ {
+  "id": 65195,
+  "name": "מכונת אספרסו רוקט - ROCKET R Cinquantotto",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 878,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a8%d7%95%d7%a7%d7%98-rocket-r-cinquantotto/"
+ },
+ {
+  "id": 65178,
+  "name": "HARIO פילטר בבקבוק לקפה בחליטה קרה בהשרייה Cold Brew צבע מוקה",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 722,
+  "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-2/"
+ },
+ {
+  "id": 65177,
+  "name": "מטחנת קפה אובל ג'וניור - OBEL Junior",
+  "group": "grinder",
+  "missing": [
+   "weight",
+   "hopper"
+  ],
+  "text_len": 473,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%90%d7%95%d7%91%d7%9c-%d7%92%d7%95%d7%a0%d7%99%d7%95%d7%a8-obel-junior/"
+ },
+ {
+  "id": 65176,
+  "name": "מטחנת קפה מקצועית גאג'יה 50 מ\"מ - Gaggia MDF",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 548,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-%d7%92%d7%90%d7%92%d7%99%d7%94-50-%d7%9e%d7%9e-gaggia-mdf/"
+ },
+ {
+  "id": 65165,
+  "name": "מרכך DVA מים 8 ליטר למכונת אספרסו עם חיבור ישיר",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 319,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a8%d7%9b%d7%9a-dva-%d7%9e%d7%99%d7%9d-8-%d7%9c%d7%99%d7%98%d7%a8-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a2%d7%9d-%d7%97%d7%99%d7%91%d7%95%d7%a8-%d7%99/"
+ },
+ {
+  "id": 65161,
+  "name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1235,
+  "permalink": "https://www.minuto.co.il/product/hario-drip-scales-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 65152,
+  "name": "פלנג'ר 3 כוסות (0.35) - Jinmeilai Chambord",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 780,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%9c%d7%a0%d7%92%d7%a8-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-0-35-jinmeilai-chambord/"
+ },
+ {
+  "id": 65151,
+  "name": "MIZUDASHI HARIO קנקן למיצוי קפה קר בהשרייה - Cold Brew",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 661,
+  "permalink": "https://www.minuto.co.il/product/mizudashi-hario-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9c%d7%9e%d7%99%d7%a6%d7%95%d7%99-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a8-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-cold-brew/"
+ },
+ {
+  "id": 65149,
+  "name": "HARIO פילטר בבקבוק לקפה בחליטה קרה בהשרייה Cold Brew חום שוקולד",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 728,
+  "permalink": "https://www.minuto.co.il/product/hario-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%91%d7%a7%d7%91%d7%95%d7%a7-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a7%d7%a8%d7%94-%d7%91%d7%94%d7%a9%d7%a8%d7%99%d7%99%d7%94-co/"
+ },
+ {
+  "id": 65147,
+  "name": "Hario Ceramic Coffee Mill Skerton Pro - מטחנת קפה קונית הריו סקרטון פרו עם סכינים קרמיות",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1135,
+  "permalink": "https://www.minuto.co.il/product/hario-ceramic-coffee-mill-skerton-pro-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a0%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-%d7%a1%d7%a7%d7%a8%d7%98%d7%95%d7%9f-%d7%a4%d7%a8/"
+ },
+ {
+  "id": 65137,
+  "name": "Hario Ceramic Coffee Mill Smart G- מטחנת קפה קונית הריו סמארט G עם סכינים קרמיות",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 534,
+  "permalink": "https://www.minuto.co.il/product/hario-ceramic-coffee-mill-smart-g-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a0%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-%d7%a1%d7%9e%d7%90%d7%a8%d7%98-g-%d7%a2%d7%9d-%d7%a1%d7%9b/"
+ },
+ {
+  "id": 65136,
+  "name": "V60 HARIO Cafeor קנקן מיצוי קפה עם פילטר נירוסטה",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 439,
+  "permalink": "https://www.minuto.co.il/product/v60-hario-cafeor-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%99%d7%a6%d7%95%d7%99-%d7%a7%d7%a4%d7%94-%d7%a2%d7%9d-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 65134,
+  "name": "מכונת קפה גאגיה בררה שחורה - Gaggia Brera Black",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1846,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%91%d7%a8%d7%a8%d7%94-%d7%a9%d7%97%d7%95%d7%a8%d7%94-gaggia-brera-black/"
+ },
+ {
+  "id": 65131,
+  "name": "מכונת קפה גאגיה בררה - Gaggia Brera silver",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1632,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%91%d7%a8%d7%a8%d7%94-gaggia-brera-silver/"
+ },
+ {
+  "id": 65130,
+  "name": "Hario Ceramic Coffee Mill Skerton Plus - מטחנת קפה קונית הריו סקרטון פלוס עם סכינים קרמיות",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 711,
+  "permalink": "https://www.minuto.co.il/product/hario-ceramic-coffee-mill-skerton-plus-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a0%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-%d7%a1%d7%a7%d7%a8%d7%98%d7%95%d7%9f-%d7%a4%d7%9c/"
+ },
+ {
+  "id": 65115,
+  "name": "מקינטה  ביאלטי מוקה 6 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 415,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 65114,
+  "name": "מקינטה ביאלטי בריקה 4 כוסות Bialetti Brikka",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 879,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%91%d7%a8%d7%99%d7%a7%d7%94-4-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%93%d7%95%d7%a8-%d7%97%d7%93%d7%a9-2020/"
+ },
+ {
+  "id": 65098,
+  "name": "Hario Ceramic Coffee Mill Wood - מטחנת קפה קונית הריו עץ עם סכינים קרמיות",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 427,
+  "permalink": "https://www.minuto.co.il/product/hario-ceramic-coffee-mill-wood-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a0%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-%d7%a2%d7%a5-%d7%a2%d7%9d-%d7%a1%d7%9b%d7%99%d7%a0%d7%99/"
+ },
+ {
+  "id": 65094,
+  "name": "Baton Dripper Caféor - Size 02 מפלסטיק ממוחזר עם פילטר רב פעמי מנירוסטה",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-%d7%a1%d7%99%d7%9c%d7%99%d7%a7%d7%95%d7%9f-%d7%a2%d7%9d-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a8%d7%91-%d7%a4%d7%a2%d7%9e%d7%99-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 65065,
+  "name": "מטחנת K-3 Touch של COMPAK אלומיניום מלוטש",
+  "group": "grinder",
+  "missing": [
+   "burrs",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 949,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-k-3-touch-%d7%a9%d7%9c-compak-%d7%90%d7%9c%d7%95%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%9e%d7%9c%d7%95%d7%98%d7%a9/"
+ },
+ {
+  "id": 65062,
+  "name": "Hario Ceramic Coffee Mill, Mini Slim- מטחנת קפה קונית הריו מיני סלים",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 579,
+  "permalink": "https://www.minuto.co.il/product/hario-ceramic-coffee-mill-mini-slim-%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a0%d7%99%d7%aa-%d7%94%d7%a8%d7%99%d7%95-%d7%9e%d7%99%d7%a0%d7%99-%d7%a1%d7%9c%d7%99%d7%9d/"
+ },
+ {
+  "id": 65050,
+  "name": "מקינטה ונוס 6 כוסות ביאלטי - Makineta Venus 6 Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 387,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%95%d7%a0%d7%95%d7%a1-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-makineta-venus-6-bialetti/"
+ },
+ {
+  "id": 65029,
+  "name": "מכונת קפה מליטה  Melitta® Caffeo Passione Silver",
+  "group": "superauto",
+  "missing": [
+   "weight",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1635,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-caffeo-passione-silver/"
+ },
+ {
+  "id": 65028,
+  "name": "מכונת קפה גאג'יה מג׳נטה מילק Gaggia Magenta Milk",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "weight",
+   "water_tank",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1610,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%9e%d7%92%d7%b3%d7%a0%d7%98%d7%94-%d7%9e%d7%99%d7%9c%d7%a7-gaggia-magenta-milk/"
+ },
+ {
+  "id": 65026,
+  "name": "מכונת קפה פילטר טוחנת מליטה Melitta Aroma Fresh Timer",
+  "group": "filter_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 1683,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%98%d7%95%d7%97%d7%a0%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-aroma-fresh-timer/"
+ },
+ {
+  "id": 65023,
+  "name": "שלישיית פילטרים מים למכונות ניבונה",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank",
+   "boiler",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 237,
+  "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8%d7%99%d7%9d-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94/"
+ },
+ {
+  "id": 65007,
+  "name": "10 שקיות אבקה Puly לניקוי מטחנות קפה",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 283,
+  "permalink": "https://www.minuto.co.il/product/10-%d7%a9%d7%a7%d7%99%d7%95%d7%aa-%d7%90%d7%91%d7%a7%d7%94-puly-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%98%d7%97%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64999,
+  "name": "מכונת קפה פסקל עם מקציף Pascale Coffee &amp; Tea Silver OT",
+  "group": "superauto",
+  "missing": [
+   "bean_hopper"
+  ],
+  "text_len": 1023,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%a1%d7%a7%d7%9c-%d7%a2%d7%9d-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-pascale-coffee-tea-silver-ot/"
+ },
+ {
+  "id": 64988,
+  "name": "פרנץ׳ פרס 5 כוסות (600 מל) -  ביאלטי Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1163,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%a8%d7%a0%d7%a5%d7%b3-%d7%a4%d7%a8%d7%a1-5-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-600-%d7%9e%d7%9c-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-bialetti/"
+ },
+ {
+  "id": 64973,
+  "name": "מקינטה חשמלית ביאלטי 2 כוסות - Moka Elettrika",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 507,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-2-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-moka-elettrika/"
+ },
+ {
+  "id": 64961,
+  "name": "PICOPRESSO מכונת אספרסו ניידת",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "boiler",
+   "portafilter"
+  ],
+  "text_len": 1036,
+  "permalink": "https://www.minuto.co.il/product/picopresso-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%99%d7%99%d7%93%d7%aa/"
+ },
+ {
+  "id": 64943,
+  "name": "מכונת קפה פילטר מליטה Melitta Epour Momentum",
+  "group": "filter_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight"
+  ],
+  "text_len": 1113,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%9c%d7%99%d7%98%d7%94-melitta-epour-momentum/"
+ },
+ {
+  "id": 64942,
+  "name": "מטחנת קפה ידנית מקצועית Oak8 Gen2",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "weight",
+   "speed"
+  ],
+  "text_len": 1832,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-oak8-gen2/"
+ },
+ {
+  "id": 64940,
+  "name": "מבצע PICOPRESSO + מטחנה ידנית מקצועית Oak8",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burr_size",
+   "speed"
+  ],
+  "text_len": 1396,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a6%d7%a2-picopresso-%d7%9e%d7%98%d7%97%d7%a0%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-oak8/"
+ },
+ {
+  "id": 64914,
+  "name": "תיק מקורי לנשיאה וטיולים Comandante C40",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 509,
+  "permalink": "https://www.minuto.co.il/product/%d7%aa%d7%99%d7%a7-%d7%9e%d7%a7%d7%95%d7%a8%d7%99-%d7%9c%d7%a0%d7%a9%d7%99%d7%90%d7%94-%d7%95%d7%98%d7%99%d7%95%d7%9c%d7%99%d7%9d-comandante-c40/"
+ },
+ {
+  "id": 64913,
+  "name": "ערכת 4 צנצנות פולי קפה Comandante",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "burrs",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 334,
+  "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-4-%d7%a6%d7%a0%d7%a6%d7%a0%d7%95%d7%aa-%d7%a4%d7%95%d7%9c%d7%99-%d7%a7%d7%a4%d7%94-comandante/"
+ },
+ {
+  "id": 64911,
+  "name": "משקל ייעודי לקפה",
+  "group": "scale",
+  "missing": [
+   "dimensions"
+  ],
+  "text_len": 398,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64900,
+  "name": "מכונת אספרסו מקצועית PROFITEC PRO 400",
+  "group": "espresso",
+  "missing": [
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1378,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-pro-400/"
+ },
+ {
+  "id": 64899,
+  "name": "מכונת אספרסו מקצועית PROFITEC GO",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1151,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-go/"
+ },
+ {
+  "id": 64896,
+  "name": "מכונת קפה ידנית ניידת Flair Signature Espresso Maker white",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 1271,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a0%d7%99%d7%99%d7%93%d7%aa-flair-signature-espresso-maker-white/"
+ },
+ {
+  "id": 64889,
+  "name": "מכונת אספרסו מקצועית PROFITEC GO צבעוני",
+  "group": "espresso",
+  "missing": [
+   "dimensions",
+   "pressure",
+   "portafilter"
+  ],
+  "text_len": 1158,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-profitec-go-%d7%a6%d7%91%d7%a2%d7%95%d7%a0%d7%99/"
+ },
+ {
+  "id": 64872,
+  "name": "מיניפרסו - מכונת אספרסו לשטח - MiniPresso NS2",
+  "group": "capsule_machine",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "water_tank"
+  ],
+  "text_len": 784,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%99%d7%a0%d7%99%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%a9%d7%98%d7%97-minipresso-ns2/"
+ },
+ {
+  "id": 64868,
+  "name": "מכונת אספרסו מקצועית La Marzocco GS3 AV",
+  "group": "espresso",
+  "missing": [
+   "pressure"
+  ],
+  "text_len": 1949,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-la-marzocco-gs3-av/"
+ },
+ {
+  "id": 64849,
+  "name": "מטחנת קפה OLYMPUS 75 HS Doser grinder",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1286,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-olympus-75-hs-doser-grinder/"
+ },
+ {
+  "id": 64836,
+  "name": "מטחנת קפה Eureka MIGNON LIBRA 55",
+  "group": "grinder",
+  "missing": [
+   "hopper"
+  ],
+  "text_len": 1080,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-libra-55/"
+ },
+ {
+  "id": 64835,
+  "name": "מטחנת קפה מקצועית Ceado E37Z Barista",
+  "group": "grinder",
+  "missing": [
+   "burrs",
+   "burr_size",
+   "hopper"
+  ],
+  "text_len": 848,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ceado-e37z-barista/"
+ },
+ {
+  "id": 64831,
+  "name": "מטחנת קפה מקצועית Ceado E37R",
+  "group": "grinder",
+  "missing": [
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1602,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99%d7%aa-ceado-e37r/"
+ },
+ {
+  "id": 64808,
+  "name": "מקינטה  ביאלטי מוקה 12 כוסות לאספרסו",
+  "group": "brewer",
+  "missing": [
+   "material"
+  ],
+  "text_len": 417,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%9e%d7%95%d7%a7%d7%94-12-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 64807,
+  "name": "מטחנת קפה Eureka MIGNON SINGLE DOSE 65",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "dimensions",
+   "weight",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1383,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-eureka-mignon-single-dose-65/"
+ },
+ {
+  "id": 64780,
+  "name": "מטחנת קפה ידנית לשטח קומנדנטה - Comandante Trailmaster X25",
+  "group": "grinder",
+  "missing": [
+   "power",
+   "burr_size",
+   "speed",
+   "hopper"
+  ],
+  "text_len": 1432,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%98%d7%97%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%9c%d7%a9%d7%98%d7%97-%d7%a7%d7%95%d7%9e%d7%a0%d7%93%d7%a0%d7%98%d7%94-comandante-trailmaster-x25/"
+ },
+ {
+  "id": 64778,
+  "name": "מקינטה חשמלית מוקה טיימר 3 כוסות Bialetti",
+  "group": "brewer",
+  "missing": [
+   "capacity"
+  ],
+  "text_len": 1311,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%97%d7%a9%d7%9e%d7%9c%d7%99%d7%aa-%d7%9e%d7%95%d7%a7%d7%94-%d7%98%d7%99%d7%99%d7%9e%d7%a8-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti/"
+ },
+ {
+  "id": 64725,
+  "name": "מכונת קפה ידנית ניידת Flair 58 plus",
+  "group": "espresso",
+  "missing": [
+   "power",
+   "water_tank",
+   "boiler",
+   "pressure"
+  ],
+  "text_len": 1921,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93%d7%a0%d7%99%d7%aa-%d7%a0%d7%99%d7%99%d7%93%d7%aa-flair-58-plus/"
+ },
+ {
+  "id": 64719,
+  "name": "מקינטה ונוס 10 כוסות ביאלטי – Makineta Venus 10 Bialetti",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 389,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%99%d7%a0%d7%98%d7%94-%d7%95%d7%a0%d7%95%d7%a1-10-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-makineta-venus-10-bialetti/"
+ },
+ {
+  "id": 64699,
+  "name": "Hario V60 Server 800 ml - קנקן מזיגה האריו שקוף",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 422,
+  "permalink": "https://www.minuto.co.il/product/hario-v60-server-800-ml-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%9e%d7%96%d7%99%d7%92%d7%94-%d7%94%d7%90%d7%a8%d7%99%d7%95-%d7%a9%d7%a7%d7%95%d7%a3/"
+ },
+ {
+  "id": 64695,
+  "name": "מכונת קפה למשרדים Dr.coffee - Coffee Break",
+  "group": "superauto",
+  "missing": [
+   "power",
+   "pressure",
+   "bean_hopper"
+  ],
+  "text_len": 1108,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9c%d7%9e%d7%a9%d7%a8%d7%93%d7%99%d7%9d-dr-coffee-coffee-break/"
+ },
+ {
+  "id": 64672,
+  "name": "Hario SWITCH Immersion Dripper 02",
+  "group": "brewer",
+  "missing": [],
+  "text_len": 1128,
+  "permalink": "https://www.minuto.co.il/product/hario-switch-immersion-dripper-02/"
+ }
+]
