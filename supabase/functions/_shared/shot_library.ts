@@ -54,6 +54,10 @@ export interface ShotDef {
   needs_product: boolean
   // False until the owner's shoot fills the folder; planners never see it.
   enabled:     boolean
+  // Moments of a generated shot that are shown with a real photo instead,
+  // as photographed: motion the image model draws badly (owner, 2026-10-28:
+  // generated falling beans "not natural"). Matched by referenceSubject.
+  real_moments?: string[]
 }
 
 export const SHOTS: Record<ShotType, ShotDef> = {
@@ -66,9 +70,11 @@ export const SHOTS: Record<ShotType, ShotDef> = {
   },
   bar_moment: {
     id: 'bar_moment', label: 'Bar moment',
-    use_for: "a real moment at Minuto's espresso bar: steaming milk, pouring latte art, pulling a shot, serving a cup",
+    use_for: "a real moment at Minuto's espresso bar: steaming milk, pulling a shot, a cup in hand",
     source: 'real_photo', folders: ['hands', 'machine', 'pitchers'],
-    moments: ['steaming milk', 'pouring latte art', 'pulling an espresso shot', 'serving a cappuccino', 'the espresso bar'],
+    // Only what the real photos show. There is no latte-art pour in the
+    // library yet (owner's next shoot); until then latte art is finished_drink.
+    moments: ['steaming milk', 'pulling an espresso shot', 'a cup in hand', 'the espresso bar'],
     needs_product: false, enabled: true,
   },
   roastery: {
@@ -80,6 +86,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     // real photos carried whatever was behind the roaster (a restroom door).
     source: 'generated', folders: ['roaster'],
     moments: ['the roaster at work', 'fresh beans dropping into the cooling bin', 'a close-up of the roaster'],
+    real_moments: ['fresh beans dropping into the cooling bin'],
     needs_product: false, enabled: true,
   },
   brew_ritual: {
@@ -95,7 +102,7 @@ export const SHOTS: Record<ShotType, ShotDef> = {
   },
   finished_drink: {
     id: 'finished_drink', label: 'Finished drink',
-    use_for: 'a finished coffee drink in a Minuto cup, still life, no hands: espresso, cappuccino, latte, filter coffee',
+    use_for: 'a finished coffee drink in a Minuto cup, still life, no hands: espresso, cappuccino, a latte with latte art, filter coffee',
     source: 'generated', folders: ['cups'],
     moments: ['eye level', 'top down'],
     needs_product: false, enabled: true,
@@ -118,14 +125,22 @@ export const SHOTS: Record<ShotType, ShotDef> = {
 
 export const ENABLED_SHOTS = (Object.values(SHOTS) as ShotDef[]).filter(s => s.enabled)
 
-// Library originals a generated shot must never use as its reference, as
-// <folder>/<file>. docs/image-pipeline/library_exclude.txt covers the
-// prepared (published-as-photographed) copies; generated shots read the
-// originals in upload_images/, so their exclusions live here.
-export const REFERENCE_EXCLUDE: ReadonlySet<string> = new Set([
+// Library photos the pipeline must never use, as <folder>/<file>: neither
+// published as photographed nor as a generated shot's reference. Applied at
+// render time, so a prepared copy still in storage can't ship either;
+// docs/image-pipeline/library_exclude.txt lists the same photos for the prep
+// script.
+export const PHOTO_EXCLUDE: ReadonlySet<string> = new Set([
   'roaster/IMG_5172.jpg',   // restroom door and sign behind the roaster (owner, 2026-10-28)
   'roaster/IMG_5188.jpg',   // sack of GREEN coffee: never a featured subject (brand rule)
   'roaster/IMG_5189.jpg',   // the small tabletop sample roaster, not the drum roaster
+  'hands/IMG_5190.jpg',     // awkward crop: paper takeaway cups, forearm across the frame
+  'hands/IMG_5191.jpg',     // same scene as IMG_5190
+  'machine/espresso_bar_2026-10-16_06.jpg',   // order tickets at the bottom of the frame
+  // Bag "window" photos: the street behind the bag (parked cars, passers-by).
+  // Owner, 2026-10-29: bags use the counter photos only.
+  ...['aristo', 'dark_chocolate', 'guatemala_antigua', 'guji', 'jungle_java', 'velvet_star', 'yirgacheffe']
+    .map(slug => `bag_scenes/${slug}_window.jpg`),
 ])
 
 // What the reference photo must show, matched against the library captions.
@@ -138,15 +153,29 @@ export function referenceSubject(shot: ShotDef, slots: ShotSlots): string {
       return `A photo showing ${moment} (that exact kind of brewer, nothing else).`
     case 'finished_drink':
       return 'A clean photo of a single coffee cup.'
+    case 'bar_moment':
+      return moment === 'steaming milk'
+        ? 'A photo of a steam wand in a milk pitcher, milk being steamed.'
+        : moment === 'pulling an espresso shot'
+          ? 'A photo of espresso pouring from a portafilter into a cup on the machine.'
+          : moment === 'a cup in hand'
+            ? 'A photo of a hand holding a coffee cup at the espresso bar.'
+            : 'A photo of the whole espresso machine and bar.'
     case 'roastery':
       return moment === 'fresh beans dropping into the cooling bin'
-        ? 'A photo of roasted coffee beans falling from the main drum roaster into its round cooling bin.'
+        ? 'A photo of freshly roasted coffee beans caught falling down a steel chute onto a pile of beans.'
         : moment === 'a close-up of the roaster'
           ? "A close-up photo of the main drum roaster's front: the drum door, sight glass and gauge."
           : 'A photo of the whole main drum roaster with its round cooling bin.'
     default:
       return 'A clean photo of roasted coffee beans.'
   }
+}
+
+// True when this pick is a real photo published as photographed: a
+// real_photo shot, or one of a generated shot's real_moments.
+export function shotUsesRealPhoto(shot: ShotDef, slots: ShotSlots): boolean {
+  return shot.source === 'real_photo' || (shot.real_moments ?? []).includes(resolveMoment(shot, slots.moment))
 }
 
 export function isShotType(v: unknown): v is ShotType {
@@ -274,7 +303,6 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
   const photo  = 'Does the image look like a real photograph (not a render or illustration)?'
   const ground = 'Is every object resting on a surface or held by a hand, with nothing floating?'
   const text   = 'Is all sharp, readable text in the image correctly spelled? (n/a if there is none)'
-  const hands  = 'If hands appear, are there at most two, belonging to one person (one left, one right), each with five normal fingers? (n/a if no hands)'
   switch (shot.id) {
     case 'bag_hero':
     case 'bag_with_drink':
@@ -284,7 +312,9 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
         ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
     case 'bar_moment':
-      return [photo, ground, text, hands,
+      // No hand-anatomy question: these are real photos, and fingers wrapped
+      // around a pitcher can't be counted, which only raised false alarms.
+      return [photo, ground, text,
         'Is the espresso machine shown with every part attached (no floating or duplicated portafilters or steam wands)? (n/a if no machine is visible)',
         'If coffee or milk is flowing, does it come from a portafilter spout or a hand-held pitcher into a cup or pitcher? (n/a if nothing is flowing)',
         'Is the image free of readable customer names or order tickets?']
@@ -292,7 +322,7 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
       return [photo, ground, text,
         'Is there exactly one roaster, a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
         'Are any beans shown roasted (brown), not green or pale?',
-        'Is the background only a plain roastery wall, free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
+        'Is the background free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
     case 'brew_ritual':
       return [photo, ground, text,
         `Is ${resolveMoment(shot, slots.moment)} the main subject, shown whole?`,
@@ -372,10 +402,11 @@ export function normalizeShotChoice(
 // draws scene_brief, so planners keep writing one, describing the picked shot.
 export function plannerShotInstructions(opts: { legacyScene?: boolean } = {}): string {
   const sceneRule = opts.legacyScene
-    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer. Describe the picked shot only, never a different scene.`
+    ? `scene_brief: 3-4 English sentences describing THAT shot (what the camera sees), for the current renderer: the same subject and moment as shot_type + shot_slots, never a different scene, and hands only for bar_moment.`
     : `scene_brief is optional: at most one sentence of context, never a new scene.`
   return `INSTAGRAM IMAGES: CAPTION FIRST, THEN A SHOT FROM THE MENU.
 1. Write the Hebrew caption (caption_he) first. The caption decides what the post is about.
+Choose a topic the menu below can show: if nothing on the menu shows what a caption talks about (for example a hand grinder, which has no shot yet), pick a different topic and write the caption for that.
 2. Then pick the ONE shot below that shows what that caption talks about, and fill its slots. Never describe a new scene: the image pipeline can only make these shots.
 
 SHOT MENU (shot_type: what it shows. moments):

@@ -513,6 +513,10 @@ serve(async (req) => {
     // pool exhausted, looped forever picking a product. A story is NOT a product
     // feature — it's a brewing/ritual/tip/ambiance scene — so it is exempt from
     // the no-repeat-bean rule and must never be blocked by it.
+    // A bag story is ALLOWED (owner, 2026-10-29: use the real bag photos) but
+    // never required: it follows the no-repeat-bean rule like a feed, and when
+    // every bean was featured recently the story is made without a bag, so
+    // the deadlock cannot come back.
     //
     // When a theme lock is active the SUBJECT clause is replaced wholesale.
     // The default wording ("a brewing method, ritual, brewing tip, or
@@ -524,9 +528,9 @@ serve(async (req) => {
     // deadlocking, and the lock must not reintroduce that failure.
     const storySubject = storyLock
       ? renderStoryLockPolicy(storyLock)
-      : `STORY POLICY: the daily story is PRODUCT-FREE by default — a brewing method, ritual, brewing tip, or café-ambiance moment, shown with a non-bag shot from the SHOT MENU (bar_moment, roastery, brew_ritual, finished_drink, beans_closeup).\n`
+      : `STORY POLICY: the daily story is a brewing method, ritual, brewing tip, roast-day or café-ambiance moment (bar_moment, roastery, brew_ritual, finished_drink, beans_closeup), OR a bag story when its caption is about one Minuto coffee (bag_hero or bag_with_drink, real photos of the bag). Mix them across the week.\n`
     const storyPolicy = c.storyRemainingToday > 0
-      ? `${storySubject}Mechanics: visual aspect:"story", caption_he written first, a non-bag shot_type, NO product_name; post media_type:"story". Do NOT pick a coffee for the story and do NOT consult the "featured on Instagram" list for it — that no-repeat rule is for FEED posts only. A story is therefore NEVER blocked by recently-featured beans: if a story is still needed, queue it now.\n`
+      ? `${storySubject}Mechanics: visual aspect:"story", caption_he written first, then the shot_type; post media_type:"story". A bag story sets shot_slots.product_name to an exact lineup coffee NOT on the "featured on Instagram" list. A story without a bag needs no coffee and is NEVER blocked by recently-featured beans: if every coffee was featured recently, make the story without a bag and queue it now.\n`
       : ''
     // ORPHAN RECOVERY. A completed IG visual with no instagram_post is a finished
     // render waiting to be posted — committing it needs NO new render, so it works
@@ -604,7 +608,7 @@ serve(async (req) => {
     `=== MINUTO COFFEE LINEUP (the ONLY products to feature — copy an EXACT name into products_to_mention; products_to_mention[0] becomes the article's banner hero bag. Never invent a name or feature anything not on this list) ===\n${catalogBlock}\n\n` +
     `=== SEARCH DEMAND — top GSC keywords, last 30d (what real people search; ground topic choices here) ===\n${gscBlock}\n\n` +
     `=== ALREADY PUBLISHED — blog posts, last 90d (do NOT re-write a topic we just covered) ===\n${recentBlock}\n\n` +
-    `=== FEATURED ON INSTAGRAM — last ${IG_PRODUCT_REPEAT_DAYS}d (applies to FEED posts ONLY: do NOT feature any of these coffees in another FEED; pick a DIFFERENT bean so feeds don't cannibalize. STORIES are product-free and EXEMPT — never block a story on this list) ===\n${recentIgBlock}\n\n` +
+    `=== FEATURED ON INSTAGRAM — last ${IG_PRODUCT_REPEAT_DAYS}d (applies to FEED posts and BAG STORIES: do NOT feature any of these coffees again; pick a DIFFERENT bean so posts don't cannibalize. A story without a bag is EXEMPT — never block it on this list) ===\n${recentIgBlock}\n\n` +
     `Decide the SINGLE next move toward the objective. If sub-tasks are still in-flight and you have nothing independent to do, note_progress and wait. If the objective is met, complete_mission.`
 
   let res
@@ -764,7 +768,7 @@ serve(async (req) => {
             if (!verdict.ok) {
               newNotes.push(
                 `(did NOT queue the story visual — ${verdict.why}. ` +
-                `Re-queue a story depicting ${storyLock.themes.join(' or ')}: shot_type bar_moment (an espresso pull, steaming milk, pouring latte art) ` +
+                `Re-queue a story depicting ${storyLock.themes.join(' or ')}: shot_type bar_moment (an espresso pull, steaming milk) ` +
                 `or finished_drink (an espresso or a latte-art cup). Vary the moment and the cup — not the subject — ` +
                 `and make it a different shot from every scene in RECENT IG SCENES. ` +
                 `Lock lifts ${storyLock.until}.)`,
@@ -844,12 +848,16 @@ serve(async (req) => {
           continue
         }
         parentsPostedThisStep.add(parent_task_id)
-        // Caption first: the visual already carries the caption it was
-        // picked for. The post publishes that one unless it brings its own.
+        // Caption first: the visual carries the caption its image was picked
+        // for, and the post publishes THAT caption, verbatim. A caption the
+        // post brings is replaced: on 2026-10-30 a story about manual
+        // grinding shipped with a new, generic "cup of coffee" caption
+        // written 20 minutes after the image.
+        const fromVisual = await parentVisualCaption(supabase, parent_task_id)
         const own = typeof rawBrief.caption_he === 'string' ? rawBrief.caption_he.trim() : ''
-        if (!own) {
-          const fromVisual = await parentVisualCaption(supabase, parent_task_id)
-          if (fromVisual) rawBrief.caption_he = fromVisual
+        if (fromVisual) {
+          if (own && own !== fromVisual) newNotes.push('(instagram_post: used the caption written with its visual, not a new one. The caption is written once, before the image.)')
+          rawBrief.caption_he = fromVisual
         }
       }
       // Hard cadence caps at the authoritative point — the committed POST is exactly
@@ -1157,9 +1165,9 @@ function buildMissionSystemPrompt(inflight: number, isDailyIgCadence = false): s
 - Your job is to keep Minuto's Instagram on cadence per the "IG CADENCE" block: ${IG_STORY_PER_DAY} story PER DAY plus ${IG_FEED_PER_WEEK_MIN}-${IG_FEED_PER_WEEK_MAX} feed posts PER WEEK. Feed posts are SPREAD across the week (at most ${IG_FEED_MAX_PER_DAY}/day) — do NOT post 3-4 feeds in one day. The story count resets at UTC midnight; the feed count resets at the start of each week (Sunday).
 - This mission NEVER completes. Do NOT call complete_mission — there is no "done"; it runs until the admin pauses it.
 - Each tick: do EXACTLY what "STILL NEEDED right now" lists — nothing more. If it says 0 story and no feed due, just note_progress and wait. Crucially: if no feed is due today, do NOT queue a feed (the weekly quota is on pace). Queue at most the next 1-2 sub-tasks, never a day/week at once.
-- A post is a TWO-STEP pipeline, CAPTION FIRST: decide the topic and write the Hebrew caption, then queue a visual_generation (brief.destination:"ig_post") carrying that caption_he plus a shot_type + shot_slots from the SHOT MENU that shows what the caption talks about (a bag shot with an exact product_name when featuring a coffee). WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts); its caption_he is taken from the visual when you leave it out. Set media_type:"story" on exactly the story.
+- A post is a TWO-STEP pipeline, CAPTION FIRST: decide the topic and write the Hebrew caption, then queue a visual_generation (brief.destination:"ig_post") carrying that caption_he plus a shot_type + shot_slots from the SHOT MENU that shows what the caption talks about (a bag shot with an exact product_name when featuring a coffee). WAIT for it to COMPLETE, then queue the instagram_post with parent_task_id = that visual's id and the matching media_type ("story" for the story, "feed_image"/"feed_carousel" for feed posts); it always publishes the caption_he written with the visual (copied automatically; never write a second caption). Set media_type:"story" on exactly the story.
 - CRITICAL — match the aspect to the format: the STORY's visual_generation MUST set aspect:"story" (9:16 full-bleed, 1080×1920). FEED posts use aspect:"feed_square" (1:1) for a single image or aspect:"feed_portrait" (4:5) for a carousel. A story rendered at feed_square/feed_portrait is WRONG — it must be aspect:"story". So: story → visual aspect:"story" + post media_type:"story"; feed → visual aspect:"feed_square"/"feed_portrait" + post media_type:"feed_image"/"feed_carousel".
-- STORY vs FEED are different formats with different rules. The daily STORY is PRODUCT-FREE (aspect:"story", no bag shot, no product_name). Its SUBJECT is set by the STORY POLICY line in the IG CADENCE block below — that block is the single source of truth and may carry an active theme lock; follow it exactly rather than defaulting to any subject named here. It does NOT feature a specific bean and is NOT subject to the "featured on Instagram" no-repeat list — so the story is NEVER blocked by recently-used beans. Only FEED posts feature an exact coffee and must rotate to a bean not featured in the last ${IG_PRODUCT_REPEAT_DAYS} days. If you can't find an un-featured bean for a feed, that just means no feed is due — it never blocks the story.
+- STORY vs FEED are different formats with different rules. The daily STORY (aspect:"story") is usually a moment without a bag, and may be a bag story when its caption is about one Minuto coffee. Its SUBJECT is set by the STORY POLICY line in the IG CADENCE block below — that block is the single source of truth and may carry an active theme lock; follow it exactly rather than defaulting to any subject named here. A story without a bag does NOT feature a bean and is NOT subject to the "featured on Instagram" no-repeat list — so the story is NEVER blocked by recently-used beans. FEED posts and bag stories feature an exact coffee and must rotate to a bean not featured in the last ${IG_PRODUCT_REPEAT_DAYS} days. If you can't find an un-featured bean for a feed, that just means no feed is due — it never blocks the story.
 - Vary it: don't post the same product/angle every day; ground each choice in the SEARCH DEMAND + CATALOG data below, same as any content task.
 - Everything still queues for review — you never publish. The admin approves what ships.` : ''
   return `You are Minuto's autonomous MISSION EXECUTOR.${cadenceAddendum} Minuto is a specialty-coffee roastery in Israel (minuto.co.il) doing organic growth (blog SEO + Instagram + more). You pursue ONE long-running objective across many short sessions — you wake roughly every 10 minutes, take ONE step, and sleep. A mission spans hours or days.
@@ -1185,7 +1193,7 @@ BRIEF SHAPES — queue_subtask.brief_data MUST carry the required fields for the
 - text_generation → { keyword✱ (target search keyword), title✱ (H1/headline), key_points✱ (non-empty array of the points the article must cover), products_to_mention (array of EXACT names copied from the MINUTO COFFEE LINEUP block — when set, the auto-paired banner shows that real bag, so never invent a name or use anything off the list) }. A matching blog banner is queued AUTOMATICALLY for every article — do NOT queue a separate visual_generation for a blog post.
 - visual_generation for Instagram (destination "ig_post") → { caption_he✱ (the Hebrew caption, written FIRST), shot_type✱ + shot_slots✱ (from the SHOT MENU below), aspect✱ ("story" for a 9:16 story, "feed_square" for a feed image), destination: "ig_post", scene_brief (see the SHOT MENU rules) }. Carousels keep { slides✱ (array of { scene_brief, heading, body }) }.
 - visual_generation, any other use → { scene_brief✱ (one concrete scene to render), aspect ("feed_square"|"feed_portrait"|"reel_cover"|"story" — use "story" for a 9:16 IG story), render_mode ("bag_hero"|"no_bag" — bag_hero composites the real Minuto bag and REQUIRES product_name set to an exact Minuto product; no_bag is a bag-free editorial scene and must NOT mention any bag/pouch/packaging), product_name (exact Minuto product name, required when render_mode="bag_hero"), destination ("blog_banner"|"ig_post") } — OR for a carousel: { slides✱ (array of { scene_brief, heading, body }) }. (Blog articles get a banner auto-paired — only queue this for IG visuals or standalone scenes.)
-- instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { caption_he (the caption you wrote with the visual; filled from it when omitted), hashtags (array), media_type } — never queue this before the visual exists.
+- instagram_post → needs a COMPLETED visual_generation parent first (its render feeds the post); brief: { hashtags (array), media_type } — its caption is ALWAYS the caption_he you wrote with the visual, copied automatically; do not write a new one — never queue this before the visual exists.
 - technical_seo → { subtype: "faq_injection"✱, target_post_url OR target_post_id✱ }
 - dynamic_experiment → { description✱, approval_required: true }
 Fill every ✱ field with real content. If you lack the info for a required field, do deep_research first or note_progress — do NOT queue a task with placeholder/missing fields.

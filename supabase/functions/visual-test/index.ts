@@ -4,7 +4,8 @@ import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  REFERENCE_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  PHOTO_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  shotUsesRealPhoto,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
 import {
@@ -238,14 +239,19 @@ async function pickMatchingRealPhoto(
     const candidates = paths.filter(p => captionCache.has(p))
     if (candidates.length === 0) return []
     const list = candidates.map((p, i) => `[${i}] ${captionCache.get(p)}`).join('\n')
-    const out = await geminiJson([{ text: `A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:
+    // A photo published as photographed gets no edit, so it must already show
+    // the moment. A reference only anchors what the equipment looks like.
+    const published = root.startsWith('upload_images_ready')
+    const out = await geminiJson([{ text: `${published
+      ? 'A real photo will be PUBLISHED AS PHOTOGRAPHED, with nothing added or changed, to illustrate this scene brief:'
+      : 'A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:'}
 
 ${brief}
 
 Library photos:
 ${list}
 
-Which photos ALREADY show the brief's main subject and action from a usable viewpoint, so that only a crop, light and that small action need changing? IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
+Which photos ALREADY show the brief's main subject and action from a usable viewpoint${published ? '? Nothing will be added, so the action itself must be visible in the photo.' : ', so that only a crop, light and that small action need changing?'} IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
     const idx: number[] = Array.isArray(out?.matches)
       ? out.matches.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < candidates.length)
       : []
@@ -408,13 +414,13 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
   let referencePhoto: string | null = null
   const checks: Array<{ photo: string; same: boolean; why: string }> = []
 
-  if (shot.source === 'real_photo') {
+  if (shotUsesRealPhoto(shot, slots)) {
     // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
     // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
     // into upload_images_ready/<ratio>/. No image model touches it — an edit
     // pass rotated, re-staged or added hands to real photos in testing.
     const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
-    const exclude = new Set(body.exclude_photos ?? [])
+    const exclude = new Set([...(body.exclude_photos ?? []), ...PHOTO_EXCLUDE])
     const brief = shotEditBrief(shot, slots)
     let pick: string | undefined
     if (shot.needs_product) {
@@ -423,36 +429,48 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
       // studio packshot. A bag_with_drink shot needs a real scene photo (the
       // packshot has no drink), so it degrades to the packshot as a bag_hero.
       const { data: scenes } = await supabase.storage.from('marketing').list(`${readyRoot}/bag_scenes`, { limit: 500 })
-      const mine = (scenes ?? []).map(f => f.name).filter(n => n && isBagSceneOf(n, slots.product_name))
+      const mine = (scenes ?? []).map(f => f.name)
+        .filter(n => n && isBagSceneOf(n, slots.product_name) && !PHOTO_EXCLUDE.has(`bag_scenes/${n}`))
       const fresh = mine.filter(n => !exclude.has(`bag_scenes/${n}`))
       const choice = (fresh.length ? fresh : mine).sort(() => Math.random() - 0.5)[0]
       if (choice) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/bag_scenes/${choice}`
       const pack = packshotFor(slots.product_name)
       if (!pick && pack) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/${pack.replace(/\.[a-z]+$/i, '.jpg')}`
       if (!pick) throw new Error(`no prepared photo or packshot for product "${slots.product_name}"`)
+    } else if (shot.source === 'generated') {
+      // A real moment of a generated shot: only a photo that shows that
+      // moment. None → the shot's first (still) moment is generated below,
+      // never a random photo (that is how the restroom photo shipped).
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, referenceSubject(shot, slots), readyRoot, exclude))[0]
+      if (!pick) slots.moment = shot.moments[0]
     } else {
-      pick = (await pickMatchingRealPhoto(supabase, shot.folders, brief, readyRoot, exclude))[0]
-        // Every photo in the shot's folders is on-topic by construction.
-        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, exclude))[0]
-        // All used recently: allow a repeat rather than fail.
-        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot))[0]
+      // A photo that shows this moment; if those were all used recently, a
+      // repeat of one beats a photo of something else. Only then any shot-
+      // folder photo, and never an excluded one.
+      const subject = referenceSubject(shot, slots)
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, exclude))[0]
+        ?? (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, PHOTO_EXCLUDE))[0]
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, PHOTO_EXCLUDE))[0]
     }
-    if (!pick) {
+    if (!pick && shot.source !== 'generated') {
       return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
     }
-    const res = await fetch(pick)
-    if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
-    gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
-    sourcePhoto = pick
-    sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
-  } else {
+    if (pick) {
+      const res = await fetch(pick)
+      if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
+      gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
+      sourcePhoto = pick
+      sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
+    }
+  }
+  if (!gen) {
     sentPrompt = shotGeneratePrompt(shot, slots, ratio)
     // Match the reference on the subject (and the roaster's moment) alone.
     // Matching on the whole scene prompt picked the moka-pot photo for "a
     // pour-over dripper", and the model then printed "Bialetti" on it.
     const subject = referenceSubject(shot, slots)
-    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', REFERENCE_EXCLUDE)
-    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', REFERENCE_EXCLUDE))[0] ?? null
+    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', PHOTO_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', PHOTO_EXCLUDE))[0] ?? null
     const parts: any[] = []
     if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
     parts.push({ text: sentPrompt })
