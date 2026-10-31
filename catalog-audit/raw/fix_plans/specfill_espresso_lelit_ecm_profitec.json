@@ -1,0 +1,425 @@
+{
+ "edits": [
+  {
+   "product_id": 82968,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>לחץ מיצוי:</strong> 9 בר (המשאבה מעלה את הלחץ ל־9 בר לאחר הפרה־אינפיוז'ן)</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+   ]
+  },
+  {
+   "product_id": 76318,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>לחץ מיצוי:</strong> 9 בר (המשאבה מעלה את הלחץ ל־9 בר לאחר הפרה־אינפיוז'ן)</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+   ]
+  },
+  {
+   "product_id": 77225,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1000 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2025/04/BA_Classika_-PID_2412-web.pdf"
+   ]
+  },
+  {
+   "product_id": 67645,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>הספק:</strong> 1500 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>\n<li><strong>דוד:</strong> כ־1.9 ליטר, נירוסטה, מערכת מחליף חום</li>\n<li><strong>משאבה:</strong> משאבת רטט שקטה</li>\n<li><strong>מיכל מים:</strong> כ־2.8 ליטר</li>\n<li><strong>מידות (ר×ע×ג):</strong> 25×44.5×39.5 ס\"מ (ללא ידית)</li>\n<li><strong>משקל:</strong> 20.2 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: power, pressure, boiler, pump, water_tank, dimensions, weight",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf",
+    "https://www.ecm.de/en/products/mechanika-slim-pid/"
+   ]
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1500 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>טווח כיוון לחץ החליטה:</strong> כ־8.5 עד 12 בר</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf"
+   ]
+  },
+  {
+   "product_id": 67156,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1000 וואט (גרסת 230 וולט, 50 הרץ)</li>\n<li><strong>לחץ חליטה:</strong> מכויל במפעל ל־9–10 בר</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2025/03/BA_Puristika_2407-web.pdf"
+   ]
+  },
+  {
+   "product_id": 67650,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 2200 וואט (גרסת 230 וולט)</li>\n<li><strong>לחץ מיצוי:</strong> 9 בר (המיצוי מתחיל ב־9 בר לאחר הפרה־אינפיוז'ן)</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.ecm.de/wp-content/uploads/2026/07/BA-Technika-VI-2607.pdf"
+   ]
+  },
+  {
+   "product_id": 65104,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מידות (ר×ע×ג):</strong> 22.5×52×35.5 ס\"מ</li>\n<li><strong>משקל:</strong> 18.5 ק\"ג</li>\n<li><strong>דוד:</strong> 1.8 ליטר עם מחליף חום מנירוסטה AISI316L</li>\n</ul>",
+   "finding": "missing specs: dimensions, weight, boiler",
+   "sources": [
+    "https://www.lelit.com/wp-content/uploads/2024/09/EN-MaraX.pdf"
+   ]
+  },
+  {
+   "product_id": 65040,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>ידית חליטה:</strong> LELIT58 (58 מ\"מ), ראש חליטה L58E</li>\n</ul>",
+   "finding": "missing specs: portafilter",
+   "sources": [
+    "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+   ]
+  },
+  {
+   "product_id": 64680,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>ידית חליטה:</strong> LELIT58 (58 מ\"מ), ראש חליטה L58E</li>\n</ul>",
+   "finding": "missing specs: portafilter",
+   "sources": [
+    "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+   ]
+  },
+  {
+   "product_id": 64679,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>ידית חליטה:</strong> LELIT58 (58 מ\"מ), ראש חליטה L58E</li>\n</ul>",
+   "finding": "missing specs: portafilter",
+   "sources": [
+    "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+   ]
+  },
+  {
+   "product_id": 64675,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>הספק:</strong> 1600 וואט (גרסת 230 וולט)</li>\n<li><strong>לחץ מיצוי:</strong> 9 בר (המיצוי מתחיל ב־9 בר לאחר הפרה־אינפיוז'ן)</li>\n</ul>",
+   "finding": "missing specs: power, pressure",
+   "sources": [
+    "https://www.profitec-espresso.com/en/products/drive",
+    "https://www.profitec-espresso.com/media/pages/produkte/drive/a59dfadb82-1782907095/ba-drive.pdf"
+   ]
+  },
+  {
+   "product_id": 64900,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>לחץ חליטה:</strong> מתכוונן בין כ־8.5 ל־12 בר</li>\n</ul>",
+   "finding": "missing specs: pressure",
+   "sources": [
+    "https://www.profitec-espresso.com/media/pages/produkte/pro-400/6f52c5c90c-1778593561/ba_pro400-jump.pdf"
+   ]
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 78317,
+   "name": "מכונת קפה ידנית ללית Lelit Elizabeth PL92T",
+   "reason": "no official source for the missing items: lelit.com Elizabeth (PESEL01/PL92T) page and official sheet give no wattage and no pump-pressure figure (only manometer green zone 8-12 bar). Note: official sheet says coffee boiler is brass 300 ml / steam 600 ml AISI316L, page says stainless brew boiler - owner may want to check."
+  },
+  {
+   "product_id": 78278,
+   "name": "מכונת קפה ידנית ללית Lelit - PL41TEM",
+   "reason": "power/pressure not stated on official Lelit sources (lelit.com EN-Anna-TEM sheet); portafilter (LELIT57) already on page."
+  },
+  {
+   "product_id": 67348,
+   "name": "מכונת קפה מקצועית ECM SYNCHRONIKA",
+   "reason": "discontinued ECM Synchronika (1st gen): not on ecm.de; no official spec page or manual with power/pressure found. Synchronika II values do not apply."
+  },
+  {
+   "product_id": 67157,
+   "name": "מכונת קפה מקצועית ECM Mechanika MAX",
+   "reason": "discontinued ECM Mechanika MAX (1st gen): only the official product card exists (no power or pressure). Mechanika MAX II values do not apply. Note: official card says water tank 2.8 l; page says ~3 l."
+  },
+  {
+   "product_id": 67347,
+   "name": "מכונת קפה מקצועית ECM Mechanika IV Profi",
+   "reason": "discontinued ECM Mechanika IV Profi: no official product page, datasheet or manual on ecm.de (only an exploded parts drawing)."
+  },
+  {
+   "product_id": 64966,
+   "name": "מכונת אספרסו מקצועית PROFITEC PRO 500 QUICK STEAM ESPRESSO MACHINE",
+   "reason": "discontinued Profitec PRO 500 Quick Steam: not on profitec-espresso.com; manuals found only on retailer-hosted Shopify CDNs (not the manufacturer's own)."
+  },
+  {
+   "product_id": 64955,
+   "name": "מכונת אספרסו מקצועית Profitec PRO 700 דוד כפול",
+   "reason": "discontinued Profitec PRO 700: not on profitec-espresso.com; manuals only on retailer-hosted Shopify CDNs."
+  },
+  {
+   "product_id": 64681,
+   "name": "מכונת אספרסו מקצועית Profitec PRO 600 דוד כפול",
+   "reason": "discontinued Profitec PRO 600: not on profitec-espresso.com; manuals only on retailer-hosted Shopify CDNs."
+  },
+  {
+   "product_id": 64899,
+   "name": "מכונת אספרסו מקצועית PROFITEC GO",
+   "reason": "Profitec GO (1st gen, CM500001): official site now only has GO 2.0; official catalog (pt-machines-en.pdf) gives no pump-pressure figure or portafilter size; dimensions already on page (210x362x381 mm, matches official). Note: official catalog lists GO at 1500 W and 0.3 l brass boiler, page says 1200 W and 0.4 l - owner may want to check."
+  },
+  {
+   "product_id": 64889,
+   "name": "מכונת אספרסו מקצועית PROFITEC GO צבעוני",
+   "reason": "Profitec GO (1st gen, CM500001): official site now only has GO 2.0; official catalog (pt-machines-en.pdf) gives no pump-pressure figure or portafilter size; dimensions already on page (210x362x381 mm, matches official). Note: official catalog lists GO at 1500 W and 0.3 l brass boiler, page says 1200 W and 0.4 l - owner may want to check."
+  },
+  {
+   "product_id": 77225,
+   "name": "מכונת קפה ECM Classika PID",
+   "spec": "portafilter",
+   "reason": "portafilter diameter not stated by ECM (manual only recommends a 58 mm tamper for Slim; nothing for Classika)"
+  },
+  {
+   "product_id": 67645,
+   "name": "מכונת קפה מקצועית ECM Mechanika VI Slim PID",
+   "spec": "portafilter",
+   "reason": "portafilter diameter not stated by ECM (manual only recommends a 58 mm tamper for Slim; nothing for Classika)"
+  },
+  {
+   "product_id": 65104,
+   "name": "מכונת קפה ידנית ללית מארה  Lelit Mara X PL62X",
+   "spec": "power",
+   "reason": "power not stated on official Lelit MaraX page/sheet"
+  },
+  {
+   "product_id": 65040,
+   "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T",
+   "spec": "pressure",
+   "reason": "no official pump-pressure figure on lelit.com Bianca page/sheet (only \"pump calibration via external adjustment screw\")"
+  },
+  {
+   "product_id": 64680,
+   "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T V3 צבע לבן",
+   "spec": "pressure",
+   "reason": "no official pump-pressure figure on lelit.com Bianca page/sheet (only \"pump calibration via external adjustment screw\")"
+  },
+  {
+   "product_id": 64679,
+   "name": "מכונת אספרסו מקצועית Lelit Bianca Dual Boiler - PL162T V3 צבע שחור",
+   "spec": "pressure",
+   "reason": "no official pump-pressure figure on lelit.com Bianca page/sheet (only \"pump calibration via external adjustment screw\")"
+  },
+  {
+   "product_id": 64675,
+   "name": "מכונת אספרסו מקצועית Profitec Drive",
+   "spec": "portafilter",
+   "reason": "portafilter diameter not stated by Profitec (manual only recommends a 58.4 mm tamper)"
+  },
+  {
+   "product_id": 64900,
+   "name": "מכונת אספרסו מקצועית PROFITEC PRO 400",
+   "spec": "portafilter",
+   "reason": "portafilter diameter not stated by Profitec (manual only recommends a 58.4 mm tamper)"
+  },
+  {
+   "product_id": 82968,
+   "name": "מכונת קפה ECM Synchronika II Heritage",
+   "spec": "note",
+   "reason": "Synchronika II Heritage is not listed on ecm.de; values taken from the official Synchronika II (shop page states it is the same machine with a different finish, like the official anthracite CM100012-04 and Anniversary editions). Owner may verify."
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 82968,
+   "spec": "power",
+   "value": "Power: 1.600 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+  },
+  {
+   "product_id": 82968,
+   "spec": "pressure",
+   "value": "extraction continues at 9 bar / pump starts to increase the brewing pressure to 9 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+  },
+  {
+   "product_id": 76318,
+   "spec": "power",
+   "value": "Power: 1.600 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+  },
+  {
+   "product_id": 76318,
+   "spec": "pressure",
+   "value": "extraction continues at 9 bar / pump starts to increase the brewing pressure to 9 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/04/Synchronika-II-2505-web.pdf"
+  },
+  {
+   "product_id": 77225,
+   "spec": "power",
+   "value": "Power: 1.000 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_Classika_-PID_2412-web.pdf"
+  },
+  {
+   "product_id": 77225,
+   "spec": "pressure",
+   "value": "brewing pressure adjustable between approx. 8.5 and 12 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_Classika_-PID_2412-web.pdf"
+  },
+  {
+   "product_id": 67645,
+   "spec": "power",
+   "value": "Power: 1.500 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf"
+  },
+  {
+   "product_id": 67645,
+   "spec": "pressure",
+   "value": "brewing pressure adjustable between approx. 8.5 and 12 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf"
+  },
+  {
+   "product_id": 67645,
+   "spec": "boiler",
+   "value": "Stainless steel boiler: approx. 1.9 L; System: Heat exchanger",
+   "url": "https://www.ecm.de/en/products/mechanika-slim-pid/"
+  },
+  {
+   "product_id": 67645,
+   "spec": "pump",
+   "value": "\"Low-noise\" vibration pump",
+   "url": "https://www.ecm.de/en/products/mechanika-slim-pid/"
+  },
+  {
+   "product_id": 67645,
+   "spec": "water_tank",
+   "value": "Water tank: approx. 2.8 L",
+   "url": "https://www.ecm.de/en/products/mechanika-slim-pid/"
+  },
+  {
+   "product_id": 67645,
+   "spec": "dimensions",
+   "value": "Dimensions: 250 x 445 x 395 mm (without portafilter)",
+   "url": "https://www.ecm.de/en/products/mechanika-slim-pid/"
+  },
+  {
+   "product_id": 67645,
+   "spec": "weight",
+   "value": "Weight: 20.2 kg",
+   "url": "https://www.ecm.de/en/products/mechanika-slim-pid/"
+  },
+  {
+   "product_id": 67349,
+   "spec": "power",
+   "value": "Power: 1.500 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf"
+  },
+  {
+   "product_id": 67349,
+   "spec": "pressure",
+   "value": "brewing pressure adjustable between approx. 8.5 and 12 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/04/BA_MVI-Slim-PID_2501-web.pdf"
+  },
+  {
+   "product_id": 67156,
+   "spec": "power",
+   "value": "Power: 1.000 W (EU: 230 V, 50 Hz)",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/03/BA_Puristika_2407-web.pdf"
+  },
+  {
+   "product_id": 67156,
+   "spec": "pressure",
+   "value": "The brewing pressure is factory set to 9 - 10 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2025/03/BA_Puristika_2407-web.pdf"
+  },
+  {
+   "product_id": 67650,
+   "spec": "power",
+   "value": "Power EU, UK, CN, AU: 2200 W; 230 V~",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/07/BA-Technika-VI-2607.pdf"
+  },
+  {
+   "product_id": 67650,
+   "spec": "pressure",
+   "value": "After soaking is complete, the extraction is started at 9 bar",
+   "url": "https://www.ecm.de/wp-content/uploads/2026/07/BA-Technika-VI-2607.pdf"
+  },
+  {
+   "product_id": 65104,
+   "spec": "dimensions",
+   "value": "Dimensions LxDxH: 22.5x52x35.5 cm",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-MaraX.pdf"
+  },
+  {
+   "product_id": 65104,
+   "spec": "weight",
+   "value": "Weight: 18.5 kg",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-MaraX.pdf"
+  },
+  {
+   "product_id": 65104,
+   "spec": "boiler",
+   "value": "Boiler: 1.8 l with AISI316L stainless steel heat-exchanger",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-MaraX.pdf"
+  },
+  {
+   "product_id": 65040,
+   "spec": "portafilter",
+   "value": "L58E group ... compatible with LELIT58 barista tools; LELIT58 2-ways filterholder",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+  },
+  {
+   "product_id": 64680,
+   "spec": "portafilter",
+   "value": "L58E group ... compatible with LELIT58 barista tools; LELIT58 2-ways filterholder",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+  },
+  {
+   "product_id": 64679,
+   "spec": "portafilter",
+   "value": "L58E group ... compatible with LELIT58 barista tools; LELIT58 2-ways filterholder",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-Bianca.pdf"
+  },
+  {
+   "product_id": 64675,
+   "spec": "power",
+   "value": "Power usage EU, UK, CH, AU: 230V/1600 W",
+   "url": "https://www.profitec-espresso.com/en/products/drive"
+  },
+  {
+   "product_id": 64675,
+   "spec": "pressure",
+   "value": "After soaking is complete, the extraction is started at 9 bar",
+   "url": "https://www.profitec-espresso.com/media/pages/produkte/drive/a59dfadb82-1782907095/ba-drive.pdf"
+  },
+  {
+   "product_id": 64900,
+   "spec": "pressure",
+   "value": "You can adjust the brewing pressure ... between approx. 8.5 and 12 bar",
+   "url": "https://www.profitec-espresso.com/media/pages/produkte/pro-400/6f52c5c90c-1778593561/ba_pro400-jump.pdf"
+  }
+ ]
+}
