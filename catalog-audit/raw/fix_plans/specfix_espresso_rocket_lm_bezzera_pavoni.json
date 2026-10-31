@@ -1,0 +1,564 @@
+{
+ "edits": [
+  {
+   "product_id": 65374,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קיבולת מיכל מים:</strong>",
+   "new": "<strong>קיבולת דוודים כוללת:</strong>",
+   "finding": "contradiction: page labels 5.5 ליטר as water-tank capacity vs official 5.5 L = TOTAL BOILER CAPACITY (1.9 L coffee + 3.6 L steam)",
+   "source": "https://rocket-espresso.com/pdf/ROCKET_Domestic_Catalog.pdf"
+  },
+  {
+   "product_id": 65376,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קיבולת מיכל מים:</strong>",
+   "new": "<strong>קיבולת דוודים כוללת:</strong>",
+   "finding": "contradiction: page labels 5.5 ליטר as water-tank capacity vs official 5.5 L = TOTAL BOILER CAPACITY (1.9 L coffee + 3.6 L steam)",
+   "source": "https://rocket-espresso.com/pdf/ROCKET_Domestic_Catalog.pdf"
+  },
+  {
+   "product_id": 65375,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>קיבולת מיכל מים:</strong>",
+   "new": "<strong>קיבולת דוודים כוללת:</strong>",
+   "finding": "contradiction: page labels 5.5 ליטר as water-tank capacity vs official 5.5 L = TOTAL BOILER CAPACITY (1.9 L coffee + 3.6 L steam)",
+   "source": "https://rocket-espresso.com/pdf/ROCKET_Domestic_Catalog.pdf"
+  },
+  {
+   "product_id": 82622,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64881,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64880,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64879,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64878,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64877,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 64876,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק 39 ס\"מ",
+   "new": "עומק 47.2 ס\"מ",
+   "finding": "contradiction: page depth 39 ס\"מ vs official 47.2 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-micra/"
+  },
+  {
+   "product_id": 82155,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64882,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64883,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64884,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64885,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64886,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64887,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 65025,
+   "variation_id": null,
+   "target": "description",
+   "old": "הספק גוף חימום: 1620W (220V)",
+   "new": "הספק מרבי: 1770W (220V)",
+   "finding": "contradiction: page power 1620W (220V) vs official Wattage max 1770 W (220V)",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 82155,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64882,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64883,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64884,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64885,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64886,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64887,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 65025,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 45.72 ס\"מ",
+   "new": "עומק: 54 ס\"מ",
+   "finding": "contradiction: page depth 45.72 ס\"מ vs official 54.0 cm",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 82155,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64882,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64883,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64884,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64885,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64886,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 64887,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 65025,
+   "variation_id": null,
+   "target": "description",
+   "old": "קיבולת דוד הקצפה: 3.5 ליטר",
+   "new": "קיבולת דוד הקצפה: 3 ליטר",
+   "finding": "contradiction: page steam boiler 3.5 ליטר vs official 3 L",
+   "source": "https://www.lamarzocco.com/it/en/home-products/espresso-machines/linea-mini-r/"
+  },
+  {
+   "product_id": 67622,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב, עומק, גובה: 200x290x350 מ\"מ",
+   "new": "רוחב, עומק, גובה: 200x375x485 מ\"מ",
+   "finding": "contradiction: page 200x290x350 mm vs official W200 D375 H485 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/expo"
+  },
+  {
+   "product_id": 67622,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל: 6.5 ק\"ג",
+   "new": "משקל: 7 ק\"ג",
+   "finding": "contradiction: page weight 6.5 kg vs official net 7.000 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/expo"
+  },
+  {
+   "product_id": 67153,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל נטו: 6.2 ק\"ג",
+   "new": "משקל נטו: 8 ק\"ג",
+   "finding": "contradiction: page net weight 6.2 kg vs official 8.000 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-edotto"
+  },
+  {
+   "product_id": 67153,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 290 מ\"מ",
+   "new": "עומק: 470 מ\"מ",
+   "finding": "contradiction: page depth 290 mm vs official 470 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-edotto"
+  },
+  {
+   "product_id": 67153,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה: 410 מ\"מ",
+   "new": "גובה: 505 מ\"מ",
+   "finding": "contradiction: page height 410 mm vs official 505 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-edotto"
+  },
+  {
+   "product_id": 67671,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל נטו (ק\"ג): 6.200 ק\"ג",
+   "new": "משקל נטו (ק\"ג): 8.000 ק\"ג",
+   "finding": "contradiction: page net weight 6.200 kg vs official 8.000 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-abile"
+  },
+  {
+   "product_id": 67671,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל ברוטו (ק\"ג): 9.000 ק\"ג",
+   "new": "משקל ברוטו (ק\"ג): 9.315 ק\"ג",
+   "finding": "contradiction: page gross weight 9.000 kg vs official 9.315 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-abile"
+  },
+  {
+   "product_id": 67671,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק אריזה: 270 מ\"מ",
+   "new": "עומק אריזה: 290 מ\"מ",
+   "finding": "contradiction: page packaged depth 270 mm vs official 290 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-abile"
+  },
+  {
+   "product_id": 67671,
+   "variation_id": null,
+   "target": "description",
+   "old": "רוחב אריזה: 440 מ\"מ",
+   "new": "רוחב אריזה: 450 מ\"מ",
+   "finding": "contradiction: page packed width 440 mm vs official 450 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-abile"
+  },
+  {
+   "product_id": 67671,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה אריזה: 460 מ\"מ",
+   "new": "גובה אריזה: 480 מ\"מ",
+   "finding": "contradiction: page packed height 460 mm vs official 480 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/esperto-abile"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה: 35 ס\"מ",
+   "new": "גובה: 49 ס\"מ",
+   "finding": "contradiction: page height 35 cm vs official 490 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-rame-gold"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 29 ס\"מ",
+   "new": "עומק: 35 ס\"מ",
+   "finding": "contradiction: page depth 29 cm vs official 350 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-rame-gold"
+  },
+  {
+   "product_id": 67604,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>משקל:</strong> 5.5 ק\"ג",
+   "new": "<strong>משקל:</strong> 6.5 ק\"ג",
+   "finding": "contradiction: page weight 5.5 kg vs official net 6.500 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-rame-gold"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "גובה: 32 ס\"מ",
+   "new": "גובה: 49 ס\"מ",
+   "finding": "contradiction: page height 32 cm vs official 490 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-lusso"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 29.0 ס\"מ",
+   "new": "עומק: 35 ס\"מ",
+   "finding": "contradiction: page depth 29.0 cm vs official 350 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-lusso"
+  },
+  {
+   "product_id": 67160,
+   "variation_id": null,
+   "target": "description",
+   "old": "משקל: 5.5 ק\"ג",
+   "new": "משקל: 6.5 ק\"ג",
+   "finding": "contradiction: page weight 5.5 kg vs official net 6.500 kg",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/professional-lusso"
+  },
+  {
+   "product_id": 67603,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 43 ס\"מ",
+   "new": "עומק: 42 ס\"מ",
+   "finding": "contradiction: page depth 43 cm vs official 420 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini"
+  },
+  {
+   "product_id": 67602,
+   "variation_id": null,
+   "target": "description",
+   "old": "עומק: 43 ס\"מ",
+   "new": "עומק: 42 ס\"מ",
+   "finding": "contradiction: page depth 43 cm vs official 420 mm",
+   "source": "https://www.lapavoni.com/en/products/domestic-machines/mini-cellini-black"
+  },
+  {
+   "product_id": 67283,
+   "variation_id": null,
+   "target": "description",
+   "old": "גוף חימום שירות; W 1100 - 1300",
+   "new": "גוף חימום שירות; W 1200",
+   "finding": "contradiction: page service element 1100-1300 W vs official 1200 W (220-240 V)",
+   "source": "https://www.bezzera.it/en/machines/matrix"
+  },
+  {
+   "product_id": 67283,
+   "variation_id": null,
+   "target": "description",
+   "old": "דוד שירות;  1,05 ליטר",
+   "new": "דוד שירות;  1 ליטר",
+   "finding": "contradiction: page service boiler 1,05 L vs official 1 lt",
+   "source": "https://www.bezzera.it/en/machines/matrix"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 67167,
+   "reason": "model uncertain: \"Aria Top\" is not listed under that name on bezzera.it; page values (tank 4 L, boiler 2 L, 1350-1550 W, width 200 mm) differ from the Aria MN PID table (3 lt, 1.5 lt, 1200 W, 250 mm) but the match to that model cannot be confirmed"
+  },
+  {
+   "product_id": 67605,
+   "reason": "model uncertain: Europiccola Nero is not on lapavoni.com; page dims/weight (H32 W20 D29 cm, 5.5 kg) differ from Europiccola Lusso/Special (200x335x490 mm, 6.5 kg) but the variant cannot be confirmed"
+  },
+  {
+   "product_id": 64867,
+   "reason": "official sources disagree: GS3 web page (33 kg, W41 cm, 2120 W, coffee boiler 1.2 L) vs GS3 product brochure (34.5 kg, W40 cm, 2300 W, 1.5 L); page matches the brochure"
+  },
+  {
+   "product_id": 64868,
+   "reason": "official sources disagree: GS3 web page vs product brochure (see 64867); page matches the brochure"
+  },
+  {
+   "product_id": 81092,
+   "reason": "official sources disagree: page wattage 5400/5700 W matches KB90 web page \"Wattage Elements\"; data sheet gives min 3350 / max 5670 W"
+  },
+  {
+   "product_id": 76875,
+   "reason": "official sources disagree: page wattage 7300/7800 W matches KB90 web page; data sheet gives min 5830 / max 7790 W"
+  },
+  {
+   "product_id": 81086,
+   "reason": "official sources disagree: page 4600 W matches Linea PB web page \"Standard watts\"; brochure gives min 3750 / max 5450 W"
+  },
+  {
+   "product_id": 81044,
+   "reason": "official sources disagree: page 6100 W matches Linea PB web page; brochure gives min 4930 / max 7240 W"
+  },
+  {
+   "product_id": 67670,
+   "reason": "official sources disagree: page tank 1.9 L and 1200 W match the Appartamento TCA web page; Rocket catalog/brochure say tank 2.5 L and 1350 W"
+  },
+  {
+   "product_id": 67169,
+   "reason": "official sources disagree on weight: web table 28.2 kg (S PID) vs Magica S/S PID depliant 22.7 kg; page 23 kg. Other differences are rounding (depth 42 vs 42.5 cm) or not wrong (240 V within 220-240 V)"
+  },
+  {
+   "product_id": 65377,
+   "reason": "not stated officially: page \"דוד שירות 3.6 ליטר – 1400 W\" - Rocket gives only total 1600 W (220-240 V) and 1400 W for 115 V, no per-boiler element rating"
+  },
+  {
+   "product_id": 65240,
+   "reason": "older version: page describes previous Appartamento; official site lists only the updated model"
+  },
+  {
+   "product_id": 65022,
+   "reason": "older version: page describes previous Appartamento; official site lists only the updated model"
+  },
+  {
+   "product_id": 67601,
+   "reason": "older version: page describes previous Domus Bar (7-step grinder); official lists New Domus Bar only"
+  },
+  {
+   "product_id": 67399,
+   "reason": "no official source: discontinued Mozzafiato Cronometro V"
+  },
+  {
+   "product_id": 64990,
+   "reason": "no official source: discontinued R 60V"
+  },
+  {
+   "product_id": 65195,
+   "reason": "no official source: discontinued R Cinquantotto (replaced by R58 TUNE)"
+  },
+  {
+   "product_id": 65163,
+   "reason": "no official source: Gran Caffe GCM not on lapavoni.com"
+  }
+ ]
+}
