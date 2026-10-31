@@ -56,7 +56,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ "$CMD" = "help" ]; then sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ; fi
+if [ "$CMD" = "help" ]; then sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ; fi
 
 # ── Resolve the key ────────────────────────────────────────────────────
 # system_logs is admin-read since 20261018c (the anon key no longer reads it),
