@@ -1,0 +1,20 @@
+﻿product_id,variation_id,target,status,reason,old,new,finding,plan
+64759,,description,applied,,מיכל פולי קפה של 250 גרם,מיכל פולי קפה של 300 גרם,contradiction: page hopper 250 g vs official Life X hopper capacity approximately 300 g,models_grinders.json
+64759,,description,applied,,"<p>15x36x20 ס""מ</p>","<p>15x35.5x20 ס""מ</p>",contradiction: page height 36 cm vs official Life X dimensions 150 x 200 x 355h mm (15x20x35.5 cm),models_grinders.json
+64759,,description,applied,,,"<h3>מפרט טכני</h3>
+<ul>
+<li><strong>מתח:</strong> 220–240 וולט, 50–60 הרץ</li>
+<li><strong>הספק:</strong> 300 וואט</li>
+<li><strong>מהירות:</strong> 1380 סל""ד (50 הרץ)</li>
+<li><strong>סכינים:</strong","missing specs: voltage, power, speed, burrs, burr size, weight (Ceado Life X)",models_grinders.json
+65203,,description,applied,,140 וואט/ 220V,140 וואט/ 230V,contradiction: page voltage 220V vs official Rocky voltage 110 V / 230 V (EU/IL version 230 V),models_grinders.json
+65459,,description,applied,,"<strong>סט בורר סופרנובה נירוסטה 38 מ""מ:</strong>","<strong>סט בורר הייפרנובה נירוסטה 38 מ""מ:</strong>","contradiction: page burr name Supernova vs official current name ""38mm Stainless Steel Hypernova Burr Set""",models_grinders.json
+65459,,description,applied,,<strong>סטים בורר סופרנובה VS3</strong>,<strong>סטים בורר הייפרנובה VS3</strong>,contradiction: page burr name Supernova vs official current name Hypernova,models_grinders.json
+65459,,description,applied,,אותה טכנולוגיית סופרנובה בורר,אותה טכנולוגיית הייפרנובה בורר,contradiction: page burr name Supernova vs official current name Hypernova,models_grinders.json
+65459,,description,applied,,"<p data-sourcepos=""26:1-26:81""><strong>מטחנה הידנית Varia EVO - הטוחנת ההיברידית הראשונה בעולם המשתמשת בסגסוגת כוללת</strong></p>",,"contradiction: heading calls the product the world's first hybrid grinder; official: ""EVO Hand is manual only"" (the hybrid is a separate model, EVO Hy",models_grinders.json
+65459,,description,applied,,"<p data-sourcepos=""28:1-28:185"">הכירו את טוחנת הידנית Varia EVO, טוחנת הידנית ההיברידית הראשונה בעולם המהפכה בשיטות הטחינה המסורתיות. הגישה החדשנית שלנו משלבת את עוצמת הטכנולוגיה USB-C עם האמינות של ט",,"contradiction: paragraph describes the USB-C hybrid drive (EVO Hybrid manual intro text); official: ""EVO Hybrid includes a battery-powered drive. EVO ",models_grinders.json
+65459,,description,applied,,,"<h3>מפרט טכני נוסף</h3>
+<ul>
+<li><strong>סוג סכינים:</strong> קוניים</li>
+</ul>",missing specs: burr type (conical); power/speed not applicable (EVO Hand has no motor),models_grinders.json
+65203,,description,applied,,<p>משקל: 7 ק``ג</p>,<p>משקל: 6.5 ק``ג</p>,owner: Rancilio Rocky (not SD) → official 6.5 kg,models_grinders.json

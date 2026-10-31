@@ -1,0 +1,3700 @@
+[
+ {
+  "id": 82915,
+  "name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל (אפור)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1209,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c-%d7%90%d7%a4%d7%95%d7%a8/"
+ },
+ {
+  "id": 82864,
+  "name": "ממברנה Pro 100 אוסמוזה הפוכה RO100S Aquaphor",
+  "group": "water",
+  "missing": [],
+  "text_len": 703,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9e%d7%91%d7%a8%d7%a0%d7%94-pro-100-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-ro100s-aquaphor/"
+ },
+ {
+  "id": 82796,
+  "name": "ידית חליטה ללא תחתית (Bottomless) עם ידית עץ – בזרה Bezzera",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 592,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9c%d7%9c%d7%90-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-bottomless-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%91%d7%96%d7%a8/"
+ },
+ {
+  "id": 82493,
+  "name": "מקציף חלב נייד NanoFoamer GO כתום",
+  "group": "frother",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 2171,
+  "permalink": "https://www.minuto.co.il/product/nanofoamer-go-%d7%9b%d7%aa%d7%95%d7%9d/"
+ },
+ {
+  "id": 82492,
+  "name": "מקציף חלב נייד NanoFoamer GO כחול",
+  "group": "frother",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 2171,
+  "permalink": "https://www.minuto.co.il/product/nanofoamer-go-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 82491,
+  "name": "מקציף חלב נייד NanoFoamer GO שחור",
+  "group": "frother",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 2171,
+  "permalink": "https://www.minuto.co.il/product/nanofoamer-go-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 82470,
+  "name": "ספל קפה נוט-ניוטרל notNeutral Vero Cappuccino Glass שקוף",
+  "group": "cup",
+  "missing": [],
+  "text_len": 892,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cappuccino-glass-%d7%a9%d7%a7%d7%95%d7%a3-%d7%94%d7%a2%d7%aa%d7%a7/"
+ },
+ {
+  "id": 82139,
+  "name": "ידית חליטה חתוכה (Bottomless) – תואמת למכונות Lelit (57mm) ול-La Pavoni",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 1327,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-bottomless-%d7%aa%d7%95%d7%90%d7%9e%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-lelit-57mm/"
+ },
+ {
+  "id": 82084,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - טורקיז",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96/"
+ },
+ {
+  "id": 82082,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - כחול",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 82023,
+  "name": "סלסלת חליטה מדויקת IMS Competition 7-9g (דגם B702TH26.5E)",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 839,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-ims-competition-7-9g-%d7%93%d7%92%d7%9d-b702th26-5e/"
+ },
+ {
+  "id": 82021,
+  "name": "סלסלת חליטה מדויקת IMS Competition 18-20g (דגם B702TH26.5M)",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 881,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-ims-competition-18-21g-%d7%93%d7%92%d7%9d-b702th26-5m/"
+ },
+ {
+  "id": 82018,
+  "name": "סלסלת חליטה מדויקת IMS Competition 16-18g (דגם B702TH24.5M)",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 835,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9e%d7%93%d7%95%d7%99%d7%a7%d7%aa-%d7%9e%d7%91%d7%99%d7%aa-ims-%d7%93%d7%92%d7%9d-b702th24-5m/"
+ },
+ {
+  "id": 81804,
+  "name": "36 טבליות הסרת אבנית למכונות קפה Jura",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 421,
+  "permalink": "https://www.minuto.co.il/product/36-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/"
+ },
+ {
+  "id": 81746,
+  "name": "NotNeutral pico - תחתית לאספרסו בצבע כחול",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 813,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81745,
+  "name": "NotNeutral pico - תחתית לאספרסו בצבע טבעי",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 813,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%a6%d7%91%d7%a2-%d7%98%d7%91%d7%a2%d7%99/"
+ },
+ {
+  "id": 81744,
+  "name": "NotNeutral pico - תחתית לאספרסו בצבע לבן",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81743,
+  "name": "NotNeutral pico - תחתית לאספרסו בצבע שחור",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 813,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81742,
+  "name": "NotNeutral pico - תחתית לאספרסו בצבע מרווה",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 814,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%a6%d7%91%d7%a2-%d7%9e%d7%a8%d7%95%d7%95%d7%94/"
+ },
+ {
+  "id": 81737,
+  "name": "NotNeutral pico - תחתית לקפוצינו/לאטה בצבע כחול",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 806,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%9c%d7%90%d7%98%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81736,
+  "name": "NotNeutral pico - תחתית לקפוצינו/לאטה בצבע טבעי",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 806,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%9c%d7%90%d7%98%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%98%d7%91%d7%a2%d7%99/"
+ },
+ {
+  "id": 81735,
+  "name": "NotNeutral pico - תחתית לקפוצינו/לאטה בצבע לבן",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 805,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%9c%d7%90%d7%98%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81734,
+  "name": "NotNeutral pico - תחתית לקפוצינו/לאטה בצבע שחור",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 806,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%aa%d7%97%d7%aa%d7%99%d7%aa-%d7%9c%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%9c%d7%90%d7%98%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81733,
+  "name": "NotNeutral pico - ספל לאטה גדול 355 מ\"ל בצבע כחול",
+  "group": "cup",
+  "missing": [],
+  "text_len": 884,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c-2/"
+ },
+ {
+  "id": 81727,
+  "name": "NotNeutral pico - ספל לאטה גדול 355 מ\"ל בצבע שחור",
+  "group": "cup",
+  "missing": [],
+  "text_len": 884,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81726,
+  "name": "NotNeutral pico - ספל לאטה גדול 355 מ\"ל בצבע טבעי",
+  "group": "cup",
+  "missing": [],
+  "text_len": 884,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%98%d7%91%d7%a2%d7%99/"
+ },
+ {
+  "id": 81725,
+  "name": "NotNeutral pico - ספל לאטה גדול 355 מ\"ל בצבע לבן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 883,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81724,
+  "name": "NotNeutral pico - ספל לאטה גדול 355 מ\"ל בצבע מרווה",
+  "group": "cup",
+  "missing": [],
+  "text_len": 885,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%9e%d7%a8%d7%95%d7%95%d7%94/"
+ },
+ {
+  "id": 81722,
+  "name": "NotNeutral pico - תחתית לקפוצינו/לאטה בצבע מרווה",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 807,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-%d7%92%d7%93%d7%95%d7%9c-355-%d7%9e%d7%9c-%d7%91%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81719,
+  "name": "NotNeutral Pico - ספל לאטה 240 מ\"ל בצבע כחול",
+  "group": "cup",
+  "missing": [],
+  "text_len": 603,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-240-%d7%9e%d7%9c-%d7%91%d7%a6%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81718,
+  "name": "NotNeutral pico - ספל קפוצ'ינו 180 מ\"ל צבע כחול",
+  "group": "cup",
+  "missing": [],
+  "text_len": 500,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-180-%d7%9e%d7%9c-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81716,
+  "name": "NotNeutral pico - ספל אספרסו 90 מל צבע כחול",
+  "group": "cup",
+  "missing": [],
+  "text_len": 870,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-90-%d7%9e%d7%9c-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 81714,
+  "name": "NotNeutral pico - ספל קפוצ'ינו 180 מ\"ל טבעי",
+  "group": "cup",
+  "missing": [],
+  "text_len": 460,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-180-%d7%9e%d7%9c-%d7%98%d7%91%d7%a2%d7%99/"
+ },
+ {
+  "id": 81581,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - לבן",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 81574,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - נירוסטה",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 81566,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - נחושת",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a0%d7%97%d7%95%d7%a9%d7%aa/"
+ },
+ {
+  "id": 81559,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - שחור",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81503,
+  "name": "כד הקצפה בריסטה סוואג וורטקס Dynamic",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 948,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%95%d7%95%d7%a8%d7%98%d7%a7%d7%a1-%d7%93%d7%99%d7%a0%d7%9e%d7%99/"
+ },
+ {
+  "id": 81476,
+  "name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore לא כולל התקנה",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 626,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-osmo-pro-100-aquaphore-%d7%9c%d7%90-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94/"
+ },
+ {
+  "id": 81452,
+  "name": "סטיקים לבדיקת מים - 12 יח",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 67,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d-12-%d7%99%d7%97/"
+ },
+ {
+  "id": 81414,
+  "name": "כוס פלאט ווייט 150 מל דייל האריס המראה הסדוק - ורוד",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1129,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a4%d7%9c%d7%90%d7%98-%d7%95%d7%95%d7%99%d7%99%d7%98-150-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8%d7%90%d7%94-%d7%94%d7%a1%d7%93-2/"
+ },
+ {
+  "id": 81410,
+  "name": "כוס פלאט ווייט 150 מל דייל האריס המראה הסדוק - צהוב",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1129,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a4%d7%9c%d7%90%d7%98-%d7%95%d7%95%d7%99%d7%99%d7%98-150-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8%d7%90%d7%94-%d7%94%d7%a1%d7%93-3/"
+ },
+ {
+  "id": 81406,
+  "name": "כוס פלאט ווייט 150 מל דייל האריס המראה הסדוק - פחם",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1129,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a4%d7%9c%d7%90%d7%98-%d7%95%d7%95%d7%99%d7%99%d7%98-150-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8%d7%90%d7%94-%d7%94%d7%a1%d7%93-4/"
+ },
+ {
+  "id": 81402,
+  "name": "כוס קפוצ׳ינו לוברמיקס 200 מל דייל האריס המראה הסדוק - ורוד",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1001,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-200-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94-3/"
+ },
+ {
+  "id": 81398,
+  "name": "כוס קפוצ׳ינו לוברמיקס 200 מל דייל האריס המראה הסדוק - צהוב",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1001,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-200-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94-2/"
+ },
+ {
+  "id": 81389,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ירוק",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-2/"
+ },
+ {
+  "id": 81382,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - צהוב",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-3/"
+ },
+ {
+  "id": 81375,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - ורוד",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-4/"
+ },
+ {
+  "id": 81368,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - סגול",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-5/"
+ },
+ {
+  "id": 81361,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כחול",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8-6/"
+ },
+ {
+  "id": 81358,
+  "name": "כוס מינון טחינה Varia VS3 - 58mm - שחור",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "dishwasher"
+  ],
+  "text_len": 1416,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%99%d7%a0%d7%95%d7%9f-%d7%98%d7%97%d7%99%d7%a0%d7%94-varia-vs3-58mm-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81354,
+  "name": "פילטר רזין מרכך למכונות אספרסו ביתיות - 1 יח",
+  "group": "water",
+  "missing": [],
+  "text_len": 301,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a8%d7%96%d7%99%d7%9f-%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%99%d7%aa%d7%99%d7%95%d7%aa-2/"
+ },
+ {
+  "id": 81350,
+  "name": "פילטר רזין מרכך למכונות אספרסו ביתיות - 5 יח",
+  "group": "water",
+  "missing": [],
+  "text_len": 301,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a8%d7%96%d7%99%d7%9f-%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%99%d7%aa%d7%99%d7%95%d7%aa-3/"
+ },
+ {
+  "id": 81346,
+  "name": "כוס אספרסו לוברמיקס 80 מל דייל האריס המראה הסדוק - ורוד",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-80-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8-2/"
+ },
+ {
+  "id": 81342,
+  "name": "כוס אספרסו לוברמיקס 80 מל דייל האריס המראה הסדוק - צהוב",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-80-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8-3/"
+ },
+ {
+  "id": 81152,
+  "name": "סלסלת פילטר  לידית  מכונת קפה La Marzocco - גרם 17",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 709,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-la-marzocco-%d7%92%d7%a8%d7%9d-17/"
+ },
+ {
+  "id": 81147,
+  "name": "סלסלת פילטר  לידית  מכונת קפה La Marzocco - גרם 14",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 709,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-la-marzocco-%d7%92%d7%a8%d7%9d-14/"
+ },
+ {
+  "id": 81142,
+  "name": "סלסלת פילטר  לידית  מכונת קפה La Marzocco - גרם 7",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 713,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-la-marzocco-%d7%92%d7%a8%d7%9d-7/"
+ },
+ {
+  "id": 81089,
+  "name": "משקל קפה Acaia Pearl s - שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1303,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81083,
+  "name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1235,
+  "permalink": "https://www.minuto.co.il/product/hario-polaris-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-%d7%97%d7%9b%d7%9d-%d7%9c%d7%93%d7%99%d7%95%d7%a7-%d7%9e%d7%95%d7%a9%d7%9c%d7%9d/"
+ },
+ {
+  "id": 81077,
+  "name": "משקל קפה Acaia Lunar - שחור",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1461,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 81073,
+  "name": "כד הקצפה 600 מל בריסטה סוואג אולטרה שארפ 2.0 - שחור",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1034,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-%d7%a9%d7%97%d7%95/"
+ },
+ {
+  "id": 81069,
+  "name": "כד הקצפה 600 מל בריסטה סוואג אולטרה שארפ 2.0 - מולטיקולור",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1034,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-%d7%9e%d7%95%d7%9c-2/"
+ },
+ {
+  "id": 81063,
+  "name": "כד הקצפה 350 מל בריסטה סוואג אולטרה שארפ 2.0 - מולטיקולור",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1034,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-%d7%9e%d7%95%d7%9c/"
+ },
+ {
+  "id": 81057,
+  "name": "כד הקצפה 350 מל בריסטה סוואג אולטרה שארפ 2.0",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1034,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0-2/"
+ },
+ {
+  "id": 81041,
+  "name": "ספל תרמי Adventure Tumbler מבית Planetary Design",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 851,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%aa%d7%a8%d7%9e%d7%99-adventure-tumbler-%d7%9e%d7%91%d7%99%d7%aa-planetary-design-2/"
+ },
+ {
+  "id": 80994,
+  "name": "ספל תרמי צבע לבן Adventure Tumbler מבית Planetary Design",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 850,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%aa%d7%a8%d7%9e%d7%99-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-adventure-tumbler-%d7%9e%d7%91%d7%99%d7%aa-planetary-design/"
+ },
+ {
+  "id": 80992,
+  "name": "סט 4 ספלי קפוצ'ינו Club House מניקו לבן + צלוחית - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 930,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%9c%d7%91%d7%9f-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-205-%d7%9e/"
+ },
+ {
+  "id": 80990,
+  "name": "סט 4 ספלי קפוצ'ינו Club House מניקו ירוק + צלוחית - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%99%d7%a8%d7%95%d7%a7-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-205/"
+ },
+ {
+  "id": 80988,
+  "name": "סט 4 ספלי קפוצ'ינו Club House מניקו סלמון + צלוחית - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 934,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a1%d7%9c%d7%9e%d7%95%d7%9f-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-2/"
+ },
+ {
+  "id": 80986,
+  "name": "סט 4 ספלי קפוצינו Club House מניקו אדום + צלוחית 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%90%d7%93%d7%95%d7%9d-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-205-%d7%9e/"
+ },
+ {
+  "id": 80984,
+  "name": "סט 4 ספלי קפוצ'ינו Club House מניקו ניקל + צלוחית 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a0%d7%99%d7%a7%d7%9c-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-205/"
+ },
+ {
+  "id": 80982,
+  "name": "סט 4 ספלי קפוצ'ינו Club House + צלוחית מניקו טורקיז - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 936,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%98%d7%95%d7%a8%d7%a7%d7%99/"
+ },
+ {
+  "id": 80979,
+  "name": "סט 4 ספלי אספרסו Club House + צלוחית מניקו ירוק - 70 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%99%d7%a8%d7%95%d7%a7-70-%d7%9e/"
+ },
+ {
+  "id": 80977,
+  "name": "סט 4 ספלי אספרסו Club House + צלוחית מניקו אדום - 70 מל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%90%d7%93%d7%95%d7%9d-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80975,
+  "name": "סט 4 ספלי אספרסו Club House + צלוחית מניקו ניקל - 70 מל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a0%d7%99%d7%a7%d7%9c-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80950,
+  "name": "דוחסן קפה OAK8 קפיצי קוטר 53",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 1315,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-oak8-%d7%a7%d7%a4%d7%99%d7%a6%d7%99-%d7%a7%d7%95%d7%98%d7%a8-53/"
+ },
+ {
+  "id": 80892,
+  "name": "סט 4 ספלי אספרסו Club House + צלוחית מניקו טורקיז - 70 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 671,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-4-%d7%a1%d7%a4%d7%9c%d7%99-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96-70/"
+ },
+ {
+  "id": 80648,
+  "name": "ספל אספרסו Club House  מניקו שחור - 70 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a9%d7%97%d7%95%d7%a8-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80646,
+  "name": "ספל אספרסו Club House  מניקו ירוק - 70 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%99%d7%a8%d7%95%d7%a7-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80644,
+  "name": "ספל אספרסו Club House  מניקו טורקיז - 70 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 671,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80579,
+  "name": "ספל קפוצ'ינו Club House Tulipano - שחור מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%a9%d7%97%d7%95%d7%a8-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80577,
+  "name": "ספל קפוצ'ינו Club House Tulipano - לבן מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 890,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%9c%d7%91%d7%9f-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80575,
+  "name": "ספל קפוצ'ינו Club House Tulipano - ורוד מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%95%d7%a8%d7%95%d7%93-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80573,
+  "name": "ספל קפוצ'ינו Club House Tulipano -  מוקה (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%9e%d7%95%d7%a7%d7%94-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80571,
+  "name": "ספל קפוצ'ינו Club House Tulipano - ירוק מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%99%d7%a8%d7%95%d7%a7-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80564,
+  "name": "ספל קפוצ'ינו Club House Tulipano - כחול מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%9b%d7%97%d7%95%d7%9c-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80562,
+  "name": "ספל אספרסו Club House Tulipano – ורוד מאט (Pink Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1526,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%95%d7%a8%d7%95%d7%93-%d7%9e%d7%90%d7%98-pink-matte/"
+ },
+ {
+  "id": 80560,
+  "name": "ספל אספרסו Club House Tulipano – לבן מאט (White Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1521,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%9c%d7%91%d7%9f-%d7%9e%d7%90%d7%98-white-matte/"
+ },
+ {
+  "id": 80557,
+  "name": "ספל אספרסו Club House Tulipano – מוקה מאט (Mocha Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1525,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%9e%d7%95%d7%a7%d7%94-%d7%9e%d7%90%d7%98-mocha-matte/"
+ },
+ {
+  "id": 80555,
+  "name": "ספל אספרסו Club House Tulipano – ירוק מאט (Green Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1526,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%99%d7%a8%d7%95%d7%a7-%d7%9e%d7%90%d7%98-green-matte/"
+ },
+ {
+  "id": 80553,
+  "name": "ספל אספרסו Club House Tulipano – שחור מאט (Black Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1526,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%a9%d7%97%d7%95%d7%a8-%d7%9e%d7%90%d7%98-black-matte/"
+ },
+ {
+  "id": 80551,
+  "name": "ספל אספרסו Club House Tulipano – כחול מט (Blue Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1525,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%9b%d7%97%d7%95%d7%9c-%d7%9e%d7%98-blue-matte/"
+ },
+ {
+  "id": 80549,
+  "name": "ספל קפוצ'ינו Club House מניקו לבן - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 930,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%9c%d7%91%d7%9f-205-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80547,
+  "name": "ספל קפוצ'ינו Club House מניקו ירוק - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%99%d7%a8%d7%95%d7%a7-205-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80545,
+  "name": "ספל קפוצ'ינו Club House מניקו טורקיז - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 936,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96-205-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80543,
+  "name": "ספל קפוצ'ינו Club House מניקו סלמון - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 934,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a1%d7%9c%d7%9e%d7%95%d7%9f-205-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80541,
+  "name": "ספל קפוצ'ינו Club House מניקו שחור - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a9%d7%97%d7%95%d7%a8-205-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80539,
+  "name": "ספל אספרסו Club House  מניקו אדום - 70 מל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%90%d7%93%d7%95%d7%9d-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80537,
+  "name": "ספל קפוצ'ינו Club House Tulipano - אפור מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 894,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%90%d7%a4%d7%95%d7%a8-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80535,
+  "name": "ספל קפוצ'ינו Club House Tulipano - אדום מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 893,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%90%d7%93%d7%95%d7%9d-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80505,
+  "name": "ספל קפוצ'ינו Club House Tulipano - בז' מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 890,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a2%d7%9d-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-210-%d7%9e%d7%9c-%d7%97%d7%95%d7%9c-%d7%9e%d7%98-club-house/"
+ },
+ {
+  "id": 80503,
+  "name": "ספל קפוצ'ינו Club House TULIPANO  צהוב מט (210 מ\"ל)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1344,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-club-house-tulipano-%d7%a6%d7%94%d7%95%d7%91-%d7%9e%d7%98-210-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 80374,
+  "name": "פילטר מים למכונת דלונגי - DeLonghi water filter",
+  "group": "water",
+  "missing": [],
+  "text_len": 664,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%93%d7%9c%d7%95%d7%a0%d7%92%d7%99-delonghi-water-filter/"
+ },
+ {
+  "id": 80201,
+  "name": "ספל אספרסו Club House Tulipano – אפור מאט (Grey Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1525,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%90%d7%a4%d7%95%d7%a8-%d7%9e%d7%90%d7%98-grey-matte/"
+ },
+ {
+  "id": 80199,
+  "name": "ספל אספרסו Club House Tulipano – אדום מאט (Red Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1524,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%90%d7%93%d7%95%d7%9d-%d7%9e%d7%90%d7%98-red-matte/"
+ },
+ {
+  "id": 80195,
+  "name": "ספל אספרסו Club House Tulipano - חול מאט (Sand Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1520,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-club-house-tulipano-%d7%97%d7%95%d7%9c-%d7%9e%d7%98-sand-matte/"
+ },
+ {
+  "id": 80193,
+  "name": "ספל אספרסו Club House Tulipano – צהוב מאט (Yellow Matte)",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 1527,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a2%d7%9d-%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-70-%d7%9e%d7%9c-%d7%a6%d7%94%d7%95%d7%91-%d7%9e%d7%98-club-house/"
+ },
+ {
+  "id": 79990,
+  "name": "נוק בוקס - סיר ריקון Knockbox נירוסטה שחור (140mmx150mm)",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 761,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knockbox-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a9%d7%97%d7%95%d7%a8-114mmx114mm/"
+ },
+ {
+  "id": 79506,
+  "name": "ספל קפוצינו Club House מניקו אדום - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-205-%d7%9e%d7%9c-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 79505,
+  "name": "ספל קפוצ'ינו Club House מניקו ניקל - 205 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 932,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-205-%d7%9e%d7%9c-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a0%d7%99%d7%a7%d7%9c/"
+ },
+ {
+  "id": 79504,
+  "name": "ספל אספרסו Club House  מניקו ניקל - 70 מל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 667,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-70-%d7%9e%d7%9c-%d7%9e%d7%a0%d7%99%d7%a7%d7%95-%d7%a0%d7%99%d7%a7%d7%9c-club-house/"
+ },
+ {
+  "id": 79499,
+  "name": "room of ceramics - ספל אספרסו צבע חול",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/room-of-ceramics-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a6%d7%91%d7%a2-%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 79498,
+  "name": "room of ceramics - ספל פלאט וויט צבע חול",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/room-of-ceramics-%d7%a4%d7%9c%d7%90%d7%98-%d7%95%d7%95%d7%99%d7%98-%d7%a6%d7%91%d7%a2-%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 79485,
+  "name": "ידית חליטה אספרסו קצר מנירוסטה למכונות קפה לה מרזוקו La Marzocco",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 477,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a7%d7%a6%d7%a8-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95/"
+ },
+ {
+  "id": 79418,
+  "name": "כוס מדידה לאספרסו מנירוסטה איכותית 100 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 963,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%93%d7%99%d7%93%d7%94-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%90%d7%99%d7%9b%d7%95%d7%aa%d7%99%d7%aa-100-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 79402,
+  "name": "כלי WDT מקצועי לאספרסו - לפירוק גושים לאחר טחינה",
+  "group": "milk_jug",
+  "missing": [
+   "volume",
+   "material"
+  ],
+  "text_len": 1135,
+  "permalink": "https://www.minuto.co.il/product/wdt-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99/"
+ },
+ {
+  "id": 79401,
+  "name": "מגירת ריקון לקפה בצבע שחור - Knock Box",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 744,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%94%d7%a2%d7%aa%d7%a7/"
+ },
+ {
+  "id": 79357,
+  "name": "קנקן הקצפה נירוסטה 0.75 ליטר MOTTA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1078,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-0-75-%d7%9c%d7%99%d7%98%d7%a8-motta/"
+ },
+ {
+  "id": 79324,
+  "name": "notneutral Pico - ספל קפוצ'ינו 180 מ\"ל שחור",
+  "group": "cup",
+  "missing": [],
+  "text_len": 540,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-180-%d7%9e%d7%9c-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 79321,
+  "name": "NotNeutral Pico - ספל לאטה 240 מ\"ל שחור",
+  "group": "cup",
+  "missing": [],
+  "text_len": 598,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-240-%d7%9e%d7%9c-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 79319,
+  "name": "NotNeutral pico - ספל לאטה 240 מ\"ל מרווה",
+  "group": "cup",
+  "missing": [],
+  "text_len": 580,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-240-%d7%9e%d7%9c-%d7%9e%d7%a8%d7%95%d7%95%d7%94/"
+ },
+ {
+  "id": 79317,
+  "name": "NotNeutral pico - ספל לאטה 240 מ\"ל צבע טבעי",
+  "group": "cup",
+  "missing": [],
+  "text_len": 583,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-240-%d7%9e%d7%9c-%d7%98%d7%91%d7%a2%d7%99/"
+ },
+ {
+  "id": 79184,
+  "name": "שלישיית פילטרים מסנני מים Eco Klear למכונות קפה דלונגי",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 528,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-3-%d7%9e%d7%a1%d7%a0%d7%a0%d7%99-%d7%9e%d7%99%d7%9d-%d7%aa%d7%95%d7%90%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-delonghi/"
+ },
+ {
+  "id": 79112,
+  "name": "NotNeutral Vero - כוס זכוכית קפוצ'ינו סגול",
+  "group": "cup",
+  "missing": [],
+  "text_len": 689,
+  "permalink": "https://www.minuto.co.il/product/notneutral-vero-%d7%9b%d7%95%d7%a1-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%a1%d7%92%d7%95%d7%9c/"
+ },
+ {
+  "id": 78846,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע קרמל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 386,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9e%d7%9c/"
+ },
+ {
+  "id": 78785,
+  "name": "NotNeutral pico - ספל לאטה 240 מ\"ל לבן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 575,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%9c%d7%90%d7%98%d7%94-240-%d7%9e%d7%9c-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 78775,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע Berry",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 385,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-200-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-berry/"
+ },
+ {
+  "id": 78699,
+  "name": "NotNeutral pico - ספל קפוצ'ינו 180 מ\"ל מרווה",
+  "group": "cup",
+  "missing": [],
+  "text_len": 502,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-180-%d7%9e%d7%9c-%d7%9e%d7%a8%d7%95%d7%95%d7%94/"
+ },
+ {
+  "id": 78695,
+  "name": "NotNeutral pico - ספל קפוצ'ינו 180 מ\"ל לבן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 498,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-180-%d7%9e%d7%9c-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 78682,
+  "name": "NotNeutral pico - ספל אספרסו קרמי Pico בנפח 90 מ״ל צבע שחור",
+  "group": "cup",
+  "missing": [],
+  "text_len": 859,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 78661,
+  "name": "NotNeutral pico - ספל אספרסו קרמי בנפח 90 מ״ל, צבע מרווה",
+  "group": "cup",
+  "missing": [],
+  "text_len": 856,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%a8%d7%95%d7%95%d7%94/"
+ },
+ {
+  "id": 78659,
+  "name": "NotNeutral pico - ספל אספרסו קרמי Pico בנפח 90 מ״ל צבע לבן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 844,
+  "permalink": "https://www.minuto.co.il/product/notneutral-pico-%d7%a1%d7%a4%d7%9c-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 78557,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע ירוק",
+  "group": "storage",
+  "missing": [],
+  "text_len": 828,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7/"
+ },
+ {
+  "id": 78498,
+  "name": "ספל תרמי Adventure Tumbler מבית Planetary Design",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 847,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%aa%d7%a8%d7%9e%d7%99-adventure-tumbler-%d7%9e%d7%91%d7%99%d7%aa-planetary-design/"
+ },
+ {
+  "id": 78262,
+  "name": "כד הקצפה בריסטה סוואג איבו 2 מולטיקולור",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1022,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%99%d7%91%d7%95-480/"
+ },
+ {
+  "id": 78251,
+  "name": "כד הקצפה בריסטה סוואג אולטרה שארפ 2.0 - נחושת",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1034,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%95%d7%9c%d7%98%d7%a8%d7%94-%d7%a9%d7%90%d7%a8%d7%a4-2-0/"
+ },
+ {
+  "id": 78249,
+  "name": "כד הקצפה בריסטה סוואג איבו 2 שחור",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1048,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%90%d7%99%d7%91%d7%95-2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 78245,
+  "name": "כד הקצפה בריסטה סוואג וורטקס High-velocity",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 948,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%91%d7%a8%d7%99%d7%a1%d7%98%d7%94-%d7%a1%d7%95%d7%95%d7%90%d7%92-%d7%95%d7%95%d7%a8%d7%98%d7%a7%d7%a1/"
+ },
+ {
+  "id": 78244,
+  "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 54",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 176,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-54/"
+ },
+ {
+  "id": 78232,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics מינט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 860,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%9e%d7%99%d7%a0%d7%98/"
+ },
+ {
+  "id": 78230,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics כחול ריבר",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 870,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%9b%d7%97%d7%95%d7%9c-%d7%a8%d7%99%d7%91%d7%a8/"
+ },
+ {
+  "id": 78228,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע צהוב",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 860,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a6%d7%94%d7%95%d7%91/"
+ },
+ {
+  "id": 78189,
+  "name": "ספל Volcano צהוב 210 מ\"ל Club House",
+  "group": "cup",
+  "missing": [],
+  "text_len": 682,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-volcano-%d7%a6%d7%94%d7%95%d7%91-210-%d7%9e%d7%9c-club-house/"
+ },
+ {
+  "id": 78182,
+  "name": "ספל Volcano אקוואמארין 210 מ\"ל Club House",
+  "group": "cup",
+  "missing": [],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-volcano-%d7%90%d7%a7%d7%95%d7%95%d7%90%d7%9e%d7%90%d7%a8%d7%99%d7%9f-210-%d7%9e%d7%9c-club-house/"
+ },
+ {
+  "id": 78179,
+  "name": "ספל Volcano אקוואמארין 90 מ\"ל Club House",
+  "group": "cup",
+  "missing": [],
+  "text_len": 690,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-volcano-%d7%90%d7%a7%d7%95%d7%95%d7%90%d7%9e%d7%90%d7%a8%d7%99%d7%9f-90-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 78176,
+  "name": "ספל קפה Maniko ורוד סלמון 70 מ\"ל - Club House",
+  "group": "cup",
+  "missing": [],
+  "text_len": 626,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-maniko-%d7%90%d7%93%d7%95%d7%9d-70-%d7%9e%d7%9c-club-house/"
+ },
+ {
+  "id": 78172,
+  "name": "ספל Maniko אפור 120 מ\"ל – Club House",
+  "group": "cup",
+  "missing": [],
+  "text_len": 523,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-maniko-%d7%90%d7%a4%d7%95%d7%a8-120-%d7%9e%d7%9c-club-house/"
+ },
+ {
+  "id": 78151,
+  "name": "מקציף חלב מקצועי סוורין - Severin Milk Frother SM3597",
+  "group": "frother",
+  "missing": [],
+  "text_len": 383,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99-%d7%a1%d7%95%d7%95%d7%a8%d7%99%d7%9f-severin-milk-frother-sm9495-%d7%a2%d7%95%d7%aa%d7%a7/"
+ },
+ {
+  "id": 77376,
+  "name": "קנקן נירוסטה - חלבית למכונת אספרסו",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 658,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a0%d7%99%d7%a8%d7%95%d7%98%d7%94-%d7%97%d7%9c%d7%91%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 77373,
+  "name": "כוס טחינה מנירוסטה לאספרסו - Dosing Cup",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "dishwasher"
+  ],
+  "text_len": 555,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%97%d7%99%d7%a0%d7%94-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-dosing-cup/"
+ },
+ {
+  "id": 77223,
+  "name": "ערכת מדחף ורשתות חלופיות למקציף NanoFoamer V2 / Lithium",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 392,
+  "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%9e%d7%93%d7%97%d7%a3-%d7%95%d7%a8%d7%a9%d7%aa%d7%95%d7%aa-%d7%97%d7%9c%d7%95%d7%a4%d7%99%d7%95%d7%aa-%d7%9c%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-nanofoamer-v2-lithium/"
+ },
+ {
+  "id": 77165,
+  "name": "Subminimal Flick WDT Tool",
+  "group": "tamper",
+  "missing": [
+   "diameter",
+   "material"
+  ],
+  "text_len": 1639,
+  "permalink": "https://www.minuto.co.il/product/subminimal-flick-wdt-tool/"
+ },
+ {
+  "id": 77141,
+  "name": "מגירת ריקון knock box לקפה בצבע שחור",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 738,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knock-box-%d7%9c%d7%a7%d7%a4%d7%94-%d7%91%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 77075,
+  "name": "ידית חליטה כפולה – עץ מייפל | למכונות La Marzocco",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 540,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-%d7%a2%d7%a5-%d7%9e%d7%99%d7%99%d7%a4%d7%9c-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-la-marzocco/"
+ },
+ {
+  "id": 76850,
+  "name": "פילטר + CLARIS Pro Smart למכונת Jura",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 1831,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-claris-pro-smart-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-jura/"
+ },
+ {
+  "id": 76799,
+  "name": "  כוס לאטה לוברמיקס אורבן טוויסטד זכוכית שקופה 180מ''ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1902,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9c%d7%90%d7%98%d7%94-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%90%d7%95%d7%a8%d7%91%d7%9f-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%96%d7%9b%d7%95-2/"
+ },
+ {
+  "id": 76516,
+  "name": "ספל קורטדו דייל האריס כחול 150 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1172,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%99%d7%a8%d7%95%d7%a7-150-%d7%9e%d7%9c-%d7%94%d7%a2%d7%aa%d7%a7/"
+ },
+ {
+  "id": 76406,
+  "name": "ספל קורטדו דייל האריס בז' 200 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1170,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%91%d7%96-200-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 76294,
+  "name": "8 טבליות להסרת שומנים במכונת קפה Eco Klear",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 995,
+  "permalink": "https://www.minuto.co.il/product/6-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-3-4-%d7%92%d7%a8-%d7%9c%d7%94%d7%a1%d7%a8%d7%aa-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d-%d7%91%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 76289,
+  "name": "מסיר אבנית אקולוגי למכונות קפה Eco Klear",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 920,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%99%d7%a8-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%90%d7%a7%d7%95%d7%9c%d7%95%d7%92%d7%99-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-eco-klear/"
+ },
+ {
+  "id": 68448,
+  "name": "קפסולות AXOR לניקוי מכונות נספרסו",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 1240,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-axor-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95/"
+ },
+ {
+  "id": 68312,
+  "name": "מקציף חלב מקצועי סוורין - Severin Milk Frother SM3585",
+  "group": "frother",
+  "missing": [],
+  "text_len": 1427,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99-%d7%a1%d7%95%d7%95%d7%a8%d7%99%d7%9f-severin-milk-frother-sm3585/"
+ },
+ {
+  "id": 68309,
+  "name": "כד נירוסטה להקצפת חלב עבור מכונת קפה 1 ליטר - Milchkanne",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 342,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-%d7%a2%d7%91%d7%95%d7%a8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-1-%d7%9c/"
+ },
+ {
+  "id": 68308,
+  "name": "מקציף חלב ביאלטי טוטוקרמה 6 כוסות - Bialetti Tuttocrema milk frother",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 1172,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%98%d7%95%d7%98%d7%95%d7%a7%d7%a8%d7%9e%d7%94-6-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-tuttocrema-milk-frot/"
+ },
+ {
+  "id": 68307,
+  "name": "מקציף חלב ביאלטי טוטוקרמה 3 כוסות - Bialetti Tuttocrema milk frother",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 1172,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%91%d7%99%d7%90%d7%9c%d7%98%d7%99-%d7%98%d7%95%d7%98%d7%95%d7%a7%d7%a8%d7%9e%d7%94-3-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-bialetti-tuttocrema-milk-frot/"
+ },
+ {
+  "id": 68283,
+  "name": "3 מסנני מים Aquaphor Maxfor B-100-25 - מסנני מים מותאמים לקנקני בריטה",
+  "group": "water",
+  "missing": [],
+  "text_len": 785,
+  "permalink": "https://www.minuto.co.il/product/3-%d7%9e%d7%a1%d7%a0%d7%a0%d7%99-%d7%9e%d7%99%d7%9d-aquaphor-maxfor-b-100-25-%d7%9e%d7%a1%d7%a0%d7%a0%d7%99-%d7%9e%d7%99%d7%9d-%d7%9e%d7%95%d7%aa%d7%90%d7%9e%d7%99%d7%9d-%d7%9c%d7%a7%d7%a0%d7%a7/"
+ },
+ {
+  "id": 68282,
+  "name": "קנקן Aquaphor דגם Amethyst לשיפור המים",
+  "group": "water",
+  "missing": [],
+  "text_len": 1049,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-amethyst-%d7%9c%d7%a9%d7%99%d7%a4%d7%95%d7%a8-%d7%94%d7%9e%d7%99%d7%9d/"
+ },
+ {
+  "id": 68275,
+  "name": "60 טבליות חזקות 2.5 גרם לניקוי מכונת קפה - Puly Cafe",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 768,
+  "permalink": "https://www.minuto.co.il/product/60-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%97%d7%96%d7%a7%d7%95%d7%aa-2-5-%d7%92%d7%a8%d7%9d-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-puly-cafe/"
+ },
+ {
+  "id": 68274,
+  "name": "דוחסן קפה מפלסטיק - דוחסן דו שימושי",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 135,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a4%d7%9c%d7%a1%d7%98%d7%99%d7%a7-%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%93%d7%95-%d7%a9%d7%99%d7%9e%d7%95%d7%a9%d7%99/"
+ },
+ {
+  "id": 67672,
+  "name": "מסננת ראש למכונות פרופיטק גו IMS CI200IM",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 758,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%a0%d7%a0%d7%aa-%d7%a8%d7%90%d7%a9-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%a8%d7%95%d7%a4%d7%99%d7%98%d7%a7-%d7%92%d7%95-ims-ci200im/"
+ },
+ {
+  "id": 67669,
+  "name": "ECM Klumpen Crusher WDT Tool",
+  "group": "tamper",
+  "missing": [
+   "diameter",
+   "material"
+  ],
+  "text_len": 783,
+  "permalink": "https://www.minuto.co.il/product/ecm-klumpen-crusher-wdt-tool/"
+ },
+ {
+  "id": 67667,
+  "name": "מגירת ריקון קפה – Knock Box M ECM",
+  "group": "knockbox",
+  "missing": [
+   "material"
+  ],
+  "text_len": 672,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-knock-box-m-ecm/"
+ },
+ {
+  "id": 67642,
+  "name": "ידית חליטה חתוכה  Portafilter Bottomless – Lelit  57 ממ",
+  "group": "basket_portafilter",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 1019,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-portafilter-bottomless-lelit-57-%d7%9e%d7%9e/"
+ },
+ {
+  "id": 67641,
+  "name": "ידית חליטה חתוכה  למכונת קפה Gaggia classic pro",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 1024,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-gaggaia-classic-pro/"
+ },
+ {
+  "id": 67632,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע גרניט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 485,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%92%d7%a8%d7%a0%d7%99%d7%98/"
+ },
+ {
+  "id": 67631,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע גרניט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 387,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%92%d7%a8%d7%a0%d7%99%d7%98/"
+ },
+ {
+  "id": 67629,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע ירוק יער",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 390,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%99%d7%a2/"
+ },
+ {
+  "id": 67624,
+  "name": "ידית חליטה חתוכה  Portafilter Bottomless – Lelit 58MM",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter",
+   "compatibility"
+  ],
+  "text_len": 1008,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-portafilter-bottomless-lelit/"
+ },
+ {
+  "id": 67620,
+  "name": "דייל האריס \"CHAMPIONS SIGNATURE\" כוס אספרסו 80 מל צבע לבן כחול סלדון",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 405,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-champions-signature-%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-80-%d7%9e%d7%9c-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 67610,
+  "name": "ידית חליטה רב-תכליתית למכונת קפה La Marzocco Linea Micra",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter",
+   "compatibility"
+  ],
+  "text_len": 540,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%a8%d7%91-%d7%aa%d7%9b%d7%9c%d7%99%d7%aa%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-la-marzocco-linea-micra/"
+ },
+ {
+  "id": 67609,
+  "name": "סלסלת פילטר  לידית  מכונת קפה La Marzocco - גרם 21",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 709,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%9c%d7%a1%d7%9c%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-la-marzocco/"
+ },
+ {
+  "id": 67608,
+  "name": "ידית חליטה כפולה מנירוסטה למכונות קפה לה מרזוקו La Marzocco",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 567,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 67324,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע ירקרק גרניט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 498,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-200-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%a7%d7%a8%d7%a7-%d7%92/"
+ },
+ {
+  "id": 67323,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע ירקרק גרניט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 491,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%a7%d7%a8%d7%a7-%d7%92%d7%a8%d7%a0/"
+ },
+ {
+  "id": 67322,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע אדום",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 484,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 67321,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע כחול",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 484,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c/"
+ },
+ {
+  "id": 67298,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע ירקרק גרניט",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 393,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%a7%d7%a8%d7%a7-%d7%92/"
+ },
+ {
+  "id": 67276,
+  "name": "נוק בוקס - סיר ריקון Knockbox נירוסטה שחור (141mmx150mm)",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 761,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knockbox-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 67272,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע אבק שריפה(חום)",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 396,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%90%d7%91%d7%a7-%d7%a9%d7%a8%d7%99/"
+ },
+ {
+  "id": 67271,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע Berry",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 384,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-berry/"
+ },
+ {
+  "id": 67270,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע כחול קרח",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 390,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c-%d7%a7%d7%a8/"
+ },
+ {
+  "id": 67269,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע רוז",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 385,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a8%d7%95%d7%96/"
+ },
+ {
+  "id": 67268,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע קרמל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 386,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-200-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9e%d7%9c/"
+ },
+ {
+  "id": 67267,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע רוז",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 483,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a8%d7%95%d7%96/"
+ },
+ {
+  "id": 67266,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע כחול קרח",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 488,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c-%d7%a7%d7%a8%d7%97/"
+ },
+ {
+  "id": 67265,
+  "name": "כוס אספרסו וצלוחית 80 מ\"ל Loveramics צבע קרמל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 484,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a7%d7%a8%d7%9e%d7%9c/"
+ },
+ {
+  "id": 67246,
+  "name": "כוס 2GO Loveramics עם דופן כפולה מקולקציית נומד - NOMAD",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 462,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-2go-loveramics-%d7%a2%d7%9d-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%a0%d7%95%d7%9e%d7%93-nomad/"
+ },
+ {
+  "id": 67245,
+  "name": "כוס 2GO Loveramics עם דופן כפולה מקולקציית נומד - NOMAD צבע כחול",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 474,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-2go-loveramics-%d7%a2%d7%9d-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%a0%d7%95%d7%9e%d7%93-nomad-%d7%a6-2/"
+ },
+ {
+  "id": 67244,
+  "name": "כוס 2GO Loveramics עם דופן כפולה מקולקציית נומד - NOMAD צבע שחור לילה",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 479,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-2go-loveramics-%d7%a2%d7%9d-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%a0%d7%95%d7%9e%d7%93-nomad-%d7%a6/"
+ },
+ {
+  "id": 67222,
+  "name": "מגירת ריקון לקפה מנירוסטה",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 725,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 67206,
+  "name": "מסננת ראש IMS E61200IM",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 935,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%a0%d7%a0%d7%aa-%d7%a8%d7%90%d7%a9-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9c%d7%a8%d7%90%d7%a9-%d7%a8%d7%90%d7%a0%d7%a6%d7%99%d7%9c%d7%99%d7%95-%d7%91%d7%96/"
+ },
+ {
+  "id": 67197,
+  "name": "זוג כוסות דופן כפולה KRUVE IMAGINE glassware 250 ml",
+  "group": "cup",
+  "missing": [],
+  "text_len": 1210,
+  "permalink": "https://www.minuto.co.il/product/%d7%96%d7%95%d7%92-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-kruve-imagine-glassware-250-ml/"
+ },
+ {
+  "id": 67182,
+  "name": "מסננת ראש למכונות לה מרזוקו IMS COMPETITION MA200IM",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 910,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a1%d7%a0%d7%a0%d7%aa-%d7%a8%d7%90%d7%a9-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%9c%d7%94-%d7%9e%d7%a8%d7%96%d7%95%d7%a7%d7%95-ims-competition/"
+ },
+ {
+  "id": 67145,
+  "name": "ידית חליטה חתוכה Gran Crema Portafilter Bottomless – ECM",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter",
+   "compatibility"
+  ],
+  "text_len": 1243,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%9c%d7%99%d7%98%d7%94-%d7%97%d7%aa%d7%95%d7%9b%d7%94-gran-crema-portafilter-bottomless-ecm/"
+ },
+ {
+  "id": 67142,
+  "name": "מגירת ריקון קפה מנירוסטה KNOCKBOX (M) DRAWER ECM",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 1004,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-knockbox-m-drawer-ecm/"
+ },
+ {
+  "id": 67138,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics שחור לילה",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 387,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%9c%d7%94/"
+ },
+ {
+  "id": 68311,
+  "name": "כד נירוסטה להקצפת חלב עבור מכונת קפה 0.35 ליטר - Milchkanne",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 345,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-%d7%a2%d7%91%d7%95%d7%a8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-0-35-%d7%9c/"
+ },
+ {
+  "id": 68310,
+  "name": "כד נירוסטה להקצפת חלב עבור מכונת קפה 0.6 ליטר - Milchkanne",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 344,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-%d7%a2%d7%91%d7%95%d7%a8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-0-6-%d7%9c/"
+ },
+ {
+  "id": 68292,
+  "name": "מברשת זוויתית לניקוי ראש מכונת קפה ממכונת אספרסו",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 366,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a8%d7%a9%d7%aa-%d7%96%d7%95%d7%95%d7%99%d7%aa%d7%99%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a8%d7%90%d7%a9-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%9e%d7%9e%d7%9b/"
+ },
+ {
+  "id": 68291,
+  "name": "דוחסן 57 מאלמיניום של Motta",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 289,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-57-%d7%9e%d7%90%d7%9c%d7%9e%d7%99%d7%a0%d7%99%d7%95%d7%9d-%d7%a9%d7%9c-motta/"
+ },
+ {
+  "id": 68278,
+  "name": "מרכך מים למכונת סאקו וגאגיה של בריטה - Water filter and cartridge",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 589,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%90%d7%a7%d7%95-%d7%95%d7%92%d7%90%d7%92%d7%99%d7%94-%d7%a9%d7%9c-%d7%91%d7%a8%d7%99%d7%98%d7%94-water-filte/"
+ },
+ {
+  "id": 68276,
+  "name": "Blind Filter Basket - פילטר באסקט עיוור",
+  "group": "basket_portafilter",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 155,
+  "permalink": "https://www.minuto.co.il/product/blind-filter-basket-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%90%d7%a1%d7%a7%d7%98-%d7%a2%d7%99%d7%95%d7%95%d7%a8/"
+ },
+ {
+  "id": 68273,
+  "name": "דוחסן גובה Distributor / Leveler - עם הכנפיים קוטר 58",
+  "group": "tamper",
+  "missing": [
+   "diameter",
+   "material"
+  ],
+  "text_len": 362,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%92%d7%95%d7%91%d7%94-distributor-leveler-%d7%a2%d7%9d-%d7%94%d7%9b%d7%a0%d7%a4%d7%99%d7%99%d7%9d-%d7%a7%d7%95%d7%98%d7%a8-58/"
+ },
+ {
+  "id": 68254,
+  "name": "מקציף חלב אוטומטי נירוסטה",
+  "group": "frother",
+  "missing": [
+   "power"
+  ],
+  "text_len": 466,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%90%d7%95%d7%98%d7%95%d7%9e%d7%98%d7%99-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-copy/"
+ },
+ {
+  "id": 67666,
+  "name": "דוחסן קפיצי 58 מ\"מ מבית ECM – Pressure-Regulating Tamper",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 684,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%99%d7%a6%d7%99-58-%d7%9e%d7%9e-%d7%9e%d7%91%d7%99%d7%aa-ecm-pressure-regulating-tamper/"
+ },
+ {
+  "id": 67665,
+  "name": "מגירת דחיסת קפה Slim – Knock Box ECM",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 629,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%92%d7%99%d7%a8%d7%aa-%d7%93%d7%97%d7%99%d7%a1%d7%aa-%d7%a7%d7%a4%d7%94-slim-knock-box-ecm/"
+ },
+ {
+  "id": 67664,
+  "name": "מעמד מתכוונן לדוחסן קפה -Adjustable Tamping Station ECM",
+  "group": "tamper",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 601,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9e%d7%aa%d7%9b%d7%95%d7%95%d7%a0%d7%9f-%d7%9c%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-adjustable-tamping-station-ecm/"
+ },
+ {
+  "id": 67660,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע אפור פחם",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 751,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-200-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%a4%d7%97/"
+ },
+ {
+  "id": 67651,
+  "name": "כוס מדידה שוקלת לקפה Subscale Digital Coffee Dosing Cup",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1208,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%93%d7%99%d7%93%d7%94-%d7%a9%d7%95%d7%a7%d7%9c%d7%aa-%d7%9c%d7%a7%d7%a4%d7%94-subscale-digital-coffee-dosing-cup/"
+ },
+ {
+  "id": 67619,
+  "name": "דייל האריס \"CHAMPIONS SIGNATURE\" כוס קפוצ׳ינו 200 מל צבע כחול סלדון",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 404,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-champions-signature-%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-200-%d7%9e%d7%9c-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97/"
+ },
+ {
+  "id": 67614,
+  "name": "זוג כוסות קפוצינו פורצלן צבע שחור דופן כפולה KRUVE IMAGINE 250 ml",
+  "group": "cup",
+  "missing": [],
+  "text_len": 1044,
+  "permalink": "https://www.minuto.co.il/product/%d7%96%d7%95%d7%92-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%93%d7%95%d7%a4%d7%9f/"
+ },
+ {
+  "id": 67613,
+  "name": "זוג כוסות קפוצינו פורצלן לבן דופן כפולה KRUVE IMAGINE 250 ml",
+  "group": "cup",
+  "missing": [],
+  "text_len": 949,
+  "permalink": "https://www.minuto.co.il/product/%d7%96%d7%95%d7%92-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a7%d7%a4%d7%95%d7%a6%d7%99%d7%a0%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-%d7%9c%d7%91%d7%9f-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c/"
+ },
+ {
+  "id": 67612,
+  "name": "זוג כוסות אספרסו דופן כפולה KRUVE Propel 75 ml",
+  "group": "cup",
+  "missing": [],
+  "text_len": 1076,
+  "permalink": "https://www.minuto.co.il/product/%d7%96%d7%95%d7%92-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-kruve-propel-75-ml/"
+ },
+ {
+  "id": 67404,
+  "name": "פילטר בריטה מים למכונת Gaggia BRITA Intenza Plus",
+  "group": "water",
+  "missing": [],
+  "text_len": 1063,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-gaggia-brita-intenza-plus/"
+ },
+ {
+  "id": 67344,
+  "name": "דייל האריס \"CHAMPIONS SIGNATURE\" כוס אספרסו צבע לבן ירוק",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 371,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-champions-signature-%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f-%d7%99%d7%a8%d7%95%d7%a7/"
+ },
+ {
+  "id": 67331,
+  "name": "נוק בוקס - סיר ריקון Motta Knockbox לידית קפה",
+  "group": "knockbox",
+  "missing": [
+   "material"
+  ],
+  "text_len": 285,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-motta-knockbox-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 67327,
+  "name": "כוס קפוצ׳ינו וצלוחית 200 מ\"ל Loveramics צבע אדום",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 743,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-200-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 67325,
+  "name": "כוס קפוצ׳ינו וצלוחית 250 מ\"ל Loveramics צבע כחול דנים",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 860,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-250-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%9b%d7%97%d7%95%d7%9c-%d7%93%d7%a0/"
+ },
+ {
+  "id": 67297,
+  "name": "דייל האריס \"CHAMPIONS SIGNATURE\" כוס קפוצ׳ינו 200 מל צבע לבן ירוק",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 404,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-champions-signature-%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-200-%d7%9e%d7%9c-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91/"
+ },
+ {
+  "id": 67236,
+  "name": "נוק בוקס - סיר ריקון 10.5 סמ Motta Knockbox לידית קפה",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 433,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-10-5-%d7%a1%d7%9e-motta-knockbox-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 67209,
+  "name": "כוסות נירוסטה דופן כפולה",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 363,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%93%d7%95%d7%a4%d7%9f-%d7%9b%d7%a4%d7%95%d7%9c%d7%94/"
+ },
+ {
+  "id": 67176,
+  "name": "נוק בוקס - סיר ריקון Knockbox נירוסטה",
+  "group": "knockbox",
+  "missing": [],
+  "text_len": 756,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%a7-%d7%91%d7%95%d7%a7%d7%a1-%d7%a1%d7%99%d7%a8-%d7%a8%d7%99%d7%a7%d7%95%d7%9f-knockbox-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94/"
+ },
+ {
+  "id": 67143,
+  "name": "מעמד לדוחסן קפה - TAMPING STATION ECM",
+  "group": "tamper",
+  "missing": [
+   "diameter",
+   "material"
+  ],
+  "text_len": 746,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%9e%d7%93-%d7%9c%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-tamping-station-ecm/"
+ },
+ {
+  "id": 65475,
+  "name": "כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע אפור פחם",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 691,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8-%d7%a4%d7%97%d7%9d/"
+ },
+ {
+  "id": 65455,
+  "name": "כוס מינון טחינה Varia VS3 - 58mm - לבן",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "dishwasher"
+  ],
+  "text_len": 1416,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9e%d7%99%d7%a0%d7%95%d7%9f-%d7%98%d7%97%d7%99%d7%a0%d7%94-varia-vs3-58mm/"
+ },
+ {
+  "id": 65445,
+  "name": "זוג מסנני מים Aquaphor Smile A5",
+  "group": "water",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 620,
+  "permalink": "https://www.minuto.co.il/product/%d7%96%d7%95%d7%92-%d7%a1%d7%a0%d7%a0%d7%99-%d7%9e%d7%99%d7%9d-aquaphor-smile-a5/"
+ },
+ {
+  "id": 65441,
+  "name": "מיכל חלב זכוכית JURA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 921,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%99%d7%9b%d7%9c-%d7%97%d7%9c%d7%91-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-jura/"
+ },
+ {
+  "id": 65440,
+  "name": "כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע ירוק יער",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 691,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%99%d7%a8%d7%95%d7%a7-%d7%99%d7%a2%d7%a8/"
+ },
+ {
+  "id": 65439,
+  "name": "טבליות הסרת אבנית למכונות קפה Jura",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 420,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-jura/"
+ },
+ {
+  "id": 65436,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע טורקיז",
+  "group": "storage",
+  "missing": [],
+  "text_len": 824,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%98%d7%95%d7%a8%d7%a7%d7%99%d7%96/"
+ },
+ {
+  "id": 65409,
+  "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אדום בריק",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1068,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-4/"
+ },
+ {
+  "id": 65408,
+  "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע אינדיגו",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1068,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-3/"
+ },
+ {
+  "id": 65407,
+  "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע חרדל",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1068,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2-2/"
+ },
+ {
+  "id": 65406,
+  "name": "מאג לוברמיקס 300 מ״ל מקולקציית בונד - BOND צבע פחם",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1068,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%90%d7%92-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-300-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%95%d7%a0%d7%93-bond-%d7%a6%d7%91%d7%a2/"
+ },
+ {
+  "id": 65405,
+  "name": "ספל קפה אספרסו נוט-ניוטרל עשן notNeutral Vero Espresso Glass",
+  "group": "cup",
+  "missing": [],
+  "text_len": 877,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-%d7%a2%d7%a9%d7%9f-%d7%94notneutral-vero-espresso-glass/"
+ },
+ {
+  "id": 65401,
+  "name": "ספל קפה אספרסו נוט-ניוטרל אמרלד notNeutral Vero Espresso Glass",
+  "group": "cup",
+  "missing": [],
+  "text_len": 879,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-%d7%90%d7%9e%d7%a8%d7%9c%d7%93-notneutral-vero-espresso-glass/"
+ },
+ {
+  "id": 65400,
+  "name": "ספל קפה אספרסו נוט-ניוטרל שקוף notNeutral Vero Espresso Glass",
+  "group": "cup",
+  "missing": [],
+  "text_len": 878,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-%d7%a9%d7%a7%d7%95%d7%a3-notneutral-vero-espresso-glass/"
+ },
+ {
+  "id": 65399,
+  "name": "ספל קפה אספרסו נוט-ניוטרל כחול אוקינוס notNeutral Vero Espresso Glass",
+  "group": "cup",
+  "missing": [],
+  "text_len": 886,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-%d7%9b%d7%97%d7%95%d7%9c-%d7%90%d7%95%d7%a7%d7%99%d7%a0%d7%95%d7%a1-n/"
+ },
+ {
+  "id": 65396,
+  "name": "ספל קפה נוט-ניוטרל notNeutral Vero Cappuccino Glass עשן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 892,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cappuccino-glass-%d7%a2%d7%a9%d7%9f/"
+ },
+ {
+  "id": 65394,
+  "name": "ספל קפה נוט-ניוטרל notNeutral Vero Cappuccino Glass אמרלד",
+  "group": "cup",
+  "missing": [],
+  "text_len": 892,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cappuccino-glass-%d7%90%d7%9e%d7%a8%d7%9c%d7%93/"
+ },
+ {
+  "id": 65393,
+  "name": "ספל קפה נוט-ניוטרל notNeutral Vero Cappuccino Glass ענבר",
+  "group": "cup",
+  "missing": [],
+  "text_len": 892,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cappuccino-glass-%d7%a2%d7%a0%d7%91%d7%a8/"
+ },
+ {
+  "id": 65392,
+  "name": "ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass שקוף",
+  "group": "cup",
+  "missing": [],
+  "text_len": 876,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%90%d7%93%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cortado-glass-%d7%a9%d7%a7%d7%95%d7%a37/"
+ },
+ {
+  "id": 65391,
+  "name": "ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass כחול ים",
+  "group": "cup",
+  "missing": [],
+  "text_len": 876,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%90%d7%93%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cortado-glass-%d7%9b%d7%97%d7%95%d7%9c-%d7%99/"
+ },
+ {
+  "id": 65390,
+  "name": "ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass אמרלד",
+  "group": "cup",
+  "missing": [],
+  "text_len": 876,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%90%d7%93%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cortado-glass-%d7%90%d7%9e%d7%a8%d7%9c%d7%93/"
+ },
+ {
+  "id": 65389,
+  "name": "ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass ענבר",
+  "group": "cup",
+  "missing": [],
+  "text_len": 876,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%90%d7%93%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cortado-glass-%d7%a2%d7%a0%d7%91%d7%a8/"
+ },
+ {
+  "id": 65387,
+  "name": "כוס אספרסו לוברמיקס 80 מל דייל האריס המראה הסדוק - פחם",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 982,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-80-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94%d7%9e%d7%a8/"
+ },
+ {
+  "id": 65385,
+  "name": "כוס קפוצ׳ינו לוברמיקס 200 מל דייל האריס המראה הסדוק - פחם",
+  "group": "cup",
+  "missing": [
+   "material",
+   "dishwasher"
+  ],
+  "text_len": 1001,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-200-%d7%9e%d7%9c-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%94/"
+ },
+ {
+  "id": 65370,
+  "name": "WDT Needles Coffee Tool דיסטרביוטור 58ממ",
+  "group": "tamper",
+  "missing": [
+   "material"
+  ],
+  "text_len": 1077,
+  "permalink": "https://www.minuto.co.il/product/wdt-needles-coffee-tool-%d7%93%d7%99%d7%a1%d7%98%d7%a8%d7%91%d7%99%d7%95%d7%98%d7%95%d7%a8-58%d7%9e%d7%9e/"
+ },
+ {
+  "id": 65244,
+  "name": "קנקן Aquaphor דגם Amethyst + 4 סננים",
+  "group": "water",
+  "missing": [],
+  "text_len": 1061,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-amethyst-4-%d7%a1%d7%a0%d7%a0%d7%99%d7%9d/"
+ },
+ {
+  "id": 65239,
+  "name": "מקציף חלב מקצועי סוורין - Severin Milk Frother SM3586",
+  "group": "frother",
+  "missing": [],
+  "text_len": 2014,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99-%d7%a1%d7%95%d7%95%d7%a8%d7%99%d7%9f-severin-milk-frother-sm3586/"
+ },
+ {
+  "id": 65205,
+  "name": "נוזל ניקוי למקציף חלב",
+  "group": "cleaning",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 238,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%96%d7%9c-%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9c%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91/"
+ },
+ {
+  "id": 65162,
+  "name": "Hario Coffee Canister – מיכל אחסון לקפה 300 גרם",
+  "group": "storage",
+  "missing": [],
+  "text_len": 914,
+  "permalink": "https://www.minuto.co.il/product/hario-coffee-canister-%d7%9e%d7%99%d7%9b%d7%9c-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94-300-%d7%92%d7%a8%d7%9d/"
+ },
+ {
+  "id": 65159,
+  "name": "פילטר רזין מרכך למכונות אספרסו ביתיות - 3 יח",
+  "group": "water",
+  "missing": [],
+  "text_len": 301,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a8%d7%96%d7%99%d7%9f-%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%91%d7%99%d7%aa%d7%99%d7%95%d7%aa/"
+ },
+ {
+  "id": 65154,
+  "name": "פילטר עיוור 58 מ״מ Blind Filter Basket",
+  "group": "basket_portafilter",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 187,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a2%d7%99%d7%95%d7%95%d7%a8-58-%d7%9e%d7%b4%d7%9e-blind-filter-basket/"
+ },
+ {
+  "id": 65123,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע שחור",
+  "group": "storage",
+  "missing": [
+   "capacity_g"
+  ],
+  "text_len": 809,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 65122,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע לבן",
+  "group": "storage",
+  "missing": [],
+  "text_len": 826,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 65121,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע לבן",
+  "group": "storage",
+  "missing": [
+   "capacity_g"
+  ],
+  "text_len": 820,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 65120,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע שחור",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 65119,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 250 גרם קפה - אדום",
+  "group": "storage",
+  "missing": [],
+  "text_len": 812,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-250-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 65118,
+  "name": "ידית חתוכה למכונת אספרסו - Naked Portafilter - Bottomless Portafilter",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter"
+  ],
+  "text_len": 693,
+  "permalink": "https://www.minuto.co.il/product/%d7%99%d7%93%d7%99%d7%aa-%d7%97%d7%aa%d7%95%d7%9b%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-naked-portafilter-bottomless-portafilter/"
+ },
+ {
+  "id": 65101,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 1 ק״ג קפה צבע אפור",
+  "group": "storage",
+  "missing": [
+   "capacity_g"
+  ],
+  "text_len": 822,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-1-%d7%a7%d7%b4%d7%92-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%90%d7%a4%d7%95%d7%a8/"
+ },
+ {
+  "id": 65091,
+  "name": "ספל HARIO טרמית מנירוסטה 300 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1191,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 65090,
+  "name": "כוס HARIO טרמית מנירוסטה 300 מ\"ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1202,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-hario-%d7%98%d7%a8%d7%9e%d7%99%d7%aa-%d7%9e%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-300-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 65079,
+  "name": "קנקן Aquaphor דגם Compact לשיפור המים",
+  "group": "water",
+  "missing": [],
+  "text_len": 953,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-aquaphor-%d7%93%d7%92%d7%9d-compact-%d7%9c%d7%a9%d7%99%d7%a4%d7%95%d7%a8-%d7%94%d7%9e%d7%99%d7%9d/"
+ },
+ {
+  "id": 65077,
+  "name": "כד נירוסטה להקצפת חלב עבור מכונת קפה 0.5 ליטר - Cafelat",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 520,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%9c%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-%d7%a2%d7%91%d7%95%d7%a8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-0-5-%d7%9c/"
+ },
+ {
+  "id": 65076,
+  "name": "פילטר מרכך BestMax S להחלפה",
+  "group": "water",
+  "missing": [],
+  "text_len": 1188,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-s-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/"
+ },
+ {
+  "id": 65069,
+  "name": "אבקה לניקוי שומנים למכונות קפה - קופי קלין",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 647,
+  "permalink": "https://www.minuto.co.il/product/%d7%90%d7%91%d7%a7%d7%94-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a4%d7%99-%d7%a7%d7%9c/"
+ },
+ {
+  "id": 65067,
+  "name": "קפסולות לניקוי מכונות קפיטאלי ואספרסו קלאב",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 547,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%99%d7%98%d7%90%d7%9c%d7%99-%d7%95%d7%90%d7%a1%d7%a4%d7%a8%d7%a1/"
+ },
+ {
+  "id": 65061,
+  "name": "מברשת ידית עץ לניקוי פילטר מכונת קפה ידנית קקטוס",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 331,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%91%d7%a8%d7%a9%d7%aa-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%99%d7%93/"
+ },
+ {
+  "id": 65021,
+  "name": "מקציף חלב Crema Di Latte - אספרסו מור",
+  "group": "frother",
+  "missing": [
+   "power"
+  ],
+  "text_len": 391,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-crema-di-latte-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9e%d7%95%d7%a8/"
+ },
+ {
+  "id": 64996,
+  "name": "פילטר מרכך BestMax L להחלפה",
+  "group": "water",
+  "missing": [],
+  "text_len": 1187,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-l-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/"
+ },
+ {
+  "id": 64995,
+  "name": "פילטר מרכך BestMax M להחלפה",
+  "group": "water",
+  "missing": [],
+  "text_len": 1214,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-m-%d7%9c%d7%94%d7%97%d7%9c%d7%a4%d7%94/"
+ },
+ {
+  "id": 64989,
+  "name": "פילטר מים למכונות מליטה",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 208,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94/"
+ },
+ {
+  "id": 64980,
+  "name": "סטיקים לבדיקת מים - 3 יח",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 67,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98%d7%99%d7%a7%d7%99%d7%9d-%d7%9c%d7%91%d7%93%d7%99%d7%a7%d7%aa-%d7%9e%d7%99%d7%9d/"
+ },
+ {
+  "id": 64976,
+  "name": "מקציף חלב מוט Severin SM 3590",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 469,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9e%d7%95%d7%98-severin-sm-3590/"
+ },
+ {
+  "id": 64957,
+  "name": "3 פילטר מים אקווה קלין למכונות פיליפס Saeco Aqua Clean",
+  "group": "water",
+  "missing": [],
+  "text_len": 724,
+  "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqua-c/"
+ },
+ {
+  "id": 64956,
+  "name": "ערכת קפסולות לניקוי מכונות נספרסו ובקבוק מסיר אבנית",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 662,
+  "permalink": "https://www.minuto.co.il/product/%d7%a2%d7%a8%d7%9b%d7%aa-%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%91%d7%a7/"
+ },
+ {
+  "id": 64953,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C50 Quell",
+  "group": "water",
+  "missing": [],
+  "text_len": 1308,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c50-quell/"
+ },
+ {
+  "id": 64952,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C50 Quell כולל ראש",
+  "group": "water",
+  "missing": [],
+  "text_len": 1317,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c50-quell-%d7%9b%d7%95%d7%9c%d7%9c-%d7%a8%d7%90%d7%a9/"
+ },
+ {
+  "id": 64951,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C150 Quell כולל ראש",
+  "group": "water",
+  "missing": [],
+  "text_len": 1349,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c150-quell-%d7%9b%d7%95%d7%9c%d7%9c-%d7%a8%d7%90%d7%a9/"
+ },
+ {
+  "id": 64950,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C150 Quell",
+  "group": "water",
+  "missing": [],
+  "text_len": 1340,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c150-quell/"
+ },
+ {
+  "id": 64949,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C300 Quell פלוס ראש",
+  "group": "water",
+  "missing": [],
+  "text_len": 1353,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c300-quell-%d7%a4%d7%9c%d7%95%d7%a1-%d7%a8%d7%90%d7%a9/"
+ },
+ {
+  "id": 64948,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C300 Quell",
+  "group": "water",
+  "missing": [],
+  "text_len": 1344,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c300-quell/"
+ },
+ {
+  "id": 64947,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C1100 ExtraSafe כולל ראש",
+  "group": "water",
+  "missing": [],
+  "text_len": 1360,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c1100-extrasafe-%d7%9b%d7%95%d7%9c%d7%9c-%d7%a8%d7%90%d7%a9/"
+ },
+ {
+  "id": 64946,
+  "name": "פילטר בריטה למכונות קפה BRITA PURITY C1100 ExtraSafe",
+  "group": "water",
+  "missing": [],
+  "text_len": 1351,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-brita-purity-c1100-extrasafe/"
+ },
+ {
+  "id": 64945,
+  "name": "דוחסן קפה נירוסטה  עם ידית שחורה קוטר 51",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 162,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a9%d7%97%d7%95%d7%a8%d7%94-%d7%a7%d7%95%d7%98%d7%a8-51/"
+ },
+ {
+  "id": 64933,
+  "name": "טבליות ניקוי Jura לניקוי שומנים",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 1636,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%a7%d7%95%d7%99-jura-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d/"
+ },
+ {
+  "id": 64932,
+  "name": "פילטר CLARIS Smart למכונת Jura",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 1809,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-claris-smart-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-jura/"
+ },
+ {
+  "id": 64931,
+  "name": "טבליות ניקוי מערכת חלב Jura(מיני טבליות)",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 962,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%97%d7%9c%d7%91-jura%d7%9e%d7%99%d7%a0%d7%99-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa/"
+ },
+ {
+  "id": 64928,
+  "name": "נוזל מליטה להסרת אבנית -Melitta ANTI CALC BIO",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 415,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%96%d7%9c-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%9c%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-melitta-anti-calc-bio/"
+ },
+ {
+  "id": 64916,
+  "name": "נוזל ניקוי אבנית ניבונה",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 470,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%96%d7%9c-%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94/"
+ },
+ {
+  "id": 64904,
+  "name": "ספל קפה קורטאדו נוט-ניוטרל notNeutral Vero Cortado Glass עשן",
+  "group": "cup",
+  "missing": [],
+  "text_len": 876,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%90%d7%93%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cortado-glass-%d7%a2%d7%a9%d7%9f/"
+ },
+ {
+  "id": 64903,
+  "name": "ספל קפה אספרסו נוט-ניוטרל ענבר notNeutral Vero Espresso Glass",
+  "group": "cup",
+  "missing": [],
+  "text_len": 878,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-%d7%a2%d7%a0%d7%91%d7%a8-notneutral-vero-espresso-glass/"
+ },
+ {
+  "id": 64888,
+  "name": "מערכת אוסמוזה הפוכה כולל התקנה Aquaphor Morion RO-101S",
+  "group": "water",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 2221,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94-aquaphor-morion-ro-101s/"
+ },
+ {
+  "id": 64874,
+  "name": "ספל קפה אספרסו פורצלן נוט-ניוטרל notNeutral Lino Espresso",
+  "group": "cup",
+  "missing": [
+   "volume",
+   "dishwasher"
+  ],
+  "text_len": 890,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-lino-espresso/"
+ },
+ {
+  "id": 64873,
+  "name": "ספל קפה קורטדו פורצלן 150 מל נוט-ניוטרל notNeutral Lino",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 906,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-150-%d7%9e%d7%9c-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-lino/"
+ },
+ {
+  "id": 64871,
+  "name": "ספל קפה קפוצ׳ינו פורצלן 180 מל נוט-ניוטרל notNeutral Lino",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 908,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-180-%d7%9e%d7%9c-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-not/"
+ },
+ {
+  "id": 64870,
+  "name": "ספל קפה קפוצ׳ינו פורצלן 240 מל נוט-ניוטרל notNeutral Lino",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 908,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a7%d7%a4%d7%95%d7%a6%d7%b3%d7%99%d7%a0%d7%95-%d7%a4%d7%95%d7%a8%d7%a6%d7%9c%d7%9f-240-%d7%9e%d7%9c-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-not/"
+ },
+ {
+  "id": 64864,
+  "name": "4 פילטר מים אקווה קלין למכונות פיליפס Eco Klear",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 515,
+  "permalink": "https://www.minuto.co.il/product/3-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqualo/"
+ },
+ {
+  "id": 64848,
+  "name": "טבליות ניקוי שומנים למכונות קפה (100 יחידות) - Axor",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 1089,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94-100-%d7%99%d7%97%d7%99%d7%93/"
+ },
+ {
+  "id": 64842,
+  "name": "שני פילטר מים למכונות ניבונה/מליטה/קרופס Eco Klear",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 877,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-%d7%9e%d7%9c%d7%99%d7%98%d7%94-aqualogis/"
+ },
+ {
+  "id": 64830,
+  "name": "כד הקצפת חלב 750 מל תואם מוטה - MOTTA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1479,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-750-%d7%9e%d7%9c-%d7%aa%d7%95%d7%90%d7%9d-%d7%9e%d7%95%d7%98%d7%94/"
+ },
+ {
+  "id": 64822,
+  "name": "Hario Coffee Canister –  מיכל אחסון לקפה 200 גרם",
+  "group": "storage",
+  "missing": [
+   "capacity_g"
+  ],
+  "text_len": 52,
+  "permalink": "https://www.minuto.co.il/product/hario-coffee-canister-%d7%9e%d7%99%d7%9b%d7%9c-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%9c%d7%a7%d7%a4%d7%94-200-%d7%92%d7%a8%d7%9d/"
+ },
+ {
+  "id": 64799,
+  "name": "דוחסן 57 ממ ILSA לידית מכונת קפה",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 1814,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-57-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64798,
+  "name": "WDT Needles Coffee Tool",
+  "group": "tamper",
+  "missing": [
+   "diameter",
+   "material"
+  ],
+  "text_len": 957,
+  "permalink": "https://www.minuto.co.il/product/wdt-needles-coffee-tool/"
+ },
+ {
+  "id": 64797,
+  "name": "כוס אספרסו לוברמיקס אורבן טוויסטד זכוכית שקופה 70 מ''ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1626,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%90%d7%95%d7%a8%d7%91%d7%9f-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%96%d7%9b%d7%95/"
+ },
+ {
+  "id": 64785,
+  "name": "לוברמיקס זכוכית אורבן טוויסטד לאטה 360 מ''ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1894,
+  "permalink": "https://www.minuto.co.il/product/%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%90%d7%95%d7%a8%d7%91%d7%9f-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%9c%d7%90%d7%98%d7%94-360-%d7%9e/"
+ },
+ {
+  "id": 64770,
+  "name": "כד הקצפת חלב NANOFOAMER",
+  "group": "frother",
+  "missing": [
+   "power"
+  ],
+  "text_len": 2079,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%aa-%d7%97%d7%9c%d7%91-nanofoamer/"
+ },
+ {
+  "id": 64745,
+  "name": "משקל קפה Acaia Lunar - לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1450,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-lunar/"
+ },
+ {
+  "id": 64744,
+  "name": "משקל קפה Acaia Pearl",
+  "group": "scale",
+  "missing": [],
+  "text_len": 754,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl/"
+ },
+ {
+  "id": 64743,
+  "name": "משקל קפה Acaia Pearl s - לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1303,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%a7%d7%a4%d7%94-acia-pearl-s/"
+ },
+ {
+  "id": 64737,
+  "name": "כוס אספרסו וצלוחית 80 מ”ל Loveramics צבע שחור לילה",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 957,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%95%d7%a6%d7%9c%d7%95%d7%97%d7%99%d7%aa-80-%d7%9e%d7%9c-loveramics-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8-%d7%9c%d7%99%d7%9c/"
+ },
+ {
+  "id": 64733,
+  "name": "נוזל אקולוגי להסרת אבנית - Eco Klear",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 391,
+  "permalink": "https://www.minuto.co.il/product/%d7%a0%d7%95%d7%96%d7%9c-%d7%90%d7%a7%d7%95%d7%9c%d7%95%d7%92%d7%99-%d7%9c%d7%94%d7%a1%d7%a8%d7%aa-%d7%90%d7%91%d7%a0%d7%99%d7%aa-eco-klear/"
+ },
+ {
+  "id": 64722,
+  "name": "10 טבליות לניקוי שומנים סימנס בוש מקורי",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 465,
+  "permalink": "https://www.minuto.co.il/product/10-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-%d7%91%d7%95%d7%a9-%d7%9e%d7%a7%d7%95%d7%a8%d7%99/"
+ },
+ {
+  "id": 64713,
+  "name": "NANOFOAMER PRO GEN2 מקציף חלב חשמלי",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 981,
+  "permalink": "https://www.minuto.co.il/product/nanofoamer-pro-gen2-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%97%d7%a9%d7%9e%d7%9c%d7%99/"
+ },
+ {
+  "id": 64705,
+  "name": "La Marzocco Shower screen",
+  "group": "basket_portafilter",
+  "missing": [
+   "diameter",
+   "compatibility"
+  ],
+  "text_len": 581,
+  "permalink": "https://www.minuto.co.il/product/la-marzocco-shower-screen/"
+ },
+ {
+  "id": 64694,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע אדום",
+  "group": "storage",
+  "missing": [],
+  "text_len": 822,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%90%d7%93%d7%95%d7%9d/"
+ },
+ {
+  "id": 64693,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע צהוב",
+  "group": "storage",
+  "missing": [],
+  "text_len": 822,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a6%d7%94%d7%95%d7%91/"
+ },
+ {
+  "id": 64692,
+  "name": "קופסת אחסון קפה AIRSCAPE Copper כ- 500 גרם קפה צבע נחושת",
+  "group": "storage",
+  "missing": [],
+  "text_len": 823,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-copper-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a0%d7%97%d7%95%d7%a9%d7%aa/"
+ },
+ {
+  "id": 64691,
+  "name": "קופסת אחסון קפה AIRSCAPE כ- 500 גרם קפה צבע נירוסטה",
+  "group": "storage",
+  "missing": [],
+  "text_len": 825,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%95%d7%a4%d7%a1%d7%aa-%d7%90%d7%97%d7%a1%d7%95%d7%9f-%d7%a7%d7%a4%d7%94-airscape-%d7%9b-500-%d7%92%d7%a8%d7%9d-%d7%a7%d7%a4%d7%94-%d7%a6%d7%91%d7%a2-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98/"
+ },
+ {
+  "id": 64688,
+  "name": "סט סננים למערכת אוסמוזה הפוכה מוריון RO-101 Aquaphor Morion",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 1038,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-%d7%a1%d7%a0%d7%a0%d7%99%d7%9d-%d7%9c%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-%d7%9e%d7%95%d7%a8%d7%99%d7%95%d7%9f-ro-101-a/"
+ },
+ {
+  "id": 64686,
+  "name": "סט סננים למערכת אוסמוזה הפוכה Aquaphor Osmo pro 100 / 50",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 1675,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-%d7%a1%d7%a0%d7%a0%d7%99%d7%9d-%d7%9c%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-aquaphor-osmo-pro-100-50/"
+ },
+ {
+  "id": 65471,
+  "name": "דוחסן 53 ממ ILSA לידית מכונת קפה",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 1815,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-53-%d7%9e%d7%9e-ilsa-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 65444,
+  "name": "קנקן סינון מים Aquaphor Smile A5",
+  "group": "water",
+  "missing": [],
+  "text_len": 921,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a1%d7%99%d7%a0%d7%95%d7%9f-%d7%9e%d7%99%d7%9d-aquaphor-smile-a5/"
+ },
+ {
+  "id": 65428,
+  "name": "קנקן הקצפה נירוסטה 0.35 ליטר MOTTA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1078,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-0-35-%d7%9c%d7%99%d7%98%d7%a8-motta/"
+ },
+ {
+  "id": 65422,
+  "name": "כוס זכוכית שחור טוויסטד לוברמיקס 70 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 847,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%a9%d7%97%d7%95%d7%a8-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-70-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 65421,
+  "name": "סט כוסות אספרסו קרמיות KRUVE צבע לבן",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 884,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a7%d7%a8%d7%9e%d7%99%d7%95%d7%aa-kruve-%d7%a6%d7%91%d7%a2-%d7%9c%d7%91%d7%9f/"
+ },
+ {
+  "id": 65417,
+  "name": "סט כוסות אספרסו קרמיות KRUVE צבע שחור",
+  "group": "cup",
+  "missing": [
+   "volume"
+  ],
+  "text_len": 884,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%98-%d7%9b%d7%95%d7%a1%d7%95%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a7%d7%a8%d7%9e%d7%99%d7%95%d7%aa-kruve-%d7%a6%d7%91%d7%a2-%d7%a9%d7%97%d7%95%d7%a8/"
+ },
+ {
+  "id": 65411,
+  "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 57",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 242,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-57/"
+ },
+ {
+  "id": 65410,
+  "name": "קנקן הקצפה נירוסטה 0.50 ליטר MOTTA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1078,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-0-50-%d7%9c%d7%99%d7%98%d7%a8-motta/"
+ },
+ {
+  "id": 65403,
+  "name": "כוס טעימה אמבוסד 250 מ״ל מקולקציית ברוארס - BREWERS EMBOSSED - כתום",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 706,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%98%d7%a2%d7%99%d7%9e%d7%94-%d7%90%d7%9e%d7%91%d7%95%d7%a1%d7%93-250-%d7%9e%d7%b4%d7%9c-%d7%9e%d7%a7%d7%95%d7%9c%d7%a7%d7%a6%d7%99%d7%99%d7%aa-%d7%91%d7%a8%d7%95%d7%90%d7%a8/"
+ },
+ {
+  "id": 65395,
+  "name": "ספל קפה נוט-ניוטרל notNeutral Vero Cappuccino Glass כחול ים",
+  "group": "cup",
+  "missing": [],
+  "text_len": 885,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%a4%d7%94-%d7%a0%d7%95%d7%98-%d7%a0%d7%99%d7%95%d7%98%d7%a8%d7%9c-notneutral-vero-cappuccino-glass-%d7%9b%d7%97%d7%95%d7%9c-%d7%99%d7%9d/"
+ },
+ {
+  "id": 65243,
+  "name": "פילטר מים למכונת סימנס- Siemens water filter",
+  "group": "water",
+  "missing": [],
+  "text_len": 829,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens-water-filter/"
+ },
+ {
+  "id": 65242,
+  "name": "שלישיית פילטר בריטה מים למכונת סימנס- Siemens water filter",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 843,
+  "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%91%d7%a8%d7%99%d7%98%d7%94-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-siemens/"
+ },
+ {
+  "id": 65165,
+  "name": "מרכך DVA מים 8 ליטר למכונת אספרסו עם חיבור ישיר",
+  "group": "water",
+  "missing": [],
+  "text_len": 319,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a8%d7%9b%d7%9a-dva-%d7%9e%d7%99%d7%9d-8-%d7%9c%d7%99%d7%98%d7%a8-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%a2%d7%9d-%d7%97%d7%99%d7%91%d7%95%d7%a8-%d7%99/"
+ },
+ {
+  "id": 65161,
+  "name": "Hario POLARIS – משקל קפה חכם לדיוק מושלם צבע לבן",
+  "group": "scale",
+  "missing": [],
+  "text_len": 1235,
+  "permalink": "https://www.minuto.co.il/product/hario-drip-scales-%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94-%d7%a4%d7%99%d7%9c%d7%98%d7%a8/"
+ },
+ {
+  "id": 65160,
+  "name": "פילטר מים אקווה קלין למכונות פיליפס Saeco Aqua Clean",
+  "group": "water",
+  "missing": [],
+  "text_len": 608,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%90%d7%a7%d7%95%d7%95%d7%94-%d7%a7%d7%9c%d7%99%d7%9f-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a4%d7%99%d7%9c%d7%99%d7%a4%d7%a1-saeco-aqua-cle/"
+ },
+ {
+  "id": 65107,
+  "name": "מקציף חלב לוואצה אמודו מיו מילק איזי Lavazza Milk Easy",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 616,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9c%d7%95%d7%95%d7%90%d7%a6%d7%94-%d7%90%d7%9e%d7%95%d7%93%d7%95-%d7%9e%d7%99%d7%95-%d7%9e%d7%99%d7%9c%d7%a7-%d7%90%d7%99%d7%96%d7%99-lavazza-milk/"
+ },
+ {
+  "id": 65078,
+  "name": "חבילת קנקן + סננים Aquaphor דגם Compact לשיפור המים",
+  "group": "water",
+  "missing": [],
+  "text_len": 967,
+  "permalink": "https://www.minuto.co.il/product/%d7%97%d7%91%d7%99%d7%9c%d7%aa-%d7%a7%d7%a0%d7%a7%d7%9f-%d7%a1%d7%a0%d7%a0%d7%99%d7%9d-aquaphor-%d7%93%d7%92%d7%9d-compact-%d7%9c%d7%a9%d7%99%d7%a4%d7%95%d7%a8-%d7%94%d7%9e%d7%99%d7%9d/"
+ },
+ {
+  "id": 65073,
+  "name": "פילטר / סלסלה לידית אספרסו כפולה 58ממ",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 221,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a1%d7%9c%d7%a1%d7%9c%d7%94-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9b%d7%a4%d7%95%d7%9c%d7%94-58%d7%9e%d7%9e/"
+ },
+ {
+  "id": 65072,
+  "name": "פילטר / סלסלה לידית מנת אספרסו יחידה 58ממ",
+  "group": "basket_portafilter",
+  "missing": [],
+  "text_len": 226,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a1%d7%9c%d7%a1%d7%9c%d7%94-%d7%9c%d7%99%d7%93%d7%99%d7%aa-%d7%9e%d7%a0%d7%aa-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%99%d7%97%d7%99%d7%93%d7%94-58%d7%9e%d7%9e/"
+ },
+ {
+  "id": 65054,
+  "name": "אטם גומי פילטר עיוור לשטיפה נגדית Back Flush",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 240,
+  "permalink": "https://www.minuto.co.il/product/%d7%90%d7%98%d7%9d-%d7%92%d7%95%d7%9e%d7%99-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a2%d7%99%d7%95%d7%95%d7%a8-%d7%9c%d7%a9%d7%98%d7%99%d7%a4%d7%94-%d7%a0%d7%92%d7%93%d7%99%d7%aa-back-flush/"
+ },
+ {
+  "id": 65041,
+  "name": "מקציף חלב מקצועי סוורין - Severin Milk Frother SM9495",
+  "group": "frother",
+  "missing": [],
+  "text_len": 449,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%9e%d7%a7%d7%a6%d7%95%d7%a2%d7%99-%d7%a1%d7%95%d7%95%d7%a8%d7%99%d7%9f-severin-milk-frother-sm9495/"
+ },
+ {
+  "id": 65024,
+  "name": "פילטר מים למכונות ניבונה",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 210,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94/"
+ },
+ {
+  "id": 65023,
+  "name": "שלישיית פילטרים מים למכונות ניבונה",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 237,
+  "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8%d7%99%d7%9d-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94/"
+ },
+ {
+  "id": 65007,
+  "name": "10 שקיות אבקה Puly לניקוי מטחנות קפה",
+  "group": "cleaning",
+  "missing": [],
+  "text_len": 283,
+  "permalink": "https://www.minuto.co.il/product/10-%d7%a9%d7%a7%d7%99%d7%95%d7%aa-%d7%90%d7%91%d7%a7%d7%94-puly-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%98%d7%97%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 65006,
+  "name": "דוחסן קפה נירוסטה קוטר 51",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 103,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a7%d7%95%d7%98%d7%a8-51/"
+ },
+ {
+  "id": 64999,
+  "name": "מכונת קפה פסקל עם מקציף Pascale Coffee &amp; Tea Silver OT",
+  "group": "frother",
+  "missing": [],
+  "text_len": 1023,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a7%d7%a4%d7%94-%d7%a4%d7%a1%d7%a7%d7%9c-%d7%a2%d7%9d-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-pascale-coffee-tea-silver-ot/"
+ },
+ {
+  "id": 64998,
+  "name": "חומר סיכה / גריז למכונות קפה",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 179,
+  "permalink": "https://www.minuto.co.il/product/%d7%97%d7%95%d7%9e%d7%a8-%d7%a1%d7%99%d7%9b%d7%94-%d7%92%d7%a8%d7%99%d7%96-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%95%d7%aa-%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64993,
+  "name": "שלישיית פילטר מרכך מים בריטה Aquagusto 250",
+  "group": "water",
+  "missing": [],
+  "text_len": 628,
+  "permalink": "https://www.minuto.co.il/product/%d7%a9%d7%9c%d7%99%d7%a9%d7%99%d7%99%d7%aa-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-%d7%9e%d7%99%d7%9d-%d7%91%d7%a8%d7%99%d7%98%d7%94-aquagusto-250/"
+ },
+ {
+  "id": 64981,
+  "name": "פילטר מרכך BestMax V פרימיום",
+  "group": "water",
+  "missing": [],
+  "text_len": 940,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-v-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/"
+ },
+ {
+  "id": 64979,
+  "name": "דוחסן קפה נירוסטה  עם ידית עץ שחורה קוטר 58",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 215,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%a9%d7%97%d7%95%d7%a8%d7%94-%d7%a7%d7%95%d7%98%d7%a8/"
+ },
+ {
+  "id": 64978,
+  "name": "דוחסן קפה נירוסטה  עם ידית עץ אגוז קוטר 58",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 242,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-%d7%a2%d7%9d-%d7%99%d7%93%d7%99%d7%aa-%d7%a2%d7%a5-%d7%90%d7%92%d7%95%d7%96-%d7%a7%d7%95%d7%98%d7%a8-58/"
+ },
+ {
+  "id": 64965,
+  "name": "דוחסן קפה OAK8 קפיצי קוטר 58",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 1378,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-oak8-%d7%a7%d7%a4%d7%99%d7%a6%d7%99-%d7%a7%d7%95%d7%98%d7%a8-58/"
+ },
+ {
+  "id": 64941,
+  "name": "טבליות מליטה לניקוי שומנים - PERFECT CLEAN",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 426,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%9e%d7%9c%d7%99%d7%98%d7%94-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d-perfect-clean/"
+ },
+ {
+  "id": 64925,
+  "name": "טבליות ניבונה לניקוי שומנים",
+  "group": "cleaning",
+  "missing": [
+   "quantity"
+  ],
+  "text_len": 407,
+  "permalink": "https://www.minuto.co.il/product/%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%a0%d7%99%d7%91%d7%95%d7%a0%d7%94-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%a9%d7%95%d7%9e%d7%a0%d7%99%d7%9d/"
+ },
+ {
+  "id": 64911,
+  "name": "משקל ייעודי לקפה",
+  "group": "scale",
+  "missing": [
+   "dimensions"
+  ],
+  "text_len": 398,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a9%d7%a7%d7%9c-%d7%99%d7%99%d7%a2%d7%95%d7%93%d7%99-%d7%9c%d7%a7%d7%a4%d7%94/"
+ },
+ {
+  "id": 64901,
+  "name": "פילטר מים למכונת לליט",
+  "group": "water",
+  "missing": [
+   "filter_life"
+  ],
+  "text_len": 338,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%99%d7%9d-%d7%9c%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%9c%d7%9c%d7%99%d7%98/"
+ },
+ {
+  "id": 64856,
+  "name": "דוחסן קפה OAK8 קפיצי קוטר 51",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 1315,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-oak8-%d7%a7%d7%a4%d7%99%d7%a6%d7%99-%d7%a7%d7%95%d7%98%d7%a8-51/"
+ },
+ {
+  "id": 64845,
+  "name": "דוחסן קפה  58 של Motta מעץ PRESSINO",
+  "group": "tamper",
+  "missing": [],
+  "text_len": 920,
+  "permalink": "https://www.minuto.co.il/product/%d7%93%d7%95%d7%97%d7%a1%d7%9f-%d7%a7%d7%a4%d7%94-58-%d7%a9%d7%9c-motta-%d7%9e%d7%a2%d7%a5-pressino/"
+ },
+ {
+  "id": 64829,
+  "name": "פילטר מרכך BestMax bwt M פרימיום",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 1224,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%9e%d7%a8%d7%9b%d7%9a-bestmax-bwt-m-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/"
+ },
+ {
+  "id": 64796,
+  "name": "  כוס לאטה לוברמיקס אורבן טוויסטד זכוכית שקופה 120 מ''ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1904,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%9c%d7%90%d7%98%d7%94-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%90%d7%95%d7%a8%d7%91%d7%9f-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%96%d7%9b%d7%95/"
+ },
+ {
+  "id": 64795,
+  "name": "לוברמיקס אורבן טוויסטד לאטה זכוכית שחורה 180 מ''ל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1900,
+  "permalink": "https://www.minuto.co.il/product/%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%90%d7%95%d7%a8%d7%91%d7%9f-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%9c%d7%90%d7%98%d7%94-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%a9%d7%97/"
+ },
+ {
+  "id": 64794,
+  "name": "ספל קורטדו דייל האריס ירוק 150 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1172,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%99%d7%a8%d7%95%d7%a7-150-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 64793,
+  "name": "ספל קורטדו דייל האריס לבן 150 מל קורטדו",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1178,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a4%d7%9c-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%9c%d7%91%d7%9f-150-%d7%9e%d7%9c-%d7%a7%d7%95%d7%a8%d7%98%d7%93%d7%95/"
+ },
+ {
+  "id": 64792,
+  "name": "כוס אספרסו לוברמיקס דייל האריס לבן 80 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1173,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%90%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-%d7%93%d7%99%d7%99%d7%9c-%d7%94%d7%90%d7%a8%d7%99%d7%a1-%d7%9c%d7%91%d7%9f-80-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 64791,
+  "name": "כוס זכוכית שחור טוויסטד לוברמיקס 120 מל",
+  "group": "cup",
+  "missing": [
+   "dishwasher"
+  ],
+  "text_len": 1631,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%95%d7%a1-%d7%96%d7%9b%d7%95%d7%9b%d7%99%d7%aa-%d7%a9%d7%97%d7%95%d7%a8-%d7%98%d7%95%d7%95%d7%99%d7%a1%d7%98%d7%93-%d7%9c%d7%95%d7%91%d7%a8%d7%9e%d7%99%d7%a7%d7%a1-120-%d7%9e%d7%9c/"
+ },
+ {
+  "id": 64788,
+  "name": "פילטר קוקוס BWT",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%95%d7%a7%d7%95%d7%a1-bwt/"
+ },
+ {
+  "id": 64787,
+  "name": "סנן קו - פילטר קוקוס k - 2010",
+  "group": "water",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 1587,
+  "permalink": "https://www.minuto.co.il/product/%d7%a1%d7%a0%d7%9f-%d7%a7%d7%95-%d7%a4%d7%99%d7%9c%d7%98%d7%a8-%d7%a7%d7%95%d7%a7%d7%95%d7%a1-k-2010/"
+ },
+ {
+  "id": 64784,
+  "name": "מקציף חלב Lithium NANOFOAMER נטען",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 2770,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-lithium-nanofoamer-%d7%a0%d7%98%d7%a2%d7%9f/"
+ },
+ {
+  "id": 64765,
+  "name": "קפסולות לניקוי מכונת נספרסו CAFETTO ECO",
+  "group": "cleaning",
+  "missing": [
+   "quantity",
+   "compatibility"
+  ],
+  "text_len": 0,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a4%d7%a1%d7%95%d7%9c%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%9e%d7%9b%d7%95%d7%a0%d7%aa-%d7%a0%d7%a1%d7%a4%d7%a8%d7%a1%d7%95-cafetto-eco/"
+ },
+ {
+  "id": 64751,
+  "name": "קנקן הקצפה 0.5 ליטר שחור תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 677,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-0-5-%d7%9c%d7%99%d7%98%d7%a8-%d7%a9%d7%97%d7%95%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64750,
+  "name": "קנקן הקצפה אדום 0.50 ליטר תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 677,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%90%d7%93%d7%95%d7%9d-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64749,
+  "name": "קנקן הקצפה לבן 0.50 ליטר תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 676,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%9c%d7%91%d7%9f-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64748,
+  "name": "קנקן הקצפה כחול 0.50 ליטר תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 677,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%9b%d7%97%d7%95%d7%9c-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64747,
+  "name": "קנקן הקצפה כתום 0.50 ליטר  תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 677,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%9b%d7%aa%d7%95%d7%9d-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64746,
+  "name": "כד הקצפה מוזהב 0.50 ליטר תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [
+   "material"
+  ],
+  "text_len": 676,
+  "permalink": "https://www.minuto.co.il/product/%d7%9b%d7%93-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%9e%d7%95%d7%96%d7%94%d7%91-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64721,
+  "name": "6 טבליות לניקוי אבנית סימנס בוש מקורי (18גרם)",
+  "group": "cleaning",
+  "missing": [
+   "compatibility"
+  ],
+  "text_len": 454,
+  "permalink": "https://www.minuto.co.il/product/6-%d7%98%d7%91%d7%9c%d7%99%d7%95%d7%aa-%d7%9c%d7%a0%d7%99%d7%a7%d7%95%d7%99-%d7%90%d7%91%d7%a0%d7%99%d7%aa-%d7%a1%d7%99%d7%9e%d7%a0%d7%a1-%d7%91%d7%95%d7%a9-%d7%9e%d7%a7%d7%95%d7%a8%d7%99-18%d7%92/"
+ },
+ {
+  "id": 64711,
+  "name": "קנקן הקצפה נירוסטה 0.50 ליטר תואם MOTTA",
+  "group": "milk_jug",
+  "missing": [],
+  "text_len": 1196,
+  "permalink": "https://www.minuto.co.il/product/%d7%a7%d7%a0%d7%a7%d7%9f-%d7%94%d7%a7%d7%a6%d7%a4%d7%94-%d7%a0%d7%99%d7%a8%d7%95%d7%a1%d7%98%d7%94-0-50-%d7%9c%d7%99%d7%98%d7%a8-%d7%aa%d7%95%d7%90%d7%9d-motta/"
+ },
+ {
+  "id": 64709,
+  "name": "NANOFOAMER LITHIUM לבן - מקציף ידני נטען",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 2774,
+  "permalink": "https://www.minuto.co.il/product/nanofoamer-lithium-%d7%9c%d7%91%d7%9f-%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%99%d7%93%d7%a0%d7%99-%d7%a0%d7%98%d7%a2%d7%9f/"
+ },
+ {
+  "id": 64701,
+  "name": "מערכת אוסמוזה הפוכה Osmo Pro 100 Aquaphore כולל התקנה",
+  "group": "water",
+  "missing": [
+   "compatibility",
+   "filter_life"
+  ],
+  "text_len": 623,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a2%d7%a8%d7%9b%d7%aa-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-osmo-pro-100-aquaphore-%d7%9b%d7%95%d7%9c%d7%9c-%d7%94%d7%aa%d7%a7%d7%a0%d7%94/"
+ },
+ {
+  "id": 64687,
+  "name": "ממברנה RO-50S אוסמוזה הפוכה מוריון RO-101 Aquaphor Morion",
+  "group": "water",
+  "missing": [],
+  "text_len": 1062,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%9e%d7%91%d7%a8%d7%a0%d7%94-ro-50s-%d7%90%d7%95%d7%a1%d7%9e%d7%95%d7%96%d7%94-%d7%94%d7%a4%d7%95%d7%9b%d7%94-%d7%9e%d7%95%d7%a8%d7%99%d7%95%d7%9f-ro-101-aquaphor-morion/"
+ },
+ {
+  "id": 64674,
+  "name": "מקציף חלב אינדוקציה אמיליו קרמה טאץ'",
+  "group": "frother",
+  "missing": [
+   "volume",
+   "power"
+  ],
+  "text_len": 1036,
+  "permalink": "https://www.minuto.co.il/product/%d7%9e%d7%a7%d7%a6%d7%99%d7%a3-%d7%97%d7%9c%d7%91-%d7%90%d7%99%d7%a0%d7%93%d7%95%d7%a7%d7%a6%d7%99%d7%94-%d7%90%d7%9e%d7%99%d7%9c%d7%99%d7%95-%d7%a7%d7%a8%d7%9e%d7%94-%d7%98%d7%90%d7%a5/"
+ }
+]

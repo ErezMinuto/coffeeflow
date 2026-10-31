@@ -1,0 +1,263 @@
+{
+ "edits": [
+  {
+   "product_id": 64759,
+   "variation_id": null,
+   "target": "description",
+   "old": "מיכל פולי קפה של 250 גרם",
+   "new": "מיכל פולי קפה של 300 גרם",
+   "finding": "contradiction: page hopper 250 g vs official Life X hopper capacity approximately 300 g",
+   "source": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>15x36x20 ס\"מ</p>",
+   "new": "<p>15x35.5x20 ס\"מ</p>",
+   "finding": "contradiction: page height 36 cm vs official Life X dimensions 150 x 200 x 355h mm (15x20x35.5 cm)",
+   "source": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מתח:</strong> 220–240 וולט, 50–60 הרץ</li>\n<li><strong>הספק:</strong> 300 וואט</li>\n<li><strong>מהירות:</strong> 1380 סל\"ד (50 הרץ)</li>\n<li><strong>סכינים:</strong> שטוחים 50 מ\"מ (XB50)</li>\n<li><strong>משקל:</strong> 5.4 ק\"ג</li>\n</ul>",
+   "finding": "missing specs: voltage, power, speed, burrs, burr size, weight (Ceado Life X)",
+   "sources": [
+    "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/",
+    "https://www.ceado.com/wp-content/uploads/2025/08/Leaflet_LifeXTouch_ENG.pdf"
+   ]
+  },
+  {
+   "product_id": 65203,
+   "variation_id": null,
+   "target": "description",
+   "old": "140 וואט/ 220V",
+   "new": "140 וואט/ 230V",
+   "finding": "contradiction: page voltage 220V vs official Rocky voltage 110 V / 230 V (EU/IL version 230 V)",
+   "source": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>סט בורר סופרנובה נירוסטה 38 מ\"מ:</strong>",
+   "new": "<strong>סט בורר הייפרנובה נירוסטה 38 מ\"מ:</strong>",
+   "finding": "contradiction: page burr name Supernova vs official current name \"38mm Stainless Steel Hypernova Burr Set\"",
+   "source": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "<strong>סטים בורר סופרנובה VS3</strong>",
+   "new": "<strong>סטים בורר הייפרנובה VS3</strong>",
+   "finding": "contradiction: page burr name Supernova vs official current name Hypernova",
+   "source": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "אותה טכנולוגיית סופרנובה בורר",
+   "new": "אותה טכנולוגיית הייפרנובה בורר",
+   "finding": "contradiction: page burr name Supernova vs official current name Hypernova",
+   "source": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p data-sourcepos=\"26:1-26:81\"><strong>מטחנה הידנית Varia EVO - הטוחנת ההיברידית הראשונה בעולם המשתמשת בסגסוגת כוללת</strong></p>",
+   "new": "",
+   "finding": "contradiction: heading calls the product the world's first hybrid grinder; official: \"EVO Hand is manual only\" (the hybrid is a separate model, EVO Hybrid)",
+   "source": "https://www.variabrewing.com/products/evo-hand-grinder",
+   "remove_element": true
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p data-sourcepos=\"28:1-28:185\">הכירו את טוחנת הידנית Varia EVO, טוחנת הידנית ההיברידית הראשונה בעולם המהפכה בשיטות הטחינה המסורתיות. הגישה החדשנית שלנו משלבת את עוצמת הטכנולוגיה USB-C עם האמינות של טוחנת הידנית שלנו,וכתוצאה מכך נוצר מכשיר קומפקטי, קל משקל וחזק במיוחד.</p>",
+   "new": "",
+   "finding": "contradiction: paragraph describes the USB-C hybrid drive (EVO Hybrid manual intro text); official: \"EVO Hybrid includes a battery-powered drive. EVO Hand is manual only.\"",
+   "source": "https://www.variabrewing.com/products/evo-hand-grinder",
+   "remove_element": true
+  },
+  {
+   "product_id": 65459,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<h3>מפרט טכני נוסף</h3>\n<ul>\n<li><strong>סוג סכינים:</strong> קוניים</li>\n</ul>",
+   "finding": "missing specs: burr type (conical); power/speed not applicable (EVO Hand has no motor)",
+   "sources": [
+    "https://www.variabrewing.com/products/evo-hand-grinder",
+    "https://drive.google.com/file/d/1dJn1oaDQqKLCvVBUkPvyaapxpker_p24/view"
+   ]
+  },
+  {
+   "product_id": 65203,
+   "variation_id": null,
+   "target": "description",
+   "old": "<p>משקל: 7 ק``ג</p>",
+   "new": "<p>משקל: 6.5 ק``ג</p>",
+   "finding": "owner: Rancilio Rocky (not SD) → official 6.5 kg",
+   "source": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  }
+ ],
+ "skipped": [
+  {
+   "product_id": 64759,
+   "finding": "Life X Touch vs Life X",
+   "reason": "note only: ceado.com's Life X page (URL life-x) now presents the 'Life X Touch' (2.4\" touch display). Values used are its technical data; the minuto page does not mention the display. Funnel (approx. 30 g) and average output (1.6 g/s) not added: not in the missing list."
+  },
+  {
+   "product_id": 65203,
+   "finding": "משקל: 7 ק``ג",
+   "reason": "model naming conflict, not changed: owner says 'standard doser-less Rocky, NOT the Rocky SD', but Rancilio's official catalogue defines the opposite: ROCKY = with manual doser lever (ground coffee container 0.2 kg, 7 g dose), 6.5 kg; ROCKY SD = no doser (on/off switch), 7 kg. The page's 7 kg is correct for the doser-less grinder (Rocky SD) and wrong only if the shop sells the doser Rocky. Owner must confirm doser vs doser-less."
+  },
+  {
+   "product_id": 65203,
+   "finding": "missing: burr_size, speed",
+   "reason": "no append: burr size (50 מ\"מ) already on page; Rancilio gives no rpm for Rocky. Other page values (12x25x35 ס\"מ, 300 גר', 50 מ\"מ, 140 וואט) match the official catalogue for both versions."
+  },
+  {
+   "product_id": 65097,
+   "finding": "missing: power, weight, burrs, burr_size, speed, hopper; depth 25.5 cm",
+   "reason": "no official PL042EMI source: lelit.com has only the Anita PL042EM page and datasheet (site search for PL042EMI returns nothing) and Lelit nowhere states EM and EMI are identical. Per brief, PL042EM values (10.2 kg, 150 g hopper, 31.5x26.5x37 cm, 2.7 l tank) are not used; page depth 25.5 cm vs EM 26.5 cm not corrected. Page values that exist (38 mm conical, 250 ml brass boiler, 57 mm) are consistent with the EM sheet. Power and rpm are not stated officially for either."
+  },
+  {
+   "product_id": 65459,
+   "finding": "140 שלבי התאמה / מעל 140 שלבי דיוק",
+   "reason": "official sources disagree: EVO Hand product description says 140 steps; the same page's spec block and the current EVO manual say 144 steps of 10 microns. Not changed."
+  },
+  {
+   "product_id": 65459,
+   "finding": "קיבולת 30-35 גרם / עד 35 גרם",
+   "reason": "official sources disagree: product description 30 g, spec block and manual 25–30 g bean capacity, but manual safety section says grounds canister max 30-35 g. Not changed."
+  },
+  {
+   "product_id": 65459,
+   "finding": "משקל 1 ק\"ג; גובה 195 מ\"מ; אורך מוט 174 מ\"מ",
+   "reason": "official sources disagree: product description 1 kg / 195 mm / 174 mm (matches page) vs spec block and manual 0.8 kg / 194.3 mm / 174.3 mm. Not changed."
+  },
+  {
+   "product_id": 65459,
+   "finding": "VS3 burr claim, CNC 0.02 mm tolerance",
+   "reason": "not on current official EVO Hand page; not motor-related so left as is. Only the burr name was updated to Hypernova; owner may want to review the 'same technology as VS3' wording."
+  }
+ ],
+ "sources": [
+  {
+   "product_id": 64759,
+   "spec": "hopper",
+   "value": "Approximately 300 g",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "spec": "dimensions",
+   "value": "150 x 200 x 355h mm",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "spec": "voltage/power",
+   "value": "220-240 V • 50-60 Hz / 300 W",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "spec": "voltage/power",
+   "value": "220-240 V • 50-60 Hz / 300 W",
+   "url": "https://www.ceado.com/wp-content/uploads/2025/08/Leaflet_LifeXTouch_ENG.pdf"
+  },
+  {
+   "product_id": 64759,
+   "spec": "speed",
+   "value": "1380 / 1650 rpm (50/60 Hz)",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 64759,
+   "spec": "burrs",
+   "value": "XB50 ø 50 mm blind multi-purpose flat burrs",
+   "url": "https://www.ceado.com/wp-content/uploads/2025/08/Leaflet_LifeXTouch_ENG.pdf"
+  },
+  {
+   "product_id": 64759,
+   "spec": "weight",
+   "value": "Net weight 5.4 kg",
+   "url": "https://www.ceado.com/en/products/coffee-grinder-home-use-life-x/"
+  },
+  {
+   "product_id": 65203,
+   "spec": "voltage",
+   "value": "110 V / 230 V, 50-60 Hz",
+   "url": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65203,
+   "spec": "power",
+   "value": "140 W (Rocky and Rocky SD)",
+   "url": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65203,
+   "spec": "weight",
+   "value": "Rocky 6,5 kg (doser lever); Rocky SD 7 kg (on/off, no doser)",
+   "url": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65203,
+   "spec": "dimensions/hopper/burrs",
+   "value": "120 x 250 x 350 mm; 0.3 kg; Steel Flat 50 mm",
+   "url": "https://www.ranciliogroup.com/app/uploads/2019/10/2020_RANCILIO_HOME-LINE_CATALOGUE_WEB_EN.pdf"
+  },
+  {
+   "product_id": 65097,
+   "spec": "PL042EM only (not used)",
+   "value": "250 ml brass boiler; 150 g hopper; 2.7 l tank; 31.5x26.5x37 cm; 10.2 kg; 38 mm conical",
+   "url": "https://www.lelit.com/wp-content/uploads/2024/09/EN-Anita-EM.pdf"
+  },
+  {
+   "product_id": 65459,
+   "spec": "burrs",
+   "value": "38mm Stainless Steel Hypernova Burr Set / 38 mm stainless steel Hypernova conical burrs",
+   "url": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "spec": "burrs",
+   "value": "38mm stainless steel Hypernova burr set",
+   "url": "https://drive.google.com/file/d/1dJn1oaDQqKLCvVBUkPvyaapxpker_p24/view"
+  },
+  {
+   "product_id": 65459,
+   "spec": "drive",
+   "value": "Hand crank; \"EVO Hybrid includes a battery-powered drive. EVO Hand is manual only.\"",
+   "url": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "spec": "steps",
+   "value": "140 (description) vs 144 (spec block, manual)",
+   "url": "https://www.variabrewing.com/products/evo-hand-grinder"
+  },
+  {
+   "product_id": 65459,
+   "spec": "capacity",
+   "value": "30g (description); 25–30 g (spec block, manual); grounds canister max 30-35 g (manual p.4)",
+   "url": "https://drive.google.com/file/d/1dJn1oaDQqKLCvVBUkPvyaapxpker_p24/view"
+  },
+  {
+   "product_id": 65459,
+   "spec": "weight/dims",
+   "value": "1kg, 195 mm, crank 174 mm (description) vs 0.8 kg, 194.3 x 64 mm, crank 174.3 mm (spec block, manual)",
+   "url": "https://drive.google.com/file/d/1dJn1oaDQqKLCvVBUkPvyaapxpker_p24/view"
+  }
+ ]
+}
