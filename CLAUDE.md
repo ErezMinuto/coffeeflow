@@ -255,7 +255,8 @@ Edge functions write structured, durable logs to the `system_logs` table via
 ./scripts/logs.sh run <run-id>    # full trace of one invocation
 ```
 
-Needs `SUPABASE_ACCESS_TOKEN` (the same token deploys use). Read-only.
+Needs `SUPABASE_SERVICE_ROLE_KEY`, or `SUPABASE_ACCESS_TOKEN` to look it up (the anon
+key cannot read `system_logs`). Read-only.
 Retention is 30 days. Full guide: `docs/logging.md`.
 
 Run status `incomplete` means the run was killed mid-flight (worker timeout /

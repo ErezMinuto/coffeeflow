@@ -255,14 +255,19 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
   }
-  if (!parent || parent.status !== 'completed') {
+  if (!parent || parent.status === 'failed') {
+    // The visual is gone for good, so there will never be an image to post.
+    await safeMarkFailed(supabase, task, `[superseded] parent visual ${task.parent_task_id} ${parent ? 'failed' : 'is missing'}`, true)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, reason: 'parent_superseded' })
+  }
+  if (parent.status !== 'completed') {
     // Visual worker hasn't finished. Release back to pending without
     // counting an attempt — visual generation has its own QA loop that
     // can take 2-3 min, and we shouldn't burn a retry slot waiting.
     const retryInMinutes = await releaseForParentNotReady(
       supabase,
       task,
-      `parent visual task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
+      `parent visual task ${task.parent_task_id} not yet completed (status=${parent.status})`,
     )
     return jsonResponse({
       processed: 1,
