@@ -19,13 +19,15 @@ function data(over: Partial<RetentionData> = {}): RetentionData {
     ...over,
   };
 }
+// Customer c1 on the marketing list (check-in and reminder both need consent).
+const consenting = (over: Partial<RetentionData> = {}) => data({ consent: new Map([["c1", [{ at: ago(100), granted: true }]]]), ...over });
 const unsub = (e: string) => `https://u/?e=${e}`;
 const CHECKIN = { delay_days: 9, max_lookback_days: 14, settings: { review_url: "https://g.page/r/x/review", review_link_enabled: false } };
 const REM_OPTS = { stopBase: "https://f/sched", signingKey: "k", unsubscribeUrlFor: unsub };
 const regular = () => [o({ date_created: ago(60) }), o({ date_created: ago(40) }), o({ date_created: ago(20) })]; // due ~day 17 → in window
 
 Deno.test("checkin: one person with two emails is asked once", () => {
-  const d = data({
+  const d = consenting({
     orders: new Map([["c1", [o({ date_completed: ago(10), email_norm: "new@x.com" })]]]),
     emails: new Map([["c1", ["old@x.com", "new@x.com"]]]),
     sentKeys: new Set(["coffee_checkin::old@x.com"]),          // asked before under the other address
@@ -35,13 +37,13 @@ Deno.test("checkin: one person with two emails is asked once", () => {
 
 Deno.test("checkin: review block only when enabled; unsubscribed and 4-day rule skip", () => {
   const base = { orders: new Map([["c1", [o({ date_completed: ago(10) })]]]), emails: new Map([["c1", ["a@b.com"]]]) };
-  const [c] = findCheckinCandidates(data(base), CHECKIN, unsub);
+  const [c] = findCheckinCandidates(consenting(base), CHECKIN, unsub);
   assertEquals(c.extra_vars.review_block_html, "");
-  const [c2] = findCheckinCandidates(data(base), { ...CHECKIN, settings: { ...CHECKIN.settings, review_link_enabled: true } }, unsub);
+  const [c2] = findCheckinCandidates(consenting(base), { ...CHECKIN, settings: { ...CHECKIN.settings, review_link_enabled: true } }, unsub);
   assert(c2.extra_vars.review_block_html.includes("https://g.page/r/x/review"));
   assert(!/אם נהנית|אם אהבת/.test(c2.extra_vars.review_block_html)); // never conditional on liking it
-  assertEquals(findCheckinCandidates(data({ ...base, consent: new Map([["c1", [{ at: ago(50), granted: true }, { at: ago(5), granted: false }]]]) }), CHECKIN, unsub).length, 0);
-  assertEquals(findCheckinCandidates(data({ ...base, lastSent: new Map([["a@b.com", ago(2)]]) }), CHECKIN, unsub).length, 0);
+  assertEquals(findCheckinCandidates(consenting({ ...base, consent: new Map([["c1", [{ at: ago(50), granted: true }, { at: ago(5), granted: false }]]]) }), CHECKIN, unsub).length, 0);
+  assertEquals(findCheckinCandidates(consenting({ ...base, lastSent: new Map([["a@b.com", ago(2)]]) }), CHECKIN, unsub).length, 0);
 });
 
 Deno.test("reminder: consent required; stop wins; one per cycle", async () => {
@@ -74,7 +76,7 @@ Deno.test("product photo: every Minuto bag in the order, side by side, Veneto le
     { product_id: 7, is_bean: true, name: "Aristo" }, { product_id: 8, is_bean: true, name: "Fazenda" },
     { product_id: 7, is_bean: true, name: "Aristo" }, { product_id: 9, is_bean: true, name: "Veneto" },
   ]
-  const d = data({ orders: new Map([["c1", [o({ date_completed: ago(10), lines })]]]), emails: new Map([["c1", ["a@b.com"]]]),
+  const d = consenting({ orders: new Map([["c1", [o({ date_completed: ago(10), lines })]]]), emails: new Map([["c1", ["a@b.com"]]]),
     products: new Map([
       [7, { permalink: "https://p/aristo/", name: "Aristo", image_url: "https://img/aristo.png" }],
       [8, { permalink: "https://p/fazenda/", name: "Fazenda Sertão", image_url: "https://img/fazenda.png" }],
@@ -88,15 +90,25 @@ Deno.test("product photo: every Minuto bag in the order, side by side, Veneto le
 
 Deno.test("product photo: the coffee they bought; never Veneto in a reminder; none without an image", async () => {
   const base = { orders: new Map([["c1", [o({ date_completed: ago(10) })]]]), emails: new Map([["c1", ["a@b.com"]]]) };
-  const [c] = findCheckinCandidates(data(base), CHECKIN, unsub);
+  const [c] = findCheckinCandidates(consenting(base), CHECKIN, unsub);
   assert(c.extra_vars.product_block_html.includes('src="https://img/aristo.png"'));
-  const noImg = data({ ...base, products: new Map([[7, { permalink: "https://p/", name: "Aristo", image_url: null }]]) });
+  const noImg = consenting({ ...base, products: new Map([[7, { permalink: "https://p/", name: "Aristo", image_url: null }]]) });
   assertEquals(findCheckinCandidates(noImg, CHECKIN, unsub)[0].extra_vars.product_block_html, "");
-  const veneto = data({ orders: new Map([["c1", [o({ date_completed: ago(10), lines: [{ product_id: 9, is_bean: true, name: "Veneto" }] })]]]), emails: new Map([["c1", ["a@b.com"]]]),
+  const veneto = consenting({ orders: new Map([["c1", [o({ date_completed: ago(10), lines: [{ product_id: 9, is_bean: true, name: "Veneto" }] })]]]), emails: new Map([["c1", ["a@b.com"]]]),
     products: new Map([[9, { permalink: "https://p/veneto/", name: "1 ק״ג פולי קפה Veneto Delux", image_url: "https://img/veneto.png" }]]) });
   assertEquals(findCheckinCandidates(veneto, CHECKIN, unsub)[0].extra_vars.product_block_html, "");   // still asked, never pictured
   const os = regular(); os[2].lines = [{ product_id: 9, is_bean: true, name: "Veneto" }];
   const d = data({ orders: new Map([["c1", os]]), emails: new Map([["c1", ["a@b.com"]]]), consent: new Map([["c1", [{ at: ago(90), granted: true }]]]),
     products: new Map([[9, { permalink: "https://p/veneto/", name: "Veneto Delux", image_url: "https://img/veneto.png" }]]) });
   assertEquals((await findReminderCandidates(d, {}, REM_OPTS))[0].extra_vars.product_block_html, "");
+});
+
+Deno.test("checkin: marketing consent required (list or checkout box)", () => {
+  const base = { orders: new Map([["c1", [o({ date_completed: ago(10) })]]]), emails: new Map([["c1", ["a@b.com"]]]) };
+  assertEquals(findCheckinCandidates(data(base), CHECKIN, unsub).length, 0);                       // not on the list
+  assertEquals(findCheckinCandidates(consenting(base), CHECKIN, unsub).length, 1);                 // on the list
+  const viaCheckout = data({ ...base, consent: new Map([["c1", [{ at: ago(12), granted: true }]]]) });  // ticked the box
+  assertEquals(findCheckinCandidates(viaCheckout, CHECKIN, unsub).length, 1);
+  const unsubscribed = data({ ...base, consent: new Map([["c1", [{ at: ago(90), granted: true }, { at: ago(3), granted: false }]]]) });
+  assertEquals(findCheckinCandidates(unsubscribed, CHECKIN, unsub).length, 0);
 });

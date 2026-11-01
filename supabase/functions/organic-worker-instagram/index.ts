@@ -255,14 +255,19 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
   }
-  if (!parent || parent.status !== 'completed') {
+  if (!parent || parent.status === 'failed') {
+    // The visual is gone for good, so there will never be an image to post.
+    await safeMarkFailed(supabase, task, `[superseded] parent visual ${task.parent_task_id} ${parent ? 'failed' : 'is missing'}`, true)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, reason: 'parent_superseded' })
+  }
+  if (parent.status !== 'completed') {
     // Visual worker hasn't finished. Release back to pending without
     // counting an attempt — visual generation has its own QA loop that
     // can take 2-3 min, and we shouldn't burn a retry slot waiting.
     const retryInMinutes = await releaseForParentNotReady(
       supabase,
       task,
-      `parent visual task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
+      `parent visual task ${task.parent_task_id} not yet completed (status=${parent.status})`,
     )
     return jsonResponse({
       processed: 1,
@@ -287,7 +292,7 @@ serve(async (req) => {
   // Publish). Hard-failing a QA-flagged image here meant good images silently
   // never reached the admin to approve. Instead: STILL stage the post and
   // surface it for review, carrying a qa_flagged marker so the review UI can
-  // warn — the human makes the final call.
+  // warn — the human makes the final call. Flagged posts skip the email (6b).
   const qaFlagged = parentResult.review_required === true
   if (qaFlagged) {
     console.warn(`[organic-worker-instagram] ${workerId} parent visual ${task.parent_task_id} is QA-flagged (review_required) — staging for HUMAN review anyway, not auto-failing`)
@@ -433,7 +438,13 @@ serve(async (req) => {
   // Best-effort + non-blocking: the task is already committed above, so a
   // failed/slow email never affects the pipeline. Only for review-staged posts
   // (the only path this worker takes), so this fires exactly once per post.
-  if (reviewRequired) {
+  // QA-flagged posts are NOT emailed (owner decision 2026-10-24): with the
+  // stricter Opus critic a flag usually means a genuinely broken image, so it
+  // waits in the admin queue (/admin/seo-agent, "QA flagged" badge) instead
+  // of landing in the inbox as "ready for review".
+  if (reviewRequired && qaFlagged) {
+    console.log(`[organic-worker-instagram] ${workerId} QA-flagged post staged for the admin queue — no ready-for-review email`)
+  } else if (reviewRequired) {
     const armContext = await fetchExperimentArmContext(supabase, task)
     const notifyStatus = await notifyPostReadyForReview({
       mediaType: mediaType,

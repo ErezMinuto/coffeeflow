@@ -21,6 +21,7 @@ import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { applyPlannedShot } from '../_shared/shot_library.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -77,6 +78,10 @@ async function draftBlog(supabase: SupabaseClient, rec: RecommendationRow): Prom
 // then the post pointing at it. Everything stays queue_for_review.
 async function draftIg(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
   const p = rec.action_params ?? {}
+  // Caption first (docs/image-pipeline/plan.md): no caption, nothing to draft,
+  // so check before the visual is inserted rather than orphaning it.
+  const caption = typeof p.caption_he === 'string' ? p.caption_he.trim() : ''
+  if (!caption) throw new Error('content_ig recommendation missing caption_he')
   const mediaType = ((p.media_type as string) || 'feed_image') as InstagramPostBrief['media_type']
   const isStory = mediaType === 'story'
   const aspect = ((p.aspect as string) || (isStory ? 'story' : 'feed_square')) as VisualGenerationBrief['aspect']
@@ -84,13 +89,25 @@ async function draftIg(supabase: SupabaseClient, rec: RecommendationRow): Promis
   const wantsBag = (p.render_mode as string) === 'bag_hero' && typeof p.product_name === 'string' && (p.product_name as string).length > 0
   const renderMode: VisualGenerationBrief['render_mode'] = wantsBag ? 'bag_hero' : 'no_bag'
 
-  const visualBrief: VisualGenerationBrief = {
-    scene_brief: (p.scene_brief as string) || `Editorial Minuto specialty-coffee scene for: ${(p.topic as string) || rec.title}. Warm natural light, shallow depth of field, the locked Minuto visual identity.`,
+  // The brain picks a shot from the menu for its caption. The pick fixes
+  // render_mode / product_name and, when scene_brief is empty, writes one from
+  // the shot. Flag off: kept as planned_shot, rendered on the legacy path.
+  const picked = applyPlannedShot({
+    scene_brief: typeof p.scene_brief === 'string' ? p.scene_brief : '',
     aspect,
     render_mode: renderMode,
     destination: 'ig_post',
-    ...(wantsBag ? { product_name: p.product_name as string } : {}),
+    ...(typeof p.product_name === 'string' && p.product_name ? { product_name: p.product_name } : {}),
+    shot_type:  p.shot_type,
+    shot_slots: p.shot_slots,
+  }, { enabled: Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true', caption })
+  if (picked.note) console.warn(`[strategist-executor] rec ${rec.id} shot pick repaired: ${picked.note}`)
+  const visualBrief = picked.brief as unknown as VisualGenerationBrief
+  if (!visualBrief.scene_brief) {
+    visualBrief.scene_brief = `Editorial Minuto specialty-coffee scene for: ${(p.topic as string) || rec.title}. Warm natural light, shallow depth of field, the locked Minuto visual identity.`
   }
+  // Legacy no_bag brief (no shot picked): no product, as before.
+  if (visualBrief.render_mode === 'no_bag' && !picked.picked) delete visualBrief.product_name
   const [visual] = await insertTasks(supabase, [{
     task_type:           'visual_generation',
     brief_data:          visualBrief,
@@ -100,12 +117,11 @@ async function draftIg(supabase: SupabaseClient, rec: RecommendationRow): Promis
   if (!visual) throw new Error('visual_generation insert returned no row')
 
   const igBrief: InstagramPostBrief = {
-    caption_he:       (p.caption_he as string) || '',
+    caption_he:       caption,
     hashtags:         Array.isArray(p.hashtags) ? (p.hashtags as string[]) : [],
     media_type:       mediaType,
     publish_strategy: 'queue_for_review',
   }
-  if (!igBrief.caption_he) throw new Error('content_ig recommendation missing caption_he')
   const [ig] = await insertTasks(supabase, [{
     task_type:           'instagram_post',
     brief_data:          igBrief,
