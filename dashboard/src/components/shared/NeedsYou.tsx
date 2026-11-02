@@ -46,11 +46,11 @@ export function NeedsYou() {
       ])
       if (!alive) return
       setRows([
-        { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=brief',     cta: 'לאישור',  count: proposals },
-        { key: 'loop',      icon: '✅', label: 'טיוטות מהאסטרטג אחרי בדיקה, ממתינות להחלטה שלך', to: '/admin/seo-agent?view=brief', cta: 'לבדיקה', count: loopDone },
+        { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=inbox',     cta: 'לאישור',  count: proposals },
+        { key: 'loop',      icon: '✅', label: 'טיוטות מהאסטרטג אחרי בדיקה, ממתינות להחלטה שלך', to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה', count: loopDone },
         { key: 'drafts',    icon: '✉️', label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing?tab=history',          cta: 'למרקטינג', count: drafts },
-        { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=workspace', cta: 'לבדיקה',  count: review },
-        { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=brief',     cta: 'לצפייה',  count: signals },
+        { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה',  count: review },
+        { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=inbox',     cta: 'לצפייה',  count: signals },
       ])
     })()
     return () => { alive = false }

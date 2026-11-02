@@ -22,12 +22,16 @@ interface Props {
   sessionId: string
   onSwitchSession?: (sessionId: string) => void
   onNewSession?:    () => void
+  // Text to put in the composer (e.g. from the Approvals inbox "Guide the
+  // agent" button). The nonce makes the same text re-apply on a second click.
+  prefill?:         { text: string; nonce: number } | null
 }
 
-export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession }: Props) {
+export default function SeoChatThread({ sessionId, onSwitchSession, onNewSession, prefill }: Props) {
   const [messages, setMessages] = useState<ChatRow[]>([])
   const [loading, setLoading]   = useState(true)
   const [draft, setDraft]       = useState('')
+  useEffect(() => { if (prefill?.text) setDraft(prefill.text) }, [prefill?.nonce])
   const [sending, setSending]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
   const [unreadBriefings, setUnreadBriefings] = useState<number>(0)
