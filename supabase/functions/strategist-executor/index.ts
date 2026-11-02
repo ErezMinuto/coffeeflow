@@ -26,6 +26,7 @@ import { applyPlannedShot } from '../_shared/shot_library.ts'
 import { ASYNC_DRAFT_HOURS, critiqueOn, LOOP_IMPLEMENTED, readLoopConfig, type LoopConfig } from '../_shared/strategist_loop.ts'
 import { claimLoopRows, finishLoopRow, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 import { callLoopAds } from '../_shared/loop_ads_client.ts'
+import { GOOGLE_SEARCH_SPEC_SYSTEM, googleSearchSpecProblems } from '../_shared/google_search_spec.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -43,8 +44,8 @@ function json(body: unknown, status = 200): Response {
 }
 
 // All three action types now draft (Phase 2b). 'none' is pure advice — skipped.
-// ad_meta runs ONLY through the review loop (draftRec has no non-loop path for it).
-const SUPPORTED: RecommendationRow['action_type'][] = ['content_blog', 'content_ig', 'email_campaign', 'ad_meta']
+// ad_meta / ad_google run ONLY through the review loop (draftRec has no non-loop path).
+const SUPPORTED: RecommendationRow['action_type'][] = ['content_blog', 'content_ig', 'email_campaign', 'ad_meta', 'ad_google']
 
 const runIdOf = (rec: RecommendationRow) => rec.run_id ?? rec.id
 
@@ -269,6 +270,52 @@ async function snapshotMetaAd(supabase: SupabaseClient, rec: RecommendationRow):
   return { kind: 'ad_meta', spec: out.spec, image_url: hit.image_url, product, product_url: hit.permalink ?? null }
 }
 
+// ── ad_google: PAUSED Google SEARCH campaign ─────────────────────────────────
+// No Google spec builder exists outside the chat, so the executor writes the
+// spec (one Claude call), checks Google's limits locally, then asks Google to
+// validate it (validate_only: Google writes nothing). One rebuild with the
+// error before giving up. Created only after the critic passes it.
+async function snapshotGoogleAd(supabase: SupabaseClient, rec: RecommendationRow): Promise<Record<string, unknown>> {
+  const p = (rec.action_params ?? {}) as Record<string, any>
+  const keywords = Array.isArray(p.keywords) ? p.keywords.filter((k: unknown) => typeof k === 'string' && k.trim()) : []
+  if (keywords.length === 0) throw new Error('ad_google recommendation needs action_params.keywords (grounded in search terms / GSC)')
+  let landing = typeof p.landing_url === 'string' ? p.landing_url : ''
+  if (typeof p.product === 'string' && p.product.trim()) {
+    const hit = (await fetchMinutoCoffeeCatalog(supabase)).find(c => c.name === p.product.trim())
+    if (!hit) throw new Error(`ad_google product "${p.product}" is not in the Minuto coffee catalog`)
+    if (hit.stock_status !== 'instock') throw new Error(`ad_google product "${p.product}" is out of stock`)
+    landing = hit.permalink ?? landing
+  }
+  if (!landing) throw new Error('ad_google recommendation needs action_params.product or landing_url')
+  const brief = [
+    `Brief: ${rec.title}. ${rec.rationale ?? ''}`,
+    p.angle ? `Angle: ${p.angle}` : '',
+    `Keywords: ${keywords.join(', ')}`,
+    `Landing URL: ${landing}`,
+    `Daily budget ILS: ${p.daily_budget_ils ?? 40}. Duration days: ${p.duration_days ?? 14}.`,
+  ].filter(Boolean).join('\n') + revisionNote(rec)
+  let lastError = ''
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await callClaude({
+      sourceFn: 'strategist-executor', runId: rec.run_id, model: MODEL_CAMPAIGN,
+      system: GOOGLE_SEARCH_SPEC_SYSTEM,
+      messages: [{ role: 'user', content: brief + (lastError ? `\n\nYOUR PREVIOUS SPEC WAS REJECTED. Fix exactly this:\n${lastError}` : '') }],
+      maxTokens: 3000, timeoutMs: 60_000,
+    })
+    let spec: Record<string, unknown>
+    try { spec = parseClaudeJson<Record<string, unknown>>(res.text) } catch { lastError = 'output was not valid JSON'; continue }
+    spec.campaign_type = 'search'
+    const local = googleSearchSpecProblems(spec)
+    if (local.length) { lastError = local.join('; '); continue }
+    try {
+      await callLoopAds({ supabaseUrl: SUPABASE_URL, serviceKey: SERVICE_ROLE }, 'google', 'create',
+        { idea_id: `srec:${rec.id}`, spec, validate_only: true })
+    } catch (e) { lastError = e instanceof Error ? e.message : String(e); continue }
+    return { kind: 'ad_google', spec, keywords, landing_url: landing }
+  }
+  throw new Error(`ad_google spec not valid after 2 attempts: ${lastError.slice(0, 600)}`)
+}
+
 /** Produce a draft for the critic. Synchronous drafters return the snapshot;
  *  async ones (blog/IG, later) enqueue a job and return null. */
 /** The loop flags every strategist brief carries while it is under review. */
@@ -332,6 +379,7 @@ async function draftForCritique(supabase: SupabaseClient, rec: RecommendationRow
     switch (rec.action_type) {
       case 'email_campaign': snapshot = await snapshotEmail(rec); break
       case 'ad_meta':        snapshot = await snapshotMetaAd(supabase, rec); break
+      case 'ad_google':      snapshot = await snapshotGoogleAd(supabase, rec); break
       case 'content_blog':   asyncTask = await draftBlog(supabase, rec, loopFields(rec)); break
       case 'content_ig':     asyncTask = await draftIg(supabase, rec, { ...loopFields(rec), ...(rec.last_feedback ? await reviseIg(rec) : {}) }); break
       default: throw new Error(`action_type ${rec.action_type} has no closed-loop drafter`)
@@ -436,6 +484,19 @@ async function exportMetaAd(rec: RecommendationRow): Promise<string> {
   return `meta_ad:${id}`
 }
 
+async function exportGoogleAd(rec: RecommendationRow): Promise<string> {
+  const d = (rec.artifact_snapshot ?? {}) as Record<string, any>
+  const problems = googleSearchSpecProblems(d.spec)
+  if (problems.length) throw new Error(`ad_google snapshot spec invalid: ${problems.join('; ')}`)
+  // create = a NEW campaign, created PAUSED by google-ads-draft after its claim
+  // and budget guards. Same idea_id returns the existing campaign on a retry.
+  const out = await callLoopAds({ supabaseUrl: SUPABASE_URL, serviceKey: SERVICE_ROLE }, 'google', 'create',
+    { idea_id: `srec:${rec.id}`, spec: d.spec })
+  const id = out.campaign_id
+  if (id == null || id === '') throw new Error('google-ads-draft returned no campaign_id')
+  return `google_ad:${id}`
+}
+
 async function exportRec(supabase: SupabaseClient, rec: RecommendationRow, workerId: string): Promise<{ id: string; status: string; draft_ref?: string; error?: string }> {
   let draftRef: string
   try {
@@ -444,6 +505,7 @@ async function exportRec(supabase: SupabaseClient, rec: RecommendationRow, worke
       case 'content_blog':   draftRef = await exportBlog(supabase, rec); break
       case 'content_ig':     draftRef = await exportIg(supabase, rec); break
       case 'ad_meta':        draftRef = await exportMetaAd(rec); break
+      case 'ad_google':      draftRef = await exportGoogleAd(rec); break
       default: throw new Error(`action_type ${rec.action_type} has no exporter`)
     }
   } catch (e) {

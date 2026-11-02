@@ -99,7 +99,8 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
   const cfg = await readLoopConfig(db)
   check('max_revisions clamped to 2', cfg.max_revisions === 2)
   check('critique on for an implemented type', critiqueOn(cfg, 'email_campaign'))
-  check('critique stays off for a type with no loop code yet', !critiqueOn(cfg, 'ad_google'))
+  check('critique never on for a type with no loop code', !critiqueOn(cfg, 'none'))
+  check('ad_google loop on when switched on', critiqueOn(cfg, 'ad_google'))
   check('ad_meta loop on when switched on', critiqueOn(cfg, 'ad_meta'))
   check('auto-approve needs the critic on', autoApproveOn(cfg, 'email_campaign') && !autoApproveOn(cfg, 'content_blog'))
 }
