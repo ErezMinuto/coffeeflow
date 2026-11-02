@@ -30,6 +30,7 @@ import { freshnessBudgetHours } from './freshness_budget.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { buildApprovalDigest, renderApprovalDigest } from '../_shared/approval_digest.ts'
 import { artisanCoverageFindings } from './artisan_coverage.ts'
 import {
   chatLoopFindings, edgeCrashFindings, visualQaFindings,
@@ -216,6 +217,24 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
   const findings: HealthFinding[] = []
+
+  // ── 0. Daily "waiting for your approval" email ─────────────────────────
+  // Sent once per daily run, only when something waits. Never blocks the
+  // health checks. ?action=approval_digest runs only this (for testing).
+  const digestOnly = new URL(req.url).searchParams.get('action') === 'approval_digest'
+  let digestStatus = 'nothing waiting'
+  try {
+    const sections = await buildApprovalDigest(supabase)
+    if (sections.length > 0) {
+      const { subject, html } = renderApprovalDigest(sections)
+      digestStatus = await sendOwnerEmail({ subject, html, fromName: 'Minuto CoffeeFlow' })
+    }
+    console.log(`[health-watchdog] approval digest: ${digestStatus}`)
+  } catch (e: any) {
+    digestStatus = `error: ${e?.message ?? e}`
+    console.warn(`[health-watchdog] approval digest threw: ${digestStatus}`)
+  }
+  if (digestOnly) return jsonResponse({ ok: true, approval_digest: digestStatus })
 
   // ── 1. Cron registry health — exists, active, ran, succeeded ──────────
   // Uses cron_job_health (reads cron.job + cron.job_run_details) so we catch
@@ -695,7 +714,7 @@ serve(async (req) => {
   // ── 6. Emit findings → ONE consolidated dynamic_experiment task ──────
   if (findings.length === 0) {
     console.log('[health-watchdog] all healthy, no task created')
-    return jsonResponse({ ok: true, healthy: true, findings_count: 0 })
+    return jsonResponse({ ok: true, healthy: true, findings_count: 0, approval_digest: digestStatus })
   }
 
   // Repeating, concrete bugs → strategist_signals for the fixer agent.
