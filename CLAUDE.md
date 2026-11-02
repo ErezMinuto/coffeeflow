@@ -15,6 +15,25 @@ All AI assistants working on this project MUST follow the rules below.
 6. **Never ask for a credential to be pasted into chat.** Everything is in Vault or the
    local store — run `./scripts/secrets-doctor.sh`. See *Credentials* below.
 7. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
+8. **Every change must receive a PASS verdict from a real Gemini QA API call before it is
+   reported done.** Never write, simulate or assume a Gemini verdict or reply yourself. The one
+   exception: a FAIL is acceptable when its only remaining objections are findings the developer
+   explicitly waived (last bullet). Any other finding still blocks.
+   - You may not overrule a Gemini finding on your own authority, and you may not instruct
+     Gemini to drop a finding. You may present evidence and ask it to reconsider.
+   - If you disagree with a finding (you think it is wrong, out of scope, or not worth fixing),
+     send Gemini your counter-argument with the actual code as evidence and iterate until you
+     both agree on a resolution: a code fix you both think is good, or Gemini conceding that the
+     existing code can be left as it is. Apply the agreed fix (if any), then run Gemini QA again.
+   - Gemini is stateless. When it conceded a finding, include its concession verbatim (quoted
+     from its actual reply) in every later Gemini QA request for that change, so it does not
+     raise the same finding again. Never paraphrase or invent a concession.
+   - If you are still split after 2 rounds of argument on a finding, or Gemini QA keeps
+     flagging a finding it already conceded, put both positions to the developer and stop until they answer; never assume or simulate their decision.
+   - If the developer decides the finding must be fixed, fix it and get a Gemini PASS as usual.
+   - If the developer explicitly waives the finding, record it (finding, both positions,
+     decision) in the PR description or report and include it in every later Gemini QA request
+     for that change.
 
 ---
 
