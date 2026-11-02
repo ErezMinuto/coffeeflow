@@ -20,7 +20,13 @@ export type LoopActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 
 // The ops_profile switch can only turn the loop on for a type listed here.
 export const LOOP_IMPLEMENTED: ReadonlySet<string> = new Set<LoopActionType>([
   'email_campaign',
+  'content_blog',
+  'content_ig',
 ])
+
+// An async drafter (writer / IG worker) holds the recommendation in 'drafting'
+// while its task runs. Past this the sweep fails the row (the task is stuck).
+export const ASYNC_DRAFT_HOURS = 3
 
 export interface LoopConfig {
   critique:                 Partial<Record<LoopActionType, boolean>>
