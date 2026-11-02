@@ -19,6 +19,7 @@ import {
   deterministicIssues, feedbackForDrafter, nextStateAfterCritique, normaliseVerdict, passes,
   readLoopConfig, type Verdict,
 } from '../_shared/strategist_loop.ts'
+import { fetchActivePaidCampaigns } from '../seo-agent/services/paidCampaigns.ts'
 import { claimLoopRows, finishLoopRow, MAX_CRITIQUE_ATTEMPTS, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 
 // Verified against GET /v1beta/models on 2026-11-02 (used for the plan review).
@@ -57,6 +58,17 @@ export async function buildCritiqueMessage(supabase: SupabaseClient, rec: Recomm
   ].join('\n')
 }
 
+/** Paid ads are judged against what is already running (overlap, duplicates). */
+async function adContext(supabase: SupabaseClient, actionType: string): Promise<string> {
+  if (!actionType.startsWith('ad_')) return ''
+  try {
+    return `=== ACTIVE CAMPAIGNS (synced, last 30 days) ===\n${JSON.stringify(await fetchActivePaidCampaigns(supabase))}`
+  } catch (e) {
+    // Without this the critic cannot check overlap: say so, so it rejects on missing context.
+    return `=== ACTIVE CAMPAIGNS ===\nUNAVAILABLE (${e instanceof Error ? e.message : String(e)}). You cannot verify overlap with running campaigns: raise a high issue "active_campaigns_unavailable".`
+  }
+}
+
 async function critiqueOne(supabase: SupabaseClient, rec: RecommendationRow, workerId: string): Promise<Record<string, unknown>> {
   // The claim already counted this attempt. A critic that keeps failing (API
   // down, output always unreadable) hands the draft to Erez instead of looping.
@@ -82,7 +94,7 @@ async function critiqueOne(supabase: SupabaseClient, rec: RecommendationRow, wor
         runId:          rec.run_id,
         model:          MODEL_CRITIC,
         system:         DRAFT_CRITIC_SYSTEM_PROMPT,
-        messages:       [{ role: 'user', content: await buildCritiqueMessage(supabase, rec) }],
+        messages:       [{ role: 'user', content: await buildCritiqueMessage(supabase, rec, await adContext(supabase, rec.action_type)) }],
         maxTokens:      16_000,
         temperature:    0.2,
         timeoutMs:      120_000,

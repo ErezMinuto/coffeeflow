@@ -95,11 +95,12 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
   check('missing config = loop off', JSON.stringify(cfg) === JSON.stringify(LOOP_OFF) && !critiqueOn(cfg, 'email_campaign'))
 }
 {
-  const db = fakeTable({ ops_profile: [{ key: 'strategist_loop', value: { critique: { email_campaign: true, ad_meta: true }, auto_approve: { email_campaign: true, content_blog: true }, max_revisions: 99, max_auto_approve_per_run: 3 } }] })
+  const db = fakeTable({ ops_profile: [{ key: 'strategist_loop', value: { critique: { email_campaign: true, ad_meta: true, ad_google: true }, auto_approve: { email_campaign: true, content_blog: true }, max_revisions: 99, max_auto_approve_per_run: 3 } }] })
   const cfg = await readLoopConfig(db)
   check('max_revisions clamped to 2', cfg.max_revisions === 2)
   check('critique on for an implemented type', critiqueOn(cfg, 'email_campaign'))
-  check('critique stays off for a type with no loop code yet', !critiqueOn(cfg, 'ad_meta'))
+  check('critique stays off for a type with no loop code yet', !critiqueOn(cfg, 'ad_google'))
+  check('ad_meta loop on when switched on', critiqueOn(cfg, 'ad_meta'))
   check('auto-approve needs the critic on', autoApproveOn(cfg, 'email_campaign') && !autoApproveOn(cfg, 'content_blog'))
 }
 {
