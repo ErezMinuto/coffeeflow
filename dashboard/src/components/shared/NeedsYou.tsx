@@ -31,9 +31,12 @@ export function NeedsYou() {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [proposals, drafts, review, signals] = await Promise.all([
+      const [proposals, loopDone, drafts, review, signals] = await Promise.all([
         countRows(() => supabase.from('strategic_recommendations')
           .select('*', { count: 'exact', head: true }).eq('status', 'proposed')),
+        // Closed loop: drafts that passed review, or did not pass after 2 revisions.
+        countRows(() => supabase.from('strategic_recommendations')
+          .select('*', { count: 'exact', head: true }).in('status', ['ready_for_review', 'needs_human'])),
         countRows(() => supabase.from('campaigns')
           .select('*', { count: 'exact', head: true }).eq('status', 'draft')),
         countRows(() => supabase.from('seo_tasks')
@@ -44,6 +47,7 @@ export function NeedsYou() {
       if (!alive) return
       setRows([
         { key: 'proposals', icon: '🧠', label: 'המלצות מהאסטרטג לאישור',       to: '/admin/seo-agent?view=inbox',     cta: 'לאישור',  count: proposals },
+        { key: 'loop',      icon: '✅', label: 'טיוטות מהאסטרטג אחרי בדיקה, ממתינות להחלטה שלך', to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה', count: loopDone },
         { key: 'drafts',    icon: '✉️', label: 'טיוטות מייל מוכנות לבדיקה ושליחה', to: '/marketing?tab=history',          cta: 'למרקטינג', count: drafts },
         { key: 'review',    icon: '🖼️', label: 'תוכן שממתין לבדיקה שלך',         to: '/admin/seo-agent?view=inbox', cta: 'לבדיקה',  count: review },
         { key: 'signals',   icon: '⚠️', label: 'התראות שהאסטרטג העלה',           to: '/admin/seo-agent?view=inbox',     cta: 'לצפייה',  count: signals },

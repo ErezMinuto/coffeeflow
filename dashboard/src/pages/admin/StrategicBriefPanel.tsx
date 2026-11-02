@@ -19,8 +19,18 @@ import { supabase } from '../../lib/supabase'
 interface DiagnosisItem { claim: string; evidence: string }
 interface Recommendation { title: string; rationale: string; expected_revenue_effect?: string }
 
-type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
-type RecStatus = 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed'
+type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'ad_meta' | 'ad_google' | 'none'
+type RecStatus =
+  | 'proposed' | 'approved' | 'drafted' | 'dismissed' | 'failed' | 'drafting'
+  // closed loop: draft → critique → revise (max 2) → you
+  | 'awaiting_critique' | 'revising' | 'exporting' | 'ready_for_review' | 'needs_human'
+interface CritiqueEntry {
+  at:       string
+  revision: number
+  pass:     boolean
+  issues:   Array<{ severity: string; rule: string; detail: string }>
+  feedback: string
+}
 interface StrategistRec {
   id:             string
   title:          string
@@ -30,16 +40,33 @@ interface StrategistRec {
   status:         RecStatus
   draft_ref:      string | null
   draft_error:    string | null
+  revision_count?: number
+  critique_log?:   CritiqueEntry[] | null
+  auto_approved?:  boolean
 }
 
 // Content + email all draft (never send/publish); 'none' is pure advice.
-const REC_DRAFTABLE: RecActionType[] = ['content_blog', 'content_ig', 'email_campaign']
+const REC_DRAFTABLE: RecActionType[] = ['content_blog', 'content_ig', 'email_campaign', 'ad_meta', 'ad_google']
 const REC_STATUS_STYLE: Record<RecStatus, string> = {
   proposed:  'bg-surface-100 text-surface-700',
   approved:  'bg-blue-100 text-blue-900',
   drafted:   'bg-green-100 text-green-900',
   dismissed: 'bg-surface-200 text-surface-500',
   failed:    'bg-red-100 text-red-900',
+  drafting:          'bg-blue-50 text-blue-800',
+  awaiting_critique: 'bg-amber-50 text-amber-800',
+  revising:          'bg-amber-50 text-amber-800',
+  exporting:         'bg-blue-50 text-blue-800',
+  ready_for_review:  'bg-green-100 text-green-900',
+  needs_human:       'bg-red-50 text-red-800',
+}
+
+// Where each exported draft waits for you.
+function draftHome(ref: string | null): string {
+  if (ref?.startsWith('campaign:')) return 'review in Marketing → Campaigns (draft), then send there'
+  if (ref?.startsWith('meta_ad:'))  return 'review in Meta Ads Manager (PAUSED); only you can activate it'
+  if (ref?.startsWith('google_ad:')) return 'review in Google Ads (PAUSED); only you can activate it'
+  return 'review in Workspace → Tasks, then publish there'
 }
 
 interface StrategicBrief {
@@ -139,7 +166,7 @@ export default function StrategicBriefPanel() {
     if (latestBrief) {
       const { data: recData } = await supabase
         .from('strategic_recommendations')
-        .select('id,title,rationale,action_type,success_metric,status,draft_ref,draft_error')
+        .select('*')
         .eq('brief_id', latestBrief.id)
         .order('created_at', { ascending: true })
       if (!cancelledRef.current) setRecs((recData ?? []) as StrategistRec[])
@@ -294,13 +321,40 @@ export default function StrategicBriefPanel() {
                                   {r.success_metric?.metric && (
                                     <div className="text-[12px] text-surface-500 mt-0.5">Measure: {r.success_metric.metric}{r.success_metric.check_date ? ` (by ${r.success_metric.check_date})` : ''}</div>
                                   )}
-                                  {r.status === 'drafted' && (
+                                  {(r.status === 'drafted' || r.status === 'ready_for_review') && (
                                     <div className="text-[12px] text-green-700 mt-1">
-                                      Drafted — {r.draft_ref?.startsWith('campaign:')
-                                        ? 'review in Marketing → Campaigns (draft), then send there'
-                                        : 'review in Workspace → Tasks, then publish there'}
-                                      {r.draft_ref ? ` (${r.draft_ref})` : ''}. Nothing was sent or published.
+                                      {r.status === 'ready_for_review' ? 'Passed review' : 'Drafted'} — {draftHome(r.draft_ref)}
+                                      {r.draft_ref ? ` (${r.draft_ref})` : ''}. Nothing was sent, published or activated.
                                     </div>
+                                  )}
+                                  {(r.status === 'awaiting_critique' || r.status === 'revising' || r.status === 'exporting' || r.status === 'drafting') && (
+                                    <div className="text-[12px] text-amber-700 mt-1">
+                                      In the review loop{r.revision_count ? ` (revision ${r.revision_count} of 2)` : ''}. It reaches you once it passes, or after 2 revisions.
+                                    </div>
+                                  )}
+                                  {r.status === 'needs_human' && (
+                                    <div className="text-[12px] text-red-700 mt-1">
+                                      Did not pass review{r.draft_error ? `: ${r.draft_error}` : ''}. Nothing was exported.
+                                    </div>
+                                  )}
+                                  {r.auto_approved && <div className="text-[11px] text-surface-500 mt-0.5">Auto-approved by the strategist loop.</div>}
+                                  {Array.isArray(r.critique_log) && r.critique_log.length > 0 && (
+                                    <details className="mt-1 text-[12px] text-surface-600">
+                                      <summary className="cursor-pointer">Review history ({r.critique_log.length})</summary>
+                                      <ul className="mt-1 space-y-1">
+                                        {r.critique_log.map((c, i) => (
+                                          <li key={i}>
+                                            <span className={c.pass ? 'text-green-700' : 'text-red-700'}>{c.pass ? 'pass' : 'reject'}</span>
+                                            {` · draft ${c.revision + 1}`}
+                                            {c.issues?.length ? (
+                                              <ul className="pl-3 list-disc">
+                                                {c.issues.map((x, j) => <li key={j}><b>{x.severity}</b> {x.rule}: {x.detail}</li>)}
+                                              </ul>
+                                            ) : null}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </details>
                                   )}
                                   {r.status === 'failed' && r.draft_error && (
                                     <div className="text-[12px] text-red-700 mt-1">Draft failed: {r.draft_error}</div>
@@ -311,6 +365,31 @@ export default function StrategicBriefPanel() {
                                 </div>
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${REC_STATUS_STYLE[r.status]}`}>{r.status}</span>
                               </div>
+                              {r.status === 'ready_for_review' && (
+                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                  <button
+                                    onClick={() => setRecStatus(r, 'drafted')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+                                    title="You have handled the draft (published, sent, activated or discarded it)"
+                                  ><ThumbsUp size={12} /> done</button>
+                                </div>
+                              )}
+                              {r.status === 'needs_human' && (
+                                <div className="flex items-center gap-2 mt-2 pl-5">
+                                  <button
+                                    onClick={() => setRecStatus(r, 'exporting')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                                    title="Create the draft anyway (WP draft / campaign draft / PAUSED ad). Nothing is published, sent or activated."
+                                  ><ThumbsUp size={12} /> draft it anyway</button>
+                                  <button
+                                    onClick={() => setRecStatus(r, 'dismissed')}
+                                    disabled={busy === r.id}
+                                    className="inline-flex items-center gap-1 text-xs text-surface-500 hover:text-surface-800 disabled:opacity-50"
+                                  ><X size={12} /> dismiss</button>
+                                </div>
+                              )}
                               {r.status === 'proposed' && (
                                 <div className="flex items-center gap-2 mt-2 pl-5">
                                   <button

@@ -46,11 +46,12 @@ export async function claimRecs(
   actionTypes: string[],
   batch: number,
   nowMs = Date.now(),
+  fromStatus: 'approved' | 'revising' = 'approved',
 ): Promise<RecommendationRow[]> {
   const { data, error } = await supabase
     .from(TABLE)
     .select('*')
-    .eq('status', 'approved')
+    .eq('status', fromStatus)
     .in('action_type', actionTypes)
     .order('created_at', { ascending: true })
     .limit(batch * 2)
@@ -66,7 +67,7 @@ export async function claimRecs(
         updated_at: new Date(nowMs).toISOString(),
       })
       .eq('id', r.id)
-      .eq('status', 'approved')
+      .eq('status', fromStatus)
       .select('*')
       .maybeSingle()
     if (got) claimed.push(got as RecommendationRow)
@@ -82,6 +83,7 @@ export async function finishRec(
   recId: string,
   workerId: string,
   patch: Record<string, unknown>,
+  heldStatus: 'drafting' | 'awaiting_critique' | 'exporting' = 'drafting',
 ): Promise<string | null> {
   let last = ''
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -89,7 +91,7 @@ export async function finishRec(
       .from(TABLE)
       .update({ ...patch, locked_until: null, updated_at: new Date().toISOString() })
       .eq('id', recId)
-      .eq('status', 'drafting')
+      .eq('status', heldStatus)
       .eq('worker_id', workerId)
       .select('id')
       .maybeSingle()
@@ -99,3 +101,4 @@ export async function finishRec(
   }
   return last
 }
+

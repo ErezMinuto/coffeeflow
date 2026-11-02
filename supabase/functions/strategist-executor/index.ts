@@ -22,6 +22,8 @@ import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
 import type { NewSeoTask, RecommendationRow, TextGenerationBrief, InstagramPostBrief, VisualGenerationBrief } from '../seo-agent/types.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { applyPlannedShot } from '../_shared/shot_library.ts'
+import { critiqueOn, LOOP_IMPLEMENTED, readLoopConfig, type LoopConfig } from '../_shared/strategist_loop.ts'
+import { claimLoopRows, finishLoopRow, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -134,8 +136,7 @@ async function draftIg(supabase: SupabaseClient, rec: RecommendationRow): Promis
 }
 
 // ── email_campaign → reuse generate-campaign (draft only, never send) ─────────
-async function draftEmail(rec: RecommendationRow): Promise<string> {
-  if (!COFFEEFLOW_USER_ID) throw new Error('COFFEEFLOW_USER_ID not set — cannot draft a campaign')
+function emailInstructions(rec: RecommendationRow): string {
   const p = rec.action_params ?? {}
   const products = Array.isArray(p.products) ? (p.products as string[]) : []
   // generate-campaign writes the AI copy + HTML + draft row from free-text
@@ -146,14 +147,23 @@ async function draftEmail(rec: RecommendationRow): Promise<string> {
     products.length ? `Feature these Minuto products: ${products.join(', ')}.` : '',
     p.target_segment ? `Audience: the "${p.target_segment}" customer segment.` : '',
   ].filter(Boolean).join('\n')
+  return instructions
+}
 
+async function callGenerateCampaign(instructions: string, persist: boolean): Promise<string> {
+  if (!COFFEEFLOW_USER_ID) throw new Error('COFFEEFLOW_USER_ID not set — cannot draft a campaign')
   const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-campaign`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${SERVICE_ROLE}`, 'apikey': SERVICE_ROLE, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'generate', userId: COFFEEFLOW_USER_ID, campaignType: 'strategist', customInstructions: instructions }),
+    body: JSON.stringify({ action: 'generate', userId: COFFEEFLOW_USER_ID, campaignType: 'strategist', customInstructions: instructions, persist }),
   })
   const text = await res.text()
   if (!res.ok) throw new Error(`generate-campaign ${res.status}: ${text.slice(0, 300)}`)
+  return text
+}
+
+async function draftEmail(rec: RecommendationRow): Promise<string> {
+  const text = await callGenerateCampaign(emailInstructions(rec), true)
   let id: unknown
   try { id = JSON.parse(text)?.campaign?.id } catch { /* fall through */ }
   if (id == null) throw new Error(`generate-campaign returned no campaign id: ${text.slice(0, 200)}`)
@@ -185,6 +195,102 @@ async function draftRec(supabase: SupabaseClient, rec: RecommendationRow, worker
   return { id: rec.id, status: 'drafted', draft_ref: draftRef }
 }
 
+// ── Closed loop (docs/plans/2026-11-02-strategist-closed-loop.md) ────────────
+// For action types with the critic on, a draft is produced WITHOUT leaving
+// CoffeeFlow, kept in artifact_snapshot for the critic, and exported only after
+// it passes (or Erez sends a needs_human draft on anyway).
+
+/** The revision request appended to a drafter's instructions. */
+function revisionNote(rec: RecommendationRow): string {
+  if (!rec.last_feedback) return ''
+  const prev = rec.artifact_snapshot ? JSON.stringify(rec.artifact_snapshot).slice(0, 6000) : '(not kept)'
+  return `\n\nREVISION ${rec.revision_count ?? 1}: a reviewer rejected the previous draft. Write a new draft that fixes every point below and keeps what was not criticised.\nREVIEWER FEEDBACK:\n${rec.last_feedback}\nPREVIOUS DRAFT:\n${prev}`
+}
+
+async function snapshotEmail(rec: RecommendationRow): Promise<Record<string, unknown>> {
+  const text = await callGenerateCampaign(emailInstructions(rec) + revisionNote(rec), false)
+  let campaign: Record<string, unknown> | null = null
+  try { campaign = JSON.parse(text)?.campaign ?? null } catch { /* fall through */ }
+  if (!campaign || typeof campaign.subject !== 'string' || typeof campaign.body !== 'string') {
+    throw new Error(`generate-campaign (persist:false) returned no draft: ${text.slice(0, 200)}`)
+  }
+  return { kind: 'email', ...campaign }
+}
+
+/** Produce a draft for the critic. Synchronous drafters return the snapshot;
+ *  async ones (blog/IG, later) enqueue a job and return null. */
+async function draftForCritique(supabase: SupabaseClient, rec: RecommendationRow, workerId: string): Promise<{ id: string; status: string; error?: string }> {
+  let snapshot: Record<string, unknown>
+  try {
+    switch (rec.action_type) {
+      case 'email_campaign': snapshot = await snapshotEmail(rec); break
+      default: throw new Error(`action_type ${rec.action_type} has no closed-loop drafter`)
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    const notRecorded = await finishRec(supabase, rec.id, workerId, { status: 'failed', draft_error: msg.slice(0, 1000) })
+    if (notRecorded) console.error(`[strategist-executor] ${rec.id} loop draft failed (${msg}) and was not recorded: ${notRecorded}`)
+    return { id: rec.id, status: 'failed', error: msg }
+  }
+  // worker_id NULL = unclaimed for the critic.
+  const notRecorded = await finishRec(supabase, rec.id, workerId, { status: 'awaiting_critique', artifact_snapshot: snapshot, worker_id: null, draft_error: null })
+  if (notRecorded) return { id: rec.id, status: 'unrecorded', error: notRecorded }
+  return { id: rec.id, status: 'awaiting_critique' }
+}
+
+async function exportEmail(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
+  const c = (rec.artifact_snapshot ?? {}) as Record<string, any>
+  if (!COFFEEFLOW_USER_ID) throw new Error('COFFEEFLOW_USER_ID not set — cannot write the campaign draft')
+  const { data, error } = await supabase.from('campaigns').insert({
+    user_id:       COFFEEFLOW_USER_ID,
+    channel:       'email',
+    subject:       c.subject,
+    message:       c.body,
+    html_content:  c.htmlContent,
+    status:        'draft',   // never sent from here: Erez sends it from the marketing UI
+    campaign_type: c.campaignType || 'strategist',
+    product_ids:   Array.isArray(c.productIds) ? c.productIds : [],
+    preheader:     c.preheader,
+    cta_text:      c.ctaText,
+    cta_url:       c.ctaUrl,
+  }).select('id').single()
+  if (error || !data) throw new Error(`campaigns insert failed: ${error?.message ?? 'no row'}`)
+  return `campaign:${data.id}`
+}
+
+async function exportRec(supabase: SupabaseClient, rec: RecommendationRow, workerId: string): Promise<{ id: string; status: string; draft_ref?: string; error?: string }> {
+  let draftRef: string
+  try {
+    switch (rec.action_type) {
+      case 'email_campaign': draftRef = await exportEmail(supabase, rec); break
+      default: throw new Error(`action_type ${rec.action_type} has no exporter`)
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    const notRecorded = await finishLoopRow(supabase, rec.id, workerId, 'exporting', { status: 'failed', draft_error: `export failed: ${msg.slice(0, 900)}` })
+    if (notRecorded) console.error(`[strategist-executor] ${rec.id} export failed (${msg}) and was not recorded: ${notRecorded}`)
+    return { id: rec.id, status: 'failed', error: msg }
+  }
+  const notRecorded = await finishLoopRow(supabase, rec.id, workerId, 'exporting', { status: 'ready_for_review', draft_ref: draftRef, draft_error: null })
+  if (notRecorded) {
+    console.error(`[strategist-executor] ${rec.id} exported as ${draftRef} but not recorded: ${notRecorded}`)
+    return { id: rec.id, status: 'exported_unrecorded', draft_ref: draftRef, error: notRecorded }
+  }
+  return { id: rec.id, status: 'ready_for_review', draft_ref: draftRef }
+}
+
+async function runLoop(supabase: SupabaseClient, cfg: LoopConfig, workerId: string) {
+  const loopTypes = [...LOOP_IMPLEMENTED].filter(t => critiqueOn(cfg, t))
+  const out: Array<Record<string, unknown>> = []
+  // Export first: those drafts already passed and Erez is waiting on them.
+  for (const rec of await claimLoopRows(supabase, 'exporting', workerId, BATCH)) out.push(await exportRec(supabase, rec, workerId))
+  if (loopTypes.length) {
+    // Revisions call the drafter again (~30-50 s each): 2 per tick keeps the tick bounded.
+    for (const rec of await claimRecs(supabase, workerId, loopTypes, 2, Date.now(), 'revising')) out.push(await draftForCritique(supabase, rec, workerId))
+  }
+  return { loopTypes, results: out }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   // Only cron (and other functions) run this. The gateway's verify_jwt still
@@ -193,18 +299,23 @@ serve(async (req) => {
   const supabase = createSupabase()
   const workerId = `exec-${crypto.randomUUID().slice(0, 8)}`
   try {
-    const swept = await sweepStaleDrafting(supabase)
+    const cfg = await readLoopConfig(supabase)
+    const swept = (await sweepStaleDrafting(supabase)) + (await sweepStaleLoop(supabase))
+    const loop = await runLoop(supabase, cfg, workerId)
     const recs = await claimRecs(supabase, workerId, SUPPORTED, BATCH)
-    if (recs.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft', swept_stale: swept || undefined })
-    const results = []
-    for (const rec of recs) results.push(await draftRec(supabase, rec, workerId))
+    if (recs.length === 0 && loop.results.length === 0) return json({ ok: true, idle: 'no approved recommendations to draft', swept_stale: swept || undefined })
+    const results: Array<Record<string, unknown>> = []
+    // Critic on for this type → draft for review; otherwise the original path.
+    for (const rec of recs) results.push(critiqueOn(cfg, rec.action_type) ? await draftForCritique(supabase, rec, workerId) : await draftRec(supabase, rec, workerId))
     return json({
       ok: true,
       drafted: results.filter(r => r.status === 'drafted').length,
+      for_critique: results.filter(r => r.status === 'awaiting_critique').length || undefined,
       failed: results.filter(r => r.status === 'failed').length,
       unrecorded: results.filter(r => r.status === 'drafted_unrecorded').length || undefined,
       swept_stale: swept || undefined,
       results,
+      loop: loop.results.length ? loop.results : undefined,
     })
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)

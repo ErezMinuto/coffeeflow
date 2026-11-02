@@ -649,7 +649,7 @@ export interface BusinessSnapshot {
 // emits these structured inside conclude_brief; conclude_brief promotes each into
 // a strategic_recommendations row the human approves in the dashboard.
 
-export type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
+export type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'ad_meta' | 'ad_google' | 'none'
 
 /** Attributable success metric — the Phase-1 weakness fix. Every recommendation
  *  must say HOW it will be measured (source + baseline + when), preferring a
@@ -693,7 +693,10 @@ export interface BriefRecommendation {
   success_metric: SuccessMetric
 }
 
-export type RecStatus = 'proposed' | 'approved' | 'drafting' | 'drafted' | 'dismissed' | 'failed'
+export type RecStatus =
+  | 'proposed' | 'approved' | 'drafting' | 'drafted' | 'dismissed' | 'failed'
+  // closed loop (20261102a): see _shared/strategist_loop.ts
+  | 'awaiting_critique' | 'revising' | 'exporting' | 'ready_for_review' | 'needs_human'
 
 /** A strategic_recommendations row (the execution ledger). */
 export interface RecommendationRow {
@@ -713,4 +716,11 @@ export interface RecommendationRow {
   worker_id:      string | null
   created_at:     string
   updated_at:     string
+  // closed loop (20261102a). Optional: absent until the migration is applied.
+  revision_count?:    number
+  critique_attempts?: number
+  critique_log?:      unknown[]
+  last_feedback?:     string | null
+  artifact_snapshot?: Record<string, unknown> | null
+  auto_approved?:     boolean
 }
