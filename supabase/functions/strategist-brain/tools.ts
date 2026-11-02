@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
+import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from '../_shared/marketing_intel.ts'
@@ -478,6 +479,19 @@ async function handleConcludeBrief(
       } }
     }
   }
+  // Paid-ad recommendations: real product / grounded keywords / sane budget,
+  // at most MAX_AD_RECS_PER_BRIEF. They become PAUSED drafts at most; only
+  // Erez activates an ad.
+  if (recsIn.some(r => r.action_type === 'ad_meta' || r.action_type === 'ad_google')) {
+    const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+    const problems = adRecommendationProblems(recsIn as Array<{ title?: string; action_type?: string; action_params?: Record<string, unknown> }>, lineup)
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — paid-ad recommendations: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        minuto_coffee_lineup: lineup,
+      } }
+    }
+  }
   const { data: brief, error } = await supabase
     .from('strategic_briefs')
     .insert({
@@ -694,8 +708,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
             properties: {
               title: { type: 'string' },
               rationale: { type: 'string' },
-              action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, or none (pure advice)' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}' },
+              action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
