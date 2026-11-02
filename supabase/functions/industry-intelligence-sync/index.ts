@@ -212,10 +212,15 @@ serve(async (req) => {
   }
 
   await log.finish(status, stats)
+  // Every source failing (typically all feeds answering 403) is a failed run,
+  // not a success with a flag: ok:false + HTTP 502 so the caller and the cron
+  // response log see it. Partial failures and quiet days stay ok:true +
+  // degraded, since the run did what it could.
   return jsonResponse({
-    ok: true, degraded, run_id: log.runId,
+    ok: !allSourcesFailed, degraded, run_id: log.runId,
+    ...(allSourcesFailed ? { error: `all ${stats.sources_polled} sources failed: ${stats.errors.slice(0, 3).map(e => `${e.source}: ${e.error}`).join('; ')}` } : {}),
     started_at: startedAt, finished_at: new Date().toISOString(), stats,
-  })
+  }, allSourcesFailed ? 502 : 200)
 })
 
 // ─────────────────────────────────────────────────────────────────────────
