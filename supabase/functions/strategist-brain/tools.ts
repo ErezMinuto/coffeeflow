@@ -16,6 +16,10 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.
 import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
 import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
 import {
+  getCurrentCapabilities, getOpsProfile, getResearchFindings, getSeoLearnings, handleEmitInnovationPitch, RESEARCH_TOOL_DEFS,
+} from './research_tools.ts'
+import type { PitchInput } from '../_shared/innovation_pitch.ts'
+import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from '../_shared/marketing_intel.ts'
 import type { ToolDefinition } from '../seo-agent/claude.ts'
@@ -730,6 +734,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
       required: ['summary', 'diagnosis'],
     },
   },
+  // Research + innovation pitches (research_tools.ts).
+  ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
 
 /** Dispatch a tool_use to its handler. Returns the outcome (and `concluded`
@@ -755,6 +761,11 @@ export async function dispatchTool(
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
       case 'conclude_brief':              return await handleConcludeBrief(supabase, ctx, input as Parameters<typeof handleConcludeBrief>[2])
+      case 'get_research_findings':       return { result: await getResearchFindings(supabase) }
+      case 'get_ops_profile':             return { result: await getOpsProfile(supabase) }
+      case 'get_seo_learnings':           return { result: await getSeoLearnings(supabase, input as { limit?: number }) }
+      case 'get_current_capabilities':    return { result: await getCurrentCapabilities(supabase) }
+      case 'emit_innovation_pitch':       return { result: await handleEmitInnovationPitch(supabase, ctx, input as unknown as PitchInput) }
       default:                            return { result: { error: `unknown tool: ${name}` } }
     }
   } catch (e) {
