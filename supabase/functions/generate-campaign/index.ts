@@ -728,6 +728,10 @@ interface GeneratePayload {
   customInstructions?: string;
   campaignType?: string;
   pinnedProductIds?: number[];
+  // false = return the generated draft WITHOUT writing a campaigns row. The
+  // strategist loop keeps the draft in strategic_recommendations.artifact_snapshot
+  // while the critic reviews it, and writes the campaigns row once, on pass.
+  persist?: boolean;
 }
 
 async function handleGenerate(p: GeneratePayload) {
@@ -1113,7 +1117,28 @@ ${p.customInstructions
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
   });
 
-  // 9. Save draft to database
+  // 9. Save draft to database (skipped for persist:false — see GeneratePayload)
+  if (p.persist === false) {
+    return ok({
+      ok:       true,
+      persisted: false,
+      campaign: {
+        id:           null,
+        subject:      campaign.subject,
+        preheader:    campaign.preheader,
+        greeting:     campaign.greeting,
+        body:         campaign.body,
+        ctaText:      campaign.cta_text,
+        ctaUrl:       campaign.cta_url,
+        theme:        campaign.campaign_theme,
+        bannerUrl,
+        products:     selectedProducts.map((pr: any) => ({ name: pr.name, permalink: pr.permalink })),
+        productIds:   selectedIds.map(String),
+        htmlContent,
+        campaignType: p.campaignType || "auto",
+      },
+    });
+  }
   const { data: inserted, error: insertErr } = await supabase
     .from("campaigns")
     .insert({

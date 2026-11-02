@@ -13,6 +13,7 @@
 // or spends. Every tool touches only the strategist's own tables or reads.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from '../_shared/marketing_intel.ts'
@@ -500,16 +501,28 @@ async function handleConcludeBrief(
   // a brief that's already persisted must not unwind if this insert hiccups.
   const recs = input.recommendations ?? []
   if (recs.length > 0) {
-    const rows = recs.map(r => ({
-      brief_id:       briefId,
-      run_id:         ctx.runId,
-      title:          r.title,
-      rationale:      r.rationale ?? null,
-      action_type:    r.action_type ?? 'none',
-      action_params:  r.action_params ?? {},
-      success_metric: r.success_metric ?? {},
-      status:         'proposed',
-    }))
+    // Closed loop: for action types Erez has switched to auto-approve (and only
+    // where the draft critic is on), the row skips the planning gate and goes
+    // straight to the executor, capped per run. The final human gate (publish /
+    // send / activate) is untouched. Config missing or unreadable = all proposed.
+    const loopCfg = await readLoopConfig(supabase)
+    let autoLeft = loopCfg.max_auto_approve_per_run
+    const rows = recs.map(r => {
+      const actionType = r.action_type ?? 'none'
+      const auto = autoLeft > 0 && autoApproveOn(loopCfg, actionType)
+      if (auto) autoLeft--
+      return {
+        brief_id:       briefId,
+        run_id:         ctx.runId,
+        title:          r.title,
+        rationale:      r.rationale ?? null,
+        action_type:    actionType,
+        action_params:  r.action_params ?? {},
+        success_metric: r.success_metric ?? {},
+        status:         auto ? 'approved' : 'proposed',
+        ...(auto ? { auto_approved: true } : {}),
+      }
+    })
     const { error: recErr } = await supabase.from('strategic_recommendations').insert(rows)
     if (recErr) console.warn(`[strategist] recommendation rows insert failed (non-fatal): ${recErr.message}`)
   }

@@ -119,6 +119,10 @@ const EXPECTED_CRONS: Array<{
   // strategist-brain-advance and strategist-executor; -b fires
   // seo-worker-research and seo-worker-techseo. Both run every 5 minutes.
   { jobname: 'cf-dispatch-workers-a',               max_silence_hours: 1,  required: true  },
+  // Strategist closed loop: the draft critic (20261102b). Not required until
+  // the loop is on everywhere; a silent critic leaves drafts in
+  // awaiting_critique, which check 1d below also reports.
+  { jobname: 'strategist-critic-tick',              max_silence_hours: 1,  required: false },
   // Added 2026-06-21 after woo-orders-sync silently froze for 12 days: its
   // cron was never registered, so nothing was watching it. These are the
   // remaining business-critical schedules that feed customer-facing flows.
@@ -205,7 +209,7 @@ const EXPECTED_FRESH_DATA: Array<{
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
   category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
-            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk'
+            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk' | 'strategist_loop_stuck'
   message:  string
   context?: Record<string, unknown>
 }
@@ -373,6 +377,32 @@ serve(async (req) => {
     } catch (e: any) {
       console.warn(`[health-watchdog] freshness check threw for ${src.table}: ${e?.message ?? e}`)
     }
+  }
+
+  // ── 1d. Strategist closed loop — recommendations stuck mid-loop ─────
+  // Every loop state is transient. A row that has not moved in STUCK_HOURS
+  // means a worker, the critic or a hand-back is not running.
+  try {
+    const STUCK_HOURS = 6
+    const cutoff = new Date(Date.now() - STUCK_HOURS * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('strategic_recommendations')
+      .select('id, status, title, updated_at')
+      .in('status', ['drafting', 'awaiting_critique', 'revising', 'exporting'])
+      .lt('updated_at', cutoff)
+      .limit(20)
+    if (error) console.warn(`[health-watchdog] strategist loop check failed: ${error.message}`)
+    else if ((data ?? []).length > 0) {
+      const rows = data as Array<{ id: string; status: string; title: string; updated_at: string }>
+      findings.push({
+        severity: 'WARN',
+        category: 'strategist_loop_stuck',
+        message:  `${rows.length} strategist recommendation(s) stuck mid-loop for over ${STUCK_HOURS}h: ${rows.slice(0, 5).map(r => `${r.status} "${r.title.slice(0, 50)}"`).join('; ')}`,
+        context:  { rows: rows.map(r => ({ id: r.id, status: r.status, updated_at: r.updated_at })) },
+      })
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] strategist loop check threw: ${e?.message ?? e}`)
   }
 
   // ── 1c. Artisan coverage — roasts logged without their Artisan file ───
