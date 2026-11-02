@@ -15,6 +15,11 @@ All AI assistants working on this project MUST follow the rules below.
 6. **Never ask for a credential to be pasted into chat.** Everything is in Vault or the
    local store — run `./scripts/secrets-doctor.sh`. See *Credentials* below.
 7. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
+8. **Every change gets a Gemini QA pass (PASS/FAIL) before it is reported done.** If you think
+   a Gemini finding is wrong, do **not** overrule it or tell Gemini "do not re-raise". Send Gemini
+   your counter-argument with the actual code as evidence, let it answer, and iterate until you
+   agree on a fix you both think is good. If you are still split after a couple of rounds, put
+   both positions to the developer and let them decide.
 
 ---
 
