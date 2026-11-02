@@ -5,6 +5,7 @@
   var root = document.getElementById('minuto-coffee-quiz');
   if (!root) return;
 
+  var GA4_ID = 'G-Q531JEYSMC';
   var SIMPLE = 'simple', PREMIUM = 'premium';
   var STEPS = [
     { id: 'brew', title: 'איך מכינים קפה אצלך?', options: [
@@ -38,6 +39,18 @@
   var answers = {};
   var stepIndex = 0;
   var interacted = false;
+  var started = false;
+
+  // Analytics must never get in the way of the quiz. The site's gtag already
+  // honors consent, and these events carry quiz choices only, nothing personal.
+  function track(name, params) {
+    try {
+      if (typeof window.gtag !== 'function') return;
+      var data = { send_to: GA4_ID };
+      Object.keys(params || {}).forEach(function (k) { data[k] = params[k]; });
+      window.gtag('event', name, data);
+    } catch (e) { /* ignored on purpose */ }
+  }
 
   function el(tag, className, text) {
     var n = document.createElement(tag);
@@ -64,6 +77,10 @@
 
   function answer(step, value) {
     interacted = true;
+    if (!started) {
+      started = true;
+      track('quiz_start');
+    }
     if (step.id === 'extra') {
       answers.light = value === 'light';
       answers.natural = value === 'natural';
@@ -117,6 +134,9 @@
     if (c.price) body.appendChild(el('p', 'mq-price', c.price));
     var a = el('a', 'mq-button', c.cart ? 'הוספה לסל' : 'לבחירת טחינה');
     a.href = c.cart || c.url;
+    a.addEventListener('click', function () {
+      track('quiz_click', { coffee: c.name, click_action: c.cart ? 'add_to_cart' : 'choose_grind', transport_type: 'beacon' });
+    });
     body.appendChild(a);
     card.appendChild(body);
     return card;
@@ -130,6 +150,7 @@
       extras: catalog.filter(function (c) { return c.extra || c.limited; }),
     };
     var keys = window.MinutoQuizEngine.recommend(answers, available);
+    track('quiz_result', { brew: answers.brew, milk: answers.milk, taste: answers.taste, strength: answers.strength });
     var wrap = el('div', 'mq-result');
     var title = heading('הקפה שמתאים לך');
     wrap.appendChild(title);
@@ -141,7 +162,7 @@
     wrap.appendChild(cards);
     var again = el('button', 'mq-link', 'להתחיל מחדש');
     again.type = 'button';
-    again.addEventListener('click', function () { answers = {}; stepIndex = 0; render(); });
+    again.addEventListener('click', function () { answers = {}; stepIndex = 0; started = false; render(); });
     wrap.appendChild(again);
     root.appendChild(wrap);
     focusHeading(title);
