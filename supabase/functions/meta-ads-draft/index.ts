@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { adCopyBrandViolation } from '../seo-agent/services/brandGuard.ts'
+import { checkForwardBudget } from '../_shared/ad_budget_guard.ts'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 
 // Creates a PAUSED ad campaign in Meta Ads Manager from a build_meta_campaign
@@ -309,6 +310,22 @@ serve(async (req) => {
       )
     }
 
+    // Forward-looking guard (_shared/ad_budget_guard.ts): what RUNNING
+    // campaigns and queued PAUSED drafts will still spend, not just what was
+    // spent. Live from Meta; any unreadable budget refuses the draft.
+    {
+      const live = await liveBudgets(ctx, supabase)
+      // Month boundaries in the ad account's own time zone.
+      const tzRes = await fetch(`${GRAPH}/${ctx.adAccountId}?fields=timezone_name&access_token=${ctx.userToken}`)
+      const tzJson = await tzRes.json()
+      if (tzJson.error || !tzJson.timezone_name) throw new Error(`budget guard: could not read the ad account time zone: ${tzJson.error?.message ?? 'missing'}`)
+      const fwd = checkForwardBudget({
+        mtdSpend, activeDaily: live.activeDaily, committedDrafts: live.committedDrafts,
+        newDaily: reqDaily, newDurationDays: reqDuration, monthlyCap, timeZone: tzJson.timezone_name,
+      })
+      if (!fwd.ok) throw new Error(`budget guard: ${fwd.reasons.join('; ')} (META_MONTHLY_BUDGET_ILS)`)
+    }
+
     const warnings: string[] = []
 
     // ── 1. Campaign ────────────────────────────────────────────────────────
@@ -606,6 +623,67 @@ function round2(n: number): number { return Math.round(n * 100) / 100 }
 
 // Account-level ad spend from Meta for a date_preset (e.g. this_month,
 // last_month). Meta computes the range in the ad account's own timezone.
+// Live budgets for the forward guard. Meta returns budgets in minor units.
+//  • active: every campaign Meta reports effective_status ACTIVE. Its daily
+//    budget is on the campaign (CBO) or, if not, the sum of its ACTIVE ad
+//    sets' daily budgets (ABO). A lifetime budget cannot be projected per day,
+//    so it refuses the draft rather than counting as ₪0.
+//  • committed: our own drafts (meta_ad_drafts) whose campaign still exists
+//    and is PAUSED on Meta. Deleted / archived drafts drop out by themselves.
+// deno-lint-ignore no-explicit-any
+async function liveBudgets(ctx: AdsContext, supabase: { from(t: string): any }): Promise<{
+  activeDaily: number[]; committedDrafts: Array<{ daily: number; durationDays: number }>
+}> {
+  const campaigns: any[] = []
+  // Only ACTIVE + PAUSED: deleted / archived history would otherwise fill the pages.
+  const statusFilter = (v: string[]) => encodeURIComponent(JSON.stringify([{ field: 'effective_status', operator: 'IN', value: v }]))
+  let url: string | null = `${GRAPH}/${ctx.adAccountId}/campaigns?fields=id,effective_status,daily_budget,lifetime_budget&filtering=${statusFilter(['ACTIVE', 'PAUSED'])}&limit=200&access_token=${ctx.userToken}`
+  for (let page = 0; url && page < 20; page++) {
+    const r: Response = await fetch(url)
+    // deno-lint-ignore no-explicit-any
+    const j: any = await r.json()
+    if (j.error) throw new Error(`budget guard: campaigns list failed: ${j.error.message}`)
+    campaigns.push(...(j.data ?? []))
+    url = j.paging?.next ?? null
+  }
+  if (url) throw new Error('budget guard: more than 4000 campaigns, refusing rather than guessing')
+  const activeDaily: number[] = []
+  for (const c of campaigns.filter(c => c.effective_status === 'ACTIVE')) {
+    if (c.daily_budget != null && c.daily_budget !== '') { activeDaily.push(Number(c.daily_budget) / 100); continue }
+    if (c.lifetime_budget != null && c.lifetime_budget !== '' && Number(c.lifetime_budget) > 0) {
+      throw new Error(`budget guard: active campaign ${c.id} uses a lifetime budget, which cannot be projected per day; refusing`)
+    }
+    const adsets: any[] = []
+    let next: string | null = `${GRAPH}/${c.id}/adsets?fields=effective_status,daily_budget,lifetime_budget&filtering=${statusFilter(['ACTIVE'])}&limit=200&access_token=${ctx.userToken}`
+    for (let page = 0; next && page < 20; page++) {
+      const r: Response = await fetch(next)
+      // deno-lint-ignore no-explicit-any
+      const j: any = await r.json()
+      if (j.error) throw new Error(`budget guard: ad sets of ${c.id}: ${j.error.message}`)
+      adsets.push(...(j.data ?? []))
+      next = j.paging?.next ?? null
+    }
+    if (next) throw new Error(`budget guard: campaign ${c.id} has more than 4000 active ad sets, refusing rather than guessing`)
+    for (const a of adsets.filter((a: any) => a.effective_status === 'ACTIVE')) {
+      if (a.lifetime_budget != null && a.lifetime_budget !== '' && Number(a.lifetime_budget) > 0 && (a.daily_budget == null || a.daily_budget === '')) {
+        throw new Error(`budget guard: active ad set in campaign ${c.id} uses a lifetime budget; refusing`)
+      }
+      activeDaily.push(a.daily_budget == null || a.daily_budget === '' ? NaN : Number(a.daily_budget) / 100)
+    }
+  }
+  // Only drafts whose campaign is PAUSED on Meta, read by id in chunks so no
+  // row is lost to PostgREST's default row cap.
+  const pausedIds = campaigns.filter(c => c.effective_status === 'PAUSED').map(c => String(c.id))
+  const committedDrafts: Array<{ daily: number; durationDays: number }> = []
+  for (let i = 0; i < pausedIds.length; i += 200) {
+    const { data: drafts, error } = await supabase.from('meta_ad_drafts')
+      .select('campaign_id, daily_budget_ils, spec').in('campaign_id', pausedIds.slice(i, i + 200))
+    if (error) throw new Error(`budget guard: meta_ad_drafts read failed: ${error.message}`)
+    for (const d of (drafts ?? []) as any[]) committedDrafts.push({ daily: d.daily_budget_ils, durationDays: d?.spec?.duration_days ?? 14 })
+  }
+  return { activeDaily, committedDrafts }
+}
+
 async function accountSpend(ctx: AdsContext, preset: string): Promise<number> {
   const url = `${GRAPH}/${ctx.adAccountId}/insights?fields=spend&level=account&date_preset=${preset}&access_token=${ctx.userToken}`
   const r = await fetch(url)
