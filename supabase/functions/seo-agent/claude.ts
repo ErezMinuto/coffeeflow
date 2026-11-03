@@ -520,33 +520,53 @@ function logCost(opts: CallClaudeOptions, usage: TokenUsage): void {
   }
 }
 
-// Robust JSON parser for Claude's text output. Claude sometimes wraps
-// JSON in markdown fences (```json ... ```) or prepends a one-line
-// "Here's the JSON:" preamble. This finds the first {...} or [...]
-// block and parses it.
+// Robust JSON parser for model text output. Models sometimes wrap JSON in
+// markdown fences (```json ... ```) or prepend prose before it. This returns
+// the first balanced {...} or [...] block that actually PARSES.
+//
+// "Actually parses" matters: on 2026-10-21 the writer printed a self-check
+// list before its JSON, and that list held a markdown link
+// "[פולי קפה ...](https://...)". Taking the first bracket blindly made the
+// parser try the link as JSON, so all 3 attempts failed and no article was
+// written. A candidate that fails to parse is now skipped, not fatal.
 export function parseClaudeJson<T = unknown>(text: string): T {
-  // Strip leading/trailing markdown fences if present.
-  let cleaned = text.trim()
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-  if (fenceMatch) cleaned = fenceMatch[1].trim()
+  const raw = text.trim()
+  // A fenced block is the likeliest home for the JSON, so try it first, but
+  // fall back to the whole text: a fence may hold something else entirely.
+  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+  const sources = fenceMatch ? [fenceMatch[1].trim(), raw] : [raw]
 
-  // Find first balanced JSON object/array.
-  const firstBrace = cleaned.indexOf('{')
-  const firstBracket = cleaned.indexOf('[')
-  let start: number
-  if (firstBrace === -1) start = firstBracket
-  else if (firstBracket === -1) start = firstBrace
-  else start = Math.min(firstBrace, firstBracket)
-  if (start < 0) throw new Error(`No JSON in Claude response: ${text.slice(0, 200)}`)
+  let firstError: unknown = null
+  let sawCandidate = false
+  for (const cleaned of sources) {
+    for (let start = 0; start < cleaned.length; start++) {
+      const openChar = cleaned[start]
+      if (openChar !== '{' && openChar !== '[') continue
+      sawCandidate = true
+      const end = matchingClose(cleaned, start)
+      if (end < 0) continue
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1)) as T
+      } catch (e) {
+        firstError ??= e
+      }
+    }
+  }
+  if (!sawCandidate) throw new Error(`No JSON in Claude response: ${text.slice(0, 200)}`)
+  if (firstError) throw firstError
+  throw new Error(`Unbalanced JSON in Claude response: ${raw.slice(0, 200)}`)
+}
 
-  // Walk from start, tracking depth, to find the matching close.
-  const openChar  = cleaned[start]
+// Index of the bracket closing the one at `start`, skipping string contents;
+// -1 when it never closes.
+function matchingClose(s: string, start: number): number {
+  const openChar  = s[start]
   const closeChar = openChar === '{' ? '}' : ']'
   let depth = 0
   let inString = false
   let escaped = false
-  for (let i = start; i < cleaned.length; i++) {
-    const c = cleaned[i]
+  for (let i = start; i < s.length; i++) {
+    const c = s[i]
     if (escaped) { escaped = false; continue }
     if (c === '\\' && inString) { escaped = true; continue }
     if (c === '"') { inString = !inString; continue }
@@ -554,11 +574,8 @@ export function parseClaudeJson<T = unknown>(text: string): T {
     if (c === openChar) depth++
     else if (c === closeChar) {
       depth--
-      if (depth === 0) {
-        const slice = cleaned.slice(start, i + 1)
-        return JSON.parse(slice) as T
-      }
+      if (depth === 0) return i
     }
   }
-  throw new Error(`Unbalanced JSON in Claude response: ${cleaned.slice(start, start + 200)}`)
+  return -1
 }
