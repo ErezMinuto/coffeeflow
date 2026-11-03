@@ -1,0 +1,93 @@
+# Pre-merge QA guard. Static checks against the rules in CLAUDE.md / GEMINI.md
+# on every PR into main: NO_VERIFY_JWT kept, supabase-js pinned to 2.116.0,
+# filterByUser:false on shared tables, no credential leaks, no hard-coded
+# prompt overrides. See scripts/ci/qa_review.py for the exact rules.
+#
+# On a FAIL it posts (or updates) one sticky comment on the PR and the job
+# fails. To make that BLOCK the merge button, mark "QA review / qa" as a
+# required status check in GitHub → Settings → Branches → main.
+#
+# No secrets, no network beyond GitHub: it never talks to Supabase.
+name: QA review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write   # the sticky summary comment
+
+concurrency:
+  group: qa-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # merge-base + per-function bundle walk need history
+
+      - name: Static QA checks
+        id: qa
+        run: |
+          git fetch -q origin main
+          # Run the checker as it is on MAIN, not as this PR edited it, so a PR
+          # cannot relax the rules it is judged by. First introduction (not on
+          # main yet) falls back to the PR's copy. The self-test below covers
+          # changes to the checker itself.
+          if git show origin/main:scripts/ci/qa_review.py > "$RUNNER_TEMP/qa_review.py" 2>/dev/null; then
+            CHECKER="$RUNNER_TEMP/qa_review.py"
+            # It imports edge_affected from its own directory; give it main's too.
+            git show origin/main:scripts/ci/edge_affected.py > "$RUNNER_TEMP/edge_affected.py"
+          else
+            CHECKER=scripts/ci/qa_review.py
+          fi
+          # `python3 scripts/ci/edge_affected.py origin/main HEAD` decides which
+          # function bundles are checked; qa_review.py calls it internally.
+          set +e
+          python3 "$CHECKER" origin/main HEAD --report qa-report.md
+          code=$?
+          set -e
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          cat qa-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Self-test the checker (only when this PR changes it)
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -qE '^scripts/ci/(qa_review\.py|qa_review_test\.sh|edge_affected\.py)$'; then
+            bash scripts/ci/qa_review_test.sh
+          else
+            echo "checker unchanged — skipped"
+          fi
+
+      - name: Post summary comment
+        # Fork PRs get a read-only token; the job result still gates the merge.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          QA_EXIT: ${{ steps.qa.outputs.exit }}
+        run: |
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- qa-review -->")) | .id' | head -1)
+          clean=$(grep -c 'all checks passed' qa-report.md || true)
+          if [ -n "$existing" ]; then
+            # Keep one comment, always current — including flipping to green.
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -F body=@qa-report.md >/dev/null
+          elif [ "$clean" = "0" ]; then
+            # Only start a comment thread when there is something to say.
+            gh pr comment "$PR" --repo "$REPO" --body-file qa-report.md
+          fi
+
+      - name: Gate
+        env:
+          QA_EXIT: ${{ steps.qa.outputs.exit }}
+        run: |
+          if [ "$QA_EXIT" != "0" ]; then
+            echo "::error::QA review found blocking issues — see the PR comment or the job summary."
+            exit 1
+          fi

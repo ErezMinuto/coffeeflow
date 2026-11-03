@@ -16,7 +16,7 @@
 // Each invoice and each charge is used once; closest date wins, a name match
 // breaks ties.
 
-import { namesMatch } from './ledgerReconcile';
+import { namesMatch, findReversals } from './ledgerReconcile';
 
 const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
 const clean = (s) => String(s ?? '').replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim();
@@ -116,4 +116,57 @@ export function reconcileCard(invoices, lines) {
     }
   }
   return { matches, missing: lines.filter((_, i) => !usedLine.has(i)) };
+}
+
+// ── card charges vs the bookkeeper's ledger ──────────────────────────────────
+// Was every charge booked? The ledger books a VAT invoice BEFORE VAT, a
+// no-VAT purchase (bank/card import, foreign service, fee) at its full amount,
+// and a vehicle expense (ס"ת חסר: fuel …) with only 2/3 of the VAT deducted,
+// so a charge fits a line at the charge, the charge ÷ 1.18, or the charge
+// minus 2/3 of its VAT (Paz ₪301.00 → ₪270.39 in the Sept 2026 ledger).
+// Only charges dated inside the ledger's period can be checked: a statement for
+// billing month M also holds purchases from M-1, which belong to M-1's ledger.
+
+const VAT = 1.18;
+const fitsAmount = (ledgerAmount, txn) => {
+  const vat = txn - txn / VAT;
+  return [txn, txn - vat, txn - (vat * 2) / 3].some((a) => Math.abs(ledgerAmount - a) <= 1);
+};
+
+const LEDGER_RULES = [
+  { name: 'amount_name', test: (l, c, gap) => gap <= 7 && fitsAmount(l.amount, c.txn_amount) && namesMatch(l.details, c.merchant) },
+  { name: 'amount_date', test: (l, c, gap) => gap <= 3 && fitsAmount(l.amount, c.txn_amount) },
+];
+
+/**
+ * cardLines:   statement lines (all cards)
+ * ledgerLines: the bookkeeper's lines; periods = [{ from, to }] the ledgers cover
+ * → { booked: [{ card, line, rule }], notBooked: charges in the period with no line,
+ *     outside: charges dated outside the ledger period (not checkable) }
+ */
+export function reconcileCardLedger(cardLines, ledgerLines, periods) {
+  const reversed = findReversals(ledgerLines);
+  const used = new Set(reversed);
+  const list = Array.isArray(periods) ? periods : [periods];
+  const inPeriod = (d) => !!d && list.some((p) => d >= p.from && d <= p.to);
+  const checkable = cardLines.filter((c) => inPeriod(c.txn_date));
+  const outside = cardLines.filter((c) => !inPeriod(c.txn_date));
+  const booked = [];
+  const done = new Set();
+
+  for (const rule of LEDGER_RULES) {
+    for (const c of checkable) {
+      if (done.has(c)) continue;
+      let best = -1, bestGap = Infinity;
+      ledgerLines.forEach((l, i) => {
+        if (used.has(i)) return;
+        const gap = dayDiff(l.doc_date, c.txn_date);
+        if (rule.test(l, c, gap) && gap < bestGap) { best = i; bestGap = gap; }
+      });
+      if (best < 0) continue;
+      used.add(best); done.add(c);
+      booked.push({ card: c, line: ledgerLines[best], rule: rule.name });
+    }
+  }
+  return { booked, notBooked: checkable.filter((c) => !done.has(c)), outside };
 }

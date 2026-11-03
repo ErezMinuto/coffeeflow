@@ -1,21 +1,28 @@
 /**
- * rfm-sync — computes RFM scores from woo_orders and refreshes the six
+ * rfm-sync — computes RFM scores from customer_orders and refreshes the six
  * rfm_* contact_groups so the Marketing dashboard can target each segment.
  *
  * Pipeline:
- *   1. Pull all completed woo_orders (paid, not refunded, with a customer_email)
- *   2. Group by customer_email → compute order_count, total_spent, last_order_date,
- *      first_order_date, days_since_last
- *   3. Score each customer on R/F/M using quintile ranking across the full base
+ *   1. Pull every paid web order from customer_orders (2023 onward, identities
+ *      already merged into customer_id). woo_orders only starts in Jan 2026,
+ *      so segments built from it called a ten-order regular "new".
+ *   2. Group by customer_id → order_count, first/last order date,
+ *      days_since_last, lifetime Minuto bean grams, and ₪ spend where
+ *      woo_orders knows the order total (2026 onward only).
+ *   3. Score R/F/M by quintile across the full base. M is lifetime Minuto
+ *      BEAN grams, not ₪: beans are the business goal and customer_orders
+ *      carries no totals, so a one-off machine buyer is no longer a
+ *      "big_spender" ahead of a customer who buys beans every two months.
  *   4. Assign segment based on the R/F/M combination
- *   5. Upsert into customer_rfm (email PK)
+ *   5. Upsert into customer_rfm (email PK, the customer's latest email). Rows
+ *      this run did not write get segment='superseded' (never deleted).
  *   6. Clear + repopulate the six rfm_* contact_groups — but only with emails
  *      that also exist in marketing_contacts with opted_in=true (compliance —
  *      unsubscribed customers stay out of segments even if WooCommerce has
  *      their order history)
  *
- * Cron schedule: daily at 04:30 UTC (07:30 Israel, right after auto-sync).
- * Can also be triggered manually for testing.
+ * Cron: pg_cron job rfm-sync-daily (migration 20261026d). The GitHub
+ * auto-sync.yml schedule that used to call it has been off since 2026-04-21.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -76,98 +83,148 @@ serve(async (req) => {
   const startedAt = new Date().toISOString();
 
   try {
-    // 1. Pull completed orders
-    const { data: orders, error: ordersErr } = await supabase
-      .from("woo_orders")
-      .select("customer_email, order_date, total, status")
-      .in("status", ["completed", "processing"])  // processing counts — paid but not yet fulfilled
-      .not("customer_email", "is", null);
-
-    if (ordersErr) throw new Error(`woo_orders fetch: ${ordersErr.message}`);
-    if (!orders || orders.length === 0) {
+    // 1. Pull paid web orders, paged (PostgREST caps a response at 1000 rows)
+    interface OrderRow {
+      customer_id: string; email_norm: string | null; date_created: string;
+      woo_order_id: number;
+      lines: { name?: string; quantity?: number; is_bean?: boolean; grams_each?: number | null }[] | null;
+    }
+    const orders: OrderRow[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("customer_orders")
+        .select("customer_id, email_norm, date_created, woo_order_id, lines")
+        .in("status", ["completed", "processing"])  // processing counts — paid but not yet fulfilled
+        .eq("resolve_skipped", false)
+        .not("customer_id", "is", null)
+        .order("woo_order_id")
+        .range(from, from + 999);
+      if (error) throw new Error(`customer_orders fetch: ${error.message}`);
+      orders.push(...((data ?? []) as OrderRow[]));
+      if (!data || data.length < 1000) break;
+    }
+    if (orders.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No orders found", customers: 0 }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     }
 
-    // 2. Group by email
+    // ₪ totals exist only in woo_orders (Jan 2026 onward).
+    const totals = new Map<number, number>();
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("woo_orders").select("woo_order_id, total")
+        .order("woo_order_id").range(from, from + 999);
+      if (error) throw new Error(`woo_orders fetch: ${error.message}`);
+      for (const r of (data ?? []) as Array<{ woo_order_id: number; total: number | null }>) {
+        totals.set(r.woo_order_id, Number(r.total) || 0);
+      }
+      if (!data || data.length < 1000) break;
+    }
+
+    // Minuto's own roasted beans only: resold Veneto/Toddy and green coffee
+    // are bean lines too, but they are not what the business is trying to grow.
+    const NOT_MINUTO = /veneto|toddy|ירוק|green/i;
+    const minutoGrams = (o: OrderRow) => (o.lines ?? [])
+      .filter(l => l.is_bean && !NOT_MINUTO.test(l.name ?? ""))
+      .reduce((s, l) => s + (Number(l.quantity) || 0) * (l.grams_each ?? 330), 0);  // unknown size → the standard 330 g bag
+
+    // 2. Group by customer
     interface CustomerRaw {
       email: string;
+      latestAt: string;
       orders: number;
       total: number;
+      grams: number;
       firstDate: string;
       lastDate: string;
     }
-    const byEmail = new Map<string, CustomerRaw>();
+    const byCustomer = new Map<string, CustomerRaw>();
     for (const o of orders) {
-      const email = (o.customer_email ?? "").trim().toLowerCase();
-      if (!email) continue;
-      const existing = byEmail.get(email);
-      if (!existing) {
-        byEmail.set(email, {
-          email,
-          orders: 1,
-          total: Number(o.total) || 0,
-          firstDate: o.order_date,
-          lastDate: o.order_date,
+      const date = o.date_created.slice(0, 10);
+      const grams = minutoGrams(o);
+      const total = totals.get(o.woo_order_id) ?? 0;
+      const c = byCustomer.get(o.customer_id);
+      if (!c) {
+        byCustomer.set(o.customer_id, {
+          email: o.email_norm ?? "", latestAt: o.date_created,
+          orders: 1, total, grams, firstDate: date, lastDate: date,
         });
-      } else {
-        existing.orders++;
-        existing.total += Number(o.total) || 0;
-        if (o.order_date < existing.firstDate) existing.firstDate = o.order_date;
-        if (o.order_date > existing.lastDate)  existing.lastDate  = o.order_date;
+        continue;
       }
+      c.orders++;
+      c.total += total;
+      c.grams += grams;
+      if (date < c.firstDate) c.firstDate = date;
+      if (date > c.lastDate)  c.lastDate  = date;
+      if (o.email_norm && o.date_created > c.latestAt) { c.email = o.email_norm; c.latestAt = o.date_created; }
+      else if (!c.email && o.email_norm) c.email = o.email_norm;
     }
 
     // 3. Compute scores
     const today = new Date();
-    const customers = [...byEmail.values()].map(c => {
-      const daysSinceLast = Math.floor(
-        (today.getTime() - new Date(c.lastDate).getTime()) / (24 * 60 * 60 * 1000)
-      );
-      return { ...c, daysSinceLast };
-    });
+    const customers = [...byCustomer.entries()]
+      .filter(([, c]) => c.email)
+      .map(([customerId, c]) => {
+        const daysSinceLast = Math.floor(
+          (today.getTime() - new Date(c.lastDate).getTime()) / (24 * 60 * 60 * 1000)
+        );
+        return { ...c, customerId, daysSinceLast };
+      });
 
     // Sorted baselines for quintile ranking
     // Recency: fewer days = better → sort ascending, inverted
     const recencyBase  = [...customers].map(c => c.daysSinceLast).sort((a, b) => a - b);
     // Frequency: more orders = better → sort ascending, regular
     const frequencyBase = [...customers].map(c => c.orders).sort((a, b) => a - b);
-    // Monetary: more total = better → sort ascending, regular
-    const monetaryBase = [...customers].map(c => c.total).sort((a, b) => a - b);
+    // Monetary: more Minuto bean grams = better → sort ascending, regular
+    const monetaryBase = [...customers].map(c => c.grams).sort((a, b) => a - b);
 
-    // 4. Upsert scored rows
+    // 4. Upsert scored rows, 500 per request
     let upserted = 0;
     const segmentCounts: Record<string, number> = {};
-
-    for (const c of customers) {
+    const segmentOf = new Map<string, string>();
+    const rows = customers.map(c => {
       // For recency: invert because lower days = higher score
-      // Simplest: rank in descending order of "goodness"
       const rScore = 6 - quintileScore(recencyBase, c.daysSinceLast);  // flipped
       const fScore = quintileScore(frequencyBase, c.orders);
-      const mScore = quintileScore(monetaryBase, c.total);
+      const mScore = quintileScore(monetaryBase, c.grams);
       const segment = assignSegment(rScore, fScore, mScore, c.daysSinceLast);
       segmentCounts[segment] = (segmentCounts[segment] ?? 0) + 1;
-
-      const { error: upErr } = await supabase.from("customer_rfm").upsert({
+      segmentOf.set(c.email, segment);
+      return {
         email:            c.email,
+        customer_id:      c.customerId,
         first_order_date: c.firstDate,
         last_order_date:  c.lastDate,
         order_count:      c.orders,
         total_spent_ils:  Math.round(c.total * 100) / 100,
+        bean_grams:       Math.round(c.grams),
         days_since_last:  c.daysSinceLast,
         r_score:          rScore,
         f_score:          fScore,
         m_score:          mScore,
         segment,
-        updated_at:       new Date().toISOString(),
-      }, { onConflict: "email" });
-
-      if (upErr) {
-        console.error(`[rfm-sync] upsert fail ${c.email}: ${upErr.message}`);
-      } else {
-        upserted++;
-      }
+        updated_at:       startedAt,
+      };
+    });
+    // One row per email: a second row with the same key in one upsert fails the batch.
+    const unique = [...new Map(rows.map(r => [r.email, r])).values()];
+    for (let i = 0; i < unique.length; i += 500) {
+      const batch = unique.slice(i, i + 500);
+      const { error: upErr } = await supabase.from("customer_rfm").upsert(batch, { onConflict: "email" });
+      if (upErr) console.error(`[rfm-sync] upsert fail (rows ${i}-${i + batch.length}): ${upErr.message}`);
+      else upserted += batch.length;
     }
+
+    // Rows from earlier runs whose email is no longer anyone's latest (or that
+    // came from the old woo_orders source) would sit in the table with stale
+    // scores. Mark them instead of deleting them.
+    const { count: superseded, error: supErr } = await supabase
+      .from("customer_rfm")
+      .update({ segment: "superseded" }, { count: "exact" })
+      .lt("updated_at", startedAt)
+      .neq("segment", "superseded");
+    if (supErr) console.error(`[rfm-sync] superseded mark fail: ${supErr.message}`);
 
     // 5. Refresh contact_group memberships
     // Only include emails that are in marketing_contacts + opted_in=true.
@@ -196,12 +253,7 @@ serve(async (req) => {
 
     for (const c of customers) {
       if (!optedInSet.has(c.email)) continue;  // must be opted-in
-      const segment = customers.find(x => x.email === c.email) ? assignSegment(
-        6 - quintileScore(recencyBase, c.daysSinceLast),
-        quintileScore(frequencyBase, c.orders),
-        quintileScore(monetaryBase, c.total),
-        c.daysSinceLast,
-      ) : null;
+      const segment = segmentOf.get(c.email);
       if (!segment) continue;
       const groupName = segmentToGroupName[segment];
       if (groupName) groupMembers[groupName].push({ email: c.email });
@@ -250,6 +302,7 @@ serve(async (req) => {
       finished_at:   new Date().toISOString(),
       total_customers: customers.length,
       rfm_upserted:  upserted,
+      rfm_superseded: superseded ?? 0,
       segment_counts: segmentCounts,
       opted_in_groups: groupSummary,
     }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });

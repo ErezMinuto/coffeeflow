@@ -44,7 +44,18 @@ export type ExperimentSubtype =
 // exactly; workers consume them. Keep them strict so a malformed brief
 // is a parse error, not a runtime mystery.
 
-export interface TextGenerationBrief {
+// ── Strategist closed loop (docs/plans/2026-11-02-strategist-closed-loop.md) ──
+// Set by strategist-executor on briefs it drafts for the critic. A held task
+// generates its draft but does NOT export it (no blog-publish / meta-publish):
+// it hands the draft back to the recommendation for review.
+export interface StrategistLoopFields {
+  strategist_rec_id?: string
+  hold_for_critique?: boolean
+  // Present on a revision: the critic's feedback and the rejected draft.
+  revision?:          { feedback: string; previous?: unknown; number?: number }
+}
+
+export interface TextGenerationBrief extends StrategistLoopFields {
   // Target keyword from GSC, raw user query, or orchestrator-chosen.
   keyword: string
   // The H1 / SEO title for the article. NOT the raw search query.
@@ -107,7 +118,21 @@ export interface VisualGenerationBrief {
     heading: string
     // Optional Hebrew supporting line(s) under the heading.
     body?: string
-  }>
+  }>  // SHOT LIBRARY (docs/image-pipeline/plan.md, _shared/shot_library.ts).
+  // For ig_post visuals: which fixed shot to render and its slots. When set,
+  // scene_brief is only context; seo-worker-visual renders the shot.
+  shot_type?: import('../_shared/shot_library.ts').ShotType
+  shot_slots?: import('../_shared/shot_library.ts').ShotSlots
+  // Caption first (Phase 1b): the Hebrew caption the shot was picked for, the
+  // same one the paired instagram_post publishes.
+  caption_he?: string
+  // The planner's pick while SHOT_LIBRARY_ENABLED is off. Recorded only:
+  // seo-worker-visual renders any brief naming shot_type through the library,
+  // so the pick waits here until the owner turns the flag on.
+  planned_shot?: {
+    shot_type:  import('../_shared/shot_library.ts').ShotType
+    shot_slots: import('../_shared/shot_library.ts').ShotSlots
+  }
 }
 
 export interface DeepResearchBrief {
@@ -171,7 +196,7 @@ export interface DynamicExperimentBrief {
   details?: Record<string, unknown>
 }
 
-export interface InstagramPostBrief {
+export interface InstagramPostBrief extends StrategistLoopFields {
   // Hebrew caption — primary copy. The orchestrator writes it directly
   // (not deferred to a worker) so the strategist owns the brand-voice
   // execution end-to-end. Worker just publishes verbatim.
@@ -628,6 +653,7 @@ export interface BusinessSnapshot {
   open_theses:           TheseSnapshotRow[] | SnapshotError
   resolved_theses:       unknown[] | SnapshotError      // validated/refuted theses + outcomes (Phase 3 learning)
   recent_learnings:      unknown[] | SnapshotError      // LearningRow[]
+  active_paid_campaigns: unknown | SnapshotError        // ActivePaidCampaigns (services/paidCampaigns.ts)
 }
 
 // ── Strategist Brain — Phase 2: actionable recommendations ───────────────────
@@ -635,7 +661,7 @@ export interface BusinessSnapshot {
 // emits these structured inside conclude_brief; conclude_brief promotes each into
 // a strategic_recommendations row the human approves in the dashboard.
 
-export type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'none'
+export type RecActionType = 'email_campaign' | 'content_blog' | 'content_ig' | 'ad_meta' | 'ad_google' | 'none'
 
 /** Attributable success metric — the Phase-1 weakness fix. Every recommendation
  *  must say HOW it will be measured (source + baseline + when), preferring a
@@ -679,7 +705,10 @@ export interface BriefRecommendation {
   success_metric: SuccessMetric
 }
 
-export type RecStatus = 'proposed' | 'approved' | 'drafting' | 'drafted' | 'dismissed' | 'failed'
+export type RecStatus =
+  | 'proposed' | 'approved' | 'drafting' | 'drafted' | 'dismissed' | 'failed'
+  // closed loop (20261102a): see _shared/strategist_loop.ts
+  | 'awaiting_critique' | 'revising' | 'exporting' | 'ready_for_review' | 'needs_human'
 
 /** A strategic_recommendations row (the execution ledger). */
 export interface RecommendationRow {
@@ -699,4 +728,11 @@ export interface RecommendationRow {
   worker_id:      string | null
   created_at:     string
   updated_at:     string
+  // closed loop (20261102a). Optional: absent until the migration is applied.
+  revision_count?:    number
+  critique_attempts?: number
+  critique_log?:      unknown[]
+  last_feedback?:     string | null
+  artifact_snapshot?: Record<string, unknown> | null
+  auto_approved?:     boolean
 }

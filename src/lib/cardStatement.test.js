@@ -1,4 +1,4 @@
-import { parseCardStatement, reconcileCard, toAmount, toDate } from './cardStatement';
+import { parseCardStatement, reconcileCard, reconcileCardLedger, toAmount, toDate } from './cardStatement';
 
 // Shaped like a Bank Leumi card export (HTML saved as .xls), made-up values.
 const HTML = `<html dir="RTL"><body>
@@ -70,5 +70,39 @@ describe('reconcileCard', () => {
     const r = reconcileCard([inv('y', 'יוחננוף', '2026-09-02', 133.2)], two);
     expect(r.matches).toHaveLength(1);
     expect(r.missing.filter((l) => l.merchant.startsWith('יוחננוף'))).toHaveLength(1);
+  });
+});
+
+describe('reconcileCardLedger', () => {
+  // Cases taken from the real Sept 2026 card statements and ledger.
+  const L = (doc_date, amount, details, counter_account = '17113', ref2 = '1') => ({ doc_date, amount, details, counter_account, ref2 });
+  const C = (txn_date, txn_amount, merchant) => ({ txn_date, txn_amount, merchant });
+  const sept = { from: '2026-09-01', to: '2026-09-30' };
+
+  test('booked before VAT, at the full amount, or with 2/3 of the VAT (vehicle)', () => {
+    const r = reconcileCardLedger(
+      [C('2026-09-02', 133.2, 'יוחננוף - אחד העם'), C('2026-09-01', 62.6, 'Google CLOUD 6T2T6R'), C('2026-09-04', 301, 'פז מזכרת בתיה')],
+      [L('2026-09-02', 112.88, 'יוחננוף'), L('2026-09-01', 62.6, 'Google CLOUD 6T2T6R', '18177'), L('2026-09-04', 270.39, 'פז מזכרת בתיה')],
+      sept);
+    expect(r.booked).toHaveLength(3);
+    expect(r.notBooked).toHaveLength(0);
+  });
+  test('a charge with no line of its amount is not booked', () => {
+    const r = reconcileCardLedger([C('2026-09-07', 39.9, 'APPLE.COM/BILL')],
+      [L('2026-09-11', 69.9, 'APPLE.COM/BILL'), L('2026-09-19', 97.9, 'APPLE.COM/BILL')], sept);
+    expect(r.notBooked.map((c) => c.txn_amount)).toEqual([39.9]);
+  });
+  test('August charges on a September statement are outside the September ledger', () => {
+    const r = reconcileCardLedger([C('2026-08-30', 8543, 'סי פרונטו חברה למסחר')], [], sept);
+    expect([r.outside.length, r.notBooked.length]).toEqual([1, 0]);
+  });
+  test('two ledgers cover two months', () => {
+    const r = reconcileCardLedger([C('2026-08-30', 64, 'גונסון')], [L('2026-08-30', 64, 'גונסון')],
+      [{ from: '2026-08-01', to: '2026-08-31' }, sept]);
+    expect(r.booked).toHaveLength(1);
+  });
+  test('same amount, no name match, more than 3 days apart: not booked', () => {
+    const r = reconcileCardLedger([C('2026-09-01', 100, 'א')], [L('2026-09-06', 100, 'ב')], sept);
+    expect(r.notBooked).toHaveLength(1);
   });
 });

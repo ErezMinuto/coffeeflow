@@ -19,6 +19,8 @@ import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-age
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from "../_shared/marketing_intel.ts";
+import { checkBlogProducts } from "../_shared/blog_products.ts";
+import { fetchMinutoCoffeeCatalog } from "../seo-agent/services/cmsApi.ts";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -46,7 +48,7 @@ const BUSINESS_BRIEF = `
 מה אנחנו: בית קלייה ספשלטי ברחובות, פעיל מעל 10 שנים. קולים קפה בעצמנו ומוכרים ישירות.
 
 מקור הרווח הראשי — פולי קפה:
-• מייצרים ומוכרים פולי קפה קלויים טרי — טריות אמיתית, לא מדף ולא מחסן.
+• מייצרים ומוכרים פולי קפה קלויים טרי: קולים פולים טריים בכל שבוע, ותאריך הקלייה מודפס על כל שקית.
 • מכירה online (משלוח לכל הארץ) + איסוף עצמי מהקלייה.
 • מגוון: חד-זניים (Ethiopia Yirgacheffe, Kenya AA, Brazil Natural וכו') + בלנדים.
 
@@ -65,15 +67,15 @@ const BUSINESS_BRIEF = `
 כבר קונים פולי קפה ספשלטי ממתחרים — נחת, Jera, אגרו, נגרו, או מייבאים מחו"ל.
 יש להם מטחנה ומכונת אספרסו ביתית. הם מחפשים פולים חד-זניים, ציוני SCA, מקורות ספציפיים.
 ביטויי חיפוש: "קפה ספשלטי", "פולי קפה חד זני", "Ethiopia Yirgacheffe", "קפה ספשלטי אונליין"
-אסטרטגיה: הראה שמינוטו יותר טרי (קלייה ביום ההזמנה), מומחים (10+ שנים), ומגוון יותר מכל מתחרה.
+אסטרטגיה: דברו רק על החוזקות של מינוטו: קלייה טרייה בכל שבוע, תאריך קלייה מודפס על השקית, מגוון חד-זניים ספשלטי, מומחיות של 10+ שנים בקלייה.
 
 קהל 2 — קונים פולי קפה מסחרי (גדול, פוטנציאל צמיחה עצום):
-כבר קונים פולי קפה — אבל מהסופר. קונים Lavazza, Illy, Mauro, Bristot, Hausbrandt, Kimbo, Segafredo. משלמים ₪60-120 לק"ג על פולים שנקלו חודשים לפני כן.
-יש להם מכונת אספרסו ביתית או מטחנה — הם כבר בעולם הפולים. הם פשוט לא יודעים שיש משהו טוב יותר.
+כבר קונים פולי קפה מהסופר: Lavazza, Illy, Mauro, Bristot, Hausbrandt, Kimbo, Segafredo, ₪60-120 לק"ג.
+יש להם מכונת אספרסו ביתית או מטחנה — הם כבר בעולם הפולים. עוד לא הכירו פולים טריים מבית קלייה.
 ביטויי חיפוש: "פולי קפה", "פולי קפה טריים", "קפה טרי לבית", "פולי קפה למכונת אספרסו", "שדרוג קפה ביתי", "פולי קפה איטלקי", "קפה טרי משלוח"
-אסטרטגיה: הראה את ההבדל בין פולים מהסופר (נקלו לפני 4 חודשים) לפולים טריים (נקלו היום). טריות = טעם אחר לגמרי. אנחנו מוצר פרימיום — לא מתחרים על מחיר.
+אסטרטגיה: הראו מה מקבלים אצלנו: פולים שנקלו השבוע, תאריך קלייה מודפס על השקית, פולי ספשלטי ממקור ידוע, מומחיות בקלייה. אנחנו מוצר פרימיום, לא מתחרים על מחיר.
 
-מותגים שקהל 2 קונה (ואנחנו מתחרים עליהם ישירות):
+מותגים שקהל 2 קונה (לטרגוט ולמחקר בלבד, לעולם לא בקופי):
 • Lavazza (הכי נמכר בסופרים), Illy, Mauro, Bristot, Hausbrandt, Kimbo, Segafredo
 • עלית פולים, Landwer פולים
 • פולים מרשתות: Aldo, AM:PM, רמי לוי
@@ -83,7 +85,9 @@ const BUSINESS_BRIEF = `
 ⚠️ מינוטו הוא מוצר פרימיום. כללים קריטיים:
 • לעולם לא להתחרות על מחיר. לא "אותו מחיר", לא "זול יותר", לא "במחיר הסופר".
 • לעולם לא לתת הנחות או מבצעים בקופי המודעות. לא "15% הנחה", לא "משלוח חינם".
-• המסר הוא תמיד איכות, טריות, מומחיות, חוויה. "נקלה היום", "מבית קלייה ברחובות", "ספשלטי אמיתי".
+• המסר הוא תמיד איכות, טריות, מומחיות, חוויה. "קולים פולים טריים בכל שבוע", "מבית קלייה ברחובות", "ספשלטי אמיתי".
+• מדברים רק על היתרונות שלנו. אסור להזכיר חסרונות של מתחרים או של קפה מסחרי/סופר, עם שם או בלי שם, ואסור להשוות אליהם.
+• קולים פעם בשבוע, לא כל יום. אסור לטעון "נקלה היום", "נקלה הבוקר" או "קלייה ביום ההזמנה".
 • אם לקוח רוצה זול — הוא לא הלקוח שלנו. אנחנו רוצים לקוחות שמוכנים לשלם על איכות.
 === סוף תיאור העסק ===`;
 
@@ -134,18 +138,16 @@ const META_ADS_EXPERTISE = `
 
 🚫 **אסור לחלוטין בטקסט/ויז'ואל של מודעה:**
 • שמות מתחרים (Lavazza, Illy, Hausbrandt, Nespresso, נחת, Jera, אגרו, Mauro, Bristot, Kimbo, Segafredo) — trademark + חוק הגנת הצרכן בישראל + Meta policy. מודעה תידחה או תגרור תלונה.
-• טענות על מתחרים ("הפולים של X נקלו לפני 4 חודשים") — גם אם נכון, זה השמצה. אסור.
+• כל חיסרון של מתחרים או של קפה מסחרי/סופר, עם שם או בלי שם (גיל הקלייה שלהם, טריות, השוואה). מדברים רק על היתרונות שלנו.
 • לוגואים של מותגים אחרים — אפילו מיטושטש/ניטרלי קרוב מדי מזוהה.
-✓ במקום לנקוב בשם: "הפולים מהסופר" / "השקית הקיימת שלכם" / "קפה מסחרי" — תקיפה קטגורית, לא trademark.
-✓ טריק יעיל: **גורם לצופה להסתכל על עצמו** — "בשקית שלך יש תאריך קלייה?" במקום "בשקית של X אין".
+✓ מה כן: קלייה טרייה בכל שבוע, תאריך הקלייה המודפס על השקית שלנו, המקור והטעם, המומחיות שלנו.
 
 🎯 **כללי הפקה לקריאייטיב שעובד ב-Reels (1.5 שניות עד skip):**
 1. **Hook = payoff frame, לא setup.** הפריים הראשון חייב להיות הפואנטה (בסוד: "למה לעצור?"). אל תפתח עם "הפולים של המתחרה" — זה setup משמים. פתח עם קלוזאפ של הפולים שלנו + הטקסט הכי חזק.
-2. **משפט אחד, לא ארבעה.** טקסט על המסך = צופה קורא במקום להסתכל. בחר משפט אחד שנושא את כל המודעה ("נקלה הבוקר. אצלך מחר.").
+2. **משפט אחד, לא ארבעה.** טקסט על המסך = צופה קורא במקום להסתכל. בחר משפט אחד שנושא את כל המודעה.
 3. **תן חוויה חושית.** קפה טרי הוא ריח, אדים, טעם ראשון — לא מפרט. הראה יד שיוצקת, פנים שנרגעים, אור בוקר. **אל תתן דף מוצר.**
 4. **CTA לא רק בסוף.** מותג/לוגו חייב להיות מרגע 3, לא רק בשנייה 10 — רוב הצופים נוטשים לפני 8.
-5. **"תגרום להם להסתכל" > "תגיד להם מה."** מודעה שגורמת לצופה להרים את שקית הקפה שלו ולחפש תאריך = 10× engagement של מודעה שאומרת "שלנו טריים".
-6. ⚠️ אם הברייף שלך נראה כמו דף מוצר עם מוזיקה — זה לא ברייף שיווקי, זה מפרט. שנה אותו.
+5. ⚠️ אם הברייף שלך נראה כמו דף מוצר עם מוזיקה — זה לא ברייף שיווקי, זה מפרט. שנה אותו.
 
 --- תקציבים ---
 • מינימום ₪30/יום ללמידה. רטרגטינג ₪20-50. LAL ₪80-150. Advantage+ Shopping ₪100-200.
@@ -2620,7 +2622,7 @@ You are Minuto's UNIFIED marketing planner. You reason across ORGANIC (SEO / con
 4. Meta is ACTIONABLE (can be drafted PAUSED later). Google Ads is RECOMMENDATION-ONLY — never propose to auto-create Google campaigns.
 
 # BRAND / COMPLIANCE
-- Promote only roasted specialty beans. Never name competitors. Any Hebrew copy: gender-inclusive, no em-dashes, premium positioning, no discounts.
+- Promote only roasted specialty beans. Never name competitors, and never mention competitors' or supermarket/commercial coffee's disadvantages, named or not: only our advantages. Minuto roasts weekly, never claim daily roasting. Any Hebrew copy: gender-inclusive, no em-dashes, premium positioning, no discounts.
 
 # OUTPUT — return PURE JSON only (no prose, no markdown fences):
 {
@@ -2789,7 +2791,7 @@ To research, plan, and draft high-converting campaigns that find the perfect "Ho
 # Channel doctrine — what each paid channel is FOR
 These are not two versions of the same thing, and proposing the same campaign on both is a mistake.
 
-- **Meta CREATES demand.** Beans are a visual, story-led, interrupt-the-scroll product. Nobody wakes up searching for a bean they've never heard of. This is where a new origin, a roast-date angle, or an upgrade-from-supermarket message goes.
+- **Meta CREATES demand.** Beans are a visual, story-led, interrupt-the-scroll product. Nobody wakes up searching for a bean they've never heard of. This is where a new origin or the roast-date-on-our-bag story goes.
 - **Google HARVESTS demand that already exists.** Its job is to be there when someone is already looking: brand search ("מינוטו"), espresso-machine and La Marzocco intent, remarketing, and the Merchant Center product feed via Performance Max.
 - **Evidence for that split, from Minuto's own spend:** the Specialty_Freshness_Single_Origin cold-acquisition campaign was stopped on 2026-05-08 after ₪1,195/month produced only 9 attributable pure-bean orders. Hebrew search volume for specialty coffee is the ceiling — that was a market-size result, not a campaign-quality one. **Do not propose reviving cold-prospecting bean campaigns on Google Search or Shopping** unless the owner tells you the market has changed. If you want to test cold bean demand, that is a Meta proposal.
 - Google's legitimate growth levers here are: brand defence, machine/grinder intent, remarketing to people who already visited, and PMax over the real product feed.
@@ -2806,7 +2808,7 @@ These are not two versions of the same thing, and proposing the same campaign on
 
 # Campaign Development Process — every new campaign you propose must include:
 1. **Channel + why** — Meta or Google, justified by the doctrine above. Say which one and why this specific idea belongs there.
-2. **Market/Competitor Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade", "upgrade from supermarket espresso")
+2. **Market Angle** — what we're tapping into (e.g., "morning ritual", "office upgrade"). Always one of Minuto's own strengths, never a competitor's weakness.
 3. **Targeting**
    - *Meta*: specific interest-based segments (Third Wave Coffee, Espresso Machines, Burr Grinders, De'Longhi, Sage, Breville owners). Always name the targeting layer (Custom → LAL → Advantage+ → Detailed).
    - *Google Search*: the actual keyword list with match types, plus the negatives that keep it from bleeding. Ground keywords in \`get_google_search_terms\` or Search Console data where you can — do not invent search volume.
@@ -2819,15 +2821,16 @@ These are not two versions of the same thing, and proposing the same campaign on
 
 # Brand Voice & Identity
 - **Tone**: Professional, passionate, "geeky" about coffee but accessible to people leveling up their home brewing.
-- **Focus**: Freshness (roast date matters), flavor notes (fruity / nutty / chocolatey / honey), the quality of the beans, the craft of roasting.
-- **Never**: discount language, "% off", "free shipping" as a hook, disparaging competitors by name.
+- **Focus**: Freshness (fresh roasting every week, the roast date printed on our bag), specialty single origins, flavor notes (fruity / nutty / chocolatey / honey), the quality of the beans, the craft and expertise of roasting.
+- **Only our advantages**: never mention a disadvantage of competitors or of supermarket/commercial coffee, named or unnamed. No roast-age claims about others, no "stale", no side-by-side comparison.
+- **Roasting cadence**: Minuto roasts fresh every WEEK. Never claim daily roasting ("roasted today", "roasted this morning", "roasted on the day of your order").
+- **Never**: discount language, "% off", "free shipping" as a hook.
 
 # Compliance — ABSOLUTE (legal + brand)
 🚫 **Never name a competitor** in ad copy or visual brief: Lavazza, Illy, Nespresso, Hausbrandt, Mauro, Bristot, Kimbo, Segafredo, Dolce Gusto, נחת, Jera, אגרו, נגרו, Negro, עלית, לנדוור, ארומה, Aldo, AM:PM, רמי לוי.
 🚫 Never say "blurred logo of X" or "neutral bag that looks like X" — still a violation.
-🚫 Never make specific factual claims about a named competitor.
-✓ Attack the *category*: "supermarket beans", "the bag currently in your kitchen", "commercial coffee".
-✓ Make the viewer self-reflect: "Does your current bag have a roast date?" — not "Brand X's bag doesn't."
+🚫 Never mention any disadvantage of competitors or of supermarket/commercial coffee, named or unnamed. Talk only about our advantages.
+✓ The competitor and supermarket brand lists are for research and targeting only.
 
 🚫 **Hebrew gender-inclusive**: avoid masculine-only 2nd-person verbs (תחזור / תענה / תיהנה / בחרת / ראית / תשתה / אתה). Restructure to plural (ראיתם / בחרתם / שלכם) or impersonal ("הקפה שמגיע אליכם", "מי שמחפש"). The brand's customers are mixed gender.
 🚫 No em-dashes in Hebrew — use commas.
@@ -2852,7 +2855,7 @@ Your tools fall into two classes, and the distinction matters:
 4. **Never invent an id.** Campaign ids come from a tool result, never from your own head. A made-up number can match a real campaign you did not mean and the change will go through. If you don't have the id, fetch it. When you report a change, name the CAMPAIGN so the owner can catch a wrong target.
 
 5. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
-6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a blog article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here.
+6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a BLOG article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here. It does NOT write emails: the blog writer has no email format. For a customer email, write the Hebrew copy here in chat for the owner to review, or point them to the email Campaigns page (generate-campaign). Never tell the owner a draft is on its way unless this tool returned "queued".
 
 You are the brain over all three hands: recommend across Meta, Google AND organic, but only ACT (fire a write tool) on the owner's explicit approval for that specific action.
 
@@ -2860,11 +2863,11 @@ You are the brain over all three hands: recommend across Meta, Google AND organi
 Both hands refuse anything over their caps before writing a single thing, so an over-budget proposal fails loudly rather than overspending. Meta: ₪100/day per campaign, ₪3,500/month account-wide. Google: ₪100/day per campaign, ₪3,500/month account-wide (the monthly check counts real month-to-date Google spend + drafts already committed this month + the new campaign). The two budgets are SEPARATE — a shekel spent on Google does not come out of the Meta cap. If a proposal would breach a cap, say so while proposing, don't discover it by failing.
 
 # What You Already Know About Minuto (do NOT re-ask)
-- **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts to order. Sells online + cafe storefront.
+- **Roastery**: Bet Klaya (בית קלייה) ספיישלטי ברחובות, 10+ years operating. Roasts fresh every week (not daily). Sells online + cafe storefront.
 - **Top revenue SKUs**: **Aristo** and **Dark Chocolate** (both espresso blends, similar margins). These are the anchors for paid acquisition.
 - **Two audiences** (per owner's brief):
   - Audience 1 — Specialty enthusiasts (small, high LTV) — already buy from נחת/Jera/agro/import. Have grinder + machine. Search "ethiopia yirgacheffe", "single origin". Pitch: freshness + roastery expertise.
-  - Audience 2 — Commercial bean buyers (large, growth) — currently buy Lavazza/Illy/Mauro at supermarkets. Have espresso machine. Search "פולי קפה", "קפה טרי". Pitch: upgrade vs. supermarket beans.
+  - Audience 2 — Commercial bean buyers (large, growth) — currently buy Lavazza/Illy/Mauro at supermarkets. Have espresso machine. Search "פולי קפה", "קפה טרי". Pitch: what they get from us (beans roasted this week, roast date on the bag, specialty origins). Brand list is for targeting only.
 - **Espresso machine in the cafe**: La Marzocco Strada X, 2-group, slate body with clear glass side windows. Use as creative anchor sparingly.
 - **Premium positioning** — never compete on price. No discounts. No "% off".
 - **Meta budget ceiling**: ₪3,500 / month (~₪117/day account-wide; hard cap ₪100/day per campaign). Raised from ₪3,000 by the owner on 2026-08-19.
@@ -2977,13 +2980,17 @@ ${postsBlock}
         },
       }, {
         name: "queue_organic_task",
-        description: "Queue an ORGANIC task for the SEO/content agent. Fire ONLY after explicit owner approval. Publishes nothing — it enters the SEO agent's own review pipeline. Not for Instagram (needs the SEO agent's visual-first flow).",
+        description: "Queue an ORGANIC task for the SEO/content agent. Fire ONLY after explicit owner approval. Publishes nothing — it enters the SEO agent's own review pipeline. Not for Instagram (needs the SEO agent's visual-first flow). NOT for emails or newsletters: text_generation is the BLOG writer and refuses anything else, so an email request is rejected here. Only tell the owner a draft is coming if this tool's result says the task was queued; if it refused or failed, say so and do not promise a draft.",
         input_schema: {
           type: "object",
           properties: {
-            task_type: { type: "string", enum: ["deep_research", "text_generation"], description: "deep_research = research a topic/angle; text_generation = draft a blog article." },
+            task_type: { type: "string", enum: ["deep_research", "text_generation"], description: "deep_research = research a topic/angle; text_generation = draft a blog article (never an email)." },
             topic: { type: "string", description: "What to research or write, in one clear sentence (Hebrew or English)." },
             rationale: { type: "string", description: "One-line justification, surfaced in the SEO admin UI." },
+            keyword: { type: "string", description: "text_generation only (required): the target search keyword, in Hebrew." },
+            title: { type: "string", description: "text_generation only (required): the article's H1 / SEO title." },
+            key_points: { type: "array", items: { type: "string" }, description: "text_generation only (required, non-empty): the points the article must cover." },
+            products: { type: "array", items: { type: "string" }, description: "text_generation only (required, non-empty): EXACT product names from the Minuto coffee lineup to link. A name not in the lineup is refused and the result lists the lineup." },
           },
           required: ["task_type", "topic", "rationale"],
         },
@@ -3247,9 +3254,36 @@ ${postsBlock}
             try {
               const isText = tu.input.task_type === "text_generation";
               const topic  = String(tu.input.topic ?? "").trim();
-              const brief  = isText
-                ? { topic, source: "marketing_brain" }
-                : { question: topic, scope: "content_topic", expected_output: "action_plan", source: "marketing_brain" };
+              // seo-worker-writer is the BLOG writer: it requires keyword, title
+              // and key_points (validateBrief) and has no email format. A brief
+              // of only {topic} failed 3/3 with "brief.keyword is required", and
+              // the brain had already told the owner a draft was coming. Refuse
+              // up front so nothing unfulfillable is queued.
+              const refuse = (why: string) => { throw Object.assign(new Error(why), { refusal: true }); };
+              let brief: Record<string, unknown>;
+              if (isText) {
+                const ask = `${topic} ${tu.input.title ?? ""} ${tu.input.rationale ?? ""}`;
+                if (/e-?mail|newsletter|מייל|אימייל|ניוזלטר|דיוור/i.test(ask)) {
+                  refuse("emails are not supported: text_generation is the blog writer and has no email format. Write the email copy in chat for the owner to review, or point them to the email Campaigns page. Do NOT tell the owner a draft is coming.");
+                }
+                const keyword   = String(tu.input.keyword ?? "").trim();
+                const title     = String(tu.input.title ?? "").trim();
+                const keyPoints = Array.isArray(tu.input.key_points)
+                  ? tu.input.key_points.map((k: unknown) => String(k).trim()).filter(Boolean) : [];
+                const missing = [!keyword && "keyword", !title && "title", !keyPoints.length && "key_points"].filter(Boolean);
+                if (missing.length) refuse(`text_generation needs ${missing.join(", ")} (the blog writer rejects a brief without them).`);
+                const lineup = (await fetchMinutoCoffeeCatalog(supabase as any)).map((p: any) => p.name);
+                const chk = checkBlogProducts(tu.input.products, lineup);
+                if (!chk.ok) refuse(`${chk.error}. Minuto coffee lineup: ${lineup.join(" | ")}`);
+                brief = {
+                  keyword, title, key_points: keyPoints,
+                  products_to_mention: (chk as { products: string[] }).products,
+                  why_now: String(tu.input.rationale ?? "") || undefined,
+                  source: "marketing_brain",
+                };
+              } else {
+                brief = { question: topic, scope: "content_topic", expected_output: "action_plan", source: "marketing_brain" };
+              }
               const { data: qRow, error: qErr } = await supabase.from("seo_tasks").insert({
                 task_type:  isText ? "text_generation" : "deep_research",
                 status:     "pending",
@@ -3263,7 +3297,9 @@ ${postsBlock}
                 resultText = `Organic task queued for the SEO agent (id ${String(qRow?.id ?? "").slice(0, 8)}, type ${isText ? "text_generation" : "deep_research"}). It will appear in the SEO agent's pipeline for review — nothing is published yet.`;
               }
             } catch (e: any) {
-              resultText = `Queue FAILED with exception: ${e?.message}`;
+              resultText = e?.refusal
+                ? `NOT queued: ${e.message} Nothing was queued, so no draft will arrive. Fix the brief or tell the owner.`
+                : `Queue FAILED with exception: ${e?.message}`;
             }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else if (tu.name === "get_ga4_data" || tu.name === "get_search_console_data"

@@ -154,6 +154,50 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
+// Clean house design (approved 2026-10-25, same as the automation and
+// campaign emails): white 560px card on #F7F7F7, logo over a hairline,
+// right-aligned #3C4A2C headline, quiet centered footer. No gradients/emoji.
+const EMAIL_FONT = "'Heebo', Arial, Helvetica, sans-serif"
+
+function brandEmailHtml(title: string, logoUrl: string, headline: string, contentRows: string, footerNote: string): string {
+  return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0; padding:0; background:#F7F7F7; font-family:${EMAIL_FONT}; color:#333333;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F7F7F7;">
+<tr><td align="center" style="padding:32px 12px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px; background:#FFFFFF;">
+    <tr><td align="center" style="padding:28px 32px 22px; border-bottom:1px solid #E6E6E6;">
+      <a href="https://www.minuto.co.il"><img src="${escapeHtml(logoUrl)}" alt="Minuto Café Roastery" width="132" style="display:block; width:132px; max-width:132px; height:auto; border:0;"></a>
+    </td></tr>
+    <tr><td style="padding:36px 40px 36px; text-align:right;">
+      <h1 style="margin:0 0 20px; font-family:${EMAIL_FONT}; font-size:26px; line-height:1.3; font-weight:700; color:#3C4A2C; text-align:right;">${headline}</h1>
+${contentRows}
+      <p style="margin:28px 0 0; font-size:16px; line-height:1.75; color:#333333;">שיהיה בכיף,<br>מינוטו קפה</p>
+    </td></tr>
+  </table>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
+    <tr><td align="center" style="padding:24px 32px ${footerNote ? '8px' : '24px'}; font-family:${EMAIL_FONT}; font-size:13px; line-height:1.8; color:#555555;">
+      מינוטו קפה בע״מ · בית קלייה ספשלטי · אחד העם 22, רחובות<br>
+      <a href="tel:+972544490486" style="color:#555555;">054-4490486</a> · <a href="mailto:info@minuto.co.il" style="color:#555555;">info@minuto.co.il</a> · <a href="https://www.minuto.co.il" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
+    </td></tr>${footerNote ? `
+    <tr><td align="center" style="padding:4px 32px 24px; font-family:${EMAIL_FONT}; font-size:12px; line-height:1.8; color:#666666;">
+      ${footerNote}
+    </td></tr>` : ''}
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`
+}
+
+const EMAIL_P = 'margin:0 0 16px; font-size:16px; line-height:1.75; color:#333333;'
+
 /**
  * Light welcome email used for newsletter + callback signups. Different
  * from the first-purchase welcome — no coupon (we save that for actual
@@ -162,38 +206,11 @@ function escapeHtml(s: string): string {
  */
 function renderWelcomeEmail(firstName: string, logoUrl: string): { subject: string; html: string } {
   const greeting = firstName.trim() ? `היי ${escapeHtml(firstName.trim())},` : 'היי,'
-  const subject = 'תודה שנרשמת לעדכונים של מינוטו ☕'
-  const html = `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><title>תודה ממינוטו</title></head>
-<body style="font-family: Arial, sans-serif; background: #f6f3ee; margin: 0; padding: 20px;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 560px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden;">
-    <tr>
-      <td style="background: linear-gradient(160deg, #3D4A2E 0%, #6A7D45 100%); padding: 28px 32px 20px; text-align: center; color: white;">
-        <img src="${escapeHtml(logoUrl)}" alt="Minuto Cafe" style="max-height: 64px; width: auto; margin-bottom: 12px;" />
-        <h1 style="margin: 0; font-size: 26px;">תודה שנרשמת ☕</h1>
-        <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">בית קלייה ספשלטי, רחובות</p>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 32px; color: #2a2a2a; line-height: 1.7;">
-        <p style="margin: 0 0 16px;">${greeting}</p>
-        <p style="margin: 0 0 16px;">תודה שהצטרפת לרשימת התפוצה שלנו. כל כמה שבועות נשלח עדכונים על פולים חדשים מבית הקלייה, מאמרים על קפה ספשלטי, וטיפים להכנת קפה ביתי.</p>
-        <p style="margin: 0 0 16px;">בלי ספאם, רק תוכן שיעניין אותך.</p>
-        <p style="margin: 24px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>מינוטו קפה</p>
-      </td>
-    </tr>
-    <tr>
-      <td style="background: #f6f3ee; padding: 20px 32px; text-align: center; font-size: 12px; color: #8a8a8a; line-height: 1.7;">
-        <p style="margin: 0;"><strong style="color: #3D4A2E;">מינוטו קפה בע"מ</strong></p>
-        <p style="margin: 0;">אחד העם 22, רחובות</p>
-        <p style="margin: 0;">📞 054-4490486 · 📧 <a href="mailto:info@minuto.co.il" style="color: #6A7D45;">info@minuto.co.il</a></p>
-        <p style="margin: 8px 0 0;"><a href="https://www.minuto.co.il" style="color: #6A7D45;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color: #6A7D45;">@minuto_coffee</a></p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+  const subject = 'תודה שנרשמת לעדכונים של מינוטו'
+  const html = brandEmailHtml('תודה ממינוטו', logoUrl, 'תודה שנרשמת', `
+      <p style="${EMAIL_P}">${greeting}</p>
+      <p style="${EMAIL_P}">תודה שהצטרפת לרשימת התפוצה שלנו. כל כמה שבועות נשלח עדכונים על פולים חדשים מבית הקלייה, מאמרים על קפה ספשלטי, וטיפים להכנת קפה ביתי.</p>
+      <p style="margin:0; font-size:16px; line-height:1.75; color:#333333;">בלי ספאם, רק תוכן שיעניין אותך.</p>`, '')
   return { subject, html }
 }
 
@@ -212,43 +229,22 @@ function renderAckEmail(
 ): { subject: string; html: string } {
   const greeting = firstName.trim() ? `היי ${escapeHtml(firstName.trim())},` : 'היי,'
   const subject =
-    variant === 'callback'   ? 'קיבלנו את פנייתך — נחזור אליך בהקדם' :
+    variant === 'callback'   ? 'קיבלנו את פנייתך, נחזור אליך בהקדם' :
     variant === 'cancel_order' ? `קיבלנו את בקשת הביטול${orderId ? ` להזמנה #${escapeHtml(orderId)}` : ''}` :
-                                 'קיבלנו את הודעתך — נענה בקרוב'
+                                 'קיבלנו את הודעתך, נענה בקרוב'
   const introLine =
     variant === 'callback'   ? 'תודה על פנייתך. קיבלנו את הפרטים שלך, וניצור איתך קשר בהקדם האפשרי.' :
     variant === 'cancel_order' ? `תודה שפנית אלינו. קיבלנו את בקשת הביטול${orderId ? ` להזמנה <strong>#${escapeHtml(orderId)}</strong>` : ''}, וצוות שירות הלקוחות שלנו יטפל בפנייתך בהקדם האפשרי בתוך מסגרת הזמן הקבועה בחוק.` :
                                  'תודה שכתבת אלינו. קיבלנו את הודעתך, ונענה אישית בקרוב.'
-  const html = `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><title>קיבלנו את פנייתך</title></head>
-<body style="font-family: Arial, sans-serif; background: #f6f3ee; margin: 0; padding: 20px;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 560px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden;">
-    <tr>
-      <td style="background: linear-gradient(160deg, #3D4A2E 0%, #6A7D45 100%); padding: 28px 32px 20px; text-align: center; color: white;">
-        <img src="${escapeHtml(logoUrl)}" alt="Minuto Cafe" style="max-height: 64px; width: auto; margin-bottom: 12px;" />
-        <h1 style="margin: 0; font-size: 22px;">${escapeHtml(subject)}</h1>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 32px; color: #2a2a2a; line-height: 1.7;">
-        <p style="margin: 0 0 16px;">${greeting}</p>
-        <p style="margin: 0 0 24px;">${introLine}</p>
-        <div style="background: #f6f3ee; border-right: 4px solid #6A7D45; padding: 16px; border-radius: 8px; margin: 16px 0; color: #4a4a4a; font-size: 14px;">
-          <strong style="color: #3D4A2E; display: block; margin-bottom: 8px;">ההודעה שקיבלנו:</strong>
-          <div style="white-space: pre-wrap;">${escapeHtml(message)}</div>
-        </div>
-        <p style="margin: 16px 0 0; color: #6a6a6a; font-size: 14px;">שיהיה בכיף,<br>מינוטו קפה</p>
-      </td>
-    </tr>
-    <tr>
-      <td style="background: #f6f3ee; padding: 16px 32px; text-align: center; font-size: 12px; color: #8a8a8a;">
-        <p style="margin: 0;">📞 054-4490486 · 📧 <a href="mailto:info@minuto.co.il" style="color: #6A7D45;">info@minuto.co.il</a></p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+  const html = brandEmailHtml('קיבלנו את פנייתך', logoUrl, escapeHtml(subject), `
+      <p style="${EMAIL_P}">${greeting}</p>
+      <p style="margin:0 0 24px; font-size:16px; line-height:1.75; color:#333333;">${introLine}</p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #E6E6E6; border-bottom:1px solid #E6E6E6;">
+        <tr><td style="padding:16px 0; text-align:right; font-family:${EMAIL_FONT}; font-size:14px; line-height:1.75; color:#555555;">
+          <strong style="color:#3C4A2C; display:block; margin-bottom:6px;">ההודעה שקיבלנו:</strong>
+          <div style="white-space:pre-wrap;">${escapeHtml(message)}</div>
+        </td></tr>
+      </table>`, '')
   return { subject, html }
 }
 

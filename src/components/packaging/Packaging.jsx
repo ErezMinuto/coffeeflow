@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../lib/context';
 import { supabase } from '../../lib/supabase';
+import { reservedBagsByProduct, storeStock } from '../../lib/reservedStock';
+import PackingList from './PackingList';
+import B2BAllocations from './B2BAllocations';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +35,8 @@ export default function Packaging() {
   const {
     data, originsDb, roastProfilesDb, productsDb, packingLogsDb, showToast
   } = useApp();
+
+  const reserved = reservedBagsByProduct(data.bagAllocations);
 
   const [packProductId, setPackProductId] = useState('');
   const [packBags,      setPackBags]      = useState('');
@@ -172,6 +177,8 @@ export default function Packaging() {
         <h1>🎁 אריזה</h1>
       </div>
 
+      <PackingList />
+
       {/* Packing form */}
       <div className="form-card" style={{ marginBottom: '24px', background: '#F0FFF4', border: '2px solid #059669' }}>
         <h3>רישום אריזה</h3>
@@ -214,7 +221,9 @@ export default function Packaging() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
           {data.products.map(product => {
-            const stock    = product.packed_stock ?? 0;
+            // Bags allocated to a B2B customer are not store stock.
+            const reservedBags = reserved[product.id] || 0;
+            const stock    = storeStock(product, reserved);
             const minStock = product.min_packed_stock ?? 0;
             const isEmpty  = stock === 0;
             const isLow    = !isEmpty && minStock > 0 && stock <= minStock;
@@ -236,7 +245,12 @@ export default function Packaging() {
                 <div style={{ fontSize: '32px', fontWeight: 'bold', color, lineHeight: 1 }}>
                   {stock}
                 </div>
-                <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות</div>
+                <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px' }}>שקיות לחנות</div>
+                {reservedBags > 0 && (
+                  <div style={{ fontSize: '11px', color: '#6B3A1F', marginTop: '4px' }}>
+                    🏷️ +{reservedBags} מוקצות ל-B2B
+                  </div>
+                )}
                 {minStock > 0 && (
                   <div style={{ fontSize: '11px', color, marginTop: '6px', fontWeight: '500' }}>
                     {isEmpty ? '❌ אזל מהמלאי' : isLow ? `⚠️ מינימום: ${minStock}` : `✓ מינימום: ${minStock}`}
@@ -247,6 +261,10 @@ export default function Packaging() {
           })}
         </div>
       )}
+      <div style={{ marginTop: '28px' }}>
+        <B2BAllocations />
+      </div>
+
       {/* Packing logs */}
       <h3 style={{ margin: '28px 0 12px' }}>📋 היסטוריית אריזות</h3>
 

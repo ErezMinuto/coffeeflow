@@ -200,38 +200,51 @@ export interface CustomerSegmentSummary {
     avg_total_spent_ils:   number
     avg_order_count:       number
     avg_days_since_last:   number
+    avg_bean_grams:        number   // lifetime Minuto bean grams (rfm-sync's M)
   }>
   new_in_last_30d:         number   // first_order_date within 30d
   at_risk_count:           number   // days_since_last > 90, was previously active
+  note:                    string
 }
 
 export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Promise<CustomerSegmentSummary> {
-  const { data, error } = await supabase
-    .from('customer_rfm')
-    .select('segment, total_spent_ils, order_count, days_since_last, first_order_date')
-    .limit(5000)
-  if (error) throw new Error(`fetchCustomerSegmentSummary failed: ${error.message}`)
-  const rows = (data ?? []) as Array<{
+  // Paged: PostgREST returns at most 1000 rows per request, and there are ~4000
+  // customers since rfm-sync reads the full order history. 'superseded' rows are
+  // leftovers from earlier runs, not customers.
+  const rows: Array<{
     segment: string | null
     total_spent_ils: number | null
     order_count: number | null
     days_since_last: number | null
     first_order_date: string | null
-  }>
+    bean_grams: number | null
+  }> = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('customer_rfm')
+      .select('segment, total_spent_ils, order_count, days_since_last, first_order_date, bean_grams')
+      .neq('segment', 'superseded')
+      .order('email')
+      .range(from, from + 999)
+    if (error) throw new Error(`fetchCustomerSegmentSummary failed: ${error.message}`)
+    rows.push(...((data ?? []) as typeof rows))
+    if (!data || data.length < 1000) break
+  }
   if (rows.length === 0) {
-    return { total_customers: 0, by_segment: [], new_in_last_30d: 0, at_risk_count: 0 }
+    return { total_customers: 0, by_segment: [], new_in_last_30d: 0, at_risk_count: 0, note: 'customer_rfm is empty' }
   }
   const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000
   let newCount = 0
   let atRiskCount = 0
-  const bySeg = new Map<string, { count: number; totSpent: number; totOrders: number; totDaysSince: number }>()
+  const bySeg = new Map<string, { count: number; totSpent: number; totOrders: number; totDaysSince: number; totGrams: number }>()
   for (const r of rows) {
     const seg = r.segment ?? 'unknown'
-    const agg = bySeg.get(seg) ?? { count: 0, totSpent: 0, totOrders: 0, totDaysSince: 0 }
+    const agg = bySeg.get(seg) ?? { count: 0, totSpent: 0, totOrders: 0, totDaysSince: 0, totGrams: 0 }
     agg.count++
     agg.totSpent      += Number(r.total_spent_ils ?? 0)
     agg.totOrders     += Number(r.order_count ?? 0)
     agg.totDaysSince  += Number(r.days_since_last ?? 0)
+    agg.totGrams      += Number(r.bean_grams ?? 0)
     bySeg.set(seg, agg)
     if (r.first_order_date && new Date(r.first_order_date).getTime() > thirtyDaysAgoMs) newCount++
     if ((r.days_since_last ?? 0) > 90 && (r.order_count ?? 0) > 1) atRiskCount++
@@ -243,9 +256,13 @@ export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Pro
       avg_total_spent_ils: a.count > 0 ? Math.round(a.totSpent / a.count) : 0,
       avg_order_count:     a.count > 0 ? Math.round((a.totOrders / a.count) * 10) / 10 : 0,
       avg_days_since_last: a.count > 0 ? Math.round(a.totDaysSince / a.count) : 0,
+      avg_bean_grams:      a.count > 0 ? Math.round(a.totGrams / a.count) : 0,
     }))
     .sort((a, b) => b.count - a.count)
-  return { total_customers: rows.length, by_segment, new_in_last_30d: newCount, at_risk_count: atRiskCount }
+  return {
+    total_customers: rows.length, by_segment, new_in_last_30d: newCount, at_risk_count: atRiskCount,
+    note: 'Web customers since 2023 (café till sales carry no identity). Segments score M on lifetime Minuto bean grams. avg_total_spent_ils counts only orders since Jan 2026.',
+  }
 }
 
 // ── Competitor intelligence — aggregated from existing tables ───────────

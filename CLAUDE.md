@@ -15,6 +15,25 @@ All AI assistants working on this project MUST follow the rules below.
 6. **Never ask for a credential to be pasted into chat.** Everything is in Vault or the
    local store — run `./scripts/secrets-doctor.sh`. See *Credentials* below.
 7. **After deploying any edge function** — re-patch `verify_jwt: false` via the Management API (deploys reset it).
+8. **Every change must receive a PASS verdict from a real Gemini QA API call before it is
+   reported done.** Never write, simulate or assume a Gemini verdict or reply yourself. The one
+   exception: a FAIL is acceptable when its only remaining objections are findings the developer
+   explicitly waived (last bullet). Any other finding still blocks.
+   - You may not overrule a Gemini finding on your own authority, and you may not instruct
+     Gemini to drop a finding. You may present evidence and ask it to reconsider.
+   - If you disagree with a finding (you think it is wrong, out of scope, or not worth fixing),
+     send Gemini your counter-argument with the actual code as evidence and iterate until you
+     both agree on a resolution: a code fix you both think is good, or Gemini conceding that the
+     existing code can be left as it is. Apply the agreed fix (if any), then run Gemini QA again.
+   - Gemini is stateless. When it conceded a finding, include its concession verbatim (quoted
+     from its actual reply) in every later Gemini QA request for that change, so it does not
+     raise the same finding again. Never paraphrase or invent a concession.
+   - If you are still split after 2 rounds of argument on a finding, or Gemini QA keeps
+     flagging a finding it already conceded, put both positions to the developer and stop until they answer; never assume or simulate their decision.
+   - If the developer decides the finding must be fixed, fix it and get a Gemini PASS as usual.
+   - If the developer explicitly waives the finding, record it (finding, both positions,
+     decision) in the PR description or report and include it in every later Gemini QA request
+     for that change.
 
 ---
 
@@ -255,7 +274,8 @@ Edge functions write structured, durable logs to the `system_logs` table via
 ./scripts/logs.sh run <run-id>    # full trace of one invocation
 ```
 
-Needs `SUPABASE_ACCESS_TOKEN` (the same token deploys use). Read-only.
+Needs `SUPABASE_SERVICE_ROLE_KEY`, or `SUPABASE_ACCESS_TOKEN` to look it up (the anon
+key cannot read `system_logs`). Read-only.
 Retention is 30 days. Full guide: `docs/logging.md`.
 
 Run status `incomplete` means the run was killed mid-flight (worker timeout /
@@ -265,6 +285,24 @@ OOM) — it never wrote a terminal line. That is a real signal, not missing data
 `run_id` in the HTTP response, and use stable `event` keys. Note that editing
 `_shared/logger.ts` makes every importing function stale — Supabase bundles
 imports at deploy time, so they need redeploying for the change to land.
+
+### QA & automated bug detection
+
+```bash
+./scripts/qa-scan.sh --quick      # git sync, CI guards, failing seo_tasks, crashes (24h)
+./scripts/qa-scan.sh --db         # + rolled-back access/counter dry-runs on prod
+```
+
+- **PR guard**: `.github/workflows/qa-review.yml` runs `scripts/ci/qa_review.py` on
+  every PR into `main` (NO_VERIFY_JWT kept, supabase-js `@2.116.0`, `filterByUser:
+  false` on shared tables, no credential leaks, no hard-coded prompt overrides) and
+  posts one sticky comment. A false positive is silenced per line with
+  `qa-allow: <check> — reason`. Self-test: `bash scripts/ci/qa_review_test.sh`.
+- **Runtime sentinel**: `health-watchdog` also reports visual-QA spikes, SEO-chat
+  runaway loops and edge crashes (`runtime_sentinel.ts`). A bug that REPEATS is
+  filed into `strategist_signals` as an `open` bug_report (`watchdog:<key>:<date>`,
+  deduped) — approving it hands it to `fixer-agent.yml`. Handled refusals
+  (`finish('error', { code })`) are never filed.
 
 ---
 
