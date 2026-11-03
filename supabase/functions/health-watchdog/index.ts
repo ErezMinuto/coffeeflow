@@ -124,6 +124,9 @@ const EXPECTED_CRONS: Array<{
   // the loop is on everywhere; a silent critic leaves drafts in
   // awaiting_critique, which check 1d below also reports.
   { jobname: 'strategist-critic-tick',              max_silence_hours: 1,  required: false },
+  // Weekly research for innovation pitches (20261103b). Check 1e below also
+  // verifies a scan actually COMPLETED, not just that the insert ran.
+  { jobname: 'innovation-scan-weekly',              max_silence_hours: 8 * 24, required: false },
   // Added 2026-06-21 after woo-orders-sync silently froze for 12 days: its
   // cron was never registered, so nothing was watching it. These are the
   // remaining business-critical schedules that feed customer-facing flows.
@@ -422,6 +425,50 @@ serve(async (req) => {
     }
   } catch (e: any) {
     console.warn(`[health-watchdog] strategist loop check threw: ${e?.message ?? e}`)
+  }
+
+  // ── 1e. Innovation scan — did a weekly research report actually land? ──
+  // The cron only inserts a deep_research task; seo-worker-research does the
+  // work. A scan older than SCAN_MAX_DAYS means the strategist pitches from
+  // nothing (it skips pitching on stale research).
+  try {
+    const SCAN_MAX_DAYS = 9
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('completed_at')
+      .eq('task_type', 'deep_research')
+      .eq('status', 'completed')
+      .eq('brief_data->>innovation_scan', 'true')
+      .order('completed_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) console.warn(`[health-watchdog] innovation scan check failed: ${error.message}`)
+    else {
+      const last = (data as { completed_at: string | null } | null)?.completed_at ?? null
+      // Baseline before any scan has completed: the first one ever queued, so a
+      // first scan still in progress gets the same budget instead of alerting.
+      // No scan ever queued (migration not applied yet) = silent.
+      const { data: firstQueued } = await supabase
+        .from('seo_tasks')
+        .select('created_at')
+        .eq('task_type', 'deep_research')
+        .eq('brief_data->>innovation_scan', 'true')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      const since = last ?? (firstQueued as { created_at: string } | null)?.created_at ?? null
+      const ageDays = since ? (Date.now() - new Date(since).getTime()) / 86_400_000 : 0
+      if (since && ageDays > SCAN_MAX_DAYS) {
+        findings.push({
+          severity: 'WARN',
+          category: 'data_stale',
+          message:  `Innovation scan is STALE: last completed weekly research ${last ? `${ageDays.toFixed(1)} days ago` : 'never'} (budget ${SCAN_MAX_DAYS} days). seo-worker-research may be failing on it.`,
+          context:  { last_completed_at: last, budget_days: SCAN_MAX_DAYS },
+        })
+      }
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] innovation scan check threw: ${e?.message ?? e}`)
   }
 
   // ── 1c. Artisan coverage — roasts logged without their Artisan file ───
