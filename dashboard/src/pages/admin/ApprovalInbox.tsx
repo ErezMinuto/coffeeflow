@@ -48,7 +48,8 @@ async function loadInbox(): Promise<InboxItem[]> {
       .eq('status', 'draft').order('created_at', { ascending: false }).limit(200),
     supabase.from('seo_tasks').select('id, task_type, task_subtype, brief_data, result_data, created_at, status')
       .eq('result_data->>review_required', 'true').order('created_at', { ascending: false }).limit(500),
-    supabase.from('strategist_signals').select('id, kind, title, detail, leverage, created_at, status')
+    // '*' so the inbox also works before the innovation_pitch columns exist.
+    supabase.from('strategist_signals').select('*')
       .eq('status', 'open').order('created_at', { ascending: false }).limit(200),
   ])
   // Surface a failed source instead of silently showing an emptier inbox.
@@ -75,7 +76,8 @@ async function loadInbox(): Promise<InboxItem[]> {
       imageUrl: rd.image_url ?? rd.carousel_slides?.[0]?.image_url, raw: t })
   }
   for (const s of (sigs.data ?? []) as any[]) {
-    out.push({ key: `signal:${s.id}`, kind: 'signal', id: s.id, group: `Agent requests: ${s.kind.replace('_', ' ')}`, title: s.title,
+    out.push({ key: `signal:${s.id}`, kind: 'signal', id: s.id,
+      group: s.kind === 'innovation_pitch' ? 'Innovation pitches: new tools and methods' : `Agent requests: ${s.kind.replace('_', ' ')}`, title: s.title,
       detail: [s.detail ?? '', s.leverage ? `Payoff: ${s.leverage}` : ''].filter(Boolean).join(' '), status: s.status, created: s.created_at, raw: s })
   }
   return out
@@ -150,6 +152,44 @@ function approveLabel(it: InboxItem): string | null {
   return 'Accept'
 }
 
+const METRIC_LABEL: Record<string, string> = {
+  bean_revenue: 'bean revenue', orders: 'orders', repeat_purchase_rate: 'repeat purchase rate',
+  roas: 'ROAS', cpa: 'cost per acquisition', email_ctr: 'email click rate', organic_sessions: 'organic sessions',
+}
+
+/** Only http(s) links are rendered as links: sources come from web research. */
+function safeHref(u: unknown): string | null {
+  try { const x = new URL(String(u)); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : null } catch { return null }
+}
+
+function PitchDetails({ s }: { s: Record<string, any> }) {
+  const steps: unknown[] = Array.isArray(s.implementation_steps) ? s.implementation_steps : []
+  const sources: Array<Record<string, unknown>> = Array.isArray(s.sources) ? s.sources : []
+  return (
+    <div className="mt-1.5 text-[12px] text-surface-700 space-y-1" dir="auto">
+      <div className="flex flex-wrap gap-x-3 text-surface-500">
+        {s.check_metric && <span>Should move: <b>{Object.prototype.hasOwnProperty.call(METRIC_LABEL, String(s.check_metric)) ? METRIC_LABEL[String(s.check_metric)] : String(s.check_metric)}</b></span>}
+        {s.effort && <span>Effort: {String(s.effort)}</span>}
+        {s.cost_estimate && <span>Cost: {String(s.cost_estimate)}</span>}
+      </div>
+      {steps.length > 0 && (
+        <ol className="list-decimal pl-4">{steps.slice(0, 8).map((x, i) => <li key={i}>{String(x)}</li>)}</ol>
+      )}
+      {sources.length > 0 && (
+        <div className="flex flex-wrap gap-x-3">
+          {sources.slice(0, 5).map((src, i) => {
+            const href = safeHref(src?.url)
+            const label = String(src?.title ?? src?.url ?? 'source').slice(0, 80) + (src?.published ? ` (${String(src.published).slice(0, 10)})` : '')
+            return href
+              ? <a key={i} href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-700 underline">{label}</a>
+              : <span key={i}>{label}</span>
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function guidePrompt(it: InboxItem): string {
   return `About this item waiting for my approval (${it.group}, ${ageLabel(it.created)}):\n"${it.title}"\n${it.detail ? it.detail.slice(0, 400) + '\n' : ''}\nMy guidance: `
 }
@@ -221,6 +261,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-surface-900 break-words" dir="auto">{it.title}</div>
                         {it.detail && <div className="text-[12px] text-surface-600 mt-0.5 line-clamp-3" dir="auto">{it.detail}</div>}
+                        {it.kind === 'signal' && it.raw.kind === 'innovation_pitch' && <PitchDetails s={it.raw} />}
                         <div className="text-[11px] text-surface-400 mt-1">{ageLabel(it.created)}</div>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                           {ok && <button onClick={() => run(() => approveItem(it))} disabled={busy} className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"><Check size={12} /> {ok}</button>}
