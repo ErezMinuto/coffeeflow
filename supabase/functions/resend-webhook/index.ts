@@ -8,15 +8,25 @@
  *
  * Events handled: email.sent, email.delivered, email.opened,
  *   email.clicked, email.bounced, email.complained
+ *
+ * Also the invoice inbox: an `email.received` addressed to
+ * invoices@in.minuto.co.il (INVOICE_INBOX_ADDRESS) is answered 200 at once and
+ * its attachments are stored as supplier invoices in the background —
+ * see inbound_invoices.ts. Other received mail is logged as before.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { constantTimeEqual } from "../_shared/constant_time.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { DEFAULT_INBOX, handleInboundInvoices, isForInbox } from "./inbound_invoices.ts";
 
 const SUPA_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY              = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET")     ?? "";
+const RESEND_API_KEY        = Deno.env.get("RESEND_API_KEY")            ?? "";
+const ANTHROPIC_API_KEY     = Deno.env.get("ANTHROPIC_API_KEY")         ?? "";
+const INVOICE_INBOX         = Deno.env.get("INVOICE_INBOX_ADDRESS")     || DEFAULT_INBOX;
 
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
@@ -104,6 +114,41 @@ serve(async (req) => {
 
     const payload = JSON.parse(rawBody);
     console.log("Resend webhook:", payload.type, JSON.stringify(payload.data?.email_id || "").slice(0, 50));
+
+    // ── invoice inbox ───────────────────────────────────────────────────────
+    // Reading each attachment with Claude can outlast Resend's delivery
+    // timeout (which would retry the email), so answer now and work after.
+    if (payload.type === "email.received" && payload.data?.email_id &&
+        isForInbox(payload.data, INVOICE_INBOX)) {
+      const log = createLogger("resend-webhook");
+      const emailId = String(payload.data.email_id);
+      log.info("inbox.received", `email from ${payload.data.from ?? "?"}`, {
+        email_id: emailId, from: payload.data.from ?? null,
+        attachments: Array.isArray(payload.data.attachments) ? payload.data.attachments.length : 0,
+      });
+      const work = (async () => {
+        try {
+          const r = await handleInboundInvoices(emailId, {
+            supabase, log, resendKey: RESEND_API_KEY, anthropicKey: ANTHROPIC_API_KEY,
+          });
+          const summary = { email_id: emailId, stored: r.stored, skipped: r.skipped, failed: r.failed };
+          if (r.code === "stored") await log.finish("success", summary);
+          else if (r.code === "partial") await log.finish("partial", summary);
+          else if (r.failed) await log.finish("error", summary);              // a real failure
+          else await log.finish("error", { ...summary, code: r.code });        // a handled refusal
+        } catch (e) {
+          log.error("inbox.throw", "invoice inbox aborted", { email_id: emailId }, e);
+          await log.finish("error", { email_id: emailId });
+        }
+      })();
+      // deno-lint-ignore no-explicit-any
+      const rt = (globalThis as any).EdgeRuntime;
+      if (rt?.waitUntil) rt.waitUntil(work); else await work;
+      return new Response(JSON.stringify({ ok: true, invoice_inbox: true, run_id: log.runId }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const eventType = EVENT_MAP[payload.type];
     if (!eventType) {
