@@ -18,14 +18,26 @@
 //   4. seo_tasks "stuck" — claimed (status=processing) past locked_until + 30min
 //   5. No experiment learning written in N cycles (signal that the loop isn't producing rules)
 //   6. WP/Meta/Anthropic API errors detected in recent task error_msgs
+//   7. Runtime sentinel (runtime_sentinel.ts): visual QA spikes, SEO-chat
+//      runaway loops, edge crashes / killed runs from system_logs. Repeating
+//      bugs are filed into strategist_signals as 'open' bug_reports for the
+//      fixer agent (bug_signals.ts) — a human still approves each one.
 //
 // Outputs SILENT-OK when everything is healthy (no spammy daily "all
 // good" tasks).
 
+import { freshnessBudgetHours } from './freshness_budget.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
+import { buildApprovalDigest, renderApprovalDigest } from '../_shared/approval_digest.ts'
 import { artisanCoverageFindings } from './artisan_coverage.ts'
+import {
+  chatLoopFindings, edgeCrashFindings, visualQaFindings,
+  CRASH_WINDOW_HOURS, VISUAL_WINDOW_HOURS,
+  type BugSignalDraft, type ChatRow, type FailedVisualTask, type LogErrorLine, type LogRun, type SentinelFinding,
+} from './runtime_sentinel.ts'
+import { fileBugSignals } from './bug_signals.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -108,12 +120,22 @@ const EXPECTED_CRONS: Array<{
   // strategist-brain-advance and strategist-executor; -b fires
   // seo-worker-research and seo-worker-techseo. Both run every 5 minutes.
   { jobname: 'cf-dispatch-workers-a',               max_silence_hours: 1,  required: true  },
+  // Strategist closed loop: the draft critic (20261102b). Not required until
+  // the loop is on everywhere; a silent critic leaves drafts in
+  // awaiting_critique, which check 1d below also reports.
+  { jobname: 'strategist-critic-tick',              max_silence_hours: 1,  required: false },
+  // Weekly research for innovation pitches (20261103b). Check 1e below also
+  // verifies a scan actually COMPLETED, not just that the insert ran.
+  { jobname: 'innovation-scan-weekly',              max_silence_hours: 8 * 24, required: false },
   // Added 2026-06-21 after woo-orders-sync silently froze for 12 days: its
   // cron was never registered, so nothing was watching it. These are the
   // remaining business-critical schedules that feed customer-facing flows.
   { jobname: 'woo-orders-sync-daily',               max_silence_hours: 30, required: true  },  // feeds welcome emails + revenue
   { jobname: 'email-automation-first-purchase-daily', max_silence_hours: 30, required: true },
   { jobname: 'woo-products-enrich-tick',            max_silence_hours: 30, required: false },
+  // rfm-sync ran from a GitHub schedule that was switched off on 2026-04-21;
+  // customer_rfm then sat frozen for six months under the strategist brain.
+  { jobname: 'rfm-sync-daily',                      max_silence_hours: 30, required: true  },
   { jobname: 'cf-dispatch-workers-b',               max_silence_hours: 1,  required: true  },
   { jobname: 'mission-worker-tick',                 max_silence_hours: 1,  required: false },
   // Weekly Wed 18:00 IDT employee availability reminder (see
@@ -130,6 +152,10 @@ const EXPECTED_CRONS: Array<{
   // because an unregistered cron is an unwatched one — the exact reason
   // woo-orders-sync froze for 12 days unnoticed.
   { jobname: 'system-logs-purge-daily',             max_silence_hours: 30, required: false },
+  // Daily 03:50 UTC: packing_logs keeps 10 days (see
+  // 20261028_packing_logs_retention.sql). Non-critical: a missed run only
+  // leaves older packing rows around a little longer.
+  { jobname: 'packing-logs-purge-daily',            max_silence_hours: 30, required: false },
   // MFlow is the single source of revenue truth AND the thing that moves real
   // packed_stock, and NEITHER job was registered here. The revenue half had no
   // cron at all until 2026-08-25 and sat frozen for three days after its
@@ -156,6 +182,7 @@ const EXPECTED_FRESH_DATA: Array<{
   table:          string
   column:         string   // timestamptz or date column whose max() = freshness
   max_age_hours:  number
+  saturday_max_age_hours?: number
   required:       boolean
   label:          string
 }> = [
@@ -164,6 +191,10 @@ const EXPECTED_FRESH_DATA: Array<{
   // store sees 3-9 orders every single day, so 60h has effectively no false
   // positives yet still catches a freeze within ~2.5 days.
   { table: 'woo_orders',         column: 'order_date',    max_age_hours: 60, required: true,  label: 'WooCommerce orders (feeds welcome emails)' },
+  // date_modified (Woo's own clock) for the same reason as order_date above.
+  // Not required until customer messaging sends live (step 4 flips it).
+  { table: 'customer_orders',    column: 'date_modified', max_age_hours: 60, required: false, label: 'Customer orders (feeds customer messaging)' },
+  { table: 'customer_rfm',       column: 'updated_at',    max_age_hours: 36, required: true,  label: 'Customer RFM segments (strategist brain + marketing groups)' },
   { table: 'ga4_pages_daily',    column: 'synced_at',     max_age_hours: 40, required: true,  label: 'GA4 analytics' },
   { table: 'meta_ad_daily',      column: 'synced_at',     max_age_hours: 40, required: true,  label: 'Meta ad insights' },
   { table: 'meta_organic_posts', column: 'synced_at',     max_age_hours: 48, required: false, label: 'Meta organic posts' },
@@ -174,13 +205,15 @@ const EXPECTED_FRESH_DATA: Array<{
   // re-writes rows constantly, so synced_at would advance even if MFlow stopped
   // returning new documents. Minuto sells every day across POS + EcoSite +
   // back office, so a 12h budget catches a freeze within half a day without
-  // false-positiving on a quiet evening.
-  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
+  // false-positiving on a quiet evening. Saturday gets 36h: the Friday-to-first-
+  // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy.
+  { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 
 interface HealthFinding {
   severity: 'WARN' | 'ERROR'
   category: 'cron_silent' | 'cron_missing' | 'cron_disabled' | 'cron_failed' | 'data_stale' | 'task_failure_rate' | 'task_stuck' | 'no_learnings' | 'api_errors' | 'token_expiry' | 'artisan_coverage'
+            | 'visual_qa_spike' | 'chat_runaway' | 'edge_crash' | 'edge_timeout_risk' | 'strategist_loop_stuck'
   message:  string
   context?: Record<string, unknown>
 }
@@ -191,6 +224,24 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
   const findings: HealthFinding[] = []
+
+  // ── 0. Daily "waiting for your approval" email ─────────────────────────
+  // Sent once per daily run, only when something waits. Never blocks the
+  // health checks. ?action=approval_digest runs only this (for testing).
+  const digestOnly = new URL(req.url).searchParams.get('action') === 'approval_digest'
+  let digestStatus = 'nothing waiting'
+  try {
+    const sections = await buildApprovalDigest(supabase)
+    if (sections.length > 0) {
+      const { subject, html } = renderApprovalDigest(sections)
+      digestStatus = await sendOwnerEmail({ subject, html, fromName: 'Minuto CoffeeFlow' })
+    }
+    console.log(`[health-watchdog] approval digest: ${digestStatus}`)
+  } catch (e: any) {
+    digestStatus = `error: ${e?.message ?? e}`
+    console.warn(`[health-watchdog] approval digest threw: ${digestStatus}`)
+  }
+  if (digestOnly) return jsonResponse({ ok: true, approval_digest: digestStatus })
 
   // ── 1. Cron registry health — exists, active, ran, succeeded ──────────
   // Uses cron_job_health (reads cron.job + cron.job_run_details) so we catch
@@ -336,17 +387,88 @@ serve(async (req) => {
         continue
       }
       const ageHours = (Date.now() - new Date(raw).getTime()) / (3600 * 1000)
-      if (ageHours > src.max_age_hours) {
+      const budgetHours = freshnessBudgetHours(src, new Date())
+      if (ageHours > budgetHours) {
         findings.push({
           severity: src.required ? 'ERROR' : 'WARN',
           category: 'data_stale',
-          message:  `${src.label} is STALE — newest ${src.table}.${src.column} is ${ageHours.toFixed(1)}h old (budget: ${src.max_age_hours}h). The sync is not advancing the data even if its cron looks healthy.`,
-          context:  { table: src.table, column: src.column, latest: raw, age_hours: ageHours, budget_hours: src.max_age_hours },
+          message:  `${src.label} is STALE — newest ${src.table}.${src.column} is ${ageHours.toFixed(1)}h old (budget: ${budgetHours}h). The sync is not advancing the data even if its cron looks healthy.`,
+          context:  { table: src.table, column: src.column, latest: raw, age_hours: ageHours, budget_hours: budgetHours },
         })
       }
     } catch (e: any) {
       console.warn(`[health-watchdog] freshness check threw for ${src.table}: ${e?.message ?? e}`)
     }
+  }
+
+  // ── 1d. Strategist closed loop — recommendations stuck mid-loop ─────
+  // Every loop state is transient. A row that has not moved in STUCK_HOURS
+  // means a worker, the critic or a hand-back is not running.
+  try {
+    const STUCK_HOURS = 6
+    const cutoff = new Date(Date.now() - STUCK_HOURS * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('strategic_recommendations')
+      .select('id, status, title, updated_at')
+      .in('status', ['drafting', 'awaiting_critique', 'revising', 'exporting'])
+      .lt('updated_at', cutoff)
+      .limit(20)
+    if (error) console.warn(`[health-watchdog] strategist loop check failed: ${error.message}`)
+    else if ((data ?? []).length > 0) {
+      const rows = data as Array<{ id: string; status: string; title: string; updated_at: string }>
+      findings.push({
+        severity: 'WARN',
+        category: 'strategist_loop_stuck',
+        message:  `${rows.length} strategist recommendation(s) stuck mid-loop for over ${STUCK_HOURS}h: ${rows.slice(0, 5).map(r => `${r.status} "${r.title.slice(0, 50)}"`).join('; ')}`,
+        context:  { rows: rows.map(r => ({ id: r.id, status: r.status, updated_at: r.updated_at })) },
+      })
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] strategist loop check threw: ${e?.message ?? e}`)
+  }
+
+  // ── 1e. Innovation scan — did a weekly research report actually land? ──
+  // The cron only inserts a deep_research task; seo-worker-research does the
+  // work. A scan older than SCAN_MAX_DAYS means the strategist pitches from
+  // nothing (it skips pitching on stale research).
+  try {
+    const SCAN_MAX_DAYS = 9
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('completed_at')
+      .eq('task_type', 'deep_research')
+      .eq('status', 'completed')
+      .eq('brief_data->>innovation_scan', 'true')
+      .order('completed_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) console.warn(`[health-watchdog] innovation scan check failed: ${error.message}`)
+    else {
+      const last = (data as { completed_at: string | null } | null)?.completed_at ?? null
+      // Baseline before any scan has completed: the first one ever queued, so a
+      // first scan still in progress gets the same budget instead of alerting.
+      // No scan ever queued (migration not applied yet) = silent.
+      const { data: firstQueued } = await supabase
+        .from('seo_tasks')
+        .select('created_at')
+        .eq('task_type', 'deep_research')
+        .eq('brief_data->>innovation_scan', 'true')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      const since = last ?? (firstQueued as { created_at: string } | null)?.created_at ?? null
+      const ageDays = since ? (Date.now() - new Date(since).getTime()) / 86_400_000 : 0
+      if (since && ageDays > SCAN_MAX_DAYS) {
+        findings.push({
+          severity: 'WARN',
+          category: 'data_stale',
+          message:  `Innovation scan is STALE: last completed weekly research ${last ? `${ageDays.toFixed(1)} days ago` : 'never'} (budget ${SCAN_MAX_DAYS} days). seo-worker-research may be failing on it.`,
+          context:  { last_completed_at: last, budget_days: SCAN_MAX_DAYS },
+        })
+      }
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] innovation scan check threw: ${e?.message ?? e}`)
   }
 
   // ── 1c. Artisan coverage — roasts logged without their Artisan file ───
@@ -584,11 +706,98 @@ serve(async (req) => {
     console.warn(`[health-watchdog] token-expiry check threw: ${e?.message ?? e}`)
   }
 
+  // ── 5c. Runtime sentinel — bugs that look healthy from the outside ───
+  // Detection is pure (runtime_sentinel.ts); this block only fetches rows.
+  // Each check is isolated so one failing query can't blind the others.
+  const bugDrafts: BugSignalDraft[] = []
+  const addSentinel = (fs: SentinelFinding[]) => {
+    for (const { signal, ...f } of fs) {
+      findings.push(f)
+      if (signal) bugDrafts.push(signal)
+    }
+  }
+
+  // 5c-i. Visual QA loop failure spike — tasks that exhausted every QA attempt.
+  try {
+    const since = new Date(Date.now() - VISUAL_WINDOW_HOURS * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('seo_tasks')
+      .select('id, updated_at, qa_last_critique:result_data->qa_last_critique, slide_qa:result_data->slide_qa')
+      .eq('task_type', 'visual_generation')
+      .eq('result_data->>review_required', 'true')
+      .gte('updated_at', since)
+      .limit(200)
+    if (error) console.warn(`[health-watchdog] visual QA scan failed: ${error.message}`)
+    else addSentinel(visualQaFindings((data ?? []) as FailedVisualTask[]))
+  } catch (e: any) {
+    console.warn(`[health-watchdog] visual QA scan threw: ${e?.message ?? e}`)
+  }
+
+  // 5c-ii. SEO chat runaway loops. 7 days, because a repeat across days is
+  // the signal; the 24h counts are derived from the same rows.
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('session_id, role, content, created_at')
+      .gte('created_at', since)
+      .or('role.eq.system,content.like.*parent_not_ready*')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error) console.warn(`[health-watchdog] chat loop scan failed: ${error.message}`)
+    else addSentinel(chatLoopFindings((data ?? []) as ChatRow[]))
+  } catch (e: any) {
+    console.warn(`[health-watchdog] chat loop scan threw: ${e?.message ?? e}`)
+  }
+
+  // 5c-iii. Edge crashes + killed runs + near-timeouts, from system_logs.
+  try {
+    const since = new Date(Date.now() - CRASH_WINDOW_HOURS * 3600 * 1000).toISOString()
+    const { data: runs, error } = await supabase
+      .from('system_log_runs')
+      .select('run_id, fn, started_at, duration_ms, status')
+      .gte('started_at', since)
+      .neq('status', 'success')
+      .limit(500)
+    // Slow-but-successful runs for the timeout-risk WARN.
+    const { data: slowRuns } = await supabase
+      .from('system_log_runs')
+      .select('run_id, fn, started_at, duration_ms, status')
+      .gte('started_at', since)
+      .eq('status', 'success')
+      .gte('duration_ms', 100_000)
+      .limit(100)
+    if (error) {
+      console.warn(`[health-watchdog] system_logs scan failed: ${error.message}`)
+    } else {
+      const errorRunIds = (runs ?? []).filter(r => r.status === 'error').map(r => r.run_id).slice(0, 200)
+      let lines: LogErrorLine[] = []
+      if (errorRunIds.length > 0) {
+        const { data: l, error: lErr } = await supabase
+          .from('system_logs')
+          .select('run_id, event, message, data, error_name, error_stack, run_status')
+          .in('run_id', errorRunIds)
+          .eq('level', 'error')
+          .limit(1000)
+        if (lErr) console.warn(`[health-watchdog] system_logs error lines failed: ${lErr.message}`)
+        lines = (l ?? []) as LogErrorLine[]
+      }
+      addSentinel(edgeCrashFindings([...(runs ?? []), ...(slowRuns ?? [])] as LogRun[], lines))
+    }
+  } catch (e: any) {
+    console.warn(`[health-watchdog] system_logs scan threw: ${e?.message ?? e}`)
+  }
+
   // ── 6. Emit findings → ONE consolidated dynamic_experiment task ──────
   if (findings.length === 0) {
     console.log('[health-watchdog] all healthy, no task created')
-    return jsonResponse({ ok: true, healthy: true, findings_count: 0 })
+    return jsonResponse({ ok: true, healthy: true, findings_count: 0, approval_digest: digestStatus })
   }
+
+  // Repeating, concrete bugs → strategist_signals for the fixer agent.
+  // Deduped (bug_signals.ts); never throws, so it can't block the email.
+  const signals = bugDrafts.length > 0 ? await fileBugSignals(supabase, bugDrafts) : []
+  for (const s of signals) console.log(`[health-watchdog] bug signal ${s.key}: ${s.filed ? `filed ${s.signal_id}` : 'skipped'} (${s.reason})`)
 
   const errCount  = findings.filter(f => f.severity === 'ERROR').length
   const warnCount = findings.filter(f => f.severity === 'WARN').length
@@ -620,7 +829,7 @@ serve(async (req) => {
 
   if (error) {
     console.error(`[health-watchdog] task insert failed: ${error.message}`)
-    return jsonResponse({ ok: false, error: error.message, email_status: emailStatus, findings }, 500)
+    return jsonResponse({ ok: false, error: error.message, email_status: emailStatus, findings, signals }, 500)
   }
-  return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings })
+  return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings, signals })
 })

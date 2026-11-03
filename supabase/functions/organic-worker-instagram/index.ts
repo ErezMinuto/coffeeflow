@@ -35,6 +35,7 @@
 //    the writer + visual workers). attempts>=max_attempts flips to 'failed'.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { handBackForCritique } from '../_shared/strategist_loop.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import {
   createSupabase,
@@ -255,14 +256,19 @@ serve(async (req) => {
     await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
   }
-  if (!parent || parent.status !== 'completed') {
+  if (!parent || parent.status === 'failed') {
+    // The visual is gone for good, so there will never be an image to post.
+    await safeMarkFailed(supabase, task, `[superseded] parent visual ${task.parent_task_id} ${parent ? 'failed' : 'is missing'}`, true)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, reason: 'parent_superseded' })
+  }
+  if (parent.status !== 'completed') {
     // Visual worker hasn't finished. Release back to pending without
     // counting an attempt — visual generation has its own QA loop that
     // can take 2-3 min, and we shouldn't burn a retry slot waiting.
     const retryInMinutes = await releaseForParentNotReady(
       supabase,
       task,
-      `parent visual task ${task.parent_task_id} not yet completed (status=${parent?.status ?? 'missing'})`,
+      `parent visual task ${task.parent_task_id} not yet completed (status=${parent.status})`,
     )
     return jsonResponse({
       processed: 1,
@@ -287,7 +293,7 @@ serve(async (req) => {
   // Publish). Hard-failing a QA-flagged image here meant good images silently
   // never reached the admin to approve. Instead: STILL stage the post and
   // surface it for review, carrying a qa_flagged marker so the review UI can
-  // warn — the human makes the final call.
+  // warn — the human makes the final call. Flagged posts skip the email (6b).
   const qaFlagged = parentResult.review_required === true
   if (qaFlagged) {
     console.warn(`[organic-worker-instagram] ${workerId} parent visual ${task.parent_task_id} is QA-flagged (review_required) — staging for HUMAN review anyway, not auto-failing`)
@@ -329,6 +335,29 @@ serve(async (req) => {
   if (finalCaption.length > IG_CAPTION_MAX) {
     await safeMarkFailed(supabase, task, `final caption ${finalCaption.length} chars exceeds IG cap ${IG_CAPTION_MAX}. Strategist must trim caption_he.`, true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption too long' })
+  }
+
+  // ── 4b. Strategist closed loop: hold for the critic ─────────────────
+  // Nothing is staged on Meta yet (prepared containers expire in ~24h, and a
+  // rejected draft must leave nothing behind). strategist-executor runs the
+  // same 'prepare' call below once strategist-evaluator passes the draft.
+  if (brief.hold_for_critique && brief.strategist_rec_id) {
+    const held = {
+      kind: 'ig', ig_task_id: task.id, visual_task_id: task.parent_task_id,
+      caption_he, caption: finalCaption, hashtags, media_type: mediaType, meta_type: metaPublishType,
+      image_url: imageUrl ?? null,
+      carousel_children: carouselChildren ? carouselChildren.map(c => c.image_url) : null,
+      qa_flagged: qaFlagged,
+    }
+    await markTaskCompleted(supabase, task, {
+      held_for_critique: true, strategist_rec_id: brief.strategist_rec_id,
+      image_url: held.image_url, carousel_children: held.carousel_children, caption: finalCaption,
+      caption_length: finalCaption.length, hashtags, media_type: mediaType, meta_type: metaPublishType,
+      qa_flagged: qaFlagged, review_required: false,
+    })
+    const notHanded = await handBackForCritique(supabase, brief.strategist_rec_id, held)
+    if (notHanded) console.warn(`[organic-worker-instagram] ${workerId} task ${task.id} held but not handed back to rec ${brief.strategist_rec_id}: ${notHanded}`)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, held_for_critique: true, handed_back: !notHanded })
   }
 
   // ── 5. Call meta-publish ────────────────────────────────────────────
@@ -433,7 +462,13 @@ serve(async (req) => {
   // Best-effort + non-blocking: the task is already committed above, so a
   // failed/slow email never affects the pipeline. Only for review-staged posts
   // (the only path this worker takes), so this fires exactly once per post.
-  if (reviewRequired) {
+  // QA-flagged posts are NOT emailed (owner decision 2026-10-24): with the
+  // stricter Opus critic a flag usually means a genuinely broken image, so it
+  // waits in the admin queue (/admin/seo-agent, "QA flagged" badge) instead
+  // of landing in the inbox as "ready for review".
+  if (reviewRequired && qaFlagged) {
+    console.log(`[organic-worker-instagram] ${workerId} QA-flagged post staged for the admin queue — no ready-for-review email`)
+  } else if (reviewRequired) {
     const armContext = await fetchExperimentArmContext(supabase, task)
     const notifyStatus = await notifyPostReadyForReview({
       mediaType: mediaType,

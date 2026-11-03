@@ -31,6 +31,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { WRITER_SYSTEM_PROMPT } from '../seo-agent/prompts/writer.ts'
+import { handBackForCritique } from '../_shared/strategist_loop.ts'
 import { callClaude, parseClaudeJson, MODEL_WRITER } from '../seo-agent/claude.ts'
 import { checkKeywordCannibalization } from '../seo-agent/cannibalizationCheck.ts'
 import {
@@ -213,8 +214,22 @@ serve(async (req: Request): Promise<Response> => {
     const title           = sanitizeHebrew(draft.title)
     const metaDescription = sanitizeHebrew(draft.meta_description ?? '')
 
-    // ── 7. POST to blog-publish (WordPress draft) ───────────────────────
     const slug = (draft.slug ?? '').trim().slice(0, 60) || undefined
+
+    // ── 6b. Strategist closed loop: hold for the critic ─────────────────
+    // The draft stays in CoffeeFlow until strategist-evaluator passes it;
+    // strategist-executor then sends it to blog-publish. Nothing reaches
+    // WordPress from here, so a rejected draft leaves no WP draft behind.
+    if (brief.hold_for_critique && brief.strategist_rec_id) {
+      const held = { kind: 'blog', title, slug: slug ?? null, meta_description: metaDescription, body, keyword: brief.keyword, task_id: task.id }
+      await markTaskCompleted(supabase, task, { held_for_critique: true, strategist_rec_id: brief.strategist_rec_id, draft: held })
+      const notHanded = await handBackForCritique(supabase, brief.strategist_rec_id, held)
+      if (notHanded) console.warn(`[seo-worker-writer] task=${task.id} draft held but not handed back to rec ${brief.strategist_rec_id}: ${notHanded}`)
+      console.log(`[seo-worker-writer] ✓ task=${task.id} held for critique (rec ${brief.strategist_rec_id})`)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, held_for_critique: true, handed_back: !notHanded })
+    }
+
+    // ── 7. POST to blog-publish (WordPress draft) ───────────────────────
     const pubRes = await fetch(`${SUPABASE_URL}/functions/v1/blog-publish`, {
       method:  'POST',
       headers: {
@@ -609,6 +624,11 @@ function buildWriterUserMessage(
     brief.competitive_angle   ? `COMPETITIVE ANGLE: ${brief.competitive_angle}` : '',
   ].filter(Boolean).join('\n')
 
+  // Closed-loop revision: a reviewer rejected the previous draft.
+  const revisionBlock = brief.revision?.feedback
+    ? `\n=== REVISION ${brief.revision.number ?? ''} ===\nA reviewer rejected the previous draft of this article. Write a new full article that fixes every point below and keeps what was not criticised. Do not mention the review.\nREVIEWER FEEDBACK:\n${brief.revision.feedback}\n${brief.revision.previous ? `PREVIOUS DRAFT (for reference only):\n${String(typeof brief.revision.previous === 'string' ? brief.revision.previous : JSON.stringify(brief.revision.previous)).slice(0, 12000)}\n` : ''}`
+    : ''
+
   return `=== ARTICLE BRIEF ===
 
 KEYWORD: "${brief.keyword}"
@@ -619,7 +639,7 @@ ${keyPointsBlock}
 
 PRODUCTS TO MENTION (catalog-exact names + their real permalinks already resolved — inline these URLs directly in the markdown links):
 ${productsBlock}
-${internalLinksBlock}${optionalLines ? '\n' + optionalLines + '\n' : ''}
+${internalLinksBlock}${optionalLines ? '\n' + optionalLines + '\n' : ''}${revisionBlock}
 === INSTRUCTIONS ===
 
 Write the full article body in Hebrew markdown per the system prompt. EVERY product above that has a resolved URL MUST appear in the body as a real markdown link [שם המוצר](THAT_URL) at least once, woven naturally into the relevant section — substitute the real URL, NOT the literal text PERMALINK, and do not skip a resolved product. If a product has no resolved URL, drop it entirely; do not invent a link. An article that recommends or discusses a coffee we sell but links zero products is a failure — prefer placing the product link where the reader is most likely to act (next to a tasting note, brew recommendation, or "which beans" mention).

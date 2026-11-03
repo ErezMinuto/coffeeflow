@@ -105,6 +105,9 @@ export function toDate(v: unknown): string | null {
     d = +match[1]; m = +match[2]; y = +match[3]
     if (y < 100) y += 2000
   }
+  // A supplier invoice is from this century and not from next year; anything
+  // else is a misread (an invoice was saved as year 0006 on 2026-10-22).
+  if (y < 2000 || y > new Date().getUTCFullYear() + 1) return null
   const dt = new Date(Date.UTC(y, m - 1, d))
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`

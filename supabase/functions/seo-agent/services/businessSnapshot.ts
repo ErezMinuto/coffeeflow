@@ -30,6 +30,7 @@ import {
 import { fetchTopOrganicLandingPages, fetchTopKeywords, type Ga4LandingPageSignal, type GscKeywordRow } from './googleApi.ts'
 import { fetchTopOrganicPosts, fetchTopConvertingAds, type OrganicPostSignal, type AdInsightSignal } from './metaApi.ts'
 import { getRecentLearnings } from '../db.ts'
+import { fetchActivePaidCampaigns } from './paidCampaigns.ts'
 import type { LearningRow } from '../types.ts'
 import type {
   BusinessSnapshot,
@@ -382,6 +383,7 @@ export async function assembleBusinessSnapshot(
     theses,
     learnings,
     resolvedTheses,
+    activePaid,
   ] = await Promise.all([
     safe('sales', fetchSalesSnapshot(supabase, salesWindowDays)),
     safe('customer_segments', fetchCustomerSegmentSummary(supabase)),
@@ -396,6 +398,7 @@ export async function assembleBusinessSnapshot(
     safe('open_theses', fetchOpenTheses(supabase)),
     safe('learnings', getRecentLearnings(supabase, { limit: 15 })),
     safe('resolved_theses', fetchResolvedTheses(supabase)),
+    safe('active_paid_campaigns', fetchActivePaidCampaigns(supabase)),
   ])
 
   // Inventory is large + mostly healthy; surface only the actionable subset so
@@ -420,6 +423,7 @@ export async function assembleBusinessSnapshot(
     open_theses: theses as TheseSnapshotRow[] | { error: string },
     resolved_theses: resolvedTheses as unknown[] | { error: string },
     recent_learnings: learnings as LearningRow[] | { error: string },
+    active_paid_campaigns: activePaid,
   }
 
   // Deep key-sort so the serialized prefix is byte-stable across runs (the cache
