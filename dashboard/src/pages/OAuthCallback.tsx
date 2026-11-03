@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { consumeOAuthState } from '../lib/utils'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 
 type Status = 'loading' | 'success' | 'error'
@@ -18,13 +19,24 @@ function OAuthCallback({ platform, edgeFunction }: { platform: string, edgeFunct
   const [error, setError] = useState('')
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const started = useRef(false)
 
   useEffect(() => {
+    // StrictMode runs effects twice in dev; the state is single-use, so only the first run may check it.
+    if (started.current) return
+    started.current = true
+
     const code = searchParams.get('code')
     const err = searchParams.get('error')
 
     if (err || !code) {
       setError(err || 'No authorization code received')
+      setStatus('error')
+      return
+    }
+
+    if (!consumeOAuthState(platform, searchParams.get('state'))) {
+      setError('OAuth state mismatch: start the connection again from Settings')
       setStatus('error')
       return
     }

@@ -17,10 +17,10 @@
 // key may list Auth users, PostgREST rejects a token whose signature it doesn't
 // recognise, and get_role_for_user answers from a user_roles table.
 
-const URL_ = 'http://backend.test'
-const SERVICE = 'test-service-role'
-const ANON = 'test-anon-key'
-const ROLES: Record<string, string> = { user_admin: 'admin', user_sched: 'schedule_manager', user_emp: 'employee' }
+export const URL_ = 'http://backend.test'
+export const SERVICE = 'test-service-role'
+export const ANON = 'test-anon-key'
+const ROLES: Record<string, string> = { user_admin: 'admin', user_sched: 'schedule_manager', user_emp: 'employee', user_books: 'bookkeeper' }
 
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
 const jwt = (payload: Record<string, unknown>, sig = 'valid-signature') => `${b64({ alg: 'HS256' })}.${b64(payload)}.${sig}`
@@ -28,22 +28,25 @@ const ADMIN = jwt({ sub: 'user_admin', role: 'authenticated' })
 const SCHED = jwt({ sub: 'user_sched', role: 'authenticated' })
 const EMP = jwt({ sub: 'user_emp', role: 'authenticated' })
 const STRANGER = jwt({ sub: 'user_nobody', role: 'authenticated' })
+// The outside bookkeeper: has a user_roles row, but is not staff (is_staff() excludes the role).
+const BOOKS = jwt({ sub: 'user_books', role: 'authenticated' })
 const FORGED_ADMIN = jwt({ sub: 'user_admin', role: 'authenticated' }, 'forged')
 const ANON_JWT = jwt({ role: 'anon' })
 
-type Caller = 'none' | 'anon' | 'madeup' | 'forged_admin' | 'employee' | 'stranger' | 'schedule_manager' | 'admin' | 'service'
-const HEADERS: Record<Caller, Record<string, string>> = {
+type Caller = 'none' | 'anon' | 'madeup' | 'forged_admin' | 'employee' | 'stranger' | 'bookkeeper' | 'schedule_manager' | 'admin' | 'service'
+export const HEADERS: Record<Caller, Record<string, string>> = {
   none: {},
   anon: { Authorization: `Bearer ${ANON_JWT}`, apikey: ANON },
   madeup: { Authorization: 'Bearer nope' },
   forged_admin: { Authorization: `Bearer ${FORGED_ADMIN}`, apikey: ANON },
   employee: { Authorization: `Bearer ${EMP}`, apikey: ANON },
   stranger: { Authorization: `Bearer ${STRANGER}`, apikey: ANON },
+  bookkeeper: { Authorization: `Bearer ${BOOKS}`, apikey: ANON },
   schedule_manager: { Authorization: `Bearer ${SCHED}`, apikey: ANON },
   admin: { Authorization: `Bearer ${ADMIN}`, apikey: ANON },
   service: { Authorization: `Bearer ${SERVICE}`, apikey: SERVICE },
 }
-const ALL: Caller[] = ['none', 'anon', 'madeup', 'forged_admin', 'employee', 'stranger', 'schedule_manager', 'admin', 'service']
+const ALL: Caller[] = ['none', 'anon', 'madeup', 'forged_admin', 'employee', 'stranger', 'bookkeeper', 'schedule_manager', 'admin', 'service']
 
 // One request shape per gate. `allow` lists who gets through; everyone else
 // must be refused with nothing called.
@@ -77,6 +80,9 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   'woo-orders-sync': { cases: adm({ count_only: true, days_back: 1 }) },
   'google-search-sync': { cases: adm({}) },
   'export-to-sheets': { cases: [{ name: 'POST', body: { schedule_id: 1, week_start: '2026-10-18' }, allow: SCHEDULERS }] },
+  // Signed-in staff only: the service role is nobody, so it cannot upload either.
+  'supplier-invoices': { cases: [{ name: 'POST ingest', body: { action: 'ingest', mime: 'image/jpeg', data: '' }, allow: ['employee', 'schedule_manager', 'admin'] }] },
+  'artisan-import': { cases: [{ name: 'POST', body: { roast_id: 1, filename: 'a.alog', content: '{}' }, allow: ['employee', ...SCHEDULERS] }] },
   'generate-campaign': {
     env: { RESEND_AUDIENCE_ID: 'test-audience' },
     cases: [
@@ -99,9 +105,27 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
       { name: 'Telegram webhook, no secret configured', body: { message: { chat: { id: 1 }, text: 'hi' } }, allow: [] },
     ],
   },
+  // The other two bots are Telegram webhooks only: with no secret configured
+  // every update must be refused, whatever the caller sends.
+  'coffee-bot': {
+    env: { COFFEE_BOT_WEBHOOK_SECRET: '' },
+    preflight: false,
+    cases: [
+      { name: 'Telegram update, no secret configured', body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/stock' } }, allow: [] },
+      { name: 'Telegram update with a made-up secret', headers: { 'x-telegram-bot-api-secret-token': 'guess' }, body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/stock' } }, allow: [] },
+    ],
+  },
+  'telegram-bot': {
+    env: { TASKS_BOT_WEBHOOK_SECRET: '' },
+    preflight: false,
+    cases: [
+      { name: 'Telegram update, no secret configured', body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/tasks' } }, allow: [] },
+      { name: 'Telegram update with a made-up secret', headers: { 'x-telegram-bot-api-secret-token': 'guess' }, body: { message: { chat: { id: 1 }, from: { id: 1 }, text: '/tasks' } }, allow: [] },
+    ],
+  },
 }
 
-const fake: typeof fetch = async (input, init) => {
+export const fake: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   const h = new Headers(init?.headers)
   if (url.startsWith(`${URL_}/auth/v1/admin/users`)) {
@@ -112,6 +136,12 @@ const fake: typeof fetch = async (input, init) => {
     if (!token.endsWith('.valid-signature')) return new Response('{"message":"JWSError"}', { status: 401 })
     const { p_user_id } = JSON.parse(String(init?.body ?? '{}'))
     return new Response(JSON.stringify(ROLES[p_user_id] ?? 'employee'), { status: 200 })
+  }
+  if (url === `${URL_}/rest/v1/rpc/is_staff`) {
+    const token = (h.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+    if (!token.endsWith('.valid-signature')) return new Response('{"message":"JWSError"}', { status: 401 })
+    const sub = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub
+    return new Response(JSON.stringify(typeof sub === 'string' && sub in ROLES && ROLES[sub] !== 'bookkeeper'), { status: 200 })
   }
   return new Response('not faked', { status: 599 })
 }
@@ -139,7 +169,7 @@ if (import.meta.main) {
   globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     if (url.startsWith('http://localhost:8000')) return realFetch(input, init)
-    if (url.startsWith(`${URL_}/auth/v1/admin/users`) || url === `${URL_}/rest/v1/rpc/get_role_for_user`) return fake(input, init)
+    if (url.startsWith(`${URL_}/auth/v1/admin/users`) || url === `${URL_}/rest/v1/rpc/get_role_for_user` || url === `${URL_}/rest/v1/rpc/is_staff`) return fake(input, init)
     outbound.push(url.replace(/\?.*/, ''))
     return new Response(JSON.stringify({ error: 'blocked by test' }), { status: 503 })
   }) as typeof fetch

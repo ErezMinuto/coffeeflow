@@ -20,7 +20,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { acquireLease, releaseLease } from '../_shared/job_lease.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
+import { applyPlannedShot } from '../_shared/shot_library.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
 import {
   createSupabase,
@@ -106,6 +108,11 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
+// Longer than any cycle can live (the edge runtime kills background work well
+// before this), short enough that a killed run frees the next cron tick.
+const ORCHESTRATOR_LEASE = 'organic-orchestrator'
+const ORCHESTRATOR_LEASE_TTL_S = 15 * 60
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
@@ -122,6 +129,21 @@ serve(async (req: Request): Promise<Response> => {
   const focus   = body.focus   ?? ''
   const runId   = crypto.randomUUID()
   console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
+
+  // One cycle at a time. Overlapping runs (a manual run during the cron, or a
+  // cron tick while a slow cycle is still going) planned from the same queue
+  // state and inserted duplicate task batches. The lease outlives this request
+  // (the cycle runs in the background) and expires on its own if the run is
+  // killed. Fails closed: no lease, no cycle.
+  const lease = await acquireLease(createSupabase(), ORCHESTRATOR_LEASE, runId, ORCHESTRATOR_LEASE_TTL_S)
+  if (!lease.held) {
+    if (lease.error) {
+      console.error(`[organic-orchestrator] run=${runId} could not take the run lease: ${lease.error}`)
+      return jsonResponse({ accepted: false, error: `run lease unavailable: ${lease.error}` }, 500)
+    }
+    console.log(`[organic-orchestrator] run=${runId} skipped: another cycle is still running`)
+    return jsonResponse({ accepted: false, skipped: 'another orchestrator cycle is still running', trigger }, 409)
+  }
 
   // The full cycle (10 data sources + a ~2min strategist call + experiment
   // eval + followback + FAQ scan + briefing) exceeds the edge gateway's
@@ -719,6 +741,33 @@ serve(async (req: Request): Promise<Response> => {
     //
     // Converting in place rather than removing keeps parent_task_index /
     // depends_on_index valid, same reasoning as the cannibalization gate.
+    // ── 5a. CAPTION FIRST, THEN A SHOT (docs/image-pipeline/plan.md) ────
+    // An IG visual and its instagram_post share one caption: the visual
+    // carries the caption its shot was picked for, the post publishes it.
+    // Whichever side the strategist wrote it on is copied to the other. The
+    // shot pick is validated here, before the story-lock guard reads the
+    // scene_brief it fills in. Flag off: the pick is kept as planned_shot.
+    phase = 'shot_pick'
+    const shotLibraryOn = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
+    emittedTasks.forEach((et, idx) => {
+      if (et.task_type !== 'visual_generation') return
+      const brief = (et.brief_data ?? {}) as Record<string, unknown>
+      if (String(brief.destination ?? '').toLowerCase() !== 'ig_post') return
+      if (Array.isArray(brief.slides) && brief.slides.length > 0) return
+      const post = emittedTasks.find(t => t.task_type === 'instagram_post' && t.parent_task_index === idx)
+      const postBrief = (post?.brief_data ?? null) as Record<string, unknown> | null
+      const postCaption = typeof postBrief?.caption_he === 'string' ? postBrief.caption_he : undefined
+      const picked = applyPlannedShot(brief, { enabled: shotLibraryOn, caption: postCaption })
+      et.brief_data = picked.brief
+      if (picked.note) {
+        et.rationale = `${et.rationale ?? ''}\n[shot] ${picked.note}`.trim()
+        console.warn(`[organic-orchestrator] shot pick repaired: ${picked.note}`)
+      }
+      if (postBrief && !postCaption && typeof picked.brief.caption_he === 'string') {
+        postBrief.caption_he = picked.brief.caption_he
+      }
+    })
+
     phase = 'brand_guard'
     let brandScrubbed = 0
     let brandBlocked  = 0
@@ -813,9 +862,30 @@ serve(async (req: Request): Promise<Response> => {
     // then stamped onto every task that referenced the same group.
     phase = 'emit_tasks'
     const experimentIdByGroup = new Map<string, string>()
+    // The cannibalization / brand / story-theme guards above strip
+    // experiment_group from tasks they block, so a group can arrive here
+    // with fewer than two variations left. Materializing it anyway produced
+    // experiments with 0–1 tasks that the evaluator can only close as
+    // inconclusive — no learning, and the loop looks stalled. Skip those and
+    // untag a lone survivor so it ships as an ordinary task.
+    const variationsByGroup = new Map<string, number>()
+    for (const et of emittedTasks) {
+      if (et.experiment_group) variationsByGroup.set(et.experiment_group, (variationsByGroup.get(et.experiment_group) ?? 0) + 1)
+    }
     for (const exp of emittedExperiments) {
       if (!exp.experiment_group || !exp.hypothesis || !exp.task_type || !exp.primary_metric) {
         console.warn(`[organic-orchestrator] skipping malformed experiment: ${JSON.stringify(exp).slice(0, 200)}`)
+        continue
+      }
+      const variationCount = variationsByGroup.get(exp.experiment_group) ?? 0
+      if (variationCount < 2) {
+        console.warn(`[organic-orchestrator] skipping experiment "${exp.experiment_group}": only ${variationCount} variation(s) left after guards`)
+        for (const et of emittedTasks) {
+          if (et.experiment_group === exp.experiment_group) {
+            delete et.experiment_group
+            delete et.variation_label
+          }
+        }
         continue
       }
       try {
@@ -1076,12 +1146,13 @@ serve(async (req: Request): Promise<Response> => {
   // Kick off the cycle in the background and return immediately so the
   // edge gateway's 150s idle timeout never fires. waitUntil keeps the
   // isolate alive until runCycle settles.
+  const runAndRelease = () => runCycle().finally(() => releaseLease(createSupabase(), ORCHESTRATOR_LEASE, runId))
   // @ts-ignore — EdgeRuntime is injected by the Supabase edge runtime.
   if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
     // @ts-ignore
-    EdgeRuntime.waitUntil(runCycle())
+    EdgeRuntime.waitUntil(runAndRelease())
   } else {
-    runCycle()  // local/dev fallback (no EdgeRuntime)
+    runAndRelease()  // local/dev fallback (no EdgeRuntime)
   }
   return jsonResponse({
     accepted: true,

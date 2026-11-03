@@ -8,7 +8,7 @@
 //
 // Both feed the same use-case: "social signal → blog content seed".
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 export interface OrganicPostSignal {
   post_id:    string

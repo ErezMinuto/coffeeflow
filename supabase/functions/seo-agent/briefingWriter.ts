@@ -22,7 +22,7 @@
 // Briefings ALWAYS go to the same hardcoded session_id so the admin can
 // navigate to a single thread to see history.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { appendChatMessage } from './db.ts'
 
 // One hardcoded session per agent-event-type so admin sees a stable

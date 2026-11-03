@@ -31,12 +31,54 @@
 # so the guard fails CLOSED, never open.
 set -uo pipefail
 
-FN="${1:?function}"; BASE="${2:?base sha}"; HEAD="${3:?head sha}"
-PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
-ROOT="$(git rev-parse --show-toplevel)"
 WORK="$(mktemp -d)"
 cleanup() { chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK" 2>/dev/null; true; }
 trap cleanup EXIT
+
+canon() {  # file → canonical, layout-free code on stdout
+  local f="$1" tmp
+  tmp="$(mktemp "$WORK/canon.XXXXXX")" && mv "$tmp" "$tmp.${f##*.}" && tmp="$tmp.${f##*.}"
+  cp "$f" "$tmp" 2>/dev/null || return 1
+  # Production returns the bundle with TypeScript types ERASED (type
+  # annotations and type-only imports gone). Running both sides through
+  # esbuild's TS→JS transform erases types the same way and re-prints the code
+  # in one fixed layout. --minify-whitespace also drops the comments that sit
+  # inside objects and arrays, which a plain transform keeps but production
+  # has already stripped. --minify-syntax evens out what Deno's compiler
+  # rewrites on its own (redundant parentheses, `new Map()` → `new Map`); it
+  # only ever turns code into an equivalent form, so a real change still shows.
+  #
+  # Class fields are the one place the two sides print differently. Git has
+  # `private i = 0; constructor(private s: string) {}`; production's emitter
+  # (Deno, useDefineForClassFields off) serves `s; i; constructor(s) {
+  # this.s = s; this.i = 0; }`. esbuild's default (define semantics, keeps
+  # `i=0` as a field) cannot turn one into the other, which refused a
+  # byte-identical artisan-import on 2026-10-18. So both sides are read with
+  # useDefineForClassFields=false, which moves every initialiser into the
+  # constructor as `this.x = …` and drops bare `x;` declarations; a second,
+  # plain-JS pass then folds the moved assignments into the same
+  # comma-joined form the first pass gives code that was already there.
+  # Initialisers and constructor bodies stay in full, so a changed or added
+  # field still shows; only a field declared with no value and never assigned
+  # is invisible. Target is pinned so a new esbuild default cannot reshuffle.
+  local opts=(--format=esm --target=esnext --minify-whitespace --minify-syntax --log-level=error)
+  if ! esbuild --loader=ts "${opts[@]}" --tsconfig-raw='{"compilerOptions":{"useDefineForClassFields":false}}' < "$tmp" > "$tmp.1.js" 2>"$tmp.err" \
+     || ! esbuild --loader=js "${opts[@]}" < "$tmp.1.js" > "$tmp.js" 2>>"$tmp.err"; then
+    echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
+    cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
+  fi
+  # Drop ALL whitespace and any comma directly before a closer: what is left is
+  # layout-free.
+  tr -d '[:space:]' < "$tmp.js" | sed -E 's/,([]})])/\1/g'
+}
+
+# `edge_prod_guard.sh --canon <file>` prints just the canonical form, so
+# scripts/ci/edge_canon_test.sh can pin it without touching production.
+if [ "${1:-}" = "--canon" ]; then canon "${2:?file}" 3>&2; exit; fi
+
+FN="${1:?function}"; BASE="${2:?base sha}"; HEAD="${3:?head sha}"
+PROJECT_REF="${PROJECT_REF:-ytydgldyeygpzmlxvpvb}"
+ROOT="$(git rev-parse --show-toplevel)"
 
 # Deployed at all? (`functions list` prints a table; slug is column 3.)
 if ! supabase functions list --project-ref "$PROJECT_REF" > "$WORK/list.txt" 2>"$WORK/list.err"; then
@@ -55,27 +97,6 @@ done
 if [ "$ok" -ne 1 ] || [ ! -f "$live/supabase/functions/$FN/index.ts" ]; then
   echo "error"; echo "guard: download of $FN failed 3x" >&2; exit 4
 fi
-
-canon() {  # file → canonical, layout-free code on stdout
-  local f="$1" tmp
-  tmp="$(mktemp "$WORK/canon.XXXXXX")" && mv "$tmp" "$tmp.${f##*.}" && tmp="$tmp.${f##*.}"
-  cp "$f" "$tmp" 2>/dev/null || return 1
-  # Production returns the bundle with TypeScript types ERASED (type
-  # annotations and type-only imports gone). Running both sides through
-  # esbuild's TS→JS transform erases types the same way and re-prints the code
-  # in one fixed layout. --minify-whitespace also drops the comments that sit
-  # inside objects and arrays, which a plain transform keeps but production
-  # has already stripped. --minify-syntax evens out what Deno's compiler
-  # rewrites on its own (redundant parentheses, `new Map()` → `new Map`); it
-  # only ever turns code into an equivalent form, so a real change still shows.
-  if ! esbuild --loader=ts --format=esm --minify-whitespace --minify-syntax --log-level=error < "$tmp" > "$tmp.js" 2>"$tmp.err"; then
-    echo "  (esbuild could not parse ${f##*/}: $(head -c 200 "$tmp.err" | tr '\n' ' '))" >&3
-    cp "$tmp" "$tmp.js"     # unparseable → raw text, still compared (fails closed)
-  fi
-  # Drop ALL whitespace and any comma directly before a closer: what is left is
-  # layout-free.
-  tr -d '[:space:]' < "$tmp.js" | sed -E 's/,([]})])/\1/g'
-}
 
 # Compare every source file in the deployed bundle with git at a revision.
 # Returns 0 when all match, and lists mismatches on fd 3.

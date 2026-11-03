@@ -1,0 +1,26 @@
+# Runs the deploy guard's canonical-form self-test on every PR that touches the
+# guard or its fixtures. No secrets, no network beyond npm: it never talks to
+# Supabase. The same test also runs at the start of every edge deploy.
+name: Edge guard self-test
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ci/edge_prod_guard.sh'
+      - 'scripts/ci/edge_canon_test.sh'
+      - 'scripts/ci/fixtures/**'
+      - '.github/workflows/edge-guard-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  canon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install esbuild
+        run: npm install -g esbuild@0.25.10   # same pin as the deploy workflow
+      - name: Self-test the guard's canonical form
+        run: bash scripts/ci/edge_canon_test.sh

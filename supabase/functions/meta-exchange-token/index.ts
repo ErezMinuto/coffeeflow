@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 serve(async (req) => {
   const corsHeaders = {
@@ -26,8 +26,6 @@ serve(async (req) => {
     const res = await fetch(`https://graph.facebook.com/v23.0/oauth/access_token?${params}`)
     const data = await res.json()
 
-    console.log('FB token response:', JSON.stringify(data))
-
     if (data.error) {
       throw new Error(`Facebook: ${data.error.message} [code ${data.error.code}]`)
     }
@@ -41,8 +39,6 @@ serve(async (req) => {
     })
     const longRes = await fetch(`https://graph.facebook.com/v23.0/oauth/access_token?${longParams}`)
     const longData = await longRes.json()
-
-    console.log('Long-lived token response:', JSON.stringify(longData))
 
     if (longData.error) {
       throw new Error(`Facebook long-lived: ${longData.error.message} [code ${longData.error.code}]`)

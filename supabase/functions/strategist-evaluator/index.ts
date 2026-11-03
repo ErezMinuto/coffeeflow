@@ -18,7 +18,8 @@ import { assembleBusinessSnapshot } from '../seo-agent/services/businessSnapshot
 import { STRATEGIST_MODEL, STRATEGIST_EFFORT, estimateUsd } from '../seo-agent/strategistConfig.ts'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { critiqueDrafts } from './critique.ts'
 
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://coffeeflow-neon.vercel.app'
 const BATCH = 5                       // theses graded per invocation
@@ -175,6 +176,11 @@ serve(async (req) => {
   if (!(await isServiceCaller(req))) return unauthorized(CORS)
   const supabase = createSupabase()
   try {
+    // action=critique_draft: the closed loop's draft critic (critique.ts), on its
+    // own cron. Anything else: the daily thesis grading, unchanged.
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
+    const action = (body as { action?: unknown })?.action ?? new URL(req.url).searchParams.get('action')
+    if (action === 'critique_draft') return json(await critiqueDrafts(supabase))
     return await evaluate(supabase)
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)

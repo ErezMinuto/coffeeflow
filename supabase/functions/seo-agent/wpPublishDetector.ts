@@ -18,7 +18,7 @@
 // the visual worker's featured-image attach: WP_BLOG_POST_USER_NAME +
 // WP_BLOG_POST_PASS. WOO_URL for the base URL.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const WP_URL          = (Deno.env.get('WOO_URL') ?? 'https://www.minuto.co.il').replace(/\/+$/, '')
 const WP_USERNAME     = Deno.env.get('WP_BLOG_POST_USER_NAME') ?? ''

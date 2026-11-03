@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { LayoutGrid, Compass } from 'lucide-react'
+import { LayoutGrid, Compass, Inbox } from 'lucide-react'
 import SeoAgentLayout from './SeoAgentLayout'
 import SeoTaskQueue from './SeoTaskQueue'
 import SeoChatThread from './SeoChatThread'
 import SeoMetricsPanel from './SeoMetricsPanel'
 import StrategicBriefPanel from './StrategicBriefPanel'
+import ApprovalInbox from './ApprovalInbox'
 import { supabase } from '../../lib/supabase'
 
 const SESSION_STORAGE_KEY = 'seo_agent_session_id'
@@ -48,7 +49,7 @@ type MobilePanel = 'tasks' | 'chat' | 'metrics'
 // Top-level view: the existing 3-panel content workspace, or the full-width
 // strategist "State of Minuto" brief (a reading surface that wants width, so
 // it gets its own view rather than a cramped 4th grid column).
-type View = 'workspace' | 'brief'
+type View = 'workspace' | 'brief' | 'inbox'
 
 export default function SeoAgent() {
   const [sessionId, setSessionId] = useState<string>('')
@@ -59,8 +60,13 @@ export default function SeoAgent() {
   // Honor a ?view=brief deep-link (the home "Needs You" panel links proposals
   // and signals straight to the strategist brief, not the content workspace).
   const [view, setView] = useState<View>(
-    new URLSearchParams(window.location.search).get('view') === 'brief' ? 'brief' : 'workspace'
+    (() => {
+      const v = new URLSearchParams(window.location.search).get('view')
+      return v === 'brief' || v === 'inbox' ? v : 'workspace'
+    })()
   )
+  // "Guide the agent" from the Approvals inbox → prefill the chat composer.
+  const [chatPrefill, setChatPrefill] = useState<{ text: string; nonce: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -118,6 +124,7 @@ export default function SeoAgent() {
   ]
 
   const views: Array<{ key: View; label: string; icon: typeof LayoutGrid }> = [
+    { key: 'inbox',     label: 'Approvals',      icon: Inbox },
     { key: 'workspace', label: 'Workspace',      icon: LayoutGrid },
     { key: 'brief',     label: 'State of Minuto', icon: Compass },
   ]
@@ -144,7 +151,20 @@ export default function SeoAgent() {
           })}
         </div>
 
-        {view === 'brief' ? (
+        {view === 'inbox' ? (
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_420px] grid-rows-1">
+            <div className="h-full min-h-0 overflow-hidden border-r border-surface-200">
+              <ApprovalInbox onGuide={text => {
+                setChatPrefill({ text, nonce: Date.now() })
+                // Below lg the chat is not beside the inbox: jump to the workspace chat.
+                if (window.innerWidth < 1024) { setView('workspace'); setMobilePanel('chat') }
+              }} />
+            </div>
+            <div className="hidden lg:block h-full min-h-0 overflow-hidden">
+              <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} prefill={chatPrefill} />
+            </div>
+          </div>
+        ) : view === 'brief' ? (
           <div className="flex-1 min-h-0 overflow-hidden">
             <StrategicBriefPanel />
           </div>
@@ -181,7 +201,7 @@ export default function SeoAgent() {
             <SeoTaskQueue />
           </div>
           <div className={`${mobilePanel === 'chat' ? 'block' : 'hidden'} lg:block h-full min-h-0 overflow-hidden`}>
-            <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} />
+            <SeoChatThread sessionId={sessionId} onSwitchSession={setSessionId} onNewSession={newSession} prefill={chatPrefill} />
           </div>
           <div className={`${mobilePanel === 'metrics' ? 'flex' : 'hidden'} lg:flex flex-col h-full min-h-0 overflow-hidden`}>
             <SeoMetricsPanel />

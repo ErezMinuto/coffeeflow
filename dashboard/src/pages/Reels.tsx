@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone } from 'lucide-react'
+import { Film, Search, Loader2, AlertCircle, CheckCircle2, Clock, Send, X, RotateCcw, ExternalLink, Smartphone, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 // Product reels: pick a coffee, render a vertical Reel, review it, publish it.
@@ -42,8 +42,8 @@ type ReelFormat = 'reel' | 'story'
 
 const COFFEE_CATEGORY = 'פולי קפה'
 const FORMATS: Array<{id: ReelFormat; label: string; hint: string}> = [
-  {id: 'reel', label: 'פוסט (Reel)', hint: 'נשאר בפיד, עם כיתוב'},
   {id: 'story', label: 'סטורי', hint: 'נעלם אחרי 24 שעות, בלי כיתוב'},
+  {id: 'reel', label: 'פוסט (Reel)', hint: 'נשאר בפיד, עם כיתוב'},
 ]
 
 const decode = (s: string) => {
@@ -59,7 +59,7 @@ export default function ReelsPage() {
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Product | null>(null)
   const [badge, setBadge] = useState('')
-  const [format, setFormat] = useState<ReelFormat>('reel')
+  const [format, setFormat] = useState<ReelFormat>('story')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const alive = useRef(true)
@@ -130,7 +130,7 @@ export default function ReelsPage() {
           woo_id: product.woo_id,
           product_name: decode(product.name),
           badge: opts.badge?.trim() || null,
-          format: opts.format ?? 'reel',
+          format: opts.format ?? 'story',
           ...(opts.facts ? { facts: opts.facts } : {}),
           requested_via: 'dashboard',
         },
@@ -138,7 +138,7 @@ export default function ReelsPage() {
       if (e) throw e
       setPicked(null)
       setBadge('')
-      setFormat('reel')
+      setFormat('story')
       await loadTasks()
     } catch (e: any) {
       setError(`יצירת הרילס נכשלה: ${e?.message ?? e}`)
@@ -190,6 +190,27 @@ export default function ReelsPage() {
       await saveResult(task, { review_required: false, rejected_via_ui_at: new Date().toISOString() })
     } catch (e: any) {
       setError(`הדחייה נכשלה: ${e?.message ?? e}`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function remove(task: ReelTask) {
+    const published = !!task.result_data?.published_via_ui_at
+    const msg = published
+      ? 'למחוק את הרילס מהרשימה? הפוסט שכבר עלה לאינסטגרם לא יימחק משם.'
+      : 'למחוק את הרילס? אי אפשר לבטל את זה.'
+    if (!window.confirm(msg)) return
+    setBusy(`delete-${task.id}`)
+    setError(null)
+    try {
+      // .select() so an RLS-filtered delete (0 rows) surfaces instead of passing silently.
+      const { data, error: e } = await supabase.from('seo_tasks').delete().eq('id', task.id).select('id')
+      if (e) throw e
+      if (!data?.length) throw new Error('אין הרשאה למחוק את הרילס הזה')
+      setTasks(ts => ts.filter(t => t.id !== task.id))
+    } catch (e: any) {
+      setError(`המחיקה נכשלה: ${e?.message ?? e}`)
     } finally {
       setBusy(null)
     }
@@ -308,7 +329,7 @@ export default function ReelsPage() {
                 {busy === `create-${picked.woo_id}` ? <Loader2 size={14} className="animate-spin" /> : <Film size={14} />}
                 {format === 'story' ? 'צור סטורי' : 'צור רילס'}
               </button>
-              <button onClick={() => { setPicked(null); setBadge(''); setFormat('reel') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
+              <button onClick={() => { setPicked(null); setBadge(''); setFormat('story') }} className="text-sm px-4 py-2 rounded-lg text-surface-500 hover:bg-surface-100">
                 ביטול
               </button>
             </div>
@@ -329,6 +350,7 @@ export default function ReelsPage() {
               onPublish={caption => publish(t, caption)}
               onReject={() => reject(t)}
               onRerender={() => rerender(t)}
+              onDelete={() => remove(t)}
             />
           ))}
         </div>
@@ -337,12 +359,13 @@ export default function ReelsPage() {
   )
 }
 
-function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
+function ReelCard({ task, busy, onPublish, onReject, onRerender, onDelete }: {
   task: ReelTask
   busy: string | null
   onPublish: (caption: string) => void
   onReject: () => void
   onRerender: () => void
+  onDelete: () => void
 }) {
   const rd = task.result_data ?? {}
   const [caption, setCaption] = useState(rd.caption ?? '')
@@ -436,6 +459,16 @@ function ReelCard({ task, busy, onPublish, onReject, onRerender }: {
           <a href={rd.ig_permalink} target="_blank" rel="noreferrer" className="text-sm px-3 py-1.5 rounded-lg text-brand-700 hover:bg-brand-50 flex items-center gap-1.5">
             <ExternalLink size={14} /> צפייה באינסטגרם
           </a>
+        )}
+        {/* Not while rendering: the workflow would finish into a row that no longer exists. */}
+        {task.status !== 'processing' && (
+          <button
+            onClick={onDelete}
+            disabled={!!busy}
+            className="text-sm px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 flex items-center gap-1.5 ms-auto"
+          >
+            {busy === `delete-${task.id}` ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} מחק
+          </button>
         )}
       </div>
     </div>

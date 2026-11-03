@@ -19,6 +19,7 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger } from "../_shared/logger.ts";
+import { isStaff }      from "../_shared/role_caller.ts";
 import { parseArtisanFile, ArtisanParseError } from "../_shared/artisan.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -37,30 +38,16 @@ const json = (body: unknown, status = 200) =>
 const MAX_CONTENT_CHARS = 20_000_000;
 
 /**
- * Is the caller holding a real project key?
+ * Is the caller a team member (or the service role)?
  *
- * Verified by USING the key against PostgREST rather than comparing it to
- * `SUPABASE_ANON_KEY`. That comparison silently never matches: the anon key
- * injected into an edge function is the 46-char `sb_publishable_…` format,
- * while the browser client sends the legacy 208-char `eyJ…` JWT. They are
- * different strings for the same project, so string equality is wrong for
- * any of them — and stays wrong through a key rotation.
- *
- * Every table here is already anon-writable by design (see CLAUDE.md), so
- * this grants nothing a direct PostgREST call would not.
+ * The Roasting page sends the user's Clerk token; public.is_staff() is asked
+ * WITH that token (see _shared/role_caller.ts). The anon key has no `sub`,
+ * and a stranger who signed themselves up on the open Clerk instance has no
+ * user_roles row, so neither gets through. The write below uses the service
+ * role, so this check is the whole gate.
  */
-async function authorised(req: Request): Promise<boolean> {
-  const key = req.headers.get("apikey")
-    || (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!key || !SUPA_URL) return false;
-  try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/roasts?select=id&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+function authorised(req: Request): Promise<boolean> {
+  return isStaff(req);
 }
 
 serve(async (req) => {

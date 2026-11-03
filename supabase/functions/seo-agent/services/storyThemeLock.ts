@@ -30,7 +30,7 @@
 // than db.ts's getSystemConfig. db.ts reads Deno.env at module load, so
 // importing it here would drag env access into every consumer — including the
 // unit tests, which have no business needing SUPABASE_URL to check a regex.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 export const STORY_THEME_LOCK_KEY = 'ig_story.theme_lock'
 

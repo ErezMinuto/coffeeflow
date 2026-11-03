@@ -12,6 +12,7 @@ import {
   screenProductList,
   screenHeroProduct,
   namesResellerBrand,
+  adCopyBrandViolation,
   type BrandIndexEntry,
 } from './brandGuard.ts'
 
@@ -211,4 +212,34 @@ Deno.test('a caption mentioning green coffee, green apple or Toddy is left alone
   assertEquals(namesResellerBrand('קונטור של טעם, ונטוס הוא לא מילה'), false)
   assertEquals(namesResellerBrand(''), false)
   assertEquals(namesResellerBrand(undefined), false)
+})
+
+// ── Paid ads ────────────────────────────────────────────────────────────
+const AD = {
+  campaign_name: 'Ethiopia Guji — אתיופיה גוג׳י',
+  landing_page_url: 'https://www.minuto.co.il/product/ethiopia-guji/',
+  creative: { primary_text: 'קלייה טרייה כל שבוע, ישר מבית הקלייה', headline: 'אתיופיה גוג׳י', headlines: ['קפה ספשלטי טרי'], descriptions: ['משלוח עד הבית'] },
+  keywords: ['פולי קפה טריים', 'קפה ספשלטי'],
+  negative_keywords: ['veneto', 'פולי קפה ונטו', 'קפה ירוק'],
+}
+
+Deno.test('a clean Minuto ad passes, even with Veneto/green in negative keywords', () => {
+  assertEquals(adCopyBrandViolation(AD), null)
+})
+
+Deno.test('Veneto anywhere in an ad is caught: copy, keyword, landing URL', () => {
+  assertEquals(adCopyBrandViolation({ ...AD, creative: { ...AD.creative, primary_text: 'פולי קפה ונטו במבצע' } })?.path, 'spec.creative.primary_text')
+  assertEquals(adCopyBrandViolation({ ...AD, keywords: ['veneto coffee'] })?.path, 'spec.keywords[0]')
+  assertEquals(adCopyBrandViolation({ ...AD, landing_page_url: 'https://www.minuto.co.il/product/veneto-delux-1kg/' })?.path, 'spec.landing_page_url')
+  assertEquals(adCopyBrandViolation({ ...AD, creative: { ...AD.creative, headlines: ['ok', 'Veneto Premium'] } })?.path, 'spec.creative.headlines[1]')
+})
+
+Deno.test('green coffee in an ad is caught; green-coloured gear and green-apple notes are not', () => {
+  assert(adCopyBrandViolation({ ...AD, creative: { ...AD.creative, headline: '1 ק״ג קפה ירוק קניה' } }))
+  assertEquals(adCopyBrandViolation({ ...AD, creative: { ...AD.creative, primary_text: 'קומקום Fellow Stagg בצבע ירוק עשן, סיומת של תפוח ירוק' } }), null)
+})
+
+Deno.test('a keyword list passed alone (update_targeting add_keywords) is checked', () => {
+  assertEquals(adCopyBrandViolation(['קפה ספשלטי', 'ונטו'], 'targeting.add_keywords')?.path, 'targeting.add_keywords[1]')
+  assertEquals(adCopyBrandViolation(undefined, 'targeting.add_keywords'), null)
 })

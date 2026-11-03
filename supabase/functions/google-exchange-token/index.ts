@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 serve(async (req) => {
   const corsHeaders = {
@@ -14,7 +14,6 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    console.log('Received body:', JSON.stringify(body))
     const { code, redirect_uri } = body
 
     // Exchange code for tokens
@@ -31,7 +30,6 @@ serve(async (req) => {
     })
 
     const data = await res.json()
-    console.log('Token response:', JSON.stringify(data))
     if (data.error) throw new Error(data.error_description || data.error)
 
     const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString()

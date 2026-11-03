@@ -12,13 +12,21 @@
 // Phase 1 is THINKING ONLY: nothing here publishes content, sends a campaign,
 // or spends. Every tool touches only the strategist's own tables or reads.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
+import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
+import {
+  getCurrentCapabilities, getOpsProfile, getResearchFindings, getSeoLearnings, handleEmitInnovationPitch, RESEARCH_TOOL_DEFS,
+} from './research_tools.ts'
+import type { PitchInput } from '../_shared/innovation_pitch.ts'
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from '../_shared/marketing_intel.ts'
 import type { ToolDefinition } from '../seo-agent/claude.ts'
 import type { BriefRecommendation } from '../seo-agent/types.ts'
 import { appendChatMessage } from '../seo-agent/db.ts'
+import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
+import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { sendOwnerEmail, OWNER_EMAIL } from '../_shared/email.ts'
 
 export type BrainToolDefinition = ToolDefinition
@@ -117,15 +125,22 @@ async function drilldownSegmentDetail(
   input: { segment: string },
 ): Promise<unknown> {
   if (!input.segment) return { error: 'segment is required' }
-  const { data, error } = await supabase
-    .from('customer_rfm')
-    .select('total_spent_ils, order_count, days_since_last')
-    .eq('segment', input.segment)
-    .limit(10000)
-  if (error) return { error: error.message }
-  const rows = (data ?? []) as Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null }>
+  // Paged: PostgREST caps a response at 1000 rows.
+  const rows: Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from('customer_rfm')
+      .select('total_spent_ils, order_count, days_since_last, bean_grams')
+      .eq('segment', input.segment)
+      .order('email')
+      .range(from, from + 999)
+    if (error) return { error: error.message }
+    rows.push(...((data ?? []) as typeof rows))
+    if (!data || data.length < 1000) break
+  }
   if (rows.length === 0) return { segment: input.segment, count: 0 }
   const spends = rows.map(r => Number(r.total_spent_ils ?? 0)).sort((a, b) => a - b)
+  const grams = rows.map(r => Number(r.bean_grams ?? 0)).sort((a, b) => a - b)
   const orders = rows.map(r => Number(r.order_count ?? 0))
   const recency = rows.map(r => Number(r.days_since_last ?? 0))
   const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0)
@@ -135,6 +150,8 @@ async function drilldownSegmentDetail(
     count: rows.length,
     total_spent_ils: Math.round(sum(spends)),
     median_spent_ils: Math.round(median(spends)),
+    spend_note: 'total_spent_ils counts only orders since Jan 2026 (woo_orders); order_count, recency and bean grams cover the full history from 2023',
+    median_bean_grams: median(grams),
     avg_order_count: Math.round((sum(orders) / rows.length) * 10) / 10,
     median_days_since_last: median([...recency].sort((a, b) => a - b)),
     repeat_buyer_share: Math.round((orders.filter(o => o > 1).length / rows.length) * 100) / 100,
@@ -445,6 +462,40 @@ async function handleConcludeBrief(
   if (!input.summary || !Array.isArray(input.diagnosis)) {
     return { result: { error: 'summary and diagnosis[] are required' } }
   }
+
+  // Blog recommendations must name real catalog products before anything is
+  // written — the writer links them and the banner shows products[0]. Refusing
+  // here (with the lineup) lets the Brain fix and re-call conclude_brief.
+  const recsIn = input.recommendations ?? []
+  if (recsIn.some(r => r.action_type === 'content_blog')) {
+    const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+    const problems: string[] = []
+    for (const [i, r] of recsIn.entries()) {
+      if (r.action_type !== 'content_blog') continue
+      const chk = checkBlogProducts(r.action_params?.products, lineup)
+      if (!chk.ok) problems.push(`recommendations[${i}] "${r.title}": ${chk.error}`)
+      else r.action_params = { ...r.action_params, products: chk.products }
+    }
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — content_blog products must be exact Minuto coffee lineup names. ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        minuto_coffee_lineup: lineup,
+      } }
+    }
+  }
+  // Paid-ad recommendations: real product / grounded keywords / sane budget,
+  // at most MAX_AD_RECS_PER_BRIEF. They become PAUSED drafts at most; only
+  // Erez activates an ad.
+  if (recsIn.some(r => r.action_type === 'ad_meta' || r.action_type === 'ad_google')) {
+    const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
+    const problems = adRecommendationProblems(recsIn as Array<{ title?: string; action_type?: string; action_params?: Record<string, unknown> }>, lineup)
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — paid-ad recommendations: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        minuto_coffee_lineup: lineup,
+      } }
+    }
+  }
   const { data: brief, error } = await supabase
     .from('strategic_briefs')
     .insert({
@@ -468,16 +519,28 @@ async function handleConcludeBrief(
   // a brief that's already persisted must not unwind if this insert hiccups.
   const recs = input.recommendations ?? []
   if (recs.length > 0) {
-    const rows = recs.map(r => ({
-      brief_id:       briefId,
-      run_id:         ctx.runId,
-      title:          r.title,
-      rationale:      r.rationale ?? null,
-      action_type:    r.action_type ?? 'none',
-      action_params:  r.action_params ?? {},
-      success_metric: r.success_metric ?? {},
-      status:         'proposed',
-    }))
+    // Closed loop: for action types Erez has switched to auto-approve (and only
+    // where the draft critic is on), the row skips the planning gate and goes
+    // straight to the executor, capped per run. The final human gate (publish /
+    // send / activate) is untouched. Config missing or unreadable = all proposed.
+    const loopCfg = await readLoopConfig(supabase)
+    let autoLeft = loopCfg.max_auto_approve_per_run
+    const rows = recs.map(r => {
+      const actionType = r.action_type ?? 'none'
+      const auto = autoLeft > 0 && autoApproveOn(loopCfg, actionType)
+      if (auto) autoLeft--
+      return {
+        brief_id:       briefId,
+        run_id:         ctx.runId,
+        title:          r.title,
+        rationale:      r.rationale ?? null,
+        action_type:    actionType,
+        action_params:  r.action_params ?? {},
+        success_metric: r.success_metric ?? {},
+        status:         auto ? 'approved' : 'proposed',
+        ...(auto ? { auto_approved: true } : {}),
+      }
+    })
     const { error: recErr } = await supabase.from('strategic_recommendations').insert(rows)
     if (recErr) console.warn(`[strategist] recommendation rows insert failed (non-fatal): ${recErr.message}`)
   }
@@ -649,8 +712,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
             properties: {
               title: { type: 'string' },
               rationale: { type: 'string' },
-              action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, or none (pure advice)' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now}. content_ig: {caption_he, hashtags[], media_type(feed_image|story), scene_brief, render_mode(bag_hero+product_name|no_bag), aspect(feed_square|story)}' },
+              action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
@@ -671,6 +734,8 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
       required: ['summary', 'diagnosis'],
     },
   },
+  // Research + innovation pitches (research_tools.ts).
+  ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
 
 /** Dispatch a tool_use to its handler. Returns the outcome (and `concluded`
@@ -696,6 +761,11 @@ export async function dispatchTool(
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
       case 'conclude_brief':              return await handleConcludeBrief(supabase, ctx, input as Parameters<typeof handleConcludeBrief>[2])
+      case 'get_research_findings':       return { result: await getResearchFindings(supabase) }
+      case 'get_ops_profile':             return { result: await getOpsProfile(supabase) }
+      case 'get_seo_learnings':           return { result: await getSeoLearnings(supabase, input as { limit?: number }) }
+      case 'get_current_capabilities':    return { result: await getCurrentCapabilities(supabase) }
+      case 'emit_innovation_pitch':       return { result: await handleEmitInnovationPitch(supabase, ctx, input as unknown as PitchInput) }
       default:                            return { result: { error: `unknown tool: ${name}` } }
     }
   } catch (e) {

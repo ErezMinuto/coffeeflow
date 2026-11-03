@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, RefreshCw } from 'lucide-react'
+import { Clock, AlertCircle, CheckCircle2, X, Eye, ThumbsUp, Loader2, Flag, RefreshCw, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 // Left-panel: live pending-task queue.
@@ -257,6 +257,14 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                         <Flag size={11} /> review
                       </span>
                     )}
+                    {t.task_type === 'instagram_post' && t.result_data?.qa_flagged === true && (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-900 font-medium shrink-0"
+                        title="Visual QA rejected this image — it was not emailed. Check it closely before publishing."
+                      >
+                        <AlertTriangle size={11} /> QA flagged
+                      </span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-surface-900 truncate">
                         {t.task_type}{t.task_subtype ? `:${t.task_subtype}` : ''}
@@ -371,6 +379,9 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       ) : rd.review_required === true ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-medium"><Flag size={10} /> awaiting review</span>
                       ) : null}
+                      {rd.qa_flagged === true && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-900 text-[10px] font-medium" title="Visual QA rejected this image after 3 attempts; it was not emailed"><AlertTriangle size={10} /> QA flagged</span>
+                      )}
                       {isArm && (
                         <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-medium">
                           🧪 A/B arm{viewing.variation_label ? `: ${viewing.variation_label}` : ''}

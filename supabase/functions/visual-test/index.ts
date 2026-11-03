@@ -1,7 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
-import { decode as decodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
+import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import {
+  PHOTO_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
+  shotUsesRealPhoto,
+  type ShotSlots, type ShotType,
+} from '../_shared/shot_library.ts'
 import {
   ASPECT_TO_RATIO,
   Aspect,
@@ -173,8 +179,9 @@ RULES:
 3. ONE OF EACH MACHINE. Name each machine once, with "a single". Never two roasters, two espresso machines, two kettles or two grinders unless the brief explicitly asks for two. Collapse different words for the same machine ("the roaster", "the roasting machine", "the drum") into one.
 4. THE ROASTER is Minuto's single, FULL-SIZE production drum roaster standing on the roastery floor, 2.0 m tall (taller than an adult), 1.5 m long and 1.0 m wide, with silver chimney ducts at 2.8 m by the ceiling — never a small model, miniature or tabletop unit, never on a counter, table or bench, and never small or distant in the frame; describe it as large and dominant. Its cooler is a large, deep, cylindrical brushed-stainless COOLING BIN with tall straight sides (about as wide as the drum body) standing on the FLOOR at the front-right of the roaster, directly below the drum door; fresh beans fall from the drum door into it and its internal stirring arms turn them. Never a shallow tray on a stand or on a table; nobody stirs the beans by hand. (The small tabletop SAMPLE roaster is only for briefs about sample roasting / cupping, and never alongside the main roaster.)
 5. AEROPRESS ON THE CUP. An AeroPress is supported only by the cup it brews into: its base flange RESTS DIRECTLY ON THE CUP RIM, physically touching it — never floating above the cup with a gap or a stream falling through open air.
-6. NO HANDS, ARMS OR PEOPLE unless the brief explicitly asks for a person, hand or barista. No spoons, scoops, paddles or stirring tools anywhere.
-7. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
+6. HANDS ONLY FOR AN ACTION. No people, faces or bodies. Keep or add ONE natural hand (or a pair) only when the brief asks for a person, hand or barista, or when the scene shows a tool being actively used: a kettle pouring, a pitcher pouring milk, tamping, cranking a hand grinder, pressing an AeroPress. The hand belongs to a person standing just out of frame and holds the tool properly (a pouring kettle by its handle; a hand grinder's body gripped in one hand while the other turns the crank). If the brief shows the action but no hand, either add that hand or rewrite the scene as the moment just after the action with the tool set down, never a tool floating or pouring on its own. Otherwise no hands. No spoons, scoops, paddles or stirring tools anywhere.
+7. ESPRESSO ON THE MACHINE. Espresso pouring from a portafilter is only ever under the espresso machine: the portafilter locked into the group head, the cup on the machine's stainless drip-tray grate. If the brief puts a shot being pulled onto a table, counter or wooden surface, move the cup onto the drip tray and keep the brief's surface only as the counter around the machine. A finished espresso with no pour may stand anywhere.
+8. Describe only what the camera sees, in concrete nouns. Write it as 3-6 sentences of plain English.
 
 Reply as JSON {"brief": "<the rewritten brief>", "changes": ["<each rule you applied, short>"]}. If the brief already follows every rule, return it unchanged with "changes": [].`
 
@@ -193,16 +200,19 @@ async function pickMatchingRealPhoto(
   supabase: ReturnType<typeof createClient>,
   folders: string[],
   brief: string,
+  root = 'upload_images',
+  exclude: ReadonlySet<string> = new Set(),
 ): Promise<string[]> {
   try {
     // 1. Candidate files across the allowed folders.
     const paths: string[] = []
     for (const folder of folders) {
       const { data } = await supabase.storage.from('marketing')
-        .list(`upload_images/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
+        .list(`${root}/${folder}`, { limit: 200, sortBy: { column: 'name', order: 'asc' } })
       for (const f of data ?? []) {
         if (!f.name || f.name.startsWith('.') || !/\.(jpe?g|png|webp)$/i.test(f.name)) continue
-        paths.push(`upload_images/${folder}/${f.name}`)
+        if (exclude.has(`${folder}/${f.name}`)) continue
+        paths.push(`${root}/${folder}/${f.name}`)
       }
     }
     if (paths.length === 0) return []
@@ -229,14 +239,19 @@ async function pickMatchingRealPhoto(
     const candidates = paths.filter(p => captionCache.has(p))
     if (candidates.length === 0) return []
     const list = candidates.map((p, i) => `[${i}] ${captionCache.get(p)}`).join('\n')
-    const out = await geminiJson([{ text: `A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:
+    // A photo published as photographed gets no edit, so it must already show
+    // the moment. A reference only anchors what the equipment looks like.
+    const published = root.startsWith('upload_images_ready')
+    const out = await geminiJson([{ text: `${published
+      ? 'A real photo will be PUBLISHED AS PHOTOGRAPHED, with nothing added or changed, to illustrate this scene brief:'
+      : 'A real photo will be lightly EDITED (reframed, relit, and at most a small action added such as an espresso stream, steam, or beans pouring onto a tray) to illustrate this scene brief:'}
 
 ${brief}
 
 Library photos:
 ${list}
 
-Which photos ALREADY show the brief's main subject and action from a usable viewpoint, so that only a crop, light and that small action need changing? IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
+Which photos ALREADY show the brief's main subject and action from a usable viewpoint${published ? '? Nothing will be added, so the action itself must be visible in the photo.' : ', so that only a crop, light and that small action need changing?'} IGNORE the brief's surface, table or counter material, cup material/colour, light and background — the real photo's own versions are correct and win (e.g. at Minuto an espresso cup stands on the machine's drip tray, not on a wooden table). A close-up brief is met by cropping in on a photo where the subject is clearly visible. The camera angle cannot change: a brief about the group head / portafilter / espresso pour needs a photo where the group heads and portafilters are clearly visible (front or three-quarter view, not the machine's side end); a brief about steaming milk needs the steam wand and a pitcher in frame; a close-up brief needs the subject already large in the photo. Be strict: a different machine, a different kind of roaster, sacks instead of a roaster, or green beans where roasted are needed = NOT a match. At Minuto, "the roaster", "the roastery", "roast day" and "cooling tray" mean the MAIN DRUM ROASTER with its round cooling tray — the small tabletop sample roaster matches only briefs that explicitly say sample roast / sample roaster / cupping. Reply as JSON {"matches": [indices]} — empty if none fit.` }])
     const idx: number[] = Array.isArray(out?.matches)
       ? out.matches.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < candidates.length)
       : []
@@ -265,6 +280,10 @@ interface VisualTestRequest {
   reference_image_url?: string               // direct URL to a bag photo
   product_id?: number                        // woo_id (numeric WooCommerce product ID); resolved against woo_products.image_url
   product_name?: string                      // text — fuzzy-matched via ILIKE against woo_products.name (same pattern as marketing-advisor enrichment)
+  // Extra photos of the SAME bag from other angles (e.g. a three-quarter view
+  // showing the gusset). Shape/depth reference only; the primary bag image
+  // stays the authority for the label. Max 2.
+  bag_view_urls?: string[]
   composite_bag?: boolean                    // no-op (kept for backward compat) — compositing was abandoned in favour of bag-as-Gemini-reference rendering
   composite_cup?: boolean                    // no-op (kept for backward compat)
   // Real-photo mode: start from an actual photo of Minuto's bar / machine /
@@ -274,7 +293,227 @@ interface VisualTestRequest {
   real_photo?: boolean
   // Skip the pre-generation brief rewrite (rewriteBrief). Default: rewrite.
   skip_rewrite?: boolean
+  // SHOT LIBRARY (docs/image-pipeline/plan.md). When set, the render comes
+  // from _shared/shot_library.ts — a real-photo edit or a short positive
+  // still-life prompt — and scene_brief/preset/use_reference are ignored.
+  shot_type?: ShotType
+  shot_slots?: ShotSlots
+  // "<folder>/<file>" library photos used recently; real-photo shots skip
+  // them while other photos remain (seo-worker-visual passes the last 21 days).
+  exclude_photos?: string[]
 }
+
+
+// The real-photo EDIT prompt: what may change (crop, light, one small action)
+// and what may not (the equipment, people, text). Shared by the legacy path and
+// the shot library.
+function realPhotoEditPrompt(ratio: string, sceneBrief: string): string {
+  return `Edit the attached REAL photograph of Minuto's own coffee bar / roastery into a ${ratio} photograph for Instagram.
+
+THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machine, group heads, portafilters, steam wands, grinders, roaster, cups, counter, and people keep the same shapes, parts, positions and colours. Do NOT redraw, restyle, replace, add or remove any equipment. Do not change the machine's colours. Existing real signage, menu boards, badges and logos stay as they are — do not add new text or logos, and never re-letter, sharpen or "clean up" existing small text (badges, labels, gauges): keep it exactly as in the photo, or let it fall softly out of focus. Misspelled text is the #1 tell of an edited photo. If you cannot keep a piece of existing text letter-perfect, blur it instead. Never add a badge, label or printed text that is not in the photo.
+
+Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
+
+WHAT YOU MAY DO:
+• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT, SAME UPRIGHT ORIENTATION: the result must look like a crop of this exact photo, not a new photo of the same place. Never rotate or tilt the photo to fill the new frame; crop it. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
+• Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
+• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
+• Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
+• ORDER TICKETS / RECEIPTS (the paper slips hanging under the drip tray) show customers' names: crop them out of the frame, or if that is impossible, blur them until no text is readable. Never leave them sharp.
+• THE "LA MARZOCCO" WORDMARK (the drip tray's front plate, and the red logo on the white cups): leave it EXACTLY as photographed only if that part of the photo is left untouched. If your edit would redraw, relight or extend that area, crop it out of the frame or blur it until no letters can be read — never re-letter it, and never add it where the photo does not show it.
+
+SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
+${sceneBrief}`
+}
+
+// Is an edit still the SAME real scene? Answered by the caption model with
+// the source photo and the edit attached.
+const SAME_SCENE_PROMPT = `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
+Is image 2 still clearly the SAME scene? Answer false if ANY of: image 2 is rotated or tilted compared with image 1 (e.g. turned 90° to fill a vertical frame); the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
+Reply as JSON {"same": true|false, "why": "one short sentence"}.`
+
+// One image call to gemini-3.1-flash-image-preview with the aspect ratio set
+// in imageConfig (the hard contract; prompt text is only a suggestion).
+async function callGeminiImage(useParts: any[], ratio: string): Promise<{ b64: string; mime: string }> {
+  const genRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent`,
+    {
+      method: 'POST',
+      // Key in a header, never the URL: a URL leaks into logs, retries and
+      // error output (CLAUDE.md credentials rule; QA review 2026-10-28).
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
+      body: JSON.stringify({
+        contents: [{ parts: useParts }],
+        generationConfig: {
+          responseModalities: ['IMAGE', 'TEXT'],
+          // HARD aspect-ratio control. The FORMAT line in the prompt is
+          // only a suggestion — Gemini routinely ignores prose framing
+          // instructions and returns its own default shape. imageConfig
+          // is the contract, and it is what keeps a 'story' render at
+          // 9:16 instead of whatever the model felt like.
+          imageConfig: { aspectRatio: ratio },
+        },
+      }),
+    },
+  )
+  if (!genRes.ok) {
+    const errText = await genRes.text().catch(() => '')
+    throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
+  }
+  const genJson = await genRes.json()
+  for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.mimeType?.startsWith('image/')) {
+      return { b64: part.inlineData.data as string, mime: part.inlineData.mimeType as string }
+    }
+  }
+  throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
+}
+
+// ── SHOT LIBRARY RENDER ────────────────────────────────────────────────────
+// docs/image-pipeline/plan.md. Instagram images come from a fixed menu of
+// shots (_shared/shot_library.ts) instead of free-form scenes:
+//   real_photo → edit one of Minuto's own photos (crop, relight, at most a
+//                small action), verified to still be the same scene.
+//   generated  → a short positive still-life prompt + ONE real reference photo.
+// No brief rewrite, no surface override, no forbidden lists, no bag
+// generation. A real-photo shot with no edit passing the same-scene check
+// FAILS (so the worker can flag it) rather than falling back to generation.
+async function randomLibraryPhotos(
+  supabase: ReturnType<typeof createClient>, folders: string[], n: number,
+  root = 'upload_images', exclude: ReadonlySet<string> = new Set(),
+): Promise<string[]> {
+  const urls: string[] = []
+  for (const folder of folders) {
+    const { data } = await supabase.storage.from('marketing')
+      .list(`${root}/${folder}`, { limit: 200 })
+    for (const f of data ?? []) {
+      if (f.name && !f.name.startsWith('.') && /\.(jpe?g|png|webp)$/i.test(f.name) && !exclude.has(`${folder}/${f.name}`)) {
+        urls.push(`${SUPABASE_URL}/storage/v1/object/public/marketing/${root}/${folder}/${f.name}`)
+      }
+    }
+  }
+  return urls.sort(() => Math.random() - 0.5).slice(0, n)
+}
+
+async function renderShot(body: VisualTestRequest, cors: Record<string, string>): Promise<Response> {
+  const shot  = SHOTS[body.shot_type as ShotType]
+  const slots: ShotSlots = { ...(body.shot_slots ?? {}) }
+  slots.product_name = slots.product_name ?? body.product_name
+  if (!shot.enabled) throw new Error(`shot "${shot.id}" is not enabled yet`)
+  if (shot.needs_product && !slots.product_name) throw new Error(`shot "${shot.id}" needs shot_slots.product_name`)
+  const aspect = body.aspect ?? 'story'
+  const ratio: string = ASPECT_TO_RATIO[aspect] ?? '9:16'
+  // Cast: the helpers' parameter type and createClient's return type disagree
+  // on supabase-js generics (the same 3 pre-existing errors in this file).
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE) as unknown as ReturnType<typeof createClient>
+  const libUrl = (path: string) => `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${path}`
+
+  let gen: { b64: string; mime: string } | null = null
+  let sentPrompt = ''
+  let sourcePhoto: string | null = null
+  let referencePhoto: string | null = null
+  const checks: Array<{ photo: string; same: boolean; why: string }> = []
+
+  if (shotUsesRealPhoto(shot, slots)) {
+    // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
+    // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
+    // into upload_images_ready/<ratio>/. No image model touches it — an edit
+    // pass rotated, re-staged or added hands to real photos in testing.
+    const readyRoot = `upload_images_ready/${ratio.replace(':', 'x')}`
+    const exclude = new Set([...(body.exclude_photos ?? []), ...PHOTO_EXCLUDE])
+    const brief = shotEditBrief(shot, slots)
+    let pick: string | undefined
+    if (shot.needs_product) {
+      // The product's own bag photos (bag_scenes/<slug>_*.jpg), chosen by
+      // file name, rotating away from recently used ones; then the product's
+      // studio packshot. A bag_with_drink shot needs a real scene photo (the
+      // packshot has no drink), so it degrades to the packshot as a bag_hero.
+      const { data: scenes } = await supabase.storage.from('marketing').list(`${readyRoot}/bag_scenes`, { limit: 500 })
+      const mine = (scenes ?? []).map(f => f.name)
+        .filter(n => n && isBagSceneOf(n, slots.product_name) && !PHOTO_EXCLUDE.has(`bag_scenes/${n}`))
+      const fresh = mine.filter(n => !exclude.has(`bag_scenes/${n}`))
+      const choice = (fresh.length ? fresh : mine).sort(() => Math.random() - 0.5)[0]
+      if (choice) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/bag_scenes/${choice}`
+      const pack = packshotFor(slots.product_name)
+      if (!pick && pack) pick = `${SUPABASE_URL}/storage/v1/object/public/marketing/${readyRoot}/${pack.replace(/\.[a-z]+$/i, '.jpg')}`
+      if (!pick) throw new Error(`no prepared photo or packshot for product "${slots.product_name}"`)
+    } else if (shot.source === 'generated') {
+      // A real moment of a generated shot: only a photo that shows that
+      // moment. None → the shot's first (still) moment is generated below,
+      // never a random photo (that is how the restroom photo shipped).
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, referenceSubject(shot, slots), readyRoot, exclude))[0]
+      if (!pick) slots.moment = shot.moments[0]
+    } else {
+      // A photo that shows this moment; if those were all used recently, a
+      // repeat of one beats a photo of something else. Only then any shot-
+      // folder photo, and never an excluded one.
+      const subject = referenceSubject(shot, slots)
+      pick = (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, exclude))[0]
+        ?? (await pickMatchingRealPhoto(supabase, shot.folders, subject, readyRoot, PHOTO_EXCLUDE))[0]
+        ?? (await randomLibraryPhotos(supabase, shot.folders, 1, readyRoot, PHOTO_EXCLUDE))[0]
+    }
+    if (!pick && shot.source !== 'generated') {
+      return jsonResponse({ success: false, error: `no prepared ${ratio} photo for shot ${shot.id} (run scripts/image-library-prep.sh)`, shot_type: shot.id, prompt_version: SHOT_PROMPT_VERSION }, 422, cors)
+    }
+    if (pick) {
+      const res = await fetch(pick)
+      if (!res.ok) throw new Error(`library photo ${pick}: HTTP ${res.status}`)
+      gen = { b64: encodeBase64(await res.arrayBuffer()), mime: 'image/jpeg' }
+      sourcePhoto = pick
+      sentPrompt = `(none: the real photo is published as photographed, cropped offline) — shot brief: ${brief}`
+    }
+  }
+  if (!gen) {
+    sentPrompt = shotGeneratePrompt(shot, slots, ratio)
+    // Match the reference on the subject (and the roaster's moment) alone.
+    // Matching on the whole scene prompt picked the moka-pot photo for "a
+    // pour-over dripper", and the model then printed "Bialetti" on it.
+    const subject = referenceSubject(shot, slots)
+    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', PHOTO_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', PHOTO_EXCLUDE))[0] ?? null
+    const parts: any[] = []
+    if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
+    parts.push({ text: sentPrompt })
+    // One retry when the model answers with text instead of an image, or with
+    // the wrong shape.
+    try { gen = await callGeminiImage(parts, ratio) } catch { gen = await callGeminiImage(parts, ratio) }
+    if (!matchesRatio(readImageSize(decodeBase64(gen.b64)), ratio)) gen = await callGeminiImage(parts, ratio)
+  }
+
+  const bytes = decodeBase64(gen.b64)
+  const dims  = readImageSize(bytes)
+  const ext   = gen.mime.includes('jpeg') ? 'jpg' : 'png'
+  const filename = `ig-test/shot_${shot.id}_${aspect}_${Date.now()}.${ext}`
+  const { error: upErr } = await supabase.storage.from('marketing').upload(filename, bytes, { contentType: gen.mime, upsert: true })
+  if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+  const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
+  const promptDoc = [
+    `IMAGE: ${pub.publicUrl}`,
+    `PROMPT VERSION: ${SHOT_PROMPT_VERSION}`,
+    `SHOT: ${shot.id} ${JSON.stringify(slots)}`,
+    `MODEL: ${sourcePhoto ? `none: real photo ${sourcePhoto}` : `gemini-3.1-flash-image-preview generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`}`,
+    ``, `── PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
+  ].join('\n')
+  return jsonResponse({
+    success: true,
+    prompt_version: SHOT_PROMPT_VERSION,
+    prompt_doc: promptDoc,
+    shot_type: shot.id,
+    shot_slots: slots,
+    url: pub.publicUrl,
+    aspect, ratio,
+    width: dims?.w ?? null, height: dims?.h ?? null,
+    aspect_ok: matchesRatio(dims, ratio),
+    bytes: bytes.length,
+    real_photo: sourcePhoto,
+    real_photo_checks: checks,
+    reference_photo: referencePhoto,
+    used_reference: shot.needs_product,
+    scene_brief: sourcePhoto ? shotEditBrief(shot, slots) : sentPrompt,
+  }, 200, cors)
+}
+
+const SHOT_PROMPT_VERSION = 'shot-library-v1'
 
 serve(async (req) => {
   const corsHeaders = {
@@ -287,6 +526,10 @@ serve(async (req) => {
 
   try {
     const body = await req.json() as VisualTestRequest
+    if (body.shot_type !== undefined) {
+      if (!isShotType(body.shot_type)) throw new Error(`unknown shot_type "${body.shot_type}"`)
+      return await renderShot(body, corsHeaders)
+    }
     const originalBrief = body.scene_brief ?? (body.preset ? SCENE_PRESETS[body.preset] : null)
     if (!originalBrief) {
       throw new Error(`provide either 'scene_brief' or 'preset' (one of: ${Object.keys(SCENE_PRESETS).join(', ')})`)
@@ -410,12 +653,15 @@ serve(async (req) => {
       : null
 
     let bagRef:     { data: string; mime: string } | null = null
+    let bagViews:   Array<{ data: string; mime: string }> = []
+    let realBag:    BagReference | null = null
     let beansRef:   { data: string; mime: string } | null = null
     let machineRef: { uri: string; mime: string } | null = null
     let machineRefUrl: string | null = null
     let roasterRef: { uri: string; mime: string } | null = null
     let bagUrl:     string | null = null
     let bagSource:  'reference_image_url' | 'product_id' | 'product_name' | null = null
+    let bagWooId:   number | null = null
     if (useReference) {
       // Resolve which specific bag image to use. Random pool fallback was
       // removed 2026-05-16 — caller MUST pass one of reference_image_url,
@@ -427,7 +673,7 @@ serve(async (req) => {
       } else if (typeof body.product_id === 'number' && Number.isFinite(body.product_id)) {
         const { data, error } = await supabase
           .from('woo_products')
-          .select('name, image_url')
+          .select('woo_id, name, image_url')
           .eq('woo_id', body.product_id)
           .not('image_url', 'is', null)
           .limit(1)
@@ -439,13 +685,14 @@ serve(async (req) => {
           return jsonResponse({ error: `no woo_products row with woo_id=${body.product_id}, or that row has no image_url` }, 400, corsHeaders)
         }
         bagUrl = data.image_url as string
+        bagWooId = data.woo_id as number
         bagSource = 'product_id'
         console.log(`[visual-test] resolved product_id=${body.product_id} → "${data.name}" → ${bagUrl}`)
       } else if (body.product_name && body.product_name.trim().length >= 2) {
         const needle = body.product_name.trim()
         const { data, error } = await supabase
           .from('woo_products')
-          .select('name, image_url')
+          .select('woo_id, name, image_url')
           .ilike('name', `%${needle}%`)
           .not('image_url', 'is', null)
           .limit(1)
@@ -457,12 +704,21 @@ serve(async (req) => {
           return jsonResponse({ error: `no woo_products name match for "${needle}" with a non-null image_url` }, 400, corsHeaders)
         }
         bagUrl = data.image_url as string
+        bagWooId = data.woo_id as number
         bagSource = 'product_name'
         console.log(`[visual-test] resolved product_name="${needle}" → "${data.name}" → ${bagUrl}`)
       } else {
         return jsonResponse({
           error: 'must provide one of: reference_image_url (direct URL), product_id (numeric WooCommerce woo_id), or product_name (text — fuzzy matched against woo_products.name). The function no longer falls back to a random bag. To skip the bag entirely, pass use_reference:false.',
         }, 400, corsHeaders)
+      }
+      // Real photos of this bag, when it has them (_shared/bag_references.ts),
+      // replace the store image; every other bag renders exactly as before.
+      // A direct reference_image_url is the caller's explicit choice and wins.
+      realBag = bagSource === 'reference_image_url' ? null : bagReferenceFor(bagWooId)
+      if (realBag) {
+        console.log(`[visual-test] real bag photos for woo_id=${bagWooId} replace the store image ${bagUrl}`)
+        bagUrl = storagePublicUrl(SUPABASE_URL, realBag.front)
       }
       // Bag is always-on (primary subject), beans always-on (color anchor).
       // Machine / roaster refs are loaded below, OUTSIDE this block.
@@ -472,6 +728,10 @@ serve(async (req) => {
       ])
       bagRef     = b1
       beansRef   = b2
+      const viewUrls = (Array.isArray(body.bag_view_urls) ? body.bag_view_urls : realBag ? realBag.views.map(v => storagePublicUrl(SUPABASE_URL, v)) : [])
+        .filter(u => typeof u === 'string' && u).slice(0, 2)
+      bagViews = (await Promise.all(viewUrls.map(fetchAsB64))).filter((v): v is { data: string; mime: string } => !!v)
+      if (viewUrls.length) console.log(`[visual-test] extra bag views: ${bagViews.length}/${viewUrls.length} loaded`)
 
       // FAIL-FAST when the bag was requested but its reference image could not
       // be fetched (404 / network / bad URL → fetchAsB64 returned null).
@@ -578,6 +838,9 @@ ${bagDownplayed
   ? '\nThe SCENE brief downplays the bag — keep it minor or omit it entirely.'
   : '\nThe bag is the HERO subject of the photograph unless the brief specifies an equipment-led scene.'}
 Hard constraints (just in case the model is tempted to deviate): no invented label artwork, no added date stamps or batch numbers on the bag, no color changes.`)
+    }
+    for (const _ of bagViews) {
+      refDescriptions.push(`reference image — the SAME MINUTO BAG from another angle. Use it for the bag's 3D shape only: its flat box bottom, side gussets, depth and how the front label sits on the bag. It is the same physical bag as the FIRST image; render ONE bag, never a second one. The FIRST image stays the authority for the label artwork and text.`)
     }
     if (styleRef) {
       refDescriptions.push(`reference image — STYLE ANCHOR. Real photo from Minuto's library showing the actual surface, lighting, prop styling, and atmosphere we want to match. Use this image as a visual reference for:
@@ -712,62 +975,17 @@ text is inspiration; these are mandatory.`
     //    Gemini matches the ordinal labels to the right images.
     // Real-photo mode replaces the whole generation prompt with an EDIT
     // instruction on the one real photo.
-    const realPhotoPrompt = `Edit the attached REAL photograph of Minuto's own coffee bar / roastery into a ${ratio} photograph for Instagram.
-
-THE EQUIPMENT IS REAL AND MUST STAY EXACTLY AS PHOTOGRAPHED. The espresso machine, group heads, portafilters, steam wands, grinders, roaster, cups, counter, and people keep the same shapes, parts, positions and colours. Do NOT redraw, restyle, replace, add or remove any equipment. Do not change the machine's colours. Existing real signage, menu boards, badges and logos stay as they are — do not add new text or logos, and never re-letter, sharpen or "clean up" existing small text (badges, labels, gauges): keep it exactly as in the photo, or let it fall softly out of focus. Misspelled text is the #1 tell of an edited photo. If you cannot keep a piece of existing text letter-perfect, blur it instead. Never add a badge, label or printed text that is not in the photo.
-
-Never change what an object IS: green (unroasted) coffee stays green, sacks stay sacks, an empty cup stays empty unless the brief's action fills it. If the photo does not show what the brief describes, keep the photo's real content and take only the mood and light from the brief.
-
-WHAT YOU MAY DO:
-• Reframe to ${ratio} by CROPPING (and, only where unavoidable, extending the edges). SAME CAMERA, SAME ANGLE, SAME VIEWPOINT: the result must look like a crop of this exact photo, not a new photo of the same place. Do not rotate the scene, move the camera, zoom in past what the photo shows, or re-stage anything. If the brief asks for a closer or different view than this photo has, IGNORE that part of the brief. Extend ONLY plain wall, plain counter, floor, or soft out-of-focus background — never invent products, bags, cups, shelves of goods, people or equipment.
-• Relight and colour-grade: warm, editorial, natural light, gentle film grain, slightly softer background. Keep it believable — a well-shot phone/film photo, not a render.
-• Add ONLY the small in-the-moment action the brief describes, and only where the photo already shows the part it comes from (no espresso stream unless a portafilter is visible, no beans on a tray that is out of frame), physically correct: e.g. an espresso stream from the existing portafilter spouts into a cup on the drip tray, a wisp of steam, milk being poured from a hand-held pitcher. Nothing else.
-• Push clutter (trash, cables, boxes, cleaning cloths) into shadow or crop it out.
-• ORDER TICKETS / RECEIPTS (the paper slips hanging under the drip tray) show customers' names: crop them out of the frame, or if that is impossible, blur them until no text is readable. Never leave them sharp.
-• THE "LA MARZOCCO" WORDMARK (the drip tray's front plate, and the red logo on the white cups): leave it EXACTLY as photographed only if that part of the photo is left untouched. If your edit would redraw, relight or extend that area, crop it out of the frame or blur it until no letters can be read — never re-letter it, and never add it where the photo does not show it.
-
-SCENE BRIEF (use it for framing, mood and the small action — ignore any equipment description in it that contradicts the photo; the photo wins):
-${sceneBrief}`
+    const realPhotoPrompt = realPhotoEditPrompt(ratio, sceneBrief)
     const parts: any[] = []
     if (bagRef)     parts.push({ inlineData: { mimeType: bagRef.mime,     data: bagRef.data } })
+    for (const v of bagViews) parts.push({ inlineData: { mimeType: v.mime, data: v.data } })
     if (styleRef)   parts.push({ inlineData: { mimeType: styleRef.mime,   data: styleRef.data } })
     if (beansRef)   parts.push({ inlineData: { mimeType: beansRef.mime,   data: beansRef.data } })
     if (machineRef) parts.push({ fileData: { mimeType: machineRef.mime, fileUri: machineRef.uri } })
     if (roasterRef) parts.push({ fileData: { mimeType: roasterRef.mime, fileUri: roasterRef.uri } })
     parts.push({ text: `Generate an image: ${fullPrompt}` })
 
-    async function callGemini(useParts: any[] = parts): Promise<{ b64: string; mime: string }> {
-      const genRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: useParts }],
-            generationConfig: {
-              responseModalities: ['IMAGE', 'TEXT'],
-              // HARD aspect-ratio control. The FORMAT line in the prompt is
-              // only a suggestion — Gemini routinely ignores prose framing
-              // instructions and returns its own default shape. imageConfig
-              // is the contract, and it is what keeps a 'story' render at
-              // 9:16 instead of whatever the model felt like.
-              imageConfig: { aspectRatio: ratio },
-            },
-          }),
-        },
-      )
-      if (!genRes.ok) {
-        const errText = await genRes.text().catch(() => '')
-        throw new Error(`Gemini ${genRes.status}: ${errText.slice(0, 300)}`)
-      }
-      const genJson = await genRes.json()
-      for (const part of genJson.candidates?.[0]?.content?.parts ?? []) {
-        if (part.inlineData?.mimeType?.startsWith('image/')) {
-          return { b64: part.inlineData.data as string, mime: part.inlineData.mimeType as string }
-        }
-      }
-      throw new Error(`Gemini returned no image. Raw: ${JSON.stringify(genJson).slice(0, 400)}`)
-    }
+    const callGemini = (useParts: any[] = parts) => callGeminiImage(useParts, ratio)
 
     // std decoder — the old Uint8Array.from(atob(...), cb) ran a JS callback
     // per byte, which adds up to real CPU time once real-photo mode makes
@@ -797,9 +1015,7 @@ ${sceneBrief}`
         const verdict = await geminiJson([
           { fileData: { mimeType: mimeOf(url), fileUri: url } },
           { inlineData: { mimeType: edit.mime, data: edit.b64 } },
-          { text: `Image 1 is a real photo. Image 2 is supposed to be a LIGHT EDIT of it: cropped / reframed, relit, and at most a small added action (espresso stream from an existing portafilter, steam, beans pouring onto an existing tray, milk in an existing pitcher).
-Is image 2 still clearly the SAME scene? Answer false if ANY of: the equipment is a different model or has different parts/layout (e.g. a different espresso machine, extra or missing group heads, a relocated steam wand, a different roaster); the camera angle / viewpoint changed or the scene was re-staged; new objects were invented (cups, bags, products, people, signage); readable text differs from image 1 or is misspelled. Cropping away parts of image 1 is fine.
-Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
+          { text: SAME_SCENE_PROMPT },
         ])
         const same = verdict?.same === true
         realPhotoChecks.push({ photo: url, same, why: String(verdict?.why ?? '') })
@@ -867,7 +1083,7 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
     const promptDoc = [
       `IMAGE: ${pub.publicUrl}`,
       `MODEL: gemini-3.1-flash-image-preview (${realPhotoUsed ? `real-photo edit of ${realPhotoUsed}` : 'generation'})`,
-      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
+      `REFERENCE IMAGES: ${[bagRef && `bag (${bagUrl})`, bagViews.length && `${bagViews.length} extra bag view(s)`, styleRef && `style (${styleRefUrl})`, beansRef && 'beans', machineRef && `machine (${machineRefUrl})`, roasterRef && 'roaster'].filter(Boolean).join(', ') || 'none'}`,
       `SURFACE: ${surface.name}`,
       `RULE SECTIONS: ${sectionNames(scene).join(', ')}`,
       ``, `── ORIGINAL BRIEF (from the agent) ──`, originalBrief,
@@ -875,6 +1091,7 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       ``, `── FULL PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
     ].join('\n')
     return jsonResponse({
+      prompt_version: PROMPT_VERSION,
       prompt_doc: promptDoc,
       success: true,
       url: pub.publicUrl,
@@ -889,6 +1106,9 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       composited_cup: cupComposited,
       composited: composited,
       surface: surface.name,
+      // false when the brief forbids props and its own surface is used verbatim;
+      // seo-worker-visual's critic only discounts the brief's surface when true.
+      surface_overrides_brief: !forbidsProps,
       style_ref: styleRefUrl,
       machine_ref: machineRef ? machineRefUrl : null,
       real_photo: realPhotoUsed,
@@ -900,6 +1120,10 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
       brief_rewrite_error: rewrite.error ?? null,
       bag_url: bagUrl,
       bag_source: bagSource,
+      // Real-bag photo set in use (null = store image) and what its label
+      // prints; seo-worker-visual spell-checks the rendered label against it.
+      bag_reference: realBag ? { woo_id: bagWooId, views: bagViews.length } : null,
+      bag_label_text: realBag?.label_text ?? null,
     }, 200, corsHeaders)
 
   } catch (err: any) {
@@ -907,6 +1131,12 @@ Reply as JSON {"same": true|false, "why": "one short sentence"}.` },
     return jsonResponse({ error: err?.message ?? String(err) }, 500, corsHeaders)
   }
 })
+
+// Which prompt architecture built this image. Every render result carries it so
+// approval rates can be compared per version (scripts/image-approval-report.sh).
+// Bump it whenever the prompt assembly changes; the shot-library rebuild will
+// be "shot-library-v1".
+const PROMPT_VERSION = 'layered-v1'
 
 function jsonResponse(body: unknown, status: number, cors: Record<string,string>) {
   return new Response(JSON.stringify(body), {

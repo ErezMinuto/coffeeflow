@@ -14,6 +14,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
+import { constantTimeEqual } from "../_shared/constant_time.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { createLogger, type Logger } from "../_shared/logger.ts";
 import { addPacked, deductRoasted } from "./stock.ts";
@@ -203,9 +204,21 @@ ${profileList}
 async function handleStock(chatId: string) {
   const { data: products } = await supabase
     .from("products")
-    .select("name, size, packed_stock")
+    .select("id, name, size, packed_stock")
     .eq("user_id", USER_ID)
     .order("name");
+
+  // Bags allocated to a B2B customer are on the shelf but not store stock —
+  // same rule as the app (src/lib/reservedStock.js). Fail open: if this read
+  // errors, show raw packed stock rather than no answer at all.
+  const { data: allocations } = await supabase
+    .from("bag_allocations")
+    .select("product_id, bags")
+    .eq("status", "allocated");
+  const reserved = new Map<number, number>();
+  for (const a of allocations ?? []) {
+    reserved.set(a.product_id, (reserved.get(a.product_id) ?? 0) + (a.bags ?? 0));
+  }
 
   if (!products || products.length === 0) {
     await send(chatId, "📦 אין מוצרים מוגדרים");
@@ -213,9 +226,11 @@ async function handleStock(chatId: string) {
   }
 
   const lines = products.map(p => {
-    const stock = p.packed_stock ?? 0;
+    const held  = reserved.get(p.id) ?? 0;
+    const stock = Math.max(0, (p.packed_stock ?? 0) - held);
     const icon  = stock === 0 ? "🔴" : stock < 10 ? "🟡" : "🟢";
-    return `${icon} ${p.name} ${p.size}g: <b>${stock}</b> שקיות`;
+    const note  = held > 0 ? ` (+${held} מוקצות ל-B2B)` : "";
+    return `${icon} ${p.name} ${p.size}g: <b>${stock}</b> שקיות${note}`;
   }).join("\n");
 
   await send(chatId, `📦 <b>מלאי שקיות ארוזות:</b>\n\n${lines}`);
@@ -561,11 +576,10 @@ serve(async (req) => {
     // This is set when the webhook is registered via Telegram's setWebhook
     // API with ?secret_token=... and echoed back on every update. Without
     // this check, anyone on the internet could forge Telegram updates.
-    if (WEBHOOK_SECRET) {
-      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
-      if (tgSecret !== WEBHOOK_SECRET) {
-        return new Response("Unauthorized", { status: 401 });
-      }
+    // Fails closed: with no secret configured nothing is accepted.
+    const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+    if (!WEBHOOK_SECRET || !constantTimeEqual(tgSecret, WEBHOOK_SECRET)) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();

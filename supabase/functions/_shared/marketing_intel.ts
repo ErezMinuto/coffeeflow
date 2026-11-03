@@ -10,7 +10,7 @@
 // The point is to hand a model conclusions it can reason about, not raw rows it
 // has to re-aggregate in its head (and get wrong).
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
 const clampDays = (d: unknown, def = 30, max = 365) =>
   Math.max(1, Math.min(max, Number(d) || def))

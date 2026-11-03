@@ -9,7 +9,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const CLERK_SECRET = Deno.env.get("CLERK_SECRET_KEY")           ?? "";
 const SUPA_URL     = Deno.env.get("SUPABASE_URL")               ?? "";

@@ -2,9 +2,11 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 import {
-  claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
+  CLAIM_CAMPAIGN_ID, capAfterClaim, claimConflict, claimIdea, committedThisMonth, finalizeClaim, isClaim, isServiceCaller,
   parseAction, releaseClaim, syncDraftBudget,
 } from './guards.ts'
+import { adCopyBrandViolation } from '../seo-agent/services/brandGuard.ts'
+import { checkForwardBudget } from '../_shared/ad_budget_guard.ts'
 
 // Creates a PAUSED Google Ads campaign from a draft_google_campaign spec —
 // the Google twin of meta-ads-draft. The owner reviews + activates manually
@@ -81,6 +83,13 @@ serve(async (req) => {
     if (action === 'create' && (!spec || typeof spec !== 'object')) {
       throw new Error("'spec' object is required for create")
     }
+    // Brand rule in code: no Veneto / green coffee in a paid ad or in the
+    // keywords it buys. Checked before anything is read or created.
+    // (Negative keywords are exempt: excluding Veneto is the point.)
+    const brandHit = action === 'create'
+      ? adCopyBrandViolation(spec)
+      : action === 'update_targeting' ? adCopyBrandViolation(body.targeting?.add_keywords, 'targeting.add_keywords') : null
+    if (brandHit) throw new Error(`brand guard: ${brandHit.path} ${brandHit.why} ("${brandHit.text}"). Rewrite it around a Minuto roast.`)
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -605,16 +614,19 @@ serve(async (req) => {
       throw new Error(`daily budget ₪${reqDaily} exceeds per-campaign cap ₪${dailyCap()} (GOOGLE_MAX_DAILY_BUDGET_ILS)`)
     }
     const mtdSpend = await accountSpend(ctx, ...monthToDateRange(ctx.timeZone))
-    const committed = await committedThisMonth(supabase)
     const newPlanned = reqDaily * reqDuration
-    const projected = mtdSpend + committed + newPlanned
-    if (projected > monthlyCap()) {
-      throw new Error(
-        `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committed)} + this campaign ₪${round2(newPlanned)} = ₪${round2(projected)} > cap ₪${monthlyCap()} (GOOGLE_MONTHLY_BUDGET_ILS)`,
-      )
-    }
+    const capError = (committedOthers: number, projected: number) => new Error(
+      `monthly cap would be exceeded: actual ₪${round2(mtdSpend)} + committed ₪${round2(committedOthers)} + this campaign ₪${round2(newPlanned)} = ₪${round2(projected)} > cap ₪${monthlyCap()} (GOOGLE_MONTHLY_BUDGET_ILS)`,
+    )
 
     const validateOnly = body.validate_only === true
+    // Fast refusal before claiming. Not the real guard: two concurrent creates
+    // can both pass it. The decisive check runs after the claim, below.
+    {
+      const committed = await committedThisMonth(supabase)
+      const projected = mtdSpend + committed + newPlanned
+      if (projected > monthlyCap()) throw capError(committed, projected)
+    }
 
     // Reserve the idea_id before anything reaches Google. The lookup above is
     // only a fast path — two requests can both pass it, so the unique
@@ -643,6 +655,31 @@ serve(async (req) => {
         })
       }
       claimId = claim.id
+
+      // Decisive cap check, now that this campaign's claim row counts toward
+      // committed spend (see capAfterClaim).
+      let cap: Awaited<ReturnType<typeof capAfterClaim>>
+      try { cap = await capAfterClaim(supabase, mtdSpend, monthlyCap()) }
+      catch (e) { await releaseClaim(supabase, claimId); throw e }
+      if (!cap.ok) {
+        await releaseClaim(supabase, claimId)
+        throw capError(cap.committed - newPlanned, cap.projected)
+      }
+    }
+
+    // Forward-looking guard (_shared/ad_budget_guard.ts), after the claim so
+    // concurrent creates see each other's claim rows as queued drafts. Live
+    // from Google; any unreadable budget refuses (and frees the claim).
+    try {
+      const live = await liveBudgets(ctx, supabase, claimId)
+      const fwd = checkForwardBudget({
+        mtdSpend, activeDaily: live.activeDaily, committedDrafts: live.committedDrafts,
+        newDaily: reqDaily, newDurationDays: reqDuration, monthlyCap: monthlyCap(), timeZone: ctx.timeZone,
+      })
+      if (!fwd.ok) throw new Error(`budget guard: ${fwd.reasons.join('; ')} (GOOGLE_MONTHLY_BUDGET_ILS)`)
+    } catch (e) {
+      if (claimId != null) await releaseClaim(supabase, claimId)
+      throw e
     }
 
     let built: Awaited<ReturnType<typeof buildOperations>>
@@ -910,6 +947,51 @@ function apiHeaders(ctx: AdsContext): Record<string, string> {
   // Only needed when the account sits under a manager (MCC).
   if (ctx.loginCustomerId) h['login-customer-id'] = ctx.loginCustomerId
   return h
+}
+
+// Live budgets for the forward guard.
+//  • active: ENABLED campaigns that have not ENDED. A shared budget is counted
+//    once. A non-daily or missing budget reads as NaN, which refuses the draft.
+//  • committed: our drafts (google_ad_drafts) that are PAUSED on Google, plus
+//    in-flight claims of other creates. This request's own claim is excluded:
+//    it is passed to the guard as the new draft.
+// deno-lint-ignore no-explicit-any
+async function liveBudgets(ctx: AdsContext, supabase: { from(t: string): any }, ownClaimId: number | null): Promise<{
+  activeDaily: number[]; committedDrafts: Array<{ daily: number; durationDays: number }>
+}> {
+  const rows = await gaql(ctx,
+    `SELECT campaign.id, campaign.status, campaign.serving_status, campaign_budget.resource_name, campaign_budget.amount_micros, campaign_budget.period
+     FROM campaign WHERE campaign.status IN ('ENABLED', 'PAUSED')`, 'budget guard')
+  const activeDaily: number[] = []
+  const seenBudgets = new Set<string>()
+  const paused = new Set<string>()
+  for (const r of rows) {
+    const id = String(r.campaign?.id ?? '')
+    if (r.campaign?.status === 'PAUSED') { paused.add(id); continue }
+    if (r.campaign?.servingStatus === 'ENDED') continue
+    const budget = r.campaignBudget ?? {}
+    const key = String(budget.resourceName ?? `campaign:${id}`)
+    if (seenBudgets.has(key)) continue
+    seenBudgets.add(key)
+    const ok = budget.period === 'DAILY' && budget.amountMicros != null && budget.amountMicros !== ''
+    activeDaily.push(ok ? Number(budget.amountMicros) / 1_000_000 : NaN)
+  }
+  // Only drafts PAUSED on Google plus in-flight claims (campaign_id is the
+  // claim placeholder), read by id in chunks so no row is lost to PostgREST's
+  // default row cap.
+  const ids = [CLAIM_CAMPAIGN_ID, ...paused]
+  const committedDrafts: Array<{ daily: number; durationDays: number }> = []
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: drafts, error } = await supabase.from('google_ad_drafts')
+      .select('id, campaign_id, status, daily_budget_ils, spec').in('campaign_id', ids.slice(i, i + 200))
+    if (error) throw new Error(`budget guard: google_ad_drafts read failed: ${error.message}`)
+    for (const d of (drafts ?? []) as any[]) {
+      if (d.id === ownClaimId) continue
+      if (String(d.campaign_id) === CLAIM_CAMPAIGN_ID && !isClaim(d)) continue
+      committedDrafts.push({ daily: d.daily_budget_ils, durationDays: d?.spec?.duration_days ?? 14 })
+    }
+  }
+  return { activeDaily, committedDrafts }
 }
 
 async function gaql(ctx: AdsContext, query: string, label: string): Promise<any[]> {

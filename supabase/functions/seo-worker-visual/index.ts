@@ -71,10 +71,18 @@ import {
   markTaskFailed,
   insertTasks,
 } from '../seo-agent/db.ts'
-import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson } from '../seo-agent/claude.ts'
+import { callClaude, MODEL_VISUAL_CRITIC, parseClaudeJson, type MessageContentBlock } from '../seo-agent/claude.ts'
+import { shotBudget } from './shotBudget.ts'
 import { attachFeaturedImage } from '../seo-agent/wpMediaAttach.ts'
+import { checkLabelText, LABEL_TRANSCRIBE_PROMPT, type LabelTranscript } from '../_shared/bag_label_check.ts'
+import { BAG_LOCKUP_TEXT } from '../_shared/bag_references.ts'
 import { buildBrandIndex, screenHeroProduct } from '../seo-agent/services/brandGuard.ts'
 import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent/types.ts'
+import { noBagTail } from './no_bag_tail.ts'
+import {
+  SHOTS, isShotType, normalizeShotChoice, shotChecklist, shotRouterPrompt,
+  type ShotDef, type ShotSlots,
+} from '../_shared/shot_library.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
 // asks Claude to rewrite the scene_brief based on the qa_attempts history,
@@ -85,6 +93,14 @@ import type { SeoTaskRow, VisualGenerationBrief, NewSeoTask } from '../seo-agent
 // strategist-emitted task: original + 2 regens = 9 image-generation
 // attempts max before genuine HITL.
 const MAX_BRIEF_REGENS = 2
+
+// SHOT LIBRARY ROLLOUT (docs/image-pipeline/plan.md). When the secret
+// SHOT_LIBRARY_ENABLED=true, every ig_post visual is rendered from the shot
+// library (handleShot). Off: only briefs that already name a shot_type take
+// that path; everything else keeps the legacy free-form pipeline.
+const SHOT_LIBRARY_ENABLED = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
+const SHOT_ROUTER_MODEL    = 'claude-haiku-4-5'
+const MAX_SHOT_ATTEMPTS    = 2
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -154,6 +170,11 @@ serve(async (req) => {
     return await handleCarousel(supabase, task, brief, workerId)
   }
 
+  // ── 2c. SHOT LIBRARY FORK ─────────────────────────────────────────────
+  if (brief && (brief.destination ?? 'blog_banner') === 'ig_post' && (isShotType(brief.shot_type) || SHOT_LIBRARY_ENABLED)) {
+    return await handleShot(supabase, task, brief, workerId)
+  }
+
   if (!brief || typeof brief.scene_brief !== 'string' || !brief.scene_brief.trim()) {
     await safeMarkFailed(supabase, task, 'brief_data.scene_brief is required (non-empty)', true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brief invalid' })
@@ -209,13 +230,21 @@ serve(async (req) => {
   if (task.parent_task_id) {
     const { data: parent, error: parentErr } = await supabase
       .from('seo_tasks')
-      .select('status, result_data')
+      .select('status, task_type, result_data')
       .eq('id', task.parent_task_id)
       .maybeSingle()
     if (parentErr) {
       // Treat as transient — retry next tick.
       await safeMarkFailed(supabase, task, `parent lookup failed: ${parentErr.message}`, false)
       return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'parent lookup error' })
+    }
+    if (destination === 'blog_banner' && parent?.task_type === 'dynamic_experiment') {
+      // The cannibalization gate turned this banner's article into a review
+      // proposal, so no article will ever exist to attach to. Waiting on it
+      // never ends: 8 such rows cycled for up to 10 weeks and took the chat's
+      // worker nudges. The [marker] keeps this out of the watchdog failure rate.
+      await safeMarkFailed(supabase, task, `[superseded] article ${task.parent_task_id} became a review proposal and was never written`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, reason: 'parent_superseded' })
     }
     if (destination === 'blog_banner') {
       const parentStatus = parent?.status ?? 'missing'
@@ -394,6 +423,7 @@ serve(async (req) => {
         renderMode:  workingRenderMode,
         productName: brief.product_name,
         realPhoto:   !!rendered.raw.real_photo,
+        ...critiqueContext(rendered.raw),
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} qa-attempt ${qaAttempt} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -535,7 +565,7 @@ serve(async (req) => {
   // is unusable.
   const finalRenderFunction = 'visual-test'  // both bag + no_bag render via Gemini now
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       image_url:           imageUrl,
       render_function:     finalRenderFunction,
       render_mode:         finalRenderMode,
@@ -595,6 +625,195 @@ serve(async (req) => {
 // attachFeaturedImage lifted to seo-agent/wpMediaAttach.ts so the chat
 // handler's approve_qa_attempt tool can reuse the same code path.
 
+// ─────────────────────────────────────────────────────────────────────────
+// SHOT LIBRARY PATH. An Instagram visual is one of the fixed shots in
+// _shared/shot_library.ts. A brief that names shot_type uses it; a legacy
+// free-form brief is ROUTED onto the menu (with the post's caption when the
+// paired instagram_post already exists), so an unrenderable idea ("a bean
+// dropped into water") becomes the nearest real shot instead of an AI
+// invention. QA is one pass of the shot's yes/no checklist (owner: keep it
+// light); a failed or unrenderable shot is flagged for review, never
+// re-imagined.
+// ─────────────────────────────────────────────────────────────────────────
+async function childCaption(supabase: ReturnType<typeof createSupabase>, taskId: string): Promise<string | undefined> {
+  const { data } = await supabase.from('seo_tasks')
+    .select('brief_data').eq('parent_task_id', taskId).eq('task_type', 'instagram_post').limit(1)
+  const cap = (data?.[0]?.brief_data as Record<string, unknown> | undefined)?.caption_he
+  return typeof cap === 'string' && cap.trim() ? cap : undefined
+}
+
+// Library photos ("<folder>/<file>") published by shot tasks in the last 21
+// days, so a real-photo shot rotates through the library instead of
+// repeating yesterday's photo ("same images as yesterday").
+async function recentShotPhotos(supabase: ReturnType<typeof createSupabase>): Promise<string[]> {
+  const since = new Date(Date.now() - 21 * 86_400_000).toISOString()
+  const { data } = await supabase.from('seo_tasks')
+    .select('result_data->render_response->>real_photo')
+    .eq('task_type', 'visual_generation').gte('created_at', since)
+    .not('result_data->>shot_type', 'is', null).limit(500)
+  const out: string[] = []
+  for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+    const url = String(row.real_photo ?? '')
+    const m = url.match(/\/upload_images_ready\/[^/]+\/(.+)$/)
+    if (m) out.push(decodeURIComponent(m[1]))
+  }
+  return out
+}
+
+async function routeShot(sceneBrief: string, caption: string | undefined, productName: string | undefined): Promise<Record<string, unknown>> {
+  const res = await callClaude({
+    sourceFn: 'seo-worker-visual',
+    model: SHOT_ROUTER_MODEL,
+    system: 'You map Instagram post ideas onto a fixed photo menu. Reply with strict JSON only.',
+    messages: [{ role: 'user', content: shotRouterPrompt(sceneBrief, caption, productName) }],
+    maxTokens: 300, temperature: 0, timeoutMs: 60_000,
+  })
+  return parseClaudeJson<Record<string, unknown>>(res.text)
+}
+
+const SHOT_QA_SYSTEM_PROMPT = `You are the visual QA for Minuto, a specialty coffee roastery, checking an Instagram image before the owner reviews it.
+First describe in one or two sentences exactly what the image shows. Then answer every numbered question about what is VISIBLE: "yes" (good), "no" (a problem), or "n/a" when the question's condition does not apply (e.g. it asks about hands and there are none). Answer "no" when you are not sure. Count hands and check what each object rests on before answering those questions.
+Reply with strict JSON only: {"description": "...", "answers": [{"n": 1, "answer": "yes" | "no" | "n/a", "why": "..."}]}`
+
+async function evaluateShot(imageUrl: string, shot: ShotDef, slots: ShotSlots, sourcePhoto: string | null, budget: ReturnType<typeof shotBudget>): Promise<VisualCritique> {
+  const questions = shotChecklist(shot, slots)
+  const compareBag = shot.needs_product && sourcePhoto
+  const content: MessageContentBlock[] = [
+    { type: 'image', source: { type: 'url', url: imageUrl } },
+    ...(compareBag ? [{ type: 'image' as const, source: { type: 'url' as const, url: sourcePhoto! } }] : []),
+    { type: 'text', text: `${compareBag ? 'The SECOND image is the real bag; compare the label in the first image against it.\n\n' : ''}Questions:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}` },
+  ]
+  const ask = () => callClaude({
+    sourceFn: 'seo-worker-visual', model: MODEL_VISUAL_CRITIC, system: SHOT_QA_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content }], maxTokens: 900, temperature: 0, timeoutMs: Math.min(120_000, budget.remainingMs()),
+  })
+  let res: Awaited<ReturnType<typeof callClaude>>
+  try { res = await ask() } catch { res = await ask() }   // one retry; a second failure throws
+  const parsed = parseClaudeJson<{ description?: unknown; answers?: Array<{ n?: unknown; answer?: unknown; why?: unknown }> }>(res.text)
+  const answers = Array.isArray(parsed.answers) ? parsed.answers : []
+  const failed = questions
+    .map((q, i) => ({ q, a: answers.find(x => Number(x?.n) === i + 1) }))
+    .filter(({ a }) => !['yes', 'n/a'].includes(String(a?.answer ?? '').toLowerCase()))
+  return {
+    passes: failed.length === 0,
+    missing: [],
+    issues: failed.map(({ q, a }) => `${q} → ${a ? `no: ${String(a.why ?? '')}` : 'not answered'}`),
+    suggested_adjustment: '',
+    description: typeof parsed.description === 'string' ? parsed.description : undefined,
+  } as VisualCritique
+}
+
+async function handleShot(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  brief: VisualGenerationBrief,
+  workerId: string,
+): Promise<Response> {
+  const aspect = brief.aspect ?? 'story'
+  const product = brief.shot_slots?.product_name ?? brief.product_name
+  let routedBy: 'brief' | 'router' = 'brief'
+  let routerWhy: string | undefined
+  let choice: { shot: ShotDef; slots: ShotSlots }
+  if (isShotType(brief.shot_type)) {
+    choice = normalizeShotChoice({ shot_type: brief.shot_type, moment: brief.shot_slots?.moment, drink: brief.shot_slots?.drink }, product)
+  } else {
+    routedBy = 'router'
+    let routed: Record<string, unknown> = {}
+    try {
+      routed = await routeShot(brief.scene_brief ?? '', await childCaption(supabase, task.id), brief.render_mode === 'bag_hero' ? product : undefined)
+    } catch (e: any) {
+      console.warn(`[seo-worker-visual] ${workerId} shot router failed, using default shot: ${e?.message ?? e}`)
+    }
+    routerWhy = typeof routed.why === 'string' ? routed.why : undefined
+    choice = normalizeShotChoice(routed, brief.render_mode === 'bag_hero' ? product : undefined)
+  }
+  const { shot, slots } = choice
+  console.log(`[seo-worker-visual] ${workerId} shot=${shot.id} ${JSON.stringify(slots)} (by ${routedBy}${routerWhy ? `: ${routerWhy}` : ''})`)
+
+  if (slots.product_name) {
+    const verdict = screenHeroProduct(slots.product_name, buildBrandIndex([]))
+    if (!verdict.ok) {
+      await safeMarkFailed(supabase, task, `brand guard: ${verdict.why}`, true)
+      return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'brand guard blocked product_name' })
+    }
+  }
+
+  const budget = shotBudget()
+  const recent = await recentShotPhotos(supabase).catch(() => [] as string[])
+  const qaAttempts: Array<Record<string, unknown>> = []
+  let imageUrl: string | null = null
+  let raw: Record<string, unknown> = {}
+  let lastCritique: VisualCritique | null = null
+  let qaPassed = false
+  let lastAttemptMs = 0
+  for (let a = 1; a <= MAX_SHOT_ATTEMPTS && !qaPassed; a++) {
+    // A retry that cannot finish must not start: the edge runtime would kill
+    // this worker mid-render, losing the image already in hand. The attempt
+    // that just failed QA goes to review instead.
+    if (imageUrl && !budget.fits(lastAttemptMs)) {
+      console.warn(`[seo-worker-visual] ${workerId} shot attempt ${a}/${MAX_SHOT_ATTEMPTS} skipped: last took ${lastAttemptMs}ms, ${budget.remainingMs()}ms left`)
+      break
+    }
+    const attemptStart = Date.now()
+    let res: Response
+    try {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+        body: JSON.stringify({ shot_type: shot.id, shot_slots: slots, aspect, exclude_photos: recent }),
+        signal: AbortSignal.timeout(budget.remainingMs()),
+      })
+    } catch (e: any) {
+      qaAttempts.push({ attempt: a, render_error: `visual-test: ${e?.message ?? e}` })
+      continue
+    }
+    const json = await res.json().catch(() => ({})) as Record<string, unknown>
+    if (!res.ok || typeof json.url !== 'string') {
+      qaAttempts.push({ attempt: a, render_error: String(json.error ?? `HTTP ${res.status}`), real_photo_checks: json.real_photo_checks })
+      continue
+    }
+    imageUrl = json.url; raw = json
+    let critique: VisualCritique
+    try {
+      critique = await evaluateShot(imageUrl, shot, slots, typeof json.real_photo === 'string' ? json.real_photo : null, budget)
+    } catch (e: any) {
+      // Unlike the legacy path, an unanswerable QA does NOT count as a pass.
+      critique = { passes: false, missing: [], issues: [`QA could not run: ${e?.message ?? e}`], suggested_adjustment: '' } as VisualCritique
+    }
+    qaAttempts.push({ attempt: a, image_url: imageUrl, shot_type: shot.id, critique, prompt_doc: typeof json.prompt_doc === 'string' ? json.prompt_doc : undefined })
+    lastCritique = critique
+    qaPassed = critique.passes
+    lastAttemptMs = Date.now() - attemptStart
+    console.log(`[seo-worker-visual] ${workerId} shot attempt ${a}/${MAX_SHOT_ATTEMPTS} ${qaPassed ? 'PASSED' : `FAILED ${JSON.stringify(critique.issues)}`}`)
+  }
+
+  if (!imageUrl) {
+    const permanently = task.attempts >= task.max_attempts
+    await safeMarkFailed(supabase, task, `shot ${shot.id}: no image rendered (${JSON.stringify(qaAttempts).slice(0, 400)})`, permanently)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, shot_type: shot.id, error: 'shot render failed', permanent: permanently }, 500)
+  }
+
+  const reviewRequired = !qaPassed
+  await markTaskCompleted(supabase, task, {
+    image_url:        imageUrl,
+    render_function:  'visual-test',
+    render_mode:      shot.needs_product ? 'bag_hero' : 'no_bag',
+    original_render_mode: brief.render_mode,
+    destination:      'ig_post',
+    aspect,
+    shot_type:        shot.id,
+    shot_slots:       slots,
+    shot_routed_by:   routedBy,
+    shot_router_why:  routerWhy,
+    render_response:  { ...pickRenderSummary(raw), shot_type: raw.shot_type, shot_slots: raw.shot_slots, reference_photo: raw.reference_photo },
+    qa_passed:        qaPassed,
+    review_required:  reviewRequired,
+    qa_attempts:      qaAttempts,
+    qa_last_critique: lastCritique,
+  })
+  return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, image_url: imageUrl, shot_type: shot.id, routed_by: routedBy, qa_passed: qaPassed, review_required: reviewRequired })
+}
+
 // markTaskFailed throws on its own DB errors; swallow so the HTTP
 // response we already prepared still flushes cleanly.
 async function safeMarkFailed(
@@ -604,7 +823,7 @@ async function safeMarkFailed(
   permanent: boolean,
 ): Promise<void> {
   try {
-    await markTaskFailed(supabase, task.id, msg, permanent)
+    await markTaskFailed(supabase, task, msg, permanent)
   } catch (e: any) {
     console.error(`[seo-worker-visual] markTaskFailed write failed: ${e?.message ?? e}`)
   }
@@ -676,6 +895,7 @@ function parentWaitBackoffMinutes(task: SeoTaskRow): number {
 // debugging without bloating the result_data JSONB.
 function pickRenderSummary(r: Record<string, unknown>): Record<string, unknown> {
   return {
+    prompt_version:        r.prompt_version ?? 'layered-v1',
     aspect:                r.aspect,
     ratio:                 r.ratio,
     // Actual rendered pixel dimensions + whether they match the requested
@@ -873,7 +1093,7 @@ async function handleCarousel(
   }
 
   try {
-    await markTaskCompleted(supabase, task.id, {
+    await markTaskCompleted(supabase, task, {
       carousel:        true,
       carousel_slides: renderedSlides,
       slide_count:     renderedSlides.length,
@@ -981,6 +1201,7 @@ async function renderCarouselSlideWithQA(
         renderMode:  slideMode,
         productName: slideMode === 'bag_hero' ? productName : undefined,
         realPhoto:   !!bg.raw.real_photo,
+        ...critiqueContext(bg.raw),
       })
     } catch (e: any) {
       console.warn(`[seo-worker-visual] ${workerId} slide ${slideIndex + 1} eval threw — treating as pass: ${e?.message ?? e}`)
@@ -1058,22 +1279,31 @@ const VISUAL_EVAL_SYSTEM_PROMPT = `You are a strict visual QA agent for Minuto's
 
 You are STRICT on subject completeness. If the brief named multiple concrete subjects (e.g. "espresso machine" AND "coffee bag"), all of them must appear in frame. Missing a named subject is a hard FAIL even if the image is otherwise beautiful.
 
-You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish".
+You are STRICT on PROMINENT label legibility. The bag's large, in-focus label elements — the "Minuto" brand wordmark, the stag-head emblem, and the product name — MUST be real, correctly-rendered, and faithful. If those PROMINENT elements are garbled, scrambled, misspelled, show invented/hallucinated wording, or contain malformed glyphs (Latin OR Hebrew) rendered SHARP, that is a hard FAIL — a fabricated brand/product name misrepresents the product and must never ship. Add a specific "issues" entry like "bag wordmark/product name is gibberish". The real bag's lockup is the stag-head emblem, the "MINUTO" wordmark and the line "Café Roastery" directly beneath it: all three are correct and must never be flagged.
+
+BAG COLOUR: when a photo of the real bag is attached, the rendered bag's body must be the same colour as in that photo. A white bag rendered clearly beige, cream, kraft, yellowed or grey is a FAIL; add an issue like "bag colour drifted from white to beige". Warm or cool light falling on a white bag, and its shadows, are not a colour change.
 
 You are LENIENT on small fine print. The tiny descriptor / fine-print lines below the product name are intentionally rendered as SOFT, shallow-depth-of-field, out-of-focus text — that is correct real-photography behaviour, NOT a defect. Do NOT fail an image because the small fine print is blurred or unreadable-because-soft. ONLY fail fine print if it is rendered SHARP and clearly in focus yet is still garbled nonsense. (Incidental background text is always exempt — this rule is about the hero bag.)
+
+You are LENIENT on soft background props. Objects that are clearly out of focus in the background (blurred shelves, canisters, ceramics, windowsill items, wall décor) are set dressing, not what the brief's "no X" exclusions are about: do not fail an image or list an issue for them. The brief's exclusions apply in full to everything in focus: the subject, the props beside it and the surface it stands on. Even when soft, these still FAIL: any coffee bag, packaging or brand logo in a no_bag render; a second machine, roaster, kettle or grinder; tea; anything physically impossible.
 
 You are STRICT on PHYSICAL REALISM. Judge the image the way a professional barista scrolling Instagram would: anything that could not exist in a real photo of a real cafe is a hard FAIL, even if the brief is otherwise satisfied. Check specifically:
   • Espresso machine anatomy — a steam wand, pipe or handle growing out of a group head or portafilter; more than one portafilter per group; parts floating, merged or attached to nothing; an invented panel, shield or cover (e.g. a translucent blue/green/white plate hanging beside the group head). Minuto's Strada X has clear glass ONLY as its large outer side window at the far end of the machine — never as a small piece next to the portafilter.
   • Liquid physics — coffee or milk coming from anywhere other than portafilter spouts or a hand-held pitcher; streams that miss the cup or defy gravity.
-  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object.
+  • Espresso context — a portafilter is only ever locked into an espresso machine's group head. Espresso pouring from a portafilter with no machine body around it, a portafilter hovering over a table, or a cup being filled from a portafilter while it stands on a table or counter instead of the machine's drip-tray grate, is a hard FAIL (even if the brief asked for the cup "on a wood surface").
+  • Support and gravity — every object rests on something or is held. A kettle, pitcher, portafilter, grinder, scoop or other tool floating in mid-air, or pouring with nothing holding it, is a hard FAIL. A tool being operated must be held the way a person would hold it: a hand-grinder crank turned while the grinder body is not gripped by the other hand, a kettle pouring with no hand on the handle.
+  • Hands — wrong finger count, fused or boneless fingers, a hand holding nothing or merging into an object, or a disembodied hand or forearm that enters the frame at an angle no attached arm could reach from (e.g. a flat hand sliding in from the top edge). Hands must look like a real person standing just out of frame. Two hands must be one person's LEFT and RIGHT hand: two forearms entering side by side from the SAME edge, two left or two right hands, or arms whose angles could not meet at one pair of shoulders is a hard FAIL.
   • Objects — cups/pitchers with impossible handles, duplicated or melted props, objects intersecting each other.
   • Sharp, legible text anywhere in the scene (equipment plates, signs, cups) that is misspelled or garbled, e.g. "LA MAAZOCCO". Soft/out-of-focus background text is exempt.
 Name each defect concretely in "issues" (what and where), so the next render can avoid it.
 
-You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine.
+You are LENIENT on stylistic interpretation. The brief specifies a mood / palette / composition; minor reinterpretation is fine. When the message starts with a SURFACE OVERRIDE, the surface material is out of scope: never fail or list an issue because the surface is not the material the brief names.
+
+HANDS CHECK — whenever any hand is visible, do this BEFORE deciding: for each hand, say whether it is a LEFT or RIGHT hand (find the thumb: on a hand seen from the back, a right hand's thumb is on its left side and a left hand's on its right side, measured along the direction the fingers point), which frame edge its forearm enters from, and whether both hands could belong to one person. Write this in "hands_check". Two hands of the same side, or two forearms side by side from the same edge, is a hard FAIL.
 
 Output STRICT JSON (no markdown fences, no preamble):
 {
+  "hands_check": "per-hand LEFT/RIGHT + entry edge + one-person verdict, or 'no hands'",
   "passes": true | false,
   "missing": ["concrete subject from the brief that didn't appear", "..."],
   "issues": ["other quality problems — gibberish text, wrong product, weird artifacts, etc.", "..."],
@@ -1088,16 +1318,97 @@ async function evaluateVisual(args: {
   renderMode:  'no_bag' | 'bag_hero'
   productName?: string
   realPhoto?:  boolean
+  // The real bag photo the renderer was given (visual-test's bag_url). When
+  // present the label is judged against THIS, not against productName:
+  // productName is the WooCommerce catalog title ("פולי קפה טרי 100% ערביקה
+  // - Minuto Dark Chocolate"), which is not what the bag prints ("Dark
+  // Chocolate"). Comparing to the title failed correct bags.
+  bagRefUrl?:  string
+  // The surface visual-test chose (pickSurface), which deliberately overrides
+  // any surface the brief names — so the brief's surface must not be judged.
+  surface?:    string
+  // What the real bag's label prints (visual-test's bag_label_text), when the
+  // bag has real photos. The Minuto lockup is always checked on bag renders.
+  labelText?:  string[]
 }): Promise<VisualCritique> {
-  const userText = `BRIEF (render_mode=${args.renderMode}${args.productName ? `, product_name="${args.productName}"` : ''}):
+  const bagRef = args.renderMode === 'bag_hero' && args.bagRefUrl ? args.bagRefUrl : undefined
+  const userText = `${args.surface ? `SURFACE OVERRIDE: the renderer was ordered to place this scene on ${args.surface}, replacing any surface, table or counter material the brief below names. Ignore the brief's surface material completely: a surface that differs from the brief is CORRECT, never an issue and never missing.
+
+` : ''}BRIEF (render_mode=${args.renderMode}${args.productName ? `, product_name="${args.productName}"` : ''}):
 
 ${args.sceneBrief}
-${args.realPhoto ? `
+${args.renderMode === 'bag_hero' && args.productName ? `
+NOTE ON THE PRODUCT NAME: product_name above is the online-store catalog title, NOT the text printed on the bag. The real bag prints a shorter name (e.g. the catalog title "פולי קפה טרי 100% ערביקה - Minuto Dark Chocolate" is printed on the bag as just "Dark Chocolate"). Never fail the bag because it does not show the full catalog title.${bagRef ? ' The SECOND attached image is a photo of the REAL bag: judge the rendered label against THAT photo. Text that appears on the real bag is correct; fail only text that is garbled, misspelled, or not on the real bag.' : ''}
+` : ''}${args.realPhoto ? `
 NOTE: this image is an EDIT of a real photograph of Minuto's own bar/roastery (reframed and relit). The equipment, people, cups and existing signage/logos are REAL — do not fail it for how the real machine looks or for real, correctly-spelled signage, menu boards or cup logos that were in the photo, and do not require equipment details the brief describes differently. DO still fail anything added by the edit that is unrealistic (e.g. an impossible liquid stream, an invented bag or product, warped/duplicated equipment at the extended edges).
 ` : ''}
-Evaluate the attached image against this brief. Output strict JSON only.`
+Evaluate the ${bagRef ? 'FIRST' : ''} attached image against this brief. Output strict JSON only.`
 
-  const res = await callClaude({
+  const content = (withRef: boolean) => [
+    { type: 'image' as const, source: { type: 'url' as const, url: args.imageUrl } },
+    ...(withRef && bagRef ? [{ type: 'image' as const, source: { type: 'url' as const, url: bagRef } }] : []),
+    { type: 'text' as const, text: withRef ? userText : userText.replace(/ The SECOND attached image[^\n]*/, '') },
+  ]
+  let res: Awaited<ReturnType<typeof callClaude>>
+  try {
+    res = await critic(content(true))
+  } catch (e) {
+    // A reference the API cannot fetch must not turn into "eval threw →
+    // treated as pass" upstream: retry once judging the render alone.
+    if (!bagRef) throw e
+    console.warn(`[seo-worker-visual] eval with bag reference failed, retrying without it: ${e instanceof Error ? e.message : String(e)}`)
+    res = await critic(content(false))
+  }
+
+  const parsed = parseClaudeJson<{
+    passes?: unknown
+    missing?: unknown
+    issues?: unknown
+    suggested_adjustment?: unknown
+  }>(res.text)
+
+  const critique: VisualCritique = {
+    passes:               parsed.passes === true,
+    missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
+    issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
+    suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+  }
+  // Only worth a call when the critic passed: a failed attempt retries anyway.
+  if (critique.passes && args.renderMode === 'bag_hero' && !args.realPhoto) await applyLabelCheck(critique, args.imageUrl, [...BAG_LOCKUP_TEXT, ...(args.labelText ?? [])])
+  return critique
+}
+
+// Spell-check the rendered label (see _shared/bag_label_check.ts). A near miss
+// fails the attempt so the QA loop re-renders it; text the model cannot read
+// is skipped. Fails open: if the transcription call errors, the critic's
+// verdict stands.
+async function applyLabelCheck(critique: VisualCritique, imageUrl: string, expected: string[]): Promise<void> {
+  try {
+    const res = await callClaude({
+      sourceFn:    'seo-worker-visual',
+      model:       MODEL_VISUAL_CRITIC,
+      system:      LABEL_TRANSCRIBE_PROMPT,
+      messages:    [{ role: 'user', content: [
+        { type: 'image', source: { type: 'url', url: imageUrl } },
+        { type: 'text', text: 'Transcribe the bag label. Output strict JSON only.' },
+      ] }],
+      maxTokens:   300,
+      temperature: 0.0,
+      timeoutMs:   60_000,
+    })
+    const t = parseClaudeJson<Partial<LabelTranscript>>(res.text)
+    const check = checkLabelText({ bag_visible: t.bag_visible === true, lines: Array.isArray(t.lines) ? t.lines.map(String) : [] }, expected)
+    if (check.ok) return
+    critique.passes = false
+    for (const m of check.misspelled) critique.issues.push(`bag label misspelled: reads "${m.found}" instead of "${m.expected}"`)
+    if (!critique.suggested_adjustment) critique.suggested_adjustment = `Render the bag label exactly as in the reference: ${check.misspelled.map(m => `"${m.expected}"`).join(', ')}.`
+  } catch (e) {
+    console.warn(`[seo-worker-visual] label check failed, keeping the critic's verdict: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
+function critic(content: MessageContentBlock[]) {
+  return callClaude({
     sourceFn: 'seo-worker-visual',
     // SELF-CRITIQUE BLIND SPOT — watch this one. The image is GENERATED by
     // Gemini (vertex-imagen-edit / visual-test, both already 100% Gemini).
@@ -1109,32 +1420,25 @@ Evaluate the attached image against this brief. Output strict JSON only.`
     // image, and 11 visual_style/render_strategy learnings came from this loop.
     model:  MODEL_VISUAL_CRITIC,
     system: VISUAL_EVAL_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'url', url: args.imageUrl } },
-          { type: 'text',  text: userText },
-        ],
-      },
-    ],
+    messages: [{ role: 'user', content }],
     maxTokens:   600,
     temperature: 0.0,
-    timeoutMs:   60_000,
+    // Opus 5.5 always thinks, and the HANDS CHECK makes it reason before the
+    // verdict: 60 s aborted real calls, and an aborted eval counts as a PASS
+    // upstream. 120 s keeps a 3-attempt loop inside the worker's wall clock.
+    timeoutMs:   120_000,
   })
+}
 
-  const parsed = parseClaudeJson<{
-    passes?: unknown
-    missing?: unknown
-    issues?: unknown
-    suggested_adjustment?: unknown
-  }>(res.text)
-
+// What the renderer actually used, from visual-test's response, so the critic
+// judges the image against that rather than against brief text the renderer
+// was told to override. The surface is only passed when visual-test says it
+// overrode the brief (not for studio/props-free briefs, not for real photos).
+function critiqueContext(raw: Record<string, unknown>): { bagRefUrl?: string; surface?: string; labelText?: string[] } {
   return {
-    passes:               parsed.passes === true,
-    missing:              Array.isArray(parsed.missing) ? parsed.missing.map(String) : [],
-    issues:               Array.isArray(parsed.issues)  ? parsed.issues.map(String)  : [],
-    suggested_adjustment: typeof parsed.suggested_adjustment === 'string' ? parsed.suggested_adjustment : '',
+    labelText: Array.isArray(raw.bag_label_text) ? raw.bag_label_text.map(String) : undefined,
+    bagRefUrl: raw.used_reference === true && typeof raw.bag_url === 'string' ? raw.bag_url : undefined,
+    surface:   raw.surface_overrides_brief === true && !raw.real_photo && typeof raw.surface === 'string' ? raw.surface : undefined,
   }
 }
 
@@ -1203,14 +1507,9 @@ function stripConflictingTerms(brief: string, mode: 'no_bag' | 'bag_hero'): stri
       .filter(sentence => !/\b(bag|bags|pouch|pouches|packaging|sachet|package of (?:beans|coffee))\b/i.test(sentence))
       .join(' ')
       .trim() || brief
-    return `${stripped}
-
-DO NOT INCLUDE ANY OF THESE — they are forbidden in this render:
-- No coffee bag, no packaging, no pouch, no sachet, no bean container of any kind
-- No loose coffee beans scattered on the surface
-- No human hands or arms in frame
-- No coffee-product branding text anywhere
-The image must show ONLY the espresso machine and the pull (cup + crema), nothing else.`
+    // Only the bag ban is unconditional — see no_bag_tail.ts for the bug the
+    // old fixed tail caused (an espresso machine forced into every brief).
+    return `${stripped}\n\n${noBagTail(stripped)}`
   }
   // bag_hero: Vertex needs single-subject focus. Keep sentences that
   // mention the bag/coffee, drop sentences naming co-subjects (machines,

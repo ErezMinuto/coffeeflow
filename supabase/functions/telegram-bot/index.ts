@@ -13,7 +13,8 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { constantTimeEqual } from "../_shared/constant_time.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN")        ?? "";
 const ALLOWED_CHAT   = Deno.env.get("TELEGRAM_CHAT_ID")          ?? "";
@@ -295,9 +296,10 @@ async function handleFreeText(chatId: string, text: string, fromName: string) {
 
 serve(async (req) => {
   try {
-    if (WEBHOOK_SECRET) {
-      const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
-      if (tgSecret !== WEBHOOK_SECRET) return new Response("Unauthorized", { status: 401 });
+    // Fails closed: with no secret configured nothing is accepted.
+    const tgSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+    if (!WEBHOOK_SECRET || !constantTimeEqual(tgSecret, WEBHOOK_SECRET)) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const body    = await req.json();

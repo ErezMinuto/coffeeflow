@@ -11,7 +11,6 @@ const allNavItems = [
       { path: '/roasting',  icon: '🔥', label: 'Roasting'  },
       { path: '/products',  icon: '📦', label: 'Products'  },
       { path: '/packaging', icon: '🎁', label: 'Packaging' },
-      { path: '/orders',    icon: '📋', label: 'הזמנות'    },
     ],
   },
   {
@@ -20,6 +19,7 @@ const allNavItems = [
       { path: '/schedule',   icon: '📅', label: 'Schedule',   scheduleOnly: true },
       { path: '/attendance', icon: '⏱️', label: 'Attendance', scheduleOnly: true },
       { path: '/vehicle-log',  icon: '🚗', label: 'יומן רכב',       adminOnly: true },
+      { path: '/invoices',   icon: '🧾', label: 'חשבוניות ספקים' },
     ],
   },
   { path: '/settings',  icon: '⚙️', label: 'Settings',  adminOnly: true },
@@ -124,7 +124,8 @@ function NavDropdown({ item, badges }) {
 }
 
 export default function Navigation() {
-  const { data, isAdmin, canSchedule } = useApp();
+  const { data, isAdmin, canSchedule, userRole } = useApp();
+  const isBookkeeper = userRole === 'bookkeeper';
   const { user } = useUser();
   const isSagie = user?.primaryEmailAddress?.emailAddress === 'sagieelbaz@gmail.com';
 
@@ -144,7 +145,7 @@ export default function Navigation() {
 
   // Filter nav items based on role. For dropdown groups, filter the children
   // and drop the group entirely if nothing inside is visible.
-  const navItems = [
+  const navItems = isBookkeeper ? [{ path: '/invoices', icon: '🧾', label: 'חשבוניות ספקים' }] : [
     ...allNavItems
       .map(item => {
         if (!item.children) return canSee(item) ? item : null;
