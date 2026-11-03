@@ -22,6 +22,8 @@ export const LOOP_IMPLEMENTED: ReadonlySet<string> = new Set<LoopActionType>([
   'email_campaign',
   'content_blog',
   'content_ig',
+  'ad_meta',
+  'ad_google',
 ])
 
 // An async drafter (writer / IG worker) holds the recommendation in 'drafting'

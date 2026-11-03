@@ -653,6 +653,7 @@ export interface BusinessSnapshot {
   open_theses:           TheseSnapshotRow[] | SnapshotError
   resolved_theses:       unknown[] | SnapshotError      // validated/refuted theses + outcomes (Phase 3 learning)
   recent_learnings:      unknown[] | SnapshotError      // LearningRow[]
+  active_paid_campaigns: unknown | SnapshotError        // ActivePaidCampaigns (services/paidCampaigns.ts)
 }
 
 // ── Strategist Brain — Phase 2: actionable recommendations ───────────────────
