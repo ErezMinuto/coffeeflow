@@ -125,8 +125,9 @@ async function getOrCreateCache(
     }
     if (toolsPart) body.tools = toolsPart
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${GEMINI_API_KEY}`,
-      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      // Key in a header, never the URL: a URL lands in logs and error output.
+      `https://generativelanguage.googleapis.com/v1beta/cachedContents`,
+      { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY }, body: JSON.stringify(body) })
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j?.name) {
       // The common rejection is "too small": Gemini enforces a minimum cacheable
