@@ -18,6 +18,12 @@
 // (vertex-imagen-edit, visual-test). Nothing here touches it.
 
 import { estimateUsd, type TokenUsage } from './pricing.ts'
+import {
+  alternateThinkingConfig,
+  isThinkingConfigError,
+  modelRequiresThinking,
+  offThinkingConfig,
+} from '../_shared/gemini_thinking.ts'
 import type {
   CallClaudeOptions,
   CallClaudeResult,
@@ -147,13 +153,10 @@ async function getOrCreateCache(
   }
 }
 
-// Models that reject an explicit zero thinking budget. Pro tiers reason by
-// design and treat "no thinking" as invalid rather than as a cheaper mode.
-// Matching on the tier name rather than an allow-list of exact ids, because
-// Gemini ids change often and a stale list fails the same silent way.
-export function modelRequiresThinking(model: string): boolean {
-  return /(^|[-_])pro([-_]|$)/i.test(model)
-}
+// Models that reject "no thinking" (pro tiers), and the per-model form of
+// "no thinking" for the rest, live in _shared/gemini_thinking.ts so the bots
+// that call Gemini directly use the same rules. Re-exported for existing callers.
+export { modelRequiresThinking }
 
 export function sanitizeSchema(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sanitizeSchema)
@@ -387,8 +390,11 @@ export async function callGemini(
   // Fallback only — every Wave A slot passes an explicit model. It must still
   // be a REAL id: 'gemini-3.1-flash' was used here originally and does not
   // exist on this endpoint (404 NOT_FOUND on every call). Verify any new id
-  // against GET /v1beta/models before using it.
-  const model = opts.model ?? 'gemini-2.5-flash'
+  // against GET /v1beta/models before using it. gemini-2.5-flash is deprecated
+  // (redirected to gemini-3.5-flash-lite from 2026-12-01); this is the
+  // successor Google names, at the same per-token price.
+  const model = opts.model ?? 'gemini-3.5-flash-lite'
+  const offThinking = opts.effort ? null : offThinkingConfig(model)
   const contents = await toGeminiContents(opts.messages)
 
   const body: Record<string, unknown> = {
@@ -416,8 +422,10 @@ export async function callGemini(
       // This model only works in thinking mode" for EVERY request — with 0, 5,
       // 20 and 41 tool declarations alike, so it is the budget and not the tool
       // payload. Sending no thinkingConfig at all lets such a model use its own
-      // default. Flash-tier keeps the explicit 0, which is what that fix was for.
-      ...(opts.effort || modelRequiresThinking(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+      // default. Flash-tier keeps thinking off — but the "off" form is per model
+      // (gemini-3.5-flash-lite 400s on thinkingBudget 0), so it comes from
+      // offThinkingConfig, with one retry below if a model rejects it anyway.
+      ...(offThinking ? { thinkingConfig: offThinking } : {}),
     },
   }
 
@@ -453,23 +461,39 @@ export async function callGemini(
   const timeoutMs = opts.timeoutMs ?? 110_000   // stay under the 150s edge cap
   const t = setTimeout(() => controller.abort(), timeoutMs)
 
+  const post = () => fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': GEMINI_API_KEY,
+      'content-type':   'application/json',
+    },
+    body:   JSON.stringify(body),
+    signal: controller.signal,
+  })
+
   let res: Response
+  let errText = ''
   try {
-    res = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': GEMINI_API_KEY,
-        'content-type':   'application/json',
-      },
-      body:   JSON.stringify(body),
-      signal: controller.signal,
-    })
+    res = await post()
+    // A model that refuses this "thinking off" form gets the other one, once.
+    // Ids change faster than offThinkingConfig's rules; this keeps the next
+    // such id from 400ing every call.
+    if (!res.ok && offThinking) {
+      errText = await res.text().catch(() => '')
+      if (isThinkingConfigError(res.status, errText)) {
+        const retryCfg = alternateThinkingConfig(offThinking)
+        console.warn(`[gemini] ${model} rejected thinkingConfig ${JSON.stringify(offThinking)}; retrying with ${JSON.stringify(retryCfg)}`)
+        ;(body.generationConfig as Record<string, unknown>).thinkingConfig = retryCfg
+        res = await post()
+        errText = ''
+      }
+    }
   } finally {
     clearTimeout(t)
   }
 
   if (!res.ok) {
-    const errText = await res.text().catch(() => '')
+    if (!errText) errText = await res.text().catch(() => '')
     throw new Error(`Gemini ${model} ${res.status}: ${errText.slice(0, 500)}`)
   }
 

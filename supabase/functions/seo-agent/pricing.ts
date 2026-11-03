@@ -26,11 +26,19 @@ const MODEL_PRICES: Record<string, ModelPrice> = {
   // 'gemini-3.1-flash' and 'gemini-3.1-pro' — NEITHER MODEL EXISTS, so the rates
   // were fiction attached to ids that 404.
   //
-  // A Gemini 3.x model is deliberately NOT listed: its rates are unconfirmed, and
-  // the unknown-model fallback below prices as Opus. That over-states 3.x spend,
+  // A Gemini 3.x model is listed only with a rate from that page; any other is
+  // left out, and the unknown-model fallback below prices it as Opus. That over-states 3.x spend,
   // which is the safe direction — the monthly kill-switch trips early rather than
   // late. Add a 3.x entry only with a rate taken from Google's pricing page.
   'gemini-2.5-flash':  { input: 0.30, output: 2.50 },
+  // From the Gemini API pricing page, 2026-11-03 (paid tier, prompts <=200k).
+  // 3.5 Flash-Lite is the redirect target for the deprecated 2.5 Flash, billed
+  // at the same rate. 3.6/3.8 Flash are $0.75/$3.75 until 2026-12-31 and
+  // $1.50/$7.50 from 2027-01-01; the later rate is used so spend is
+  // over-stated, never under-stated (same reasoning as the Opus fallback).
+  'gemini-3.5-flash-lite': { input: 0.30, output: 2.50 },
+  'gemini-3.6-flash':      { input: 1.50, output: 7.50 },
+  'gemini-3.8-flash':      { input: 1.50, output: 7.50 },
   'gemini-2.5-pro':    { input: 1.25, output: 10 },
 }
 // Cache reads cost ~0.1× the input rate; cache writes (5-min TTL) ~1.25×.
