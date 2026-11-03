@@ -35,6 +35,7 @@
 //    the writer + visual workers). attempts>=max_attempts flips to 'failed'.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { handBackForCritique } from '../_shared/strategist_loop.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import {
   createSupabase,
@@ -334,6 +335,29 @@ serve(async (req) => {
   if (finalCaption.length > IG_CAPTION_MAX) {
     await safeMarkFailed(supabase, task, `final caption ${finalCaption.length} chars exceeds IG cap ${IG_CAPTION_MAX}. Strategist must trim caption_he.`, true)
     return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'caption too long' })
+  }
+
+  // ── 4b. Strategist closed loop: hold for the critic ─────────────────
+  // Nothing is staged on Meta yet (prepared containers expire in ~24h, and a
+  // rejected draft must leave nothing behind). strategist-executor runs the
+  // same 'prepare' call below once strategist-evaluator passes the draft.
+  if (brief.hold_for_critique && brief.strategist_rec_id) {
+    const held = {
+      kind: 'ig', ig_task_id: task.id, visual_task_id: task.parent_task_id,
+      caption_he, caption: finalCaption, hashtags, media_type: mediaType, meta_type: metaPublishType,
+      image_url: imageUrl ?? null,
+      carousel_children: carouselChildren ? carouselChildren.map(c => c.image_url) : null,
+      qa_flagged: qaFlagged,
+    }
+    await markTaskCompleted(supabase, task, {
+      held_for_critique: true, strategist_rec_id: brief.strategist_rec_id,
+      image_url: held.image_url, carousel_children: held.carousel_children, caption: finalCaption,
+      caption_length: finalCaption.length, hashtags, media_type: mediaType, meta_type: metaPublishType,
+      qa_flagged: qaFlagged, review_required: false,
+    })
+    const notHanded = await handBackForCritique(supabase, brief.strategist_rec_id, held)
+    if (notHanded) console.warn(`[organic-worker-instagram] ${workerId} task ${task.id} held but not handed back to rec ${brief.strategist_rec_id}: ${notHanded}`)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, held_for_critique: true, handed_back: !notHanded })
   }
 
   // ── 5. Call meta-publish ────────────────────────────────────────────

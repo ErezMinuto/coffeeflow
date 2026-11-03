@@ -64,6 +64,7 @@ const REC_STATUS_STYLE: Record<RecStatus, string> = {
 // Where each exported draft waits for you.
 function draftHome(ref: string | null): string {
   if (ref?.startsWith('campaign:')) return 'review in Marketing → Campaigns (draft), then send there'
+  if (ref?.startsWith('wp:'))        return 'review the WordPress draft (WP admin → Posts → Drafts), then publish there'
   if (ref?.startsWith('meta_ad:'))  return 'review in Meta Ads Manager (PAUSED); only you can activate it'
   if (ref?.startsWith('google_ad:')) return 'review in Google Ads (PAUSED); only you can activate it'
   return 'review in Workspace → Tasks, then publish there'

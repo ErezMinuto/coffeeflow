@@ -44,7 +44,18 @@ export type ExperimentSubtype =
 // exactly; workers consume them. Keep them strict so a malformed brief
 // is a parse error, not a runtime mystery.
 
-export interface TextGenerationBrief {
+// ── Strategist closed loop (docs/plans/2026-11-02-strategist-closed-loop.md) ──
+// Set by strategist-executor on briefs it drafts for the critic. A held task
+// generates its draft but does NOT export it (no blog-publish / meta-publish):
+// it hands the draft back to the recommendation for review.
+export interface StrategistLoopFields {
+  strategist_rec_id?: string
+  hold_for_critique?: boolean
+  // Present on a revision: the critic's feedback and the rejected draft.
+  revision?:          { feedback: string; previous?: unknown; number?: number }
+}
+
+export interface TextGenerationBrief extends StrategistLoopFields {
   // Target keyword from GSC, raw user query, or orchestrator-chosen.
   keyword: string
   // The H1 / SEO title for the article. NOT the raw search query.
@@ -185,7 +196,7 @@ export interface DynamicExperimentBrief {
   details?: Record<string, unknown>
 }
 
-export interface InstagramPostBrief {
+export interface InstagramPostBrief extends StrategistLoopFields {
   // Hebrew caption — primary copy. The orchestrator writes it directly
   // (not deferred to a worker) so the strategist owns the brand-voice
   // execution end-to-end. Worker just publishes verbatim.

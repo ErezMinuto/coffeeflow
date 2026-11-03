@@ -103,6 +103,12 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
   check('auto-approve needs the critic on', autoApproveOn(cfg, 'email_campaign') && !autoApproveOn(cfg, 'content_blog'))
 }
 {
+  const db = fakeTable({ ops_profile: [{ key: 'strategist_loop', value: { critique: { content_blog: true, content_ig: true, email_campaign: false } } }] })
+  const cfg = await readLoopConfig(db)
+  check('blog + IG loop on when switched on', critiqueOn(cfg, 'content_blog') && critiqueOn(cfg, 'content_ig'))
+  check('per-type switch respected (email off)', !critiqueOn(cfg, 'email_campaign'))
+}
+{
   const db = { from() { throw new Error('boom') } }
   check('config read that throws = loop off', (await readLoopConfig(db)).max_auto_approve_per_run === 0)
 }
