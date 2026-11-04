@@ -207,6 +207,11 @@ const EXPECTED_FRESH_DATA: Array<{
   // back office, so a 12h budget catches a freeze within half a day without
   // false-positiving on a quiet evening. Saturday gets 36h: the Friday-to-first-
   // Shabbat-sale gap passed 12h on 2026-10-31 with the sync healthy.
+  // Google data the agents plan from. Synced twice daily by GitHub Actions
+  // (google-sync-daily.yml); 36h allows for GitHub's schedule delays. Search
+  // Console went unsynced for 6 months before this check existed.
+  { table: 'google_search_console', column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Search Console keywords (SEO agent + strategist)' },
+  { table: 'google_ads',            column: 'synced_at', max_age_hours: 36, required: true, label: 'Google Ads performance (advisor + strategist)' },
   { table: 'mflow_sell_lines',   column: 'transaction_date', max_age_hours: 12, saturday_max_age_hours: 36, required: true, label: 'MFlow revenue ledger (single source of revenue truth)' },
 ]
 

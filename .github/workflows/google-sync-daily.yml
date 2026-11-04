@@ -1,7 +1,15 @@
-name: Google Ads sync (daily)
+name: Google sync (Ads + Search Console)
 
-# Runs google-sync every morning so the advisor, the strategist and the
-# dashboard always see current Google spend and gclid → campaign mapping.
+# Runs twice a day so the advisor, the strategist, the SEO agent and the
+# dashboard always see current Google data:
+#   1. google-sync         Google Ads spend, campaigns, gclid → campaign mapping
+#   2. google-search-sync  Search Console keywords/pages (last 90 days)
+# Search Console had no schedule at all from 2026-04-21 (auto-sync.yml was
+# switched off) until this was added on 2026-11-03; the agents read the
+# google_search_console table, so it went stale silently. health-watchdog now
+# alerts when either table stops advancing.
+#
+# The two steps are independent: a failing Ads sync does not skip Search Console.
 #
 # WHY HERE AND NOT pg_cron: the database is a Micro instance whose background
 # worker budget is the root cause of the 2026-09-20 outage (see
@@ -13,12 +21,13 @@ name: Google Ads sync (daily)
 # google-sync answers 202 immediately and works in the background; the result
 # is in sync_log (and the dashboard's Settings page).
 #
-# Manual run: Actions → Google Ads sync (daily) → Run workflow, optionally with
+# Manual run: Actions → Google sync (Ads + Search Console) → Run workflow, optionally with
 # click_days up to 90 for a backfill.
 
 on:
   schedule:
     - cron: '45 2 * * *'     # 05:45 Israel, before the advisor and the morning jobs
+    - cron: '45 13 * * *'    # 16:45 Israel, so the evening has same-day spend
   workflow_dispatch:
     inputs:
       click_days:
@@ -33,7 +42,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Start google-sync
         env:
@@ -53,3 +62,24 @@ jobs:
             exit 1
           fi
           echo "::notice title=google-sync started::click_days=$DAYS, sync_log id $(jq -r '.sync_id // .id // "?"' resp.json 2>/dev/null)"
+
+      - name: Sync Search Console
+        if: ${{ !cancelled() }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_URL" ] && [ -n "$KEY" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets missing"; exit 1; }
+          # Synchronous: it fetches from Google and upserts before answering.
+          code=$(curl -sS --max-time 180 -o gsc.json -w '%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/google-search-sync" \
+            -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}' || true)
+          code=${code:-000}   # curl itself failed (DNS, timeout): report it below, do not exit blind
+          echo "HTTP $code"
+          if [ "$code" -ge 300 ] || [ "$(jq -r '.success // false' gsc.json 2>/dev/null)" != "true" ]; then
+            # Public repo: print only the function's own error field, never the raw body.
+            echo "::error title=google-search-sync HTTP $code::$(jq -r '.error // "no error field"' gsc.json 2>/dev/null | head -c 200 | tr '\n' ' ' || true)"
+            exit 1
+          fi
+          echo "::notice title=Search Console synced::$(jq -r '.records' gsc.json) rows"
