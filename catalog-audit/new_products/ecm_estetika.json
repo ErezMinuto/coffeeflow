@@ -1,0 +1,22 @@
+{
+ "name": "מכונת קפה מקצועית ECM Estetika דוד כפול",
+ "type": "simple",
+ "status": "draft",
+ "sku": "CM100022-00",
+ "categories": [{"id": 373}, {"id": 394}, {"id": 375}, {"id": 376}],
+ "attributes": [{"id": 18, "options": ["ECM"], "visible": true, "variation": false}],
+ "short_description": "<p><strong>ECM Estetika – מכונת אספרסו דו־דודית עם מערכת 3C Temp ומשאבה רוטורית, בגימור שחור מט.</strong></p>\n<ul>\n<li>שני הדודים מתחממים במקביל – מוכנה לחליטה תוך כ־6 דקות</li>\n<li>ראש חליטה מחומם חדש ליציבות טמפרטורה בכל שוט</li>\n<li>שלושה כפתורים וולומטריים ניתנים לתכנות, טיימר שוט ותצוגת Shot Observer</li>\n<li>פרה־אינפיוזן אקטיבי ופסיבי, Barista Lights ומד לחץ כפול</li>\n</ul>",
+ "description": "<h2>ECM Estetika – נוחות מרבית, מוכנה לחליטה תוך 6 דקות</h2>\n<p>ה־Estetika של ECM מחממת את שני הדודים במקביל, כך שאפשר לחלוט אספרסו ולהקציף חלב כמעט מיד לאחר ההדלקה. ראש החליטה המחומם, שפותח מחדש עבור המכונה, שומר על טמפרטורה יציבה במיוחד לאורך כל המיצוי, ושלושת הכפתורים הוולומטריים מאפשרים לתכנת כמות מים מדויקת לכל משקה ולקבל תוצאה עקבית בכל פעם.</p>\n<h3>תכונות עיקריות</h3>\n<ul>\n<li>מערכת דוד כפול עם בקרת טמפרטורה משולשת (3C Temp)</li>\n<li>ראש חליטה מחומם בפיתוח חדש</li>\n<li>חימום סימולטני של שני הדודים ומצב חימום מהיר (Fast Heat-Up)</li>\n<li>שלושה כפתורים וולומטריים ניתנים לתכנות</li>\n<li>טיימר שוט ותצוגת Shot Observer</li>\n<li>זמני הפעלה וכיבוי ניתנים לתכנות</li>\n<li>מצבי פרה־אינפיוזן אקטיבי ופסיבי</li>\n<li>משאבה רוטורית שקטה</li>\n<li>תאורת Barista Lights</li>\n<li>מד לחץ כפול (לחץ דוד ולחץ חליטה)</li>\n<li>עיצוב אלגנטי בגימור שחור מט</li>\n</ul>\n<h3>מפרט טכני</h3>\n<ul>\n<li><strong>מערכת:</strong> דוד כפול עם 3C Temp ומשאבה רוטורית</li>\n<li><strong>דוד קפה:</strong> כ־0.5 ליטר, נירוסטה</li>\n<li><strong>דוד קיטור/מים חמים:</strong> כ־2 ליטר, נירוסטה</li>\n<li><strong>מיכל מים:</strong> כ־2.8 ליטר, עם אפשרות לחיבור ישיר לרשת המים (צינור מתכת כלול)</li>\n<li><strong>תצוגה:</strong> 2 תצוגות</li>\n<li><strong>בקרה:</strong> PID, זמן פרה־אינפיוזן מתכוונן (אקטיבי ופסיבי), מצב ECO, תזכורת ניקוי ראש (CLn), תזכורת החלפת פילטר (FL), שני זמני הפעלה וכיבוי ביום, תצוגת טמפרטורה ב־°C או °F</li>\n<li><strong>קיטור:</strong> שרביט קיטור דו־דופני עם ברז מנוף</li>\n<li><strong>מתח והספק:</strong> 230 וולט, 50/60 הרץ, 2800 וואט</li>\n<li><strong>מידות (ר×ע×ג):</strong> 33.6×48.7×40.8 ס\"מ (ללא ידית); עומק עם ידית 58.5 ס\"מ</li>\n<li><strong>משקל:</strong> 29.4 ק\"ג</li>\n<li><strong>מק\"ט יצרן:</strong> CM100022-00</li>\n</ul>\n<h3>מה בקופסה</h3>\n<ul>\n<li>ידית מודולרית עם תוספות סיליקון לשוט יחיד וכפול</li>\n<li>ידית עם פיה כפולה</li>\n<li>סלסלה לשוט יחיד (7 גרם) וסלסלה לשוט כפול (14 גרם)</li>\n<li>סלסלה ללא תחתית (Bottomless)</li>\n<li>סלסלה עיוורת לניקוי</li>\n<li>דוחסן ומברשת ניקוי</li>\n<li>צינור מתכת לחיבור למים, 1/8″ ל־3/8″ BSPP</li>\n<li>חוברת הוראות שימוש</li>\n</ul>",
+ "images": [
+  {"src": "https://www.ecm.de/wp-content/uploads/2025/09/ECM_Estetika-frontal-768x504-1.jpg", "alt": "ECM Estetika מכונת אספרסו דו־דודית – מבט קדמי"},
+  {"src": "https://www.ecm.de/wp-content/uploads/2025/09/ECM_Estetika-seitlich-768x504-1.jpg", "alt": "ECM Estetika – מבט מהצד"},
+  {"src": "https://www.ecm.de/wp-content/uploads/2025/09/ECM_Estetika-Display-768x504-1.jpg", "alt": "ECM Estetika – תצוגה וכפתורים וולומטריים"},
+  {"src": "https://www.ecm.de/wp-content/uploads/2025/09/ECM_Estetika-Bruehgruppe_von_oben-768x504-1.jpg", "alt": "ECM Estetika – ראש חליטה מחומם"},
+  {"src": "https://www.ecm.de/wp-content/uploads/2025/09/ECM_Estetika-Manometer-768x504-1.jpg", "alt": "ECM Estetika – מד לחץ כפול"}
+ ],
+ "meta_data": [
+  {"key": "rank_math_title", "value": "מכונת אספרסו ECM Estetika דוד כפול | %sitename%"},
+  {"key": "rank_math_description", "value": "ECM Estetika – מכונת אספרסו דו־דודית עם 3C Temp, משאבה רוטורית, ראש חליטה מחומם ושלושה כפתורים וולומטריים. מוכנה תוך כ־6 דקות, בגימור שחור מט."},
+  {"key": "rank_math_focus_keyword", "value": "ECM Estetika"}
+ ]
+}
