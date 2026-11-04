@@ -70,10 +70,13 @@ export const SHOTS: Record<ShotType, ShotDef> = {
   },
   bar_moment: {
     id: 'bar_moment', label: 'Bar moment',
-    use_for: "a real moment at Minuto's espresso bar: steaming milk, pulling a shot, a cup in hand",
-    source: 'real_photo', folders: ['hands', 'machine', 'pitchers'],
-    // Only what the real photos show. There is no latte-art pour in the
-    // library yet (owner's next shoot); until then latte art is finished_drink.
+    use_for: "Minuto's espresso bar and its Strada X: freshly steamed milk, a just-pulled espresso, a fresh cup at the bar, the bar itself",
+    // RECREATED from the real photo (owner, 2026-11-04): the photo that
+    // matches the moment anchors the real machine; the prompt makes a clean,
+    // calm, STILL scene around it. Never published raw (dirty steam lever,
+    // stained drip tray, cluttered shelves), and no hands or pours (those are
+    // what image models draw wrong).
+    source: 'generated', folders: ['hands', 'machine', 'pitchers'],
     moments: ['steaming milk', 'pulling an espresso shot', 'a cup in hand', 'the espresso bar'],
     needs_product: false, enabled: true,
   },
@@ -85,8 +88,9 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     // clean, plain roastery wall behind it. Published as photographed, the
     // real photos carried whatever was behind the roaster (a restroom door).
     source: 'generated', folders: ['roaster'],
+    // Every moment is recreated from the matching real photo (owner,
+    // 2026-11-04: recreate by default, never publish raw).
     moments: ['the roaster at work', 'fresh beans dropping into the cooling bin', 'a close-up of the roaster'],
-    real_moments: ['fresh beans dropping into the cooling bin'],
     needs_product: false, enabled: true,
   },
   brew_ritual: {
@@ -283,10 +287,23 @@ export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: strin
     const wall = 'Behind it is only a plain, dark charcoal roastery wall with warm amber light falling across it.'
     const scene: Record<string, string> = {
       'the roaster at work': `the drum roaster from the reference photo, exactly as it is, from the same angle, its sight glass and round cooling bin full of freshly roasted medium-brown coffee beans. ${wall}`,
-      'fresh beans dropping into the cooling bin': `the moment in the reference photo: freshly roasted, evenly medium-brown coffee beans falling from the drum roaster into its round cooling bin, the roaster exactly as it is. ${wall}`,
+      'fresh beans dropping into the cooling bin': `the round cooling bin of the drum roaster from the reference photo, exactly as it is, piled with freshly roasted, evenly medium-brown coffee beans just dropped from the drum, its stirring arms resting in the beans. ${wall}`,
       'a close-up of the roaster': `a close-up of the front of the drum roaster from the reference photo, exactly as it is: the drum door, gauge and sight glass, the glass full of freshly roasted medium-brown beans. ${wall}`,
     }
     return `A ${frame} editorial photograph of ${scene[moment]} Warm, moody light, shallow depth of field, natural film grain.`
+  }
+  if (shot.id === 'bar_moment') {
+    // Minuto's Strada X from the reference photo, in a still moment. Spotless
+    // metal and a tidy bar are what the raw photos lacked (owner, 2026-11-04).
+    const machine = 'the espresso machine from the reference photo, exactly as it is'
+    const scene: Record<string, string> = {
+      'steaming milk': `a stainless milk pitcher of freshly steamed, glossy white microfoam standing on the drip tray of ${machine}, beside its chrome steam wand, a light wisp of steam rising`,
+      'pulling an espresso shot': `two small glass cups of freshly pulled espresso with rich golden crema standing on the drip tray of ${machine}, beside its group heads; the shot is finished, the spouts are dry and nothing is dripping`,
+      'a cup in hand': `a freshly made cappuccino with latte art in a ceramic cup on its saucer, standing flat on the wooden bar counter, with ${machine} softly out of focus behind it`,
+      'the espresso bar': `${machine} on Minuto's bar, its shelves tidy with stacked glasses and cups`,
+    }
+    return `A ${frame} editorial photograph of ${scene[moment] ?? scene['the espresso bar']}. Spotless polished metal, a clean drip tray, ` +
+      `warm soft morning light, shallow depth of field, natural film grain.`
   }
   // beans_closeup
   return `A ${frame} close-up editorial photograph of freshly roasted, medium-brown coffee beans, ${moment}, like the beans in the reference photo. ` +
@@ -312,17 +329,19 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
         ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
     case 'bar_moment':
-      // No hand-anatomy question: these are real photos, and fingers wrapped
-      // around a pitcher can't be counted, which only raised false alarms.
+      // A recreated STILL scene: no hands, nothing pouring, no invented marks
+      // (a test retouch printed a fake "Minuto" logo on the machine).
       return [photo, ground, text,
         'Is the espresso machine shown with every part attached (no floating or duplicated portafilters or steam wands)? (n/a if no machine is visible)',
-        'If coffee or milk is flowing, does it come from a portafilter spout or a hand-held pitcher into a cup or pitcher? (n/a if nothing is flowing)',
+        'Is the scene still: no hands or people, and nothing pouring or flowing?',
+        'Is the machine free of any logo or lettering that would not be on a real espresso machine (for example a café name painted on it)?',
         'Is the image free of readable customer names or order tickets?']
     case 'roastery':
       return [photo, ground, text,
         'Is there exactly one roaster, a full-size floor-standing drum roaster (not a small or tabletop machine)? (n/a if only a close-up of a part is shown)',
         'Are any beans shown roasted (brown), not green or pale?',
-        'Is the background free of doors, signs, people and readable text other than the roaster\'s own maker plate?']
+        'Is the background free of doors, signs, people and readable text other than the roaster\'s own maker plate?',
+        'Is the scene still, with no beans in mid-air?']
     case 'brew_ritual':
       return [photo, ground, text,
         `Is ${resolveMoment(shot, slots.moment)} the main subject, shown whole?`,

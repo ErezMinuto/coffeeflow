@@ -171,12 +171,16 @@ Deno.test('reference subject follows the roaster moment; excluded photos are lis
   assert(PHOTO_EXCLUDE.has('roaster/IMG_5172.jpg'))
 })
 
-Deno.test('roastery: falling beans use a real photo, the still moments are generated', () => {
-  assert(shotUsesRealPhoto(SHOTS.roastery, { moment: 'fresh beans dropping into the cooling bin' }))
-  assert(!shotUsesRealPhoto(SHOTS.roastery, { moment: 'the roaster at work' }))
-  assert(!shotUsesRealPhoto(SHOTS.roastery, { moment: 'a close-up of the roaster' }))
-  assert(shotUsesRealPhoto(SHOTS.bar_moment, {}))
+Deno.test('bar and roastery are recreated from the real photo, never published raw', () => {
+  // Owner, 2026-11-04: "recreate by default".
+  for (const shot of [SHOTS.bar_moment, SHOTS.roastery]) {
+    for (const moment of shot.moments) assert(!shotUsesRealPhoto(shot, { moment }), `${shot.id}/${moment}`)
+  }
   assert(!shotUsesRealPhoto(SHOTS.finished_drink, {}))
+  // Recreated scenes are still: no hands, nothing pouring, no invented logos.
+  const bar = shotChecklist(SHOTS.bar_moment, {})
+  assert(bar.some(q => q.includes('no hands')) && bar.some(q => q.includes('logo')))
+  for (const moment of SHOTS.bar_moment.moments) assert(!/\bhand\b|pour(ing|s)?\b/i.test(shotGeneratePrompt(SHOTS.bar_moment, { moment }, '9:16')), moment)
 })
 
 Deno.test('bags use the counter photos only: every window photo is excluded', () => {
