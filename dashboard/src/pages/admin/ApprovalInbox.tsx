@@ -131,10 +131,14 @@ function TaskDetails({ t }: { t: Record<string, any> }) {
   )
 }
 
+const hasUnpublishedFaq = (it: InboxItem) => Array.isArray(it.raw.result_data?.proposed_faq) && it.raw.result_data.proposed_faq.length > 0 && !it.raw.result_data?.faq_written
+
 /** One line under the buttons saying what Accept really does for this task type. */
 function acceptNote(it: InboxItem): string | null {
   if (it.kind !== 'task') return null
-  if (it.raw.task_type === 'technical_seo') return 'Mark reviewed only clears this from your inbox. It does NOT add the FAQ to the page. To put it live, use "Publish via agent chat": the agent shows the final Q&A and writes it after your go.'
+  if (it.raw.task_type === 'technical_seo') return hasUnpublishedFaq(it)
+    ? 'Mark reviewed only clears this from your inbox. It does NOT add the FAQ to the page. To put it live, use "Publish via agent chat": the agent shows the final Q&A and writes it after your go.'
+    : 'Mark reviewed only clears this from your inbox; nothing else runs.'
   if (it.raw.task_type === 'visual_generation') return 'Mark reviewed only clears the quality flag. It does not attach or publish the image anywhere.'
   if (it.raw.task_type === 'instagram_post') return 'Publish posts it live to @minuto_cafe (asks you to confirm first).'
   return 'Accept only clears this from your inbox; nothing else runs.'
@@ -382,7 +386,7 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                           {ok && <button onClick={() => run(() => approveItem(it))} disabled={busy} className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"><Check size={12} /> {ok}</button>}
                           <button onClick={() => reject([it])} disabled={busy} className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-900 disabled:opacity-50"><X size={12} /> Reject</button>
                           <button onClick={() => onGuide(guidePrompt(it))} className="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-900"><MessageSquare size={12} /> Guide the agent</button>
-                          {it.kind === 'task' && it.raw.task_type === 'technical_seo' && Array.isArray(it.raw.result_data?.proposed_faq) && !it.raw.result_data?.faq_written && (
+                          {it.kind === 'task' && it.raw.task_type === 'technical_seo' && hasUnpublishedFaq(it) && (
                             <button onClick={() => onGuide(publishFaqPrompt(it))} className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900"><MessageSquare size={12} /> Publish via agent chat</button>
                           )}
                           {it.link && <a href={it.link} className="inline-flex items-center gap-1 text-xs text-surface-600 hover:text-surface-900"><ExternalLink size={12} /> open</a>}
