@@ -814,6 +814,7 @@ async function selectCustomers(
     const { data, error } = await supabase
       .from('marketing_contacts')
       .select('email, name, opted_in')
+      .order('email')   // a stable order, or .range() pages skip and repeat rows
       .range(from, from + 999)
     if (error) { warnings.push(`marketing_contacts enrichment skipped: ${error.message}`); break }
     const rows = (data ?? []) as Array<{ email: string; name: string | null; opted_in: boolean }>
@@ -864,6 +865,7 @@ async function optedInEmailSet(supabase: SupabaseClient): Promise<Set<string>> {
       .from('marketing_contacts')
       .select('email')
       .eq('opted_in', true)
+      .order('email')
       .range(from, from + 999)
     if (error) break
     const rows = (data ?? []) as Array<{ email: string }>
