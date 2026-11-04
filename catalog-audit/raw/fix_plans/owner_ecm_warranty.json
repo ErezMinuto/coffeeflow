@@ -1,0 +1,104 @@
+{
+ "edits": [
+  {
+   "product_id": 83070,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 82968,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 77225,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 76318,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67650,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67645,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67349,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67348,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67157,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67347,
+   "variation_id": null,
+   "target": "description",
+   "op": "append",
+   "new": "<p><strong>אחריות 24 חודשים ע\"י היבואן Vero</strong></p>",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  },
+  {
+   "product_id": 67156,
+   "variation_id": null,
+   "target": "description",
+   "old": "אחריות לשנתיים על חלקים ועבודה מסופקת על היבואן",
+   "new": "אחריות 24 חודשים ע\"י היבואן Vero",
+   "finding": "owner: ECM warranty line (importer Vero)",
+   "source": "owner"
+  }
+ ],
+ "skipped": []
+}
