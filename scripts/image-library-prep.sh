@@ -55,7 +55,7 @@ def gemini_json(jpg, text):
     b64 = base64.b64encode(open(jpg, "rb").read()).decode()
     body = {"contents": [{"parts": [{"inlineData": {"mimeType": "image/jpeg", "data": b64}}, {"text": text}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0}}
-    r = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    r = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
                                data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "x-goog-api-key": GKEY})
     out = json.load(urlopen_retry(r))
     return json.loads("".join(p.get("text", "") for p in out["candidates"][0]["content"]["parts"]))
@@ -131,7 +131,7 @@ def subject_box(jpg):
                  "(the coffee bag if there is one, otherwise the most important subject). "
                  "JSON {\"box_2d\": [ymin, xmin, ymax, xmax], \"hero\": [ymin, xmin, ymax, xmax]}, values 0-1000."}]}],
         "generationConfig": {"responseMimeType": "application/json", "temperature": 0}}
-    r = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    r = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
                                data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "x-goog-api-key": GKEY})
     out = json.load(urlopen_retry(r))
     j = json.loads("".join(p.get("text", "") for p in out["candidates"][0]["content"]["parts"]))

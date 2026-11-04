@@ -27,12 +27,13 @@
 //
 // Secrets (supabase secrets set, never in chat): WHATSAPP_APP_SECRET,
 // WHATSAPP_VERIFY_TOKEN, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID,
-// GEMINI_API_KEY. Optional: WHATSAPP_MODEL (default gemini-2.5-flash),
+// GEMINI_API_KEY. Optional: WHATSAPP_MODEL (default gemini-3.5-flash-lite),
 // WHATSAPP_TEST_WA_IDS (comma-separated phone numbers treated as ad leads, for
 // testing from a staff phone and for Meta's App Review screencast).
 
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger, type Logger } from '../_shared/logger.ts'
+import { alternateThinkingConfig, isThinkingConfigError, offThinkingConfig, resolveGeminiModel } from '../_shared/gemini_thinking.ts'
 import {
   buildOutboundMessages,
   formatCatalog,
@@ -63,9 +64,11 @@ const VERIFY_TOKEN     = Deno.env.get('WHATSAPP_VERIFY_TOKEN') ?? ''
 const ACCESS_TOKEN     = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? ''
 const PHONE_NUMBER_ID  = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? ''
 const GEMINI_API_KEY   = Deno.env.get('GEMINI_API_KEY') ?? ''
-// Verified against the live model list on 2026-10-17. Ids are not guessable
+// Verified against the live model list on 2026-11-03. Ids are not guessable
 // from marketing names (see seo-agent/claude.ts), so check before overriding.
-const MODEL            = Deno.env.get('WHATSAPP_MODEL')?.trim() || 'gemini-2.5-flash'
+// gemini-2.5-flash is deprecated and redirected here from 2026-12-01; this is
+// Google's named successor, at the same per-token price.
+const MODEL            = resolveGeminiModel(Deno.env.get('WHATSAPP_MODEL')?.trim() || 'gemini-3.5-flash-lite')
 // Overridable only so the local end-to-end harness can stand in for Meta.
 const GRAPH_BASE       = Deno.env.get('WHATSAPP_GRAPH_BASE') || 'https://graph.facebook.com/v23.0'
 
@@ -322,17 +325,30 @@ async function askGemini(system: string, history: StoredMessage[], log: Logger, 
       required: ['text'],
     },
   }
-  // 2.5 models think by default and spend the output budget on it; a chat
-  // reply needs no thinking and should come back fast.
-  if (MODEL.startsWith('gemini-2.5')) generationConfig.thinkingConfig = { thinkingBudget: 0 }
+  // Flash models think by default and spend the output budget on it; a chat
+  // reply needs no thinking and should come back fast. The "off" form differs
+  // per model (gemini-3.5-flash-lite 400s on thinkingBudget 0), hence the helper.
+  const offThinking = offThinkingConfig(MODEL)
+  if (offThinking) generationConfig.thinkingConfig = offThinking
 
   const started = Date.now()
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+  const post = () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
     body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig }),
   })
-  const body = await res.json().catch(() => ({}))
+  let res = await post()
+  let body = await res.json().catch(() => ({}))
+  // A model that refuses this "thinking off" form gets the other one, once,
+  // rather than leaving the lead without an answer.
+  if (!res.ok && offThinking && isThinkingConfigError(res.status, JSON.stringify(body))) {
+    generationConfig.thinkingConfig = alternateThinkingConfig(offThinking)
+    log.warn('gemini.thinking_retry', 'model rejected thinkingConfig; retrying with the other form', {
+      model: MODEL, rejected: offThinking,
+    })
+    res = await post()
+    body = await res.json().catch(() => ({}))
+  }
   if (!res.ok) throw new Error(`gemini ${res.status}: ${JSON.stringify(body).slice(0, 500)}`)
   const cand = body?.candidates?.[0]
   const text = (cand?.content?.parts ?? []).map((p: any) => p?.text ?? '').join('').trim()

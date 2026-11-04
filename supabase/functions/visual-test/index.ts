@@ -136,7 +136,9 @@ function matchesRatio(dims: { w: number; h: number } | null, ratio: string): boo
 // Captions live in memory for the life of the worker (the marketing bucket
 // only accepts images/video, so there is nowhere to persist them without a
 // new table); a cold start re-captions the few folders a brief needs.
-const CAPTION_MODEL  = 'gemini-2.5-flash'
+// gemini-2.5-flash is deprecated (redirected to gemini-3.5-flash-lite from
+// 2026-12-01); this is the named successor at the same per-token price.
+const CAPTION_MODEL  = 'gemini-3.5-flash-lite'
 const CAPTION_BATCH  = 6
 // Library photos are 3-6 MB phone shots. Loading + base64-ing a dozen of
 // them blew the edge worker's memory (WORKER_RESOURCE_LIMIT), so Gemini

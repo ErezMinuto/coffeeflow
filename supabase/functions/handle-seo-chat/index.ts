@@ -24,6 +24,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { CHAT_SYSTEM_PROMPT } from '../seo-agent/prompts/chat.ts'
 import { applyPlannedShot, withIgDestination } from '../_shared/shot_library.ts'
+import { offThinkingConfig } from '../_shared/gemini_thinking.ts'
 import {
   callClaude,
   parseClaudeJson,
@@ -2572,11 +2573,12 @@ serve(async (req: Request): Promise<Response> => {
       }))
       const body: Record<string, unknown> = {
         contents: [{ role: 'user', parts: [{ text: 'Reply with the single word OK.' }] }],
-        generationConfig: { maxOutputTokens: 32, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { maxOutputTokens: 32, ...(offThinkingConfig(model) ? { thinkingConfig: offThinkingConfig(model) } : {}) },
       }
       if (nTools > 0) body.tools = [{ functionDeclarations: decls }]
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      // Key in a header, never the URL: a URL lands in logs and error output.
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) })
       const j = await r.json().catch(() => ({}))
       return jsonResponse({
         model, tools_sent: nTools, http: r.status,
