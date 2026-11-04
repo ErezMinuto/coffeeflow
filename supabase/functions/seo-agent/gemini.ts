@@ -23,6 +23,7 @@ import {
   isThinkingConfigError,
   modelRequiresThinking,
   offThinkingConfig,
+  resolveGeminiModel,
 } from '../_shared/gemini_thinking.ts'
 import type {
   CallClaudeOptions,
@@ -394,7 +395,9 @@ export async function callGemini(
   // against GET /v1beta/models before using it. gemini-2.5-flash is deprecated
   // (redirected to gemini-3.5-flash-lite from 2026-12-01); this is the
   // successor Google names, at the same per-token price.
-  const model = opts.model ?? 'gemini-3.5-flash-lite'
+  // resolveGeminiModel: a MODEL_* secret still naming the deprecated
+  // gemini-2.5-flash calls its successor directly (see _shared/gemini_thinking.ts).
+  const model = resolveGeminiModel(opts.model ?? 'gemini-3.5-flash-lite')
   const offThinking = opts.effort ? null : offThinkingConfig(model)
   const contents = await toGeminiContents(opts.messages)
 

@@ -20,6 +20,20 @@
 // a 400 names the thinking config (see isThinkingConfigError), which covers the
 // next id that breaks the pattern.
 
+// Deprecated ids, and the model Google redirects each to. Calling the target
+// directly skips the redirect, and with it a request the target would reject
+// (gemini-3.5-flash-lite 400s on the 2.5-style thinkingBudget:0) followed by a
+// retry. Prod MODEL_* secrets still name gemini-2.5-flash, so this is what
+// keeps those slots on one request per call without touching the secrets.
+const DEPRECATED_GEMINI: Record<string, string> = {
+  'gemini-2.5-flash': 'gemini-3.5-flash-lite',   // redirected by Google from 2026-12-01
+}
+
+/** The id to actually call: a deprecated id becomes its successor. */
+export function resolveGeminiModel(model: string): string {
+  return DEPRECATED_GEMINI[model.trim()] ?? model
+}
+
 export type ThinkingConfig = { thinkingBudget: number } | { thinkingLevel: string }
 
 // Pro tiers reason by design and treat "no thinking" as invalid rather than as

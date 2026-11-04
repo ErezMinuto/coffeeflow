@@ -33,7 +33,7 @@
 
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { createLogger, type Logger } from '../_shared/logger.ts'
-import { alternateThinkingConfig, isThinkingConfigError, offThinkingConfig } from '../_shared/gemini_thinking.ts'
+import { alternateThinkingConfig, isThinkingConfigError, offThinkingConfig, resolveGeminiModel } from '../_shared/gemini_thinking.ts'
 import {
   buildOutboundMessages,
   formatCatalog,
@@ -68,7 +68,7 @@ const GEMINI_API_KEY   = Deno.env.get('GEMINI_API_KEY') ?? ''
 // from marketing names (see seo-agent/claude.ts), so check before overriding.
 // gemini-2.5-flash is deprecated and redirected here from 2026-12-01; this is
 // Google's named successor, at the same per-token price.
-const MODEL            = Deno.env.get('WHATSAPP_MODEL')?.trim() || 'gemini-3.5-flash-lite'
+const MODEL            = resolveGeminiModel(Deno.env.get('WHATSAPP_MODEL')?.trim() || 'gemini-3.5-flash-lite')
 // Overridable only so the local end-to-end harness can stand in for Meta.
 const GRAPH_BASE       = Deno.env.get('WHATSAPP_GRAPH_BASE') || 'https://graph.facebook.com/v23.0'
 

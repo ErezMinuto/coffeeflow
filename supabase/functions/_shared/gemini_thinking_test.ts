@@ -5,7 +5,16 @@ import {
   isThinkingConfigError,
   modelRequiresThinking,
   offThinkingConfig,
+  resolveGeminiModel,
 } from './gemini_thinking.ts'
+
+Deno.test('resolveGeminiModel maps deprecated 2.5 Flash to its successor only', () => {
+  assertEquals(resolveGeminiModel('gemini-2.5-flash'), 'gemini-3.5-flash-lite')
+  assertEquals(resolveGeminiModel(' gemini-2.5-flash '), 'gemini-3.5-flash-lite')
+  assertEquals(resolveGeminiModel('gemini-2.5-flash-lite'), 'gemini-2.5-flash-lite')
+  assertEquals(resolveGeminiModel('gemini-2.5-pro'), 'gemini-2.5-pro')
+  assertEquals(resolveGeminiModel('gemini-3.1-pro-preview'), 'gemini-3.1-pro-preview')
+})
 
 // Each expectation is what the live API accepted on 2026-11-03 (see the table
 // at the top of gemini_thinking.ts).
