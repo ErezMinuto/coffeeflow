@@ -12,7 +12,7 @@
 // so anything can be restored. Publishing an Instagram post is the only action
 // that goes live, and it asks for confirmation first (same call as the task queue).
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, X, MessageSquare, RefreshCw, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -29,7 +29,115 @@ export interface InboxItem {
   created:  string
   imageUrl?: string
   link?:    string
+  targetUrl?: string        // the live page this item is about (external, opens in a new tab)
   raw:      Record<string, any>
+}
+
+/** Hebrew slugs arrive percent-encoded; show them readable. Never throws on a malformed sequence. */
+function readableUrl(u: string): string { try { return decodeURIComponent(u) } catch { return u } }
+
+const clip = (s: unknown, n = 120) => { const x = String(s ?? '').trim(); return x.length > n ? x.slice(0, n) + '…' : x }
+
+const DESTINATION_LABEL: Record<string, string> = { ig_post: 'Instagram', blog_banner: 'blog banner' }
+
+/** What a waiting seo_task IS, in words: each task type keeps its meaning in different fields. */
+function describeTask(t: Record<string, any>): { group: string; title: string; detail: string; targetUrl?: string } {
+  const rd = t.result_data ?? {}, bd = t.brief_data ?? {}
+  if (t.task_type === 'technical_seo') {
+    const subtype = rd.subtype ?? bd.subtype ?? t.task_subtype
+    const url = safeHref(rd.target_post_url ?? bd.target_post_url) ?? undefined
+    const page = rd.article_title || (url ? readableUrl(new URL(url).pathname) : 'a blog article')
+    if (subtype === 'faq_injection') {
+      const n = Array.isArray(rd.proposed_faq) ? rd.proposed_faq.length : rd.faq_count ?? 0
+      const visits = rd.rationale_signal?.ga4_organic_sessions_30d ?? bd.rationale_signal?.ga4_organic_sessions_30d
+      return { group: 'Technical SEO', targetUrl: url,
+        title: `FAQ proposal for blog article: ${clip(page)}`,
+        detail: `The agent wrote ${n} questions and answers to add to this article as an FAQ section with FAQ schema` +
+          (visits != null ? ` (the page had ${visits} organic visits in the last 30 days).` : '.') +
+          (rd.faq_written ? ' Already on the live page.' : ' Not on the live page yet.') }
+    }
+    return { group: 'Technical SEO', targetUrl: url, title: `Technical SEO (${subtype ?? 'unknown type'}): ${clip(page)}`, detail: rd.review_reason ?? t.rationale ?? '' }
+  }
+  if (t.task_type === 'instagram_post') {
+    const kind = rd.media_type === 'story' || bd.media_type === 'story' ? 'Instagram story' : rd.media_type === 'carousel' || bd.media_type === 'carousel' ? 'Instagram carousel' : 'Instagram post'
+    return { group: 'Instagram posts', title: `${kind}: ${clip(bd.caption_he ?? rd.caption) || '(no caption)'}`,
+      detail: [rd.qa_flagged === true ? 'The image did not pass the automatic quality check.' : '', rd.review_reason ?? ''].filter(Boolean).join(' ') || 'Staged on Instagram, waiting for you to publish it.' }
+  }
+  if (t.task_type === 'visual_generation') {
+    const dest = DESTINATION_LABEL[String(bd.destination ?? rd.destination)] ?? String(bd.destination ?? rd.destination ?? 'image')
+    const c = rd.qa_last_critique ?? {}
+    const text = (x: unknown) => typeof x === 'string' ? x : JSON.stringify(x)
+    const problems = [...(Array.isArray(c.issues) ? c.issues.map(text) : []), ...(Array.isArray(c.missing) ? c.missing.map((m: unknown) => `missing: ${text(m)}`) : [])]
+    return { group: 'Images', targetUrl: safeHref(rd.wp_edit_url) ?? undefined,
+      title: `Image for ${dest}: ${clip(bd.scene_brief ?? bd.caption_he ?? bd.shot_type) || '(no brief)'}`,
+      detail: rd.review_reason ?? (problems.length ? `Failed the automatic quality check: ${clip(problems.join('; '), 300)}` : rd.attach_skipped_reason ?? rd.qa_summary ?? '') }
+  }
+  return { group: String(t.task_type), title: clip(bd.title ?? bd.keyword ?? bd.caption_he ?? bd.scene_brief ?? t.rationale) || String(t.task_subtype ?? t.task_type),
+    detail: rd.review_reason ?? rd.qa_summary ?? t.rationale ?? '' }
+}
+
+// Bookkeeping fields that mean nothing to a reviewer.
+const HIDDEN_KEYS = new Set(['tokens', 'meta_response', 'render_response', 'qa_attempts', 'review_required', 'ig_creation_id', 'ig_media_id',
+  'carousel_children', 'requested_strategy', 'publish_strategy', 'auto_publish_overridden', 'render_function', 'original_render_mode', 'proposed_faq', 'written_faq'])
+
+function humanKey(k: string): string { return k.replace(/_/g, ' ') }
+
+function Value({ v }: { v: unknown }) {
+  if (v == null || v === '') return <span className="text-surface-400">none</span>
+  const href = typeof v === 'string' ? safeHref(v) : null
+  if (href) return <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-700 underline break-all">{readableUrl(v as string)}</a>
+  if (Array.isArray(v)) {
+    if (v.every(x => typeof x !== 'object' || x === null)) return <span>{v.map(String).join(', ')}</span>
+    return <ol className="list-decimal pl-4">{v.slice(0, 10).map((x, i) => <li key={i}><Value v={x} /></li>)}</ol>
+  }
+  if (typeof v === 'object') return <Fields obj={v as Record<string, unknown>} />
+  return <span className="whitespace-pre-wrap break-words">{String(v)}</span>
+}
+
+function Fields({ obj }: { obj: Record<string, unknown> }) {
+  const entries = Object.entries(obj).filter(([k, v]) => !HIDDEN_KEYS.has(k) && v != null && v !== '')
+  if (!entries.length) return <span className="text-surface-400">none</span>
+  return (
+    <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-0.5">
+      {entries.map(([k, v]) => <Fragment key={k}><dt className="text-surface-500">{humanKey(k)}</dt><dd className="min-w-0"><Value v={v} /></dd></Fragment>)}
+    </dl>
+  )
+}
+
+function FaqList({ faq }: { faq: unknown }) {
+  const list = (Array.isArray(faq) ? faq : []) as Array<{ q?: unknown; a?: unknown }>
+  if (!list.length) return null
+  return (
+    <ol className="list-decimal pr-4 pl-4 space-y-1.5" dir="rtl">
+      {list.map((p, i) => <li key={i}><div className="font-medium">{String(p?.q ?? '')}</div><div className="text-surface-600">{String(p?.a ?? '')}</div></li>)}
+    </ol>
+  )
+}
+
+/** Expandable full brief + result of a task, readable rather than raw JSON. */
+function TaskDetails({ t }: { t: Record<string, any> }) {
+  const rd = t.result_data ?? {}
+  return (
+    <details className="mt-1.5 text-[12px] text-surface-700">
+      <summary className="cursor-pointer text-surface-500 hover:text-surface-800 select-none">details</summary>
+      <div className="mt-1.5 space-y-2" dir="auto">
+        {t.rationale && <div><span className="text-surface-500">Why the agent made this: </span>{String(t.rationale)}</div>}
+        {Array.isArray(rd.proposed_faq) && <div><div className="text-surface-500 mb-1">Proposed FAQ (exactly what would go on the page):</div><FaqList faq={rd.proposed_faq} /></div>}
+        {Array.isArray(rd.written_faq) && <div><div className="text-surface-500 mb-1">FAQ written live:</div><FaqList faq={rd.written_faq} /></div>}
+        <div><div className="text-surface-500 mb-0.5">What the agent was asked</div><Fields obj={t.brief_data ?? {}} /></div>
+        <div><div className="text-surface-500 mb-0.5">What it produced</div><Fields obj={rd} /></div>
+      </div>
+    </details>
+  )
+}
+
+/** One line under the buttons saying what Accept really does for this task type. */
+function acceptNote(it: InboxItem): string | null {
+  if (it.kind !== 'task') return null
+  if (it.raw.task_type === 'technical_seo') return 'Mark reviewed only clears this from your inbox. It does NOT add the FAQ to the page. To put it live, use "Publish via agent chat": the agent shows the final Q&A and writes it after your go.'
+  if (it.raw.task_type === 'visual_generation') return 'Mark reviewed only clears the quality flag. It does not attach or publish the image anywhere.'
+  if (it.raw.task_type === 'instagram_post') return 'Publish posts it live to @minuto_cafe (asks you to confirm first).'
+  return 'Accept only clears this from your inbox; nothing else runs.'
 }
 
 const DAY = 86_400_000
@@ -46,7 +154,7 @@ async function loadInbox(): Promise<InboxItem[]> {
       .in('status', ['proposed', 'ready_for_review', 'needs_human']).order('created_at', { ascending: false }).limit(200),
     supabase.from('campaigns').select('id, subject, preheader, created_at, campaign_type, status')
       .eq('status', 'draft').order('created_at', { ascending: false }).limit(200),
-    supabase.from('seo_tasks').select('id, task_type, task_subtype, brief_data, result_data, created_at, status')
+    supabase.from('seo_tasks').select('id, task_type, task_subtype, brief_data, result_data, rationale, created_at, status')
       .eq('result_data->>review_required', 'true').order('created_at', { ascending: false }).limit(500),
     // '*' so the inbox also works before the innovation_pitch columns exist.
     supabase.from('strategist_signals').select('*')
@@ -68,12 +176,10 @@ async function loadInbox(): Promise<InboxItem[]> {
       detail: c.preheader ?? '', status: c.status, created: c.created_at, link: '/marketing?tab=history', raw: c })
   }
   for (const t of (tasks.data ?? []) as any[]) {
-    const rd = t.result_data ?? {}, bd = t.brief_data ?? {}
-    const label = t.task_type === 'instagram_post' ? 'Instagram posts' : t.task_type === 'visual_generation' ? 'Images' : t.task_type === 'technical_seo' ? 'Technical SEO' : t.task_type
-    out.push({ key: `task:${t.id}`, kind: 'task', id: t.id, group: `${label}: waiting for review`,
-      title: bd.caption_he?.slice(0, 120) || bd.keyword || bd.scene_brief?.slice(0, 120) || t.task_subtype || t.task_type,
-      detail: rd.review_reason ?? rd.qa_summary ?? '', status: t.status, created: t.created_at,
-      imageUrl: rd.image_url ?? rd.carousel_slides?.[0]?.image_url, raw: t })
+    const d = describeTask(t)
+    out.push({ key: `task:${t.id}`, kind: 'task', id: t.id, group: `${d.group}: waiting for review`,
+      title: d.title, detail: d.detail, status: t.status, created: t.created_at,
+      targetUrl: d.targetUrl, imageUrl: t.result_data?.image_url ?? t.result_data?.carousel_slides?.[0]?.image_url, raw: t })
   }
   for (const s of (sigs.data ?? []) as any[]) {
     out.push({ key: `signal:${s.id}`, kind: 'signal', id: s.id,
@@ -149,6 +255,8 @@ function approveLabel(it: InboxItem): string | null {
     const fresh = Date.now() - new Date(it.raw.result_data?.prepared_at ?? it.created).getTime() < IG_CONTAINER_TTL_MS
     return it.raw.result_data?.ig_creation_id && fresh ? 'Publish' : null   // expired container: only reject makes sense
   }
+  // These only clear the review flag; the label must not suggest a fix is applied.
+  if (it.kind === 'task' && (it.raw.task_type === 'technical_seo' || it.raw.task_type === 'visual_generation')) return 'Mark reviewed'
   return 'Accept'
 }
 
@@ -188,6 +296,11 @@ function PitchDetails({ s }: { s: Record<string, any> }) {
       )}
     </div>
   )
+}
+
+/** Live FAQ writes go through the chat's approve_post_faq (service key + show-then-go), never from here. */
+export function publishFaqPrompt(it: InboxItem): string {
+  return `Publish the proposed FAQ of technical_seo task ${it.id} live (approve_post_faq) on ${it.raw.result_data?.target_post_url ?? 'its article'}. Show me the final Q&A first and wait for my go.`
 }
 
 export function guidePrompt(it: InboxItem): string {
@@ -261,14 +374,20 @@ export default function ApprovalInbox({ onGuide }: { onGuide: (text: string) => 
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-surface-900 break-words" dir="auto">{it.title}</div>
                         {it.detail && <div className="text-[12px] text-surface-600 mt-0.5 line-clamp-3" dir="auto">{it.detail}</div>}
+                        {it.targetUrl && <a href={it.targetUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] text-brand-700 underline mt-0.5 break-all" dir="auto"><ExternalLink size={11} className="shrink-0" /> {readableUrl(it.targetUrl)}</a>}
                         {it.kind === 'signal' && it.raw.kind === 'innovation_pitch' && <PitchDetails s={it.raw} />}
+                        {it.kind === 'task' && <TaskDetails t={it.raw} />}
                         <div className="text-[11px] text-surface-400 mt-1">{ageLabel(it.created)}</div>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                           {ok && <button onClick={() => run(() => approveItem(it))} disabled={busy} className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 disabled:opacity-50"><Check size={12} /> {ok}</button>}
                           <button onClick={() => reject([it])} disabled={busy} className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-900 disabled:opacity-50"><X size={12} /> Reject</button>
                           <button onClick={() => onGuide(guidePrompt(it))} className="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-900"><MessageSquare size={12} /> Guide the agent</button>
+                          {it.kind === 'task' && it.raw.task_type === 'technical_seo' && Array.isArray(it.raw.result_data?.proposed_faq) && !it.raw.result_data?.faq_written && (
+                            <button onClick={() => onGuide(publishFaqPrompt(it))} className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900"><MessageSquare size={12} /> Publish via agent chat</button>
+                          )}
                           {it.link && <a href={it.link} className="inline-flex items-center gap-1 text-xs text-surface-600 hover:text-surface-900"><ExternalLink size={12} /> open</a>}
                         </div>
+                        {acceptNote(it) && <div className="text-[11px] text-surface-500 mt-1">{acceptNote(it)}</div>}
                       </div>
                     </div>
                   </li>
