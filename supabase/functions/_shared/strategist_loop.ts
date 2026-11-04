@@ -35,9 +35,15 @@ export interface LoopConfig {
   auto_approve:             Partial<Record<LoopActionType, boolean>>
   max_revisions:            number
   max_auto_approve_per_run: number
+  // conclude_brief refuses an email_campaign whose segment has fewer opted-in
+  // customers than this (segment_facts.ts). Not a loop switch: it applies with
+  // the loop off too.
+  min_email_reachable:      number
 }
 
-export const LOOP_OFF: LoopConfig = { critique: {}, auto_approve: {}, max_revisions: 2, max_auto_approve_per_run: 0 }
+export const DEFAULT_MIN_EMAIL_REACHABLE = 200
+
+export const LOOP_OFF: LoopConfig = { critique: {}, auto_approve: {}, max_revisions: 2, max_auto_approve_per_run: 0, min_email_reachable: DEFAULT_MIN_EMAIL_REACHABLE }
 
 /** Read the switches. A missing key, a failed read or a malformed value all
  *  mean "loop off", so code that ships before its migration behaves as today. */
@@ -53,12 +59,14 @@ export async function readLoopConfig(supabase: Db): Promise<LoopConfig> {
     }
     const maxRev = Number(v.max_revisions)
     const maxAuto = Number(v.max_auto_approve_per_run)
+    const minReach = v.min_email_reachable == null ? NaN : Number(v.min_email_reachable)
     return {
       critique:                 bools(v.critique),
       auto_approve:             bools(v.auto_approve),
       // Clamp: the plan caps revisions at 2; a typo must not open an endless loop.
       max_revisions:            Number.isFinite(maxRev) ? Math.min(Math.max(Math.trunc(maxRev), 0), 2) : 2,
       max_auto_approve_per_run: Number.isFinite(maxAuto) ? Math.min(Math.max(Math.trunc(maxAuto), 0), 10) : 0,
+      min_email_reachable:      Number.isFinite(minReach) ? Math.max(Math.trunc(minReach), 0) : DEFAULT_MIN_EMAIL_REACHABLE,
     }
   } catch {
     return LOOP_OFF

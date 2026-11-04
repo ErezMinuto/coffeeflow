@@ -22,6 +22,7 @@ import {
 import { fetchActivePaidCampaigns } from '../seo-agent/services/paidCampaigns.ts'
 import { checkBlogKeywordLive } from '../_shared/keyword_research.ts'
 import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
+import { audienceFactsBlock, fetchSegmentFacts } from '../_shared/segment_facts.ts'
 import { claimLoopRows, finishLoopRow, MAX_CRITIQUE_ATTEMPTS, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 
 // Verified against GET /v1beta/models on 2026-11-02 (used for the plan review).
@@ -73,9 +74,21 @@ async function blogContext(supabase: SupabaseClient, rec: RecommendationRow): Pr
   }
 }
 
+/** Email drafts are judged against who the segment really is and how many of
+ *  it the email reaches (customer_rfm + marketing_contacts, read now). */
+async function audienceContext(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
+  const segment = String(rec.action_params?.target_segment ?? '').trim()
+  try {
+    return audienceFactsBlock(await fetchSegmentFacts(supabase), segment)
+  } catch (e) {
+    return `=== AUDIENCE FACTS ===\nCOULD NOT READ (${e instanceof Error ? e.message : String(e)}). You cannot verify the audience: raise a high issue "audience_unverified".`
+  }
+}
+
 /** Paid ads are judged against what is already running (overlap, duplicates). */
 async function adContext(supabase: SupabaseClient, actionType: string, rec?: RecommendationRow): Promise<string> {
   if (actionType === 'content_blog' && rec) return await blogContext(supabase, rec)
+  if (actionType === 'email_campaign' && rec) return await audienceContext(supabase, rec)
   if (!actionType.startsWith('ad_')) return ''
   try {
     return `=== ACTIVE CAMPAIGNS (synced, last 30 days) ===\n${JSON.stringify(await fetchActivePaidCampaigns(supabase))}`
