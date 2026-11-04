@@ -20,6 +20,8 @@ import {
   readLoopConfig, type Verdict,
 } from '../_shared/strategist_loop.ts'
 import { fetchActivePaidCampaigns } from '../seo-agent/services/paidCampaigns.ts'
+import { checkBlogKeywordLive } from '../_shared/keyword_research.ts'
+import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
 import { claimLoopRows, finishLoopRow, MAX_CRITIQUE_ATTEMPTS, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 
 // Verified against GET /v1beta/models on 2026-11-02 (used for the plan review).
@@ -58,8 +60,22 @@ export async function buildCritiqueMessage(supabase: SupabaseClient, rec: Recomm
   ].join('\n')
 }
 
+/** Blog drafts are judged against our keyword research and existing posts:
+ *  a conflict (or a check that could not run) must be raised as critical. */
+async function blogContext(supabase: SupabaseClient, rec: RecommendationRow): Promise<string> {
+  try {
+    const g = await checkBlogKeywordLive(supabase, rec.action_params as Record<string, unknown>, String(rec.action_params?.topic ?? rec.title), checkCannibalizationForQueue)
+    return g.ok
+      ? `=== KEYWORD + CANNIBALIZATION ===\nKeyword is in our Google research and no existing post covers it (checked just now).`
+      : `=== KEYWORD + CANNIBALIZATION ===\nBLOCKED: ${g.reason}\nRaise a critical issue "cannibalization_or_ungrounded_keyword". Never pass a second post on a keyword an existing post covers.`
+  } catch (e) {
+    return `=== KEYWORD + CANNIBALIZATION ===\nCOULD NOT CHECK (${e instanceof Error ? e.message : String(e)}). Raise a high issue "cannibalization_unverified".`
+  }
+}
+
 /** Paid ads are judged against what is already running (overlap, duplicates). */
-async function adContext(supabase: SupabaseClient, actionType: string): Promise<string> {
+async function adContext(supabase: SupabaseClient, actionType: string, rec?: RecommendationRow): Promise<string> {
+  if (actionType === 'content_blog' && rec) return await blogContext(supabase, rec)
   if (!actionType.startsWith('ad_')) return ''
   try {
     return `=== ACTIVE CAMPAIGNS (synced, last 30 days) ===\n${JSON.stringify(await fetchActivePaidCampaigns(supabase))}`
@@ -94,7 +110,7 @@ async function critiqueOne(supabase: SupabaseClient, rec: RecommendationRow, wor
         runId:          rec.run_id,
         model:          MODEL_CRITIC,
         system:         DRAFT_CRITIC_SYSTEM_PROMPT,
-        messages:       [{ role: 'user', content: await buildCritiqueMessage(supabase, rec, await adContext(supabase, rec.action_type)) }],
+        messages:       [{ role: 'user', content: await buildCritiqueMessage(supabase, rec, await adContext(supabase, rec.action_type, rec)) }],
         maxTokens:      16_000,
         temperature:    0.2,
         timeoutMs:      120_000,

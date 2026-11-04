@@ -4,7 +4,8 @@
 // filled by google-sync; avg_monthly_searches there is ad impressions).
 // Read-only. Both tables are synced twice a day.
 
-import type { ResearchKeyword } from './blog_keyword_gate.ts'
+import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword, type ResearchKeyword } from './blog_keyword_gate.ts'
+import type { CannibalizationResult } from '../seo-agent/cannibalizationCheck.ts'
 
 // deno-lint-ignore no-explicit-any
 type Db = { from(table: string): any }
@@ -61,4 +62,23 @@ export async function fetchKeywordResearch(supabase: Db, days = 90): Promise<Key
   const maxOf = (rows: Array<Record<string, unknown>>, k: string) =>
     rows.reduce<string | null>((m, r) => (typeof r[k] === 'string' && (!m || (r[k] as string) > m) ? r[k] as string : m), null)
   return { rows: [...aggregateGsc(gscRows), ...adsResearch], gsc_as_of: maxOf(gscRows, 'date'), ads_as_of: maxOf(adsRows, 'synced_at') }
+}
+
+/** The full live gate for one blog keyword: research grounding + strict
+ *  cannibalization (WordPress posts + Search Console ranking page). Shared by
+ *  the executor (before drafting) and the critic (as context). `cannibal`
+ *  injects the WordPress check (checkCannibalizationForQueue) for testing. */
+export async function checkBlogKeywordLive(
+  supabase: Db,
+  params: Record<string, unknown> | undefined,
+  title: string,
+  cannibal: (keyword: string, title: string) => Promise<CannibalizationResult>,
+): Promise<{ ok: boolean; reason: string; conflicts: Array<{ title: string; link: string; status: string }> }> {
+  const research = await fetchKeywordResearch(supabase)
+  const index = indexResearch(research.rows)
+  const grounded = blogResearchProblems(params, index)
+  if (grounded.length) return { ok: false, reason: grounded.join('; '), conflicts: [] }
+  const kw = String(params?.keyword)
+  const v = cannibalVerdict(await cannibal(kw, title), index.get(`search_console|${normKeyword(kw)}`)?.ranking_page)
+  return { ok: !v.block, reason: v.reason, conflicts: v.conflicts }
 }
