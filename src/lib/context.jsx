@@ -78,9 +78,21 @@ export const AppProvider = ({ children }) => {
     const fetchRole = async () => {
       // get_role_for_user is SECURITY DEFINER — safe to call with anon key.
       // It looks up the role by user_id without relying on JWT verification.
-      const { data: role } = await supabase.rpc('get_role_for_user', {
+      let { data: role } = await supabase.rpc('get_role_for_user', {
         p_user_id: user.id,
       });
+      // Invited by an admin (Settings → roles)? The invitation left the role
+      // in their Clerk public metadata: take it up now, on their first
+      // sign-in, before anything renders with the wrong access. Everyone else
+      // skips this call.
+      if (user.publicMetadata?.coffeeflow_role) {
+        try {
+          const { data: claim } = await supabase.functions.invoke('clerk-user-lookup', {
+            body: { action: 'claim-invite' },
+          });
+          if (claim?.role) role = claim.role;
+        } catch (_) { /* no invitation, or offline: keep what we have */ }
+      }
       setUserRole(role || 'employee');
       setRoleLoading(false);
     };

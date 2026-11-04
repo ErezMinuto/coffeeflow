@@ -165,6 +165,7 @@ function RolesSection({ user, showToast }) {
   const [newEmail,    setNewEmail]    = useState('');
   const [newRoleRole, setNewRoleRole] = useState('employee');
   const [looking,     setLooking]     = useState(false);
+  const [invites,     setInvites]     = useState([]);   // pending Clerk invitations carrying a role
 
   const fetchRoles = async () => {
     const { data: rows } = await supabase.from('user_roles').select('*').order('created_at', { ascending: true });
@@ -192,15 +193,60 @@ function RolesSection({ user, showToast }) {
     } catch (_) {}
   };
 
-  useEffect(() => { fetchRoles(); }, []);
+  const fetchInvites = async () => {
+    const { data } = await supabase.functions.invoke('clerk-user-lookup', { body: { action: 'list-invites' } });
+    setInvites(Array.isArray(data?.invites) ? data.invites : []);
+  };
+
+  useEffect(() => { fetchRoles(); fetchInvites(); }, []);
+
+  const roleLabelOf = (role) => role === 'admin' ? 'מנהל' : role === 'schedule_manager' ? 'אחראי/ת סידור' : role === 'bookkeeper' ? 'הנהלת חשבונות' : 'עובד';
+
+  // No Clerk account yet: Clerk emails them a sign-up link; the role is
+  // applied automatically on their first sign-in (claim-invite).
+  const invite = async (email, role) => {
+    const { data, error } = await supabase.functions.invoke('clerk-user-lookup', {
+      body: { action: 'invite', email, role },
+    });
+    if (error || data?.error) {
+      let msg = data?.error;
+      try { msg = msg || (await error?.context?.json())?.error; } catch (_) {}
+      throw new Error(msg || error?.message || 'ההזמנה נכשלה');
+    }
+    setNewEmail('');
+    fetchInvites();
+    showToast(`📧 נשלחה הזמנה ל-${email} כ${roleLabelOf(role)}. התפקיד ייקבע אוטומטית בכניסה הראשונה.`);
+  };
+
+  // A manual role change always wins over an old invitation.
+  const clearInvitedRole = (userId) =>
+    supabase.functions.invoke('clerk-user-lookup', { body: { action: 'clear-invited-role', user_id: userId } })
+      .then(() => fetchInvites()).catch(() => {});
+
+  const revokeInvite = async (inv) => {
+    if (!window.confirm(`לבטל את ההזמנה של ${inv.email}?`)) return;
+    const { data, error } = await supabase.functions.invoke('clerk-user-lookup', {
+      body: { action: 'revoke-invite', id: inv.id, user_id: inv.status === 'accepted' ? inv.user_id : undefined },
+    });
+    if (error || data?.error) { showToast(`❌ ${data?.error || error?.message}`, 'error'); return; }
+    fetchInvites();
+    showToast('✅ ההזמנה בוטלה');
+  };
 
   const addRole = async () => {
     if (!newEmail.trim()) { showToast('⚠️ נא להזין אימייל', 'warning'); return; }
     setLooking(true);
     try {
+      const email = newEmail.trim();
       const { data, error } = await supabase.functions.invoke('clerk-user-lookup', {
-        body: { email: newEmail.trim() },
+        body: { email },
       });
+      if (error?.context?.status === 404 || data?.error === 'User not found') {
+        if (window.confirm(`ל-${email} עדיין אין חשבון ב-CoffeeFlow.\nלשלוח לו/ה הזמנה במייל? התפקיד "${roleLabelOf(newRoleRole)}" ייקבע אוטומטית בכניסה הראשונה.`)) {
+          await invite(email, newRoleRole);
+        }
+        return;
+      }
       if (error || data?.error) throw new Error(data?.error || error?.message || 'משתמש לא נמצא');
 
       const { error: upsertError } = await supabase.from('user_roles').upsert(
@@ -208,10 +254,10 @@ function RolesSection({ user, showToast }) {
         { onConflict: 'user_id', ignoreDuplicates: false }
       );
       if (upsertError) throw new Error(upsertError.message);
+      clearInvitedRole(data.user_id);
       setNewEmail('');
       fetchRoles();
-      const roleLabel = newRoleRole === 'admin' ? 'מנהל' : newRoleRole === 'schedule_manager' ? 'אחראי/ת סידור' : newRoleRole === 'bookkeeper' ? 'הנהלת חשבונות' : 'עובד';
-      showToast(`✅ ${data.full_name || data.email} נוסף כ${roleLabel}!`);
+      showToast(`✅ ${data.full_name || data.email} נוסף כ${roleLabelOf(newRoleRole)}!`);
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
     } finally {
@@ -221,6 +267,7 @@ function RolesSection({ user, showToast }) {
 
   const updateRole = async (userId, role) => {
     await supabase.from('user_roles').update({ role }).eq('user_id', userId);
+    clearInvitedRole(userId);
     fetchRoles();
     showToast(`✅ תפקיד עודכן`);
   };
@@ -228,6 +275,7 @@ function RolesSection({ user, showToast }) {
   const deleteRole = async (userId) => {
     if (!window.confirm('להסיר תפקיד? המשתמש יקבל גישת עובד.')) return;
     await supabase.from('user_roles').delete().eq('user_id', userId);
+    clearInvitedRole(userId);
     fetchRoles();
     showToast('✅ תפקיד הוסר');
   };
@@ -260,6 +308,26 @@ function RolesSection({ user, showToast }) {
           </button>
         </div>
       </div>
+
+      {/* Pending invitations */}
+      {invites.length > 0 && (
+        <div className="form-card" style={{ marginBottom: '1rem', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+          <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>📧 הזמנות שממתינות להרשמה</div>
+          {invites.map(inv => (
+            <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: '0.88rem' }}>
+              <span style={{ flex: 1 }}>{inv.email}</span>
+              <span style={{ fontSize: '0.75rem', color: '#78716C' }}>
+                {inv.status === 'accepted' ? 'נרשם/ה, עוד לא נכנס/ה' : 'ממתין להרשמה'}
+              </span>
+              <span style={{ color: '#92400E' }}>{roleLabelOf(inv.role)}</span>
+              <button onClick={() => revokeInvite(inv)} className="btn-small" title="ביטול ההזמנה">✕</button>
+            </div>
+          ))}
+          <div style={{ fontSize: '0.78rem', color: '#92400E', marginTop: 6 }}>
+            התפקיד ייקבע אוטומטית כשהם יירשמו דרך הקישור במייל ויתחברו בפעם הראשונה. הזמנה תקפה ל-30 יום.
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       {roles.length > 0 ? (
