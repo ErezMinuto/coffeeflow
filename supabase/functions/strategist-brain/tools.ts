@@ -15,6 +15,9 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
 import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
+import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
+import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword } from '../_shared/blog_keyword_gate.ts'
+import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
 import {
   getCurrentCapabilities, getOpsProfile, getResearchFindings, getSeoLearnings, handleEmitInnovationPitch, RESEARCH_TOOL_DEFS,
 } from './research_tools.ts'
@@ -483,6 +486,31 @@ async function handleConcludeBrief(
       } }
     }
   }
+  // Blog keywords: grounded in our Google research AND no cannibalization.
+  // Checked here so a bad rec goes back to the model with the reason (the
+  // executor and the writer check again before anything is written).
+  if (recsIn.some(r => r.action_type === 'content_blog')) {
+    const research = await fetchKeywordResearch(supabase)
+    const index = indexResearch(research.rows)
+    const problems: string[] = []
+    for (const [i, r] of recsIn.entries()) {
+      if (r.action_type !== 'content_blog') continue
+      const at = `recommendations[${i}] "${r.title}"`
+      const params = (r.action_params ?? {}) as Record<string, unknown>
+      const grounded = blogResearchProblems(params, index)
+      if (grounded.length) { problems.push(`${at}: ${grounded.join('; ')}`); continue }
+      const kw = String(params.keyword)
+      const gscRow = index.get(`search_console|${normKeyword(kw)}`)
+      const verdict = cannibalVerdict(await checkCannibalizationForQueue(kw, String(params.topic ?? r.title ?? '')), gscRow?.ranking_page)
+      if (verdict.block) problems.push(`${at}: ${verdict.reason}`)
+    }
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — content_blog recommendations: ${problems.join(' ; ')}. Fix (pick another research keyword, or turn it into refresh advice with action_type "none") and call conclude_brief again.`,
+      } }
+    }
+  }
+
   // Paid-ad recommendations: real product / grounded keywords / sane budget,
   // at most MAX_AD_RECS_PER_BRIEF. They become PAUSED drafts at most; only
   // Erez activates an ad.
@@ -713,7 +741,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
               title: { type: 'string' },
               rationale: { type: 'string' },
               action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
@@ -734,9 +762,27 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
       required: ['summary', 'diagnosis'],
     },
   },
+  {
+    name: 'get_keyword_research',
+    description: 'Our Google keyword research: Search Console queries (last 90 days: impressions, clicks, average position, the page of ours that ranked) and the Google Ads keywords we bid on (ad impressions). A content_blog keyword must be one of these, cited with its source; one of our /blog/ pages already ranking for it means refresh that post, not a new one.',
+    input_schema: { type: 'object', properties: { limit: { type: 'number', description: 'per source, 1-150, default 60' } } },
+  },
   // Research + innovation pitches (research_tools.ts).
   ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
+
+async function getKeywordResearch(supabase: SupabaseClient, input: { limit?: number }) {
+  const limit = Math.min(Math.max(Math.trunc(Number(input?.limit ?? 60)) || 60, 1), 150)
+  const r = await fetchKeywordResearch(supabase)
+  const gsc = r.rows.filter(x => x.source === 'search_console').slice(0, limit)
+  return {
+    search_console: gsc.map(x => ({ ...x, striking_distance: x.position != null && x.position >= 5 && x.position <= 30 })),
+    google_ads: r.rows.filter(x => x.source === 'google_ads').slice(0, limit),
+    gsc_data_as_of: r.gsc_as_of,
+    google_ads_data_as_of: r.ads_as_of,
+    note: 'google_ads impressions are ad impressions for keywords we bid on, not search volume.',
+  }
+}
 
 /** Dispatch a tool_use to its handler. Returns the outcome (and `concluded`
  *  when conclude_brief ran). Never throws — a handler error becomes an
@@ -761,6 +807,7 @@ export async function dispatchTool(
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
       case 'conclude_brief':              return await handleConcludeBrief(supabase, ctx, input as Parameters<typeof handleConcludeBrief>[2])
+      case 'get_keyword_research':        return { result: await getKeywordResearch(supabase, input as { limit?: number }) }
       case 'get_research_findings':       return { result: await getResearchFindings(supabase) }
       case 'get_ops_profile':             return { result: await getOpsProfile(supabase) }
       case 'get_seo_learnings':           return { result: await getSeoLearnings(supabase, input as { limit?: number }) }
