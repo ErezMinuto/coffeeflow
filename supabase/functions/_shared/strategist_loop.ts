@@ -41,7 +41,7 @@ export interface LoopConfig {
   min_email_reachable:      number
 }
 
-export const DEFAULT_MIN_EMAIL_REACHABLE = 50
+export const DEFAULT_MIN_EMAIL_REACHABLE = 200
 
 export const LOOP_OFF: LoopConfig = { critique: {}, auto_approve: {}, max_revisions: 2, max_auto_approve_per_run: 0, min_email_reachable: DEFAULT_MIN_EMAIL_REACHABLE }
 

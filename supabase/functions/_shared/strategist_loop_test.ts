@@ -114,15 +114,15 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
   const db = { from() { throw new Error('boom') } }
   const cfg = await readLoopConfig(db)
   check('config read that throws = loop off', cfg.max_auto_approve_per_run === 0)
-  check('…and the email minimum still applies (50)', cfg.min_email_reachable === 50)
+  check('…and the email minimum still applies (200)', cfg.min_email_reachable === 200)
 }
 // Minimum email audience (ops_profile.strategist_loop.min_email_reachable).
 for (const [value, want, name] of [
-  [undefined, 50, 'missing key = default 50'],
+  [undefined, 200, 'missing key = default 200'],
   [120, 120, 'set to 120'],
   [-5, 0, 'negative clamps to 0'],
-  ['lots', 50, 'garbage = default 50'],
-  [null, 50, 'null = default 50'],
+  ['lots', 200, 'garbage = default 200'],
+  [null, 200, 'null = default 200'],
 ] as Array<[unknown, number, string]>) {
   const value_ = value === undefined ? { critique: {} } : { critique: {}, min_email_reachable: value }
   const cfg = await readLoopConfig(fakeTable({ ops_profile: [{ key: 'strategist_loop', value: value_ }] }))

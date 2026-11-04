@@ -1,6 +1,6 @@
 // Tests for segment facts and the email_campaign check in conclude_brief.
 //
-//   deno run --allow-read supabase/functions/_shared/segment_facts_test.ts
+//   deno run --allow-read --allow-env supabase/functions/_shared/segment_facts_test.ts
 //
 // Numbers are prod on 2026-11-04 (customer_rfm non-superseded, joined to
 // marketing_contacts on lower(email) where opted_in):
@@ -16,6 +16,7 @@ import {
   audienceFactsBlock, computeSegmentFacts, emailRecProblems, peopleCounts, SEGMENT_DEFINITIONS,
   type RfmFactRow, type SegmentFacts,
 } from './segment_facts.ts'
+import { DEFAULT_MIN_EMAIL_REACHABLE } from './strategist_loop.ts'
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -95,7 +96,7 @@ const realRec = {
   check('…for not stating the reachable count', /must state the reachable audience, 104/.test(all))
 }
 
-// ── A correct one passes at today's minimum, and Erez's "too small" bar refuses it
+// ── A correct one passes at a low bar; Erez's minimum (200, 2026-11-04) refuses it
 const goodRec = {
   title: 'Big spender winback email (104 reachable)',
   rationale: 'big_spender is 793 customers scored on lifetime Minuto bean grams; 104 opted-in contacts can be emailed, 97 of them last ordered over 90 days ago.',
@@ -104,8 +105,10 @@ const goodRec = {
 }
 check('correct rec passes at minimum 50', emailRecProblems([goodRec], [facts], 50).length === 0, emailRecProblems([goodRec], [facts], 50).join(' | '))
 {
-  const p = emailRecProblems([goodRec], [facts], 150)
-  check('below a minimum of 150 is refused', p.length === 1 && /104 opted-in reachable customers, below the minimum email audience of 150/.test(p[0]), p.join(' | '))
+  const p = emailRecProblems([goodRec], [facts], DEFAULT_MIN_EMAIL_REACHABLE)
+  check('big_spender (104) refused at the default minimum of 200', p.length === 1 && /104 opted-in reachable customers, below the minimum email audience of 200/.test(p[0]), p.join(' | '))
+  const largest = Math.max(...facts.segments.map(f => f.opted_in_reachable ?? 0))
+  check('today no segment reaches 200 opted-in (largest is 104)', largest === 104 && largest < DEFAULT_MIN_EMAIL_REACHABLE)
 }
 {
   const atRisk = { ...goodRec, title: 'At-risk email', rationale: '52 opted-in at_risk customers', action_params: { ...goodRec.action_params, target_segment: 'at_risk', reachable_opted_in: 52 } }
