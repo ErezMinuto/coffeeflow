@@ -73,11 +73,18 @@
   <div class="accent"></div>
   <div class="card">
     <img class="logo" src="https://minuto.co.il/content/uploads/2025/03/Frame-14.png" alt="Minuto">
-    <h1>הוסרת בהצלחה</h1>
-    <p>הכתובת</p>
-    <div class="email" id="email-line">—</div>
-    <p>הוסרה מרשימת התפוצה של מינוטו.</p>
-    <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
+    <div id="done-box">
+      <h1>הוסרת בהצלחה</h1>
+      <p>הכתובת</p>
+      <div class="email" id="email-line">—</div>
+      <p>הוסרה מרשימת התפוצה של מינוטו.</p>
+      <p>לא תקבל/י יותר מיילים שיווקיים מאיתנו.</p>
+    </div>
+    <div id="invalid-box" style="display:none;">
+      <h1>הקישור להסרה לא תקין</h1>
+      <p>לא הצלחנו לאמת את הקישור, ולכן הכתובת עדיין ברשימה.</p>
+      <p>אפשר לכתוב לנו ל-<a href="mailto:info@minuto.co.il">info@minuto.co.il</a> ונסיר אותה ידנית.</p>
+    </div>
     <div class="warn" id="warn-box" style="display:none;">
       ⚠️ הבקשה התקבלה אך עדכון הרשימה החיצונית נכשל — צוות מינוטו יטפל ידנית.
     </div>
@@ -92,7 +99,11 @@
         var el = document.getElementById('email-line');
         el.textContent = email;
       }
-      if (status !== 'ok') {
+      if (status === 'invalid') {
+        // The link's token didn't verify: nothing was changed, so don't say it was.
+        document.getElementById('done-box').style.display = 'none';
+        document.getElementById('invalid-box').style.display = 'block';
+      } else if (status !== 'ok') {
         document.getElementById('warn-box').style.display = 'block';
       }
     })();
