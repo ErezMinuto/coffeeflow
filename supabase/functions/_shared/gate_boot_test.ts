@@ -75,7 +75,17 @@ export const GATES: Record<string, { cases: Case[]; preflight?: boolean; env?: R
   'email-automation-scheduler': { cases: adm({ test_send: 'someone@example.test' }) },
   'google-exchange-token': { cases: adm({ code: 'x', redirect_uri: 'https://example.test' }) },
   'meta-exchange-token': { cases: adm({ code: 'x', redirect_uri: 'https://example.test' }) },
-  'clerk-user-lookup': { cases: adm({ email: 'someone@example.test' }) },
+  'clerk-user-lookup': {
+    cases: [
+      ...adm({ email: 'someone@example.test' }),
+      { name: 'invite', body: { action: 'invite', email: 'someone@example.test', role: 'admin' }, allow: ADMIN_ONLY },
+      { name: 'list-invites', body: { action: 'list-invites' }, allow: ADMIN_ONLY },
+      { name: 'revoke-invite', body: { action: 'revoke-invite', id: 'inv_x' }, allow: ADMIN_ONLY },
+      { name: 'clear-invited-role', body: { action: 'clear-invited-role', user_id: 'user_x' }, allow: ADMIN_ONLY },
+      // Any genuine signed-in user, about themselves; the service role is nobody.
+      { name: 'claim-invite', body: { action: 'claim-invite' }, allow: ['employee', 'stranger', 'bookkeeper', 'schedule_manager', 'admin'] },
+    ],
+  },
   'meta-sync': { cases: adm({}), env: { META_AD_ACCOUNT_ID: 'act_test' } },
   'woo-orders-sync': { cases: adm({ count_only: true, days_back: 1 }) },
   'google-search-sync': { cases: adm({}) },
