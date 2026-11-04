@@ -112,7 +112,21 @@ check('clean Hebrew passes', rules('email_campaign', { subject: 'פולים טר
 }
 {
   const db = { from() { throw new Error('boom') } }
-  check('config read that throws = loop off', (await readLoopConfig(db)).max_auto_approve_per_run === 0)
+  const cfg = await readLoopConfig(db)
+  check('config read that throws = loop off', cfg.max_auto_approve_per_run === 0)
+  check('…and the email minimum still applies (50)', cfg.min_email_reachable === 50)
+}
+// Minimum email audience (ops_profile.strategist_loop.min_email_reachable).
+for (const [value, want, name] of [
+  [undefined, 50, 'missing key = default 50'],
+  [120, 120, 'set to 120'],
+  [-5, 0, 'negative clamps to 0'],
+  ['lots', 50, 'garbage = default 50'],
+  [null, 50, 'null = default 50'],
+] as Array<[unknown, number, string]>) {
+  const value_ = value === undefined ? { critique: {} } : { critique: {}, min_email_reachable: value }
+  const cfg = await readLoopConfig(fakeTable({ ops_profile: [{ key: 'strategist_loop', value: value_ }] }))
+  check(`min_email_reachable: ${name}`, cfg.min_email_reachable === want, String(cfg.min_email_reachable))
 }
 
 // ── Claims ───────────────────────────────────────────────────────────────────

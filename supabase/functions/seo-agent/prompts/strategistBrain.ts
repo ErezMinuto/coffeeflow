@@ -57,7 +57,7 @@ Your recommendations are not just advice. When Erez APPROVES one, it gets DRAFTE
   • recommendations — in-hands moves (content + email). For EACH, specify:
       - action_type — what the executor will draft: email_campaign | content_blog | content_ig | none (none = pure advice with no draftable artifact).
       - action_params — the inputs that draft needs, by type:
-          · email_campaign: target_segment (an RFM segment name), angle, products (exact Minuto names), subject_he.
+          · email_campaign: target_segment (an RFM segment name), reachable_opted_in (that segment's opted_in_reachable in customer_segments.by_segment), angle, products (exact Minuto names), subject_he. Describe the audience by the segment's definition in the data; opted_in_reachable is the number of people the email reaches.
           · content_blog: keyword/topic, key_points, why_now.
           · content_ig: CAPTION FIRST, THEN A SHOT. caption_he (the FINAL Hebrew caption, brand-voice, ≤2200 chars, written first: it decides what the post is about), hashtags (5-12, no spaces), media_type (feed_image | story), aspect (feed_square | story), then shot_type + shot_slots picked for that caption from the fixed shot menu below; never a free-form scene. shot_slots = { moment (one of the shot's moments, verbatim), product_name (exact Minuto product, bag shots only), drink (finished_drink only) }. Bag shots only when the post features one specific Minuto coffee. ${SHOT_LIBRARY_ENABLED ? 'scene_brief is optional (one sentence of context).' : 'Also scene_brief: 3-4 English sentences describing that same shot, for the current renderer.'}
             Shot menu (shot_type: what it shows. moments):
