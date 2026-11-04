@@ -20,6 +20,14 @@
 //   • It is never invisible: listInvites() shows pending invitations AND
 //     people who accepted but have not signed in to CoffeeFlow yet, while
 //     their role is still claimable; both can be cancelled.
+//
+// The Clerk instance restricts sign-up to an allowlist, so createInvite()
+// also adds the email to it (unless it is already there). An entry this code
+// added is removed again when the admin cancels the invitation before it is
+// used (its id is kept in the invitation's metadata as META_ALLOW); an entry
+// that was already there is never touched. If an invitation simply expires,
+// its entry stays: it names one person an admin chose, exactly as if they had
+// been allowlisted by hand, and an admin removes it in Clerk if wanted.
 
 // deno-lint-ignore-file no-explicit-any
 
@@ -28,6 +36,8 @@ export type InviteRole = typeof INVITE_ROLES[number];
 /** public_metadata keys carrying the invited role and when it stops counting (epoch ms). */
 export const META_KEY = "coffeeflow_role";
 export const META_EXP = "coffeeflow_role_expires";
+/** Set only when createInvite() itself added the allowlist entry: its Clerk id. */
+export const META_ALLOW = "coffeeflow_allowlist_id";
 export const INVITE_TTL_DAYS = 30;
 
 const CLERK = "https://api.clerk.com/v1";
@@ -75,7 +85,7 @@ const validUserId = (id: unknown): id is string => typeof id === "string" && /^u
 /** Remove the invited-role keys from a user's public_metadata (a null in a merge deletes the key). */
 async function clearMeta(userId: string, o: ClerkOpts): Promise<boolean> {
   const { status, body } = await clerk(`/users/${encodeURIComponent(userId)}/metadata`, o, {
-    method: "PATCH", body: JSON.stringify({ public_metadata: { [META_KEY]: null, [META_EXP]: null } }),
+    method: "PATCH", body: JSON.stringify({ public_metadata: { [META_KEY]: null, [META_EXP]: null, [META_ALLOW]: null } }),
   });
   if (status >= 400) console.error("clearing invited role failed", status, clerkError(body));
   return status < 400;
@@ -91,6 +101,35 @@ export interface InviteView {
   expires: number;
 }
 
+/**
+ * Put the email on Clerk's sign-up allowlist. `createdId` is set only when
+ * this call created the entry; an existing entry (Clerk answers 422 for a
+ * duplicate) is left as it is and never removed by this code.
+ */
+export async function addToAllowlist(
+  email: string, o: ClerkOpts,
+): Promise<{ ok: true; createdId: string | null } | { ok: false; error: string }> {
+  const { status, body } = await clerk("/allowlist_identifiers", o, {
+    method: "POST", body: JSON.stringify({ identifier: email, notify: false }),
+  });
+  if (status === 422) return { ok: true, createdId: null };
+  if (status >= 400) return { ok: false, error: clerkError(body) };
+  return { ok: true, createdId: typeof body?.id === "string" ? body.id : null };
+}
+
+const validAllowId = (id: unknown): id is string => typeof id === "string" && /^[A-Za-z0-9_]+$/.test(id);
+
+/** Remove an allowlist entry this code created. A missing one (404) counts as removed. */
+export async function removeFromAllowlist(id: unknown, o: ClerkOpts): Promise<boolean> {
+  if (!validAllowId(id)) return false;
+  const { status, body } = await clerk(`/allowlist_identifiers/${id}`, o, { method: "DELETE" });
+  if (status >= 400 && status !== 404) {
+    console.error("removing allowlist entry failed", status, clerkError(body));
+    return false;
+  }
+  return true;
+}
+
 export async function createInvite(
   email: unknown, role: unknown, o: ClerkOpts & { redirectUrl?: string },
 ): Promise<{ ok: true; invite: InviteView } | { ok: false; status: number; error: string }> {
@@ -98,21 +137,30 @@ export async function createInvite(
   if (!addr) return { ok: false, status: 400, error: "כתובת אימייל לא תקינה" };
   if (!isInviteRole(role)) return { ok: false, status: 400, error: "תפקיד לא מוכר" };
   const expires = (o.now ?? Date.now()) + INVITE_TTL_DAYS * 86_400_000;
+
+  // Sign-up is allowlist-only: without this the invitation cannot be accepted.
+  const allow = await addToAllowlist(addr, o);
+  if (!allow.ok) return { ok: false, status: 502, error: `הוספה לרשימת המורשים ב-Clerk נכשלה: ${allow.error}` };
+
   const { status, body } = await clerk("/invitations", o, {
     method: "POST",
     body: JSON.stringify({
       email_address: addr,
-      public_metadata: { [META_KEY]: role, [META_EXP]: expires },
+      public_metadata: {
+        [META_KEY]: role, [META_EXP]: expires,
+        ...(allow.createdId ? { [META_ALLOW]: allow.createdId } : {}),
+      },
       notify: true,
       expires_in_days: INVITE_TTL_DAYS,
       ...(o.redirectUrl ? { redirect_url: o.redirectUrl } : {}),
     }),
   });
-  if (status >= 400) {
+  if (status >= 400 || !body?.id) {
+    if (allow.createdId) await removeFromAllowlist(allow.createdId, o);   // roll back our own entry
     // 422 covers "already has an account" and "already invited".
-    return { ok: false, status: status === 422 ? 409 : 502, error: clerkError(body) };
+    if (status >= 400) return { ok: false, status: status === 422 ? 409 : 502, error: clerkError(body) };
+    return { ok: false, status: 502, error: "Clerk returned an unexpected invitation" };
   }
-  if (!body?.id) return { ok: false, status: 502, error: "Clerk returned an unexpected invitation" };
   return { ok: true, invite: { status: "pending", id: body.id, user_id: null, email: addr, role, expires } };
 }
 
@@ -152,6 +200,9 @@ export async function revokeInvite(
   if (typeof id !== "string" || !/^[A-Za-z0-9_]+$/.test(id)) return { ok: false, status: 400, error: "bad invitation id" };
   const { status, body } = await clerk(`/invitations/${id}/revoke`, o, { method: "POST" });
   if (status >= 400) return { ok: false, status: status === 404 ? 404 : 502, error: clerkError(body) };
+  // Never accepted: the allowlist entry we added for it goes too.
+  const allowId = body?.public_metadata?.[META_ALLOW];
+  if (allowId) await removeFromAllowlist(allowId, o);
   return { ok: true };
 }
 
