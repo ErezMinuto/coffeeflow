@@ -259,3 +259,40 @@ function shopUrl(d: RetentionData, order: OrderRow): string {
   const base = p && !NOT_PROMOTED.test(p.name) ? p.permalink : 'https://www.minuto.co.il/shop/'
   return `${base}${base.includes('?') ? '&' : '?'}${utm}`
 }
+
+/**
+ * Which of `emails` may receive a marketing automation right now, under the
+ * same rule as the retention emails: the newsletter list (opted_in true =
+ * granted, false = unsubscribed) and the checkout box (ticked = granted),
+ * latest event per address wins. Looks up only the given addresses (a cart
+ * run has a handful), keyed by address so a buyer with no customers row
+ * still resolves. Stored addresses are lower-case (marketing_contacts.email,
+ * customer_orders.email_norm), so the input is normalised the same way.
+ * Throws on a read failure: a caller must never fall back to an unchecked list.
+ */
+export async function loadConsentedEmails(db: Db, emails: string[]): Promise<Set<string>> {
+  const wanted = [...new Set(emails.map(e => (e ?? '').toLowerCase().trim()).filter(Boolean))]
+  const events = new Map<string, ConsentEvent[]>()
+  const push = (e: string, ev: ConsentEvent) => { const a = events.get(e); a ? a.push(ev) : events.set(e, [ev]) }
+  for (let i = 0; i < wanted.length; i += 100) {
+    const chunk = wanted.slice(i, i + 100)
+    const [contacts, consentOrders] = await Promise.all([
+      fetchAll<{ email: string; opted_in: boolean; updated_at: string | null; created_at: string | null }>(
+        db, 'marketing_contacts', 'email, opted_in, updated_at, created_at', q => q.in('email', chunk)),
+      fetchAll<{ woo_order_id: number; email_norm: string | null; consent_at: string | null; date_created: string }>(
+        db, 'customer_orders', 'woo_order_id, email_norm, consent_at, date_created', q => q.in('email_norm', chunk).eq('marketing_consent', true)),
+    ])
+    for (const m of contacts) {
+      const e = (m.email ?? '').toLowerCase().trim()
+      const at = m.updated_at ?? m.created_at
+      if (e && at) push(e, { at, granted: !!m.opted_in })
+    }
+    for (const o of consentOrders) {
+      const e = (o.email_norm ?? '').toLowerCase().trim()
+      if (e) push(e, { at: o.consent_at ?? o.date_created, granted: true })
+    }
+  }
+  const out = new Set<string>()
+  for (const [e, evs] of events) if (hasMarketingConsent(evs)) out.add(e)
+  return out
+}

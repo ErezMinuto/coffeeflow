@@ -33,7 +33,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { constantTimeEqual } from '../_shared/constant_time.ts'
-import { findCheckinCandidates, findReminderCandidates, loadRetentionData, sampleProductBlock, type RetentionData } from './retention_data.ts'
+import { findCheckinCandidates, findReminderCandidates, loadConsentedEmails, loadRetentionData, sampleProductBlock, type RetentionData } from './retention_data.ts'
 import { stopToken } from './retention.ts'
 
 const SUPA_URL  = Deno.env.get('SUPABASE_URL')!
@@ -468,18 +468,11 @@ async function sendEmail(
  * incentive ("subscribe and get 10% off your first order"),
  * driving list growth.
  */
-async function fetchOptedInEmails(supabase: any): Promise<Set<string>> {
-  const { data, error } = await supabase
-    .from('marketing_contacts')
-    .select('email')
-    .eq('opted_in', true)
-  if (error) throw new Error(`opted-in query: ${error.message}`)
-  const set = new Set<string>()
-  for (const r of (data ?? [])) {
-    const e = (r.email ?? '').toLowerCase().trim()
-    if (e) set.add(e)
-  }
-  return set
+async function fetchOptedInEmails(supabase: any, emails: string[]): Promise<Set<string>> {
+  // Was one unpaged select of the whole list, so only the first 1,000
+  // contacts ever counted. Now: just these addresses, newsletter list +
+  // checkout box, latest event wins (the retention rule).
+  return await loadConsentedEmails(supabase, emails)
 }
 
 async function findFirstPurchaseCandidates(
@@ -551,7 +544,7 @@ async function findFirstPurchaseCandidates(
   // Marketing-consent gate: only customers who explicitly opted into
   // our list qualify. Past buyers who never subscribed get nothing —
   // that's the privacy-compliant default. See fetchOptedInEmails docs.
-  const optedIn = await fetchOptedInEmails(supabase)
+  const optedIn = await fetchOptedInEmails(supabase, [...byEmail.keys()])
 
   const candidates: FirstOrderCandidate[] = []
   for (const [email, orders] of byEmail.entries()) {
@@ -646,10 +639,10 @@ async function fetchBillingFirstNames(orderIds: number[]): Promise<Map<number, s
  *   at most one row per trigger type, so cart_1 + cart_2 = two emails max.
  *
  * Consent gate:
- *   NO opted-in filter. Owner's explicit choice — the customer handed
- *   us their email to complete a purchase, so recovery is the industry-
- *   standard exception to the marketing-consent rule used by
- *   first_purchase / refill_reminder.
+ *   Marketing consent required, same rule as every other automation
+ *   (owner, 2026-11-05: "make sure we sent only to customer who approved
+ *   sending"). This replaces the earlier cart-recovery exception, under
+ *   which 66 of 77 cart emails went to addresses with no consent record.
  *
  * Operator caveat baked into reality: WooCommerce auto-cancels pending
  * orders after `hold_stock_minutes` (default 60 min). If that's set
@@ -776,6 +769,14 @@ async function findAbandonedCartCandidates(
       cart_items,
     })
   }
+  if (pending.length === 0) return []
+
+  // Consent gate (see the doc comment): no consent, no cart email. Throws on
+  // a read failure, so a broken lookup sends nothing rather than everyone.
+  const consented = await fetchOptedInEmails(supabase, pending.map(p => p.email))
+  const before = pending.length
+  for (let i = pending.length - 1; i >= 0; i--) if (!consented.has(pending[i].email)) pending.splice(i, 1)
+  console.log(`[email-automation] abandoned_cart: ${pending.length}/${before} pending carts have marketing consent`)
   if (pending.length === 0) return []
 
   // Recovery check: if the customer completed/processing ANY order on/after
