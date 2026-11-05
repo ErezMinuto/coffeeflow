@@ -10,7 +10,7 @@
 // google-search-sync function as a template).
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { selectAll } from '../../_shared/select_all.ts'
+import { fetchGscKeywordTotals } from '../../_shared/gsc_totals.ts'
 
 export interface GscKeywordRow {
   keyword: string
@@ -20,41 +20,8 @@ export interface GscKeywordRow {
   position: number
 }
 
-// Pure: aggregate daily GSC keyword rows per keyword over the window. Sums
-// clicks/impressions; CTR = clicks / impressions; position is
-// impression-weighted (plain mean when a keyword has no impressions at all).
-export function aggregateGscKeywords(
-  rows: Array<{ keyword: string; clicks: number | null; impressions: number | null; position: number | null }>,
-  limit: number,
-): GscKeywordRow[] {
-  const byKeyword = new Map<string, { clicks: number; imp: number; posW: number; posSum: number; n: number }>()
-  for (const r of rows) {
-    const a = byKeyword.get(r.keyword) ?? { clicks: 0, imp: 0, posW: 0, posSum: 0, n: 0 }
-    const imp = Number(r.impressions ?? 0)
-    const pos = Number(r.position ?? 0)
-    a.clicks += Number(r.clicks ?? 0)
-    a.imp    += imp
-    a.posW   += pos * imp
-    a.posSum += pos
-    a.n      += 1
-    byKeyword.set(r.keyword, a)
-  }
-  return [...byKeyword.entries()]
-    .map(([keyword, a]) => ({
-      keyword,
-      clicks:      a.clicks,
-      impressions: a.imp,
-      ctr:         a.imp > 0 ? a.clicks / a.imp : 0,
-      position:    a.imp > 0 ? a.posW / a.imp : a.posSum / a.n,
-    }))
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, limit)
-}
-
-// Returns top N keywords by impressions over the lookback window. Excludes
-// the synthetic '__page__' aggregate row (it's a page-level summary, not
-// a keyword). Reads every row in the window (paged), then aggregates, so the
-// totals cover the whole window and not just the first response page.
+// Returns top N keywords by impressions over the lookback window, summed in
+// the database (gsc_keyword_totals excludes the '__page__' page rows).
 export async function fetchTopKeywords(
   supabase: SupabaseClient,
   lookbackDays = 30,
@@ -62,17 +29,8 @@ export async function fetchTopKeywords(
 ): Promise<GscKeywordRow[]> {
   const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000)
     .toISOString().split('T')[0]
-  const rows = await selectAll<{ keyword: string; clicks: number; impressions: number; position: number }>(
-    (from, to) => supabase
-      .from('google_search_console')
-      .select('keyword, clicks, impressions, position')
-      .neq('keyword', '__page__')
-      .gte('date', since)
-      .order('id')
-      .range(from, to),
-    { label: 'fetchTopKeywords' },
-  )
-  return aggregateGscKeywords(rows, limit)
+  const totals = await fetchGscKeywordTotals(supabase, since, { top: limit })
+  return totals.map(({ keyword, clicks, impressions, ctr, position }) => ({ keyword, clicks, impressions, ctr, position }))
 }
 
 // ── Google Ads — aggregated views the orchestrator uses for paid-intent signals

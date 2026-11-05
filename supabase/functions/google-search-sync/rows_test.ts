@@ -1,8 +1,8 @@
 // deno run supabase/functions/google-search-sync/rows_test.ts
-import { chunk, dedupeByKey, fetchAllGscRows, toDbRows, upsertInBatches, type GscDbRow } from './rows.ts'
+import { chunk, dedupeByKey, forEachGscPage, syncWindow, toDbRows, upsertInBatches, MAX_WINDOW_DAYS, type GscApiRow, type GscDbRow } from './rows.ts'
 import { selectAll } from '../_shared/select_all.ts'
-import { aggregateGscKeywords } from '../seo-agent/services/googleApi.ts'
-import { aggregateGsc, fetchKeywordResearch } from '../_shared/keyword_research.ts'
+import { fetchGscKeywordTotals } from '../_shared/gsc_totals.ts'
+import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
 import { getSearchConsoleData } from '../_shared/marketing_intel.ts'
 import { fetchTopKeywords } from '../seo-agent/services/googleApi.ts'
 
@@ -57,22 +57,47 @@ check('batched: error throws', err.includes('duplicate key value') && err.includ
 check('batched: stops after failing batch', sent === 2, String(sent))
 check('batched: empty input = no calls', (await upsertInBatches([], async () => { throw new Error('called') })) === 0)
 
-// ── fetchAllGscRows: startRow paging past the 25,000-row API cap
+// ── forEachGscPage: startRow paging past the 25,000-row API cap, one page at a time
 const api = Array.from({ length: 52_345 }, (_, i) => ({ keys: [`q${i}`, '2026-11-01'], clicks: 1 }))
 const starts: Array<[number, number]> = []
-const got = await fetchAllGscRows(async (startRow, rowLimit) => { starts.push([startRow, rowLimit]); return api.slice(startRow, startRow + rowLimit) })
-check('gsc paging: every row fetched', got.length === 52_345 && got[52_344].keys![0] === 'q52344', String(got.length))
+const sizes: number[] = []
+let held = 0, maxHeld = 0
+const seen = await forEachGscPage(
+  async (startRow, rowLimit) => { starts.push([startRow, rowLimit]); const p = api.slice(startRow, startRow + rowLimit); held += p.length; maxHeld = Math.max(maxHeld, held); return p },
+  async (page) => { sizes.push(page.length); held -= page.length },
+)
+check('gsc paging: every row seen', seen === 52_345, String(seen))
 check('gsc paging: startRow sequence', JSON.stringify(starts) === '[[0,25000],[25000,25000],[50000,25000]]', JSON.stringify(starts))
-const exact: Array<number> = []
-const got2 = await fetchAllGscRows(async (startRow, rowLimit) => { exact.push(startRow); return api.slice(0, 50).slice(startRow, startRow + rowLimit) }, 25)
-check('gsc paging: exact multiple ends on an empty page', got2.length === 50 && JSON.stringify(exact) === '[0,25,50]', JSON.stringify(exact))
-check('gsc paging: no rows', (await fetchAllGscRows(async () => [])).length === 0)
+check('gsc paging: pages handed over in order', JSON.stringify(sizes) === '[25000,25000,2345]', JSON.stringify(sizes))
+check('gsc paging: never holds more than one page', maxHeld === 25_000, String(maxHeld))
+const exact: number[] = []; let calls2 = 0
+await forEachGscPage(async (startRow, rowLimit) => { exact.push(startRow); return api.slice(0, 50).slice(startRow, startRow + rowLimit) }, async () => { calls2++ }, 25)
+check('gsc paging: exact multiple ends on an empty page, no empty onPage', JSON.stringify(exact) === '[0,25,50]' && calls2 === 2, JSON.stringify(exact))
+check('gsc paging: no rows', (await forEachGscPage(async () => [], async () => { throw new Error('called') })) === 0)
 let gErr = ''
-try { await fetchAllGscRows(async () => { throw new Error('Search Console API error (403)') }) } catch (e) { gErr = (e as Error).message }
+try { await forEachGscPage(async () => { throw new Error('Search Console API error (403)') }, async () => {}) } catch (e) { gErr = (e as Error).message }
 check('gsc paging: API error propagates', gErr.includes('403'), gErr)
+let wErr = ''
+try { await forEachGscPage(async (s, n) => api.slice(s, s + n), async () => { throw new Error('upsert failed') }) } catch (e) { wErr = (e as Error).message }
+check('gsc paging: onPage (write) error propagates', wErr === 'upsert failed', wErr)
 let gCap = ''
-try { await fetchAllGscRows(async (s, n) => api.slice(s, s + n), 10_000, 30_000) } catch (e) { gCap = (e as Error).message }
+try { await forEachGscPage(async (s, n) => api.slice(s, s + n), async () => {}, 10_000, 30_000) } catch (e) { gCap = (e as Error).message }
 check('gsc paging: refuses past maxRows', gCap.includes('more than 30000'), gCap)
+
+// ── syncWindow
+const NOW = Date.parse('2026-11-05T15:00:00Z')
+const w0 = syncWindow({}, NOW) as { startDate: string; endDate: string }
+check('window default: last 5 days ending yesterday', w0.startDate === '2026-10-31' && w0.endDate === '2026-11-04', JSON.stringify(w0))
+check('window: null/non-object body = default', JSON.stringify(syncWindow(null, NOW)) === JSON.stringify(w0) && JSON.stringify(syncWindow('x', NOW)) === JSON.stringify(w0))
+check('window: backfill range accepted', JSON.stringify(syncWindow({ start_date: '2026-08-07', end_date: '2026-08-20' }, NOW)) === '{"startDate":"2026-08-07","endDate":"2026-08-20"}')
+const bad = (b: unknown) => 'error' in (syncWindow(b, NOW) as object)
+check('window: only one date rejected', bad({ start_date: '2026-10-01' }))
+check('window: bad format rejected', bad({ start_date: '2026-10-1', end_date: '2026-10-05' }) && bad({ start_date: '2026-02-30', end_date: '2026-03-01' }))
+check('window: start after end rejected', bad({ start_date: '2026-10-05', end_date: '2026-10-01' }))
+check('window: end after yesterday rejected', bad({ start_date: '2026-11-01', end_date: '2026-11-05' }))
+check(`window: more than ${MAX_WINDOW_DAYS} days rejected`, bad({ start_date: '2026-10-01', end_date: '2026-10-15' }) && !bad({ start_date: '2026-10-01', end_date: '2026-10-14' }))
+check('window: older than 16 months rejected', bad({ start_date: '2025-06-01', end_date: '2025-06-05' }))
+check('window: injection-shaped input rejected', bad({ start_date: "2026-10-01'; drop", end_date: '2026-10-02' }))
 
 // ── selectAll: walks pages past a 1,000-row server cap
 const table = Array.from({ length: 2345 }, (_, i) => ({ id: i }))
@@ -91,55 +116,46 @@ let capErr = ''
 try { await selectAll(async (from) => ({ data: table.slice(from, from + 1000), error: null }), { maxRows: 1500 }) } catch (e) { capErr = (e as Error).message }
 check('selectAll: refuses partial read over maxRows', capErr.includes('more than 1500'), capErr)
 
-// ── readers' aggregation (rows as they look after the dedupe migration)
-const daily = [
-  { keyword: 'פולי קפה', clicks: 2, impressions: 100, position: 10 },
-  { keyword: 'פולי קפה', clicks: 1, impressions: 300, position: 6 },
-  { keyword: 'v60', clicks: 0, impressions: 0, position: 30 },
-  { keyword: 'v60', clicks: 0, impressions: 0, position: 20 },
-  { keyword: 'אספרסו', clicks: 5, impressions: 50, position: 3 },
-]
-const top = aggregateGscKeywords(daily, 2)
-check('seo-agent: sums per keyword', top[0].keyword === 'פולי קפה' && top[0].clicks === 3 && top[0].impressions === 400)
-check('seo-agent: impression-weighted position', top[0].position === 7, String(top[0].position))
-check('seo-agent: ctr = clicks / impressions', top[0].ctr === 3 / 400)
-check('seo-agent: limit + sort by impressions', top.length === 2 && top[1].keyword === 'אספרסו')
-const zero = aggregateGscKeywords(daily, 10).find(x => x.keyword === 'v60')!
-check('seo-agent: zero-impression keyword gets mean position, not NaN', zero.position === 25 && zero.ctr === 0, JSON.stringify(zero))
-// The bug this fixes: the same day stored 7 times summed to 7x. After dedupe one row per day.
-const dup = Array.from({ length: 7 }, () => ({ keyword: 'k', clicks: 1, impressions: 10, position: 5 }))
-check('seo-agent: 7 copies of one day = 7x (why the migration dedupes)', aggregateGscKeywords(dup, 1)[0].impressions === 70)
-check('seo-agent: one row per day = true total', aggregateGscKeywords(dedupeByKey(dup.map(x => r('d1', x.keyword, null, x.clicks))).map(x => ({ ...x, impressions: 10, position: 5 })), 1)[0].impressions === 10)
-const kr = aggregateGsc(daily)
-check('keyword_research: same totals as seo-agent', kr[0].keyword === 'פולי קפה' && kr[0].impressions === 400 && kr[0].clicks === 3 && kr[0].position === 7)
-
-// ── readers end to end against a fake PostgREST that caps responses at 1,000
-// 2,500 rows for one keyword (10 impressions each) + a __page__ row that must be ignored.
-const gscTable = [
-  ...Array.from({ length: 2500 }, (_, i) => ({ id: i, keyword: 'k', page: null, clicks: 1, impressions: 10, position: 4, date: '2026-11-01' })),
-  { id: 9999, keyword: '__page__', page: '/x/', clicks: 50, impressions: 5000, position: 1, date: '2026-11-01' },
-]
+// ── readers on gsc_keyword_totals (fake RPC capped at 1,000 rows like PostgREST)
+const totalsTable = Array.from({ length: 2500 }, (_, i) => ({
+  keyword: `k${String(i).padStart(4, '0')}`, clicks: i % 7, impressions: String(i), ctr: 0, position: 5, days: 3, last_date: i === 7 ? '2026-11-04' : '2026-11-01',
+}))
+const rpcCalls: Array<{ fn: string; args: unknown; order: string[]; limit?: number }> = []
 const fakeDb: any = {
-  from(t: string) {
-    let rows: any[] = t === 'google_search_console' ? gscTable : [{ keyword: 'ads kw', avg_monthly_searches: 10, synced_at: '2026-11-03' }]
+  rpc(fn: string, args: unknown) {
+    const call = { fn, args, order: [] as string[], limit: undefined as number | undefined }
+    rpcCalls.push(call)
+    let rows = [...totalsTable]
     const q: any = {
-      select: () => q, gte: () => q, order: () => q,
-      neq: (c: string, v: unknown) => { rows = rows.filter(x => x[c] !== v); return q },
+      order: (c: string, o?: { ascending?: boolean }) => {
+        call.order.push(`${c}${o?.ascending === false ? ' desc' : ''}`)
+        if (c === 'impressions') rows.sort((a, b) => Number(b.impressions) - Number(a.impressions) || a.keyword.localeCompare(b.keyword))
+        return q
+      },
       range: async (from: number, to: number) => ({ data: rows.slice(from, Math.min(to + 1, from + 1000)), error: null }),
-      limit: async () => ({ data: rows.slice(0, 1000), error: null }),
+      limit: async (n: number) => { call.limit = n; return { data: rows.slice(0, Math.min(n, 1000)), error: null } },
     }
     return q
   },
+  from(_t: string) {
+    const q: any = { select: () => q, order: () => q, range: async (from: number) => ({ data: from === 0 ? [{ keyword: 'ads kw', avg_monthly_searches: 10, synced_at: '2026-11-03' }] : [], error: null }) }
+    return q
+  },
 }
-const sc = await getSearchConsoleData(fakeDb, { window_days: 30 })
-check('marketing_intel: reads past 1,000 rows', sc.top_by_clicks[0].impressions === 25000 && sc.top_by_clicks[0].clicks === 2500, JSON.stringify(sc.top_by_clicks[0]))
-check('marketing_intel: __page__ excluded', sc.total_keywords === 1)
-const tk = await fetchTopKeywords(fakeDb, 30, 10)
-check('seo-agent fetchTopKeywords: reads past 1,000 rows', tk.length === 1 && tk[0].impressions === 25000, JSON.stringify(tk))
+const all3 = await fetchGscKeywordTotals(fakeDb, '2026-08-07')
+check('totals: every keyword read past the 1,000 cap', all3.length === 2500, String(all3.length))
+check('totals: paged by keyword, since passed', rpcCalls[0].fn === 'gsc_keyword_totals' && (rpcCalls[0].args as any).p_since === '2026-08-07' && rpcCalls[0].order.join() === 'keyword')
+check('totals: numeric strings normalised', all3[2499].impressions === 2499 && typeof all3[2499].impressions === 'number')
+rpcCalls.length = 0
+const top = await fetchTopKeywords(fakeDb, 30, 20)
+check('seo-agent: one request, top 20 by impressions', rpcCalls.length === 1 && rpcCalls[0].limit === 20 && rpcCalls[0].order.join() === 'impressions desc,keyword', JSON.stringify(rpcCalls))
+check('seo-agent: best first, GscKeywordRow shape', top.length === 20 && top[0].keyword === 'k2499' && JSON.stringify(Object.keys(top[0])) === '["keyword","clicks","impressions","ctr","position"]', JSON.stringify(top[0]))
+const sc = await getSearchConsoleData(fakeDb, { window_days: 30, min_impressions: 100 })
+check('marketing_intel: every keyword, min_impressions applied', sc.total_keywords === 2400, String(sc.total_keywords))
+check('marketing_intel: top_by_clicks sorted', sc.top_by_clicks[0].clicks === 6)
 const res = await fetchKeywordResearch(fakeDb)
-const gscKw = res.rows.filter(x => x.source === 'search_console')
-check('keyword_research: reads past 1,000 rows', gscKw.length === 1 && gscKw[0].impressions === 25000, JSON.stringify(gscKw))
-check('keyword_research: __page__ is not a research keyword', !res.rows.some(x => x.keyword === '__page__'))
+check('keyword_research: every keyword + ads rows', res.rows.filter(r => r.source === 'search_console').length === 2500 && res.rows.some(r => r.source === 'google_ads'), String(res.rows.length))
+check('keyword_research: gsc_as_of = newest last_date', res.gsc_as_of === '2026-11-04', String(res.gsc_as_of))
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')
