@@ -6,6 +6,7 @@
 
 import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword, type ResearchKeyword } from './blog_keyword_gate.ts'
 import type { CannibalizationResult } from '../seo-agent/cannibalizationCheck.ts'
+import { selectAll } from './select_all.ts'
 
 // deno-lint-ignore no-explicit-any
 type Db = { from(table: string): any }
@@ -46,15 +47,15 @@ export interface KeywordResearch {
 
 export async function fetchKeywordResearch(supabase: Db, days = 90): Promise<KeywordResearch> {
   const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
-  const [gsc, ads] = await Promise.all([
-    supabase.from('google_search_console').select('keyword, page, impressions, clicks, position, date')
-      .gte('date', since).order('date', { ascending: false }).limit(20_000),
-    supabase.from('keyword_ideas').select('keyword, avg_monthly_searches, synced_at').limit(2_000),
+  // Paged: one PostgREST response stops at 1,000 rows whatever .limit() says,
+  // and these rows are summed, so a single request gave arbitrary totals.
+  const [gscRows, adsRows] = await Promise.all([
+    selectAll<Record<string, unknown>>((from, to) =>
+      supabase.from('google_search_console').select('keyword, page, impressions, clicks, position, date')
+        .neq('keyword', '__page__').gte('date', since).order('id').range(from, to), { label: 'google_search_console read' }),
+    selectAll<Record<string, unknown>>((from, to) =>
+      supabase.from('keyword_ideas').select('keyword, avg_monthly_searches, synced_at').order('keyword').range(from, to), { label: 'keyword_ideas read' }),
   ])
-  if (gsc.error) throw new Error(`google_search_console read failed: ${gsc.error.message}`)
-  if (ads.error) throw new Error(`keyword_ideas read failed: ${ads.error.message}`)
-  const gscRows = (gsc.data ?? []) as Array<Record<string, unknown>>
-  const adsRows = (ads.data ?? []) as Array<Record<string, unknown>>
   const adsResearch: ResearchKeyword[] = adsRows
     .filter(r => typeof r.keyword === 'string' && r.keyword.trim())
     .map(r => ({ source: 'google_ads' as const, keyword: String(r.keyword).trim(), impressions: Number(r.avg_monthly_searches) || 0 }))

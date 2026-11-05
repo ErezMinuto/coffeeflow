@@ -16,6 +16,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { toDbRows, upsertInBatches } from './rows.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -134,38 +135,13 @@ serve(async (req) => {
     const pageRows = pageData.rows ?? []
     console.log(`Fetched ${pageRows.length} page rows`)
 
-    // Upsert keyword rows
-    // GSC dimensions come back as: keys[0]=query, keys[1]=date
-    for (const row of rows) {
-      const [keyword, date] = row.keys as [string, string]
-      await supabase.from('google_search_console').upsert({
-        date,
-        keyword,
-        page: null,
-        clicks:      Math.round(row.clicks ?? 0),
-        impressions: Math.round(row.impressions ?? 0),
-        ctr:         row.ctr ?? 0,
-        position:    row.position ?? 0,
-        synced_at:   new Date().toISOString(),
-      }, { onConflict: 'date,keyword,page' })
-      records++
-    }
-
-    // Upsert page rows — stored with keyword='__page__' to distinguish
-    for (const row of pageRows) {
-      const [page, date] = row.keys as [string, string]
-      await supabase.from('google_search_console').upsert({
-        date,
-        keyword: '__page__',
-        page,
-        clicks:      Math.round(row.clicks ?? 0),
-        impressions: Math.round(row.impressions ?? 0),
-        ctr:         row.ctr ?? 0,
-        position:    row.position ?? 0,
-        synced_at:   new Date().toISOString(),
-      }, { onConflict: 'date,keyword,page' })
-      records++
-    }
+    // Upsert in batches of 500 (was one request per row: ~1,200 round trips,
+    // which pushed busy runs past the 150 s gateway limit). Any write error
+    // throws, so the run is logged as an error instead of a silent success.
+    records = await upsertInBatches(
+      toDbRows(rows, pageRows, new Date().toISOString()),
+      (batch) => supabase.from('google_search_console').upsert(batch, { onConflict: 'date,keyword,page' }),
+    )
 
     await supabase.from('sync_log').insert({
       platform: 'google_search',
