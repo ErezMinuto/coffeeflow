@@ -126,7 +126,13 @@ export function shortProductName(name: string): string {
   let s = String(name ?? "").split(/\s[-–|]\s/)[0];
   s = s.replace(/פולי קפה|ספשלטי קפה|קפה ספשלטי|ספשלטי|טרי|מינוטו|100% ערביקה|חד זני|בקלייה בהירה|קפה(?=\s)/g, " ")
     .replace(/\s{2,}/g, " ").trim();
-  if (s.length < 3) s = String(name ?? "").split(/\s[-–|]\s/)[0].trim();
+  // Nothing but generic words in Hebrew ("פולי קפה טרי 100% ערביקה - Minuto
+  // Dark Chocolate"): the real name is the English part after the dash.
+  if (s.length < 3) {
+    const latin = String(name ?? "").split(/\s[-–|]\s/).slice(1).join(" ")
+      .replace(/\bminuto\b|\bspecialty coffee\b/gi, " ").replace(/[+|]/g, " ").replace(/\s{2,}/g, " ").trim();
+    s = latin.length >= 3 ? latin : String(name ?? "").split(/\s[-–|]\s/)[0].trim();
+  }
   return s.length > 34 ? s.slice(0, 32).trim() + "…" : s;
 }
 
