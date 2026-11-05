@@ -8,7 +8,9 @@ name: Deploy edge functions
 # what it changed, and nothing else.
 #
 # WHAT IT DEPLOYS
-#   Only functions whose bundle contains a changed file, following relative
+#   Only functions whose bundle contains a file changed since the last deploy
+#   run that finished (normally this push's parent; further back when a waiting
+#   run was cancelled by a newer push), following relative
 #   imports through _shared/ and seo-agent/ (scripts/ci/edge_affected.py).
 #   A change to _shared/visual_identity.ts deploys visual-test,
 #   vertex-imagen-edit and marketing-advisor, not all 59 functions.
@@ -54,6 +56,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read   # list earlier deploy runs to find the last deployed commit
 
 jobs:
   deploy:
@@ -89,21 +92,33 @@ jobs:
       - name: Self-test the guard's canonical form
         run: bash scripts/ci/edge_canon_test.sh
 
+      - name: Self-test the deploy base picker
+        run: bash scripts/ci/deploy_base_test.sh
+
       - name: Work out what to deploy
         id: plan
         env:
           EVENT: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
           INPUT_FUNCTIONS: ${{ inputs.functions }}
         run: |
           set -euo pipefail
           HEAD_SHA="$(git rev-parse HEAD)"
           if [ "$EVENT" = "push" ]; then
-            BASE="$BEFORE"
+            # Diff from the last push run that ran to the end, not just this
+            # push's parent: GitHub cancels a WAITING run when a newer push
+            # queues, and that push's functions were then never deployed
+            # (#491, 2026-11-05). See scripts/ci/deploy_base.sh.
+            runs="$(gh run list --workflow deploy-edge-functions.yml --branch main --event push \
+                      --limit 30 --json headSha,status,conclusion 2>runs.err || echo '[]')"
+            BASE="$(printf '%s' "$runs" | bash scripts/ci/deploy_base.sh "$HEAD_SHA" "$BEFORE" 2>base.err)"
+            if [ -s base.err ]; then echo "::warning title=Deploy base::$(head -c 300 base.err | tr '\n' ' ') $(head -c 200 runs.err | tr '\n' ' ')"; fi
             if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-              echo "::error::Cannot find the pre-push commit $BASE; deploy manually."
+              echo "::error::Cannot find the base commit $BASE; deploy manually."
               exit 1
             fi
+            if [ "$BASE" != "$BEFORE" ]; then echo "Base is the last finished deploy ${BASE:0:7}, not the push parent ${BEFORE:0:7}: pushes in between were not deployed by their own run."; fi
             FUNCS="$(python3 scripts/ci/edge_affected.py "$BASE" "$HEAD_SHA" | tr '\n' ' ')"
           else
             BASE="$(git rev-parse HEAD~1)"
