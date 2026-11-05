@@ -646,20 +646,24 @@ ${p.customInstructions
   // Routed through the shared client: measured in agent_cost_ledger and
   // switchable by the MODEL_CAMPAIGN slot, like the rest of the marketing stack.
   let rawText = "";
+  let stopReason = "";
   try {
     const res = await callClaude({
       sourceFn:  "generate-campaign",
       model:     MODEL_CAMPAIGN,
       system:    systemPrompt,
       messages:  [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
-      maxTokens: 2500,
+      // Thinking models spend part of max_tokens before the JSON starts; the
+      // reply itself is ~1.5k tokens. A tight cap cut it off mid-JSON in prod.
+      maxTokens: 8192,
     });
     rawText = res.text;
+    stopReason = res.stop_reason;
   } catch (e: unknown) {
     console.error("model error:", e instanceof Error ? e.message : String(e));
     return err(500, "Claude API error: " + (e instanceof Error ? e.message : String(e)));
   }
-  console.log("model raw response length:", rawText.length);
+  console.log("model raw response length:", rawText.length, "stop:", stopReason, "model:", MODEL_CAMPAIGN);
 
   let campaign: any;
   try {
@@ -668,8 +672,10 @@ ${p.customInstructions
     const end = unfenced.lastIndexOf("}");
     campaign = JSON.parse(start >= 0 && end > start ? unfenced.slice(start, end + 1) : unfenced);
   } catch {
-    console.error("AI parse error:", rawText);
-    return err(500, "Failed to parse AI response");
+    console.error("AI parse error:", stopReason, rawText.slice(0, 2000));
+    return err(500, stopReason === "max_tokens"
+      ? "AI response was cut off (max_tokens)"
+      : "Failed to parse AI response");
   }
   if (!campaign || typeof campaign !== "object" || !campaign.subject || !campaign.body) {
     return err(500, "AI response is missing subject or body");
