@@ -8,6 +8,7 @@ const dir = new URL('../../migrations/', import.meta.url)
 const base = Deno.readTextFileSync(new URL('20260408_google_search_console.sql', dir))
   .replace(/ALTER TABLE google_search_console ENABLE ROW LEVEL SECURITY;[\s\S]*$/, '') // no roles in PGlite
 const mig = Deno.readTextFileSync(new URL('20261105a_gsc_dedupe_nulls_not_distinct.sql', dir))
+const totalsMig = Deno.readTextFileSync(new URL('20261105b_gsc_keyword_totals.sql', dir))
 
 let failures = 0
 function check(name: string, ok: boolean, detail = '') {
@@ -51,6 +52,32 @@ try { await db.exec(`insert into google_search_console(date, keyword, page) valu
 check('plain duplicate insert now rejected', msg.includes('google_search_console_date_keyword_page_key'), msg)
 await db.exec(mig)
 check('re-running the migration is a no-op', (await db.query<{ n: number }>(`select count(*)::int n from google_search_console`)).rows[0].n === 6)
+
+// ── 20261105b: gsc_keyword_totals sums in SQL what the readers used to sum in code
+await db.exec(`create role anon; create role authenticated; create role service_role;`)
+await db.exec(totalsMig)
+await db.exec(`delete from google_search_console;
+  insert into google_search_console(date, keyword, page, clicks, impressions, position) values
+    ('2026-10-01', 'פולי קפה', null, 2, 100, 10), ('2026-10-02', 'פולי קפה', null, 1, 300, 6),
+    ('2026-10-02', 'v60', null, 0, 0, 30), ('2026-10-03', 'v60', null, 0, 0, 20),
+    ('2026-09-01', 'old', null, 9, 900, 1),
+    ('2026-10-02', '__page__', '/a', 50, 5000, 1);`)
+type T = { keyword: string; clicks: number; impressions: number; ctr: number; position: number; days: number; last_date: string }
+const t = (await db.query<T>(`select keyword, clicks::int, impressions::int, ctr, position, days, last_date::text from gsc_keyword_totals('2026-10-01') order by keyword`)).rows
+const by = Object.fromEntries(t.map(r => [r.keyword, r]))
+check('totals: window and __page__ filter', t.length === 2 && !by['__page__'] && !by['old'], JSON.stringify(t.map(r => r.keyword)))
+check('totals: sums', by['פולי קפה'].clicks === 3 && by['פולי קפה'].impressions === 400)
+check('totals: impression-weighted position', by['פולי קפה'].position === 7, String(by['פולי קפה'].position))
+check('totals: ctr', by['פולי קפה'].ctr === 3 / 400)
+check('totals: 0 impressions → mean position, ctr 0', by['v60'].position === 25 && by['v60'].ctr === 0)
+check('totals: days + last_date', by['פולי קפה'].days === 2 && by['פולי קפה'].last_date === '2026-10-02')
+const until = (await db.query<T>(`select keyword from gsc_keyword_totals('2026-10-01', '2026-10-02')`)).rows
+check('totals: p_until respected', until.length === 2)
+const acl = (await db.query<{ anon: boolean; svc: boolean }>(`select has_function_privilege('anon', 'gsc_keyword_totals(date,date)', 'execute') anon,
+  has_function_privilege('service_role', 'gsc_keyword_totals(date,date)', 'execute') svc`)).rows[0]
+check('totals: anon cannot execute, service_role can', acl.anon === false && acl.svc === true, JSON.stringify(acl))
+await db.exec(totalsMig)
+check('totals: migration re-runs cleanly', true)
 
 if (failures) { console.error(`\n${failures} FAILED`); Deno.exit(1) }
 console.log('\nall passed')

@@ -48,7 +48,7 @@ export function toDbRows(keywordRows: GscApiRow[], pageRows: GscApiRow[], synced
 // command cannot affect row a second time", so keep one row per key (the last).
 export function dedupeByKey(rows: GscDbRow[]): GscDbRow[] {
   const byKey = new Map<string, GscDbRow>()
-  for (const r of rows) byKey.set(JSON.stringify([r.date, r.keyword, r.page]), r)
+  for (const r of rows) byKey.set(`${r.date}\u0000${r.keyword}\u0000${r.page ?? '\u0001'}`, r)
   return [...byKey.values()]
 }
 
@@ -72,4 +72,56 @@ export async function upsertInBatches(rows: GscDbRow[], upsert: Upsert, size = 5
     written += batch.length
   }
   return written
+}
+
+// Search Console returns at most 25,000 rows per searchAnalytics.query call;
+// more rows come from repeating the call with startRow. A page shorter than
+// rowLimit is the last one. Each page is handed to onPage before the next is
+// fetched, so a run never holds more than one page in memory (holding a whole
+// 90-day window, ~130k rows, hit the edge worker's resource limit). Throws past
+// maxRows rather than stopping silently. Returns the number of rows seen.
+export async function forEachGscPage(
+  fetchPage: (startRow: number, rowLimit: number) => Promise<GscApiRow[]>,
+  onPage: (rows: GscApiRow[]) => Promise<void>,
+  rowLimit = 25_000,
+  maxRows = 100_000,
+): Promise<number> {
+  let seen = 0
+  for (;;) {
+    const page = await fetchPage(seen, rowLimit)
+    if (page.length) await onPage(page)
+    seen += page.length
+    if (page.length < rowLimit) return seen
+    if (seen >= maxRows) throw new Error(`Search Console returned more than ${maxRows} rows for one window, use a shorter date range`)
+  }
+}
+
+export const DEFAULT_WINDOW_DAYS = 5   // Search Console revises roughly the last 3 days
+export const MAX_WINDOW_DAYS = 14      // ~20k rows: well inside one worker's budget
+
+const DAY = 86_400_000
+const iso = (t: number) => new Date(t).toISOString().slice(0, 10)
+
+// The date window for one run. No body: the last DEFAULT_WINDOW_DAYS days
+// ending yesterday. A backfill passes { start_date, end_date } (YYYY-MM-DD,
+// at most MAX_WINDOW_DAYS long, inside Search Console's 16 months, not after
+// yesterday). Returns an error string instead of throwing so the caller can
+// answer 400.
+export function syncWindow(body: unknown, now = Date.now()): { startDate: string; endDate: string } | { error: string } {
+  const yesterday = iso(now - DAY)
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>
+  if (b.start_date == null && b.end_date == null) {
+    return { startDate: iso(now - DEFAULT_WINDOW_DAYS * DAY), endDate: yesterday }
+  }
+  const re = /^\d{4}-\d{2}-\d{2}$/
+  const s = String(b.start_date ?? ''), e = String(b.end_date ?? '')
+  if (!re.test(s) || !re.test(e) || iso(Date.parse(s)) !== s || iso(Date.parse(e)) !== e) {
+    return { error: 'start_date and end_date must both be valid YYYY-MM-DD dates' }
+  }
+  if (s > e) return { error: 'start_date is after end_date' }
+  if (e > yesterday) return { error: `end_date must be ${yesterday} or earlier` }
+  if (s < iso(now - 485 * DAY)) return { error: 'start_date is older than Search Console keeps (16 months)' }
+  const span = (Date.parse(e) - Date.parse(s)) / DAY + 1
+  if (span > MAX_WINDOW_DAYS) return { error: `window is ${span} days, at most ${MAX_WINDOW_DAYS} per run` }
+  return { startDate: s, endDate: e }
 }
