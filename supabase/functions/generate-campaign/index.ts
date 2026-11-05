@@ -626,7 +626,7 @@ ${p.customInstructions
   "cta_text": "טקסט כפתור, 2-4 מילים, פועל ברבים או שם פעולה (למשל 'להזמנת דיי בנסה')",
   "cta_url": "קישור minuto.co.il של מוצר הגיבור, או https://minuto.co.il/shop",
   "hero_product_id": 0,
-  "notes": ["2-4 תגיות טעם של מוצר הגיבור, מילה או שתיים כל אחת, רק מתוך ה-description. [] אם אין"],
+  "notes": ["2-4 תגיות טעם של מוצר הגיבור, מילה או שתיים כל אחת, מתוך ה-description. כשהגיבור הוא פולי קפה: חובה אם ה-description מזכיר טעמים או ארומות. [] אם אין בו טעם"],
   "facts": [{"label": "מקור", "value": "..."}],
   "tip": {"title": "איך להכין", "text": "משפט או שניים"},
   "offer": null,
@@ -778,7 +778,19 @@ ${p.customInstructions
   console.log("Hero:", hero?.name ?? "none", "| grid:", selectedProducts.length - (hero ? 1 : 0));
 
   // Notes and facts only about a real hero; the model fills them from its description.
-  const notes = hero ? (Array.isArray(campaign.notes) ? campaign.notes : []).map((n: unknown) => clean(n, 30)).filter(Boolean).slice(0, 4) : [];
+  // Tasting chips are required when the hero is coffee beans and its
+  // description names flavours (Erez, 2026-11-05). Each chip must come from
+  // that description; if the model left them out (or invented them), a small
+  // extraction call reads them off it. Equipment emails are left as written.
+  const heroDescription = hero ? plainText(hero.short_description) : "";
+  let notes: string[] = hero
+    ? groundedNotes((Array.isArray(campaign.notes) ? campaign.notes : []).map((n: unknown) => clean(n, 30)), heroDescription)
+    : [];
+  if (hero && isCoffeeBeans(hero) && notes.length < 2 && heroDescription.length > 20) {
+    const extracted = (await extractTastingNotes(heroDescription)).map((n) => clean(n, 30));
+    if (extracted.length >= notes.length) notes = extracted;
+    console.log("Tasting notes from description:", notes.join(", ") || "none");
+  }
   const facts = hero ? (Array.isArray(campaign.facts) ? campaign.facts : [])
     .map((f: any) => ({ label: clean(f?.label, 20), value: clean(f?.value, 40) }))
     .filter((f: any) => f.label && f.value).slice(0, 4) : [];
@@ -898,6 +910,51 @@ ${p.customInstructions
       htmlContent,
     },
   });
+}
+
+// Roasted coffee beans we sell (bags, jars, tasting kits), not equipment.
+function isCoffeeBeans(pr: any): boolean {
+  if (!pr || isOffBrandHero(pr.name)) return false;
+  const cats = (pr.categories || []).map((c: any) => (typeof c === "string" ? c : c?.name || "")).join(" ");
+  return /פולי קפה|תערובות קפה מינוטו/.test(cats) || /^\s*פולי קפה/.test(String(pr.name ?? ""));
+}
+
+// A chip survives only if one of its words (3+ letters) appears in the
+// product's own description, so no flavour reaches the email that the shop
+// page does not state. Hebrew prefixes ("ואגוזים") still match by substring.
+function groundedNotes(notes: string[], description: string): string[] {
+  const desc = description.toLowerCase();
+  const out: string[] = [];
+  for (const n of notes) {
+    const note = String(n ?? "").trim();
+    if (!note || out.includes(note)) continue;
+    const words = note.toLowerCase().match(/[\p{L}]{3,}/gu) || [];
+    if (words.some((w) => desc.includes(w))) out.push(note);
+    if (out.length === 4) break;
+  }
+  return out;
+}
+
+async function extractTastingNotes(description: string): Promise<string[]> {
+  try {
+    const res = await callClaude({
+      sourceFn:  "generate-campaign",
+      model:     MODEL_CAMPAIGN_CHEAP,
+      system:    "אתה מחלץ תווי טעם מתיאור מוצר קפה. החזר JSON בלבד: מערך של 2-4 תווי טעם או ארומה קצרים בעברית (מילה או שתיים כל אחד), שמופיעים בתיאור עצמו. אל תוסיף טעם שלא כתוב בתיאור. אם אין בתיאור אף טעם או ארומה, החזר [].",
+      messages:  [{ role: "user", content: description.slice(0, 1200) }],
+      // Thinking models spend tokens before the short reply.
+      maxTokens: 4000,
+    });
+    const raw = res.text.replace(/```json?\n?/g, "").replace(/```/g, "");
+    const start = raw.indexOf("[");
+    const end = raw.lastIndexOf("]");
+    if (start < 0 || end <= start) return [];
+    const arr = JSON.parse(raw.slice(start, end + 1));
+    return Array.isArray(arr) ? groundedNotes(arr.map((x) => String(x ?? "")), description) : [];
+  } catch (e) {
+    console.warn("tasting-note extraction failed:", e instanceof Error ? e.message : String(e));
+    return [];
+  }
 }
 
 // ── Update Draft ────────────────────────────────────────────────────────────
