@@ -16,7 +16,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { toDbRows, upsertInBatches } from './rows.ts'
+import { fetchAllGscRows, toDbRows, upsertInBatches, type GscApiRow } from './rows.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -84,64 +84,52 @@ serve(async (req) => {
 
     console.log(`Fetching GSC data for ${siteUrl} from ${startDate} to ${endDate}`)
 
-    // Query 1: Top keywords by clicks (query + date dimensions)
-    const keywordRes = await fetch(
-      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSite}/searchAnalytics/query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          dimensions: ['query', 'date'],
-          rowLimit: 1000,
-          dataState: 'all',
-        }),
+    // One searchAnalytics.query call, as a page of rows. Search Console caps a
+    // call at 25,000 rows, so fetchAllGscRows repeats it with startRow until
+    // every row is in (rowLimit 1,000 used to keep only the top 1,000
+    // query-day pairs of the 90 days).
+    const queryPage = (dimensions: string[]) => async (startRow: number, rowLimit: number): Promise<GscApiRow[]> => {
+      const res = await fetch(
+        `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSite}/searchAnalytics/query`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ startDate, endDate, dimensions, rowLimit, startRow, dataState: 'all' }),
+        }
+      )
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`Search Console API error (${res.status}) for ${dimensions.join('+')} at row ${startRow}: ${errText.substring(0, 300)}`)
       }
-    )
-
-    if (!keywordRes.ok) {
-      const errText = await keywordRes.text()
-      throw new Error(`Search Console API error (${keywordRes.status}): ${errText.substring(0, 300)}`)
+      return (await res.json()).rows ?? []
     }
 
-    const keywordData = await keywordRes.json()
-    const rows = keywordData.rows ?? []
+    // Query 1: every keyword (query + date dimensions)
+    const rows = await fetchAllGscRows(queryPage(['query', 'date']))
     console.log(`Fetched ${rows.length} keyword rows`)
 
-    // Query 2: Top pages by clicks (page + date dimensions)
-    const pageRes = await fetch(
-      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSite}/searchAnalytics/query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          dimensions: ['page', 'date'],
-          rowLimit: 200,
-          dataState: 'all',
-        }),
-      }
-    )
-
-    const pageData = pageRes.ok ? await pageRes.json() : { rows: [] }
-    const pageRows = pageData.rows ?? []
+    // Query 2: every page (page + date dimensions). As before, a failure here
+    // does not fail the keyword sync.
+    const pageRows = await fetchAllGscRows(queryPage(['page', 'date'])).catch((e) => {
+      console.warn(`Page rows skipped: ${e instanceof Error ? e.message : String(e)}`)
+      return [] as GscApiRow[]
+    })
     console.log(`Fetched ${pageRows.length} page rows`)
 
-    // Upsert in batches of 500 (was one request per row: ~1,200 round trips,
-    // which pushed busy runs past the 150 s gateway limit). Any write error
-    // throws, so the run is logged as an error instead of a silent success.
+    // Upsert in batches of 1,000 (was one request per row, which pushed busy
+    // runs past the 150 s gateway limit; full paging now writes every query,
+    // so keep the round trips few). Any write error throws, so the run is
+    // logged as an error instead of a silent success.
+    const upsertStarted = Date.now()
     records = await upsertInBatches(
       toDbRows(rows, pageRows, new Date().toISOString()),
       (batch) => supabase.from('google_search_console').upsert(batch, { onConflict: 'date,keyword,page' }),
+      1000,
     )
+    console.log(`Upserted ${records} rows in ${Date.now() - upsertStarted} ms`)
 
     await supabase.from('sync_log').insert({
       platform: 'google_search',
