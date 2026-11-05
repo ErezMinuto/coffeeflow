@@ -484,7 +484,7 @@ function buildCampaignHtml(params: {
         <!-- Body Content -->
         <tr>
           <td class="content-pad" style="padding:${greeting ? '12px' : '24px'} 40px 20px;font-size:16px;line-height:1.75;color:#333333;direction:rtl;text-align:right;">
-            ${body.replace(/\n\n/g, '</p><p style="margin:0 0 16px;">').replace(/\n/g, "<br>")}
+            ${body.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/\n\n/g, '</p><p style="margin:0 0 16px;">').replace(/\n/g, "<br>")}
           </td>
         </tr>
 
@@ -1296,6 +1296,102 @@ async function handleUpdateDraft(p: UpdateDraftPayload) {
   }
 }
 
+// ── Render Draft (finished copy, no AI) ─────────────────────────────────────
+// The marketing brain's chat hands over copy the owner already approved word
+// for word. `generate` would rewrite it, so this path only renders the house
+// template around it and saves a draft. It never sends.
+
+interface RenderDraftPayload {
+  userId: string;
+  subject: string;
+  preheader?: string;
+  body: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  campaignType?: string;
+}
+
+const RENDER_SUBJECT_SUFFIX = " | פרסומת";
+
+// The CTA can only point at our own site: the draft goes to the whole list.
+function isMinutoUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && (u.hostname === "minuto.co.il" || u.hostname === "www.minuto.co.il");
+  } catch { return false; }
+}
+
+async function handleRenderDraft(p: RenderDraftPayload) {
+  const subjectIn = String(p.subject ?? "").trim();
+  const body      = String(p.body ?? "").replace(/\r\n/g, "\n").trim();
+  const preheader = String(p.preheader ?? "").trim();
+  const ctaText   = String(p.ctaText ?? "").trim();
+  const ctaUrl    = String(p.ctaUrl ?? "").trim();
+  if (!p.userId) return err(400, "userId is required");
+  if (!subjectIn || !body) return err(400, "subject and body are required");
+  if (subjectIn.length > 200 || preheader.length > 300 || body.length > 8000 || ctaText.length > 80) {
+    return err(400, "copy too long (subject ≤200, preheader ≤300, body ≤8000, cta_text ≤80)");
+  }
+  if (ctaText && !ctaUrl) return err(400, "cta_url is required when cta_text is given");
+  if (ctaUrl && !isMinutoUrl(ctaUrl)) return err(400, "cta_url must be an https://minuto.co.il link");
+
+  // Same legal marker the AI path adds (Communications Law §30א). Only the
+  // marker is added; the creative subject stays as given.
+  const subject = subjectIn
+    .replace(/[\s‎‏]*\|[\s‎‏]*פרסומת[\s‎‏]*$/, "")
+    .trim() + RENDER_SUBJECT_SUFFIX;
+
+  // A chat tool can fire twice for one approval. Same copy, still a draft,
+  // within 15 minutes = the same draft.
+  const since = new Date(Date.now() - 15 * 60_000).toISOString();
+  const { data: dupe } = await supabase
+    .from("campaigns")
+    .select("id, html_content")
+    .eq("user_id", p.userId)
+    .eq("status", "draft")
+    .eq("subject", subject)
+    .eq("message", body)
+    .gte("created_at", since)
+    .limit(1)
+    .maybeSingle();
+  if (dupe) return ok({ ok: true, existed: true, campaign: { id: dupe.id, subject, htmlContent: dupe.html_content } });
+
+  // buildCampaignHtml inserts the body as HTML, so escape it here; **bold**
+  // and line breaks are applied by the template.
+  const htmlContent = buildCampaignHtml({
+    subject,
+    preheader,
+    greeting:       "",
+    body:           escapeHtml(body),
+    ctaText,
+    ctaUrl:         ctaUrl || SITE_URL,
+    bannerUrl:      null,
+    products:       [],
+    unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
+  });
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from("campaigns")
+    .insert({
+      user_id:       p.userId,
+      channel:       "email",
+      subject,
+      message:       body,
+      html_content:  htmlContent,
+      status:        "draft",
+      campaign_type: String(p.campaignType || "brain").slice(0, 40),
+      product_ids:   [],
+      preheader:     preheader || null,
+      cta_text:      ctaText || null,
+      cta_url:       ctaUrl || null,
+    })
+    .select("id")
+    .single();
+  if (insertErr) return err(500, insertErr.message);
+
+  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent } });
+}
+
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────
 
 async function fetchResendContacts(): Promise<Array<{ email: string; name?: string }>> {
@@ -2091,6 +2187,7 @@ serve(async (req) => {
       case "generate-ideas":    response = await handleGenerateIdeas(payload as IdeasPayload); break;
       case "generate":          response = await handleGenerate(payload as GeneratePayload); break;
       case "update-draft":      response = await handleUpdateDraft(payload as UpdateDraftPayload); break;
+      case "render-draft":      response = await handleRenderDraft(payload as RenderDraftPayload); break;
       case "sync-woo-products": response = await handleSyncWooProducts(payload.userId); break;
       case "send-campaign":     response = await handleSendCampaign(payload as SendCampaignPayload); break;
       case "send-test":         response = await handleSendCampaign({ ...payload, testEmail: payload.testEmail } as SendCampaignPayload); break;
