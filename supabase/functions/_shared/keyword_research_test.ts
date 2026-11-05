@@ -26,7 +26,7 @@ const fakeDb = {
       ? [{ keyword: 'מכונת קפה לבית', page: 'https://www.minuto.co.il/product-category/m/', impressions: 900, clicks: 9, position: 12, date: '2026-11-02' },
          { keyword: 'מדריך v60', page: 'https://www.minuto.co.il/blog/v60/', impressions: 300, clicks: 4, position: 8, date: '2026-11-02' }]
       : [{ keyword: 'פולי קפה', avg_monthly_searches: 4200, synced_at: '2026-11-03T10:00:00Z' }]
-    const q: any = { select: () => q, gte: () => q, order: () => q, limit: async () => ({ data, error: null }) }
+    const q: any = { select: () => q, neq: () => q, gte: () => q, order: () => q, range: async (from: number) => ({ data: from === 0 ? data : [], error: null }) }
     return q
   },
 }
