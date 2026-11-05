@@ -10,6 +10,7 @@
 // function — that's a separate concern handled there, not here.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { computeSegmentFacts, fetchOptedInEmails, type SegmentFact } from '../../_shared/segment_facts.ts'
 
 // ── Published blog posts (avoid duplicate recommendations) ───────────────
 
@@ -194,9 +195,9 @@ export interface MarketResearchSummary {
 
 export interface CustomerSegmentSummary {
   total_customers:         number
-  by_segment: Array<{
-    segment:               string
-    count:                 number
+  total_opted_in_reachable: number | null  // customers an email can reach (opted in in marketing_contacts)
+  by_segment: Array<SegmentFact & {
+    count:                 number   // = total; kept for existing readers (organic-orchestrator)
     avg_total_spent_ils:   number
     avg_order_count:       number
     avg_days_since_last:   number
@@ -212,6 +213,7 @@ export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Pro
   // customers since rfm-sync reads the full order history. 'superseded' rows are
   // leftovers from earlier runs, not customers.
   const rows: Array<{
+    email: string | null
     segment: string | null
     total_spent_ils: number | null
     order_count: number | null
@@ -222,7 +224,7 @@ export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Pro
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from('customer_rfm')
-      .select('segment, total_spent_ils, order_count, days_since_last, first_order_date, bean_grams')
+      .select('email, segment, total_spent_ils, order_count, days_since_last, first_order_date, bean_grams')
       .neq('segment', 'superseded')
       .order('email')
       .range(from, from + 999)
@@ -231,8 +233,12 @@ export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Pro
     if (!data || data.length < 1000) break
   }
   if (rows.length === 0) {
-    return { total_customers: 0, by_segment: [], new_in_last_30d: 0, at_risk_count: 0, note: 'customer_rfm is empty' }
+    return { total_customers: 0, total_opted_in_reachable: 0, by_segment: [], new_in_last_30d: 0, at_risk_count: 0, note: 'customer_rfm is empty' }
   }
+  // Opt-in read failed → reachable counts are null (unknown), never 0, and the
+  // rest of the summary still reaches the orchestrator.
+  const optedIn = await fetchOptedInEmails(supabase).catch(() => null)
+  const facts = computeSegmentFacts(rows, optedIn)
   const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000
   let newCount = 0
   let atRiskCount = 0
@@ -249,19 +255,21 @@ export async function fetchCustomerSegmentSummary(supabase: SupabaseClient): Pro
     if (r.first_order_date && new Date(r.first_order_date).getTime() > thirtyDaysAgoMs) newCount++
     if ((r.days_since_last ?? 0) > 90 && (r.order_count ?? 0) > 1) atRiskCount++
   }
-  const by_segment = Array.from(bySeg.entries())
-    .map(([segment, a]) => ({
-      segment,
-      count: a.count,
+  const by_segment = facts.segments.map(f => {
+    const a = bySeg.get(f.segment)!
+    return {
+      ...f,
+      count:               f.total,
       avg_total_spent_ils: a.count > 0 ? Math.round(a.totSpent / a.count) : 0,
       avg_order_count:     a.count > 0 ? Math.round((a.totOrders / a.count) * 10) / 10 : 0,
       avg_days_since_last: a.count > 0 ? Math.round(a.totDaysSince / a.count) : 0,
       avg_bean_grams:      a.count > 0 ? Math.round(a.totGrams / a.count) : 0,
-    }))
-    .sort((a, b) => b.count - a.count)
+    }
+  })
   return {
-    total_customers: rows.length, by_segment, new_in_last_30d: newCount, at_risk_count: atRiskCount,
-    note: 'Web customers since 2023 (café till sales carry no identity). Segments score M on lifetime Minuto bean grams. avg_total_spent_ils counts only orders since Jan 2026.',
+    total_customers: rows.length, total_opted_in_reachable: facts.total_opted_in_reachable,
+    by_segment, new_in_last_30d: newCount, at_risk_count: atRiskCount,
+    note: 'Web customers since 2023 (café till sales carry no identity). avg_total_spent_ils counts only orders since Jan 2026. ' + facts.note,
   }
 }
 

@@ -15,6 +15,9 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
 import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
+import {
+  computeSegmentFacts, emailRecProblems, fetchOptedInEmails, fetchSegmentFacts, type SegmentFacts,
+} from '../_shared/segment_facts.ts'
 import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
 import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword } from '../_shared/blog_keyword_gate.ts'
 import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
@@ -129,11 +132,11 @@ async function drilldownSegmentDetail(
 ): Promise<unknown> {
   if (!input.segment) return { error: 'segment is required' }
   // Paged: PostgREST caps a response at 1000 rows.
-  const rows: Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
+  const rows: Array<{ email: string | null; total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from('customer_rfm')
-      .select('total_spent_ils, order_count, days_since_last, bean_grams')
+      .select('email, total_spent_ils, order_count, days_since_last, bean_grams')
       .eq('segment', input.segment)
       .order('email')
       .range(from, from + 999)
@@ -142,6 +145,8 @@ async function drilldownSegmentDetail(
     if (!data || data.length < 1000) break
   }
   if (rows.length === 0) return { segment: input.segment, count: 0 }
+  const optedIn = await fetchOptedInEmails(supabase).catch(() => null)
+  const fact = computeSegmentFacts(rows.map(r => ({ ...r, segment: input.segment })), optedIn).segments[0]
   const spends = rows.map(r => Number(r.total_spent_ils ?? 0)).sort((a, b) => a - b)
   const grams = rows.map(r => Number(r.bean_grams ?? 0)).sort((a, b) => a - b)
   const orders = rows.map(r => Number(r.order_count ?? 0))
@@ -151,6 +156,10 @@ async function drilldownSegmentDetail(
   return {
     segment: input.segment,
     count: rows.length,
+    definition: fact.definition,
+    opted_in_reachable: fact.opted_in_reachable,
+    lapsed_90d_reachable: fact.lapsed_90d_reachable,
+    bean_buyer_share: fact.bean_buyer_share,
     total_spent_ils: Math.round(sum(spends)),
     median_spent_ils: Math.round(median(spends)),
     spend_note: 'total_spent_ils counts only orders since Jan 2026 (woo_orders); order_count, recency and bean grams cover the full history from 2023',
@@ -451,6 +460,20 @@ async function handleEmitSignal(
 interface DiagnosisItem { claim: string; evidence: string }
 interface OutOfHandsItem { title: string; rationale: string }
 
+/** The segment facts the brain saw: customer_segments.by_segment in this
+ *  run's snapshot. Null when the run predates them or the sense errored. */
+async function snapshotSegmentFacts(supabase: SupabaseClient, runId: string): Promise<SegmentFacts | null> {
+  const { data } = await supabase.from('strategist_runs').select('snapshot').eq('id', runId).maybeSingle()
+  const cs = (data as { snapshot?: { customer_segments?: Record<string, unknown> } } | null)?.snapshot?.customer_segments
+  if (!cs || !Array.isArray(cs.by_segment)) return null
+  return {
+    total_customers:          Number(cs.total_customers ?? 0),
+    total_opted_in_reachable: typeof cs.total_opted_in_reachable === 'number' ? cs.total_opted_in_reachable : null,
+    segments:                 cs.by_segment as SegmentFacts['segments'],
+    note:                     String(cs.note ?? ''),
+  }
+}
+
 async function handleConcludeBrief(
   supabase: SupabaseClient,
   ctx: ToolContext,
@@ -511,6 +534,23 @@ async function handleConcludeBrief(
     }
   }
 
+  // Email recommendations: a real segment, described as the data describes it,
+  // sized by who can actually be emailed. Checked against the facts this run's
+  // snapshot carried AND a fresh read (rfm-sync may have run since kickoff).
+  if (recsIn.some(r => r.action_type === 'email_campaign')) {
+    const sets: SegmentFacts[] = []
+    const snap = await snapshotSegmentFacts(supabase, ctx.runId)
+    if (snap) sets.push(snap)
+    try { sets.push(await fetchSegmentFacts(supabase)) } catch (e) { console.warn(`[strategist] segment facts read failed: ${e instanceof Error ? e.message : String(e)}`) }
+    const problems = emailRecProblems(recsIn, sets, (await readLoopConfig(supabase)).min_email_reachable)
+    if (problems.length) {
+      const facts = sets[sets.length - 1]
+      return { result: {
+        error: `conclude_brief NOT saved — email_campaign recommendations: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        segment_facts: facts?.segments.map(f => ({ segment: f.segment, definition: f.definition, total: f.total, opted_in_reachable: f.opted_in_reachable, lapsed_90d_reachable: f.lapsed_90d_reachable, bean_buyer_share: f.bean_buyer_share })),
+      } }
+    }
+  }
   // Paid-ad recommendations: real product / grounded keywords / sane budget,
   // at most MAX_AD_RECS_PER_BRIEF. They become PAUSED drafts at most; only
   // Erez activates an ad.
@@ -648,7 +688,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   },
   {
     name: 'drilldown_segment_detail',
-    description: 'Aggregated profile of ONE customer RFM segment (count, spend distribution, recency, repeat-buyer share). Aggregated only — no individual customer data.',
+    description: 'Aggregated profile of ONE customer RFM segment: its definition, count, opted-in reachable count (who an email can reach), lapsed (>90d) reachable count, share with bean purchases, spend distribution, recency, repeat-buyer share. Aggregated only — no individual customer data.',
     input_schema: { type: 'object', properties: { segment: { type: 'string' } }, required: ['segment'] },
   },
   {
@@ -741,7 +781,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
               title: { type: 'string' },
               rationale: { type: 'string' },
               action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment (an RFM segment from customer_segments.by_segment), reachable_opted_in (the opted_in_reachable of that segment, copied from the data), angle, products[], subject_he}; the title or rationale states the reachable count. conclude_brief checks the segment, reachable_opted_in, every customer count in the text and the audience description against the segment data, and refuses a segment below ops_profile.strategist_loop.min_email_reachable opted-in customers. content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',

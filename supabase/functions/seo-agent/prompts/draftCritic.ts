@@ -18,6 +18,8 @@ Grade against, in order:
 
 1. FIDELITY TO THE BRIEF. Does the draft do what the brief asked: the angle, the audience, the products, the offer (if any)? A draft that is well written but about something else fails.
 
+   EMAILS: you are also given AUDIENCE FACTS for the target segment (its definition, size, how many are opted in and so reachable, how many of those lapsed, the share who bought Minuto beans). They are the only allowed source for who the audience is. Copy, a brief or a rationale that describes the audience otherwise (e.g. as equipment buyers who never bought beans when most of the segment bought beans, as lapsed when few are, or with a size other than these numbers) is a critical issue "audience_misdescribed". Quote the phrase and give the fact it contradicts.
+
 2. FACTS. Every product claim (name, origin, tasting notes, roast, price, size, availability) must be supported by the CATALOG FACTS you are given. If the catalog does not state it, the draft must not state it. Invented attributes are a critical issue. Products not in the catalog, or out of stock, must not be featured.
 
 3. BRAND RULES (each violation is high unless noted):
