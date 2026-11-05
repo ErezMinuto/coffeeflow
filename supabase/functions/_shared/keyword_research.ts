@@ -7,36 +7,29 @@
 import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword, type ResearchKeyword } from './blog_keyword_gate.ts'
 import type { CannibalizationResult } from '../seo-agent/cannibalizationCheck.ts'
 import { selectAll } from './select_all.ts'
+import { fetchGscKeywordTotals, type GscKeywordTotal } from './gsc_totals.ts'
 
 // deno-lint-ignore no-explicit-any
-type Db = { from(table: string): any }
+type Db = { from(table: string): any; rpc(fn: string, args: Record<string, unknown>): any }
 
 const r1 = (n: number) => Math.round(n * 10) / 10
 
-/** Pure: aggregate daily GSC rows (keyword, page, impressions, clicks, position)
- *  per keyword. Position is impression-weighted; ranking_page = the page with
- *  the most impressions for that keyword. */
-export function aggregateGsc(rows: Array<Record<string, unknown>>): ResearchKeyword[] {
-  const by = new Map<string, { keyword: string; imp: number; clicks: number; posW: number; pages: Map<string, number> }>()
-  for (const r of rows) {
-    const kw = typeof r.keyword === 'string' ? r.keyword.trim() : ''
-    if (!kw) continue
-    const imp = Number(r.impressions) || 0
-    const a = by.get(kw) ?? { keyword: kw, imp: 0, clicks: 0, posW: 0, pages: new Map<string, number>() }
-    a.imp += imp
-    a.clicks += Number(r.clicks) || 0
-    a.posW += (Number(r.position) || 0) * imp
-    if (typeof r.page === 'string' && r.page) a.pages.set(r.page, (a.pages.get(r.page) ?? 0) + imp)
-    by.set(kw, a)
-  }
-  return [...by.values()].map(a => ({
-    source: 'search_console' as const,
-    keyword: a.keyword,
-    impressions: a.imp,
-    clicks: a.clicks,
-    position: a.imp > 0 ? r1(a.posW / a.imp) : null,
-    ranking_page: [...a.pages.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null,
-  })).sort((x, y) => y.impressions - x.impressions)
+/** Pure: Search Console keyword totals → research rows, most impressions
+ *  first. ranking_page stays null: the sync stores keyword rows without a page
+ *  (query+page is not fetched), so Search Console cannot name the ranking URL;
+ *  the WordPress check in checkBlogKeywordLive covers existing posts. */
+export function gscResearch(totals: GscKeywordTotal[]): ResearchKeyword[] {
+  return totals
+    .filter(t => t.keyword.trim())
+    .map(t => ({
+      source: 'search_console' as const,
+      keyword: t.keyword.trim(),
+      impressions: t.impressions,
+      clicks: t.clicks,
+      position: t.impressions > 0 ? r1(t.position) : null,
+      ranking_page: null,
+    }))
+    .sort((x, y) => y.impressions - x.impressions)
 }
 
 export interface KeywordResearch {
@@ -47,12 +40,10 @@ export interface KeywordResearch {
 
 export async function fetchKeywordResearch(supabase: Db, days = 90): Promise<KeywordResearch> {
   const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
-  // Paged: one PostgREST response stops at 1,000 rows whatever .limit() says,
-  // and these rows are summed, so a single request gave arbitrary totals.
-  const [gscRows, adsRows] = await Promise.all([
-    selectAll<Record<string, unknown>>((from, to) =>
-      supabase.from('google_search_console').select('keyword, page, impressions, clicks, position, date')
-        .neq('keyword', '__page__').gte('date', since).order('id').range(from, to), { label: 'google_search_console read' }),
+  // Search Console totals are summed in the database (gsc_keyword_totals);
+  // keyword_ideas is paged because one response stops at 1,000 rows.
+  const [gscTotals, adsRows] = await Promise.all([
+    fetchGscKeywordTotals(supabase, since),
     selectAll<Record<string, unknown>>((from, to) =>
       supabase.from('keyword_ideas').select('keyword, avg_monthly_searches, synced_at').order('keyword').range(from, to), { label: 'keyword_ideas read' }),
   ])
@@ -62,7 +53,8 @@ export async function fetchKeywordResearch(supabase: Db, days = 90): Promise<Key
     .sort((x, y) => y.impressions - x.impressions)
   const maxOf = (rows: Array<Record<string, unknown>>, k: string) =>
     rows.reduce<string | null>((m, r) => (typeof r[k] === 'string' && (!m || (r[k] as string) > m) ? r[k] as string : m), null)
-  return { rows: [...aggregateGsc(gscRows), ...adsResearch], gsc_as_of: maxOf(gscRows, 'date'), ads_as_of: maxOf(adsRows, 'synced_at') }
+  const gscAsOf = gscTotals.reduce<string | null>((m, t) => (t.last_date && (!m || t.last_date > m) ? t.last_date : m), null)
+  return { rows: [...gscResearch(gscTotals), ...adsResearch], gsc_as_of: gscAsOf, ads_as_of: maxOf(adsRows, 'synced_at') }
 }
 
 /** The full live gate for one blog keyword: research grounding + strict

@@ -2,7 +2,12 @@
  * CoffeeFlow — Google Search Console Sync
  *
  * Fetches organic search performance (keywords, clicks, impressions, CTR, position)
- * from Google Search Console for the last 30 days and upserts into google_search_console table.
+ * from Google Search Console and upserts into google_search_console table.
+ *
+ * Each run syncs a short window: by default the last 5 days ending yesterday
+ * (Search Console revises roughly the last 3). A backfill passes
+ * { "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD" }, at most 14 days per
+ * call. One call for the whole 90 days (~130k rows) hit the worker's resource limit.
  *
  * Site URL: https://www.minuto.co.il (set via GOOGLE_SITE_URL secret)
  *
@@ -16,7 +21,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
-import { fetchAllGscRows, toDbRows, upsertInBatches, type GscApiRow } from './rows.ts'
+import { forEachGscPage, syncWindow, toDbRows, upsertInBatches, type GscApiRow, type GscDbRow } from './rows.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -52,6 +57,12 @@ serve(async (req) => {
   const startedAt = new Date().toISOString()
   let records = 0
 
+  const win = syncWindow(await req.json().catch(() => ({})))
+  if ('error' in win) {
+    return new Response(JSON.stringify({ error: win.error }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
+  }
+  const { startDate, endDate } = win
+
   try {
     // Fetch stored OAuth token (same token as google-sync)
     const { data: tokenRow } = await supabase
@@ -73,21 +84,11 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('GOOGLE_SITE_URL') || 'https://www.minuto.co.il'
     const encodedSite = encodeURIComponent(siteUrl)
 
-    // Date range: last 90 days. Search Console retains 16 months of data and
-    // a 30-day window dropped queries that were still ranking but slow-moving.
-    const today = new Date()
-    // Search Console has a ~2-day delay, so end at yesterday
-    today.setDate(today.getDate() - 1)
-    const endDate = today.toISOString().split('T')[0]
-    const startDate = new Date(today.getTime() - 89 * 24 * 60 * 60 * 1000)
-      .toISOString().split('T')[0]
-
     console.log(`Fetching GSC data for ${siteUrl} from ${startDate} to ${endDate}`)
 
     // One searchAnalytics.query call, as a page of rows. Search Console caps a
-    // call at 25,000 rows, so fetchAllGscRows repeats it with startRow until
-    // every row is in (rowLimit 1,000 used to keep only the top 1,000
-    // query-day pairs of the 90 days).
+    // call at 25,000 rows; forEachGscPage repeats it with startRow and hands
+    // each page over before fetching the next.
     const queryPage = (dimensions: string[]) => async (startRow: number, rowLimit: number): Promise<GscApiRow[]> => {
       const res = await fetch(
         `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSite}/searchAnalytics/query`,
@@ -107,29 +108,31 @@ serve(async (req) => {
       return (await res.json()).rows ?? []
     }
 
+    // Upsert each page in batches of 1,000. Any write error throws, so the run
+    // is logged as an error instead of a silent success.
+    const upsert = (batch: GscDbRow[]) =>
+      supabase.from('google_search_console').upsert(batch, { onConflict: 'date,keyword,page' })
+    const syncedAt = new Date().toISOString()
+
     // Query 1: every keyword (query + date dimensions)
-    const rows = await fetchAllGscRows(queryPage(['query', 'date']))
-    console.log(`Fetched ${rows.length} keyword rows`)
-
-    // Query 2: every page (page + date dimensions). As before, a failure here
-    // does not fail the keyword sync.
-    const pageRows = await fetchAllGscRows(queryPage(['page', 'date'])).catch((e) => {
-      console.warn(`Page rows skipped: ${e instanceof Error ? e.message : String(e)}`)
-      return [] as GscApiRow[]
+    await forEachGscPage(queryPage(['query', 'date']), async (page) => {
+      records += await upsertInBatches(toDbRows(page, [], syncedAt), upsert, 1000)
     })
-    console.log(`Fetched ${pageRows.length} page rows`)
+    console.log(`Keyword rows upserted: ${records}`)
 
-    // Upsert in batches of 1,000 (was one request per row, which pushed busy
-    // runs past the 150 s gateway limit; full paging now writes every query,
-    // so keep the round trips few). Any write error throws, so the run is
-    // logged as an error instead of a silent success.
-    const upsertStarted = Date.now()
-    records = await upsertInBatches(
-      toDbRows(rows, pageRows, new Date().toISOString()),
-      (batch) => supabase.from('google_search_console').upsert(batch, { onConflict: 'date,keyword,page' }),
-      1000,
+    // Query 2: every page (page + date dimensions). As before, a Search Console
+    // error here does not fail the keyword sync (it ends the page rows); a
+    // database write error still fails the run.
+    const keywordRecords = records
+    const pagePage = queryPage(['page', 'date'])
+    await forEachGscPage(
+      (startRow, rowLimit) => pagePage(startRow, rowLimit).catch((e) => {
+        console.warn(`Page rows stopped: ${e instanceof Error ? e.message : String(e)}`)
+        return [] as GscApiRow[]
+      }),
+      async (page) => { records += await upsertInBatches(toDbRows([], page, syncedAt), upsert, 1000) },
     )
-    console.log(`Upserted ${records} rows in ${Date.now() - upsertStarted} ms`)
+    console.log(`Page rows upserted: ${records - keywordRecords}`)
 
     await supabase.from('sync_log').insert({
       platform: 'google_search',
@@ -141,7 +144,7 @@ serve(async (req) => {
 
     console.log(`Done. Upserted ${records} rows.`)
 
-    return new Response(JSON.stringify({ success: true, records, site: siteUrl }), {
+    return new Response(JSON.stringify({ success: true, records, site: siteUrl, start_date: startDate, end_date: endDate }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
 
