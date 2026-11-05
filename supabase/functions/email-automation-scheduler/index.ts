@@ -580,6 +580,9 @@ async function fetchBillingFirstNames(orderIds: number[]): Promise<Map<number, s
     console.warn('[email-automation] first names: WOO_KEY/WOO_SECRET not configured, sending without names')
     return names
   }
+  // Basic auth in a header (GET, no body to lose on a redirect), so the
+  // credentials stay out of URLs, logs and error output.
+  const auth = btoa(`${WOO_KEY}:${WOO_SECRET}`)
   for (let i = 0; i < orderIds.length; i += 100) {
     const chunk = orderIds.slice(i, i + 100)
     const params = new URLSearchParams({
@@ -587,9 +590,9 @@ async function fetchBillingFirstNames(orderIds: number[]): Promise<Map<number, s
       per_page: '100',
       _fields: 'id,billing',
     })
-    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}&consumer_key=${encodeURIComponent(WOO_KEY)}&consumer_secret=${encodeURIComponent(WOO_SECRET)}`
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}`
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { headers: { Authorization: `Basic ${auth}` } })
       if (!res.ok) {
         console.warn(`[email-automation] first names: WC orders fetch ${res.status}: ${(await res.text()).slice(0, 200)}`)
         continue
