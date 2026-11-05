@@ -15,7 +15,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
-import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE } from "./email_template.ts";
+import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE, isSpecialEdition, shortProductName } from "./email_template.ts";
+import { generateSceneImage } from "./scene_image.ts";
+import { resolveCoffee } from "./resolve_products.ts";
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
@@ -1108,7 +1110,12 @@ interface RenderDraftPayload {
   ctaText?: string;
   ctaUrl?: string;
   campaignType?: string;
+  // Optional design around the words (the words themselves never change):
+  products?: string[];      // 1-4 Minuto coffee products, exact or unique short names
+  sceneBrief?: string;      // a scene for an image built around the real bags
+  promoDeadline?: string;   // YYYY-MM-DD, last day of the offer (legal footer line)
 }
+
 
 const RENDER_SUBJECT_SUFFIX = " | פרסומת";
 
@@ -1133,6 +1140,15 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   }
   if (ctaText && !ctaUrl) return err(400, "cta_url is required when cta_text is given");
   if (ctaUrl && !isMinutoUrl(ctaUrl)) return err(400, "cta_url must be an https://minuto.co.il link");
+  const productNames = Array.isArray(p.products) ? p.products.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
+  const sceneBrief   = String(p.sceneBrief ?? "").trim();
+  const promoDeadline = String(p.promoDeadline ?? "").trim();
+  if (productNames.length > 4) return err(400, "at most 4 products");
+  if (sceneBrief.length > 600) return err(400, "scene_brief too long (≤600)");
+  if (sceneBrief && !productNames.length) return err(400, "scene_brief needs products: the scene is built around their real bags");
+  if (promoDeadline && (!/^\d{4}-\d{2}-\d{2}$/.test(promoDeadline) || isNaN(Date.parse(promoDeadline)))) {
+    return err(400, "promo_deadline must be YYYY-MM-DD");
+  }
 
   // Same legal marker the AI path adds (Communications Law §30א). Only the
   // marker is added; the creative subject stays as given.
@@ -1155,6 +1171,43 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .maybeSingle();
   if (dupe) return ok({ ok: true, existed: true, campaign: { id: dupe.id, subject, htmlContent: dupe.html_content } });
 
+  // Products: real catalog rows (photo, price, link), Minuto roasted coffee only.
+  // deno-lint-ignore no-explicit-any
+  let products: any[] = [];
+  if (productNames.length) {
+    const { data: rows, error: pErr } = await supabase
+      .from("woo_products")
+      .select("woo_id, name, price, regular_price, sale_price, short_description, image_url, permalink, categories, stock_status")
+      .eq("user_id", p.userId)
+      .eq("stock_status", "instock");
+    if (pErr) return err(500, `catalog: ${pErr.message}`);
+    const coffee = (rows ?? []).filter((pr: any) => isCoffeeBeans(pr) && pr.image_url);
+    const r = resolveCoffee(productNames, coffee);
+    if (!r.ok) return err(400, r.error);
+    products = r.products;
+  }
+
+  // Scene image around the real bags. A render only counts if it passes the
+  // label check; otherwise the first product's real photo is the hero.
+  let bannerUrl: string | null = null;
+  let scene: { attempts: number; issues: string[]; used: boolean } | null = null;
+  if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
+    // Special editions ship in a jar; a bag scene would show the wrong pack.
+    scene = { attempts: 0, issues: ["special edition (jar) in the products: real photos used instead"], used: false };
+  } else if (sceneBrief && products.length) {
+    const res = await generateSceneImage({
+      bags: products.map((pr) => ({ name: shortProductName(pr.name), image_url: pr.image_url })),
+      sceneBrief, geminiKey: GEMINI_KEY, supabaseUrl: SUPA_URL, supabase,
+    });
+    bannerUrl = res.url;
+    scene = { attempts: res.attempts, issues: res.issues, used: !!res.url };
+    console.log("render-draft scene:", JSON.stringify(scene));
+  }
+  const emailProducts = products.map((pr: any) => ({
+    woo_id: pr.woo_id, name: pr.name, price: pr.price, regular_price: pr.regular_price, sale_price: pr.sale_price,
+    short_description: pr.short_description, image_url: pr.image_url, permalink: pr.permalink,
+  }));
+
   // The template escapes the body itself and applies **bold** and line
   // breaks, so the copy goes in exactly as approved.
   const htmlContent = buildCampaignHtml({
@@ -1164,9 +1217,11 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     body,
     ctaText,
     ctaUrl:         ctaUrl || SITE_URL,
-    bannerUrl:      null,
-    products:       [],
+    bannerUrl,
+    products:       emailProducts,
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
+    promoDeadline:  promoDeadline || null,
+    heroProductId:  !bannerUrl && emailProducts.length ? emailProducts[0].woo_id : null,
   });
 
   const { data: inserted, error: insertErr } = await supabase
@@ -1179,7 +1234,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
       html_content:  htmlContent,
       status:        "draft",
       campaign_type: String(p.campaignType || "brain").slice(0, 40),
-      product_ids:   [],
+      product_ids:   products.map((pr: any) => String(pr.woo_id)),
       preheader:     preheader || null,
       cta_text:      ctaText || null,
       cta_url:       ctaUrl || null,
@@ -1188,7 +1243,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .single();
   if (insertErr) return err(500, insertErr.message);
 
-  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent } });
+  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent }, scene });
 }
 
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────
