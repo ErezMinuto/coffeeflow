@@ -73,3 +73,21 @@ export async function upsertInBatches(rows: GscDbRow[], upsert: Upsert, size = 5
   }
   return written
 }
+
+// Search Console returns at most 25,000 rows per searchAnalytics.query call;
+// more rows come from repeating the call with startRow. A page shorter than
+// rowLimit is the last one. Throws past maxRows rather than storing a silently
+// truncated set.
+export async function fetchAllGscRows(
+  fetchPage: (startRow: number, rowLimit: number) => Promise<GscApiRow[]>,
+  rowLimit = 25_000,
+  maxRows = 500_000,
+): Promise<GscApiRow[]> {
+  const out: GscApiRow[] = []
+  for (;;) {
+    const page = await fetchPage(out.length, rowLimit)
+    out.push(...page)
+    if (page.length < rowLimit) return out
+    if (out.length >= maxRows) throw new Error(`Search Console returned more than ${maxRows} rows, refusing a partial sync`)
+  }
+}

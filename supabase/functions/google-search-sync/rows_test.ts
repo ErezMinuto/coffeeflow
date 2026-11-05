@@ -1,5 +1,5 @@
 // deno run supabase/functions/google-search-sync/rows_test.ts
-import { chunk, dedupeByKey, toDbRows, upsertInBatches, type GscDbRow } from './rows.ts'
+import { chunk, dedupeByKey, fetchAllGscRows, toDbRows, upsertInBatches, type GscDbRow } from './rows.ts'
 import { selectAll } from '../_shared/select_all.ts'
 import { aggregateGscKeywords } from '../seo-agent/services/googleApi.ts'
 import { aggregateGsc, fetchKeywordResearch } from '../_shared/keyword_research.ts'
@@ -56,6 +56,23 @@ try {
 check('batched: error throws', err.includes('duplicate key value') && err.includes('after 500 rows'), err)
 check('batched: stops after failing batch', sent === 2, String(sent))
 check('batched: empty input = no calls', (await upsertInBatches([], async () => { throw new Error('called') })) === 0)
+
+// ── fetchAllGscRows: startRow paging past the 25,000-row API cap
+const api = Array.from({ length: 52_345 }, (_, i) => ({ keys: [`q${i}`, '2026-11-01'], clicks: 1 }))
+const starts: Array<[number, number]> = []
+const got = await fetchAllGscRows(async (startRow, rowLimit) => { starts.push([startRow, rowLimit]); return api.slice(startRow, startRow + rowLimit) })
+check('gsc paging: every row fetched', got.length === 52_345 && got[52_344].keys![0] === 'q52344', String(got.length))
+check('gsc paging: startRow sequence', JSON.stringify(starts) === '[[0,25000],[25000,25000],[50000,25000]]', JSON.stringify(starts))
+const exact: Array<number> = []
+const got2 = await fetchAllGscRows(async (startRow, rowLimit) => { exact.push(startRow); return api.slice(0, 50).slice(startRow, startRow + rowLimit) }, 25)
+check('gsc paging: exact multiple ends on an empty page', got2.length === 50 && JSON.stringify(exact) === '[0,25,50]', JSON.stringify(exact))
+check('gsc paging: no rows', (await fetchAllGscRows(async () => [])).length === 0)
+let gErr = ''
+try { await fetchAllGscRows(async () => { throw new Error('Search Console API error (403)') }) } catch (e) { gErr = (e as Error).message }
+check('gsc paging: API error propagates', gErr.includes('403'), gErr)
+let gCap = ''
+try { await fetchAllGscRows(async (s, n) => api.slice(s, s + n), 10_000, 30_000) } catch (e) { gCap = (e as Error).message }
+check('gsc paging: refuses past maxRows', gCap.includes('more than 30000'), gCap)
 
 // ── selectAll: walks pages past a 1,000-row server cap
 const table = Array.from({ length: 2345 }, (_, i) => ({ id: i }))
