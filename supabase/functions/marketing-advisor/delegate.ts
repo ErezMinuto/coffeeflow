@@ -60,6 +60,9 @@ async function renderEmailDraft(c: Record<string, any>): Promise<DelegateResult>
       campaignType: "brain",
       // Passed through untouched: the copy is the owner's, word for word.
       subject: c.subject, preheader: c.preheader, body: c.body, ctaText: c.cta_text, ctaUrl: c.cta_url,
+      // Design around the words (the words never change): real products, an
+      // image built around their real bags, and the offer's last day.
+      products: strList(c.products).slice(0, 4), sceneBrief: str(c.scene_brief), promoDeadline: str(c.promo_deadline),
     }),
   });
   let out: Record<string, any> = {};
@@ -68,9 +71,13 @@ async function renderEmailDraft(c: Record<string, any>): Promise<DelegateResult>
   if (!res.ok || !out?.ok || id == null) {
     return { text: `Email draft FAILED: ${out?.error ?? `HTTP ${res.status}`}. Nothing was created. Tell the owner what went wrong.`, data: { ok: false, error: out?.error ?? `HTTP ${res.status}` } };
   }
+  const sc = out?.scene;
+  const sceneNote = !sc ? ""
+    : sc.used ? ` A scene image built around the real bags passed the label check (attempt ${sc.attempts}) and is the hero.`
+    : ` The scene image did NOT pass (${(sc.issues ?? []).slice(-2).join(" / ") || "no image"}), so the real product photo is the hero instead. Tell the owner.`;
   return {
-    text: `Email DRAFT ${out.existed ? "already existed (same copy, created minutes ago; nothing new was made)" : "created"}: campaign id ${id}, subject "${out.campaign.subject}". The copy is word for word as approved; the only addition is the legal " | פרסומת" subject suffix. It is in Marketing → History. NOTHING was sent or scheduled: the owner picks the audience and sends it from there.`,
-    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history" },
+    text: `Email DRAFT ${out.existed ? "already existed (same copy, created minutes ago; nothing new was made)" : "created"}: campaign id ${id}, subject "${out.campaign.subject}". The copy is word for word as approved; the only addition is the legal " | פרסומת" subject suffix. It is in Marketing → History.${sceneNote} NOTHING was sent or scheduled: the owner picks the audience and sends it from there.`,
+    data: { ok: true, kind: "email_draft", campaign_id: id, existed: !!out.existed, link: "/marketing?tab=history", scene_used: sc?.used ?? null },
   };
 }
 
