@@ -1364,6 +1364,45 @@ interface SendCampaignPayload {
   resume?: boolean;
 }
 
+// Lower-cased addresses that may receive a campaign: opted_in contacts.
+// null = the read failed, and the caller must refuse to send rather than
+// fall back to an unchecked list.
+async function optedInEmails(): Promise<Set<string> | null> {
+  const out = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data: rows, error } = await supabase
+      .from("marketing_contacts")
+      .select("email")
+      .eq("opted_in", true)
+      .order("id")
+      .range(from, from + 999);
+    if (error) { console.error("optedInEmails:", error.message); return null; }
+    for (const r of rows ?? []) if (r.email) out.add(String(r.email).toLowerCase().trim());
+    if (!rows || rows.length < 1000) return out;
+  }
+}
+
+// Lower-cased members of every is_test_group group (the internal test list).
+async function testGroupEmails(): Promise<Set<string> | null> {
+  const { data: groups, error: gErr } = await supabase
+    .from("contact_groups").select("id").eq("is_test_group", true);
+  if (gErr) { console.error("testGroupEmails:", gErr.message); return null; }
+  const ids = (groups ?? []).map((g: any) => g.id);
+  const out = new Set<string>();
+  if (ids.length === 0) return out;
+  for (let from = 0; ; from += 1000) {
+    const { data: rows, error } = await supabase
+      .from("contact_group_members")
+      .select("email")
+      .in("group_id", ids)
+      .order("id")
+      .range(from, from + 999);
+    if (error) { console.error("testGroupEmails:", error.message); return null; }
+    for (const r of rows ?? []) if (r.email) out.add(String(r.email).toLowerCase().trim());
+    if (!rows || rows.length < 1000) return out;
+  }
+}
+
 async function handleSendCampaign(p: SendCampaignPayload) {
   if (!RESEND_KEY) return err(500, "RESEND_API_KEY not configured");
 
@@ -1377,13 +1416,27 @@ async function handleSendCampaign(p: SendCampaignPayload) {
   if (campErr || !campaign) return err(404, "Campaign not found");
 
   let recipients: Array<{ email: string; name?: string }>;
+  let consentSkipped = 0;
 
   if (p.testEmail) {
     recipients = [{ email: p.testEmail }];
   } else if (p.selectedRecipients && p.selectedRecipients.length > 0) {
-    // User selected specific recipients
-    recipients = p.selectedRecipients;
-    console.log(`Sending to ${recipients.length} selected recipients`);
+    // A hand-picked list or a group picked in the UI (the dashboard sends a
+    // group as its member list). Membership is not consent, so the list is
+    // checked here, never trusted from the caller: a real send keeps only
+    // opted-in contacts; a test send keeps only members of a test group.
+    const allowed = p.isTestSend ? await testGroupEmails() : await optedInEmails();
+    if (!allowed) return err(500, "Could not load the consent list; nothing was sent");
+    const seen = new Set<string>();
+    recipients = [];
+    for (const r of p.selectedRecipients) {
+      const e = String(r?.email || "").toLowerCase().trim();
+      if (!e || seen.has(e) || !allowed.has(e)) continue;
+      seen.add(e);
+      recipients.push({ email: e, name: r.name || undefined });
+    }
+    consentSkipped = p.selectedRecipients.length - recipients.length;
+    console.log(`Sending to ${recipients.length} of ${p.selectedRecipients.length} selected recipients (${consentSkipped} skipped: ${p.isTestSend ? "not in a test group" : "not opted in"} or duplicate)`);
   } else if (p.groupName) {
     // Target a specific contact_group — intersect with opted-in marketing_contacts.
     const { data: groupRow } = await supabase
@@ -1470,7 +1523,11 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     console.log(`Resume: ${before} -> ${recipients.length} (excluded ${alreadySent.size} already-sent)`);
   }
 
-  if (recipients.length === 0) return err(400, "No recipients");
+  if (recipients.length === 0) {
+    return err(400, consentSkipped > 0
+      ? `No recipients: all ${consentSkipped} selected addresses were skipped (${p.isTestSend ? "not in a test group" : "not opted in to marketing email"})`
+      : "No recipients");
+  }
 
   // Resend Batch API: up to 100 personalized emails per request. This keeps
   // us well under any rate limit (each call = 1 request, not N) and is the
@@ -1646,6 +1703,7 @@ async function handleSendCampaign(p: SendCampaignPayload) {
     errorCount:  errors.length,
     errors:      errors.slice(0, 5),
     isTest:      !!p.testEmail,
+    consentSkipped,
   });
 }
 
