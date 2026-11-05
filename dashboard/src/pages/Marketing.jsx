@@ -149,6 +149,13 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
   const syncProgress  = useAnimatedProgress(syncing, 12);
 
   const optedInCount = (data.marketingContacts || []).filter(c => c.opted_in).length;
+  // Group membership is not consent: a group send only reaches opted-in
+  // contacts (generate-campaign enforces the same server-side).
+  const optedInEmails = useMemo(() => new Set(
+    (data.marketingContacts || [])
+      .filter(c => c.opted_in && c.email)
+      .map(c => c.email.toLowerCase().trim())
+  ), [data.marketingContacts]);
 
   // Members of any group flagged as is_test_group — deduplicated by email.
   // Powers the one-click "send to test group" button next to the test email input.
@@ -591,7 +598,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
         payload.selectedRecipients = selectedContacts;
       }
       const result = await callCampaignFunction(supabase, 'send-campaign', payload);
-      showToast(`✅ הקמפיין נשלח ל-${result.sent} נמענים!`);
+      const skipped = result?.consentSkipped
+        ? ` (${result.consentSkipped} דולגו: לא אישרו קבלת דיוור)`
+        : '';
+      showToast(`✅ הקמפיין נשלח ל-${result.sent} נמענים!${skipped}`);
       setStep('sent');
     } catch (err) {
       showToast(`❌ שגיאה בשליחה: ${err.message}`, 'error');
@@ -1185,7 +1195,9 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {(data.contactGroups || []).map(g => {
-                  const count = (data.contactGroupMembers || []).filter(m => m.group_id === g.id).length;
+                  const groupMembers = (data.contactGroupMembers || []).filter(m => m.group_id === g.id);
+                  const count = groupMembers.length;
+                  const sendable = groupMembers.filter(m => optedInEmails.has((m.email || '').toLowerCase().trim())).length;
                   const isSelected = selectedGroupId === g.id;
                   return (
                     <label
@@ -1203,8 +1215,10 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                         checked={isSelected}
                         onChange={() => {
                           setSelectedGroupId(g.id);
-                          const members = (data.contactGroupMembers || [])
-                            .filter(m => m.group_id === g.id)
+                          // Group membership is not consent: only opted-in
+                          // contacts are sendable (the backend enforces the same).
+                          const members = groupMembers
+                            .filter(m => optedInEmails.has((m.email || '').toLowerCase().trim()))
                             .map(m => ({ email: m.email, name: m.name || undefined }));
                           setSelectedContacts(members);
                         }}
@@ -1220,7 +1234,7 @@ function AutoComposeTab({ data, user, showToast, duplicateData, clearDuplicate, 
                           }}>🧪 בדיקה</span>
                         )}
                         <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                          {count} חברים {g.description ? `• ${g.description}` : ''}
+                          {count} חברים{sendable < count ? ` · ${sendable} אישרו דיוור` : ''} {g.description ? `• ${g.description}` : ''}
                         </div>
                       </div>
                     </label>
