@@ -80,3 +80,11 @@ Deno.test("section data survives a round trip through the stored HTML", () => {
 Deno.test("short names drop the SEO tail", () => {
   assertEquals(shortProductName("פולי קפה אתיופיה דיי בנסה חד זני בקלייה בהירה  - Minuto Daye Bensa Ethiopia"), "אתיופיה דיי בנסה");
 });
+
+Deno.test("a generic Hebrew title falls back to the English name after the dash", () => {
+  // Real shop titles, 2026-11-05.
+  assertEquals(shortProductName("פולי קפה טרי 100% ערביקה  - Minuto Dark Chocolate"), "Dark Chocolate");
+  assertEquals(shortProductName("פולי קפה טרי ספשלטי קפה מינוטו אריסטו  - Minuto Specialty Coffee"), "אריסטו");
+  assertEquals(shortProductName("פולי קפה טרי ספשלטי קפה מינוטו אינטנסו  - Minuto Specialty Coffee"), "אינטנסו");
+  assertEquals(shortProductName("פולי קפה טרי"), "פולי קפה טרי");   // no English part: keep the Hebrew
+});
