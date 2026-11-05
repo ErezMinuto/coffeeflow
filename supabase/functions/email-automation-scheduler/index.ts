@@ -110,8 +110,20 @@ interface FirstOrderCandidate {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Renders {{ var }} placeholders in a template string. */
+/**
+ * Renders {{ var }} placeholders in a template string.
+ *
+ * An empty first_name drops the name together with the comma/space that
+ * belongs to it, so the greeting still reads naturally:
+ *   "היי {{ first_name }},"               → "היי,"
+ *   "תודה {{ first_name }}"               → "תודה"
+ *   "פרסומת: {{ first_name }}, הגיע…"     → "פרסומת: הגיע…"
+ *   "איך היה הקפה, {{ first_name }}?"     → "איך היה הקפה?"
+ */
 function renderTemplate(template: string, vars: Record<string, string | number>): string {
+  if (String(vars.first_name ?? '').trim() === '') {
+    template = template.replace(/,?[ \t]*\{\{\s*first_name\s*\}\}(?:,(?=[ \t]))?/g, '')
+  }
   return template.replace(/\{\{\s*([\w_]+)\s*\}\}/g, (_, key) => {
     const v = vars[key]
     return v === undefined || v === null ? '' : String(v)
@@ -514,7 +526,7 @@ async function findFirstPurchaseCandidates(
     if (!byEmail.has(email)) byEmail.set(email, [])
     byEmail.get(email)!.push({
       customer_email: email,
-      customer_name: null,  // filled in later if needed; we don't have it on woo_orders
+      customer_name: null,  // woo_orders has no name column; filled from WC below
       woo_order_id: o.woo_order_id,
       order_date: o.order_date,
     })
@@ -547,7 +559,58 @@ async function findFirstPurchaseCandidates(
     if (!optedIn.has(email)) continue
     candidates.push(orders[0])
   }
+
+  // woo_orders doesn't store the customer's name, so without this every
+  // first-purchase email greeted "חבר/ה". Pull billing.first_name live from
+  // WC for just the qualifying orders (usually a handful).
+  const names = await fetchBillingFirstNames(candidates.map(c => c.woo_order_id))
+  for (const c of candidates) c.customer_name = names.get(c.woo_order_id) ?? null
   return candidates
+}
+
+/**
+ * Billing first name per WC order id, fetched live from WooCommerce.
+ * Best-effort: a missing name only changes the greeting (renderTemplate
+ * drops it cleanly), so a WC failure is logged and never blocks a send.
+ */
+async function fetchBillingFirstNames(orderIds: number[]): Promise<Map<number, string>> {
+  const names = new Map<number, string>()
+  if (orderIds.length === 0) return names
+  if (!WOO_KEY || !WOO_SECRET) {
+    console.warn('[email-automation] first names: WOO_KEY/WOO_SECRET not configured, sending without names')
+    return names
+  }
+  // Basic auth in a header (GET, no body to lose on a redirect), so the
+  // credentials stay out of URLs, logs and error output.
+  const auth = btoa(`${WOO_KEY}:${WOO_SECRET}`)
+  for (let i = 0; i < orderIds.length; i += 100) {
+    const chunk = orderIds.slice(i, i + 100)
+    const params = new URLSearchParams({
+      include: chunk.join(','),
+      per_page: '100',
+      _fields: 'id,billing',
+    })
+    const url = `${WOO_URL}/wp-json/wc/v3/orders?${params.toString()}`
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Basic ${auth}` } })
+      if (!res.ok) {
+        console.warn(`[email-automation] first names: WC orders fetch ${res.status}: ${(await res.text()).slice(0, 200)}`)
+        continue
+      }
+      const orders = await res.json()
+      if (!Array.isArray(orders)) {
+        console.warn(`[email-automation] first names: WC returned non-array: ${JSON.stringify(orders).slice(0, 200)}`)
+        continue
+      }
+      for (const o of orders) {
+        const name = String(o?.billing?.first_name ?? '').trim()
+        if (typeof o?.id === 'number' && name) names.set(o.id, name)
+      }
+    } catch (e: any) {
+      console.warn(`[email-automation] first names: ${e.message}`)
+    }
+  }
+  return names
 }
 
 /**
@@ -854,11 +917,11 @@ async function processAutomation(
     }
   }
 
-  // Render subject + body. customer_name might be null — fall back to
-  // a friendly default so the greeting still reads well. coupon_code
-  // is empty string when no coupon was created (template should not
-  // reference it in that case; if it does, renders as empty).
-  const firstName = (candidate.customer_name ?? 'חבר/ה').trim()
+  // Render subject + body. customer_name might be null — renderTemplate
+  // then drops the name from the greeting ("היי," not "היי חבר/ה,").
+  // coupon_code is empty string when no coupon was created (template
+  // should not reference it in that case; if it does, renders as empty).
+  const firstName = (candidate.customer_name ?? '').trim()
   const unsubscribeUrl = generateUnsubscribeUrl(candidate.customer_email)
   const vars = {
     first_name: firstName,
@@ -1038,7 +1101,7 @@ serve(async (req) => {
 
     const previews: any[] = []
     for (const c of candidates) {
-      const firstName = (c.customer_name ?? 'חבר/ה').trim()
+      const firstName = (c.customer_name ?? '').trim()
       const unsubscribeUrl = generateUnsubscribeUrl(c.customer_email)
       const vars = {
         first_name: firstName,
