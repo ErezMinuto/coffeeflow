@@ -1064,6 +1064,7 @@ async function handleUpdateDraft(p: UpdateDraftPayload) {
         offer:          design.offer,
         gridTitle:      design.gridTitle,
         closingText:    design.closingText,
+        sceneBrief:     typeof design.sceneBrief === "string" ? design.sceneBrief : undefined,
       });
     } catch (buildErr: any) {
       console.error("update-draft:build-html-failed", buildErr?.message, buildErr?.stack);
@@ -1222,6 +1223,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
     promoDeadline:  promoDeadline || null,
     heroProductId:  !bannerUrl && emailProducts.length ? emailProducts[0].woo_id : null,
+    sceneBrief:     sceneBrief || undefined,
   });
 
   const { data: inserted, error: insertErr } = await supabase

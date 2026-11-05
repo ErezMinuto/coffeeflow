@@ -61,6 +61,7 @@ export interface EmailParams {
   offer?: EmailOffer | null;
   gridTitle?: string;
   closingText?: string;         // one line above the last button
+  sceneBrief?: string;          // the scene the hero image was asked for (stored, not rendered)
 }
 
 // Design C, approved by Erez on 2026-11-05 after a dark-mode check in the
@@ -506,6 +507,7 @@ export interface EmailDesign {
   offer?: EmailOffer | null;
   gridTitle?: string;
   closingText?: string;
+  sceneBrief?: string;
   bannerUrl?: string | null;
   productNotes?: Record<string, { note?: string; display_name?: string }>;
 }
@@ -522,7 +524,7 @@ export function designOf(p: EmailParams): EmailDesign {
   return {
     style: p.style, kicker: p.kicker, headline: p.headline, heroProductId: p.heroProductId ?? null,
     notes: p.notes, facts: p.facts, tip: p.tip ?? null, offer: p.offer ?? null,
-    gridTitle: p.gridTitle, closingText: p.closingText, bannerUrl: p.bannerUrl ?? null, productNotes,
+    gridTitle: p.gridTitle, closingText: p.closingText, sceneBrief: p.sceneBrief, bannerUrl: p.bannerUrl ?? null, productNotes,
   };
 }
 

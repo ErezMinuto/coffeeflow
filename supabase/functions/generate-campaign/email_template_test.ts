@@ -88,3 +88,12 @@ Deno.test("a generic Hebrew title falls back to the English name after the dash"
   assertEquals(shortProductName("פולי קפה טרי ספשלטי קפה מינוטו אינטנסו  - Minuto Specialty Coffee"), "אינטנסו");
   assertEquals(shortProductName("פולי קפה טרי"), "פולי קפה טרי");   // no English part: keep the Hebrew
 });
+
+Deno.test("the scene brief is stored in the design but never shown", () => {
+  const scene = "four bags on a warm oak counter, morning light";
+  const html = buildCampaignHtml({ ...legacy, products: [], sceneBrief: scene, bannerUrl: "https://ytydgldyeygpzmlxvpvb.supabase.co/storage/v1/object/public/marketing/scenes/x.jpg" });
+  assertEquals(decodeDesign(html).sceneBrief, scene);
+  assertEquals(html.includes(scene), false);
+  // An older draft without one decodes to undefined, not an error.
+  assertEquals(decodeDesign(buildCampaignHtml({ ...legacy, products: [] })).sceneBrief, undefined);
+});
