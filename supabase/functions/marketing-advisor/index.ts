@@ -15,6 +15,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { decodeDesign } from "../generate-campaign/email_template.ts";
 import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
@@ -2731,7 +2732,7 @@ ${dataSection}`;
       // live API call: this runs on every chat turn, and the strategist can pull
       // live Google numbers itself with get_google_campaign_performance.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts, brainEmails] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -2753,6 +2754,12 @@ ${dataSection}`;
           .select("idea_id, campaign_name, campaign_type, daily_budget_ils, status, created_at, warnings")
           .order("created_at", { ascending: false })
           .limit(10),
+        // Scenes already asked for, so a new email image doesn't repeat them.
+        supabase.from("campaigns")
+          .select("created_at, subject, html_content")
+          .eq("campaign_type", "brain")
+          .order("created_at", { ascending: false })
+          .limit(8),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -2774,6 +2781,12 @@ ${dataSection}`;
           return `  • id=${c.campaign_id} | ${c.name} — ${c.advertising_channel_type ?? "?"} — ${c.status} — ${daily} — bidding ${c.bidding_strategy_type ?? "?"}`;
         })
         .join("\n") || "  (no Google campaigns synced — run a Google sync, or the account has none)";
+
+      const scenesBlock = (brainEmails.data ?? [])
+        .map((c: any) => ({ c, scene: decodeDesign(c.html_content).sceneBrief }))
+        .filter((x: any) => typeof x.scene === "string" && x.scene.trim())
+        .map((x: any) => `  • [${String(x.c.created_at).slice(0, 10)}] ${String(x.c.subject).slice(0, 60)}: ${String(x.scene).slice(0, 200)}`)
+        .join("\n") || "  (none yet)";
 
       const googleDraftsBlock = (googleDrafts.data ?? [])
         .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.campaign_type} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
@@ -2859,6 +2872,7 @@ Your tools fall into two classes, and the distinction matters:
 6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a BLOG article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. It does NOT write emails. Never tell the owner a draft is on its way unless this tool returned "queued".
 7. \`delegate_to_agent\` — hands work to the agent that makes it: \`email\` (the email agent), \`blog\` (the blog writer) or \`instagram\` (the IG worker). Fire ONLY after the owner's explicit yes in chat for that specific piece; the work then goes straight to the agent with no further approval click. Everything it makes is a DRAFT: nothing is sent, scheduled or published, and the owner sends or publishes it themselves.
    - Email with FINISHED copy (the owner wrote or approved the exact words): pass \`final_copy\` with subject, preheader, body, cta_text, cta_url. The text is used WORD FOR WORD: copy it exactly from the owner's approved version, do not polish, shorten, translate or "fix" it. **bold** and line breaks are kept. cta_url must be a minuto.co.il link. The only change the system makes is the legal " | פרסומת" suffix on the subject.
+     To make it a real marketing email, also pass \`products\` (1-4 Minuto coffees it features), \`scene_brief\` (an English photo scene that fits this email and differs from the recent scenes in your live data; the image is built around those products' REAL bags and label-checked, with the real product photo as the fallback) and \`promo_deadline\` (YYYY-MM-DD) when there is an offer end date. Propose the products and the scene to the owner in chat first; the image takes about a minute.
    - Email from a BRIEF (no finished copy): pass \`brief\` with angle, and optionally subject_he, products, target_segment. The email agent writes the copy.
    - Blog: \`brief\` with keyword (Hebrew), topic (the H1), key_points, products (exact Minuto coffee names). Instagram: \`brief\` with caption_he (the approved Hebrew caption), optional hashtags, media_type, product_name.
    - Report exactly what the result says: a finished-copy email is a draft in Marketing → History right away; a brief is queued and the draft appears a few minutes later. If it refused or failed, say so and do not promise a draft. Never say an email was sent or scheduled.
@@ -2916,6 +2930,9 @@ ${draftsBlock}
 
 ## Past Google Drafts (created via this strategist — for continuity)
 ${googleDraftsBlock}
+
+## Recent email image scenes (scene_brief of the latest email drafts you made)
+${scenesBlock}
 
 ## Recent organic posts/reels — boostable (pass existing_post {source:"ig", id} to draft_meta_campaign to run one AS an ad; no image needed)
 ${postsBlock}
@@ -3018,6 +3035,9 @@ ${postsBlock}
                 body:      { type: "string", description: "Full body. Use \\n for line breaks and **text** for bold, as in the approved copy. No greeting is added." },
                 cta_text:  { type: "string", description: "Button text." },
                 cta_url:   { type: "string", description: "Button link, must be https://minuto.co.il or https://www.minuto.co.il." },
+                products:  { type: "array", items: { type: "string" }, description: "Optional, 1-4 Minuto coffee products to feature, by name (\"Aristo\", \"Dark Chocolate\"). Shown as product cards with their real photo, price and link. If a name is refused, the result lists the valid ones: pick from it and call again." },
+                scene_brief: { type: "string", description: "Optional, needs products. One or two sentences in English describing a photo SCENE that fits this email's message, offer and season: setting, surface, light, props and mood. It must differ from the scenes listed under 'Recent email image scenes' in your live data. The image is generated around the REAL bags of the products and checked against them; if it fails the check, the real product photo is used. Don't describe the bags themselves and don't ask for text in the image." },
+                promo_deadline: { type: "string", description: "Optional YYYY-MM-DD: last day of the offer, shown in the legal footer line." },
               },
               required: ["subject", "body"],
             },

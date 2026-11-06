@@ -15,6 +15,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
 import { callClaude, MODEL_CAMPAIGN, MODEL_CAMPAIGN_CHEAP } from "../seo-agent/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { buildCampaignHtml, decodeDesign, DEFAULT_STYLE, isSpecialEdition, shortProductName } from "./email_template.ts";
+import { generateSceneImage } from "./scene_image.ts";
+import { resolveCoffee } from "./resolve_products.ts";
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
@@ -30,7 +33,6 @@ const SENDER_EMAIL   = Deno.env.get("SENDER_EMAIL")              ?? "info@minuto
 const UNSUBSCRIBE_BASE = Deno.env.get("UNSUBSCRIBE_BASE_URL")   ?? `${SUPA_URL}/functions/v1/generate-campaign`;
 const RESEND_AUDIENCE_ID = Deno.env.get("RESEND_AUDIENCE_ID");
 if (!RESEND_AUDIENCE_ID) throw new Error("RESEND_AUDIENCE_ID secret is required");
-const LOGO_URL       = "https://minuto.co.il/content/uploads/2025/03/Frame-14.png";
 const SITE_URL       = "https://minuto.co.il";
 
 // Allowed origins for CORS (CoffeeFlow app + Minuto website)
@@ -75,21 +77,22 @@ function err(status: number, message: string) {
   });
 }
 
-function escapeHtml(str: string): string {
-  if (!str) return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+// Campaign brand guard: these never lead an email (green / unroasted coffee,
+// resold Veneto and Toddy). Same list as fetchMinutoCoffeeCatalog.
+function isOffBrandHero(name: string): boolean {
+  return /ירוק|green coffee|unroasted|raw coffee|veneto|ונטו|toddy|טודי/i.test(String(name ?? ""));
 }
 
-function formatPrice(raw: string): string {
-  if (!raw) return "";
-  // "4700.0000" → "4,700" | "5490" → "5,490" | "89.90" → "89.90"
-  const num = parseFloat(raw);
-  if (isNaN(num)) return raw;
-  // If it's a whole number (or .0000), drop decimals; otherwise keep 2
-  const isWhole = num === Math.floor(num);
-  return isWhole
-    ? Math.floor(num).toLocaleString("en-IL")
-    : num.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const PROMO_RE = /\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד/;
+
+// Woo short descriptions arrive tag-stripped but with entities (&#8211;).
+function plainText(raw: unknown): string {
+  return String(raw ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function generateUnsubscribeUrl(email: string): string {
@@ -304,249 +307,6 @@ function getSeasonalContext(): string {
   ].filter(Boolean).join("\n");
 }
 
-// ── Professional Email Template ─────────────────────────────────────────────
-
-function buildCampaignHtml(params: {
-  subject: string;
-  preheader: string;
-  greeting: string;
-  body: string;
-  ctaText: string;
-  ctaUrl: string;
-  bannerUrl?: string | null;
-  products: Array<{
-    name: string;
-    price?: string;
-    regular_price?: string;
-    sale_price?: string;
-    short_description?: string;
-    image_url?: string;
-    permalink?: string;
-  }>;
-  unsubscribeUrl: string;
-  promoDeadline?: string | null;
-}): string {
-  const { subject, preheader, greeting, body, ctaText, ctaUrl, bannerUrl, products, unsubscribeUrl, promoDeadline } = params;
-
-  // The stored subject has a " | פרסומת" suffix for mail-client display
-  // (Communications Law §30א compliance), but the visual banner heading
-  // should show only the creative subject — the legal marker belongs in
-  // the mail client header, not on the marketing image. Strip any form of
-  // the marker (new suffix format, legacy prefix format, RTL variants) for
-  // the in-banner h1 rendering only. The email subject in the mail client
-  // is unaffected.
-  const bannerSubject = String(subject || "")
-    .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/, "")
-    .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/, "")
-    .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
-    // The subject may carry one emoji for the inbox; the clean in-email
-    // headline shows none.
-    .replace(/\p{Extended_Pictographic}\uFE0F?/gu, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  // Append UTM parameters to minuto.co.il links only.
-  // Convention: utm_source=email, utm_medium=email (industry standard).
-  // Two placeholders substituted per-send by handleSendCampaign:
-  //   {{UTM_CAMPAIGN}} → human-readable campaign slug (e.g. moka_bialetti_apr2026)
-  //   {{UTM_GROUP}}    → contact group / RFM segment slug (e.g. rfm_champions)
-  // utm_content combines link position + group so GA4 can answer both
-  // "which link in the email got clicks" and "which segment converted".
-  // Encoded manually — URLSearchParams would percent-encode {{}} and break the replace.
-  const addUtms = (rawUrl: string | undefined, content: string): string => {
-    if (!rawUrl) return "";
-    if (!rawUrl.includes("minuto.co.il")) return rawUrl;
-    if (rawUrl.includes("utm_source=")) return rawUrl; // don't double-up
-    const sep = rawUrl.includes("?") ? "&" : "?";
-    return `${rawUrl}${sep}utm_source=email&utm_medium=email&utm_campaign={{UTM_CAMPAIGN}}&utm_content=${encodeURIComponent(content)}__{{UTM_GROUP}}`;
-  };
-
-  // Clean house design (approved 2026-10-25, same as the automation emails):
-  // white card on #F7F7F7, hairlines, #3C4A2C headings and buttons, no
-  // gradients, shadows, rounded cards or emoji.
-  const FONT = "'Heebo', Arial, Helvetica, sans-serif";
-
-  // Build a single product card cell — fixed dimensions, no description, consistent height
-  const buildProductCell = (p: any) => {
-    const productUrl = addUtms(p.permalink || ctaUrl, `product_${p.woo_id || "unknown"}`);
-    const hasDiscount = p.sale_price && p.regular_price && p.sale_price !== p.regular_price;
-    const priceHtml = hasDiscount
-      ? `<span style="text-decoration:line-through;color:#999999;font-size:13px;">₪${formatPrice(p.regular_price!)}</span>&nbsp;
-         <span style="color:#3C4A2C;font-weight:700;font-size:16px;">₪${formatPrice(p.sale_price!)}</span>`
-      : p.price ? `<span style="color:#3C4A2C;font-weight:700;font-size:16px;">₪${formatPrice(p.price)}</span>` : "";
-
-    // Truncate name to ~40 chars to keep cards uniform
-    const shortName = p.name && p.name.length > 40 ? p.name.slice(0, 38) + "..." : (p.name || "");
-
-    return `<td valign="top" width="50%" style="padding:8px;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;">
-    <tr><td align="center" style="padding:0 0 12px;">
-      <a href="${escapeHtml(productUrl)}" style="text-decoration:none;display:block;">
-        ${p.image_url
-          ? `<img class="product-img" src="${escapeHtml(p.image_url)}" width="220" alt="${escapeHtml(shortName)}" style="display:block;width:100%;max-width:220px;height:auto;margin:0 auto;border:0;" />`
-          : `<div style="width:100%;height:180px;background:#F7F7F7;font-size:0;line-height:0;">&nbsp;</div>`}
-      </a>
-    </td></tr>
-    <tr><td style="padding:0 4px;direction:rtl;text-align:right;font-family:${FONT};">
-      <a href="${escapeHtml(productUrl)}" style="font-size:15px;font-weight:700;color:#333333;text-decoration:none;display:block;margin-bottom:6px;line-height:1.4;min-height:42px;">
-        ${escapeHtml(shortName)}
-      </a>
-      ${priceHtml ? `<div style="margin-bottom:12px;">${priceHtml}</div>` : ""}
-      <a href="${escapeHtml(productUrl)}" style="display:inline-block;padding:8px 20px;color:#3C4A2C;border:1px solid #3C4A2C;border-radius:4px;text-decoration:none;font-size:14px;font-weight:700;">לרכישה</a>
-    </td></tr>
-  </table>
-</td>`;
-  };
-
-  // Build 2-column table rows; center the last product if odd count
-  const productRowsHtml = (() => {
-    let rows = '';
-    const len = products.length;
-    for (let i = 0; i < len; i += 2) {
-      if (i + 1 < len) {
-        // Full 2-column row
-        rows += '<tr>';
-        rows += buildProductCell(products[i]);
-        rows += buildProductCell(products[i + 1]);
-        rows += '</tr>';
-      } else {
-        // Last product alone — center it with empty cells on each side
-        rows += '<tr>';
-        rows += '<td width="25%" style="padding:0;">&nbsp;</td>';
-        rows += buildProductCell(products[i]);
-        rows += '<td width="25%" style="padding:0;">&nbsp;</td>';
-        rows += '</tr>';
-      }
-    }
-    return rows;
-  })();
-
-  return `<!DOCTYPE html>
-<html dir="rtl" lang="he" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
-  <title>${escapeHtml(subject)}</title>
-  <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
-  <!--<![endif]-->
-  <style>
-    body { font-family: ${FONT}; }
-    .product-table { table-layout: fixed; }
-    @media only screen and (max-width: 620px) {
-      .content-pad { padding-left: 24px !important; padding-right: 24px !important; }
-      .product-table td { display: block !important; width: 100% !important; max-width: 100% !important; }
-      .product-table td[width="25%"] { display: none !important; }
-    }
-  </style>
-</head>
-<body style="margin:0;padding:0;background:#F7F7F7;font-family:${FONT};color:#333333;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
-  ${preheader ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${escapeHtml(preheader)}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>` : ""}
-
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F7F7F7;">
-    <tr><td align="center" style="padding:32px 12px;">
-
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#FFFFFF;">
-
-        <!-- Logo -->
-        <tr>
-          <td align="center" style="padding:28px 32px 22px;border-bottom:1px solid #E6E6E6;">
-            <a href="${SITE_URL}"><img src="${LOGO_URL}" width="132" alt="Minuto Café Roastery" style="display:block;width:132px;max-width:132px;height:auto;border:0;" /></a>
-          </td>
-        </tr>
-
-        ${bannerUrl ? `
-        <!-- Banner -->
-        <tr>
-          <td style="padding:0;">
-            <img class="banner-img" src="${escapeHtml(bannerUrl)}" width="560" alt="" style="display:block;width:100%;max-width:560px;height:auto;border:0;" />
-          </td>
-        </tr>` : ""}
-
-        <!-- Headline -->
-        <tr>
-          <td class="content-pad" style="padding:36px 40px 0;direction:rtl;text-align:right;">
-            <h1 style="margin:0;font-family:${FONT};font-size:26px;line-height:1.3;font-weight:700;color:#3C4A2C;text-align:right;">${escapeHtml(bannerSubject)}</h1>
-            ${preheader ? `<p style="margin:10px 0 0;font-size:16px;line-height:1.6;color:#555555;">${escapeHtml(preheader)}</p>` : ""}
-          </td>
-        </tr>
-
-        ${greeting ? `
-        <!-- Greeting -->
-        <tr>
-          <td class="content-pad" style="padding:24px 40px 0;font-size:16px;line-height:1.75;color:#333333;direction:rtl;text-align:right;">
-            ${escapeHtml(greeting)}
-          </td>
-        </tr>` : ""}
-
-        <!-- Body Content -->
-        <tr>
-          <td class="content-pad" style="padding:${greeting ? '12px' : '24px'} 40px 20px;font-size:16px;line-height:1.75;color:#333333;direction:rtl;text-align:right;">
-            ${body.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/\n\n/g, '</p><p style="margin:0 0 16px;">').replace(/\n/g, "<br>")}
-          </td>
-        </tr>
-
-        ${ctaText ? `
-        <!-- Primary CTA Button -->
-        <tr>
-          <td class="content-pad" align="right" style="padding:4px 40px 36px;text-align:right;">
-            <a href="${escapeHtml(addUtms(ctaUrl, "cta_button"))}" style="display:inline-block;background:#3C4A2C;color:#FFFFFF;text-decoration:none;font-size:16px;font-weight:700;padding:14px 40px;border-radius:4px;">${escapeHtml(ctaText)}</a>
-          </td>
-        </tr>` : ""}
-
-        ${products.length > 0 ? `
-        <!-- Products Section -->
-        <tr>
-          <td class="content-pad" style="padding:28px 40px 4px;border-top:1px solid #E6E6E6;direction:rtl;text-align:right;">
-            <h2 style="margin:0;font-family:${FONT};font-size:20px;line-height:1.3;font-weight:700;color:#3C4A2C;">מוצרים שיעניינו אותך</h2>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:12px 32px 28px;">
-            <table class="product-table" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="table-layout:fixed;">
-              ${productRowsHtml}
-            </table>
-          </td>
-        </tr>` : ""}
-
-      </table>
-
-      <!-- Footer -->
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;">
-        <tr>
-          <td align="center" style="padding:24px 32px 8px;font-family:${FONT};font-size:13px;line-height:1.8;color:#555555;">
-            מינוטו קפה בע״מ · בית קלייה ספשלטי · אחד העם 22, רחובות 7626101<br>
-            <a href="${SITE_URL}" style="color:#555555;">minuto.co.il</a> · <a href="https://www.instagram.com/minuto_coffee/" style="color:#555555;">Instagram</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" style="padding:4px 32px 24px;font-family:${FONT};font-size:12px;line-height:1.8;color:#666666;direction:rtl;">
-            ${promoDeadline ? `<p style="margin:0 0 8px;font-weight:700;color:#555555;">
-              המבצע עד ה־${new Date(promoDeadline).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" })} או עד גמר המלאי, הראשון מבינהם | ט.ל.ח
-            </p>` : ""}
-            <p style="margin:0 0 6px;">הפניה אליך נעשית בדיוור ישיר בעקבות הרשמתך לקפה מינוטו.</p>
-            <p style="margin:0 0 6px;">
-              הודעת דואר זו נשלחה מכתובת דואר אלקטרוני שאינה נבדקת.
-              אין באפשרותנו להגיב על תשובות שנשלחות לכתובת דואר אלקטרוני זאת.
-              אנו מכבדים את פרטיותך, כנדרש עפ&quot;י דין.
-            </p>
-            <p style="margin:0 0 6px;">
-              להסרה מרשימת הדיוור
-              <a href="${escapeHtml(unsubscribeUrl)}" style="color:#666666;">לחץ/י כאן</a>.
-            </p>
-            <p style="margin:0;">Please do not reply to this mail · ט.ל.ח</p>
-          </td>
-        </tr>
-      </table>
-
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
 // ── Sync WooCommerce Products ───────────────────────────────────────────────
 
 async function handleSyncWooProducts(userId: string) {
@@ -757,26 +517,43 @@ async function handleGenerate(p: GeneratePayload) {
       .map(id => allProducts.find((pr: any) => pr.woo_id === id))
       .filter(Boolean);
   } else if (p.customInstructions) {
+    // Match on distinctive name words in any script ("דיי בנסה", "Jura"),
+    // not the generic ones every coffee shares.
     const instr = p.customInstructions.toLowerCase();
-    prioritized = allProducts.filter((pr: any) => {
-      const name = (pr.name || "").toLowerCase();
-      const tokens = name.match(/[a-zA-Z0-9]+/g) || [];
-      return tokens.some((t: string) => t.length >= 2 && instr.toLowerCase().includes(t.toLowerCase()));
-    });
+    const generic = new Set(["פולי", "קפה", "ספשלטי", "ספיישלטי", "מינוטו", "טרי", "זני", "בקלייה", "בהירה", "כהה", "ערביקה", "specialty", "coffee", "minuto", "arabica", "100%", "מבצע", "הנחה", "חדש", "מתנה"]);
+    const score = (pr: any) => new Set(((pr.name || "").toLowerCase().match(/[\p{L}\p{N}+]+/gu) || [])
+      .filter((w: string) => w.length >= 3 && !generic.has(w) && instr.includes(w))).size;
+    prioritized = allProducts
+      .map((pr: any) => ({ pr, n: score(pr) }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 12)
+      .map((x) => x.pr);
   }
-  const rest = allProducts.filter((pr: any) => !prioritized.includes(pr));
-  const orderedProducts = [...prioritized, ...rest].slice(0, 40);
+  // Minuto's own roasted coffee is always in view, so the model can pick a
+  // real bean as the hero; then the rest of the catalog, up to 50 items.
+  const isMinutoCoffee = (pr: any) =>
+    (pr.categories || []).some((c: any) => /פולי קפה טרי|תערובות קפה מינוטו/.test(typeof c === "string" ? c : c?.name || "")) &&
+    !isOffBrandHero(pr.name);
+  const coffee = allProducts.filter((pr: any) => isMinutoCoffee(pr) && !prioritized.includes(pr));
+  const rest = allProducts.filter((pr: any) => !prioritized.includes(pr) && !coffee.includes(pr));
+  const orderedProducts = [...prioritized, ...coffee, ...rest].slice(0, 50);
 
-  const productCatalog = orderedProducts.map((pr: any) => ({
+  // The model gets each product's own description so the notes it writes
+  // come from the shop page, not from its imagination. Descriptions only for
+  // the first 30 (matches, then our coffee) to keep the prompt small.
+  const productCatalog = orderedProducts.map((pr: any, i: number) => ({
     woo_id: pr.woo_id,
     name: pr.name,
     price: pr.price,
     sale_price: pr.sale_price || undefined,
     categories: pr.categories?.slice(0, 2),
+    off_brand: isOffBrandHero(pr.name) || undefined,
+    description: i < 30 ? plainText(pr.short_description).slice(0, 240) || undefined : undefined,
   }));
   console.log("Catalog size:", productCatalog.length, "prioritized:", prioritized.length, prioritized.map((p: any) => `${p.name}(${p.woo_id})`).join(", "));
 
-  // 3. Fetch past campaigns (for AI to avoid repetition + learn patterns)
+  // 3. Fetch past campaigns (for AI to avoid repetition)
   const { data: pastCampaigns } = await supabase
     .from("campaigns")
     .select("subject, campaign_type")
@@ -786,336 +563,296 @@ async function handleGenerate(p: GeneratePayload) {
     .limit(5);
 
   const pastSubjects = (pastCampaigns || []).map((c: any) => c.subject).filter(Boolean);
-  const sentCampaigns = (pastCampaigns || []).filter((c: any) => c.status === "sent");
-  const pastPatterns = sentCampaigns.slice(0, 3).map((c: any) =>
-    `נושא: ${c.subject} | סוג: ${c.campaign_type}`
-  ).join("\n");
 
   // 4. Seasonal context
   const seasonalContext = getSeasonalContext();
 
-  // 5. Call Claude AI
-  const systemPrompt = `אתה כותב מייל שיווקי בעברית למינוטו, בית קלייה קטן בישראל של ארז.
+  // The owner's instructions are the only source of a promotion. Without
+  // one, every promo word is stripped below (Consumer Protection Law §7).
+  const userAuthorizedPromo = PROMO_RE.test(p.customInstructions || "");
+
+  // 5. Call the model
+  const systemPrompt = `אתה כותב ועורך מייל שיווקי בעברית למינוטו קפה בית קלייה ספיישלטי, בית קלייה קטן ברחובות.
+המייל נבנה מסקשנים קבועים בתבנית מעוצבת: כותרת ראשית עם מוצר גיבור, תגיות טעם, פס עובדות, טקסט קצר, טיפ הכנה, בלוק הצעה, רשת מוצרים, וכפתור סיום. אתה ממלא את התוכן של כל סקשן. העיצוב כבר קיים, אל תכתוב HTML.
 
 === חוק היסוד: מה אתה לא יודע ===
+אתה לא ארז. אתה לא יודע מה קרה בקלייה השבוע, מה המלאי, או מה לקוחות אמרו. אל תמציא אירועים, סטטיסטיקות, ציטוטים, מספרי יחידות או "אתמול קליתי".
+כל עובדה על מוצר (טעמים, מקור, גובה, זן, עיבוד, משקל) חייבת להופיע בשדה description שלו בקטלוג. אם היא לא שם, אל תכתוב אותה. עדיף להשמיט שדה מאשר לנחש.
 
-אתה מודל שפה. אתה **לא** ארז. אתה לא יודע מה ארז עשה אתמול, מה הוא שתה, מה קרה בקלייה השבוע, כמה יחידות יש במלאי, או מה היה בחנות. **אל תמציא אירועים.**
+=== עובדות קבועות על מינוטו (מותר להשתמש) ===
+- קולים פולים טריים בכל שבוע. לעולם לא "כל בוקר" או "כל יום".
+- שקית קמעונאית של 330 גרם, סגורה. לעולם לא לתאר שקית פתוחה.
+- מהדורות מיוחדות (Roastery) נמכרות בצנצנת, לא בשקית.
 
-אסור בכל מחיר:
-- "אתמול הכנתי / שתיתי / טעמתי / קליתי / בדקתי"
-- "השבוע קליתי / עשינו / הוצאנו / טעמנו"
-- "יש X במלאי" או כל מספר ספציפי של יחידות
-- "X% יותר טוב" / "הכי טוב שבדקנו" / כל סטטיסטיקה
-- ציטוטי לקוחות שלא סופקו לך
+=== מוצר הגיבור ===
+- hero_product_id: המוצר שהמייל עליו. בדרך כלל פולי קפה קלויים של מינוטו.
+- אסור כגיבור: מוצרים עם off_brand=true (קפה ירוק/לא קלוי, Veneto, Toddy).
+- אם המשתמש ביקש מוצר מסוים, הוא הגיבור.
 
-**הכלל:** אם אתה לא יכול לאמת את המשפט עם הנתונים שבפרומפט הזה, אל תכתוב אותו כאילו הוא עובדה.
+=== הקול ===
+- חם, ישיר, ספציפי. משפטים קצרים. כמו הודעה מבית הקלייה, לא כמו פרסומת.
+- פנייה ברבים ("אתם", "תטעמו") או ניסוח ניטרלי. לא פנייה בלשון זכר יחיד ("תחזור", "תיהנה", "אתה").
+- בלי מקפים ארוכים (— או –) כסימן פיסוק. נקודות ופסיקים בלבד.
+- לא להשוות למתחרים, לסופרמרקט או לקפה של אחרים. רק היתרונות שלנו.
+- לא "ספשלטי" אלא "ספיישלטי". לא "מקלה" אלא "בית קלייה".
+- סימן קריאה אחד לכל היותר. בלי אימוג'י בגוף.
+- אסורים: "חוויה", "מיוחד", "לרמה הבאה", "מהפכה", "במיוחד בשבילך", "מעולה", "מדהים", "הכי טוב", "כדאי לנסות", "הסוד הוא", "הקיץ כבר כאן", "בלחיצת כפתור", "ישירות אליך".
 
-=== מה לכתוב במקום ===
+=== פתיחה (שדה body, פסקה ראשונה) ===
+אחת משלוש: סצנה שהקורא מזהה ("בוקר חם. הכוס הראשונה נשארת חצי מלאה."), חישוב בראש של הקורא, או טענה שבאמת מפתיעה. לא תזה גנרית, לא "השבוע בקלייה".
 
-אם המשתמש נתן לך רגע ספציפי בהנחיות (customInstructions) — תשתמש בו כמו שהוא. זה הקלט האמיתי היחיד שלך.
-
-אם המשתמש לא נתן כלום — תכתוב מזווית שלא מצריכה לדעת מה קרה השבוע:
-1. **זווית הקורא:** הסצנה של הקורא עכשיו. "הבוקר הזה כבר חם מדי לקפה חם בכוס."
-2. **עובדה על המוצר:** דבר שאפשר לאמת מהקטלוג. "חבילה של 250 גרם יוצאת ל-4 ליטר קולד ברו."
-3. **תצפית כללית:** אמירה שנכונה תמיד, לא השבוע. "קפה עם גוף מלא עובד יותר טוב קר מקפה עם חומציות גבוהה."
-
-=== איך אתה כותב ===
-- כמו וואטסאפ לחבר טוב. קצר, ישיר, חם.
-- **חובה** להתחיל ב-"היי," או "שלום," או "מה קורה," — לעולם לא בלי ברכת פתיחה.
-- משפטים קצרים. 5-10 מילים.
-- 70-110 מילים בסך הכל.
-
-=== חוק הפתיחה (קריטי) ===
-
-פתיחה חזקה היא אחת משלוש אפשרויות. כל השאר אסורות.
-
-**אפשרות 1 — סצנה/רגש שהקורא מזהה:**
-- "בוקר חם. הכוס הראשונה של הקפה החם נשארת חצי מלאה." ← הקורא *מרגיש* את זה.
-- "יש לך קפה בבית, יש לך מקרר, יש לך 18 שעות." ← הקורא חושב "נכון, אז מה הבעיה?".
-
-**אפשרות 2 — חישוב כלכלי בראש של הקורא:**
-- "בית קפה לוקח 22 שקל לכוס קולד ברו. אחת ביום זה 660 שקל בחודש." ← מחייב את הקורא לעצור ולחשב.
-
-**אפשרות 3 — טענה קונטרה-אינטואיטיבית (רק אם באמת מפתיעה):**
-- "רוב האנשים חושבים שקולד ברו = קלייה כהה. זה לא נכון." ← מפר את ציפיית הקורא, מחייב אותו להמשיך כדי לראות למה.
-- "קפה בהיר יותר טוב קר מקפה כהה." ← הפוך מהאינטואיציה, מעניין.
-
-זה חייב להיות באמת קונטרה-אינטואיטיבי. "הקפה שלנו הוא הכי טוב" זה לא קונטרה-אינטואיטיבי, זה רק בוסט.
-
-**פתיחות אסורות — כל השאר, כולל:**
-- תזה גנרית: "הקלייה היא הסוד בקולד ברו" ← משהו שכולם יודעים, לא מפתיע.
-- הכרזה על המותג: "אנחנו אוהבים להכין קולד ברו" ← מי אכפת.
-- הודעת חדשות גנרית: "השבוע בקלייה..." ← זה "השבוע ב...", לא פתיחה.
-- סיפור מומצא בגוף ראשון: "אתמול הכנתי..." ← אתה לא יודע מה הוא הכין אתמול.
-
-**כלל הבדיקה:** אם הפתיחה שלך יכולה להיות משפט ראשון בכתבה במגזין קפה בלי שינוי — **לא טוב**. מייל חייב להיות אישי (סצנה של הקורא), כלכלי (חישוב של הקורא), או מפתיע (טענה שמפרה ציפייה). בלוגים יכולים להיות מידע, מיילים לא יכולים.
-
-=== דוגמאות לטון הנכון ===
-
-**שם לב לשני דברים:** (א) אף אחת לא מתחילה ב"אתמול הכנתי" או "השבוע טעמנו", (ב) כולן פותחות ברגש/סצנה/חישוב, לא בתזה. זה הדפוס שאתה צריך להעתיק.
-
-דוגמה 1 (סצנה של בוקר):
-"היי,
-בוקר חם. הכוס הראשונה של הקפה החם נשארת חצי מלאה. זה הרגע שקולד ברו הופך מרעיון לצורך.
-הקולומביה שלנו — שוקולד, מעט פרי, חומציות רכה. מבנה שמחזיק קר במקום להתפרק.
-חבילת 250 גרם, באתר."
-
-דוגמה 2 (חישוב כלכלי מזווית הקורא):
-"שלום,
-כוס קולד ברו בבית קפה = 22 שקל. אחת ביום = 660 שקל בחודש.
-ערכת Toddy + חבילת 250 גרם של הפולים הקולומביאנים שלנו מייצרת 4 ליטר קולד ברו. קצת יותר משבועיים של בקרים, בפחות מכוס אחת של בית קפה.
-הערכה באתר."
-
-דוגמה 3 (אמירה שמזמינה את הקורא פנימה):
-"מה קורה,
-יש לך קפה בבית. יש לך מקרר. יש לך 18 שעות. זה כל מה שצריך לקולד ברו שלא נופל מזה של בית קפה.
-התערובת הקולומביאנית שלנו — גוף מלא, שוקולד, מעט פרי — עושה את העבודה. טחינה גסה, מים קרים, לילה במקרר.
-חבילת 250 גרם, באתר."
-
-מילים וביטויים אסורים (לא להשתמש בשום מצב):
-- "חובבי הקפה המתוחכמים"
-- "דיוק שוויצרי" / "דיוק גרמני"
-- "משקה משיי" / "משקה חלק" / "משקה שמחזיר לחיים"
-- "בלחיצת כפתור"
-- "מהפכה בטעם" / "חוללת מהפכה" / "לרמה הבאה" / "לוקחים את X לרמה הבאה"
-- "במיוחד בשבילך" / "נבחרו במיוחד"
-- "משהו מיוחד" / "משהו שווה במיוחד" / "הכנו משהו מיוחד"
-- "מחירים חגיגיים" / "מחירים מיוחדים" / "מחירים שלא יחזרו"
-- "המבצע לא נמשך כל השנה"
-- "ישירות אליך" / "ישירות אל המטבח שלך"
-- "קפה ברמה של בית קפה" / "חוויה ברמה של בית קפה"
-- "חלק, צלול ודל בחומציות" (כל רשימת שמות תואר גנרית)
-- "שנולד לX" / "שפשוט נולדו ל" (אנתרופומורפיזם זול)
-- "להתרענן בסטייל" / "מרגיש יותר טוב בסטייל"
-- "אנחנו יודעים מה חסר לך"
-- "השנה החלטנו" / "החלטנו לקחת"
-- "הקיץ כבר כאן" / "החורף הגיע" / "האביב פה" / "הסתיו מתקרב"
-- "חוויה בלתי נשכחת" / "חוויה ייחודית" / "חוויית קפה"
-- "הטריק הוא" / "הסוד הוא" / "הטיפ" / "הטיפ הוא" / "הטיפ שלי" / "רק צריך" / "רק סבלנות"
-- "כדאי לנסות" / "שווה לנסות" (סתמיים)
-- "יאללה לחנות" / "מחכה לך" / "בא לקחת"
-- כל ביטוי עם המילה "מיוחד" — קלישאה. תמיד יש דרך ספציפית יותר.
-- "מעולה" / "מדהים" / "פנטסטי" / "מצוין" / "המובחרים ביותר" / "הכי טוב שיש" — סופרלטיבים ריקים
-- שימוש ב-"!" יותר מפעם אחת
-- שימוש ביותר מאימוג'י 1
-- bullet lists עם אמוג'י — זה לא מייל, זה פוסט לינקדאין
-- **מקף ארוך (—, em dash) או מקף רגיל (–, en dash) כסימן פיסוק.** זה "טלפון" של AI — קופירייטרים אנושיים כמעט לא משתמשים במקפים באמצע משפט. **השתמש בנקודות ופסיקים במקום.** אם אתה רוצה לומר "X, Y, Z" — תשבור לשני משפטים: "X. Y ו-Z." אם אתה רוצה סוגרי משנה — תשבור גם אותם למשפטים נפרדים.
-
-**חוק בלתי-עביר: לא להמציא מבצעים, הנחות, אחוזים, או מחירים ספציפיים.**
-אם המשתמש לא ציין בהנחיות שלו "יש X% הנחה" או "המחיר ירד ל-Y", **אסור לך לכתוב שום דבר שכולל אחוז, מילה "הנחה", "מבצע", "חסכון", או "במחיר מיוחד".** זו עבירה על חוק הגנת הצרכן הישראלי ועל חוק הספאם. אם תכתוב "15% הנחה השבוע" כשאין כזה מבצע, העסק חשוף לתביעה ייצוגית. זה לא עניין של סגנון, זה עניין של חוקיות.
-
-אם אתה רוצה לסיים עם CTA, תשתמש ב-"באתר." פשוט — או "זמין באתר." או "במלאי באתר." אף פעם לא אחוז שלא אומת.
-
-**מבנה אסור:** אף פעם לא "מה מחכה לך בחנות?" ואחריו רשימת bullet points. זה קטלוג, לא מייל.
-
-כללי איכות:
-- בדוק איות של מילים לועזיות: specialty = ספשיאלטי (לא ספשלטי), espresso = אספרסו
-- אל תמציא מבצעים או אחוזי הנחה שלא צוינו בהנחיית המשתמש
-- אם המשתמש לא ציין הנחה ספציפית, אל תכתוב אחוזי הנחה
-- כתוב מחירים כמו שהם מופיעים בקטלוג. אם המחיר הוא 4500.0000, כתוב ₪4,500
+=== מבצעים ===
+${userAuthorizedPromo
+  ? "המשתמש ציין מבצע בהנחיות. השתמש רק בפרטים שהוא נתן (אחוז, קוד, מוצרים, תאריך). אל תוסיף פרטים ואל תחשב מחירים אחרי הנחה. שים את המבצע בשדה offer."
+  : "המשתמש לא ציין מבצע. אסור לכתוב אחוז, 'הנחה', 'מבצע', 'חסכון' או 'מחיר מיוחד' בשום שדה. offer יכול להציג רק מוצר אמיתי מהקטלוג (למשל ערכת התנסות) במחיר שלו בקטלוג, או להיות null."}
 
 ${seasonalContext}
 
 נושאים קודמים (לא לחזור): ${pastSubjects.join(", ") || "אין"}
 
-מוצרים זמינים:
-${JSON.stringify(productCatalog, null, 2)}
+מוצרים זמינים (JSON):
+${JSON.stringify(productCatalog)}
 
 ${p.customInstructions
-  ? `**הנחיית המשתמש (השתמש בזה כקלט אמיתי, אל תמציא סביב זה):**\n${p.customInstructions}`
-  : "**אין הנחיה מהמשתמש.** זה אומר: אל תמציא אירוע אישי של ארז. תפתח מזווית הקורא, כעובדה על המוצר, או כתצפית כללית (ראה דוגמאות)."}
+  ? `**הנחיית המשתמש (זה הקלט האמיתי היחיד, אל תמציא סביבו):**\n${p.customInstructions}`
+  : "**אין הנחיה מהמשתמש.** בחר פולי קפה של מינוטו מהקטלוג וכתוב מזווית הקורא או מעובדה מתוך ה-description."}
 
-חובה: בחר מוצרים מהרשימה למעלה! אם המשתמש ציין שמות מוצרים, מצא אותם בקטלוג לפי שם (חיפוש חלקי). תמיד כלול לפחות 2-4 מוצרים. **אל תמציא שמות של פולים, מחירים, או מספרי יחידות שלא בקטלוג.**
-
-החזר JSON בלבד:
+החזר JSON בלבד, בלי טקסט לפניו או אחריו:
 {
-  "subject": "נושא קצר עד 50 תווים, אימוג'י אחד מקסימום. **אסור לכלול את המילה 'פרסומת'** — המערכת מוסיפה ' | פרסומת' בסוף אוטומטית. אם תכלול אותה, היא תופיע פעמיים.",
-  "preheader": "משפט אחד קצר עד 60 תווים",
-  "greeting": "חובה: 'היי' או 'שלום' או 'מה קורה' — בלי תארים",
-  "body": "גוף קצר בעברית פשוטה, 70-110 מילים. שבירת שורות עם \\n. **אסור לכלול את המילה 'פרסומת' בגוף.** המערכת מוסיפה אותה רק לנושא (subject), לא לגוף.",
-  "cta_text": "טקסט קצר לכפתור",
-  "cta_url": "https://minuto.co.il/shop",
-  "product_ids": ["חובה! woo_id מספרים מהקטלוג למעלה. לפחות 2 מוצרים"],
+  "subject": "עד 50 תווים, אימוג'י אחד לכל היותר. בלי המילה 'פרסומת' (המערכת מוסיפה).",
+  "preheader": "משפט אחד עד 80 תווים. מוצג גם מתחת לכותרת.",
+  "kicker": "תווית קצרה מעל הכותרת, עד 5 מילים, למשל 'חד זני מאתיופיה · קלייה בהירה'",
+  "headline": "כותרת ראשית, עד 8 מילים, בלי אימוג'י",
+  "greeting": "'היי,' או 'שלום,' או ''",
+  "body": "2-3 פסקאות קצרות, 50-100 מילים בסך הכל. פסקאות מופרדות ב-\\n\\n. מותר **הדגשה** אחת.",
+  "cta_text": "טקסט כפתור, 2-4 מילים, פועל ברבים או שם פעולה (למשל 'להזמנת דיי בנסה')",
+  "cta_url": "קישור minuto.co.il של מוצר הגיבור, או https://minuto.co.il/shop",
+  "hero_product_id": 0,
+  "notes": ["2-4 תגיות טעם של מוצר הגיבור, מילה או שתיים כל אחת, מתוך ה-description. כשהגיבור הוא פולי קפה: חובה אם ה-description מזכיר טעמים או ארומות. [] אם אין בו טעם"],
+  "facts": [{"label": "מקור", "value": "..."}],
+  "tip": {"title": "איך להכין", "text": "משפט או שניים"},
+  "offer": null,
+  "products": [{"id": 0, "note": "שורת טעם קצרה מתוך ה-description שלו, עד 6 מילים", "display_name": "שם קצר עד 4 מילים"}],
+  "grid_title": "כותרת לרשת המוצרים, עד 5 מילים",
+  "closing_text": "משפט סיום קצר מעל הכפתור האחרון, או ''",
   "campaign_theme": "tips|story|promo|seasonal|education",
-  "banner_prompt": "A short English description of a CONCRETE coffee-only scene — beans, cup, latte art, bag, roasting drum, or café counter. NO metaphors. NO 'journey', 'road', 'mountain', 'landscape', 'travel', 'adventure'. NO people, vehicles, or outdoor scenery. Example: 'close-up of dark roasted coffee beans next to a white ceramic cup with steam, warm lighting, wooden table'. 10-20 words max."
-}`;
+  "banner_prompt": "English, 10-20 words, a concrete coffee-only scene (beans, cup, bag). Used only when the hero has no product photo."
+}
+
+הערות לשדות:
+- facts: עד 4 פריטים (מקור, גובה, זן, עיבוד, קלייה) ורק מה שכתוב ב-description של הגיבור. [] אם אין.
+- tip: רק אם יש טיפ הכנה כללי ונכון לסוג המוצר. אחרת null.
+- offer: null, או {"title": "...", "text": "...", "code": "רק קוד שהמשתמש נתן", "cta_text": "...", "cta_url": "קישור minuto.co.il", "product_id": 0}.
+- products: 2-4 מוצרים לרשת, לא כולל הגיבור. מוצרים משלימים אמיתיים מהקטלוג.`;
 
   // Routed through the shared client: measured in agent_cost_ledger and
   // switchable by the MODEL_CAMPAIGN slot, like the rest of the marketing stack.
   let rawText = "";
+  let stopReason = "";
   try {
     const res = await callClaude({
       sourceFn:  "generate-campaign",
       model:     MODEL_CAMPAIGN,
       system:    systemPrompt,
       messages:  [{ role: "user", content: p.customInstructions || "צור קמפיין שבועי" }],
-      maxTokens: 1500,
+      // Thinking models spend part of max_tokens before the JSON starts; the
+      // reply itself is ~1.5k tokens. A tight cap cut it off mid-JSON in prod.
+      maxTokens: 8192,
     });
     rawText = res.text;
+    stopReason = res.stop_reason;
   } catch (e: unknown) {
     console.error("model error:", e instanceof Error ? e.message : String(e));
     return err(500, "Claude API error: " + (e instanceof Error ? e.message : String(e)));
   }
-  console.log("model raw response length:", rawText.length);
+  console.log("model raw response length:", rawText.length, "stop:", stopReason, "model:", MODEL_CAMPAIGN);
 
   let campaign: any;
   try {
-    const clean = rawText.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-    campaign = JSON.parse(clean);
+    const unfenced = rawText.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    const start = unfenced.indexOf("{");
+    const end = unfenced.lastIndexOf("}");
+    campaign = JSON.parse(start >= 0 && end > start ? unfenced.slice(start, end + 1) : unfenced);
   } catch {
-    console.error("AI parse error:", rawText);
-    return err(500, "Failed to parse AI response");
+    console.error("AI parse error:", stopReason, rawText.slice(0, 2000));
+    return err(500, stopReason === "max_tokens"
+      ? "AI response was cut off (max_tokens)"
+      : "Failed to parse AI response");
+  }
+  if (!campaign || typeof campaign !== "object" || !campaign.subject || !campaign.body) {
+    return err(500, "AI response is missing subject or body");
   }
 
-  // ── Em-dash / en-dash stripper ──────────────────────────────────────────
-  // Claude Sonnet 4.5 keeps using em dashes for mid-sentence asides despite
-  // an explicit prompt ban. Em dashes are a classic AI tell — real Hebrew
-  // copywriters almost never use them. Regex beats prompt rules on this.
-  //
-  // Strategy: replace "word — word" with "word. Word" (break into two
-  // sentences). Also catches the parenthetical pattern "X — Y — Z" → "X. Y.
-  // Z.". Works for both em dash (U+2014) and en dash (U+2013).
-  if (campaign.body) {
-    campaign.body = String(campaign.body)
-      .replace(/\s*[—–]\s*/g, ". ")
-      // Collapse ".  ." type artifacts from replacements
-      .replace(/\.\s*\./g, ".")
-      // Collapse multiple spaces
-      .replace(/ {2,}/g, " ");
-  }
-  if (campaign.subject) {
-    campaign.subject = String(campaign.subject)
-      .replace(/\s*[—–]\s*/g, " ")
-      .replace(/ {2,}/g, " ")
-      .trim();
-  }
-
-  // ── Anti-hallucinated-promotion safety net ──────────────────────────────
-  // The prompt tells the AI not to invent percentage discounts, but it
-  // occasionally does anyway. Sending a campaign with a fake "15% הנחה"
-  // line is a Consumer Protection Law §7 violation (misleading advertising)
-  // and a class-action risk. This post-processor strips any line that
-  // contains promotional language when the user's customInstructions
-  // didn't authorize a promotion.
-  const userAuthorizedPromo = /\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד/.test(p.customInstructions || "");
-  if (!userAuthorizedPromo && campaign.body) {
-    const originalBody = String(campaign.body);
-    const promoLineRegex = /^.*(\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד).*$/gm;
-    const cleaned = originalBody.replace(promoLineRegex, "");
-    if (cleaned !== originalBody) {
-      console.warn(
-        "Stripped hallucinated promotion lines from body. Original length:",
-        originalBody.length,
-        "cleaned length:",
-        cleaned.length,
-      );
-      // Collapse multi-blank runs created by the strip.
-      campaign.body = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+  // ── Clean every text field the same way ────────────────────────────────
+  // Em/en dashes are an AI tell the prompt alone doesn't stop; "פרסומת"
+  // belongs in the subject suffix only; without the owner's say-so a
+  // promotion line is removed (fake "15% הנחה" = §7 exposure).
+  const clean = (v: unknown, max = 400): string => {
+    let s = String(v ?? "").replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ",");
+    s = s.replace(/[\s‎‏]*\|[\s‎‏]*פרסומת[\s‎‏]*/g, " ").replace(/[\s‎‏]+פרסומת\b/g, "");
+    if (!userAuthorizedPromo && PROMO_RE.test(s)) return "";
+    return s.replace(/ {2,}/g, " ").trim().slice(0, max);
+  };
+  const cleanBody = (v: unknown): string => {
+    let s = String(v ?? "").replace(/\s*[—–]\s*/g, ". ").replace(/\.\s*\./g, ".");
+    s = s.replace(/[\s‎‏]*\|[\s‎‏]*פרסומת[\s‎‏]*/g, "").replace(/[\s‎‏]+פרסומת\b/g, "");
+    if (!userAuthorizedPromo) {
+      const stripped = s.replace(/^.*(\d+\s*%|הנחה|מבצע|חסכון|במחיר\s+מיוחד).*$/gm, "");
+      if (stripped !== s) console.warn("Stripped unauthorised promotion lines from body");
+      s = stripped;
     }
-  }
+    return s.replace(/ {2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, 4000);
+  };
 
-  // Israeli Communications Law §30א requires clear identification of
-  // commercial emails. The convention: a " | פרסומת" suffix on the subject
-  // line. Body stays clean — "פרסומת" belongs in the subject only.
-  //
-  // Idempotence is enforced by STRIPPING any existing "פרסומת" markers the
-  // AI might have included (as prefix, suffix, or in the body), then
-  // appending a single clean suffix on the subject. This is more robust
-  // than endsWith() checks which the AI occasionally evaded via RTL marks.
+  // Israeli Communications Law §30א: one " | פרסומת" suffix on the subject.
+  // Any marker the model produced (prefix, suffix, stray) is stripped first.
   const SUBJECT_SUFFIX = " | פרסומת";
-  if (campaign.subject) {
-    const subj = String(campaign.subject)
-      // Strip any legacy prefix form "פרסומת <text>"
-      .replace(/^[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/g, "")
-      // Strip any existing suffix form "<text> | פרסומת"
-      .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*$/g, "")
-      // Strip stray "פרסומת" tokens anywhere else
-      .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
-      .trim();
-    campaign.subject = `${subj}${SUBJECT_SUFFIX}`;
+  const subjectCore = String(campaign.subject)
+    .replace(/\s*[—–]\s*/g, " ")
+    .replace(/^[\s‎‏]*פרסומת[\s‎‏]*/g, "")
+    .replace(/[\s‎‏]*\|[\s‎‏]*פרסומת[\s‎‏]*$/g, "")
+    .replace(/[\s‎‏]+פרסומת\b/g, "")
+    .replace(/ {2,}/g, " ")
+    .trim();
+  campaign.subject = `${subjectCore}${SUBJECT_SUFFIX}`;
+  campaign.body = cleanBody(campaign.body);
+  campaign.preheader = clean(campaign.preheader, 150);
+  campaign.greeting = clean(campaign.greeting, 40);
+  campaign.cta_text = clean(campaign.cta_text, 60) || "לחנות";
+  campaign.cta_url = isMinutoUrl(String(campaign.cta_url ?? "")) ? String(campaign.cta_url) : `${SITE_URL}/shop`;
+
+  // 6. Match products with full data. Ids may come back as strings.
+  const byId = new Map((wooProducts || []).map((pr: any) => [Number(pr.woo_id), pr]));
+  const toEmailProduct = (pr: any, extra: { note?: string; display_name?: string } = {}) => ({
+    woo_id:            pr.woo_id,
+    name:              pr.name,
+    display_name:      extra.display_name || undefined,
+    note:              extra.note || undefined,
+    price:             pr.price,
+    regular_price:     pr.regular_price,
+    sale_price:        pr.sale_price,
+    short_description: pr.short_description,
+    image_url:         pr.image_url,
+    permalink:         pr.permalink,
+  });
+
+  let heroId = Number(campaign.hero_product_id);
+  let hero: any = byId.get(heroId);
+  if (hero && isOffBrandHero(hero.name)) {
+    console.warn("Model picked an off-brand hero, dropped:", hero.name);
+    hero = undefined;
   }
-  // Body: strip any "פרסומת" / "| פרסומת" the AI accidentally produced.
-  // Do NOT re-append — the marker belongs in the subject only.
-  if (campaign.body) {
-    campaign.body = String(campaign.body)
-      .replace(/[\s\u200e\u200f]*\|[\s\u200e\u200f]*פרסומת[\s\u200e\u200f]*/g, "")
-      .replace(/[\s\u200e\u200f]+פרסומת\b/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trimEnd();
+  if (!hero) heroId = NaN;
+
+  const gridSpec: Array<{ id: number; note?: string; display_name?: string }> = (Array.isArray(campaign.products) ? campaign.products : [])
+    .map((x: any) => (typeof x === "object" && x ? { id: Number(x.id), note: clean(x.note, 80), display_name: clean(x.display_name, 40) } : { id: Number(x) }))
+    .filter((x: any) => Number.isFinite(x.id) && x.id !== heroId && byId.has(x.id));
+  // Older response shape: plain product_ids.
+  if (!gridSpec.length && Array.isArray(campaign.product_ids)) {
+    for (const id of campaign.product_ids.map(Number)) if (id !== heroId && byId.has(id)) gridSpec.push({ id });
   }
+  const seen = new Set<number>();
+  let selectedProducts = [
+    ...(hero ? [toEmailProduct(hero)] : []),
+    ...gridSpec.filter((x) => !seen.has(x.id) && seen.add(x.id)).slice(0, 4).map((x) => toEmailProduct(byId.get(x.id), x)),
+  ];
 
-  // 6. Generate banner image with Gemini
-  let bannerUrl: string | null = null;
-  if (campaign.banner_prompt) {
-    bannerUrl = await generateBannerImage(campaign.banner_prompt);
-  }
-
-  // 7. Match selected products with full data
-  // Normalize IDs to numbers for comparison (AI may return strings or numbers)
-  const rawIds = campaign.product_ids || [];
-  const selectedIds = rawIds.map((id: any) => Number(id));
-  console.log("AI returned product_ids:", JSON.stringify(rawIds), "normalized:", JSON.stringify(selectedIds));
-  console.log("Available woo_ids:", (wooProducts || []).slice(0, 10).map((p: any) => `${p.woo_id}(${typeof p.woo_id})`).join(", "));
-
-  let selectedProducts = (wooProducts || [])
-    .filter((pr: any) => selectedIds.includes(Number(pr.woo_id)))
-    .map((pr: any) => ({
-      woo_id:            pr.woo_id,
-      name:              pr.name,
-      price:             pr.price,
-      regular_price:     pr.regular_price,
-      sale_price:        pr.sale_price,
-      short_description: pr.short_description,
-      image_url:         pr.image_url,
-      permalink:         pr.permalink,
-    }));
-
-  // Fallback: if no products matched by ID, try matching by brand/model from user instructions
+  // Fallback: nothing matched by id, try brand/model tokens from the instructions
   if (selectedProducts.length === 0 && p.customInstructions) {
     console.log("No products matched by ID, trying brand/model-based fallback");
     const instructions = p.customInstructions.toLowerCase();
-
-    // Extract brand/model tokens (e.g., "Jura C8", "ENA 8", "Chemex") — skip common Hebrew words
     const hebrewStopWords = new Set(["קפה", "מכונת", "מכונה", "פולי", "על", "של", "את", "עם", "גם", "או", "לא", "כל", "יש", "אין", "מבצע", "הנחה", "חדש", "חדשה", "מחיר", "במחיר", "למכירה"]);
-
     selectedProducts = (wooProducts || [])
       .filter((pr: any) => {
-        const name = (pr.name || "").toLowerCase();
-        // Score: how many specific (non-stopword) tokens from the product name appear in instructions
-        const tokens = name.split(/[\s\-,]+/).filter((w: string) => w.length > 1 && !hebrewStopWords.has(w));
+        const tokens = (pr.name || "").toLowerCase().split(/[\s\-,]+/).filter((w: string) => w.length > 1 && !hebrewStopWords.has(w));
         const matchCount = tokens.filter((w: string) => instructions.includes(w)).length;
-        // Require at least 2 token matches, OR 1 match if it's a brand/model name (>= 3 chars, alphanumeric)
         const hasBrandMatch = tokens.some((w: string) => /[a-zA-Z]/.test(w) && w.length >= 2 && instructions.includes(w));
         return matchCount >= 2 || hasBrandMatch;
       })
-      .slice(0, 6)
-      .map((pr: any) => ({
-        woo_id:            pr.woo_id,
-        name:              pr.name,
-        price:             pr.price,
-        regular_price:     pr.regular_price,
-        sale_price:        pr.sale_price,
-        short_description: pr.short_description,
-        image_url:         pr.image_url,
-        permalink:         pr.permalink,
-      }));
-    console.log("Brand/model fallback matched:", selectedProducts.length, "products:", selectedProducts.map((p: any) => p.name).join(", "));
+      .slice(0, 5)
+      .map((pr: any) => toEmailProduct(pr));
+    console.log("Brand/model fallback matched:", selectedProducts.length, selectedProducts.map((x: any) => x.name).join(", "));
+  }
+  if (!hero) {
+    const first = selectedProducts.find((x: any) => x.image_url && !isOffBrandHero(x.name));
+    if (first) { hero = byId.get(Number(first.woo_id)); heroId = Number(first.woo_id); }
+  }
+  console.log("Hero:", hero?.name ?? "none", "| grid:", selectedProducts.length - (hero ? 1 : 0));
+
+  // Notes and facts only about a real hero; the model fills them from its description.
+  // Tasting chips are required when the hero is coffee beans and its
+  // description names flavours (Erez, 2026-11-05). Each chip must come from
+  // that description; if the model left them out (or invented them), a small
+  // extraction call reads them off it. Equipment emails are left as written.
+  const heroDescription = hero ? plainText(hero.short_description) : "";
+  let notes: string[] = hero
+    ? groundedNotes((Array.isArray(campaign.notes) ? campaign.notes : []).map((n: unknown) => clean(n, 30)), heroDescription)
+    : [];
+  if (hero && isCoffeeBeans(hero) && notes.length < 2 && heroDescription.length > 20) {
+    const extracted = (await extractTastingNotes(heroDescription)).map((n) => clean(n, 30));
+    if (extracted.length >= notes.length) notes = extracted;
+    console.log("Tasting notes from description:", notes.join(", ") || "none");
+  }
+  const facts = hero ? (Array.isArray(campaign.facts) ? campaign.facts : [])
+    .map((f: any) => ({ label: clean(f?.label, 20), value: clean(f?.value, 40) }))
+    .filter((f: any) => f.label && f.value).slice(0, 4) : [];
+  const tip = campaign.tip && campaign.tip.text ? { title: clean(campaign.tip.title, 40) || "איך להכין", text: clean(campaign.tip.text, 300) } : null;
+
+  // Offer: a real catalog product at its catalog price, or the owner's own
+  // promotion. A code only when the owner wrote that exact code.
+  let offer: any = null;
+  if (campaign.offer && typeof campaign.offer === "object") {
+    const o = campaign.offer;
+    const code = String(o.code ?? "").trim();
+    const codeOk = code && userAuthorizedPromo && (p.customInstructions || "").includes(code);
+    const offerProduct = byId.get(Number(o.product_id));
+    const title = clean(o.title, 80);
+    const text = clean(o.text, 240);
+    if (title && (userAuthorizedPromo || offerProduct)) {
+      offer = {
+        title,
+        text: text || undefined,
+        code: codeOk ? code : undefined,
+        ctaText: clean(o.cta_text, 40) || undefined,
+        ctaUrl: isMinutoUrl(String(o.cta_url ?? "")) ? String(o.cta_url) : offerProduct?.permalink || undefined,
+      };
+    }
   }
 
-  console.log("Final selectedProducts count:", selectedProducts.length);
+  // 7. Hero image: the real product photo. The AI banner is only a fallback
+  // for a campaign without one.
+  let bannerUrl: string | null = null;
+  if (!hero?.image_url && campaign.banner_prompt) {
+    bannerUrl = await generateBannerImage(String(campaign.banner_prompt));
+  }
+
+  const design = {
+    style:         DEFAULT_STYLE,
+    kicker:        clean(campaign.kicker, 60) || undefined,
+    headline:      clean(campaign.headline, 90) || undefined,
+    heroProductId: hero ? hero.woo_id : null,
+    notes,
+    facts,
+    tip,
+    offer,
+    gridTitle:     clean(campaign.grid_title, 50) || undefined,
+    closingText:   clean(campaign.closing_text, 120) || undefined,
+  };
 
   // 8. Build HTML
   const htmlContent = buildCampaignHtml({
     subject:        campaign.subject,
-    preheader:      campaign.preheader || "",
-    greeting:       campaign.greeting || "",
+    preheader:      campaign.preheader,
+    greeting:       campaign.greeting,
     body:           campaign.body,
-    ctaText:        campaign.cta_text || "לחנות",
-    ctaUrl:         campaign.cta_url || "https://minuto.co.il/shop",
+    ctaText:        campaign.cta_text,
+    ctaUrl:         campaign.cta_url,
     bannerUrl,
     products:       selectedProducts,
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
+    ...design,
   });
+  const productIds = selectedProducts.map((pr: any) => String(pr.woo_id));
 
   // 9. Save draft to database (skipped for persist:false — see GeneratePayload)
   if (p.persist === false) {
@@ -1133,7 +870,7 @@ ${p.customInstructions
         theme:        campaign.campaign_theme,
         bannerUrl,
         products:     selectedProducts.map((pr: any) => ({ name: pr.name, permalink: pr.permalink })),
-        productIds:   selectedIds.map(String),
+        productIds,
         htmlContent,
         campaignType: p.campaignType || "auto",
       },
@@ -1149,7 +886,7 @@ ${p.customInstructions
       html_content:    htmlContent,
       status:          "draft",
       campaign_type:   p.campaignType || "auto",
-      product_ids:     selectedIds.map(String),
+      product_ids:     productIds,
       preheader:       campaign.preheader,
       cta_text:        campaign.cta_text,
       cta_url:         campaign.cta_url,
@@ -1171,11 +908,55 @@ ${p.customInstructions
       ctaUrl:      campaign.cta_url,
       theme:       campaign.campaign_theme,
       bannerUrl,
-      bannerPrompt: campaign.banner_prompt,
       products:    selectedProducts,
       htmlContent,
     },
   });
+}
+
+// Roasted coffee beans we sell (bags, jars, tasting kits), not equipment.
+function isCoffeeBeans(pr: any): boolean {
+  if (!pr || isOffBrandHero(pr.name)) return false;
+  const cats = (pr.categories || []).map((c: any) => (typeof c === "string" ? c : c?.name || "")).join(" ");
+  return /פולי קפה|תערובות קפה מינוטו/.test(cats) || /^\s*פולי קפה/.test(String(pr.name ?? ""));
+}
+
+// A chip survives only if one of its words (3+ letters) appears in the
+// product's own description, so no flavour reaches the email that the shop
+// page does not state. Hebrew prefixes ("ואגוזים") still match by substring.
+function groundedNotes(notes: string[], description: string): string[] {
+  const desc = description.toLowerCase();
+  const out: string[] = [];
+  for (const n of notes) {
+    const note = String(n ?? "").trim();
+    if (!note || out.includes(note)) continue;
+    const words = note.toLowerCase().match(/[\p{L}]{3,}/gu) || [];
+    if (words.some((w) => desc.includes(w))) out.push(note);
+    if (out.length === 4) break;
+  }
+  return out;
+}
+
+async function extractTastingNotes(description: string): Promise<string[]> {
+  try {
+    const res = await callClaude({
+      sourceFn:  "generate-campaign",
+      model:     MODEL_CAMPAIGN_CHEAP,
+      system:    "אתה מחלץ תווי טעם מתיאור מוצר קפה. החזר JSON בלבד: מערך של 2-4 תווי טעם או ארומה קצרים בעברית (מילה או שתיים כל אחד), שמופיעים בתיאור עצמו. אל תוסיף טעם שלא כתוב בתיאור. אם אין בתיאור אף טעם או ארומה, החזר [].",
+      messages:  [{ role: "user", content: description.slice(0, 1200) }],
+      // Thinking models spend tokens before the short reply.
+      maxTokens: 4000,
+    });
+    const raw = res.text.replace(/```json?\n?/g, "").replace(/```/g, "");
+    const start = raw.indexOf("[");
+    const end = raw.lastIndexOf("]");
+    if (start < 0 || end <= start) return [];
+    const arr = JSON.parse(raw.slice(start, end + 1));
+    return Array.isArray(arr) ? groundedNotes(arr.map((x) => String(x ?? "")), description) : [];
+  } catch (e) {
+    console.warn("tasting-note extraction failed:", e instanceof Error ? e.message : String(e));
+    return [];
+  }
 }
 
 // ── Update Draft ────────────────────────────────────────────────────────────
@@ -1232,11 +1013,19 @@ async function handleUpdateDraft(p: UpdateDraftPayload) {
       return err(404, "Campaign not found");
     }
 
+    // Section fields (hero, notes, offer ...) ride in the stored HTML; the
+    // editor only sends the text columns. Drafts from before the new
+    // template have none and render with the defaults.
+    const design = decodeDesign(existing.html_content);
+    const productNotes = design.productNotes && typeof design.productNotes === "object" ? design.productNotes : {};
+
     // Normalize products to the shape buildCampaignHtml expects.
     // Anything missing a woo_id or name is dropped to avoid HTML-build surprises.
     const safeProducts = (p.products || []).filter((pr: any) => pr && pr.woo_id != null).map((pr: any) => ({
       woo_id:            pr.woo_id,
       name:              String(pr.name ?? ""),
+      note:              typeof productNotes[String(pr.woo_id)]?.note === "string" ? productNotes[String(pr.woo_id)].note : undefined,
+      display_name:      typeof productNotes[String(pr.woo_id)]?.display_name === "string" ? productNotes[String(pr.woo_id)].display_name : undefined,
       price:             pr.price != null ? String(pr.price) : undefined,
       regular_price:     pr.regular_price != null ? String(pr.regular_price) : undefined,
       sale_price:        pr.sale_price != null ? String(pr.sale_price) : undefined,
@@ -1247,7 +1036,9 @@ async function handleUpdateDraft(p: UpdateDraftPayload) {
 
     // Preserve banner URL from the existing HTML if caller didn't provide one
     const bannerUrl =
-      p.bannerUrl !== undefined ? p.bannerUrl : extractBannerUrl(existing.html_content);
+      p.bannerUrl !== undefined ? p.bannerUrl
+      : typeof design.bannerUrl === "string" ? design.bannerUrl
+      : extractBannerUrl(existing.html_content);
 
     // Rebuild HTML with edits
     let htmlContent: string;
@@ -1263,6 +1054,17 @@ async function handleUpdateDraft(p: UpdateDraftPayload) {
         products:       safeProducts,
         unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
         promoDeadline:  p.promoDeadline || null,
+        style:          design.style,
+        kicker:         design.kicker,
+        headline:       design.headline,
+        heroProductId:  design.heroProductId,
+        notes:          Array.isArray(design.notes) ? design.notes : undefined,
+        facts:          Array.isArray(design.facts) ? design.facts : undefined,
+        tip:            design.tip,
+        offer:          design.offer,
+        gridTitle:      design.gridTitle,
+        closingText:    design.closingText,
+        sceneBrief:     typeof design.sceneBrief === "string" ? design.sceneBrief : undefined,
       });
     } catch (buildErr: any) {
       console.error("update-draft:build-html-failed", buildErr?.message, buildErr?.stack);
@@ -1309,7 +1111,12 @@ interface RenderDraftPayload {
   ctaText?: string;
   ctaUrl?: string;
   campaignType?: string;
+  // Optional design around the words (the words themselves never change):
+  products?: string[];      // 1-4 Minuto coffee products, exact or unique short names
+  sceneBrief?: string;      // a scene for an image built around the real bags
+  promoDeadline?: string;   // YYYY-MM-DD, last day of the offer (legal footer line)
 }
+
 
 const RENDER_SUBJECT_SUFFIX = " | פרסומת";
 
@@ -1334,6 +1141,15 @@ async function handleRenderDraft(p: RenderDraftPayload) {
   }
   if (ctaText && !ctaUrl) return err(400, "cta_url is required when cta_text is given");
   if (ctaUrl && !isMinutoUrl(ctaUrl)) return err(400, "cta_url must be an https://minuto.co.il link");
+  const productNames = Array.isArray(p.products) ? p.products.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
+  const sceneBrief   = String(p.sceneBrief ?? "").trim();
+  const promoDeadline = String(p.promoDeadline ?? "").trim();
+  if (productNames.length > 4) return err(400, "at most 4 products");
+  if (sceneBrief.length > 600) return err(400, "scene_brief too long (≤600)");
+  if (sceneBrief && !productNames.length) return err(400, "scene_brief needs products: the scene is built around their real bags");
+  if (promoDeadline && (!/^\d{4}-\d{2}-\d{2}$/.test(promoDeadline) || isNaN(Date.parse(promoDeadline)))) {
+    return err(400, "promo_deadline must be YYYY-MM-DD");
+  }
 
   // Same legal marker the AI path adds (Communications Law §30א). Only the
   // marker is added; the creative subject stays as given.
@@ -1356,18 +1172,58 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .maybeSingle();
   if (dupe) return ok({ ok: true, existed: true, campaign: { id: dupe.id, subject, htmlContent: dupe.html_content } });
 
-  // buildCampaignHtml inserts the body as HTML, so escape it here; **bold**
-  // and line breaks are applied by the template.
+  // Products: real catalog rows (photo, price, link), Minuto roasted coffee only.
+  // deno-lint-ignore no-explicit-any
+  let products: any[] = [];
+  if (productNames.length) {
+    const { data: rows, error: pErr } = await supabase
+      .from("woo_products")
+      .select("woo_id, name, price, regular_price, sale_price, short_description, image_url, permalink, categories, stock_status")
+      .eq("user_id", p.userId)
+      .eq("stock_status", "instock");
+    if (pErr) return err(500, `catalog: ${pErr.message}`);
+    const coffee = (rows ?? []).filter((pr: any) => isCoffeeBeans(pr) && pr.image_url);
+    const r = resolveCoffee(productNames, coffee);
+    if (!r.ok) return err(400, r.error);
+    products = r.products;
+  }
+
+  // Scene image around the real bags. A render only counts if it passes the
+  // label check; otherwise the first product's real photo is the hero.
+  let bannerUrl: string | null = null;
+  let scene: { attempts: number; issues: string[]; used: boolean } | null = null;
+  if (sceneBrief && products.some((pr: any) => isSpecialEdition(pr.name))) {
+    // Special editions ship in a jar; a bag scene would show the wrong pack.
+    scene = { attempts: 0, issues: ["special edition (jar) in the products: real photos used instead"], used: false };
+  } else if (sceneBrief && products.length) {
+    const res = await generateSceneImage({
+      bags: products.map((pr) => ({ name: shortProductName(pr.name), image_url: pr.image_url })),
+      sceneBrief, geminiKey: GEMINI_KEY, supabaseUrl: SUPA_URL, supabase,
+    });
+    bannerUrl = res.url;
+    scene = { attempts: res.attempts, issues: res.issues, used: !!res.url };
+    console.log("render-draft scene:", JSON.stringify(scene));
+  }
+  const emailProducts = products.map((pr: any) => ({
+    woo_id: pr.woo_id, name: pr.name, price: pr.price, regular_price: pr.regular_price, sale_price: pr.sale_price,
+    short_description: pr.short_description, image_url: pr.image_url, permalink: pr.permalink,
+  }));
+
+  // The template escapes the body itself and applies **bold** and line
+  // breaks, so the copy goes in exactly as approved.
   const htmlContent = buildCampaignHtml({
     subject,
     preheader,
     greeting:       "",
-    body:           escapeHtml(body),
+    body,
     ctaText,
     ctaUrl:         ctaUrl || SITE_URL,
-    bannerUrl:      null,
-    products:       [],
+    bannerUrl,
+    products:       emailProducts,
     unsubscribeUrl: "{{UNSUBSCRIBE_URL}}",
+    promoDeadline:  promoDeadline || null,
+    heroProductId:  !bannerUrl && emailProducts.length ? emailProducts[0].woo_id : null,
+    sceneBrief:     sceneBrief || undefined,
   });
 
   const { data: inserted, error: insertErr } = await supabase
@@ -1380,7 +1236,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
       html_content:  htmlContent,
       status:        "draft",
       campaign_type: String(p.campaignType || "brain").slice(0, 40),
-      product_ids:   [],
+      product_ids:   products.map((pr: any) => String(pr.woo_id)),
       preheader:     preheader || null,
       cta_text:      ctaText || null,
       cta_url:       ctaUrl || null,
@@ -1389,7 +1245,7 @@ async function handleRenderDraft(p: RenderDraftPayload) {
     .single();
   if (insertErr) return err(500, insertErr.message);
 
-  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent } });
+  return ok({ ok: true, campaign: { id: inserted.id, subject, htmlContent }, scene });
 }
 
 // ── Fetch Contacts from Resend (single source of truth) ─────────────────────
