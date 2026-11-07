@@ -4,8 +4,9 @@ import { detectScene, identityFor, sectionNames } from './scene_rules.ts'
 import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared/bag_references.ts'
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
-  PHOTO_EXCLUDE, SHOTS, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief, shotGeneratePrompt,
-  shotUsesRealPhoto,
+  PHOTO_EXCLUDE, SHOTS, bagScenePrompt, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief,
+  shotGeneratePrompt, shotUsesRealPhoto,
+  type ShotDef,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
 import {
@@ -16,6 +17,9 @@ import {
   MINUTO_ROASTER_REFERENCE_URL,
   SCENE_PRESETS,
 } from '../_shared/visual_identity.ts'
+// The label check the email scene images use, so an IG bag scene passes the
+// same bar (2026-11-07).
+import { checkPrompt as bagLabelCheckPrompt, parseCheck as parseBagLabelCheck } from '../generate-campaign/scene_image.ts'
 // pickFallbackBagUrl intentionally NOT imported — caller must specify
 // which bag to use via reference_image_url / product_id / product_name.
 // Random pool selection was removed 2026-05-16 so the rendered bag
@@ -395,6 +399,85 @@ async function randomLibraryPhotos(
   return urls.sort(() => Math.random() - 0.5).slice(0, n)
 }
 
+// ── BAG SCENES ──────────────────────────────────────────────────────────────
+// bag_hero / bag_with_drink: a NEW styled scene around the real bag, ported
+// from generate-campaign/scene_image.ts (owner, 2026-11-07). The bag's real
+// photo is the reference for Nano Banana Pro; every render is checked against
+// that photo for the wordmark, product name and label art, and a render that
+// fails is thrown away. No passing render → the caller publishes the real
+// photo, as before.
+const BAG_SCENE_MODEL = 'gemini-3-pro-image'
+const BAG_CHECK_MODEL = 'gemini-3.5-flash'
+const BAG_SCENE_ATTEMPTS = 3
+// seo-worker-visual runs inside a cron budget; stop starting new attempts
+// after this and leave time for the real-photo fallback.
+const BAG_SCENE_BUDGET_MS = 110_000
+
+async function geminiParts(model: string, parts: any[], generationConfig: Record<string, unknown>, timeoutMs: number): Promise<any[]> {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
+    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig }),
+    signal: AbortSignal.timeout(timeoutMs),
+  })
+  if (!res.ok) throw new Error(`${model} ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  return (await res.json())?.candidates?.[0]?.content?.parts ?? []
+}
+
+interface BagSceneResult {
+  image: { b64: string; mime: string } | null
+  reference: string | null
+  prompt: string
+  attempts: number
+  issues: string[]
+}
+
+async function renderBagScene(
+  supabase: ReturnType<typeof createClient>, shot: ShotDef, slots: ShotSlots, ratio: string,
+): Promise<BagSceneResult> {
+  const prompt = bagScenePrompt(shot, slots, ratio)
+  const out: BagSceneResult = { image: null, reference: null, prompt, attempts: 0, issues: [] }
+  // The studio packshot shows the label flat and sharp, the best reference
+  // for label fidelity; the product's counter photo when there is none.
+  const pack = packshotFor(slots.product_name)
+  let ref = pack ? `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${pack}` : null
+  if (!ref) {
+    const { data } = await supabase.storage.from('marketing').list('upload_images/bag_scenes', { limit: 500 })
+    const counter = (data ?? []).map(f => f.name)
+      .find(n => n && isBagSceneOf(n, slots.product_name) && !PHOTO_EXCLUDE.has(`bag_scenes/${n}`))
+    if (counter) ref = `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/bag_scenes/${counter}`
+  }
+  if (!ref) { out.issues.push(`no reference photo for "${slots.product_name}"`); return out }
+  out.reference = ref
+  const refRes = await fetch(ref, { signal: AbortSignal.timeout(20_000) })
+  if (!refRes.ok) { out.issues.push(`reference ${refRes.status}: ${ref}`); return out }
+  const refPart = { inline_data: { mime_type: mimeOf(ref), data: encodeBase64(await refRes.arrayBuffer()) } }
+  const name = (slots.product_name ?? '').trim()
+  const refParts = [{ text: `Reference image 1: the real Minuto "${name}" coffee bag. Reproduce THIS EXACT bag.` }, refPart]
+
+  const started = Date.now()
+  while (out.attempts < BAG_SCENE_ATTEMPTS && Date.now() - started < BAG_SCENE_BUDGET_MS) {
+    out.attempts++
+    try {
+      const parts = await geminiParts(BAG_SCENE_MODEL, [...refParts, { text: prompt }],
+        { responseModalities: ['IMAGE', 'TEXT'], imageConfig: { aspectRatio: ratio } }, 90_000)
+      const img = parts.map(p => p.inlineData || p.inline_data).find(d => d?.data && String(d.mimeType || d.mime_type).startsWith('image/'))
+      if (!img) { out.issues.push(`attempt ${out.attempts}: no image returned`); continue }
+      const mime = String(img.mimeType || img.mime_type)
+      if (!matchesRatio(readImageSize(decodeBase64(img.data)), ratio)) { out.issues.push(`attempt ${out.attempts}: wrong aspect ratio`); continue }
+      const verdict = parseBagLabelCheck((await geminiParts(BAG_CHECK_MODEL,
+        [...refParts, { text: 'Generated image to check:' }, { inline_data: { mime_type: mime, data: img.data } }, { text: bagLabelCheckPrompt([name]) }],
+        { responseMimeType: 'application/json', temperature: 0 }, 45_000)).map(p => p.text || '').join(''))
+      if (!verdict.pass) { out.issues.push(`attempt ${out.attempts}: ${verdict.issues.join('; ') || 'failed the label check'}`); continue }
+      out.image = { b64: img.data, mime }
+      return out
+    } catch (e) {
+      out.issues.push(`attempt ${out.attempts}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+  return out
+}
+
 async function renderShot(body: VisualTestRequest, cors: Record<string, string>): Promise<Response> {
   const shot  = SHOTS[body.shot_type as ShotType]
   const slots: ShotSlots = { ...(body.shot_slots ?? {}) }
@@ -414,7 +497,19 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
   let referencePhoto: string | null = null
   const checks: Array<{ photo: string; same: boolean; why: string }> = []
 
-  if (shotUsesRealPhoto(shot, slots)) {
+  let bagScene: BagSceneResult | null = null
+  if (shot.needs_product) {
+    bagScene = await renderBagScene(supabase, shot, slots, ratio)
+    if (bagScene.image) {
+      gen = bagScene.image
+      referencePhoto = bagScene.reference
+      sentPrompt = bagScene.prompt
+    } else {
+      console.warn(`[visual-test] bag scene for "${slots.product_name}" failed, publishing the real photo: ${bagScene.issues.join(' | ')}`)
+    }
+  }
+
+  if (!gen && shotUsesRealPhoto(shot, slots)) {
     // Minuto's own photo, PUBLISHED AS PHOTOGRAPHED: the crop to this aspect
     // was made offline by scripts/image-library-prep.sh (subject-aware, ffmpeg)
     // into upload_images_ready/<ratio>/. No image model touches it — an edit
@@ -491,7 +586,8 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     `IMAGE: ${pub.publicUrl}`,
     `PROMPT VERSION: ${SHOT_PROMPT_VERSION}`,
     `SHOT: ${shot.id} ${JSON.stringify(slots)}`,
-    `MODEL: ${sourcePhoto ? `none: real photo ${sourcePhoto}` : `gemini-3.1-flash-image-preview generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`}`,
+    `MODEL: ${sourcePhoto ? `none: real photo ${sourcePhoto}` : bagScene?.image ? `${BAG_SCENE_MODEL} bag scene with reference ${referencePhoto}, label-checked by ${BAG_CHECK_MODEL} (attempt ${bagScene.attempts})` : `gemini-3.1-flash-image-preview generation${referencePhoto ? ` with reference ${referencePhoto}` : ''}`}`,
+    ...(bagScene && bagScene.issues.length ? [`BAG SCENE REJECTED: ${bagScene.issues.join(' | ')}`] : []),
     ``, `── PROMPT SENT TO THE IMAGE MODEL ──`, sentPrompt,
   ].join('\n')
   return jsonResponse({
@@ -509,11 +605,12 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     real_photo_checks: checks,
     reference_photo: referencePhoto,
     used_reference: shot.needs_product,
+    bag_scene: bagScene ? { model: BAG_SCENE_MODEL, passed: !!bagScene.image, attempts: bagScene.attempts, issues: bagScene.issues } : null,
     scene_brief: sourcePhoto ? shotEditBrief(shot, slots) : sentPrompt,
   }, 200, cors)
 }
 
-const SHOT_PROMPT_VERSION = 'shot-library-v1'
+const SHOT_PROMPT_VERSION = 'shot-library-v2'   // v2 (2026-11-07): bag scenes + recreated bar/roastery
 
 serve(async (req) => {
   const corsHeaders = {
