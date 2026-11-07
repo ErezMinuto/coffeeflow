@@ -35,6 +35,7 @@ import {
   insertExperiment,
   getRecentCannibalizationConflicts,
 } from '../seo-agent/db.ts'
+import { validateNewTask } from '../seo-agent/taskValidation.ts'
 import { detectWpPublishTransitions } from '../seo-agent/wpPublishDetector.ts'
 import {
   checkCannibalizationForQueue,
@@ -911,13 +912,32 @@ serve(async (req: Request): Promise<Response> => {
     // that have parent_task_index / depends_on_index references.
     let insertedRows: SeoTaskRow[] = []
     if (emittedTasks.length > 0) {
-      const newTasks: NewSeoTask[] = emittedTasks.map(et => {
+      let rejectedAtEnqueue = 0
+      const newTasks: NewSeoTask[] = emittedTasks.map((et, i) => {
         const base: NewSeoTask = {
           task_type:           et.task_type,
           task_subtype:        et.task_subtype ?? null,
           brief_data:          et.brief_data,
           rationale:           et.rationale ?? '',
           orchestrator_run_id: runId,
+        }
+        // A brief its worker would reject is recorded as failed, with the
+        // reason, instead of failing later in the worker. It is NOT dropped:
+        // insertedRows[i] must keep matching emittedTasks[i] for the wiring
+        // pass below and the emit log. Parents are wired after insert, so
+        // the parent check uses parent_task_index here.
+        const problems = validateNewTask(base, { parentLinkedLater: true })
+        if (et.task_type === 'instagram_post') {
+          const pi = et.parent_task_index
+          if (typeof pi !== 'number' || pi === i || pi < 0 || pi >= emittedTasks.length) {
+            problems.push('instagram_post requires parent_task_index pointing at the visual_generation task that produces the image')
+          }
+        }
+        if (problems.length > 0) {
+          rejectedAtEnqueue++
+          base.status    = 'failed'
+          base.error_msg = `[rejected at enqueue] ${problems.join('; ')}`
+          console.warn(`[organic-orchestrator] task #${i} (${et.task_type}) rejected at enqueue: ${problems.join('; ')}`)
         }
         // Stamp the experiment_id onto the task at insert time. If the
         // strategist named an experiment_group but we failed to insert it
@@ -935,8 +955,8 @@ serve(async (req: Request): Promise<Response> => {
         }
         return base
       })
-      insertedRows = await insertTasks(supabase, newTasks)
-      console.log(`[organic-orchestrator] first-pass insert: ${insertedRows.length} rows`)
+      insertedRows = await insertTasks(supabase, newTasks, { parentLinkedLater: true })
+      console.log(`[organic-orchestrator] first-pass insert: ${insertedRows.length} rows (${rejectedAtEnqueue} rejected at enqueue)`)
 
       // Wire parent_task_id + depends_on from indexes → UUIDs.
       // Each emittedTask[i] corresponds to insertedRows[i].
