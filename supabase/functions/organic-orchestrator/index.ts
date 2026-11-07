@@ -21,6 +21,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { acquireLease, releaseLease } from '../_shared/job_lease.ts'
+import { createLogger } from '../_shared/logger.ts'
 import { STRATEGIST_SYSTEM_PROMPT } from '../seo-agent/prompts/strategist.ts'
 import { applyPlannedShot } from '../_shared/shot_library.ts'
 import { callClaude, parseClaudeJson, MODEL_ORCHESTRATOR, isGeminiModel } from '../seo-agent/claude.ts'
@@ -130,6 +131,11 @@ serve(async (req: Request): Promise<Response> => {
   const focus   = body.focus   ?? ''
   const runId   = crypto.randomUUID()
   console.log(`[organic-orchestrator] run=${runId} trigger=${trigger} focus="${focus.slice(0, 100)}"`)
+  // Same id as orchestrator_run_id, so a cycle's seo_tasks and its log rows join.
+  // The cycle runs in the background after the 202, so the run is finished
+  // inside runCycle; a cycle killed by the wall clock reads back 'incomplete'
+  // with its last 'cycle.phase' line showing where it died.
+  const log = createLogger('organic-orchestrator', { runId })
 
   // One cycle at a time. Overlapping runs (a manual run during the cron, or a
   // cron tick while a slow cycle is still going) planned from the same queue
@@ -140,9 +146,13 @@ serve(async (req: Request): Promise<Response> => {
   if (!lease.held) {
     if (lease.error) {
       console.error(`[organic-orchestrator] run=${runId} could not take the run lease: ${lease.error}`)
+      log.error('lease.fail', 'could not take the run lease', { trigger, error: String(lease.error).slice(0, 300) })
+      await log.finish('error', { trigger })
       return jsonResponse({ accepted: false, error: `run lease unavailable: ${lease.error}` }, 500)
     }
     console.log(`[organic-orchestrator] run=${runId} skipped: another cycle is still running`)
+    log.info('cycle.skipped', 'another orchestrator cycle is still running', { trigger })
+    await log.finish('success', { trigger, skipped: true })
     return jsonResponse({ accepted: false, skipped: 'another orchestrator cycle is still running', trigger }, 409)
   }
 
@@ -156,6 +166,7 @@ serve(async (req: Request): Promise<Response> => {
   const runCycle = async (): Promise<void> => {
    let phase = 'init'
    const cycleStartedAt = Date.now()
+   log.info('run.start', `cycle start (trigger ${trigger})`, { trigger, has_focus: !!focus })
    try {
     const supabase = createSupabase()
 
@@ -185,7 +196,7 @@ serve(async (req: Request): Promise<Response> => {
     // detector scope tightened 60→25 (its only job is the wp_published
     // side-effect; bounding it caps worst-case latency).
     console.log('[organic-orchestrator] gathering all sources + housekeeping in parallel…')
-    phase = 'gather'
+    phase = 'gather'; log.info('cycle.phase', 'gather')
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
     const sixtyDaysAgo    = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
     const ninetyDaysAgo   = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString()
@@ -315,7 +326,7 @@ serve(async (req: Request): Promise<Response> => {
     )
 
     // ── 2. Snapshot fresh metrics ─────────────────────────────────────
-    phase = 'snapshot'
+    phase = 'snapshot'; log.info('cycle.phase', 'snapshot')
     // Prior snapshot[0] is the LAST orchestrator run's snapshot (if any).
     const priorPayload = (priorSnapshots[0]?.metrics_payload ?? null) as unknown as MetricsSnapshot | null
     const priorKeywords = priorPayload?.gsc_top_keywords ?? null
@@ -407,7 +418,7 @@ serve(async (req: Request): Promise<Response> => {
     // the planner degrades to exactly its previous behaviour.
     let serpBlock = ''
     if (isGeminiModel(MODEL_ORCHESTRATOR) && keywordOpportunities.length > 0) {
-      phase = 'serp_grounding'
+      phase = 'serp_grounding'; log.info('cycle.phase', 'serp_grounding')
       const candidates = keywordOpportunities.slice(0, 6).map(k => k.keyword)
       try {
         const serp = await callClaude({
@@ -445,7 +456,7 @@ serve(async (req: Request): Promise<Response> => {
     }
     // ── 4. Call Claude ───────────────────────────────────────────────
     console.log(`[organic-orchestrator] calling ${MODEL_ORCHESTRATOR}…`)
-    phase = 'strategist_claude'
+    phase = 'strategist_claude'; log.info('cycle.phase', 'strategist_claude')
     const claudeRes = await callClaude({
       sourceFn: 'organic-orchestrator',
       model:    MODEL_ORCHESTRATOR,
@@ -480,7 +491,7 @@ serve(async (req: Request): Promise<Response> => {
       tasks?:           OrchestratorEmittedTask[]
       experiments?:     OrchestratorEmittedExperiment[]
     }
-    phase = 'parse_plan'
+    phase = 'parse_plan'; log.info('cycle.phase', 'parse_plan')
     try {
       plan = parseClaudeJson(claudeRes.text)
     } catch (e: any) {
@@ -497,6 +508,8 @@ serve(async (req: Request): Promise<Response> => {
           context: { orchestrator_run_id: runId, phase: 'parse_plan', output_tokens: claudeRes.outputTokens },
         })
       } catch { /* best-effort */ }
+      log.error('plan.parse.fail', 'strategist output did not parse; cycle aborted', { output_tokens: claudeRes.outputTokens, error: String(e?.message ?? e).slice(0, 300) })
+      await log.finish('error', { phase })
       return
     }
     const emittedTasks       = Array.isArray(plan.tasks) ? plan.tasks : []
@@ -529,7 +542,7 @@ serve(async (req: Request): Promise<Response> => {
     // On a conflict the task BECOMES a dynamic_experiment
     // (cannibalization_conflict, approval_required), landing in the admin's
     // pending-approvals queue rather than vanishing from the plan silently.
-    phase = 'cannibalization_gate'
+    phase = 'cannibalization_gate'; log.info('cycle.phase', 'cannibalization_gate')
     let cannibalConflictsFiled = 0
     // Every blog task this run's gate refused, with its brief as the
     // strategist wrote it — the input to the re-pick below.
@@ -635,7 +648,7 @@ serve(async (req: Request): Promise<Response> => {
     //
     // Bounded: at most 2 calls, in parallel, 45s each, skipped entirely once
     // the cycle is past 4 minutes so it cannot push the run into the wall clock.
-    phase = 'blog_repick'
+    phase = 'blog_repick'; log.info('cycle.phase', 'blog_repick')
     let repicked = 0
     const REPICK_MAX = 2
     if (blockedThisRun.length > 0 && Date.now() - cycleStartedAt < 240_000) {
@@ -748,7 +761,7 @@ serve(async (req: Request): Promise<Response> => {
     // Whichever side the strategist wrote it on is copied to the other. The
     // shot pick is validated here, before the story-lock guard reads the
     // scene_brief it fills in. Flag off: the pick is kept as planned_shot.
-    phase = 'shot_pick'
+    phase = 'shot_pick'; log.info('cycle.phase', 'shot_pick')
     const shotLibraryOn = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
     emittedTasks.forEach((et, idx) => {
       if (et.task_type !== 'visual_generation') return
@@ -769,7 +782,7 @@ serve(async (req: Request): Promise<Response> => {
       }
     })
 
-    phase = 'brand_guard'
+    phase = 'brand_guard'; log.info('cycle.phase', 'brand_guard')
     let brandScrubbed = 0
     let brandBlocked  = 0
 
@@ -861,7 +874,7 @@ serve(async (req: Request): Promise<Response> => {
     // ── 6a. Materialize experiments. Each experiment_group string from
     // the strategist becomes one seo_experiments row; the row's UUID is
     // then stamped onto every task that referenced the same group.
-    phase = 'emit_tasks'
+    phase = 'emit_tasks'; log.info('cycle.phase', 'emit_tasks')
     const experimentIdByGroup = new Map<string, string>()
     // The cannibalization / brand / story-theme guards above strip
     // experiment_group from tasks they block, so a group can arrive here
@@ -1107,6 +1120,7 @@ serve(async (req: Request): Promise<Response> => {
       console.log(`[organic-orchestrator] channel-explorer queued: ${channelExplorerQueued}`)
     } catch (e: any) {
       console.warn(`[organic-orchestrator] channel-explorer queue failed (non-fatal): ${e?.message ?? e}`)
+      log.warn('channel_explorer.fail', 'channel-explorer queue failed (non-fatal)', undefined, e)
     }
 
     // ── 6c. Write proactive briefing for admin ───────────────────────
@@ -1126,6 +1140,7 @@ serve(async (req: Request): Promise<Response> => {
       }))
     } catch (e: any) {
       console.warn(`[organic-orchestrator] briefing write failed (non-fatal): ${e?.message ?? e}`)
+      log.warn('briefing.fail', 'cycle briefing write failed (non-fatal)', undefined, e)
     }
 
     // ── 7. Done — log the summary (no HTTP return; we already 202'd). ─
@@ -1143,8 +1158,19 @@ serve(async (req: Request): Promise<Response> => {
         cache_read: claudeRes.cacheReadTokens,
       },
     }))
+    // Counts only: plan.summary is model prose about the business.
+    if (insertedRows.length === 0) log.warn('tasks.none', 'cycle completed without emitting a single task', { snapshot_id: snapshotId })
+    await log.finish('success', {
+      trigger, snapshot_id: snapshotId,
+      tasks_emitted: insertedRows.length, experiments_emitted: experimentIdByGroup.size,
+      faq_candidates_queued: faqCandidatesQueued,
+      tokens_in: claudeRes.inputTokens, tokens_out: claudeRes.outputTokens, tokens_cache_read: claudeRes.cacheReadTokens,
+      cycle_ms: Date.now() - cycleStartedAt,
+    })
    } catch (e: any) {
     console.error(`[organic-orchestrator] run=${runId} failed at phase=${phase}:`, e?.message ?? e)
+    log.error('cycle.throw', `cycle failed in phase ${phase}`, { phase }, e)
+    await log.finish('error', { phase })
     console.error(e?.stack ?? '')
     // Surface the failure (with the phase it died in) to the briefings
     // thread — the catch can't see `supabase` (declared in the try), so
