@@ -46,6 +46,26 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   const [busy, setBusy] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  // Every rendered attempt of the image behind the post being reviewed, so
+  // the owner can choose which one goes out, not only the last.
+  const [attemptChoices, setAttemptChoices] = useState<Array<{ attempt: number; image_url: string }>>([])
+
+  useEffect(() => {
+    setAttemptChoices([])
+    if (!viewing || viewing.task_type !== 'instagram_post' || !viewing.parent_task_id) return
+    let stale = false
+    supabase.from('seo_tasks').select('result_data').eq('id', viewing.parent_task_id).maybeSingle()
+      .then(({ data }) => {
+        if (stale) return
+        const attempts = ((data?.result_data as Record<string, unknown> | null)?.qa_attempts ?? []) as Array<{ attempt?: number; image_url?: string }>
+        const seen = new Set<string>()
+        const choices = attempts
+          .filter(a => typeof a.image_url === 'string' && a.image_url && !seen.has(a.image_url) && seen.add(a.image_url))
+          .map(a => ({ attempt: Number(a.attempt ?? 0), image_url: a.image_url as string }))
+        setAttemptChoices(choices)
+      })
+    return () => { stale = true }
+  }, [viewing?.id, viewing?.parent_task_id, viewing?.task_type])
   const cancelledRef = useRef(false)
 
   // Stable loader the realtime sub, polling interval, manual button, and
@@ -195,6 +215,44 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
     if (error) { window.alert(`Could not load the post: ${error.message}`); return }
     if (!data?.length) { window.alert('No Instagram post uses this image yet.'); return }
     setViewing(data[0] as SeoTaskRow)
+  }
+
+  // Choose a different attempt for an IG post: stage a NEW Instagram container
+  // with that image and the post's caption (meta-publish 'prepare', nothing
+  // goes live), then point the post at it. Approve & Publish then publishes
+  // the chosen image. The old container is left to expire on Meta's side.
+  async function handleUseAttempt(t: SeoTaskRow, imageUrl: string, attempt: number) {
+    const rd = (t.result_data ?? {}) as Record<string, any>
+    const brief = (t.brief_data ?? {}) as Record<string, any>
+    const mediaType = (rd.media_type as string) ?? (brief.media_type as string) ?? 'feed_image'
+    const type = mediaType === 'story' ? 'story' : mediaType === 'feed_image' ? 'feed' : null
+    if (!type) { window.alert(`Choosing an image isn't supported for ${mediaType} posts.`); return }
+    const caption = (rd.caption as string) ?? (brief.caption_he as string) ?? ''
+    if (!window.confirm(`Use attempt ${attempt} for this ${type}? It is staged for your review; nothing goes live until you press Approve & Publish.`)) return
+    setBusy(t.id)
+    try {
+      const { data, error } = await supabase.functions.invoke('meta-publish', {
+        body: { action: 'prepare', type, image_url: imageUrl, caption },
+      })
+      if (error) throw error
+      const creationId = data?.creation_id as string | undefined
+      if (!creationId) throw new Error(data?.error ?? 'meta-publish returned no creation_id')
+      const updated = {
+        ...rd,
+        image_url:        imageUrl,
+        ig_creation_id:   creationId,
+        chosen_attempt:   attempt,
+        chosen_via_ui_at: new Date().toISOString(),
+      }
+      const { error: upErr } = await supabase.from('seo_tasks').update({ result_data: updated }).eq('id', t.id)
+      if (upErr) throw upErr
+      setViewing(v => (v && v.id === t.id ? { ...v, result_data: updated } : v))
+    } catch (e: any) {
+      console.error('[SeoTaskQueue] choose attempt failed:', e)
+      window.alert(`Could not stage that image: ${e?.message ?? e}`)
+    } finally {
+      setBusy(null)
+    }
   }
 
   async function handleRejectIg(t: SeoTaskRow) {
@@ -441,6 +499,36 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                       </div>
                     ) : (
                       <div className="text-surface-500">No image yet — the visual task hasn't rendered.</div>
+                    )}
+
+                    {canPublish && carousel.length === 0 && attemptChoices.length > 1 && (
+                      <div className="space-y-1">
+                        <div className="text-surface-600 text-[11px]">All attempts: choose the one to publish</div>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {attemptChoices.map(c => {
+                            const current = c.image_url === single
+                            return (
+                              <div key={c.image_url} className={`shrink-0 rounded border p-1 ${current ? 'border-green-500 bg-green-50' : 'border-surface-200'}`}>
+                                <a href={c.image_url} target="_blank" rel="noreferrer">
+                                  <img src={c.image_url} alt={`Attempt ${c.attempt}`} className="h-40 rounded object-contain bg-surface-50" loading="lazy" />
+                                </a>
+                                <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+                                  <span>Attempt {c.attempt}</span>
+                                  {current ? (
+                                    <span className="text-green-800 font-medium">in this post</span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleUseAttempt(viewing, c.image_url, c.attempt)}
+                                      disabled={busy === viewing.id}
+                                      className="text-amber-700 hover:text-amber-900 font-medium disabled:opacity-50"
+                                    >Use this image</button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
                     )}
 
                     {caption && (
