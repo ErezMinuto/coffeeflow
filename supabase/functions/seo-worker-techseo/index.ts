@@ -19,6 +19,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { queueWorkerJudge, runLogged } from '../_shared/run_logged.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -53,7 +54,7 @@ RULES:
 OUTPUT: strict JSON only, no preamble:
 {"faq":[{"q":"...","a":"..."}, ...]}`
 
-serve(async (req) => {
+serve(runLogged('seo-worker-techseo', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -72,6 +73,9 @@ serve(async (req) => {
   }
   if (!task) return jsonResponse({ processed: 0, worker_id: workerId })
   console.log(`[seo-worker-techseo] ${workerId} claimed task ${task.id}`)
+  // Logged at claim time so a run killed by the wall clock still reads back
+  // 'incomplete' with its task id. Empty ticks reach no log call and write nothing.
+  log.info('task.claimed', `claimed task ${task.id}`, { task_id: task.id, attempt: task.attempts })
 
   const brief = task.brief_data as TechnicalSeoBrief
   if ((brief?.subtype ?? 'faq_injection') !== 'faq_injection') {
@@ -235,7 +239,10 @@ serve(async (req) => {
     faq_count:   proposedFaq.length,
     review_required: true,
   })
-})
+}, {
+  // Empty ticks and parent-not-ready polling write no rows; see queueWorkerJudge.
+  judge: queueWorkerJudge,
+}))
 
 // Coerce a brief value to a positive integer post id. Tolerates the number
 // the canonical brief carries and the numeric string an LLM-built brief may

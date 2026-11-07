@@ -27,6 +27,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { queueWorkerJudge, runLogged } from '../_shared/run_logged.ts'
 import { claudeBody, claudeHeaders } from '../_shared/claude.ts'
 import {
   createSupabase,
@@ -104,7 +105,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 // ─────────────────────────────────────────────────────────────────────────
 // HTTP entry point — claim one task, run loop, write result.
 // ─────────────────────────────────────────────────────────────────────────
-serve(async (req) => {
+serve(runLogged('seo-worker-research', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -235,6 +236,9 @@ Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
   }
   if (!task) return jsonResponse({ processed: 0, worker_id: workerId })
   console.log(`[seo-worker-research] ${workerId} claimed task ${task.id}`)
+  // Logged at claim time so a run killed by the wall clock still reads back
+  // 'incomplete' with its task id. Empty ticks reach no log call and write nothing.
+  log.info('task.claimed', `claimed task ${task.id}`, { task_id: task.id, attempt: task.attempts })
 
   const brief = task.brief_data as DeepResearchBrief
   const question = (brief?.question ?? '').trim()
@@ -627,7 +631,10 @@ Reply strict JSON only: {"winner":"A"|"B"|"tie","why":"one sentence"}`
     text_length:  finalText.length,
     tokens:       { input: totalInputTokens, output: totalOutputTokens },
   })
-})
+}, {
+  // Empty ticks and parent-not-ready polling write no rows; see queueWorkerJudge.
+  judge: queueWorkerJudge,
+}))
 
 // ─────────────────────────────────────────────────────────────────────────
 // System prompt — calibrated per scope + output shape.
