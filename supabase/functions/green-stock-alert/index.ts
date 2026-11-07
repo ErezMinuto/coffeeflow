@@ -19,6 +19,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
+import { runLogged } from "../_shared/run_logged.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const SUPA_URL  = Deno.env.get("SUPABASE_URL")              ?? "";
@@ -88,7 +89,7 @@ ${lines}
   throw new Error("Claude API failed: " + JSON.stringify(data).slice(0, 200));
 }
 
-serve(async (req) => {
+serve(runLogged("green-stock-alert", async (req, _log) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   // verify_jwt is off, so the caller is checked here. Posts to the team Telegram group. Only the green-stock-alert-daily cron calls it.
   if (!(await isServiceCaller(req))) return unauthorized(CORS);
@@ -123,4 +124,15 @@ serve(async (req) => {
   } catch (e) {
     return json({ error: String(e instanceof Error ? e.message : e) }, 500);
   }
-});
+}, {
+  judge: (out) => {
+    const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    // Counts only; origin names and the alert text stay out.
+    const notSent = out?.ok === true && !out?.test && Number(out?.low_stock) > 0 && out?.sent === false
+    return {
+      status: notSent ? 'partial' : undefined,
+      summary: { low_stock: out?.low_stock, sent: out?.sent, test: out?.test },
+      warnings: notSent ? [W('telegram.send.fail', `low-stock alert for ${out.low_stock} origin(s) was not delivered to the team group`, { low_stock: out.low_stock })] : [],
+    }
+  },
+}));

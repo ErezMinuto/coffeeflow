@@ -143,7 +143,10 @@ export function runLogged(
 
     try {
       let out: any = null
-      const isJson = (res.headers.get('content-type') ?? '').includes('application/json')
+      // Deno labels a string body text/plain, and some handlers (employee-bot)
+      // send JSON that way; non-JSON text simply fails to parse and passes through.
+      const ct = res.headers.get('content-type') ?? ''
+      const isJson = ct.includes('application/json') || ct.startsWith('text/plain') || ct === ''
       if (isJson) { try { out = await res.clone().json() } catch { out = null } }
 
       let j: RunJudgement | undefined

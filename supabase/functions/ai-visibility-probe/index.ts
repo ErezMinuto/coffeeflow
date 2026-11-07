@@ -26,6 +26,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import { CLAUDE_MODEL, claudeBody, claudeHeaders } from '../_shared/claude.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 
@@ -72,7 +73,7 @@ const KNOWN_COMPETITORS = [
 // queries get 500-2000 word answers.
 const MAX_RESPONSE_CHARS = 8000
 
-serve(async (req) => {
+serve(runLogged('ai-visibility-probe', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -161,7 +162,25 @@ serve(async (req) => {
   }
 
   return jsonResponse({ ok: true, stats })
-})
+}, {
+  judge: (out) => {
+    const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    const runs = Number(out?.stats?.runs) || 0, errors = Number(out?.stats?.errors) || 0
+    const byProvider: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(out?.stats?.by_provider ?? {})) {
+      const x = v as { runs?: number; mentioned?: number; errors?: number }
+      byProvider[k] = { runs: x.runs, mentioned: x.mentioned, errors: x.errors }
+    }
+    return {
+      status: out?.ok === true && errors > 0 ? (errors >= runs ? 'error' : 'partial') : undefined,
+      summary: { runs, minuto_mentioned: out?.stats?.minuto_mentioned, errors, by_provider: byProvider },
+      warnings: [
+        ...(errors > 0 ? [W('probe.errors', `${errors} of ${runs} probe call(s) failed`, { errors, runs })] : []),
+        ...(out?.ok === true && !out?.stats ? [W('probe.nothing_run', String(out?.note ?? 'no probes ran').slice(0, 120))] : []),
+      ],
+    }
+  },
+}))
 
 // ─────────────────────────────────────────────────────────────────────────
 // Response parser. Counts Minuto mentions, captures ±200 char context

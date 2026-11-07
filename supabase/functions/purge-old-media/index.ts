@@ -26,6 +26,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
+import { runLogged } from "../_shared/run_logged.ts";
 
 const URL    = Deno.env.get("SUPABASE_URL")              ?? "";
 const KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -158,7 +159,7 @@ async function removeBatch(headers: HeadersInit, paths: string[]): Promise<void>
   if (!res.ok) throw new Error(`delete failed: ${res.status} ${await res.text()}`);
 }
 
-serve(async (req) => {
+serve(runLogged("purge-old-media", async (req, _log) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   // verify_jwt is off, so the caller is checked here. Deletes Storage objects. Only the purge-old-media-weekly cron calls it.
   if (!(await isServiceCaller(req))) return unauthorized(CORS);
@@ -231,4 +232,15 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: String(e), perPrefix }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
   }
-});
+}, {
+  judge: (out) => {
+    const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    const targeted = Number(out?.filesTargeted) || 0, deleted = Number(out?.filesDeleted) || 0
+    const short = out?.ok === true && out?.dryRun === false && deleted < targeted
+    return {
+      status: short ? 'partial' : undefined,
+      summary: { dry_run: out?.dryRun, files_targeted: out?.filesTargeted, files_deleted: out?.filesDeleted, total_mb: out?.totalMB },
+      warnings: short ? [W('delete.short', `deleted ${deleted} of ${targeted} targeted file(s)`, { deleted, targeted })] : [],
+    }
+  },
+}));

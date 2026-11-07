@@ -178,3 +178,13 @@ Deno.test('scope: null writes no rows and the handler still reads the body; an o
   assert((await b.json()).got === 'cron_agent', 'scoped request lost its body')
   assert(terminal()[0]?.data?.agent === 'cron_agent', 'scope label missing from summary')
 })
+
+Deno.test('JSON sent as text/plain is read; plain text still passes through', async () => {
+  rows.length = 0
+  const res = await runLogged('t', async () => new Response(JSON.stringify({ ok: false, error: 'x' })))(post())
+  assert(typeof (await res.json()).run_id === 'string', 'text/plain JSON not read')
+  assert(terminal()[0]?.run_status === 'error', 'ok:false in text/plain not judged')
+  rows.length = 0
+  const r2 = await runLogged('t', async () => new Response('ok'))(post())
+  assert((await r2.text()) === 'ok', 'plain text body changed')
+})
