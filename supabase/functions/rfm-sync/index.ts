@@ -28,6 +28,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { createLogger } from "../_shared/logger.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -81,6 +82,10 @@ serve(async (req) => {
 
   const supabase = createClient(SUPA_URL, SUPA_KEY);
   const startedAt = new Date().toISOString();
+  // Created after the auth check so an unauthenticated caller cannot write log rows.
+  // Never log emails or ₪ spend: counts only.
+  const log = createLogger("rfm-sync");
+  let failures = 0;
 
   try {
     // 1. Pull paid web orders, paged (PostgREST caps a response at 1000 rows)
@@ -103,8 +108,11 @@ serve(async (req) => {
       orders.push(...((data ?? []) as OrderRow[]));
       if (!data || data.length < 1000) break;
     }
+    log.info("run.start", `${orders.length} paid orders`, { orders: orders.length });
     if (orders.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: "No orders found", customers: 0 }),
+      log.warn("orders.empty", "customer_orders returned no paid orders; nothing scored");
+      await log.finish("success", { orders: 0, customers: 0 });
+      return new Response(JSON.stringify({ success: true, message: "No orders found", customers: 0, run_id: log.runId }),
         { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
     }
 
@@ -212,7 +220,11 @@ serve(async (req) => {
     for (let i = 0; i < unique.length; i += 500) {
       const batch = unique.slice(i, i + 500);
       const { error: upErr } = await supabase.from("customer_rfm").upsert(batch, { onConflict: "email" });
-      if (upErr) console.error(`[rfm-sync] upsert fail (rows ${i}-${i + batch.length}): ${upErr.message}`);
+      if (upErr) {
+        console.error(`[rfm-sync] upsert fail (rows ${i}-${i + batch.length}): ${upErr.message}`);
+        log.error("rfm.upsert.fail", `customer_rfm upsert failed (rows ${i}-${i + batch.length})`, { code: upErr.code, message: upErr.message });
+        failures++;
+      }
       else upserted += batch.length;
     }
 
@@ -224,16 +236,25 @@ serve(async (req) => {
       .update({ segment: "superseded" }, { count: "exact" })
       .lt("updated_at", startedAt)
       .neq("segment", "superseded");
-    if (supErr) console.error(`[rfm-sync] superseded mark fail: ${supErr.message}`);
+    if (supErr) {
+      console.error(`[rfm-sync] superseded mark fail: ${supErr.message}`);
+      log.error("rfm.supersede.fail", "superseded mark failed", { code: supErr.code, message: supErr.message });
+      failures++;
+    }
 
     // 5. Refresh contact_group memberships
     // Only include emails that are in marketing_contacts + opted_in=true.
     // Customers who ordered but never opted into marketing stay out of email
     // segments (we can still target them via Meta Custom Audiences separately).
-    const { data: optedIn } = await supabase
+    const { data: optedIn, error: optErr } = await supabase
       .from("marketing_contacts")
       .select("email")
       .eq("opted_in", true);
+    // A failed read here empties every rfm_* group below without an error.
+    if (optErr) {
+      log.error("optin.fetch.fail", "marketing_contacts read failed; rfm_* groups will be rebuilt empty", { code: optErr.code, message: optErr.message });
+      failures++;
+    }
 
     const optedInSet = new Set(
       ((optedIn ?? []) as Array<{ email: string }>).map(r => r.email.trim().toLowerCase())
@@ -270,12 +291,17 @@ serve(async (req) => {
 
       if (!groupRow) {
         console.error(`[rfm-sync] group '${groupName}' not found — skipping`);
+        log.warn("group.missing", `contact group ${groupName} not found; skipped`, { group: groupName });
         continue;
       }
       const groupId = (groupRow as any).id;
 
       // Replace-all strategy: simpler than diffing
-      await supabase.from("contact_group_members").delete().eq("group_id", groupId);
+      const { error: delErr } = await supabase.from("contact_group_members").delete().eq("group_id", groupId);
+      if (delErr) {
+        log.error("group.clear.fail", `clearing ${groupName} failed`, { group: groupName, code: delErr.code, message: delErr.message });
+        failures++;
+      }
 
       if (members.length > 0) {
         // Insert in batches of 500 to avoid oversize payloads
@@ -290,13 +316,22 @@ serve(async (req) => {
           const { error: insErr } = await supabase
             .from("contact_group_members")
             .insert(batch);
-          if (insErr) console.error(`[rfm-sync] member insert fail ${groupName}: ${insErr.message}`);
+          if (insErr) {
+            console.error(`[rfm-sync] member insert fail ${groupName}: ${insErr.message}`);
+            log.error("group.insert.fail", `member insert failed for ${groupName}`, { group: groupName, rows: batch.length, code: insErr.code, message: insErr.message });
+            failures++;
+          }
         }
       }
       groupSummary[groupName] = members.length;
     }
 
+    await log.finish(failures > 0 ? "partial" : "success", {
+      orders: orders.length, customers: customers.length, rfm_upserted: upserted,
+      rfm_superseded: superseded ?? 0, segment_counts: segmentCounts, opted_in_groups: groupSummary, failures,
+    });
     return new Response(JSON.stringify({
+      run_id:        log.runId,
       success:       true,
       started_at:    startedAt,
       finished_at:   new Date().toISOString(),
@@ -308,7 +343,9 @@ serve(async (req) => {
     }), { status: 200, headers: { ...CORS, "Content-Type": "application/json" } });
   } catch (err: any) {
     console.error("[rfm-sync] error:", err?.message);
-    return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown" }),
+    log.error("run.throw", "rfm sync aborted", undefined, err);
+    await log.finish("error");
+    return new Response(JSON.stringify({ success: false, error: err?.message ?? "unknown", run_id: log.runId }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
   }
 });

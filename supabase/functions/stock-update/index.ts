@@ -22,6 +22,7 @@ import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
 import { applySells, type ApplySellsResult } from "./sells.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPA_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -643,6 +644,64 @@ async function handleMflowGet(body: any) {
   return json({ status: r.status, ok: r.ok, data: r.data });
 }
 
+// ── Run logging for the two cron actions (mflow_sync_sells, mflow_sync_revenue)
+// Both handlers report most failures as HTTP 200 + { ok:false } (e.g. "sells
+// fetch failed"), which pg_cron never reads. This wrapper turns every run into
+// a system_logs trace without touching the handlers: it reads the handler's
+// own JSON, records the outcome, and adds run_id to the response.
+//
+// Only counts reach the log. The revenue response carries ₪ figures
+// (revenue_ex_vat_by_channel, mismatch_value_ex_vat, shipping, header values)
+// and the sells response carries per-product detail; none of that is logged.
+const SELLS_LOG_FIELDS = [
+  "apply", "from_date", "to_date", "sells_fetched", "coffee_products_mapped",
+  "new_eligible", "already_processed", "skipped_draft", "claimed_by_other_run",
+  "skipped_returned_sale", "applied",
+] as const;
+const REVENUE_LOG_FIELDS = [
+  "apply", "from_date", "to_date", "sells_fetched", "lines", "rows_built", "written",
+  "purged_for_docs", "purge_skipped_truncated", "duplicate_rows_dropped", "truncated_window",
+  "reconciled_docs", "mismatch_count", "zero_line_docs", "unmapped_coffee_like_lines",
+] as const;
+
+async function runLogged(action: string, body: any, run: () => Promise<Response>): Promise<Response> {
+  const log = createLogger("stock-update");
+  log.info("run.start", action, { action, apply: body.apply === true, days: body.days ?? null });
+  try {
+    const res = await run();
+    let out: any = null;
+    try { out = await res.clone().json(); } catch { /* not JSON — returned as-is below */ }
+    const fields = action === "mflow_sync_sells" ? SELLS_LOG_FIELDS : REVENUE_LOG_FIELDS;
+    const summary: Record<string, unknown> = { action, http_status: res.status };
+    for (const k of fields) if (out?.[k] !== undefined) summary[k] = out[k];
+
+    const failed = !res.ok || out?.ok === false || (out?.error !== undefined && out?.ok !== true);
+    if (failed) {
+      // `http` is MFlow's status on a failed sells fetch; `error` is the handler's own message.
+      log.error(`${action}.fail`, String(out?.error ?? `HTTP ${res.status}`).slice(0, 500),
+        { ...summary, mflow_http: out?.http ?? null });
+    } else {
+      // The quiet failures: a run that "succeeded" but did nothing it should have.
+      if (out?.sells_fetched === 0) log.warn("sells.empty", `MFlow returned 0 sells for ${out?.from_date}..${out?.to_date}`, summary);
+      if (action === "mflow_sync_sells") {
+        if (out?.coffee_products_mapped === 0) log.warn("sku_map.empty", "no MFlow product mapped to a CoffeeFlow product; stock cannot move", summary);
+        if (Array.isArray(out?.failed_products) && out.failed_products.length) log.warn("apply.failed_products", `${out.failed_products.length} product(s) did not move; their sells retry next run`, { count: out.failed_products.length });
+        if (Array.isArray(out?.clamped) && out.clamped.length) log.warn("apply.clamped", `${out.clamped.length} sale(s) hit the >=0 stock clamp and will not retry`, { count: out.clamped.length });
+      } else {
+        if (out?.unknown_statuses) log.warn("revenue.unknown_status", "a sell status we never classified was excluded from revenue", { statuses: Object.keys(out.unknown_statuses) });
+        if (out?.truncated_window) log.warn("revenue.truncated", "window hit max_pages; purge was skipped", summary);
+      }
+    }
+    await log.finish(failed ? "error" : "success", summary);
+    if (out && typeof out === "object" && !Array.isArray(out)) return json({ ...out, run_id: log.runId }, res.status);
+    return res;
+  } catch (e) {
+    log.error("run.throw", `${action} aborted by an unhandled error`, { action }, e);
+    await log.finish("error", { action });
+    throw e;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: CORS });
   if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
@@ -673,7 +732,7 @@ serve(async (req) => {
 
   // MFlow sells fetch (read-only inspection of recent coffee sales).
   if (body.action === "mflow_sync_sells") {
-    try { return await handleMflowSyncSells(body); }
+    try { return await runLogged("mflow_sync_sells", body, () => handleMflowSyncSells(body)); }
     catch (e) {
       console.error("mflow_sync_sells error:", (e as Error).message);
       return json({ error: (e as Error).message }, 500);
@@ -682,7 +741,7 @@ serve(async (req) => {
 
   // MFlow raw GET (read-only lookup).
   if (body.action === "mflow_sync_revenue") {
-    try { return await handleMflowSyncRevenue(body); }
+    try { return await runLogged("mflow_sync_revenue", body, () => handleMflowSyncRevenue(body)); }
     catch (e) {
       console.error("mflow_sync_revenue error:", (e as Error).message);
       return json({ error: (e as Error).message }, 500);
