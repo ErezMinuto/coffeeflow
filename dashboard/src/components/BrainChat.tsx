@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useApp } from '../lib/context'
 import { Send, Loader2, Megaphone, Sparkles, ExternalLink, CheckCircle2 } from 'lucide-react'
 
 interface ToolCall { name: string; input: any; result: any }
@@ -37,6 +39,20 @@ function ToolChip({ t }: { t: ToolCall }) {
       </span>
     )
   }
+  // delegate_to_agent: an email draft made from finished copy, or a piece
+  // queued straight to the email / blog / IG agent. Links stay in-app.
+  if (t.name === 'delegate_to_agent' && r?.ok && r?.link) {
+    const agentLabel: Record<string, string> = { email: 'סוכן המייל', blog: 'כותב הבלוג', instagram: 'סוכן האינסטגרם' }
+    const label = r.kind === 'email_draft'
+      ? 'טיוטת מייל נוצרה · לא נשלחה · פתיחה בהיסטוריה'
+      : `נשלח ל${agentLabel[r.agent] ?? 'סוכן'} · הטיוטה תגיע בעוד כמה דקות`
+    return (
+      <Link to={r.link}
+         className="mt-2 inline-flex items-center gap-1.5 badge bg-white text-emerald-700 border border-emerald-100">
+        <CheckCircle2 size={12} /> {label}
+      </Link>
+    )
+  }
   if (t.name === 'queue_organic_task') {
     return (
       <span className="mt-2 inline-flex items-center gap-1.5 badge bg-white text-emerald-700 border border-emerald-100">
@@ -51,6 +67,7 @@ export function BrainChat() {
   const [messages, setMessages] = useState<Msg[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
   })
+  const { campaignsDb } = useApp()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
@@ -79,6 +96,11 @@ export function BrainChat() {
       if (error) throw error
       if (!data?.success) throw new Error(data?.error || 'הבקשה נכשלה')
       setMessages((m) => [...m, { role: 'assistant', content: data.answer || '', tools: data.tool_calls || [] }])
+      // The campaigns list is loaded once per session: refresh it so a draft the
+      // brain just made is there when the chip opens Marketing → History.
+      if ((data.tool_calls || []).some((t: ToolCall) => t.name === 'delegate_to_agent' && t.result?.kind === 'email_draft')) {
+        campaignsDb.refresh().catch(() => {})
+      }
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e?.message ?? 'שגיאה'}` }])
     } finally {

@@ -15,12 +15,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { decodeDesign } from "../generate-campaign/email_template.ts";
 import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
   getGa4Data, getSearchConsoleData, getWooCommerceData, getCompetitorAds,
 } from "../_shared/marketing_intel.ts";
 import { checkBlogProducts } from "../_shared/blog_products.ts";
 import { fetchMinutoCoffeeCatalog } from "../seo-agent/services/cmsApi.ts";
+import { delegateToAgent } from "./delegate.ts";
 
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPA_URL      = Deno.env.get("SUPABASE_URL") ?? "";
@@ -2730,7 +2732,7 @@ ${dataSection}`;
       // live API call: this runs on every chat turn, and the strategist can pull
       // live Google numbers itself with get_google_campaign_performance.
       const weekEnd2 = addDays(weekStart, 6);
-      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts] = await Promise.all([
+      const [metaData, topProducts, pastDrafts, recentPosts, googleCampaigns, googleDrafts, brainEmails] = await Promise.all([
         fetchMetaAdData(supabase, weekStart, weekEnd2),
         supabase.from("woo_products")
           .select("name, regular_price, total_sales, stock_status")
@@ -2752,6 +2754,12 @@ ${dataSection}`;
           .select("idea_id, campaign_name, campaign_type, daily_budget_ils, status, created_at, warnings")
           .order("created_at", { ascending: false })
           .limit(10),
+        // Scenes already asked for, so a new email image doesn't repeat them.
+        supabase.from("campaigns")
+          .select("created_at, subject, html_content")
+          .eq("campaign_type", "brain")
+          .order("created_at", { ascending: false })
+          .limit(8),
       ]);
       const metaBlock = buildMetaDataBlock(metaData.metaCurrentAgg, metaData.metaPrevAgg);
 
@@ -2773,6 +2781,12 @@ ${dataSection}`;
           return `  • id=${c.campaign_id} | ${c.name} — ${c.advertising_channel_type ?? "?"} — ${c.status} — ${daily} — bidding ${c.bidding_strategy_type ?? "?"}`;
         })
         .join("\n") || "  (no Google campaigns synced — run a Google sync, or the account has none)";
+
+      const scenesBlock = (brainEmails.data ?? [])
+        .map((c: any) => ({ c, scene: decodeDesign(c.html_content).sceneBrief }))
+        .filter((x: any) => typeof x.scene === "string" && x.scene.trim())
+        .map((x: any) => `  • [${String(x.c.created_at).slice(0, 10)}] ${String(x.c.subject).slice(0, 60)}: ${String(x.scene).slice(0, 200)}`)
+        .join("\n") || "  (none yet)";
 
       const googleDraftsBlock = (googleDrafts.data ?? [])
         .map((d: any) => `  • [${d.created_at?.slice(0, 10)}] ${d.campaign_name} — ${d.campaign_type} — ₪${d.daily_budget_ils}/d — status=${d.status}${d.warnings?.length ? ` — warnings: ${d.warnings.join(', ')}` : ''}`)
@@ -2855,7 +2869,13 @@ Your tools fall into two classes, and the distinction matters:
 4. **Never invent an id.** Campaign ids come from a tool result, never from your own head. A made-up number can match a real campaign you did not mean and the change will go through. If you don't have the id, fetch it. When you report a change, name the CAMPAIGN so the owner can catch a wrong target.
 
 5. \`change_targeting\` (Meta) / \`change_google_keywords\` (Google) — Meta: audience. Google: add keywords, remove keywords, add negative keywords. Show before → after. Warn that changing targeting on an active campaign resets its learning phase.
-6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a BLOG article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. For Instagram, direct the owner to the SEO chat (IG needs the SEO agent's visual-first flow); do not queue IG here. It does NOT write emails: the blog writer has no email format. For a customer email, write the Hebrew copy here in chat for the owner to review, or point them to the email Campaigns page (generate-campaign). Never tell the owner a draft is on its way unless this tool returned "queued".
+6. \`queue_organic_task\` — hands an ORGANIC task to the SEO/content agent (deep_research = research a topic/angle; text_generation = draft a BLOG article). It only QUEUES into the SEO agent's own review pipeline — it publishes nothing. It does NOT write emails. Never tell the owner a draft is on its way unless this tool returned "queued".
+7. \`delegate_to_agent\` — hands work to the agent that makes it: \`email\` (the email agent), \`blog\` (the blog writer) or \`instagram\` (the IG worker). Fire ONLY after the owner's explicit yes in chat for that specific piece; the work then goes straight to the agent with no further approval click. Everything it makes is a DRAFT: nothing is sent, scheduled or published, and the owner sends or publishes it themselves.
+   - Email with FINISHED copy (the owner wrote or approved the exact words): pass \`final_copy\` with subject, preheader, body, cta_text, cta_url. The text is used WORD FOR WORD: copy it exactly from the owner's approved version, do not polish, shorten, translate or "fix" it. **bold** and line breaks are kept. cta_url must be a minuto.co.il link. The only change the system makes is the legal " | פרסומת" suffix on the subject.
+     To make it a real marketing email, also pass \`products\` (1-4 Minuto coffees it features), \`scene_brief\` (an English photo scene that fits this email and differs from the recent scenes in your live data; the image is built around those products' REAL bags and label-checked, with the real product photo as the fallback) and \`promo_deadline\` (YYYY-MM-DD) when there is an offer end date. Propose the products and the scene to the owner in chat first; the image takes about a minute.
+   - Email from a BRIEF (no finished copy): pass \`brief\` with angle, and optionally subject_he, products, target_segment. The email agent writes the copy.
+   - Blog: \`brief\` with keyword (Hebrew), topic (the H1), key_points, products (exact Minuto coffee names). Instagram: \`brief\` with caption_he (the approved Hebrew caption), optional hashtags, media_type, product_name.
+   - Report exactly what the result says: a finished-copy email is a draft in Marketing → History right away; a brief is queued and the draft appears a few minutes later. If it refused or failed, say so and do not promise a draft. Never say an email was sent or scheduled.
 
 You are the brain over all three hands: recommend across Meta, Google AND organic, but only ACT (fire a write tool) on the owner's explicit approval for that specific action.
 
@@ -2910,6 +2930,9 @@ ${draftsBlock}
 
 ## Past Google Drafts (created via this strategist — for continuity)
 ${googleDraftsBlock}
+
+## Recent email image scenes (scene_brief of the latest email drafts you made)
+${scenesBlock}
 
 ## Recent organic posts/reels — boostable (pass existing_post {source:"ig", id} to draft_meta_campaign to run one AS an ad; no image needed)
 ${postsBlock}
@@ -2980,7 +3003,7 @@ ${postsBlock}
         },
       }, {
         name: "queue_organic_task",
-        description: "Queue an ORGANIC task for the SEO/content agent. Fire ONLY after explicit owner approval. Publishes nothing — it enters the SEO agent's own review pipeline. Not for Instagram (needs the SEO agent's visual-first flow). NOT for emails or newsletters: text_generation is the BLOG writer and refuses anything else, so an email request is rejected here. Only tell the owner a draft is coming if this tool's result says the task was queued; if it refused or failed, say so and do not promise a draft.",
+        description: "Queue an ORGANIC task for the SEO/content agent. Fire ONLY after explicit owner approval. Publishes nothing — it enters the SEO agent's own review pipeline. Not for Instagram (needs the SEO agent's visual-first flow). NOT for emails or newsletters: text_generation is the BLOG writer and refuses anything else, so an email request is rejected here (use delegate_to_agent for emails and Instagram). Only tell the owner a draft is coming if this tool's result says the task was queued; if it refused or failed, say so and do not promise a draft.",
         input_schema: {
           type: "object",
           properties: {
@@ -2993,6 +3016,50 @@ ${postsBlock}
             products: { type: "array", items: { type: "string" }, description: "text_generation only (required, non-empty): EXACT product names from the Minuto coffee lineup to link. A name not in the lineup is refused and the result lists the lineup." },
           },
           required: ["task_type", "topic", "rationale"],
+        },
+      }, {
+        name: "delegate_to_agent",
+        description: "Hand work to the agent that makes it: email, blog or instagram. Fire ONLY after the owner's explicit yes in chat for this specific piece. Creates DRAFTS only, never sends, schedules or publishes. Email with final_copy is rendered WORD FOR WORD (no AI rewrite) into a draft in Marketing → History. A brief is queued straight to the agent (no extra approval click) and drafted within minutes. Only tell the owner a draft exists or is coming if the result says so.",
+        input_schema: {
+          type: "object",
+          properties: {
+            agent: { type: "string", enum: ["email", "blog", "instagram"] },
+            title: { type: "string", description: "Short internal name for this piece (shown in the dashboard)." },
+            rationale: { type: "string", description: "One line: why this, why now." },
+            final_copy: {
+              type: "object",
+              description: "email only: the owner's FINISHED copy, exactly as approved. Do not edit a single word.",
+              properties: {
+                subject:   { type: "string" },
+                preheader: { type: "string" },
+                body:      { type: "string", description: "Full body. Use \\n for line breaks and **text** for bold, as in the approved copy. No greeting is added." },
+                cta_text:  { type: "string", description: "Button text." },
+                cta_url:   { type: "string", description: "Button link, must be https://minuto.co.il or https://www.minuto.co.il." },
+                products:  { type: "array", items: { type: "string" }, description: "Optional, 1-4 Minuto coffee products to feature, by name (\"Aristo\", \"Dark Chocolate\"). Shown as product cards with their real photo, price and link. If a name is refused, the result lists the valid ones: pick from it and call again." },
+                scene_brief: { type: "string", description: "Optional, needs products. One or two sentences in English describing a photo SCENE that fits this email's message, offer and season: setting, surface, light, props and mood. It must differ from the scenes listed under 'Recent email image scenes' in your live data. The image is generated around the REAL bags of the products and checked against them; if it fails the check, the real product photo is used. Don't describe the bags themselves and don't ask for text in the image." },
+                promo_deadline: { type: "string", description: "Optional YYYY-MM-DD: last day of the offer, shown in the legal footer line." },
+              },
+              required: ["subject", "body"],
+            },
+            brief: {
+              type: "object",
+              description: "Instead of final_copy, when the agent should write the work itself.",
+              properties: {
+                angle:          { type: "string", description: "email: the angle / offer the email agent writes around." },
+                subject_he:     { type: "string", description: "email: preferred Hebrew subject." },
+                target_segment: { type: "string", description: "email: customer segment the owner will send it to." },
+                keyword:        { type: "string", description: "blog: target search keyword in Hebrew." },
+                topic:          { type: "string", description: "blog: the article's H1. instagram: what the post is about." },
+                key_points:     { type: "array", items: { type: "string" }, description: "blog: points the article must cover." },
+                products:       { type: "array", items: { type: "string" }, description: "email/blog: EXACT Minuto coffee names." },
+                caption_he:     { type: "string", description: "instagram: the approved Hebrew caption." },
+                hashtags:       { type: "array", items: { type: "string" } },
+                media_type:     { type: "string", enum: ["feed_image", "story"] },
+                product_name:   { type: "string", description: "instagram: exact Minuto product to show (bag shot)." },
+              },
+            },
+          },
+          required: ["agent", "title"],
         },
       }, {
         name: "get_campaign_performance",
@@ -3264,7 +3331,7 @@ ${postsBlock}
               if (isText) {
                 const ask = `${topic} ${tu.input.title ?? ""} ${tu.input.rationale ?? ""}`;
                 if (/e-?mail|newsletter|מייל|אימייל|ניוזלטר|דיוור/i.test(ask)) {
-                  refuse("emails are not supported: text_generation is the blog writer and has no email format. Write the email copy in chat for the owner to review, or point them to the email Campaigns page. Do NOT tell the owner a draft is coming.");
+                  refuse("emails are not supported here: text_generation is the blog writer and has no email format. Use delegate_to_agent with agent=email instead. Do NOT tell the owner a draft is coming from this call.");
                 }
                 const keyword   = String(tu.input.keyword ?? "").trim();
                 const title     = String(tu.input.title ?? "").trim();
@@ -3300,6 +3367,15 @@ ${postsBlock}
               resultText = e?.refusal
                 ? `NOT queued: ${e.message} Nothing was queued, so no draft will arrive. Fix the brief or tell the owner.`
                 : `Queue FAILED with exception: ${e?.message}`;
+            }
+            toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
+          } else if (tu.name === "delegate_to_agent") {
+            try {
+              const out = await delegateToAgent(supabase as any, tu.input ?? {});
+              resultData = out.data;
+              resultText = out.text;
+            } catch (e: any) {
+              resultText = `Delegation FAILED with exception: ${e?.message}. Nothing was drafted; tell the owner.`;
             }
             toolCallsExecuted.push({ name: tu.name, input: tu.input, result: resultData });
           } else if (tu.name === "get_ga4_data" || tu.name === "get_search_console_data"

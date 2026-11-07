@@ -3,13 +3,17 @@ name: Google sync (Ads + Search Console)
 # Runs twice a day so the advisor, the strategist, the SEO agent and the
 # dashboard always see current Google data:
 #   1. google-sync         Google Ads spend, campaigns, gclid → campaign mapping
-#   2. google-search-sync  Search Console keywords/pages (last 90 days)
+#   2. google-search-sync  Search Console keywords/pages (last 5 days; Search Console revises ~3)
 # Search Console had no schedule at all from 2026-04-21 (auto-sync.yml was
 # switched off) until this was added on 2026-11-03; the agents read the
 # google_search_console table, so it went stale silently. health-watchdog now
 # alerts when either table stops advancing.
 #
-# The two steps are independent: a failing Ads sync does not skip Search Console.
+# The two steps are independent: one failing does not skip the other.
+# Search Console runs FIRST: it is synchronous (~60 s alone) and must finish
+# inside the 150 s gateway limit. google-sync answers 202 and keeps working in
+# the background for ~2 min; run in parallel with it, Search Console took
+# >150 s on 2026-11-04 and was cut off after 853 of 1200 rows.
 #
 # WHY HERE AND NOT pg_cron: the database is a Micro instance whose background
 # worker budget is the root cause of the 2026-09-20 outage (see
@@ -44,27 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Start google-sync
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DAYS: ${{ inputs.click_days || '30' }}
-        run: |
-          set -euo pipefail
-          case "$DAYS" in ''|*[!0-9]*) echo "::error::click_days must be a number"; exit 1 ;; esac
-          [ -n "$SUPABASE_URL" ] && [ -n "$KEY" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets missing"; exit 1; }
-          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST \
-            "$SUPABASE_URL/functions/v1/google-sync?mode=performance&click_days=$DAYS" \
-            -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
-          echo "HTTP $code"
-          if [ "$code" -ge 300 ]; then
-            echo "::error title=google-sync HTTP $code::$(head -c 300 resp.json | tr '\n' ' ')"
-            exit 1
-          fi
-          echo "::notice title=google-sync started::click_days=$DAYS, sync_log id $(jq -r '.sync_id // .id // "?"' resp.json 2>/dev/null)"
-
       - name: Sync Search Console
-        if: ${{ !cancelled() }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -83,3 +67,23 @@ jobs:
             exit 1
           fi
           echo "::notice title=Search Console synced::$(jq -r '.records' gsc.json) rows"
+
+      - name: Start google-sync
+        if: ${{ !cancelled() }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DAYS: ${{ inputs.click_days || '30' }}
+        run: |
+          set -euo pipefail
+          case "$DAYS" in ''|*[!0-9]*) echo "::error::click_days must be a number"; exit 1 ;; esac
+          [ -n "$SUPABASE_URL" ] && [ -n "$KEY" ] || { echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY repo secrets missing"; exit 1; }
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/google-sync?mode=performance&click_days=$DAYS" \
+            -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "HTTP $code"
+          if [ "$code" -ge 300 ]; then
+            echo "::error title=google-sync HTTP $code::$(head -c 300 resp.json | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "::notice title=google-sync started::click_days=$DAYS, sync_log id $(jq -r '.sync_id // .id // "?"' resp.json 2>/dev/null)"

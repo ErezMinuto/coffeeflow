@@ -11,6 +11,7 @@
 // has to re-aggregate in its head (and get wrong).
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { fetchGscKeywordTotals } from './gsc_totals.ts'
 
 const clampDays = (d: unknown, def = 30, max = 365) =>
   Math.max(1, Math.min(max, Number(d) || def))
@@ -91,30 +92,15 @@ export async function getSearchConsoleData(
   args: { window_days?: number; limit?: number; min_impressions?: number } = {},
 ) {
   const days = clampDays(args.window_days, 30, 180)
-  const { data, error } = await supabase
-    .from('google_search_console')
-    .select('keyword, clicks, impressions, position, date')
-    .neq('keyword', '__page__')          // the sync stores page rows under this sentinel
-    .gte('date', since(days))
-    .limit(5000)
-  if (error) throw new Error(`search console query failed: ${error.message}`)
-
-  const agg = new Map<string, { clicks: number; impr: number; posW: number }>()
-  for (const r of (data ?? []) as any[]) {
-    const k = r.keyword
-    const a = agg.get(k) ?? { clicks: 0, impr: 0, posW: 0 }
-    const im = Number(r.impressions ?? 0)
-    a.clicks += Number(r.clicks ?? 0); a.impr += im
-    a.posW += Number(r.position ?? 0) * im   // impression-weighted average position
-    agg.set(k, a)
-  }
+  // Summed in the database (gsc_keyword_totals, page rows excluded), every keyword read.
+  const totals = await fetchGscKeywordTotals(supabase, since(days))
   const minImpr = Number(args.min_impressions) || 0
-  const rows = [...agg.entries()]
-    .filter(([, v]) => v.impr >= minImpr)
-    .map(([keyword, v]) => ({
-      keyword, clicks: v.clicks, impressions: v.impr,
-      ctr: v.impr ? r2(v.clicks / v.impr) : 0,
-      avg_position: v.impr ? r2(v.posW / v.impr) : null,
+  const rows = totals
+    .filter(t => t.impressions >= minImpr)
+    .map(t => ({
+      keyword: t.keyword, clicks: t.clicks, impressions: t.impressions,
+      ctr: t.impressions ? r2(t.clicks / t.impressions) : 0,
+      avg_position: t.impressions ? r2(t.position) : null,
     }))
 
   return {

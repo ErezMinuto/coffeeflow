@@ -26,6 +26,8 @@ import { applyPlannedShot } from '../_shared/shot_library.ts'
 import { ASYNC_DRAFT_HOURS, critiqueOn, LOOP_IMPLEMENTED, readLoopConfig, type LoopConfig } from '../_shared/strategist_loop.ts'
 import { claimLoopRows, finishLoopRow, sweepStaleLoop } from '../_shared/strategist_loop_ledger.ts'
 import { callLoopAds } from '../_shared/loop_ads_client.ts'
+import { checkBlogKeywordLive } from '../_shared/keyword_research.ts'
+import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
 import { GOOGLE_SEARCH_SPEC_SYSTEM, googleSearchSpecProblems } from '../_shared/google_search_spec.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -67,6 +69,11 @@ async function draftBlog(supabase: SupabaseClient, rec: RecommendationRow, loop?
   const lineup = (await fetchMinutoCoffeeCatalog(supabase)).map(p => p.name)
   const chk = checkBlogProducts(rec.action_params?.products, lineup)
   if (!chk.ok) throw new Error(`content_blog products: ${chk.error}`)
+  // Re-checked here too: a post can appear between the proposal and now.
+  // Strict: not in our research, a conflicting post, or an unverifiable check
+  // all stop the draft (the rec fails with the reason; nothing is written).
+  const gate = await checkBlogKeywordLive(supabase, rec.action_params as Record<string, unknown>, String(rec.action_params?.topic ?? rec.title), checkCannibalizationForQueue)
+  if (!gate.ok) throw new Error(`content_blog keyword blocked: ${gate.reason}`)
   const brief: TextGenerationBrief = { ...blogBrief(rec), products_to_mention: chk.products, ...(loop ?? {}) }
   const task: NewSeoTask = {
     task_type:           'text_generation',

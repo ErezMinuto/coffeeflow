@@ -52,6 +52,18 @@
     } catch (e) { /* ignored on purpose */ }
   }
 
+  // Remembers which quiz coffees were clicked, so the order placed later in
+  // the week can be marked as coming from the quiz. Keys only, nothing personal.
+  function rememberClick(key) {
+    try {
+      var m = document.cookie.match(/(?:^|; )mq_quiz=([^;]*)/);
+      var list = m ? decodeURIComponent(m[1]).split(',').filter(Boolean) : [];
+      if (list.indexOf(key) === -1) list.push(key);
+      document.cookie = 'mq_quiz=' + encodeURIComponent(list.slice(-5).join(','))
+        + '; max-age=604800; path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+    } catch (e) { /* ignored on purpose */ }
+  }
+
   function el(tag, className, text) {
     var n = document.createElement(tag);
     if (className) n.className = className;
@@ -135,6 +147,7 @@
     var a = el('a', 'mq-button', c.cart ? 'הוספה לסל' : 'לבחירת טחינה');
     a.href = c.cart || c.url;
     a.addEventListener('click', function () {
+      rememberClick(c.key);
       track('quiz_click', { coffee: c.name, click_action: c.cart ? 'add_to_cart' : 'choose_grind', transport_type: 'beacon' });
     });
     body.appendChild(a);

@@ -1,7 +1,7 @@
 // Behaviour tests for invites.ts with a fake Clerk API and a fake user_roles.
 //
 //   deno run supabase/functions/clerk-user-lookup/invites_test.ts
-import { claimInvite, clearInvitedRole, createInvite, listInvites, META_EXP, META_KEY, normaliseEmail, revokeInvite } from './invites.ts'
+import { claimInvite, clearInvitedRole, createInvite, listInvites, META_ALLOW, META_EXP, META_KEY, normaliseEmail, revokeInvite } from './invites.ts'
 
 const NOW = 1_800_000_000_000
 const LIVE = NOW + 86_400_000
@@ -15,8 +15,9 @@ function check(name: string, cond: boolean, detail = '') {
 
 // ── fakes ────────────────────────────────────────────────────────────────────
 type Call = { method: string; path: string; body: any }
-function fakeClerk(users: Record<string, any>, opts: { inviteStatus?: number; invites?: any } = {}) {
+function fakeClerk(users: Record<string, any>, opts: { inviteStatus?: number; invites?: any; allowStatus?: number; allow?: Map<string, string> } = {}) {
   const calls: Call[] = []
+  const allow = opts.allow ?? new Map<string, string>()   // identifier → id
   const fn = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(String(input))
     const path = url.pathname.replace(/^\/v1/, '') + url.search
@@ -36,7 +37,23 @@ function fakeClerk(users: Record<string, any>, opts: { inviteStatus?: number; in
       const e = url.searchParams.get('email_address')
       return j(Object.values(users).filter((u: any) => u.email_addresses.some((a: any) => a.email_address === e)))
     }
-    if (method === 'POST' && /^\/invitations\/[^/]+\/revoke$/.test(path)) return j({ id: 'inv_1', status: 'revoked' })
+    if (method === 'POST' && path === '/allowlist_identifiers') {
+      if (opts.allowStatus) return j({ errors: [{ message: 'allowlist down' }] }, opts.allowStatus)
+      if (allow.has(body.identifier)) return j({ errors: [{ code: 'duplicate_record' }] }, 422)
+      const id = `alw_${allow.size + 1}`; allow.set(body.identifier, id)
+      return j({ id, identifier: body.identifier })
+    }
+    const del = path.match(/^\/allowlist_identifiers\/([^/]+)$/)
+    if (method === 'DELETE' && del) {
+      const hit = [...allow].find(([, v]) => v === del[1])
+      if (!hit) return j({ errors: [{ message: 'not found' }] }, 404)
+      allow.delete(hit[0]); return j({ deleted: true })
+    }
+    const rv = path.match(/^\/invitations\/([^/]+)\/revoke$/)
+    if (method === 'POST' && rv) {
+      const inv = (opts.invites ?? []).find((i: any) => i.id === rv[1])
+      return j({ id: rv[1], status: 'revoked', public_metadata: inv?.public_metadata ?? {} })
+    }
     const m = path.match(/^\/users\/([^/?]+)(\/metadata)?$/)
     if (m) {
       const u = users[decodeURIComponent(m[1])]
@@ -51,7 +68,7 @@ function fakeClerk(users: Record<string, any>, opts: { inviteStatus?: number; in
     }
     return j({ errors: [{ message: 'unexpected' }] }, 599)
   }) as typeof fetch
-  return { fn, calls }
+  return { fn, calls, allow }
 }
 
 function fakeDb(rows: Array<{ user_id: string; role: string; email?: string | null; full_name?: string | null }>) {
@@ -76,7 +93,7 @@ function fakeDb(rows: Array<{ user_id: string; role: string; email?: string | nu
 const user = (id: string, role?: string, exp = LIVE) => ({
   id, first_name: 'Dana', last_name: 'Books', primary_email_address_id: 'e2',
   email_addresses: [{ id: 'e1', email_address: 'old@x.co' }, { id: 'e2', email_address: 'dana@books.co.il' }],
-  public_metadata: role ? { [META_KEY]: role, [META_EXP]: exp } : {},
+  public_metadata: role ? { [META_KEY]: role, [META_EXP]: exp, [META_ALLOW]: 'alw_x' } : {},
 })
 
 // ── input checks ─────────────────────────────────────────────────────────────
@@ -88,7 +105,7 @@ const O = (fn: typeof fetch) => ({ clerkSecret: 'sk', fetchFn: fn, now: NOW })
   const c = fakeClerk({})
   const r = await createInvite('Dana@Books.co.il', 'bookkeeper', { ...O(c.fn), redirectUrl: 'https://app.test' })
   check('invite sent', r.ok && r.invite.role === 'bookkeeper' && r.invite.email === 'dana@books.co.il', JSON.stringify(r))
-  const sent = c.calls[0]?.body
+  const sent = c.calls.find((x) => x.method === 'POST' && x.path === '/invitations')?.body
   check('role carried in public_metadata', sent?.public_metadata?.[META_KEY] === 'bookkeeper')
   check('expires in 30 days', sent?.public_metadata?.[META_EXP] === NOW + 30 * 86_400_000 && sent?.expires_in_days === 30)
   check('Clerk emails it, back to the app', sent?.notify === true && sent?.redirect_url === 'https://app.test')
@@ -102,6 +119,61 @@ const O = (fn: typeof fetch) => ({ clerkSecret: 'sk', fetchFn: fn, now: NOW })
   const c = fakeClerk({}, { inviteStatus: 422 })
   const r = await createInvite('dana@books.co.il', 'employee', O(c.fn))
   check('Clerk refusal surfaced as 409 with its text', !r.ok && r.status === 409 && r.error.includes('taken'), JSON.stringify(r))
+}
+
+// ── allowlist (sign-up is allowlist-only) ───────────────────────────────────
+{
+  const c = fakeClerk({})
+  const r = await createInvite('alona@bokman-fin.com', 'bookkeeper', O(c.fn))
+  const inv = c.calls.find((x) => x.path === '/invitations')
+  check('invite adds the email to the allowlist first', r.ok && c.allow.get('alona@bokman-fin.com') === 'alw_1'
+    && c.calls[0].path === '/allowlist_identifiers', JSON.stringify(c.calls.map((x) => x.path)))
+  check('the entry we created is remembered on the invitation', inv?.body?.public_metadata?.[META_ALLOW] === 'alw_1')
+}
+{
+  const c = fakeClerk({}, { allow: new Map([['jule@bokman-fin.com', 'alw_old']]) })
+  const r = await createInvite('jule@bokman-fin.com', 'bookkeeper', O(c.fn))
+  const inv = c.calls.find((x) => x.path === '/invitations')
+  check('already allowlisted: invite still sent', r.ok)
+  check('already allowlisted: not marked as ours', !(META_ALLOW in (inv?.body?.public_metadata ?? {})))
+}
+{
+  const c = fakeClerk({}, { allowStatus: 500 })
+  const r = await createInvite('x@bokman-fin.com', 'bookkeeper', O(c.fn))
+  check('allowlist failure stops the invite (it could not be accepted)', !r.ok && !c.calls.some((x) => x.path === '/invitations'))
+}
+{
+  const c = fakeClerk({}, { inviteStatus: 422 })
+  const r = await createInvite('dup@x.co', 'employee', O(c.fn))
+  check('invitation refused: our allowlist entry rolled back', !r.ok && c.allow.size === 0)
+}
+{
+  const allow = new Map([['p@x.co', 'alw_9']])
+  const c = fakeClerk({}, { allow, invites: [
+    { id: 'inv_p', email_address: 'p@x.co', status: 'pending', public_metadata: { [META_KEY]: 'employee', [META_EXP]: LIVE, [META_ALLOW]: 'alw_9' } },
+  ] })
+  const r = await revokeInvite('inv_p', undefined, O(c.fn))
+  check('cancelling a pending invite removes the allowlist entry we added', r.ok && allow.size === 0)
+}
+{
+  const allow = new Map([['keep@x.co', 'alw_keep']])
+  const c = fakeClerk({}, { allow, invites: [
+    { id: 'inv_k', email_address: 'keep@x.co', status: 'pending', public_metadata: { [META_KEY]: 'employee', [META_EXP]: LIVE } },
+  ] })
+  await revokeInvite('inv_k', undefined, O(c.fn))
+  check('cancelling never removes an entry that was there before', allow.get('keep@x.co') === 'alw_keep')
+}
+{
+  // Gemini round 1 (allowlist), finding 2: an old expired invitation must
+  // never take away the allowlist entry a newer invitation relies on.
+  const allow = new Map([['again@x.co', 'alw_5']])
+  const c = fakeClerk({}, { allow, invites: [
+    { id: 'inv_e', email_address: 'again@x.co', status: 'expired', public_metadata: { [META_KEY]: 'employee', [META_EXP]: DEAD, [META_ALLOW]: 'alw_5' } },
+    { id: 'inv_b', email_address: 'again@x.co', status: 'pending', public_metadata: { [META_KEY]: 'employee', [META_EXP]: LIVE } },
+  ] })
+  await listInvites(O(c.fn)); await listInvites(O(c.fn))
+  check('listing never deletes allowlist entries (re-invited email keeps its entry)', allow.get('again@x.co') === 'alw_5')
+  check('listing makes no DELETE calls at all', !c.calls.some((x) => x.method === 'DELETE'))
 }
 
 // ── list: pending AND accepted-but-unclaimed are both visible ───────────────
@@ -152,7 +224,7 @@ const O = (fn: typeof fetch) => ({ clerkSecret: 'sk', fetchFn: fn, now: NOW })
   check('invited user gets the role', r.claimed && r.role === 'bookkeeper', JSON.stringify(r))
   const row = db.rows[0]
   check('row has primary email and name', row?.email === 'dana@books.co.il' && row?.full_name === 'Dana Books', JSON.stringify(row))
-  check('metadata cleared after use', !(META_KEY in users.u_new.public_metadata) && !(META_EXP in users.u_new.public_metadata))
+  check('metadata cleared after use', !(META_KEY in users.u_new.public_metadata) && !(META_EXP in users.u_new.public_metadata) && !(META_ALLOW in users.u_new.public_metadata))
   db.rows.length = 0   // admin deletes the role later…
   const again = await claimInvite('u_new', { ...O(c.fn), supabase: db })
   check('…and it does not come back', !again.claimed && db.rows.length === 0)

@@ -16,6 +16,12 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.
 import { autoApproveOn, readLoopConfig } from '../_shared/strategist_loop.ts'
 import { adRecommendationProblems } from '../_shared/ad_recommendation_check.ts'
 import {
+  computeSegmentFacts, emailRecProblems, fetchOptedInEmails, fetchSegmentFacts, type SegmentFacts,
+} from '../_shared/segment_facts.ts'
+import { fetchKeywordResearch } from '../_shared/keyword_research.ts'
+import { blogResearchProblems, cannibalVerdict, indexResearch, normKeyword } from '../_shared/blog_keyword_gate.ts'
+import { checkCannibalizationForQueue } from '../seo-agent/cannibalizationCheck.ts'
+import {
   getCurrentCapabilities, getOpsProfile, getResearchFindings, getSeoLearnings, handleEmitInnovationPitch, RESEARCH_TOOL_DEFS,
 } from './research_tools.ts'
 import type { PitchInput } from '../_shared/innovation_pitch.ts'
@@ -126,11 +132,11 @@ async function drilldownSegmentDetail(
 ): Promise<unknown> {
   if (!input.segment) return { error: 'segment is required' }
   // Paged: PostgREST caps a response at 1000 rows.
-  const rows: Array<{ total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
+  const rows: Array<{ email: string | null; total_spent_ils: number | null; order_count: number | null; days_since_last: number | null; bean_grams: number | null }> = []
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from('customer_rfm')
-      .select('total_spent_ils, order_count, days_since_last, bean_grams')
+      .select('email, total_spent_ils, order_count, days_since_last, bean_grams')
       .eq('segment', input.segment)
       .order('email')
       .range(from, from + 999)
@@ -139,6 +145,8 @@ async function drilldownSegmentDetail(
     if (!data || data.length < 1000) break
   }
   if (rows.length === 0) return { segment: input.segment, count: 0 }
+  const optedIn = await fetchOptedInEmails(supabase).catch(() => null)
+  const fact = computeSegmentFacts(rows.map(r => ({ ...r, segment: input.segment })), optedIn).segments[0]
   const spends = rows.map(r => Number(r.total_spent_ils ?? 0)).sort((a, b) => a - b)
   const grams = rows.map(r => Number(r.bean_grams ?? 0)).sort((a, b) => a - b)
   const orders = rows.map(r => Number(r.order_count ?? 0))
@@ -148,6 +156,10 @@ async function drilldownSegmentDetail(
   return {
     segment: input.segment,
     count: rows.length,
+    definition: fact.definition,
+    opted_in_reachable: fact.opted_in_reachable,
+    lapsed_90d_reachable: fact.lapsed_90d_reachable,
+    bean_buyer_share: fact.bean_buyer_share,
     total_spent_ils: Math.round(sum(spends)),
     median_spent_ils: Math.round(median(spends)),
     spend_note: 'total_spent_ils counts only orders since Jan 2026 (woo_orders); order_count, recency and bean grams cover the full history from 2023',
@@ -448,6 +460,20 @@ async function handleEmitSignal(
 interface DiagnosisItem { claim: string; evidence: string }
 interface OutOfHandsItem { title: string; rationale: string }
 
+/** The segment facts the brain saw: customer_segments.by_segment in this
+ *  run's snapshot. Null when the run predates them or the sense errored. */
+async function snapshotSegmentFacts(supabase: SupabaseClient, runId: string): Promise<SegmentFacts | null> {
+  const { data } = await supabase.from('strategist_runs').select('snapshot').eq('id', runId).maybeSingle()
+  const cs = (data as { snapshot?: { customer_segments?: Record<string, unknown> } } | null)?.snapshot?.customer_segments
+  if (!cs || !Array.isArray(cs.by_segment)) return null
+  return {
+    total_customers:          Number(cs.total_customers ?? 0),
+    total_opted_in_reachable: typeof cs.total_opted_in_reachable === 'number' ? cs.total_opted_in_reachable : null,
+    segments:                 cs.by_segment as SegmentFacts['segments'],
+    note:                     String(cs.note ?? ''),
+  }
+}
+
 async function handleConcludeBrief(
   supabase: SupabaseClient,
   ctx: ToolContext,
@@ -480,6 +506,48 @@ async function handleConcludeBrief(
       return { result: {
         error: `conclude_brief NOT saved — content_blog products must be exact Minuto coffee lineup names. ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
         minuto_coffee_lineup: lineup,
+      } }
+    }
+  }
+  // Blog keywords: grounded in our Google research AND no cannibalization.
+  // Checked here so a bad rec goes back to the model with the reason (the
+  // executor and the writer check again before anything is written).
+  if (recsIn.some(r => r.action_type === 'content_blog')) {
+    const research = await fetchKeywordResearch(supabase)
+    const index = indexResearch(research.rows)
+    const problems: string[] = []
+    for (const [i, r] of recsIn.entries()) {
+      if (r.action_type !== 'content_blog') continue
+      const at = `recommendations[${i}] "${r.title}"`
+      const params = (r.action_params ?? {}) as Record<string, unknown>
+      const grounded = blogResearchProblems(params, index)
+      if (grounded.length) { problems.push(`${at}: ${grounded.join('; ')}`); continue }
+      const kw = String(params.keyword)
+      const gscRow = index.get(`search_console|${normKeyword(kw)}`)
+      const verdict = cannibalVerdict(await checkCannibalizationForQueue(kw, String(params.topic ?? r.title ?? '')), gscRow?.ranking_page)
+      if (verdict.block) problems.push(`${at}: ${verdict.reason}`)
+    }
+    if (problems.length) {
+      return { result: {
+        error: `conclude_brief NOT saved — content_blog recommendations: ${problems.join(' ; ')}. Fix (pick another research keyword, or turn it into refresh advice with action_type "none") and call conclude_brief again.`,
+      } }
+    }
+  }
+
+  // Email recommendations: a real segment, described as the data describes it,
+  // sized by who can actually be emailed. Checked against the facts this run's
+  // snapshot carried AND a fresh read (rfm-sync may have run since kickoff).
+  if (recsIn.some(r => r.action_type === 'email_campaign')) {
+    const sets: SegmentFacts[] = []
+    const snap = await snapshotSegmentFacts(supabase, ctx.runId)
+    if (snap) sets.push(snap)
+    try { sets.push(await fetchSegmentFacts(supabase)) } catch (e) { console.warn(`[strategist] segment facts read failed: ${e instanceof Error ? e.message : String(e)}`) }
+    const problems = emailRecProblems(recsIn, sets, (await readLoopConfig(supabase)).min_email_reachable)
+    if (problems.length) {
+      const facts = sets[sets.length - 1]
+      return { result: {
+        error: `conclude_brief NOT saved — email_campaign recommendations: ${problems.join(' ; ')}. Fix and call conclude_brief again.`,
+        segment_facts: facts?.segments.map(f => ({ segment: f.segment, definition: f.definition, total: f.total, opted_in_reachable: f.opted_in_reachable, lapsed_90d_reachable: f.lapsed_90d_reachable, bean_buyer_share: f.bean_buyer_share })),
       } }
     }
   }
@@ -620,7 +688,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
   },
   {
     name: 'drilldown_segment_detail',
-    description: 'Aggregated profile of ONE customer RFM segment (count, spend distribution, recency, repeat-buyer share). Aggregated only — no individual customer data.',
+    description: 'Aggregated profile of ONE customer RFM segment: its definition, count, opted-in reachable count (who an email can reach), lapsed (>90d) reachable count, share with bean purchases, spend distribution, recency, repeat-buyer share. Aggregated only — no individual customer data.',
     input_schema: { type: 'object', properties: { segment: { type: 'string' } }, required: ['segment'] },
   },
   {
@@ -713,7 +781,7 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
               title: { type: 'string' },
               rationale: { type: 'string' },
               action_type: { type: 'string', enum: ['email_campaign', 'content_blog', 'content_ig', 'ad_meta', 'ad_google', 'none'], description: 'what the executor will draft: an email-campaign draft, a blog draft, an IG draft, a PAUSED Meta ad, a PAUSED Google Search ad, or none (pure advice). Ads are only ever created PAUSED; Erez alone activates them. Check active_paid_campaigns first: do not duplicate or overlap a running campaign (to scale a winner, recommend it as advice with action_type none).' },
-              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment, angle, products[], subject_he}. content_blog: {keyword|topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
+              action_params: { type: 'object', description: 'draft inputs. email_campaign: {target_segment (an RFM segment from customer_segments.by_segment), reachable_opted_in (the opted_in_reachable of that segment, copied from the data), angle, products[], subject_he}; the title or rationale states the reachable count. conclude_brief checks the segment, reachable_opted_in, every customer count in the text and the audience description against the segment data, and refuses a segment below ops_profile.strategist_loop.min_email_reachable opted-in customers. content_blog: {keyword (EXACTLY a keyword returned by get_keyword_research), research {source: search_console|google_ads, keyword (same keyword)}, topic, key_points[], why_now, products[] (1+ EXACT names from the Minuto coffee lineup; products[0] is the banner bag — conclude_brief rejects any other name and returns the lineup)}. content_ig: {caption_he (written FIRST), hashtags[], media_type(feed_image|story), aspect(feed_square|story), shot_type (from the shot menu, picked for the caption), shot_slots {moment, product_name (bag shots only), drink (finished_drink only)}, scene_brief (optional context)}. ad_meta: {product (EXACT lineup name; its real bag photo is the ad image), angle, audience, daily_budget_ils (<=100), duration_days, objective?}. ad_google (Search only): {keywords[] (grounded in search terms / Search Console), product (EXACT lineup name) or landing_url (minuto.co.il), angle, daily_budget_ils (<=100), duration_days}. Max 2 ad recommendations per brief.' },
               success_metric: {
                 type: 'object',
                 description: 'ATTRIBUTABLE: prefer a revenue / repeat-purchase proxy over a noisy segment-count. Name the data source and a baseline value now.',
@@ -734,9 +802,27 @@ export const BRAIN_TOOLS: BrainToolDefinition[] = [
       required: ['summary', 'diagnosis'],
     },
   },
+  {
+    name: 'get_keyword_research',
+    description: 'Our Google keyword research: Search Console queries (last 90 days: impressions, clicks, average position, the page of ours that ranked) and the Google Ads keywords we bid on (ad impressions). A content_blog keyword must be one of these, cited with its source; one of our /blog/ pages already ranking for it means refresh that post, not a new one.',
+    input_schema: { type: 'object', properties: { limit: { type: 'number', description: 'per source, 1-150, default 60' } } },
+  },
   // Research + innovation pitches (research_tools.ts).
   ...(RESEARCH_TOOL_DEFS as unknown as BrainToolDefinition[]),
 ]
+
+async function getKeywordResearch(supabase: SupabaseClient, input: { limit?: number }) {
+  const limit = Math.min(Math.max(Math.trunc(Number(input?.limit ?? 60)) || 60, 1), 150)
+  const r = await fetchKeywordResearch(supabase)
+  const gsc = r.rows.filter(x => x.source === 'search_console').slice(0, limit)
+  return {
+    search_console: gsc.map(x => ({ ...x, striking_distance: x.position != null && x.position >= 5 && x.position <= 30 })),
+    google_ads: r.rows.filter(x => x.source === 'google_ads').slice(0, limit),
+    gsc_data_as_of: r.gsc_as_of,
+    google_ads_data_as_of: r.ads_as_of,
+    note: 'google_ads impressions are ad impressions for keywords we bid on, not search volume.',
+  }
+}
 
 /** Dispatch a tool_use to its handler. Returns the outcome (and `concluded`
  *  when conclude_brief ran). Never throws — a handler error becomes an
@@ -761,6 +847,7 @@ export async function dispatchTool(
       case 'record_thesis':               return { result: await handleRecordThesis(supabase, ctx, input as Parameters<typeof handleRecordThesis>[2]) }
       case 'emit_signal':                 return { result: await handleEmitSignal(supabase, ctx, input as Parameters<typeof handleEmitSignal>[2]) }
       case 'conclude_brief':              return await handleConcludeBrief(supabase, ctx, input as Parameters<typeof handleConcludeBrief>[2])
+      case 'get_keyword_research':        return { result: await getKeywordResearch(supabase, input as { limit?: number }) }
       case 'get_research_findings':       return { result: await getResearchFindings(supabase) }
       case 'get_ops_profile':             return { result: await getOpsProfile(supabase) }
       case 'get_seo_learnings':           return { result: await getSeoLearnings(supabase, input as { limit?: number }) }

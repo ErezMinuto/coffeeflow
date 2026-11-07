@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Minuto Coffee Quiz
  * Description: "איזה קפה מתאים לי?" quiz. Place [minuto_coffee_quiz] on a page.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: Minuto
  * Requires Plugins: woocommerce
  *
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('MINUTO_QUIZ_VERSION', '1.1.4');
+define('MINUTO_QUIZ_VERSION', '1.1.5');
 define('MINUTO_QUIZ_CACHE_KEY', 'minuto_quiz_catalog');
 define('MINUTO_QUIZ_ROAST_ATTRIBUTE_ID', 20);   // רמת קלייה
 define('MINUTO_QUIZ_MACHINES_CATEGORY_ID', 394);  // מכונות קפה, including its subcategories
@@ -287,4 +287,58 @@ add_action('admin_notices', function () {
     if (!in_array($id, minuto_quiz_fresh_product_ids(), true)) return;
     if (in_array((string) get_post_meta($id, '_mq_flavor', true), ['chocolate', 'fruity', 'floral'], true)) return;
     echo '<div class="notice notice-warning"><p>' . esc_html('הקפה הזה עדיין לא בשאלון. ממלאים את התיבה "שאלון קפה" בצד העמוד.') . '</p></div>';
+});
+
+/**
+ * Marks an order whose customer clicked a quiz coffee in the last 7 days.
+ * _minuto_quiz_clicked: the clicked quiz keys. _minuto_quiz_bought: those of
+ * them that are in the order. The cookie is set by quiz.js and is untrusted,
+ * so only keys the quiz itself could have produced are kept.
+ */
+function minuto_quiz_clicked_products(): array {
+    if (empty($_COOKIE['mq_quiz'])) return [];
+    $raw = sanitize_text_field(wp_unslash((string) $_COOKIE['mq_quiz']));
+    $named = minuto_quiz_coffees();
+    $found = [];
+    foreach (array_slice(explode(',', $raw), 0, 5) as $key) {
+        $key = sanitize_key($key);
+        if (isset($named[$key])) {
+            $found[$key] = (int) $named[$key][0];
+        } elseif (preg_match('/^extra_(\d{1,10})$/', $key, $m)) {
+            $found[$key] = (int) $m[1];
+        }
+    }
+    return $found;
+}
+
+function minuto_quiz_tag_order($order): void {
+    if (!$order instanceof WC_Order) return;
+    $clicked = minuto_quiz_clicked_products();
+    if (!$clicked) return;
+    $in_order = [];
+    foreach ($order->get_items() as $item) {
+        if ($item instanceof WC_Order_Item_Product) $in_order[] = (int) $item->get_product_id();
+    }
+    $bought = array_keys(array_filter($clicked, fn($id) => in_array($id, $in_order, true)));
+    $order->update_meta_data('_minuto_quiz_clicked', implode(',', array_keys($clicked)));
+    $order->update_meta_data('_minuto_quiz_bought', implode(',', $bought));
+    // One order per quiz visit: a later, unrelated order shouldn't count too.
+    if (!headers_sent()) {
+        setcookie('mq_quiz', '', ['expires' => time() - 3600, 'path' => '/', 'secure' => is_ssl(), 'samesite' => 'Lax']);
+    }
+}
+add_action('woocommerce_checkout_create_order', 'minuto_quiz_tag_order');
+add_action('woocommerce_store_api_checkout_update_order_from_request', 'minuto_quiz_tag_order');
+
+// Shown to staff on the order screen.
+add_action('woocommerce_admin_order_data_after_order_details', function ($order) {
+    if (!$order instanceof WC_Order) return;
+    $clicked = (string) $order->get_meta('_minuto_quiz_clicked');
+    if ($clicked === '') return;
+    $bought = (string) $order->get_meta('_minuto_quiz_bought');
+    printf(
+        '<p class="form-field form-field-wide"><strong>%s</strong> %s</p>',
+        esc_html('הגיע מהשאלון.'),
+        esc_html($bought !== '' ? 'בהזמנה יש קפה שהשאלון המליץ עליו.' : 'הייתה לחיצה על המלצה, אבל בהזמנה יש קפה אחר.')
+    );
 });

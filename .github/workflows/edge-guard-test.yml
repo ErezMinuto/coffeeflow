@@ -9,6 +9,9 @@ on:
       - 'scripts/ci/edge_prod_guard.sh'
       - 'scripts/ci/edge_canon_test.sh'
       - 'scripts/ci/fixtures/**'
+      - 'scripts/ci/deploy_base.sh'
+      - 'scripts/ci/deploy_base_test.sh'
+      - '.github/workflows/deploy-edge-functions.yml'
       - '.github/workflows/edge-guard-test.yml'
 
 permissions:
@@ -24,3 +27,5 @@ jobs:
         run: npm install -g esbuild@0.25.10   # same pin as the deploy workflow
       - name: Self-test the guard's canonical form
         run: bash scripts/ci/edge_canon_test.sh
+      - name: Test how a deploy picks its base commit
+        run: bash scripts/ci/deploy_base_test.sh

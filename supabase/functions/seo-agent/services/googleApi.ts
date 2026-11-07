@@ -10,6 +10,7 @@
 // google-search-sync function as a template).
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
+import { fetchGscKeywordTotals } from '../../_shared/gsc_totals.ts'
 
 export interface GscKeywordRow {
   keyword: string
@@ -19,9 +20,8 @@ export interface GscKeywordRow {
   position: number
 }
 
-// Returns top N keywords by impressions over the lookback window. Excludes
-// the synthetic '__page__' aggregate row (it's a page-level summary, not
-// a keyword).
+// Returns top N keywords by impressions over the lookback window, summed in
+// the database (gsc_keyword_totals excludes the '__page__' page rows).
 export async function fetchTopKeywords(
   supabase: SupabaseClient,
   lookbackDays = 30,
@@ -29,50 +29,8 @@ export async function fetchTopKeywords(
 ): Promise<GscKeywordRow[]> {
   const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000)
     .toISOString().split('T')[0]
-  const { data, error } = await supabase
-    .from('google_search_console')
-    .select('keyword, clicks, impressions, ctr, position')
-    .neq('keyword', '__page__')
-    .gte('date', since)
-    .order('impressions', { ascending: false })
-    .limit(limit * 3) // pull extra so we can aggregate across multiple dates
-  if (error) throw new Error(`fetchTopKeywords failed: ${error.message}`)
-
-  // Aggregate across dates — one keyword may appear on many rows. Sum
-  // clicks/impressions, average position weighted by impressions.
-  const byKeyword = new Map<string, GscKeywordRow & { _impSum: number }>()
-  for (const r of (data ?? []) as Array<{
-    keyword: string
-    clicks: number
-    impressions: number
-    ctr: number
-    position: number
-  }>) {
-    const k = r.keyword
-    const prev = byKeyword.get(k)
-    const imp = r.impressions ?? 0
-    if (!prev) {
-      byKeyword.set(k, {
-        keyword:     k,
-        clicks:      r.clicks ?? 0,
-        impressions: imp,
-        ctr:         r.ctr ?? 0,
-        position:    r.position ?? 0,
-        _impSum:     imp,
-      })
-    } else {
-      prev.clicks      += r.clicks ?? 0
-      prev.impressions += imp
-      prev.position     = (prev.position * prev._impSum + (r.position ?? 0) * imp) / (prev._impSum + imp || 1)
-      prev._impSum     += imp
-      prev.ctr          = prev.impressions > 0 ? prev.clicks / prev.impressions : 0
-    }
-  }
-
-  return Array.from(byKeyword.values())
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, limit)
-    .map(({ _impSum: _, ...rest }) => rest)
+  const totals = await fetchGscKeywordTotals(supabase, since, { top: limit })
+  return totals.map(({ keyword, clicks, impressions, ctr, position }) => ({ keyword, clicks, impressions, ctr, position }))
 }
 
 // ── Google Ads — aggregated views the orchestrator uses for paid-intent signals
