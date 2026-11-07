@@ -500,11 +500,12 @@ async function renderArtDirected(body: VisualTestRequest, cors: Record<string, s
   const parts: any[] = []
   for (const [i, r] of refs.entries()) {
     if (!allowed.has(r.key)) throw new Error(`reference "${r.key}" is not an allowed library photo`)
+    // By URL, as the shot-library path does: the library holds phone originals
+    // (up to ~6 MB), and base64-encoding one here hit the edge worker's compute
+    // limit (HTTP 546 on the first prod run, 2026-11-07). Gemini fetches it.
     const url = `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${r.key.split('/').map(encodeURIComponent).join('/')}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) })
-    if (!res.ok) throw new Error(`reference ${r.key}: HTTP ${res.status}`)
     parts.push({ text: `Reference image ${i + 1}: use it only for ${String(r.role).slice(0, 300)}` })
-    parts.push({ inline_data: { mime_type: mimeOf(r.key), data: encodeBase64(await res.arrayBuffer()) } })
+    parts.push({ fileData: { mimeType: mimeOf(r.key), fileUri: url } })
   }
   parts.push({ text: prompt })
   const started = Date.now()
