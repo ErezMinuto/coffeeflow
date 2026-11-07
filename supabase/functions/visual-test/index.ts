@@ -5,7 +5,7 @@ import { bagReferenceFor, storagePublicUrl, type BagReference } from '../_shared
 import { decode as decodeBase64, encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 import {
   PHOTO_EXCLUDE, SHOTS, bagScenePrompt, isBagSceneOf, isShotType, packshotFor, referenceSubject, shotEditBrief,
-  shotGeneratePrompt, shotUsesRealPhoto,
+  shotFolders, shotGeneratePrompt, shotUsesRealPhoto,
   type ShotDef,
   type ShotSlots, type ShotType,
 } from '../_shared/shot_library.ts'
@@ -564,8 +564,9 @@ async function renderShot(body: VisualTestRequest, cors: Record<string, string>)
     // Matching on the whole scene prompt picked the moka-pot photo for "a
     // pour-over dripper", and the model then printed "Bialetti" on it.
     const subject = referenceSubject(shot, slots)
-    const refs = await pickMatchingRealPhoto(supabase, shot.folders, subject, 'upload_images', PHOTO_EXCLUDE)
-    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, shot.folders, 1, 'upload_images', PHOTO_EXCLUDE))[0] ?? null
+    const folders = shotFolders(shot, slots)
+    const refs = await pickMatchingRealPhoto(supabase, folders, subject, 'upload_images', PHOTO_EXCLUDE)
+    referencePhoto = (refs.length ? refs : await randomLibraryPhotos(supabase, folders, 1, 'upload_images', PHOTO_EXCLUDE))[0] ?? null
     const parts: any[] = []
     if (referencePhoto) parts.push({ fileData: { mimeType: mimeOf(referencePhoto), fileUri: referencePhoto } })
     parts.push({ text: sentPrompt })
