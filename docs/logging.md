@@ -134,10 +134,15 @@ are redeployed afterwards. Keep it stable.
 
 ## Retention
 
-30 days, purged daily at 03:30 UTC by `system-logs-purge-daily`, which calls
+30 days, purged daily at 02:00 UTC by `system-logs-purge-daily`, which calls
 `purge_system_logs(30)` in 10k batches so it never holds a long lock. The cron
 is registered in `health-watchdog`'s `EXPECTED_CRONS`, so if it stops firing
 you will hear about it.
+
+`purge_system_logs` is SECURITY DEFINER, so only `service_role` may EXECUTE it
+(the cron runs as its owner, `postgres`), and it refuses a window under 7 days.
+`scripts/ci/purge_functions_check.sql` (`qa-scan.sh --db`) fails if any
+`purge_*` function becomes callable with the anon or user key again.
 
 30 days is chosen to cover slow-burn failures: a sync that quietly stops
 (`woo-orders-sync` sat ~6 days stale once) or anything on a weekly cadence
