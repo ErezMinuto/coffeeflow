@@ -158,5 +158,57 @@ needs more history than a fortnight.
 | `meta-sync` | Wrote `status:'success'` unconditionally, even when every block threw |
 | `coffee-bot` | Stock writes discarded their errors — employees saw "✅ נרשמה אריזה" while nothing was recorded |
 
-Everything else still uses `console.log` only. Add the logger as you touch
-them; there is no need for a big-bang pass.
+**Every function `pg_cron` calls now logs** (step 1b, 2026-11-07, PRs #515,
+#517, #520, #521/#522, #523):
+
+| Batch | Functions |
+|---|---|
+| 1 — data syncs (inline `createLogger`) | `stock-update` (MFlow sells + revenue), `woo-stock-check`, `woo-products-enrich`, `ga4-sync`, `rfm-sync` |
+| 2 — workers | `mission-worker`, `organic-orchestrator` (inline, per-phase lines), `health-watchdog`, `email-automation-scheduler`, `strategist-executor` |
+| 3 — queue workers | `seo-worker-research`, `seo-worker-techseo`, `seo-worker-writer`, `seo-worker-visual`, `organic-worker-instagram` |
+| 4 — strategist + agents | `strategist-brain`, `strategist-evaluator`, `evaluator-tick`, `scout-tick`, `marketing-advisor` (cron agents only) |
+| 5 — small jobs | `ai-visibility-probe`, `attendance-reminder`, `green-stock-alert`, `purge-old-media`, `employee-bot` (cron actions only) |
+
+Functions not called by cron (webhooks, dashboard endpoints) still use
+`console.log` only. Add the logger as you touch them.
+
+## Wrapping a long handler: `_shared/run_logged.ts`
+
+For a handler with many exit paths, wrap it instead of editing every return:
+
+```ts
+import { runLogged, queueWorkerJudge } from '../_shared/run_logged.ts'
+
+serve(runLogged('my-function', async (req, log) => {
+  // …handler unchanged…
+}, {
+  judge: (out, res, scope) => ({ summary: { processed: out?.processed } }),
+}))
+```
+
+It reads the handler's own JSON reply after it returns, records the run's
+outcome (HTTP 200 + `ok:false` counts as an error), always awaits `finish()`,
+and adds `run_id` to the reply (`log_run_id` if the reply already has a
+`run_id`) plus an `x-run-id` header. Behaviour of the handler is unchanged.
+
+- **Only what `judge` returns is logged.** Default summary is the HTTP status
+  alone; name each field. Error text is email-masked. Never log names, emails,
+  prompt or model text, or money.
+- **Refused requests write nothing**: OPTIONS, 401, 403, 405, and anything
+  `skip` (after the handler, headers/URL only) or `scope` (before the handler,
+  from a request clone, may read the body; `null` = not logged) rules out. Use
+  `scope` when only some calls are scheduled work (`marketing-advisor`
+  agents, `employee-bot` actions).
+- **`drop: true`** from `judge` writes no rows for an empty tick (frequent
+  crons with nothing to do). Refused once the run failed, a warning is
+  pending, or the handler logged anything, so a run is never left
+  `incomplete`. `queueWorkerJudge` is the shared judge for `seo_tasks` queue
+  workers.
+- Log one line (e.g. `task.claimed`) as soon as real work starts, so a
+  wall-clock kill reads back `incomplete` instead of leaving no trace.
+- Check it parses: run `NO_COLOR=1 deno check` and treat **any** `error` line
+  as a failure (a parse error prints lowercase `error:` and no `ERROR`), or
+  parse with esbuild like the deploy guard does. #521 shipped a missing `)`
+  that a grep for `ERROR` did not catch.
+
+Tests: `deno test --allow-env --allow-net supabase/functions/_shared/run_logged_test.ts`.
