@@ -30,6 +30,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { queueWorkerJudge, runLogged } from '../_shared/run_logged.ts'
 import { WRITER_SYSTEM_PROMPT } from '../seo-agent/prompts/writer.ts'
 import { handBackForCritique } from '../_shared/strategist_loop.ts'
 import { callClaude, parseClaudeJson, MODEL_WRITER } from '../seo-agent/claude.ts'
@@ -61,7 +62,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-serve(async (req: Request): Promise<Response> => {
+serve(runLogged('seo-worker-writer', async (req: Request, log): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -88,6 +89,9 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   console.log(`[seo-worker-writer] claimed task=${task.id} attempt=${task.attempts}/${task.max_attempts}`)
+  // Logged at claim time so a run killed by the wall clock still reads back
+  // 'incomplete' with its task id. Empty ticks reach no log call and write nothing.
+  log.info('task.claimed', `claimed task ${task.id}`, { task_id: task.id, attempt: task.attempts })
 
   // ── 2..N: process — wrap so any throw flips the task to failed ─────────
   try {
@@ -318,7 +322,10 @@ serve(async (req: Request): Promise<Response> => {
       error:     msg,
     }, 200)  // 200 so cron doesn't retry-storm us; the task lifecycle is the source of truth
   }
-})
+}, {
+  // Empty ticks and parent-not-ready polling write no rows; see queueWorkerJudge.
+  judge: queueWorkerJudge,
+}))
 
 // ── helpers ────────────────────────────────────────────────────────────
 

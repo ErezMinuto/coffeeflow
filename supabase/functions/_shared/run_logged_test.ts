@@ -19,7 +19,7 @@ globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) =>
   return realFetch(input as any, init)
 }) as typeof fetch
 
-const { runLogged, redactEmails } = await import('./run_logged.ts')
+const { runLogged, redactEmails, queueWorkerJudge } = await import('./run_logged.ts')
 
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } })
@@ -113,4 +113,49 @@ Deno.test('non-JSON reply passes through with the header', async () => {
 Deno.test('redactEmails', () => {
   assert(redactEmails('x: a.b+c@mail.co.il, y') === 'x: <email>, y', redactEmails('x: a.b+c@mail.co.il, y'))
   assert(redactEmails('no email here') === 'no email here', 'changed clean text')
+})
+
+Deno.test('queue worker: empty tick writes no rows', async () => {
+  rows.length = 0
+  await runLogged('w', async () => json({ processed: 0, worker_id: 'x' }), { judge: queueWorkerJudge })(post())
+  assert(rows.length === 0, `expected 0 rows, got ${rows.length}`)
+})
+
+Deno.test('queue worker: parent-not-ready polling writes no rows', async () => {
+  rows.length = 0
+  await runLogged('w', async () => json({ processed: 1, task_id: 't', ok: false, retry: true, reason: 'parent_not_ready' }), { judge: queueWorkerJudge })(post())
+  assert(rows.length === 0, `expected 0 rows, got ${rows.length}`)
+})
+
+Deno.test('queue worker: drop is refused once the handler logged (no orphaned lines)', async () => {
+  rows.length = 0
+  await runLogged('w', async (_r, log) => { log.info('task.claimed', 'c'); return json({ processed: 1, task_id: 't', ok: false, retry: true }) }, { judge: queueWorkerJudge })(post())
+  assert(terminal().length === 1 && terminal()[0].run_status === 'success', 'want one success terminal row')
+})
+
+Deno.test('queue worker: an idle tick that errored is logged', async () => {
+  rows.length = 0
+  await runLogged('w', async () => json({ processed: 0, worker_id: 'x', error: 'claim failed' }, 500), { judge: queueWorkerJudge })(post())
+  assert(terminal()[0]?.run_status === 'error', 'want error')
+})
+
+Deno.test('queue worker: ok:false without error is success; failed:true at HTTP 200 is error', async () => {
+  rows.length = 0
+  await runLogged('w', async () => json({ processed: 1, task_id: 't', ok: false, reason: 'parent_superseded' }), { judge: queueWorkerJudge })(post())
+  assert(terminal()[0]?.run_status === 'success', 'superseded should be success')
+  rows.length = 0
+  await runLogged('w', async () => json({ processed: 0, task_id: 't', failed: true, permanent: true, error: 'x' }, 200), { judge: queueWorkerJudge })(post())
+  assert(terminal()[0]?.run_status === 'error', 'failed:true should be error')
+})
+
+Deno.test('queue worker: only allowlisted scalars are logged', async () => {
+  rows.length = 0
+  await runLogged('w', async () => json({
+    processed: 1, task_id: 't', ok: true, caption_he: 'SECRET CAPTION', image_url: 'https://img/x.png',
+    meta_response: { token: 'abc' }, tokens: { input: 10, output: 5 }, attach_error: 'wp 500',
+  }), { judge: queueWorkerJudge })(post())
+  const dump = JSON.stringify(rows)
+  assert(!dump.includes('SECRET CAPTION') && !dump.includes('img/x.png') && !dump.includes('abc'), 'non-allowlisted field leaked')
+  assert(terminal()[0].data.tokens_in === 10, 'tokens missing')
+  assert(rows.some((r) => r.event === 'attach.fail'), 'attach warning missing')
 })

@@ -64,6 +64,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { queueWorkerJudge, runLogged } from '../_shared/run_logged.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -131,7 +132,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-serve(async (req) => {
+serve(runLogged('seo-worker-visual', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -153,6 +154,9 @@ serve(async (req) => {
     return jsonResponse({ processed: 0, worker_id: workerId })
   }
   console.log(`[seo-worker-visual] ${workerId} claimed task ${task.id} attempt=${task.attempts}`)
+  // Logged at claim time so a run killed by the wall clock still reads back
+  // 'incomplete' with its task id. Empty ticks reach no log call and write nothing.
+  log.info('task.claimed', `claimed task ${task.id}`, { task_id: task.id, attempt: task.attempts })
 
   // ── 2. Parse + validate brief ────────────────────────────────────────
   // Tolerate a double-encoded brief: if brief_data was stored as a JSON string
@@ -627,7 +631,10 @@ serve(async (req) => {
     review_required:     reviewRequired,
     qa_attempt_count:    qaAttempts.length,
   })
-})
+}, {
+  // Empty ticks and parent-not-ready polling write no rows; see queueWorkerJudge.
+  judge: queueWorkerJudge,
+}))
 
 // attachFeaturedImage lifted to seo-agent/wpMediaAttach.ts so the chat
 // handler's approve_qa_attempt tool can reuse the same code path.

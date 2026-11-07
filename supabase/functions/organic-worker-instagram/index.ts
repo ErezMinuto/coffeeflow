@@ -37,6 +37,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { handBackForCritique } from '../_shared/strategist_loop.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { queueWorkerJudge, runLogged } from '../_shared/run_logged.ts'
 import {
   createSupabase,
   claimNextTask,
@@ -171,7 +172,7 @@ async function fetchExperimentArmContext(
   }
 }
 
-serve(async (req) => {
+serve(runLogged('organic-worker-instagram', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -191,6 +192,9 @@ serve(async (req) => {
   }
   if (!task) return jsonResponse({ processed: 0, worker_id: workerId })
   console.log(`[organic-worker-instagram] ${workerId} claimed task ${task.id} attempt=${task.attempts}`)
+  // Logged at claim time so a run killed by the wall clock still reads back
+  // 'incomplete' with its task id. Empty ticks reach no log call and write nothing.
+  log.info('task.claimed', `claimed task ${task.id}`, { task_id: task.id, attempt: task.attempts })
 
   // ── 2. Parse + validate brief ───────────────────────────────────────
   const brief = task.brief_data as InstagramPostBrief
@@ -494,7 +498,10 @@ serve(async (req) => {
     ig_media_id:      metaResult.media_id ?? null,
     ig_permalink:     metaResult.permalink ?? null,
   })
-})
+}, {
+  // Empty ticks and parent-not-ready polling write no rows; see queueWorkerJudge.
+  judge: queueWorkerJudge,
+}))
 
 // ─────────────────────────────────────────────────────────────────────────
 // Caption assembly. Strategist owns caption_he verbatim; we append the
