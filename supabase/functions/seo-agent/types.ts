@@ -285,6 +285,11 @@ export interface NewSeoTask {
   max_attempts?: number
   experiment_id?: string | null
   variation_label?: string | null
+  // Only for recording a task that was rejected at enqueue (status 'failed'
+  // + the reason), which keeps a batch's rows aligned with what was emitted.
+  // Everything else inserts as the DB default, 'pending'.
+  status?: 'failed'
+  error_msg?: string
 }
 
 // What the orchestrator emits BEFORE we resolve indexes to UUIDs.

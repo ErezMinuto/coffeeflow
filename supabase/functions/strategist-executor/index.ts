@@ -15,6 +15,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
+import { validateNewTask } from '../seo-agent/taskValidation.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
 import { claimRecs, finishRec, sweepStaleDrafting } from './ledger.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
@@ -127,6 +128,23 @@ async function draftIg(supabase: SupabaseClient, rec: RecommendationRow, loop?: 
   }
   // Legacy no_bag brief (no shot picked): no product, as before.
   if (visualBrief.render_mode === 'no_bag' && !picked.picked) delete visualBrief.product_name
+
+  // Build and check the post BEFORE inserting the visual, so a post the IG
+  // worker would reject (e.g. media_type "reel") can't orphan a visual that
+  // still renders. Its parent is the visual inserted just below.
+  const igBrief: InstagramPostBrief = {
+    caption_he:       caption,
+    hashtags:         Array.isArray(p.hashtags) ? (p.hashtags as string[]) : [],
+    media_type:       mediaType,
+    publish_strategy: 'queue_for_review',
+    ...(loop ? { strategist_rec_id: loop.strategist_rec_id, hold_for_critique: loop.hold_for_critique, revision: loop.revision } : {}),
+  }
+  const igProblems = validateNewTask(
+    { task_type: 'instagram_post', brief_data: igBrief, rationale: '', orchestrator_run_id: '' },
+    { parentLinkedLater: true },
+  )
+  if (igProblems.length > 0) throw new Error(`content_ig post brief rejected: ${igProblems.join('; ')}`)
+
   let visual: { id: string } | undefined
   if (loop?.reuse_visual_task) {
     visual = { id: loop.reuse_visual_task }
@@ -140,13 +158,6 @@ async function draftIg(supabase: SupabaseClient, rec: RecommendationRow, loop?: 
   }
   if (!visual) throw new Error('visual_generation insert returned no row')
 
-  const igBrief: InstagramPostBrief = {
-    caption_he:       caption,
-    hashtags:         Array.isArray(p.hashtags) ? (p.hashtags as string[]) : [],
-    media_type:       mediaType,
-    publish_strategy: 'queue_for_review',
-    ...(loop ? { strategist_rec_id: loop.strategist_rec_id, hold_for_critique: loop.hold_for_critique, revision: loop.revision } : {}),
-  }
   const [ig] = await insertTasks(supabase, [{
     task_type:           'instagram_post',
     brief_data:          igBrief,
