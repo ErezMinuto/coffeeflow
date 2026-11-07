@@ -192,18 +192,23 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
   }
 }
 
-// Critic v3, calibrated 2026-11-07 against the owner's verdicts on 18 test
-// images: a full physics audit failed all 18 (the owner passed 13); these
-// gross-defect questions caught all 5 the owner rejected. Only these block.
-// The owner judges the overall photo at phone size, not zoomed-in details.
+// What blocks: only OBJECTIVE brand rules (owner, 2026-11-07). Calibrated on
+// 20 images: the critic's hand and "physically absurd" judgements disagreed
+// with the owner on most images he called good, and also caught his rejects,
+// so they behaved like a coin flip. They are notes now: recorded for the
+// owner, no badge, no retry. The owner's review is the quality check.
 export const AD_BLOCKING_QUESTIONS = [
-  'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
-  'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
-  'Is every object resting on a surface or held, with nothing visibly floating in the air?',
   "Does the espresso machine carry only its own maker's mark, with no painted café name or extra logo? (yes if no machine)",
   'Are all coffee beans roasted brown, none green? (yes if no beans)',
-  'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
   'Is the image free of coffee bags and jars?',
+  'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
+  'Is every object resting on a surface or held, with nothing visibly floating in the air?',
+]
+
+// Subjective checks the owner reads as notes.
+export const AD_NOTE_QUESTIONS = [
+  'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
+  'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
 ]
 
 export interface CriticQuestions { blocking: string[]; notes: string[] }
@@ -212,7 +217,7 @@ export interface CriticQuestions { blocking: string[]; notes: string[] }
  *  director's own questions are recorded as notes for the owner. */
 export function criticQuestions(ad: ArtDirection): CriticQuestions {
   const note = ACTIONS[ad.action] ?? ad.new_action_note
-  return { blocking: AD_BLOCKING_QUESTIONS, notes: [`Does the scene match how this action really looks: ${note}`, ...ad.qa] }
+  return { blocking: AD_BLOCKING_QUESTIONS, notes: [...AD_NOTE_QUESTIONS, `Does the scene match how this action really looks: ${note}`, ...ad.qa] }
 }
 
 export const AD_CRITIC_SYSTEM = `You are checking an Instagram story or feed image for Minuto, a specialty coffee roastery, the way its owner does: on a phone, at normal viewing size, before posting.
