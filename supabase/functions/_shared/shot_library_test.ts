@@ -1,7 +1,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
   ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
-  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
+  plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotFolders, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
 // Real woo_products names (2026-10-28). Several house blends are Hebrew-only.
@@ -226,4 +226,13 @@ Deno.test('bag scenes keep the real bag and fill the frame asked for', () => {
   }
   assert(bagScenePrompt(SHOTS.bag_with_drink, { product_name: 'Guji' }, '9:16').includes('espresso'))
   assert(shotChecklist(SHOTS.bag_hero, { product_name: 'Guji' }).some(q => q.includes('sealed')))
+})
+
+Deno.test('steaming milk keeps the steam wand out of frame and QA counts wands', () => {
+  const p = shotGeneratePrompt(SHOTS.bar_moment, { moment: 'steaming milk' }, '9:16')
+  assert(p.includes('above the frame') && !p.includes('beside its chrome steam wand'))
+  assert(!referenceSubject(SHOTS.bar_moment, { moment: 'steaming milk' }).includes('steam wand'))
+  assert(shotChecklist(SHOTS.bar_moment, {}).some(q => q.includes('at most one steam wand')))
+  assert(!shotFolders(SHOTS.bar_moment, { moment: 'steaming milk' }).includes('hands'))
+  assertEquals(shotFolders(SHOTS.bar_moment, { moment: 'a cup in hand' }), SHOTS.bar_moment.folders)
 })

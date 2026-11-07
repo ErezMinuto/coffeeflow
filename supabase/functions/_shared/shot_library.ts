@@ -58,6 +58,9 @@ export interface ShotDef {
   // as photographed: motion the image model draws badly (owner, 2026-10-28:
   // generated falling beans "not natural"). Matched by referenceSubject.
   real_moments?: string[]
+  // Reference folders for one moment, when the shot's folders would hand the
+  // model the wrong anchor (see bar_moment / steaming milk).
+  moment_folders?: Record<string, string[]>
 }
 
 export const SHOTS: Record<ShotType, ShotDef> = {
@@ -80,6 +83,9 @@ export const SHOTS: Record<ShotType, ShotDef> = {
     // what image models draw wrong).
     source: 'generated', folders: ['hands', 'machine', 'pitchers'],
     moments: ['steaming milk', 'pulling an espresso shot', 'a cup in hand', 'the espresso bar'],
+    // hands/ holds barista photos of the wand IN the pitcher; as a reference
+    // the model copies that wand and draws a second one (2026-11-07).
+    moment_folders: { 'steaming milk': ['machine', 'pitchers'] },
     needs_product: false, enabled: true,
   },
   roastery: {
@@ -161,7 +167,9 @@ export function referenceSubject(shot: ShotDef, slots: ShotSlots): string {
       return 'A clean photo of a single coffee cup.'
     case 'bar_moment':
       return moment === 'steaming milk'
-        ? 'A photo of a steam wand in a milk pitcher, milk being steamed.'
+        // A pitcher photo, not wand-in-pitcher: with that reference the model
+        // drew its wand AND the prompt's, two wands in both prod renders (2026-11-07).
+        ? 'A photo of a milk pitcher on the drip tray of an espresso machine.'
         : moment === 'pulling an espresso shot'
           ? 'A photo of espresso pouring from a portafilter into a cup on the machine.'
           : moment === 'a cup in hand'
@@ -182,6 +190,11 @@ export function referenceSubject(shot: ShotDef, slots: ShotSlots): string {
 // real_photo shot, or one of a generated shot's real_moments.
 export function shotUsesRealPhoto(shot: ShotDef, slots: ShotSlots): boolean {
   return shot.source === 'real_photo' || (shot.real_moments ?? []).includes(resolveMoment(shot, slots.moment))
+}
+
+// Library folders that may anchor this shot's moment.
+export function shotFolders(shot: ShotDef, slots: ShotSlots): string[] {
+  return shot.moment_folders?.[resolveMoment(shot, slots.moment)] ?? shot.folders
 }
 
 export function isShotType(v: unknown): v is ShotType {
@@ -326,7 +339,9 @@ export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: strin
     // metal and a tidy bar are what the raw photos lacked (owner, 2026-11-04).
     const machine = 'the espresso machine from the reference photo, exactly as it is'
     const scene: Record<string, string> = {
-      'steaming milk': `a stainless milk pitcher of freshly steamed, glossy white microfoam standing on the drip tray of ${machine}, beside its chrome steam wand, a light wisp of steam rising`,
+      // Framed low so the steam wand sits ABOVE the frame: every
+      // render that showed the wand doubled it (owner rejected both, 2026-11-07).
+      'steaming milk': `a stainless milk pitcher of glossy steamed microfoam standing alone on the drip tray of ${machine}, framed close and low, the steam wand above the frame, a wisp of steam rising from the milk`,
       'pulling an espresso shot': `two small glass cups of freshly pulled espresso with rich golden crema standing on the drip tray of ${machine}, beside its group heads; the shot is finished, the spouts are dry and nothing is dripping`,
       'a cup in hand': `a freshly made cappuccino with latte art in a ceramic cup on its saucer, standing flat on the wooden bar counter, with ${machine} softly out of focus behind it`,
       'the espresso bar': `${machine} on Minuto's bar, its shelves tidy with stacked glasses and cups`,
@@ -364,6 +379,7 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
       return [photo, ground, text,
         'Is the espresso machine shown with every part attached (no floating or duplicated portafilters or steam wands)? (n/a if no machine is visible)',
         'Is the scene still: no hands or people, and nothing pouring or flowing?',
+        'Is there at most one steam wand, attached to the machine, with no wand standing in a pitcher? (n/a if no steam wand is visible)',
         'Is the machine free of any logo or lettering that would not be on a real espresso machine (for example a café name painted on it)?',
         'Is the image free of readable customer names or order tickets?']
     case 'roastery':
