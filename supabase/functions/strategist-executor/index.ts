@@ -17,6 +17,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { validateNewTask } from '../seo-agent/taskValidation.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import { claimRecs, finishRec, sweepStaleDrafting } from './ledger.ts'
 import { checkBlogProducts } from '../_shared/blog_products.ts'
 import { fetchMinutoCoffeeCatalog } from '../seo-agent/services/cmsApi.ts'
@@ -552,7 +553,7 @@ async function runLoop(supabase: SupabaseClient, cfg: LoopConfig, workerId: stri
   return { loopTypes, results: out }
 }
 
-serve(async (req) => {
+serve(runLogged('strategist-executor', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   // Only cron (and other functions) run this. The gateway's verify_jwt still
   // admits the public anon key, so the caller is checked here.
@@ -581,4 +582,21 @@ serve(async (req) => {
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500)
   }
-})
+}, {
+  // Counts only: `results` and `loop` carry draft text and recommendation detail.
+  judge: (out) => {
+    const failed = Number(out?.failed ?? 0)
+    return {
+      status: out?.ok === true && failed > 0 ? 'partial' : undefined,
+      summary: {
+        idle: out?.idle ? true : undefined, drafted: out?.drafted, for_critique: out?.for_critique,
+        failed: out?.failed, unrecorded: out?.unrecorded, swept_stale: out?.swept_stale,
+        loop_results: Array.isArray(out?.loop) ? out.loop.length : undefined,
+      },
+      warnings: [
+        ...(failed > 0 ? [['drafts.failed', `${failed} recommendation draft(s) failed`, { failed }] as [string, string, Record<string, unknown>]] : []),
+        ...(Number(out?.unrecorded ?? 0) > 0 ? [['drafts.unrecorded', `${out.unrecorded} draft(s) created but not recorded`, { unrecorded: out.unrecorded }] as [string, string, Record<string, unknown>]] : []),
+      ],
+    }
+  },
+}))

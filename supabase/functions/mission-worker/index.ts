@@ -16,6 +16,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import { createSupabase, insertTasks } from '../seo-agent/db.ts'
 import { updateIfOwned } from './ownership.ts'
 import {
@@ -322,7 +323,7 @@ const TOOLS: ToolDefinition[] = [
   },
 ]
 
-serve(async (req) => {
+serve(runLogged('mission-worker', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -1046,6 +1047,7 @@ serve(async (req) => {
     }
   } catch (e: any) {
     console.warn(`[mission-worker] ${workerId} briefing failed (non-fatal): ${e?.message ?? e}`)
+    log.warn('briefing.fail', 'briefing write failed (non-fatal)', { mission_id: mission.id }, e)
   }
 
   return json({
@@ -1059,7 +1061,18 @@ serve(async (req) => {
     inflight,
     completed,
   })
-})
+}, {
+  // Counts and ids only: the idle reply's `cadence` and the mission objective stay out.
+  judge: (out) => ({
+    summary: {
+      processed: out?.processed, mission_id: out?.mission_id, step: out?.step, status: out?.status,
+      queued_now: out?.queued_now, completed: out?.completed, idle: out?.idle, lost_mission: out?.lost_mission,
+    },
+    warnings: out?.lost_mission
+      ? [['mission.lost', 'mission was cancelled or reclaimed mid-step; step result not written', { mission_id: out.mission_id, queued_now: out.queued_now }]]
+      : [],
+  }),
+}))
 
 // ── Brief validation + light repair ──────────────────────────────────────
 // The mission LLM authors brief_data freehand and insertTasks writes it as

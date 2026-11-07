@@ -31,6 +31,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { forbidden, hasRole } from '../_shared/role_caller.ts'
+import { redactEmails, runLogged } from '../_shared/run_logged.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { constantTimeEqual } from '../_shared/constant_time.ts'
 import { findCheckinCandidates, findReminderCandidates, loadConsentedEmails, loadRetentionData, sampleProductBlock, type RetentionData } from './retention_data.ts'
@@ -962,7 +963,7 @@ async function processAutomation(
 
 // ── HTTP entry point ─────────────────────────────────────────────────────────
 
-serve(async (req) => {
+serve(runLogged('email-automation-scheduler', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   // The customer's own "stop reminders" link (GET from the email footer, or
@@ -1202,7 +1203,38 @@ serve(async (req) => {
 
   return new Response(JSON.stringify(summary, null, 2),
     { headers: { ...CORS, 'Content-Type': 'application/json' } })
-})
+}, {
+  // The public stop-reminders link is not a scheduler run, and an anonymous
+  // caller must not be able to add rows to system_logs.
+  skip: (req) => new URL(req.url).searchParams.get('action') === 'stop_reminders',
+  // Counts only. Replies carry customer emails (candidates_sample, per-send
+  // errors, the test_send address), which never reach the log.
+  judge: (out) => {
+    if (Array.isArray(out?.runs)) {
+      const runs = out.runs.map((r: any) => ({
+        trigger: r.trigger, sent: r.sent, skipped: r.skipped, failed: r.failed,
+        errors: Array.isArray(r.errors) ? r.errors.length : undefined,
+        candidates: r.candidates_count, enabled: r.enabled,
+        error: typeof r.error === 'string' ? redactEmails(r.error).slice(0, 200) : undefined,
+      }))
+      const failedSends = runs.reduce((n: number, r: any) => n + (Number(r.failed) || 0), 0)
+      const brokenTriggers = runs.filter((r: any) => r.error)
+      return {
+        status: failedSends > 0 || brokenTriggers.length > 0 ? 'partial' : undefined,
+        summary: { mode: out.dryRun ? 'dry_run' : 'live', templates: runs.length, runs },
+        warnings: [
+          ...(failedSends > 0 ? [['send.failed', `${failedSends} automation email(s) failed`, { failed: failedSends }] as [string, string, Record<string, unknown>]] : []),
+          ...brokenTriggers.map((r: any) => ['trigger.fail', `${r.trigger}: no candidates (${r.error})`, { trigger: r.trigger }] as [string, string, Record<string, unknown>]),
+          ...(!out.dryRun && runs.length === 0 ? [['templates.none_enabled', 'no enabled automation templates; nothing sent']] as Array<[string, string]> : []),
+        ],
+      }
+    }
+    if (out?.test_send !== undefined) return { summary: { mode: 'test_send', trigger: out.trigger } }
+    if (out?.review_send !== undefined) return { summary: { mode: 'review_send', trigger: out.trigger, candidate_count: out.candidate_count } }
+    if (out?.found !== undefined) return { summary: { mode: 'reminder_admin', found: out.found } }
+    return undefined
+  },
+}))
 
 // ── Retention triggers (coffee_checkin, refill_reminder) ────────────────────
 
