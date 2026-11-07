@@ -15,6 +15,7 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller } from "../_shared/service_caller.ts";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { runLogged } from "../_shared/run_logged.ts";
 import { claudeBody, claudeHeaders, claudeText } from "../_shared/claude.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
@@ -1441,7 +1442,7 @@ async function handleWebhook(req: Request) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-serve(async (req) => {
+serve(runLogged("employee-bot", async (req, _log) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -1501,4 +1502,27 @@ serve(async (req) => {
     console.error("Employee bot error:", err);
     return new Response("ok");
   }
-});
+}, {
+  scope: (req) => {
+    // Only the three cron actions. The Telegram webhook (employee messages),
+    // publish, onboard and diagnose write no rows.
+    const action = new URL(req.url).searchParams.get("action") ?? req.headers.get("x-action")
+    return action === "remind" || action === "confirm-opening" || action === "confirm-opening-followup" ? { action } : null
+  },
+  judge: (out, _res, scope) => {
+    const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    // The handler's catch answers a plain "ok" (200) when an action throws.
+    if (out === null) return { status: 'error', summary: { note: 'non-JSON reply: the action threw' }, warnings: [W('action.threw', `${scope.action} threw; see the console log`)] }
+    const failed = Number(out?.failed) || 0
+    const warnings: Array<[string, string, Record<string, unknown>?]> = []
+    if (failed > 0) warnings.push(W('remind.failed', `${failed} reminder DM(s) failed`, { failed }))
+    if (out?.reason === 'no telegram') warnings.push(W('opening.no_telegram', 'opening employee has no Telegram id; confirmation not sent'))
+    if (scope.action === 'confirm-opening' && out?.ok === true && out?.sent === 0 && !out?.reason) warnings.push(W('opening.send_fail', 'opening confirmation DM was not delivered'))
+    return {
+      status: out?.ok === true && warnings.length > 0 ? 'partial' : undefined,
+      // Counts only: no employee names, chat ids or message text.
+      summary: { sent: out?.sent, failed: out?.failed, reminded: out?.reminded, alerted: out?.alerted, reason: typeof out?.reason === 'string' ? out.reason.slice(0, 60) : undefined },
+      warnings,
+    }
+  },
+}));

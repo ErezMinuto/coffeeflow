@@ -18,6 +18,7 @@
 
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { isServiceCaller, unauthorized } from "../_shared/service_caller.ts";
+import { runLogged } from "../_shared/run_logged.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { remindOnce, telegramSend } from "./remind.ts";
 
@@ -245,7 +246,7 @@ async function run(): Promise<RunStats> {
   return stats;
 }
 
-serve(async (req) => {
+serve(runLogged("attendance-reminder", async (req, _log) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -264,4 +265,17 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}, {
+  judge: (out) => {
+    const W = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    const pinged = (Number(out?.pinged_in) || 0) + (Number(out?.pinged_out) || 0)
+    const failed = Number(out?.failed) || 0
+    // Runs every 10 min through the day; a tick that pinged nobody and failed nothing writes no rows.
+    if (out?.ok === true && pinged === 0 && failed === 0) return { drop: true, status: 'success' }
+    return {
+      status: out?.ok === true && failed > 0 ? 'partial' : undefined,
+      summary: { checked: out?.checked, pinged_in: out?.pinged_in, pinged_out: out?.pinged_out, skipped: out?.skipped, failed: out?.failed },
+      warnings: failed > 0 ? [W('ping.failed', `${failed} attendance reminder(s) failed to send`, { failed })] : [],
+    }
+  },
+}));
