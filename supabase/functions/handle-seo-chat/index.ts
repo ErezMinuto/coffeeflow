@@ -328,11 +328,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'record_learning',
-    description: 'Persist an insight from this conversation into seo_learnings so it survives across chat sessions AND shapes future orchestrator runs. Use when the admin teaches you something durable ("no hands in images", "Yirgacheffe articles work better"). Do NOT use for one-off corrections — only for rules/preferences that should apply going forward. Always confirm the wording with the admin first, in one sentence, before calling.',
+    description: 'Persist an insight from this conversation into seo_learnings so it survives across chat sessions AND shapes future orchestrator runs. Use when the admin teaches you something durable ("never show a jug of foam parked on the drip tray", "Yirgacheffe articles work better"). Do NOT use for one-off corrections — only for rules/preferences that should apply going forward. Always confirm the wording with the admin first, in one sentence, before calling.',
     input_schema: {
       type: 'object',
       properties: {
-        scope:   { type: 'string', description: "Taxonomy bucket: 'visual_style' | 'brand_voice' | 'render_strategy' | 'content_topic' | 'qa_pattern' | 'other'." },
+        scope:   { type: 'string', description: "Taxonomy bucket: 'art_director' | 'visual_style' | 'brand_voice' | 'render_strategy' | 'content_topic' | 'qa_pattern' | 'other'. Use 'art_director' for what the admin likes or dislikes in Instagram images (scenes, realism, what looks like Minuto): the Instagram art director reads only that scope. 'visual_style' is for blog banners and legacy scene briefs." },
         insight: { type: 'string', description: 'One- to three-sentence rule in plain English, phrased prescriptively ("Always avoid X" / "Prefer Y when Z").' },
         evidence_task_ids: { type: 'array', items: { type: 'string' }, description: 'Optional UUIDs of seo_tasks rows that triggered this learning, so admins can trace why it was recorded.' },
       },
