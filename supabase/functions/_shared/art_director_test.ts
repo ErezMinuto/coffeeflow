@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, parseArtDirection,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, isRealRejection, parseArtDirection,
   parseCritic, referenceCandidates, type ArtDirection,
 } from './art_director.ts'
 import { PHOTO_INDEX } from './photo_index.ts'
@@ -100,4 +100,19 @@ Deno.test('the brief carries the caption, the hint and no bag photos', () => {
   assert(!m.includes('coffee_bags/') && !m.includes('bag_scenes/'))
   assert(adRevisionMessage(JSON.parse(reply()), [{ q: 'held?', why: 'on tray' }], 'held at chest height').includes('held at chest height'))
   assert(AD_SYSTEM.includes('Strada X') && AD_SYSTEM.includes('JSON only'))
+})
+
+Deno.test('owner verdicts reach the art director; bulk queue clean-ups do not count', () => {
+  assert(isRealRejection('not a logical image, no one throws a single coffee bean'))
+  assert(!isRealRejection('cleared by Erez 2026-11-03 (fresh start)'))
+  assert(!isRealRejection('') && !isRealRejection(null))
+  const m = adUserMessage({
+    caption: 'x', aspect: 'story', recent: [], learnings: [],
+    verdicts: [
+      { date: '2026-11-07', verdict: 'rejected', reason: 'filter with milk, image looks really bad', caption: 'פילטר', image: 'finished_drink (eye level)' },
+      { date: '2026-11-05', verdict: 'published', caption: 'קלייה', image: 'roastery (the roaster at work)' },
+    ],
+  })
+  assert(m.includes('REJECTED ("filter with milk, image looks really bad")') && m.includes('PUBLISHED: image: roastery'))
+  assert(adUserMessage({ caption: 'x', aspect: 'story', recent: [], learnings: [] }).includes('OWNER VERDICTS ON RECENT IMAGES'))
 })
