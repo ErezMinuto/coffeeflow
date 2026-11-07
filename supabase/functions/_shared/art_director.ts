@@ -79,6 +79,18 @@ Reply with JSON only, exactly this shape:
 
 export interface RecentPost { date: string; caption: string; concept?: string; action?: string }
 
+// The owner's verdicts on recent Instagram images, read from the review queue:
+// published (it went out) or rejected, with the owner's reason. The strongest
+// signal the art director has about what the owner wants.
+export interface OwnerVerdict { date: string; verdict: 'published' | 'rejected'; reason?: string; caption: string; image: string }
+
+// Bulk queue clean-ups ("cleared by Erez 2026-11-03 (fresh start)") are not
+// verdicts on the image.
+export function isRealRejection(reason: string | null | undefined): boolean {
+  const r = (reason ?? '').trim()
+  return r.length > 0 && !/^cleared by\b/i.test(r)
+}
+
 export interface ArtDirection {
   concepts: string[]
   choice: number
@@ -101,15 +113,19 @@ export function adUserMessage(opts: {
   goal?: string
   recent: RecentPost[]
   learnings: string[]
+  verdicts?: OwnerVerdict[]
   plannerHint?: string
   photos?: IndexedPhoto[]
 }): string {
   const photos = opts.photos ?? referenceCandidates()
+  const verdicts = opts.verdicts ?? []
   return [
     'ACTION LIST (key: realism note):', JSON.stringify(ACTIONS, null, 1),
     '', 'PHOTO INDEX:', JSON.stringify(photos),
     '', 'RECENT POSTS (newest first):', JSON.stringify(opts.recent.slice(0, 15)),
     '', 'OWNER LEARNINGS:', opts.learnings.length ? opts.learnings.map(l => `- ${l}`).join('\n') : '- (none yet)',
+    '', 'OWNER VERDICTS ON RECENT IMAGES (what was published, what was rejected and why; learn from the reasons):',
+    verdicts.length ? verdicts.map(v => `- ${v.date} ${v.verdict.toUpperCase()}${v.reason ? ` ("${v.reason}")` : ''}: image: ${v.image} | caption: ${v.caption}`).join('\n') : '- (none yet)',
     '', 'THIS POST:',
     `format: ${ASPECT_WORDS[opts.aspect] ?? opts.aspect}`,
     `goal: ${opts.goal ?? 'Instagram post for Minuto'}`,

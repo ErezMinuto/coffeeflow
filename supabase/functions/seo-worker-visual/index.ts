@@ -83,7 +83,7 @@ import {
   SHOTS, isShotType, normalizeShotChoice, shotChecklist, shotRouterPrompt,
   type ShotDef, type ShotSlots,
 } from '../_shared/shot_library.ts'
-import { AD_PROMPT_VERSION, adUserMessage, referenceCandidates, type RecentPost } from '../_shared/art_director.ts'
+import { AD_PROMPT_VERSION, adUserMessage, isRealRejection, referenceCandidates, type OwnerVerdict, type RecentPost } from '../_shared/art_director.ts'
 import { runArtDirector } from './art_directed.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
@@ -858,6 +858,40 @@ async function artDirectorLearnings(supabase: ReturnType<typeof createSupabase>)
   return ((data ?? []) as Array<{ insight: string }>).map(r => r.insight)
 }
 
+// What the owner published or rejected (with the reason) in the last 30 days,
+// joined to what each image showed: the art director's concept when it made
+// the image, otherwise the shot the old pipeline rendered.
+async function ownerVerdicts(supabase: ReturnType<typeof createSupabase>): Promise<OwnerVerdict[]> {
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString()
+  const { data: posts } = await supabase.from('seo_tasks')
+    .select('created_at, parent_task_id, brief_data->>caption_he, result_data->>rejected_via_ui_at, result_data->>reject_reason, result_data->>ig_media_id')
+    .eq('task_type', 'instagram_post').gte('created_at', since)
+    .order('created_at', { ascending: false }).limit(80)
+  const rows = ((posts ?? []) as Array<Record<string, any>>)
+    .filter(r => r.ig_media_id || (r.rejected_via_ui_at && isRealRejection(r.reject_reason)))
+  const parentIds = [...new Set(rows.map(r => r.parent_task_id).filter(Boolean))]
+  const visuals = new Map<string, string>()
+  if (parentIds.length) {
+    const { data } = await supabase.from('seo_tasks')
+      .select('id, brief_data->>shot_type, brief_data->shot_slots, result_data->art_direction')
+      .in('id', parentIds)
+    for (const v of (data ?? []) as Array<Record<string, any>>) {
+      visuals.set(v.id, v.art_direction?.concept
+        ? String(v.art_direction.concept)
+        : `${v.shot_type ?? 'shot'}${v.shot_slots?.moment ? ` (${v.shot_slots.moment})` : ''}`)
+    }
+  }
+  const rejected = rows.filter(r => !r.ig_media_id).slice(0, 12)
+  const published = rows.filter(r => r.ig_media_id).slice(0, 8)
+  return [...rejected, ...published].map(r => ({
+    date: String(r.created_at ?? '').slice(0, 10),
+    verdict: r.ig_media_id ? 'published' as const : 'rejected' as const,
+    ...(r.ig_media_id ? {} : { reason: String(r.reject_reason).slice(0, 200) }),
+    caption: String(r.caption_he ?? '').slice(0, 120),
+    image: String(visuals.get(r.parent_task_id) ?? 'unknown').slice(0, 200),
+  }))
+}
+
 async function handleArtDirected(
   supabase: ReturnType<typeof createSupabase>,
   task: SeoTaskRow,
@@ -869,12 +903,13 @@ async function handleArtDirected(
   const budget = shotBudget()
   const caption = brief.caption_he ?? await childCaption(supabase, task.id) ?? brief.scene_brief ?? ''
   const allowed = new Set(referenceCandidates().map(p => p.key))
-  const [recent, learnings] = await Promise.all([
+  const [recent, learnings, verdicts] = await Promise.all([
     recentArtPosts(supabase).catch(() => [] as RecentPost[]),
     artDirectorLearnings(supabase).catch(() => [] as string[]),
+    ownerVerdicts(supabase).catch(() => [] as OwnerVerdict[]),
   ])
   const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, plannerHint }) },
+    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, verdicts, plannerHint }) },
   ]
   const { ad, imageUrl, renderRaw, verdict, qaAttempts } = await runArtDirector({
     conversation, aspect, allowed, budget, log: (m) => console.log(`[seo-worker-visual] ${workerId} ${m}`),
