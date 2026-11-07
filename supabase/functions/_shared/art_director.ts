@@ -176,48 +176,65 @@ export function parseArtDirection(text: string, allowedKeys: ReadonlySet<string>
   }
 }
 
-// Fixed questions every art-directed image must pass, "yes" meaning correct.
-// Gemini missed sharp background faces in the prototype (Opus caught them), so
-// faces get their own explicit question.
-export const AD_BRAND_QUESTIONS = [
-  'Does the espresso machine carry only its own small maker\'s mark, with no painted café names or extra logos? (yes if no machine is visible)',
-  'Are all coffee beans in the image roasted brown, none green or pale? (yes if no beans are visible)',
-  'Look at every person, including people far in the background and through the window: is every face turned away, cropped out or clearly blurred, with no sharp, recognisable face?',
-  'Does every visible hand have a natural shape with five fingers, holding its object plausibly? (yes if no hands are visible)',
-  'Is every object resting on a surface or held, with nothing floating?',
-  'Is the image free of coffee bags, jars and any readable invented text or signage?',
+// Critic v3, calibrated 2026-11-07 against the owner's verdicts on 18 test
+// images: a full physics audit failed all 18 (the owner passed 13); these
+// gross-defect questions caught all 5 the owner rejected. Only these block.
+// The owner judges the overall photo at phone size, not zoomed-in details.
+export const AD_BLOCKING_QUESTIONS = [
+  'Is the image free of an obviously deformed hand (a clearly extra, missing or melted finger that a viewer would notice at phone size)?',
+  'Is the image free of a sharp, recognisable face that is the main subject or in the foreground? (soft or background faces are fine)',
+  'Is every object resting on a surface or held, with nothing visibly floating in the air?',
+  "Does the espresso machine carry only its own maker's mark, with no painted café name or extra logo? (yes if no machine)",
+  'Are all coffee beans roasted brown, none green? (yes if no beans)',
+  'Does the scene look like a real photograph of a real coffee bar or roastery, with nothing physically absurd that jumps out at first glance?',
+  'Is the image free of coffee bags and jars?',
 ]
 
-export function criticQuestions(ad: ArtDirection): string[] {
+export interface CriticQuestions { blocking: string[]; notes: string[] }
+
+/** Blocking questions decide pass/fail; the action's realism note and the art
+ *  director's own questions are recorded as notes for the owner. */
+export function criticQuestions(ad: ArtDirection): CriticQuestions {
   const note = ACTIONS[ad.action] ?? ad.new_action_note
-  return [...AD_BRAND_QUESTIONS, `Does the scene match how this action really looks: ${note}`, ...ad.qa]
+  return { blocking: AD_BLOCKING_QUESTIONS, notes: [`Does the scene match how this action really looks: ${note}`, ...ad.qa] }
 }
 
-export const AD_CRITIC_SYSTEM = `You are a strict veteran barista and roaster checking an Instagram image for Minuto, a specialty coffee roastery, before the owner sees it. Look carefully at the whole image, then answer every numbered question: "yes" (correct) or "no" (a problem). Answer "no" when you are not sure.
+export const AD_CRITIC_SYSTEM = `You are checking an Instagram story or feed image for Minuto, a specialty coffee roastery, the way its owner does: on a phone, at normal viewing size, before posting.
+Answer every numbered question "yes" or "no". Answer "no" only for a defect a viewer would actually notice at phone size without zooming: an extra or missing finger that is plainly visible, liquid coming from the wrong place, an object floating, a clearly recognisable face in focus, prominent garbled text that draws the eye, a machine part that is obviously broken or duplicated. Small details that only show when zoomed in (a slightly soft knuckle, tiny unreadable print on a tray, a cup angle a few degrees off) count as "yes". When a question's subject is not in the image, answer "yes".
 Reply with JSON only: {"description": "one sentence on what the image shows", "answers": [{"n": 1, "answer": "yes" | "no", "why": "short"}], "correction": "if anything failed, one sentence describing the corrected scene positively; else empty"}`
 
 export function criticUserMessage(questions: string[]): string {
   return `Questions:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
 }
 
-export interface CriticVerdict { passes: boolean; description: string; failed: Array<{ q: string; why: string }>; correction: string }
+export interface CriticVerdict {
+  passes: boolean
+  description: string
+  failed: Array<{ q: string; why: string }>      // blocking questions not answered "yes"
+  notes: Array<{ q: string; why: string }>       // note questions not answered "yes"
+  correction: string
+}
 
-/** Anything but an explicit "yes" to every question fails. */
-export function parseCritic(text: string, questions: string[]): CriticVerdict {
+/** Anything but an explicit "yes" to every BLOCKING question fails; the first
+ *  blockingCount questions block, the rest are notes. */
+export function parseCritic(text: string, questions: string[], blockingCount = questions.length): CriticVerdict {
   let d: Record<string, unknown> = {}
   try {
     const s = text.indexOf('{'), e = text.lastIndexOf('}')
     d = JSON.parse(text.slice(s, e + 1))
   } catch { /* falls through as unanswered */ }
   const answers = Array.isArray(d.answers) ? d.answers as Array<Record<string, unknown>> : []
-  const failed = questions
-    .map((q, i) => ({ q, a: answers.find(x => Number(x?.n) === i + 1) }))
+  const misses = questions
+    .map((q, i) => ({ q, i, a: answers.find(x => Number(x?.n) === i + 1) }))
     .filter(({ a }) => String(a?.answer ?? '').toLowerCase() !== 'yes')
-    .map(({ q, a }) => ({ q, why: a ? String(a.why ?? '') : 'not answered' }))
+    .map(({ q, i, a }) => ({ q, i, why: a ? String(a.why ?? '') : 'not answered' }))
+  const failed = misses.filter(m => m.i < blockingCount).map(({ q, why }) => ({ q, why }))
+  const notes = misses.filter(m => m.i >= blockingCount).map(({ q, why }) => ({ q, why }))
   return {
     passes: failed.length === 0,
     description: typeof d.description === 'string' ? d.description : '',
     failed,
+    notes,
     correction: typeof d.correction === 'string' ? d.correction : '',
   }
 }
