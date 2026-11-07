@@ -17,6 +17,7 @@ import {
   MINUTO_ROASTER_REFERENCE_URL,
   SCENE_PRESETS,
 } from '../_shared/visual_identity.ts'
+import { AD_PROMPT_VERSION, referenceCandidates } from '../_shared/art_director.ts'
 // The label check the email scene images use, so an IG bag scene passes the
 // same bar (2026-11-07).
 import { checkPrompt as bagLabelCheckPrompt, parseCheck as parseBagLabelCheck } from '../generate-campaign/scene_image.ts'
@@ -305,6 +306,10 @@ interface VisualTestRequest {
   // "<folder>/<file>" library photos used recently; real-photo shots skip
   // them while other photos remain (seo-worker-visual passes the last 21 days).
   exclude_photos?: string[]
+  // ART DIRECTOR (docs/image-pipeline/art-director-design.md). The prompt and
+  // 1-2 library references with their roles, written by the art director in
+  // seo-worker-visual. One render, no retry: the worker owns the loop.
+  art_direction?: { prompt: string; references: Array<{ key: string; role: string }> }
 }
 
 
@@ -478,6 +483,57 @@ async function renderBagScene(
   return out
 }
 
+// ── ART-DIRECTED RENDER ─────────────────────────────────────────────────────
+// One Nano Banana Pro render of the art director's prompt, with each library
+// reference introduced by its role ("use it only for the exact design of the
+// espresso machine"). References are keys into the photo index only, never
+// URLs from the request, and only non-bag photos the index allows.
+async function renderArtDirected(body: VisualTestRequest, cors: Record<string, string>): Promise<Response> {
+  const ad = body.art_direction!
+  const prompt = String(ad?.prompt ?? '').trim()
+  const refs = Array.isArray(ad?.references) ? ad.references.slice(0, 2) : []
+  if (prompt.length < 80 || prompt.length > 4000) throw new Error('art_direction.prompt must be 80-4000 characters')
+  if (!refs.length) throw new Error('art_direction needs 1-2 references')
+  const allowed = new Set(referenceCandidates().map(p => p.key))
+  const aspect = body.aspect ?? 'story'
+  const ratio: string = ASPECT_TO_RATIO[aspect] ?? '9:16'
+  const parts: any[] = []
+  for (const [i, r] of refs.entries()) {
+    if (!allowed.has(r.key)) throw new Error(`reference "${r.key}" is not an allowed library photo`)
+    const url = `${SUPABASE_URL}/storage/v1/object/public/marketing/upload_images/${r.key.split('/').map(encodeURIComponent).join('/')}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+    if (!res.ok) throw new Error(`reference ${r.key}: HTTP ${res.status}`)
+    parts.push({ text: `Reference image ${i + 1}: use it only for ${String(r.role).slice(0, 300)}` })
+    parts.push({ inline_data: { mime_type: mimeOf(r.key), data: encodeBase64(await res.arrayBuffer()) } })
+  }
+  parts.push({ text: prompt })
+  const started = Date.now()
+  const out = await geminiParts(BAG_SCENE_MODEL, parts, { responseModalities: ['IMAGE', 'TEXT'], imageConfig: { aspectRatio: ratio } }, 110_000)
+  const img = out.map(p => p.inlineData || p.inline_data).find(d => d?.data && String(d.mimeType || d.mime_type).startsWith('image/'))
+  if (!img) return jsonResponse({ success: false, error: 'the image model returned no image', prompt_version: AD_PROMPT_VERSION }, 502, cors)
+  const mime = String(img.mimeType || img.mime_type)
+  const bytes = decodeBase64(img.data)
+  const dims = readImageSize(bytes)
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE) as unknown as ReturnType<typeof createClient>
+  const filename = `ig-test/ad_${aspect}_${crypto.randomUUID()}.${mime.includes('png') ? 'png' : 'jpg'}`
+  const { error: upErr } = await supabase.storage.from('marketing').upload(filename, bytes, { contentType: mime, upsert: true })
+  if (upErr) throw new Error(`storage upload: ${upErr.message}`)
+  const { data: pub } = supabase.storage.from('marketing').getPublicUrl(filename)
+  return jsonResponse({
+    success: true,
+    prompt_version: AD_PROMPT_VERSION,
+    url: pub.publicUrl,
+    aspect, ratio,
+    width: dims?.w ?? null, height: dims?.h ?? null,
+    aspect_ok: matchesRatio(dims, ratio),
+    render_ms: Date.now() - started,
+    model: BAG_SCENE_MODEL,
+    references: refs.map(r => r.key),
+    prompt_doc: [`IMAGE: ${pub.publicUrl}`, `PROMPT VERSION: ${AD_PROMPT_VERSION}`, `MODEL: ${BAG_SCENE_MODEL}`,
+      ...refs.map((r, i) => `REFERENCE ${i + 1}: ${r.key} (${r.role})`), '', '── PROMPT ──', prompt].join('\n'),
+  }, 200, cors)
+}
+
 async function renderShot(body: VisualTestRequest, cors: Record<string, string>): Promise<Response> {
   const shot  = SHOTS[body.shot_type as ShotType]
   const slots: ShotSlots = { ...(body.shot_slots ?? {}) }
@@ -624,6 +680,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json() as VisualTestRequest
+    if (body.art_direction !== undefined) return await renderArtDirected(body, corsHeaders)
     if (body.shot_type !== undefined) {
       if (!isShotType(body.shot_type)) throw new Error(`unknown shot_type "${body.shot_type}"`)
       return await renderShot(body, corsHeaders)

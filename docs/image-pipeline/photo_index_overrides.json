@@ -1,0 +1,10 @@
+{
+  "roaster/minuto-roaster-49.jpg": {
+    "desc": "Freshly roasted, light-brown coffee beans pour from the roaster's metal pipe (owner confirmed 2026-10-29: roasted, not green).",
+    "shows": ["drum_roaster", "roasted_beans"]
+  },
+  "roaster/minuto-roaster-fix-8.jpg": {
+    "desc": "Freshly roasted, light-brown coffee beans pour from the roaster's metal pipe (owner confirmed 2026-10-29: roasted, not green).",
+    "shows": ["drum_roaster", "roasted_beans"]
+  }
+}

@@ -83,6 +83,8 @@ import {
   SHOTS, isShotType, normalizeShotChoice, shotChecklist, shotRouterPrompt,
   type ShotDef, type ShotSlots,
 } from '../_shared/shot_library.ts'
+import { AD_PROMPT_VERSION, adUserMessage, referenceCandidates, type RecentPost } from '../_shared/art_director.ts'
+import { runArtDirector } from './art_directed.ts'
 
 // Brief regeneration: when the QA loop caps without passing, the worker
 // asks Claude to rewrite the scene_brief based on the qa_attempts history,
@@ -99,6 +101,11 @@ const MAX_BRIEF_REGENS = 2
 // library (handleShot). Off: only briefs that already name a shot_type take
 // that path; everything else keeps the legacy free-form pipeline.
 const SHOT_LIBRARY_ENABLED = Deno.env.get('SHOT_LIBRARY_ENABLED') === 'true'
+// ART DIRECTOR ROLLOUT (docs/image-pipeline/art-director-design.md). When the
+// secret ART_DIRECTOR_ENABLED=true, an Instagram visual without a product bag
+// is invented by the art director (handleArtDirected) instead of rendered
+// from the fixed shot prompts. Bag shots keep the bag-scene path either way.
+const ART_DIRECTOR_ENABLED = Deno.env.get('ART_DIRECTOR_ENABLED') === 'true'
 const SHOT_ROUTER_MODEL    = 'claude-haiku-4-5'
 const MAX_SHOT_ATTEMPTS    = 2
 
@@ -730,6 +737,10 @@ async function handleShot(
   const { shot, slots } = choice
   console.log(`[seo-worker-visual] ${workerId} shot=${shot.id} ${JSON.stringify(slots)} (by ${routedBy}${routerWhy ? `: ${routerWhy}` : ''})`)
 
+  if (ART_DIRECTOR_ENABLED && !shot.needs_product) {
+    return await handleArtDirected(supabase, task, brief, workerId, `${shot.label}: ${slots.moment ?? ''}`.trim())
+  }
+
   if (slots.product_name) {
     const verdict = screenHeroProduct(slots.product_name, buildBrandIndex([]))
     if (!verdict.ok) {
@@ -812,6 +823,99 @@ async function handleShot(
     qa_last_critique: lastCritique,
   })
   return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, image_url: imageUrl, shot_type: shot.id, routed_by: routedBy, qa_passed: qaPassed, review_required: reviewRequired })
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ART DIRECTOR PATH. Opus invents the scene from the caption (3 concepts, one
+// chosen), Nano Banana Pro renders it around 1-2 of Minuto's photos (one
+// visual-test call each, well inside the 150 s idle timeout), Gemini checks it
+// against the brand rules, the action's realism note and the art director's
+// own questions. One revision on FAIL, restated positively, if the run budget
+// allows; otherwise the image goes to the owner flagged. A new action (outside
+// the owner-approved list) always goes to review.
+// ─────────────────────────────────────────────────────────────────────────
+async function recentArtPosts(supabase: ReturnType<typeof createSupabase>): Promise<RecentPost[]> {
+  const since = new Date(Date.now() - 21 * 86_400_000).toISOString()
+  const { data } = await supabase.from('seo_tasks')
+    .select('created_at, brief_data->>caption_he, result_data->art_direction')
+    .eq('task_type', 'visual_generation').eq('status', 'completed').gte('created_at', since)
+    .eq('brief_data->>destination', 'ig_post')
+    .order('created_at', { ascending: false }).limit(15)
+  return ((data ?? []) as Array<Record<string, any>>).map(r => ({
+    date: String(r.created_at ?? '').slice(0, 10),
+    caption: String(r.caption_he ?? '').slice(0, 140),
+    ...(r.art_direction?.concept ? { concept: String(r.art_direction.concept), action: String(r.art_direction.action ?? '') } : {}),
+  }))
+}
+
+// The owner's image verdicts, recorded by the chat agent under scope
+// 'art_director'. The older 'visual_style' rows were written for free-form
+// scene briefs ("never show hands") and would fight the art director.
+async function artDirectorLearnings(supabase: ReturnType<typeof createSupabase>): Promise<string[]> {
+  const { data } = await supabase.from('seo_learnings')
+    .select('insight').eq('scope', 'art_director').is('superseded_at', null)
+    .order('created_at', { ascending: false }).limit(20)
+  return ((data ?? []) as Array<{ insight: string }>).map(r => r.insight)
+}
+
+async function handleArtDirected(
+  supabase: ReturnType<typeof createSupabase>,
+  task: SeoTaskRow,
+  brief: VisualGenerationBrief,
+  workerId: string,
+  plannerHint: string,
+): Promise<Response> {
+  const aspect = brief.aspect ?? 'story'
+  const budget = shotBudget()
+  const caption = brief.caption_he ?? await childCaption(supabase, task.id) ?? brief.scene_brief ?? ''
+  const allowed = new Set(referenceCandidates().map(p => p.key))
+  const [recent, learnings] = await Promise.all([
+    recentArtPosts(supabase).catch(() => [] as RecentPost[]),
+    artDirectorLearnings(supabase).catch(() => [] as string[]),
+  ])
+  const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    { role: 'user', content: adUserMessage({ caption, aspect, goal: aspect === 'story' ? 'daily Instagram story' : 'Instagram feed post', recent, learnings, plannerHint }) },
+  ]
+  const { ad, imageUrl, renderRaw, verdict, qaAttempts } = await runArtDirector({
+    conversation, aspect, allowed, budget, log: (m) => console.log(`[seo-worker-visual] ${workerId} ${m}`),
+    render: async (body, timeoutMs) => {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/visual-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+        body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
+      })
+      return { ok: res.ok, status: res.status, json: await res.json().catch(() => ({})) as Record<string, unknown> }
+    },
+  })
+
+  if (!imageUrl || !ad) {
+    const permanently = task.attempts >= task.max_attempts
+    await safeMarkFailed(supabase, task, `art director: no image rendered (${JSON.stringify(qaAttempts).slice(0, 400)})`, permanently)
+    return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: false, error: 'art-directed render failed', permanent: permanently }, 500)
+  }
+  const qaPassed = !!verdict?.passes
+  const reviewRequired = !qaPassed || ad.new_action
+  await markTaskCompleted(supabase, task, {
+    image_url:        imageUrl,
+    render_function:  'visual-test',
+    render_mode:      'no_bag',
+    original_render_mode: brief.render_mode,
+    destination:      'ig_post',
+    aspect,
+    prompt_version:   AD_PROMPT_VERSION,
+    art_direction: {
+      concept: ad.concepts[ad.choice], concepts: ad.concepts, why: ad.why, action: ad.action,
+      new_action: ad.new_action, new_action_note: ad.new_action_note || undefined,
+      references: ad.references, prompt: ad.prompt, qa: ad.qa, planner_hint: plannerHint,
+    },
+    render_response:  pickRenderSummary(renderRaw),
+    qa_passed:        qaPassed,
+    review_required:  reviewRequired,
+    review_reason:    ad.new_action ? `new action "${ad.action}": ${ad.new_action_note}` : undefined,
+    qa_attempts:      qaAttempts,
+    qa_last_critique: qaAttempts[qaAttempts.length - 1]?.critique,
+  })
+  return jsonResponse({ processed: 1, worker_id: workerId, task_id: task.id, ok: true, image_url: imageUrl, art_director: true, action: ad.action, qa_passed: qaPassed, review_required: reviewRequired })
 }
 
 // markTaskFailed throws on its own DB errors; swallow so the HTTP
