@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BRAND_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, parseArtDirection,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, parseArtDirection,
   parseCritic, referenceCandidates, type ArtDirection,
 } from './art_director.ts'
 import { PHOTO_INDEX } from './photo_index.ts'
@@ -68,13 +68,13 @@ Deno.test('a negation in the prompt is a warning, not a failure', () => {
   assert(r.ok && r.warnings.length === 1)
 })
 
-Deno.test('the critic gets the brand rules, the realism note and the art director questions', () => {
+Deno.test('only gross defects block; the realism note and the art director questions are notes', () => {
   const ad = JSON.parse(reply()) as ArtDirection
-  const qs = criticQuestions(ad)
-  assertEquals(qs.length, AD_BRAND_QUESTIONS.length + 2)
-  assert(qs.some(q => q.includes('face')))
-  assert(qs.some(q => q.includes(ACTIONS.steaming_milk)))
-  assert(qs.includes('Is the pitcher held?'))
+  const { blocking, notes } = criticQuestions(ad)
+  assertEquals(blocking, AD_BLOCKING_QUESTIONS)
+  assert(blocking.some(q => q.includes('face')) && blocking.some(q => q.includes('bags')))
+  assert(notes.some(q => q.includes(ACTIONS.steaming_milk)))
+  assert(notes.includes('Is the pitcher held?'))
 })
 
 Deno.test('the critic fails closed', () => {
@@ -84,6 +84,14 @@ Deno.test('the critic fails closed', () => {
   assert(!one.passes && one.failed[0].why === 'not answered')
   assert(!parseCritic('{"answers":[{"n":1,"answer":"yes"},{"n":2,"answer":"no","why":"pitcher on tray"}],"correction":"held up"}', qs).passes)
   assert(!parseCritic('garbage', qs).passes)
+})
+
+Deno.test('a failed note is recorded but does not fail the image', () => {
+  const qs = ['block1', 'note1']
+  const v = parseCritic('{"answers":[{"n":1,"answer":"yes"},{"n":2,"answer":"no","why":"cup flat"}]}', qs, 1)
+  assert(v.passes)
+  assertEquals(v.notes, [{ q: 'note1', why: 'cup flat' }])
+  assert(!parseCritic('{"answers":[{"n":1,"answer":"no","why":"melted finger"},{"n":2,"answer":"yes"}]}', qs, 1).passes)
 })
 
 Deno.test('the brief carries the caption, the hint and no bag photos', () => {

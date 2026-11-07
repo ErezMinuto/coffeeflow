@@ -39,15 +39,16 @@ const CRITIC_SCHEMA = {
 }
 
 async function criticCheck(imageUrl: string, ad: ArtDirection, budget: Budget): Promise<CriticVerdict> {
-  const questions = criticQuestions(ad)
+  const { blocking, notes } = criticQuestions(ad)
+  const questions = [...blocking, ...notes]
   const ask = () => callClaude({
     sourceFn: 'seo-worker-visual', model: AD_CRITIC_MODEL, system: AD_CRITIC_SYSTEM,
     messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'url', url: imageUrl } }, { type: 'text', text: criticUserMessage(questions) }] }],
-    maxTokens: 4000, responseSchema: CRITIC_SCHEMA, timeoutMs: Math.min(60_000, budget.remainingMs()),
+    maxTokens: 16000, responseSchema: CRITIC_SCHEMA, timeoutMs: Math.min(90_000, budget.remainingMs()),
   })
   let res: Awaited<ReturnType<typeof callClaude>>
   try { res = await ask() } catch { res = await ask() }
-  return parseCritic(res.text, questions)
+  return parseCritic(res.text, questions, blocking.length)
 }
 
 export interface ArtDirectorRun {
@@ -104,11 +105,11 @@ export async function runArtDirector(opts: {
     try {
       verdict = await criticCheck(imageUrl, ad, budget)
     } catch (e: any) {
-      verdict = { passes: false, description: '', failed: [{ q: 'QA could not run', why: String(e?.message ?? e) }], correction: '' }
+      verdict = { passes: false, description: '', failed: [{ q: 'QA could not run', why: String(e?.message ?? e) }], notes: [], correction: '' }
     }
     qaAttempts.push({
       attempt: a, image_url: imageUrl, art_direction: ad, prompt_doc: json.prompt_doc,
-      critique: { passes: verdict.passes, description: verdict.description, issues: verdict.failed.map(f => `${f.q} → no: ${f.why}`), correction: verdict.correction },
+      critique: { passes: verdict.passes, description: verdict.description, issues: verdict.failed.map(f => `${f.q} → no: ${f.why}`), notes: verdict.notes.map(f => `${f.q} → no: ${f.why}`), correction: verdict.correction },
     })
     lastAttemptMs = Date.now() - attemptStart
     log(`art-director attempt ${a} ${verdict.passes ? 'PASSED' : `FAILED ${JSON.stringify(verdict.failed.map(f => f.q.slice(0, 60)))}`} in ${lastAttemptMs}ms`)
