@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ACTIONS, AD_BRAND_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, parseArtDirection,
+  ACTIONS, AD_BLOCKING_QUESTIONS, AD_SYSTEM, adRevisionMessage, adUserMessage, criticQuestions, isRealRejection, parseArtDirection,
   parseCritic, referenceCandidates, type ArtDirection,
 } from './art_director.ts'
 import { PHOTO_INDEX } from './photo_index.ts'
@@ -68,13 +68,13 @@ Deno.test('a negation in the prompt is a warning, not a failure', () => {
   assert(r.ok && r.warnings.length === 1)
 })
 
-Deno.test('the critic gets the brand rules, the realism note and the art director questions', () => {
+Deno.test('only gross defects block; the realism note and the art director questions are notes', () => {
   const ad = JSON.parse(reply()) as ArtDirection
-  const qs = criticQuestions(ad)
-  assertEquals(qs.length, AD_BRAND_QUESTIONS.length + 2)
-  assert(qs.some(q => q.includes('face')))
-  assert(qs.some(q => q.includes(ACTIONS.steaming_milk)))
-  assert(qs.includes('Is the pitcher held?'))
+  const { blocking, notes } = criticQuestions(ad)
+  assertEquals(blocking, AD_BLOCKING_QUESTIONS)
+  assert(blocking.some(q => q.includes('face')) && blocking.some(q => q.includes('bags')))
+  assert(notes.some(q => q.includes(ACTIONS.steaming_milk)))
+  assert(notes.includes('Is the pitcher held?'))
 })
 
 Deno.test('the critic fails closed', () => {
@@ -86,10 +86,33 @@ Deno.test('the critic fails closed', () => {
   assert(!parseCritic('garbage', qs).passes)
 })
 
+Deno.test('a failed note is recorded but does not fail the image', () => {
+  const qs = ['block1', 'note1']
+  const v = parseCritic('{"answers":[{"n":1,"answer":"yes"},{"n":2,"answer":"no","why":"cup flat"}]}', qs, 1)
+  assert(v.passes)
+  assertEquals(v.notes, [{ q: 'note1', why: 'cup flat' }])
+  assert(!parseCritic('{"answers":[{"n":1,"answer":"no","why":"melted finger"},{"n":2,"answer":"yes"}]}', qs, 1).passes)
+})
+
 Deno.test('the brief carries the caption, the hint and no bag photos', () => {
   const m = adUserMessage({ caption: 'קפה טרי', aspect: 'story', recent: [{ date: '2026-11-06', caption: 'x' }], learnings: ['L1'], plannerHint: 'Bar moment' })
   assert(m.includes('קפה טרי') && m.includes('9:16') && m.includes('L1') && m.includes('Bar moment'))
   assert(!m.includes('coffee_bags/') && !m.includes('bag_scenes/'))
   assert(adRevisionMessage(JSON.parse(reply()), [{ q: 'held?', why: 'on tray' }], 'held at chest height').includes('held at chest height'))
   assert(AD_SYSTEM.includes('Strada X') && AD_SYSTEM.includes('JSON only'))
+})
+
+Deno.test('owner verdicts reach the art director; bulk queue clean-ups do not count', () => {
+  assert(isRealRejection('not a logical image, no one throws a single coffee bean'))
+  assert(!isRealRejection('cleared by Erez 2026-11-03 (fresh start)'))
+  assert(!isRealRejection('') && !isRealRejection(null))
+  const m = adUserMessage({
+    caption: 'x', aspect: 'story', recent: [], learnings: [],
+    verdicts: [
+      { date: '2026-11-07', verdict: 'rejected', reason: 'filter with milk, image looks really bad', caption: 'פילטר', image: 'finished_drink (eye level)' },
+      { date: '2026-11-05', verdict: 'published', caption: 'קלייה', image: 'roastery (the roaster at work)' },
+    ],
+  })
+  assert(m.includes('REJECTED ("filter with milk, image looks really bad")') && m.includes('PUBLISHED: image: roastery'))
+  assert(adUserMessage({ caption: 'x', aspect: 'story', recent: [], learnings: [] }).includes('OWNER VERDICTS ON RECENT IMAGES'))
 })
