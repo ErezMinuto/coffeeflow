@@ -12,6 +12,7 @@ import type {
   TaskType,
   TaskStatus,
 } from './types.ts'
+import { InvalidTaskError, validateNewTask, type TaskValidationOptions } from './taskValidation.ts'
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -24,11 +25,24 @@ export function createSupabase(): SupabaseClient {
 
 // ── seo_tasks ────────────────────────────────────────────────────────────
 
+// Throws InvalidTaskError (and inserts nothing) when any task's brief would be
+// rejected by its worker; see taskValidation.ts. The error message names each
+// bad task and what to fix, so a planner in a tool loop can correct and retry.
+// Rows passed with status:'failed' are recorded as-is, without validation.
 export async function insertTasks(
   supabase: SupabaseClient,
   tasks: NewSeoTask[],
+  opts: TaskValidationOptions = {},
 ): Promise<SeoTaskRow[]> {
   if (tasks.length === 0) return []
+  const invalid = tasks
+    .map((t, index) => ({
+      index,
+      task_type: t.task_type,
+      problems: t.status === 'failed' ? [] : validateNewTask(t, opts),
+    }))
+    .filter((p) => p.problems.length > 0)
+  if (invalid.length > 0) throw new InvalidTaskError(invalid)
   // Defense-in-depth: a model-authored brief_data sometimes arrives as a JSON
   // STRING instead of an object. Inserted into the jsonb column verbatim it
   // becomes a string scalar, so workers see no fields (e.g. no .slides) and
