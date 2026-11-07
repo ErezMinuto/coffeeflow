@@ -24,6 +24,8 @@ export interface SeoTaskRow {
   // tasks; set by the orchestrator when a task is one arm of a cohort.
   experiment_id:   string | null
   variation_label: string | null
+  // An instagram_post's image task. Comes with select('*').
+  parent_task_id?: string | null
 }
 
 interface Props {
@@ -180,6 +182,21 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
   // Reject an instagram_post — clears review_required so it leaves the
   // review queue, records the reason. The prepared container is simply left
   // to expire on Meta's side (no publish call), so nothing goes live.
+  // An Instagram image task (visual_generation) has no approve button of its
+  // own: the post that uses it does. Open that post's review (with Approve &
+  // Publish), from the loaded list or, if it fell outside it, from the DB.
+  async function openPostFor(t: SeoTaskRow) {
+    const loaded = tasks.find(c => c.task_type === 'instagram_post' && c.parent_task_id === t.id)
+    if (loaded) { setViewing(loaded); return }
+    const { data, error } = await supabase
+      .from('seo_tasks').select('*')
+      .eq('task_type', 'instagram_post').eq('parent_task_id', t.id)
+      .order('created_at', { ascending: false }).limit(1)
+    if (error) { window.alert(`Could not load the post: ${error.message}`); return }
+    if (!data?.length) { window.alert('No Instagram post uses this image yet.'); return }
+    setViewing(data[0] as SeoTaskRow)
+  }
+
   async function handleRejectIg(t: SeoTaskRow) {
     const reason = window.prompt('Reject this IG post (it will NOT be published).\n\nReason:', 'Off-brand / needs rework')
     if (!reason) return
@@ -284,6 +301,13 @@ export default function SeoTaskQueue({ onTaskAction }: Props) {
                           className={`inline-flex items-center gap-1 ${t.task_type === 'instagram_post' && reviewRequired ? 'text-amber-700 hover:text-amber-900 font-medium' : 'text-surface-500 hover:text-surface-900'}`}
                           title={t.task_type === 'instagram_post' ? 'Review the post + approve/publish' : 'View brief'}
                         ><Eye size={12} /> {t.task_type === 'instagram_post' ? 'review' : 'brief'}</button>
+                        {t.task_type === 'visual_generation' && (t.brief_data as Record<string, unknown>)?.destination === 'ig_post' && (
+                          <button
+                            onClick={() => openPostFor(t)}
+                            className={`inline-flex items-center gap-1 ${reviewRequired ? 'text-amber-700 hover:text-amber-900 font-medium' : 'text-surface-500 hover:text-surface-900'}`}
+                            title="Open the Instagram post that uses this image, to approve & publish or reject it"
+                          ><ThumbsUp size={12} /> open post</button>
+                        )}
                         {t.task_type === 'dynamic_experiment' && t.status === 'pending' && (
                           <button
                             onClick={() => handleApprove(t)}
