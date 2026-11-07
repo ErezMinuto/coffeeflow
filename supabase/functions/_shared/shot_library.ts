@@ -64,6 +64,8 @@ export const SHOTS: Record<ShotType, ShotDef> = {
   bag_hero: {
     id: 'bag_hero', label: 'Bag hero',
     use_for: 'a Minuto coffee bag as the hero, for a product, a launch or a roast-of-the-week post',
+    // A new scene around the real bag (bagScenePrompt, owner 2026-11-07);
+    // the real photo below is the fallback when no render passes the label check.
     source: 'real_photo', folders: ['bag_scenes', 'coffee_bags'],
     moments: ['the bag on the counter', 'the bag in daylight', 'the bag in warm lamp light'],
     needs_product: true, enabled: true,
@@ -257,6 +259,33 @@ export function shotEditBrief(shot: ShotDef, slots: ShotSlots): string {
   }
 }
 
+// Bag shots: a NEW scene built around the real bag (owner, 2026-11-07), the
+// pattern generate-campaign/scene_image.ts proved for emails: the bag's real
+// photo goes to Nano Banana Pro as the reference, and a label check against
+// that photo throws away any render that redraws the bag. The real photo is
+// published only when no render passes.
+export function bagScenePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): string {
+  const frame = RATIO_WORDS[ratio] ?? ratio
+  const name = (slots.product_name ?? 'coffee').trim()
+  const bag = `the real Minuto "${name}" coffee bag from the reference image, sealed and standing upright`
+  const scene: Record<string, string> = {
+    'the bag on the counter': `${bag} on a warm wooden café counter, a few freshly roasted coffee beans beside it, soft morning window light`,
+    'the bag in daylight': `${bag} on a pale stone surface by a window, bright natural daylight and soft shadows`,
+    'the bag in warm lamp light': `${bag} on a dark wooden shelf in the warm glow of a lamp, a calm evening mood`,
+    'the bag beside a cup': `${bag} on a warm wooden café counter beside a freshly made espresso in a small ceramic cup on its saucer, soft morning light`,
+  }
+  const moment = resolveMoment(shot, slots.moment)
+  return `Scene: a ${frame} editorial photograph of ${scene[moment] ?? scene['the bag on the counter']}.\n\n` + bagSceneRules(frame)
+}
+
+export function bagSceneRules(frame: string): string {
+  return `Hard rules: show the bag from the reference exactly once, SEALED and upright (never open, torn or spilling). ` +
+    `It keeps its exact proportions, stag logo, "MINUTO Café Roastery" wordmark and label artwork; do not redraw, simplify or invent label text. ` +
+    `The label faces the camera and is in sharp focus. Any loose coffee beans are medium-roasted, light-cinnamon brown, not black or oily. ` +
+    `No other bags or packaging, no people, no hands, no added text, numbers, prices, signs or logos anywhere except what is printed on the real bag. ` +
+    `Premium, warm, natural photography for a specialty coffee roastery's Instagram. ${frame[0].toUpperCase()}${frame.slice(1)} frame.`
+}
+
 // Generated still lifes: one positive scene, about 50 words, written for the
 // image model with ONE reference photo attached (a real Minuto cup or beans).
 export function shotGeneratePrompt(shot: ShotDef, slots: ShotSlots, ratio: string): string {
@@ -327,6 +356,7 @@ export function shotChecklist(shot: ShotDef, slots: ShotSlots): string[] {
       return [ground, text,
         'Is exactly one Minuto coffee bag the main subject?',
         `Does the bag's printed label read clearly and match the real ${slots.product_name ?? 'product'} bag?`,
+        'Is the bag sealed and upright, with no people, hands or other packaging in the image?',
         ...(shot.id === 'bag_with_drink' ? ['Is there a finished coffee drink next to the bag?'] : [])]
     case 'bar_moment':
       // A recreated STILL scene: no hands, nothing pouring, no invented marks

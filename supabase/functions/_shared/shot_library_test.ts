@@ -1,6 +1,6 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
-  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
+  ENABLED_SHOTS, PHOTO_EXCLUDE, SHOTS, applyPlannedShot, bagScenePrompt, withIgDestination, isBagSceneOf, normalizeShotChoice, packshotFor, plannerShotInstructions,
   plannerShotMenu, referenceSubject, resolveMoment, shotChecklist, shotUsesRealPhoto, shotEditBrief, shotGeneratePrompt, shotRouterPrompt, shotSceneSummary,
 } from './shot_library.ts'
 
@@ -213,4 +213,17 @@ Deno.test('withIgDestination: explicit destinations and plain briefs are left al
 Deno.test('the 2026-10-31 failing brief now resolves to a render_mode', () => {
   const raw = withIgDestination({ aspect: 'story', shot_type: 'finished_drink', caption_he: 'x', shot_slots: { drink: 'espresso', moment: 'top down' }, scene_brief: 'y' })
   assertEquals(applyPlannedShot(raw, { enabled: true }).brief.render_mode, 'no_bag')
+})
+
+Deno.test('bag scenes keep the real bag and fill the frame asked for', () => {
+  for (const shot of [SHOTS.bag_hero, SHOTS.bag_with_drink]) {
+    for (const moment of shot.moments) {
+      const p = bagScenePrompt(shot, { product_name: 'Dark Chocolate', moment }, '4:5')
+      assert(p.includes('"Dark Chocolate"') && p.includes('SEALED') && p.includes('MINUTO Café Roastery'), `${shot.id}/${moment}`)
+      assert(p.includes('vertical 4:5') && !/\b16:9\b/.test(p), `${shot.id}/${moment} frame`)
+      assert(!/\bhands? (holding|pouring)|\bpouring\b/i.test(p), `${shot.id}/${moment} still`)
+    }
+  }
+  assert(bagScenePrompt(SHOTS.bag_with_drink, { product_name: 'Guji' }, '9:16').includes('espresso'))
+  assert(shotChecklist(SHOTS.bag_hero, { product_name: 'Guji' }).some(q => q.includes('sealed')))
 })
