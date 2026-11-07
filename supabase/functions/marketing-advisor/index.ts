@@ -15,6 +15,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 import { forbidden, hasRole } from "../_shared/role_caller.ts";
+import { runLogged } from "../_shared/run_logged.ts";
 import { decodeDesign } from "../generate-campaign/email_template.ts";
 import { callClaude as sharedCallClaude, CLAUDE_DEFAULT_MODEL } from "../seo-agent/claude.ts";
 import {
@@ -1995,7 +1996,7 @@ function withCors(handler: (req: Request) => Promise<Response>) {
   };
 }
 
-serve(withCors(async (req) => {
+serve(withCors(runLogged("marketing-advisor", async (req, _log) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   // verify_jwt is off, and the brain chat can edit live ad campaigns through
   // the ad hands, so the caller is checked here: an admin from the dashboard,
@@ -3601,4 +3602,36 @@ ${postsBlock}
     JSON.stringify({ error: `Unknown agent: ${body.agent ?? "(none)"}` }),
     { status: 400, headers: { ...CORS, "Content-Type": "application/json" } },
   );
+}, {
+  // Only the two agents cron runs are logged; every other agent is the admin
+  // dashboard (chat, drafts, lookups) and writes no rows.
+  scope: async (req) => {
+    const body = await req.json().catch(() => ({})) as { agent?: unknown; _run?: unknown; trigger?: unknown }
+    if (body.agent !== "market_research" && body.agent !== "unified_marketing_plan") return null
+    return {
+      agent: body.agent,
+      mode: body.agent === "unified_marketing_plan" ? (body._run === true ? "worker" : "trigger") : "run",
+      trigger: body.trigger === "cron" ? "cron" : undefined,
+    }
+  },
+  // Counts and flags only: the plan, raw model text and research findings stay out.
+  judge: (out, _res, scope) => {
+    const T = (e: string, m: string, d?: Record<string, unknown>) => [e, m, d] as [string, string, Record<string, unknown>?]
+    if (scope.agent === "market_research") {
+      const errors = Number(out?.errors) || 0
+      return {
+        status: out?.success === true && errors > 0 ? "partial" : out?.success === false ? "error" : undefined,
+        summary: { sources: out?.sources, errors: out?.errors },
+        warnings: [
+          ...(errors > 0 ? [T("research.source_errors", `${errors} research source(s) failed`, { errors })] : []),
+          ...(out?.success === true && Number(out?.sources) === 0 ? [T("research.empty", "market research gathered 0 sources")] : []),
+        ],
+      }
+    }
+    const lErr = out?._learnings?.err
+    return {
+      summary: { started: out?.started, week_start: out?.week_start, ok: out?.ok, learnings_written: out?._learnings?.written },
+      warnings: lErr ? [T("learnings.fail", "plan learnings write failed", { error: String(lErr).slice(0, 200) })] : [],
+    }
+  },
 }));

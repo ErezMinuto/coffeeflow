@@ -18,6 +18,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { isServiceCaller, unauthorized } from '../_shared/service_caller.ts'
+import { runLogged } from '../_shared/run_logged.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { evaluateDueExperiments } from '../seo-agent/experimentEvaluator.ts'
 import { writeBriefing } from '../seo-agent/briefingWriter.ts'
@@ -37,7 +38,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
-serve(async (req) => {
+serve(runLogged('evaluator-tick', async (req, log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   // Only cron and other functions run this. The gateway's verify_jwt still admits
   // the public anon key, so the caller is checked here.
@@ -64,6 +65,7 @@ serve(async (req) => {
         })
       } catch (e: any) {
         console.warn(`[evaluator-tick] briefing write failed (non-fatal): ${e?.message ?? e}`)
+        log.warn('briefing.fail', 'winner briefing write failed (non-fatal)', undefined, e)
       }
     }
     return jsonResponse({ ok: true, started_at: startedAt, finished_at: new Date().toISOString(), summary })
@@ -71,4 +73,13 @@ serve(async (req) => {
     console.error(`[evaluator-tick] threw: ${e?.message ?? e}`)
     return jsonResponse({ ok: false, error: e?.message ?? String(e) }, 500)
   }
-})
+}, {
+  judge: (out) => ({
+    // Counts only; experiment and learning ids live in the briefing.
+    summary: {
+      evaluated: out?.summary?.evaluated, inconclusive: out?.summary?.inconclusive,
+      winners: Array.isArray(out?.summary?.winners) ? out.summary.winners.length : undefined,
+      skipped: Array.isArray(out?.summary?.skipped) ? out.summary.skipped.length : undefined,
+    },
+  }),
+}))

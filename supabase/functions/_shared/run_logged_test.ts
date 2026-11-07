@@ -159,3 +159,22 @@ Deno.test('queue worker: only allowlisted scalars are logged', async () => {
   assert(terminal()[0].data.tokens_in === 10, 'tokens missing')
   assert(rows.some((r) => r.event === 'attach.fail'), 'attach warning missing')
 })
+
+Deno.test('a handler-owned run_id is kept; the log id goes in log_run_id', async () => {
+  rows.length = 0
+  const res = await runLogged('t', async () => json({ ok: true, run_id: 'strategist-run-1' }))(post())
+  const body = await res.json()
+  assert(body.run_id === 'strategist-run-1', 'handler run_id overwritten')
+  assert(typeof body.log_run_id === 'string' && body.log_run_id === res.headers.get('x-run-id'), 'log_run_id missing')
+})
+
+Deno.test('scope: null writes no rows and the handler still reads the body; an object is logged', async () => {
+  rows.length = 0
+  const scope = async (r: Request) => { const b = await r.json(); return b.agent === 'cron_agent' ? { agent: b.agent } : null }
+  const handler = async (r: Request) => json({ ok: true, got: (await r.json()).agent })
+  const a = await runLogged('t', handler, { scope })(new Request('http://x', { method: 'POST', body: JSON.stringify({ agent: 'chat' }) }))
+  assert((await a.json()).got === 'chat' && rows.length === 0, 'unscoped request was logged or lost its body')
+  const b = await runLogged('t', handler, { scope })(new Request('http://x', { method: 'POST', body: JSON.stringify({ agent: 'cron_agent' }) }))
+  assert((await b.json()).got === 'cron_agent', 'scoped request lost its body')
+  assert(terminal()[0]?.data?.agent === 'cron_agent', 'scope label missing from summary')
+})
