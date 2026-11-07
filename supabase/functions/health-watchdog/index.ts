@@ -28,6 +28,8 @@
 
 import { freshnessBudgetHours } from './freshness_budget.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { redactEmails, runLogged } from '../_shared/run_logged.ts'
+import { isServiceCaller } from '../_shared/service_caller.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0'
 import { sendOwnerEmail } from '../_shared/email.ts'
 import { buildApprovalDigest, renderApprovalDigest } from '../_shared/approval_digest.ts'
@@ -223,7 +225,7 @@ interface HealthFinding {
   context?: Record<string, unknown>
 }
 
-serve(async (req) => {
+serve(runLogged('health-watchdog', async (req, _log) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
   if (req.method !== 'POST')    return jsonResponse({ error: 'POST only' }, 405)
 
@@ -837,4 +839,36 @@ serve(async (req) => {
     return jsonResponse({ ok: false, error: error.message, email_status: emailStatus, findings, signals }, 500)
   }
   return jsonResponse({ ok: true, healthy: false, findings_count: findings.length, task_id: data.id, email_status: emailStatus, findings, signals })
-})
+}, {
+  // This function has no caller check of its own (the gateway's verify_jwt
+  // admits the public anon key), so only the service-role caller, i.e. the
+  // daily cron, is logged. Anyone else still gets the same run, unlogged, so
+  // they cannot add rows to system_logs. Behaviour is unchanged either way.
+  skip: async (req) => !(await isServiceCaller(req)),
+  // Findings are the watchdog's OUTPUT, not its failure: a run that found
+  // problems still ends 'success', so the runtime sentinel (which reads
+  // system_logs) never reports the watchdog for doing its job. Only counts and
+  // categories are logged; finding messages can quote other functions' errors.
+  judge: (out) => {
+    const findings: Array<{ severity?: string; category?: string }> = Array.isArray(out?.findings) ? out.findings : []
+    // A failed send quotes Resend's reply, which can name an address.
+    const short = (v: unknown) => (typeof v === 'string' ? redactEmails(v).slice(0, 120) : undefined)
+    // email.ts returns 'sent (…)' | 'failed (…)' | 'error: …' | 'skipped (no RESEND_API_KEY)'; anything but sent means no alert.
+    const emailFailed = typeof out?.email_status === 'string' && /^(error|fail|skipped)/i.test(out.email_status)
+    const digestFailed = typeof out?.approval_digest === 'string' && /^(error|fail)/i.test(out.approval_digest)
+    return {
+      summary: {
+        healthy: out?.healthy, findings_count: out?.findings_count,
+        error_findings: findings.filter((f) => f.severity === 'ERROR').length,
+        warn_findings: findings.filter((f) => f.severity === 'WARN').length,
+        categories: [...new Set(findings.map((f) => f.category).filter(Boolean))].slice(0, 30),
+        signals_filed: Array.isArray(out?.signals) ? out.signals.filter((x: any) => x?.filed).length : undefined,
+        task_id: out?.task_id, email_status: short(out?.email_status), approval_digest: short(out?.approval_digest),
+      },
+      warnings: [
+        ...(emailFailed ? [['alert_email.fail', 'alert email to the owner did not send', { email_status: short(out?.email_status) }] as [string, string, Record<string, unknown>]] : []),
+        ...(digestFailed ? [['approval_digest.fail', 'approval digest email failed', { approval_digest: short(out?.approval_digest) }] as [string, string, Record<string, unknown>]] : []),
+      ],
+    }
+  },
+}))
