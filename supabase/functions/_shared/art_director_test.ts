@@ -68,11 +68,13 @@ Deno.test('a negation in the prompt is a warning, not a failure', () => {
   assert(r.ok && r.warnings.length === 1)
 })
 
-Deno.test('only gross defects block; the realism note and the art director questions are notes', () => {
+Deno.test('only objective brand rules block; hands, physics, realism and the art director questions are notes', () => {
   const ad = JSON.parse(reply()) as ArtDirection
   const { blocking, notes } = criticQuestions(ad)
   assertEquals(blocking, AD_BLOCKING_QUESTIONS)
-  assert(blocking.some(q => q.includes('face')) && blocking.some(q => q.includes('bags')))
+  assert(blocking.some(q => q.includes('face')) && blocking.some(q => q.includes('bags')) && blocking.some(q => q.includes('logo')))
+  assert(!blocking.some(q => q.includes('hand') || q.includes('absurd')))
+  assert(notes.some(q => q.includes('deformed hand')) && notes.some(q => q.includes('absurd')))
   assert(notes.some(q => q.includes(ACTIONS.steaming_milk)))
   assert(notes.includes('Is the pitcher held?'))
 })
